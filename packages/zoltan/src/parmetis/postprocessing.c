@@ -49,8 +49,8 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 
 static int Compute_Bal(ZZ *, int, indextype *, int, int *, double *);
 static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
-static int Compute_NetCut(ZZ *, int, int *, int *, int *);
-static int Compute_ConCut(ZZ *, int, int *, int *, int *);
+static float Compute_NetCut(ZZ *, int, int *, float *, int *, int *);
+static float Compute_ConCut(ZZ *, int, int *, float *, int *, int *);
 static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
 
 
@@ -321,15 +321,15 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   static double balmin[FOMAXDIM], cutemin[FOMAXDIM];
   /* following variables are defined double to avoid overflow */
   static double cutlsum = 0.0, cutnsum = 0.0, movesum = 0.0, repartsum = 0.0;
-  static int cutlmax = 0, cutnmax = 0;
+  static float cutlmax = 0, cutnmax = 0;
   static double movemax = 0, repartmax = 0;
-  static int cutlmin = INT_MAX, cutnmin = INT_MAX;
+  static float cutlmin = INT_MAX, cutnmin = INT_MAX;
   static double movemin = 1e100, repartmin = 1e100;
   static int timer_final_output = -1;
   double bal[FOMAXDIM];    /* Balance:  max / avg */
   double cute[FOMAXDIM];   /* Traditional weighted graph edge cuts */
-  int cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)) */
-  int cutn;   /* Net cuts:  sum_over_edges((nparts>1)) */
+  float cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)) */
+  float cutn;   /* Net cuts:  sum_over_edges((nparts>1)) */
   double move = 0.0, gmove =0.0;   /* migration cost */
   double repart; /* total repartitioning cost; cutl x multiplier + move */
   int *adjpart = NULL;
@@ -366,11 +366,14 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
     adjpart = (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
 
     Compute_Bal(zz, gr->num_obj, gr->vwgt, gr->obj_wgt_dim, prt->part, bal);
-    Compute_Adjpart(zz, gr->num_obj, gr->vtxdist, gr->xadj, gr->adjncy, gr->adjproc,
-		    prt->part, adjpart);
-    Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts, prt->part, adjpart, cute);
-    cutl= Compute_ConCut(zz, gr->num_obj, gr->xadj, prt->part, adjpart);
-    cutn = Compute_NetCut(zz, gr->num_obj, gr->xadj, prt->part, adjpart);
+    Compute_Adjpart(zz, gr->num_obj, gr->vtxdist, gr->xadj, gr->adjncy,
+                    gr->adjproc, prt->part, adjpart);
+    Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts, 
+                    prt->part, adjpart, cute);
+    cutl = Compute_ConCut(zz, gr->num_obj, gr->xadj,  gr->float_ewgts,
+                          prt->part, adjpart);
+    cutn = Compute_NetCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts,
+                          prt->part, adjpart);
 
 #ifdef UVC_DORUK_COMP_OBJSIZE
     if (vsizeBACKUP) {
@@ -441,24 +444,22 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
     nRuns++;
 
     if (zz->Proc == 0) {
-      for (i = 0; i < vdim; i++) {
+      for (i = 0; i < vdim; i++) 
 	printf("STATS Runs %d  bal[%d]  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 	       nRuns, i, bal[i], balmax[i], balmin[i], balsum[i]/nRuns);
-      }
-      printf("STATS Runs %d  cutl CURRENT %d  MAX %d  MIN %d  AVG %f\n",
+      printf("STATS Runs %d  cutl CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 	     nRuns, cutl, cutlmax, cutlmin, cutlsum/nRuns);
-      printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %f\n",
+      printf("STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 	     nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
+      for (i = 0; i < edim; i++) 
+	printf("STATS Runs %d  cute[%d] CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+	       nRuns, i, cute[i], cutemax[i], cutemin[i], cutesum[i]/nRuns);
       printf("STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-	     nRuns, gr->showMoveVol ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+	     nRuns, gr->showMoveVol ? "moveVol" : "moveCnt", gmove,
+             movemax, movemin, movesum/nRuns);
       if (gr->showMoveVol)
 	printf("STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 	       nRuns, repart, repartmax, repartmin, repartsum/nRuns);
-
-      for (i = 0; i < edim; i++) {
-	printf("STATS Runs %d  cute[%d] CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-	       nRuns, i, cute[i], cutemax[i], cutemin[i], cutesum[i]/nRuns);
-      }
     }
     ZOLTAN_FREE(&adjpart);
   }
@@ -544,74 +545,91 @@ double *cut = NULL;
           cut[k] += (ewgts ? ewgts[j*dim+k] : 1.);
 
   MPI_Allreduce(cut, cute, dim, MPI_DOUBLE, MPI_SUM, zz->Communicator);
-  for (k = 0; k < dim; k++) cute[k] *= 0.5;  /* ParMETIS lists edges twice;
-                                                we'll count each edge 
-                                                only once. */
   ZOLTAN_FREE(&cut);
   return ZOLTAN_OK;
 }
 
 /****************************************************************************/
-static int Compute_NetCut(
+static float Compute_NetCut(
   ZZ *zz,
   int nvtx,
   int *xadj,
+  float *ewgts,
   int *parts,
   int *nborparts
 )
 {
 /*
- * Compute number of hyperedges cut w.r.t. partitions.
+ * Compute weight of hyperedges cut w.r.t. partitions.
  * Assume one hyperedge per vertex.
- * Equivalent to number of boundary vertices.
+ * Equivalent to number of boundary vertices weighted by edge weights.
  */
 int i, j;
-int cutn = 0, gcutn = 0;
+float cutn = 0., gcutn = 0.;
+int dim = zz->Edge_Weight_Dim;
 
-  for (i = 0; i < nvtx; i++)
+  for (i = 0; i < nvtx; i++) {
+
+    /* Compute the maximum graph edge weight of all edges incident to vertex */
+    /* For now, use only first weight per edge. */
+    float maxewgt = 0.;
+    if (ewgts)
+      for (j = xadj[i]; j < xadj[i+1]; j++) 
+        if (ewgts[j*dim] > maxewgt) maxewgt = ewgts[j*dim];
+
     for (j = xadj[i]; j < xadj[i+1]; j++)
       if (parts[i] != nborparts[j]) {
-        cutn++; 
+        cutn += (ewgts ? maxewgt : 1.); 
         break;
       }
+  }
 
-  MPI_Allreduce(&cutn, &gcutn, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&cutn, &gcutn, 1, MPI_FLOAT, MPI_SUM, zz->Communicator);
 
   return gcutn;
 }
 
 /****************************************************************************/
-static int Compute_ConCut(
+static float Compute_ConCut(
   ZZ *zz,
   int nvtx,
   int *xadj,
+  float *ewgts,
   int *parts,
   int *nborparts
 )
 {
 /*
- * Compute SUM over hyperedges( (#parts/hyperedge - 1));
+ * Compute SUM over hyperedges( (#parts/hyperedge - 1)*ewgt);
  * Assume one hyperedge per vertex.
- * Equivalent to number of boundary vertices.
+ * Equivalent to number of boundary vertices weighted by edge weights.
  */
 int i, j;
-int cutl = 0, gcutl = 0;
+float cutl = 0., gcutl = 0.;
 int *used = NULL;
+int dim = zz->Edge_Weight_Dim;
 
   used = (int *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(int));
   for (i = 0; i < zz->LB.Num_Global_Parts; i++) used[i] = -1;
 
   for (i = 0; i < nvtx; i++) {
+    /* Compute the maximum graph edge weight of all edges incident to vertex */
+    /* For now, use only first weight per edge. */
+    float maxewgt = 0.;
+    if (ewgts)
+      for (j = xadj[i]; j < xadj[i+1]; j++) 
+        if (ewgts[j*dim] > maxewgt) maxewgt = ewgts[j*dim];
+
     used[parts[i]] = i;
     for (j = xadj[i]; j < xadj[i+1]; j++)
       if (used[nborparts[j]] < i) {
         used[nborparts[j]] = i;
-        cutl++; 
+        cutl += (ewgts ? maxewgt : 1.); 
       }
   }
   ZOLTAN_FREE(&used);
 
-  MPI_Allreduce(&cutl, &gcutl, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(&cutl, &gcutl, 1, MPI_FLOAT, MPI_SUM, zz->Communicator);
 
   return gcutl;
 }
