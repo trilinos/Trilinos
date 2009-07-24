@@ -33,6 +33,8 @@ static int Convert_To_CSR( ZZ *zz, int num_pins, int *col_ptr,
 int Zoltan_Get_Hypergraph_From_Queries(
                     ZZ *zz,                      /* input zoltan struct */
                     PHGPartParams *hgp,          /* input phg parameters */
+                    int hgraph_model,            /* input model (graph/hgraph)
+                                                    to use in construction */
                     ZHG *zhg)                    /* output hypergraph */
 {
 static char *yo = "Zoltan_Get_Hypergraph_From_Queries";
@@ -133,10 +135,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     need_pin_weights = 1;
   }
 
-  if (hgp->hgraph_model == 1){      /* "neighbors" */
+  if (hgraph_model == HYPERGRAPH){      /* "neighbors" */
     use_all_neighbors = 1;
   }
-  else if (hgp->hgraph_model == 2){ /* "pairs"     */
+  else if (hgraph_model == GRAPH){      /* "pairs"     */
     use_all_neighbors = 0;
   }
   else{

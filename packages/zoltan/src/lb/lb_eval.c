@@ -863,7 +863,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   Zoltan_Input_HG_Init(zhg);
 
-  ierr = Zoltan_Get_Hypergraph_From_Queries(zz, &hgp, zhg);
+  ierr = Zoltan_Get_Hypergraph_From_Queries(zz, &hgp, HYPERGRAPH, zhg);
   if (ierr != ZOLTAN_OK)
     goto End;
 

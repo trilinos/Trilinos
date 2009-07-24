@@ -69,10 +69,6 @@ struct PHGPartParamsStruct {
                                     preferences into account. */
                                     
 
-  int  hgraph_model;             /* Graph->HG conversion model. */
-                                 /* 0: Undefined. */
-                                 /* 1: Nbors; a hyperedge contains all neighbors. */
-                                 /* 2: Pairs; a hyperedge is a graph edge. */
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
   char redm_fast[MAX_PARAM_STRING_LEN]; /* Fast reduction method string. */
   char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
@@ -251,7 +247,7 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
 
 int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize, int *num);
 
-int Zoltan_Get_Hypergraph_From_Queries(ZZ *zz, PHGPartParams *hgp, ZHG *zhg);
+int Zoltan_Get_Hypergraph_From_Queries(ZZ *, PHGPartParams *, int, ZHG *); 
 
 int Zoltan_Hypergraph_Queries(ZZ *zz, int *num_lists, int *num_pins, ZOLTAN_ID_PTR *edg_GID,
    int **row_ptr, ZOLTAN_ID_PTR *vtx_GID);

@@ -759,14 +759,6 @@ int Zoltan_PHG_Initialize_Params(
   else
     hgp->useMultilevel = 1;
 
-  /* Set hgraph_model depending on the LB Method */
-  if (zz->LB.Method == HYPERGRAPH)
-    hgp->hgraph_model = 1; 
-  else if (zz->LB.Method == GRAPH)
-    hgp->hgraph_model = 2; 
-  else
-    hgp->hgraph_model = 0;
-
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
   hgp->edge_scaling = 0;

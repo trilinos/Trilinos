@@ -82,7 +82,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
   Zoltan_Input_HG_Init(zhg);
 
-  ierr = Zoltan_Get_Hypergraph_From_Queries(zz, hgp, zhg);
+  ierr = Zoltan_Get_Hypergraph_From_Queries(zz, hgp, zz->LB.Method, zhg);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting hypergraph from application");
