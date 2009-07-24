@@ -296,7 +296,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   *imp_procs = *exp_procs = NULL;
   
   /* Initialize HG parameters. */
-  err = Zoltan_PHG_Initialize_Params(zz, part_sizes, &hgp);
+  err = Zoltan_PHG_Initialize_Params(zz, part_sizes, zz->LB.Method, &hgp);
   if (err != ZOLTAN_OK)
     goto End;
 
@@ -668,6 +668,8 @@ void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
 int Zoltan_PHG_Initialize_Params(
   ZZ *zz,   /* the Zoltan data structure */
   float *part_sizes, /* preallocation assumes object weight dimension is one */
+  int hgraph_model,  /* GRAPH or HYPERGRAPH -- some default param values 
+                        depend on the model. */
   PHGPartParams *hgp
 )
 {
@@ -751,7 +753,12 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->parkway_serpart,    "patoh", MAX_PARAM_STRING_LEN);
   strncpy(cut_objective,    "connectivity", MAX_PARAM_STRING_LEN);
   strncpy(add_obj_weight,           "none", MAX_PARAM_STRING_LEN);
-  strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
+
+  if (hgraph_model == GRAPH)
+    strncpy(edge_weight_op,          "sum", MAX_PARAM_STRING_LEN);
+  else 
+    strncpy(edge_weight_op,          "max", MAX_PARAM_STRING_LEN);
+
   /* LB.Approach is initialized to "REPARTITION", and set in Set_Key_Params  */
   strncpy(hgp->hgraph_method,  zz->LB.Approach, MAX_PARAM_STRING_LEN);
   if (!strcasecmp(zz->LB.Approach,"REFINE")) 

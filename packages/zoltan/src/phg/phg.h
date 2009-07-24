@@ -206,7 +206,7 @@ extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
 /* Other Function Prototypes */
 /*****************************/
 
-extern int Zoltan_PHG_Initialize_Params(ZZ*, float *, PHGPartParams*);
+extern int Zoltan_PHG_Initialize_Params(ZZ*, float *, int, PHGPartParams*);
 
 extern void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg);
 

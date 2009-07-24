@@ -156,7 +156,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   }
 
   if (graph_callbacks && hypergraph_callbacks){
-    if (zz->LB.Method == GRAPH)
+    if (hgraph_model == GRAPH)
       hypergraph_callbacks = 0;
   }
 
@@ -793,7 +793,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       }
     }
 
-    /* Search for a second weight for each edge, either on process of off process.
+    /* Search for a second weight for each edge, either on process or off process.
      * Most by far should be on process, so we'll look there first instead of
      * using collective communication for all vertex pairs.
      *
@@ -986,7 +986,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
        * a weight of 1.0.  
        */
       ew_dim = zz->Edge_Weight_Dim = 1;
-      ew_op = hgp->edge_weight_op = PHG_MAX_EDGE_WEIGHTS;
     }
 
     if (use_all_neighbors){
@@ -1054,8 +1053,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
     else{
       /* 
-       * Create a hyperedge out of each pair of neighboring vertices.  The hyperedge 
-       * weight will be the weight of the original graph edge.
+       * Create a hyperedge out of each pair of neighboring vertices.  
+       * The hyperedge weight will be the weight of the original graph edge.
        *
        * The user may or may not have specified graph edges twice
        * [v0, v1]  and [v1, v0].  We will only include one instance of
@@ -1080,7 +1079,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         for (j = 0; j < zhg->Esize[i]; j++, k++){
           gnos[1] = zhg->pinGNO[k];
 
-          /* only include each edge once */
+          /* include each edge only once */
 
           if ((gnos[0] < gnos[1]) || !flag[k]){
 
@@ -1099,7 +1098,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
               }
             }
             else{
-              wgts[cnt] = 1.0;
+              wgts[cnt] = 1.0 + flag[k];
             }
 
             cnt++;

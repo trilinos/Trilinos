@@ -177,10 +177,10 @@ End:
 
 int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 {
-  /*****************************************************************************/
-  /* Return performance metrics in GRAPH_EVAL structure.                       */ 
-  /* Also print them out if print_stats is true.                               */
-  /*****************************************************************************/
+  /****************************************************************************/
+  /* Return performance metrics in GRAPH_EVAL structure.                      */ 
+  /* Also print them out if print_stats is true.                              */
+  /****************************************************************************/
 
   char *yo = "Zoltan_LB_Eval_Graph";
   MPI_Comm comm = zz->Communicator;
@@ -211,7 +211,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   float *globalVals = NULL;
   float *cutn=NULL, *cutl=NULL, *cut_wgt=NULL;
 
-  int partitionPair[2], dummyValue[2];
+  int partPair[2], dummyValue[2];
 
   GRAPH_EVAL localEval;
 
@@ -242,7 +242,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   /* Get object weights and parts */
 
-  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, vwgt_dim, &vwgts, &parts);
+  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
+                             vwgt_dim, &vwgts, &parts);
 
   if (ierr != ZOLTAN_OK)
     goto End;
@@ -334,8 +335,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     }
 
     /*  
-     * For calculation of each partition's number of neighbors,
-     * initialize a set of partition number pairs using Zoltan_Hash.
+     * For calculation of each part's number of neighbors,
+     * initialize a set of part number pairs using Zoltan_Hash.
      * Alternative is a nparts*nparts array, which uses too much memory.
      */
 
@@ -415,15 +416,15 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
           nother_parts++;
           part_check[nbor_part] = i + 1;
 
-          partitionPair[0] = obj_part;
-          partitionPair[1] = nbor_part;
+          partPair[0] = obj_part;
+          partPair[1] = nbor_part;
 
-          ierr = Zoltan_Map_Add(zz, map_num, partitionPair, (void *)dummyValue);
+          ierr = Zoltan_Map_Add(zz, map_num, partPair, (void *)dummyValue);
           if (ierr != ZOLTAN_OK){
             goto End;
           }
-        } /* first time neighbor partition is seen for this object */
-      } /* if neighbor's partition is different than object's partition */
+        } /* first time neighbor part is seen for this object */
+      } /* if neighbor's part is different than object's part */
     } /* next neighbor */
 
     if (nother_parts){
@@ -452,14 +453,14 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   ZOLTAN_FREE(&nbors_part);
 
   /*
-   * List of each local partition, followed by the number of neighbors of that partition
+   * List of each local part, followed by the number of neighbors of that part
    */
   partCount = (int *)ZOLTAN_CALLOC(2 * nparts, sizeof(int));
   if (!partCount){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
-  count = 0;   /* number of partitions listed in partCount */
+  count = 0;   /* number of parts listed in partCount */
 
   if (num_edges){
 
@@ -506,7 +507,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     Zoltan_Map_Destroy(zz, map_num);
 
     if (num_pairs > 0){     
-      qsort(partNbors, num_pairs, sizeof(int) * 2, zoltan_lb_eval_sort_increasing);
+      qsort(partNbors, num_pairs, sizeof(int) * 2,
+            zoltan_lb_eval_sort_increasing);
 
       obj_part = -1;
       count = -1;
@@ -514,8 +516,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
         if (partNbors[2*i] != obj_part){
           obj_part = partNbors[2*i];
-          partCount[++count] = obj_part;  /* object partition */
-          partCount[++count] = 0;       /* number of neighbor partitions */
+          partCount[++count] = obj_part;  /* object part */
+          partCount[++count] = 0;       /* number of neighbor parts */
         }
         partCount[count]++;
       }
@@ -556,7 +558,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   ZOLTAN_FREE(&partCount);
 
-  /* Note: this is incorrect if partitions are split across processes, as
+  /* Note: this is incorrect if parts are split across processes, as
    * they could be if migration has not yet occured.
    */
 
@@ -785,10 +787,10 @@ End:
 
 int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 {
-  /*****************************************************************************/
-  /* Return performance metrics in HG_EVAL structure.  Also print them out     */
+  /****************************************************************************/
+  /* Return performance metrics in HG_EVAL structure.  Also print them out    */
   /* if print_stats is true.  Results are per part, not per process.      */
-  /*****************************************************************************/
+  /****************************************************************************/
 
   char *yo = "Zoltan_LB_Eval_HG";
   MPI_Comm comm = zz->Communicator;
@@ -849,7 +851,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
   debug_level = zz->Debug_Level;
   zz->Debug_Level = 0;
 
-  ierr = Zoltan_PHG_Initialize_Params(zz, part_sizes, &hgp);
+  ierr = Zoltan_PHG_Initialize_Params(zz, part_sizes, HYPERGRAPH, &hgp);
   if (ierr != ZOLTAN_OK)
     goto End;
 
