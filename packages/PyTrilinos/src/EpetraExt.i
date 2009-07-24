@@ -93,6 +93,7 @@ example subdirectory of the PyTrilinos package:
 #include "Teuchos_PythonParameter.h"
 
 // Epetra includes
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_DistObject.h"
@@ -124,6 +125,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyFEVector.h"
 
 // EpetraExt includes
+#include "EpetraExt_ConfigDefs.h"
 #include "EpetraExt_Version.h"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
@@ -142,7 +144,7 @@ example subdirectory of the PyTrilinos package:
 #include "EpetraExt_ModelEvaluator.h"
 
 // EpetraExt python includes
-#include "PyModelEvaluator.h"
+#include "EpetraExt_PyUtil.h"
 %}
 
 // Standard exception handling
@@ -612,12 +614,12 @@ class InArgs(PropertyBase):
 
 %typemap(directorout) EpetraExt::ModelEvaluator::InArgs
 {
-  $result = convertInArgsFromPython($1);
+  $result = EpetraExt::convertInArgsFromPython($1);
 }
 
 %typemap(in) const EpetraExt::ModelEvaluator::InArgs &
 {
-  *$1 = convertInArgsFromPython($input);
+  *$1 = EpetraExt::convertInArgsFromPython($input);
 }
 
 //////////////////////
@@ -866,12 +868,12 @@ class OutArgs(PropertyBase):
 
 %typemap(directorout) EpetraExt::ModelEvaluator::OutArgs
 {
-  $result = convertOutArgsFromPython($1);
+  $result = EpetraExt::convertOutArgsFromPython($1);
 }
 
 %typemap(in) const EpetraExt::ModelEvaluator::OutArgs &
 {
-  *$1 = convertOutArgsFromPython($input);
+  *$1 = EpetraExt::convertOutArgsFromPython($input);
 }
 
 //////////////////////////////////////
@@ -885,26 +887,7 @@ class OutArgs(PropertyBase):
 // stripped-down declaration of the class for wrapping purposes only,
 // with enumerations and all but two nested classes removed.
 //
-// The methods 'createInArgs', 'createOutArgs' and 'evalModel' require
-// special handling.  They need to be declared so that SWIG can
-// generate the Director class properly.  They also need to be
-// prevented from being wrapped (%ignore-d), because the wrappers will
-// call conversion functions that are out of scope (see
-// PyModelEvaluator below).  These methods are re-implemented in
-// PyModelEvaluator, where the scoping works properly, and the python
-// interface becomes complete.
-//
-// In the python interface, the C++ class 'ModelEvaluator' becomes
-// 'ModelEvaluatorBase' and the C++ class 'PyModelEvaluator' (below)
-// becomes 'ModelEvaluator'.  Both are virtual base classes and can
-// only serve to be derived from.  In practice, python users should
-// not derive from python class 'ModelEvaluatorBase'.
-//
 %feature("director") EpetraExt::ModelEvaluator;
-%rename(ModelEvaluatorBase) EpetraExt::ModelEvaluator;
-%ignore EpetraExt::ModelEvaluator::createInArgs() const;
-%ignore EpetraExt::ModelEvaluator::createOutArgs() const;
-%ignore EpetraExt::ModelEvaluator::evalModel;
 
 namespace EpetraExt {
 class ModelEvaluator : virtual public Teuchos::Describable
@@ -940,22 +923,6 @@ public:
   virtual void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const = 0;
 };
 }
-
-//////////////////////////////
-// PyModelEvaluator support //
-//////////////////////////////
-//
-// The PyModelEvaluator class is necessary so that we can write
-// conversion functions between python and the highly protected nested
-// classes 'InArgs' and 'OutArgs'.  The conversion functions
-// 'convertInArgsFromPython' and 'convertOutArgsFromPython' are
-// friends of 'PyModelEvaluator' that are needed internally, but
-// should not be wrapped.
-//
-%rename(ModelEvaluator) PyModelEvaluator;
-%ignore convertInArgsFromPython;
-%ignore convertOutArgsFromPython;
-%include "PyModelEvaluator.h"
 
 // Notes:
 //

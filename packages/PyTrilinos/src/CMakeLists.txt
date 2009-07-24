@@ -141,11 +141,11 @@ ENDIF(PyTrilinos_ENABLE_Epetra)
 IF(PyTrilinos_ENABLE_EpetraExt)
 
   APPEND_SET(HEADERS
-    PyModelEvaluator.h
+    EpetraExt_PyUtil.h
     )
 
   APPEND_SET(SOURCES
-    PyModelEvaluator.cpp
+    EpetraExt_PyUtil.cpp
     )
 
 ENDIF(PyTrilinos_ENABLE_EpetraExt)

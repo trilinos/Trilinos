@@ -62,6 +62,7 @@ NOX.Epetra provides the following user-level classes:
 #include <vector>
 
 // Teuchos includes
+#include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_PythonParameter.h"
 
 // Epetra includes
@@ -80,10 +81,13 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_CrsGraph.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
+#include "Epetra_SerialDistributor.h"
 
 // EpetraExt includes
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
+#include "EpetraExt_ModelEvaluator.h"
 
 // NOX includes
 #include "NOX_Abstract_Group.H"
@@ -104,10 +108,15 @@ NOX.Epetra provides the following user-level classes:
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+#include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyFEVector.h"
+#include "PyModelEvaluator.h"
 
 // Namespace flattening
 using Teuchos::RCP;
@@ -361,7 +370,23 @@ namespace Epetra
 ////////////////////////////////////////////////
 // NOX.Epetra.ModelEvaluatorInterface support //
 ////////////////////////////////////////////////
-%teuchos_rcp_typemaps(EpetraExt::ModelEvaluator)
+%import "EpetraExt.i"
+namespace NOX
+{
+namespace Epetra
+{
+%extend ModelEvaluatorInterface
+{
+  ModelEvaluatorInterface(EpetraExt::ModelEvaluator & eeme)
+  {
+    Teuchos::RCP<EpetraExt::ModelEvaluator> eeme_ptr = Teuchos::rcpFromRef(eeme);
+    return new ModelEvaluatorInterface(eeme_ptr);
+  }
+}
+// Only accept the above constructor for wrapping
+%ignore ModelEvaluatorInterface::ModelEvaluatorInterface;
+}
+}
 %include "NOX_Epetra_ModelEvaluatorInterface.H"
 
 // Turn off the exception handling

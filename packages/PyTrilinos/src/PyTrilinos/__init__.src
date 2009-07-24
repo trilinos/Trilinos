@@ -74,6 +74,16 @@ def version():
     return 'Trilinos version: ${Trilinos_VERSION}\n${PACKAGE_NAME} version: ' + __version__
 
 #
+# Import utility class
+from PropertyBase import PropertyBase
+#
+# Import the typed tuple factory and classes
+from typed_tuple import *
+#
+# Import the typed dict factory
+from typed_dict import *
+
+#
 # In order to handle the nested namespaces properly, the import of NOX and LOCA
 # and their sub-modules needs to be handled at this level.  If, for example, we
 # tried to put the import statement in NOX/__init__.py, we can't fill the
@@ -86,13 +96,3 @@ if ('LOCA' in __all__):
     import LOCA
     if (NOX.Have_Epetra):
         import LOCA.Epetra
-
-#
-# Import utility class
-from PropertyBase import PropertyBase
-#
-# Import the typed tuple factory and classes
-from typed_tuple import *
-#
-# Import the typed dict factory
-from typed_dict import *
