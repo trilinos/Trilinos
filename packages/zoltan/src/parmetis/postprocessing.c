@@ -602,7 +602,6 @@ static float Compute_ConCut(
 /*
  * Compute SUM over hyperedges( (#parts/hyperedge - 1)*ewgt);
  * Assume one hyperedge per vertex.
- * Equivalent to number of boundary vertices weighted by edge weights.
  */
 int i, j;
 float cutl = 0., gcutl = 0.;
