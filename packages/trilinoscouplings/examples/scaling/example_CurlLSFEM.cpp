@@ -1708,11 +1708,11 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
- /*
     uExact0 = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
     
+ /*
     uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
@@ -1720,13 +1720,13 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
     uExact0 = cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
     uExact1 = sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
     uExact2 = sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
- */
  
  
     uExact0 = x*(y*y - 1.0)*(z*z-1.0);
     uExact1 = y*(x*x - 1.0)*(z*z-1.0);
     uExact2 = z*(x*x - 1.0)*(y*y-1.0);
 
+ */
  /*
     uExact0 = (y*y - 1.0)*(z*z-1.0);
     uExact1 = (x*x - 1.0)*(z*z-1.0);
@@ -1740,25 +1740,26 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates divergence of exact solution u
  double evalDivu(double & x, double & y, double & z, double & mu)
  {
-  /*
+  
    double divu = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
 
+ /*
    double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
 
    double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
 
-  */
-   double divu = mu*((y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+   double divu = (y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  + (x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
-                 + (x+1.0)*(x-1.0)*(y+1.0)*(y-1.0));
+                 + (x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+  */
 
   // double divu = 0.0;
 
-   return divu;
+   return mu*divu;
  }
 
 
@@ -1766,7 +1767,6 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z, double &mu)
  {
   
- /*
    double duxdy = exp(x+y+z)*(z*z-1.0)*(y*y+2.0*y-1.0);
    double duxdz = exp(x+y+z)*(y*y-1.0)*(z*z+2.0*z-1.0);
    double duydx = exp(x+y+z)*(z*z-1.0)*(x*x+2.0*x-1.0);
@@ -1775,6 +1775,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double duzdy = exp(x+y+z)*(x*x-1.0)*(y*y+2.0*y-1.0);
 
  
+ /*
    double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
    double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
    double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
@@ -1789,7 +1790,6 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double duydz = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
    double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
    double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
- */
  
 
    double duxdy = 2.0*x*y*(z*z-1);
@@ -1798,6 +1798,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double duydz = 2.0*y*z*(x*x-1);
    double duzdx = 2.0*z*x*(y*y-1);
    double duzdy = 2.0*z*y*(x*x-1);
+ */
  /*
   
    double duxdy = 2.0*y*(z*z-1);
@@ -1821,12 +1822,12 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 {
    
  
-  /*
    gradDivu0 = exp(x+y+z)*((y*y-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(y*y-1.0));
    gradDivu1 = exp(x+y+z)*((y*y+2.0*y-1.0)*(z*z-1.0)+(x*x-1.0)*(z*z-1.0)+(x*x-1.0)*(y*y+2.0*y-1.0));
    gradDivu2 = exp(x+y+z)*((y*y-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(y*y-1.0));
  
    
+  /*
     gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                   -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
                   -M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
@@ -1842,18 +1843,22 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
 
+
+   gradDivu0 = 2.0*x*((z*z-1.0)+(y*y-1.0));
+   gradDivu1 = 2.0*y*((z*z-1.0)+(x*x-1.0));
+   gradDivu2 = 2.0*z*((x*x-1.0)+(y*y-1.0));
+
  */
-
-   gradDivu0 = mu*2.0*x*((z*z-1.0)+(y*y-1.0));
-   gradDivu1 = mu*2.0*y*((z*z-1.0)+(x*x-1.0));
-   gradDivu2 = mu*2.0*z*((x*x-1.0)+(y*y-1.0));
-
  
  /*
    gradDivu0 = 0;
    gradDivu1 = 0;
    gradDivu2 = 0;
   */
+
+   gradDivu0 = gradDivu0 * mu;
+   gradDivu1 = gradDivu1 * mu;
+   gradDivu2 = gradDivu2 * mu;
    
 
    return 0;
