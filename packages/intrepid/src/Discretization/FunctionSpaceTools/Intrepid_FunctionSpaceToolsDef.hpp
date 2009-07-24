@@ -267,7 +267,7 @@ void FunctionSpaceTools::scalarMultiplyDataData(ArrayOutData &           outputD
                                                 ArrayInDataRight &       inputDataRight,
                                                 const bool               reciprocal) {
 
-  ArrayTools::scalarMultiplyDataData(outputData, inputDataLeft, inputDataRight, reciprocal);
+  ArrayTools::scalarMultiplyDataData<Scalar>(outputData, inputDataLeft, inputDataRight, reciprocal);
 
 } // scalarMultiplyDataData
 
@@ -277,7 +277,7 @@ void FunctionSpaceTools::dotMultiplyDataField(ArrayOutFields &       outputField
                                               const ArrayInData &    inputData,
                                               const ArrayInFields &  inputFields) {
 
-  ArrayTools::dotMultiplyDataField(outputFields, inputData, inputFields);
+  ArrayTools::dotMultiplyDataField<Scalar>(outputFields, inputData, inputFields);
 
 } // dotMultiplyDataField
 
@@ -287,7 +287,7 @@ void FunctionSpaceTools::dotMultiplyDataData(ArrayOutData &            outputDat
                                              const ArrayInDataLeft &   inputDataLeft,
                                              const ArrayInDataRight &  inputDataRight) {
 
-  ArrayTools::dotMultiplyDataData(outputData, inputDataLeft, inputDataRight);
+  ArrayTools::dotMultiplyDataData<Scalar>(outputData, inputDataLeft, inputDataRight);
 
 } // dotMultiplyDataData
 
@@ -302,10 +302,10 @@ void FunctionSpaceTools::vectorMultiplyDataField(ArrayOutFields &       outputFi
   switch (outRank) {
     case 3:
     case 4:
-      ArrayTools::crossProductDataField(outputFields, inputData, inputFields);
+      ArrayTools::crossProductDataField<Scalar>(outputFields, inputData, inputFields);
       break;
     case 5:
-      ArrayTools::outerProductDataField(outputFields, inputData, inputFields);
+      ArrayTools::outerProductDataField<Scalar>(outputFields, inputData, inputFields);
       break;
     default:
       TEST_FOR_EXCEPTION( ((outRank != 3) && (outRank != 4) && (outRank != 5)), std::invalid_argument,
@@ -325,10 +325,10 @@ void FunctionSpaceTools::vectorMultiplyDataData(ArrayOutData &            output
   switch (outRank) {
     case 2:
     case 3:
-      ArrayTools::crossProductDataData(outputData, inputDataLeft, inputDataRight);
+      ArrayTools::crossProductDataData<Scalar>(outputData, inputDataLeft, inputDataRight);
       break;
     case 4:
-      ArrayTools::outerProductDataData(outputData, inputDataLeft, inputDataRight);
+      ArrayTools::outerProductDataData<Scalar>(outputData, inputDataLeft, inputDataRight);
       break;
     default:
       TEST_FOR_EXCEPTION( ((outRank != 2) && (outRank != 3) && (outRank != 4)), std::invalid_argument,
@@ -348,10 +348,10 @@ void FunctionSpaceTools::tensorMultiplyDataField(ArrayOutFields &       outputFi
 
   switch (outRank) {
     case 4:
-      ArrayTools::matvecProductDataField(outputFields, inputData, inputFields, transpose);
+      ArrayTools::matvecProductDataField<Scalar>(outputFields, inputData, inputFields, transpose);
       break;
     case 5:
-      ArrayTools::matmatProductDataField(outputFields, inputData, inputFields, transpose);
+      ArrayTools::matmatProductDataField<Scalar>(outputFields, inputData, inputFields, transpose);
       break;
     default:
       TEST_FOR_EXCEPTION( ((outRank != 4) && (outRank != 5)), std::invalid_argument,
@@ -371,10 +371,10 @@ void FunctionSpaceTools::tensorMultiplyDataData(ArrayOutData &            output
 
   switch (outRank) {
     case 3:
-      ArrayTools::matvecProductDataData(outputData, inputDataLeft, inputDataRight, transpose);
+      ArrayTools::matvecProductDataData<Scalar>(outputData, inputDataLeft, inputDataRight, transpose);
       break;
     case 4:
-      ArrayTools::matmatProductDataData(outputData, inputDataLeft, inputDataRight, transpose);
+      ArrayTools::matmatProductDataData<Scalar>(outputData, inputDataLeft, inputDataRight, transpose);
       break;
     default:
       TEST_FOR_EXCEPTION( ((outRank != 3) && (outRank != 4)), std::invalid_argument,
