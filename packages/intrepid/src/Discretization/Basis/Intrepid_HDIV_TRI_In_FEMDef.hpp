@@ -170,26 +170,27 @@ namespace Intrepid {
 							      n + 1 ,
 							      1 );
 
-    FieldContainer<Scalar> internalPoints( numInternalPoints , 2 );
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
-							    this->getBaseCellTopology() , 
-							    n + 1 ,
-							    1 ,
-							    pointType );
-    
-    FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
-    Phis.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
-
-    // copy values into right positions of V2
-    for (int i=0;i<numInternalPoints;i++) {
-      for (int j=0;j<scalarBigN;j++) {
-	// x component
-	V2(3*n+i,j) = phisAtInternalPoints(j,i);
-	// y component
-	V2(3*n+numInternalPoints+i,scalarBigN+j) = phisAtInternalPoints(j,i);
+    if (numInternalPoints > 0) {
+      FieldContainer<Scalar> internalPoints( numInternalPoints , 2 );
+      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
+							      this->getBaseCellTopology() , 
+							      n + 1 ,
+							      1 ,
+							      pointType );
+      
+      FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
+      Phis.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
+      
+      // copy values into right positions of V2
+      for (int i=0;i<numInternalPoints;i++) {
+	for (int j=0;j<scalarBigN;j++) {
+	  // x component
+	  V2(3*n+i,j) = phisAtInternalPoints(j,i);
+	  // y component
+	  V2(3*n+numInternalPoints+i,scalarBigN+j) = phisAtInternalPoints(j,i);
+	}
       }
     }
-
 //     std::cout << "Nodes on big basis\n";
 //     std::cout << V2 << "\n";
 //     std::cout << "End nodes\n";
