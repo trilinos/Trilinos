@@ -98,6 +98,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HDF5
   "Enable EpetraExt interface support for HDF5. This interface requires an already installed HDF5 library\; the include, the library path and the library name must be specified as well."
   OFF )
 
+ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_PyTrilinos
+  HAVE_PYTRILINOS
+  "Enable certain python-compatible code only if PyTrilinos is enabled."
+  OFF )
+
 #
 # C) Add the libraries, tests, and examples
 #

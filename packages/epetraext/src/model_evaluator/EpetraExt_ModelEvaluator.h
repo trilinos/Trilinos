@@ -36,6 +36,10 @@
 #include "Teuchos_Polynomial.hpp"
 #include "Teuchos_Array.hpp"
 
+#ifdef HAVE_PYTRILINOS
+#include "Python.h"
+#endif
+
 class Epetra_Map;
 class Epetra_Vector;
 class Epetra_Operator;
@@ -684,6 +688,13 @@ public:
   /** \brief . */
   virtual void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const = 0;
 
+#ifdef HAVE_PYTRILINOS
+  /** \brief . */
+  friend InArgs convertInArgsFromPython(PyObject * source);
+
+  /** \brief . */
+  friend OutArgs convertOutArgsFromPython(PyObject * source);
+#endif
   //@}
 
 protected:

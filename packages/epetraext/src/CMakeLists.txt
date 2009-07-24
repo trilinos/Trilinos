@@ -406,6 +406,17 @@ IF (TPL_ENABLE_HYPRE)
 
 ENDIF()
 
+#
+# PyTrilinos support
+#
+
+IF (Trilinos_ENABLE_PyTrilinos)
+
+  FIND_PACKAGE(PythonInclude REQUIRED)
+
+  INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+
+ENDIF (Trilinos_ENABLE_PyTrilinos)
 
 #
 # C) Define the targets for package's library(s)

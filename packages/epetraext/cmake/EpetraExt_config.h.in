@@ -72,5 +72,8 @@
 /* Define if want to build epetraext-zoltan */
 #cmakedefine HAVE_ZOLTAN
 
+/* Define if PyTrilinos is enabled */
+#cmakedefine HAVE_PYTRILINOS
+
 /* define if STL map key is required to be const */
 #cmakedefine MUST_CONST_STL_MAP_KEY
