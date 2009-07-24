@@ -195,6 +195,19 @@ template<class Scalar>
 RCP<IntegratorBuilder<Scalar> >
 integratorBuilder(const RCP<ParameterList> &paramList);
 
+/** \brief Creates a Forward Sensitivity Integrator
+ *   Initial conditions for the sensitivities are all zero.
+ *
+ * \relates IntegratorBuilder
+ */
+template<class Scalar>
+RCP<IntegratorBase<Scalar> > createForwardSensitivityIntegrator(
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const int& p_index,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& model_ic,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver,
+    const RCP<ParameterList>& integratorBuilderPL
+    );
 
 } // namespace Rythmos
 

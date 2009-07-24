@@ -50,6 +50,9 @@
 #include "Rythmos_HermiteInterpolator.hpp"
 #include "Rythmos_CubicSplineInterpolator.hpp"
 
+// Includes for the Forward Sensitivity Integrator Builder:
+#include "Rythmos_ForwardSensitivityStepper.hpp"
+
 
 namespace {
 
@@ -618,6 +621,30 @@ Rythmos::integratorBuilder(const RCP<ParameterList> &paramList)
   return ib;
 }
 
+template<class Scalar>
+Teuchos::RCP<Rythmos::IntegratorBase<Scalar> > Rythmos::createForwardSensitivityIntegrator(
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const int& p_index,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& model_ic,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver,
+    const RCP<Teuchos::ParameterList>& integratorBuilderPL
+    )
+{
+  RCP<IntegratorBuilder<Scalar> > ib = integratorBuilder<Scalar>(integratorBuilderPL);
+  RCP<IntegratorBase<Scalar> > sensIntegrator = ib->create(model,model_ic,nlSolver);
+  RCP<ForwardSensitivityStepper<Scalar> > stateAndSensStepper =
+    forwardSensitivityStepper<Scalar>();
+  stateAndSensStepper->initializeSyncedSteppers(
+    model, p_index, model_ic, sensIntegrator->getNonconstStepper(), nlSolver
+    );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> state_and_sens_ic =
+    createStateAndSensInitialCondition(*stateAndSensStepper, model_ic);
+  stateAndSensStepper->setInitialCondition(state_and_sens_ic);
+  sensIntegrator->setStepper(stateAndSensStepper, sensIntegrator->getFwdTimeRange().upper());
+  return sensIntegrator;
+}
+
 
 
 // 
@@ -633,9 +660,17 @@ Rythmos::integratorBuilder(const RCP<ParameterList> &paramList)
   template RCP<IntegratorBuilder< SCALAR > > \
   integratorBuilder(); \
   \
-  template RCP<IntegratorBuilder<SCALAR> > \
-  integratorBuilder(const RCP<ParameterList> &paraList);
-
+  template RCP<IntegratorBuilder< SCALAR > > \
+  integratorBuilder(const RCP<ParameterList> &paraList); \
+  \
+  template RCP<IntegratorBase< SCALAR > > \
+  createForwardSensitivityIntegrator( \
+    const RCP<const Thyra::ModelEvaluator< SCALAR > >& model, \
+    const int& p_index, \
+    const Thyra::ModelEvaluatorBase::InArgs< SCALAR >& model_ic, \
+    const RCP<Thyra::NonlinearSolverBase< SCALAR > >& nlSolver, \
+    const RCP<ParameterList>& integratorBuilderPL \
+    );
 
 #endif //Rythmos_INTEGRATOR_BUILDER_DEF_H
 

@@ -75,7 +75,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepperTester, linear )
     "      value=\"Simple Integration Control Strategy\"/>"
     "    <ParameterList name=\"Simple Integration Control Strategy\">"
     "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
-    "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.1\"/>"
+    "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>"
     "    </ParameterList>"
     "  </ParameterList>"
     "</ParameterList>"
@@ -131,6 +131,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepperTester, linear )
     fwdSensStepperTester = forwardSensitivityStepperTester<double>(fsstPL);
 
   fwdSensStepperTester->setVerbLevel(Teuchos::VERB_EXTREME);
+  fwdSensStepperTester->setOStream(Teuchos::rcpFromRef(out));
 
   TEST_ASSERT(fwdSensStepperTester->testForwardSens(sensIntegrator.ptr()));
 

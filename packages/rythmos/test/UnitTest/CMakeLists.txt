@@ -260,3 +260,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TestModelBuilder_UnitTest
+    SOURCES Rythmos_TestModelBuilder_UnitTest.cpp Rythmos_UnitTest.cpp Rythmos_UnitTestModels.cpp
+    DEPLIBS rythmos_test_models
+    COMM serial
+    STANDARD_PASS_OUTPUT
+    )
+

@@ -29,10 +29,14 @@
 #ifndef Rythmos_UNITTEST_MODELS_H
 #define Rythmos_UNITTEST_MODELS_H
 
+#include "Rythmos_Types.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_ObjectBuilder.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 #include "Epetra_SerialComm.h"
 
 namespace Rythmos {
@@ -94,6 +98,59 @@ Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
 
   return(getDiagonalModel<Scalar>(paramList));
 }
+
+//// Class for Unit Testing which builds Thyra::ModelEvaluators
+//class TestModelBuilder : virtual public Teuchos::ParameterListAcceptor
+//{
+//  public:
+//
+//    TestModelBuilder();
+//
+//    virtual ~TestModelBuilder();
+//
+//    void setModelFactory(
+//      const RCP<const Teuchos::AbstractFactory<Thyra::ModelEvaluator<double> > > &modelFactory,
+//      const std::string &modelFactoryName
+//      );
+//
+//    std::string getModelName() const;
+//
+//    RCP<Thyra::ModelEvaluator<double> > create(
+//      const std::string &modelName = ""
+//      ) const;
+//
+//    /** \name Overridden from Teuchos::ParameterListAcceptor */
+//    //@{
+//
+//    /** \brief . */
+//    void setParameterList(const RCP<Teuchos::ParameterList> & paramList);
+//    
+//    /** \brief . */
+//    RCP<Teuchos::ParameterList> getNonconstParameterList();
+//    
+//    /** \brief . */
+//    RCP<Teuchos::ParameterList> unsetParameterList();
+//    
+//    /** \brief. */
+//    RCP<const ParameterList> getParameterList() const;
+//
+//    /** \brief. */
+//    RCP<const Teuchos::ParameterList> getValidParameters() const;
+//  
+//    //@}
+//
+//  private:
+//    Teuchos::ObjectBuilder<Thyra::ModelEvaluator<double> > builder_;
+//    void initializeDefaults_();
+//};
+//
+//// Nonmember constructor
+//RCP<TestModelBuilder> testModelBuilder();
+//// Nonmember helper
+//RCP<Thyra::ModelEvaluator<double> > createTestModel(
+//    const std::string& modelName,
+//    const RCP<ParameterList>& modelPL = Teuchos::null
+//    );
 
 
 } // namespace Rythmos
