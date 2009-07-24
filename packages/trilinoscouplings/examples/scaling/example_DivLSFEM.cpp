@@ -467,7 +467,7 @@ int main(int argc, char *argv[]) {
         refFaceToNode(i,3)=hex_8.getNodeMap(2, i, 3);
     }
 
-   // Build reference element face to edge map (Hardcoded for now -- need to FIX)
+   // Build reference element face to edge map (Hardcoded for now)
     FieldContainer<int> refFaceToEdge(numFacesPerElem,numEdgesPerFace);
         refFaceToEdge(0,0)=0;
         refFaceToEdge(0,1)=9;
@@ -485,10 +485,10 @@ int main(int argc, char *argv[]) {
         refFaceToEdge(3,1)=8;
         refFaceToEdge(3,2)=7;
         refFaceToEdge(3,3)=11;
-        refFaceToEdge(4,0)=0;
-        refFaceToEdge(4,1)=1;
-        refFaceToEdge(4,2)=2;
-        refFaceToEdge(4,3)=3;
+        refFaceToEdge(4,0)=3;
+        refFaceToEdge(4,1)=2;
+        refFaceToEdge(4,2)=1;
+        refFaceToEdge(4,3)=0;
         refFaceToEdge(5,0)=4;
         refFaceToEdge(5,1)=5;
         refFaceToEdge(5,2)=6;
@@ -633,7 +633,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-
     //Calculate global node ids
     long long * globalNodeIds = new long long[numNodes];
     bool * nodeIsOwned = new bool[numNodes];
@@ -730,12 +729,16 @@ int main(int argc, char *argv[]) {
 
    // Face to Edge connectivity
     FieldContainer<int> faceToEdge(face_vector.size(), numEdgesPerFace);
+    FieldContainer<bool> faceDone(face_vector.size());
     for (int ielem = 0; ielem < numElems; ielem++){
        for (int iface = 0; iface < numFacesPerElem; iface++){
-          for (int iedge = 0; iedge < numEdgesPerFace; iedge++){
-            faceToEdge(elemToFace(ielem,iface),iedge) = 
+         if (!faceDone(elemToFace(ielem,iface))){
+           for (int iedge = 0; iedge < numEdgesPerFace; iedge++){
+              faceToEdge(elemToFace(ielem,iface),iedge) = 
                            elemToEdge(ielem,refFaceToEdge(iface,iedge));
-          }
+              faceDone(elemToFace(ielem,iface))=1;
+           }
+         }
        }
     }   
 
@@ -865,7 +868,7 @@ int main(int argc, char *argv[]) {
     Epetra_Map globalMapD(numFaces, 0, Comm);
     Epetra_Map globalMapC(numEdges, 0, Comm);
     Epetra_Map globalMapG(numNodes, 0, Comm);
-    Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 2);
+    Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 4);
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
 
     double edgevals[2];
@@ -1354,14 +1357,13 @@ int main(int argc, char *argv[]) {
 
   // Set value to zero on diagonal that corresponds to boundary edge
    for(int i=0;i<numEdges;i++) {
-     if (edgeOnBoundary(i)==1){
+     if (edgeOnBoundary(i)){
       double val=0.0;
       MassCinv.ReplaceGlobalValues(i,1,&val,&i);
      }
    }
 
-
-  // Get boundary faces and apply zeros and ones to rhs and StiffD
+  // Adjust matrices and rhs due to boundary conditions
      int numBCFaces=0;
      for (int i=0; i<numFaces; i++){
          if (faceOnBoundary(i)){
@@ -1378,48 +1380,9 @@ int main(int argc, char *argv[]) {
          }
       }
       ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, StiffD);
+      ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, MassD);
       delete [] BCFaces;
 
-/*
-   int numEntries;
-    double *values;
-    int *cols;
-
-  // Adjust matrices and rhs due to boundary conditions
-   for (int row = 0; row<numFaces; row++){
-      MassD.ExtractMyRowView(row,numEntries,values,cols);
-        for (int i=0; i<numEntries; i++){
-           if (faceOnBoundary(cols[i])) {
-             values[i]=0;
-          }
-       }
-      StiffD.ExtractMyRowView(row,numEntries,values,cols);
-        for (int i=0; i<numEntries; i++){
-           if (faceOnBoundary(cols[i])) {
-             values[i]=0;
-          }
-       }
-    }
-   for (int row = 0; row<numFaces; row++){
-       if (faceOnBoundary(row)) {
-          int rowindex = row;
-          StiffD.ExtractMyRowView(row,numEntries,values,cols);
-          for (int i=0; i<numEntries; i++){
-             values[i]=0;
-          }
-          MassD.ExtractMyRowView(row,numEntries,values,cols);
-          for (int i=0; i<numEntries; i++){
-             values[i]=0;
-          }
-         rhsD[0][row]=0;
-         double val = 1.0;
-         StiffD.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-       }
-    }
-
-*/
-
-   
   // Dump matrices to disk
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
    EpetraExt::RowMatrixToMatlabFile("mag_m1inv_matrix.dat",MassCinv);
@@ -1486,13 +1449,13 @@ int main(int argc, char *argv[]) {
     uExact1 = exp(x+z)*(y+1.0)*(y-1.0);
     uExact2 = exp(x+y)*(z+1.0)*(z-1.0);
   
- /*
+/*
    // function 2
     uExact0 = cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
     uExact1 = cos(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
     uExact2 = cos(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
  
- */  
+*/
  /*
    // function 3
     uExact0 = x*x-1.0;
