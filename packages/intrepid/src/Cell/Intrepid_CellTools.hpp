@@ -93,6 +93,7 @@ namespace Intrepid {
     \li     computing Jacobians of reference-to-frame mappings, their inverses and determinants    
     \li     application of the reference-to-physical frame mapping and its inverse
     \li     parametrizations of edges and faces of reference cells needed for edge and face integrals
+    \li     computation of edge and face tangents and face normals on both reference and physical frames
     \li     inclusion tests for point sets in reference and physical cells.  
 */
 template<class Scalar>
@@ -110,15 +111,13 @@ private:
               of a reference cell topology. See CellTools<Scalar>::setSubcellParametrization and 
               Section \ref sec_cell_topology_subcell_map more information about parametrization maps.
    
-      \param  subcellDim        [in]  - dimension of subcell whose parametrization map is wanted
-      \param  subcellOrd        [in]  - ordinal, relative to parent cell of the subcell
-      \param  parentCell        [in]  - topology of the reference cell owning the subcell
+      \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
+      \param  parentCell        [in]  - topology of the reference cell owning the subcells
   
-      \return FieldContainer<double> with the coefficients of the parametrization map for the specified
-              subcell
+      \return FieldContainer<double> with the coefficients of the parametrization map for all subcells
+              of the specified dimension. 
     */
   static const FieldContainer<double>& getSubcellParametrization(const int                   subcellDim, 
-                                                                 const int                   subcellOrd, 
                                                                  const shards::CellTopology& parentCell);
   
   
@@ -146,7 +145,16 @@ private:
               on {V0,V1,V2} and {V0,V1,V2,V3}, determined according to the right-hand rule 
               (see http://mathworld.wolfram.com/Right-HandRule.html for definition of right-hand rule
                and Section \ref Section sec_cell_topology_subcell_map for further details).
-           
+  
+              Because faces of all reference cells supported in Intrepid are affine images of either
+              the standard 2-simplex or the standard 2-cube, the coordinate functions of the respective
+              parmetrization maps are linear polynomials in the parameter variables (u,v), i.e., they
+              are of the form F_i(u,v) = C_0(i) + C_1(i) + C_2(i)v;  0<= i < 3 (face parametrizations
+              are supported only for 3D cells, thus parametrization maps have 3 coordinate functions).   
+              As a result, application of these maps is independent of the face type which is convenient
+              for cells such as Wedge or Pyramid that have both types of faces. Also, coefficients of
+              coordinate functions for all faces can be stored together in the same array.
+  
       \param  subcellParametrization [out]  - array with the coefficients of the parametrization map
       \param  subcellDim             [in]   - dimension of the subcells being parametrized (1 or 2)
       \param  parentCell             [in]   - topology of the parent cell owning the subcells.
@@ -330,7 +338,7 @@ public:
     //                                                                                            //
     //============================================================================================//
     
-    /** \brief  Applies \f$ F_{c} \f$ for a single cell <var>c</var> or multiple cells to a set of 
+    /** \brief  Applies \f$ F_{c} \f$ for a single physical cell \f${\mathcal C}\f$ or multiple cells to a set of 
                 points. Returns a rank-3 or rank-2 array with dimensions (C,P,D) or (P,D) where
         \f[  
                 \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad c=0,\ldots, C 
@@ -370,7 +378,7 @@ public:
                                    const int &                   whichCell = -1);
 
     
-    /** \brief  Applies \f$ F^{-1}_{c} \f$ for a specified cell <var>c</var> to a set of points.       
+    /** \brief  Applies \f$ F^{-1}_{c} \f$ for a specified physical cell \f${\mathcal C}\f$ to a set of points.       
                 Returns a rank-2 array with dimensions (P,D) where
         \f[            
                 \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d         
@@ -402,24 +410,26 @@ public:
 
     
     
-    /** \brief  Maps points from a parametrization domain <var>R</var> to the specified subcell of
-                 a reference cell. Returns a rank-2 array with dimensions (P,D) where for 1-subcells:
+    /** \brief  Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$ 
+                from a given reference cell, to a set of points in the parametrization domain
+                \e R  of \f$\hat{\mathcal{S}}_i\f$. Returns a rank-2 array with dimensions 
+                 (P,D) where for 1-subcells:
          \f[
-                {subcellPoints}(p,*) = \hat{\Phi}_i(t_p); \quad\mbox{and}\quad
+                {subcellPoints}(p,*) = \hat{\Phi}_i(t_p) \quad\mbox{and}\quad
                 \hat{\Phi}_i(t_p) = \left\{
-                \begin{array}{rl}
-                  (\hat{x}(t_p),\hat{y}(t_p))              & \mbox{for 2D parent cells} \\[1.5ex]                 
-                  (\hat{x}(t_p),\hat{y}(t_p),\hat{z}(t_p)) & \quad\mbox{for 3D parent cells}
+                \begin{array}{ll}
+                  (\hat{x}(t_p),\hat{y}(t_p),\hat{z}(t_p)) & \mbox{for 3D parent cells}\\[1.5ex] 
+                  (\hat{x}(t_p),\hat{y}(t_p))              & \mbox{for 2D parent cells}                 
                 \end{array} \right.
-                \quad t_p \in R = [-1,1] 
+                \quad t_p \in R = [-1,1] \,;
          \f]
-                and for 2-subcells:
+                 for 2-subcells:
          \f[
-                {subcellPoints}(p,*) = \hat{\Phi}_i(u_p,v_p)\quad
+                {subcellPoints}(p,*) = \hat{\Phi}_i(u_p,v_p)\quad\mbox{and}\quad
                 \hat{\Phi}_i(u_p,v_p) = (\hat{x}(u_p,v_p), \hat{y}(u_p,v_p), \hat{z}(u_p, v_p))
                 \quad (u_p,v_p)\in R
          \f]
-                where
+                and
          \f[
                 R = \left\{\begin{array}{rl} 
                           \{(0,0),(1,0),(0,1)\} & \mbox{if face is Triangle} \\[1ex]
@@ -428,10 +438,12 @@ public:
         \f]
 
         \remarks 
-        \li     parametrization of 1-subcells is defined for shell lines and beams
-        \li     parametrization of 2-subcells is defined for shell triangles and shell quadrilaterals
+        \li     parametrization of 1-subcells is defined for all 2D and 3D cell topologies with reference
+                cells, including special 2D and 3D topologies such as shell and beams.
+        \li     parametrization of 2-subcells is defined for all 3D cell topologies with reference cells,
+                including special 3D topologies such as shells. 
 
-                To map a set of points in a parametrization domain to a subcell workset, apply 
+                To map a set of points from a parametrization domain to a physical subcell workset, apply 
                 CellTools<Scalar>::mapToPhysicalFrame to the output of this method.  This will effectively 
                 apply the parametrization map \f$ \Phi_{c,i} =  F_{c}\circ\hat{\Phi}_i \f$ 
                 of each subcell in the workset to <var>paramPoints</var>. Here <var>c</var> is  
@@ -454,98 +466,168 @@ public:
                                       const shards::CellTopology &  parentCell);
     
     
-    /** \brief  Computes a pair of constant (non-normalized) tangent vectors to the specified  
-                face of a 3D reference cell. Returns 2 rank-1 arrays with dimension (D=3) such that       
+    
+    /** \brief  Computes a constant (non-normalized) tangent vector to the specified edge of a 2D or 
+                3D reference cell. Returns rank-1 array with dimension (D), D=2 or D=3; such that
         \f[
-                {uRefTan}(*) = \hat{T}_{u}(u,v) = 
+                {refEdgeTangent}(*) = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
+        \f]
+                where \f$\hat{\Phi}_i : R =[-1,1]\mapsto \hat{\mathcal E}_i\f$ is the parametrization map
+                of the specified reference edge \f$\hat{\mathcal E}_i\f$, given by
+        \f[
+                \hat{\Phi}_i(t) = \left\{\begin{array}{ll}
+                    (\hat{x}(t),\hat{y}(t),\hat{z}(t)) & \mbox{for 3D parent cells} \\[1ex]
+                    (\hat{x}(t),\hat{y}(t))            & \mbox{for 2D parent cells} \\[1ex]
+                  \end{array}\right.
+        \f]
+                Because the edges of all reference cells are always affine images of [-1,1],
+                the edge tangent is constant vector field. 
+      
+        \param  refEdgeTangent    [out] - rank-1 array (D) with the edge tangent; D = cell dimension
+        \param  edgeOrd           [in]  - ordinal of the edge whose tangent is computed
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+      */
+    template<class ArrayTypeOut>
+    static void getReferenceEdgeTangent(ArrayTypeOut &                refEdgeTangent,
+                                        const int &                   edgeOrd,
+                                        const shards::CellTopology &  parentCell);
+
+    
+    
+    /** \brief  Computes a pair of constant (non-normalized) tangent vectors to the specified face  
+                of a 3D reference cell. Returns 2 rank-1 arrays with dimension (D), D=3, such that       
+        \f[
+                {refFaceTanU}(*) =  {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
                 \left({\partial\hat{x}(u,v)\over\partial u}, 
                       {\partial\hat{y}(u,v)\over\partial u},
                       {\partial\hat{z}(u,v)\over\partial u} \right) ;
         \f]
         \f[
-                {vRefTan}(*) = \hat{T}_{v}(u,v) = 
+                {refFaceTanV}(*) = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
                 \left({\partial\hat{x}(u,v)\over\partial v}, 
                       {\partial\hat{y}(u,v)\over\partial v},
                       {\partial\hat{z}(u,v)\over\partial v} \right)\,;
         \f]
-               where \f$\hat{\Phi}(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v)): R \mapsto \hat{\mathcal F}\f$  
-               is parametrization of the specified reference face \f${\mathcal F}\f$ and 
+               where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
+               is the parametrization map of the specified reference face \f$\hat{\mathcal F}_i\f$ given by
+        \f[
+               \hat{\Phi}_i(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))
+        \f]
+               and 
         \f[
                 R = \left\{\begin{array}{rl} 
                     \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
                       [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
                     \end{array}\right.
         \f]
-                Because the faces of all reference cells are always affine images of <var>R</var>, 
+                Because the faces of all reference cells are always affine images of \e R , 
                 the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
                 are linear and the face tangents are constant vectors.  
       
-        \param  uRefTan           [out] - rank-1 array (D) with tangent in u-direction at face points
-        \param  vRefTan           [out] - rank-1 array (D) with tangent in v-direction at face points
-        \param  faceOrd           [in]  - ordinal of the face where the tangents are computed
+        \param  refFaceTanU       [out] - rank-1 array (D) with (constant) tangent in u-direction
+        \param  refFaceTanV       [out] - rank-1 array (D) with (constant) tangent in v-direction
+        \param  faceOrd           [in]  - ordinal of the face whose tangents are computed
         \param  parentCell        [in]  - cell topology of the parent 3D reference cell
       */
     template<class ArrayTypeOut>
-    static void getReferenceFaceTangents(ArrayTypeOut &                uRefTan,
-                                         ArrayTypeOut &                vRefTan,
+    static void getReferenceFaceTangents(ArrayTypeOut &                refFaceTanU,
+                                         ArrayTypeOut &                refFaceTanV,
                                          const int &                   faceOrd,
                                          const shards::CellTopology &  parentCell);
     
     
     
     /** \brief  Computes a constant (non-normalized) normal vector to the specified face of a  
-                3D reference cell. Returns
+                3D reference cell. Returns rank-1 array with dimension (D), D=3 such that
         \f[
-                {refNormal}(*) = \hat{T}_{u} \times \hat{T}_{v}
+                {refFaceNormal}(*) = {\partial\hat{\Phi}_{i}\over\partial u} \times 
+                                     {\partial\hat{\Phi}_{i}\over\partial v}
         \f]
-                where \f$\hat{T}_{u},\hat{T}_{v}\f$ are the constant (non-normalized) face tangents 
-                computed by CellTools::getReferenceFaceTangents.
-
-        \param  refNormal         [out] - rank-2 array (P,D) with normal at face points
-        \param  faceOrd           [in]  - ordinal of the face where the normal is computed
+                where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
+                is the parametrization map of the specified reference face \f$\hat{\mathcal F}_i\f$ given by
+        \f[
+                \hat{\Phi}_i(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))
+        \f]
+                and 
+        \f[
+                R = \left\{\begin{array}{rl} 
+                    \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
+                      [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
+                    \end{array}\right.
+        \f]
+                Because the faces of all reference cells are always affine images of \e R , 
+                the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
+                are linear and the face normal is a constant vector.  
+         
+        \remark
+                The method CellTools::getReferenceFaceTangents computes the reference face tangents
+                \f${\partial\hat{\Phi}_{i}/\partial u}\f$ and \f${\partial\hat{\Phi}_{i}/\partial v}\f$.
+ 
+        \param  refFaceNormal     [out] - rank-1 array (D) with (constant) face normal
+        \param  faceOrd           [in]  - ordinal of the face whose normal is computed
         \param  parentCell        [in]  - cell topology of the parent reference cell
       */
     template<class ArrayTypeOut>
-    static void getReferenceFaceNormal(ArrayTypeOut &                refNormal,
+    static void getReferenceFaceNormal(ArrayTypeOut &                refFaceNormal,
                                        const int &                   faceOrd,
                                        const shards::CellTopology &  parentCell);
-
     
     
-    /** \brief  Computes a constant (non-normalized) tangent vector to the specified edge of a 2D or 
-                3D reference cell. Returns rank-1 array with dimension (D=2, or D=3) such that
+    
+    /** \brief  Computes (non-normalized) tangent vectors to physical edges in an edge workset 
+                \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets). 
+                For every edge in the workset the tangents are computed at the points 
+                \f${\bf x}_p = F_c(\hat{\Phi}_i(t_p))\in\mathcal{E}_{c,i}\f$ that are images of points
+                from <var>R=[-1,1]</var> on edge \f$\mathcal{E}_{c,i}\f$. Returns rank-3 array with 
+                dimensions (C,P,D1), D1=2 or D1=3 such that 
         \f[
-                {edgeTan}(*) = {\partial\hat{\Phi}(t)\over\partial t} \,,
+                {edgeTangents}(c,p,d) = 
+                    DF_c(\hat{\Phi}_i(t_p))\cdot {\partial{\hat{\Phi}}_{i}(t_p)\over\partial t}\,; \qquad t_p \in R
         \f]
-                where \f$ \hat{\Phi}(t) : [-1,1]\mapsto \hat{\mathcal E} \f$ is parametrization of the
-                specified reference edge \f$\hat{\mathcal E}\f$. Because the edges of all reference  
-                cells are always affine images of [-1,1], the edge tangent is constant vector field. 
-       
-        \param  edgeTan           [out] - rank-1 array (D) with the edge tangent; D = cell dimension
-        \param  edgeOrd           [in]  - ordinal of the edge where the tangent is computed
+                In this formula: 
+        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical edge \f${\mathcal E}_{c,i}\f$;
+        \li     \f$ {\partial{\hat{\Phi}}_{i}/\partial t}\f$ is the (constant) tangent to reference edge
+                \f$\hat{\mathcal E}_i\f$; see CellTools<Scalar>::getReferenceEdgeTangent that has the 
+                same local ordinal as the edges in the workset;
+        \li     \f$ \hat{\Phi}_i R\mapsto\hat{\mathcal E}_i \f$ is parametrization of reference edge \f$\hat{\mathcal E}_i\f$;
+
+        \warning
+                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(t_p))\f$, 
+                where \f$ t_p \in R=[-1,1] \f$, i.e., Jacobians of the parent cells evaluated at points 
+                that are located on reference edge \f$\hat{\mathcal E}_i\f$ having the same local ordinal as
+                the edges in the workset.
+ 
+        \param  edgeTangents      [out] - rank-3 array (C,P,D1) with tangents on workset edges
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D1,D1) with Jacobians evaluated at ref. edge points
+        \param  worksetEdgeOrd    [in]  - edge ordinal, relative to ref. cell, of the edge workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
-      */
-    template<class ArrayTypeOut>
-    static void getReferenceEdgeTangent(ArrayTypeOut &                edgeTan,
-                                        const int &                   edgeOrd,
+*/
+    template<class ArrayTypeOut, class ArrayTypeIn>
+    static void getPhysicalEdgeTangents(ArrayTypeOut &                edgeTangents,
+                                        const ArrayTypeIn &           worksetJacobians,
+                                        const int &                   worksetEdgeOrd,
                                         const shards::CellTopology &  parentCell);
     
     
     
-    /** \brief  Returns (non-normalized) tangent vectors to physical faces in a face workset. The 
-                tangents are computed at face points that are images of points from <var>R</var>,  
-                the parametrization domain for the faces in the face workset:
+    /** \brief  Computes (non-normalized) tangent vectors to physical faces in a face workset 
+                \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
+                For every face in the workset the tangents are computed at the points 
+                \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
+                from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$. 
+                Returns 2 rank-3 arrays with dimensions (C,P,D), D=3 such that
         \f[
-                {uPhysTan}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{u};\quad
-                {vPhysTan}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{v}
-                \qquad (u_p, v_p) \in R
+                {faceTanU}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u};\qquad
+                {faceTanV}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_{i}\over\partial v}\,;
+                \qquad (u_p, v_p) \in R \,.
         \f]
-                where 
-        \li     \f$ \hat{\Phi}_i \f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
-        \li     \f$ DF_c \f$ is Jacobian of parent cell <var>c</var> that owns physical face \f${\mathcal F}_i\f$;
-        \li     \f$ \hat{T}_{u}, \hat{T}_{v}\f$ are the constant tangents on reference face \f$\hat{\mathcal F}_i\f$; see 
-                 CellTools<Scalar>::getReferenceFaceTangents;
-        \li     <var>R</var> is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
+                In this formula:
+        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical face \f${\mathcal F}_{c,i}\f$;
+        \li     \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
+                tangents on reference face \f$\hat{\mathcal F}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents; 
+                that has the same local ordinal as the faces in the workset;
+        \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal F}_i\f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
+        \li     \e R  is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
         \f[
                 R = 
                   \left\{\begin{array}{rl} 
@@ -555,42 +637,45 @@ public:
          \f]
       
         \warning
-                <var>faceSetJacobians</var> is required to provide \f$DF_c(\hat{\Phi}_i(u_p, v_p))\f$,
-                i.e., the Jacobian of cell <var>c</var> computed at the images of the points from 
-                <var>R</var> on reference face <var>i</var>, i.e., the face owned by that cell. 
+                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
+                where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
+                that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
+                the faces in the workset.
 
-        \param  uPhysTan          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
-        \param  vPhysTan          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
-        \param  uvPoints          [in]  - rank-2 array (P,2) with points in <var>R</var>
+        \param  faceTanU          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  faceTanV          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
         \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
         \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
       */
     template<class ArrayTypeOut, class ArrayTypeIn>
-    static void getPhysicalFaceTangents(ArrayTypeOut &                uPhysTan,
-                                        ArrayTypeOut &                vPhysTan,
-                                        const ArrayTypeIn &           uvPoints,
+    static void getPhysicalFaceTangents(ArrayTypeOut &                faceTanU,
+                                        ArrayTypeOut &                faceTanV,
                                         const ArrayTypeIn &           worksetJacobians,
                                         const int &                   worksetFaceOrd,
                                         const shards::CellTopology &  parentCell);
     
     
     
-    /** \brief  Returns (non-normalized) normal vectors to physical faces in a face workset. The 
-                normals are computed at face points that are images of points from <var>R</var>,  
-                the parametrization domain for the faces in the face workset:
+    /** \brief  Computes (non-normalized) normal vectors to physical faces in a face workset 
+                \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
+                For every face in the workset the normals are computed at the points 
+                \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
+                from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$.  
+                Returns rank-3 array with dimensions (C,P,D), D=3, such that 
         \f[
                 {faceNormals}(c,p,d) = 
-                   DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{u}\times
-                   DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{v}
-                   \qquad (u_p, v_p) \in R
+                   \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u}\right) \times
+                   \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial v}\right) \,;
+                   \qquad (u_p, v_p) \in R \,.
         \f]
-                where 
-        \li     \f$ \hat{\Phi}_i \f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
-        \li     \f$ DF_c \f$ is Jacobian of parent cell <var>c</var> that owns physical face \f${\mathcal F}_i\f$;
-        \li     \f$ \hat{T}_{u}, \hat{T}_{v}\f$ are the constant tangents on reference face\f$\hat{\mathcal F}_i\f$; see 
-                CellTools<Scalar>::getReferenceFaceTangents;
-        \li     <var>R</var> is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
+                In this formula:
+        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical face \f${\mathcal F}_{c,i}\f$;
+        \li     \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
+                tangents on reference face \f$\hat{\mathcal F}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents;
+                that has the same local ordinal as the faces in the workset;
+        \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal F}_i\f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
+        \li     \e R  is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
         \f[
                 R = \left\{\begin{array}{rl} 
                     \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
@@ -599,19 +684,18 @@ public:
         \f]
 
         \warning
-                <var>faceSetJacobians</var> is required to provide \f$DF_c(\hat{\Phi}_i(u_p, v_p))\f$,
-                i.e., the Jacobian of cell <var>c</var> computed at the images of the points from 
-                <var>R</var> on reference face <var>i</var>, i.e., the face owned by that cell. 
+                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
+                where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
+                that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
+                the faces in the workset.
 
         \param  faceNormals       [out] - rank-3 array (C,P,D), normals at workset faces
-        \param  uvPoints          [in]  - rank-2 array (P,2) with points in <var>R</var>
         \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
         \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
 */
     template<class ArrayTypeOut, class ArrayTypeIn>
     static void getPhysicalFaceNormals(ArrayTypeOut &                faceNormals,
-                                       const ArrayTypeIn &           uvPoints,
                                        const ArrayTypeIn &           worksetJacobians,
                                        const int &                   worksetFaceOrd,
                                        const shards::CellTopology &  parentCell);
@@ -673,8 +757,8 @@ public:
         \f[
                \mbox{inRefCell}(i,j) = 
                  \left\{\begin{array}{rl} 
-                    1 & \mbox{if $points(i,j,*)\in\hat{\kappa}$} \\[2ex]
-                    0 & \mbox{if $points(i,j,*)\notin\hat{\kappa}$} 
+                    1 & \mbox{if $points(i,j,*)\in\hat{\mathcal{C}}$} \\[2ex]
+                    0 & \mbox{if $points(i,j,*)\notin\hat{\mathcal{C}}$} 
                  \end{array}\right.
           \f]
         \param  inRefCell         [out] - rank-1 or 2 array with results from the pointwise inclusion test
@@ -695,8 +779,8 @@ public:
         \f[
                 \mbox{inCell}(i) = 
                   \left\{\begin{array}{rl} 
-                     1 & \mbox{if $points(i,*)\in {\kappa}$} \\ [2ex]
-                     0 & \mbox{if $points(i,*)\notin {\kappa}$} 
+                     1 & \mbox{if $points(i,*)\in {\mathcal{C}}$} \\ [2ex]
+                     0 & \mbox{if $points(i,*)\notin {\mathcal{C}}$} 
                   \end{array}\right.
         \f]
 
@@ -803,30 +887,34 @@ public:
 \page cell_tools_page                 Cell tools
 
 
+
 \section cell_topology_sec            Cell topologies
 
 The range of admissible cell shapes in Intrepid is restricted to <var>d</var>-dimensional 
-<strong>polytopes</strong>, <var>d=1,2,3</var>. A polytope is defined by a set of vertices 
+<strong>polytopes</strong>, <var>d=1,2,3</var>. A polytope is defined by a set of its vertices 
 \f$ \{ {\bf v}_0,\ldots {\bf v}_V\} \f$ and a <strong>base topology</strong>  <var>BT</var> that 
-defines how these verices are connected into <var>k</var>-dimensional, <var>k < d</var> facets of 
-that polytope. 
+defines how these verices are connected into <var>k</var>-dimensional, <var>k < d</var> facets 
+(k-subcells) of that polytope.  
 
 The base topology of any polytope can be extended by augmenting the set of its vertices by 
-an additional set of points \f$ \{ {\bf v}_0,\ldots {\bf v}_V\}\cup \{ {\bf p}_0,\ldots {\bf p}_P\} \f$
-and defining their connectivity relative to the facets specified by its base topology <var>BT</var>.
+an additional set of points \f$\{ {\bf p}_0,\ldots {\bf p}_P\} \f$. The <strong>extended topology</strong>
+<var>ET</var> is defined by specifying the connectivity of the set
+\f$ \{ {\bf v}_0,\ldots {\bf v}_V\}\cup \{ {\bf p}_0,\ldots {\bf p}_P\} \f$
+relative to the subcells specified by its base topology <var>BT</var>.
 The vertices and the extra points are collectively referred to as <strong>nodes</strong>. Thus,
 a polytope with <strong>extended topology</strong> <var>ET</var> is defined by a set of nodes 
-\f$\{{\bf q}_0,\ldots,{\bf q}_N\}\f$, where <var>N>=V</var>, and connectivity rule for these nodes.
+\f$\{{\bf q}_0,\ldots,{\bf q}_N\}\f$, where \f$N = V + P\f$, and a connectivity rule for these nodes.
 
 Intrepid requires any cell to have a valid base topology. The nodes of the cell should always be 
 ordered by listing its vertices <strong>first</strong>, i.e.,
 \f[ 
-     \{{\bf q}_0,\ldots,{\bf q}_N\} = \{ {\bf v}_0,\ldots {\bf v}_V,{\bf p}_0,\ldots {\bf p}_P\} 
-\f]
-To manage cell topologies Intrepid uses the Shards package http://trilinos.sandia.gov/packages/shards
+  \{{\bf q}_0,\ldots,{\bf q}_N\} = \{ {\bf v}_0,\ldots {\bf v}_V,{\bf p}_0,\ldots {\bf p}_P\} 
+  \f]
+To manage cell topologies Intrepid uses the Shards package http://trilinos.sandia.gov/packages/shards .
 Shards provides definitions for a standard set of base and extended cell topologies plus tools to
 construct custom, user defined cell topologies, such as arbitrary polyhedral cells. For further
 details see Shards documentation. 
+
 
 
 \section cell_topology_ref_cells      Reference cells
@@ -835,12 +923,12 @@ For some cell topologies there exist simple, e.g., polynomial, mappings that all
 cell having that topology as an image of a single "standard" cell. We refer to such standard cells
 as <strong>reference</strong> cells. 
 
-Just like in the general case, a reference cell with a base topology is defined by a set of vertices,
-and a reference cell with extended topology is defined by a set of nodes whose number is larger than
-the number of vertices in the base topology. 
+Just like in the general case, a reference cell with a base topology <var>BT</var> is defined by a 
+set of vertices, and a reference cell with extended topology <var>ET</var> is defined by a set of 
+nodes that include the original vertices and some additional points. 
 
 The actual vertex and node coordinates for the reference cells can be chosen arbitrarily; however, 
-once selected they should not be altered because in many cases, e.g., in finite element reconstructions,
+once selected they should not be changed because in many cases, e.g., in finite element reconstructions,
 all calculations are done on a reference cell and then transformed to physical cells by an appropriate
 pullback (see Section \ref sec_pullbacks).
 
@@ -852,137 +940,244 @@ of vertex and node coordinates:
 | Topology family       |    reference cell vertices/additional nodes defining extended topology       |
 |=======================|==============================================================================|
 | Line<2>               |                                                                              |
-| Beam<2>               |  {(-1,0,0), (1,0,0)}                                                         |
+| Beam<2>               | {(-1,0,0),(1,0,0)}                                                           |
 | ShellLine<2>          |                                                                              |
 |-----------------------|------------------------------------------------------------------------------|
 | Line<3>               |                                                                              |
-| Beam<3>               |  {(0,0,0)}                                                                   |
+| Beam<3>               | {(0,0,0)}                                                                    |
 | ShellLine<3>          |                                                                              |
 |=======================|==============================================================================|
-| Triangle<3>           | {(0,0,0), (1,0,0), (0,1,0)}                                                  |
+| Triangle<3>           | {(0,0,0),(1,0,0),(0,1,0)}                                                    |
 | ShellTriangle<3>      |                                                                              |
 |-----------------------|------------------------------------------------------------------------------|
 | Triangle<4>           | {(1/3,1/3,0)}                                                                |
 |.......................|..............................................................................|
-| Triangle<6>           | {(1/2,0,0), (1/2,1/2,0), (0,1/2,0)}                                          |
+| Triangle<6>           | {(1/2,0,0),(1/2,1/2,0),(0,1/2,0)}                                            |
 | ShellTriangle<6>      |                                                                              |
 |=======================|==============================================================================|
-| Quadrilateral<4>      | {(-1,-1,0), (1,-1,0), (1,1,0), (-1,1,0)}                                     |
+| Quadrilateral<4>      | {(-1,-1,0),(1,-1,0), (1,1,0),(-1,1,0)}                                       |
 | ShellQuadrilateral<4> |                                                                              |
 |-----------------------|------------------------------------------------------------------------------|
-| Quadrilateral<8>      | {(0,-1,0), (1,0,0), (0,1,0), (-1,0,0)}                                       |
+| Quadrilateral<8>      | {(0,-1,0),(1,0,0),(0,1,0),(-1,0,0)}                                          |
 | ShellQuadrilateral<8> |                                                                              |
 |.......................|..............................................................................|
-| Quadrilateral<9>      |{(0,-1,0), (1,0,0), (0,1,0), (-1,0,0), (0,0,0)}                               |
+| Quadrilateral<9>      | {(0,-1,0),(1,0,0),(0,1,0),(-1,0,0),(0,0,0)}                                  |
 | ShellQuadrilateral<9> |                                                                              |
 |=======================|==============================================================================|
-| Tetrahedron<4>        | {( 0, 0, 0), ( 1, 0, 0), ( 0, 1, 0), ( 0, 0, 1)}                             |
+| Tetrahedron<4>        | {(0,0,0),(1,0,0),(0,1,0),(0,0,1)}                                            |
 |-----------------------|------------------------------------------------------------------------------|
-| Tetrahedron<8>        | {(1/2,0,0), (1/2,1/2,0), (0,1/2,0), (1/3,1/3,1/3)}                           |
-| Tetrahedron<10>       | {(1/2,0,0), (1/2,1/2,0), (0,1/2,0), (0,0,1/2), (1/2,0,1/2), (0,1/2,1/2)}     |
+| Tetrahedron<8>        | {(1/2,0,0),(1/2,1/2,0),(0,1/2,0),(1/3,1/3,1/3)}                              |
+| Tetrahedron<10>       | {(1/2,0,0),(1/2,1/2,0),(0,1/2,0),(0,0,1/2),(1/2,0,1/2),(0,1/2,1/2)}          |
 |=======================|==============================================================================|
-| Pyramid<5>            | {(-1,-1, 0), ( 1,-1, 0), ( 1, 1, 0), (-1, 1, 0), (0, 0, 1)}                             |
+| Pyramid<5>            | {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0),(0,0,1)}                                |
 |-----------------------|------------------------------------------------------------------------------|
-| Pyramid<13>           | {(0,-1,0),(1,0,0),(0,1,0),(-1,0,0), 1/2((-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1))}|                                  |
+| Pyramid<13>           | {(0,-1,0),(1,0,0),(0,1,0),(-1,0,0), 1/2((-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1))}|
 | Pyramid<14>           | all of the above and (0,0,0)                                                 |
 |=======================|==============================================================================|
-| Wedge<6>              | {( 0, 0,-1),( 1, 0,-1),( 0, 1,-1),( 0, 0, 1),( 1, 0, 1),( 0, 1, 1) }         |
+| Wedge<6>              | {(0,0,-1),(1,0,-1),(0,1,-1),(0,0,1),(1,0,1),(0,1,1)}                         |
 |-----------------------|------------------------------------------------------------------------------|
-| Wedge<15>             |                                                                              |
-| Wedge<18>             |                                                                              |
+| Wedge<15>             | {(1/2,0,-1),(1/2,1/2,-1),(0,1/2,-1), (1/2,0,0),(1/2,1/2,0),(0,1/2,0),        |  
+|                       |  (1/2,0, 1),(1/2,1/2, 1),(0,1/2, 1)                                          |
+|.......................|..............................................................................|
+| Wedge<18>             | All of the above plus {(1/2,0,0),(1/2,1/2,0),(0,1/2,0)}                      |
 |=======================|==============================================================================|
-| Hexahedron<8>         | {(-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1),(-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1)}|                               |
+| Hexahedron<8>         | {(-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1),(-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1)}|
 |-----------------------|------------------------------------------------------------------------------|
-| Hexahedron<20>        |                                                                              |
-| Hexahedron<27>        |                                                                              |
+| Hexahedron<20>        | {(0,-1,-1),(1,0,-1),(0,1,-1),(-1,0,-1), (0,-1,0),(1,0,0),(0,1,0),(-1,0,0),   |
+|                       |  (0,-1, 1),(1,0, 1),(0,1, 1),(-1,0, 1) }                                     |
+|.......................|..............................................................................|
+| Hexahedron<27>        | All of the above plus center point and face midpoints:                       |
+|                       | {(0,0,0), (0,0,-1),(0,0,1), (-1,0,0),(1,0,0), (0,-1,0),(0,1,0)}              |
 |=======================|==============================================================================|
 \endverbatim
-
 
 Finite element reconstruction methods based on pullbacks (see Section \ref sec_pullbacks) are 
 restricted to the above cell topologies.  
 
-\subsection sec_cell_topology_ref_map      Reference to physical cell mapping
 
-The map from a reference cell to a physical cell with the same topology is defined using a nodal
-Lagrangian basis, i.e., a set of basis functions dual to the nodes of the reference cell.  
-Assume that \f$ \hat{\kappa} \f$ is a reference cell with topology <var>T</var> and nodes
-\f$\{\hat{{\bf p}}_0,\ldots,\hat{{\bf p}}_{N}\}\f$, and that \f$ \{\hat{\phi}_i\}_{i=0}^{N} \f$ is
-the Lagrangian basis dual to these nodes, i.e., \f$ \hat{\phi}_i( \hat{{\bf p}}_j)=\delta_{ij} \f$.
-
-A physical cell \f$\kappa\f$ with the same topology <var>T</var> is then defined as the image of
-\f$ \hat{\kappa} \f$ under the mapping
-\f[               F(\hat{\bf x}) = \sum_{m=0}^{N}  {\bf p}_m  \hat{\phi}_m(\hat{\bf x})          \f]
-where \f$\{{\bf p}_0,\ldots,{\bf p}_N\}\f$ is a set of <strong>physical nodes</strong>. 
-The number of physical nodes has to match the number of reference nodes required by the 
-specified cell topology <var>T</var>. The <var>i</var>th coordinate function is given by
-\f[        F_i(\hat{\bf x}) = \sum_{m=0}^{N}  ({\bf p}_m)_i  \hat{\phi}_m(\hat{\bf x})           \f]
-where \f$ ({\bf p}_m)_i \f$ is the <var>i</var>th spatial coordinate of the <var>m</var>th node.
-
-\warning Intrepid::CellTools does not check for non-degeneracy of the physical cell obtained from a
-         given set of physical nodes. As a result, <var>F</var> is not guaranteed to be a diffeomorphism,
-         i.e., it may not have a continuously differentiable inverse. In this case some 
-         Intrepid::CellTools methods, such as Intrepid::CellTools::setJacobianInv, 
-         and Intrepid::CellTools::mapToReferenceFrame will fail.
   
-Intrepid::CellTools::mapToPhysicalFrame implements the action of <var>F</var>. The action of its 
-inverse is implemented in Intrepid::CellTools::mapToReferenceFrame.
+\subsection sec_cell_topology_ref_map      Reference-to-physical cell mapping
 
+The mapping that takes a given reference cell to a physical cell with the same topology is defined 
+using a nodal Lagrangian basis corresponding to the nodes of the reference cell. In other words, the
+mapping is constructed using basis functions that are dual to the nodes of the reference cell.
+Implementation details are as follows.
 
+Assume that \f$ \hat{\mathcal{C}} \f$ is a reference cell with topology <var>T</var> and nodes
+\f$\{\hat{{\bf q}}_0,\ldots,\hat{{\bf q}}_{N}\}\f$, and that \f$ \{\hat{\phi}_i\}_{i=0}^{N} \f$ is
+the Lagrangian basis dual to these nodes, i.e., \f$ \hat{\phi}_i( \hat{{\bf q}}_j)=\delta_{ij} \f$.
+A physical cell \f$\mathcal{C}\f$ with the same topology <var>T</var> as \f$\hat{\mathcal{C}}\f$ is  
+then defined as the image of \f$ \hat{\mathcal{C}} \f$ under the mapping
+\f[               
+  F_\mathcal{C}(\hat{\bf x}) = \sum_{m=0}^{N}  {\bf q}_m(\mathcal{C})  \hat{\phi}_m(\hat{\bf x})          
+\f]
+where \f$\{{\bf q}_0(\mathcal{C}),\ldots,{\bf q}_N(\mathcal{C})\}\f$ is the set of <strong>physical nodes</strong>
+that defines \f$\mathcal{C}\f$. The number of physical nodes is required to match the number of reference  
+nodes in the specified cell topology <var>T</var>. The <var>i</var>-th coordinate function of the 
+reference-to-physical mapping is given by
+\f[        
+  \big(F_{\mathcal{C}}(\hat{\bf x})\big)_i = 
+              \sum_{m=0}^{N}  \big({\bf q}_m(\mathcal{C})\big)_i\hat{\phi}_m(\hat{\bf x})           
+\f]
+where \f$ \big({\bf q}_m(\mathcal{C})\big)_i \f$ is the <var>i</var>-th spatial coordinate of the <var>m</var>-th node.
 
-\subsection sec_cell_topology_ref_map_DF   Jacobian of the reference to physical cell mapping
+For simplicity, unless there's a chance for confusion, the cell symbol will be ommitted from the
+designations of physical points and reference-to-physical maps, i.e., we shall simply write
+\f$F(\hat{\bf x})\ \mbox{and}\ {\bf q}_m\f$.
+
+\par Summary
+  
+\li      \f$F(\hat{\bf x})\f$: implemented in Intrepid::CellTools::mapToPhysicalFrame 
+\li      \f$F^{-1}({\bf x})\f$: implemented in Intrepid::CellTools::mapToReferenceFrame 
+  
+\warning Intrepid::CellTools does not check for non-degeneracy of the physical cell obtained from a
+given set of physical nodes. As a result, <var>F</var> is not guaranteed to be a diffeomorphism,
+i.e., it may not have a continuously differentiable inverse. In this case some 
+Intrepid::CellTools methods, such as Intrepid::CellTools::setJacobianInv, 
+and Intrepid::CellTools::mapToReferenceFrame will fail.
+    
+
+  
+\subsection sec_cell_topology_ref_map_DF   Jacobian of the reference-to-physical cell mapping
 
 Intrepid follows the convention that the rows of the Jacobian are the transposed gradients of the
 coordinate functions of the mapping, i.e.,
-\f[                    DF_{ij} = \frac{\partial F_i}{\partial\hat{{\bf x}}_j}                    \f]
+\f[                    
+      DF_{ij}(\hat{{\bf x}}) = \frac{\partial F_i(\hat{{\bf x}})}{\partial\hat{{\bf x}}_j}                    
+\f]
 In light of the definition of <var>F</var> in Section \ref sec_cell_topology_ref_map, it follows that
-\f[  DF_{ij} = \sum_{m=0}^{N}
-            ({\bf p}_m)_i\frac{\partial\hat{\phi}_m({\bf x})}{\partial\hat{{\bf x}}_j} \,.       \f]
-This formula is implemented in Intrepid::CellTools::setJacobian.
+\f[  
+      DF_{ij}(\hat{{\bf x}}) = \sum_{m=0}^{N}
+                ({\bf q}_m)_i\frac{\partial\hat{\phi}_m(\hat{{\bf x}})}{\partial\hat{{\bf x}}_j} \,.       
+\f]
+
+\par Summary
+  
+\li     \f$DF_{ij}(\hat{{\bf x}}) \f$: implemented in Intrepid::CellTools::setJacobian
+\li     \f$DF_{ij}^{-1}(\hat{{\bf x}}) \f$: implemented in Intrepid::CellTools::setJacobianInv
+\li     \f$\mbox{det} DF_{ij}(\hat{{\bf x}}) \f$: implemented in  Intrepid::CellTools::setJacobianDet                      
 
 
+  
+\subsection sec_cell_topology_subcell_map  Parametrization of physical 1- and 2-subcells
+  
+Parametrization of a given physical k-subcell \f$\mathcal{S}_i\f$, k=1,2, is a map from a 
+k-dimensional parametrization domain \e R to that subcell:
+\f[
+    \Phi : R \mapsto \mathcal{S} \,.
+\f]
+Parametrization domains play role similar to that of reference cells in the sense that they allow 
+computation of line and surface integrals on 1- and 2-subcells (edges and faces) to be reduced to   
+computation of integrals on \e R . 
 
-\subsection sec_cell_topology_subcell_map  Parametrization of physical 1 and 2-subcells
+Parametrization maps are supported for 1- and 2-subcells (edges and faces) that belong to physical 
+cells with reference cells. The reason is that these maps are defined by the composition of  the
+parametrization maps for reference edges and faces with the mapping \e F defined in \ref sec_cell_topology_ref_map.
+As a result, parametrization of a given physical k-subcell requires selection of a 
+<strong>parent cell</strong> that contains the subcell. 
 
+\remark  
+Because a given k-subcell may belong to more than one physical cell, its parent cell is not unique. For a single
+k-subcell the choice of a parent cell is not important, however, when dealing with subcell worksets
+parent cells must all have the same topology (see \ref sec_cell_topology_subcell_wset for details about
+subcell worksets).
+  
+  
+Implementation of subcell parametrization is as follows. Assume that \f$\mathcal{S}_i\f$ is a k-subcell   
+with parent cell \f$\mathcal{C}\f$; \f$\mathcal{\hat{C}}\f$ is the associated reference cell and 
+\e i is the local ordinal of the subcell relative to the reference cell. To this physical subcell
+corresponds a reference subcell \f$\hat{\mathcal{S}}_i\f$ having the same local ordinal. Parametrization of
+the reference k-subcell is a map from the k-dimensional parametrization domain \e R to that subcell:
+\f[
+    \hat{\Phi} : R \mapsto \hat{\mathcal{S}}_i \,.
+\f]
+Parametrization of \f$\mathcal{S}_i\f$ is then defined as
+\f[
+    \Phi = F\circ \hat{\Phi} \,,
+\f]
+where \e F is the reference-to-physical mapping between the parent cell and its reference cell. 
+  
+
+A 1-subcell (edge) always has \c Line<N> topology and so, the parametrization domain for edges is the standard 1-cube:
+\f[
+      R = [-1,1]\,.
+\f]
+On the other hand, faces of reference cells can have \c Triangle<N> and/or \c Quadrilateral<N> topologies. 
+Thus, the parametrization domain for a 2-subcell depends on its topology and is either the standard 
+2-simplex or the standard 2-cube:
+\f[
+      R = \left\{\begin{array}{rl} 
+          \{(0,0),(1,0),(0,1)\} & \mbox{if the face is Triangle} \\[1ex]
+            [-1,1]\times [-1,1] & \mbox{if the face is Quadrilateral}
+          \end{array}\right.
+\f]
+\par Summary
+
+-    \f$\hat{\Phi} : R \mapsto \hat{\mathcal{S}}_i \f$ requires two steps: 
+  -# Intrepid::CellTools::mapToReferenceSubcell to apply \f$\hat{\Phi}\f$;
+  -# Intrepid::CellTools::mapToPhysicalFrame to apply \e F
 
 
 
 \subsection sec_cell_topology_subcell_wset Subcell worksets
 
-A subcell workset comprises of 1 or 2-subcells that are images of the same reference 
-subcell of a given reference cell. A subcell workset is defined by specifying a parent
-cell for each subcell in the set and a subcell ordinal, relative to the reference cell.
-A parent cell must satisfy the following conditions:
+A subcell workset comprises of 1- or 2-subcells and associated parent cells that satisfy the 
+following conditions
 
-\li     It has the same reference cell as the subcells in the workset
-\li     Its associated subcell is image of a reference subcell with the specified ordinal.
+\li     all subcells have the same cell topology;
+\li     all parent cells have the same cell topology;
+\li     The parent cell topology has a reference cell;
+\li     relative to that reference cell, all subcells in the workset have the same local ordinal
 
-Any cell that satisfies these two conditions can be used as a parent cell. 
+Therefore, a subcell workset is defined by 
+
+-#      collecting a set of 1- or 2-subcells having the same topology
+-#      selecting a parent cell for every subcell in such a way that 
+  -#      all parent cells have the same cell topology
+  -#      all subcells in the workset have the same local ordinal relative to the parent cell topology
+
+  Obviously, a subcell can have multiple parent cells. For example, in a mesh consisiting of Triangle<3> cells, every
+  edge is shared by 2 triangle cells. To define an edge workset we can use either one of the two traingles
+  sharing the cell.
+
+  Suppose now that the mesh comprises of Triangle<3> and Quadrilateral<4> cells and we want to define an
+  edge workset. Let's say the first few edges in our workset happen to be shared by 2 triangles and so 
+  we select one of them as the parent cell. Now suppose the next edge is shared by a traingle and a 
+  quadrilateral. Because all parent cells in the workset must have the same cell topology we cannot use
+  the quadrilateral as a parent cell and so we choose the triangle. Finally suppose that one of the candidate 
+  edges for our workset is shared by 2 quadrilaterals. Because of the requirement that all parent cells
+  have the same topology, we will have to reject this edge because it does not posses a potential parent cell
+  with the same topology as the rest of the edges in our workset.
+
+  A subcell workset is denoted by \f$ \{\mathcal{S}_{c,i}\}_{c=0}^N \f$, where
+
+  \li <var>c</var> is parent cell ordinal;
+  \li <var>i</var> is the local subcell ordinal (relative to the topology of the parent cell) shared
+  by all subcells in the workset. 
 
 
 
 
-\section sec_pullbacks             Pullbacks
- 
- Pullback is defined for canonical cells that have a standard (reference) cell. It is
- a function R^n -> R^n, where n=ambient_dimension, that maps the standard cell to
- a cell of the same type in the physical space. Therefore, to define the chart, 
- the cell dimension must match the ambient dimension. For example, it is OK to ask
- for the chart of a TRI cell if ambient_dimension = 2, but we cannot get a chart
- for a TRI cell if the ambient_dimension = 3. In this case, the TRI cell is a subcell
- of a higher dimensional cell (e.g. a TET) and its chart can be obtained by restricting
- the chart of its parent cell. 
- 
- This function computes the standard charts of canonical cells, i.e., the 
- chart is a polynomial function. Pullback coefficients are stored in a 
- Pullback struct. Definition of coefficients and the storage convention is
- as follows (\f$v_{ij}\f$ denotes the \f$j\f$-th coordinate of the \f$i\f$-th vertex, except  
-             in 1D where we simply write \f$v_i\f$):
- 
+
+
+  \section sec_pullbacks             Pullbacks
+
+  Pullback is defined for canonical cells that have a standard (reference) cell. It is
+  a function R^n -> R^n, where n=ambient_dimension, that maps the standard cell to
+  a cell of the same type in the physical space. Therefore, to define the chart, 
+  the cell dimension must match the ambient dimension. For example, it is OK to ask
+  for the chart of a TRI cell if ambient_dimension = 2, but we cannot get a chart
+  for a TRI cell if the ambient_dimension = 3. In this case, the TRI cell is a subcell
+  of a higher dimensional cell (e.g. a TET) and its chart can be obtained by restricting
+  the chart of its parent cell. 
+
+  This function computes the standard charts of canonical cells, i.e., the 
+  chart is a polynomial function. Pullback coefficients are stored in a 
+  Pullback struct. Definition of coefficients and the storage convention is
+  as follows (\f$v_{ij}\f$ denotes the \f$j\f$-th coordinate of the \f$i\f$-th vertex, except  
+              in 1D where we simply write \f$v_i\f$):
 
 
 
 
-
-
- */
+  */

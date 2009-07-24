@@ -696,8 +696,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
     FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobInv(numCells, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
-    FieldContainer<double> worksetFaceTv(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetCValsTransformed(numCells, numFieldsC, numFacePoints, spaceDim);
@@ -916,16 +914,10 @@ int main(int argc, char *argv[]) {
                                 refGaussPoints,
                                 hexNodes, hex_8);
 
-         // Compute face tangents
-            CellTools::getPhysicalFaceTangents(worksetFaceTu,
-                                     worksetFaceTv,
-                                     paramGaussPoints,
-                                     worksetJacobians,
-                                     i, hex_8);
-
-         // Face outer normals (relative to parent cell) are uTan x vTan
-            RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
-
+         // Compute face normals
+            CellTools::getPhysicalFaceNormals(worksetFaceN,
+                                              worksetJacobians,
+                                              i, hex_8);
 
          // Evaluate div u at face points
            for(int nPt = 0; nPt < numFacePoints; nPt++){

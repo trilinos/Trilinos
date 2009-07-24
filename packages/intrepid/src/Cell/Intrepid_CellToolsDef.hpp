@@ -37,8 +37,15 @@ namespace Intrepid {
 
   template<class Scalar>
   const FieldContainer<double>& CellTools<Scalar>::getSubcellParametrization(const int subcellDim,
-                                                                             const int subcellOrd,
                                                                              const shards::CellTopology& parentCell){
+    
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !(hasReferenceCell(parentCell) ), std::invalid_argument, 
+                        ">>> ERROR (Intrepid::CellTools::getSubcellParametrization): the specified cell topology does not have a reference cell.");
+
+    TEST_FOR_EXCEPTION( !( (1 <= subcellDim) && (subcellDim <= 2 ) ), std::invalid_argument,
+                           ">>> ERROR (Intrepid::CellTools::getSubcellParametrization): parametrization defined only for 1 and 2-dimensional subcells.");    
+#endif
     
     // Coefficients of the coordinate functions defining the parametrization maps are stored in 
     // rank-3 arrays with dimensions (SC, PCD, COEF) where:
@@ -48,12 +55,15 @@ namespace Intrepid {
     //          PCD = 3 for standard 3D cells and non-standard 3D cells: shell Tri and Quad
     //  - COEF  is number of coefficients needed to specify a coordinate function:
     //          COEFF = 2 for edge parametrizations
-    //          COEFF = 4 for triangular and quadrilateral face parametrizations
+    //          COEFF = 3 for both Quad and Tri face parametrizations. Because all Quad reference faces
+    //          are affine, the coefficient of the bilinear term u*v is zero and is not stored, i.e.,
+    //          3 coefficients are sufficient to store Quad face parameterization maps.
+    //
     // Arrays are sized and filled only when parametrization of a particular subcell is requested
     // by setSubcellParametrization.
     
     // Edge maps for 2D non-standard cells: ShellLine and Beam
-    static FieldContainer<double> lineEdges;   static int lineEdgesSet = 0;
+    static FieldContainer<double> lineEdges;        static int lineEdgesSet = 0;
     
     // Edge maps for 2D standard cells: Triangle and Quadrilateral
     static FieldContainer<double> triEdges;         static int triEdgesSet  = 0;
@@ -296,7 +306,14 @@ namespace Intrepid {
                                                     const int                   subcellDim,
                                                     const shards::CellTopology& parentCell)
   {
-    // subcellParametrization is rank-3 FieldContainer with dimensions (SC, PCD, COEF) where:
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !(hasReferenceCell(parentCell) ), std::invalid_argument, 
+                        ">>> ERROR (Intrepid::CellTools::setSubcellParametrization): the specified cell topology does not have a reference cell.");
+
+    TEST_FOR_EXCEPTION( !( (1 <= subcellDim) && (subcellDim <= 2 ) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::setSubcellParametrization): parametrization defined only for 1 and 2-dimensional subcells.");    
+#endif
+                        // subcellParametrization is rank-3 FieldContainer with dimensions (SC, PCD, COEF) where:
     //  - SC    is the subcell count of subcells with the specified dimension in the parent cell
     //  - PCD   is Parent Cell Dimension, which gives the number of coordinate functions in the map
     //          PCD = 2 for standard 2D cells and non-standard 2D cells: shell line and beam
@@ -350,7 +367,9 @@ namespace Intrepid {
       }// for loop over 1-subcells
     }
       
-      // Face parametrizations of 2D and 3D cells: (shell Tri and Quad are 3D cells with faces)
+      // Face parametrizations of 3D cells: (shell Tri and Quad are 3D cells with faces)
+      // A 3D cell can have both Tri and Quad faces, but because they are affine images of the
+      // parametrization domain, 3 coefficients are enough to store them in both cases.
       else if(subcellDim == 2) {
         for(unsigned subcellOrd = 0; subcellOrd < sc; subcellOrd++){
           
@@ -432,7 +451,7 @@ namespace Intrepid {
     
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( !(hasReferenceCell(cell) ), std::invalid_argument, 
-                        ">>> ERROR (Intrepid::CellTools::getReferenceVertex): the specified cell does not have a reference cell.");
+                        ">>> ERROR (Intrepid::CellTools::getReferenceVertex): the specified cell topology does not have a reference cell.");
 #endif
     
     // Cartesian coordinates of supported reference cell vertices, padded to three-dimensions.
@@ -577,7 +596,20 @@ namespace Intrepid {
                                                       const int                   subcellDim,
                                                       const int                   subcellOrd,
                                                       const shards::CellTopology& parentCell){
-      
+#ifdef HAVE_INTREPID_DEBUG
+    TEST_FOR_EXCEPTION( !(hasReferenceCell(parentCell) ), std::invalid_argument, 
+                        ">>> ERROR (Intrepid::CellTools::getReferenceSubcellVertices): the specified cell topology does not have a reference cell.");
+
+    // This method is not restricted to work only on 1 and 2D subcells because getting subcell
+    // vertices should be defined for any subcell, including the trivial cases of a vertex and
+    // the cell itself
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim < (int)parentCell.getDimension()) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::getReferenceSubcellVertices): subcell dimension out of range.");
+    
+    TEST_FOR_EXCEPTION( !( (0 <= subcellOrd) && (subcellOrd < (int)parentCell.getSubcellCount(subcellDim) ) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::getReferenceSubcellVertices): subcell ordinal out of range.");
+#endif 
+    
     // Find how many vertices does the specified subcell have.
     int subcVertexCount = parentCell.getVertexCount(subcellDim, subcellOrd);
     
@@ -792,7 +824,7 @@ void CellTools<Scalar>::setJacobianDet(ArrayScalar &         jacobianDet,
 
 template<class Scalar>
 template<class ArrayScalar>
-void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &                physPoints,
+void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoints,
                                           const ArrayScalar &          refPoints,
                                           const ArrayScalar &          nodes,
                                           const shards::CellTopology & cellTopo,
@@ -961,19 +993,44 @@ void CellTools<Scalar>::mapToReferenceSubcell(ArrayTypeOut &                refS
                                               const int                     subcellDim,
                                               const int                     subcellOrd,
                                               const shards::CellTopology &  parentCell){
+  
   int cellDim = parentCell.getDimension();
   int numPts  = paramPoints.dimension(0);
-    
-  // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
-  const FieldContainer<double>& subcellMap = getSubcellParametrization(subcellDim, subcellOrd, parentCell);
 
-  // Apply the parametrization map to every point in parameter space
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( !(hasReferenceCell(parentCell) ), std::invalid_argument, 
+                      ">>> ERROR (Intrepid::CellTools::mapToReferenceSubcell): the specified cell topology does not have a reference cell.");
+  
+  TEST_FOR_EXCEPTION( !( (1 <= subcellDim) && (subcellDim <= 2 ) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-dimensional subcells.");  
+  
+  TEST_FOR_EXCEPTION( !( (0 <= subcellOrd) && (subcellOrd < (int)parentCell.getSubcellCount(subcellDim) ) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::mapToReferenceSubcell): subcell ordinal out of range.");
+  
+  // refSubcellPoints is rank-2 (P,D1), D1 = cell dimension
+  std::string errmsg = ">>> ERROR (Intrepid::mapToReferenceSubcell):";
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, refSubcellPoints, 2,2), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, refSubcellPoints, 1, cellDim, cellDim), std::invalid_argument, errmsg);
+                    
+  // paramPoints is rank-2 (P,D2) with D2 = subcell dimension
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, paramPoints, 2,2), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, paramPoints, 1, subcellDim, subcellDim), std::invalid_argument, errmsg);    
+  
+  // cross check: refSubcellPoints and paramPoints: dimension 0 must match
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, refSubcellPoints, 0,  paramPoints, 0), std::invalid_argument, errmsg);      
+#endif
+  
+  
+  // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
+  const FieldContainer<double>& subcellMap = getSubcellParametrization(subcellDim, parentCell);
+
+  // Apply the parametrization map to every point in parameter domain
   if(subcellDim == 2) {
     for(int pt = 0; pt < numPts; pt++){
       double u = paramPoints(pt,0);
       double v = paramPoints(pt,1);
       
-      // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are aaffine!
+      // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
       for(int  dim = 0; dim < cellDim; dim++){
         refSubcellPoints(pt, dim) = subcellMap(subcellOrd, dim, 0) + \
                                     subcellMap(subcellOrd, dim, 1)*u + \
@@ -990,9 +1047,47 @@ void CellTools<Scalar>::mapToReferenceSubcell(ArrayTypeOut &                refS
   }
   else{
     TEST_FOR_EXCEPTION( !( (subcellDim == 1) || (subcellDim == 2) ), std::invalid_argument, 
-                        ">>> ERROR (Intrepid::CellTools::mapToReferenceSubcell): defined only for 1 and 2-subcells");
+                        ">>> ERROR (Intrepid::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-subcells");
   }
 }
+
+
+
+template<class Scalar>
+template<class ArrayTypeOut>
+void CellTools<Scalar>::getReferenceEdgeTangent(ArrayTypeOut &                refEdgeTangent,
+                                                const int &                   edgeOrd,
+                                                const shards::CellTopology &  parentCell){
+  
+  int spaceDim  = parentCell.getDimension();
+  
+#ifdef HAVE_INTREPID_DEBUG
+  
+  TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
+                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
+  
+  TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < parentCell.getSubcellCount(1) ) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
+  
+  TEST_FOR_EXCEPTION( !( refEdgeTangent.size() == spaceDim ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
+#endif
+  
+  // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
+  // (subcOrd, coordinate, coefficient)
+  const FieldContainer<double>& edgeMap = getSubcellParametrization(1, parentCell);
+  
+  // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
+  //                                     => edge Tangent: -> C_1(*)
+  refEdgeTangent(0) = edgeMap(edgeOrd, 0, 1);
+  refEdgeTangent(1) = edgeMap(edgeOrd, 1, 1);
+  
+  // Skip last coordinate for 2D parent cells
+  if(spaceDim == 3) {
+    refEdgeTangent(2) = edgeMap(edgeOrd, 2, 1);  
+  }
+}
+
 
 
 template<class Scalar>
@@ -1001,13 +1096,13 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayTypeOut &                u
                                                  ArrayTypeOut &                vTan,
                                                  const int &                   faceOrd,
                                                  const shards::CellTopology &  parentCell){
-  int spaceDim  = parentCell.getDimension();
   
 #ifdef HAVE_INTREPID_DEBUG
+  int spaceDim  = parentCell.getDimension();
   TEST_FOR_EXCEPTION( !(spaceDim == 3), std::invalid_argument, 
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
   
-  TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < parentCell.getSubcellCount(2) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < (int)parentCell.getSubcellCount(2) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
 
   TEST_FOR_EXCEPTION( !( (uTan.rank() == 1)  && (vTan.rank() == 1) ), std::invalid_argument,  
@@ -1022,7 +1117,7 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayTypeOut &                u
   
   // Face parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
   // (subcOrd, coordinate, coefficient): retrieve this array
-  const FieldContainer<double>& faceMap = getSubcellParametrization(2, faceOrd, parentCell);
+  const FieldContainer<double>& faceMap = getSubcellParametrization(2, parentCell);
   
   /*  All ref. face maps have affine coordinate functions:  f_dim(u,v) = C_0(dim) + C_1(dim)*u + C_2(dim)*v
    *                           `   => Tangent vectors are:  uTan -> C_1(*);    vTan -> C_2(*)
@@ -1042,7 +1137,7 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayTypeOut &                u
 
 template<class Scalar>
 template<class ArrayTypeOut>
-void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                normal,
+void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                refFaceNormal,
                                                const int &                   faceOrd,
                                                const shards::CellTopology &  parentCell){
   int spaceDim  = parentCell.getDimension();
@@ -1055,10 +1150,10 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                nor
   TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < parentCell.getSubcellCount(2) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
   
-  TEST_FOR_EXCEPTION( !( normal.rank() == 1 ), std::invalid_argument,  
+  TEST_FOR_EXCEPTION( !( refFaceNormal.rank() == 1 ), std::invalid_argument,  
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
     
-  TEST_FOR_EXCEPTION( !( normal.dimension(0) == spaceDim ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( refFaceNormal.dimension(0) == spaceDim ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
 
@@ -1068,53 +1163,66 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                nor
   getReferenceFaceTangents(uTan, vTan, faceOrd, parentCell);
   
   // Compute the vector product of the reference face tangents:
-  RealSpaceTools<Scalar>::vecprod(normal, uTan, vTan);
-}
-
-
-
-template<class Scalar>
-template<class ArrayTypeOut>
-void CellTools<Scalar>::getReferenceEdgeTangent(ArrayTypeOut &                edgeTan,
-                                                const int &                   edgeOrd,
-                                                const shards::CellTopology &  parentCell){
-  
-  int spaceDim  = parentCell.getDimension();
-
-#ifdef HAVE_INTREPID_DEBUG
-  
-  TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
-  
-  TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < parentCell.getSubcellCount(1) ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
-  
-  TEST_FOR_EXCEPTION( !( edgeTan.size() == spaceDim ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
-#endif
-  
-  // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
-  // (subcOrd, coordinate, coefficient)
-  const FieldContainer<double>& edgeMap = getSubcellParametrization(1, edgeOrd, parentCell);
-  
-  // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
-  //                                     => edge Tangent: -> C_1(*)
-  edgeTan(0) = edgeMap(edgeOrd, 0, 1);
-  edgeTan(1) = edgeMap(edgeOrd, 1, 1);
-  
-  // Skip last coordinate for 2D parent cells
-  if(spaceDim == 3) {
-    edgeTan(2) = edgeMap(edgeOrd, 2, 1);  
-  }
+  RealSpaceTools<Scalar>::vecprod(refFaceNormal, uTan, vTan);
 }
 
 
 
 template<class Scalar>
 template<class ArrayTypeOut, class ArrayTypeIn>
-void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                uPhysTan,
-                                                ArrayTypeOut &                vPhysTan,
-                                                const ArrayTypeIn &           uvPoints,
+void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayTypeOut &                edgeTangents,
+                                                const ArrayTypeIn &           worksetJacobians,
+                                                const int &                   worksetEdgeOrd,
+                                                const shards::CellTopology &  parentCell){
+  int worksetSize = worksetJacobians.dimension(0);
+  int edgePtCount = worksetJacobians.dimension(1); 
+  int pCellDim    = parentCell.getDimension();
+  
+#ifdef HAVE_INTREPID_DEBUG
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::getPhysicalEdgeTangents):";
+  
+  TEST_FOR_EXCEPTION( !( (pCellDim == 3) || (pCellDim == 2) ), std::invalid_argument, 
+                      ">>> ERROR (Intrepid::CellTools::getPhysicalEdgeTangents): 2D or 3D parent cell required");  
+  
+  // (1) edgeTangents is rank-3 (C,P,D) and D=2, or 3 is required
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, edgeTangents, 3,3), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, edgeTangents, 2, 2,3), std::invalid_argument, errmsg);
+ 
+  // (2) worksetJacobians in rank-4 (C,P,D,D) and D=2, or 3 is required
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, worksetJacobians, 4,4), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 2, 2,3), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 3, 2,3), std::invalid_argument, errmsg);
+  
+  // (4) cross-check array dimensions: edgeTangents (C,P,D) vs. worksetJacobians (C,P,D,D)
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, edgeTangents, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);      
+  
+#endif
+  
+  // Temp storage for constant reference edge tangent: rank-1 (D) arrays
+  FieldContainer<double> refEdgeTan(pCellDim);
+  getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
+  
+  // Loop over workset faces and edge points
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    for(int pt = 0; pt < edgePtCount; pt++){
+      
+      // Apply parent cell Jacobian to ref. edge tangent
+      for(int i = 0; i < pCellDim; i++){
+        edgeTangents(pCell, pt, i) = 0.0;
+        for(int j = 0; j < pCellDim; j++){
+          edgeTangents(pCell, pt, i) +=  worksetJacobians(pCell, pt, i, j)*refEdgeTan(j);
+        }// for j
+      }// for i
+    }// for pt
+  }// for pCell
+}
+
+
+
+template<class Scalar>
+template<class ArrayTypeOut, class ArrayTypeIn>
+void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                faceTanU,
+                                                ArrayTypeOut &                faceTanV,
                                                 const ArrayTypeIn &           worksetJacobians,
                                                 const int &                   worksetFaceOrd,
                                                 const shards::CellTopology &  parentCell){
@@ -1128,34 +1236,29 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                uP
   TEST_FOR_EXCEPTION( !(pCellDim == 3), std::invalid_argument, 
                       ">>> ERROR (Intrepid::CellTools::getPhysicalFaceTangents): three-dimensional parent cell required");  
   
-  // (1) uPhysTan and vPhysTan are rank-3 (C,P,D) and D=3 is required
-  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, uPhysTan, 3,3), std::invalid_argument, errmsg);
-  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, uPhysTan, 2, 3,3), std::invalid_argument, errmsg);
+  // (1) faceTanU and faceTanV are rank-3 (C,P,D) and D=3 is required
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, faceTanU, 3,3), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, faceTanU, 2, 3,3), std::invalid_argument, errmsg);
 
-  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, vPhysTan, 3,3), std::invalid_argument, errmsg);
-  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, vPhysTan, 2, 3,3), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, faceTanV, 3,3), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, faceTanV, 2, 3,3), std::invalid_argument, errmsg);
 
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, uPhysTan,  vPhysTan), std::invalid_argument, errmsg);      
-
-  // (2) uvPoints is rank-2 (P,D) and D=2 is required (points are in 2D parametrization domain)
-  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, uvPoints, 2,2), std::invalid_argument, errmsg);
-  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, uvPoints, 1, 2,2), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceTanU,  faceTanV), std::invalid_argument, errmsg);      
 
   // (3) worksetJacobians in rank-4 (C,P,D,D) and D=3 is required
   TEST_FOR_EXCEPTION( !requireRankRange(errmsg, worksetJacobians, 4,4), std::invalid_argument, errmsg);
   TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 2, 3,3), std::invalid_argument, errmsg);
   TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 3, 3,3), std::invalid_argument, errmsg);
 
-  // (4) cross-check array dimensions: uPhysTan (C,P,D) vs. worksetJacobians (C,P,D,D) and uvPoints(P,2)
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, uPhysTan, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);      
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, uPhysTan, 1,  uvPoints, 0), std::invalid_argument, errmsg);      
+  // (4) cross-check array dimensions: faceTanU (C,P,D) vs. worksetJacobians (C,P,D,D)
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceTanU, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);      
 
 #endif
     
   // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
-  FieldContainer<double> uRefTan(pCellDim);
-  FieldContainer<double> vRefTan(pCellDim);
-  getReferenceFaceTangents(uRefTan, vRefTan, worksetFaceOrd, parentCell);
+  FieldContainer<double> refFaceTanU(pCellDim);
+  FieldContainer<double> refFaceTanV(pCellDim);
+  getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
   // Loop over workset faces and face points
   for(int pCell = 0; pCell < worksetSize; pCell++){
@@ -1163,18 +1266,18 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                uP
       
       // Apply parent cell Jacobian to ref. face tangents
       for(int dim = 0; dim < pCellDim; dim++){
-        uPhysTan(pCell, pt, dim) = 0.0;
-        vPhysTan(pCell, pt, dim) = 0.0;
+        faceTanU(pCell, pt, dim) = 0.0;
+        faceTanV(pCell, pt, dim) = 0.0;
         
         // Unroll loops: parent cell dimension can only be 3
-        uPhysTan(pCell, pt, dim) = \
-          worksetJacobians(pCell, pt, dim, 0)*uRefTan(0) + \
-          worksetJacobians(pCell, pt, dim, 1)*uRefTan(1) + \
-          worksetJacobians(pCell, pt, dim, 2)*uRefTan(2);
-        vPhysTan(pCell, pt, dim) = \
-          worksetJacobians(pCell, pt, dim, 0)*vRefTan(0) + \
-          worksetJacobians(pCell, pt, dim, 1)*vRefTan(1) + \
-          worksetJacobians(pCell, pt, dim, 2)*vRefTan(2);
+        faceTanU(pCell, pt, dim) = \
+          worksetJacobians(pCell, pt, dim, 0)*refFaceTanU(0) + \
+          worksetJacobians(pCell, pt, dim, 1)*refFaceTanU(1) + \
+          worksetJacobians(pCell, pt, dim, 2)*refFaceTanU(2);
+        faceTanV(pCell, pt, dim) = \
+          worksetJacobians(pCell, pt, dim, 0)*refFaceTanV(0) + \
+          worksetJacobians(pCell, pt, dim, 1)*refFaceTanV(1) + \
+          worksetJacobians(pCell, pt, dim, 2)*refFaceTanV(2);
       }// for dim
     }// for pt
   }// for pCell
@@ -1185,7 +1288,6 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                uP
 template<class Scalar>
 template<class ArrayTypeOut, class ArrayTypeIn>
 void CellTools<Scalar>::getPhysicalFaceNormals(ArrayTypeOut &                faceNormals,
-                                               const ArrayTypeIn &           uvPoints,
                                                const ArrayTypeIn &           worksetJacobians,
                                                const int &                   worksetFaceOrd,
                                                const shards::CellTopology &  parentCell){
@@ -1202,29 +1304,23 @@ void CellTools<Scalar>::getPhysicalFaceNormals(ArrayTypeOut &                fac
   // (1) faceNormals is rank-3 (C,P,D) and D=3 is required
   TEST_FOR_EXCEPTION( !requireRankRange(errmsg, faceNormals, 3,3), std::invalid_argument, errmsg);
   TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, faceNormals, 2, 3,3), std::invalid_argument, errmsg);
-    
-  // (2) uvPoints is rank-2 (P,D) and D=2 is required (points are in 2D parametrization domain)
-  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, uvPoints, 2,2), std::invalid_argument, errmsg);
-  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, uvPoints, 1, 2,2), std::invalid_argument, errmsg);
   
   // (3) worksetJacobians in rank-4 (C,P,D,D) and D=3 is required
   TEST_FOR_EXCEPTION( !requireRankRange(errmsg, worksetJacobians, 4,4), std::invalid_argument, errmsg);
   TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 2, 3,3), std::invalid_argument, errmsg);
   TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, worksetJacobians, 3, 3,3), std::invalid_argument, errmsg);
   
-  // (4) cross-check array dimensions: faceNormals (C,P,D) vs. worksetJacobians (C,P,D,D) and uvPoints(P,2)
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceNormals, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);      
-  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceNormals, 1,  uvPoints, 0), std::invalid_argument, errmsg);      
-  
+  // (4) cross-check array dimensions: faceNormals (C,P,D) vs. worksetJacobians (C,P,D,D)
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, faceNormals, 0,1,2,2,  worksetJacobians, 0,1,2,3), std::invalid_argument, errmsg);        
 #endif
   
   // Temp storage for physical face tangents: rank-3 (C,P,D) arrays
-  FieldContainer<double> uPhysTan(worksetSize, facePtCount, pCellDim);
-  FieldContainer<double> vPhysTan(worksetSize, facePtCount, pCellDim);
-  getPhysicalFaceTangents(uPhysTan, vPhysTan, uvPoints, worksetJacobians, worksetFaceOrd, parentCell);
+  FieldContainer<double> faceTanU(worksetSize, facePtCount, pCellDim);
+  FieldContainer<double> faceTanV(worksetSize, facePtCount, pCellDim);
+  getPhysicalFaceTangents(faceTanU, faceTanV, worksetJacobians, worksetFaceOrd, parentCell);
   
   // Compute the vector product of the physical face tangents:
-  RealSpaceTools<Scalar>::vecprod(faceNormals, uPhysTan, vPhysTan);
+  RealSpaceTools<Scalar>::vecprod(faceNormals, faceTanU, faceTanV);
   
   
 }

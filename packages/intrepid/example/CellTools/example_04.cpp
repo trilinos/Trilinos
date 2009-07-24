@@ -224,7 +224,6 @@ int main(int argc, char *argv[]) {
   //   Step 2.2.b: Compute face tangents
   CellTools::getPhysicalFaceTangents(worksetFaceTu,
                                      worksetFaceTv,
-                                     paramGaussPoints,
                                      worksetJacobians,
                                      subcellOrd,
                                      hexahedron_8);
