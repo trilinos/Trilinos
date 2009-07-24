@@ -57,6 +57,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_LinearProblem.h"
@@ -433,8 +435,11 @@ int main(int argc, char *argv[]) {
 
 // ************************************ GET INPUTS **************************************
 
-  // Input file
-    std::string   xmlInFileName = "CurlLSFEMin.xml";
+  // Command line for xml file, otherwise use default
+    std::string   xmlInFileName;
+    if(argc>=2) xmlInFileName=string(argv[1]);
+    else xmlInFileName="CurlLSFEMin.xml";
+
 
   // Read xml file into parameter list
     Teuchos::ParameterList inputList;
@@ -787,7 +792,7 @@ int main(int argc, char *argv[]) {
                doing_type);
 #endif
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATAE
   // Output element to face connectivity
     ofstream el2fout("elem2face.dat");
     ofstream el2eout("elem2edge.dat");
@@ -906,7 +911,8 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
 
     double vals[2];
-    vals[0]=-0.5; vals[1]=0.5;
+    //    vals[0]=-0.5; vals[1]=0.5;
+        vals[0]=-1.0; vals[1]=1.0;
     for (int j=0; j<numEdges; j++){
         int rowNum = j;
         int colNum[2];
@@ -1307,32 +1313,35 @@ int main(int argc, char *argv[]) {
 
     DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATAX
     EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
     EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
 #endif
-  
-     int numBCEdges=0;
-     for (int i=0; i<numEdges; i++){
-         if (edgeOnBoundary(i)){
-             numBCEdges++;
-         }
+    
+    int numBCEdges=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeOnBoundary(i)){
+	numBCEdges++;
       }
-      int * BCEdges = new int [numBCEdges];
-      int indbc=0;
-      for (int i=0; i<numEdges; i++){
-         if (edgeOnBoundary(i)){
-            BCEdges[indbc]=i;
-            indbc++;
-            rhsC[0][i]=0;
-         }
-      }
-      ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
+    }
+    printf("# edgeOnBoundary = %d\n",numBCEdges);
 
-      delete [] BCEdges;
+
+    int * BCEdges = new int [numBCEdges];
+    int indbc=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeOnBoundary(i)){
+	BCEdges[indbc]=i;
+	indbc++;
+	rhsC[0][i]=0;
+      }
+    }
+    ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
+    
+    delete [] BCEdges;
   
             
-#ifdef DUMP_DATA
+#ifdef DUMP_DATAX
     EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
     EpetraExt::RowMatrixToMatlabFile("m0.dat",MassG);
 #endif
@@ -1378,7 +1387,7 @@ int main(int argc, char *argv[]) {
    dummy.set("ML output",10);
    dummy.set("smoother: sweeps",2);
    dummy.set("smoother: type","symmetric Gauss-Seidel");
-   dummy.set("max levels",1);
+   dummy.set("max levels",10);
    dummy.set("coarse: type","Amesos-KLU");
    MLList2.set("edge matrix free: coarse",dummy);
 
@@ -1595,8 +1604,67 @@ int main(int argc, char *argv[]) {
 }
 
 
+/*************************************************************************************/
+/*************************************************************************************/
+/*************************************************************************************/
+// Multiplies Ax = y, where all non-zero entries of A are replaces with the value 1.0
+int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
+  if(!A.Filled()) 
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+  const Epetra_Import* Importer_=A.Importer();
+  const Epetra_Export* Exporter_=A.Exporter();
+  Epetra_Vector *xcopy=0, *ImportVector_=0, *ExportVector_=0;
+
+  if (&x==&y && Importer_==0 && Importer_==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
+  }
+  else if (Importer_)
+    ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
+  else if (Importer_)
+    ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
+  
+
+  // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+  if(Importer_ != 0) {
+    EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
+    xp = (double*) ImportVector_->Values();
+    }
+  
+  // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+  if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
+  
+  // Do actual computation
+  for(int i = 0; i < A.NumMyRows(); i++) {
+    int NumEntries,*RowIndices;
+    A.Graph().ExtractMyRowView(i,NumEntries,RowIndices);
+    double sum = 0.0;
+    for(int j = 0; j < NumEntries; j++) 
+      sum += x[*RowIndices++];    
+    y[i] = sum;    
+  }
+  
+  if(Exporter_ != 0) {
+    y.PutScalar(0.0); // Make sure target is zero
+    EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
+  }
+  // Handle case of rangemap being a local replicated map
+  if (!A.Graph().RangeMap().DistributedGlobal() && A.Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+
+  delete xcopy;
+  delete ImportVector_;
+  delete ExportVector_;
 
 
+  return(0);
+}
+
+/*************************************************************************************/
+/*************************************************************************************/
+/*************************************************************************************/
 void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
   // ==================================================== //  
   // compute difference between exact solution and ML one //
@@ -1646,6 +1714,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   /* Get the BC edges*/
   int numBCedges;  
   int* BCedges=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(CurlCurl,numBCedges);  
+  printf("# BC edges = %d\n",numBCedges);
   ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
 
   /* Build the (1,1) Block Operator */
@@ -1665,21 +1734,33 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   Epetra_CrsMatrix *TMT_Agg_Matrix;
   ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);
   
-  /* Approximate the diagonal for EMFP: Double the Diagonal of CurlCurl */
-  Epetra_Vector Diagonal(CurlCurl.DomainMap(),false);
-  CurlCurl.ExtractDiagonalCopy(Diagonal);
-  for(int i=0;i<CurlCurl.NumMyRows();i++) Diagonal[i]*=2;
+
+  /* Approximate the diagonal for EMFP: 2a^2 b guy */
+  Epetra_Vector Diagonal(CurlCurl.DomainMap());
+  Epetra_Vector NodeDiagonal(D0.DomainMap());
+  Epetra_Vector EdgeDiagonal(M1.DomainMap());
+  Epetra_Vector CurlDiagonal(CurlCurl.DomainMap());
+
+  M0inv.ExtractDiagonalCopy(NodeDiagonal);
+  M1.ExtractDiagonalCopy(EdgeDiagonal);
+  CurlCurl.ExtractDiagonalCopy(CurlDiagonal);
+
+  Multiply_Ones(D0,NodeDiagonal,Diagonal);
+
+  for(int i=0;i<CurlCurl.NumMyRows();i++) {
+    Diagonal[i]=Diagonal[i]*(EdgeDiagonal[i]*EdgeDiagonal[i]) + CurlDiagonal[i];
+    if(ABS(Diagonal[i]-1.0)<1e-12) Diagonal[i]=2.0;
+  }
 
   /* Build the EMFP Preconditioner */  
   ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
 
   /* Solve! */
-
   AztecOO solver(Problem);  
   solver.SetPrecOperator(&EMFP);
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
-  solver.Iterate(200, 1e-10);
+  solver.Iterate(500, 1e-10);
   //  solver.Iterate(1, 1e-10);
 
   Epetra_MultiVector xexact(xh);
@@ -1690,8 +1771,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
 
-  #define DUMP_OUT_MATRICES
-#ifdef DUMP_OUT_MATRICES
+#ifdef DUMP_DATA
    EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",M0inv);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",M1);
    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",CurlCurl);
