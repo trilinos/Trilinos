@@ -898,6 +898,19 @@ Teuchos::arcp( const RCP<const std::vector<T> > &v )
 
 template<class T>
 REFCOUNTPTR_INLINE
+Teuchos::ArrayRCP<T>
+Teuchos::arcpFromArrayView(const ArrayView<T> &av)
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return av.access_private_arcp();
+#else
+  return arcp(av.getRawPtr(), 0, av.size(), false);
+#endif  
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
 Teuchos::RCP<std::vector<T> >
 Teuchos::get_std_vector( const ArrayRCP<T> &ptr )
 {

@@ -135,7 +135,7 @@ private:
  * general derivative is provided, a <tt>LinearOpBase</tt> version is
  * automatically supported.
  *
- * <li> Provide a default implementation for computing the <tt>LOWSB</tt> form
+ * <li> Provide a default implementation for computing the <tt>LOWSB</tt> from
  * <tt>W</tt> given the <tt>LOB</tt>-only form <tt>W_op</tt> given a
  * <tt>LOWSFB</tt> object <tt>W_factory</tt> supplied by the subclass.  If the
  * subclass wants to take this over, then it should override

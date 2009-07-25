@@ -122,70 +122,77 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, FDstepperTesterSinCosBE ) 
   fwdSensStepperTester->setVerbLevel(Teuchos::VERB_NONE);
   fwdSensStepperTester->setOStream(Teuchos::rcpFromRef(out));
 
-  TEST_ASSERT(fwdSensStepperTester->testForwardSens(fwdSensIntegrator.ptr()));
+  const bool fwdSensPass = fwdSensStepperTester->testForwardSens(fwdSensIntegrator.ptr());
+  TEST_ASSERT(fwdSensPass);
 
 }
 
 
-// Finite Difference test for forward sensitivity calculation on
-// VanderPol with Backward Euler
-//TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, FDstepperTesterVanderPolBE ) {
-//
-//  RCP<ParameterList> ibPL = Teuchos::getParametersFromXmlString(
-//    "<ParameterList>"
-//    "  <ParameterList name=\"Stepper Settings\">"
-//    "    <ParameterList name=\"Stepper Selection\">"
-//    "      <Parameter name=\"Stepper Type\" type=\"string\" value=\"Backward Euler\"/>"
-//    "    </ParameterList>"
-//    "  </ParameterList>"
-//    "  <ParameterList name=\"Integration Control Strategy Selection\">"
-//    "    <Parameter name=\"Integration Control Strategy Type\" type=\"string\""
-//    "      value=\"Simple Integration Control Strategy\"/>"
-//    "    <ParameterList name=\"Simple Integration Control Strategy\">"
-//    "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
-//    "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>"
-//    "    </ParameterList>"
-//    "  </ParameterList>"
-//    "</ParameterList>"
-//    );
-//
-//  RCP<VanderPolModel> stateModel = vanderPolModel();
-//  RCP<ParameterList> modelPL = Teuchos::parameterList();
-//  {
-//    modelPL->set("Implicit model formulation",true);
-//    modelPL->set("Accept model parameters",true);
-//  }
-//  stateModel->setParameterList(modelPL);
-//  int p_index = 0;
-//  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver = timeStepNonlinearSolver<double>();
-//  typedef Thyra::ModelEvaluatorBase MEB;
-//  const MEB::InArgs<double> state_ic = stateModel->getNominalValues();
-//
-//  RCP<IntegratorBase<double> > fwdSensIntegrator = createForwardSensitivityIntegrator<double>(
-//      stateModel,p_index,state_ic,nonlinearSolver,ibPL);
-//  
-//  // Test the Forward Sensitivities
-//
-//  RCP<ParameterList> fsstPL = Teuchos::getParametersFromXmlString(
-//    "<ParameterList>"
-//    "  <ParameterList name=\"FD Calc\">"
-//    "    <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>"
-//    "    <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e-3\"/>"
-//    "    <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>"
-//    "  </ParameterList>"
-//    "  <Parameter name=\"Error Tol\" type=\"double\" value=\"1e-10\"/>"
-//    "</ParameterList>"
-//    );
-//  const RCP<ForwardSensitivityStepperTester<double> >
-//    fwdSensStepperTester = forwardSensitivityStepperTester<double>(fsstPL);
-//
-//  fwdSensStepperTester->setVerbLevel(Teuchos::VERB_EXTREME);
-//  //fwdSensStepperTester->setVerbLevel(Teuchos::VERB_NONE);
-//  fwdSensStepperTester->setOStream(Teuchos::rcpFromRef(out));
-//
-//  TEST_ASSERT(fwdSensStepperTester->testForwardSens(fwdSensIntegrator.ptr()));
-//
-//}
+// Finite Difference test for forward sensitivity calculation on VanderPol
+// with Backward Euler
+TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, FDstepperTesterVanderPolBE ) {
+
+  RCP<ParameterList> ibPL = Teuchos::getParametersFromXmlString(
+    "<ParameterList>"
+    "  <ParameterList name=\"Stepper Settings\">"
+    "    <ParameterList name=\"Stepper Selection\">"
+    "      <Parameter name=\"Stepper Type\" type=\"string\" value=\"Backward Euler\"/>"
+    "    </ParameterList>"
+    "  </ParameterList>"
+    "  <ParameterList name=\"Integration Control Strategy Selection\">"
+    "    <Parameter name=\"Integration Control Strategy Type\" type=\"string\""
+    "      value=\"Simple Integration Control Strategy\"/>"
+    "    <ParameterList name=\"Simple Integration Control Strategy\">"
+    "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
+    "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>"
+    "    </ParameterList>"
+    "  </ParameterList>"
+    "</ParameterList>"
+    );
+
+  RCP<VanderPolModel> stateModel = vanderPolModel();
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  {
+    modelPL->set("Implicit model formulation",true);
+    modelPL->set("Accept model parameters",true);
+  }
+  stateModel->setParameterList(modelPL);
+  int p_index = 0;
+  RCP<ParameterList> nlPL = Teuchos::parameterList();
+  nlPL->set("Default Tol",1.0e-10);
+  nlPL->set("Default Max Iters",20);
+  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver =
+    timeStepNonlinearSolver<double>();
+  nonlinearSolver->setParameterList(nlPL);
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<double> state_ic = stateModel->getNominalValues();
+
+  RCP<IntegratorBase<double> > fwdSensIntegrator = createForwardSensitivityIntegrator<double>(
+      stateModel,p_index,state_ic,nonlinearSolver,ibPL);
+  
+  // Test the Forward Sensitivities
+
+  RCP<ParameterList> fsstPL = Teuchos::getParametersFromXmlString(
+    "<ParameterList>"
+    "  <ParameterList name=\"FD Calc\">"
+    "    <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>"
+    "    <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e-3\"/>"
+    "    <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>"
+    "  </ParameterList>"
+    "  <Parameter name=\"Error Tol\" type=\"double\" value=\"1e-10\"/>"
+    "</ParameterList>"
+    );
+  const RCP<ForwardSensitivityStepperTester<double> >
+    fwdSensStepperTester = forwardSensitivityStepperTester<double>(fsstPL);
+
+  fwdSensStepperTester->setVerbLevel(Teuchos::VERB_EXTREME);
+  //fwdSensStepperTester->setVerbLevel(Teuchos::VERB_NONE);
+  fwdSensStepperTester->setOStream(Teuchos::rcpFromRef(out));
+
+  const bool fwdSensPass = fwdSensStepperTester->testForwardSens(fwdSensIntegrator.ptr());
+  TEST_ASSERT(fwdSensPass);
+
+}
 
 TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, exactSinCosBE ) {
   //RCP<Teuchos::FancyOStream>

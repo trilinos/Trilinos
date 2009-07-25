@@ -125,7 +125,44 @@ Array<RCP<T_out> > arrayRcpConv(const ArrayPtrT_in &a_in)
 }
 
 
+/** \brief Utility function that does a reinterpret case to convert an
+ * ArrayView<const Ptr<T> > object to an ArrayView<const Ptr<const T> >
+ * object.
+ *
+ * Making this conversion requires an reinterpret case since Ptr<T> is not
+ * exactly the same thing as a raw pointer but this conversion should be 100
+ * percent portable and safe.
+ *
+ *
+ */
+template<class T>
+ArrayView<const Ptr<const T> >
+arrayConstPtrConstCast(const ArrayView<const Ptr<T> > &a_in)
+{
+  return av_reinterpret_cast<const Ptr<const T> >(a_in);
+}
+
+
+/** \brief Utility function that does a reinterpret case to convert an
+ * ArrayView<const RCP<T> > object to an ArrayView<const RCP<const T> >
+ * object.
+ *
+ * Making this conversion requires an reinterpret case since RCP<T> is not
+ * exactly the same thing as a raw pointer but this conversion should be 100
+ * percent portable and safe.
+ *
+ *
+ */
+template<class T>
+ArrayView<const RCP<const T> >
+arrayConstRcpConstCast(const ArrayView<const RCP<T> > &a_in)
+{
+  return av_reinterpret_cast<const RCP<const T> >(a_in);
+}
+
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_ARRAY_CONVERSIONS_H
 

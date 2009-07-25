@@ -31,6 +31,8 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+#include "Sacado.hpp"
+
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
@@ -141,6 +143,7 @@ void VanderPolModel::setImplicitFlag(bool implicit)
   setupInOutArgs_();
 }
 
+
 ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) const
 {
   TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
@@ -172,7 +175,9 @@ ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) co
   return(inArgs);
 }
 
-ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSensSolution(int j, double t) const
+
+ModelEvaluatorBase::InArgs<double>
+VanderPolModel::getExactSensSolution(int j, double t) const
 {
   TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
@@ -206,6 +211,7 @@ ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSensSolution(int j, d
   }
   return(inArgs);
 }
+
 
 RCP<const Thyra::VectorSpaceBase<double> >
 VanderPolModel::get_x_space() const
@@ -276,8 +282,6 @@ VanderPolModel::create_W_op() const
 }
 
 
-
-
 RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > 
 VanderPolModel::get_W_factory() const
 {
@@ -299,6 +303,34 @@ VanderPolModel::createInArgs() const
 // Private functions overridden from ModelEvaulatorDefaultBase
 
 
+template<class ScalarT>
+Array<Sacado::Fad::DFad<ScalarT> > convertToPassiveFadArray(
+  const ArrayView<const ScalarT> &av
+  )
+{
+  using Sacado::Fad::DFad;
+  Array<DFad<ScalarT> > a_fad(av.size());
+  for (int i = 0; i < av.size(); ++i) {
+    a_fad[i] = DFad<double>(av[i]);
+  }
+  return a_fad;
+}
+
+
+template<class ScalarT>
+Array<Sacado::Fad::DFad<ScalarT> > convertToIndepVarFadArray(
+  const ArrayView<const ScalarT> &av, const int num_derivs,
+  const Ptr<int> &deriv_idx)
+{
+  using Sacado::Fad::DFad;
+  Array<DFad<ScalarT> > a_fad(av.size());
+  for (int i = 0; i < av.size(); ++i) {
+    a_fad[i] = DFad<double>(num_derivs, (*deriv_idx)++, av[i]);
+  }
+  return a_fad;
+}
+
+
 ModelEvaluatorBase::OutArgs<double>
 VanderPolModel::createOutArgsImpl() const
 {
@@ -314,6 +346,13 @@ void VanderPolModel::evalModelImpl(
   const ModelEvaluatorBase::OutArgs<double> &outArgs
   ) const
 {
+
+  using Teuchos::as;
+  using Teuchos::outArg;
+  using Teuchos::optInArg;
+  using Teuchos::inOutArg;
+  using Sacado::Fad::DFad;
+
   TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
@@ -330,11 +369,12 @@ void VanderPolModel::evalModelImpl(
   }
 
   RCP<const VectorBase<double> > x_dot_in;
-  double beta = inArgs.get_beta();
   double alpha = -1.0;
+  double beta = -1.0;
   if (isImplicit_) {
     x_dot_in = inArgs.get_x_dot().assert_not_null();
     alpha = inArgs.get_alpha();
+    beta = inArgs.get_beta();
   }
 
   const RCP<VectorBase<double> > f_out = outArgs.get_f();
@@ -344,56 +384,97 @@ void VanderPolModel::evalModelImpl(
     Derivative<double> DfDp = outArgs.get_DfDp(0); 
     DfDp_out = DfDp.getMultiVector();
   }
-  
-  const double x0 = 2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
-  const double x1 = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
-  
-  const double x1prime = -2*cos(t) + eps*(-0.75*sin(t)+9.0/4.0*sin(3.0*t));
-  const double forcing_term = x1prime-eps*(1.0-x0*x0)*x1+x0;
-  const double forcing_term_d_eps = -(1.0-x0*x0)*x1;
 
-  if (!isImplicit_) { // EXPLICIT
-    if (!is_null(f_out)) {
-      Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
-      f_out_view[0] = x_in_view[1];
-      f_out_view[1] = eps*(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0] + forcing_term;
-    }
-    if (!is_null(W_out)) {
-      RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
-      Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
-      matrix_view(0,0) = 0.0;
-      matrix_view(0,1) = 1.0;
-      matrix_view(1,0) = -2.0*eps*x_in_view[0]*x_in_view[1]-1.0;
-      matrix_view(1,1) = eps*(1.0-x_in_view[0]*x_in_view[0]);
-    }
-    if (!is_null(DfDp_out)) {
-      Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
-      DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(1,0) = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1] + forcing_term_d_eps;
-    }
-  } else { // IMPLICIT
-    if (!is_null(f_out)) {
-      Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
-      Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
-
-      f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
-      f_out_view[1] = x_dot_in_view[1] - (eps*(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0]) - forcing_term;
-    }
-    if (!is_null(W_out)) {
-      RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
-      Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
-      matrix_view(0,0) = alpha;
-      matrix_view(0,1) = -beta;
-      matrix_view(1,0) = - beta*(eps*(-2.0*x_in_view[0])*x_in_view[1]-1.0);
-      matrix_view(1,1) = alpha - beta*eps*(1.0-x_in_view[0]*x_in_view[0]);
-    }
-    if (!is_null(DfDp_out)) {
-      Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
-      DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(1,0) = -(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1] - forcing_term_d_eps;
+  // Determine how many derivatives we will compute
+  
+  int num_derivs = 0;
+  if (nonnull(W_out)) {
+    num_derivs += 2;
+    if (isImplicit_) {
+      num_derivs += 2;
     }
   }
+  if (nonnull(DfDp_out))
+    num_derivs += 1;
+
+  // Set up the FAD derivative objects
+
+  int deriv_i = 0;
+
+  Array<DFad<double> > x_dot_fad;
+  int x_dot_idx_offset = 0;
+  if (isImplicit_) {
+    Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
+    if (nonnull(W_out)) {
+      x_dot_idx_offset = deriv_i;
+      x_dot_fad = convertToIndepVarFadArray<double>(x_dot_in_view.sv().values()(),
+        num_derivs, inOutArg(deriv_i));
+    }
+    else {
+      x_dot_fad = convertToPassiveFadArray<double>(x_dot_in_view.sv().values()());
+    }
+  }
+
+  Array<DFad<double> > x_fad;
+  int x_idx_offset = 0;
+  if (nonnull(W_out)) {
+    x_idx_offset = deriv_i;
+    x_fad = convertToIndepVarFadArray<double>(x_in_view.sv().values()(),
+      num_derivs, inOutArg(deriv_i));
+  }
+  else {
+    x_fad = convertToPassiveFadArray<double>(x_in_view.sv().values()());
+  }
+
+  DFad<double> eps_fad(eps); // Default passive
+  int eps_idx_offset = 0;
+  if (nonnull(DfDp_out)) {
+    eps_idx_offset = deriv_i;
+    eps_fad = DFad<double>(num_derivs, deriv_i++, eps);
+  }
+  
+  // Compute the function
+
+  Array<DFad<double> > f_fad(2);
+  this->eval_f<DFad<double> >( x_dot_fad, x_fad, eps_fad, t, f_fad );
+
+  // Extract the output
+
+  if (nonnull(f_out)) {
+    Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
+    for ( int i = 0; i < as<int>(f_fad.size()); ++i )
+      f_out_view[i] = f_fad[i].val();
+  }
+
+  if (nonnull(W_out)) {
+    const RCP<Thyra::MultiVectorBase<double> > matrix =
+      Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out, true);
+    Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
+    if (isImplicit_) {
+      for ( int i = 0; i < matrix_view.subDim(); ++i) {
+        for ( int j = 0; j < matrix_view.numSubCols(); ++j) {
+          matrix_view(i, j) = alpha * f_fad[i].dx(x_dot_idx_offset+j)
+            + beta * f_fad[i].dx(x_idx_offset + j);
+        }
+      }
+    }
+    else {
+      for ( int i = 0; i < matrix_view.subDim(); ++i) {
+        for ( int j = 0; j < matrix_view.numSubCols(); ++j) {
+          matrix_view(i, j) = f_fad[i].dx(x_idx_offset + j);
+        }
+      }
+    }
+  }
+
+  if (nonnull(DfDp_out)) {
+    Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
+    for ( int i = 0; i < DfDp_out_view.subDim(); ++i )
+      DfDp_out_view(i,0) = f_fad[i].dx(eps_idx_offset);
+  }
+
 }
+
 
 RCP<const Thyra::VectorSpaceBase<double> > VanderPolModel::get_p_space(int l) const
 {
@@ -440,10 +521,10 @@ void VanderPolModel::setupInOutArgs_()
       inArgs.setModelEvalDescription(this->description());
       inArgs.setSupports( ModelEvaluatorBase::IN_ARG_t );
       inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x );
-      inArgs.setSupports( ModelEvaluatorBase::IN_ARG_beta );
       if (isImplicit_) {
         inArgs.setSupports( ModelEvaluatorBase::IN_ARG_x_dot );
         inArgs.setSupports( ModelEvaluatorBase::IN_ARG_alpha );
+        inArgs.setSupports( ModelEvaluatorBase::IN_ARG_beta );
       }
       if (acceptModelParams_) {
         inArgs.set_Np(Np_);
@@ -554,6 +635,34 @@ RCP<const ParameterList> VanderPolModel::getValidParameters() const
     validPL = pl;
   }
   return validPL;
+}
+
+
+template<class ScalarT>
+void VanderPolModel::eval_f(
+  const ArrayView<const ScalarT> &x_dot,
+  const ArrayView<const ScalarT> &x,
+  const ScalarT &eps,
+  const ScalarT &t,
+  const ArrayView<ScalarT> &f
+  ) const
+{
+  
+  const ScalarT x0 = 2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
+  const ScalarT x1 = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
+  
+  const ScalarT x1prime = -2*cos(t) + eps*(-0.75*sin(t)+9.0/4.0*sin(3.0*t));
+  const ScalarT forcing_term = x1prime-eps*(1.0-x0*x0)*x1+x0;
+
+  if (!isImplicit_) { // EXPLICIT
+    f[0] = x[1];
+    f[1] = eps*(1.0-x[0]*x[0])*x[1]-x[0] + forcing_term;
+  }
+  else { // IMPLICIT
+    f[0] = x_dot[0] - x[1];
+    f[1] = x_dot[1] - (eps*(1.0-x[0]*x[0])* x[1] - x[0]) - forcing_term;
+  }
+
 }
 
 

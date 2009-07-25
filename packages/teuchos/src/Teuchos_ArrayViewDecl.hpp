@@ -316,9 +316,15 @@ public:
   //@}
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  // I should make make this public but templated friends are
-  // not very portable.
+
+  // I should make these private but templated friends are not very portable.
+  // Besides, if a client directly calls this it will not compile in an
+  // optimized build.
+
 	explicit ArrayView( const ArrayRCP<T> &arcp );
+
+	explicit ArrayView( T* p, Ordinal size, const ArrayRCP<T> &arcp );
+
 #endif
 
 private:
@@ -366,6 +372,10 @@ public: // Bad bad bad
   T* access_private_ptr() const
     { return ptr_; }
 
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  ArrayRCP<T> access_private_arcp() const
+    { return arcp_; }
+#endif
 
 };
 
@@ -445,6 +455,22 @@ bool is_null( const ArrayView<T> &av );
  */
 template<class T>
 std::ostream& operator<<( std::ostream& out, const ArrayView<T>& av );
+
+
+/** \brief Reinterpret cast of underlying <tt>ArrayView</tt> type from
+ * <tt>T1*</tt> to <tt>T2*</tt>.
+ *
+ * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
+ *
+ * <b>Warning!</b> Do not use this function unless you absolutely know what
+ * you are doing. Doing a reinterpret cast is always a tricking thing and
+ * must only be done by developers who are 100% comfortable with what they are
+ * doing.
+ *
+ * \relates ArrayView
+ */
+template<class T2, class T1>
+ArrayView<T2> av_reinterpret_cast(const ArrayView<T1>& p1);
 
 
 } // end namespace Teuchos

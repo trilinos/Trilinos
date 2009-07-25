@@ -68,17 +68,6 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
     MESSAGE(STATUS "DEPLIBS = ${PARSE_DEPLIBS}")
   ENDIF()
 
-  # Add the library and all the dependencies
-
-  ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_HEADERS} ${PARSE_NOINSTALLHEADERS}
-    ${PARSE_SOURCES})
-
-  SET_PROPERTY(TARGET ${LIBRARY_NAME} APPEND PROPERTY
-    LABELS ${PACKAGE_NAME})
-
-  PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
-  PREPEND_GLOBAL_SET(${PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
-
   SET(LINK_LIBS)
 
   IF (PARSE_DEPLIBS)
@@ -90,13 +79,17 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   # library being created for this package or if this library does not depend
   # on other libraries created for this package.  Otherwise, we don't need to
   # add the include directories or link libraries because a dependent lib
-  # specified in PARSE_DEP_LIBS already has everything that we need.  We also
-  # Need to make special considerations for test libraries since things
-  # need to be handled a little bit differently (but not much).
+  # specified in PARSE_DEP_LIBS already has everything that we need.
+ 
+  # We also Need to make special considerations for test libraries since
+  # things need to be handled a little bit differently (but not much).  In the
+  # case of test libaries, we need to also pull the test-only dependencies.
+  # In this case, we will always assume that we will add in the test
+  # libraries.
 
   SET(ADD_DEP_PACKAGE_AND_TPL_LIBS TRUE)
 
-  IF (PARSE_DEPLIBS)
+  IF (PARSE_DEPLIBS AND NOT PARSE_TESTONLY)
     FOREACH(DEPLIB ${PARSE_DEPLIBS})
       LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${DEPLIB} DEPLIB_IDX)
       IF (NOT DEPLIB_IDX EQUAL -1)
@@ -113,22 +106,43 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   ENDIF()
 
   IF (ADD_DEP_PACKAGE_AND_TPL_LIBS)
-  
+ 
+    IF (NOT PARSE_TESTONLY)
+      SET(TEST_OR_LIB_ARG LIB)
+    ELSE()
+      SET(TEST_OR_LIB_ARG TEST)
+    ENDIF()
+
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "\nPulling in header and libraries dependencies for ${TEST_OR_LIB_ARG} ...")
+    ENDIF()
+ 
     # Add the dependent package libraries (if we have not done so yet for this package)
-    PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} LIB PACKAGES ALL_DEP_PACKAGES)
-    PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_PACKAGES}" "${ALL_DEP_PACKAGES}"
-      "" LINK_LIBS)
+    PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} ${TEST_OR_LIB_ARG} PACKAGES ALL_DEP_PACKAGES)
+    PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_PACKAGES}"
+      "${ALL_DEP_PACKAGES}" "" LINK_LIBS)
 
     # Add the TPL libraries (if we have not done so yet for this package)
-    PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} LIB TPLS ALL_TPLS)
-    PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_TPLS}" "${ALL_TPLS}"
-      TPL_ LINK_LIBS)
+    PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} ${TEST_OR_LIB_ARG} TPLS ALL_TPLS)
+    PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_TPLS}"
+     "${ALL_TPLS}" TPL_ LINK_LIBS)
 
   ENDIF()
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(LINK_LIBS)
   ENDIF()
+
+  # Add the library and all the dependencies
+
+  ADD_LIBRARY(${LIBRARY_NAME} ${PARSE_HEADERS} ${PARSE_NOINSTALLHEADERS}
+    ${PARSE_SOURCES})
+
+  SET_PROPERTY(TARGET ${LIBRARY_NAME} APPEND PROPERTY
+    LABELS ${PACKAGE_NAME})
+
+  PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
+  PREPEND_GLOBAL_SET(${PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
   
   TARGET_LINK_LIBRARIES(${LIBRARY_NAME} ${LINK_LIBS})
 
@@ -176,7 +190,8 @@ FUNCTION(PACKAGE_ADD_LIBRARY LIBRARY_NAME)
   ELSE()
 
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "Skipping augmentation of package's lists of include directories and libraries because 'TESTONLY' was passed in ...")
+      MESSAGE(STATUS "Skipping augmentation of package's lists of include"
+        " directories and libraries because 'TESTONLY' was passed in ...")
     ENDIF()
 
     GLOBAL_SET(${LIBRARY_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})

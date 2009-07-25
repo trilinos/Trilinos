@@ -136,6 +136,7 @@ private:
   //@}
 
 private:
+
   int dim_;         // Number of state unknowns (2)
   int Np_;          // Number of parameter vectors (1)
   int np_;          // Number of parameters in this vector (1)
@@ -159,12 +160,21 @@ private:
   double t0_ic_; // initial time
   double x0_ic_; // initial condition for x0
   double x1_ic_; // initial condition for x1
+
+  template<class ScalarT>
+  void eval_f(
+    const ArrayView<const ScalarT> &x_dot,
+    const ArrayView<const ScalarT> &x,
+    const ScalarT &eps,
+    const ScalarT &t,
+    const ArrayView<ScalarT> &f
+    ) const;
+
 };
 
 // Non-member constructor
 RCP<VanderPolModel> vanderPolModel(bool implicit);
 RCP<VanderPolModel> vanderPolModel();
-
 
 } // namespace Rythmos 
 

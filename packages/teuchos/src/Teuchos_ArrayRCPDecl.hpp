@@ -924,6 +924,18 @@ template<class T>
 ArrayRCP<const T> arcp( const RCP<const std::vector<T> > &v );
 
 
+/** \brief Get an ArrayRCP object out of an ArrayView object.
+ *
+ * This conversion is required an proper in certain types of situations.  In a
+ * debug build, a dangling reference will be detected with an exception being
+ * thrown.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<T> arcpFromArrayView(const ArrayView<T> &av);
+
+
 /** \brief Get an <tt>std::vector<T></tt> object out of an
  * <tt>ArrayRCP<T></tt> object that was created using the
  * <tt>arcp()</tt> above to wrap the std::vector in the first place..

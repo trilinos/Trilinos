@@ -39,7 +39,7 @@ namespace Thyra {
  * appropritate for a set of nonlinear state functions of the form
  * <tt>x -> f(x)</tt>.
  *
- * The minimum that a subclass must to is to define implementations for
+ * The minimum that a subclass must do is to define implementations for
  * <tt>get_x_space()</tt>, <tt>get_f_space()</tt>, <tt>createInArgs()</tt>,
  * <tt>createOutArgsImpl</tt>, and <tt>evalModelImpl()</tt>.
  */

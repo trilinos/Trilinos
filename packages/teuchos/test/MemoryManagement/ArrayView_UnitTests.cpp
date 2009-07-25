@@ -1,5 +1,7 @@
 #include "Array_UnitTest_helpers.hpp"
 
+#include "Teuchos_implicit_cast.hpp"
+
 
 namespace {
 
@@ -13,9 +15,11 @@ using Teuchos::ArrayRCP;
 using Teuchos::arcp;
 using Teuchos::ArrayView;
 using Teuchos::arrayView;
+using Teuchos::av_reinterpret_cast;
 using Teuchos::DanglingReferenceError;
 using Teuchos::as;
 using Teuchos::null;
+using Teuchos::implicit_ptr_cast;
 
 
 TEUCHOS_UNIT_TEST( ArrayView, assignSelf )
@@ -30,6 +34,57 @@ TEUCHOS_UNIT_TEST( ArrayView, assignFuncSelf )
   Array<int> a = generateArray<int>(n);
   ArrayView<int> av = a;
   av.assign(av);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_null )
+{
+  ArrayView<char> av_char = null;
+  ArrayView<int> av_int = av_reinterpret_cast<int>(av_char);
+  TEST_ASSERT(is_null(av_int));
+}
+
+TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_char_to_int )
+{
+
+  const int sizeOfInt = sizeof(int);
+  const int sizeOfChar = sizeof(char);
+  const int num_ints = n;
+  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
+  out << "num_ints = " << num_ints << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ArrayRCP<char> arcp_char = arcp<char>(num_chars);
+  ArrayView<int> av_int = av_reinterpret_cast<int>(arcp_char());
+  TEST_EQUALITY(av_int.size(), num_ints);
+  TEST_EQUALITY(implicit_ptr_cast<void>(&av_int[0]),
+    implicit_ptr_cast<void>(&arcp_char[0]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&av_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_int_to_char )
+{
+
+  const int sizeOfInt = sizeof(int);
+  const int sizeOfChar = sizeof(char);
+  const int num_ints = n;
+  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
+  out << "num_ints = " << num_ints << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ArrayRCP<int> arcp_int = arcp<int>(num_ints);
+  ArrayView<char> av_char = av_reinterpret_cast<char>(arcp_int());
+  TEST_EQUALITY(av_char.size(), num_chars);
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
+    implicit_ptr_cast<void>(&av_char[0]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&av_char[num_chars-1])+1));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&av_char[num_chars-1])+1));
+
 }
 
 

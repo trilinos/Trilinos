@@ -41,6 +41,11 @@ specific machines for specific build cases.
 - Add an explicit MPI compiler, headers, and library build
 - Add a build with Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
 
+(*) [???] Write pre-checkin tool that will configure an MPI_DEBUG and
+SERIAL_RELEASE build directory and enable only "Primary Stable" code.  This
+will need a minimal configuration script to pull in only the basic info needed
+in order to find compilers, MPI, BLAS, and LAPACK and nothing else.
+
 (*) [???] Turn on shared libraries by default on Mac and Linux: Switching to
 shared libraries by default will save on disk space and could speed up
 pre-checkin testing when only libraries need to be rebuilt and rerun the
@@ -66,11 +71,6 @@ fail the configure step.
 - Enable testing for PyTrilinos on godel by setting
 PYTHONPATH=/home/wfspotz/lib64/python2.4/site-packages on the environment.
 You can also set this as a CMake variable I think.
-
-(*) [???] Write pre-checkin tool that will configure an MPI_DEBUG and
-SERIAL_RELEASE build directory and enable only "Primary Stable" code.  This
-will need a minimal configuration script to pull in only the basic info needed
-in order to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
 (*) [???] Add the GCC option -Wextra to the list of default strong warning
 options.  Many of these options may already be covered by -ansi -pedantic but

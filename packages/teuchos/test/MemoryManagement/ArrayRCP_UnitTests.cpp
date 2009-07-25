@@ -9,6 +9,7 @@
 namespace {
 
 using ArrayUnitTestHelpers::n;
+using ArrayUnitTestHelpers::generateArray;
 
 typedef Teuchos_Ordinal Ordinal;
 using Teuchos::getRawPtr;
@@ -17,6 +18,7 @@ using Teuchos::null;
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
+using Teuchos::Array;
 using Teuchos::arcp;
 using Teuchos::arcp_reinterpret_cast;
 using Teuchos::ArrayView;
@@ -342,14 +344,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CPtr, getRawPtr, T )
 }
 
 
-#ifdef TEUCHOS_DEBUG
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, arcp_zero, T )
 {
   ArrayRCP<T> arcp_strong = arcp<T>(0);
   TEST_EQUALITY(arcp_strong.size(), as<Ordinal>(0));
 }
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, arcpFromArrayView, T )
+{
+  Array<T> a = generateArray<T>(n);
+  ArrayView<T> av = a;
+  ArrayRCP<T> arcp1 = Teuchos::arcpFromArrayView(av);
+  TEST_COMPARE_ARRAYS(arcp1, av);
+}
+
+
+#ifdef TEUCHOS_DEBUG
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, arcp_neg, T )
@@ -384,7 +395,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 #ifdef TEUCHOS_DEBUG
 
 #  define DEBUG_UNIT_TEST_GROUP( T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, arcp_zero, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, arcp_neg, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, outOfBounds, T ) \
 
@@ -409,6 +419,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, danglingArrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, getRawPtr, T) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CPtr, getRawPtr, T) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, arcp_zero, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, arcpFromArrayView, T ) \
   DEBUG_UNIT_TEST_GROUP(T)
 
 

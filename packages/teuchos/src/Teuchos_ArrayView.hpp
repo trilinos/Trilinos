@@ -313,9 +313,14 @@ ArrayView<T>::assert_in_range( Ordinal offset, Ordinal size_in ) const
 template<class T>
 ArrayView<T>::ArrayView( const ArrayRCP<T> &arcp )
   : ptr_(arcp.getRawPtr()), size_(arcp.size()), arcp_(arcp)
-{
-  
-}
+{}
+
+
+template<class T>
+ArrayView<T>::ArrayView( T* p, Ordinal size_in, const ArrayRCP<T> &arcp )
+  : ptr_(p), size_(size_in), arcp_(arcp)
+{}
+
 
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -396,6 +401,26 @@ template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayView<T>& p )
 {
   return out << p.toString();
+}
+
+
+template<class T2, class T1>
+REFCOUNTPTR_INLINE
+Teuchos::ArrayView<T2>
+Teuchos::av_reinterpret_cast(const ArrayView<T1>& p1)
+{
+  typedef typename ArrayView<T1>::Ordinal Ordinal;
+  const int sizeOfT1 = sizeof(T1);
+  const int sizeOfT2 = sizeof(T2);
+  Ordinal size2 = (p1.size()*sizeOfT1) / sizeOfT2;
+  T2 *ptr2 = reinterpret_cast<T2*>(p1.getRawPtr());
+  return ArrayView<T2>(
+    ptr2, size2
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+    ,arcp_reinterpret_cast<T2>(p1.access_private_arcp())
+#endif
+    );
+  // Note: Above is just fine even if p1.get()==NULL!
 }
 
 

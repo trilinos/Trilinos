@@ -18,6 +18,7 @@ using Teuchos::arrayRcpConv;
 using Teuchos::arrayViewPtrConv;
 using Teuchos::arrayViewRcpConv;
 using Teuchos::Array;
+using Teuchos::ArrayView;
 using Teuchos::Ptr;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -179,6 +180,53 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayConversions, arrayRcpConv_RcpConst_to_Rc
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayConversions, arrayConstPtrConstCast_nonconst_to_const,
+  T ) 
+{
+  Array<RCP<T> > a_rcp = generateArrayRcp<T>(n);
+  Array<Ptr<T> > a_ptr = arrayPtrConv<T>(a_rcp);
+  const ArrayView<const Ptr<T> > av_ptr_nonconst = a_ptr();
+  const ArrayView<const Ptr<const T> > av_ptr_const =
+    Teuchos::arrayConstPtrConstCast(av_ptr_nonconst);
+  TEST_COMPARE_ARRAYS( av_ptr_nonconst, av_ptr_const );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayConversions, arrayConstPtrConstCast_const_to_const,
+  T ) 
+{
+  Array<RCP<T> > a_rcp = generateArrayRcp<T>(n);
+  Array<Ptr<const T> > a_ptr = arrayPtrConv<const T>(a_rcp);
+  const ArrayView<const Ptr<const T> > av_ptr_const1 = a_ptr();
+  const ArrayView<const Ptr<const T> > av_ptr_const2 =
+    Teuchos::arrayConstPtrConstCast(av_ptr_const1);
+  TEST_COMPARE_ARRAYS( av_ptr_const1, av_ptr_const2 );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayConversions, arrayConstRcpConstCast_nonconst_to_const,
+  T ) 
+{
+  Array<RCP<T> > a_rcp = generateArrayRcp<T>(n);
+  const ArrayView<const RCP<T> > av_rcp_nonconst = a_rcp();
+  const ArrayView<const RCP<const T> > av_rcp_const =
+    Teuchos::arrayConstRcpConstCast(av_rcp_nonconst);
+  TEST_COMPARE_ARRAYS( av_rcp_nonconst, av_rcp_const );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayConversions, arrayConstRcpConstCast_const_to_const,
+  T ) 
+{
+  Array<RCP<T> > a_rcp_orig = generateArrayRcp<T>(n);
+  Array<RCP<const T> > a_rcp = arrayRcpConv<const T>(a_rcp_orig);
+  const ArrayView<const RCP<const T> > av_rcp_const1 = a_rcp();
+  const ArrayView<const RCP<const T> > av_rcp_const2 =
+    Teuchos::arrayConstRcpConstCast(av_rcp_const1);
+  TEST_COMPARE_ARRAYS( av_rcp_const1, av_rcp_const2 );
+}
+
+
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
 #  define DEBUG_UNIT_TEST_GROUP( T )
@@ -203,6 +251,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayConversions, arrayRcpConv_RcpConst_to_Rc
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayPtrConv_PassNonconst, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayRcpConv_RcpNonconst_to_RcpNonconst, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayRcpConv_RcpNonconst_to_RcpConst, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayConstPtrConstCast_nonconst_to_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayConstPtrConstCast_const_to_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayConstRcpConstCast_nonconst_to_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayConversions, arrayConstRcpConstCast_const_to_const, T ) \
   DEBUG_UNIT_TEST_GROUP( T )
 
 
