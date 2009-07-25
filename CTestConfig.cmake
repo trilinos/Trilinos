@@ -6,7 +6,7 @@ IF(NOT DEFINED CTEST_DROP_METHOD)
 ENDIF()
 
 IF(CTEST_DROP_METHOD STREQUAL "http")
-  SET(CTEST_DROP_SITE "trilinos-dev.sandia.gov")
+  SET(CTEST_DROP_SITE "trilinos.sandia.gov")
   SET(CTEST_DROP_LOCATION "/cdash/submit.php?project=Trilinos")
   SET(CTEST_TRIGGER_SITE "")
 ENDIF()
