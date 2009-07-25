@@ -75,6 +75,7 @@ class InArgsTestCase(unittest.TestCase):
     def testConstructor0(self):
         "Test EpetraExt InArgs constructor, no arguments"
         inArgs = EpetraExt.InArgs()
+        self.failUnless(inArgs.description.startswith('WARNING'))
         self.assertEquals(inArgs.x,     False)
         self.assertEquals(inArgs.x_dot, False)
         self.assertEquals(inArgs.p,     0    )
@@ -85,6 +86,7 @@ class InArgsTestCase(unittest.TestCase):
     def testConstructor1(self):
         "Test EpetraExt InArgs constructor, one argument"
         inArgs = EpetraExt.InArgs(t=0.0)
+        self.failUnless(inArgs.description.startswith('WARNING'))
         self.assertEquals(inArgs.x,     False)
         self.assertEquals(inArgs.x_dot, False)
         self.assertEquals(inArgs.p,     0    )
@@ -96,6 +98,7 @@ class InArgsTestCase(unittest.TestCase):
         "Test EpetraExt InArgs constructor, six arguments"
         inArgs = EpetraExt.InArgs(x=self.v1, x_dot=self.v2, p=self.tp,
                                   t=0.0, alpha=1.0, beta=1.414213)
+        self.failUnless(inArgs.description.startswith('WARNING'))
         self.failUnless((inArgs.x     == self.v1).all())
         self.failUnless((inArgs.x_dot == self.v2).all())
         self.failUnless((inArgs.p[0]  == self.v1).all())
@@ -119,6 +122,19 @@ class InArgsTestCase(unittest.TestCase):
         inArgs = EpetraExt.InArgs()
         self.assertEquals(inArgs.x, False)
         self.assertRaises(ValueError, inArgs.__setattr__, 'x', 0.0)
+
+    def testDescription(self):
+        "Test EpetraExt InArgs description property"
+        inArgs = EpetraExt.InArgs()
+        self.failUnless(inArgs.description.startswith('WARNING'))
+        inArgs.description = 'Example'
+        self.assertEquals(inArgs.description, 'Example')
+
+    def testDescriptionBad(self):
+        "Test EpetraExt InArgs description property, bad assignment"
+        inArgs = EpetraExt.InArgs()
+        self.failUnless(inArgs.description.startswith('WARNING'))
+        self.assertRaises(TypeError, inArgs.__setattr__, 'description', 2009)
 
     def testXDot(self):
         "Test EpetraExt InArgs x_dot property"
@@ -571,6 +587,7 @@ class OutArgsTestCase(unittest.TestCase):
     def testConstructor0(self):
         "Test EpetraExt OutArgs constructor, no arguments"
         outArgs = EpetraExt.OutArgs()
+        self.failUnless(outArgs.description.startswith('WARNING'))
         self.assertEquals(outArgs.g,                   0    )
         self.assertEquals(outArgs.f,                   False)
         self.assertEquals(outArgs.W,                   False)
@@ -587,6 +604,7 @@ class OutArgsTestCase(unittest.TestCase):
     def testConstructor1(self):
         "Test EpetraExt OutArgs constructor, one argument"
         outArgs = EpetraExt.OutArgs(f=self.evaluation)
+        self.failUnless(outArgs.description.startswith('WARNING'))
         self.assertEquals(outArgs.g,                   0              )
         self.assertEquals(outArgs.f,                   self.evaluation)
         self.assertEquals(outArgs.W,                   False          )
@@ -603,6 +621,7 @@ class OutArgsTestCase(unittest.TestCase):
     def testConstructor2(self):
         "Test EpetraExt OutArgs constructor, two arguments"
         outArgs = EpetraExt.OutArgs(W=self.op, W_properties=self.dp)
+        self.failUnless(outArgs.description.startswith('WARNING'))
         self.assertEquals(outArgs.g,                   0      )
         self.assertEquals(outArgs.f,                   False  )
         self.assertEquals(outArgs.W,                   self.op)
@@ -621,6 +640,7 @@ class OutArgsTestCase(unittest.TestCase):
         outArgs = EpetraExt.OutArgs(g=self.evaluationTuple,
                                     DgDp=self.derivTuple,
                                     DgDp_properties=self.dpTuple)
+        self.failUnless(outArgs.description.startswith('WARNING'))
         self.assertEquals(outArgs.g,                   self.evaluationTuple)
         self.assertEquals(outArgs.f,                   False               )
         self.assertEquals(outArgs.W,                   False               )
@@ -633,6 +653,19 @@ class OutArgsTestCase(unittest.TestCase):
         self.assertEquals(outArgs.DgDx_dot_properties, None                )
         self.assertEquals(outArgs.DgDp,                self.derivTuple     )
         self.assertEquals(outArgs.DgDp_properties,     self.dpTuple        )
+
+    def testDescription(self):
+        "Test EpetraExt OutArgs description property"
+        outArgs = EpetraExt.OutArgs()
+        self.failUnless(outArgs.description.startswith('WARNING'))
+        outArgs.description = 'Example'
+        self.assertEquals(outArgs.description, 'Example')
+
+    def testDescriptionBad(self):
+        "Test EpetraExt OutArgs description property, bad assignment"
+        outArgs = EpetraExt.OutArgs()
+        self.failUnless(outArgs.description.startswith('WARNING'))
+        self.assertRaises(TypeError, outArgs.__setattr__, 'description', [0,0.0,'0'])
 
     def testF(self):
         "Test EpetraExt OutArgs f property"
