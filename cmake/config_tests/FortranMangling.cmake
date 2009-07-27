@@ -55,13 +55,13 @@ FUNCTION(FORTRAN_MANGLING)
         FILE(MAKE_DIRECTORY "${_fcmangledir}/${cdef}")
         FILE(MAKE_DIRECTORY ${_fcmangledir_case})
 
-        SET(COMMON_FLAGS "-DFC_FN_${cdef} -DFC_FN_${udef}")
+        SET(COMMON_DEFS -DFC_FN_${cdef} -DFC_FN_${udef})
         SET(C_FLAGS "${CMAKE_C_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
         SET(F_FLAGS "${CMAKE_Fortran_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
         TRY_COMPILE(_fcmngl ${_fcmangledir_case} ${_fcmakelists} fmangle
           CMAKE_FLAGS "-DCMAKE_C_FLAGS:STRING=${C_FLAGS}"
           "-DCMAKE_Fortran_DEF_FLAGS:STRING=${F_FLAGS}" 
-          "-DCOMMON_FLAGS=${COMMON_FLAGS}"
+          "-DCOMMON_DEFS=${COMMON_DEFS}"
           OUTPUT_VARIABLE _fcmngl_output
           )
         IF (Trilinos_VERBOSE_CONFIGURE)
