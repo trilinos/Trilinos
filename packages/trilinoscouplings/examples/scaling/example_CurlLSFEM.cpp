@@ -911,8 +911,8 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
 
     double vals[2];
-    //    vals[0]=-0.5; vals[1]=0.5;
-        vals[0]=-1.0; vals[1]=1.0;
+        vals[0]=-0.5; vals[1]=0.5;
+    //    vals[0]=-1.0; vals[1]=1.0;
     for (int j=0; j<numEdges; j++){
         int rowNum = j;
         int colNum[2];
@@ -1030,8 +1030,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
     FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobInv(numCells, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
-    FieldContainer<double> worksetFaceTv(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetCValsTransformed(numCells, numFieldsC, numFacePoints, spaceDim);
@@ -1247,16 +1245,10 @@ int main(int argc, char *argv[]) {
                                 refGaussPoints,
                                 hexNodes, hex_8);
 
-         // compute face tangents
-            CellTools::getPhysicalFaceTangents(worksetFaceTu,
-                                     worksetFaceTv,
-                                     paramGaussPoints,
-                                     worksetJacobians,
-                                     i, hex_8);
-
-         // face outer normals (relative to parent cell) are uTan x vTan
-            RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
-
+         // Compute face normals
+            CellTools::getPhysicalFaceNormals(worksetFaceN,
+                                              worksetJacobians,
+                                              i, hex_8);
 
          // evaluate div u at face points
            for(int nPt = 0; nPt < numFacePoints; nPt++){
