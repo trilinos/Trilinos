@@ -30,7 +30,7 @@
 
 all-local:
 
-STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector BasicPerfTest CrsGraph CrsMatrix 
+#STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector BasicPerfTest CrsGraph CrsMatrix 
 
 SUBDIRS = $(STANDARD_SUBDIRS)
 

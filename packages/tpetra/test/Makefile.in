@@ -216,7 +216,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector BasicPerfTest CrsGraph CrsMatrix 
+
+#STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector BasicPerfTest CrsGraph CrsMatrix 
 SUBDIRS = $(STANDARD_SUBDIRS)
 EXTRA_DIST = 
 all: all-recursive
