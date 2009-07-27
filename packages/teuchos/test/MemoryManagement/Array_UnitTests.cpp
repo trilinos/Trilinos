@@ -139,10 +139,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_before_block_end
 }
 
 
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP, T )
 {
   const Array<T> a_const = generateArray<T>(n);
-  const RCP<Array<T> > a_rcp = rcp(new Array<T>(a_const));
+  const RCP<Array<T> > a_rcp = Teuchos::rcp( new  Array<T>(a_const));
   const ArrayRCP<T> a_arcp = arcp(a_rcp);
   TEST_COMPARE_ARRAYS( a_const(), a_arcp() );
 }
