@@ -414,8 +414,10 @@ int main(int argc, char *argv[]) {
 
 // ************************************ GET INPUTS **************************************
 
-  // Input file
-    std::string   xmlInFileName = "DivLSFEMin.xml";
+  // Command line for xml file, otherwise use default
+    std::string   xmlInFileName;
+    if(argc>=2) xmlInFileName=string(argv[1]);
+    else xmlInFileName="CurlLSFEMin.xml";
 
   // Read xml file into parameter list
     Teuchos::ParameterList inputList;
