@@ -35,7 +35,7 @@ Fourier<EvalT, Traits>::
 Fourier(const Teuchos::ParameterList& p) :
   flux("Energy_Flux", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
   density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout")),
-  dc("Heat Capacity", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
+  dc("Thermal Conductivity", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
   grad_temp("Temperature Gradient", 
 	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
 { 

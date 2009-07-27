@@ -37,7 +37,7 @@ Fourier(const Teuchos::ParameterList& p) :
        p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout")),
   density("Density", 
 	  p.get< Teuchos::RCP<PHX::DataLayout> >("Scalar Data Layout")),
-  dc("Heat Capacity", 
+  dc("Thermal Conductivity", 
      p.get< Teuchos::RCP<PHX::DataLayout> >("Scalar Data Layout") ),
   grad_temp("Temperature Gradient", 
 	    p.get< Teuchos::RCP<PHX::DataLayout> >("Vector Data Layout") )

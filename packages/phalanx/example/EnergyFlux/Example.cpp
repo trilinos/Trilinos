@@ -153,10 +153,10 @@ int main(int argc, char *argv[])
 	RCP<ParameterList> p = rcp(new ParameterList);
 	int type = MyFactoryTraits<MyTraits>::id_constant;
 	p->set<int>("Type", type);
-	p->set<string>("Name", "Heat Capacity");
+	p->set<string>("Name", "Thermal Conductivity");
 	p->set<double>("Value", 2.0);
 	p->set< RCP<DataLayout> >("Data Layout", qp);
-	evaluators_to_build["Heat Capacity"] = p;
+	evaluators_to_build["Thermal Conductivity"] = p;
       }
       
       { // Nonlinear Source

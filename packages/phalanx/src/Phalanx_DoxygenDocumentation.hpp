@@ -255,16 +255,16 @@ Suppose that we want to solve the heat equation over the physical
 space \f$ \Omega \f$:
 
 \f[
-  \nabla \cdot (-\rho C_p \nabla T) + s = 0
+  \nabla \cdot (-\rho k \nabla T) + s = 0
 \f] 
 
-where \f$ T \f$ is the temparature (and our degree of freedom), \f$ \rho \f$ is the density, \f$ C_p \f$ is the heat capacity, and \f$s\f$ is a nonlinear source term.  We pose this in terms of a conservation law system:
+where \f$ T \f$ is the temparature (and our degree of freedom), \f$ \rho \f$ is the density, \f$ k \f$ is the thermal conductivity, and \f$s\f$ is a nonlinear source term.  We pose this in terms of a conservation law system:
 
 \f[
   \nabla \cdot (\mathbf{q}) + s = 0
 \f]
 
-where \f$ \mathbf{q} = -\rho C_p \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) or finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+where \f$ \mathbf{q} = -\rho k \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) or finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
 
 Using finite elements, we pose the problem in variational form:  Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
 
@@ -1064,14 +1064,14 @@ Now let's build the evaluators.  The following code can be found in the Example.
 	evaluators_to_build["Density"] = p;
       }
 
-      { // Constant Heat Capacity
+      { // Constant Thermal Conductivity
 	RCP<ParameterList> p = rcp(new ParameterList);
 	int type = MyFactoryTraits<MyTraits>::id_constant;
 	p->set<int>("Type", type);
-	p->set<string>("Name", "Heat Capacity");
+	p->set<string>("Name", "Thermal Conductivity");
 	p->set<double>("Value", 2.0);
 	p->set< RCP<DataLayout> >("Data Layout", qp);
-	evaluators_to_build["Heat Capacity"] = p;
+	evaluators_to_build["Thermal Conductivity"] = p;
       }
       
       { // Nonlinear Source
