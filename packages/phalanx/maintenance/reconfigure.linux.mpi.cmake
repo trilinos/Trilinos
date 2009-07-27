@@ -32,9 +32,14 @@ cmake \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
       -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpif77" \
       -D CMAKE_CXX_FLAGS:STRING="-O3 -ansi -pedantic -ftrapv -Wall -Wno-long-long" \
-      -D CMAKE_EXE_LINKER_FLAGS:STRING="-L/usr/lib -lgfortran" \
+      -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/lib -lgfortran" \
       -D HAVE_STRING_H:BOOL=ON \
       -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
       -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
       -D CMAKE_SKIP_RULE_DEPENDENCY=ON \
+      -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS=OFF \
+      -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS=OFF \
+      -D Trilinos_ENABLE_SHADOW_WARNINGS=OFF \
        ../
+
+##      -D CMAKE_EXE_LINKER_FLAGS:STRING="-L/usr/lib -lgfortran" \
