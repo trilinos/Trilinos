@@ -1378,6 +1378,7 @@ int main(int argc, char *argv[]) {
       delete [] BCFaces;
 
   // Dump matrices to disk
+   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
    EpetraExt::RowMatrixToMatlabFile("mag_m1inv_matrix.dat",MassCinv);
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
