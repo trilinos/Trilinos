@@ -53,14 +53,6 @@ CompletePolynomialBasis(
 
   // Compute basis terms
   compute_terms();
-
-  // Create products
-  Cijk_1d.resize(bases.size());
-  Bij_1d.resize(bases.size());
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++) {
-    Cijk_1d[i] = bases[i]->getTripleProductTensor();
-    Bij_1d[i] = bases[i]->getDerivDoubleProductTensor();
-  }
     
   // Compute norms
   norms.resize(sz);
@@ -178,8 +170,8 @@ getTripleProductTensor() const
   if (Cijk == Teuchos::null) {
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
     std::vector<value_type> a(sz+1);
-    for (ordinal_type i=0; i<sz; i++) {
-      for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type j=0; j<sz; j++) {
+      for (ordinal_type i=0; i<sz; i++) {
 	projectProduct(i, j, a);
 	for (ordinal_type k=0; k<sz; k++) {
 	  if (std::abs(a[k]) > sparse_tol) {
@@ -252,6 +244,13 @@ void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const
 {
+  // Create products
+  if (Cijk_1d.size() == 0) {
+    Cijk_1d.resize(bases.size());
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
+      Cijk_1d[i] = bases[i]->getTripleProductTensor();
+  }
+
   double val;
   for (ordinal_type k=0; k<sz; k++) {
     value_type c = value_type(1.0);
@@ -299,6 +298,13 @@ void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
 {
+  // Create products
+  if (Bij_1d.size() == 0) {
+    Bij_1d.resize(bases.size());
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
+      Bij_1d[i] = bases[i]->getDerivDoubleProductTensor();
+  }
+
   // Initialize
   for (ordinal_type j=0; j<static_cast<ordinal_type>(coeffs.size()); j++)
     coeffs[j] = value_type(0.0);

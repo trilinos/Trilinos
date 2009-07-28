@@ -169,10 +169,10 @@ namespace Stokhos {
     std::vector< std::vector<ordinal_type> > terms;
 
     //! Array of Triple products for computing product projections
-    std::vector< Teuchos::RCP<const Dense3Tensor<ordinal_type,value_type> > > Cijk_1d;
+    mutable std::vector< Teuchos::RCP<const Dense3Tensor<ordinal_type,value_type> > > Cijk_1d;
 
     //! Array of double products for computing derivative projections
-    std::vector< Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > > Bij_1d;
+    mutable std::vector< Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > > Bij_1d;
 
     //! Triple product 3 tensor
     mutable Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
