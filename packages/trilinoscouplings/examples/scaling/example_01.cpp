@@ -87,8 +87,9 @@
 
 // Pamgen includes
 #include "create_inline_mesh.h"
-#include "../mesh_spec_lt/im_exodusII.h"
-#include "../mesh_spec_lt/im_ne_nemesisI.h"
+#include "im_exodusII.h"
+#include "im_ne_nemesisI.h"
+
 
 #define ABS(x) ((x)>0?(x):-(x))
 
