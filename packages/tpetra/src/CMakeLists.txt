@@ -36,8 +36,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   Tpetra_CombineMode.hpp
   Tpetra_ConfigDefs.hpp
+  Tpetra_CrsGraph.hpp
+  Tpetra_CrsGraphData.hpp
   Tpetra_CrsMatrix.hpp
   Tpetra_DefaultPlatform.hpp
+  Tpetra_DiagPrecond.hpp
   Tpetra_Directory.hpp
   Tpetra_DirectoryDecl.hpp
   Tpetra_DistObject.hpp
@@ -54,6 +57,8 @@ APPEND_SET(HEADERS
   Tpetra_MultiVectorDataDecl.hpp
   Tpetra_MultiVectorDecl.hpp
   Tpetra_Operator.hpp 
+  Tpetra_RowGraph.hpp
+  Tpetra_RowMatrix.hpp
   Tpetra_SerialPlatform.hpp
   Tpetra_Util.hpp
   Tpetra_Vector.hpp
@@ -64,8 +69,8 @@ APPEND_SET(HEADERS
 # Set sources
 
 APPEND_SET(SOURCES
-  Tpetra_Version.cpp
   Tpetra_DefaultPlatform.cpp
+  Tpetra_Version.cpp
   )
 
 IF (TPL_ENABLE_MPI)
