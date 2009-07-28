@@ -30,7 +30,10 @@
 #define TPETRA_MPIPLATFORM_HPP
 
 #include <Teuchos_DefaultMpiComm.hpp>
-#include "Tpetra_Platform.hpp"
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_Describable.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 namespace Tpetra {
 
@@ -40,10 +43,11 @@ namespace Tpetra {
     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
     type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class MpiPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal, Node> 
+  template<class Node=Kokkos::DefaultNode::DefaultNodeType>
+	class MpiPlatform : public Teuchos::Describable {
   {
   public:
+    typedef Node NodeType;
     //! @name Constructor/Destructor Methods
     //@{ 
 
@@ -56,9 +60,6 @@ namespace Tpetra {
     //! Destructor
     ~MpiPlatform();
 
-    //! Clone constructor - implements Tpetra::Platform clone() method.
-    Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> > clone() const;
-
     //@}
 
     //! @name Class Creation and Accessor Methods
@@ -67,7 +68,13 @@ namespace Tpetra {
     //! Comm Instance
     Teuchos::RCP< Teuchos::Comm<int> > getComm() const;
 
+    //! Get Get a node for parallel computation.
+    Node & getNode() const;
+
     //@}
+
+    protected: 
+    Node &node_;
 
     private:
     Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
@@ -83,7 +90,7 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MpiPlatform(Node &node)
-  : Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node)
+  : node_(node)
   {
     comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
   } 
@@ -98,18 +105,16 @@ namespace Tpetra {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
-  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone() const 
-  {
-    return Teuchos::rcp(new MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getNode(),comm_->getRawMpiComm()));
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< Teuchos::Comm<int> > 
   MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getComm() const 
   {
     return comm_;
   }
+
+  template<class Node>
+  Node &
+  Platform<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNode() const 
+  { return node_; }
 
 } // namespace Tpetra
 

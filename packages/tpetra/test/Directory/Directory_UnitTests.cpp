@@ -16,7 +16,6 @@ namespace {
   using Tpetra::Map;
   using Tpetra::Directory;
   using Tpetra::DefaultPlatform;
-  using Tpetra::Platform;
   using Teuchos::Array;
   using Teuchos::tuple;
   using std::sort;
@@ -43,7 +42,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform<double>::getPlatform()->getComm();
+      DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

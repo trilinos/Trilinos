@@ -16,7 +16,6 @@ namespace {
   using Teuchos::rcp;
   using Tpetra::Distributor;
   using Tpetra::DefaultPlatform;
-  using Tpetra::Platform;
   using std::sort;
   using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
@@ -50,7 +49,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform<double>::getPlatform()->getComm();
+      DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

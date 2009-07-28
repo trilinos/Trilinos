@@ -54,7 +54,6 @@ APPEND_SET(HEADERS
   Tpetra_MultiVectorDataDecl.hpp
   Tpetra_MultiVectorDecl.hpp
   Tpetra_Operator.hpp 
-  Tpetra_Platform.hpp
   Tpetra_SerialPlatform.hpp
   Tpetra_Util.hpp
   Tpetra_Vector.hpp
@@ -66,6 +65,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   Tpetra_Version.cpp
+  Tpetra_DefaultPlatform.cpp
   )
 
 IF (TPL_ENABLE_MPI)
