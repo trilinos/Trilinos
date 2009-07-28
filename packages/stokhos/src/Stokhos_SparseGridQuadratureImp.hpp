@@ -55,6 +55,8 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
       level = p;
   }
 
+  std::cout << "Sparse grid level = " << level << std::endl;
+
   const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
 
   // Compute quad points, weights, values
@@ -70,6 +72,10 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
     else if (rules[i] == 1) {
       compute1DPoints[i] = webbur::clenshaw_curtis_compute_points_np;
       compute1DWeights[i] = webbur::clenshaw_curtis_compute_weights_np;
+    }
+    else if (rules[i] == 4) {
+      compute1DPoints[i] = webbur::legendre_compute_points_np;
+      compute1DWeights[i] = webbur::legendre_compute_weights_np;
     }
   }
   std::vector<int> nparams(d);
@@ -132,7 +138,7 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
     quad_values[i] = product_basis->evaluateBases(quad_points[i]);
   }
 
-  //std::cout << "ntot = " << ntot << std::endl;
+  std::cout << "Number of quadrature points = " << ntot << std::endl;
 
 //   std::cout << "Sparse grid quadrature points, weights, values = " << std::endl;
 //   for (int i=0; i<n; i++) {
