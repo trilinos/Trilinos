@@ -55,9 +55,12 @@ extern "C" {
 template <typename ordinal_type, typename value_type> 
 Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
 ForUQTKOrthogPolyExpansion(
-     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_) :
+			   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
+			   EXPANSION_METHOD method_,
+			   value_type rtol_) :
   basis(basis_),
-  rtol(1.0e-12)
+  rtol(rtol_),
+  method(method_)
 {
   order = basis->order();
   dim = basis->dimension();
@@ -599,10 +602,13 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   const value_type* ca = a.coeff();
   value_type* cc = c.coeff();
 
-  int nrm = 1;
   int nup = pc-1;
-  UQ_EXP_F77(ca, cc, &dim, &nup, &rtol, &nrm);
-  //UQ_EXP_INT_F77(ca, cc, &nup);
+  if (method == TAYLOR) {
+    int nrm = 1;
+    UQ_EXP_F77(ca, cc, &dim, &nup, &rtol, &nrm);
+  }
+  else
+    UQ_EXP_INT_F77(ca, cc, &nup);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -618,10 +624,13 @@ log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   const value_type* ca = a.coeff();
   value_type* cc = c.coeff();
 
-  //int nrm = 1;
   int nup = pc-1;
-  //UQ_LOG_F77(ca, cc, &dim, &nup, &rtol, &nrm);
-  UQ_LOG_INT_F77(ca, cc, &nup);
+  if (method == TAYLOR) {
+    int nrm = 1;
+    UQ_LOG_F77(ca, cc, &dim, &nup, &rtol, &nrm);
+  }
+  else
+    UQ_LOG_INT_F77(ca, cc, &nup);
 }
 
 template <typename ordinal_type, typename value_type>

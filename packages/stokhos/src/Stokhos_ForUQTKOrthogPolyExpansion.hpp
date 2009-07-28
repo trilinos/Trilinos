@@ -48,8 +48,15 @@ namespace Stokhos {
     public OrthogPolyExpansion<ordinal_type, value_type> {
   public:
 
+    enum EXPANSION_METHOD {
+      TAYLOR,
+      INTEGRATION
+    };
+
     //! Constructor
-    ForUQTKOrthogPolyExpansion(const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis);
+    ForUQTKOrthogPolyExpansion(const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis,
+			       EXPANSION_METHOD method = TAYLOR,
+			       value_type rtol = 1.0e-12);
 
     //! Destructor
     virtual ~ForUQTKOrthogPolyExpansion() {}
@@ -217,6 +224,9 @@ namespace Stokhos {
 
     //! Tolerance for Taylor method
     double rtol;
+
+    //! Expansion method
+    EXPANSION_METHOD method;
     
   }; // class ForUQTKOrthogPolyExpansion
 
