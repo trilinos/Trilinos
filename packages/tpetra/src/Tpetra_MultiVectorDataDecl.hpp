@@ -33,17 +33,17 @@
 
 namespace Tpetra {
 
-  template<class Scalar>
+  template<class Scalar, class Node>
   class MultiVectorData {
 
   // cannot declare as friends any partial specializations; therefore, all MultiVectors and Vectors will be friends
-  template <class S2, class O1, class O2>
+  template <class S2, class O1, class O2, class N>
   friend class MultiVector;
-  template <class S2, class O1, class O2>
+  template <class S2, class O1, class O2, class N>
   friend class Vector;
 
   public:
-    MultiVectorData();
+    MultiVectorData(Node &node);
     ~MultiVectorData();
 
   protected:
@@ -60,23 +60,26 @@ namespace Tpetra {
        first entry in the first vector and runs to the last entry of the last vector.
        if stride == myLength(), then it has length myLength() * numVectors()
     */
-    Teuchos::ArrayRCP<Scalar> contigValues_;                          
-    Teuchos::Array<Teuchos::ArrayRCP<Scalar> > nonContigValues_;
+    //REFACTOR// Teuchos::ArrayRCP<Scalar> contigValues_;                          
+    //REFACTOR// Teuchos::Array<Teuchos::ArrayRCP<Scalar> > nonContigValues_;
+    typedef Node::buffer<Scalar>::buffer_t contigValues_;
 
     /* make sure that this is an iterator of an appropriately sized view, so that the iterator is valid only for the span of the column.
        this is filled under all circumstances, although when the data is contiguous, it may be more efficient to access data through values_ */
-    mutable Teuchos::Array<typename Teuchos::ArrayView<Scalar>::iterator>  ptrs_;
+    //REFACTOR// mutable Teuchos::Array<typename Teuchos::ArrayView<Scalar>::iterator>  ptrs_;
 
-    bool constantStride_;
+    //REFACTOR// bool constantStride_;
     Teuchos_Ordinal stride_;
     
   private:
+    Node &node_;
+
     void setupPointers(Teuchos_Ordinal MyLength, Teuchos_Ordinal NumVectors); 
 
     // Copy constructor (declared but not defined, do not use)
-    MultiVectorData(const MultiVectorData<Scalar> &source);
+    MultiVectorData(const MultiVectorData<Scalar,Node> &source);
     // Assignment operator (declared but not defined, do not use)
-    MultiVectorData<Scalar>& operator=(const MultiVectorData<Scalar> &source);
+    MultiVectorData<Scalar>& operator=(const MultiVectorData<Scalar,Node> &source);
 
   }; // class MultiVectorData
 

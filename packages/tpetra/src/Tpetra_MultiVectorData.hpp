@@ -35,40 +35,41 @@
 
 namespace Tpetra {
 
-  template<class Scalar>
-  MultiVectorData<Scalar>::MultiVectorData() {}
+  template<class Scalar, class Node>
+  MultiVectorData<Scalar>::MultiVectorData(Node &node) : node_(node) {}
 
-  template<class Scalar>
+  template<class Scalar, class Node>
   MultiVectorData<Scalar>::~MultiVectorData() {}
 
-  template<class Scalar>
+  template<class Scalar, class Node>
   void MultiVectorData<Scalar>::setupPointers(Teuchos_Ordinal MyLength, Teuchos_Ordinal NumVectors) {
-    TEST_FOR_EXCEPTION(!(NumVectors > 0) || !(MyLength >= 0), std::logic_error,
-        "MultiVectorData::setupPointers(): logic error. Please contact Tpetra team.");
-    using Teuchos::null;
-    using Teuchos::ArrayRCP;
-    // setup ptrs_ array of pointers to iterators
-    // each iterator should be an ArrayView::iterator from a properly sized ArrayView
-    // in a debug mode, these will be ArrayRCP with correct bounds
-    // in an optimized build, they are C pointers
-    ptrs_.resize(NumVectors);
-    if (constantStride_) {
-      if (contigValues_ != null) { // stride_ > 0
-        ArrayRCP<Scalar> ptr = contigValues_;
-        for (Teuchos_Ordinal j=0; j<NumVectors; ++j) {
-          ptrs_[j] = ptr(0,MyLength).begin();
-          ptr += stride_;
-        }
-      }
-    }
-    else {
-      if (MyLength > 0) {
-        for (Teuchos_Ordinal j=0; j<NumVectors; ++j) {
-          ptrs_[j] = nonContigValues_[j](0,MyLength).begin();
-        }
-      }
-    }
+  //REFACTOR//   TEST_FOR_EXCEPTION(!(NumVectors > 0) || !(MyLength >= 0), std::logic_error,
+  //REFACTOR//       "MultiVectorData::setupPointers(): logic error. Please contact Tpetra team.");
+  //REFACTOR//   using Teuchos::null;
+  //REFACTOR//   using Teuchos::ArrayRCP;
+  //REFACTOR//   // setup ptrs_ array of pointers to iterators
+  //REFACTOR//   // each iterator should be an ArrayView::iterator from a properly sized ArrayView
+  //REFACTOR//   // in a debug mode, these will be ArrayRCP with correct bounds
+  //REFACTOR//   // in an optimized build, they are C pointers
+  //REFACTOR//   ptrs_.resize(NumVectors);
+  //REFACTOR//   if (constantStride_) {
+  //REFACTOR//     if (contigValues_ != null) { // stride_ > 0
+  //REFACTOR//       ArrayRCP<Scalar> ptr = contigValues_;
+  //REFACTOR//       for (Teuchos_Ordinal j=0; j<NumVectors; ++j) {
+  //REFACTOR//         ptrs_[j] = ptr(0,MyLength).begin();
+  //REFACTOR//         ptr += stride_;
+  //REFACTOR//       }
+  //REFACTOR//     }
+  //REFACTOR//   }
+  //REFACTOR//   else {
+  //REFACTOR//     if (MyLength > 0) {
+  //REFACTOR//       for (Teuchos_Ordinal j=0; j<NumVectors; ++j) {
+  //REFACTOR//         ptrs_[j] = nonContigValues_[j](0,MyLength).begin();
+  //REFACTOR//       }
+  //REFACTOR//     }
+  //REFACTOR//   }
   }
+
 
 } // namespace Tpetra
 

@@ -92,6 +92,7 @@ namespace Kokkos {
     Scalar generate(int i) {return x[i]*y[i];}
   };
 
+  //! Class DefaultArithmetic, unimplemented
   template <class MV>
   class DefaultArithmetic {
     public:
@@ -106,6 +107,7 @@ namespace Kokkos {
       }
   };
 
+  //! class DefaultArithmetic, for Kokkos::MultiVector
   template <class Scalar, class Ordinal, class Node>
   class DefaultArithmetic<MultiVector<Scalar,Ordinal,Node> > {
     public:

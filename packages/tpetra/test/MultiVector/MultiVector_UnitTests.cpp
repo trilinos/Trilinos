@@ -39,7 +39,6 @@ namespace {
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
-  using Tpetra::Platform;
   using std::vector;
   using std::sort;
   using Teuchos::arrayViewFromVector;
@@ -66,6 +65,8 @@ namespace {
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
 
+  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
@@ -84,14 +85,15 @@ namespace {
 
   RCP<const Comm<int> > getDefaultComm()
   {
-    RCP<Platform<double> > plat;
     if (testMpi) {
-      plat = DefaultPlatform<double>::getPlatform();
+      DefaultPlatform::getDefaultPlatform().getComm();
     }
-    else {
-      plat = rcp(new Tpetra::SerialPlatform<double>());
-    }
-    return plat->getComm();
+    return rcp(new Teuchos::SerialComm<int>());
+  }
+
+  Node& getDefaultNode()
+  {
+    return DefaultPlatform::getDefaultPlatform().getNode();
   }
 
   //
@@ -101,17 +103,18 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, basic, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal numLocal = 10;
     const Teuchos_Ordinal numVecs  = 5;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
-    MV mvec(map,numVecs,true);
+    MV mvec(node,map,numVecs,true);
     TEST_EQUALITY( mvec.numVectors(), numVecs );
     TEST_EQUALITY( mvec.myLength(), numLocal );
     TEST_EQUALITY( mvec.globalLength(), numImages*numLocal );
@@ -132,15 +135,16 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadConstNumVecs, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal numLocal = 10;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
-    TEST_THROW(MV mvec(map,0), std::invalid_argument);
-    TEST_THROW(MV mvec(map,-1), std::invalid_argument);
+    TEST_THROW(MV mvec(node,map,0), std::invalid_argument);
+    TEST_THROW(MV mvec(node,map,-1), std::invalid_argument);
   }
 
 
@@ -150,11 +154,12 @@ namespace {
     // numlocal > LDA
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    typedef Tpetra::Vector<Scalar,Ordinal> V;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -165,30 +170,31 @@ namespace {
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
-    TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(node,map,values(0,3),2,numVecs), std::runtime_error);
     // it could also be too small for the given LDA: 
-    TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(node,map,values(),2+1,numVecs), std::runtime_error);
     // too small for number of entries in a Vector
-    TEST_THROW(V   vec(map,values(0,1)), std::runtime_error);
+    TEST_THROW(V   vec(node,map,values(0,1)), std::runtime_error);
 #endif
     // LDA < numLocal throws an exception anytime
-    TEST_THROW(MV mvec(map,values(0,4),1,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(node,map,values(0,4),1,numVecs), std::runtime_error);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, LabeledObject, LO, GO, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = rank(*comm);
+    const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create Map
     Map<LO,GO> map(INVALID,3,0,comm);
     // test labeling
     const string lbl("mvecA");
-    MV mvecA(map,2);
+    MV mvecA(node,map,2);
     string desc1 = mvecA.description();
     if (myImageID==0) out << desc1 << endl;
     mvecA.setObjectLabel(lbl);
@@ -228,10 +234,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadMultiply, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                 S0 = ScalarTraits<Scalar>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
@@ -239,9 +246,9 @@ namespace {
       // create local Maps
       Map<Ordinal> map3l(3,0,comm,true),
                    map2l(2,0,comm,true);
-      MV mvecA(map3l,2),
-         mvecB(map2l,3),
-         mvecD(map2l,2);
+      MV mvecA(node,map3l,2),
+         mvecB(node,map2l,3),
+         mvecD(node,map2l,2);
       // failures, 8 combinations:
       // [NTC],[NTC]: A,B don't match
       // [NTC],[NTC]: C doesn't match A,B
@@ -260,12 +267,12 @@ namespace {
                    map2n(INVALID,2,0,comm),
                    map2l(2,0,comm,true),
                    map3l(3,0,comm,true);
-      MV mv3nx2(map3n,2),
-         mv2nx2(map2n,2),
-         mv2lx2(map2l,2),
-         mv2lx3(map2l,3),
-         mv3lx2(map3l,2),
-         mv3lx3(map3l,3);
+      MV mv3nx2(node,map3n,2),
+         mv2nx2(node,map2n,2),
+         mv2lx2(node,map2l,2),
+         mv2lx3(node,map2l,3),
+         mv3lx2(node,map3l,2),
+         mv3lx3(node,map3l,3);
       // non-matching input lengths
       TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv2nx2,S0), std::runtime_error);   // (2 x 3n) x (2n x 2) not compat
       TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv2nx2,mv3nx2,S0), std::runtime_error);   // (2 x 2n) x (3n x 2) not compat
@@ -280,10 +287,10 @@ namespace {
                    map2n(INVALID,2,0,comm),
                    map2l(2,0,comm,true),
                    map3l(3,0,comm,true);
-      MV mv3nx2(map3n,2),
-         mv2nx2(map2n,2),
-         mv2x3(map2l,3),
-         mv3x2(map3l,2);
+      MV mv3nx2(node,map3n,2),
+         mv2nx2(node,map2n,2),
+         mv2x3(node,map2l,3),
+         mv3x2(node,map3l,2);
       // non-matching input lengths
       TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (trans) not compat
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (nontrans) not compat
@@ -299,11 +306,12 @@ namespace {
   {
     using Teuchos::View;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map3n(INVALID,3,0,comm),
                  map2n(INVALID,2,0,comm),
@@ -315,10 +323,10 @@ namespace {
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // deterministic input/output
     {
-      MV mv3x2l(lmap3,2),
-         mv2x3l(lmap2,3),
-         mv2x2l(lmap2,2),
-         mv3x3l(lmap3,3);
+      MV mv3x2l(node,lmap3,2),
+         mv2x3l(node,lmap2,3),
+         mv2x2l(node,lmap2,2),
+         mv3x3l(node,lmap3,3);
       // fill multivectors with ones
       mv3x2l.putScalar(ScalarTraits<Scalar>::one());
       mv2x3l.putScalar(ScalarTraits<Scalar>::one());
@@ -341,10 +349,10 @@ namespace {
     {
       ArrayView<Scalar> tmvView(Teuchos::null), sdmView(Teuchos::null);
       Teuchos_Ordinal stride;
-      MV tmv3x2(lmap3,2),
-         tmv2x3(lmap2,3),
-         tmv2x2(lmap2,2),
-         tmv3x3(lmap3,3);
+      MV tmv3x2(node,lmap3,2),
+         tmv2x3(node,lmap2,3),
+         tmv2x2(node,lmap2,2),
+         tmv3x3(node,lmap3,3);
       // setup serial dense matrices 
       tmv3x2.extractView1D(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvView.getRawPtr(),stride,3,2);
       tmv2x3.extractView1D(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm2x3(View,tmvView.getRawPtr(),stride,2,3);
@@ -380,13 +388,13 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      MV mv3nx2(map3n,2),
-         mv3nx3(map3n,3),
+      MV mv3nx2(node,map3n,2),
+         mv3nx3(node,map3n,3),
          // locals
-         mv2x2(lmap2,2),
-         mv2x3(lmap2,3),
-         mv3x2(lmap3,2),
-         mv3x3(lmap3,3);
+         mv2x2(node,lmap2,2),
+         mv2x3(node,lmap2,3),
+         mv3x2(node,lmap3,2),
+         mv3x3(node,lmap3,3);
       // fill multivectors with ones
       mv3nx3.putScalar(ScalarTraits<Scalar>::one());
       mv3nx2.putScalar(ScalarTraits<Scalar>::one());
@@ -416,10 +424,11 @@ namespace {
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
     // A[i].size() >= MyLength
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -433,10 +442,10 @@ namespace {
     arrOfarr[0] = values(0,2);
     arrOfarr[1] = values(2,2);
     // arrOfarr.size() == 0
-    TEST_THROW(MV mvec(map2,emptyArr(),0), std::runtime_error);
+    TEST_THROW(MV mvec(node,map2,emptyArr(),0), std::runtime_error);
 #ifdef HAVE_TPETRA_DEBUG
     // individual ArrayViews could be too small
-    TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
+    TEST_THROW(MV mvec(node,map3,arrOfarr(),2), std::runtime_error);
 #endif
   }
 
@@ -444,19 +453,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadDot, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    typedef Tpetra::Vector<Scalar,Ordinal> V;
-    // create a comm  
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     Map<Ordinal> map1(INVALID,1,indexBase,comm),
                  map2(INVALID,2,indexBase,comm);
     {
-      MV mv12(map1,1),
-         mv21(map2,1),
-         mv22(map2,2);
+      MV mv12(node,map1,1),
+         mv21(node,map2,1),
+         mv22(node,map2,2);
       Array<Scalar> dots(2);
       // incompatible maps
       TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
@@ -468,8 +478,8 @@ namespace {
 #endif
     }
     {
-      V v1(map1),
-        v2(map2);
+      V v1(node,map1),
+        v2(node,map2);
       // incompatible maps
       TEST_THROW(v1.dot(v2),std::runtime_error);
       TEST_THROW(v2.dot(v1),std::runtime_error);
@@ -487,12 +497,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OrthoDot, Ordinal, Scalar )
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
     const Mag M0 = ScalarTraits<Mag>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -510,8 +521,8 @@ namespace {
     values[2] = as<Scalar>(1);
     values[3] = as<Scalar>(0);
     values[4] = as<Scalar>(1);
-    MV mvec1(map,values(0,4),2,numVectors),
-       mvec2(map,values(1,4),2,numVectors);
+    MV mvec1(node,map,values(0,4),2,numVectors),
+       mvec2(node,map,values(1,4),2,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), zeros(numVectors);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Scalar>::zero());
     mvec1.dot(mvec2,dots1());
@@ -526,11 +537,12 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, ZeroScaleUpdate, Ordinal, Scalar )
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Mag M0 = ScalarTraits<Mag>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -553,8 +565,8 @@ namespace {
     values[3] = as<Scalar>(2);
     values[4] = as<Scalar>(4);
     values[5] = as<Scalar>(4);
-    MV A(map,values(0,4),LDA,numVectors),
-       B(map,values(2,4),LDA,numVectors);
+    MV A(node,map,values(0,4),LDA,numVectors),
+       B(node,map,values(2,4),LDA,numVectors);
     Array<Mag> norms(numVectors), zeros(numVectors);
     std::fill(zeros.begin(),zeros.end(),M0);
     //
@@ -587,7 +599,7 @@ namespace {
     //   set C random
     //   set it to zero by combination with A,B
     {
-      MV C(map,numVectors);
+      MV C(node,map,numVectors);
       C.random();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       C.norm2(norms);
@@ -597,7 +609,7 @@ namespace {
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
     {
-      MV C(map,numVectors);
+      MV C(node,map,numVectors);
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       C.norm2(norms);
@@ -610,11 +622,12 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, ZeroScaleUpdate, Ordinal, Scalar )
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::Vector<Scalar,Ordinal> V;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Mag M0 = ScalarTraits<Mag>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map(INVALID,2,0,comm);
     Array<Scalar> values(6);
@@ -631,8 +644,8 @@ namespace {
     values[1] = as<Scalar>(1);
     values[2] = as<Scalar>(2);
     values[3] = as<Scalar>(2);
-    V A(map,values(0,2)),
-      B(map,values(2,2));
+    V A(node,map,values(0,2)),
+      B(node,map,values(2,2));
     Mag norm;
     Array<Mag> norms(1);
     //
@@ -692,19 +705,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConst, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
     const Teuchos_Ordinal numVectors = 2;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
-    MV morig(map,numVectors);
+    MV morig(node,map,numVectors);
     morig.random();
     // copy it
     MV mcopy1(morig), mcopy2(morig);
@@ -738,18 +752,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, CopyConst, Ordinal, Scalar )
   {
-    typedef Tpetra::Vector<Scalar,Ordinal> V;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map(INVALID,2,0,comm);
     // create random MV
-    V morig(map);
+    V morig(node,map);
     morig.random();
     // copy it
-    V mcopy1(morig), mcopy2(morig);
+    V mcopy1(node,morig), mcopy2(node,morig);
     // verify that all three have identical values
     Magnitude norig, ncopy1, ncopy2;
     norig = morig.normInf();
@@ -780,20 +795,21 @@ namespace {
     // error turned out to be a neglected return in both implementations of update(), 
     // after passing to buck to scale() in the case of alpha==0 or beta==0 or gamma=0
     if (ScalarTraits<Scalar>::isOrdinal) return;
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Magnitude M1  = ScalarTraits<Magnitude>::one();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 10;
     const Teuchos_Ordinal numVectors = 6;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
-    MV mv(map,numVectors);
+    MV mv(node,map,numVectors);
     mv.random();
     // compute the norms
     Array<Magnitude> norms(numVectors);
@@ -832,13 +848,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountDot, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -855,8 +872,8 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec1(map,values(),2,numVectors),
-       mvec2(map,values(),2,numVectors);
+    MV mvec1(node,map,values(),2,numVectors),
+       mvec2(node,map,values(),2,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -874,13 +891,14 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountDotNonTrivLDA, Ordinal, Scalar )
   {
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -905,8 +923,8 @@ namespace {
     values[6] = as<Scalar>(2);
     values[7] = as<Scalar>(2);
     values[8] = as<Scalar>(-1);
-    MV mvec1(map,values(),LDA,numVectors),
-       mvec2(map,values(),LDA,numVectors);
+    MV mvec1(node,map,values(),LDA,numVectors),
+       mvec2(node,map,values(),LDA,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -923,13 +941,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountNorm1, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -946,7 +965,7 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(map,values(),2,numVectors);
+    MV mvec(node,map,values(),2,numVectors);
     Array<MT> norms(numVectors), answer(numVectors);
     answer[0] = as<MT>(0);
     answer[1] = as<MT>(2*numImages);
@@ -961,12 +980,13 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountNormInf, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -983,7 +1003,7 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(map,values(),2,numVectors);
+    MV mvec(node,map,values(),2,numVectors);
     Array<MT> norms(numVectors), answer(numVectors);
     answer[0] = as<MT>(0);
     answer[1] = as<MT>(1);
@@ -998,18 +1018,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Norm2, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
     const Ordinal numVectors = 2;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    MV mvec(map,2,numVectors);
+    MV mvec(node,map,2,numVectors);
     // randomize the multivector
     mvec.random();
     // take norms; they should not be zero
@@ -1032,14 +1053,15 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MinMaxMean, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     const MT M0 = ScalarTraits<MT>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal numLocal = 2;
@@ -1061,7 +1083,7 @@ namespace {
     values[1] = as<Scalar>(myImageID+1);
     values[2] = as<Scalar>(numImages-myImageID);
     values[3] = as<Scalar>(numImages-myImageID-1);
-    MV mvec(map,values(),LDA,numVectors);
+    MV mvec(node,map,values(),LDA,numVectors);
   }
 
 
@@ -1072,12 +1094,13 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadCombinations, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Scalar rnd = ScalarTraits<Scalar>::random();
@@ -1087,7 +1110,7 @@ namespace {
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns
-    MV m1n1(map1,1), m1n2(map1,2), m2n2(map2,2), m1n2_2(map1,2);
+    MV m1n1(node,map1,1), m1n2(node,map1,2), m2n2(node,map2,2), m1n2_2(node,map1,2);
     Array<Scalar> dots(1);
     Array<Mag>    norms(1);
     // FINISH: test multiply (both), reciprocalMultiply

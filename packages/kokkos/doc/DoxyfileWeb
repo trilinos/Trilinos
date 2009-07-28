@@ -42,8 +42,8 @@
 
 PROJECT_NAME           = Kokkos
 
-INPUT                  = ../src index.doc
+INPUT                  = ../src ../NodeAPI ../LinAlg index.doc
 
-EXAMPLE_PATH           = ../example
+# EXAMPLE_PATH           = ../example
 
 GENERATE_TAGFILE       = ../../common/tag_files/kokkos.tag
