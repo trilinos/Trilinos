@@ -136,7 +136,7 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
   // Verify that all inputPoints are in the reference cell
   /*
    TEST_FOR_EXCEPTION( !CellTools<Scalar>::checkPointSetInclusion(inputPoints, cellTopo), std::invalid_argument,
-                       ">>> ERROR: (Intrepid::getValues_HCURL_Args) One or more points are outside the " 
+                       ">>> ERROR: (Intrepid::getValues_HGRAD_Args) One or more points are outside the " 
                        << cellTopo <<" reference cell");
    */
   
@@ -266,13 +266,21 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
   // Check rank of outputValues 
   switch(operatorType) {
     case OPERATOR_VALUE:
-    case OPERATOR_CURL:
       TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
                           ">>> ERROR: (Intrepid::getValues_HCURL_Args) rank = 3 required for outputValues when operator is VALUE or CURL.");
-      
       TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
                           std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension for operator VALUE and CURL.");
+                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
+      break;
+      
+  case OPERATOR_CURL:
+    TEST_FOR_EXCEPTION( !(spaceDim == outputValues.rank() ) ,
+			std::invalid_argument,
+			">>> ERROR: (Intrepid::getValues_HCURL_Args) rank must be same as spatial dimension for outputValues when operator is CURL.");
+    TEST_FOR_EXCEPTION( ( (spaceDim == 3) && !(outputValues.dimension(2) == spaceDim) ),
+                          std::invalid_argument,
+                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
+
       break;
 
     default:

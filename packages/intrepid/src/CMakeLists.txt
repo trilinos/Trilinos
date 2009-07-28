@@ -128,6 +128,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HDIV_TRI_In_FEMDef.hpp
   Discretization/Basis/Intrepid_HDIV_TET_In_FEM.hpp
   Discretization/Basis/Intrepid_HDIV_TET_In_FEMDef.hpp
+  Discretization/Basis/Intrepid_HCURL_TRI_In_FEM.hpp
+  Discretization/Basis/Intrepid_HCURL_TRI_In_FEMDef.hpp
   )
 
 #
