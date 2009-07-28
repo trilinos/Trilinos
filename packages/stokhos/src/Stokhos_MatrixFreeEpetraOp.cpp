@@ -48,8 +48,10 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
     num_blocks(block_ops->size()),
     input_block(num_blocks),
     result_block(num_blocks),
-    tmp()
+    tmp(),
+    tmp2()
 {
+  tmp2 = Teuchos::rcp(new Epetra_MultiVector(*base_map, num_blocks));
 }
 
 Stokhos::MatrixFreeEpetraOp::~MatrixFreeEpetraOp()
@@ -113,24 +115,23 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   //    \sum_{j=0}^P \sum_{k=0}^P J_k v_j < \psi_i \psi_j \psi_k > / <\psi_i^2>
   // for i=0,...,P where P = num_blocks w_j is the jth input block, w_i
   // is the ith result block, and J_k is the kth block operator
-  
-  //Compute K_i*x_k for all i and k.
-  std::vector<Teuchos::RCP<Epetra_MultiVector> > blockProducts(num_blocks);
-  for(int k = 0; k<num_blocks; k++){
-    blockProducts[k] = Teuchos::rcp(new Epetra_MultiVector(*base_map,num_blocks)); 
-    for(int i = 0; i<num_blocks; i++){
-     (*block_ops)[k].Apply(*input_block[i],*(*blockProducts[k])(i));
-    }
-  }
-  
-  double cijk;
-  int i, j;
+  const std::vector<double>& norms = sg_basis->norm_squared();
   for (unsigned int k=0; k<num_blocks; k++) {
-    unsigned int nl = Cijk->num_values(k);
-    for (unsigned int l=0; l<nl; l++) {
-      Cijk->value(k, l, i, j, cijk);
-      cijk /= sg_basis->norm_squared(i);
-      result_block[i]->Update(cijk, *(*blockProducts[k])(j), 1.0);
+    unsigned int nj = Cijk->num_j(k);
+    const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
+    std::vector<double*> j_ptr(nj);
+    for (unsigned int l=0; l<nj; l++)
+      j_ptr[l] = input_block[j_indices[l]]->Values();
+    Epetra_MultiVector input_tmp(View, *base_map, &j_ptr[0], nj);
+    Epetra_MultiVector result_tmp(View, *tmp2, const_cast<int*>(&j_indices[0]), nj);
+    (*block_ops)[k].Apply(input_tmp, result_tmp);
+    for (unsigned int l=0; l<nj; l++) {
+      const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,l);
+      const Teuchos::Array<double>& c_values = Cijk->values(k,l);
+      for (unsigned int i=0; i<i_indices.size(); i++) {
+  	int ii = i_indices[i];
+  	result_block[ii]->Update(c_values[i]/norms[ii], *result_tmp(l), 1.0);
+      }
     }
   }
 

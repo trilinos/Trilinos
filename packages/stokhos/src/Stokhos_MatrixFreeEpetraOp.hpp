@@ -164,6 +164,9 @@ namespace Stokhos {
     //! Temporary multivector
     mutable Teuchos::RCP<Epetra_MultiVector> tmp;
 
+    //! Temporary multivector
+    mutable Teuchos::RCP<Epetra_MultiVector> tmp2;
+
   }; // class MatrixFreeEpetraOp
   
 } // namespace Stokhos

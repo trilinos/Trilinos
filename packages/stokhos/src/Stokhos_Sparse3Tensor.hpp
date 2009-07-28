@@ -68,6 +68,14 @@ namespace Stokhos {
     //! Print tensor
     void print(std::ostream& os) const;
 
+    ordinal_type num_j(ordinal_type k) const;
+    ordinal_type j_index(ordinal_type k, ordinal_type l) const;
+    const Teuchos::Array<ordinal_type>& Jindices(ordinal_type k) const;
+    const Teuchos::Array<ordinal_type>& Iindices(ordinal_type k, 
+						 ordinal_type l) const;
+    const Teuchos::Array<value_type>& values(ordinal_type k, 
+					     ordinal_type l) const;
+
   private:
 
     // Prohibit copying
@@ -86,6 +94,18 @@ namespace Stokhos {
 
     //! values in Cijk for each k
     Teuchos::Array< Teuchos::Array<value_type> > Cijk_values;
+
+    struct JValues {
+      Teuchos::Array<value_type> c_values;
+      Teuchos::Array<ordinal_type> i_indices;
+      ordinal_type j;
+    };
+
+    //! i-indices in Cijk for each k
+    Teuchos::Array< Teuchos::Array<JValues> > j_values;
+
+    //! j-indices in Cijk for each k
+    Teuchos::Array< Teuchos::Array<ordinal_type> > j_indices2;
 
   }; // class Sparse3Tensor
 
