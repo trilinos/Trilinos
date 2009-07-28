@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   double h = 1.0/nelem;
   double alpha = 1.0;
   double leftBC = 0.0;
-  double rightBC = 0.0;
+  double rightBC = 0.1;
   int maxNewtonIters = 10;
 
   try {
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     stepperList.set("Continuation Parameter", "Exponential Source Function Nonlinear Factor");
     stepperList.set("Initial Value", alpha);
     stepperList.set("Max Value", 10.0);
-    stepperList.set("Min Value", -10.0);
+    stepperList.set("Min Value", 0.1);
     stepperList.set("Max Steps", 500);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParams->sublist("Step Size");
-    stepSizeList.set("Initial Step Size", -0.1);
+    stepSizeList.set("Initial Step Size", 0.1);
     stepSizeList.set("Min Step Size", 1.0e-3);
     stepSizeList.set("Max Step Size", 10.0);
     stepSizeList.set("Aggressiveness", 0.5);
