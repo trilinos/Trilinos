@@ -128,14 +128,14 @@ extern int Zoltan_Build_Graph_Set_Param(char *, char *);
 
 extern int Zoltan_Build_Graph(ZZ *zz, int *graph_type, int check_graph,
        int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-       int obj_wgt_dim, int edge_wgt_dim,
+       int obj_wgt_dim, int * edge_wgt_dim,
        indextype **vtxdist, indextype **xadj, indextype **adjncy, float **ewgts,
        int **adjproc);
 
 extern int Zoltan_Symmetrize_Graph(
     const ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-    int obj_wgt_dim, int edge_wgt_dim,
+    int obj_wgt_dim, int *edge_wgt_dim,
     indextype ** vtxdist, indextype **xadj, indextype **adjncy,
     float **ewgts, int **adjproc);
 

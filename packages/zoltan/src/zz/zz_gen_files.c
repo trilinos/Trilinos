@@ -120,7 +120,7 @@ int gen_geom, int gen_graph, int gen_hg)
     int graph_type = 0;
     /* Build (ParMetis) graph data structures. */
     error = Zoltan_Build_Graph(zz, &graph_type, 1, num_obj,
-           global_ids, local_ids, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim,
+           global_ids, local_ids, zz->Obj_Weight_Dim, &zz->Edge_Weight_Dim,
            &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
     if (error != ZOLTAN_OK && error != ZOLTAN_WARN){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_Build_Graph returned error.");

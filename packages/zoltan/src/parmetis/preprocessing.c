@@ -183,7 +183,7 @@ int Zoltan_Preprocess_Graph(
 
   /* Build Graph for third party library data structures, or just get vtxdist. */
   ierr = Zoltan_Build_Graph(zz, &gr->graph_type, gr->check_graph, gr->num_obj,
-			    *global_ids, *local_ids, gr->obj_wgt_dim, gr->edge_wgt_dim,
+			    *global_ids, *local_ids, gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			    &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");

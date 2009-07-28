@@ -36,26 +36,55 @@ extern "C" {
 typedef struct Zoltan_Arcs_ {
   indextype src;
   indextype tgt;
+  int wgtoff;             /* Used to have a reference in wgttab */
 } Zoltan_Arcs;
 
-typedef struct Zoltan_Weighted_Arcs_ {
-  Zoltan_Arcs arc;
-  float       wgt;
-} Zoltan_Weighted_Arcs;
 
+  /* Definition of the merge wgt operator : arguments are accumulation wgt, partial wgt, wgt dim */
+  /* Return !0 when an error is found */
+typedef int(*WgtFctPtr)(float*, float*, int);
+
+
+/* This function compare if the wgt are the same for both arcs*/
+int
+wgtFctCmp(float* current, float* new, int dim)
+{
+  int i; int diff;
+
+  for (i = 0, diff=0 ; (i <dim)&&(!diff) ; ++i) {
+    diff |= (new[i] != current[i]);
+  }
+  return (diff);
+}
+
+/* This function adds the weights */
+int
+wgtFctAdd(float* current, float* new, int dim)
+{
+  int i;
+  for (i = 0 ; i <dim ; ++i) {
+    current[i] += new[i];
+  }
+  return (0);
+}
+
+/* This function chooses the maximum weight */ 
+int
+wgtFctMax(float* current, float* new, int dim)
+{
+  int i;
+  for (i = 0 ; i <dim ; ++i) {
+    current[i] = MAX(current[i],new[i]);
+  }
+  return (0);
+}
 
 inline int
-compar_unweighted(const Zoltan_Arcs* arc1, const Zoltan_Arcs* arc2)
+compar_arc(const Zoltan_Arcs* arc1, const Zoltan_Arcs* arc2)
 {
   if (arc1->src == arc2->src)
     return (arc1->tgt - arc2->tgt);
   return (arc1->src - arc2->src);
-}
-
-inline int
-compar_weighted(const Zoltan_Weighted_Arcs* arc1, const Zoltan_Weighted_Arcs* arc2)
-{
-  return compar_unweighted(&arc1->arc, &arc2->arc);
 }
 
 
@@ -103,10 +132,10 @@ give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
   */
 
 inline void
-add_edge(indextype src, indextype tgt, float wgt,
-	 Zoltan_Arcs* sndarctab, Zoltan_Weighted_Arcs *sndarcwgttab, int* proctab,
-	 Zoltan_Arcs* rcvarctab, Zoltan_Weighted_Arcs *rcvarcwgttab,
-	 int *cursersnd, int* curserrcv, Zoltan_Arcs **hashtab, int nnz_loc,
+add_edge(indextype src, indextype tgt, float *wgt, int wgt_dim, WgtFctPtr wgtfct,
+	 Zoltan_Arcs* sndarctab, float *sndarcwgttab,
+	 int* proctab, Zoltan_Arcs* rcvarctab, float *rcvarcwgttab,
+	 int *cursersnd, int* curserrcv, int *hashtab, int nnz_loc,
 	 const indextype *vtxdist, int procnum, int myproc)
 {
     unsigned int hash;
@@ -116,43 +145,37 @@ add_edge(indextype src, indextype tgt, float wgt,
     couple[0] = src; couple [1] = tgt;
 
     for (i = 0; i < 2 ; ++i) {
+      int hashnum;
       hash = Zoltan_Hash((ZOLTAN_ID_PTR)couple, 2, 2*nnz_loc);
       if (hash < 0) return;
 
-      while((hashtab[hash] != NULL) && ((hashtab[hash]->src != couple[0])
-	    || (hashtab[hash]->tgt != couple[1]))){
+      while((hashtab[hash] != 0) && ((rcvarctab[hashtab[hash]].src != couple[0])
+	    || (rcvarctab[hashtab[hash]].tgt != couple[1]))){
 	hash++;
 	if (hash >= 2*nnz_loc)
 	  hash =0;
       }
-      if (hashtab[hash] != NULL) /* If already in the hash table */
+
+      if (hashtab[hash] != 0) { /* If already in the hash table, only check weights */
+	wgtfct(&rcvarcwgttab[hashtab[hash]*wgt_dim], wgt, wgt_dim);
 	return;
-
-      if (rcvarcwgttab != NULL) {
-	rcvarcwgttab[*curserrcv].wgt = wgt;
-	hashtab[hash] = &(rcvarcwgttab[*curserrcv].arc);
       }
-      else {
-	hashtab[hash] = &(rcvarctab[*curserrcv]);
-      }
-
+      hashnum = hashtab[hash] = *curserrcv;
       (*curserrcv)++;
-      hashtab[hash]->src = couple[0];
-      hashtab[hash]->tgt = couple[1];
+      rcvarctab[hashnum].src = couple[0];
+      rcvarctab[hashnum].tgt = couple[1];
+      memcpy (&rcvarcwgttab[hashnum*wgt_dim], wgt, sizeof(float)*wgt_dim);
+      rcvarctab[hashnum].wgtoff = hashnum*wgt_dim; /* Usefull to not have to sort wgt array */
 
       if ((tgt >= vtxdist[myproc]) && (tgt < vtxdist[myproc+1])) {
 	couple[0] = tgt; couple [1] = src;
       }
       else { /* Non local vertex */
-	if (sndarcwgttab != NULL) {
-	  sndarcwgttab[*cursersnd].arc.src = tgt;
-	  sndarcwgttab[*cursersnd].arc.tgt = src;
-	  sndarcwgttab[*cursersnd].wgt = wgt;
-	}
-	else {
-	  sndarctab[*cursersnd].src = tgt;
-	  sndarctab[*cursersnd].tgt = src;
-	}
+	sndarctab[*cursersnd].src = tgt;
+	sndarctab[*cursersnd].tgt = src;
+	sndarctab[*cursersnd].wgtoff = 0;
+
+	memcpy (&sndarcwgttab[(*cursersnd)*wgt_dim], wgt, sizeof(float)*wgt_dim);
 	proctab[*cursersnd]=procnum;
 	(*cursersnd)++;
 	break;
@@ -173,7 +196,7 @@ add_edge(indextype src, indextype tgt, float wgt,
 int Zoltan_Symmetrize_Graph(
     const ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-    int obj_wgt_dim, int edge_wgt_dim,
+    int obj_wgt_dim, int * edge_wgt_dim,
     indextype ** vtxdist, indextype **xadj, indextype **adjncy,
     float **ewgts, int **adjproc)
 {
@@ -183,15 +206,19 @@ int Zoltan_Symmetrize_Graph(
   int nnz_loc;
   int numProc, myproc, currentproc;
   Zoltan_Arcs *sndarctab = NULL, *rcvarctab = NULL;
-  Zoltan_Weighted_Arcs *sndarcwgttab = NULL, *rcvarcwgttab = NULL;
   int cursersnd, curserrcv;
-  Zoltan_Arcs **hashtab;
+  int *hashtab;
   int *proctab;
   int rcvsize = 0;
   indextype prevsrc, prevtgt, currentvtx;
   int currentedge;
   int edge;
-
+  WgtFctPtr edgeWgt = &wgtFctAdd;
+  float *sndarcwgttab = NULL, *rcvarcwgttab = NULL;
+  float baseWgt = 1;
+  int msgtag = 8161982;
+  int base_wgt_dim = *edge_wgt_dim;
+  int new_wgt_dim;
 
   MPI_Comm comm = zz->Communicator;
   ZOLTAN_COMM_OBJ *comm_plan;
@@ -205,44 +232,33 @@ int Zoltan_Symmetrize_Graph(
   myproc = zz->Proc;
 
   nnz_loc = (*xadj)[num_obj];
-
-  hashtab = (Zoltan_Arcs**)ZOLTAN_MALLOC(2*nnz_loc*sizeof(Zoltan_Arcs*));
-  if (edge_wgt_dim == 1){
-    sndarcwgttab = (Zoltan_Weighted_Arcs*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(Zoltan_Weighted_Arcs));
-    rcvarcwgttab = (Zoltan_Weighted_Arcs*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(Zoltan_Weighted_Arcs));
-  }
-  else {
-    sndarctab = (Zoltan_Arcs*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(Zoltan_Arcs));
-    rcvarctab = (Zoltan_Arcs*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(Zoltan_Arcs));
-  }
+  new_wgt_dim = (base_wgt_dim>0)?base_wgt_dim:1;
+  *edge_wgt_dim = new_wgt_dim;
+  hashtab = (int*)ZOLTAN_CALLOC(2*nnz_loc, sizeof(int));
+  sndarctab = (Zoltan_Arcs*)ZOLTAN_MALLOC(nnz_loc*sizeof(Zoltan_Arcs));
+  sndarcwgttab = (float*)ZOLTAN_MALLOC(nnz_loc*sizeof(float)*new_wgt_dim);
+  rcvarctab = (Zoltan_Arcs*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(Zoltan_Arcs));
+  rcvarcwgttab = (float*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(float)*new_wgt_dim);
   proctab = (int*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(int));
 
-  if ((nnz_loc >0 ) && (hashtab == NULL ||
-      (sndarcwgttab == NULL && sndarctab == NULL) || (rcvarcwgttab == NULL && rcvarctab == NULL)
-      || proctab == NULL)) {
-    ZOLTAN_FREE(&proctab);
-    ZOLTAN_FREE(&rcvarctab);
-    ZOLTAN_FREE(&rcvarcwgttab);
-    ZOLTAN_FREE(&sndarctab);
-    ZOLTAN_FREE(&sndarcwgttab);
-    ZOLTAN_FREE(&hashtab);
+  if ((nnz_loc >0 ) && (hashtab == NULL || sndarctab == NULL || rcvarctab == NULL
+			|| proctab == NULL || sndarcwgttab == NULL || rcvarcwgttab == NULL)) {
     ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory");
-    return (ZOLTAN_MEMERR);
+    ierr = ZOLTAN_MEMERR;
+    goto End;
   }
-
-  for (edgenum = 0 ; edgenum < 2*nnz_loc ; edgenum++)
-   hashtab[edgenum] = NULL;
 
 
   /* Construct a locally symmetrized graph */
   for (vertsrc = 0, curserrcv=0, cursersnd =0 ; vertsrc < num_obj ; vertsrc ++) { /* For all vertices */
     for (edgenum = (*xadj)[vertsrc] ; edgenum < (*xadj)[vertsrc+1] ; ++edgenum) { /* For all neighbors */
-      float wgt = 0;
+      float * wgt = NULL;
 
-      if (edge_wgt_dim == 1) {
-	wgt = *ewgts[edgenum];
-      }
-      add_edge(vertsrc + (*vtxdist)[myproc], (*adjncy)[edgenum], wgt,
+      if (base_wgt_dim != 0)
+	wgt = &((*ewgts)[edgenum*new_wgt_dim]);
+      else wgt = &baseWgt;
+
+      add_edge(vertsrc + (*vtxdist)[myproc], (*adjncy)[edgenum], wgt, new_wgt_dim, edgeWgt,
 	       sndarctab, sndarcwgttab, proctab, rcvarctab, rcvarcwgttab,
 	       &cursersnd, &curserrcv, hashtab, nnz_loc, *vtxdist, (*adjproc)[edgenum], myproc);
     }
@@ -256,78 +272,53 @@ int Zoltan_Symmetrize_Graph(
 
   /* Communicate the arcs */
   Zoltan_Comm_Create(&comm_plan, cursersnd, proctab, comm, 6241984, &rcvsize);
+
   rcvsize += curserrcv;
   if ((rcvsize > 0) && (rcvsize >= 2*nnz_loc)) { /* reception buffer is too small */
-    if (edge_wgt_dim == 1) {
-      rcvarcwgttab = (Zoltan_Weighted_Arcs*)
-	ZOLTAN_REALLOC(rcvarcwgttab, rcvsize*sizeof(Zoltan_Weighted_Arcs));
-    }
-    else {
-      rcvarctab = (Zoltan_Arcs*) ZOLTAN_REALLOC(rcvarctab, rcvsize*sizeof(Zoltan_Arcs));
-    }
-    if ((rcvarcwgttab == NULL && rcvarctab == NULL)) {
+    rcvarctab = (Zoltan_Arcs*) ZOLTAN_REALLOC(rcvarctab, rcvsize*sizeof(Zoltan_Arcs));
+    rcvarcwgttab = (float*) ZOLTAN_REALLOC(rcvarcwgttab, rcvsize*sizeof(float)*new_wgt_dim);
+    if (rcvarctab == NULL) {
       Zoltan_Comm_Destroy (&comm_plan);
-      ZOLTAN_FREE(&proctab);
-      ZOLTAN_FREE(&rcvarctab);
-      ZOLTAN_FREE(&rcvarcwgttab);
-      ZOLTAN_FREE(&sndarctab);
-      ZOLTAN_FREE(&sndarcwgttab);
-      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (2)")
-      return (ZOLTAN_MEMERR);
+      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (2)");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
     }
   }
 
-  if (edge_wgt_dim == 1) {
-    Zoltan_Comm_Do (comm_plan, 8161982, (char*)sndarcwgttab, sizeof(Zoltan_Weighted_Arcs),
-			 (char*)(rcvarcwgttab + curserrcv));
-  }
-  else {
-    Zoltan_Comm_Do (comm_plan, 8161982, (char*)sndarctab, sizeof(Zoltan_Arcs),
-			 (char*)(rcvarctab + curserrcv));
+  Zoltan_Comm_Do (comm_plan, msgtag--, (char*)sndarctab, sizeof(Zoltan_Arcs),
+		  (char*)(rcvarctab + curserrcv));
+  ZOLTAN_FREE(&sndarctab);
+
+  Zoltan_Comm_Do_Post (comm_plan, msgtag, (char*)sndarcwgttab, sizeof(float)*new_wgt_dim,
+		  (char*)(rcvarcwgttab + curserrcv));
+
+  for (edge=curserrcv ; edge < rcvsize ; ++edge) { /* Update wgtindex for received data */
+    rcvarctab[edge].wgtoff = edge*new_wgt_dim;
   }
 
-  /* I use blocking communication plan because I can free the send buffer before doing allocations */
-  ZOLTAN_FREE(&sndarctab);
+  Zoltan_Comm_Do_Wait (comm_plan, msgtag, (char*)sndarcwgttab, sizeof(float)*new_wgt_dim,
+		  (char*)(rcvarcwgttab + curserrcv));
+
   ZOLTAN_FREE(&sndarcwgttab);
   ZOLTAN_FREE(&proctab);
   Zoltan_Comm_Destroy (&comm_plan);
 
   if (rcvsize > 0) {
     *adjncy = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
-    if ((*adjncy) == NULL) {
-      ZOLTAN_FREE(&rcvarctab);
-      ZOLTAN_FREE(&rcvarcwgttab);
-      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (3)");
-      return (ZOLTAN_MEMERR);
-    }
     *adjproc = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
-    if ((*adjproc) == NULL) {
-      ZOLTAN_FREE(&rcvarctab);
-      ZOLTAN_FREE(&rcvarcwgttab);
-      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (4)");
-      return (ZOLTAN_MEMERR);
-    }
+    *ewgts = (float*)ZOLTAN_MALLOC(rcvsize*sizeof(float)*new_wgt_dim);
 
-    if (edge_wgt_dim == 1) {
-      *ewgts = (float*)ZOLTAN_MALLOC(rcvsize*sizeof(float));
-      if ((*ewgts) == NULL) {
-	ZOLTAN_FREE(&rcvarctab);
-	ZOLTAN_FREE(&rcvarcwgttab);
-	ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (5)");
-	return (ZOLTAN_MEMERR);
-      }
+    if ((*adjncy) == NULL || (*adjproc) == NULL ||(*ewgts) == NULL) {
+      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (3)");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
     }
   }
 
   /* Sort Edges */
-  if (edge_wgt_dim == 1) {
-    qsort ((void*)rcvarcwgttab, rcvsize, sizeof(Zoltan_Weighted_Arcs),
-	   (int (*)(const void*,const void*)) compar_weighted);
-  }
-  else {
-    qsort ((void*)rcvarctab, rcvsize, sizeof(Zoltan_Arcs),
-	   (int (*)(const void*,const void*))compar_unweighted);
-  }
+  qsort ((void*)rcvarctab, rcvsize, sizeof(Zoltan_Arcs),
+	 (int (*)(const void*,const void*))compar_arc);
+
 
   /* Now I only need to copy these informations in the edge array and to recompute
      the indirection array */
@@ -335,12 +326,7 @@ int Zoltan_Symmetrize_Graph(
   (*xadj)[0] = 0; currentedge = 0; currentvtx=1;
   currentproc = 0;
   for (edge = 0 ; edge < rcvsize ; ++ edge) {
-    Zoltan_Arcs *arc;
-
-    if (edge_wgt_dim == 1)
-      arc = &(rcvarcwgttab[edge].arc);
-    else
-      arc = &(rcvarctab[edge]);
+    Zoltan_Arcs *arc = &(rcvarctab[edge]);
 
     if (arc->src != prevsrc) {
 #ifdef CC_DEBUG
@@ -354,25 +340,42 @@ int Zoltan_Symmetrize_Graph(
       currentproc = 0;                /* Reset procid for searching ownership */
     }
     else { /* If the same src vertex, check if it's the same edge */
-      if (prevtgt == arc->tgt)
+      if (prevtgt == arc->tgt) {
+	(*edgeWgt)(&((*ewgts)[(currentedge-1)*new_wgt_dim]), &rcvarcwgttab[arc->wgtoff], new_wgt_dim);
 	continue;
+      }
     }
 
     prevtgt = arc->tgt;
     (*adjncy)[currentedge] = arc->tgt;
     (*adjproc)[currentedge] = give_proc(arc->tgt, *vtxdist, numProc, &currentproc);
-    if (edge_wgt_dim == 1)
-      (*ewgts)[currentedge] = rcvarcwgttab[edge].wgt;
+    memcpy(&(*ewgts)[currentedge*new_wgt_dim], &rcvarcwgttab[arc->wgtoff], new_wgt_dim*sizeof(float));
 
     currentedge++;
   }
   (*xadj)[num_obj] = currentedge;
 
+  /* Realloc arrays that are probably too big to be memory more efficient */
+  if (rcvsize > 0) {
+    (*adjncy) = (indextype*) ZOLTAN_REALLOC((*adjncy), currentedge*sizeof(indextype));
+    (*adjproc) = (int*)  ZOLTAN_REALLOC((*adjproc), currentedge*sizeof(int));
+    (*ewgts) = (float*) ZOLTAN_REALLOC((*ewgts), currentedge*sizeof(float)*new_wgt_dim);
 
-  /* TODO: Add Realloc to be memory more efficient */
+    if ((*adjncy) == NULL || (*adjproc) == NULL ||(*ewgts) == NULL) {
+      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (4)");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+  }
 
+End:
+  ZOLTAN_FREE(&proctab);
   ZOLTAN_FREE(&rcvarctab);
   ZOLTAN_FREE(&rcvarcwgttab);
+  ZOLTAN_FREE(&sndarctab);
+  ZOLTAN_FREE(&sndarcwgttab);
+  ZOLTAN_FREE(&hashtab);
+
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 

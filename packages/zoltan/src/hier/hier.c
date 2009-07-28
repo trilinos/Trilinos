@@ -447,7 +447,7 @@ int Zoltan_Hier(
   ierr = Zoltan_Build_Graph(zz, &graph_type,
 			    hpp.checks, hpp.init_num_obj,
 			    hpp.global_ids, hpp.local_ids,
-			    hpp.obj_wgt_dim, hpp.edge_wgt_dim,
+			    hpp.obj_wgt_dim, &hpp.edge_wgt_dim,
 			    &hpp.vtxdist, &hpp.xadj, &adjncy_indextype,
 			    &hpp.ewgts, &hpp.adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){

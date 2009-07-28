@@ -56,7 +56,7 @@ int Zoltan_Build_Graph_NoComm(
 int Zoltan_Build_Graph(
     ZZ *zz, int *graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
-    int obj_wgt_dim, int edge_wgt_dim,
+    int obj_wgt_dim, int* edge_wgt_dim,
     indextype **vtxdist, indextype **xadj, indextype **adjncy,
     float **ewgts, int **adjproc)
 {
@@ -98,14 +98,14 @@ int Zoltan_Build_Graph(
   if ((*graph_type)&(1<<TRY_FAST)) /* Try to construct the graph without any communication */
     ierr = Zoltan_Build_Graph_NoComm(zz, *graph_type, check_graph, num_obj,
 				     global_ids, local_ids,
-				     obj_wgt_dim, edge_wgt_dim,
+				     obj_wgt_dim, *edge_wgt_dim,
 				     vtxdist, xadj, adjncy, ewgts, adjproc, &success);
 
   if ((*graph_type)&(1<<UNSYMMETRIC)) {
     if (!success) /* If the graph is not built yet */
       ierr = Zoltan_Build_Graph_Cedric(zz, *graph_type, check_graph, num_obj,
 				       global_ids, local_ids,
-				       obj_wgt_dim, edge_wgt_dim,
+				       obj_wgt_dim, *edge_wgt_dim,
 				       vtxdist, xadj, adjncy, ewgts, adjproc, &success);
 
     if ((success) && ((*graph_type)&(1<<SYMMETRIZE))) /* Symmetrize the graph, A+At way */
@@ -117,7 +117,7 @@ int Zoltan_Build_Graph(
   else if (!success)
       ierr = Zoltan_Build_Graph_Erik(zz, *graph_type, check_graph, num_obj,
 				     global_ids, local_ids,
-				     obj_wgt_dim, edge_wgt_dim,
+				     obj_wgt_dim, *edge_wgt_dim,
 				     vtxdist, xadj, adjncy, ewgts, adjproc);
 
   return (ierr);

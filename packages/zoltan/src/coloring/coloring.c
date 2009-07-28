@@ -263,7 +263,7 @@ int Zoltan_Color(
 
   /* Build ParMetis data structures, or just get vtxdist. */
   ierr = Zoltan_Build_Graph(zz, &graph_type, check_graph, nvtx,
-         global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
+         global_ids, local_ids, obj_wgt_dim, &edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned error.");
