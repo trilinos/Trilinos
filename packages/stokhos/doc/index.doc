@@ -1,4 +1,4 @@
-/*! \mainpage Trilinos/packages/stokhos
+/*! \mainpage Stokhos:  Stochastic Galerkin Uncertainty Quantification Methods
 \htmlonly
 \endhtmlonly
 
@@ -11,27 +11,24 @@
 </ul>
 
 \section stokhos_intro Introduction 
-The Trilinos/packages/stokhos package was created as a tool for developers
-wishing to utilize the Autotools configure/build process for a new or existing
-package.  Before beginning this process, approval must be obtained from the
-Trilinos Project Leader.
-
-See packages/stokhos/README for more details
+Stokhos is a Trilinos package for applying intrusive stochastic Galerkin
+uncertainty quantification methods to nonlinear dynamical systems, primarily
+stochastic partial differential equations.
 
 \section stokhos_startup Overview of stokhos
 
-stokhos contains two classes:
+Stokhos provides three types of capabilities
 
 <ul> 
 
-<li> Stokhos_Hello 
-<li> Stokhos_Jambo (only if configured with --enable-newp_swahili)
-
+<li> Classes for generating stochastic residual coefficients using 
+automatic differentiation with Sacado:  Stokhos::OrthogPolyExpansion 
+<li> Classes for forming and solving stochastic Galerkin linear systems:
+Stokhos::MatrixFreeEpetraOp
+<li> Classes for providing a nonlinear interface to nonlinear stochastic
+Galerkin problems:  Stokhos::SGModelEvaluator.
 
 </ul>
-
-This documentations should not be taken as a guide.  I made it work
-with doxygen and illustrated one or two features.  Nothing more.
 
 \section stokhos_browser Browse all of stokhos as a single doxygen collection
 
