@@ -274,3 +274,26 @@ Stokhos::operator << (std::ostream& os,
   os << "]\n";
   return os;
 }
+
+template <typename ordinal_type, typename value_type> 
+template <typename BasisT>
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+mean(const BasisT& basis) const
+{
+  return coeff_[0];
+}
+
+template <typename ordinal_type, typename value_type> 
+template <typename BasisT>
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+standard_deviation(const BasisT& basis) const
+{
+  value_type std_dev = 0.0;
+  for (ordinal_type i=1; i<static_cast<ordinal_type>(coeff_.size()); i++) {
+    std_dev += coeff_[i]*coeff_[i]*basis.norm_squared(i);
+  }
+  std_dev = std::sqrt(std_dev);
+  return std_dev;
+}

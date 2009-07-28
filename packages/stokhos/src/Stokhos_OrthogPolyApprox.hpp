@@ -136,6 +136,14 @@ namespace Stokhos {
     template <typename BasisT>
     std::ostream& print(const BasisT& basis, std::ostream& os) const;
 
+    template <typename BasisT>
+    value_type mean(const BasisT& basis) const;
+
+    template <typename BasisT>
+    value_type standard_deviation(const BasisT& basis) const;
+
+    
+
   protected:
 
     //! OrthogPolyApprox coefficients
