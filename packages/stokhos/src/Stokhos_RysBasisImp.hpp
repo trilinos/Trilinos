@@ -311,7 +311,7 @@ expectedValue_tJ_nsquared(const ordinal_type& order) const
   }
   value_type integral = cc_rule[0];
   for (ordinal_type i=1; i<=2*p; i++){
-    integral = integral + (2*cc_rule[i]/(1-4*pow(i,2)));
+    integral = integral + (2*cc_rule[i]/(1-4*pow(i,2.0)));
   }
   integral = pow(c,2)*integral;
   return integral;
@@ -331,7 +331,7 @@ expectedValue_J_nsquared(const ordinal_type& order) const
   value_type N = 2*value_type_p;
   for (ordinal_type k=0; k<=2*p; k++) {
     cc_rule[k] = (1/N)*(pow(this->evaluateBasesOrder_p(c,order),2)*this->evaluateWeight(c) + pow(this->evaluateBasesOrder_p(-c,order),2)*this->evaluateWeight(-c));
-    cc_rule[k] = cc_rule[k] + (2/N)*pow(-1,k)*pow(this->evaluateBasesOrder_p(0,order),2)*this->evaluateWeight(0);
+    cc_rule[k] = cc_rule[k] + (2/N)*pow(-1.0,k)*pow(this->evaluateBasesOrder_p(0,order),2)*this->evaluateWeight(0);
   }
   for (ordinal_type k=0; k<=2*p; k++) {
     for (ordinal_type n=1; n<p; n++) {
@@ -340,7 +340,7 @@ expectedValue_J_nsquared(const ordinal_type& order) const
   }
   value_type integral = cc_rule[0];
   for (ordinal_type i=1; i<=2*p; i++){
-    integral = integral + (2*cc_rule[i]/(1-4*pow(i,2)));
+    integral = integral + (2*cc_rule[i]/(1-4*pow(i,2.0)));
   }
   integral = c*integral;
   return integral;
@@ -358,7 +358,7 @@ eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const
   value_type N = 2*value_type_p;
   for (ordinal_type k=0; k<=2*p; k++) {
     cc_rule[k] = (1/N)*(this->evaluateBasesOrder_p(c,order1)*this->evaluateBasesOrder_p(c,order2)*this->evaluateWeight(c) + this->evaluateBasesOrder_p(-c,order1)*this->evaluateBasesOrder_p(-c,order2)*this->evaluateWeight(-c));
-    cc_rule[k] = cc_rule[k] + (2/N)*pow(-1,k)*this->evaluateBasesOrder_p(0,order1)*this->evaluateBasesOrder_p(0,order2)*this->evaluateWeight(0);
+    cc_rule[k] = cc_rule[k] + (2/N)*pow(-1.0,k)*this->evaluateBasesOrder_p(0,order1)*this->evaluateBasesOrder_p(0,order2)*this->evaluateWeight(0);
   }
   for (ordinal_type k=0; k<=2*p; k++) {
     for (ordinal_type n=1; n<p; n++) {
@@ -367,7 +367,7 @@ eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const
   }
   value_type integral = cc_rule[0];
   for (ordinal_type i=1; i<=2*p; i++){
-    integral = integral + (2*cc_rule[i]/(1-4*pow(i,2)));
+    integral = integral + (2*cc_rule[i]/(1-4*pow(i,2.0)));
   }
   integral = c*integral;
   return integral;
