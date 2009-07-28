@@ -55,6 +55,7 @@
 #include "Stokhos.hpp"
 #include "Stokhos_SGModelEvaluator.hpp"
 #include "Stokhos_SGQuadModelEvaluator.hpp"
+#include "Stokhos_SparseGridQuadrature.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Ifpack.h"
 #include "Teuchos_TimeMonitor.hpp"
@@ -93,7 +94,7 @@ enum SG_METHOD {
 int main(int argc, char *argv[]) {
   unsigned int nelem = 100;
   double h = 1.0/nelem;
-  double alpha = 1.0;
+  double alpha = 2.0;
   double leftBC = 0.0;
   double rightBC = 0.1;
   unsigned int numalpha = 2;
@@ -236,8 +237,8 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
     lsParams.set("Aztec Solver", "GMRES");  
     lsParams.set("Max Iterations", 20);
-    lsParams.set("Size of Krylov Subspace", 10);
-    lsParams.set("Tolerance", 1e-2); 
+    lsParams.set("Size of Krylov Subspace", 20);
+    lsParams.set("Tolerance", 1e-4); 
     lsParams.set("Output Frequency", 50);
     lsParams.set("Preconditioner", "Ifpack");
     lsParams.set("RCM Reordering", "Enabled");
@@ -247,10 +248,18 @@ int main(int argc, char *argv[]) {
     statusParams.set("Test Type", "Combo");
     statusParams.set("Number of Tests", 2);
     statusParams.set("Combo Type", "OR");
-    Teuchos::ParameterList& normF = statusParams.sublist("Test 0");
+    Teuchos::ParameterList& comboParams = statusParams.sublist("Test 0");
+    comboParams.set("Test Type", "Combo");
+    comboParams.set("Number of Tests", 2);
+    comboParams.set("Combo Type", "AND");
+    Teuchos::ParameterList& normF = comboParams.sublist("Test 0");
     normF.set("Test Type", "NormF");
     normF.set("Tolerance", 1e-10);
     normF.set("Scale Type", "Scaled");
+    Teuchos::ParameterList& normWRMS = comboParams.sublist("Test 1");
+    normWRMS.set("Test Type", "NormWRMS");
+    normWRMS.set("Relative Tolerance", 1e-6);
+    normWRMS.set("Absolute Tolerance", 1e-8);
     Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
     maxIters.set("Test Type", "MaxIters");
     maxIters.set("Maximum Iterations", 10);
@@ -293,6 +302,17 @@ int main(int argc, char *argv[]) {
       TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
 
       unsigned int d = numalpha;
+
+      // Source function
+      Teuchos::ParameterList& sourceParams = 
+	problemParams.sublist("Source Function");
+      sourceParams.set("Name", "Multi-Variate Exponential");
+      sourceParams.set("Nonlinear Factor Dimensions", d);
+      for (unsigned int i=0; i<d; i++) {
+	std::stringstream ss;
+	ss << "Nonlinear Factor " << i;
+	sourceParams.set(ss.str(), alpha/d);
+      }
     
       // Create SG basis and expansion
       typedef Stokhos::LegendreBasis<int,double> basis_type;
@@ -307,7 +327,12 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
 	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
 								      quad));
+//      Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
+//	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<int,double>(basis, 
+//								      Stokhos::ForUQTKOrthogPolyExpansion<int,double>::INTEGRATION, 1e-6));
       Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
+
+      std::cout << "sz = " << sz << std::endl;
 
       if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	appParams->set("Enable Stochastic Galerkin", true);
@@ -331,8 +356,10 @@ int main(int argc, char *argv[]) {
       Epetra_LocalMap p_sg_map(d, 0, *Comm);
       for (unsigned int i=0; i<sz; i++)
 	sg_p[0][i] = Teuchos::rcp(new Epetra_Vector(p_sg_map));
-      for (unsigned int i=0; i<d; i++)
+      for (unsigned int i=0; i<d; i++) {
+	(*(sg_p[0][0]))[i] = 2.0;
 	(*(sg_p[0][i+1]))[i] = 1.0;
+      }
       Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
 	Teuchos::rcp(new Teuchos::Array<std::string>);
       for (unsigned int i=0; i<d; i++) {
@@ -381,7 +408,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::RCP<Stokhos::PreconditionerFactory> sg_prec = 
 	  Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
 	sgParams->set("Preconditioner Factory", sg_prec);
-	sgParams->set("Evaluate W with F", true);
+	sgParams->set("Evaluate W with F", false);
       }
       std::vector<int> sg_g_index(1);
       sg_g_index[0] = 0;
@@ -395,7 +422,8 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;
       if (SG_Method != SG_NI) {
 	Teuchos::RCP<Epetra_Operator> M;
-	if (sgParams->get<std::string>("Jacobian Method") == "Matrix Free")
+	std::string jac_method = sgParams->get<std::string>("Jacobian Method");
+	if (jac_method == "Matrix Free")
 	  M = sg_model->create_prec();
 	
 	sg_solver = Teuchos::rcp(new FEApp::NOXSolver(appParams, sg_model, M));
@@ -432,6 +460,7 @@ int main(int argc, char *argv[]) {
       	status = Teuchos::rcp_dynamic_cast<FEApp::NOXSolver>(sg_solver)->getSolverStatus();
       if (status == NOX::StatusTest::Converged) 
 	utils.out() << "Test Passed!" << endl;
+
     }
 
     Teuchos::TimeMonitor::summarize(std::cout);
