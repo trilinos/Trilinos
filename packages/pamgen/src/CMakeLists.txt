@@ -14,6 +14,9 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
+SET(PE_HEADERS "")
+SET(PE_SOURCES "")
+
 # Set headers (for IDEs and installing)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -26,6 +29,8 @@ SET(HEADERS ${HEADERS}
 # will know to include this file in the dependency analysis
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/mesh_spec_lt)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/extra_functions)
 
 #
 # Core Files
@@ -107,6 +112,15 @@ APPEND_SET(HEADERS
   ../mesh_spec_lt/mesh_specification.h
   )
 
+APPEND_SET(PE_HEADERS
+  ../mesh_spec_lt/im_exodusII.h
+  ../mesh_spec_lt/im_exodusII_l.h
+  ../mesh_spec_lt/im_exodusII_ext.h
+  ../mesh_spec_lt/im_ne_nemesisI.h
+  ../mesh_spec_lt/im_ne_nemesisI_l.h
+  ../mesh_spec_lt/mesh_specification.h
+  )
+
 APPEND_SET(SOURCES
   ../mesh_spec_lt/im_ex_c_interface.C
   ../mesh_spec_lt/im_ex_c_interface_l.C
@@ -176,6 +190,20 @@ APPEND_SET(SOURCES
   )
 
 #
+# Extra Functions
+#
+APPEND_SET(PE_SOURCES
+  ../extra_functions/pamgen_extras.cpp
+  )
+
+
+APPEND_SET(PE_HEADERS
+  ../extra_functions/pamgen_extras.h
+  )
+
+
+
+#
 # C) Define the targets for package's library(s)
 #
 
@@ -183,6 +211,12 @@ PACKAGE_ADD_LIBRARY(
   pamgen
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  )
+
+PACKAGE_ADD_LIBRARY(
+  pamgen_extras
+  HEADERS ${PE_HEADERS}
+  SOURCES ${PE_SOURCES}
   )
 
 #

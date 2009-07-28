@@ -9,6 +9,7 @@ INCLUDE(AddOptionAndDefine)
 
 PACKAGE(Pamgen)
 
+
 #
 # B) Set up package-specific options
 #
@@ -18,6 +19,7 @@ PACKAGE(Pamgen)
 #
 
 ADD_SUBDIRECTORY(src)
+
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
