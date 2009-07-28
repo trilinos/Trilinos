@@ -2,13 +2,13 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   Platform
-  #Distributor
-  #Map
-  #Directory
-  #ImportExport
+  Map
+  Distributor
+  Directory
+  ImportExport
   #MultiVector
   #BasicPerfTest
-  #Utils
+  Utils
   #CrsGraph
   #CrsMatrix
   )

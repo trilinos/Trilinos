@@ -58,14 +58,10 @@ namespace {
 
   RCP<const Comm<int> > getDefaultComm()
   {
-    RCP<Platform<double> > plat;
     if (testMpi) {
-      plat = DefaultPlatform<double>::getPlatform();
+      DefaultPlatform<double>::getPlatform()->getComm();
     }
-    else {
-      plat = rcp(new Tpetra::SerialPlatform<double>());
-    }
-    return plat->getComm();
+    return rcp(new Teuchos::SerialComm<int>());
   }
 
   //

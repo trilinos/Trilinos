@@ -41,7 +41,7 @@ namespace Tpetra {
     type, if omitted, defaults to the \c LocalOrdinal type.
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class MpiPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal> 
+  class MpiPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal, Node> 
   {
   public:
     //! @name Constructor/Destructor Methods
