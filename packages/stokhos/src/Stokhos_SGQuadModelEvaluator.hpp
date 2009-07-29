@@ -137,6 +137,9 @@ namespace Stokhos {
     //! Response vectors
     Teuchos::Array< Teuchos::RCP<Epetra_Vector> > g_qp;
 
+    //! Response sensitivities
+    Teuchos::Array< Teuchos::Array<EpetraExt::ModelEvaluator::Derivative> > dgdp_qp;
+
   };
 
 }

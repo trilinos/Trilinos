@@ -36,6 +36,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
+#include "EpetraExt_ModelEvaluator.h"
 
 namespace Stokhos {
 
@@ -55,12 +56,34 @@ namespace Stokhos {
     const Epetra_Vector* vec;
   };
 
-  //! Cloner for Epetra_Vector coefficients
+  //! Cloner for Epetra_MultiVector coefficients
+  class EpetraMultiVectorCloner {
+  public:
+    EpetraMultiVectorCloner(const Epetra_BlockMap& map_,
+			    int num_vectors) : 
+      map(&map_), vec(NULL), num_vecs(num_vectors)  {}
+    EpetraMultiVectorCloner(const Epetra_MultiVector& vec_) : 
+      map(NULL), vec(&vec_), num_vecs(vec_.NumVectors()) {}
+    Teuchos::RCP<Epetra_MultiVector> clone(int i) const {
+      if (map) 
+	return Teuchos::rcp(new Epetra_MultiVector(*map, num_vecs));
+      else 
+	return Teuchos::rcp(new Epetra_MultiVector(*vec));
+    }
+  protected:
+    const Epetra_BlockMap* map;
+    const Epetra_MultiVector* vec;
+    int num_vecs;
+  };
+
+  //! Cloner for Epetra_Operator coefficients
   /*!
    * Epetra_Operator's cannot be cloned, thus the definition is empty and
    * will cause a compiler error if a clone is attempted.
    */
   class EpetraOperatorCloner {};
+
+  class EpetraDerivativeCloner {};
 
   //! Cloner for Epetra_CrsMatrix coefficients
   class EpetraCrsMatrixCloner {
@@ -92,6 +115,32 @@ namespace Stokhos {
 
     //! Update vector
     static void update(Epetra_Vector& vec, double a, const Epetra_Vector& x) {
+      vec.Update(a,x,1.0); 
+    }
+
+  };
+
+  //! Specialization of VectorOrthogPolyTraits to Epetra_MultiVector coefficients
+  template <> 
+  class VectorOrthogPolyTraits<Epetra_MultiVector> {
+  public:
+    
+    //! Typename of values
+    typedef double value_type;
+
+    //! Typename of ordinals
+    typedef int ordinal_type;
+
+    //! Typename of cloner
+    typedef EpetraMultiVectorCloner cloner_type;
+
+    //! Initialize vector
+    static void init(Epetra_MultiVector& vec, double val) { 
+      vec.PutScalar(val); }
+
+    //! Update vector
+    static void update(Epetra_MultiVector& vec, double a, 
+		       const Epetra_MultiVector& x) {
       vec.Update(a,x,1.0); 
     }
 
@@ -153,6 +202,35 @@ namespace Stokhos {
       Epetra_CrsMatrix& mat = dynamic_cast<Epetra_CrsMatrix&>(op);
       const Epetra_CrsMatrix& x = dynamic_cast<const Epetra_CrsMatrix&>(x_op);
       VectorOrthogPolyTraits<Epetra_CrsMatrix>::update(mat, a, x);
+    }
+
+  };
+
+  /*! 
+   * Specialization of VectorOrthogPolyTraits to 
+   * EpetraExt::ModelEvaluator::Derivative coefficients.
+   */
+  template <> 
+  class VectorOrthogPolyTraits<EpetraExt::ModelEvaluator::Derivative> {
+  public:
+    
+    //! Typename of values
+    typedef double value_type;
+
+    //! Typename of ordinals
+    typedef int ordinal_type;
+
+    //! Typename of cloner
+    typedef EpetraDerivativeCloner cloner_type;
+
+    //! Initialize vector
+    static void init(EpetraExt::ModelEvaluator::Derivative& vec, double val) {
+      vec.getMultiVector()->PutScalar(val); }
+
+    //! Update vector
+    static void update(EpetraExt::ModelEvaluator::Derivative& vec, double a, 
+		       const EpetraExt::ModelEvaluator::Derivative& x) {
+      vec.getMultiVector()->Update(a,*(x.getMultiVector()),1.0); 
     }
 
   };

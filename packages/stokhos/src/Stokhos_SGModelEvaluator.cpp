@@ -37,6 +37,7 @@
 #endif
 #include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_BlockCrsMatrix.h"
+#include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 #include "Stokhos_MeanEpetraOp.hpp"
 
@@ -72,6 +73,7 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     f_sg_blocks(),
     W_sg_blocks(),
     g_sg_blocks(num_g),
+    dgdp_sg_blocks(num_g),
     jacobianMethod(MATRIX_FREE),
     sg_p_init(num_p),
     eval_W_with_f(false)
@@ -198,6 +200,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
    // responses.
 
    // Create response maps
+   OutArgs me_outargs = me->createOutArgs();
+   int np_sg = me_outargs.Np_sg();
    for (int i=0; i<num_g; i++) {
      Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(sg_g_index[i]);
      sg_g_map[i] = 
@@ -205,11 +209,18 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 							      rowIndex,
 							      *sg_comm));
 
-     // Create p SG blocks
+     // Create g SG blocks
      g_sg_blocks[i] = 
        Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
 
+     // Create dg/dp SG blocks
+     dgdp_sg_blocks[i].resize(np_sg);
+     for (int j=0; j<np_sg; j++)
+       dgdp_sg_blocks[i][j] = 
+	 Teuchos::rcp(new Stokhos::VectorOrthogPoly<Derivative>(sg_basis));
    }
+   
+   
 
    if (supports_x) {
      // Create initial x
@@ -367,9 +378,13 @@ Stokhos::SGModelEvaluator::createOutArgs() const
 
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(me_outargs.Np(), me_outargs.Ng());
-  outArgs.set_Ng_sg(0);
+  outArgs.set_Np_Ng_sg(0, 0);
   outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W));
+  for (int i=0; i<me_outargs.Ng(); i++)
+    for (int j=0; j<me_outargs.Np(); j++)
+      outArgs.setSupports(OUT_ARG_DgDp, i, j, 
+			  me_outargs.supports(OUT_ARG_DgDp, i, j));
   
   return outArgs;
 }
@@ -401,10 +416,14 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       precFactory->compute(W_sg_blocks->getCoeffPtr(0));    
     W_mean->setMeanOperator(prec);
 
-    // We can now quit unless a fill of f or g was also requested
+    // We can now quit unless a fill of f, g, or dg/dp was also requested
     bool done = (f_out == Teuchos::null);
-    for (int i=0; i<outArgs.Ng(); i++)
-      done = (done && (outArgs.get_g(i) == Teuchos::null));
+    for (int i=0; i<outArgs.Ng(); i++) {
+      done = done && (outArgs.get_g(i) == Teuchos::null);
+      for (int j=0; j<outArgs.Np(); j++)
+	if (!outArgs.supports(OUT_ARG_DgDp, i, j).none())
+	done = done && (outArgs.get_DgDp(i,j).isEmpty());
+    }
     if (done)
       return;
   }
@@ -479,20 +498,38 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Pass responses
   for (int i=0; i<outArgs.Ng(); i++) {
-    Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(i);
-    if (g != Teuchos::null) {
-      std::vector<int>::const_iterator it = 
-	std::find(sg_g_index.begin(), sg_g_index.end(), i);
-      if (it != sg_g_index.end()) {
-	int offset = it - sg_g_index.begin();
+    std::vector<int>::const_iterator it = 
+      std::find(sg_g_index.begin(), sg_g_index.end(), i);
+    if (it != sg_g_index.end()) {
+      int offset = it - sg_g_index.begin();
+      Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(i);
+      if (g != Teuchos::null) {
 	EpetraExt::BlockVector g_sg(View, *(me->get_g_map(i)), *g);
 	for (unsigned int j=0; j<num_sg_blocks; j++)
 	  g_sg_blocks[offset]->setCoeffPtr(j, g_sg.GetBlock(j));
 	me_outargs.set_g_sg(offset, g_sg_blocks[offset]);
+
+	// Need to make this general (Row, Col, Op)
+	for (int j=0; j<outArgs.Np(); j++)
+	  if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
+	    Derivative dgdp = outArgs.get_DgDp(i,j);
+	    if (dgdp.getMultiVector() != Teuchos::null) {
+	      EpetraExt::BlockMultiVector dgdp_sg(View, *(me->get_g_map(i)), 
+						  *(dgdp.getMultiVector()));
+	      for (unsigned int k=0; k<num_sg_blocks; k++)
+		dgdp_sg_blocks[offset][j]->setCoeffPtr(k, Teuchos::rcp(new Derivative(dgdp_sg.GetBlock(k))));
+	      me_outargs.set_DgDp_sg(offset, j, dgdp_sg_blocks[offset][j]);
+	    }
+	  }
       }
-      else
-	me_outargs.set_g(i, g);
     }
+    else {
+      me_outargs.set_g(i, outArgs.get_g(i));
+      for (int j=0; j<outArgs.Np(); j++)
+	if (!outArgs.supports(OUT_ARG_DgDp, i, j).none())
+	  me_outargs.set_DgDp(i, j, outArgs.get_DgDp(i,j));
+    }
+    
   }
 
   // Compute the functions

@@ -220,6 +220,9 @@ namespace Stokhos {
     //! g stochastic Galerkin components
     mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > > g_sg_blocks;
 
+    //! dg/dp stochastic Galerkin components
+    mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Derivative> > > > dgdp_sg_blocks;
+
     //! Method for creating block Jacobian
     enum EJacobianMethod {
       MATRIX_FREE,
