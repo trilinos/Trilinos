@@ -66,11 +66,11 @@ else
   (cd src ; $driver --o=$dir/test --I=$fastdir --name="$tname" configure --logfile=$dir/test/config.out )
   echo "Zoltan.build:  Configuration done."
 
-  if ("$zdrive" == "zfdrive") then
-    # Special setup required for building zfdrive -- the F90 driver.
-    # Have to use appropriate zoltan_user_data.f90.
-    (cd src ; /bin/cp -p fdriver/zoltan_user_data.f90 fort/zoltan_user_data.f90)
-  endif
+#  if ("$zdrive" == "zfdrive") then
+#    # Special setup required for building zfdrive -- the F90 driver.
+#    # Have to use appropriate zoltan_user_data.f90.
+#    (cd src ; /bin/cp -p fdriver/zoltan_user_data.f90 fort/zoltan_user_data.f90)
+#  endif
 
   echo "Zoltan.build:  gmake ..."
   (cd src ; gmake "ZOLTAN_ARCH=$arch" zoltan "$zdrive" >& $dir/test/build.out )
