@@ -426,7 +426,7 @@ namespace Intrepid {
 #endif
     const int numPts = inputPoints.dimension(0);
     const int deg = this -> getDegree();
-    const int scalarBigN = (deg+1)*(deg+2)/2;
+    const int scalarBigN = (deg+1)*(deg+2)*(deg+3)/6;
 
     try {
       switch (operatorType) {
@@ -442,7 +442,7 @@ namespace Intrepid {
 	      }
 	      for (int k=0;k<scalarBigN;k++) { // Dubiner bf
 		for (int d=0;d<3;d++) {
-		  outputValues(i,j,d) += coeffs_(k*d*scalarBigN,i) * phisCur(k,j);
+		  outputValues(i,j,d) += coeffs_(k+d*scalarBigN,i) * phisCur(k,j);
 		}
 	      }
 	    }
