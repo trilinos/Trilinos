@@ -44,7 +44,7 @@
 
 // FEApp is defined in Trilinos/packages/sacado/example/FEApp
 #include "FEApp_ModelEvaluator.hpp"
-#include "FEApp_NOXSolver.hpp"
+#include "ENAT_NOXSolver.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -97,12 +97,12 @@ int main(int argc, char *argv[]) {
   double alpha = 2.0;
   double leftBC = 0.0;
   double rightBC = 0.1;
-  unsigned int numalpha = 2;
+  unsigned int numalpha = 1;
   unsigned int p = 5;
 
   bool do_pce = true;
   bool do_dakota = false;
-  SG_METHOD SG_Method = SG_AD;
+  SG_METHOD SG_Method = SG_NI;
 
   int MyPID;
 
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
         input_file >> vals[i] >> name;
         std::stringstream ss;
         ss << "Nonlinear Factor " << i;
-        sourceParams.set(ss.str(), vals[i]);
+        sourceParams.set(ss.str(), alpha + vals[i]);
       }
       input_file.close();
     }
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
 
     // Create NOX solver
-    FEApp::NOXSolver solver(appParams, model);
+    ENAT::NOXSolver solver(appParams, model);
 
     // Evaluate responses at parameters
     EpetraExt::ModelEvaluator::InArgs inArgs = solver.createInArgs();
@@ -281,9 +281,19 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<const Epetra_Vector> p_init = solver.get_p_init(0);
     Teuchos::RCP<Epetra_Vector> g = 
       Teuchos::rcp(new Epetra_Vector(*(solver.get_g_map(0))));
+    Teuchos::RCP<Epetra_Vector> finalSolution = 
+      Teuchos::rcp(new Epetra_Vector(*(solver.get_g_map(1))));
+    Teuchos::RCP<Epetra_MultiVector> dgdp = 
+      Teuchos::rcp(new Epetra_MultiVector(*(solver.get_g_map(0)),
+					  p_init->MyLength()));
     inArgs.set_p(0, p_init);
     outArgs.set_g(0, g);
+    outArgs.set_g(1, finalSolution);
+    outArgs.set_DgDp(0, 0, dgdp);
     solver.evalModel(inArgs, outArgs);
+
+    g->Print(std::cout);
+    dgdp->Print(std::cout);
 
     // Print objective function to file for Dakota
     if (do_dakota) {
@@ -291,6 +301,7 @@ int main(int argc, char *argv[]) {
       output_file.precision(12);
       output_file.setf(ios::scientific);
       output_file << (*g)[0] << std::endl;
+      output_file << (*dgdp)[0][0] << std::endl;
       output_file.close();
     }
 
@@ -345,8 +356,6 @@ int main(int argc, char *argv[]) {
       }
 
       // Create new app for Stochastic Galerkin solve
-      Teuchos::RCP<const Epetra_Vector> finalSolution =
-	solver.getFinalSolution();
       app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false,
 						finalSolution.get()));
 
@@ -375,20 +384,22 @@ int main(int argc, char *argv[]) {
 						       sg_param_names));
       }
       else {
-	sg_p_index[0] = 0;
+	sg_p_index[0] = 1;
 	std::vector<int> sg_p_index_quad(1);
-	sg_p_index_quad[0] = 0;
+	sg_p_index_quad[0] = 1;
 	std::vector<int> sg_g_index_quad(1);
 	sg_g_index_quad[0] = 0;
 	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model;
 	if (SG_Method == SG_GLOBAL)
 	  underlying_model = 
-	    Teuchos::rcp(new FEApp::ModelEvaluator(app, sg_param_names));
+	    Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
+						   sg_param_names));
 	else {
 	  Teuchos::RCP<EpetraExt::ModelEvaluator> base_model =
-	    Teuchos::rcp(new FEApp::ModelEvaluator(app, sg_param_names));
+	    Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
+						   sg_param_names));
 	  underlying_model =
-	    Teuchos::rcp(new FEApp::NOXSolver(appParams, base_model));
+	    Teuchos::rcp(new ENAT::NOXSolver(appParams, base_model));
 	}
 	model =
 	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model, 
@@ -426,7 +437,7 @@ int main(int argc, char *argv[]) {
 	if (jac_method == "Matrix Free")
 	  M = sg_model->create_prec();
 	
-	sg_solver = Teuchos::rcp(new FEApp::NOXSolver(appParams, sg_model, M));
+	sg_solver = Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
       }
       else 
 	sg_solver = sg_model;
@@ -438,8 +449,13 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(0);
       Teuchos::RCP<Epetra_Vector> sg_g = 
 	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(0))));
+      Teuchos::RCP<Epetra_MultiVector> sg_dgdp = 
+	Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(0)),
+					    p_init->MyLength()));
       sg_inArgs.set_p(0, sg_p_init);
       sg_outArgs.set_g(0, sg_g);
+      if (SG_Method == SG_NI)
+	sg_outArgs.set_DgDp(0, 0, sg_dgdp);
       sg_solver->evalModel(sg_inArgs, sg_outArgs);
 
       // Print mean and standard deviation
@@ -455,9 +471,12 @@ int main(int argc, char *argv[]) {
       utils.out() << "Mean =      " << mean << std::endl;
       utils.out() << "Std. Dev. = " << std_dev << std::endl;
 
+      if (SG_Method == SG_NI)
+	sg_dgdp->Print(std::cout);
+
       NOX::StatusTest::StatusType status = NOX::StatusTest::Converged;
-      if (SG_Method != SG_NI)
-      	status = Teuchos::rcp_dynamic_cast<FEApp::NOXSolver>(sg_solver)->getSolverStatus();
+      // if (SG_Method != SG_NI)
+      // 	status = Teuchos::rcp_dynamic_cast<ENAT::NOXSolver>(sg_solver)->getSolverStatus();
       if (status == NOX::StatusTest::Converged) 
 	utils.out() << "Test Passed!" << endl;
 
