@@ -191,7 +191,16 @@ int main(int argc, char *argv[]) {
   std::vector < topo_entity * > face_vector;
 
   std::vector < int > edge_comm_procs;
+
+  if (MyPID == 0) {
+    std::cout << "PARALLEL executable \n"; 
+  }
+#else
+  if (MyPID == 0) {
+    std::cout << "SERIAL executable \n";
+  }
 #endif
+
 
 // *********************************** CELL TOPOLOGY **********************************
 
