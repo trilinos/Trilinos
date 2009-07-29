@@ -102,7 +102,6 @@ ENDIF()
 PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveHgCage10CopyFiles
   SOURCE_FILES
     cage10.mtx
-    cage10.graph
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}
