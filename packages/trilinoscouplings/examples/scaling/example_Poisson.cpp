@@ -102,22 +102,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 using namespace std;
 using namespace Intrepid;
 
-#ifdef HAVE_MPI
-
-
-
-struct fecomp{
-  bool operator () ( topo_entity* x,  topo_entity*  y )const
-  {
-    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;    
-    return false;
-  }
-};
-
-
-
-
-#endif
 
 // Functions to evaluate exact solution and derivatives
 double evalu(double & x, double & y, double & z);
@@ -125,20 +109,18 @@ int evalGradu(double & x, double & y, double & z, double & gradu1, double & grad
 double evalDivGradu(double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
-
   int error = 0;
+  int numProcs=1;
+  int rank=0;
 #ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  int rank=mpiSession.getRank();
-  int numProcs=mpiSession.getNProc();
+  rank=mpiSession.getRank();
+  numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  int MyPID = Comm.MyPID();
 #else
-  int rank=0;
-  int numProcs=1;
-  int MyPID = 0;
   Epetra_SerialComm Comm;
 #endif
+  int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
 
   //Check number of arguments
@@ -176,22 +158,13 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "===============================================================================\n";
 
-#ifdef HAVE_MPI
   long long *  node_comm_proc_ids   = NULL;
   long long *  node_cmap_node_cnts  = NULL;
   long long *  node_cmap_ids        = NULL;
   long long ** comm_node_ids        = NULL;
   long long ** comm_node_proc_ids   = NULL;
-  
-  std::set < topo_entity * , fecomp > edge_set;
-  std::set < topo_entity * , fecomp > face_set;
 
-  std::vector < topo_entity * > node_vector;
-  std::vector < topo_entity * > edge_vector;
-  std::vector < topo_entity * > face_vector;
-
-  std::vector < int > edge_comm_procs;
-
+#ifdef HAVE_MPI
   if (MyPID == 0) {
     std::cout << "PARALLEL executable \n"; 
   }
@@ -262,7 +235,6 @@ int main(int argc, char *argv[]) {
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
 
-#ifdef HAVE_MPI
     long long numNodesGlobal;
     long long numElemsGlobal;
     long long numElemBlkGlobal;
@@ -278,13 +250,6 @@ int main(int argc, char *argv[]) {
        std::cout << " Number of Global Elements: " << numElemsGlobal << " \n";
        std::cout << "    Number of Global Nodes: " << numNodesGlobal << " \n\n";
     }
-#else
-   // Print mesh information
-    if (MyPID == 0){
-       std::cout << " Number of Global Elements: " << numElems << " \n";
-       std::cout << "    Number of Global Nodes: " << numNodes << " \n\n";
-    }
-#endif
 
     long long * block_ids = new long long [numElemBlk];
     error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -341,7 +306,6 @@ int main(int argc, char *argv[]) {
     delete [] nodeCoordx;
     delete [] nodeCoordy;
 
-#ifdef HAVE_MPI
     /*parallel info*/
     long long num_internal_nodes;
     long long num_border_nodes;
@@ -407,15 +371,6 @@ int main(int argc, char *argv[]) {
 			 node_comm_proc_ids,
 			 comm_node_ids,
 			 rank);    
-#else
-    cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();
-    long long * globalNodeIds = new long long[numNodes];
-    bool * nodeIsOwned = new bool[numNodes];
-    for (long long j=0; j < numNodes; j++) {
-        globalNodeIds[j] = j;
-        nodeIsOwned[j] = true;
-    }
-#endif
 
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
   
@@ -520,7 +475,6 @@ int main(int argc, char *argv[]) {
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
-#ifdef HAVE_MPI
     // Count owned nodes
     int ownedNodes=0;
     for(int i=0;i<numNodes;i++)
@@ -537,9 +491,7 @@ int main(int argc, char *argv[]) {
       }
     // Generate epetra map    
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
-#else
-    Epetra_Map globalMapG(numNodes, 0, Comm);
-#endif
+
 
     // Global arrays in Epetra format
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
@@ -823,7 +775,6 @@ int main(int argc, char *argv[]) {
    }
 
    // Cleanup
-#ifdef HAVE_MPI
    for(long long b = 0; b < numElemBlk; b++){     
      delete [] elmt_node_linkage[b];
      delete [] element_types[b];
@@ -849,20 +800,6 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_ids;
       delete [] comm_node_proc_ids;
    }
-#else
-   for(long long b = 0; b < numElemBlk; b++){     
-     delete [] elmt_node_linkage[b];
-     delete [] element_types[b];
-   }
-   delete [] block_ids;
-   delete [] nodes_per_element;
-   delete [] element_attributes;
-   delete [] element_types;
-   delete [] elmt_node_linkage;
-   delete [] elements;
-   delete [] globalNodeIds;
-   delete [] nodeIsOwned;
-#endif
 
    // delete mesh
    Delete_Pamgen_Mesh();
