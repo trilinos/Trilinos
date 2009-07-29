@@ -214,7 +214,7 @@ LB_INC		= lb_const.h lb_init_const.h
 ORDER_CSRC	= order.c order_struct.c order_tools.c perm.c
 ORDER_INC	= order_const.h 
 
-SIMPLE_CSRC	= block.c random.c
+SIMPLE_CSRC	= cyclic.c block.c random.c
 SIMPLE_INC	= 
 
 RCB_CSRC	= rcb.c rcb_util.c rcb_box.c box_assign.c point_assign.c \
