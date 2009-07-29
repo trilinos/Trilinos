@@ -246,7 +246,7 @@ namespace Intrepid {
     // there are degree internal dofs on each edge -- normals.  Let's do them
     for (int f=0;f<4;f++) {
       for (int i=0;i<numPtsPerFace;i++) {
-	tag_cur[0] = 1;  tag_cur[1] = f;  tag_cur[2] = i;  tag_cur[3] = numPtsPerFace;
+	tag_cur[0] = 2;  tag_cur[1] = f;  tag_cur[2] = i;  tag_cur[3] = numPtsPerFace;
 	tag_cur += tagSize;
       }
     }
@@ -256,7 +256,7 @@ namespace Intrepid {
     const int numInternalDof = this->getCardinality() - 4 * numPtsPerFace;
     int internalDofCur=0;
     for (int i=4*numPtsPerFace;i<this->getCardinality();i++) {
-      tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = internalDofCur; tag_cur[3] = numInternalDof;
+      tag_cur[0] = 3;  tag_cur[1] = 0;  tag_cur[2] = internalDofCur; tag_cur[3] = numInternalDof;
       tag_cur += tagSize;
       internalDofCur++;
     }
