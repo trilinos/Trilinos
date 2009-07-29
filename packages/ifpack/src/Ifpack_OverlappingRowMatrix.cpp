@@ -44,6 +44,7 @@
 #include "EpetraExt_OperatorOut.h"
 #include "EpetraExt_BlockMapOut.h"
 extern int ML_NODE_ID;
+int IFPACK_NODE_ID;
 #endif
 
 using namespace Teuchos;
@@ -160,6 +161,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 }
 
 #ifdef IFPACK_NODE_AWARE_CODE
+
 // ====================================================================== 
 // Constructor for the case of two or more cores per subdomain
 Ifpack_OverlappingRowMatrix::
@@ -175,6 +177,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   double t1, true_t0=t0;
 #endif
   //FIXME timing
+
+  const int votesMax = INT_MAX;
 
   // should not be here if no overlap
   if (OverlapLevel_in == 0)
@@ -198,9 +202,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 # endif
   
   NumMyRowsA_ = A().NumMyRows();
-
-  // GIDs that will be in the overlapped matrix's column map
-  vector<int> colMapElements; 
 
   RCP<Epetra_Map> TmpMap;
   RCP<Epetra_CrsMatrix> TmpMatrix; 
@@ -229,8 +230,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   t0=t1;
 #endif
 
-  // ghost rows that were detected in a previous overlap round
-  Teuchos::Hashtable<int,int> prevFound(3 * A().RowMatrixColMap().NumMyElements() );
+  Teuchos::Hashtable<int,int> colMapTable(3 * A().RowMatrixColMap().NumMyElements() );
+
+  // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
+  // TODO hopefully 3 times the # column entries is a reasonable table size
+  Teuchos::Hashtable<int,int> ghostTable(3 * A().RowMatrixColMap().NumMyElements() );
 
   /* ** ************************************************************************** ** */
   /* ** ********************** start of main overlap loop ************************ ** */
@@ -239,10 +243,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   {
     // nbTable holds node buddy GIDs that are connected to current PID's rows, i.e., GIDs that should be in the overlapped
     // matrix's column map
-    // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
-    // TODO hopefully 3 times the # column entries is a reasonable table size
-    Teuchos::Hashtable<int,int> ghostTable(3 * A().RowMatrixColMap().NumMyElements() );
-    Teuchos::Hashtable<int,int> colMapTable(3 * A().RowMatrixColMap().NumMyElements() );
 
     if (TmpMatrix != Teuchos::null) {
       RowMap = &(TmpMatrix->RowMatrixRowMap()); 
@@ -266,7 +266,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     Epetra_IntVector colIdList( *ColMap );
     Epetra_IntVector rowIdList(*DomainMap);
     rowIdList.PutValue(nodeID);  
-    //if (!mypid) cout << "here 1" << endl; //TODO delete
     Teuchos::RCP<Epetra_Import> nodeIdImporter = rcp(new Epetra_Import( *ColMap, *DomainMap ));
 
 #ifdef IFPACK_OVA_TIME_BUILD
@@ -278,7 +277,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     colIdList.Import(rowIdList,*nodeIdImporter,Insert);
     
     int size = ColMap->NumMyElements() - RowMap->NumMyElements(); 
-    vector<int> list(size); 
     int count = 0; 
 
 #ifdef IFPACK_OVA_TIME_BUILD
@@ -292,7 +290,9 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     // This naturally does not include off-core rows that are on the same node as me, i.e., node buddy rows.
     for (int i = 0 ; i < ColMap->NumMyElements() ; ++i) {
       int GID = ColMap->GID(i); 
-      if ( colIdList[i] != nodeID && !prevFound.containsKey(GID)) // don't include anybody found in a previous round
+      int myvotes=0;
+      if (ghostTable.containsKey(GID)) myvotes = ghostTable.get(GID);
+      if ( colIdList[i] != nodeID && myvotes < votesMax) // don't include anybody found in a previous round
       {
         int votes;
         if (ghostTable.containsKey(GID)) {
@@ -470,11 +470,15 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     gidsarray.clear(); votesarray.clear();
     ghostTable.arrayify(gidsarray,votesarray);
 
+    vector<int> list(size); 
     count=0;
     for (int i=0; i<ghostTable.size(); i++) {
-      prevFound.put(gidsarray[i],1);
-      list[i] = gidsarray[i];
-      count++;
+      // if votesarray[i] == votesmax, then this GID was found during a previous overlap round
+      if (votesarray[i] < votesMax) {
+        list[count] = gidsarray[i];
+        ghostTable.put(gidsarray[i],votesMax); //set this GID's vote to the maximum so that this PID alway wins in any subsequent overlap tiebreaking.
+        count++;
+      }
     }
 
     //FIXME timing
@@ -540,23 +544,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
        }
     }
 
-    for (int i = 0 ; i < A().RowMatrixColMap().NumMyElements() ; ++i) {
-      int GID = A().RowMatrixColMap().GID(i);
-      // Remove any entries that are in A's original column map
-      if (colMapTable.containsKey(GID)) {
-        try{colMapTable.remove(GID);}
-        catch(...) {
-          printf("pid %d: In OverlappingRowMatrix ctr, problem removing entry %d from colMapTable\n", Comm().MyPID(),GID);
-          fflush(stdout);
-        }
-      }
-    }
-
-    gidsarray.clear(); votesarray.clear();
-    colMapTable.arrayify(gidsarray,votesarray);
-    for (int i=0; i<colMapTable.size(); i++)
-      colMapElements.push_back(gidsarray[i]);
-
     //FIXME timing
 #ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
@@ -575,10 +562,30 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   vector<int> ghostElements; 
 
   Teuchos::Array<int> gidsarray,votesarray;
-  prevFound.arrayify(gidsarray,votesarray);
-  for (int i=0; i<prevFound.size(); i++) {
+  ghostTable.arrayify(gidsarray,votesarray);
+  for (int i=0; i<ghostTable.size(); i++) {
     ghostElements.push_back(gidsarray[i]);
   }
+
+    for (int i = 0 ; i < A().RowMatrixColMap().NumMyElements() ; ++i) {
+      int GID = A().RowMatrixColMap().GID(i);
+      // Remove any entries that are in A's original column map
+      if (colMapTable.containsKey(GID)) {
+        try{colMapTable.remove(GID);}
+        catch(...) {
+          printf("pid %d: In OverlappingRowMatrix ctr, problem removing entry %d from colMapTable\n", Comm().MyPID(),GID);
+          fflush(stdout);
+        }
+      }
+    }
+
+    // GIDs that will be in the overlapped matrix's column map
+    vector<int> colMapElements; 
+
+  gidsarray.clear(); votesarray.clear();
+  colMapTable.arrayify(gidsarray,votesarray);
+  for (int i=0; i<colMapTable.size(); i++)
+    colMapElements.push_back(gidsarray[i]);
 
 /*
    We need two maps here.  The first is the row map, which we've got by using my original rows
@@ -612,8 +619,10 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     colList[i] = A().RowMatrixColMap().GID(i);
   for (int i = 0 ; i < (int)colMapElements.size() ; i++)
     colList[nc+i] = colMapElements[i];
+
   // column map for the overlapped matrix (local + overlap)
   colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
+    
 
   //FIXME timing
 #ifdef IFPACK_OVA_TIME_BUILD
@@ -623,7 +632,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 #endif
   //FIXME timing
 
-
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   //++++ start of sort
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -632,25 +640,26 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   try {
     // build row map based on the local communicator.  We need this temporarily to build the column map.
     RCP<Epetra_Map> nodeMap_ = rcp( new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) );
-    //Epetra_Map* nodeMap_ = new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) ;
     int numMyElts = colMap_->NumMyElements();
+    assert(numMyElts!=0);
 
+    // The column map *must* be sorted: first locals, then ghosts.  The ghosts
+    // must be further sorted so that they are contiguous by owning processor.
+
+    // For each GID in column map, determine owning PID in local communicator.
     Teuchos::RCP<int> myGlobalElts = rcp( new int[numMyElts] );
     colMap_->MyGlobalElements(&*myGlobalElts);
     Teuchos::RCP<int> pidList = rcp( new int[numMyElts] );
     nodeMap_->RemoteIDList(numMyElts, &*myGlobalElts, &*pidList, 0);
 
-   /* The column map *must* be sorted: first locals, then ghosts.
-      The ghosts must be further sorted so that they are contiguous by owning processor.  */
-
-    // first sort on the owning pid in the *local* communicator
+    // First sort column map GIDs based on the owning PID in local communicator.
     Epetra_Util Util;
     int *tt[1];
     tt[0] = &*myGlobalElts;
     Util.Sort(true, numMyElts, &*pidList, 0, (double**)0, 1, tt);
 
-    // for each remote pid, sort the entries in ascending order
-    // don't sort the local pid's entries
+    // For each remote PID, sort the column map GIDs in ascending order.
+    // Don't sort the local PID's entries.
     int localStart=0;
     while (localStart<numMyElts) {
       int currPID = (&*pidList)[localStart];
@@ -661,30 +670,44 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       localStart = i;
     }
 
-
-    
     // now move the local entries to the front of the list
     localStart=0;
     while (localStart<numMyElts && (&*pidList)[localStart] != nodeComm->MyPID()) localStart++;
     assert(localStart != numMyElts);
     int localEnd=localStart;
     while (localEnd<numMyElts && (&*pidList)[localEnd] == nodeComm->MyPID()) localEnd++;
-    assert(numMyElts!=0);
-    Teuchos::RCP<int> mySortedGlobalElts = rcp( new int[numMyElts] );
-    //Teuchos::RCP<int> mySortedPidList = rcp( new int[numMyElts] );
+    RCP<int> mySortedGlobalElts = rcp( new int[numMyElts] );
     RCP<int> mySortedPidList = rcp( new int[numMyElts] );
     int leng = localEnd - localStart;
     /* This is a little gotcha.  It appears that the ordering of the column map's local entries
        must be the same as that of the domain map's local entries.  See the comment in method
        MakeColMap() in Epetra_CrsGraph.cpp, line 1072. */
     int *rowGlobalElts =  nodeMap_->MyGlobalElements();
+
+    /*TODO TODO TODO NTS rows 68 and 83 show up as local GIDs in rowGlobalElts for both pids 0 & 1 on node 0.
+                    This seems to imply that there is something wrong with rowList!!
+                    It is ok for the overlapped matrix's row map to have repeated entries (it's overlapped, after all).
+                    But ... on a node, there should be no repeats.
+                    Ok, here's the underlying cause.  On node 0, gpid 1 finds 83 on overlap round 0.  gpid 0 finds 83
+                    on overlap round 1.  This shouldn't happen .. once a node buddy "owns" a row, no other node buddy
+                    should ever import ("own") that row.
+
+                    Here's a possible fix.  Extend tie breaking across overlap rounds.  This means sending to lpid 0
+                    a list of *all* rows you've imported (this round plus previous rounds) for tie-breaking
+                    If a nb won a ghost row in a previous round, his votes for that ghost row should be really high, i.e.,
+                    he should probably win that ghost row forever.
+                    7/17/09
+
+      7/28/09 JJH I believe I've fixed this, but I thought it might be helpful to have this comment in here, in case I missed something.
+    */
+
+    //move locals to front of list
     for (int i=0; i<leng; i++) {
+      /* //original code */
       (&*mySortedGlobalElts)[i] = rowGlobalElts[i];
       (&*mySortedPidList)[i] = nodeComm->MyPID();
-/*
-      (&*mySortedGlobalElts)[i] = (&*myGlobalElts)[localStart+i];
-      (&*mySortedPidList)[i] = (&*pidList)[localStart+i];
-*/
+      //(&*mySortedGlobalElts)[i] = (&*myGlobalElts)[localStart+i];
+      //(&*mySortedPidList)[i] = (&*pidList)[localStart+i];
     }
     for (int i=leng; i< localEnd; i++) {
       (&*mySortedGlobalElts)[i] = (&*myGlobalElts)[i-leng];

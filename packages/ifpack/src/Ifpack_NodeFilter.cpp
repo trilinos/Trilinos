@@ -46,16 +46,14 @@
 
 using namespace Teuchos;
 
-extern int ML_NODE_ID;
-
 #define OLD_AND_BUSTED
 
 //==============================================================================
 Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& Matrix,int nodeID) :
   Matrix_(Matrix),
   NumMyRows_(0),
-  NumGlobalRows_(0),
   NumMyNonzeros_(0),
+  NumGlobalRows_(0),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0)
 {
@@ -199,8 +197,6 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   MaxNumEntries_ = ActualMaxNumEntries;
 
   int gpid = Matrix->Comm().MyPID();
-  int lpid = SubComm_->MyPID();
-
   Exporter_ = null;
   Importer_ = null;
   // Check if non-trivial import/export operators
@@ -210,46 +206,12 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
       printf("** * gpid %d: Ifpack_NodeFilter ctor: problem creating Exporter_ * **\n\n",gpid);
     }
   }
-  //if (gpid > 1) sleep(8);
-/*
-  if (gpid == 0)
-    printf(">>> node 0 <<<\n");
-  if (gpid == 2)
-    printf(">>> node 1 <<<\n");
-  if (lpid == 0) 
-    printf("=======================================\ntarget: RowMatrixColMap()\n====================================\n");
-  cout << RowMatrixColMap() << endl;
-  sleep(1);
-  if (gpid == 0)
-    printf("=======================================\nsource: OperatorDomainMap()\n=======================================\n");
-  cout << OperatorDomainMap() << endl;
-  sleep(1);
-*/
-/*
-  if (!(RowMatrixColMap().SameAs(OperatorDomainMap()))) {
-    //TODO change this to RCP
-    try{Importer_ = new Epetra_Import(RowMatrixColMap(), OperatorDomainMap());}
-    catch(...) {
-      printf("** * gpid %d: Ifpack_NodeFilter ctor: problem creating Importer_ * **\n\n",gpid);
-    }
-*/
-
-
-
   if (!(*colMap_).SameAs(*Map_)) {
     //TODO change this to RCP
     try{Importer_ = rcp(new Epetra_Import(*colMap_, *Map_));}
     catch(...) {
       printf("** * gpid %d: Ifpack_NodeFilter ctor: problem creating Importer_ * **\n\n",gpid);
     }
-/*
-    if (lpid == 0)
-    printf("=======================================\nIfpack_NodeFilter Importer_ on node %d\n=======================================\n",(gpid == 0 ? 0: 1)); fflush(stdout);
-    cout << *Importer_ << endl;
-    if (lpid == 0)
-    printf("=======================================\nIfpack_NodeFilter colmap on node %d\n=======================================\n",(gpid == 0 ? 0: 1)); fflush(stdout);
-    cout << *colMap_ << endl;
-*/
   }
 
 } //Ifpack_NodeFilter() ctor
