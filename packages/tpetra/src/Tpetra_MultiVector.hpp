@@ -48,7 +48,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos_Ordinal NumVectors, bool zeroOut) 
-    : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+    : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
   {
     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
         "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
@@ -92,7 +92,7 @@ namespace Tpetra {
 
   //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   //REFACTOR// MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos::DataAccess CopyView, Scalar **ArrayOfPtrs, Teuchos_Ordinal NumVectors, bool OwnsMem)
-  //REFACTOR//   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+  //REFACTOR//   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
   //REFACTOR// {
   //REFACTOR//   TEST_FOR_EXCEPT(true);
   //REFACTOR// }
@@ -100,7 +100,7 @@ namespace Tpetra {
 
   //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   //REFACTOR// MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos::DataAccess CopyView, Scalar *A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors, bool OwnsMem)
-  //REFACTOR//   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+  //REFACTOR//   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
   //REFACTOR// {
   //REFACTOR//   if (CopyView == Teuchos::Copy) {
   //REFACTOR//     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> victim(map, Teuchos::arrayView(A,LDA*(NumVectors-1)+myLength()),NumVectors);
@@ -114,7 +114,7 @@ namespace Tpetra {
 
 //REFACTOR//   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 //REFACTOR//   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayRCP<Scalar> &A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors)
-//REFACTOR//     : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+//REFACTOR//     : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
 //REFACTOR//   {
 //REFACTOR//     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
 //REFACTOR//         "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
@@ -135,7 +135,7 @@ namespace Tpetra {
 
   //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   //REFACTOR// MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayRCP<Scalar> > &ArrayOfPtrs, Teuchos_Ordinal NumVectors)
-  //REFACTOR//   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+  //REFACTOR//   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
   //REFACTOR// {
   //REFACTOR//   TEST_FOR_EXCEPT(true);
   //REFACTOR// }
@@ -143,7 +143,7 @@ namespace Tpetra {
 
 //REFACTOR//   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 //REFACTOR//   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Scalar> &A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors)
-//REFACTOR//     : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+//REFACTOR//     : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
 //REFACTOR//   {
 //REFACTOR//     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
 //REFACTOR//         "Tpetra::MultiVector::MultiVector(): NumVectors must be strictly positive.");
@@ -173,7 +173,7 @@ namespace Tpetra {
 //REFACTOR//   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, 
 //REFACTOR//                                                               const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, 
 //REFACTOR//                                                               Teuchos_Ordinal NumVectors)
-//REFACTOR//     : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm())
+//REFACTOR//     : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map)
 //REFACTOR//   {
 //REFACTOR//     TEST_FOR_EXCEPTION(NumVectors < 1 || NumVectors != ArrayOfPtrs.size(), std::runtime_error,
 //REFACTOR//         "Tpetra::MultiVector::MultiVector(map,ArrayOfPtrs): ArrayOfPtrs.size() must be strictly positive and as large as ArrayOfPtrs.");
@@ -198,7 +198,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<Kokkos::MultiVector<Scalar,LocalOrdinal,Node> > &lclmv) 
-    : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map, map.getComm()), lclMV_(lclmv)
+    : DistObject<Scalar,LocalOrdinal,GlobalOrdinal>(map), lclMV_(lclmv)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1067,16 +1067,9 @@ namespace Tpetra {
 //REFACTOR//   }
 
 
-  //REFACTOR// FINISH HERE
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) 
   {
-    // This routine performs a variety of matrix-matrix multiply operations, interpreting
-    // the MultiVector (this-aka C , A and B) as 2D matrices.  Variations are due to
-    // the fact that A, B and C can be local replicated or global distributed
-    // MultiVectors and that we may or may not operate with the transpose of 
-    // A and B.  Possible cases are:
     using Teuchos::NO_TRANS;      // enums
     using Teuchos::TRANS;
     using Teuchos::CONJ_TRANS;
@@ -1088,6 +1081,11 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using Teuchos::rcp;           // initializers for data structures
 
+    // This routine performs a variety of matrix-matrix multiply operations, interpreting
+    // the MultiVector (this-aka C , A and B) as 2D matrices.  Variations are due to
+    // the fact that A, B and C can be local replicated or global distributed
+    // MultiVectors and that we may or may not operate with the transpose of 
+    // A and B.  Possible cases are:
     //                                       Num
     //      OPERATIONS                        cases  Notes
     //  1) C(local) = A^X(local) * B^X(local)  4    (X=Trans or Not, No comm needed) 
@@ -1148,7 +1146,7 @@ namespace Tpetra {
 
     // Check if A, B, C have constant stride, if not then make temp copy (strided)
     RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Atmp, Btmp; 
-    RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Ctmp;
+    RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >       Ctmp;
     if (constantStride() == false) Ctmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*this));
     else Ctmp = rcp(this,false);
 
@@ -1163,34 +1161,29 @@ namespace Tpetra {
         errPrefix << "failed making temporary strided copies of input multivectors.");
 #endif
 
-    Teuchos_Ordinal m = this->myLength();
-    Teuchos_Ordinal n = this->numVectors();
-    Teuchos_Ordinal k = A_ncols;
-    Teuchos_Ordinal lda, ldb, ldc;
-    ArrayView<const Scalar> Ap(Teuchos::null), Bp(Teuchos::null);
-    ArrayView<Scalar> Cp(Teuchos::null);
-    Atmp->extractConstView1D(Ap,lda);
-    Btmp->extractConstView1D(Bp,ldb);
-    Ctmp->extractView1D(Cp,ldc);
-
-    Teuchos::BLAS<int,Scalar> blas;
-    // do the arithmetic now
-    blas.GEMM(transA,transB,m,n,k,alpha,Ap.getRawPtr(),lda,Bp.getRawPtr(),ldb,beta_local,Cp.getRawPtr(),ldc);
+    RCP<KMV> C_mv = Ctmp->lclMV_;
+    {
+      // get local multivectors
+      const KMV &A_mv = (*Atmp->lclMV_);
+      const KMV &B_mv = (*Btmp->lclMV_);
+      // do the multiply (GEMM)
+      MVDA::GEMM(transA,transB,alpha,A_mv,B_mv,beta_local,C_mv);
+    }
 
     // Dispose of (possibly) extra copies of A, B
     Atmp = null;
     Btmp = null;
 
+    Node &node = lclMV_->getNode();
     // If *this was not strided, copy the data from the strided version and then delete it
     if (constantStride() == false) {
-      // *this is not strided, so we must use extract data into our 2D structure
-      Array<ArrayView<Scalar> > aoa(MVData_->ptrs_.size(),null);
-      for (Teuchos_Ordinal j=0; j<Teuchos::as<Teuchos_Ordinal>(aoa.size()); ++j) {
-        aoa[j] = MVData_->nonContigValues_[j]();
+      // *this is not strided, we must put data from Ctmp into *this
+      for (Teuchos_Ordinal j=0; j < numVectors(); ++j) {
+        node.template copyBuffers<Scalar>(myLength(),C_mv->getValues(j),0,lclMV_->getValues(j),0);
       }
-      Ctmp->extractCopy2D(aoa());
     }
-    Ctmp = null;
+    // Done with Ctmp and its local multivector
+    C_mv = null; Ctmp = null;
 
     // If Case 2 then sum up *this and distribute it to all processors.
     if (Case2) {
@@ -1202,53 +1195,58 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reduce() 
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::arcp;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::arrayView;
     // this should be called only for "local" MultiVectors (!isDistributed())
     TEST_FOR_EXCEPTION(this->isDistributed() == true, std::runtime_error,
         "Tpetra::MultiVector::reduce() should only be called for non-distributed MultiVectors.");
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
+    if (comm->getSize() == 1) return;
+    Node &node = lclMV_->getNode();
     // sum the data across all multivectors
     // need to have separate packed buffers for send and receive
     // if we're packed, we'll just set the receive buffer as our data, the send as a copy
     // if we're not packed, we'll use allocated buffers for both. 
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
-    if (comm->getSize() == 1) return;
-    ArrayRCP<Scalar> source = arcp<Scalar>(myLength()*numVectors()), target;
-    bool packed = constantStride() && (stride() == myLength());
+    ArrayView<Scalar> target;
+    const int myStride = lclMV_->getStride(),
+              numCols  = lclMV_->getNumCols(),
+              myLen    = lclMV_->getNumRows();
+    Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
+    bool packed = constantStride() && (myStride == myLen);
+    Scalar * bufView = node.template viewBuffer<Scalar>(false,myStride*(numCols-1)+myLen,lclMV_->getValues(0),0);
     if (packed) {
-      // copy local info into source buffer
-      // target buffer will be multivector storage
-      std::copy(MVData_->contigValues_.begin(),MVData_->contigValues_.end(), source.begin());
-      // local storage is packed. can use it for target buffer.
-      target = MVData_->contigValues_;
+      // copy data from view to sourceBuffer, reduce into view below
+      target = arrayView<Scalar>(bufView,myLen*numCols);
+      std::copy(target.begin(),target.end(),sourceBuffer.begin());
     }
     else {
-      // copy local data into source buffer
-      ArrayRCP<Scalar> sptr = source;
-      for (Teuchos_Ordinal j=0; j<numVectors(); ++j) 
+      // copy data into sourceBuffer, reduce from sourceBuffer into tmparr below, copy back to view after that
+      tmparr.resize(myLen*numCols);
+      Scalar *sptr = sourceBuffer.getRawPtr();
+      const Scalar *vptr = bufView;
+      for (Teuchos_Ordinal j=0; j<numCols; ++j) 
       {
-        // copy j-th local MV data into source buffer
-        std::copy((*this)[j],(*this)[j]+myLength(),sptr);
-        // advance ptr into source buffer
-        sptr += myLength();
+        std::copy(vptr,vptr+myLen,sptr);
+        sptr += myLen;
+        vptr += myStride;
       }
-      // must allocate packed storage for target buffer
-      target = arcp<Scalar>(myLength()*numVectors());
+      target = tmparr();
     }
     // reduce 
-    Teuchos::reduceAll<int,Scalar>(*comm,Teuchos::REDUCE_SUM,myLength()*numVectors(),source.getRawPtr(),target.getRawPtr());
+    Teuchos::reduceAll<int,Scalar>(*comm,Teuchos::REDUCE_SUM,numCols*myLen,sourceBuffer.getRawPtr(),target.getRawPtr());
     if (!packed) {
-      // copy target buffer into multivector storage buffer
-      ArrayRCP<Scalar> tptr = target;
-      for (Teuchos_Ordinal j=0; j<numVectors(); ++j) 
+      // copy tmparr back into view
+      const Scalar *sptr = tmparr.getRawPtr();
+      Scalar *vptr = bufView;
+      for (Teuchos_Ordinal j=0; j<numCols; ++j) 
       {
-        std::copy(tptr,tptr+myLength(),(*this)[j]);
-        tptr += myLength();
+        std::copy(sptr,sptr+myLen,vptr);
+        sptr += myLen;
+        vptr += myStride;
       }
     }
-    // clear allocated buffers
-    source = Teuchos::null;
-    target = Teuchos::null;
+    node.template releaseView<Scalar>(bufView);
   }
 
 
@@ -1268,6 +1266,10 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
         "Tpetra::MultiVector::replaceMyValue(): vector index is invalid.");
 #endif
+    const int myLen = lclMV_->getNumRows();
+    Node &node = lclMV_->getNode();
+    Scalar *colptr = node.template viewBuffer<Scalar>(myLen,lclMV_->getValues(
+    lclMV_
     MVData_->ptrs_[VectorIndex][MyRow] = ScalarValue;
   }
 

@@ -73,7 +73,7 @@ namespace Tpetra {
     //@{ 
 
     //! constructor
-    DistObject(const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos::RCP<const Teuchos::Comm<int> > comm);
+    DistObject(const Map<LocalOrdinal,GlobalOrdinal> &map);
 
     //! copy constructor
     DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &source);
@@ -202,7 +202,6 @@ namespace Tpetra {
   private:
 
     const Map<LocalOrdinal,GlobalOrdinal> map_;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     // buffers into which packed data is imported
     Teuchos::Array<Scalar> imports_;
     // buffers from which packed data is exported
@@ -213,13 +212,11 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   DistObject<Scalar,LocalOrdinal,GlobalOrdinal>::DistObject(const Map<LocalOrdinal,GlobalOrdinal>& map, Teuchos::RCP<const Teuchos::Comm<int> > comm)
   : map_(map)
-  , comm_(comm)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   DistObject<Scalar,LocalOrdinal,GlobalOrdinal>::DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal>& source)
   : map_(source.map_)
-  , comm_(source.comm_)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
