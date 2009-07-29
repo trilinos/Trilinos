@@ -101,62 +101,50 @@ logical function migrate_elements(Proc, zz_obj, &
 !   * register migration functions
 !   */
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, migrate_pre_process, &
-!               MeshWrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Pre_Migrate_PP_Fn(zz_obj, migrate_pre_process, &
-                MeshWrapper) == ZOLTAN_FATAL) then
+!               0) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Pre_Migrate_PP_Fn(zz_obj, migrate_pre_process) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_POST_MIGRATE_FN_TYPE, migrate_post_process, &
-!               MeshWrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Post_Migrate_Fn(zz_obj, migrate_post_process, &
-                MeshWrapper) == ZOLTAN_FATAL) then
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_POST_MIGRATE_FN_TYPE, migrate_post_process) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Post_Migrate_Fn(zz_obj, migrate_post_process) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
   if (Test_Multi_Callbacks.eq.1) then
-    if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
-                 MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
-    if (Zoltan_Set_Pack_Obj_Multi_Fn(zz_obj, migrate_pack_elem_multi, & 
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Pack_Obj_Multi_Fn(zz_obj, migrate_pack_elem_multi) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
-    if (Zoltan_Set_Unpack_Obj_Multi_Fn(zz_obj, migrate_unpack_elem_multi, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Unpack_Obj_Multi_Fn(zz_obj, migrate_unpack_elem_multi) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
   else
 
-!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
-!                MeshWrapper) == ZOLTAN_FATAL) then
-    if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
-                 MeshWrapper) == ZOLTAN_FATAL) then
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_OBJ_SIZE_FN_TYPE, migrate_elem_size) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
-!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
-!                 MeshWrapper) == ZOLTAN_FATAL) then
-    if (Zoltan_Set_Pack_Obj_Fn(zz_obj, migrate_pack_elem, & 
-                  MeshWrapper) == ZOLTAN_FATAL) then
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PACK_OBJ_FN_TYPE, migrate_pack_elem) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Pack_Obj_Fn(zz_obj, migrate_pack_elem) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
 
-!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
-!                 MeshWrapper) == ZOLTAN_FATAL) then
-    if (Zoltan_Set_Unpack_Obj_Fn(zz_obj, migrate_unpack_elem, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Unpack_Obj_Fn(zz_obj, migrate_unpack_elem) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       migrate_elements = .false.; return
     endif
@@ -184,7 +172,7 @@ subroutine migrate_pre_process(data, num_gid_entries, num_lid_entries, &
                                num_export, &
                                export_global_ids, export_local_ids, &
                                export_procs, export_to_part, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: num_import, num_export
 integer(Zoltan_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
@@ -202,7 +190,6 @@ integer(Zoltan_INT) :: exp_elem  !/* index of an element being exported */
 integer(Zoltan_INT) :: bor_elem  !/* index of an element along the processor border
 integer(Zoltan_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
 type(ELEM_INFO), pointer :: tmp(:), exp_elem_ptr
-type(MESH_INFO), pointer :: mesh_data
 logical :: flag
 integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
 integer(Zoltan_INT) :: lid
@@ -210,7 +197,6 @@ integer(Zoltan_INT) :: lid
   gid = num_gid_entries;
   lid = num_lid_entries;
 
-  mesh_data => data%ptr
 
   ierr = ZOLTAN_OK
 
@@ -218,7 +204,7 @@ integer(Zoltan_INT) :: lid
 !   *  Set some flags.  Assume if true for one element, true for all elements.
 !   */
 
-  if (associated(mesh_data%elements(0)%edge_wgt)) then
+  if (associated(Mesh%elements(0)%edge_wgt)) then
     flag = .true.
   else
     flag = .false.
@@ -255,7 +241,7 @@ integer(Zoltan_INT) :: lid
   endif
 
   do i = 0, Mesh%num_elems-1
-    New_Elem_Index(i) = mesh_data%elements(i)%globalID
+    New_Elem_Index(i) = Mesh%elements(i)%globalID
     proc_ids(i) = proc
     change(i) = .false.
   end do
@@ -268,7 +254,7 @@ integer(Zoltan_INT) :: lid
     if (num_lid_entries.gt.0) then
       exp_elem = export_local_ids(lid + (i-1)*num_lid_entries)
     else
-      exp_elem_ptr => search_by_global_id(mesh_data, &
+      exp_elem_ptr => search_by_global_id(Mesh, &
                        export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
     endif
     if (export_procs(i).ne.proc) then
@@ -301,25 +287,25 @@ integer(Zoltan_INT) :: lid
     if (num_lid_entries.gt.0) then
       exp_elem = export_local_ids(lid + (i-1)*num_lid_entries)
     else
-      exp_elem_ptr => search_by_global_id(mesh_data, &
+      exp_elem_ptr => search_by_global_id(Mesh, &
                        export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
     endif
 
-    mesh_data%elements(exp_elem)%my_part = export_to_part(i)
+    Mesh%elements(exp_elem)%my_part = export_to_part(i)
 
     if (export_procs(i) == proc) then
       cycle  ! /* No adjacency changes needed if export is changing
              !    only partition, not processor. */
     endif
 
-    do j = 0, mesh_data%elements(exp_elem)%adj_len-1
+    do j = 0, Mesh%elements(exp_elem)%adj_len-1
 
 !     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (mesh_data%elements(exp_elem)%adj(j) == -1) cycle
+      if (Mesh%elements(exp_elem)%adj(j) == -1) cycle
 
 !      /* Set change flag for adjacent local elements. */
-      if (mesh_data%elements(exp_elem)%adj_proc(j) == proc) then
-        change(mesh_data%elements(exp_elem)%adj(j)) = .true.
+      if (Mesh%elements(exp_elem)%adj_proc(j) == proc) then
+        change(Mesh%elements(exp_elem)%adj(j)) = .true.
       endif
     end do
   end do
@@ -329,18 +315,18 @@ integer(Zoltan_INT) :: lid
     if (.not.change(i)) cycle
 
 !    /* loop over marked element's adjacencies; look for ones that are moving */
-    do j = 0, mesh_data%elements(i)%adj_len-1
+    do j = 0, Mesh%elements(i)%adj_len-1
 
 !     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (mesh_data%elements(i)%adj(j) == -1) cycle
+      if (Mesh%elements(i)%adj(j) == -1) cycle
 
-      if (mesh_data%elements(i)%adj_proc(j) == proc) then
+      if (Mesh%elements(i)%adj_proc(j) == proc) then
 !        /* adjacent element is local; check whether it is moving. */
-        new_proc = proc_ids(mesh_data%elements(i)%adj(j))
+        new_proc = proc_ids(Mesh%elements(i)%adj(j))
         if (new_proc /= proc) then
 !          /* Adjacent element is being exported; update this adjacency entry */
-          mesh_data%elements(i)%adj(j) = mesh_data%elements(mesh_data%elements(i)%adj(j))%globalID
-          mesh_data%elements(i)%adj_proc(j) = new_proc
+          Mesh%elements(i)%adj(j) = Mesh%elements(Mesh%elements(i)%adj(j))%globalID
+          Mesh%elements(i)%adj_proc(j) = new_proc
         endif
       endif
     end do
@@ -404,14 +390,14 @@ integer(Zoltan_INT) :: lid
       endif
 !      /* Change processor assignment in local element's adjacency list */
       bor_elem = Mesh%ecmap_elemids(offset)
-      do k = 0, mesh_data%elements(bor_elem)%adj_len-1
+      do k = 0, Mesh%elements(bor_elem)%adj_len-1
 
 !        /* Skip NULL adjacencies (sides that are not adj to another elem). */
-        if (mesh_data%elements(bor_elem)%adj(k) == -1) cycle
+        if (Mesh%elements(bor_elem)%adj(k) == -1) cycle
 
-        if (mesh_data%elements(bor_elem)%adj(k) == Mesh%ecmap_neighids(offset) .and. &
-            mesh_data%elements(bor_elem)%adj_proc(k) == Mesh%ecmap_id(i)) then
-          mesh_data%elements(bor_elem)%adj_proc(k) = recv_vec(offset)
+        if (Mesh%elements(bor_elem)%adj(k) == Mesh%ecmap_neighids(offset) .and. &
+            Mesh%elements(bor_elem)%adj_proc(k) == Mesh%ecmap_id(i)) then
+          Mesh%elements(bor_elem)%adj_proc(k) = recv_vec(offset)
           if (recv_vec(offset) == proc) then
 !            /* element is moving to this processor; */
 !            /* convert adj from global to local ID. */
@@ -422,7 +408,7 @@ integer(Zoltan_INT) :: lid
               ierr = ZOLTAN_FATAL
               return
             endif
-            mesh_data%elements(bor_elem)%adj(k) = idx
+            Mesh%elements(bor_elem)%adj(k) = idx
           endif
           exit  !/* from k loop */
         endif
@@ -462,7 +448,7 @@ subroutine migrate_post_process(data, num_gid_entries, num_lid_entries, &
                                 import_local_ids, import_procs, num_export, &
                                 export_global_ids, export_local_ids, &
                                 export_procs, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: num_import, num_export
 integer(Zoltan_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
@@ -473,9 +459,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 integer(Zoltan_INT) :: proc, num_proc
 integer(Zoltan_INT) :: i, j, k, last, mpierr
 integer(Zoltan_INT) :: adj_elem
-type(MESH_INFO), pointer :: mesh_data
 
-  mesh_data => data%ptr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
   call MPI_Comm_size(MPI_COMM_WORLD, num_proc, mpierr)
@@ -497,26 +481,26 @@ type(MESH_INFO), pointer :: mesh_data
     if (last < i) exit
 
 !    /* Copy element[last] to element[i]. */
-    mesh_data%elements(i) = mesh_data%elements(last)
+    Mesh%elements(i) = Mesh%elements(last)
 
 !    /* Adjust adjacencies for local elements.  Off-processor adjacencies */
 !    /* don't matter here.                                                */
 
-    do j = 0, mesh_data%elements(i)%adj_len-1
+    do j = 0, Mesh%elements(i)%adj_len-1
 
 !     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (mesh_data%elements(i)%adj(j) == -1) cycle
+      if (Mesh%elements(i)%adj(j) == -1) cycle
 
-      adj_elem = mesh_data%elements(i)%adj(j)
+      adj_elem = Mesh%elements(i)%adj(j)
 
 !      /* See whether adjacent element is local; if so, adjust its entry */
 !      /* for local element i.                                           */
-      if (mesh_data%elements(i)%adj_proc(j) == proc) then
-        do k = 0, mesh_data%elements(adj_elem)%adj_len-1
-          if (mesh_data%elements(adj_elem)%adj(k) == last .and. &
-              mesh_data%elements(adj_elem)%adj_proc(k) == proc) then
+      if (Mesh%elements(i)%adj_proc(j) == proc) then
+        do k = 0, Mesh%elements(adj_elem)%adj_len-1
+          if (Mesh%elements(adj_elem)%adj(k) == last .and. &
+              Mesh%elements(adj_elem)%adj_proc(k) == proc) then
 !            /* found adjacency entry for element last; change it to i */
-            mesh_data%elements(adj_elem)%adj(k) = i
+            Mesh%elements(adj_elem)%adj(k) = i
             exit
           endif
         end do
@@ -527,28 +511,28 @@ type(MESH_INFO), pointer :: mesh_data
     New_Elem_Index(i) = New_Elem_Index(last)
     New_Elem_Index(last) = -1
 
-    mesh_data%elements(last)%globalID = -1
-    mesh_data%elements(last)%border = 0
-    mesh_data%elements(last)%my_part = -1
-    mesh_data%elements(last)%nadj = 0
-    mesh_data%elements(last)%adj_len = 0
-    mesh_data%elements(last)%elem_blk = -1
-    mesh_data%elements(last)%cpu_wgt = 0
-    mesh_data%elements(last)%perm_value = -1 
-    mesh_data%elements(last)%invperm_value = -1 
-    mesh_data%elements(last)%mem_wgt = 0
-    nullify(mesh_data%elements(last)%coord)
-    nullify(mesh_data%elements(last)%connect)
-    nullify(mesh_data%elements(last)%adj)
-    nullify(mesh_data%elements(last)%adj_proc)
-    nullify(mesh_data%elements(last)%edge_wgt)
+    Mesh%elements(last)%globalID = -1
+    Mesh%elements(last)%border = 0
+    Mesh%elements(last)%my_part = -1
+    Mesh%elements(last)%nadj = 0
+    Mesh%elements(last)%adj_len = 0
+    Mesh%elements(last)%elem_blk = -1
+    Mesh%elements(last)%cpu_wgt = 0
+    Mesh%elements(last)%perm_value = -1 
+    Mesh%elements(last)%invperm_value = -1 
+    Mesh%elements(last)%mem_wgt = 0
+    nullify(Mesh%elements(last)%coord)
+    nullify(Mesh%elements(last)%connect)
+    nullify(Mesh%elements(last)%adj)
+    nullify(Mesh%elements(last)%adj_proc)
+    nullify(Mesh%elements(last)%edge_wgt)
   end do
 
   if (allocated(New_Elem_Index)) deallocate(New_Elem_Index)
   New_Elem_Index_Size = 0
 
 
-  if (.not.build_elem_comm_maps(proc, mesh_data%elements)) then
+  if (.not.build_elem_comm_maps(proc, Mesh%elements)) then
     print *, "Fatal: error rebuilding elem comm maps"
   endif
 
@@ -560,7 +544,7 @@ end subroutine migrate_post_process
 !/*****************************************************************************/
 !/*****************************************************************************/
 integer(Zoltan_INT) function migrate_elem_size(data, num_gid_entries, num_lid_entries, elem_gid, elem_lid, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
 integer(Zoltan_INT), intent(out) :: ierr
@@ -571,7 +555,6 @@ integer(Zoltan_INT), intent(out) :: ierr
 integer(Zoltan_INT) :: size
 type(ELEM_INFO), pointer :: current_elem
 integer, parameter :: SIZE_OF_INT = 4, SIZE_OF_FLOAT = 4
-type(MESH_INFO), pointer :: mesh_data
 integer(Zoltan_INT) :: idx, num_nodes
 integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
 integer(Zoltan_INT) :: lid
@@ -579,12 +562,11 @@ integer(Zoltan_INT) :: lid
   gid = num_gid_entries;
   lid = num_lid_entries;
 
-  mesh_data => data%ptr
   ierr = ZOLTAN_OK
   if (num_lid_entries.gt.0) then
-    current_elem => mesh_data%elements(elem_lid(lid))
+    current_elem => Mesh%elements(elem_lid(lid))
   else
-    current_elem => search_by_global_id(mesh_data, elem_gid(gid), idx)
+    current_elem => search_by_global_id(Mesh, elem_gid(gid), idx)
   endif
 
 !  /*
@@ -598,7 +580,7 @@ integer(Zoltan_INT) :: lid
 ! This is hardcoded, so we'll have to change it if/when we change the C driver.
 ! The Zoltan_Align calls also are added to match the C driver.
   size = 152
-  num_nodes =  mesh_data%eb_nnodes(current_elem%elem_blk)
+  num_nodes =  Mesh%eb_nnodes(current_elem%elem_blk)
   size = Zoltan_Align(size)
  
 !  /* Add space for connect table. */
@@ -626,7 +608,7 @@ end function migrate_elem_size
 !/*****************************************************************************/
 !/*****************************************************************************/
 subroutine migrate_elem_size_multi(data, num_gid_entries, num_lid_entries, num_ids, elem_gid, elem_lid, num_bytes, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_ids
 integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
 integer(Zoltan_INT), intent(out) :: num_bytes(*)
@@ -654,7 +636,7 @@ end subroutine migrate_elem_size_multi
 subroutine migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
                              elem_gid, elem_lid,  mig_proc, &
                              elem_data_size, buf, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
 integer(Zoltan_INT), intent(in) :: mig_proc, elem_data_size
@@ -671,7 +653,6 @@ integer(Zoltan_INT), intent(out) :: ierr
   integer(Zoltan_INT) :: proc
   integer(Zoltan_INT) :: num_nodes
   integer(Zoltan_INT) :: mpierr
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
@@ -680,12 +661,11 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
-  mesh_data => data%ptr
 
   if (num_lid_entries.gt.0) then
-    current_elem => mesh_data%elements(elem_lid(lid))
+    current_elem => Mesh%elements(elem_lid(lid))
   else
-    current_elem => search_by_global_id(mesh_data, elem_gid(gid), idx)
+    current_elem => search_by_global_id(Mesh, elem_gid(gid), idx)
   endif
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
 
@@ -782,7 +762,7 @@ end subroutine migrate_pack_elem
 subroutine migrate_pack_elem_multi(data, num_gid_entries, num_lid_entries, &
   num_ids, elem_gid, elem_lid, mig_proc, elem_data_size, idx,              &
   buf, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_ids
 integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
 integer(Zoltan_INT), intent(in) :: mig_proc(*), elem_data_size(*), idx(*)
@@ -813,7 +793,7 @@ end subroutine migrate_pack_elem_multi
 !/*****************************************************************************/
 subroutine migrate_unpack_elem(data, num_gid_entries, &
                                elem_gid, elem_data_size, buf, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries
 integer(Zoltan_INT), intent(in) :: elem_gid(*)
 integer(Zoltan_INT), intent(in) :: elem_data_size
@@ -824,14 +804,12 @@ integer(Zoltan_INT), intent(out) :: ierr
   integer(Zoltan_INT) :: size, num_nodes
   integer(Zoltan_INT) :: i, j, idx, mpierr, allocstat
   integer(Zoltan_INT) :: proc
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
 
   gid = num_gid_entries;
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
-  mesh_data => data%ptr
 
   idx = in_list(elem_gid(gid), New_Elem_Index_Size, New_Elem_Index)
   if (idx == -1) then
@@ -841,7 +819,7 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
 
 
-  current_elem => mesh_data%elements(idx)
+  current_elem => Mesh%elements(idx)
 !  /* now put the migrated information into the array */
   current_elem%border = buf(1)
   current_elem%globalID = buf(2)
@@ -946,7 +924,7 @@ end subroutine migrate_unpack_elem
 !/*****************************************************************************/
 subroutine migrate_unpack_elem_multi(data, num_gid_entries, num_ids, &
                                elem_gid, elem_data_size, idx, buf, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
 integer(Zoltan_INT), intent(in) :: elem_gid(*)
 integer(Zoltan_INT), intent(in) :: elem_data_size(*), idx(*)

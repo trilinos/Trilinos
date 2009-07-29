@@ -208,30 +208,26 @@ type(PARIO_INFO) :: pio_info
   deallocate(idx)
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_OBJ_FN_TYPE, get_num_elements) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Num_Obj_Fn(zz_obj, get_num_elements, &
-                        MeshWrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Num_Obj_Fn(zz_obj, get_num_elements) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
     goto 9999
   endif
 
   if (Test_Multi_Callbacks .eq. 1)  then
-    if (Zoltan_Set_Obj_List_Fn(zz_obj, get_elements, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Obj_List_Fn(zz_obj, get_elements) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
-    if (Zoltan_Set_First_Obj_Fn(zz_obj, get_first_element, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_First_Obj_Fn(zz_obj, get_first_element) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
 
-    if (Zoltan_Set_Next_Obj_Fn(zz_obj, get_next_element, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Next_Obj_Fn(zz_obj, get_next_element) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -240,8 +236,7 @@ type(PARIO_INFO) :: pio_info
 
 !  /* Functions for geometry based algorithms */
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_GEOM_FN_TYPE, get_num_geom) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Num_Geom_Fn(zz_obj, get_num_geom, &
-                         MeshWrapper) == ZOLTAN_FATAL) then
+  if (Zoltan_Set_Num_Geom_Fn(zz_obj, get_num_geom) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     run_zoltan = .false.
     goto 9999
@@ -250,15 +245,13 @@ type(PARIO_INFO) :: pio_info
 ! ZOLTAN_OBJ_SIZE_FN needed for repartitioning.
   if ((Test_Hypergraph_Callbacks .eq. 1) .or. (Test_Graph_Callbacks .eq. 1))  then
     if (Test_Multi_Callbacks.eq.1) then
-      if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
-                   MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false. 
         goto 9999
       endif
     else
-      if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
-                   MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -268,17 +261,15 @@ type(PARIO_INFO) :: pio_info
 
   if (Test_Multi_Callbacks.eq.1) then
 
-    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, MeshWrapper) &
-        == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
 
   else
-!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_GEOM_FN_TYPE, get_geom, &
-!                  MeshWrapper) == ZOLTAN_FATAL) then
-    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, MeshWrapper) == ZOLTAN_FATAL) then
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_GEOM_FN_TYPE, get_geom) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -288,30 +279,26 @@ type(PARIO_INFO) :: pio_info
 !  /* Functions for graph based algorithms */
   if (Test_Graph_Callbacks .eq. 1)  then
     if (Test_Multi_Callbacks .eq. 1)  then
-      if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi, &
-                    MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
-      if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi, &
-                    MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
     else
-      if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
-                    MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
-      if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, &
-                    MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -321,15 +308,13 @@ type(PARIO_INFO) :: pio_info
 
 !  /* Functions for hypergraph based algorithms */
   if (Test_Hypergraph_Callbacks .eq. 1)  then
-    if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   
-    if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -339,15 +324,13 @@ type(PARIO_INFO) :: pio_info
     if (.true.) then 
   !   Register hypergraph edge weight query functions
   
-      if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
       endif
   
-      if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights, &
-                  MeshWrapper) == ZOLTAN_FATAL) then
+      if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights) == ZOLTAN_FATAL) then
         print *, "fatal:  error returned from Zoltan_Set_Fn()"
         run_zoltan = .false.
         goto 9999
@@ -357,15 +340,13 @@ type(PARIO_INFO) :: pio_info
 
 
   if (Test_Multi_Callbacks .eq. 1) then
-    if (Zoltan_Set_Part_Multi_Fn(zz_obj, get_part_multi, &
-                                      MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Part_Multi_Fn(zz_obj, get_part_multi) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
   else
-    if (Zoltan_Set_Part_Fn(zz_obj, get_part, &
-                                MeshWrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Part_Fn(zz_obj, get_part) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
@@ -555,12 +536,12 @@ end function run_zoltan
 !/******* zfdrive query functions below ***************************************/
 !/*****************************************************************************/
 integer(Zoltan_INT) function get_num_elements(data, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
   ierr = ZOLTAN_OK !/* set error code */
 
-  get_num_elements = data%ptr%num_elems
+  get_num_elements = Mesh%num_elems
 end function get_num_elements
 
 !/*****************************************************************************/
@@ -569,7 +550,7 @@ end function get_num_elements
 subroutine get_elements(data, num_gid_entries, num_lid_entries, &
                         global_id, local_id, wdim, wgt, ierr)
 
-  type(Zoltan_User_Data_2), intent(in) :: data
+  INTEGER(Zoltan_INT), intent(in) :: data(*)
   integer(Zoltan_INT), intent(in) :: num_gid_entries
   integer(Zoltan_INT), intent(in) :: num_lid_entries
   integer(Zoltan_INT), intent(out) :: global_id(*)
@@ -578,7 +559,6 @@ subroutine get_elements(data, num_gid_entries, num_lid_entries, &
   real(Zoltan_FLOAT), intent(out) :: wgt(*)
   integer(Zoltan_INT), intent(out) :: ierr
 
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: gid  ! Temp variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
   integer(Zoltan_INT) :: i
@@ -586,19 +566,18 @@ subroutine get_elements(data, num_gid_entries, num_lid_entries, &
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
   
-  do i = 0, mesh_data%num_elems-1
+  do i = 0, Mesh%num_elems-1
     if (num_lid_entries.gt.0) local_id(i*num_lid_entries + lid) = i
-    global_id(i*num_gid_entries + gid) = mesh_data%elements(i)%globalID
+    global_id(i*num_gid_entries + gid) = Mesh%elements(i)%globalID
 
     if (wdim>0) then
-      wgt(i*wdim+1) = mesh_data%elements(i)%cpu_wgt
+      wgt(i*wdim+1) = Mesh%elements(i)%cpu_wgt
     endif
 
     if (wdim>1) then
@@ -618,7 +597,7 @@ integer(Zoltan_INT) function get_first_element(data, &
                                           global_id, local_id, &
                                           wdim, wgt, ierr)
 
-  type(Zoltan_User_Data_2), intent(in) :: data
+  INTEGER(Zoltan_INT), intent(in) :: data(*)
   integer(Zoltan_INT), intent(in) :: num_gid_entries
   integer(Zoltan_INT), intent(in) :: num_lid_entries
   integer(Zoltan_INT), intent(out) :: global_id(*)
@@ -627,33 +606,31 @@ integer(Zoltan_INT) function get_first_element(data, &
   real(Zoltan_FLOAT), intent(out) :: wgt(*)
   integer(Zoltan_INT), intent(out) :: ierr
 
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
 
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (mesh_data%num_elems.eq.0) then  !no elements on this processor
+  if (Mesh%num_elems.eq.0) then  !no elements on this processor
     ierr = ZOLTAN_OK
     get_first_element = 0
     return
   endif
     
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     get_first_element = 0
     return
   endif
   
   if (num_lid_entries.gt.0) local_id(lid) = 0
-  global_id(gid) = mesh_data%elements(0)%globalID
+  global_id(gid) = Mesh%elements(0)%globalID
 
   if (wdim>0) then
-    wgt(1) = mesh_data%elements(0)%cpu_wgt
+    wgt(1) = Mesh%elements(0)%cpu_wgt
   endif
 
   if (wdim>1) then
@@ -671,7 +648,7 @@ end function get_first_element
 integer(Zoltan_INT) function get_next_element(data, &
                      num_gid_entries, num_lid_entries, global_id, local_id, &
                      next_global_id, next_local_id, wdim, next_wgt, ierr)
-  type(Zoltan_User_Data_2), intent(in) :: data
+  INTEGER(Zoltan_INT), intent(in) :: data(*)
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -681,7 +658,6 @@ integer(Zoltan_INT) function get_next_element(data, &
 
   integer(Zoltan_INT) :: found
   type(ELEM_INFO), pointer :: current_elem
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -690,9 +666,8 @@ integer(Zoltan_INT) function get_next_element(data, &
   lid = num_lid_entries
 
   found = 0
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     get_next_element = 0
     return
@@ -700,19 +675,19 @@ integer(Zoltan_INT) function get_next_element(data, &
   
   if (num_lid_entries.gt.0) then
     idx = local_id(lid)
-    current_elem => mesh_data%elements(idx)
+    current_elem => Mesh%elements(idx)
   else 
     !/* testing zero-length local IDs search by global ID for current elem */
     current_elem => search_by_global_id(mesh, global_id(gid), idx)
   endif
 
-  if (idx+1 < mesh_data%num_elems) then
+  if (idx+1 < Mesh%num_elems) then
     found = 1
     if (num_lid_entries.gt.0) next_local_id(lid) = idx + 1
-    next_global_id(gid) = mesh_data%elements(idx+1)%globalID
+    next_global_id(gid) = Mesh%elements(idx+1)%globalID
 
     if (wdim>0) then
-      next_wgt(1) = mesh_data%elements(idx+1)%cpu_wgt
+      next_wgt(1) = Mesh%elements(idx+1)%cpu_wgt
     endif
 
     if (wdim>1) then
@@ -729,12 +704,12 @@ end function get_next_element
 !/*****************************************************************************/
 !/*****************************************************************************/
 integer(Zoltan_INT) function get_num_geom(data, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
   ierr = ZOLTAN_OK ! /* set error flag */
 
-  get_num_geom = data%ptr%num_dims
+  get_num_geom = Mesh%num_dims
 end function get_num_geom
 
 !/*****************************************************************************/
@@ -742,14 +717,13 @@ end function get_num_geom
 !/*****************************************************************************/
 subroutine get_part_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, parts, ierr)
-type (Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
 integer(Zoltan_INT), intent(in) :: global_id(*)
 integer(Zoltan_INT), intent(in) :: local_id(*)
 integer(Zoltan_INT), intent(out) :: parts(*), ierr
 
   type(ELEM_INFO), pointer :: current_elem
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: i
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
@@ -758,18 +732,17 @@ integer(Zoltan_INT), intent(out) :: parts(*), ierr
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   do i=0,num_obj-1
     if (num_lid_entries.gt.0) then
-      current_elem => mesh_data%elements(local_id(i*num_lid_entries+lid))
+      current_elem => Mesh%elements(local_id(i*num_lid_entries+lid))
     else
-      current_elem => search_by_global_id(mesh_data, &
+      current_elem => search_by_global_id(Mesh, &
                                           global_id(i*num_gid_entries+gid), idx)
     endif
 
@@ -786,14 +759,13 @@ end subroutine get_part_multi
 function get_part(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, ierr)
 integer(Zoltan_INT) :: get_part
-type (Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: global_id(*)
 integer(Zoltan_INT), intent(in) :: local_id(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: current_elem
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
   integer(Zoltan_INT) :: lid
@@ -801,17 +773,16 @@ integer(Zoltan_INT), intent(out) :: ierr
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => mesh_data%elements(local_id(lid))
+    current_elem => Mesh%elements(local_id(lid))
   else
-    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+    current_elem => search_by_global_id(Mesh, global_id(gid), idx)
   endif
 
   get_part = current_elem%my_part
@@ -826,7 +797,7 @@ end function get_part
 
 subroutine get_geom(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, coor, ierr)
-type (Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: global_id(*)
 integer(Zoltan_INT), intent(in) :: local_id(*)
@@ -834,7 +805,6 @@ real(Zoltan_DOUBLE), intent(out) :: coor(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: current_elem
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: i, j
   real(Zoltan_DOUBLE) :: tmp
   integer(Zoltan_INT) :: idx
@@ -844,20 +814,19 @@ integer(Zoltan_INT), intent(out) :: ierr
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => mesh_data%elements(local_id(lid))
+    current_elem => Mesh%elements(local_id(lid))
   else
-    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+    current_elem => search_by_global_id(Mesh, global_id(gid), idx)
   endif
 
-  if (mesh_data%eb_nnodes(current_elem%elem_blk) == 0) then
+  if (Mesh%eb_nnodes(current_elem%elem_blk) == 0) then
     !/* No geometry info was read. */
     ierr = ZOLTAN_FATAL
     return
@@ -867,13 +836,13 @@ integer(Zoltan_INT), intent(out) :: ierr
 !   * calculate the geometry of the element by averaging
 !   * the coordinates of the nodes in its connect table
 !   */
-  do i = 0, mesh_data%num_dims-1
+  do i = 0, Mesh%num_dims-1
     tmp = 0.0_Zoltan_DOUBLE
-    do j = 0, mesh_data%eb_nnodes(current_elem%elem_blk)-1
+    do j = 0, Mesh%eb_nnodes(current_elem%elem_blk)-1
       tmp = tmp + current_elem%coord(i,j)
     end do
 
-    coor(i+1) = tmp / mesh_data%eb_nnodes(current_elem%elem_blk)
+    coor(i+1) = tmp / Mesh%eb_nnodes(current_elem%elem_blk)
   end do
 
   ierr = ZOLTAN_OK
@@ -884,7 +853,7 @@ end subroutine get_geom
 !/*****************************************************************************/
 subroutine get_geom_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, num_dim, coor, ierr)
-type (Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: num_obj, num_dim
 integer(Zoltan_INT), intent(in) :: global_id(*)
@@ -917,14 +886,13 @@ end subroutine get_geom_multi
 !/*****************************************************************************/
 integer(Zoltan_INT) function get_num_edges(data, num_gid_entries, num_lid_entries, &
                                        global_id, local_id, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: global_id(*)
 integer(Zoltan_INT), intent(in) :: local_id(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
 type(ELEM_INFO), pointer :: current_elem
-type(MESH_INFO), pointer :: mesh_data
 integer(Zoltan_INT) :: idx
 integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
 integer(Zoltan_INT) :: lid
@@ -932,18 +900,17 @@ integer(Zoltan_INT) :: lid
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     get_num_edges = 0
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => mesh_data%elements(local_id(lid))
+    current_elem => Mesh%elements(local_id(lid))
   else
-    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+    current_elem => search_by_global_id(Mesh, global_id(gid), idx)
   endif
 
   ierr = ZOLTAN_OK
@@ -957,7 +924,7 @@ end function get_num_edges
 
 subroutine get_num_edges_multi (data, num_gid_entries, num_lid_entries, &
   num_obj, global_id, local_id, num_edges, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
 integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
 integer(Zoltan_INT), intent(out) :: num_edges(*), ierr
@@ -988,7 +955,7 @@ end subroutine get_num_edges_multi
 subroutine get_edge_list (data, num_gid_entries, num_lid_entries, &
                           global_id, local_id, nbor_global_id, &
                           nbor_procs, get_ewgts, nbor_ewgts, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
 integer(Zoltan_INT), intent(out) :: nbor_global_id(*)
@@ -998,7 +965,6 @@ real(Zoltan_FLOAT), intent(out) :: nbor_ewgts(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: current_elem
-  type(MESH_INFO), pointer :: mesh_data
   integer(Zoltan_INT) :: i, j, proc, local_elem, mpierr
   integer(Zoltan_INT) :: idx
   integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
@@ -1007,17 +973,16 @@ integer(Zoltan_INT), intent(out) :: ierr
   gid = num_gid_entries
   lid = num_lid_entries
 
-  mesh_data => data%ptr
 
-  if (.not. associated(mesh_data%elements)) then
+  if (.not. associated(Mesh%elements)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
   if (num_lid_entries.gt.0) then
-    current_elem => mesh_data%elements(local_id(lid))
+    current_elem => Mesh%elements(local_id(lid))
   else
-    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+    current_elem => search_by_global_id(Mesh, global_id(gid), idx)
   endif
 
 !  /* get the processor number */
@@ -1031,7 +996,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 
     if (current_elem%adj_proc(i) == proc) then
       local_elem = current_elem%adj(i)
-      nbor_global_id(gid+(j-1)*num_gid_entries) = mesh_data%elements(local_elem)%globalID
+      nbor_global_id(gid+(j-1)*num_gid_entries) = Mesh%elements(local_elem)%globalID
     else  ! /* adjacent element on another processor */
       nbor_global_id(gid+(j-1)*num_gid_entries) = current_elem%adj(i)
     endif
@@ -1057,7 +1022,7 @@ end subroutine get_edge_list
 subroutine get_edge_list_multi(data, num_gid_entries, num_lid_entries, &
   num_obj, global_id, local_id, num_edges, nbor_global_id, nbor_procs, &
   get_ewgts, nbor_ewgts, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
 integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*), num_edges(*)
 integer(Zoltan_INT), intent(out) :: nbor_global_id(*)
@@ -1098,19 +1063,16 @@ end subroutine get_edge_list_multi
 
 subroutine get_hg_size_compressed_pins(data, &
   num_lists, num_pins, fmat, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(out) :: num_lists, num_pins, fmat, ierr
 
-  type(MESH_INFO), pointer :: mesh
-
-  mesh => data%ptr
-  num_lists = mesh%nhedges
+  num_lists = Mesh%nhedges
   fmat = 1 ! ZOLTAN_COMPRESSED_EDGE 
 
-  if (.not. associated(mesh%hindex)) then
+  if (.not. associated(Mesh%hindex)) then
     num_pins = 0
   else
-    num_pins = mesh%hindex(mesh%nhedges)
+    num_pins = Mesh%hindex(Mesh%nhedges)
   endif
   ierr = ZOLTAN_OK
 
@@ -1118,21 +1080,19 @@ end subroutine get_hg_size_compressed_pins
 
 subroutine get_hg_compressed_pins(data, num_gid_entries, nedges, &
   npins, fmat, edge_GID, edge_ptr, pin_GID, ierr) 
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: num_gid_entries, nedges, npins, fmat
 !integer(Zoltan_INT), intent(out), dimension(*) :: edge_GID, edge_ptr, pin_GID
 integer(Zoltan_INT), intent(out) :: edge_GID(0:*), edge_ptr(0:*), pin_GID(0:*)
 integer(Zoltan_INT), intent(out) :: ierr
 
 ! Local variables
-  type(MESH_INFO), pointer :: mesh
   integer i, k, q
 
-  mesh => data%ptr
 
   !print *, "Hello from hypergraph query get_hg_compressed_pins"
 
-  if (.not. associated(mesh)) then
+  if (.not. associated(Mesh)) then
     ierr = ZOLTAN_FATAL
     return
   endif
@@ -1144,9 +1104,9 @@ integer(Zoltan_INT), intent(out) :: ierr
       edge_GID(q) = 0
       q = q+1
     end do
-    edge_ptr(i) = mesh%hindex(i)
-    edge_GID(q) = mesh%hgid(i)
-    !print *, "Debug: hyperedge ", i, q, " : ", mesh%hgid(i), mesh%hindex(i)
+    edge_ptr(i) = Mesh%hindex(i)
+    edge_GID(q) = Mesh%hgid(i)
+    !print *, "Debug: hyperedge ", i, q, " : ", Mesh%hgid(i), Mesh%hindex(i)
     q = q+1
   end do
 
@@ -1157,27 +1117,25 @@ integer(Zoltan_INT), intent(out) :: ierr
       pin_GID(q) = 0
       q = q+1
     end do
-    pin_GID(q) = mesh%hvertex(i)
+    pin_GID(q) = Mesh%hvertex(i)
     q = q+1
   end do
 
 end subroutine get_hg_compressed_pins
 
 subroutine get_hg_size_edge_weights(data, num_edge, ierr)
-type(Zoltan_User_Data_2), intent(in) :: data
+INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(out) :: num_edge, ierr
 
-  type(MESH_INFO), pointer :: mesh
 
-  mesh => data%ptr
-  num_edge = mesh%nhedges
+  num_edge = Mesh%nhedges
   ierr = ZOLTAN_OK
   
 end subroutine get_hg_size_edge_weights
 
 subroutine get_hg_edge_weights(data, num_gid_entries, num_lid_entries, &
            num_edges, edge_weight_dim, edge_GID, edge_LID, edge_weight, ierr) 
-type(Zoltan_User_Data_2), INTENT(IN) :: data 
+INTEGER(Zoltan_INT), INTENT(IN) :: data(*) 
 INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_edges, edge_weight_dim 
 INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(0:*) :: edge_GID 
 INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(0:*) :: edge_LID 
@@ -1185,12 +1143,10 @@ REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(0:*) :: edge_weight
 INTEGER(Zoltan_INT), INTENT(OUT) :: ierr 
 ! Local variables
 integer i, k, q
-type(MESH_INFO), pointer :: mesh
 
 ! TEST: return all unit weights just to test functionality.
 !       f90 driver supports only plain MatrixMarket (no weights).
 
-  mesh => data%ptr
 
   if (edge_weight_dim > 0) then
     q = 0
@@ -1200,7 +1156,7 @@ type(MESH_INFO), pointer :: mesh
         edge_GID(q) = 0
         q = q+1
       end do
-      edge_GID(q) = mesh%hgid(i)
+      edge_GID(q) = Mesh%hgid(i)
       q = q+1
 !     Then insert corresponding weights; always 1 for now
       do k= 0, edge_weight_dim-1
@@ -1224,7 +1180,7 @@ type(MESH_INFO), pointer :: mesh
 type(PARIO_INFO) :: pio_info
 type(Zoltan_Struct), pointer :: zz
 
-type (Zoltan_User_Data_2) :: data
+integer(Zoltan_INT) :: data(0)
 real(Zoltan_DOUBLE) :: xlo(3), xhi(3), x(3)
 character(FILENAME_MAX+1) :: par_out_fname, ctemp
 type(ELEM_INFO), pointer :: current_elem
@@ -1287,7 +1243,6 @@ integer(Zoltan_INT) :: test_both
       if (mesh%num_dims > 1) x(2) = current_elem%coord(1,0)
       if (mesh%num_dims > 2) x(3) = current_elem%coord(2,0)
     else 
-      data%ptr => mesh
       call get_geom(data, 1, 1, gid, lid, x, ierr)
     endif
 
