@@ -1,3 +1,4 @@
+#include "Pamgen_config.h"
 #include "../mesh_spec_lt/im_exodusII_l.h"
 #include "../mesh_spec_lt/im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
@@ -8,7 +9,6 @@
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
-
 /*****************************************************************************/
 void  Conform_Boundary_IDS(long long ** comm_entities,
 			   long long * entity_counts,
@@ -179,9 +179,8 @@ void calc_global_node_ids(long long * globalNodeIds,
 	   MPI_LONG_LONG_INT,
 	   MPI_SUM,
 	   MPI_COMM_WORLD);
-#endif
-
   start_id -= num_unique_nodes;
+#endif
 
   int num_assigned = 0;
   for(long long  i = 0 ; i < numNodes; i ++)if(globalNodeIds[i] == 1l){
@@ -300,9 +299,9 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
 	   MPI_LONG_LONG_INT,
 	   MPI_SUM,
 	   MPI_COMM_WORLD);
+  start_id -= owned_entities;
 #endif
 
-  start_id -= owned_entities;
 #ifdef DEBUG_PRINTING
   fout << " proc " << rank << " start_id " << start_id << std::endl;
 #endif
