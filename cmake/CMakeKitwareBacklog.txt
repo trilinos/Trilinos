@@ -44,13 +44,6 @@ https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
 (and some 2008): Collaborate with Damian Rouson on this.
 
 
-(*) [CTest] [P2] By default, automatically widen the main summary
-output to show the full test names: Currently, only the first 30
-characters of the name are shown.  The option -W was added to the CVS
-version of CTest to allow the width to be manually set but this is a
-hassle and does not interact well with MS Visual C++ projects.
-
-
 (*) [CDash] [P2] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
@@ -476,4 +469,14 @@ builds is changing over time.
 post-process the output from a test (both the console and any output
 files): Workaround: This is already supported through the cmake
 function PACKAGE_ADD_ADVANCED_TEST(...).
+
+
+Done:
+-----
+
+(*) [CTest] [P2] By default, automatically widen the main summary
+output to show the full test names: Currently, only the first 30
+characters of the name are shown.  The option -W was added to the CVS
+version of CTest to allow the width to be manually set but this is a
+hassle and does not interact well with MS Visual C++ projects.
 
