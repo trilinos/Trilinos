@@ -29,7 +29,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <Shards_CellTopology.hpp>
-//#include <Shards_BasicTopologies.hpp>
+#include <Shards_BasicTopologies.hpp>
 #include <iostream>
 
 namespace shards {
@@ -38,6 +38,7 @@ typedef CellTopologyData_Subcell Subcell ;
 
 class CellTopologyPrivate {
 public:
+  unsigned                m_count_ref ;
   CellTopologyData        m_cell ;
   std::string             m_name ;
   std::vector< Subcell >  m_subcell ;
@@ -73,9 +74,49 @@ private:
 };
 
 //----------------------------------------------------------------------
+// Manage assignment and destruction of allocated 'm_owned' member.
+
+CellTopology::~CellTopology()
+{
+  deleteOwned();
+}
+
+CellTopology::CellTopology()
+  : m_cell( getCellTopologyData<Node>() ), m_owned( NULL )
+{}
+
+CellTopology::CellTopology( const CellTopology & right )
+  : m_cell( NULL ), m_owned( NULL )
+{
+  // Use assignment operator for proper memory management of 'm_owned'
+  operator=( right );
+}
+
+CellTopology & CellTopology::operator = ( const CellTopology & right )
+{
+  { // Proper memory management of shared and allocated 'm_owned'
+    deleteOwned();
+    m_owned = right.m_owned ;
+    if ( m_owned ) { ++( m_owned->m_count_ref ); }
+  }
+  m_cell = right.m_cell ;
+  return *this ;
+}
 
 void CellTopology::deleteOwned()
-{ delete m_owned ; }
+{
+  if ( m_owned ) {
+    if ( m_owned->m_count_ref ) {
+      --( m_owned->m_count_ref );
+    }
+    else {
+      delete m_owned ;
+    }
+    m_owned = NULL ;
+  }
+}
+
+//----------------------------------------------------------------------
 
 CellTopology::CellTopology(
   const std::string & name,
@@ -225,7 +266,8 @@ void CellTopology::requireNodePermutation( const unsigned permutationOrd ,
 CellTopologyPrivate::CellTopologyPrivate(
   const std::string & name,
   const unsigned      node_count )
-  : m_cell(),
+  : m_count_ref(0),
+    m_cell(),
     m_name(name),
     m_subcell(1),
     m_node_map()
@@ -270,7 +312,8 @@ CellTopologyPrivate::CellTopologyPrivate(
   const std::vector< const CellTopologyData * > & edges ,
   const std::vector< unsigned >                 & edge_node_map ,
   const CellTopologyData                        * base )
-  : m_cell(),
+  : m_count_ref(0),
+    m_cell(),
     m_name(name),
     m_subcell(),
     m_node_map()
@@ -355,10 +398,11 @@ CellTopologyPrivate::CellTopologyPrivate(const std::string                      
                                          const std::vector< const CellTopologyData * > & faces ,
                                          const std::vector< unsigned >                 & face_node_map ,
                                          const CellTopologyData                        * base ) 
-: m_cell(),
-m_name(name),
-m_subcell(),
-m_node_map()
+  : m_count_ref(0),
+    m_cell(),
+    m_name(name),
+    m_subcell(),
+    m_node_map()
 
 {
   const unsigned edge_count = edges.size();
@@ -521,7 +565,7 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
   }
 
   // clear the vector  
-  topologies.resize(0);
+  topologies.clear();
   
   // 0-dimensional cells
   if( (cellDim == 0) || (cellDim == 4) ) {

@@ -139,11 +139,9 @@ int isPredefinedCell(const CellTopology &  cell);
 class CellTopology {
 private:
   
-  /** \brief Deletes m_owned data member
-  */
+  /** \brief  Safely deletes m_owned data member */
   void deleteOwned();
-  
-  
+
   /** \brief Throws runtime_error if CellTopology object is null or hase null 
              base topology   
    */
@@ -450,10 +448,6 @@ public:
    *  \{
    */
 
-  /** \brief  Default constructor for invalid topology. */
-  CellTopology() : m_cell(NULL), m_owned(NULL) {}
-  
-  
   /** \brief  Wrapper for safe access to a raw cell topology data.
    *  \param  cell             [in]  - pointer to raw cell topology
    *          Example use: the statements
@@ -517,13 +511,17 @@ public:
                 const CellTopologyData                        * base = NULL );
   
   
-  /** \brief Assignment operator <var>*this = right</var>.
-    */
-  CellTopology& operator = (const CellTopology& right) { 
-    m_cell = right.m_cell; m_owned = right.m_owned; return *this;}
+  /** \brief Assignment operator <var>*this = right</var>.  */
+  CellTopology& operator = (const CellTopology& right);
+
+  /** \brief Copy constructor */
+  CellTopology( const CellTopology& right );
+  
+  /** \brief  Default constructor yields the predefined Cell^0 (a.k.a. Node) topology. */
+  CellTopology();
   
   /** \brief Destructor */
-  ~CellTopology() { if ( m_owned ) { deleteOwned(); } }
+  ~CellTopology();
   
   /** \} */
 
