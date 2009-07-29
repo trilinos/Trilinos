@@ -1,9 +1,7 @@
 Decomposition Method 	= hypergraph
-Zoltan Parameters       = obj_weight_dim = 0
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters       = lb_approach=repartition
 Zoltan Parameters       = phg_repart_multiplier=80
 Zoltan Parameters       = final_output=1
-File Type		= chaco
+File Type		= matrixmarket
 File Name		= cage10
 Parallel Disk Info	= number=0
