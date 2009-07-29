@@ -257,23 +257,23 @@ int Zoltan_Graph_Queries( ZZ *zz, int numVertex, ZOLTAN_ID_PTR vgid, ZOLTAN_ID_P
   float **edgeWeights);
 
 
-#define MEMORY_ERROR { \
+#define MEMORY_ERROR do { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
   ierr = ZOLTAN_MEMERR; \
   goto End; \
-}
-#define FATAL_ERROR(s) { \
+} while (0)
+#define FATAL_ERROR(s) do { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, s); \
   ierr = ZOLTAN_FATAL; \
   goto End; \
-}
-#define CHECK_FOR_MPI_ERROR(rc)  \
+} while (0)
+#define CHECK_FOR_MPI_ERROR(rc) do { \
   if (rc != MPI_SUCCESS){ \
     MPI_Error_string(rc, phg_mpi_err_str, &phg_mpi_err_len);  \
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, phg_mpi_err_str); \
     ierr = ZOLTAN_FATAL; \
     goto End; \
-  }
+  } } while (0)
 
 extern char phg_mpi_err_str[MPI_MAX_ERROR_STRING];
 extern int phg_mpi_err_len;

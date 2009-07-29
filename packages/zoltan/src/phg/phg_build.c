@@ -570,11 +570,11 @@ int nRepartEdge = 0, nRepartVtx = 0;
   if (phg->comm->col_comm != MPI_COMM_NULL){
     rc = MPI_Allreduce(tmpparts, *input_parts, phg->nVtx, MPI_INT, MPI_MAX, 
                   phg->comm->col_comm);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
 
     rc = MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX,
                   phg->comm->col_comm);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
 
     if (GnFixed) {                                          
        rc = MPI_Allreduce(tmpfixed, phg->fixed_part, phg->nVtx, MPI_INT, MPI_MAX,
@@ -682,7 +682,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
         rc = MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
                       phg->comm->row_comm);
-        CHECK_FOR_MPI_ERROR(rc)
+        CHECK_FOR_MPI_ERROR(rc);
       }
     }
     else { /* dim > 0 but zz->Edge_Weight_Dim == 0 */
@@ -719,7 +719,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     int gnremove;
     rc = MPI_Allreduce(&(zhg->nHedges), &gnremove, 1, MPI_INT, MPI_SUM, 
                   zz->Communicator);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
     if (!final_output || !gnremove) {
       /* Don't need the plan long-term; destroy it now. */
       Zoltan_Comm_Destroy(&(zhg->VtxPlan));

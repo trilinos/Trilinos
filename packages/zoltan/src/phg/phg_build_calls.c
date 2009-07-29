@@ -924,7 +924,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       /* Before doing global communication, determine whether there is any information to share.  */
       rc = MPI_Allreduce(&nEdge, &w, 1, MPI_INT, MPI_MAX, comm);
-      CHECK_FOR_MPI_ERROR(rc)
+      CHECK_FOR_MPI_ERROR(rc);
   
       if (w > 0){
         if (cnt > 0){
@@ -1169,7 +1169,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   /******************************************************************************/
 
   rc = MPI_Allreduce(&zhg->nPins, &zhg->globalPins, 1, MPI_INT, MPI_SUM, comm);
-  CHECK_FOR_MPI_ERROR(rc)
+  CHECK_FOR_MPI_ERROR(rc);
 
   /***********************************************************************/
   /* If user requested ADD_OBJ_WEIGHT, modify object weights now.        */
@@ -1319,10 +1319,10 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize,
     }
     /* Compute prefix of mycnt */
     rc = MPI_Scan(mycnt, gcnt, nProc, MPI_INT, MPI_SUM, comm);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
 
     rc = MPI_Allreduce(mycnt, gtotal, nProc, MPI_INT, MPI_SUM, comm);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
 
     /* Compute first gno for vertices going to each target bin */
     for (tmp = 0, i = 0; i < nProc; i++) {
@@ -1349,12 +1349,12 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize,
     /* Scan to compute partial sums of the number of objs */
 
     rc = MPI_Scan(&len, gtotal, 1, MPI_INT, MPI_SUM, comm);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
 
     /* Gather data from all procs */
 
     rc = MPI_Allgather (&(gtotal[0]), 1, MPI_INT, &(gtotal[1]), 1, MPI_INT, comm);
-    CHECK_FOR_MPI_ERROR(rc)
+    CHECK_FOR_MPI_ERROR(rc);
     gtotal[0] = 0;
     *numGlobalObjects = gtotal[nProc];
 
