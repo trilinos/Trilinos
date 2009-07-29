@@ -5,15 +5,15 @@ method,
            #expansion_order = 9
            quadrature_order    = 6
 variables,
-        uniform_uncertain      = 4
-           uuv_lower_bounds   = -1.0 -1.0 -1.0 -1.0
-           uuv_upper_bounds   = 1.0 1.0 1.0 1.0
-           uuv_descriptor     = 'a' 'a' 'a' 'a'
+        uniform_uncertain      = 1
+           uuv_lower_bounds   = -1.0 #-1.0 -1.0 -1.0
+           uuv_upper_bounds   = 1.0 #1.0 1.0 1.0
+           uuv_descriptor     = 'a' #'a' 'a' 'a'
 interface,
         system
-           analysis_driver = './pce.exe'
+           analysis_driver = './NOX_NOX_Sacado_FEApp_PCE_Example.exe'
 responses,
-        num_response_functions = 1
+        num_response_functions = 2
         no_gradients
         no_hessians
 
