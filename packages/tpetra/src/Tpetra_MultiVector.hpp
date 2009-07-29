@@ -600,14 +600,10 @@ namespace Tpetra {
     }
   }
 
-  //REFACTOR// FINISH HERE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) 
   {
-    typedef Teuchos::ScalarTraits<Scalar>                     ST;
-    typedef Teuchos::ScalarTraits<typename ST::magnitudeType> MT;
-    const Teuchos_Ordinal numVecs = this->numVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -617,39 +613,15 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( myLength() != A.myLength(), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::reciprocal(): MultiVectors must have the same number of vectors.");
-    int ierr = 0;
-    for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-      pointer myptr = (*this)[j],
-              myend = (*this)[j]+myLength();
-      const_pointer Aptr = A[j];
-      for (; myptr != myend; ++myptr, ++Aptr) {
-        if (ST::magnitude(*Aptr) <= ST::sfmin()) {
-          if (*Aptr == ST::zero()) {
-            ierr = 1;
-            (*myptr) = ST::nan();
-          }
-          else {
-            ierr = 2;
-            if (ST::magnitude(*Aptr) < MT::zero()) { // negative
-              (*myptr) = -ST::rmax();
-            }
-            else {
-              (*myptr) =  ST::rmax();
-            }
-          }
-        }
-        else {
-          (*myptr) = ST::one()/(*Aptr);
-        }
-      }
+    try {
+      MVDA::ReciprocalMultiply(*lclMV_,(const KMV&)(*A.lclMV_));
     }
-    if (ierr != 0) {
-      TEST_FOR_EXCEPTION(ierr == 1, std::runtime_error, 
-          "Tpetra::MultiVector::reciprocal(): element of A was zero.");
-      TEST_FOR_EXCEPTION(ierr == 2, std::runtime_error, 
-          "Tpetra::MultiVector::reciprocal(): element of A was too small to invert.");
+    catch (std::runtime_error &e) {
+      TEST_FOR_EXCEPTION(true,std::runtime_error,
+          "Tpetra::MultiVector::reciprocal(A): caught exception from Kokkos:" << std::endl
+          << e.what() << std::endl);
     }
   }
 
@@ -657,8 +629,6 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) 
   {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    const Teuchos_Ordinal numVecs = this->numVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -668,16 +638,9 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( myLength() != A.myLength(), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
-    for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-      pointer myptr = (*this)[j],
-              myend = (*this)[j]+myLength();
-      const_pointer Aptr = A[j];
-      for (; myptr != myend;) {
-        (*myptr++) = ST::magnitude(*Aptr++);
-      }
-    }
+    MVDA::ReciprocalMultiply(*lclMV_,(const KMV&)(*A.lclMV_));
   }
 
 
@@ -685,11 +648,9 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) 
   {
     // this = beta*this + alpha*A
-    // do atomically, in case &this == &A, and to increase memory efficiency
+    // must support case where &this == &A
     // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
-    typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::ArrayView;
-    const Teuchos_Ordinal numVecs = this->numVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -699,36 +660,9 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( myLength() != A.myLength(), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.numVectors() != numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    if (beta == ST::one()) {
-      if (alpha == ST::one()) { // this = this + A
-        for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-          pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = A[j];
-          for (; curpos != cend; ++curpos, ++Apos) { *curpos = (*curpos) + (*Apos); }
-        }
-      }
-      else {                    // this = this + alpha*A
-        for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-          pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = A[j];
-          for (; curpos != cend; ++curpos, ++Apos) { *curpos = (*curpos) + alpha*(*Apos); }
-        }
-      }
-    }
-    else {
-      if (alpha == ST::one()) { // this = beta*this + A
-        for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-          pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = A[j];
-          for (; curpos != cend; ++curpos, ++Apos) { *curpos = beta*(*curpos) + (*Apos); }
-        }
-      }
-      else {                    // this = beta*this + alpha*A
-        for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-          pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = A[j];
-          for (; curpos != cend; ++curpos, ++Apos) { *curpos = beta*(*curpos) + alpha*(*Apos); }
-        }
-      }
-    }
+    MVDA::Update(*lclMV_,alpha,(const KMV&)(*A.lclMV_),beta);
   }
 
 
@@ -736,10 +670,8 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma)
   {
     // this = alpha*A + beta*B + gamma*this
-    // do atomically, in case &this == &A or &this == &B, and to increase memory efficiency
+    // must support case where &this == &A or &this == &B
     // can't short circuit on alpha==0.0 or beta==0.0 or gamma==0.0, because 0.0*NaN != 0.0
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    const Teuchos_Ordinal numVecs = this->numVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()) || !this->getMap().isCompatible(B.getMap()),
         std::runtime_error,
@@ -751,63 +683,9 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( myLength() != A.myLength() || myLength() != B.myLength(), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have the same local length.");
 #endif
-    TEST_FOR_EXCEPTION(A.numVectors() != numVecs || B.numVectors() != numVecs, std::runtime_error,
+    TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors() || B.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    // if only one of alpha or beta is 1.0, make it alpha. then below, alpha != 1.0 implies beta != 1.0
-    Teuchos::Ptr<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Aptr = Teuchos::ptr(&A), Bptr = Teuchos::ptr(&B);
-    Teuchos::Ptr<const Scalar> lalpha = Teuchos::ptr(&alpha),
-                               lbeta  = Teuchos::ptr(&beta);
-    if (alpha!=ST::one() && beta==ST::one()) {
-      // switch them
-      Aptr = Teuchos::ptr(&B);
-      Bptr = Teuchos::ptr(&A);
-      lalpha = Teuchos::ptr(&beta);
-      lbeta  = Teuchos::ptr(&alpha);
-    }
-    if (gamma == ST::one()) {
-      if ((*lalpha) == ST::one()) {
-        if ((*lbeta) == ST::one()) {    // this = this + A + B
-          for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-            pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = (*Aptr)[j], Bpos = (*Bptr)[j];
-            for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*Apos) + (*Bpos); }
-          }
-        }
-        else {                          // this = this + A + beta*B
-          for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-            pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = (*Aptr)[j], Bpos = (*Bptr)[j];
-            for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*Apos) + (*lbeta)*(*Bpos); }
-          }
-        }
-      }
-      else {                            // this = this + alpha*A + beta*B
-        for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-          pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = (*Aptr)[j], Bpos = (*Bptr)[j];
-          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = (*curpos) + (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
-        }
-      }
-    }
-    else {
-      if ((*lalpha) == ST::one()) {
-        if ((*lbeta) == ST::one()) {    // this = gamma*this + A + B
-          for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-            pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = (*Aptr)[j], Bpos = (*Bptr)[j];
-            for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*Apos) + (*Bpos); }
-          }
-        }
-        else {                          // this = gamma*this + A + beta*B
-          for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-            pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = (*Aptr)[j], Bpos = (*Bptr)[j];
-            for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*Apos) + (*lbeta)*(*Bpos); }
-          }
-        }
-      }
-      else {                            // this = gamma*this + alpha*A + beta*B
-        for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-          pointer curpos = (*this)[j], cend = (*this)[j]+myLength(); const_pointer Apos = (*Aptr)[j], Bpos = (*Bptr)[j];
-          for (; curpos != cend; ++curpos, ++Apos, ++Bpos) { *curpos = gamma*(*curpos) + (*lalpha)*(*Apos) + (*lbeta)*(*Bpos); }
-        }
-      }
-    }
+    MVDA::update(*lclMV_,gamma,(const KMV&)(*A.lclMV_),alpha,(const KMV&)(*B.lclMV_),beta);
   }
 
 
@@ -1005,44 +883,56 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal> > MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator()(Teuchos_Ordinal j)
   {
-    Teuchos::ArrayRCP<Scalar> data;
-    if (constantStride()) {
-      // view goes from first entry of first vector to last entry of last vector
-      data = MVData_->contigValues_.persistingView(stride()*j,myLength());
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(j < 0 || j >= this->numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::operator()(j): index j (== " << j << ") exceeds valid column range for this multivector.");
+#endif
+    Teuchos::RCP<KMV> lclV = Teuchos::rcp(new KMV(lclMV_->getNode()));
+    if (myLength() > 0) {
+      typename Node::buffer<Scalar>::buffer_t buf = (*lclMV_)(j);
+      lclV->initializeValues(myLength(),1,buf,myLength());
     }
-    else {
-      data = MVData_->nonContigValues_[j].persistingView(0,myLength());
-    }
-    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal>(this->getMap(),data));
+    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),lclV));
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal> > MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator() (Teuchos_Ordinal j) const
   {
-    Teuchos::ArrayRCP<Scalar> data;
-    if (constantStride()) {
-      // view goes from first entry of first vector to last entry of last vector
-      data = MVData_->contigValues_.persistingView(stride()*j,myLength());
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(j < 0 || j >= this->numVectors(), std::runtime_error,
+        "Tpetra::MultiVector::operator()(j): index j (== " << j << ") exceeds valid column range for this multivector.");
+#endif
+    Teuchos::RCP<KMV> lclV = Teuchos::rcp(new KMV(lclMV_->getNode()));
+    if (myLength() > 0) {
+      typename Node::buffer<Scalar>::buffer_t buf = (*lclMV_)(j);
+      lclV->initializeValues(myLength(),1,buf,myLength());
     }
-    else {
-      data = MVData_->nonContigValues_[j].persistingView(0,myLength());
-    }
-    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal>(this->getMap(),data));
+    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),lclV));
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractCopy1D(typename Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractCopy1D(Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const
   {
     TEST_FOR_EXCEPTION(LDA < myLength(), std::runtime_error,
       "Tpetra::MultiVector::extractCopy1D(A,LDA): specified stride is not large enough for local vector length.");
     TEST_FOR_EXCEPTION(A.size() < LDA*(numVectors()-1)+myLength(), std::runtime_error,
       "Tpetra::MultiVector::extractCopy1D(A,LDA): specified stride is not large enough for local vector length.");
-    pointer Aptr = A.begin();
-    for (Teuchos_Ordinal j=0; j<numVectors(); j++) {
-      std::copy((*this)[j], (*this)[j]+myLength(), Aptr);
-      Aptr += LDA;
+    Node &node = lclMV_->getNode();
+    const int myStride = lclMV_->getStride(),
+              numCols = numVectors(),
+              myLen   = myLength();
+    if (myLen > 0) {
+      const Scalar *myptr = node.template viewBufferConst<Scalar>(myStride*(numCols-1)+myLen,lclMV_->getValues(0),0);
+      const Scalar *origMyPtr = myptr;
+      typename Teuchos::ArrayView<Scalar>::iterator Aptr = A.begin();
+      for (Teuchos_Ordinal j=0; j<numCols; j++) {
+        std::copy(myptr,myptr+myLen,Aptr);
+        Aptr += LDA;
+        myptr += myStride;
+      }
+      node.template releaseView<Scalar>(origMyPtr);
     }
   }
 
@@ -1050,9 +940,21 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractCopy1D(Scalar *A, Teuchos_Ordinal LDA) const
   {
-    for (Teuchos_Ordinal j=0; j<numVectors(); j++) {
-      std::copy((*this)[j], (*this)[j]+myLength(), A);
-      A += LDA;
+    TEST_FOR_EXCEPTION(LDA < myLength(), std::runtime_error,
+      "Tpetra::MultiVector::extractCopy1D(A,LDA): specified stride is not large enough for local vector length.");
+    Node &node = lclMV_->getNode();
+    const int myStride = lclMV_->getStride(),
+              numCols = numVectors(),
+              myLen   = myLength();
+    if (myLen > 0) {
+      const Scalar *myptr = node.template viewBufferConst<Scalar>(myStride*(numCols-1)+myLen,lclMV_->getValues(0),0);
+      const Scalar *origMyPtr = myptr;
+      for (Teuchos_Ordinal j=0; j<numCols; j++) {
+        std::copy(myptr,myptr+myLen,A);
+        A += LDA;
+        myptr += myStride;
+      }
+      node.template releaseView<Scalar>(origMyPtr);
     }
   }
 
@@ -1062,12 +964,22 @@ namespace Tpetra {
   {
     TEST_FOR_EXCEPTION(ArrayOfPtrs.size() != numVectors(), std::runtime_error,
         "Tpetra::MultiVector::extractCopy2D(ArrayOfPtrs): Array of pointers must contain as many pointers as the MultiVector has rows.");
-    for (Teuchos_Ordinal j=0; j<numVectors(); ++j) {
+    Node &node = lclMV_->getNode();
+    const int myStride = lclMV_->getStride(),
+              numCols = numVectors(),
+              myLen   = myLength();
+    if (myLen > 0) {
+      const Scalar *myptr = node.template viewBufferConst<Scalar>(myStride*(numCols-1)+myLen,lclMV_->getValues(0),0);
+      const Scalar *origMyPtr = myptr;
+      for (Teuchos_Ordinal j=0; j<numCols; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION(ArrayOfPtrs[j].size() < myLength(), std::runtime_error,
-        "Tpetra::MultiVector::extractCopy2D(ArrayOfPtrs): The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
+        TEST_FOR_EXCEPTION(ArrayOfPtrs[j].size() < myLength(), std::runtime_error,
+            "Tpetra::MultiVector::extractCopy2D(ArrayOfPtrs): The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
 #endif
-      std::copy((*this)[j], (*this)[j]+myLength(), ArrayOfPtrs[j].begin());
+        std::copy(myptr,myptr+myLen,ArrayOfPtrs[j].begin());
+        myptr += myStride;
+      }
+      node.template releaseView<Scalar>(origMyPtr);
     }
   }
 
@@ -1075,8 +987,18 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractCopy2D(Scalar * const * ArrayOfPtrs) const
   {
-    for (Teuchos_Ordinal j=0; j<numVectors(); ++j) {
-      std::copy((*this)[j], (*this)[j]+myLength(), ArrayOfPtrs[j]);
+    Node &node = lclMV_->getNode();
+    const int myStride = lclMV_->getStride(),
+          numCols = numVectors(),
+          myLen   = myLength();
+    if (myLen > 0) {
+      const Scalar *myptr = node.template viewBufferConst<Scalar>(myStride*(numCols-1)+myLen,lclMV_->getValues(0),0);
+      const Scalar *origMyPtr = myptr;
+      for (Teuchos_Ordinal j=0; j<numCols; ++j) {
+        std::copy(myptr,myptr+myLen, ArrayOfPtrs[j]);
+        myptr += myStride;
+      }
+      node.template releaseView<Scalar>(origMyPtr);
     }
   }
 
@@ -1144,6 +1066,8 @@ namespace Tpetra {
 //REFACTOR// #endif
 //REFACTOR//   }
 
+
+  //REFACTOR// FINISH HERE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) 
