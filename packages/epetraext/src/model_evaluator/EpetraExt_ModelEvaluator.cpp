@@ -142,6 +142,14 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
   return supports_DgDp_[ j*Np() + l ];
 }
 
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDgDp_sg arg, int j, int l) const
+{
+  assert_j_sg(j);
+  assert_l_sg(l);
+  return supports_DgDp_sg_[ j*Np_sg() + l ];
+}
+
 
 bool ModelEvaluator::OutArgs::funcOrDerivesAreSet(EOutArgsMembers arg) const
 {
@@ -202,10 +210,19 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
   }
 }
 
-void ModelEvaluator::OutArgs::_set_Ng_sg(int Ng_sg)
+void ModelEvaluator::OutArgs::_set_Np_Ng_sg(int Np_sg, int Ng_sg)
 {
   if(Ng_sg) {
     g_sg_.resize(Ng_sg);
+  }
+  if(Np_sg && Ng_sg) {
+    Np_sg_ = Np_sg;
+    const int NpNg_sg = Np_sg*Ng_sg;
+    supports_DgDp_sg_.resize(NpNg_sg);
+    DgDp_sg_.resize(NpNg_sg);
+    std::fill_n(DgDp_sg_.begin(),NpNg_sg,sg_deriv_t());
+    DgDp_sg_properties_.resize(NpNg_sg);
+    std::fill_n(DgDp_sg_properties_.begin(),NpNg_sg,DerivativeProperties());
   }
 }
 
@@ -248,6 +265,13 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, cons
   supports_DgDp_[ j*Np() + l ] = supports;
 }
 
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& supports )
+{
+  assert_j_sg(j);
+  assert_l_sg(l);
+  supports_DgDp_sg_[ j*Np_sg() + l ] = supports;
+}
+
 
 void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_properties )
 {
@@ -280,6 +304,12 @@ void ModelEvaluator::OutArgs::_set_DgDp_properties( int j, int l, const Derivati
 {
   assert_supports(OUT_ARG_DgDp,j,l);
   DgDp_properties_[ j*Np() + l ] = properties;
+}
+
+void ModelEvaluator::OutArgs::_set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDp_sg,j,l);
+  DgDp_sg_properties_[ j*Np_sg() + l ] = properties;
 }
 
 
@@ -341,6 +371,17 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
     );
 }
 
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp_sg arg, int j, int l) const
+{
+  assert_j_sg(j);
+  TEST_FOR_EXCEPTION(
+    supports_DgDp_sg_[ j*Np_sg() + l ].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp_sg,j,l): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDp_sg(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
+    );
+}
+
 
 void ModelEvaluator::OutArgs::assert_l(int l) const
 {
@@ -369,6 +410,21 @@ void ModelEvaluator::OutArgs::assert_j(int j) const
     !( 0 <= j && j < Ng() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "The auxiliary function g(j) index j = " << j << " is not in the range [0,"<<Ng()-1<<"]!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_l_sg(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    Np_sg()==0, std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l_sg(l): model = \'"<<modelEvalDescription_<<"\':  Error, "
+    "no stochastic Galerkin auxiliary parameters subvectors p_sg(l) are supported!!"
+    );
+  TEST_FOR_EXCEPTION(
+    !( 0 <= l && l < Np_sg() ), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_l_sg(l): "
+    "model = \'"<<modelEvalDescription_<<"\': Error, "
+    "The stochastic Galerkin parameter subvector p_sg(l) index l = " << l << " is not in the range [0,"<<Np_sg()-1<<"]!"
     );
 }
 

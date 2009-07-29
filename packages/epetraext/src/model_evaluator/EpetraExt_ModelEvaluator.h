@@ -407,6 +407,11 @@ public:
   };
 
   /** \brief . */
+  enum EOutArgsDgDp_sg {
+    OUT_ARG_DgDp_sg   ///< .
+  };
+
+  /** \brief . */
   class OutArgs {
   public:
 
@@ -415,6 +420,9 @@ public:
 
     //! Short-hand for stochastic Galerkin operator type
     typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_operator_t;
+
+    //! Short-hand for stochastic Galerkin derivative type
+    typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Derivative> > sg_deriv_t;
 
     /** \brief. */
     OutArgs();
@@ -425,6 +433,8 @@ public:
     /** \brief .  */
     int Ng() const;
     /** \brief Number of stochastic Galerkin parameters  */
+    int Np_sg() const;
+    /** \brief Number of stochastic Galerkin responses  */
     int Ng_sg() const;
     /** \brief. */
     bool supports(EOutArgsMembers arg) const;
@@ -436,10 +446,16 @@ public:
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
     /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
+    /** \brief <tt>0 <= j && j < Ng_sg()</tt> and <tt>0 <= l && l < Np_sg()</tt>.  */
+    const DerivativeSupport& supports(EOutArgsDgDp_sg arg, int j, int l) const;
     /** \brief. */
     void set_f( const Evaluation<Epetra_Vector> &f );
     /** \brief. */
     Evaluation<Epetra_Vector> get_f() const;
+    /** \brief Set stochastic Galerkin residual vector polynomial.  */
+    void set_f_sg( const sg_vector_t& f_sg );
+    /** \brief Get stochastic Galerkin residual vector polynomial.  */
+    sg_vector_t get_f_sg() const;
     /** \brief Set <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
     void set_g( int j, const Evaluation<Epetra_Vector> &g_j );
     /** \brief Get <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
@@ -456,6 +472,10 @@ public:
     Teuchos::RefCountPtr<Epetra_Operator> get_W() const;
     /** \brief . */
     DerivativeProperties get_W_properties() const;
+    /** \brief Set stochastic Galerkin W operator polynomial. */
+    void set_W_sg( const sg_operator_t& W_sg );
+    /** \brief Get stochastic Galerkin W operator polynomial. */
+    sg_operator_t get_W_sg() const;
     /** \brief .  */
     void set_DfDp(int l,  const Derivative &DfDp_l);
     /** \brief .  */
@@ -480,18 +500,19 @@ public:
     Derivative get_DgDp(int j, int l) const;
     /** \brief . */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
+    /** \brief .  */
+    void set_DgDp_sg( int j, int l, const sg_deriv_t &DgDp_sg_j_l );
+    /** \brief .  */
+    sg_deriv_t get_DgDp_sg(int j, int l) const;
+    /** \brief . */
+    DerivativeProperties get_DgDp_sg_properties(int j, int l) const;
+
     /** \brief Set residual vector Taylor polynomial.  */
     void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > &f_poly );
     /** \brief Get residual vector Taylor polynomial.  */
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > get_f_poly() const;
-    /** \brief Set stochastic Galerkin residual vector polynomial.  */
-    void set_f_sg( const sg_vector_t& f_sg );
-    /** \brief Get stochastic Galerkin residual vector polynomial.  */
-    sg_vector_t get_f_sg() const;
-    /** \brief Set stochastic Galerkin W operator polynomial. */
-    void set_W_sg( const sg_operator_t& W_sg );
-    /** \brief Get stochastic Galerkin W operator polynomial. */
-    sg_operator_t get_W_sg() const;
+    
+    
     /** \brief Return true if the function or its derivatives are set. */
     bool funcOrDerivesAreSet(EOutArgsMembers arg) const;
   protected:
@@ -500,7 +521,7 @@ public:
     /** \brief . */
     void _set_Np_Ng(int Np, int Ng);
     /** \brief . */
-    void _set_Ng_sg(int Ng_sg);
+    void _set_Np_Ng_sg(int Np_sg, int Ng_sg);
     /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
     /** \brief . */
@@ -512,6 +533,8 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
+    void _setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
+    /** \brief . */
     void _set_W_properties( const DerivativeProperties &W_properties );
     /** \brief . */
     void _set_DfDp_properties( int l, const DerivativeProperties &properties );
@@ -521,6 +544,8 @@ public:
     void _set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties );
   private:
     // types
     typedef Teuchos::Array<Evaluation<Epetra_Vector> > g_t;
@@ -535,6 +560,7 @@ public:
     supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
+    supports_t supports_DgDp_sg_; // Ng_sg x Np
     Evaluation<Epetra_Vector> f_;
     g_t g_;
     g_sg_t g_sg_;
@@ -551,14 +577,19 @@ public:
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly_;
     sg_vector_t f_sg_;
     sg_operator_t W_sg_;
+    Teuchos::Array<sg_deriv_t> DgDp_sg_; // Ng_sg x Np_sg
+    deriv_properties_t DgDp_sg_properties_; // Ng_sg x Np_sg
+    int Np_sg_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
     void assert_supports(EOutArgsDgDx_dot arg, int j) const;
     void assert_supports(EOutArgsDgDx arg, int j) const;
     void assert_supports(EOutArgsDgDp arg, int j, int l) const;
+    void assert_supports(EOutArgsDgDp_sg arg, int j, int l) const;
     void assert_l(int l) const;
     void assert_j(int j) const;
+    void assert_l_sg(int l) const;
     void assert_j_sg(int j) const;
   };
 
@@ -723,7 +754,7 @@ protected:
     /** \brief . */
     void set_Np_Ng(int Np, int Ng);
     /** \brief . */
-    void set_Ng_sg(int Ng_sg);
+    void set_Np_Ng_sg(int Np_sg, int Ng_sg);
     /** \brief . */
     void setSupports( EOutArgsMembers arg, bool supports = true );
     /** \brief . */
@@ -735,6 +766,8 @@ protected:
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
+    void setSupports(EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
+    /** \brief . */
     void set_W_properties( const DerivativeProperties &properties );
     /** \brief . */
     void set_DfDp_properties( int l, const DerivativeProperties &properties );
@@ -744,6 +777,8 @@ protected:
     void set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties );
   };
 
   //@}
@@ -970,6 +1005,12 @@ int ModelEvaluator::OutArgs::Ng() const
 }
 
 inline
+int ModelEvaluator::OutArgs::Np_sg() const
+{
+  return Np_sg_;
+}
+
+inline
 int ModelEvaluator::OutArgs::Ng_sg() const
 { 
   return g_sg_.size();
@@ -1000,7 +1041,7 @@ ModelEvaluator::OutArgs::get_g(int j) const
 inline
 void ModelEvaluator::OutArgs::set_g_sg( int j, const sg_vector_t &g_sg_j )
 {
-  assert_j(j);
+  assert_j_sg(j);
   g_sg_[j] = g_sg_j;
 }
 
@@ -1117,6 +1158,29 @@ ModelEvaluator::OutArgs::get_DgDp_properties(int j, int l) const
 }
 
 inline
+void ModelEvaluator::OutArgs::set_DgDp_sg( int j, int l, const ModelEvaluator::OutArgs::sg_deriv_t &DgDp_sg_j_l )
+{
+  assert_supports(OUT_ARG_DgDp_sg,j,l);
+  DgDp_sg_[ j*Np_sg() + l ] = DgDp_sg_j_l;
+}
+
+inline
+ModelEvaluator::OutArgs::sg_deriv_t
+ModelEvaluator::OutArgs::get_DgDp_sg(int j, int l) const
+{
+  assert_supports(OUT_ARG_DgDp_sg,j,l);
+  return DgDp_sg_[ j*Np_sg() + l ];
+}
+
+inline
+ModelEvaluator::DerivativeProperties
+ModelEvaluator::OutArgs::get_DgDp_sg_properties(int j, int l) const
+{
+  assert_supports(OUT_ARG_DgDp_sg,j,l);
+  return DgDp_sg_properties_[ j*Np_sg() + l ];
+}
+
+inline
 void ModelEvaluator::OutArgs::set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > &f_poly )
 { f_poly_ = f_poly; }
 
@@ -1177,8 +1241,8 @@ void ModelEvaluator::OutArgsSetup::set_Np_Ng(int Np, int Ng)
 { this->_set_Np_Ng(Np,Ng); }
 
 inline
-void ModelEvaluator::OutArgsSetup::set_Ng_sg(int Ng_sg)
-{ this->_set_Ng_sg(Ng_sg); }
+void ModelEvaluator::OutArgsSetup::set_Np_Ng_sg(int Np_sg, int Ng_sg)
+{ this->_set_Np_Ng_sg(Np_sg, Ng_sg); }
 
 inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsMembers arg, bool supports )
@@ -1198,6 +1262,10 @@ void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx arg, int j, const D
 
 inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports )
+{ this->_setSupports(arg,j,l,supports); }
+
+inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& supports )
 { this->_setSupports(arg,j,l,supports); }
 
 inline
@@ -1226,6 +1294,12 @@ inline
 void ModelEvaluator::OutArgsSetup::set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
 {
   this->_set_DgDp_properties(j,l,properties);
+}
+
+inline
+void ModelEvaluator::OutArgsSetup::set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties )
+{
+  this->_set_DgDp_sg_properties(j,l,properties);
 }
 
 } // namespace EpetraExt
