@@ -304,6 +304,7 @@ REFTREE = \
 
 SIMPLE = \
 	$(srcdir)/simple/block.c \
+	$(srcdir)/simple/cyclic.c \
 	$(srcdir)/simple/random.c
 
 TIMER_H = \

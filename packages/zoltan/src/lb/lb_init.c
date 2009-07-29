@@ -81,9 +81,6 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   for (i=0; i<lb->Imb_Tol_Len; i++)
     lb->Imbalance_Tol[i] = ZOLTAN_LB_IMBALANCE_TOL_DEF;
   strcpy(lb->Approach, ZOLTAN_LB_APPROACH_DEF);
-  lb->Part2d_Fn = NULL;
-  lb->RowColDir = NULL;
-  lb->NzDir = NULL;
 }
 
 #ifdef __cplusplus

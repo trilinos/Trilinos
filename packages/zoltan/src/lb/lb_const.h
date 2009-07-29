@@ -49,8 +49,6 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
                                     double, double, double,
                                     double, double, double,
                                     int*, int*, int *, int *);
-  /* 2d partitioning */
-typedef int ZOLTAN_LB_PART2D_FN(struct Zoltan_Struct *);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -59,6 +57,7 @@ typedef int ZOLTAN_LB_PART2D_FN(struct Zoltan_Struct *);
 typedef enum Zoltan_LB_Method {
   NONE = -1,
   BLOCK, 
+  CYCLIC, 
   RANDOM, 
   RCB,
   OCTPART,
@@ -184,10 +183,6 @@ struct Zoltan_LB_Struct {
                                   /*  Pointer to the function that performs
                                       Box_Assign; this ptr is set based on 
                                       the method used.                       */
-  ZOLTAN_LB_PART2D_FN *Part2d_Fn; /*  Pointer to the function that performs
-                                      2d partitioning.                       */
-  Zoltan_DD_Directory *RowColDir; /* 2d: Directory of rows and columns. */
-  Zoltan_DD_Directory *NzDir;     /* 2d: Directory of nonzeros. */
 };
 
 struct Zoltan_Migrate_Struct {
@@ -279,6 +274,7 @@ extern int Zoltan_LB_Add_Part_Sizes_Weight(struct Zoltan_Struct *, int, int,
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_Block;
+extern ZOLTAN_LB_FN Zoltan_Cyclic;
 extern ZOLTAN_LB_FN Zoltan_Random;
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;

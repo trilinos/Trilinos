@@ -76,6 +76,12 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Free_Structure = NULL;
     zz->LB.Copy_Structure = NULL;
   }
+  else if (strcmp(method_upper, "CYCLIC") == 0) {
+    zz->LB.Method = CYCLIC;
+    zz->LB.LB_Fn = Zoltan_Cyclic;
+    zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
+  }
   else if (strcmp(method_upper, "RANDOM") == 0) {
     zz->LB.Method = RANDOM;
     zz->LB.LB_Fn = Zoltan_Random;

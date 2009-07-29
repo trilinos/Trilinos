@@ -147,7 +147,8 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/reftree/reftree_hash.c \
 	$(srcdir)/reftree/reftree_part.c \
 	$(srcdir)/parmetis/scotch_interface.c $(srcdir)/simple/block.c \
-	$(srcdir)/simple/random.c $(srcdir)/timer/timer_params.c \
+	$(srcdir)/simple/cyclic.c $(srcdir)/simple/random.c \
+	$(srcdir)/timer/timer_params.c \
 	$(srcdir)/Utilities/Communication/comm_exchange_sizes.c \
 	$(srcdir)/Utilities/Communication/comm_invert_map.c \
 	$(srcdir)/Utilities/Communication/comm_do.c \
@@ -235,7 +236,7 @@ am__objects_17 = reftree_build.$(OBJEXT) reftree_coarse_path.$(OBJEXT) \
 	reftree_hash.$(OBJEXT) reftree_part.$(OBJEXT)
 am__objects_18 = scotch_interface.$(OBJEXT)
 @BUILD_SCOTCH_TRUE@am__objects_19 = $(am__objects_18)
-am__objects_20 = block.$(OBJEXT) random.$(OBJEXT)
+am__objects_20 = block.$(OBJEXT) cyclic.$(OBJEXT) random.$(OBJEXT)
 am__objects_21 = timer_params.$(OBJEXT)
 am__objects_22 = comm_exchange_sizes.$(OBJEXT) \
 	comm_invert_map.$(OBJEXT) comm_do.$(OBJEXT) \
@@ -666,6 +667,7 @@ REFTREE = \
 
 SIMPLE = \
 	$(srcdir)/simple/block.c \
+	$(srcdir)/simple/cyclic.c \
 	$(srcdir)/simple/random.c
 
 TIMER_H = \
@@ -1235,6 +1237,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_sort_ints.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/costs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create_proc_list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cyclic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/divide_machine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/free_params.Po@am__quote@
@@ -2875,6 +2878,20 @@ block.obj: $(srcdir)/simple/block.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/simple/block.c' object='block.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o block.obj `if test -f '$(srcdir)/simple/block.c'; then $(CYGPATH_W) '$(srcdir)/simple/block.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/simple/block.c'; fi`
+
+cyclic.o: $(srcdir)/simple/cyclic.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cyclic.o -MD -MP -MF $(DEPDIR)/cyclic.Tpo -c -o cyclic.o `test -f '$(srcdir)/simple/cyclic.c' || echo '$(srcdir)/'`$(srcdir)/simple/cyclic.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cyclic.Tpo $(DEPDIR)/cyclic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/simple/cyclic.c' object='cyclic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cyclic.o `test -f '$(srcdir)/simple/cyclic.c' || echo '$(srcdir)/'`$(srcdir)/simple/cyclic.c
+
+cyclic.obj: $(srcdir)/simple/cyclic.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cyclic.obj -MD -MP -MF $(DEPDIR)/cyclic.Tpo -c -o cyclic.obj `if test -f '$(srcdir)/simple/cyclic.c'; then $(CYGPATH_W) '$(srcdir)/simple/cyclic.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/simple/cyclic.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cyclic.Tpo $(DEPDIR)/cyclic.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/simple/cyclic.c' object='cyclic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cyclic.obj `if test -f '$(srcdir)/simple/cyclic.c'; then $(CYGPATH_W) '$(srcdir)/simple/cyclic.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/simple/cyclic.c'; fi`
 
 random.o: $(srcdir)/simple/random.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT random.o -MD -MP -MF $(DEPDIR)/random.Tpo -c -o random.o `test -f '$(srcdir)/simple/random.c' || echo '$(srcdir)/'`$(srcdir)/simple/random.c

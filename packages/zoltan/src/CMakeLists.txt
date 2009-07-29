@@ -430,6 +430,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simple)
 
 APPEND_SET(SOURCES
   simple/block.c
+  simple/cyclic.c
   simple/random.c
   )
 
