@@ -437,17 +437,44 @@ namespace Intrepid {
 
 	  for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
 	    for (int j=0;j<outputValues.dimension(1);j++) {  // point
-	      outputValues(i,j,0) = 0.0;
-	      outputValues(i,j,1) = 0.0;
+	      for (int d=0;d<3;d++) {
+		outputValues(i,j,d) = 0.0;
+	      }
 	      for (int k=0;k<scalarBigN;k++) { // Dubiner bf
-		outputValues(i,j,0) += coeffs_(k,i) * phisCur(k,j);
-		outputValues(i,j,1) += coeffs_(k+scalarBigN,i) * phisCur(k,j);
+		for (int d=0;d<3;d++) {
+		  outputValues(i,j,d) += coeffs_(k*d*scalarBigN,i) * phisCur(k,j);
+		}
 	      }
 	    }
 	  }
 	}
 	break;
       case OPERATOR_CURL:
+	{
+          FieldContainer<Scalar> phisCur( scalarBigN , numPts , 3 );
+          Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
+          for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
+            for (int j=0;j<outputValues.dimension(1);j++) { // point loop
+	      outputValues(i,j,0) = 0.0;
+	      for (int k=0;k<scalarBigN;k++) {
+		outputValues(i,j,0) += coeffs_(k+2*scalarBigN,i) * phisCur(k,j,1);
+		outputValues(i,j,0) -= coeffs_(k+scalarBigN,i) * phisCur(k,j,2);
+	      }
+	      
+	      outputValues(i,j,1) = 0.0;
+	      for (int k=0;k<scalarBigN;k++) {
+		outputValues(i,j,1) += coeffs_(k,i) * phisCur(k,j,2);
+		outputValues(i,j,1) -= coeffs_(k+2*scalarBigN,i) * phisCur(k,j,0);
+	      }
+
+	      outputValues(i,j,2) = 0.0;
+	      for (int k=0;k<scalarBigN;k++) {
+		outputValues(i,j,2) += coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
+		outputValues(i,j,2) -= coeffs_(k,i) * phisCur(k,j,1);
+	      }
+	    }
+	  }
+	}	  
 	break;
       default:
 	TEST_FOR_EXCEPTION( true , std::invalid_argument,
