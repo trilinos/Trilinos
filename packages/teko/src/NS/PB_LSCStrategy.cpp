@@ -45,7 +45,7 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 
 // helper function for a lid driven cavity-like problem
 // This function _WILL_ change the operator
-PB::LinearOp reduceCrsOperator(PB::LinearOp & op,const std::vector<int> & zeroIndicies)
+PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::vector<int> & zeroIndicies)
 {
    // Extract a non-const version of the operator
    RCP<Epetra_Operator> eOp = get_Epetra_Operator(*rcp_const_cast<Thyra::LinearOpBase<double> >(op));
@@ -72,7 +72,7 @@ PB::LinearOp reduceCrsOperator(PB::LinearOp & op,const std::vector<int> & zeroIn
    eCrsOp->RightScale(scaling);
    eCrsOp->LeftScale(scaling);
 
-   #if 0
+   #if 1
    // so the matrix is still invertable...set the digaonals of the
    // wiped rows to 1
    for(int i=0;i<localIndicies.size();i++) {
@@ -85,7 +85,8 @@ PB::LinearOp reduceCrsOperator(PB::LinearOp & op,const std::vector<int> & zeroIn
    #endif
 
    // now wrap the crs matrix in a ZeroedEpetraOperator
-   return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,eCrsOp)));
+   // return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,eCrsOp)));
+   return Thyra::nonconstEpetraLinearOp(eCrsOp);
 }
 
 // constructors
@@ -136,16 +137,32 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
 
    // (re)build the inverse of the Schur complement
    PB::ModifiableLinearOp BQBtmC = state.getInverse("BQBtmC");
+   #if 0
+   {
+      PB_DEBUG_MSG("   Reducing BQBt",10);
+      BQBtmC = reduceCrsOperator(BQBtmC,nullPresIndices_);
+   }
+   #endif
    if(lscState->invBQBtmC_==Teuchos::null)
       lscState->invBQBtmC_ = buildInverse(*invFactoryS_,BQBtmC);
    else
       rebuildInverse(*invFactoryS_,BQBtmC,lscState->invBQBtmC_);
 
-   // if(nullPresIndicies_.size()>0) {
-   //    PB::LinearOp inv = lscState->invBQBtmC_;
-   //    RCP<Epetra_Operator> eOp = rcp(new PB::Epetra::EpetraOperatorWrapper(inv));
-   //    return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(nullPresIndicies_,eOp)));
-   // } 
+   if(nullPresIndices_.size()>0) {
+      PB::LinearOp inv = lscState->invBQBtmC_;
+      RCP<Epetra_Operator> eOp = rcp(new PB::Epetra::EpetraOperatorWrapper(inv));
+   
+      PB_DEBUG_MSG_BEGIN(5);
+         DEBUG_STREAM << "Zeroing invBQBt" << std::endl;
+         DEBUG_STREAM << "Pinned pressures = ";
+         for(int i=0;i<nullPresIndices_.size();i++) 
+            DEBUG_STREAM << nullPresIndices_[i] << " ";
+         DEBUG_STREAM << std::endl;
+      PB_DEBUG_MSG_END();
+      PB_DEBUG_MSG("END InvLSCStrategy::getInvBQBt",10);
+   
+      return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(nullPresIndices_,eOp)));
+   } 
 
    PB_DEBUG_MSG("END InvLSCStrategy::getInvBQBt",10);
 
@@ -258,6 +275,19 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
          // build an operator that zeros those rows
          modF = Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,crsF)));
+      }
+   }
+
+   // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
+   const RCP<const Epetra_Operator> epC = Thyra::get_Epetra_Operator(*C);
+   if(epC!=Teuchos::null && presZeroingNeeded_) {
+      // try to get a CRS matrix
+      const RCP<const Epetra_CrsMatrix> crsC = rcp_dynamic_cast<const Epetra_CrsMatrix>(epC);
+
+      // if it is a CRS matrix get rows that need to be zeroed
+      nullPresIndices_.clear();
+      if(crsC!=Teuchos::null) {
+         PB::Epetra::identityRowIndicies(crsC->RowMap(), *crsC,nullPresIndices_);
       }
    }
 

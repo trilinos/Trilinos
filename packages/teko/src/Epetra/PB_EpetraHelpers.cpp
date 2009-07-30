@@ -148,7 +148,7 @@ void zeroMultiVectorRowIndicies(Epetra_MultiVector & mv,const std::vector<int> &
  
       // loop over columns
       for(int j=0;j<colCnt;j++)
-         mv.ReplaceGlobalValue(*itr,j,0.0);
+         TEST_FOR_EXCEPT(mv.ReplaceGlobalValue(*itr,j,0.0));
    }
 }
 
@@ -169,6 +169,12 @@ ZeroedOperator::ZeroedOperator(const std::vector<int> & zeroIndicies,
 //! Perform a matrix-vector product with certain rows zeroed out
 int ZeroedOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+/*
+   Epetra_MultiVector temp(X);
+   zeroMultiVectorRowIndicies(temp,zeroIndicies_);
+   int result = epetraOp_->Apply(temp,Y);
+*/
+
    int result = epetraOp_->Apply(X,Y);
 
    // zero a few of the rows

@@ -13,7 +13,6 @@
 using namespace Thyra;
 
 namespace PB {
-
 /////////////////////////////////////////////////////
 
 //! Set parameters from a parameter list and return with default values.
@@ -154,6 +153,13 @@ RCP<const InverseLibrary> BlockPreconditionerFactory::getInverseLibrary() const
    return inverseLibrary_;
 }
 
+/////////////////////////////////////////////////////
+// Static members and methods
+/////////////////////////////////////////////////////
+
+//! for creating the preconditioner factories objects
+CloneFactory<BlockPreconditionerFactory> BlockPreconditionerFactory::precFactoryBuilder_;
+
 /** \brief Builder function for creating preconditioner factories (yes
   *        this is a factory factory.
   *
@@ -175,22 +181,18 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
 {
    PB_DEBUG_MSG("Begin BlockPreconditionerFactory::buildPreconditionerFactory",10);
 
-   RCP<BlockPreconditionerFactory> precFact;
+   // initialize the defaults if necessary
+   if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
 
-   // build various preconditioners
-   if(name=="Block Jacobi")
-      precFact = rcp(new JacobiPreconditionerFactory());
-   else if(name=="Block Gauss Seidel")
-      precFact = rcp(new GaussSeidelPreconditionerFactory());
-   else if(name=="Block Add")
-      precFact = rcp(new AddPreconditionerFactory());
-   else if(name=="Block Multiply")
-      precFact = rcp(new MultPreconditionerFactory());
-   else if(name=="NS LSC")
-      precFact = rcp(new NS::LSCPreconditionerFactory());
-   else if(name=="NS SIMPLE")
-      precFact = rcp(new NS::SIMPLEPreconditionerFactory());
-   else
+   // request the preconditioner factory from the CloneFactory
+   RCP<BlockPreconditionerFactory> precFact = precFactoryBuilder_.build(name);
+
+   PB_DEBUG_MSG_BEGIN(5);
+      DEBUG_STREAM << "Looked up \"" << name << "\"" << std::endl;
+      DEBUG_STREAM << "Built " << precFact << std::endl;
+   PB_DEBUG_MSG_END();
+
+   if(precFact==Teuchos::null)  
       return Teuchos::null;
 
    // add in the inverse library
@@ -204,6 +206,53 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
    PB_DEBUG_MSG("End BlockPreconditionerFactory::buildPreconditionerFactory",10);
 
    return precFact;
+}
+
+/** \brief Add a preconditioner factory to the builder. This is done using the
+  *        clone pattern. 
+  *
+  * Add a preconditioner factory to the builder. This is done using the
+  * clone pattern. If your class does not support the Cloneable interface then
+  * you can use the AutoClone class to construct your object.
+  *
+  * \note If this method is called twice with the same string, the latter clone pointer
+  *       will be used.
+  *
+  * \param[in] name String to associate with this object
+  * \param[in] clone Pointer to Cloneable object
+  */
+void BlockPreconditionerFactory::addPreconditionerFactory(const std::string & name,const RCP<Cloneable> & clone)
+{
+   // initialize the defaults if necessary
+   if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
+
+   // add clone to builder
+   precFactoryBuilder_.addClone(name,clone); 
+}
+
+//! This is where the default objects are put into the precFactoryBuilder_
+void BlockPreconditionerFactory::initializePrecFactoryBuilder()
+{
+   RCP<Cloneable> clone;
+
+   // add various preconditioners to factory
+   clone = rcp(new AutoClone<JacobiPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Block Jacobi",clone);
+
+   clone = rcp(new AutoClone<GaussSeidelPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Block Gauss Seidel",clone);
+
+   clone = rcp(new AutoClone<AddPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Block Add",clone);
+
+   clone = rcp(new AutoClone<MultPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Block Multiply",clone);
+
+   clone = rcp(new AutoClone<NS::LSCPreconditionerFactory>());
+   precFactoryBuilder_.addClone("NS LSC",clone);
+
+   clone = rcp(new AutoClone<NS::SIMPLEPreconditionerFactory>());
+   precFactoryBuilder_.addClone("NS SIMPLE",clone);
 }
 
 } // end namespace PB

@@ -115,6 +115,7 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
    bool rowZeroing = true;
+   bool presZeroing = false;
    bool useLDU = false;
 
    // "parse" the parameter list
@@ -128,6 +129,8 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
       rowZeroing = pl.get<bool>("Ignore Boundary Rows");
    if(pl.isParameter("Use LDU"))
       useLDU = pl.get<bool>("Use LDU");
+   if(pl.isParameter("Pressure Zeroing On"))
+      presZeroing = pl.get<bool>("Pressure Zeroing On");
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Parameters: " << std::endl;
@@ -135,6 +138,7 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
       DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
       DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
       DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
+      DEBUG_STREAM << "   pres zero  = " << presZeroing << std::endl;
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "LSC Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
@@ -157,6 +161,7 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
    // based on parameter type build a strategy
    RCP<InvLSCStrategy> strategy = rcp(new InvLSCStrategy(invVFact,invPFact,rowZeroing));
    strategy->setUseFullLDU(useLDU);
+   strategy->setPressureZeroing(presZeroing);
 
    invOpsStrategy_ = strategy;
 

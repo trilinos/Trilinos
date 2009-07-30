@@ -212,7 +212,6 @@ namespace Epetra {
     EpetraOperatorWrapper();
 
     /** */
-    //RCP<Epetra_Comm> getEpetraComm(const Thyra::ConstLinearOperator<double>& thyraOp) const;
     RCP<Epetra_Comm> getEpetraComm(const Thyra::LinearOpBase<double> & inOp) const;
 
     /** */

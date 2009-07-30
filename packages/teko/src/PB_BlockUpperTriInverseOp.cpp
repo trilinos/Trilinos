@@ -63,7 +63,7 @@ void BlockUpperTriInverseOp::implicitApply(const BlockedMultiVector & src, Block
    else
       dstCopy = dst; // shallow copy
 
-   // extract the blocks componets from
+   // extract the blocks components from
    // the source and destination vectors
    std::vector<MultiVector> dstVec;
    std::vector<MultiVector> scrapVec;

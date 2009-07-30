@@ -13,6 +13,7 @@
 // PB includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseLibrary.hpp"
+#include "PB_CloneFactory.hpp"
 
 namespace PB {
 
@@ -299,6 +300,29 @@ public:
    buildPreconditionerFactory(const std::string & name, 
                               const Teuchos::ParameterList & settings,
                               const RCP<const InverseLibrary> & invLib=Teuchos::null);
+
+   /** \brief Add a preconditioner factory to the builder. This is done using the
+     *        clone pattern. 
+     *
+     * Add a preconditioner factory to the builder. This is done using the
+     * clone pattern. If your class does not support the Cloneable interface then
+     * you can use the AutoClone class to construct your object.
+     *
+     * \note If this method is called twice with the same string, the latter clone pointer
+     *       will be used.
+     *
+     * \param[in] name String to associate with this object
+     * \param[in] clone Pointer to Cloneable object
+     */
+   void addPreconditionerFactory(const std::string & name,const RCP<Cloneable> & clone);
+
+protected:
+
+   //! for creating the preconditioner factories objects
+   static CloneFactory<BlockPreconditionerFactory> precFactoryBuilder_;
+
+   //! This is where the default objects are put into the precFactoryBuilder_
+   static void initializePrecFactoryBuilder();
 };
 
 } // end namespace PB

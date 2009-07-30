@@ -120,6 +120,9 @@ public:
    virtual bool useFullLDU() const { return useFullLDU_; }
    //@}
 
+   virtual void setPressureZeroing(bool on) 
+   { presZeroingNeeded_ = on; }
+
    //! Initialize the state object using this blocked linear operator
    virtual void initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
 
@@ -131,7 +134,7 @@ public:
 
    virtual void setUseFullLDU(bool val) { useFullLDU_ = val; }
 
-   virtual void addNullPressureIndex(int i) { nullPresIndicies_.push_back(i); }
+   virtual void addNullPressureIndex(int i) { nullPresIndices_.push_back(i); }
 
 protected:
    LinearOp massMatrix_;
@@ -140,10 +143,11 @@ protected:
    Teuchos::RCP<const InverseFactory> invFactoryS_;
    int eigSolveParam_;
    bool rowZeroingNeeded_;
+   bool presZeroingNeeded_;
    bool useFullLDU_;
 
    // maintain the null indicies for the pressure operator
-   std::vector<int> nullPresIndicies_;
+   mutable std::vector<int> nullPresIndices_;
 };
 
 } // end namespace NS
