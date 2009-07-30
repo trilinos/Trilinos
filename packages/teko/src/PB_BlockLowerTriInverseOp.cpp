@@ -46,10 +46,12 @@ void BlockLowerTriInverseOp::implicitApply(const BlockedMultiVector & src, Block
    TEUCHOS_ASSERT(blocks==blockCount(dst));
 
    // build a scrap vector for storing work
-   BlockedMultiVector scrap = deepcopy(src);
+   srcScrap_ = datacopy(src,srcScrap_);
    BlockedMultiVector dstCopy;
-   if(beta!=0.0)
-      dstCopy = deepcopy(dst);
+   if(beta!=0.0) {
+      dstScrap_ = datacopy(dst,dstScrap_);
+      dstCopy = dstScrap_;
+   }
    else
       dstCopy = dst; // shallow copy
 
@@ -59,7 +61,7 @@ void BlockLowerTriInverseOp::implicitApply(const BlockedMultiVector & src, Block
    std::vector<MultiVector> scrapVec;
    for(int b=0;b<blocks;b++) {
       dstVec.push_back(getBlock(b,dstCopy));
-      scrapVec.push_back(getBlock(b,scrap));
+      scrapVec.push_back(getBlock(b,srcScrap_));
    }
 
    // run forward-substituion: run over each column

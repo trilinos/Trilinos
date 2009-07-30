@@ -142,13 +142,55 @@ inline int blockCount(const BlockedMultiVector & bmv)
 inline MultiVector getBlock(int i,const BlockedMultiVector & bmv)
 { return Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(bmv->getMultiVectorBlock(i)); }
 
-//! Performa deep copy of the vector
+//! Perform a deep copy of the vector
 inline MultiVector deepcopy(const MultiVector & v)
 { return v->clone_mv(); }
 
-//! Performa deep copy of the blocked vector
+//! Perform a deep copy of the blocked vector
 inline BlockedMultiVector deepcopy(const BlockedMultiVector & v)
 { return toBlockedMultiVector(v->clone_mv()); }
+
+/** \brief Copy the contents of a multivector to a destination vector.
+  *
+  * Copy the contents of a multivector to a new vector. If the destination
+  * vector is null, a deep copy of the source multivector is made to a newly allocated
+  * vector.
+  *
+  * \param[in] src Source multivector to be copied.
+  * \param[in] dst Destination multivector.  If null a new multivector will be allocated.
+  *
+  * \returns A copy of the source multivector. If dst is not null a pointer to this object
+  *          is returned. Otherwise a new multivector is returned.
+  */
+inline MultiVector datacopy(const MultiVector & src,MultiVector & dst)
+{ 
+   if(dst==Teuchos::null)
+      return deepcopy(src);
+   // perform data copy
+   Thyra::assign<double>(dst.ptr(),*src);
+   return dst;
+}
+
+/** \brief Copy the contents of a blocked multivector to a destination vector.
+  *
+  * Copy the contents of a blocked multivector to a new vector. If the destination
+  * vector is null, a deep copy of the source multivector is made to a newly allocated
+  * vector.
+  *
+  * \param[in] src Source multivector to be copied.
+  * \param[in] dst Destination multivector.  If null a new multivector will be allocated.
+  *
+  * \returns A copy of the source multivector. If dst is not null a pointer to this object
+  *          is returned. Otherwise a new multivector is returned.
+  */
+inline BlockedMultiVector datacopy(const BlockedMultiVector & src,BlockedMultiVector & dst)
+{ 
+   if(dst==Teuchos::null)
+      return deepcopy(src);
+   // perform data copy
+   Thyra::assign<double>(dst.ptr(),*src);
+   return dst;
+}
 
 //! build a BlockedMultiVector from a vector of MultiVectors
 BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs);

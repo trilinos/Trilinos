@@ -63,6 +63,10 @@ protected:
    Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double> > productRange_; ///< Range vector space.
    Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double> > productDomain_; ///< Domain vector space.
 
+   // scratch space...so we don't have to reallocate
+   mutable BlockedMultiVector srcScrap_;
+   mutable BlockedMultiVector dstScrap_;
+
 private:
    // hide me!
    BlockLowerTriInverseOp();
