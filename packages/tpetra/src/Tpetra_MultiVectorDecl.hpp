@@ -47,8 +47,6 @@
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward declaration of MultiVectorData, needed to prevent circular inclusions
-  template<class Scalar, class Node> class MultiVectorData;
   // forward declaration of Vector, needed to prevent circular inclusions
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class Vector;
 #endif
@@ -272,7 +270,7 @@ namespace Tpetra {
     void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta);
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &B, const Scalar &gamma);
+    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
@@ -349,12 +347,12 @@ namespace Tpetra {
 
     protected:
 
-    typedef Kokkos::Multivector<Scalar,LocalOrdinal,Node>  KMV;
+    typedef Kokkos::MultiVector<Scalar,LocalOrdinal,Node>  KMV;
     typedef Kokkos::DefaultArithmetic<KMV>                 DMVA;
     Teuchos::RCP<Kokkos::MultiVector<Scalar,LocalOrdinal,Node> > lclMV_;
 
     // Advanced MultiVector constuctor for creating views.
-    MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<Kokkos::MultiVector<Scalar,Node> > &mvdata);
+    MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<Kokkos::MultiVector<Scalar,LocalOrdinal,Node> > &mvdata);
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &sourceObj, Teuchos_Ordinal &packetSize);

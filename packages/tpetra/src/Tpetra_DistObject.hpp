@@ -210,7 +210,7 @@ namespace Tpetra {
   }; // class DistObject
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal>::DistObject(const Map<LocalOrdinal,GlobalOrdinal>& map, Teuchos::RCP<const Teuchos::Comm<int> > comm)
+  DistObject<Scalar,LocalOrdinal,GlobalOrdinal>::DistObject(const Map<LocalOrdinal,GlobalOrdinal>& map)
   : map_(map)
   {}
 

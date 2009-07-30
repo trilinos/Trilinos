@@ -39,10 +39,7 @@
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include "Tpetra_MultiVectorDecl.hpp"
-#include "Tpetra_MultiVectorData.hpp"
-#include "Tpetra_Vector.hpp"
-
-// TODO: add real constructors for MultiVectorData so we don't have to setup its data and call setupPointers()
+//REFACTOR// #include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
 
@@ -55,7 +52,7 @@ namespace Tpetra {
     const LocalOrdinal myLen = myLength();
     lclMV_ = Teuchos::rcp( new KMV(node) );
     if (myLen > 0) {
-      typedef Node::buffer<Scalar>::buffer_t data = node.template allocBuffer<Scalar>(myLen*NumVectors);
+      typename Node::template buffer<Scalar>::buffer_t data = node.template allocBuffer<Scalar>(myLen*NumVectors);
       lclMV_->initializeValues(myLen,NumVectors,data,myLen);
       if (zeroOut) {
         DMVA::Init(*lclMV_,0.0);
@@ -71,20 +68,19 @@ namespace Tpetra {
     Node &node = source.lclMV_->getNode();
     const LocalOrdinal myLen = myLength();
     const Teuchos_Ordinal numVecs = source.numVectors();
-    {
-      // hijack standard constructor; allocates contiguous strided data
-      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> victim(node,source.getMap(),numVecs,false);
-      lclMV_ = victim.lclMV_;
-    }
+    lclMV_ = Teuchos::rcp( new KMV(node) );
     if (myLen > 0) {
+      // allocate data
+      typename Node::template buffer<Scalar>::buffer_t data = node.template allocBuffer<Scalar>(myLen*numVecs);
+      lclMV_->initializeValues(myLen,numVecs,data,myLen);
       // copy data
-      Teuchos::RCP<KMV> sourceLclMV = source.lclMV_;
-      typename Node::buffer<Scalar>::buffer_t dest = lclMV_->getValues(0);
+      KMV &sourceLclMV = *source.lclMV_;
+      typename Node::template buffer<Scalar>::buffer_t dest = lclMV_->getValues(0);
       int offset = 0;
       for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
-        typename Node::buffer<Scalar>::buffer_t src = sourceLclMv->getValues(j);
-        node.copyBuffers(myLen,src,0,dest,offset);
-        offset += mylen;
+        typename Node::template buffer<Scalar>::buffer_t src = sourceLclMV.getValues(j);
+        node.template copyBuffers<Scalar>(myLen,src,0,dest,offset);
+        offset += myLen;
       }
     }
   }
@@ -206,8 +202,8 @@ namespace Tpetra {
   {
     // free allocated memory 
     if (myLength() > 0) {
-      typename Node::buffer<Scalar>::buffer_t buf = lclMV_.getValues(0);
-      node.template freeBuffer<Scalar>(buf);
+      typename Node::template buffer<Scalar>::buffer_t buf = lclMV_->getValues(0);
+      lclMV_->getNode().template freeBuffer<Scalar>(buf);
     }
     // delete Kokkos::MultiVector computational object
     lclMV_ = Teuchos::null;
@@ -276,8 +272,8 @@ namespace Tpetra {
     //   Kokkos::MultiVector::getValues(j) returns a parallel buffer pointing to 
     //   the j-th column; viewBuffer/Const() will return a host pointer
     // TODO: determine whether this viewBuffer is write-only or not; for now, safe option is not
-    dstptr =  node.viewBuffer(false,dstStride*numCols,lclMV_->getValues(0),0);
-    srcptr =  node.viewBufferConst( srcStride*numCols,soruceMV.lclMV_->getValues(0),0);
+    dstptr =  node.template viewBuffer<Scalar>(false,dstStride*numCols,lclMV_->getValues(0),0);
+    srcptr =  node.template viewBufferConst<Scalar>( srcStride*numCols,sourceMV.lclMV_->getValues(0),0);
     for (Teuchos_Ordinal j = 0; j < numCols; ++j) {
       // The first numImportIDs GIDs are the same between source and target,
       // We can just copy them
@@ -314,14 +310,15 @@ namespace Tpetra {
       (all data associated with an LID) is required to be contiguous */
     TEST_FOR_EXCEPTION(exports.size() != numVectors()*exportLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::packAndPrepare(): sizing of exports buffer should be appropriate for the amount of data to be exported.");
-    const int myStride = lclMV_->getStride(),
+    KMV &srcData = (*sourceMV.lclMV_);
+    const int myStride = srcData.getStride(),
               numCols   = numVectors();
     typename ArrayView<const LocalOrdinal>::iterator idptr;
     typename ArrayView<Scalar>::iterator expptr;
     expptr = exports.begin();
-    Node &node = lclMV_->getNode();
+    Node &node = srcData.getNode();
     const Scalar * myptr;
-    myptr = node.viewBufferConst(myStride*numCols,lclMV_->getValues(0),0);
+    myptr = node.template viewBufferConst<Scalar>(myStride*numCols,srcData.getValues(0),0);
     for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr) {
       for (Teuchos_Ordinal j = 0; j < numCols; ++j) {
         *expptr++ = myptr[j*myStride + (*idptr)];
@@ -353,9 +350,9 @@ namespace Tpetra {
     const int myStride = lclMV_->getStride(),
               numCols   = numVectors();
     Node &node = lclMV_->getNode();
-    const Scalar * myptr;
+    Scalar * myptr;
     // TODO: determine whether this viewBuffer is write-only or not; for now, safe option is not
-    myptr = node.viewBuffer(false,myStride*numCols,lclMV_->getValues(0),0);
+    myptr = node.template viewBuffer<Scalar>(false,myStride*numCols,lclMV_->getValues(0),0);
     typename ArrayView<const       Scalar>::iterator impptr;
     typename ArrayView<const LocalOrdinal>::iterator  idptr;
     impptr = imports.begin();
@@ -363,14 +360,14 @@ namespace Tpetra {
     {
       for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
         for (Teuchos_Ordinal j = 0; j < numVectors(); ++j) {
-          (myptr+j*myStride)[*idptr] = *impptr++;
+          myptr[j*myStride + *idptr] = *impptr++;
         }
       }
     }
     else if (CM == ADD) {
       for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
         for (Teuchos_Ordinal j = 0; j < numVectors(); ++j) {
-          (myptr+j*myStride)[*idptr] += *impptr++;
+          myptr[j*myStride + *idptr] += *impptr++;
         }
       }
     }
@@ -408,12 +405,9 @@ namespace Tpetra {
         "Tpetra::MultiVector::dots(): MultiVectors must have the same number of vectors.");
     TEST_FOR_EXCEPTION(dots.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::dots(A,dots): dots.size() must be as large as the number of vectors in *this and A.");
-    if (!this->isDistributed()) {
-      MVDA::Dot(*lclMV_,*A.lclMV_,dots);
-    }
-    else {
-      Teuchos::Array<Scalar> ldots(numVecs);
-      MVDA::Dot(*lclMV_,*A.lclMV_,ldots());
+    DMVA::Dot(*lclMV_,*A.lclMV_,dots);
+    if (this->isDistributed()) {
+      Teuchos::Array<Scalar> ldots(dots);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,ldots.getRawPtr(),dots.getRawPtr());
     }
   }
@@ -429,12 +423,9 @@ namespace Tpetra {
     const Teuchos_Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::norm2(norms): norms.size() must be as large as the number of vectors in *this.");
-    if (!this->isDistributed()) {
-      MVDA::Norm2Squared(*lclMV_,norms);
-    }
-    else {
-      Teuchos::Array<Mag> lnorms(numVecs);
-      MVDA::Norm2Squared(*lclMV_,lnorms());
+    DMVA::Norm2Squared(*lclMV_,norms);
+    if (this->isDistributed()) {
+      Teuchos::Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
     }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
@@ -464,22 +455,19 @@ namespace Tpetra {
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(weights.getMap()), std::runtime_error,
-        "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
+        "Tpetra::MultiVector::normWeighted(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
         << "weights.getMap(): " << std::endl << weights.getMap() << std::endl);
 #else
     TEST_FOR_EXCEPTION( myLength() != weights.myLength(), std::runtime_error,
-        "Tpetra::MultiVector::dots(): MultiVectors do not have the same local length.");
+        "Tpetra::MultiVector::normWeighted(): MultiVectors do not have the same local length.");
 #endif
     // 
     TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::normWeighted(): norms.size() must be as large as the number of vectors in *this.");
-    if (!this->isDistributed()) {
-      MVDA::WeightedNorm(*weights.lclMV_,*lclMV_,norms);
-    }
-    else {
-      Teuchos::Array<Mag> lnorms(numVecs);
-      MVDA::WeightedNorm(*weights.lclMV_,*lclMV_,lnorms());
+    DMVA::WeightedNorm(*lclMV_,*weights.lclMV_,norms);
+    if (this->isDistributed()) {
+      Teuchos::Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
     }
     for (typename ArrayView<Mag>::iterator n = norms.begin(); n != norms.begin()+numVecs; ++n) {
@@ -496,12 +484,9 @@ namespace Tpetra {
     const Teuchos_Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::norm1(norms): norms.size() must be as large as the number of vectors in *this.");
-    if (!this->isDistributed()) {
-      MVDA::Norm1(*lclMV_,*A.lclMV_,norms);
-    }
-    else {
-      Teuchos::Array<Mag> lnorms(numVecs);
-      MVDA::Norm1(*lclMV_,*A.lclMV_,lnorms());
+    DMVA::Norm1(*lclMV_,norms);
+    if (this->isDistributed()) {
+      Teuchos::Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
     }
   }
@@ -515,12 +500,9 @@ namespace Tpetra {
     const Teuchos_Ordinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::normInf(norms): norms.size() must be as large as the number of vectors in *this.");
-    if (!this->isDistributed()) {
-      MVDA::Norm1(*lclMV_,*A.lclMV_,norms);
-    }
-    else {
-      Teuchos::Array<Mag> lnorms(numVecs);
-      MVDA::Norm1(*lclMV_,*A.lclMV_,lnorms());
+    DMVA::NormInf(*lclMV_,norms);
+    if (this->isDistributed()) {
+      Teuchos::Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_MAX,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
     }
   }
@@ -529,14 +511,14 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::random() 
   {
-    MVDA::Random(*lclMV_);
+    DMVA::Random(*lclMV_);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::putScalar(const Scalar &alpha) 
   {
-    MVDA::Init(*lclMV_,alpha);
+    DMVA::Init(*lclMV_,alpha);
   }
 
 
@@ -551,7 +533,7 @@ namespace Tpetra {
       // do nothing
     }
     else {
-      MVDA::Scale(*lclMV_,alpha);
+      DMVA::Scale(*lclMV_,alpha);
     }
   }
 
@@ -569,7 +551,7 @@ namespace Tpetra {
       }
       else {
         vec.initializeValues(myLength(),1,lclMV_->getValues(j),myLength());
-        MVDA::Scale(vec,alphas[j]);
+        DMVA::Scale(vec,alphas[j]);
       }
     }
   }
@@ -592,11 +574,11 @@ namespace Tpetra {
         "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
     if (alpha == Teuchos::ScalarTraits<Scalar>::one()) {
       // set me = A
-      MVDA::Assign(*lclMV_,(const KMV&)(*A.lclMV_));
+      DMVA::Assign(*lclMV_,(const KMV&)(*A.lclMV_));
     }
     else {
       // set me == alpha*A
-      MVDA::Scale(*lclMV_,alpha,(const KMV&)(*A.lclMV_));
+      DMVA::Scale(*lclMV_,alpha,(const KMV&)(*A.lclMV_));
     }
   }
 
@@ -616,7 +598,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::reciprocal(): MultiVectors must have the same number of vectors.");
     try {
-      MVDA::ReciprocalMultiply(*lclMV_,(const KMV&)(*A.lclMV_));
+      DMVA::Divide(*lclMV_,(const KMV&)(*A.lclMV_));
     }
     catch (std::runtime_error &e) {
       TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -640,7 +622,7 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
-    MVDA::ReciprocalMultiply(*lclMV_,(const KMV&)(*A.lclMV_));
+    DMVA::Abs(*lclMV_,(const KMV&)(*A.lclMV_));
   }
 
 
@@ -662,7 +644,7 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    MVDA::Update(*lclMV_,alpha,(const KMV&)(*A.lclMV_),beta);
+    DMVA::GESUM(*lclMV_,alpha,(const KMV&)(*A.lclMV_),beta);
   }
 
 
@@ -685,7 +667,7 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.numVectors() != this->numVectors() || B.numVectors() != this->numVectors(), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    MVDA::update(*lclMV_,gamma,(const KMV&)(*A.lclMV_),alpha,(const KMV&)(*B.lclMV_),beta);
+    DMVA::GESUM(*lclMV_,alpha,(const KMV&)(*A.lclMV_),beta,(const KMV&)(*B.lclMV_),gamma);
   }
 
 
@@ -880,36 +862,36 @@ namespace Tpetra {
   //REFACTOR// }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal> > MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator()(Teuchos_Ordinal j)
-  {
-#ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION(j < 0 || j >= this->numVectors(), std::runtime_error,
-        "Tpetra::MultiVector::operator()(j): index j (== " << j << ") exceeds valid column range for this multivector.");
-#endif
-    Teuchos::RCP<KMV> lclV = Teuchos::rcp(new KMV(lclMV_->getNode()));
-    if (myLength() > 0) {
-      typename Node::buffer<Scalar>::buffer_t buf = (*lclMV_)(j);
-      lclV->initializeValues(myLength(),1,buf,myLength());
-    }
-    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),lclV));
-  }
+//REFACTOR//   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+//REFACTOR//   Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal> > MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator()(Teuchos_Ordinal j)
+//REFACTOR//   {
+//REFACTOR// #ifdef HAVE_TPETRA_DEBUG
+//REFACTOR//       TEST_FOR_EXCEPTION(j < 0 || j >= this->numVectors(), std::runtime_error,
+//REFACTOR//         "Tpetra::MultiVector::operator()(j): index j (== " << j << ") exceeds valid column range for this multivector.");
+//REFACTOR// #endif
+//REFACTOR//     Teuchos::RCP<KMV> lclV = Teuchos::rcp(new KMV(lclMV_->getNode()));
+//REFACTOR//     if (myLength() > 0) {
+//REFACTOR//       typename Node::buffer<Scalar>::buffer_t buf = (*lclMV_)(j);
+//REFACTOR//       lclV->initializeValues(myLength(),1,buf,myLength());
+//REFACTOR//     }
+//REFACTOR//     return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),lclV));
+//REFACTOR//   }
 
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal> > MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator() (Teuchos_Ordinal j) const
-  {
-#ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION(j < 0 || j >= this->numVectors(), std::runtime_error,
-        "Tpetra::MultiVector::operator()(j): index j (== " << j << ") exceeds valid column range for this multivector.");
-#endif
-    Teuchos::RCP<KMV> lclV = Teuchos::rcp(new KMV(lclMV_->getNode()));
-    if (myLength() > 0) {
-      typename Node::buffer<Scalar>::buffer_t buf = (*lclMV_)(j);
-      lclV->initializeValues(myLength(),1,buf,myLength());
-    }
-    return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),lclV));
-  }
+//REFACTOR//   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+//REFACTOR//   Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal> > MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator() (Teuchos_Ordinal j) const
+//REFACTOR//   {
+//REFACTOR// #ifdef HAVE_TPETRA_DEBUG
+//REFACTOR//       TEST_FOR_EXCEPTION(j < 0 || j >= this->numVectors(), std::runtime_error,
+//REFACTOR//         "Tpetra::MultiVector::operator()(j): index j (== " << j << ") exceeds valid column range for this multivector.");
+//REFACTOR// #endif
+//REFACTOR//     Teuchos::RCP<KMV> lclV = Teuchos::rcp(new KMV(lclMV_->getNode()));
+//REFACTOR//     if (myLength() > 0) {
+//REFACTOR//       typename Node::buffer<Scalar>::buffer_t buf = (*lclMV_)(j);
+//REFACTOR//       lclV->initializeValues(myLength(),1,buf,myLength());
+//REFACTOR//     }
+//REFACTOR//     return Teuchos::rcp(new Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),lclV));
+//REFACTOR//   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1167,7 +1149,7 @@ namespace Tpetra {
       const KMV &A_mv = (*Atmp->lclMV_);
       const KMV &B_mv = (*Btmp->lclMV_);
       // do the multiply (GEMM)
-      MVDA::GEMM(transA,transB,alpha,A_mv,B_mv,beta_local,C_mv);
+      DMVA::GEMM(*C_mv,transA,transB,alpha,A_mv,B_mv,beta_local);
     }
 
     // Dispose of (possibly) extra copies of A, B
@@ -1268,9 +1250,9 @@ namespace Tpetra {
 #endif
     const int myLen = lclMV_->getNumRows();
     Node &node = lclMV_->getNode();
-    Scalar *colptr = node.template viewBuffer<Scalar>(myLen,lclMV_->getValues(
-    lclMV_
-    MVData_->ptrs_[VectorIndex][MyRow] = ScalarValue;
+    Scalar *colptr = node.template viewBuffer<Scalar>(false,myLen,lclMV_->getValues(VectorIndex),0);
+    colptr[MyRow] = ScalarValue;
+    node.template releaseView<Scalar>(colptr);
   }
 
 
@@ -1283,7 +1265,11 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
         "Tpetra::MultiVector::sumIntoMyValue(): vector index is invalid.");
 #endif
-    MVData_->ptrs_[VectorIndex][MyRow] += ScalarValue;
+    const int myLen = lclMV_->getNumRows();
+    Node &node = lclMV_->getNode();
+    Scalar *colptr = node.template viewBuffer<Scalar>(false,myLen,lclMV_->getValues(VectorIndex),0);
+    colptr[MyRow] += ScalarValue;
+    node.template releaseView<Scalar>(colptr);
   }
 
 
@@ -1297,7 +1283,11 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
         "Tpetra::MultiVector::replaceGlobalValue(): vector index is invalid.");
 #endif
-    (*this)[VectorIndex][MyRow] = ScalarValue;
+    const int myLen = lclMV_->getNumRows();
+    Node &node = lclMV_->getNode();
+    Scalar *colptr = node.template viewBuffer<Scalar>(false,myLen,lclMV_->getValues(VectorIndex),0);
+    colptr[MyRow] = ScalarValue;
+    node.template releaseView<Scalar>(colptr);
   }
 
 
@@ -1311,29 +1301,25 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
         "Tpetra::MultiVector::sumIntoGlobalValue(): vector index is invalid.");
 #endif
-    (*this)[VectorIndex][MyRow] += ScalarValue;
+    const int myLen = lclMV_->getNumRows();
+    Node &node = lclMV_->getNode();
+    Scalar *colptr = node.template viewBuffer<Scalar>(false,myLen,lclMV_->getValues(VectorIndex),0);
+    colptr[MyRow] += ScalarValue;
+    node.template releaseView<Scalar>(colptr);
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue(const Teuchos::ArrayView<Scalar> &means) const
   {
-    using Teuchos::ArrayView;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
-    const int numImages = this->getMap().getComm()->getSize();
     const GlobalOrdinal numVecs = this->numVectors();
     TEST_FOR_EXCEPTION(means.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::meanValue(): means.size() must be as large as the number of vectors in *this.");
     // compute local components of the means
     // sum these across all nodes
     Teuchos::Array<Scalar> lmeans(numVecs,SCT::zero());
-    for (Teuchos_Ordinal j=0; j<numVecs; ++j) {
-      const_pointer cpos = (*this)[j],
-                    cend = (*this)[j]+myLength();
-      for (; cpos != cend; ++cpos) {
-        lmeans[j] += *cpos;
-      }
-    }
+    DMVA::Sum(*lclMV_,means);
     if (this->isDistributed()) {
       // only combine if we are a distributed MV
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lmeans.getRawPtr(),means.getRawPtr());
@@ -1341,9 +1327,9 @@ namespace Tpetra {
     else {
       std::copy(lmeans.begin(),lmeans.end(),means.begin());
     }
-    const Scalar OneOverN = Teuchos::as<Scalar>(globalLength());
-    for (pointer n = means.begin(); n != means.begin()+numVecs; ++n) {
-      (*n) = (*n)*OneOverN;
+    const Scalar OneOverN = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(globalLength());
+    for (typename Teuchos::ArrayView<Scalar>::iterator i = means.begin(); i != means.begin()+numVecs; ++i) {
+      (*i) = (*i)*OneOverN;
     }
   }
 
@@ -1391,15 +1377,18 @@ namespace Tpetra {
               // VERB_HIGH and higher prints constantStride() and stride()
               if (constantStride()) out << ", constant stride=" << stride() << endl;
               else out << ", non-constant stride" << endl;
-              if (vl == VERB_EXTREME) {
+              if (vl == VERB_EXTREME && myLength() > 0) {
+                Node &node = lclMV_->getNode();
+                const Scalar *mvdata = node.template viewBufferConst<Scalar>(myLength()+stride()*(numVectors()-1),lclMV_->getValues(0),0);
                 // VERB_EXTREME prints values
                 for (Teuchos_Ordinal i=0; i<myLength(); ++i) {
                   out << setw(width) << this->getMap().getGlobalIndex(i) << ": ";
                   for (Teuchos_Ordinal j=0; j<numVectors(); ++j) {
-                    out << MVData_->ptrs_[j][i] << "  ";
+                    out << mvdata[j*stride()+i] << "  ";
                   }
                   out << endl;
                 }
+                node.template releaseView<Scalar>(mvdata);
               }
             }
             else {

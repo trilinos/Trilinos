@@ -31,6 +31,7 @@
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_ArrayView.hpp>
 #include <stdexcept>
 
 #include "Kokkos_MultiVector.hpp"
@@ -84,13 +85,70 @@ namespace Kokkos {
   };
 
   template <class Scalar, class Node>
-  struct DotOp {
-    typename Node::template buffer<const Scalar>::buffer_t x, y;
-    typedef Scalar ReductionType;
-    inline static Scalar identity() {return 0.0;}
-    Scalar reduce(Scalar x, Scalar y) {return x+y;}
-    Scalar generate(int i) {return x[i]*y[i];}
+  struct SumAbsOp {
+    typedef  Teuchos::ScalarTraits<Scalar> SCT;
+    typedef  typename SCT::magnitudeType   Magnitude;
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typedef  Magnitude ReductionType;
+    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
+    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
+    Magnitude generate(int i) {
+      return SCT::magnitude(x[i]);
+    }
   };
+
+  template <class Scalar, class Node>
+  struct SumOp {
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typedef  Scalar ReductionType;
+    inline static Scalar identity() {return Teuchos::ScalarTraits<Scalar>::zero();}
+    Scalar reduce(Scalar x, Scalar y) {return x+y;}
+    Scalar generate(int i) { return x[i]; }
+  };
+
+  template <class Scalar, class Node>
+  struct MaxAbsOp {
+    typedef  Teuchos::ScalarTraits<Scalar> SCT;
+    typedef  typename SCT::magnitudeType   Magnitude;
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typedef  Magnitude ReductionType;
+    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
+    Magnitude reduce(Magnitude x, Magnitude y) {return std::max(x,y);}
+    Magnitude generate(int i) {
+      return SCT::magnitude(x[i]);
+    }
+  };
+
+  template <class Scalar, class Node>
+  struct DotOp1 {
+    typedef  Teuchos::ScalarTraits<Scalar> SCT;
+    typedef  typename SCT::magnitudeType   Magnitude;
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typedef  Magnitude ReductionType;
+    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
+    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
+    Magnitude generate(int i) {
+      Scalar xi = x[i]; 
+      return SCT::real( SCT::conjugate(xi)*xi );
+    }
+  };
+
+  template <class Scalar, class Node>
+  struct DotOp2 {
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+    typename Node::template buffer<const Scalar>::buffer_t x, y;
+    typedef  Scalar ReductionType;
+    inline static Scalar identity() {return SCT::zero();}
+    Scalar reduce(Scalar x, Scalar y) {return x+y;}
+    Scalar generate(int i) {
+      Scalar xi = x[i]; Scalar yi = y[i];
+      return SCT::real( SCT::conjugate(xi)*yi );
+    }
+  };
+
+  //REFACTOR// //! Class for providing GEMM for a particular Node
+  //REFACTOR// template <class Scalar, class Node> 
+  //REFACTOR// GEMM
 
   //! Class DefaultArithmetic, unimplemented
   template <class MV>
@@ -212,6 +270,7 @@ namespace Kokkos {
                            nR != B.getNumRows(), 
                            std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+        if (nC*nR == 0) return;
         Node &node = A.getNode();
         AssignOp<Scalar,Node> wdp;
         if (A.getStride() == nR && B.getStride() == nR) {
@@ -229,6 +288,206 @@ namespace Kokkos {
           }
         }
       }
+
+      inline static void Dot(const MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B, const Teuchos::ArrayView<Scalar> &dots) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC != B.getNumCols() ||
+                           nR != B.getNumRows(), 
+                           std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same dimensions.");
+        TEST_FOR_EXCEPTION(nC > dots.size(), std::runtime_error, 
+            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): dots must have length as large as number of columns of A and B.");
+        if (nR*nC == 0) {
+          for (int j=0; j<nC; ++j) {
+            dots[j] = Teuchos::ScalarTraits<Scalar>::zero();
+          }
+          return;
+        }
+        Node &node = A.getNode();
+        DotOp2<Scalar,Node> op;
+        for (int j=0; j<nC; ++j) {
+          op.x = A.getValues(j);
+          op.y = B.getValues(j);
+          dots[j] = node.parallel_reduce(0,nR,op);
+        }
+      }
+
+      inline static Scalar Dot(const MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nR != B.getNumRows(), 
+                           std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same number of rows.");
+        if (nR*nC == 0) {
+          return Teuchos::ScalarTraits<Scalar>::zero();
+        }
+        Node &node = A.getNode();
+        DotOp2<Scalar,Node> op;
+        op.x = A.getValues(0);
+        op.y = B.getValues(0);
+        return node.parallel_reduce(0,nR,op);
+      }
+
+      inline static void GEMM(MultiVector<Scalar,Ordinal,Node> &C, Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B, Scalar beta) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void GESUM(MultiVector<Scalar,Ordinal,Node> &B, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &A, Scalar beta) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void GESUM(MultiVector<Scalar,Ordinal,Node> &C, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &A, Scalar beta, const MultiVector<Scalar,Ordinal,Node> &B, Scalar gamma) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void Norm1(const MultiVector<Scalar,Ordinal,Node> &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC > norms.size(), std::runtime_error, 
+            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): norms must have length as large as number of columns of A.");
+        if (nR*nC == 0) {
+          for (int j=0; j<nC; ++j) {norms[j] = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();}
+          return;
+        }
+        Node &node = A.getNode();
+        SumAbsOp<Scalar,Node> op;
+        for (int j=0; j<nC; ++j) {
+          op.x = A.getValues(j);
+          norms[j] = node.parallel_reduce(0,nR,op);
+        }
+      }
+
+      inline static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+      Norm1(const MultiVector<Scalar,Ordinal,Node> &A) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        if (nR*nC == 0) {
+          return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
+        }
+        Node &node = A.getNode();
+        SumAbsOp<Scalar,Node> op;
+        op.x = A.getValues(0);
+        return node.parallel_reduce(0,nR,op);
+      }
+
+      inline static void Sum(const MultiVector<Scalar,Ordinal,Node> &A, const Teuchos::ArrayView<Scalar> &sums) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC > sums.size(), std::runtime_error, 
+            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Sum(A,sums): sums must have length as large as number of columns of A.");
+        if (nR*nC == 0) {
+          Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+          for (int j=0; j<nC; ++j) {sums[j] = zero;}
+          return;
+        }
+        Node &node = A.getNode();
+        SumOp<Scalar,Node> op;
+        for (int j=0; j<nC; ++j) {
+          op.x = A.getValues(j);
+          sums[j] = node.parallel_reduce(0,nR,op);
+        }
+      }
+
+      inline static Scalar Sum(const MultiVector<Scalar,Ordinal,Node> &A) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        if (nR*nC == 0) {
+          return Teuchos::ScalarTraits<Scalar>::zero();
+        }
+        Node &node = A.getNode();
+        SumOp<Scalar,Node> op;
+        op.x = A.getValues(0);
+        return node.parallel_reduce(0,nR,op);
+      }
+
+      inline static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormInf(const MultiVector<Scalar,Ordinal,Node> &A) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        if (nR*nC == 0) {
+          return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
+        }
+        Node &node = A.getNode();
+        MaxAbsOp<Scalar,Node> op;
+        op.x = A.getValues(0);
+        return node.parallel_reduce(0,nR,op);
+      }
+
+      inline static void NormInf(const MultiVector<Scalar,Ordinal,Node> &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC > norms.size(), std::runtime_error, 
+            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::NormInf(A,norms): norms must have length as large as number of columns of A.");
+        if (nR*nC == 0) {
+          for (int j=0; j<nC; ++j) {norms[j] = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();}
+          return;
+        }
+        Node &node = A.getNode();
+        MaxAbsOp<Scalar,Node> op;
+        for (int j=0; j<nC; ++j) {
+          op.x = A.getValues(j);
+          norms[j] = node.parallel_reduce(0,nR,op);
+        }
+      }
+
+      inline static void Norm2Squared(const MultiVector<Scalar,Ordinal,Node> &A, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC > norms.size(), std::runtime_error, 
+            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm2Squared(A,norms): norms must have length as large as number of columns of A.");
+        if (nR*nC == 0) {
+          for (int j=0; j<nC; ++j) {norms[j] = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();}
+          return;
+        }
+        Node &node = A.getNode();
+        DotOp1<Scalar,Node> op;
+        for (int j=0; j<nC; ++j) {
+          op.x = A.getValues(j);
+          norms[j] = node.parallel_reduce(0,nR,op);
+        }
+      }
+
+      inline static void WeightedNorm(const MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &weightVector, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void Random(MultiVector<Scalar,Ordinal,Node> &A) {
+        // TODO: consider adding rand() functionality to node
+        // in the meantime, just generate random numbers via Teuchos and then copy to node
+        typedef Teuchos::ScalarTraits<Scalar> SCT;
+        const Ordinal stride = A.getStride();
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        if (nR*nC == 0) return;
+        Node &node = A.getNode();
+        // we'll overwrite all data covered by the multivector, but not off-stride data
+        // therefore, we are write-only only in the case that stride=nR
+        bool writeOnly = (stride == nR);
+        Scalar *mvdata = node.template viewBuffer<Scalar>(writeOnly,stride*(nC-1)+nR,A.getValues(0),0);
+        for (int j=0; j<nC; ++j) {
+          for (int i=0; i<nR; ++i) {
+            mvdata[j*stride + i] = SCT::random();
+          }
+        }
+        node.template releaseView<Scalar>(mvdata);
+      }
+
+      inline static void Abs(MultiVector<Scalar,Ordinal,Node> &B, const MultiVector<Scalar,Ordinal,Node> &A) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void Scale(MultiVector<Scalar,Ordinal,Node> &B, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &A) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void Scale(MultiVector<Scalar,Ordinal,Node> &B, Scalar alpha) {
+        TEST_FOR_EXCEPT(true);
+      }
+
+      inline static void Scale(MultiVector<Scalar,Ordinal,Node> &B, const Teuchos::ArrayView<Scalar> &alphas) {
+        TEST_FOR_EXCEPT(true);
+      }
+
   };
 
 }
