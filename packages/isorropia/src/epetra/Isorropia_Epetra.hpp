@@ -77,7 +77,7 @@ namespace Epetra {
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RCP<Partitioner>
+__deprecated Teuchos::RCP<Partitioner>
 create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist);
 
@@ -102,7 +102,7 @@ create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RCP<Partitioner>
+__deprecated Teuchos::RCP<Partitioner>
 create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		   Teuchos::RCP<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
@@ -153,7 +153,7 @@ create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
     0 to 10, default is 1), etc.
 */
-Teuchos::RCP<Partitioner>
+__deprecated Teuchos::RCP<Partitioner>
 create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		   Teuchos::RCP<CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
@@ -186,7 +186,7 @@ create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   each row.
 
 */
-Teuchos::RCP<Epetra_CrsMatrix>
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -205,7 +205,7 @@ Teuchos::RCP<Epetra_CrsMatrix>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RCP<Epetra_CrsMatrix>
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -234,7 +234,7 @@ Teuchos::RCP<Epetra_CrsMatrix>
   each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
-Teuchos::RCP<Epetra_CrsMatrix>
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      const Teuchos::ParameterList& paramlist);
 
@@ -270,7 +270,7 @@ Teuchos::RCP<Epetra_CrsMatrix>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RCP<Epetra_CrsMatrix>
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -293,7 +293,7 @@ Teuchos::RCP<Epetra_CrsMatrix>
   each row.
 
 */
-Teuchos::RCP<Epetra_RowMatrix>
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -312,7 +312,7 @@ Teuchos::RCP<Epetra_RowMatrix>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RCP<Epetra_RowMatrix>
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -342,7 +342,7 @@ Teuchos::RCP<Epetra_RowMatrix>
   each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
-Teuchos::RCP<Epetra_RowMatrix>
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      const Teuchos::ParameterList& paramlist);
 
@@ -377,7 +377,7 @@ Teuchos::RCP<Epetra_RowMatrix>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RCP<Epetra_RowMatrix>
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
   create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -400,7 +400,7 @@ Teuchos::RCP<Epetra_RowMatrix>
   each row.
 
 */
-Teuchos::RCP<Epetra_CrsGraph>
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -420,7 +420,7 @@ Teuchos::RCP<Epetra_CrsGraph>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RCP<Epetra_CrsGraph>
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -449,7 +449,7 @@ Teuchos::RCP<Epetra_CrsGraph>
   each row (vertex), and unit weight to each column (hyperedge).  It will
   attempt to minimize cuts in the hyperedges.
 */
-Teuchos::RCP<Epetra_CrsGraph>
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      const Teuchos::ParameterList& paramlist);
 
@@ -483,7 +483,7 @@ Teuchos::RCP<Epetra_CrsGraph>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RCP<Epetra_CrsGraph>
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
   create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
@@ -507,7 +507,7 @@ Teuchos::RCP<Epetra_CrsGraph>
 
 */
 
-Teuchos::RCP<Epetra_LinearProblem>
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem & input_problem);
 
 /** create_balanced_copy(), which is part of the Isorropia API, is used to
@@ -526,7 +526,7 @@ Teuchos::RCP<Epetra_LinearProblem>
 
   The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
 */
-Teuchos::RCP<Epetra_LinearProblem>
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_matrix,
                        const Epetra_Vector &row_weights);
 
@@ -556,7 +556,7 @@ Teuchos::RCP<Epetra_LinearProblem>
   attempt to minimize cuts in the hyperedges.
 */
 
-Teuchos::RCP<Epetra_LinearProblem>
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      const Teuchos::ParameterList& paramlist);
 
@@ -590,25 +590,25 @@ Teuchos::RCP<Epetra_LinearProblem>
   hypergraph partitioning.  We will assign unit weight to each row (vertex)
   and each non zero (edge) in the case of graph partitioning.
 */
-Teuchos::RCP<Epetra_LinearProblem>
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
   create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      CostDescriber &costs,
                      const Teuchos::ParameterList& paramlist);
 
-Teuchos::RCP<Epetra_MultiVector>
+__deprecated Teuchos::RCP<Epetra_MultiVector>
 create_balanced_copy(const Epetra_MultiVector &coords,
                    const Teuchos::ParameterList& paramlist);
 
-Teuchos::RCP<Epetra_MultiVector>
+__deprecated Teuchos::RCP<Epetra_MultiVector>
 create_balanced_copy(const Epetra_MultiVector &coords,
                      const Epetra_MultiVector &weights,
                    const Teuchos::ParameterList& paramlist);
 
 
-Teuchos::RCP<Epetra_MultiVector>
+__deprecated Teuchos::RCP<Epetra_MultiVector>
 create_balanced_copy(const Epetra_MultiVector &coords);
 
-Teuchos::RCP<Epetra_MultiVector>
+__deprecated Teuchos::RCP<Epetra_MultiVector>
 create_balanced_copy(const Epetra_MultiVector &coords,
                      const Epetra_MultiVector &weights);
 
