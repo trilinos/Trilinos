@@ -1444,9 +1444,11 @@ void AZ_direct_sort(int b[], int indx[], char buffer[], char a[], int *start,
         else        thelength = b[indx[i-1]];
       }
 
-      ptr1 = (char *) &(a[cur]);
-      ptr2 = (char *) &(a[si]);
-      memcpy(ptr1, ptr2, thelength);
+      if (cur != si) {
+        ptr1 = (char *) &(a[cur]);
+        ptr2 = (char *) &(a[si]);
+        memmove(ptr1, ptr2, thelength);
+      }
 
       cur += thelength;
       si  += thelength;
