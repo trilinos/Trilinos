@@ -22,6 +22,10 @@ ADD_OPTION_AND_DEFINE(TPL_ENABLE_HYPRE
   "Enable Ifpack/Hypre adapters"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Euclid
+  HAVE_EUCLID
+  "Enable Ifpack/Euclid adapters"
+  OFF )
 
 #
 # C) Add the libraries, tests, and examples

@@ -23,3 +23,6 @@
 
 /* Define if want to build with hypre enabled */
 #cmakedefine HAVE_HYPRE
+
+/* Define if we want to use the euclid preconditioner */
+#cmakedefine HAVE_EUCLID

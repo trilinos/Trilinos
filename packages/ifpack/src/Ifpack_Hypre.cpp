@@ -80,8 +80,8 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   int ilower = A_->RowMatrixRowMap().MinMyGID();
   int iupper = A_->RowMatrixRowMap().MaxMyGID();
   // Need to check if the RowMap is the way Hypre expects (if not more difficult)
-  Teuchos::Array<int> ilowers; ilowers.resize(Comm().NumProc());
-  Teuchos::Array<int> iuppers; iuppers.resize(Comm().NumProc());
+  std::vector<int> ilowers; ilowers.resize(Comm().NumProc());
+  std::vector<int> iuppers; iuppers.resize(Comm().NumProc());
   int myLower[1]; myLower[0] = ilower;
   int myUpper[1]; myUpper[0] = iupper;
   Comm().GatherAll(myLower, &ilowers[0], 1);
@@ -115,11 +115,12 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
 
   YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
   YLocal_ = hypre_ParVectorLocalVector(YVec_);
-  Teuchos::Array<int> rows; rows.resize(iupper - ilower +1);
+  std::vector<int> rows; rows.resize(iupper - ilower +1);
   for(int i = ilower; i <= iupper; i++){
     rows[i-ilower] = i;
   }
   MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
+  Aptr_ = dynamic_cast<Epetra_CrsMatrix*>(A_.get());
 }
 
 void Ifpack_Hypre::Destroy(){
@@ -139,6 +140,7 @@ void Ifpack_Hypre::Destroy(){
 }
 
 int Ifpack_Hypre::Initialize(){
+  Time_.ResetStartTime();
   MPI_Comm comm = GetMpiComm();
   int ilower = MySimpleMap_->MinMyGID();
   int iupper = MySimpleMap_->MaxMyGID();
@@ -163,6 +165,7 @@ int Ifpack_Hypre::Initialize(){
   IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
   IsInitialized_=true;
   NumInitialize_ = NumInitialize_ + 1;
+  InitializeTime_ = InitializeTime_ + Time_.ElapsedTime();
   return 0;
 }
 
@@ -287,11 +290,11 @@ int Ifpack_Hypre::CallFunctions() const{
   return 0;
 }
 
-const Epetra_Map& Ifpack_Hypre::OperatorDomainMap(){
+const Epetra_Map& Ifpack_Hypre::OperatorDomainMap() const{
   return *MySimpleMap_;
 }
 
-const Epetra_Map& Ifpack_Hypre::OperatorRangeMap(){
+const Epetra_Map& Ifpack_Hypre::OperatorRangeMap() const{
   return *MySimpleMap_;
 }
 
@@ -403,7 +406,37 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
 }
 
 ostream& Ifpack_Hypre::Print(ostream& os) const{
-  os<<"Need to add meaningful output"<<endl;
+  if (!Comm().MyPID()) {
+    os << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_Hypre: " << Label () << endl << endl;
+    os << "Using " << Comm().NumProc() << " processors." << endl;
+    os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
+    os << "Global number of nonzeros        = " << A_->NumGlobalNonzeros() << endl;
+    os << "Condition number estimate = " << Condest() << endl;
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_
+       << "  " << std::setw(15) << InitializeTime_
+       << "              0.0              0.0" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute_
+       << "  " << std::setw(15) << ComputeTime_
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
+    if (ComputeTime_ != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_
+       << "  " << std::setw(15) << ApplyInverseTime_
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
+    if (ApplyInverseTime_ != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << endl;
+    os << "================================================================================" << endl;
+    os << endl;
+  }
   return os;
 }
 
@@ -412,7 +445,12 @@ double Ifpack_Hypre::Condest(const Ifpack_CondestType CT,
                              const int MaxIters,
                              const double Tol,
                              Epetra_RowMatrix* Matrix_in){
-  return -1.0;
+  if (!IsComputed()) // cannot compute right now
+    return(-1.0);
+
+  Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
+
+  return(Condest_);
 }
 
 int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){

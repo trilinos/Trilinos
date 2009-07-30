@@ -410,9 +410,9 @@ public:
     return(0);
   }
 
-  const Epetra_Map& OperatorDomainMap();
+  const Epetra_Map& OperatorDomainMap() const;
 
-  const Epetra_Map& OperatorRangeMap();
+  const Epetra_Map& OperatorRangeMap() const;
   
   //! Returns 0.0 because this class cannot compute Inf-norm.
   double NormInf() const {return(0.0);};
@@ -422,12 +422,6 @@ public:
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
-
-  //! Returns the Epetra_Map object associated with the domain of this operator.
-  const Epetra_Map & OperatorDomainMap() const {return(A_->OperatorDomainMap());};
-
-  //! Returns the Epetra_Map object associated with the range of this operator.
-  const Epetra_Map & OperatorRangeMap() const{return(A_->OperatorRangeMap());};
 
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
   const Epetra_Comm & Comm() const{return(A_->Comm());};
@@ -587,6 +581,7 @@ private:
   
   //! Pointer to the Epetra_RowMatrix to factorize
   Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
+  Epetra_CrsMatrix* Aptr_;
   Teuchos::ParameterList List_;
   Teuchos::RefCountPtr<Epetra_Map> RowMap0_;
   

@@ -82,6 +82,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_ValidParameters.h
   Ifpack_HIPS.h
   Ifpack_Hypre.h
+  Ifpack_Euclid.h
   )
 
 SET(SOURCES ${SOURCES}
@@ -127,6 +128,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_ValidParameters.cpp
   Ifpack_HIPS.cpp
   Ifpack_Hypre.cpp
+  Ifpack_Euclid.cpp
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
@@ -145,6 +147,76 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     Ifpack_AMDReordering.cpp
     Ifpack_Amesos.cpp
     )
+
+ENDIF()
+IF (${PACKAGE_NAME}_ENABLE_Euclid)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/euclid)
+
+  SET(HEADERS ${HEADERS}
+    euclid/Euclid_dh.h
+    euclid/ExternalRows_dh.h
+    euclid/Factor_dh.h
+    euclid/Hash_dh.h
+    euclid/Hash_i_dh.h
+    euclid/MatGenFD.h
+    euclid/Mat_dh.h
+    euclid/Mem_dh.h
+    euclid/Numbering_dh.h
+    euclid/Parser_dh.h
+    euclid/SortedList_dh.h
+    euclid/SortedSet_dh.h
+    euclid/SubdomainGraph_dh.h
+    euclid/TimeLog_dh.h
+    euclid/Timer_dh.h
+    euclid/Vec_dh.h
+    euclid/blas_dh.h
+    euclid/euclid.h
+    euclid/euclid_common.h
+    euclid/euclid_config.h
+    euclid/getRow_dh.h
+    euclid/guards_dh.h
+    euclid/ilu_dh.h
+    euclid/io_dh.h
+    euclid/krylov_dh.h
+    euclid/macros_dh.h
+    euclid/mat_dh_private.h
+    euclid/shellSort_dh.h
+    euclid/sig_dh.h
+    euclid/call_epetra.h
+  )
+
+  SET(SOURCES ${SOURCES}
+    euclid/Euclid_apply.c
+    euclid/Euclid_dh.c
+    euclid/ExternalRows_dh.c
+    euclid/Factor_dh.c
+    euclid/Hash_dh.c
+    euclid/Hash_i_dh.c
+    euclid/MatGenFD.c
+    euclid/Mat_dh.c
+    euclid/Mem_dh.c
+    euclid/Numbering_dh.c
+    euclid/Parser_dh.c
+    euclid/SortedList_dh.c
+    euclid/SortedSet_dh.c
+    euclid/SubdomainGraph_dh.c
+    euclid/TimeLog_dh.c
+    euclid/Timer_dh.c
+    euclid/Vec_dh.c
+    euclid/blas_dh.c
+    euclid/getRow_dh.c
+    euclid/globalObjects.c
+    euclid/ilu_mpi_bj.c
+    euclid/ilu_mpi_pilu.c
+    euclid/ilu_seq.c
+    euclid/io_dh.c
+    euclid/krylov_dh.c
+    euclid/mat_dh_private.c
+    euclid/shellSort_dh.c
+    euclid/sig_dh.c
+    euclid/call_epetra.cpp
+  )
 
 ENDIF()
 
