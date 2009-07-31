@@ -129,13 +129,6 @@ public:
 
   virtual void compute(bool forceRecomputing=false);
 
-  bool partitioning_already_computed() const __deprecated;
-
-  __deprecated int newPartNumber(int myElem) const
-  {
-    return ((*this)[myElem]);
-  }
-
   int numElemsInPart(int part) const {
     return (numElemsWithProperty(part));
   }

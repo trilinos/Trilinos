@@ -260,10 +260,7 @@ compute(bool force_repartitioning)
   partition(force_repartitioning);
 }
 
-bool Partitioner::partitioning_already_computed() const {
-  return (alreadyComputed());
-}
-
+// Create a new RowMap 
 Teuchos::RCP<Epetra_Map>
 Partitioner::createNewMap()
 {

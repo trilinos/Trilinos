@@ -71,24 +71,6 @@ public:
   virtual void partition(bool forceRepartitioning=false) = 0;
 
 
-
-  //@{ \name Usage not recommanded
-  /** Return the new part ID for a given element that
-      resided locally in the old partitioning.
-
-      \deprecated A better way to have the same results is to use
-      Isorropia::Operator::operator[]
-
-      \param[in] myElem local ID of element we want to know in which part
-      it belongs to.
-      \return new part number
-
-      \sa Isorropia::Operator::operator[]
-   */
-  virtual __deprecated int newPartNumber(int myElem) const = 0;
-  //@}
-
-
   /** Return the number of LOCAL elements in a given part.
 
       \param[in] part the part ID we want to know the number of local
@@ -159,77 +141,6 @@ public:
 			       int* array) const {
     return extractPropertiesCopy(len, size, array);
   }
-
-
-  //@{ \name Deprecated methods
-
-  /** The deprecated way to compute partitioning.
-
-      \param[in] forceRepartitioning Optional parameter to recompute the
-      partitioning even one has been already computed.
-
-      \deprecated This method uses the old name and will be removed in
-      next version, use Isorropia::Partitioner::partition() (or
-      possibly Isorropia::Operator::compute() )
-
-      \sa Isorropia::Partitioner::partition()
-      \sa Isorropia::Operator::compute()
-   */
-  virtual __deprecated void compute_partitioning(bool forceRepartitioning=false) {
-    return (partition(forceRepartitioning));
-  }
-
-  /** Query whether a partitioning as already been successfully computed.
-
-      \deprecated This method uses the old name and will be removed in
-      next version, use Isorropia::Operator::alreadyComputed()
-
-      \sa Isorropia::Operator::alreadyComputed()
-   */
-  virtual __deprecated bool partitioning_already_computed() const = 0 ;
-
-
-  /** Return the new partition ID for a given element that
-      resided locally in the old partitioning.
-
-      \deprecated This method uses the old name and will be removed in
-      next version, use Isorropia::Partitioner::newPartNumber(), or
-      even better Isorropia::Operator::operator[]()
-
-      \sa Isorropia::Partitioner::newPartNumber()
-      \sa Isorropia::Operator::operator[]()
-   */
-  virtual __deprecated int newPartitionNumber(int myElem) {
-    return (newPartNumber(myElem));
-  }
-
-
-  /** Return the number of LOCAL elements in a given partition.
-
-      \deprecated This method uses the old name and will be removed in
-      next version, use Isorropia::Partitioner::numElemsInPart()
-
-      \sa Isorropia::Partitioner::numElemsInPart()
-   */
-  virtual __deprecated int numElemsInPartition(int partition) {
-    return (numElemsInPart(partition));
-  }
-
-  /** Fill user-allocated list (of length len) with the
-      local element ids to be located in the given partition.
-
-      \deprecated This method uses the old name and will be removed in
-      next version, use Isorropia::Partitioner::elemsInPart()
-
-     \sa Isorropia::Partitioner::elemsInPart()
-   */
-  virtual __deprecated void elemsInPartition(int part,
-                                int* elementList,
-                                int len) {
-    return (elemsInPart(part, elementList, len));
-  }
-
-  //@}
 
 };//class Partitioner
 
