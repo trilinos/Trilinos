@@ -59,7 +59,11 @@ public:
   Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in);
 
+# ifdef IFPACK_NODE_AWARE_CODE
   ~Ifpack_OverlappingRowMatrix();
+# else
+  ~Ifpack_OverlappingRowMatrix() {};
+# endif
   //@}
 
   //@{ \name Matrix data extraction routines
