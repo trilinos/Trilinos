@@ -27,6 +27,7 @@ USA
 */
 //@HEADER
 
+#ifdef ISORROPIA_2D
 #ifndef _Isorropia_EpetraPartitioner2D_hpp_
 #define _Isorropia_EpetraPartitioner2D_hpp_
 
@@ -255,3 +256,4 @@ public:
 
 #endif
 
+#endif //ISORROPIA_2D
