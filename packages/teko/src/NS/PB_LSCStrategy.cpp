@@ -136,6 +136,8 @@ void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & s
 LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    PB_DEBUG_MSG("BEGIN InvLSCStrategy::getInvBQBt",10);
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+   PB_DEBUG_EXPR(timer.start());
 
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
@@ -170,6 +172,8 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
       return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(nullPresIndices_,eOp)));
    } 
 
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("LSC::getInvBQBt RunTime = " << timer.totalElapsedTime(),1);
    PB_DEBUG_MSG("END InvLSCStrategy::getInvBQBt",10);
 
    return lscState->invBQBtmC_;
@@ -178,6 +182,8 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
 LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    PB_DEBUG_MSG("BEGIN InvLSCStrategy::getInvF",10);
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+   PB_DEBUG_EXPR(timer.start());
 
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
@@ -194,24 +200,38 @@ LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerSt
       rebuildInverse(*invFactoryF_,F,invF);
    }
 
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("LSC::getInvF RunTime = " << timer.totalElapsedTime(),1);
    PB_DEBUG_MSG("END InvLSCStrategy::getInvF",10);
    return invF;
 }
 
 LinearOp InvLSCStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+   PB_DEBUG_EXPR(timer.start());
+
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
+
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("LSC::getInvD RunTime = " << timer.totalElapsedTime(),1);
 
    return lscState->aiD_;
 }
 
 LinearOp InvLSCStrategy::getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+   PB_DEBUG_EXPR(timer.start());
+
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
+
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("LSC::getInvMass RunTime = " << timer.totalElapsedTime(),1);
 
    return lscState->invMass_;
 }
@@ -226,7 +246,12 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    if(massMatrix_!=Teuchos::null) {
       state->invMass_ = getInvDiagonalOp(massMatrix_);
+
+      PB_DEBUG_EXPR(Teuchos::Time matTimer(""));
+      PB_DEBUG_EXPR(matTimer.start(true));
       state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
+      PB_DEBUG_EXPR(matTimer.stop());
+      PB_DEBUG_MSG("LSC::init BQBt MultTime = " << matTimer.totalElapsedTime(),1); 
    }
 
    // now we can just reintialize
@@ -241,6 +266,9 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState * state) const
 {
    PB_DEBUG_MSG("BEGIN InvLSCStrategy::reinitiailzeState",10);
+   PB_DEBUG_EXPR(Teuchos::Time matTimer(""));
+   PB_DEBUG_EXPR(Teuchos::Time totalTimer(""));
+   PB_DEBUG_EXPR(totalTimer.start());
 
    const LinearOp F  = getBlock(0,0,A);
    const LinearOp Bt = getBlock(0,1,A);
@@ -251,7 +279,11 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    if(massMatrix_==Teuchos::null) {
       state->invMass_ = getInvDiagonalOp(F);
+
+      PB_DEBUG_EXPR(matTimer.start(true));
       state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);  
+      PB_DEBUG_EXPR(matTimer.stop());
+      PB_DEBUG_MSG("LSC::reinit BQBt MultTime = " << matTimer.totalElapsedTime(),1); 
    }
 
    // if this is a stable discretization...we are done!
@@ -321,7 +353,11 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    
    // construct B_idF_Bt and save it for refilling later: This could reuse BQBt graph
    PB::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
+
+   PB_DEBUG_EXPR(matTimer.start(true));
    modB_idF_Bt = explicitMultiply(B,invDiagF,Bt,modB_idF_Bt);
+   PB_DEBUG_EXPR(matTimer.stop());
+   PB_DEBUG_MSG("LSC::reinit BFBt MultTime = " << matTimer.totalElapsedTime(),1); 
    state->addInverse("BidFBt",modB_idF_Bt);
    const LinearOp B_idF_Bt = modB_idF_Bt;
 
@@ -336,17 +372,22 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    // now build B*Q*Bt-gamma*C
    PB::ModifiableLinearOp BQBtmC = state->getInverse("BQBtmC");
+   PB_DEBUG_EXPR(matTimer.start(true));
    if(graphLaplacian_==Teuchos::null)
       BQBtmC = explicitAdd(state->BQBt_,scale(-state->gamma_,C),BQBtmC);
    else
       BQBtmC = explicitAdd(state->BQBt_,scale(state->gamma_,graphLaplacian_),BQBtmC);
+   PB_DEBUG_EXPR(matTimer.stop());
+   PB_DEBUG_MSG("LSC::reinit BFBtgC AddTime = " << matTimer.totalElapsedTime(),1); 
    state->addInverse("BQBtmC",BQBtmC);
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Gamma Parameter = " << state->gamma_ << std::endl;
       DEBUG_STREAM << "LSC Alpha Parameter = " << state->alpha_ << std::endl;
    PB_DEBUG_MSG_END()
-   PB_DEBUG_MSG("END InvLSCStrategy::reinitiailzeState",10);
+   PB_DEBUG_EXPR(totalTimer.stop());
+   PB_DEBUG_MSG("LSC reinit TotalTime = " << totalTimer.totalElapsedTime(),1);
+   PB_DEBUG_MSG("END InvLSCStrategy::reinitializeState: " << totalTimer.totalElapsedTime(),10);
 }
 
 } // end namespace NS

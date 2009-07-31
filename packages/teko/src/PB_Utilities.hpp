@@ -28,7 +28,8 @@
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
-#define PB_DEBUG_OFF
+// #define PB_DEBUG_OFF
+#define PB_DEBUG_INT 4
 
 namespace PB {
 
@@ -95,10 +96,11 @@ inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
 { return Teuchos::VerboseObjectBase::getDefaultOStream(); }
 
 #ifndef PB_DEBUG_OFF
-   #define PB_DEBUG_MSG(str,level) { \
+   #define PB_DEBUG_EXPR(str) str
+   #define PB_DEBUG_MSG(str,level) if(level<=PB_DEBUG_INT) { \
       Teuchos::RCP<Teuchos::FancyOStream> out = PB::getOutputStream(); \
       *out << "PB: " << str << std::endl; }
-   #define PB_DEBUG_MSG_BEGIN(level) { \
+   #define PB_DEBUG_MSG_BEGIN(level) if(level<=PB_DEBUG_INT) { \
       PB::getOutputStream()->pushTab(3); \
       *PB::getOutputStream() << "PB: Begin debug MSG\n"; \
       std::ostream & DEBUG_STREAM = *PB::getOutputStream(); \
@@ -107,6 +109,7 @@ inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
                              *PB::getOutputStream() << "PB: End debug MSG\n"; \
                               PB::getOutputStream()->popTab(); }
 #else 
+   #define PB_DEBUG_EXPR(str)
    #define PB_DEBUG_MSG(str,level)
    #define PB_DEBUG_MSG_BEGIN(level) if(false) { \
       std::ostream & DEBUG_STREAM = *PB::getOutputStream();

@@ -3,6 +3,9 @@
 // Thyra includes
 #include "Thyra_DefaultLinearOpSource.hpp"
 
+// Teuchos includes
+#include "Teuchos_Time.hpp"
+
 namespace PB {
 namespace Epetra {
 
@@ -113,16 +116,26 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
       buildPreconditioner(A);
       return;
    }
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
 
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+   PB_DEBUG_EXPR(timer.start(true));
    const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
    RCP<const Thyra::LinearOpBase<double> > thyraA = eow->getThyraOp(); 
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild get thyraop time =  " << timer.totalElapsedTime(),2);
 
    // reinitialize the preconditioner
+   PB_DEBUG_EXPR(timer.start(true));
    preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
    RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild initialize prec time =  " << timer.totalElapsedTime(),2);
 
+   PB_DEBUG_EXPR(timer.start(true));
    SetOperator(preconditioner,false);
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild set operator time =  " << timer.totalElapsedTime(),2);
 
    TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
@@ -148,20 +161,33 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,
       buildPreconditioner(A);
       return;
    }
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
 
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+   PB_DEBUG_EXPR(timer.start(true));
    const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
    RCP<const Thyra::LinearOpBase<double> > thyraA = eow->getThyraOp(); 
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild get thyraop time =  " << timer.totalElapsedTime(),2);
 
    // build the thyra version of the source multivector
+   PB_DEBUG_EXPR(timer.start(true));
    RCP<Thyra::MultiVectorBase<double> > thyra_mv = Thyra::createMembers(thyraA->range(),epetra_mv.NumVectors());
    getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*eow);
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild vector copy time =  " << timer.totalElapsedTime(),2);
 
    // reinitialize the preconditioner
+   PB_DEBUG_EXPR(timer.start(true));
    preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),thyra_mv,&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
    RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild initialize prec time =  " << timer.totalElapsedTime(),2);
 
+   PB_DEBUG_EXPR(timer.start(true));
    SetOperator(preconditioner,false);
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("EBP::rebuild set operator time =  " << timer.totalElapsedTime(),2);
 
    TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);

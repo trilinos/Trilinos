@@ -12,6 +12,8 @@
 
 #include "EpetraExt_RowMatrixOut.h"
 
+#include "Teuchos_Time.hpp"
+
 namespace PB {
 namespace NS {
 
@@ -50,6 +52,9 @@ LSCPreconditionerFactory::LSCPreconditionerFactory()
 LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blockOp,BlockPreconditionerState & state) const
 {
    PB_DEBUG_MSG("BEGIN LSCPreconditionerFactory::buildPreconditionerOperator",10);
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+   PB_DEBUG_EXPR(Teuchos::Time totalTimer(""));
+   PB_DEBUG_EXPR(totalTimer.start());
 
    // extract sub-matrices from source operator 
    LinearOp F  = blockOp->getBlock(0,0);
@@ -57,9 +62,13 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp Bt = blockOp->getBlock(0,1);
 
    // build what is neccessary for the state object
+   PB_DEBUG_EXPR(timer.start(true));
    invOpsStrategy_->buildState(blockOp,state);
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("LSCPrecFact::buildPO BuildStateTime = " << timer.totalElapsedTime(),2);
 
    // extract operators from strategy
+   PB_DEBUG_EXPR(timer.start(true));
    LinearOp invF      = invOpsStrategy_->getInvF(blockOp,state);
    LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp,state);
    LinearOp invD      = invOpsStrategy_->getInvD(blockOp,state);
@@ -68,6 +77,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp invMass   = invOpsStrategy_->getInvMass(blockOp,state);
    if(invMass==Teuchos::null)
       invMass = identity<double>(F->range());
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("LSCPrecFact::buildPO GetInvTime = " << timer.totalElapsedTime(),2);
 
    // need to build Schur complement,  inv(P) = inv(B*Bt)*(B*F*Bt)*inv(B*Bt)
 
@@ -85,6 +96,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 
    // build the preconditioner operator: Use LDU or upper triangular approximation
    if(invOpsStrategy_->useFullLDU()) { 
+      PB_DEBUG_EXPR(totalTimer.stop());
+      PB_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
       PB_DEBUG_MSG("END LSCPreconditionerFactory::buildPreconditionerOperator (Full LDU)",10);
 
       // solve using a full LDU decomposition
@@ -98,6 +111,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
       // get upper triangular matrix
       BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
+      PB_DEBUG_EXPR(totalTimer.stop());
+      PB_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
       PB_DEBUG_MSG("END LSCPreconditionerFactory::buildPreconditionerOperator (Upper only)",10);
 
       // solve using only one inversion of F
