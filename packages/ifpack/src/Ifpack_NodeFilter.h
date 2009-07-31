@@ -104,6 +104,7 @@ public:
     if(Br_LIDMap_) delete [] Br_LIDMap_;
     if(tempX_) delete [] tempX_;
     if(tempY_) delete [] tempY_;
+    if(ImportVector_) delete ImportVector_; 
 
   };
   //@}

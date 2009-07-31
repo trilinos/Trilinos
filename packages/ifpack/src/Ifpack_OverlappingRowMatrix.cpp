@@ -130,7 +130,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   Map_ = rcp( new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
 	  			      &list[0], 0, Comm()) );
 # ifdef IFPACK_NODE_AWARE_CODE
-  colMap_ = Map_;
+  colMap_ = &*Map_;
 # endif
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
@@ -621,7 +621,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     colList[nc+i] = colMapElements[i];
 
   // column map for the overlapped matrix (local + overlap)
-  colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
+  //colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
+  colMap_ = new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm());
     
 
   //FIXME timing
@@ -639,7 +640,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   // different from that of Matrix.
   try {
     // build row map based on the local communicator.  We need this temporarily to build the column map.
-    RCP<Epetra_Map> nodeMap_ = rcp( new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) );
+    Epetra_Map* nodeMap = new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm);
     int numMyElts = colMap_->NumMyElements();
     assert(numMyElts!=0);
 
@@ -647,42 +648,41 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     // must be further sorted so that they are contiguous by owning processor.
 
     // For each GID in column map, determine owning PID in local communicator.
-    Teuchos::RCP<int> myGlobalElts = rcp( new int[numMyElts] );
-    colMap_->MyGlobalElements(&*myGlobalElts);
-    Teuchos::RCP<int> pidList = rcp( new int[numMyElts] );
-    nodeMap_->RemoteIDList(numMyElts, &*myGlobalElts, &*pidList, 0);
+    int* myGlobalElts = new int[numMyElts];
+    colMap_->MyGlobalElements(myGlobalElts);
+    int* pidList = new int[numMyElts];
+    nodeMap->RemoteIDList(numMyElts, myGlobalElts, pidList, 0);
 
     // First sort column map GIDs based on the owning PID in local communicator.
     Epetra_Util Util;
     int *tt[1];
-    tt[0] = &*myGlobalElts;
-    Util.Sort(true, numMyElts, &*pidList, 0, (double**)0, 1, tt);
+    tt[0] = myGlobalElts;
+    Util.Sort(true, numMyElts, pidList, 0, (double**)0, 1, tt);
 
     // For each remote PID, sort the column map GIDs in ascending order.
     // Don't sort the local PID's entries.
     int localStart=0;
     while (localStart<numMyElts) {
-      int currPID = (&*pidList)[localStart];
+      int currPID = (pidList)[localStart];
       int i=localStart;
-      while (i<numMyElts && (&*pidList)[i] == currPID) i++;
+      while (i<numMyElts && (pidList)[i] == currPID) i++;
       if (currPID != nodeComm->MyPID())
-        Util.Sort(true, i-localStart, (&*myGlobalElts)+localStart, 0, 0, 0, 0);
+        Util.Sort(true, i-localStart, (myGlobalElts)+localStart, 0, 0, 0, 0);
       localStart = i;
     }
 
     // now move the local entries to the front of the list
     localStart=0;
-    while (localStart<numMyElts && (&*pidList)[localStart] != nodeComm->MyPID()) localStart++;
+    while (localStart<numMyElts && (pidList)[localStart] != nodeComm->MyPID()) localStart++;
     assert(localStart != numMyElts);
     int localEnd=localStart;
-    while (localEnd<numMyElts && (&*pidList)[localEnd] == nodeComm->MyPID()) localEnd++;
-    RCP<int> mySortedGlobalElts = rcp( new int[numMyElts] );
-    RCP<int> mySortedPidList = rcp( new int[numMyElts] );
+    while (localEnd<numMyElts && (pidList)[localEnd] == nodeComm->MyPID()) localEnd++;
+    int* mySortedGlobalElts = new int[numMyElts];
     int leng = localEnd - localStart;
     /* This is a little gotcha.  It appears that the ordering of the column map's local entries
        must be the same as that of the domain map's local entries.  See the comment in method
        MakeColMap() in Epetra_CrsGraph.cpp, line 1072. */
-    int *rowGlobalElts =  nodeMap_->MyGlobalElements();
+    int *rowGlobalElts =  nodeMap->MyGlobalElements();
 
     /*TODO TODO TODO NTS rows 68 and 83 show up as local GIDs in rowGlobalElts for both pids 0 & 1 on node 0.
                     This seems to imply that there is something wrong with rowList!!
@@ -704,18 +704,15 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     //move locals to front of list
     for (int i=0; i<leng; i++) {
       /* //original code */
-      (&*mySortedGlobalElts)[i] = rowGlobalElts[i];
-      (&*mySortedPidList)[i] = nodeComm->MyPID();
+      (mySortedGlobalElts)[i] = rowGlobalElts[i];
       //(&*mySortedGlobalElts)[i] = (&*myGlobalElts)[localStart+i];
       //(&*mySortedPidList)[i] = (&*pidList)[localStart+i];
     }
     for (int i=leng; i< localEnd; i++) {
-      (&*mySortedGlobalElts)[i] = (&*myGlobalElts)[i-leng];
-      (&*mySortedPidList)[i] = (&*pidList)[i-leng];
+      (mySortedGlobalElts)[i] = (myGlobalElts)[i-leng];
     }
     for (int i=localEnd; i<numMyElts; i++) {
-      (&*mySortedGlobalElts)[i] = (&*myGlobalElts)[i];
-      (&*mySortedPidList)[i] = (&*pidList)[i];
+      (mySortedGlobalElts)[i] = (myGlobalElts)[i];
     }
 
     //FIXME timing
@@ -727,10 +724,15 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     //FIXME timing
 
     int indexBase = colMap_->IndexBase();
-    colMap_ = Teuchos::null;
-    colMap_ = rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,indexBase,Comm()) );
+    if (colMap_) delete colMap_;
+    colMap_ = new Epetra_Map(-1,numMyElts,mySortedGlobalElts,indexBase,Comm());
 
-  }
+    delete nodeMap;
+    delete [] myGlobalElts;
+    delete [] pidList;
+    delete [] mySortedGlobalElts;
+
+  } //try
   catch(...) {
     printf("** * Ifpack_OverlappingRowmatrix ctor: problem creating column map * **\n\n");
   }
@@ -841,7 +843,14 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 
 
 } //Ifpack_OverlappingRowMatrix() ctor for more than one core
+
+// Destructor
+Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix() {
+  delete colMap_;
+}
+
 #endif //ifdef IFPACK_NODE_AWARE_CODE
+
 
 // ======================================================================
 int Ifpack_OverlappingRowMatrix::
