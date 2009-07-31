@@ -1,0 +1,240 @@
+
+def O (0,0,0) % orig
+def J [0,1,0] % rotation axis
+
+def hex1 {
+    def p0 (2.5,3)
+    def p1 (2.5,0)
+    def N 4
+    def seg_rot rotate(360 / N, [J])
+    % draw the pyramid by rotating a line about the J axis
+    sweep[fill=black!20] { N<>, [[seg_rot]] }
+    line[cull=false,fill=blue!20,fill opacity=0.5](p0)(p1)
+    def p05 (p0)
+    def p06 (p0) then [[seg_rot]]
+    def p07 (p0) then [[seg_rot]]^2
+    def p04 (p0) then [[seg_rot]]^3
+    def p01 (p1)
+    def p02 (p1) then [[seg_rot]]
+    def p03 (p1) then [[seg_rot]]^2
+    def p00 (p1) then [[seg_rot]]^3
+    dots(p00)(p01)(p02)(p03)(p04)(p05)(p06)(p07)
+    special|\fill[black,font=\footnotesize]
+                #1 node [below] {0}
+                #2 node [below] {1}
+                #3 node [below] {2}
+                #4 node [below] {3}
+                #5 node [above] {4}
+                #6 node [above] {5}
+                #7 node [above] {6}
+                #8 node [above] {7};|
+    (p00)(p01)(p02)(p03)(p04)(p05)(p06)(p07)
+
+}
+
+def hex2 {
+    def p0 (2.5,3)
+    def p1 (2.5,0)
+    def N 4
+    def seg_rot rotate(360 / N, [J])
+    % draw the pyramid by rotating a line about the J axis
+    sweep[fill=black!20] { N<>, [[seg_rot]] }
+    line[cull=false,fill=blue!20,fill opacity=0.5](p0)(p1)
+    def p05 (p0)
+    def p06 (p0) then [[seg_rot]]
+    def p07 (p0) then [[seg_rot]]^2
+    def p04 (p0) then [[seg_rot]]^3
+    def p01 (p1)
+    def p02 (p1) then [[seg_rot]]
+    def p03 (p1) then [[seg_rot]]^2
+    def p00 (p1) then [[seg_rot]]^3
+    def p08 ((p00)-(O)+(p01)-(O))/2+(O)
+    def p09 ((p01)-(O)+(p02)-(O))/2+(O)
+    def p10 ((p02)-(O)+(p03)-(O))/2+(O)
+    def p11 ((p03)-(O)+(p00)-(O))/2+(O)
+    def p12 ((p00)-(O)+(p04)-(O))/2+(O)
+    def p13 ((p01)-(O)+(p05)-(O))/2+(O)
+    def p14 ((p02)-(O)+(p06)-(O))/2+(O)
+    def p15 ((p03)-(O)+(p07)-(O))/2+(O)
+    def p16 ((p04)-(O)+(p05)-(O))/2+(O)
+    def p17 ((p05)-(O)+(p06)-(O))/2+(O)
+    def p18 ((p06)-(O)+(p07)-(O))/2+(O)
+    def p19 ((p07)-(O)+(p04)-(O))/2+(O)
+    dots(p00)(p01)(p02)(p03)(p04)(p05)(p06)(p07)(p08)(p09)(p10)(p11)(p12)(p13)(p14)(p15)(p16)(p17)(p18)(p19)
+    special|\fill[black,font=\footnotesize]
+                #1 node [below] {0}
+                #2 node [below] {1}
+                #3 node [below] {2}
+                #4 node [left] {3}
+                #5 node [above] {4}
+                #6 node [above] {5}
+                #7 node [above] {6}
+                #8 node [above] {7}
+                #9 node [below] {8}
+                #10 node [below] {9}
+                #11 node [above] {10}
+                #12 node [above] {11}
+                #13 node [left] {12}
+                #14 node [left] {13}
+                #15 node [right] {14}
+                #16 node [right] {15}
+                #17 node [above] {16}
+                #18 node [above] {17}
+                #19 node [above] {18}
+                #20 node [above] {19};|
+    (p00)(p01)(p02)(p03)(p04)(p05)(p06)(p07)(p08)(p09)(p10)(p11)(p12)(p13)(p14)(p15)(p16)(p17)(p18)(p19)
+
+}
+
+def hex3 {
+    def p0 (2.5,3)
+    def p1 (2.5,0)
+    def N 4
+    def seg_rot rotate(360 / N, [J])
+    % draw the pyramid by rotating a line about the J axis
+    sweep[fill=black!20] { N<>, [[seg_rot]] }
+    line[cull=false,fill=blue!20,fill opacity=0.5](p0)(p1)
+    def p05 (p0)
+    def p06 (p0) then [[seg_rot]]
+    def p07 (p0) then [[seg_rot]]^2
+    def p04 (p0) then [[seg_rot]]^3
+    def p01 (p1)
+    def p02 (p1) then [[seg_rot]]
+    def p03 (p1) then [[seg_rot]]^2
+    def p00 (p1) then [[seg_rot]]^3
+    def p08 ((p00)-(O)+(p01)-(O))/2+(O)
+    def p09 ((p01)-(O)+(p02)-(O))/2+(O)
+    def p10 ((p02)-(O)+(p03)-(O))/2+(O)
+    def p11 ((p03)-(O)+(p00)-(O))/2+(O)
+    def p12 ((p00)-(O)+(p04)-(O))/2+(O)
+    def p13 ((p01)-(O)+(p05)-(O))/2+(O)
+    def p14 ((p02)-(O)+(p06)-(O))/2+(O)
+    def p15 ((p03)-(O)+(p07)-(O))/2+(O)
+    def p16 ((p04)-(O)+(p05)-(O))/2+(O)
+    def p17 ((p05)-(O)+(p06)-(O))/2+(O)
+    def p18 ((p06)-(O)+(p07)-(O))/2+(O)
+    def p19 ((p07)-(O)+(p04)-(O))/2+(O)
+    def p20 ((p00)-(O)+(p01)-(O)+(p02)-(O)+(p03)-(O)+(p04)-(O)+(p05)-(O)+(p06)-(O)+(p07)-(O))/8+(O)
+    def p21 ((p00)-(O)+(p03)-(O)+(p02)-(O)+(p01)-(O))/4+(O)
+    def p22 ((p04)-(O)+(p05)-(O)+(p06)-(O)+(p07)-(O))/4+(O)
+    def p23 ((p00)-(O)+(p04)-(O)+(p07)-(O)+(p03)-(O))/4+(O)
+    def p24 ((p01)-(O)+(p02)-(O)+(p06)-(O)+(p05)-(O))/4+(O)
+    def p25 ((p00)-(O)+(p01)-(O)+(p05)-(O)+(p04)-(O))/4+(O)
+    def p26 ((p02)-(O)+(p03)-(O)+(p07)-(O)+(p06)-(O))/4+(O)
+    dots(p00)(p01)(p02)(p03)(p04)(p05)(p06)(p07)(p08)(p09)(p10)(p11)(p12)(p13)(p14)(p15)(p16)(p17)(p18)(p19)(p20)(p21)(p22)(p23)(p24)(p25)(p26)
+    special|\fill[black,font=\footnotesize]
+                #1 node [below] {0}
+                #2 node [below] {1}
+                #3 node [below] {2}
+                #4 node [left] {3}
+                #5 node [above] {4}
+                #6 node [above] {5}
+                #7 node [above] {6}
+                #8 node [above] {7}
+                #9 node [below] {8}
+                #10 node [below] {9}
+                #11 node [above] {10}
+                #12 node [above] {11}
+                #13 node [left] {12}
+                #14 node [left] {13}
+                #15 node [right] {14}
+                #16 node [right] {15}
+                #17 node [above] {16}
+                #18 node [above] {17}
+                #19 node [above] {18}
+                #20 node [above] {19}
+                #21 node [above] {20}
+                #22 node [above] {21}
+                #23 node [above] {22}
+                #24 node [above] {23}
+                #25 node [above] {24}
+                #26 node [above] {25}
+                #27 node [above] {26};|
+    (p00)(p01)(p02)(p03)(p04)(p05)(p06)(p07)(p08)(p09)(p10)(p11)(p12)(p13)(p14)(p15)(p16)(p17)(p18)(p19)(p20)(p21)(p22)(p23)(p24)(p25)(p26)
+
+}
+
+% Hex edge numbering
+def hex4 {
+    def p0 (2.5,3)
+    def p1 (2.5,0)
+    def N 4
+    def seg_rot rotate(360 / N, [J])
+    % draw the pyramid by rotating a line about the J axis
+    sweep[fill=black!20] { N<>, [[seg_rot]] }
+    line[cull=false,fill=blue!20,fill opacity=0.5](p0)(p1)
+    def p05 (p0)
+    def p06 (p0) then [[seg_rot]]
+    def p07 (p0) then [[seg_rot]]^2
+    def p04 (p0) then [[seg_rot]]^3
+    def p01 (p1)
+    def p02 (p1) then [[seg_rot]]
+    def p03 (p1) then [[seg_rot]]^2
+    def p00 (p1) then [[seg_rot]]^3
+    def p08 ((p00)-(O)+(p01)-(O))/2+(O)
+    def p09 ((p01)-(O)+(p02)-(O))/2+(O)
+    def p10 ((p02)-(O)+(p03)-(O))/2+(O)
+    def p11 ((p03)-(O)+(p00)-(O))/2+(O)
+    def p12 ((p00)-(O)+(p04)-(O))/2+(O)
+    def p13 ((p01)-(O)+(p05)-(O))/2+(O)
+    def p14 ((p02)-(O)+(p06)-(O))/2+(O)
+    def p15 ((p03)-(O)+(p07)-(O))/2+(O)
+    def p16 ((p04)-(O)+(p05)-(O))/2+(O)
+    def p17 ((p05)-(O)+(p06)-(O))/2+(O)
+    def p18 ((p06)-(O)+(p07)-(O))/2+(O)
+    def p19 ((p07)-(O)+(p04)-(O))/2+(O)
+    special|\fill[black,font=\footnotesize]
+                #1 node [below] {0}
+                #2 node [below] {1}
+                #3 node [above] {2}
+                #4 node [above] {3}
+                #5 node [left] {8}
+                #6 node [left] {9}
+                #7 node [right] {10}
+                #8 node [right] {11}
+                #9 node [above] {4}
+                #10 node [above] {5}
+                #11 node [above] {6}
+                #12 node [above] {7};|
+    (p08)(p09)(p10)(p11)(p12)(p13)(p14)(p15)(p16)(p17)(p18)(p19)
+
+}
+
+% Hex face numbering
+def hex5 {
+    def p0 (2.5,3)
+    def p1 (2.5,0)
+    def N 4
+    def seg_rot rotate(360 / N, [J])
+    % draw the pyramid by rotating a line about the J axis
+    sweep[fill=black!20] { N<>, [[seg_rot]] }
+    line[cull=false,fill=blue!20,fill opacity=0.5](p0)(p1)
+    def p05 (p0)
+    def p06 (p0) then [[seg_rot]]
+    def p07 (p0) then [[seg_rot]]^2
+    def p04 (p0) then [[seg_rot]]^3
+    def p01 (p1)
+    def p02 (p1) then [[seg_rot]]
+    def p03 (p1) then [[seg_rot]]^2
+    def p00 (p1) then [[seg_rot]]^3
+    def p21 ((p00)-(O)+(p03)-(O)+(p02)-(O)+(p01)-(O))/4+(O)
+    def p22 ((p04)-(O)+(p05)-(O)+(p06)-(O)+(p07)-(O))/4+(O)
+    def p23 ((p00)-(O)+(p04)-(O)+(p07)-(O)+(p03)-(O))/4+(O)
+    def p24 ((p01)-(O)+(p02)-(O)+(p06)-(O)+(p05)-(O))/4+(O)
+    def p25 ((p00)-(O)+(p01)-(O)+(p05)-(O)+(p04)-(O))/4+(O)
+    def p26 ((p02)-(O)+(p03)-(O)+(p07)-(O)+(p06)-(O))/4+(O)
+    special|\fill[black,font=\footnotesize]
+                #1 node [] {4}
+                #2 node [] {5}
+                #3 node [] {3}
+                #4 node [] {1}
+                #5 node [] {0}
+                #6 node [] {2};|
+    (p21)(p22)(p23)(p24)(p25)(p26)
+
+}
+
+put { view((10,4,2)) } {hex5}
+
+global { language tikz }
+
