@@ -11,6 +11,8 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 
+#include "Teuchos_Time.hpp"
+
 // PB includes
 #include "PB_Utilities.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
@@ -91,23 +93,27 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
 
 // constructors
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn)
-   : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn), useFullLDU_(false)
+   : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+   , useFullLDU_(false),presZeroingNeeded_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
                                const Teuchos::RCP<const InverseFactory> & invFactS,
                                bool rzn)
-   : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn), useFullLDU_(false)
+   : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+   , useFullLDU_(false),presZeroingNeeded_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn)
-   : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn), useFullLDU_(false)
+   : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+   , useFullLDU_(false),presZeroingNeeded_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
                                const Teuchos::RCP<const InverseFactory> & invFactS,
                                LinearOp & mass,bool rzn)
-   : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn), useFullLDU_(false)
+   : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+   , useFullLDU_(false),presZeroingNeeded_(false)
 { }
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
@@ -278,6 +284,8 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       }
    }
 
+   // Next few lines don't seem to help...probably can be deleted.
+   /////////////////////////////////////////////
    // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
    const RCP<const Epetra_Operator> epC = Thyra::get_Epetra_Operator(*C);
    if(epC!=Teuchos::null && presZeroingNeeded_) {
@@ -290,6 +298,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
          PB::Epetra::identityRowIndicies(crsC->RowMap(), *crsC,nullPresIndices_);
       }
    }
+   /////////////////////////////////////////////
 
    // compute gamma
    LinearOp iQuF;
@@ -310,13 +319,13 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    const LinearOp invDiagF = getInvDiagonalOp(F);
    
-   // construct B_idF_Bt and save it for refilling later
+   // construct B_idF_Bt and save it for refilling later: This could reuse BQBt graph
    PB::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
    modB_idF_Bt = explicitMultiply(B,invDiagF,Bt,modB_idF_Bt);
    state->addInverse("BidFBt",modB_idF_Bt);
    const LinearOp B_idF_Bt = modB_idF_Bt;
 
-   MultiVector vec_D = getDiagonal(B_idF_Bt);
+   MultiVector vec_D = getDiagonal(B_idF_Bt); // this memory could be reused
    update(-1.0,getDiagonal(C),1.0,vec_D); // vec_D = diag(B*inv(diag(F))*Bt)-diag(C)
    const LinearOp invD = buildInvDiagonal(vec_D,"inv(D)");
 
