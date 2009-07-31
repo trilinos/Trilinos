@@ -390,6 +390,91 @@ repartition(const Epetra_BlockMap& input_map,
   return 0;
 }
 
+/* New createBalancedCopy functions */
+
+Epetra_MultiVector * 
+createBalancedCopy(const Epetra_MultiVector &coords)
+{
+  Teuchos::ParameterList paramlist;
+
+  return createBalancedCopy(coords, paramlist);
+}
+
+Epetra_MultiVector * 
+createBalancedCopy(const Epetra_MultiVector &coords,
+		   const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RCP<const Epetra_MultiVector> coordRcp = Teuchos::rcp(&coords, false);
+
+  Teuchos::RCP<Partitioner> partitioner =
+    Teuchos::rcp(new Partitioner(coordRcp, paramlist));
+
+  Redistributor rd(partitioner);
+
+  Teuchos::RCP<Epetra_MultiVector> newVec = rd.redistribute(coords);
+
+// Should we release() newVec? 
+  return newVec.get();
+}
+
+Epetra_CrsGraph *
+createBalancedCopy(const Epetra_CrsGraph& input_graph)
+{
+  Teuchos::ParameterList paramlist;
+
+  return createBalancedCopy(input_graph, paramlist);
+}
+
+Epetra_CrsGraph *
+createBalancedCopy(const Epetra_CrsGraph& input_graph,
+		     const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RCP<const Epetra_CrsGraph> rcp_input_graph =
+    Teuchos::rcp(&(input_graph), false);
+
+  Teuchos::RCP<Partitioner> partitioner =
+    Teuchos::rcp(new Partitioner(rcp_input_graph, paramlist));
+
+  Redistributor rd(partitioner);
+
+  Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
+    rd.redistribute(input_graph);
+
+// Should we release() balanced_graph? */
+  return balanced_graph.get();
+}
+
+Epetra_CrsMatrix *
+createBalancedCopy(const Epetra_CrsMatrix& input_matrix)
+{
+  Teuchos::ParameterList paramlist;
+
+  return createBalancedCopy(input_matrix, paramlist);
+}
+
+Epetra_CrsMatrix *
+createBalancedCopy(const Epetra_CrsMatrix& input_matrix,
+		     const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RCP<const Epetra_CrsGraph> input_graph =
+    Teuchos::rcp(&(input_matrix.Graph()), false);
+
+  Teuchos::RCP<Partitioner> partitioner =
+    Teuchos::rcp(new Partitioner(input_graph, paramlist));
+
+  Redistributor rd(partitioner);
+
+  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
+    rd.redistribute(input_matrix);
+
+// Should we release() balanced_matrix? */
+  return balanced_matrix.get();
+}
+
+/*
+************* Deprecated methods below - remove later ********************
+*/
+
 Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 {
@@ -519,6 +604,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 
   return balanced_matrix;
 }
+
 Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph)
 {
@@ -687,17 +773,11 @@ create_balanced_copy(const Epetra_MultiVector &coords,
   Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(coordRcp, weightRcp, paramlist));
 
-#if 0
   Redistributor rd(partitioner);
 
   Teuchos::RCP<Epetra_MultiVector> newVec = rd.redistribute(coords);
 
   return newVec;
-#else
-  // for now - so we compile
-  Teuchos::RCP<Epetra_MultiVector> newVec = Teuchos::rcp(new Epetra_MultiVector(coords));
-  return newVec;
-#endif
 }
 
 #endif
