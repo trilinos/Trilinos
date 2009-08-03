@@ -137,7 +137,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 	 << NumGlobalNonzeros << endl;
       cout << "Amesos (level " << curr_level
 	 << ") : Fill-in = "
-	 << 100.0*NumGlobalNonzeros/(NumGlobalRows*NumGlobalRows)
+	 << 100.0*NumGlobalNonzeros/(1.0*NumGlobalRows*NumGlobalRows)
 	 << " %" << endl;
     }
 
