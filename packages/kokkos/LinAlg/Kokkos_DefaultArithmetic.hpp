@@ -29,6 +29,7 @@
 #ifndef KOKKOS_DEFAULTARITHMETIC_H
 #define KOKKOS_DEFAULTARITHMETIC_H
 
+#include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ArrayView.hpp>
