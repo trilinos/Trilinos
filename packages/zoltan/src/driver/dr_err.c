@@ -138,7 +138,7 @@ void error_report(int Proc)
     }
   }
 
-  return;
+  MPI_Abort(MPI_COMM_WORLD, -1);
 }
 
 #ifdef __cplusplus
