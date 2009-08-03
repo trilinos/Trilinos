@@ -1760,11 +1760,13 @@ immediately before the word that is causing the link. For example,
      the parameter list with the following code.
 
      \code
-  Teuchos::RCP<UserPrePostOperator> ppo =
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
-  nlParams.sublist("Solver Options").set
-    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
+					 ppo);
      \endcode
+
+     NOTE: The type of object set in the parameter list MUST be an RCP of the type NOX::Abstract::PrePostOperator.  It can NOT be a derived type!
 
      <li> "Status Test Check Type" [std::string] - References a NOX::StatusTest::CheckType that determines if all ("Complete") or just a minimal ("Minimal") set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration if it is set to NOX::StatusTest::Complete.  Valid options are:
      <ul>
