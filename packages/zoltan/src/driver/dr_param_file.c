@@ -35,7 +35,9 @@
 #include <mpi.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <strings.h>
+#endif
 #include "zoltan.h"
 #include "dr_param_file.h"
 #include "dr_const.h"

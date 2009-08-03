@@ -19,7 +19,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#ifndef _WIN32
 #include <strings.h>
+#endif
 
 #include "zoltan.h"
 #include "lb_const.h"

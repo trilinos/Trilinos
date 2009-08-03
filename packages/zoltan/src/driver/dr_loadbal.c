@@ -27,7 +27,9 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifndef _WIN32
 #include <strings.h>
+#endif
 #include <sys/types.h>
 #include <unistd.h>
 
