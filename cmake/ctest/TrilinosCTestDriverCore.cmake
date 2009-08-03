@@ -180,9 +180,16 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
  
   # Remove an existing CMakeCache.txt file or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
+  SET(DEFAULT_GENERATOR "Unix Makefiles")
+  FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
+  FOREACH(line ${CACHE_CONTENTS})
+    IF("${line}" MATCHES "CMAKE_GENERATOR")
+      STRING(REGEX REPLACE "(.*)=(.*)" "\\2" DEFAULT_GENERATOR "${line}")
+    ENDIF()
+  ENDFOREACH(line)
+      
+  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
 
-  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR "Unix Makefiles")
-  
   # Do the CVS updates or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
  
@@ -192,9 +199,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Flags used when doing a CVS update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
 
-  # Flags passed to 'make'
-  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
-  
+  # Flags passed to 'make' assume gnumake with unix makefiles
+  IF("${CTEST_CMAKE_GENERATOR}" MATCHES "Unix Makefiles")
+    SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
+  ELSE()
+    SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS )
+  ENDIF()
+
   # Do the build or use an existing build
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
   
@@ -396,14 +407,16 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       OPTIONS "${CONFIGURE_OPTIONS}" # New option!
       RETURN_VALUE CONFIGURE_RETURN_VAL
       )
-
     MESSAGE("Generating the file CMakeCache.clean.txt ...")
-    EXECUTE_PROCESS( COMMAND
-      ${TRILINOS_CMAKE_DIR}/ctest/makeCMakeCacheFile.sh ${CTEST_BINARY_DIRECTORY} )
-    IF (NOT EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
-      MESSAGE("Error, the file '${CMAKE_CACHE_CLEAN_FILE}' does not exist!")
-    ENDIF()
-  
+    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
+    message("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
+    FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}")
+    FOREACH(line ${CACHE_CONTENTS})
+      # write lines that do not start with # or //
+      IF(NOT "${line}" MATCHES "^(#|//)")
+        FILE(APPEND "${CMAKE_CACHE_CLEAN_FILE}" "${line}\n")
+      ENDIF()
+    ENDFOREACH()
     # If the configure failed, add the package to the list
     # of failed packages
     IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
