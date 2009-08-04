@@ -269,10 +269,22 @@ private:
 
 public:
 
-  typedef IndexList< J0 ,  J1 ,  J2 ,  J3 ,  J4 ,  J5 ,  J6 ,  J7 ,
-                     J8 ,  J9 ,  J10 , J11 , J12 , J13 , J14 , J15 ,
-                     J16 , J17 , J18 , J19 , J20 , J21 , J22 , J23 ,
-                     J24 , J25 , J26 , J27 , J28 , J29 , J30 , J31 > type ;
+  typedef IndexList< J0 ,  IndexListInverse::J1 ,  IndexListInverse::J2 ,
+                     IndexListInverse::J3 ,  IndexListInverse::J4 ,  
+                     IndexListInverse::J5 ,  IndexListInverse::J6 ,  
+                     IndexListInverse::J7 ,  IndexListInverse::J8 ,  
+                     IndexListInverse::J9 ,  IndexListInverse::J10 , 
+                     IndexListInverse::J11 , IndexListInverse::J12 , 
+                     IndexListInverse::J13 , IndexListInverse::J14 ,
+                     IndexListInverse::J15 , IndexListInverse::J16 , 
+                     IndexListInverse::J17 , IndexListInverse::J18 ,
+                     IndexListInverse::J19 , IndexListInverse::J20 ,
+                     IndexListInverse::J21 , IndexListInverse::J22 , 
+                     IndexListInverse::J23 , IndexListInverse::J24 , 
+                     IndexListInverse::J25 , IndexListInverse::J26 ,
+                     IndexListInverse::J27 , IndexListInverse::J28 ,
+                     IndexListInverse::J29 , IndexListInverse::J30 , 
+                     IndexListInverse::J31 > type ;
 };
 
 #endif /* DOXYGEN_COMPILE */
