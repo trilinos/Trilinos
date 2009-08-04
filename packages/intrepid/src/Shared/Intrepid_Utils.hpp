@@ -541,7 +541,7 @@ int compareToAnalytic(const Teuchos::Array< Teuchos::Array<Scalar> > testMat,
                       std::ifstream & inputFile,
                       Scalar reltol,
                       int iprint,
-                      TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION) {
+                      TypeOfExactData analyticDataType ) {
   
   // This little trick lets us print to std::cout only if
   // iprint > 0.
@@ -626,7 +626,7 @@ int compareToAnalytic(const Scalar * testMat,
                       std::ifstream & inputFile,
                       Scalar reltol,
                       int iprint,
-                      TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION) {
+                      TypeOfExactData analyticDataType ) {
   
   // This little trick lets us print to std::cout only if
   // iprint > 0.
@@ -710,7 +710,7 @@ int compareToAnalytic(const Scalar * testMat,
 template<class Scalar>
 void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
                  std::ifstream & inputFile,
-                 TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION) {
+                 TypeOfExactData analyticDataType ) {
   
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -763,7 +763,7 @@ void getAnalytic(Teuchos::Array< Teuchos::Array<Scalar> > & testMat,
 template<class Scalar>
 void getAnalytic(Scalar * testMat,
                  std::ifstream & inputFile,
-                 TypeOfExactData analyticDataType = INTREPID_UTILS_FRACTION) {
+                 TypeOfExactData analyticDataType) {
   
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;

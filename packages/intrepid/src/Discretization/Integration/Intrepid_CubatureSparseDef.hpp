@@ -207,7 +207,7 @@ void iterateThroughDimensions(int level,
       }
       else
       {
-        weight = pow(-1, end - k_i)*combination(d-1, k_i - l)*weight;
+        weight = pow(-1.0, end - k_i)*combination(d-1, k_i - l)*weight;
         cubPointsND.addNode(&node[0], weight);
       }
     }

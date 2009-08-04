@@ -46,6 +46,10 @@
     \author Created by Spencer Sherwin, Aeronautics, Imperial College London,
             modified and redistributed by D. Ridzal.
 */
+#ifdef _MSC_VER
+#include "winmath.h"
+#endif
+
 
 namespace Intrepid {
 
