@@ -30,6 +30,7 @@ static void cyclic_part(ZZ *zz, int num_obj, int wtflag, float *wgts,
             float *part_sizes, int *newparts);
 
 /* Cyclic (round-robin) partitioning method.
+   Based on the Block code; could be consolidated.
  */
 
 int Zoltan_Cyclic(
@@ -151,12 +152,12 @@ End:
 static void cyclic_part(ZZ *zz, int num_obj, int wtflag, float *wgts, 
             float *part_sizes, int *newparts)
 {
-  int i, part;
+  int i, part=0;
   const int k = zz->LB.Num_Global_Parts;
 
   /* Compute offset for my proc */
-  part = MPI_Scan(&num_obj, &part, 1, MPI_INT, MPI_SUM, zz->Communicator);
-  part -= num_obj; /* exclusive scan: subtract local num_obj */
+  MPI_Scan(&num_obj, &part, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  part -= num_obj; 
   part = (part % k);
 
   /* Loop over objects and assign parts. */
