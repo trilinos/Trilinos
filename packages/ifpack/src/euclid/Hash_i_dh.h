@@ -38,9 +38,10 @@
 
 #include "euclid_common.h"
 
-                                 
+
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /*
@@ -48,25 +49,25 @@ extern "C" {
     note: all parameters are inputs; the only output 
           is the "int" returned by Hash_i_dhLookup.
 */
-extern void Hash_i_dhCreate(Hash_i_dh *h, int size);
+  extern void Hash_i_dhCreate (Hash_i_dh * h, int size);
   /* For proper operation, "size," which is the minimal
      size of the hash table, must be a power of 2.
      Or, pass "-1" to use the default.
    */
 
 
-extern void Hash_i_dhDestroy(Hash_i_dh h);
-extern void Hash_i_dhReset(Hash_i_dh h);
+  extern void Hash_i_dhDestroy (Hash_i_dh h);
+  extern void Hash_i_dhReset (Hash_i_dh h);
 
-extern void Hash_i_dhInsert(Hash_i_dh h, int key, int data);
+  extern void Hash_i_dhInsert (Hash_i_dh h, int key, int data);
   /* throws error if <data, data> is already inserted;
      grows hash table if out of space.
    */
 
-extern int  Hash_i_dhLookup(Hash_i_dh h, int key);
-    /* returns "data" associated with "key,"
-       or -1 if "key" is not found.
-     */
+  extern int Hash_i_dhLookup (Hash_i_dh h, int key);
+  /* returns "data" associated with "key,"
+     or -1 if "key" is not found.
+   */
 
 #ifdef __cplusplus
 }

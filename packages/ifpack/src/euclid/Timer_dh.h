@@ -63,7 +63,7 @@
 #  include <time.h>
 #endif
 #if HAVE_UNISTD_H
-#  include <unistd.h>  /* needed for sysconf(_SC_CLK_TCK) */
+#  include <unistd.h>		/* needed for sysconf(_SC_CLK_TCK) */
 #endif /* HAVE_UNISTD_H */
 #endif
 
@@ -78,29 +78,31 @@
 /*--------------------------------------------------------------*/
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-struct _timer_dh {
-  bool isRunning;
-  long int sc_clk_tck;
-  double begin_wall; 
-  double end_wall;
+  struct _timer_dh
+  {
+    bool isRunning;
+    long int sc_clk_tck;
+    double begin_wall;
+    double end_wall;
 
 #ifdef EUCLID_TIMING
-  struct tms  begin_cpu;
-  struct tms  end_cpu;
+    struct tms begin_cpu;
+    struct tms end_cpu;
 #endif
- 
-};
 
-extern void Timer_dhCreate(Timer_dh *t);
-extern void Timer_dhDestroy(Timer_dh t);
-extern void Timer_dhStart(Timer_dh t);
-extern void Timer_dhStop(Timer_dh t);
-extern double Timer_dhReadCPU(Timer_dh t);
-extern double Timer_dhReadWall(Timer_dh t);
-extern double Timer_dhReadUsage(Timer_dh t);
+  };
+
+  extern void Timer_dhCreate (Timer_dh * t);
+  extern void Timer_dhDestroy (Timer_dh t);
+  extern void Timer_dhStart (Timer_dh t);
+  extern void Timer_dhStop (Timer_dh t);
+  extern double Timer_dhReadCPU (Timer_dh t);
+  extern double Timer_dhReadWall (Timer_dh t);
+  extern double Timer_dhReadUsage (Timer_dh t);
 
 /* notes:
     (1)  unless compiled with EUCLID_TIMING defined, readCPU 

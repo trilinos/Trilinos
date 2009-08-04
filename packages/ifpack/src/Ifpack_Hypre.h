@@ -59,7 +59,7 @@
 
 #ifndef HYPRE_ENUMS
 #define HYPRE_ENUMS
-// This enumerated type defines the allowed solvers and preconditioners in Hypre. Some can be used as both solver and preconditioner.
+//! This enumerated type defines the allowed solvers and preconditioners in Hypre. Some can be used as both solver and preconditioner.
 enum Hypre_Solver{ 
     BoomerAMG,
     ParaSails,
@@ -73,14 +73,14 @@ enum Hypre_Solver{
     BiCGSTAB
 };
 
-// This enumerated type defines the two options for applying inverse, either solve or apply the preconditioner.
+//! This enumerated type defines the two options for applying inverse, either solve or apply the preconditioner.
 enum Hypre_Chooser{
     Solver,
     Preconditioner
 };
 #endif //HYPRE_ENUMS
 
-// This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
+//! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
 class FunctionParameter{
   public:
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int), int param1) :

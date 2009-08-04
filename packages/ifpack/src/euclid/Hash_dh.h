@@ -42,37 +42,40 @@
    in hashing <key, int> pairs!
 */
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-typedef struct _hash_node {
-  int     iData;      /* integer */
-  double  fData;      /* float */
-  int     *iDataPtr;  /* pointer to integer */
-  int     *iDataPtr2; /* pointer to integer */
-  double  *fDataPtr;  /* pointer to float */
-} HashData;
+  typedef struct _hash_node
+  {
+    int iData;			/* integer */
+    double fData;		/* float */
+    int *iDataPtr;		/* pointer to integer */
+    int *iDataPtr2;		/* pointer to integer */
+    double *fDataPtr;		/* pointer to float */
+  } HashData;
 
 
-typedef struct _hash_node_private HashRecord;
+  typedef struct _hash_node_private HashRecord;
 
 /* data structure for the hash table; do not directly access */
-struct _hash_dh {
-  int         size;   /* total slots in table */
-  int         count;  /* number of insertions in table */
-  int         curMark;
-  HashRecord  *data;
-};
+  struct _hash_dh
+  {
+    int size;			/* total slots in table */
+    int count;			/* number of insertions in table */
+    int curMark;
+    HashRecord *data;
+  };
 
 
-extern void Hash_dhCreate(Hash_dh *h, int size);
-extern void Hash_dhDestroy(Hash_dh h);
-extern void Hash_dhInsert(Hash_dh h, int key, HashData *data);
-extern HashData *Hash_dhLookup(Hash_dh h, int key);
-         /* returns NULL if record isn't found. */
+  extern void Hash_dhCreate (Hash_dh * h, int size);
+  extern void Hash_dhDestroy (Hash_dh h);
+  extern void Hash_dhInsert (Hash_dh h, int key, HashData * data);
+  extern HashData *Hash_dhLookup (Hash_dh h, int key);
+  /* returns NULL if record isn't found. */
 
-extern void Hash_dhReset(Hash_dh h);
-extern void Hash_dhPrint(Hash_dh h, FILE *fp);
+  extern void Hash_dhReset (Hash_dh h);
+  extern void Hash_dhPrint (Hash_dh h, FILE * fp);
 
 
 #define HASH_1(k,size,idxOut)    \

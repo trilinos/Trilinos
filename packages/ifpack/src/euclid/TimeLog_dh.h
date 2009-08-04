@@ -40,16 +40,17 @@
 
 #include "euclid_common.h"
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-extern void TimeLog_dhCreate(TimeLog_dh *t);
-extern void TimeLog_dhDestroy(TimeLog_dh t);
-extern void TimeLog_dhStart(TimeLog_dh t);
-extern void TimeLog_dhStop(TimeLog_dh t);
-extern void TimeLog_dhReset(TimeLog_dh t);
-extern void TimeLog_dhMark(TimeLog_dh t, char *description);
-extern void TimeLog_dhPrint(TimeLog_dh t, FILE *fp, bool allPrint);
+  extern void TimeLog_dhCreate (TimeLog_dh * t);
+  extern void TimeLog_dhDestroy (TimeLog_dh t);
+  extern void TimeLog_dhStart (TimeLog_dh t);
+  extern void TimeLog_dhStop (TimeLog_dh t);
+  extern void TimeLog_dhReset (TimeLog_dh t);
+  extern void TimeLog_dhMark (TimeLog_dh t, char *description);
+  extern void TimeLog_dhPrint (TimeLog_dh t, FILE * fp, bool allPrint);
 
 #ifdef __cplusplus
 }

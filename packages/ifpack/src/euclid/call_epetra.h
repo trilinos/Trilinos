@@ -33,18 +33,21 @@
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-int ExtractIndicesView(void* A, int GlobalRow, int *NumEntries, int** Indices);
+  int ExtractIndicesView (void *A, int GlobalRow, int *NumEntries,
+			  int **Indices);
 
-int ExtractValuesView(void* A, int GlobalRow, int *NumEntries, double** Values);
+  int ExtractValuesView (void *A, int GlobalRow, int *NumEntries,
+			 double **Values);
 
-int MinMaxMyGID(void* A, bool Row, bool min);
+  int MinMaxMyGID (void *A, bool Row, bool min);
 
-int NumGlobalRowCol(void* A, bool Row);
+  int NumGlobalRowCol (void *A, bool Row);
 
-int NumMyRowEntries(void *A, int Row, int *numEntries);
+  int NumMyRowEntries (void *A, int Row, int *numEntries);
 
 #ifdef __cplusplus
 }

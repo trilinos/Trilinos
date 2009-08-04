@@ -42,39 +42,42 @@
 #include "euclid_common.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /*--------------------------------------------------------------------------
  * open and close files, with error checking
  *--------------------------------------------------------------------------*/
-extern FILE * openFile_dh(const char *filenameIN, const char *modeIN);
-extern void closeFile_dh(FILE *fpIN);
+  extern FILE *openFile_dh (const char *filenameIN, const char *modeIN);
+  extern void closeFile_dh (FILE * fpIN);
 
 /*---------------------------------------------------------------------------
  * binary io; these are called by functions in mat_dh_private
  *---------------------------------------------------------------------------*/
 
-bool isSmallEndian();
+  bool isSmallEndian ();
 
 /* seq only ?? */
-extern void io_dh_print_ebin_mat_private(int m, int beg_row,
-                                int *rp, int *cval, double *aval, 
-                           int *n2o, int *o2n, Hash_i_dh hash, char *filename);
+  extern void io_dh_print_ebin_mat_private (int m, int beg_row,
+					    int *rp, int *cval, double *aval,
+					    int *n2o, int *o2n,
+					    Hash_i_dh hash, char *filename);
 
 /* seq only ?? */
-extern void io_dh_read_ebin_mat_private(int *m, int **rp, int **cval,
-                                     double **aval, char *filename);
+  extern void io_dh_read_ebin_mat_private (int *m, int **rp, int **cval,
+					   double **aval, char *filename);
 
 /* seq only */
-extern void io_dh_print_ebin_vec_private(int n, int beg_row, double *vals,
-                           int *n2o, int *o2n, Hash_i_dh hash, char *filename);
+  extern void io_dh_print_ebin_vec_private (int n, int beg_row, double *vals,
+					    int *n2o, int *o2n,
+					    Hash_i_dh hash, char *filename);
 /* seq only */
-extern void io_dh_read_ebin_vec_private(int *n, double **vals, char *filename);
+  extern void io_dh_read_ebin_vec_private (int *n, double **vals,
+					   char *filename);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

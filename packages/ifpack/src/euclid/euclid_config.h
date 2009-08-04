@@ -47,8 +47,8 @@
      use it at all.  Intended usage for calling Euclid functions from
      main is:
 
-         Euclid_dhPhoo(); ERRCHKA;
-  */
+     Euclid_dhPhoo(); ERRCHKA;
+   */
 
 #ifdef USING_MPI
 #define EUCLID_EXIT MPI_Abort(comm_dh, -1)
@@ -59,7 +59,7 @@
 #define EXIT_NOW(msg) \
       { setError_dh(msg, __FUNC__, __FILE__, __LINE__); \
         ERRCHKA; \
-      } 
+      }
 
 #define ERRCHKA   \
     if (errFlag_dh) {  \
@@ -73,7 +73,7 @@
         Mem_dhPrint(mem_dh, stderr, false); \
       } \
       EUCLID_EXIT; \
-    } 
+    }
 
 #define ERRCHKA_CHKERRA(ierr)   \
     if (errFlag_dh) {  \
@@ -86,10 +86,10 @@
       printErrorMsg(stderr);  \
       fprintf(stderr, "\n[%i] ierr = %i, errFlag_dh = %i\n", myid_dh, ierr, errFlag_dh); \
       CHKERRA(ierr); \
-    } 
+    }
 
 
-#define MAX_SUBDOMAINS  20   
+#define MAX_SUBDOMAINS  20
   /* The maximum number of subdomains into which
      the matrix may be partitioned.  Rule of thumb:
      MAX_SUBDOMAINS >= number of threads.

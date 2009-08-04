@@ -47,6 +47,7 @@ using Teuchos::rcp;
 Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
   A_(rcp(A,false)),
   UseTranspose_(false),
+  Condest_(-1),
   IsInitialized_(false),
   IsComputed_(false),
   Label_(),
@@ -94,6 +95,8 @@ Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
     rows[i-ilower] = i;
   }
   MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
+  // Here we need to change the view of each row to have global indices. This is
+  // because Euclid directly extracts a row view and expects global indices.
   for(int i = 0; i < A_->NumMyRows(); i++){
     int *indices;
     int len;
@@ -109,9 +112,14 @@ void Ifpack_Euclid::Destroy(){
     Euclid_dhDestroy(eu);
   }
   if(IsInitialized()){
+    Parser_dhDestroy(parser_dh);
+    parser_dh = NULL;
+    TimeLog_dhDestroy(tlog_dh);
+    tlog_dh = NULL;
     Mem_dhDestroy(mem_dh);
     mem_dh = NULL;
   }
+  // Now that Euclid is done with the matrix, we change it back to having local indices.
   for(int i = 0; i < A_->NumMyRows(); i++){
     int *indices;
     int len;
@@ -138,7 +146,7 @@ int Ifpack_Euclid::Initialize(){
     Parser_dhCreate(&parser_dh);
   }
   Parser_dhInit(parser_dh, 0, NULL);
-  //openLogfile_dh(0, NULL);
+  // Create the solver, this doesn't malloc anything yet, so it's only destroyed if Compute() is called.
   Euclid_dhCreate(&eu);
   IsInitialized_=true;
   NumInitialize_ = NumInitialize_ + 1;
@@ -201,7 +209,7 @@ int Ifpack_Euclid::Compute(){
     IFPACK_CHK_ERR(Initialize());
   }
   Time_.ResetStartTime();
-  sprintf(Label_, "IFPACK_Euclid (level=%d, bj=%d, stats=%d, mem=%d, sparse = %f, rowscale = %d, ilut = %f)",
+  sprintf(Label_, "IFPACK_Euclid (level=%d, bj=%d, stats=%d, mem=%d, sparse=%f, rowscale=%d, ilut=%f)",
       SetLevel_, SetBJ_, SetStats_, SetMem_, SetSparse_, SetRowScale_, SetILUT_);
 
   // Set the parameters
@@ -253,7 +261,9 @@ int Ifpack_Euclid::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector&
   for(int vecNum = 0; vecNum < NumVectors; vecNum++){
     CallEuclid(X[vecNum], Y[vecNum]);
   }
-  Euclid_dhPrintTestData(eu, stdout);
+  if(SetStats_ != 0){
+    Euclid_dhPrintTestData(eu, stdout);
+  }
   NumApplyInverse_ = NumApplyInverse_ + 1;
   ApplyInverseTime_ = ApplyInverseTime_ + Time_.ElapsedTime();
   return 0;

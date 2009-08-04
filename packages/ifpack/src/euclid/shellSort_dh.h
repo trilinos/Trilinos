@@ -33,11 +33,12 @@
 #include "euclid_common.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-extern void shellSort_int(const int n, int *x);
-extern void shellSort_float(int n, double *v);
+  extern void shellSort_int (const int n, int *x);
+  extern void shellSort_float (int n, double *v);
 
 /*
 extern void shellSort_int_int(const int n, int *x, int *y);

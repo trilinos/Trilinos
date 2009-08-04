@@ -42,16 +42,18 @@
 #endif
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-extern void matvec_euclid_seq(int n, int *rp, int *cval, double *aval, double *x, double *y);
-extern double InnerProd(int local_n, double *x, double *y);
-extern double Norm2(int local_n, double *x);
-extern void Axpy(int n, double alpha, double *x, double *y);
-extern double Norm2(int n, double *x);
-extern void CopyVec(int n, double *xIN, double *yOUT);
-extern void ScaleVec(int n, double alpha, double *x);
+  extern void matvec_euclid_seq (int n, int *rp, int *cval, double *aval,
+				 double *x, double *y);
+  extern double InnerProd (int local_n, double *x, double *y);
+  extern double Norm2 (int local_n, double *x);
+  extern void Axpy (int n, double alpha, double *x, double *y);
+  extern double Norm2 (int n, double *x);
+  extern void CopyVec (int n, double *xIN, double *yOUT);
+  extern void ScaleVec (int n, double alpha, double *x);
 
 #ifdef __cplusplus
 }

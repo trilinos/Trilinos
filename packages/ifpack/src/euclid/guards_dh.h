@@ -50,7 +50,7 @@
             } \
             dh_EndFunc(__FUNC__, 1); \
             EuclidFinalize(); \
-            MPI_Finalize(); 
+            MPI_Finalize();
 
 
 

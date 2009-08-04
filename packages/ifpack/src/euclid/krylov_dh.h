@@ -33,14 +33,15 @@
 #include "blas_dh.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-extern void bicgstab_euclid(Mat_dh A, Euclid_dh ctx, double *x, double *b, 
-                                                              int *itsOUT);
+  extern void bicgstab_euclid (Mat_dh A, Euclid_dh ctx, double *x, double *b,
+			       int *itsOUT);
 
-extern void cg_euclid(Mat_dh A, Euclid_dh ctx, double *x, double *b, 
-                                                              int *itsOUT);
+  extern void cg_euclid (Mat_dh A, Euclid_dh ctx, double *x, double *b,
+			 int *itsOUT);
 
 #ifdef __cplusplus
 }

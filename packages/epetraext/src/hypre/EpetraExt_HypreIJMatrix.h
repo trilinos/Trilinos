@@ -64,22 +64,26 @@ class Epetra_Import;
 
 #ifndef HYPRE_ENUMS
 #define HYPRE_ENUMS
+//! Enumerated type for Hypre solvers.
+/*! This enumerated type is used to determine which functions are used to create, destroy, setup and solve Hypre solvers.
+*/
     enum Hypre_Solver{ 
-        BoomerAMG,
-        ParaSails,
-        Euclid,
-        AMS,
-        Hybrid,
-        PCG,
-        GMRES,
-        FlexGMRES,
-        LGMRES,
-        BiCGSTAB
+        BoomerAMG, /*! < A BoomerAMG solver and preconditioner*/
+        ParaSails, /*! < A ParaSails preconditioner */
+        Euclid,    /*! < A Euclid preconditioner */
+        AMS,       /*! < An AMS solver and preconditioner */
+        Hybrid,    /*! < A Hybrid solver */
+        PCG,       /*! < A PCG solver */
+        GMRES,     /*! < A GMRES solver */
+        FlexGMRES, /*! < A FlexGMRES solver */
+        LGMRES,    /*! < A LGMRES solver */
+        BiCGSTAB   /*! < A BiCGSTAB solver */
         };
 
+//! Enumerated type to choose to solve or precondition
     enum Hypre_Chooser{
-        Solver,
-        Preconditioner
+        Solver,        /*! < Choose to solve the system */
+        Preconditioner /*! < Choose to apply preconditioner */
         };
 #endif //HYPRE_ENUMS
 

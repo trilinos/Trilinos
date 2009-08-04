@@ -161,9 +161,8 @@
          }
 
 #define START_FUNC_DH_2 /**/
-#define END_FUNC_DH_2   /**/
+#define END_FUNC_DH_2 /**/
 #define END_FUNC_VAL_2(a) return a ;
-
 #else
 
 #define START_FUNC_DH  \
@@ -208,6 +207,6 @@
           } \
 
 
-#endif 
+#endif
 
-#endif  /* #ifndef MACROS_DH */
+#endif /* #ifndef MACROS_DH */

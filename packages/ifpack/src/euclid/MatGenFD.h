@@ -74,58 +74,61 @@ Misc.
 #include "euclid_common.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-struct _matgenfd {
-  bool allocateMem; 
-        /* If true, memory is allocated when run() is called, in which case
-         * the caller is responsible for calling FREE_DH for the rp, cval,
-         * aval, and rhs arrays.  If false, caller is assumed to have
-         * allocated memory when run is called.  
-         * Default is "true"
-         */
-  int px, py, pz;  /* Processor graph dimensions */
-  bool threeD;  
-  int m;           /* number of matrix rows in local matrix */
-  int cc;          /* Dimension of each processor's subgrid */
-  double hh;       /* Grid spacing; this is constant,  equal to 1.0/(px*cc-1) */
-  int id;          /* the processor whose submatrix is to be generated */
-  int np;          /* number of subdomains (processors, mpi tasks) */
-  double stencil[8];
+  struct _matgenfd
+  {
+    bool allocateMem;
+    /* If true, memory is allocated when run() is called, in which case
+     * the caller is responsible for calling FREE_DH for the rp, cval,
+     * aval, and rhs arrays.  If false, caller is assumed to have
+     * allocated memory when run is called.  
+     * Default is "true"
+     */
+    int px, py, pz;		/* Processor graph dimensions */
+    bool threeD;
+    int m;			/* number of matrix rows in local matrix */
+    int cc;			/* Dimension of each processor's subgrid */
+    double hh;			/* Grid spacing; this is constant,  equal to 1.0/(px*cc-1) */
+    int id;			/* the processor whose submatrix is to be generated */
+    int np;			/* number of subdomains (processors, mpi tasks) */
+    double stencil[8];
 
 
-  /* derivative coefficients; a,b,c are 2nd derivatives, 
-   * c,d,e are 1st derivatives; f,g,h not currently used.
-   */
-  double a, b, c, d, e, f, g, h;
+    /* derivative coefficients; a,b,c are 2nd derivatives, 
+     * c,d,e are 1st derivatives; f,g,h not currently used.
+     */
+    double a, b, c, d, e, f, g, h;
 
-  int first; /* global number of first locally owned row */
-  bool debug;
+    int first;			/* global number of first locally owned row */
+    bool debug;
 
-  /* boundary conditions; if value is < 0, neumen; else, dirichelet */
-  double bcX1, bcX2;
-  double bcY1, bcY2;
-  double bcZ1, bcZ2;
-                
-  /* The following return coefficients; default is konstant() */
-  double (*A)(double coeff, double x, double y, double z);
-  double (*B)(double coeff, double x, double y, double z);
-  double (*C)(double coeff, double x, double y, double z);
-  double (*D)(double coeff, double x, double y, double z);
-  double (*E)(double coeff, double x, double y, double z);
-  double (*F)(double coeff, double x, double y, double z);
-  double (*G)(double coeff, double x, double y, double z);
-  double (*H)(double coeff, double x, double y, double z);
-};
+    /* boundary conditions; if value is < 0, neumen; else, dirichelet */
+    double bcX1, bcX2;
+    double bcY1, bcY2;
+    double bcZ1, bcZ2;
 
-extern void MatGenFD_Create(MatGenFD *mg);
-extern void MatGenFD_Destroy(MatGenFD mg);
-extern void MatGenFD_Run(MatGenFD mg, int id, int np, Mat_dh *A, Vec_dh *rhs);
+    /* The following return coefficients; default is konstant() */
+    double (*A) (double coeff, double x, double y, double z);
+    double (*B) (double coeff, double x, double y, double z);
+    double (*C) (double coeff, double x, double y, double z);
+    double (*D) (double coeff, double x, double y, double z);
+    double (*E) (double coeff, double x, double y, double z);
+    double (*F) (double coeff, double x, double y, double z);
+    double (*G) (double coeff, double x, double y, double z);
+    double (*H) (double coeff, double x, double y, double z);
+  };
 
- /* =========== coefficient functions ============== */
-extern double konstant(double coeff, double x, double y, double z);
-extern double e2_xy(double coeff, double x, double y, double z);
+  extern void MatGenFD_Create (MatGenFD * mg);
+  extern void MatGenFD_Destroy (MatGenFD mg);
+  extern void MatGenFD_Run (MatGenFD mg, int id, int np, Mat_dh * A,
+			    Vec_dh * rhs);
+
+  /* =========== coefficient functions ============== */
+  extern double konstant (double coeff, double x, double y, double z);
+  extern double e2_xy (double coeff, double x, double y, double z);
 
 
 
@@ -153,14 +156,14 @@ extern double e2_xy(double coeff, double x, double y, double z);
 #define BOX2_DD  100
 #define BOX3_DD  50
 
-extern double box_1(double coeff, double x, double y, double z);
+  extern double box_1 (double coeff, double x, double y, double z);
   /* -bd2 is diffusion coeff outside box;
      -bd1 is diffusion coeff inside box.
-  */
-     
+   */
 
 
-extern double box_2(double coeff, double x, double y, double z);
+
+  extern double box_2 (double coeff, double x, double y, double z);
 
 #ifdef __cplusplus
 }
