@@ -53,9 +53,11 @@ class DefaultClusteredSpmdProductVector
 {
 public:
 
+#ifndef _MSC_VER
   /** \brief . */
   using ProductVectorBase<Scalar>::applyOp;
-
+#endif
+  
   /** @name Constructors/initializers/accessors */
   //@{
 
