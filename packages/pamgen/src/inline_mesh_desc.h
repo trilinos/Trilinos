@@ -2,6 +2,12 @@
 #ifndef inline_mesh_descH
 #define inline_mesh_descH
 
+#ifdef _MSC_VER
+# ifndef M_PI
+# define M_PI        3.14159265358979323846
+# endif
+#endif
+
 #include "inline_geometries.h"
 #include "topology_enum.h"
 #include "bc_specification.h"

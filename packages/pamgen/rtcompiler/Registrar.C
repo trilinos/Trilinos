@@ -2,7 +2,6 @@
 #include "RegistrarRTC.hh"
 #include "ArrayVarRTC.hh"
 #include "Bessel_I.hh"
-
 #include <map>
 #include <string>
 #include <iostream>
@@ -390,7 +389,11 @@ double DRand::execute(Value** args)
 double Gamma::execute(Value** args) 
 /*****************************************************************************/
 {
+#if _MSC_VER
+  return 0;
+#else
   return tgamma(args[0]->getValue());
+#endif
 }
 
 /*****************************************************************************/
@@ -472,13 +475,21 @@ double Bessel_I1::execute(Value** args)
 double Erf::execute(Value** args) 
 /*****************************************************************************/
 {
+#ifdef _MSC_VER
+  return 0;
+#else
   return erf(args[0]->getValue());
+#endif
 }
 
 /*****************************************************************************/
 double Erfc::execute(Value** args) 
 /*****************************************************************************/
 {
+#ifdef _MSC_VER
+  return 0;
+#else
   return erfc(args[0]->getValue());
+#endif
 }
 
