@@ -93,6 +93,7 @@ if ($package eq "Zoltan") {
                     zdrive.inp.phg* 
                     zdrive.inp.color*
                     zdrive.inp.block*
+                    zdrive.inp.cyclic*
                     zdrive.inp.random* 
                     zdrive.inp.graph-repartit*
                     zdrive.inp.graph-partit*");
