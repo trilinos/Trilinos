@@ -79,7 +79,10 @@ namespace Sacado {
 
       //! Typename of argument values
       typedef ConstT value_type;
-
+      
+#ifdef _MSC_VER
+      typedef ConstT scalar_type;
+#endif
       //! Constructor
       ConstExpr(const ConstT& constant) : constant_(constant) {}
 

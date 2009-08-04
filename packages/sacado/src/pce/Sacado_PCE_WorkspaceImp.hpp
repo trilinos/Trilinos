@@ -56,7 +56,7 @@ resize(unsigned int sz_)
 }
 
 extern "C" {
-  double dlange_(char*, int*, int*, double*, int*, double*);
+  double F77_BLAS_MANGLE(dlange,DLANGE)(char*, int*, int*, double*, int*, double*);
 }
 
 template <typename BasisT>
@@ -75,7 +75,7 @@ solve(typename Sacado::PCE::Workspace<BasisT>::ordinal_type s,
   norm = 1.0;
   ordinal_type n = A.numRows();
   char t = '1';
-  norm = dlange_(&t, &s, &s, A.values(), &n, &work[0]);
+  norm = F77_BLAS_MANGLE(dlange,DLANGE)(&t, &s, &s, A.values(), &n, &work[0]);
   lapack.GECON('1', s, A.values(), A.numRows(), norm, &rcond, &work[0], 
 	       &iwork[0], &info);
   std::cout << "condition number = " << 1.0/rcond << std::endl;

@@ -42,6 +42,10 @@
 #include "Sacado_tradvec.hpp"
 #include <stdio.h>
 
+#ifdef _MSC_VER
+# define snprintf _snprintf
+#endif
+
 typedef Sacado::RadVec::ADvar<double> ADVar;
 
  ADVar
