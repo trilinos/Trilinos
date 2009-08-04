@@ -14,7 +14,7 @@
 #define __MLUTILH__
 
 #ifndef __cplusplus
-#ifdef ICL
+#if defined(ICL) || defined(_MSC_VER)
 #include <time.h>
 #else
 #include <sys/time.h>
@@ -26,6 +26,7 @@
 #endif
 
 /*#include "ml_struct.h"*/
+#include "ml_config.h"
 #include "ml_common.h"
 #include "ml_defs.h"
 #include "ml_comm.h"
@@ -57,7 +58,10 @@
 #endif
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
+#else
+typedef unsigned int uint32_t;
 #endif
+
 extern uint32_t ml_unew_val;
 /* Important: If you want to use ML_fast_hash, the table size must be 2^k for a
    positive integer k. */

@@ -13,6 +13,9 @@
 #endif
 #include "MLAPI_Error.h"
 #include "MLAPI_Workspace.h"
+#ifdef _MSC_VER
+#include "winprocess.h"
+#endif
 
 namespace MLAPI {
 

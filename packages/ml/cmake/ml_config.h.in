@@ -1,10 +1,7 @@
-/* src/ml_config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/cmake/ml_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
-
-#define HAVE_STDINT_H
-#define HAVE_INTTYPES_H
 
 /* Define the Fortran name mangling to be used for the BLAS */
 #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
@@ -132,7 +129,7 @@
 #cmakedefine HAVE_PETSC
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
+#cmakedefine HAVE_STDINT_H
 
 /* Support for 64-bit integers */
 #cmakedefine ML_BIG_INT

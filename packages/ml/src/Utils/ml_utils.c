@@ -24,6 +24,15 @@ Modified by:      $Author$
 #include "ml_lapack.h"
 #include <time.h>
 #include "ml_viz_stats.h"
+#ifdef _MSC_VER
+#pragma comment(lib, "Ws2_32.lib") 
+# include <Winsock2.h>
+# include <process.h>
+void sleep(int sec)
+{
+  Sleep(sec * 1000);
+}
+#endif
 
 /* For hashing macro defined in ml_utils.h. */
 uint32_t ml_unew_val;

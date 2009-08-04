@@ -39,7 +39,9 @@
 #ifdef HAVE_ML_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
 #endif
-
+#ifdef _MSC_VER
+# include "winprocess.h"
+#endif
 
 using namespace std;
 #ifdef HAVE_ML_TEUCHOS

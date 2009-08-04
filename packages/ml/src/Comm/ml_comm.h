@@ -86,9 +86,11 @@ typedef struct ML_Comm_Struct
    USR_ERRHANDLER USR_errhandler;
 
 } ML_Comm;
-
+#if defined(__cplusplus) && defined(_MSC_VER)
+extern "C" ML_Comm *global_comm; /* should be made obsolete */
+#else
 extern ML_Comm *global_comm; /* should be made obsolete */
-
+#endif
 /* ******************************************************************** */
 /* functions for the ML communicator                                    */
 /* -------------------------------------------------------------------- */
