@@ -33,6 +33,10 @@
 #define _TEUCHOS_BLAS_WRAPPERS_HPP_
 
 #include "Teuchos_ConfigDefs.hpp"
+#ifdef _MSC_VER
+// disable warning for C-linkage returning complex clas
+#pragma warning ( disable : 4190 )
+#endif
 
 /*! \file Teuchos_BLAS_wrappers.hpp  
     \brief The Templated BLAS wrappers.
