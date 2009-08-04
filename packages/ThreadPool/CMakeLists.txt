@@ -14,6 +14,7 @@ PACKAGE(ThreadPool)
 
 #Pthread is a required dependency so this conditional should always be true
 #hence the assert after it. 
+SET(HAVE_PTHREAD FALSE)
 IF(TPL_ENABLE_Pthread)
   SET(HAVE_PTHREAD TRUE)
 ENDIF()
