@@ -215,10 +215,10 @@ void MLPreconditionerFactory::initializePrec(
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial ML_Epetra::MultiLevelPreconditioner object...\n";
     timer.start(true);
-    // Create the initial preconditioner
+    // Create the initial preconditioner: DO NOT compute it yet
     ml_precOp = rcp(
       new ML_Epetra::MultiLevelPreconditioner(
-        *epetraFwdRowMat, paramList_->sublist(MLSettings_name)
+        *epetraFwdRowMat, paramList_->sublist(MLSettings_name),false
         )
       );
     
