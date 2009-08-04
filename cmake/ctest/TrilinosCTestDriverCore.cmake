@@ -180,13 +180,18 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
  
   # Remove an existing CMakeCache.txt file or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
+
+  # Select a default generator.  When the build tree is known and
+  # exists, use its generator.
   SET(DEFAULT_GENERATOR "Unix Makefiles")
-  FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
-  FOREACH(line ${CACHE_CONTENTS})
-    IF("${line}" MATCHES "CMAKE_GENERATOR")
-      STRING(REGEX REPLACE "(.*)=(.*)" "\\2" DEFAULT_GENERATOR "${line}")
-    ENDIF()
-  ENDFOREACH(line)
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
+    FOREACH(line ${CACHE_CONTENTS})
+      IF("${line}" MATCHES "CMAKE_GENERATOR")
+        STRING(REGEX REPLACE "(.*)=(.*)" "\\2" DEFAULT_GENERATOR "${line}")
+      ENDIF()
+    ENDFOREACH(line)
+  ENDIF()
       
   SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
 
