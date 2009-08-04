@@ -80,6 +80,11 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 
 
   ierr = ZOLTAN_OK;
+
+  /* Make sure all procs have same value of check_graph. */
+  MPI_Allreduce(&check_graph, &i, 1, MPI_INT, MPI_MAX, comm);
+  check_graph = i;
+
   if (check_graph == 0) /* perform no error checking at all */
      return ierr;
 
@@ -91,7 +96,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   num_obj = vtxdist[proc+1] - vtxdist[proc];
   MPI_Reduce(&num_obj, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
-    ierr = ZOLTAN_WARN;
+    if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
       ZOLTAN_PRINT_WARN(proc, yo, "No vertices in graph.");
   }
@@ -107,7 +112,6 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
                     vwgt[i*vwgt_dim+k], i);
             ZOLTAN_PRINT_ERROR(proc, yo, msg);
             ierr = ZOLTAN_FATAL;
-            goto barrier1;
          }
          sum += vwgt[i*vwgt_dim+k];
        }
@@ -117,12 +121,12 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
             sprintf(msg, "Zero vertex (object) weights for object %d.", i);
             ZOLTAN_PRINT_WARN(proc, yo, msg);
           }
-          ierr = ZOLTAN_WARN;
+          if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
        }
     }
     MPI_Reduce(&num_zeros, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
-      ierr = ZOLTAN_WARN;
+      if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
         sprintf(msg, "%d objects have zero weights.", global_sum);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
@@ -134,7 +138,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   nedges = xadj[num_obj];
   MPI_Reduce(&nedges, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
-    ierr = ZOLTAN_WARN;
+    if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
       ZOLTAN_PRINT_WARN(proc, yo, "No edges in graph.");
   }
@@ -150,7 +154,6 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
                   adjwgt[j*ewgt_dim+k], j);
           ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;
-          goto barrier1;
         }
         sum += adjwgt[j*ewgt_dim+k];
       }
@@ -160,13 +163,13 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
           sprintf(msg, "Zero edge (communication) weights for edge %d.", j);
           ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
-        ierr = ZOLTAN_WARN;
+        if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       }
     }
 
     MPI_Reduce(&num_zeros, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
-      ierr = ZOLTAN_WARN;
+      if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
         sprintf(msg, "%d edges have zero weights.", global_sum);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
@@ -236,7 +239,6 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
         sprintf(msg, "Edge to invalid vertex %d detected.", global_j);
         ZOLTAN_PRINT_ERROR(proc, yo, msg);
         ierr = ZOLTAN_FATAL;
-        goto barrier1;
       }
       /* Self edge? */
       if (global_j == global_i){
@@ -276,7 +278,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
                                            adjwgt[ii*ewgt_dim+k]){
                  /* Numerically nonsymmetric */
                  flag = -1;
-                 ierr = ZOLTAN_WARN;
+                 if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
               }
             }
             if (flag<0 && output_level>0){
@@ -292,7 +294,6 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
                   global_i, global_j, global_j, global_i);
           ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;
-          goto barrier1;
         }
       }
       else {
@@ -301,7 +302,6 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     }
   }
 
-barrier1:
   /* Sum up warnings so far. */
   MPI_Reduce(&num_selfs, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
@@ -329,7 +329,7 @@ barrier1:
   }
   
   
-  /* Check if any processor has encountered a fatal error so far */
+  /* Check if any processor has encountered an error so far */
   errors = 0;
   if (ierr == ZOLTAN_WARN)
     errors |= 1;
