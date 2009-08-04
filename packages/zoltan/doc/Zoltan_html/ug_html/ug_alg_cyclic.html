@@ -25,23 +25,21 @@
 </head>
 <body bgcolor="#ffffff">
 <div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_cyclic.html">Next</a>&nbsp; |&nbsp; <a
- href="ug_alg_simple.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_alg_random.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_alg_block.html">Previous</a></i></b></div>
 <h2>
-<a name="BLOCK"></a>Block</h2>
-A simple partitioner based on block partitioning of the objects.
-It is mainly intended for testing. It uses neither geometry
-nor connectivity (graph/hypergraph), so it requires very few query
-functions. 
-
-The block strategy is as follows: Consider all objects (on all processors) as a linear sequence. Assign the first block of n/num_parts objects to the first part, the next block to the second, and so on. Block is smart enough to generalize this method to handle vertex weights and target part sizes. Only a single weight per object (Obj_Weight_Dim=1) is currently supported. 
+<a name="CYCLIC"></a>Cyclic</h2>
+A simple partitioner based on cyclic (round robin) partitioning of the objects.
+It uses neither geometry nor connectivity (graph/hypergraph), so it requires very few query functions. This method currently does not take into account target part sizes nor weights, so the parts may not be balanced in this case!
+<br>
+Note that the partitioning is cyclic with respect to the local order of objects, and NOT by the global ids.
 <br>
 &nbsp;
 <table width="100%" nosave="">
   <tbody>
     <tr>
       <td valign="top"><b>Method String:</b></td>
-      <td><b>Block</b></td>
+      <td><b>Cyclic</b></td>
     </tr>
     <tr>
       <td><b>Parameters:</b></td>
@@ -70,7 +68,7 @@ The block strategy is as follows: Consider all objects (on all processors) as a 
 <p>
  
 <HR WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
-<a href="ug_alg_cyclic.html">Next:&nbsp; Cyclic</a>
-|&nbsp; <a href="ug_alg_simple.html">Previous:&nbsp; Simple Partitioners for Testing</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+<a href="ug_alg_random.html">Next:&nbsp; Random</a>
+|&nbsp; <a href="ug_alg_block.html">Previous:&nbsp; Block Partitioner</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
 </body>
 </html>
