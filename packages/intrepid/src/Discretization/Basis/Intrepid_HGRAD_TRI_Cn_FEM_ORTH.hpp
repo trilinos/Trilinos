@@ -75,10 +75,6 @@ private:
       <var>ordinalToTag_</var> lookup arrays.   */
   void initializeTags();
 
-  static inline int idx(int p, int q);
-  static void jrc( const Scalar &alpha , const Scalar &beta , const int &n ,
-		   Scalar &an , Scalar &bn, Scalar &cn );
-  
 public:
   
   /** \brief  Constructor.
@@ -108,21 +104,40 @@ public:
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
 
-  /** \brief Calculates triangular orthogonal expansions
-        (e.g. Dubiner basis) at a range of input points 
-        
-        \param np       [in]    - number of input points
-        \param z        [in]    - 2d array of points z(pt,2)
-        \param n        [in]    - the maximum polynomial degree tabulated
-        \param poly_val [out]   - 2d array poly_val((n+1)(n+2)/2,np)
+  template<unsigned deriv>
+  static void getVals( ArrayScalar       &outputValues ,
+		       const int deg ,
+		       const ArrayScalar &inputPoints );
+		    
+};
 
-       \li this can be used by other functions without instantiating
-       a basis of a partiular order.
-    */
+template<typename Scalar,typename ArrayScalar, unsigned derivOrder>
+class TabulatorTri
+{
+public:
+  static void tabulate( ArrayScalar & outputValues ,
+			const int deg ,
+			const ArrayScalar &inputPoints );
+};
 
-  static void tabulate( const ArrayScalar& z ,
-			const int n ,
-			ArrayScalar & poly_val );
+template<typename Scalar,typename ArrayScalar>
+class TabulatorTri<Scalar,ArrayScalar,0>
+{
+public:
+  static void tabulate( ArrayScalar & outputValues ,
+			const int deg ,
+			const ArrayScalar &inputPoints );
+    
+};
+
+template<typename Scalar,typename ArrayScalar>
+class TabulatorTri<Scalar,ArrayScalar,1>
+{
+public:
+  static void tabulate( ArrayScalar & outputValues ,
+			const int deg ,
+			const ArrayScalar &inputPoints );
+    
 };
 
 
