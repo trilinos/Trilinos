@@ -101,7 +101,7 @@ int Stokhos::StochGalerkinPrecon::ApplyInverse(const Epetra_MultiVector& X, Epet
 
     // Construct a Map with NumElements and index base of 0
     //Epetra_Map::Epetra_Map Map(N_x, 0, Comm_);
-    Epetra_Map::Epetra_Map Map(MLPrec->OperatorDomainMap());
+    Epetra_Map Map(MLPrec->OperatorDomainMap());
     
     // Form x and y into block vectors.
     Epetra_MultiVector xBlock(Map,N_xi);
@@ -130,6 +130,7 @@ int Stokhos::StochGalerkinPrecon::ApplyInverse(const Epetra_MultiVector& X, Epet
       }
     }
   }
+  return 1; 
 }
 
 
