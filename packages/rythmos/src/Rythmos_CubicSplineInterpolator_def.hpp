@@ -169,8 +169,8 @@ void evaluateCubicSpline(
     unsigned int j, 
     const Scalar& t,
     const Ptr<Thyra::VectorBase<Scalar> >& S,
-    const Ptr<Thyra::VectorBase<Scalar> >& Sp = Teuchos::null, 
-    const Ptr<Thyra::VectorBase<Scalar> >& Spp = Teuchos::null
+    const Ptr<Thyra::VectorBase<Scalar> >& Sp, 
+    const Ptr<Thyra::VectorBase<Scalar> >& Spp
     )
 {
   using Teuchos::outArg;

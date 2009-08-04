@@ -33,7 +33,6 @@
 
 namespace RythmosCharon {
 
-CharonImplicitBDFStepperErrWtVecCalc::
 
 CharonImplicitBDFStepperErrWtVecCalc::CharonImplicitBDFStepperErrWtVecCalc() { }
 CharonImplicitBDFStepperErrWtVecCalc::~CharonImplicitBDFStepperErrWtVecCalc() { }

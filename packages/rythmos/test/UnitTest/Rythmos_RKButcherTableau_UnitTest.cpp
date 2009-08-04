@@ -886,7 +886,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobatto
   TEST_FLOATING_EQUALITY( rkbt->A()(1,0), (11.0+sqrt(5.0))/120.0, tol );
   TEST_FLOATING_EQUALITY( rkbt->A()(1,1), (25.0-sqrt(5.0))/120.0, tol );
   TEST_FLOATING_EQUALITY( rkbt->A()(1,2), (25.0-13.0*sqrt(5.0))/120.0, tol );
-  TEST_FLOATING_EQUALITY( rkbt->A()(1,3), (-1.0+sqrt(5))/120.0, tol );
+  TEST_FLOATING_EQUALITY( rkbt->A()(1,3), (-1.0+sqrt(5.0))/120.0, tol );
   TEST_FLOATING_EQUALITY( rkbt->A()(2,0), (11.0-sqrt(5.0))/120.0, tol );
   TEST_FLOATING_EQUALITY( rkbt->A()(2,1), (25.0+13.0*sqrt(5.0))/120.0, tol );
   TEST_FLOATING_EQUALITY( rkbt->A()(2,2), (25.0+sqrt(5.0))/120.0, tol );

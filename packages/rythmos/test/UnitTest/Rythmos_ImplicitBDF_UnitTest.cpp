@@ -65,7 +65,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, minOrder ) {
       StepSizeType stepType = stepTypeVec[i];
 
       // Stepper
-      RCP<ImplicitBDFStepper<double> > stepper = rcp(new ImplicitBDFStepper<double>(model,nlSolver,stepperParamList));
+      RCP<ImplicitBDFStepper<double> > stepper = Teuchos::rcp(new ImplicitBDFStepper<double>(model,nlSolver,stepperParamList));
       TEST_EQUALITY_CONST( Teuchos::is_null(stepper), false );
       stepper->setInitialCondition(model_ic);
 

@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, restart ) {
       stepper_momento->set_model(model);
       stepper_momento->deSerialize(sss,iStream);
       RCP<ForwardEulerStepper<double> > stepper = forwardEulerStepper<double>();
-      RCP<Thyra::ModelEvaluatorBase::InArgs<double> > model_ic_ptr = rcp(new Thyra::ModelEvaluatorBase::InArgs<double>(model_ic));
+      RCP<Thyra::ModelEvaluatorBase::InArgs<double> > model_ic_ptr = Teuchos::rcp(new Thyra::ModelEvaluatorBase::InArgs<double>(model_ic));
       stepper_momento->set_basePoint(model_ic_ptr);
       // Put the momento back into the stepper
       stepper->setMomento(stepper_momento.ptr());

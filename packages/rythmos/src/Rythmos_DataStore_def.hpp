@@ -77,7 +77,7 @@ RCP<DataStore<Scalar> > DataStore<Scalar>::clone() const
     xdot_out = xdot->clone_v();
   }
   ScalarMag accuracy_out = accuracy;
-  RCP<DataStore<Scalar> > ds_out = rcp(new DataStore<Scalar>(t_out,x_out,xdot_out,accuracy_out));
+  RCP<DataStore<Scalar> > ds_out = Teuchos::rcp(new DataStore<Scalar>(t_out,x_out,xdot_out,accuracy_out));
   return ds_out;
 }
 

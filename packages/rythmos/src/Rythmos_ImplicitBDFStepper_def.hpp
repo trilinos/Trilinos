@@ -52,7 +52,7 @@ RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
   const RCP<Teuchos::ParameterList> &parameterList
   )
 {
-  RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>(model,solver,parameterList));
+  RCP<ImplicitBDFStepper<Scalar> > stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>(model,solver,parameterList));
   return stepper;
 }
 

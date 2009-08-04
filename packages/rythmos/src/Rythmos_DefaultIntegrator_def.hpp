@@ -374,7 +374,9 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
 #endif
 
   using Teuchos::incrVerbLevel;
+#ifndef _MSC_VER
   using Teuchos::Describable;
+#endif
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef InterpolationBufferBase<Scalar> IBB;
   typedef Teuchos::VerboseObjectTempState<IBB> VOTSIBB;
@@ -564,8 +566,10 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
   using std::endl;
   typedef std::numeric_limits<Scalar> NL;
-  using Teuchos::incrVerbLevel;
+  using Teuchos::incrVerbLevel; 
+#ifndef _MSC_VER
   using Teuchos::Describable;
+#endif
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 

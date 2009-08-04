@@ -639,7 +639,7 @@ ForwardEulerStepper<Scalar>::getMomento() const
   momento->set_haveInitialCondition(haveInitialCondition_);
   momento->set_parameterList(parameterList_);
   momento->set_model(model_);
-  RCP<Thyra::ModelEvaluatorBase::InArgs<Scalar> > bp = rcp(new Thyra::ModelEvaluatorBase::InArgs<Scalar>(basePoint_));
+  RCP<Thyra::ModelEvaluatorBase::InArgs<Scalar> > bp = Teuchos::rcp(new Thyra::ModelEvaluatorBase::InArgs<Scalar>(basePoint_));
   momento->set_basePoint(bp);
   return momento;
 }
