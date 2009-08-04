@@ -8,6 +8,10 @@ IF (F77_FUNC)
 ELSE()
   SET(F77_BLAS_MANGLE_DEFAULT "UNDEFINED")
 ENDIF()
+IF(WIN32 AND NOT CYGWIN)
+  SET(F77_BLAS_MANGLE_DEFAULT "${F77_FUNC}")
+ENDIF()
+
 
 # Set options so that users can change these!
 
