@@ -37,6 +37,15 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #endif
 
 #include <algorithm>
+// windows defines these but the ones from algorithm
+// are not macros, so this will let them be used 
+// from algorithm
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
 
 #define EPETRA_MAX(x,y) std::max(x,y) /* max function  */
 #define EPETRA_MIN(x,y) std::min(x,y)/* min function  */
