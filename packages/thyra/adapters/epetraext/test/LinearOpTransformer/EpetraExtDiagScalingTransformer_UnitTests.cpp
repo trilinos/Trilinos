@@ -14,6 +14,10 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#ifdef _MSC_VER
+// This is required for operator not to be defined
+#include <iso646.h>
+#endif
 
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
