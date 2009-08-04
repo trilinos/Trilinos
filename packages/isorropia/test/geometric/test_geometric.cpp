@@ -61,6 +61,10 @@
 #include "ispatest_lbeval_utils.hpp"
 #include "ispatest_epetra_utils.hpp"
 
+#ifdef _MSC_VER
+# include <winprocess.h>
+#endif
+
 static int localProc = 0;
 static int numProcs = 1;
 static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,

@@ -221,7 +221,7 @@ int CostDescriber::getNumGraphEdges(int vertex_global_id) const
       n = graph_edge_weights_->NumMyEntries(lrid);
 
       if (graph_self_edges_.size() > 0){
-        std::set<int>::iterator it = graph_self_edges_.find(vertex_global_id);
+        std::set<int>::const_iterator it = graph_self_edges_.find(vertex_global_id);
         if (it != graph_self_edges_.end()){
           n--;     // don't count self edges
         }
@@ -250,7 +250,7 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
   }
 
   int self_edge = 0;
-  std::set<int>::iterator it = graph_self_edges_.find(vertexGID);
+  std::set<int>::const_iterator it = graph_self_edges_.find(vertexGID);
   if (it != graph_self_edges_.end()){
     self_edge = 1;
   }

@@ -54,6 +54,10 @@
 #endif
 #endif
 
+#ifdef _MSC_VER
+# include <winprocess.h>
+#endif
+
 // Only run the first test
 //#define SHORT_TEST 1
 

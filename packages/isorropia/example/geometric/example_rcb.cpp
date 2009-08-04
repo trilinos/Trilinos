@@ -63,6 +63,9 @@
 
 #include "ispatest_lbeval_utils.hpp"
 #include "ispatest_epetra_utils.hpp"
+#ifdef _MSC_VER
+#include "winprocess.h"
+#endif
 
 int main(int argc, char** argv) {
 
