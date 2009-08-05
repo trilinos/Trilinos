@@ -208,6 +208,8 @@ int i;
 int rootn;
 int isprime = 1;
 
+ if (n == 1) return 0;
+
   rootn = sqrt((double)n)+1;
   for (i = 0; primes[i] < rootn && i < numprimes; i++)
     if (!(n%primes[i])) {
