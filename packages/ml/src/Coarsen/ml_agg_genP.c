@@ -2516,6 +2516,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    ML_Aggregate_Viz_Stats *grid_info;
    ML_Aggregate *ag;
    char str[80];
+   int R_is_Ptranspose;
    
 #ifdef ML_TIMING
    double t0;
@@ -2634,8 +2635,12 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         ML_Operator_Profile(ml->Amat+next,str);
       }
 
-      ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, 
-                             ML_TRUE, ML_FALSE);
+      R_is_Ptranspose=ML_TRUE;
+      /* These values are taken from ML_MultiLevel_Gen_Prolongator().  Note that Jacob Schroder's
+         energy minimization isn't checked for here, as it only runs in serial (as of 8/4/09). */
+      if (ag->minimizing_energy == 1 || ag->minimizing_energy == 2 || ag->minimizing_energy == 3)
+        R_is_Ptranspose = ML_FALSE;
+      ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, R_is_Ptranspose, ML_FALSE);
 
       if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"after_repartition");
