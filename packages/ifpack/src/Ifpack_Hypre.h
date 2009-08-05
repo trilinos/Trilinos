@@ -176,6 +176,9 @@ namespace Teuchos {
 
 //! Ifpack_Hypre: A class for constructing and using an ILU factorization of a given Epetra_RowMatrix, using the Hypre library by Lawrence Livermore National Laboratories.
 
+/*!
+Class Ifpack_Hypre: A class for using methods of Hypre with Epetra objects.
+*/
 
 class Ifpack_Hypre: public Ifpack_Preconditioner {
       
@@ -345,7 +348,9 @@ public:
   */
     int SetParameter(Hypre_Chooser chooser);
 
+  //! Call all the function pointers stored in this object.
     int CallFunctions() const;
+
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
       affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
@@ -367,6 +372,18 @@ public:
     return(Multiply(false,X,Y));
   }
 
+  //! Returns the result of a Epetra_Operator multiplied with an Epetra_MultiVector X in Y.
+  /*! In this implementation, we use the Hypre matrix to multiply with so that the map is the same
+      as what is expected in solving methods. 
+
+    \param 
+    trans - (In) If true, use the transpose operation.
+	   X - (In) A Epetra_MultiVector of dimension NumVectors to mulitply with.
+    \param Out
+	   Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
   int Multiply(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
@@ -410,8 +427,10 @@ public:
     return(0);
   }
 
+  //! Returns a reference to the map that should be used for domain.
   const Epetra_Map& OperatorDomainMap() const;
 
+  //! Returns a reference to the map that should be used for range.
   const Epetra_Map& OperatorRangeMap() const;
   
   //! Returns 0.0 because this class cannot compute Inf-norm.
@@ -515,6 +534,7 @@ private:
   //! Destroys all internal data
   void Destroy();
 
+  //! Returns the MPI communicator used in the Epetra matrix
   MPI_Comm GetMpiComm() const{
     return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();
   }
@@ -558,7 +578,7 @@ private:
   //! Add a function to be called in Compute()
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
-  // The following methods are needed because some of the solver create functions take an MPI_Comm and some don't. These simply always take it and call the appropriate function in Hypre.
+  //! The following methods are needed because some of the solver create functions take an MPI_Comm and some don't. These simply always take it and call the appropriate function in Hypre.
   int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
   int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
   int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
@@ -570,29 +590,17 @@ private:
   int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
   int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
-  //! Returns a reference to the matrix.
-  /*  Epetra_RowMatrix& Matrix()
-  {
-    return(*A_);
-    }*/
-
   // @}
   // @{ Internal data
   
   //! Pointer to the Epetra_RowMatrix to factorize
   Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
-  Epetra_CrsMatrix* Aptr_;
+  //! This objects copy of the ParameterList
   Teuchos::ParameterList List_;
-  Teuchos::RefCountPtr<Epetra_Map> RowMap0_;
-  
+  //! Needed to support Epetra_Operator abstract class
   bool UseTranspose_;
-  bool Allocated_;
-  bool ValuesInitialized_;
-  bool Factored_;
-  
+  //! A condition estimate for the preconditioner, -1 until Compute()
   double Condest_;
-
-  bool IsParallel_;
   //! If \c true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
   //! If \c true, the preconditioner has been successfully computed.
@@ -603,7 +611,6 @@ private:
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
   int NumCompute_;
-
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
   //! Contains the time for all successful calls to Initialize().
@@ -619,9 +626,13 @@ private:
   //! Used for timing issues
   mutable Epetra_Time Time_;
 
+  //! The Hypre matrix created in initialize()
   mutable HYPRE_IJMatrix HypreA_;
+  //! Pointer to the CSR (same matrix)
   mutable HYPRE_ParCSRMatrix ParMatrix_;
+  //! The Hypre Vector for input
   mutable HYPRE_IJVector XHypre_;
+  //! The Hypre Vector for output
   mutable HYPRE_IJVector YHypre_;
   mutable HYPRE_ParVector ParX_;
   mutable HYPRE_ParVector ParY_;
@@ -629,7 +640,9 @@ private:
   mutable hypre_ParVector *YVec_;
   mutable hypre_Vector *XLocal_;
   mutable hypre_Vector *YLocal_;
+  //! The Hypre Solver if doing a solve
   mutable HYPRE_Solver Solver_;
+  //! The Hypre Solver if applying preconditioner
   mutable HYPRE_Solver Preconditioner_;
 // The following are pointers to functions to use the solver and preconditioner.
   int (Ifpack_Hypre::*SolverCreatePtr_)(MPI_Comm, HYPRE_Solver*);
@@ -644,14 +657,22 @@ private:
 
   bool *IsSolverSetup_;
   bool *IsPrecondSetup_;
+  //! Is the system to be solved or apply preconditioner
   Hypre_Chooser SolveOrPrec_;
+  //! This is a linear map used the way it is in Hypre
   Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;
+  //! Counter of the number of parameters set
   int NumFunsToCall_;
+  //! Which solver was chosen
   Hypre_Solver SolverType_;
+  //! Which preconditioner was chosen
   Hypre_Solver PrecondType_;
+  //! Should the preconditioner be used in the solver
   bool UsePreconditioner_;
+  //! This contains a list of function pointers that will be called in compute
   std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
-  bool NiceRowMap_; // true if the row map of provided matrix is in form that Hypre likes
+  //! true if the row map of provided matrix is in form that Hypre likes
+  bool NiceRowMap_;
 };
 
 #endif // HAVE_HYPRE

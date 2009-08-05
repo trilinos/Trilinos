@@ -29,9 +29,7 @@
 #include "Ifpack_Hypre.h"
 #if defined(HAVE_HYPRE) && defined(HAVE_MPI)
 
-
 #include "Ifpack_Utils.h"
-//#include "io.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
@@ -44,12 +42,9 @@ extern int ML_NODE_ID;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-
-
 Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
   UseTranspose_(false),
-  IsParallel_(false),
   IsInitialized_(false),
   IsComputed_(false),
   Label_(),
@@ -73,10 +68,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   IsPrecondSetup_ = new bool[1];
   IsSolverSetup_[0] = false;
   IsPrecondSetup_[0] = false;
-  if(Comm().NumProc() != 1) IsParallel_ = true;
-  else IsParallel_ = false;
   MPI_Comm comm = GetMpiComm();
-  // First make a copy of the Epetra Matrix as a Hypre Matrix
   int ilower = A_->RowMatrixRowMap().MinMyGID();
   int iupper = A_->RowMatrixRowMap().MaxMyGID();
   // Need to check if the RowMap is the way Hypre expects (if not more difficult)
@@ -120,9 +112,9 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
     rows[i-ilower] = i;
   }
   MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
-  Aptr_ = dynamic_cast<Epetra_CrsMatrix*>(A_.get());
 }
 
+//==============================================================================
 void Ifpack_Hypre::Destroy(){
   if(IsInitialized()){
     IFPACK_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
@@ -139,6 +131,7 @@ void Ifpack_Hypre::Destroy(){
   delete[] IsPrecondSetup_;
 }
 
+//==============================================================================
 int Ifpack_Hypre::Initialize(){
   Time_.ResetStartTime();
   MPI_Comm comm = GetMpiComm();
@@ -169,6 +162,7 @@ int Ifpack_Hypre::Initialize(){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
   List_ = list;
   Hypre_Solver solType = list.get("Solver", PCG);
@@ -191,6 +185,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::AddFunToList(RCP<FunctionParameter> NewFun){
   NumFunsToCall_ = NumFunsToCall_+1;
   FunsToCall_.resize(NumFunsToCall_);
@@ -198,42 +193,49 @@ int Ifpack_Hypre::AddFunToList(RCP<FunctionParameter> NewFun){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
   RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
   IFPACK_CHK_ERR(AddFunToList(temp));
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
   if(chooser == Solver){
     SolverType_ = solver;
@@ -243,17 +245,19 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
   return 0;
 }
 
-
+//==============================================================================
 int Ifpack_Hypre::SetParameter(Hypre_Chooser answer){
   SolveOrPrec_ = answer;
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetParameter(bool UsePreconditioner){
   UsePreconditioner_ = UsePreconditioner;
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::Compute(){
   if(IsInitialized() == false){
     IFPACK_CHK_ERR(Initialize());
@@ -282,6 +286,7 @@ int Ifpack_Hypre::Compute(){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::CallFunctions() const{
   for(int i = 0; i < NumFunsToCall_; i++){
     IFPACK_CHK_ERR(FunsToCall_[i]->CallFunction(Solver_, Preconditioner_));
@@ -290,15 +295,17 @@ int Ifpack_Hypre::CallFunctions() const{
   return 0;
 }
 
+//==============================================================================
 const Epetra_Map& Ifpack_Hypre::OperatorDomainMap() const{
   return *MySimpleMap_;
 }
 
+//==============================================================================
 const Epetra_Map& Ifpack_Hypre::OperatorRangeMap() const{
   return *MySimpleMap_;
 }
 
-
+//==============================================================================
 int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
   if(IsComputed() == false){
     IFPACK_CHK_ERR(-1);
@@ -354,6 +361,7 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
   if(IsInitialized() == false){
     IFPACK_CHK_ERR(-1);
@@ -405,6 +413,7 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
   return 0;
 }
 
+//==============================================================================
 ostream& Ifpack_Hypre::Print(ostream& os) const{
   if (!Comm().MyPID()) {
     os << endl;
@@ -440,7 +449,7 @@ ostream& Ifpack_Hypre::Print(ostream& os) const{
   return os;
 }
 
-
+//==============================================================================
 double Ifpack_Hypre::Condest(const Ifpack_CondestType CT, 
                              const int MaxIters,
                              const double Tol,
@@ -453,6 +462,7 @@ double Ifpack_Hypre::Condest(const Ifpack_CondestType CT,
   return(Condest_);
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
   switch(Solver) {
     case BoomerAMG:
@@ -550,6 +560,7 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
   switch(Precond) {
     case BoomerAMG:
@@ -600,54 +611,66 @@ int Ifpack_Hypre::SetPrecondType(Hypre_Solver Precond){
 
 }
 
+//==============================================================================
 int Ifpack_Hypre::CreateSolver(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*SolverCreatePtr_)(comm, &Solver_);
 }
 
+//==============================================================================
 int Ifpack_Hypre::CreatePrecond(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_BoomerAMGCreate(solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParaSailsCreate(comm, solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_EuclidCreate(comm, solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_AMSCreate(solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParCSRHybridCreate(solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParCSRPCGCreate(comm, solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParCSRGMRESCreate(comm, solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParCSRFlexGMRESCreate(comm, solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParCSRLGMRESCreate(comm, solver);
 }
 
+//==============================================================================
 int Ifpack_Hypre::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver){
   return HYPRE_ParCSRBiCGSTABCreate(comm, solver);
 }

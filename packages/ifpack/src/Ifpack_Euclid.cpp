@@ -37,9 +37,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "getRow_dh.h"
-#ifdef IFPACK_NODE_AWARE_CODE
-extern int ML_NODE_ID;
-#endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -90,11 +87,6 @@ Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
     }
   }
 
-  std::vector<int> rows; rows.resize(iupper - ilower +1);
-  for(int i = ilower; i <= iupper; i++){
-    rows[i-ilower] = i;
-  }
-  MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
   // Here we need to change the view of each row to have global indices. This is
   // because Euclid directly extracts a row view and expects global indices.
   for(int i = 0; i < A_->NumMyRows(); i++){
@@ -107,6 +99,7 @@ Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
   }
 }
 
+//==============================================================================
 void Ifpack_Euclid::Destroy(){
   if(IsComputed()){
     Euclid_dhDestroy(eu);
@@ -130,6 +123,7 @@ void Ifpack_Euclid::Destroy(){
   }
 }
 
+//==============================================================================
 int Ifpack_Euclid::Initialize(){
   comm_dh = GetMpiComm();
   MPI_Comm_size(comm_dh, &np_dh);
@@ -154,6 +148,7 @@ int Ifpack_Euclid::Initialize(){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Euclid::SetParameters(Teuchos::ParameterList& list){
   List_ = list;
   SetLevel_ = list.get("SetLevel", (int)1);
@@ -166,6 +161,7 @@ int Ifpack_Euclid::SetParameters(Teuchos::ParameterList& list){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Euclid::SetParameter(string name, int value){
   locale loc;
   for(size_t i = 0; i < name.length(); i++){
@@ -188,6 +184,7 @@ int Ifpack_Euclid::SetParameter(string name, int value){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Euclid::SetParameter(string name, double value){
   locale loc;
   for(size_t i; i < name.length(); i++){
@@ -204,6 +201,7 @@ int Ifpack_Euclid::SetParameter(string name, double value){
   return 0;
 }
 
+//==============================================================================
 int Ifpack_Euclid::Compute(){
   if(IsInitialized() == false){
     IFPACK_CHK_ERR(Initialize());
@@ -240,15 +238,7 @@ int Ifpack_Euclid::Compute(){
   return 0;
 }
 
-const Epetra_Map& Ifpack_Euclid::OperatorDomainMap() const{
-  return *MySimpleMap_;
-}
-
-const Epetra_Map& Ifpack_Euclid::OperatorRangeMap() const{
-  return *MySimpleMap_;
-}
-
-
+//==============================================================================
 int Ifpack_Euclid::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
   if(IsComputed() == false){
     IFPACK_CHK_ERR(-1);
@@ -269,11 +259,13 @@ int Ifpack_Euclid::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector&
   return 0;
 }
 
-int Ifpack_Euclid::CallEuclid(double* x, double* y) const{
+//==============================================================================
+int Ifpack_Euclid::CallEuclid(double *x, double *y) const{
   Euclid_dhApply(eu, x, y);
   return 0;
 }
 
+//==============================================================================
 ostream& operator << (ostream& os, const Ifpack_Euclid& A){
   if (!A.Comm().MyPID()) {
     os << endl;
@@ -309,7 +301,7 @@ ostream& operator << (ostream& os, const Ifpack_Euclid& A){
   return os;
 }
 
-
+//==============================================================================
 double Ifpack_Euclid::Condest(const Ifpack_CondestType CT, 
                              const int MaxIters,
                              const double Tol,

@@ -187,13 +187,13 @@ public:
   {
     strcpy(Label_,Label_in);
   }
-
-  //! Returns a reference to the map for Domain
-  const Epetra_Map& OperatorDomainMap() const;
-
-  //! Returns a reference to the map for Range
-  const Epetra_Map& OperatorRangeMap() const;
   
+  //! Returns the domain map from the creating matrix.
+  const Epetra_Map &OperatorDomainMap() const{return A_->DomainMap();}
+
+  //! Returns the range map from the creating matrix.
+  const Epetra_Map &OperatorRangeMap() const{return A_->RangeMap();}
+
   //! Returns 0.0 because this class cannot compute Inf-norm.
   double NormInf() const {return(0.0);};
 
@@ -211,9 +211,6 @@ public:
   { 
     return(*A_);
   }
-
-  //! Prints on stream basic information about \c this object.
-  //virtual ostream& Print(ostream& os) const;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -288,11 +285,14 @@ private:
   //! Destroys all internal data
   void Destroy();
 
+  //! Returns the MPI comm used in the matrix that created the preconditioner.
   MPI_Comm GetMpiComm() const{
     return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();
   }
 
-  int CallEuclid(double* x, double* y) const;
+  //! Internal method to call the euclid solve method.
+  int CallEuclid(double *x, double *y) const;
+
   //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y.
   /*! 
     \param In
@@ -319,27 +319,17 @@ private:
   //! Returns the number of local matrix columns.
   int NumMyCols() const {return(A_->NumMyCols());};
   
-  //! Returns a reference to the matrix.
-  /*  Epetra_CrsMatrix& Matrix()
-  {
-    return(*A_);
-    }*/
-
   // @}
   // @{ Internal data
   
   //! Pointer to the Epetra_CrsMatrix to factorize
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A_;
+  //! This objects copy of the ParamterList.
   Teuchos::ParameterList List_;
-  Teuchos::RefCountPtr<Epetra_Map> RowMap0_;
-  
+  //! If true, use transpose operator operations.
   bool UseTranspose_;
-  bool Allocated_;
-  bool ValuesInitialized_;
-  bool Factored_;
-  
+  //! The condition estimate for this preconditioner, will be -1 for now. 
   double Condest_;
-
   //! If \c true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
   //! If \c true, the preconditioner has been successfully computed.
@@ -350,7 +340,6 @@ private:
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
   int NumCompute_;
-
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
   //! Contains the time for all successful calls to Initialize().
@@ -367,19 +356,25 @@ private:
   mutable Epetra_Time Time_;
   //! This is the Euclid solver.
   Euclid_dh eu;
-
-// The following are pointers to functions to use the solver and preconditioner.
-
-  Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;
-  bool NiceRowMap_; // true if the row map of provided matrix is in form that Euclid likes
-  int SetLevel_; // Set livel k for ILU(k) factorization
-  int SetBJ_; // block-jacobi solver
-  int SetStats_; // print stats
-  int SetMem_; // print memory usage information
-  double SetSparse_; // define drop-tolerance
-  int SetRowScale_; // scale values prior to factorization
-  double SetILUT_; // drop tolerance relative to the absolute value of any entry in the row being factored
+  //! true if the row map of provided matrix is in form that Euclid likes
+  bool NiceRowMap_;
+  //! Set livel k for ILU(k) factorization
+  int SetLevel_;
+  //! block-jacobi solver
+  int SetBJ_;
+  //! print stats
+  int SetStats_;
+  //! print memory usage information
+  int SetMem_;
+  //! define drop-tolerance
+  double SetSparse_;
+  //! scale values prior to factorization
+  int SetRowScale_;
+  //! drop tolerance relative to the absolute value of any entry in the row being factored
+  double SetILUT_;
 };
+
+//! This is the print function.
 ostream& operator << (ostream& os, const Ifpack_Euclid& A);
 
 #endif // HAVE_EUCLID
