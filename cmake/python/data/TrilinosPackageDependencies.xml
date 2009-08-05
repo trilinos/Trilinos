@@ -14,8 +14,8 @@
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Pthread"/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pthread,MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -131,7 +131,7 @@
   </Package>
   <Package name="Isorropia" dir="isorropia">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Kokkos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
