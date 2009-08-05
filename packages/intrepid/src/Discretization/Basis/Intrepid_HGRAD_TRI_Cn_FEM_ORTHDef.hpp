@@ -86,7 +86,6 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::initializeTags() {
 }  
 
 
-
 template<class Scalar, class ArrayScalar> 
 void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
 								 const ArrayScalar &  inputPoints,
@@ -102,27 +101,24 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
 #endif
   const int deg = this->getDegree();
 
+//   std::vector<void (*)(ArrayScalar &, const int , const ArrayScalar &)> tabulators;
+
+  void (*tabulators[])(ArrayScalar &, const int, const ArrayScalar &)
+    = { TabulatorTri<Scalar,ArrayScalar,0>::tabulate ,
+	TabulatorTri<Scalar,ArrayScalar,1>::tabulate ,
+	TabulatorTri<Scalar,ArrayScalar,2>::tabulate };
+
+
   switch (operatorType) {
   case OPERATOR_VALUE:
-    {
-      TabulatorTri<Scalar,ArrayScalar,0>::tabulate( outputValues ,
-						    deg ,
-						    inputPoints );
-    }
+    tabulators[0]( outputValues , deg , inputPoints );
     break;
   case OPERATOR_GRAD:
-  case OPERATOR_D1:
-    {
-      TabulatorTri<Scalar,ArrayScalar,1>::tabulate( outputValues , 
-						    deg ,
-						    inputPoints );
-    }
+    tabulators[1]( outputValues , deg , inputPoints );
     break;
+  case OPERATOR_D1:
   case OPERATOR_D2:
-    {
-      TabulatorTri<Scalar,ArrayScalar,2>::tabulate( outputValues ,
-						    deg , inputPoints );
-    }
+    tabulators[operatorType-OPERATOR_D1+1]( outputValues , deg , inputPoints );
     break;
   default:
     TEST_FOR_EXCEPTION( true , std::invalid_argument,
