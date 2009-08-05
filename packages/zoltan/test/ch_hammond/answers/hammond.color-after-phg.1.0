@@ -1,9 +1,9 @@
 Decomposition Method = hypergraph
 Zoltan Parameters = comm_pattern=S
-Zoltan Parameters = color_order=I
+Zoltan Parameters = coloring_order=I
 Zoltan Parameters = coloring_method=F
 Zoltan Parameters = superstep_size=100
-Zoltan Parameters = distance=1
+Zoltan Parameters = coloring_problem=distance-1
 File Type = Chaco
 File Name = hammond
 Parallel Disk Info = number=0

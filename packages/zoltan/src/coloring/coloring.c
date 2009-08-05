@@ -42,23 +42,23 @@ extern "C" {
 #define RECOLORTAG   1005
     
 /* Function prototypes */
-static int D1coloring(ZZ *zz, char color_order, char color_method, char comm_pattern, int ss,
+static int D1coloring(ZZ *zz, char coloring_problem, char coloring_order, char coloring_method, char comm_pattern, int ss,
                       int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
-static int D2coloring(ZZ *zz, char color_order, char color_method, char comm_pattern, int ss,
-                      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color);
+static int D2coloring(ZZ *zz, char coloring_problem, char coloring_order, char coloring_method, char comm_pattern, int ss,
+                      int nVtx, G2LHash *hash, int *xadj, int *adj, int *adjproc, int *color, int *partialD2);
 
-static int ReorderGraph(ZZ *, int, int, int *, int **, int *,
-                        int *, int *, int *, int *);
+static int ReorderGraph(ZZ *, char, int, int *, int **, int *,
+                        int *, int *, int *, int *, int *partialD2, int *nintvisit, int *nboundvisit);
 static int PickColor(ZZ *, char, int, int, int *, int *);
-static int InternalColoring(ZZ *zz, int distance, int *nColor,
+static int InternalColoring(ZZ *zz, char coloring_problem, int *nColor,
                             int nVtx, int *visit, int * xadj, int *adj,
-                            int *color, int *mark, int mark_size, char color_method);
+                            int *color, int *mark, int mark_size, char coloring_method);
 
 #ifdef RELEVANT_COLORS    
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
                                int *isbound, int ss, int *nColor, int *color,
                                int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
-                               char color_method, char comm_pattern, int *rreqfrom,
+                               char coloring_method, char comm_pattern, int *rreqfrom,
                                int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
                                MPI_Status *stats,
                                int *xadjproc, int *adjproc, int **persSbuf, int *Ssize, int plstcnt, int *plst);
@@ -66,26 +66,26 @@ static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
                                int *isbound, int ss, int *nColor, int *color,
                                int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
-                               char color_method, char comm_pattern, int *rreqfrom,
+                               char coloring_method, char comm_pattern, int *rreqfrom,
                                int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
                                MPI_Status *stats);
 #endif
     
 static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p, int **srp, int *xadj, int *adj, int *xadjnl, int *adjnl, int *forbsizeS, int **xforbiddenS, int **forbiddenS, int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF);
 static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx, int *rreqfromFx, MPI_Status *stats, int *forbsize, int **xforbidden, int **forbidden, int **xfp, MPI_Request *rreqsF);
-static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char color_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, int **ssendbuf, int **srecbuf, int ** ssp, int **srp, int **xfp, int *xfpMark, int *wset, int *wsize);
+static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char coloring_problem, char coloring_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, int **ssendbuf, int **srecbuf, int ** ssp, int **srp, int **xfp, int *xfpMark, int *wset, int *wsize);
 static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, G2LHash *);
-static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
+static int D2DetectConflicts(ZZ *zz, char coloring_problem, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
     
 /*****************************************************************************/
 /*  Parameters structure for Color method.  Used in  */
 /*  Zoltan_Color_Set_Param and Zoltan_Color.         */
 static PARAM_VARS Color_params[] = {
-                  { "DISTANCE", NULL, "INT", 0 },
-                  { "SUPERSTEP_SIZE", NULL, "INT", 0},
-                  { "COMM_PATTERN", NULL, "CHAR", 0 },
-                  { "COLOR_ORDER", NULL, "CHAR", 0 },
-                  { "COLORING_METHOD", NULL, "CHAR", 0},
+                  { "COLORING_PROBLEM", NULL, "STRING", 0 },
+                  { "SUPERSTEP_SIZE",   NULL, "INT", 0},
+                  { "COMM_PATTERN",     NULL, "CHAR", 0 },
+                  { "COLORING_ORDER",   NULL, "CHAR", 0 },
+                  { "COLORING_METHOD",  NULL, "CHAR", 0},
                   { NULL, NULL, NULL, 0 } };
     
 /*****************************************************************************/
@@ -144,15 +144,16 @@ int Zoltan_Color(
                               /* The application must allocate enough space */
 ) 
 {
-  int distance;         /* Input: which coloring to perform;
-                           currently only supports D1 and D2 coloring */
+  char coloring_problem;   /* Input: which coloring to perform;
+                           currently only supports D1, D2 coloring and partial D2 */
+  char coloring_problemStr[MAX_PARAM_STRING_LEN]; /* string version coloring problem name */  
   int ss;               /* Superstep size: detemines how many vertices are
                            locally colored before the next color
                            information exchange */
   char comm_pattern;    /* (A) asynchronous (S) synchronous supersteps*/
-  char color_order;     /* (I) interior vertices first
+  char coloring_order;     /* (I) interior vertices first
                            (B) boundary vertices first (U) interleaved */
-  char color_method;    /* Coloring method. (F) First fit */
+  char coloring_method;    /* Coloring method. (F) First fit */
 
 
   static char *yo = "color_fn";
@@ -174,27 +175,38 @@ int Zoltan_Color(
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2]; 
 
+  int *partialD2;       /* binary array showing which vertices to be colored */ // DBDB: temporary. This array should be allocated outside Zoltan_Color
+  
   /* PARAMETER SETTINGS */
-  Zoltan_Bind_Param(Color_params, "DISTANCE", (void *) &distance);
-  Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE", (void *) &ss);
-  Zoltan_Bind_Param(Color_params, "COMM_PATTERN", (void *) &comm_pattern);
-  Zoltan_Bind_Param(Color_params, "COLOR_ORDER", (void *) &color_order);
-  Zoltan_Bind_Param(Color_params, "COLORING_METHOD", (void *) &color_method);
+  
+  Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
+  Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE",   (void *) &ss);
+  Zoltan_Bind_Param(Color_params, "COMM_PATTERN",     (void *) &comm_pattern);
+  Zoltan_Bind_Param(Color_params, "COLORING_ORDER",   (void *) &coloring_order);
+  Zoltan_Bind_Param(Color_params, "COLORING_METHOD",  (void *) &coloring_method);
   
   /* Set default values */
-  distance = 1;
+  strncpy(coloring_problemStr, "distance-1", MAX_PARAM_STRING_LEN);
+  coloring_problem = '1';
   ss = 100;
-  color_method = 'F';
-  color_order = 'I';
+  coloring_method = 'F';
+  coloring_order = 'I';
   comm_pattern = 'S';
 
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
   
   /* Check validity of parameters */
-  if (distance != 1 && distance != 2) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Coloring with requested distance is not implemented. Using Distance-1 coloring.");
-      distance = 1;
+  if (!strcasecmp(coloring_problemStr, "distance-1"))
+      coloring_problem = '1';
+  else if (!strcasecmp(coloring_problemStr, "distance-2"))
+      coloring_problem = '2';
+  else if (!strcasecmp(coloring_problemStr, "partial distance-2")
+      || !strcasecmp(coloring_problemStr, "bipartite"))
+      coloring_problem = 'P';
+  else {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Unknown coloring requested. Using Distance-1 coloring.");
+      coloring_problem = '1';
   }
   if (ss == 0) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid superstep size. Using default value 100.");
@@ -204,21 +216,21 @@ int Zoltan_Color(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid communication pattern. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (comm_pattern == 'A' && distance == 2) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring. Using synchronous communication (S).");
+  if (comm_pattern == 'A' && (coloring_problem == '2' || coloring_problem == 'P')) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring and its variants. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (color_order != 'I' && color_order != 'B' && color_order != 'U') {
+  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
-      color_order = 'I';
+      coloring_order = 'I';
   }  
-  if (color_order == 'U' && distance == 2) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Interleaved coloring order is not implemented for distance-2 coloring. Using internal first coloring order (I).");
-      color_order = 'I';
+  if (coloring_order == 'U' && (coloring_problem == '2' || coloring_problem == 'P')) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Interleaved coloring order is not implemented for distance-2 coloring and its variants. Using internal first coloring order (I).");
+      coloring_order = 'I';
   }
-  if (color_method !='F') {
+  if (coloring_method !='F') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring method. Using first fit method (F).");
-      color_method = 'F';
+      coloring_method = 'F';
   }
   
 
@@ -305,19 +317,28 @@ int Zoltan_Color(
   if (!(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
       MEMORY_ERROR;
 
-  /* SELECT COLORING ALGORITHM AND PERFORM COLORING*/
-  if (distance == 1)      
-      D1coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color); 
-  else if (distance == 2)
-      D2coloring(zz, color_order, color_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
+  if (coloring_problem == 'P') {
+      if (!(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
+          MEMORY_ERROR;
+      for (i=0; i<nvtx; i++) 
+          partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
+                             1: indicates vertex needs to be colored, 0 means don't color  */
+  }
+
+
+  /* Select Coloring algorithm and perform the coloring */
+  if (coloring_problem == '1')      
+      D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color); 
+  else if (coloring_problem == '2' || coloring_problem == 'P')
+      D2coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color, partialD2);
     
-  /* FILL THE RETURN ARRAY */
+  /* Fill the return array */
   for (i=0; i<nvtx; i++) 
       color_exp[i] = color[i];
 
 #if 0
   /* Check if there is an error in coloring */
-  if (distance == 1 && zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) { 
+  if (coloring_problem == '1' && zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) { 
       for (i=0; i<nvtx; i++) {
           for (j = xadj[i]; j < xadj[i+1]; j++) {
               int v = adjncy[j];
@@ -330,6 +351,7 @@ int Zoltan_Color(
   
  End:  
   Zoltan_Multifree(__FILE__,__LINE__, 6, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color);
+  Zoltan_Multifree(__FILE__,__LINE__, 1, &partialD2);
   Zoltan_G2LHash_Destroy(&hash);
   
   return ierr;
@@ -340,9 +362,10 @@ int Zoltan_Color(
 
 static int D1coloring(
     ZZ *zz,
-    char color_order,  /* (I) interior vertices first
+    char coloring_problem,/* Coloring problem. '1' in this case */
+    char coloring_order,  /* (I) interior vertices first
                           (B) boundary vertices first (U) interleaved */
-    char color_method, /* Coloring method. (F) First fit
+    char coloring_method, /* Coloring method. (F) First fit
                           (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
     int ss,            /* Superstep size: detemines how many vertices are
@@ -360,7 +383,6 @@ static int D1coloring(
 {
     static char *yo = "D1coloring";
     int i;
-    int distance = 1;
     int nColor = 0;              /* Number of colors */
     int nConflict;               /* Number of local vertices to be recolored
                                     in the next round */
@@ -377,7 +399,8 @@ static int D1coloring(
     int *isbound=NULL;           /* Indicates whether a local vertex is a boundary
                                     vertex */
     int *visit = NULL;           /* Visit (coloring) order of local vertices */
-    int *visitIntern = NULL;           
+    int *visitIntern = NULL;
+    int nintvisit, nboundvisit;  /* NOTUSED: Number of internal and boundary vertices to be colored */
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxdeg = 0;             /* Maximum vertex degree in the graph */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
@@ -430,8 +453,8 @@ static int D1coloring(
         printf("\n");
     }
 #endif
-    
-    ierr = ReorderGraph(zz, 1, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit);
+
+    ierr = ReorderGraph(zz, coloring_problem, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit, NULL, &nintvisit, &nboundvisit);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
         ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
@@ -499,18 +522,18 @@ static int D1coloring(
         times[2] = Zoltan_Time(zz->Timer);
     }
     visitIntern = visit + nbound; /* Start of internal vertex visit order. Used with I and B options below */
-    if (color_order == 'U') { 
+    if (coloring_order == 'U') { 
         nConflict = nvtx;
         for (i=0; i<nvtx; i++)
             visit[i] = i;
         if (zz->Num_Proc==1)
-            InternalColoring(zz, distance, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, color_method);
+            InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, coloring_method);
     }
-    else if (color_order == 'I') {
-        InternalColoring(zz, distance, &nColor, nvtx - nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, color_method);
+    else if (coloring_order == 'I') {
+        InternalColoring(zz, coloring_problem, &nColor, nvtx - nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, coloring_method);
         nConflict = nbound;
     }
-    else if (color_order == 'B')
+    else if (coloring_order == 'B')
         nConflict = nbound;
 
     if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -586,13 +609,13 @@ static int D1coloring(
 #ifdef RELEVANT_COLORS
             ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
                                       &nColor, color, newcolored, mark, gmaxdeg, hash,
-                                      color_method, comm_pattern, rreqfrom, replies,
+                                      coloring_method, comm_pattern, rreqfrom, replies,
                                       sreqs, rreqs, stats,
                                       xrelproc, relproc, persSbuf, Ssize, plstcnt, plst);
 #else
             ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
                                       &nColor, color, newcolored, mark, gmaxdeg, hash,
-                                      color_method, comm_pattern, rreqfrom, replies,
+                                      coloring_method, comm_pattern, rreqfrom, replies,
                                       sreqs, rreqs, stats);
 #endif
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -614,8 +637,8 @@ static int D1coloring(
     if (get_times) times[4] = Zoltan_Time(zz->Timer);
 
     /* Color internal vertices after boundaries if boundary first ordering */
-    if (color_order == 'B') 
-        InternalColoring(zz, distance, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, color_method);
+    if (coloring_order == 'B') 
+        InternalColoring(zz, coloring_problem, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxdeg, coloring_method);
     
 #if 0
     printf("[%d] vtx(gno)->color: ", zz->Proc);
@@ -692,9 +715,10 @@ static int D1coloring(
 
 static int D2coloring(
     ZZ *zz,
-    char color_order,  /* (I) interior vertices first
+    char coloring_problem,/* Coloring problem. '2' or 'P'  in this case */
+    char coloring_order,  /* (I) interior vertices first
                           (B) boundary vertices first (U) interleaved */
-    char color_method, /* Coloring method. (F) First fit
+    char coloring_method, /* Coloring method. (F) First fit
                           (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
     int ss,            /* Superstep size: detemines how many vertices are
@@ -706,13 +730,13 @@ static int D2coloring(
     int *xadj,         /* arrays that store the graph structure */
     int *adj,
     int *adjproc,
-    int *color         /* return array to store colors of local and D1
+    int *color,        /* return array to store colors of local and D1
                           neighbor vertices */
+    int *partialD2     /* binary array showing which vertices will be colored */ 
 )
 {
     static char *yo = "D2coloring";
     int i, j, p;
-    int distance = 2;
     int nColor = 0;              /* Number of colors */
     int nConflict;               /* Number of local vertices to be recolored
                                     in the next round */
@@ -729,7 +753,8 @@ static int D2coloring(
     int *isbound=NULL;           /* Indicates whether a local vertex is a boundary
                                     vertex */
     int *visit = NULL;           /* Visit (coloring) order of local vertices */
-    int *visitIntern = NULL;       
+    int *visitIntern = NULL;
+    int nintvisit, nboundvisit;  /* Number of internal and boundary vertices to be colored */
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxcolor = 0;           /* Maximum #colors */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
@@ -779,7 +804,7 @@ static int D2coloring(
         MPI_Barrier(zz->Communicator);
         times[0] = Zoltan_Time(zz->Timer);
     }    
-    ierr = ReorderGraph(zz, 2, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit);
+    ierr = ReorderGraph(zz, coloring_problem, nvtx, xadj, &xbadj, adj, adjproc, &nbound, isbound, visit, partialD2, &nintvisit, &nboundvisit);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
         ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
@@ -972,19 +997,19 @@ static int D2coloring(
         times[2] = Zoltan_Time(zz->Timer);
     }
     visitIntern = visit + nbound; /* Start of internal vertex visit order. Used with I and B options below */
-    if (color_order == 'I') {
-        InternalColoring(zz, distance, &nColor, nvtx - nbound, visitIntern, xadj, adj, color, mark, gmaxcolor, color_method);
-        nConflict = nbound;
+    if (coloring_order == 'I') {
+        InternalColoring(zz, coloring_problem, &nColor, nintvisit, visitIntern, xadj, adj, color, mark, gmaxcolor, coloring_method);
+        nConflict = nboundvisit;
     }
-    else if (color_order=='B') 
-        nConflict = nbound;
+    else if (coloring_order=='B') 
+        nConflict = nboundvisit;
 /*  
-    else if (color_order == 'U') { ** not implemented **
+    else if (coloring_order == 'U') { ** not implemented **
         nConflict = nvtx;
         for (i=0; i<nvtx; i++)
             visit[i] = i;
         if (zz->Num_Proc==1)
-            InternalColoring(zz, distance, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, color_method);
+            InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxcolor, coloring_method);
     }
 */
     
@@ -1004,7 +1029,7 @@ static int D2coloring(
             ierr = D2ParallelColoring(zz, nConflict, nvtx, visit, xadj, adj, xbadj, xadjnl, adjnl, adjproc, isbound, ss,
                                       &nColor, color, newcolored, mark, gmaxcolor, hash,
                                       forbidden, xforbidden, forbiddenS, xforbiddenS, forbsize, forbsizeS,
-                                      color_method, comm_pattern,
+                                      coloring_problem, coloring_method, comm_pattern,
                                       rreqfromC, repliesC, sreqsC, rreqsC,
                                       rreqfromF, repliesF, sreqsF, rreqsF,
                                       rreqfromFx, repliesFx, sreqsFx, rreqsFx,
@@ -1017,7 +1042,7 @@ static int D2coloring(
             lColor = nColor; 
             MPI_Allreduce(&lColor, &nColor, 1, MPI_INT, MPI_MAX, zz->Communicator);        
 
-            ierr = D2DetectConflicts(zz, hash, nvtx, wset, wsize, xadj, adj, adjproc, &nColor, color, conflicts, rand_key,
+            ierr = D2DetectConflicts(zz, coloring_problem, hash, nvtx, wset, wsize, xadj, adj, adjproc, &nColor, color, conflicts, rand_key,
                               vmark, seen, where, pwhere, rcsendbuf, rcrecbuf, rcsendsize, rcrecsize, srp, sreqsC, rreqsC,
                               rreqfromC, stats, &nConflict);
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -1034,8 +1059,8 @@ static int D2coloring(
     }
     if (get_times) times[4] = Zoltan_Time(zz->Timer);
     /* Color internal vertices after boundaries if boundary first ordering */
-    if (color_order == 'B') 
-        InternalColoring(zz, distance, &nColor, nvtx-nbound, visitIntern, xadj, adj, color, mark, gmaxcolor, color_method);
+    if (coloring_order == 'B') 
+        InternalColoring(zz, coloring_problem, &nColor, nintvisit, visitIntern, xadj, adj, color, mark, gmaxcolor, coloring_method);
     
     
 #if 0
@@ -1100,22 +1125,25 @@ static int D2coloring(
 
 static int ReorderGraph(
     ZZ *zz,           
-    int distance,     /* Coloring type */
+    char color_problem, /* Coloring problem */
     int nvtx,         /* In: Number of objects */
     int *xadj,        /* In: Pointer to xadj */
     int **pxbadj,     /* Out: Pointer to start of cut edges in the
                          adj lists of boundary vertices*/
     int *adj,         /* In/Out: Pointer to adj */
-    int *adjproc,     /* In/Out: parallel to adj; holds the processor owns the adj vertex */
+    int *adjproc,     /* In: Part vector */
     int *nbound,      /* Out: Number of boundary vertices */
     int *isbound,     /* Out: Indicates if a vertex is on the boundary */
-    int *visit        /* Out: Visit order */
+    int *visit,       /* Out: Visit order */
+    int *partialD2,   /* In: binary array showing which vertices will be colored */
+    int *nintvisit,   /* Out: Number of internal vertices to be colored */
+    int *nboundvisit  /* Out: Number of boundary vertices to be colored */
 )
 {
     static char *yo = "ReorderGraph";
     int *xbadj = NULL;     /* pointer to start of cut edges in the
                               adj lists of boundary vertices    */  
-    int i, j, idx, nboundIdx;
+    int i, j, iidx, bidx;
     int ierr;
     
     /* Memory allocation */
@@ -1136,14 +1164,20 @@ static int ReorderGraph(
         }
     }
     /* Construct vertex visit order: boundaries first, internals last */
-    idx = 0;
-    nboundIdx = *nbound;
+    iidx = *nbound;
+    bidx = 0;
     for (i=0; i<nvtx; ++i) {
-        if (isbound[i] == 1)
-            visit[idx++] = i;
-        else
-            visit[nboundIdx++] = i;
+        if (color_problem != 'P' || partialD2[i] == 1) {        
+            if (isbound[i] == 1)
+                visit[bidx++] = i;
+            else {
+                visit[iidx++] = i;
+            }                
+        }
     }
+    *nintvisit = iidx-*nbound;
+    *nboundvisit = bidx;
+
     
     /* move cut edges to the beginning of adj lists for boundary vertices */
     for (i=0; i<nvtx; ++i) {
@@ -1179,7 +1213,7 @@ static int ReorderGraph(
 
 static int PickColor(
     ZZ *zz,
-    char color_method,
+    char coloring_method,
     int u,
     int oldColor,
     int *nColor,
@@ -1188,7 +1222,7 @@ static int PickColor(
 {
     int c, pickedColor;
          
-    switch(color_method){    
+    switch(coloring_method){    
     case 'F':
     default: 
         for (c = 1; (c <= *nColor) && (mark[c] == u); ++c) ;
@@ -1207,7 +1241,7 @@ static int PickColor(
 
 static int InternalColoring(
     ZZ *zz,
-    int distance,
+    char coloring_problem,
     int *nColor,
     int nvtx,
     int *visit,
@@ -1216,7 +1250,7 @@ static int InternalColoring(
     int *color,
     int *mark,
     int gmaxdeg,
-    char color_method
+    char coloring_method
 )
 {
     int i, j, k, c, u, v, w;
@@ -1224,7 +1258,7 @@ static int InternalColoring(
     int ierr = ZOLTAN_OK;
  
     memset(mark, 0xff, gmaxdeg * sizeof(int));
-    if (distance == 1) {
+    if (coloring_problem == '1') {
         for (i=0; i<nvtx; ++i) {
             u = visit[i];        
             for (j = xadj[u]; j < xadj[u+1]; ++j) {
@@ -1232,26 +1266,25 @@ static int InternalColoring(
                 if ((c = color[v]) != 0) 
                     mark[c] = u;
             }
-            color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
+            color[u] = PickColor(zz, coloring_method, u, color[u], nColor, mark);
         }
-    } else if (distance == 2) {        
+    } else if (coloring_problem == '2' || coloring_problem == 'P') {        
         for (i=0; i<nvtx; ++i) {
             u = visit[i];        
             for (j = xadj[u]; j < xadj[u+1]; ++j) {
                 v = adj[j];              
                 if ((c = color[v]) != 0) 
                     mark[c] = u;
-                if (v < nvtx) /* neighbor vertex v is internal as well - not sure if this is true for boundary first d2 coloring DBDBcheck*/ 
-                    for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
-                        w = adj[k];
-                        if ((c = color[w]) != 0) 
-                            mark[c] = u;	      
-                    }                
+                for (k = xadj[v]; k < xadj[v+1]; ++k) {	  
+                    w = adj[k];
+                    if ((c = color[w]) != 0) 
+                        mark[c] = u;	      
+                }                
             }
-            color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
+            color[u] = PickColor(zz, coloring_method, u, color[u], nColor, mark);
         }
     } else
-        ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Unknown coloring distance");
+        ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Unknown coloring problem");
 
  End:
     
@@ -1265,7 +1298,7 @@ static int InternalColoring(
 static int D1ParallelColoring (ZZ *zz, int nvtx, int *visit, int *xadj, int *adj,
                                int *isbound, int ss, int *nColor, int *color,
                                int **newcolored, int *mark, int gmaxdeg, G2LHash *hash,
-                               char color_method, char comm_pattern, int *rreqfrom,
+                               char coloring_method, char comm_pattern, int *rreqfrom,
                                int *replies, MPI_Request *sreqs, MPI_Request *rreqs,
                                MPI_Status *stats,
                                int *xrelproc, int *relproc, int **persSbuf, int *Ssize, int plstcnt, int *plst)
@@ -1292,7 +1325,7 @@ static int D1ParallelColoring (
     int gmaxdeg,      /* Maximum vertex degree in the graph */
     G2LHash *hash,    /* hash to map global ids of local and D1 neighbor
                          vertices to consecutive local ids */ 
-    char color_method, /* Coloring method. (F) First fit
+    char coloring_method, /* Coloring method. (F) First fit
                           (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
     int *rreqfrom,    /* Arrays used for MPI communication */
@@ -1345,7 +1378,7 @@ static int D1ParallelColoring (
                 mark[c] = u;
             }
         }
-        color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
+        color[u] = PickColor(zz, coloring_method, u, color[u], nColor, mark);
 
         if (!isbound[u]) /* send only boundary vertices */
             continue;
@@ -1626,7 +1659,8 @@ static int D2ParallelColoring (
     int **xforbiddenS,
     int *forbsize,
     int *forbsizeS,
-    char color_method, /* Coloring method. (F) First fit
+    char coloring_problem, /* D2 or partial D2 */
+    char coloring_method, /* Coloring method. (F) First fit
                           (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
     int *rreqfromC,     /* Arrays used for MPI communication */
@@ -1749,7 +1783,7 @@ static int D2ParallelColoring (
     n = 0; 
     for (i = 0; i < nvtx; ++i) {
         int u = visit[i];
-        if (confChk[u] == sncnt) { /* add boundary vertices of this round into confChk */
+        if (coloring_problem != 'P' && confChk[u] == sncnt) { /* add boundary vertices of this round into confChk */
             confChk[u] = -2;
             wset[(*wsize)++] = u;
         }
@@ -1760,7 +1794,7 @@ static int D2ParallelColoring (
                 while (*nColor < c) /* if nColor < c, set nColor to c and reset intermediate mark entries. May be done better. */
                     mark[++(*nColor)] = -1;
                 mark[c] = u;
-            }
+            }            
             if (vp == zz->Proc) { /* if v is local as well */
                 if (isbound[v] && confChk[v] == sncnt) { /* add boundary vertices of this round into confChk */
                     confChk[v] = -2;
@@ -1787,7 +1821,7 @@ static int D2ParallelColoring (
                 ++(xfp[vp]);
             }
         }
-        color[u] = PickColor(zz, color_method, u, color[u], nColor, mark);
+        color[u] = PickColor(zz, coloring_method, u, color[u], nColor, mark);
         colored[n++] = Zoltan_G2LHash_L2G(hash, u);
         colored[n++] = color[u];
         
@@ -1921,7 +1955,7 @@ static int D1DetectConflicts(
 /*****************************************************************************/
 /* Detect D2 conflicts */
 
-static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
+static int D2DetectConflicts(ZZ *zz, char coloring_problem, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
 {
     static char *yo="D2DetectConflicts";
     int w, i, j, p;
@@ -1950,10 +1984,12 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (i = 0; i < wsize; i++) {
         int x, v, cw, cx, px, pv, gv, gx;
         w = wset[i];
-        cw = color[w];
-        seen[cw] = w;
-        where[cw] = w;
-        pwhere[cw] = zz->Proc;
+        if (coloring_problem != 'P') {
+            cw = color[w];
+            seen[cw] = w;
+            where[cw] = w;        
+            pwhere[cw] = zz->Proc;
+        }
         for (j = xadj[w]; j < xadj[w+1]; j++) {
             x = adj[j];
             px = adjproc[j];

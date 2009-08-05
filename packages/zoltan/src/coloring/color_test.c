@@ -34,11 +34,11 @@ extern "C" {
 /*  Parameters structure for Color method.  Used in  */
 /*  Zoltan_Color_Set_Param and Zoltan_Color.         */
 static PARAM_VARS Color_params[] = {
-                  { "DISTANCE", NULL, "INT", 0 },
-                  { "SUPERSTEP_SIZE", NULL, "INT", 0},
-                  { "COMM_PATTERN", NULL, "CHAR", 0 },
-                  { "COLOR_ORDER", NULL, "CHAR", 0 },
-                  { "COLORING_METHOD", NULL, "CHAR", 0},
+                  { "COLORING_PROBLEM", NULL, "STRING", 0 },
+                  { "SUPERSTEP_SIZE",   NULL, "INT", 0},
+                  { "COMM_PATTERN",     NULL, "CHAR", 0 },
+                  { "COLORING_ORDER",   NULL, "CHAR", 0 },
+                  { "COLORING_METHOD",  NULL, "CHAR", 0},
                   { NULL, NULL, NULL, 0 } };
        
 /*****************************************************************************/
@@ -68,43 +68,61 @@ int Zoltan_Color_Test(
   int i, j;
   int ierr = ZOLTAN_OK;
   int ferr = ZOLTAN_OK;             /* final error signal */
-  int distance=1;                   /* distance for coloring. This test is only implemeted for distance=1 */
+  char coloring_problem;   /* Input: which coloring to perform;
+                           currently only supports D1, D2 coloring and variants */
+  char coloring_problemStr[MAX_PARAM_STRING_LEN]; /* string version coloring problem name */    
   int ss=100;
-  char comm_pattern='S', color_order='I', color_method='F';  
+  char comm_pattern='S', coloring_order='I', coloring_method='F';  
   int comm[2],gcomm[2];
   int *color=NULL, *reccnt=NULL;
   
   /* PARAMETER SETTINGS */
-  Zoltan_Bind_Param(Color_params, "DISTANCE", (void *) &distance);
+  Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);  
   Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE", (void *) &ss);
   Zoltan_Bind_Param(Color_params, "COMM_PATTERN", (void *) &comm_pattern);
-  Zoltan_Bind_Param(Color_params, "COLOR_ORDER", (void *) &color_order);
-  Zoltan_Bind_Param(Color_params, "COLORING_METHOD", (void *) &color_method);
-  
+  Zoltan_Bind_Param(Color_params, "COLORING_ORDER", (void *) &coloring_order);
+  Zoltan_Bind_Param(Color_params, "COLORING_METHOD", (void *) &coloring_method);
+
+  strncpy(coloring_problemStr, "distance-1", MAX_PARAM_STRING_LEN);
+    
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
   /* Check validity of parameters - they should be consistent with Zoltan_Color */
-  if (distance != 1 && distance != 2) {
-      distance = 1;
+  if (!strcasecmp(coloring_problemStr, "distance-1"))
+      coloring_problem = '1';
+  else if (!strcasecmp(coloring_problemStr, "distance-2"))
+      coloring_problem = '2';
+  else if (!strcasecmp(coloring_problemStr, "partial distance-2")
+      || !strcasecmp(coloring_problemStr, "bipartite"))
+      coloring_problem = 'P';
+  else {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Unknown coloring requested. Using Distance-1 coloring.");
+      coloring_problem = '1';
   }
   if (ss == 0) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid superstep size. Using default value 100.");
       ss = 100;
   }
   if (comm_pattern != 'S' && comm_pattern != 'A') {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid communication pattern. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (comm_pattern == 'A' && distance == 2) {
+  if (comm_pattern == 'A' && (coloring_problem == '2' || coloring_problem == 'P')) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring and its variants. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (color_order != 'I' && color_order != 'B' && color_order != 'U') {
-      color_order = 'I';
+  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U') {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
+      coloring_order = 'I';
   }  
-  if (color_order == 'U' && distance == 2) {
-      color_order = 'I';
+  if (coloring_order == 'U' && (coloring_problem == '2' || coloring_problem == 'P')) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Interleaved coloring order is not implemented for distance-2 coloring and its variants. Using internal first coloring order (I).");
+      coloring_order = 'I';
   }
-  if (color_method !='F') {
-      color_method = 'F';
+  if (coloring_method !='F') {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring method. Using first fit method (F).");
+      coloring_method = 'F';
   }
   
   /* Compute Max number of array entries per ID over all processors.
@@ -166,7 +184,7 @@ int Zoltan_Color_Test(
   if (!color || !reccnt)
       MEMORY_ERROR;
 
-  if (distance != 1) 
+  if (coloring_problem != '1') 
       ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 coloring. Skipping verification.");
 
 
