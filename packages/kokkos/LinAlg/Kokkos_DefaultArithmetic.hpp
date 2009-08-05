@@ -86,6 +86,18 @@ namespace Kokkos {
   };
 
   template <class Scalar, class Node>
+  struct GESUMOp {
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typename Node::template buffer<      Scalar>::buffer_t y;
+    Scalar alpha, beta;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      Scalar tmp = y[i];
+      y[i] = alpha * x[i] + beta * tmp;
+    }
+  };
+
+  template <class Scalar, class Node>
   struct SumAbsOp {
     typedef  Teuchos::ScalarTraits<Scalar> SCT;
     typedef  typename SCT::magnitudeType   Magnitude;
@@ -335,7 +347,30 @@ namespace Kokkos {
       }
 
       inline static void GESUM(MultiVector<Scalar,Ordinal,Node> &B, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &A, Scalar beta) {
-        TEST_FOR_EXCEPT(true);
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  ||
+                           nR != B.getNumRows(), 
+                           std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+        Node &node = B.getNode();
+        GESUMOp<Scalar,Node> wdp;
+        wdp.alpha = alpha;
+        wdp.beta  = beta;
+        if (A.getStride() == nR && B.getStride() == nR) {
+          // one kernel invocation for whole multivector
+          wdp.y = B.getValues(0);
+          wdp.x = ((const MultiVector<Scalar,Ordinal,Node> &)A).getValues(0);
+          node.template parallel_for<GESUMOp<Scalar,Node> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.y = B.getValues(j);
+            wdp.x = ((const MultiVector<Scalar,Ordinal,Node> &)A).getValues(j);
+            node.template parallel_for<GESUMOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
       }
 
       inline static void GESUM(MultiVector<Scalar,Ordinal,Node> &C, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &A, Scalar beta, const MultiVector<Scalar,Ordinal,Node> &B, Scalar gamma) {
@@ -446,6 +481,18 @@ namespace Kokkos {
           op.x = A.getValues(j);
           norms[j] = node.parallel_reduce(0,nR,op);
         }
+      }
+
+      inline static typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+      Norm2Squared(const MultiVector<Scalar,Ordinal,Node> &A) {
+        const Ordinal nR = A.getNumRows();
+        if (nR == 0) {
+          return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
+        }
+        Node &node = A.getNode();
+        DotOp1<Scalar,Node> op;
+        op.x = A.getValues(0);
+        return node.parallel_reduce(0,nR,op);
       }
 
       inline static void WeightedNorm(const MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &weightVector, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {

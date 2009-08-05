@@ -793,6 +793,38 @@ namespace {
   }
 
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, Indexing, Ordinal, Scalar )
+  {
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
+    typedef ScalarTraits<Scalar>              SCT;
+    typedef typename SCT::magnitudeType Magnitude;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
+    // create a Map
+    Map<Ordinal> map(INVALID,100,0,comm);
+    // create two random Vector objects
+    V v1(node,map), v2(node,map);
+    v1.random();
+    v2.random();
+    // set values in both to 1.0
+    // for the first, do via putScalar()
+    // the the second, do manually, looping over all elements
+    // verify that both have identical values
+    v1.putScalar(SCT::one());
+    for (int i=map.getMinLocalIndex(); i <= map.getMaxLocalIndex(); ++i) {
+      v2[i] = SCT::one();
+    }
+    Magnitude err;
+    // subtract v2 from v1; this should result in v1 = zeros
+    v1.update(-1.0,v2,1.0);
+    err = v1.norm2();
+    TEST_EQUALITY_CONST(err,SCT::zero());
+  }
+
+
 //REFACTOR//  ////
 //REFACTOR//  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, SingleVecNormalize, Ordinal, Scalar )
 //REFACTOR//  {
@@ -1210,6 +1242,7 @@ namespace {
       /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadConstAA        , ORDINAL, SCALAR ) */\
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConst         , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(      Vector, CopyConst         , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(      Vector, Indexing          , ORDINAL, SCALAR ) \
       /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OrthoDot          , ORDINAL, SCALAR ) */\
       /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDot          , ORDINAL, SCALAR ) */\
       /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountDotNonTrivLDA, ORDINAL, SCALAR ) */\

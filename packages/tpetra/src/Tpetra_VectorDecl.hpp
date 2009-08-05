@@ -163,10 +163,10 @@ namespace Tpetra {
     //@{ 
 
     //! [] operator, nonconst version
-    //REFACTOR// Scalar& operator[](Teuchos_Ordinal index);
+    Scalar& operator[](Teuchos_Ordinal index);
 
     //! [] operator, const version
-    //REFACTOR// const Scalar & operator[](Teuchos_Ordinal index) const;
+    const Scalar & operator[](Teuchos_Ordinal index) const;
 
     //@}
 

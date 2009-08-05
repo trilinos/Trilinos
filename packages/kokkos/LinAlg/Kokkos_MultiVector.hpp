@@ -151,6 +151,24 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       typename Node::template buffer<Scalar>::buffer_t 
+      getValues(Ordinal i) {
+        TEST_FOR_EXCEPTION(!dataInitialized_ || // No data to return
+                           i<0 || i>=numRows_, // Out of range
+                           std::runtime_error, 
+                           Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+        return contigValues_ + stride_*i;
+      };
+
+      //! Returns a pointer to an array of values for the ith column of the multivector.
+      /*! Extract a pointer to the values in the ith column of the multivector.  Note that
+        the values are not copied by this method.  Memory allocation is 
+        handled by the multivector object itself.  Also, if the getIsStrided() method returns
+        true, then the getColInc() should be used to access values in the ith column
+        of the multivector, especially if getColInc() != 1.
+
+        \param i (In) The column that should be returned.
+        */
+      typename Node::template buffer<const Scalar>::buffer_t 
       getValues(Ordinal i) const {
         TEST_FOR_EXCEPTION(!dataInitialized_ || // No data to return
                            i<0 || i>=numRows_, // Out of range

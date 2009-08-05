@@ -214,25 +214,26 @@ namespace Tpetra {
   }
 
 
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //REFACTOR// Scalar& Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator[](Teuchos_Ordinal index)
-  //REFACTOR// {
-  //REFACTOR//   TEST_FOR_EXCEPTION(index < 0 || index >= myLength(), std::runtime_error,
-  //REFACTOR//       "Tpetra::Vector::operator[](j): index j exceeds local dimension.");
-  //REFACTOR//   Node &node = lclMV_->getNode();
-  //REFACTOR//   Scalar * mvdata = node.template viewBuffer<Scalar>(myLength(),lclMV_->getValues(0),0);
-  //REFACTOR//   return mv; // FINISH: can't return reference and release view.... what to do?
-  //REFACTOR//   node.template releaseView<Scalar>(mvdata);
-  //REFACTOR// }
+  // FINISH: this is not legal, and will not work for non-trivial buffer<T>::buffer_t tyeps
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar& Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator[](Teuchos_Ordinal index)
+  {
+    TEST_FOR_EXCEPTION(index < this->getMap().getMinLocalIndex() || index > this->getMap().getMaxLocalIndex(),
+        std::runtime_error, "Tpetra::Vector::operator[](j): index j exceeds local dimension.");
+    //Node &node = lclMV_->getNode();
+    //Scalar * mvdata = node.template viewBuffer<Scalar>(myLength(),lclMV_->getValues(0),0);
+    return this->lclMV_->getValues(0)[index];
+    //node.template releaseView<Scalar>(mvdata);
+  }
 
-
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //REFACTOR// const Scalar& Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator[](Teuchos_Ordinal index) const
-  //REFACTOR// {
-  //REFACTOR//   ...
-  //REFACTOR//   see operator[] non-const above
-  //REFACTOR//   ...
-  //REFACTOR// }
+  // FINISH: this is not legal, and will not work for non-trivial buffer<T>::buffer_t tyeps
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Scalar& Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator[](Teuchos_Ordinal index) const
+  {
+    TEST_FOR_EXCEPTION(index < this->getMap().getMinLocalIndex() || index > this->getMap().getMaxLocalIndex(),
+        std::runtime_error, "Tpetra::Vector::operator[](j): index j exceeds local dimension.");
+    return this->lclMV_->getValues(0)[index];
+  }
 
 
 } // namespace Tpetra
