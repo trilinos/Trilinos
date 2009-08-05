@@ -85,7 +85,9 @@ int main(int argc, char *argv[]) {
   int errorFlag  = 0;
 
   const int deg = 3;
-  const int polydim = (deg+1)*(deg+2)*(deg+3)/6;
+
+  Basis_HGRAD_TET_Cn_FEM_ORTH<double,FieldContainer<double> > myBasis( deg );
+  const int polydim = myBasis.getCardinality();
   
   // First, get a reference quadrature rule
 
@@ -95,13 +97,12 @@ int main(int argc, char *argv[]) {
 
   myCub.getCubature( cubPts , cubWts );
 
-  Basis_HGRAD_TET_Cn_FEM_ORTH<double,FieldContainer<double> > myBasis( deg );
-  
 
   // Tabulate the basis functions at the cubature points
   FieldContainer<double> basisAtCubPts( polydim , myCub.getNumPoints() );
 
-  Basis_HGRAD_TET_Cn_FEM_ORTH<double,FieldContainer<double> >::tabulate( cubPts , deg , basisAtCubPts );
+  myBasis.getValues( basisAtCubPts , cubPts , OPERATOR_VALUE );
+
 
   // Now let's compute the mass matrix
   for (int i=0;i<polydim;i++) {
