@@ -175,7 +175,7 @@ int Zoltan_Color(
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2]; 
 
-  int *partialD2;       /* binary array showing which vertices to be colored */ // DBDB: temporary. This array should be allocated outside Zoltan_Color
+  int *partialD2;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
   
   /* PARAMETER SETTINGS */
   
