@@ -42,6 +42,7 @@ using namespace std;
 
 #include "zoltan_cpp.h"
 #include "dr_param_fileCPP.h"
+#include <strings.h>
 
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR, Zoltan &);
 static int Num_Global_Parts;

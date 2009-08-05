@@ -19,9 +19,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#ifndef _WIN32
 #include <strings.h>
-#endif
 
 #include "zoltan.h"
 #include "lb_const.h"
@@ -33,6 +31,10 @@
 #include "ha_drum.h"
 #endif
 #include "zoltan_timer.h"
+
+#ifdef _MSC_VER
+#define __func__ __FUNCTION__
+#endif
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

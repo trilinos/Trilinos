@@ -15,9 +15,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifndef _WIN32
 #include <strings.h>
-#endif
 
 #include "dr_const.h"
 #include "dr_err_const.h"

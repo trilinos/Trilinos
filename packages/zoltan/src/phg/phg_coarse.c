@@ -168,6 +168,12 @@ int Zoltan_PHG_Coarsening
   unsigned int           *hash=NULL, *lhash=NULL;
   struct Zoltan_Comm_Obj *plan=NULL;
 
+#ifdef _DEBUG1
+  int    totiden, totsize1;  
+  double t_all, t_coarse, t_redhash, t_redsize, t_userredop, t_suffle, t_sort, t_iden, t_shrink, t_mirror, t_cur;
+#endif
+
+
 
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   int time_details = (hgp->use_timers > 3);
@@ -187,8 +193,6 @@ int Zoltan_PHG_Coarsening
     ZOLTAN_TIMER_START(zz->ZTime, timer->comerge, hgc->Communicator);
 
 #ifdef _DEBUG1
-  int    totiden, totsize1;  
-  double t_all, t_coarse, t_redhash, t_redsize, t_userredop, t_suffle, t_sort, t_iden, t_shrink, t_mirror, t_cur;
 
 #ifndef _DEBUG2
   if (!hgc->myProc)

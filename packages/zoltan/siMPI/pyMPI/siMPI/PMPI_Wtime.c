@@ -16,7 +16,11 @@
 
 #include "mpi.h"
 
+#ifdef _MSC_VER
+#include <gettimeofday.c>
+#else
 #include <sys/time.h>
+#endif
 
 /* STUB */
 double PMPI_Wtime(void)

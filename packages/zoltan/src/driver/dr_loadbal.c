@@ -27,9 +27,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifndef _WIN32
 #include <strings.h>
-#endif
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -1295,7 +1293,6 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
   }
 
   STOP_CALLBACK_TIMER;
-
   return(nedges);
 }
 
@@ -1783,12 +1780,9 @@ void get_hg_size_compressed_pin_storage(
       }
     }
   }
-/*
-{int KDD; MPI_Comm_rank(MPI_COMM_WORLD, &KDD);printf("%d KDDPINS %d  LISTS %d\n", KDD, *num_pins, *num_lists);}
-*/
-
   STOP_CALLBACK_TIMER;
 }
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
