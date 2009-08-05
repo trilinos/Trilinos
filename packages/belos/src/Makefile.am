@@ -45,6 +45,7 @@ CORE_H = \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
+	$(srcdir)/BelosSimpleOutputManager.hpp \
 	$(srcdir)/BelosPseudoBlockCGIter.hpp \
 	$(srcdir)/BelosPseudoBlockCGSolMgr.hpp \
 	$(srcdir)/BelosPseudoBlockGmresIter.hpp \

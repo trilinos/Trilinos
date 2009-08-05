@@ -88,7 +88,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
   virtual MagnitudeType getTolerance() const = 0;
-  
+ 
+  //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
+  virtual const std::vector<MagnitudeType>* getTestValue() const = 0;
+ 
   //! Returns the current solution estimate that was computed for the most recent residual test.
   //! \note This method will return a null pointer if no vector was computed.
   virtual Teuchos::RCP<MV> getSolution() = 0;

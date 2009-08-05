@@ -107,7 +107,18 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   void printStatus(std::ostream& os, StatusType type) const;
 
   //@}
-  
+ 
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+
+  /** \brief Method to return description of the maximum iteration status test  */
+  std::string description() const 
+  {  
+    std::ostringstream oss; 
+    oss << "Belos::StatusTestMaxIters<>: [ " << getNumIters() << " / " << getMaxIters() << " ]"; 
+    return oss.str();
+  }
+  //@} 
 
 private:
 

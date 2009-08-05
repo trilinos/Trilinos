@@ -148,7 +148,10 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Returns the maximum number of iterations set in the constructor.
-  ComboType getComboType() const {return(type_);};
+  ComboType getComboType() const {return(type_);}
+
+  //! Returns the vector of status tests
+  st_vector getStatusTests() {return(tests_);}
 
   //@}
 

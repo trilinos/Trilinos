@@ -234,10 +234,54 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
    * to get the scaling std::vector.
    */
   StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP>* iSolver);
+  //@}
+
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+
+  /** \brief Method to return description of the maximum iteration status test  */
+  std::string description() const
+  {
+    std::ostringstream oss;
+    oss << "Belos::StatusTestGenResNorm<>: " << resFormStr();
+    oss << ", tol = " << tolerance_;
+    return oss.str();
+  }
+  //@}
 
  protected:
 
  private:
+
+  //! @name Private methods.
+  //@{
+  /** \brief Description of current residual form */
+  std::string resFormStr() const
+  {
+    std::ostringstream oss;
+    oss << "(";
+    oss << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
+    oss << ((restype_==Explicit) ? " Exp" : " Imp");
+    oss << " Res Vec) ";
+    if (scaletype_!=None)
+      oss << "/ ";
+    if (scaletype_==UserProvided)
+      oss << " (User Scale)";
+    else {
+      oss << "(";
+      oss << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
+      if (scaletype_==NormOfInitRes)
+        oss << " Res0";
+      else if (scaletype_==NormOfPrecInitRes)
+        oss << " Prec Res0";
+      else
+        oss << " RHS ";
+      oss << ")";
+    }
+    return oss.str();
+  }
+
+  //@}
 
   //! @name Private data members.
   //@{ 
@@ -521,25 +565,7 @@ void StatusTestGenResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent)
   for (int j = 0; j < indent; j ++)
     os << ' ';
   printStatus(os, status_);
-  os << "(";
-  os << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
-  os << ((restype_==Explicit) ? " Exp" : " Imp");
-  os << " Res Vec) ";
-  if (scaletype_!=None)
-    os << "/ ";
-  if (scaletype_==UserProvided)
-    os << " (User Scale)";
-  else {
-    os << "(";
-    os << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
-    if (scaletype_==NormOfInitRes)
-      os << " Res0";
-    else if (scaletype_==NormOfPrecInitRes)
-      os << " Prec Res0";
-    else
-      os << " RHS ";
-    os << ")";
-  }
+  os << resFormStr();
   if (status_==Undefined)
     os << ", tol = " << tolerance_ << std::endl;
   else {

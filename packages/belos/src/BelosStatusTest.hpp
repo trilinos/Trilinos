@@ -39,6 +39,7 @@
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
 #include "BelosConfigDefs.hpp"
+#include "Teuchos_Describable.hpp"
 
   /*! 
     \class Belos::StatusTest
@@ -62,7 +63,7 @@ namespace Belos {
   //@}
 
 template <class ScalarType, class MV, class OP>
-class StatusTest {
+class StatusTest : public Teuchos::Describable {
 
  public:
    //! @name Constructors/destructors
