@@ -35,6 +35,12 @@
  */
 
 namespace Intrepid {
+
+  static int idx(int p, int q,int r);
+  template<typename Scalar>
+  static void jrc( const Scalar &alpha , const Scalar &beta , 
+		   const int &n ,
+		   Scalar &an , Scalar &bn, Scalar &cn );
   
 template<class Scalar, class ArrayScalar>
 Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TET_Cn_FEM_ORTH( int degree )
@@ -94,45 +100,21 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
                                                       this -> getCardinality() );
 #endif
   const int deg = this->getDegree();
-  const int card = this->getCardinality();
-  const int np = inputPoints.dimension(0);
   
   switch (operatorType) {
   case OPERATOR_VALUE:
     {
-      Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::tabulate( inputPoints ,
-                                                                  deg ,
-                                                                  outputValues );
+      TabulatorTet<Scalar,ArrayScalar,0>::tabulate( outputValues ,
+						    deg ,
+						    inputPoints );
     }
     break;
   case OPERATOR_GRAD:
   case OPERATOR_D1:
     {
-      // create FC of AD points
-      FieldContainer<Sacado::Fad::DFad<Scalar> > 
-        dInputPoints(inputPoints.dimension(0),inputPoints.dimension(1));
-      for (int i=0;i<np;i++) {
-        for (int j=0;j<inputPoints.dimension(1);j++) {
-          dInputPoints(i,j) = Sacado::Fad::DFad<Scalar>( inputPoints(i,j) );
-          dInputPoints(i,j).diff(j,inputPoints.dimension(1));
-        }
-      }
-      
-      // create temporary FieldContainer over AD type for tabulate results
-      FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
-      
-      // tabulate into that FC
-      Basis_HGRAD_TET_Cn_FEM_ORTH<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> > >::tabulate( dInputPoints ,
-                                                                                                  deg ,
-                                                                                                  dResult );  
-      // copy each term into outputValues
-      for (int i=0;i<card;i++) {
-        for (int j=0;j<np;j++) {
-          for (int k=0;k<3;k++) {
-            outputValues(i,j,k) = dResult(i,j).dx(k);
-          }
-        }
-      }
+      TabulatorTet<Scalar,ArrayScalar,1>::tabulate( outputValues ,
+						    deg ,
+						    inputPoints );
     }
     break;
   default:
@@ -153,9 +135,9 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar&   
 }
 
 template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScalar& z ,
-							    const int n ,
-							    ArrayScalar & poly_val )
+void TabulatorTet<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
+						   const int deg ,
+						   const ArrayScalar &z )
 {
   const int np = z.dimension( 0 );
   int idxcur;
@@ -179,39 +161,39 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
   // constant term
   idxcur = idx(0,0,0);
   for (int i=0;i<np;i++) {
-    poly_val(idxcur,i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1) + z(i,2) - z(i,2);
+    outputValues(idxcur,i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1) + z(i,2) - z(i,2);
   }
   
   // D^{1,0,0}
   idxcur = idx(1,0,0);
   for (int i=0;i<np;i++) {
-    poly_val(idxcur,i) = f1[i];
+    outputValues(idxcur,i) = f1[i];
   }
   
   // p recurrence
-  for (int p=1;p<n;p++) {
+  for (int p=1;p<deg;p++) {
     Scalar a1 = (2.0 * p + 1.0) / ( p + 1.0);
     Scalar a2 = p / ( p + 1.0 );
     int idxp = idx(p,0,0);
     int idxpp1 = idx(p+1,0,0);
     int idxpm1 = idx(p-1,0,0);
     for (int i=0;i<np;i++) {
-      poly_val(idxpp1,i) = a1 * f1[i] * poly_val(idxp,i) - a2 * f2[i] * poly_val(idxpm1,i);
+      outputValues(idxpp1,i) = a1 * f1[i] * outputValues(idxp,i) - a2 * f2[i] * outputValues(idxpm1,i);
     }
   }
   // q = 1
-  for (int p=0;p<n;p++) {
+  for (int p=0;p<deg;p++) {
     int idx0 = idx(p,0,0);
     int idx1 = idx(p,1,0);
     for (int i=0;i<np;i++) {
-      poly_val(idx1,i) = poly_val(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) +
+      outputValues(idx1,i) = outputValues(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) +
 					      0.5 * ( 2.0 + 3.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) );
     }
   }
   
   // q recurrence
-  for (int p=0;p<n-1;p++) {
-    for (int q=1;q<n-p;q++) {
+  for (int p=0;p<deg-1;p++) {
+    for (int q=1;q<deg-p;q++) {
       Scalar aq,bq,cq;
 
       jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
@@ -219,34 +201,34 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
       int idxpq = idx(p,q,0);
       int idxpqm1 = idx(p,q-1,0);
       for (int i=0;i<np;i++) {
-	poly_val(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * poly_val(idxpq,i) 
-	  - ( cq * f5[i] ) * poly_val(idxpqm1,i);
+	outputValues(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * outputValues(idxpq,i) 
+	  - ( cq * f5[i] ) * outputValues(idxpqm1,i);
       }
     }
   }
   
   // r = 1
-  for (int p=0;p<n;p++) {
-    for (int q=0;q<n-p;q++) {
+  for (int p=0;p<deg;p++) {
+    for (int q=0;q<deg-p;q++) {
       int idxpq1 = idx(p,q,1);
       int idxpq0 = idx(p,q,0);
       for (int i=0;i<np;i++) {
-	poly_val(idxpq1,i) = poly_val(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + 
+	outputValues(idxpq1,i) = outputValues(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + 
 								    p ) * (2.0*z(i,2)-1.0) );
       }
     }
   }
   // general r recurrence
-  for (int p=0;p<n-1;p++) {
-    for (int q=0;q<n-p-1;q++) {
-      for (int r=1;r<n-p-q;r++) {
+  for (int p=0;p<deg-1;p++) {
+    for (int q=0;q<deg-p-1;q++) {
+      for (int r=1;r<deg-p-q;r++) {
 	Scalar ar,br,cr;
 	int idxpqrp1 = idx(p,q,r+1);
 	int idxpqr = idx(p,q,r);
 	int idxpqrm1 = idx(p,q,r-1);
-	jrc(2.0*p+2.0*q+2.0,0.0,r,ar,br,cr);
+	jrc((Scalar)(2.0*p+2.0*q+2.0),(Scalar)(0.0),r,ar,br,cr);
 	for (int i=0;i<np;i++) {
-	  poly_val(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * poly_val( idxpqr , i ) - cr * poly_val(idxpqrm1,i);
+	  outputValues(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * outputValues( idxpqr , i ) - cr * outputValues(idxpqrm1,i);
 	}
       }
     }
@@ -257,18 +239,48 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
 }
 
 
+template<typename Scalar, typename ArrayScalar>
+void TabulatorTet<Scalar,ArrayScalar,1>::tabulate( ArrayScalar &outputValues ,
+						   const int deg ,
+						   const ArrayScalar &z ) 
+{
+  const int np = z.dimension(0);
+  const int card = outputValues.dimension(0);
+  FieldContainer<Sacado::Fad::DFad<Scalar> > dZ( z.dimension(0) , z.dimension(1) );
+  for (int i=0;i<np;i++) {
+    for (int j=0;j<3;j++) {
+      dZ(i,j) = Sacado::Fad::DFad<Scalar>( z(i,j) );
+      dZ(i,j).diff(j,3);
+    }
+  }
+  FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
 
-template<class Scalar, class ArrayScalar>
-int Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::idx(int p , int q, int r)
+  TabulatorTet<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,0>::tabulate( dResult ,
+												  deg ,
+												  dZ );
+
+  for (int i=0;i<card;i++) {
+    for (int j=0;j<np;j++) {
+      for (int k=0;k<3;k++) {
+	outputValues(i,j,k) = dResult(i,j).dx(k);
+      }
+    }
+  }
+
+  return;
+
+}
+
+int idx(int p , int q, int r)
 {
   return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;
 }
 
 
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::jrc( const Scalar &alpha , const Scalar &beta , 
-							   const int &n ,
-							   Scalar &an , Scalar &bn, Scalar &cn )
+template<class Scalar>
+void jrc( const Scalar &alpha , const Scalar &beta , 
+	  const int &n ,
+	  Scalar &an , Scalar &bn, Scalar &cn )
 {
   an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
     / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );

@@ -28,13 +28,13 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TET_C1_FEM.hpp
+/** \file   Intrepid_HGRAD_TET_Cn_FEM.hpp
     \brief  Header file for the Intrepid::HGRAD_TET_Cn_FEM_ORTH class.
     \author Created by Robert Kirby
 */
 
-#ifndef INTREPID_HGRAD_TET_C1_FEM_ORTHHPP
-#define INTREPID_HGRAD_TET_C1_FEM_ORTHHPP
+#ifndef INTREPID_HGRAD_TET_Cn_FEM_ORTHHPP
+#define INTREPID_HGRAD_TET_Cn_FEM_ORTHHPP
 
 #include "Intrepid_Basis.hpp"
 #include "Sacado.hpp"
@@ -104,31 +104,37 @@ public:
                  const ArrayScalar &    cellVertices,
                  const EOperator        operatorType = OPERATOR_VALUE) const;
 
-  /** \brief Calculates tetrahedral orthogonal expansions
-        at a range of input points 
-        
-        \param np       [in]    - number of input points
-        \param z        [in]    - 2d array of points z(pt,2)
-        \param n        [in]    - the maximum polynomial degree tabulated
-        \param poly_val [out]   - 2d array poly_val((n+1)(n+2)/2,np)
-
-       \li The ScalarArray types must support (i,j) indexing 
-       and a dimension(i) operation.
-
-       \li this can be used by other functions without instantiating
-       a basis of a partiular order.
-    */
-
-  static void tabulate( const ArrayScalar& z ,
-			const int n ,
-			ArrayScalar & poly_val );
-
-  static inline int idx(int p, int q, int r);
-
-  static void jrc( const Scalar &alpha , const Scalar &beta , const int &n ,
-		   Scalar &an , Scalar &bn, Scalar &cn );
-
 };
+
+template<typename Scalar,typename ArrayScalar, unsigned derivOrder>
+class TabulatorTet
+{
+public:
+  static void tabulate( ArrayScalar & outputValues ,
+			const int deg ,
+			const ArrayScalar &inputPoints );
+};
+  
+template<typename Scalar,typename ArrayScalar>
+class TabulatorTet<Scalar,ArrayScalar,0>
+{
+public:
+  static void tabulate( ArrayScalar & outputValues ,
+			const int deg ,
+			const ArrayScalar &inputPoints );
+    
+};
+
+template<typename Scalar,typename ArrayScalar>
+class TabulatorTet<Scalar,ArrayScalar,1>
+{
+public:
+  static void tabulate( ArrayScalar & outputValues ,
+			const int deg ,
+			const ArrayScalar &inputPoints );
+    
+};
+
 
 
 }// namespace Intrepid

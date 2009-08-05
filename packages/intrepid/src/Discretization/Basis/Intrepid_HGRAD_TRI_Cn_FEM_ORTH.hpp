@@ -33,8 +33,8 @@
     \author Created by Robert Kirby
 */
 
-#ifndef INTREPID_HGRAD_TRI_C1_FEM_ORTHHPP
-#define INTREPID_HGRAD_TRI_C1_FEM_ORTHHPP
+#ifndef INTREPID_HGRAD_TRI_Cn_FEM_ORTHHPP
+#define INTREPID_HGRAD_TRI_Cn_FEM_ORTHHPP
 
 #include "Intrepid_Basis.hpp"
 #include "Sacado.hpp"
