@@ -31,8 +31,10 @@ int PMPI_Recv (void* message, int count, MPI_Datatype datatype, int source,
     /* Look up the send that matches this receive      */
     /* ----------------------------------------------- */
     index = _MPI_Buff_Find(tag, comm);
-    if (index == _MPI_NOT_OK) return MPI_ERR_TAG;
-        
+    if (index == _MPI_NOT_OK) {
+      return MPI_ERR_TAG;  /* this return value is relied upon by some    */
+    }                      /* internal calls to indicate no matching send */
+    
     message_size = _MPI_calculateSize(_MPI_DATA_BUFF[index].count,
                                       _MPI_DATA_BUFF[index].type);
 

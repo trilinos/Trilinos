@@ -19,6 +19,9 @@
 extern "C" {
 #endif
 
+#define MPI_VERSION             1
+#define MPI_SUBVERSION          2
+
 typedef int MPI_Datatype;
 
 #define MPI_CHAR		( (MPI_Datatype) 1001)
@@ -81,7 +84,7 @@ typedef int MPI_Group;
 
 /* Results of the compare Operations */
 
-#define MPI_INDENT		(111)
+#define MPI_IDENT		(111)
 #define MPI_CONGRUENT		(222)
 #define MPI_SIMILAR		(333)
 #define MPI_UNEQUAL		(444)
@@ -156,6 +159,7 @@ typedef struct _MPI_REQUEST_OBJECT {
   MPI_Comm comm;
   int send;
   int valid;
+  int cancel;  /* true if this request was cancelled */
 } _MPI_REQUEST_OBJECT;
 
 typedef _MPI_REQUEST_OBJECT *MPI_Request;
@@ -182,6 +186,22 @@ typedef int MPI_Info;
 typedef int MPI_Offset;
 typedef int MPI_Handle_enum;
 typedef int MPI_Handle_type;
+
+#define MPI_FILE_NULL ((MPI_File)(-1))
+#define MPI_INFO_NULL ((MPI_Info)(-1))
+
+#define MPI_MODE_RDONLY              2
+#define MPI_MODE_RDWR                8
+#define MPI_MODE_WRONLY              4
+#define MPI_MODE_CREATE              1
+#define MPI_MODE_EXCL               64
+#define MPI_MODE_DELETE_ON_CLOSE    16
+#define MPI_MODE_UNIQUE_OPEN        32
+#define MPI_MODE_APPEND            128
+#define MPI_MODE_SEQUENTIAL        256
+
+#define MPI_MAX_INFO_KEY       255
+#define MPI_MAX_INFO_VAL      1024
 
 typedef int MPI_Error_Class;
 

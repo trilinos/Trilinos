@@ -19,8 +19,6 @@ int PMPI_Recv (void* message, int count, MPI_Datatype datatype, int source, int 
 int PMPI_Irecv (void* message, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request* request);
 int PMPI_Isend (void* message, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request* request);
 
-int PMPI_Get_count (MPI_Status* status, MPI_Datatype datatype, int* count);
-
 int PMPI_Bsend (void* message, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 int PMPI_Rsend (void* message, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
 int PMPI_Ssend (void* message, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm);
@@ -460,25 +458,5 @@ int PMPI_Waitsome(
         int *outcount, 
         int array_of_indices[], 
         MPI_Status array_of_statuses[] );
-double PMPI_Wtick();
-double PMPI_Wtime();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+double PMPI_Wtick(void);
+double PMPI_Wtime(void);

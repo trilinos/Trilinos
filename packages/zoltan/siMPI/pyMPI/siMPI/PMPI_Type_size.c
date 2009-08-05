@@ -17,8 +17,10 @@
 int PMPI_Type_size ( MPI_Datatype datatype, int *size )
 {
   int index;
-  if ( _MPI_BasicType(datatype) == MPI_SUCCESS )
-    return _MPI_getSize(datatype);
+  *size = 0;
+  if ( _MPI_BasicType(datatype) == MPI_SUCCESS ) {
+    *size = _MPI_getSize(datatype);
+  }
   else
   {
     index = _MPI_FindType (datatype);
@@ -27,7 +29,8 @@ int PMPI_Type_size ( MPI_Datatype datatype, int *size )
       _MPI_ERR_ROUTINE (MPI_ERR_TYPE, "MPI_TYPE_SIZE: datatype error");
       MPI_Abort (MPI_COMM_NULL, MPI_ERR_TYPE); 
     }
-    return _MPI_TYPE_LIST[index].size;
+    *size = _MPI_TYPE_LIST[index].size;
   }
+  return MPI_SUCCESS;
 }
 

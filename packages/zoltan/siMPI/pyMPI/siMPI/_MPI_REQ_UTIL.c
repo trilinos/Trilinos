@@ -73,6 +73,7 @@ MPI_Request _MPI_New_Request(void* buffer,
   request->comm = comm;
   request->send = send;
   request->valid = _MPI_VALID;
+  request->cancel = 0;  /* false */
 
   return request;
 }
@@ -86,6 +87,7 @@ int _MPI_Req_Invalid (MPI_Request request) {
   request->comm = MPI_COMM_NULL;
   request->send = _MPI_NOT_VALID;
   request->valid = _MPI_NOT_VALID;
+  request->cancel = 0;  /* false */
 
   return MPI_SUCCESS;
 }

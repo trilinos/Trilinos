@@ -45,9 +45,18 @@ int PMPI_Wait(MPI_Request* request, MPI_Status* status) {
                        (*request)->tag,
                        (*request)->comm,
                        &recv_status); 
-    if (retval != MPI_SUCCESS) return retval;
+    if ( retval == MPI_ERR_TAG && (*request)->cancel )
+    {
+      /* no matching send and the recv request has been cancelled */
+      _MPI_Req_Invalid((*request));
+      *request = MPI_REQUEST_NULL;
+      return MPI_SUCCESS;
+    }
+    else if (retval != MPI_SUCCESS) {
+      return retval;
+    }
   }
-
+  
   /* Copy in the status */
   if ( status && status != MPI_STATUS_IGNORE) {
     status->MPI_SOURCE = _MPI_RANK; 
@@ -59,7 +68,7 @@ int PMPI_Wait(MPI_Request* request, MPI_Status* status) {
       status->__count = recv_status.__count;
     }
   }
-
+  
   /* ----------------------------------------------- */
   /* Mark the request available in the pool and then */
   /* write REQUEST_NULL back into the original req   */

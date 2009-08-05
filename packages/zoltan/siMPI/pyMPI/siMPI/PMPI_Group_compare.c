@@ -14,10 +14,18 @@
 
 #include "mpi.h"
 
-/* STUB */
 int PMPI_Group_compare ( MPI_Group group1, MPI_Group group2, int *result )
 {
-  fprintf(stderr,"%s:%d: NOT IMPLEMENTED\n",__FILE__,__LINE__);
-  return MPI_Abort((MPI_Comm)NULL, MPI_UNDEFINED); 
+  _MPI_COVERAGE();
+  *result = MPI_UNEQUAL;
+  if ( _MPI_Group_check(group1) == MPI_SUCCESS &&
+       _MPI_Group_check(group2) == MPI_SUCCESS )
+  {
+    _MPI_COVERAGE();
+    if ( group1 == group2 )
+      *result = MPI_IDENT;
+    return MPI_SUCCESS;
+  }
+  return MPI_ERR_GROUP;
 }
 

@@ -14,16 +14,25 @@
 
 #include "mpi.h"
 
-/* STUB */
 int PMPI_Test ( 
         MPI_Request  *request,
         int          *flag,
         MPI_Status   *status)
 {
+  int err;
+  
+  /* defer to the code in Wait() */
+  err = PMPI_Wait(request,status);
+  
+  if ( err == MPI_ERR_TAG )
+  {
+    /* could not match the request up, so assume not done */
+    *flag = 0;
+    return MPI_SUCCESS;
+  }
+  
   /* Flag indicates message was sent */
   if ( flag ) *flag = 1;
-
-  /* Just defer to the code in Wait() */
-  return PMPI_Wait(request,status);
+  
+  return err;
 }
-
