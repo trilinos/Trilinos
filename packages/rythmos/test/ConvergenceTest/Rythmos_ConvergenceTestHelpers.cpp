@@ -27,7 +27,10 @@
 //@HEADER
 
 #include "Rythmos_ConvergenceTestHelpers.hpp"
+#ifdef _MSC_VER
 #include "winmath.h"
+#endif
+
 namespace Rythmos {
 
 
