@@ -7,7 +7,7 @@ rem cygwin CVS needs to know to use ssh
 set CVS_RSH=C:/cygwin/bin/ssh.exe
 rem Driver script for dashboards on Corrin
 rem Set location of CTEST_EXE, and CVS_EXE
-set CVS_EXE="C:\cygwin\bin\cvs.exe"
+set CVS_EXE=C:\cygwin\bin\cvs.exe
 set CTEST_EXE="c:\hoffman\My Builds\CMake-build26-rel\bin\ctest.exe"
 
 rem Set the base directory which is one above where Trilinos will be 
@@ -20,7 +20,8 @@ call "C:\Program Files\Microsoft Visual Studio 9.0\Common7\Tools\vsvars32.bat"
 
 rem change into the basedir
 cd %BASEDIR%
-rem checkout the basics from Trilinos needed to run the dashboard
+rem checkout the basics from Trilinos needed to run the dashboard including
+rem this script.
 %CVS_EXE% -q -d :ext:software.sandia.gov:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 
 rem Now run ctest on each of the ctest build scripts for this machine

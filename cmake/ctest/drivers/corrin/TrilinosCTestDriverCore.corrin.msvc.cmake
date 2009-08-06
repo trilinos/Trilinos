@@ -11,7 +11,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET( CVS_EXECUTABLE "C:/cygwin/bin/cvs" )
+  # convert CVS_EXE path to a cmake style path and store
+  # in CVS_EXECUTABLE. CVS_EXE is an environment variable
+  # that should be set before running this script.
+  FILE(TO_CMAKE_PATH "$ENV{CVS_EXE}" CVS_EXECUTABLE)
   SET( CTEST_CMAKE_GENERATOR "NMake Makefiles")
   SET( CTEST_BUILD_FLAGS " -i" )
   SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON )
