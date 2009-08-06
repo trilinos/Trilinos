@@ -516,8 +516,8 @@ public:
                and 
         \f[
                 R = \left\{\begin{array}{rl} 
-                    \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
-                      [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
+                    \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+                      [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
                     \end{array}\right.
         \f]
                 Because the faces of all reference cells are always affine images of \e R , 
@@ -534,6 +534,63 @@ public:
                                          ArrayTypeOut &                refFaceTanV,
                                          const int &                   faceOrd,
                                          const shards::CellTopology &  parentCell);
+    
+    
+    /** \brief  Computes a constant (non-normalized) normal vector to the specified side of a 2D or a  
+                3D reference cell. A side is defined as a subcell of dimension one less than that of its
+                parent cell. Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
+                are 2-subcells (faces).
+      
+                Returns rank-1 array with dimension (D), D = 2 or 3 such that
+        \f[
+                {refSideNormal}(*) = 
+                \left\{\begin{array}{rl} 
+                    \displaystyle
+                    \left({\partial\hat{\Phi}_i(t)\over\partial t}\right)^{\perp} 
+                                                              & \mbox{for 2D parent cells} \\[2ex]
+                    \displaystyle
+                    {\partial\hat{\Phi}_{i}\over\partial u} \times 
+                    {\partial\hat{\Phi}_{i}\over\partial v}   & \mbox{for 3D parent cells} 
+                \end{array}\right.
+        \f]
+                where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ is the parametrization map of 
+                the specified reference side \f$\hat{\mathcal S}_i\f$ given by
+        \f[
+                \hat{\Phi}_i(u,v) = 
+                  \left\{\begin{array}{rl}
+                    (\hat{x}(t),\hat{y}(t))                   & \mbox{for 2D parent cells} \\[1ex]
+                    (\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))  & \mbox{for 3D parent cells}
+                \end{array}\right.
+          
+        \f]
+                For sides of 2D cells \e R=[-1,1] and for sides of 3D cells 
+        \f[
+                R = \left\{\begin{array}{rl} 
+                \{(0,0),(1,0),(0,1)\}   & \mbox{if $\hat{\mathcal S}_i$ is Triangle} \\[1ex]
+                    [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral} \,.
+                \end{array}\right.
+        \f]
+                Because the sides of all reference cells are always affine images of \e R , 
+                the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization maps 
+                are linear and the side normal is a constant vector.  
+
+        \remark
+              - For 3D cells the reference side normal coincides with the face normal computed by
+                CellTools<Scalar>::getReferenceFaceNormal and these two methods are completely equivalent.
+              - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}=(t_2,-t_1)\f$
+                where \f$\hat{{\bf t}}=(t_1,t_2)\f$ is the tangent vector computed by 
+                CellTools<Scalar>::getReferenceEdgeTangent. Therefore, the pair 
+                \f$(\hat{{\bf n}},\hat{{\bf t}})\f$ is positively oriented.
+
+        \param  refSideNormal     [out] - rank-1 array (D) with (constant) side normal
+        \param  sideOrd           [in]  - ordinal of the side whose normal is computed
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+*/
+    template<class ArrayTypeOut>
+    static void getReferenceSideNormal(ArrayTypeOut &                refSideNormal,
+                                       const int &                   sideOrd,
+                                       const shards::CellTopology &  parentCell);
+
     
     
     
@@ -654,6 +711,70 @@ public:
                                         const ArrayTypeIn &           worksetJacobians,
                                         const int &                   worksetFaceOrd,
                                         const shards::CellTopology &  parentCell);
+    
+    
+    
+    /** \brief  Computes (non-normalized) normal vectors to physical sides in a side workset 
+                \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. For every side in the workset the normals are 
+                computed at the points \f${\bf x}_p = F_c(\hat{\Phi}_i(P_p))\in\mathcal{S}_{c,i}\f$ 
+                that are images of points from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.      
+      
+                Returns rank-3 array with dimensions (C,P,D), D = 2 or 3, such that 
+        \f[
+                {sideNormals}(c,p,d) = 
+                  \left\{\begin{array}{crl} 
+                    \displaystyle
+                    \left(DF_c(\hat{\Phi}_i(t_p))\cdot 
+                    {\partial{\hat{\Phi}}_{i}(t_p)\over\partial t}\right)^{\perp} &  t_p\in R 
+                                                                & \mbox{for 2D parent cells} \\[2ex]
+                    \displaystyle
+                    \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u}\right) \times
+                    \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial v}\right) \,;
+                    & (u_p, v_p) \in R                          & \mbox{for 3D parent cells}
+                \end{array}\right.
+         \f]
+                In this formula:
+        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical side \f${\mathcal S}_{c,i}\f$;
+        \li     For 2D cells: \f$ {\partial{\hat{\Phi}}_{i}/\partial t}\f$ is the (constant) tangent to reference side (edge)
+                \f$\hat{\mathcal S}_i\f$; see CellTools<Scalar>::getReferenceEdgeTangent, that has the 
+                same local ordinal as the sides in the workset;
+        \li     For 3D cells: \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
+                tangents on reference side (face) \f$\hat{\mathcal S}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents,
+                that has the same local ordinal as the sides in the workset;
+        \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal S}_i\f$ is parametrization of reference side \f$\hat{\mathcal S}_i\f$;
+        \li     \e R  is the parametrization domain for reference side \f$\hat{\mathcal S}_i\f$. For
+                2D parent cells \e R=[-1,1] and for 3D parent cells
+        \f[
+                R = \left\{\begin{array}{rl} 
+                    \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal S}_i$ is Triangle} \\[1ex]
+                    [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral}
+                    \end{array}\right.
+        \f]
+
+        \remark
+              - For 3D cells the physical side normals coincides with the face normals computed by
+                CellTools<Scalar>::getPhysicalFaceNormals and these two methods are completely equivalent.
+              - For 2D cells the physical side normals are defined by \f${\bf n}=(t_2,-t_1)\f$
+                where \f${\bf t}=(t_1,t_2)\f$ are the physical edge tangents computed by 
+                CellTools<Scalar>::getPhysicalEdgeTangents. Therefore, the pair \f$({\bf n},{\bf t})\f$ is positively oriented.
+
+
+        \warning
+                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(P_p))\f$, 
+                where \f$P_p\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
+                that are located on reference side \f$\hat{\mathcal S}_i\f$ having the same local ordinal as
+                the sides in the workset.
+
+        \param  sideNormals       [out] - rank-3 array (C,P,D), normals at workset sides
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. side points
+        \param  worksetSideOrd    [in]  - side ordinal, relative to ref. cell, of the side workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+*/
+    template<class ArrayTypeOut, class ArrayTypeIn>
+    static void getPhysicalSideNormals(ArrayTypeOut &                sideNormals,
+                                       const ArrayTypeIn &           worksetJacobians,
+                                       const int &                   worksetSideOrd,
+                                       const shards::CellTopology &  parentCell);
     
     
     

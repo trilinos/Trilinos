@@ -1066,7 +1066,7 @@ void CellTools<Scalar>::getReferenceEdgeTangent(ArrayTypeOut &                re
   TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
   
-  TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < parentCell.getSubcellCount(1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < (int)parentCell.getSubcellCount(1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
   
   TEST_FOR_EXCEPTION( !( refEdgeTangent.size() == spaceDim ), std::invalid_argument,
@@ -1133,6 +1133,40 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayTypeOut &                u
     vTan(2) = faceMap(faceOrd, 2, 2);
 }
 
+
+
+template<class Scalar>
+template<class ArrayTypeOut>
+void CellTools<Scalar>::getReferenceSideNormal(ArrayTypeOut &                refSideNormal,
+                                               const int &                   sideOrd,
+                                               const shards::CellTopology &  parentCell){
+  int spaceDim  = parentCell.getDimension();
+#ifdef HAVE_INTREPID_DEBUG
+  
+  TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
+                      ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
+  
+  // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
+  TEST_FOR_EXCEPTION( !( (0 <= sideOrd) && (sideOrd < parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
+#endif  
+  
+  if(spaceDim == 2){
+    
+    // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
+    getReferenceEdgeTangent(refSideNormal, sideOrd, parentCell);
+    
+    // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
+    Scalar temp = refSideNormal(0);
+    refSideNormal(0) = refSideNormal(1);
+    refSideNormal(1) = -temp;
+  }
+  else{
+    // 3D parent cell: side = 2D subcell (face), call the face normal method.
+    getReferenceFaceNormal(refSideNormal, sideOrd, parentCell);
+  }
+}
+  
 
 
 template<class Scalar>
@@ -1284,7 +1318,47 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                fa
 }
 
 
+template<class Scalar>
+template<class ArrayTypeOut, class ArrayTypeIn>
+void CellTools<Scalar>::getPhysicalSideNormals(ArrayTypeOut &                sideNormals,
+                                               const ArrayTypeIn &           worksetJacobians,
+                                               const int &                   worksetSideOrd,
+                                               const shards::CellTopology &  parentCell){
+  int worksetSize = worksetJacobians.dimension(0);
+  int sidePtCount = worksetJacobians.dimension(1);   
+  int spaceDim  = parentCell.getDimension();
+  
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
+                      ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): two or three-dimensional parent cell required");
+  
+  // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
+  TEST_FOR_EXCEPTION( !( (0 <= worksetSideOrd) && (worksetSideOrd < parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
+#endif  
+  
+  if(spaceDim == 2){
 
+    // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
+    getPhysicalEdgeTangent(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
+    
+    // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
+    for(int cell = 0; cell < worksetSize; cell++){
+      for(int pt = 0; pt < sidePtCount; pt++){
+        Scalar temp = sideNormals(cell, pt, 0);
+        sideNormals(cell, pt, 0) = sideNormals(cell, pt, 1);
+        sideNormals(cell, pt, 1) = -temp;
+      }// for pt
+    }// for cell
+  }
+  else{
+    // 3D parent cell: side = 2D subcell (face), call the face normal method.
+    getPhysicalFaceNormals(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
+  }
+}
+  
+  
+  
 template<class Scalar>
 template<class ArrayTypeOut, class ArrayTypeIn>
 void CellTools<Scalar>::getPhysicalFaceNormals(ArrayTypeOut &                faceNormals,
