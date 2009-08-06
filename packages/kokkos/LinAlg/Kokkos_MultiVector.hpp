@@ -32,6 +32,7 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 
+#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
@@ -124,7 +125,7 @@ namespace Kokkos {
         \return Integer error code, set to 0 if successful.
         */
       int initializeValues(Ordinal numRows, Ordinal numCols, 
-                           typename Node::template buffer<Scalar>::buffer_t values,
+                           Teuchos::ArrayRCP<Scalar> values,
                            Ordinal stride)
       {
         numRows_ = numRows;
@@ -150,7 +151,7 @@ namespace Kokkos {
 
         \param i (In) The column that should be returned.
         */
-      typename Node::template buffer<Scalar>::buffer_t 
+      Teuchos::ArrayRCP<Scalar>
       getValues(Ordinal i) {
         TEST_FOR_EXCEPTION(!dataInitialized_ || // No data to return
                            i<0 || i>=numRows_, // Out of range
@@ -168,7 +169,7 @@ namespace Kokkos {
 
         \param i (In) The column that should be returned.
         */
-      typename Node::template buffer<const Scalar>::buffer_t 
+      Teuchos::ArrayRCP<const Scalar>
       getValues(Ordinal i) const {
         TEST_FOR_EXCEPTION(!dataInitialized_ || // No data to return
                            i<0 || i>=numRows_, // Out of range
@@ -199,7 +200,7 @@ namespace Kokkos {
     protected:
       Node &node_;
 
-      typename Node::template buffer<Scalar>::buffer_t contigValues_;
+      Teuchos::ArrayRCP<Scalar> contigValues_;
 
       bool dataInitialized_;
       Ordinal numRows_, numCols_;

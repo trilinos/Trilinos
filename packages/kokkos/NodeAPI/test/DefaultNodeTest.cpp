@@ -31,7 +31,7 @@ namespace {
   {
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     typedef DefaultNode::DefaultNodeType NODE;
-    NODE::buffer<int>::buffer_t x;
+    Teuchos::ArrayRCP<int> x;
     NODE &node = DefaultNode::getDefaultNode();
     out << "Default Node Type: " << Teuchos::typeName(node) << std::endl;
     int result;
@@ -57,7 +57,7 @@ namespace {
     TEST_EQUALITY(result, expectedResult);
     {
       TimeMonitor localTimer(tFree);
-      node.freeBuffer<int>(x);
+      x = Teuchos::null;
     }
     out << "allocBuffer Time: " << tAlloc.totalElapsedTime() << std::endl;
     out << "InitOp Time: " << tInit.totalElapsedTime() << std::endl;

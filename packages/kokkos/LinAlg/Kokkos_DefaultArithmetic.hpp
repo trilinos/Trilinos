@@ -45,7 +45,7 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   struct InitOp {
-    typename Node::template buffer<Scalar>::buffer_t x;
+    Teuchos::ArrayRCP<Scalar> x;
     Scalar alpha;
     inline KERNEL_PREFIX void execute(int i) const
     {
@@ -55,8 +55,8 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   struct AssignOp {
-    typename Node::template buffer<      Scalar>::buffer_t x;
-    typename Node::template buffer<const Scalar>::buffer_t y;
+    Teuchos::ArrayRCP<Scalar> x;
+    Teuchos::ArrayRCP<const Scalar> y;
     inline KERNEL_PREFIX void execute(int i) const
     {
       x[i] = y[i];
@@ -65,8 +65,8 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   struct ScaleOp {
-    typename Node::template buffer<const Scalar>::buffer_t x;
-    typename Node::template buffer<      Scalar>::buffer_t y;
+    Teuchos::ArrayRCP<const Scalar> x;
+    Teuchos::ArrayRCP<Scalar> y;
     inline KERNEL_PREFIX void execute(int i) const
     {
       Scalar tmp = y[i];
@@ -76,8 +76,8 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   struct RecipScaleOp {
-    typename Node::template buffer<const Scalar>::buffer_t x;
-    typename Node::template buffer<      Scalar>::buffer_t y;
+    Teuchos::ArrayRCP<const Scalar> x;
+    Teuchos::ArrayRCP<Scalar> y;
     inline KERNEL_PREFIX void execute(int i) const
     {
       Scalar tmp = y[i];
@@ -87,8 +87,8 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   struct GESUMOp {
-    typename Node::template buffer<const Scalar>::buffer_t x;
-    typename Node::template buffer<      Scalar>::buffer_t y;
+    Teuchos::ArrayRCP<const Scalar> x;
+    Teuchos::ArrayRCP<Scalar> y;
     Scalar alpha, beta;
     inline KERNEL_PREFIX void execute(int i) const
     {
@@ -101,7 +101,7 @@ namespace Kokkos {
   struct SumAbsOp {
     typedef  Teuchos::ScalarTraits<Scalar> SCT;
     typedef  typename SCT::magnitudeType   Magnitude;
-    typename Node::template buffer<const Scalar>::buffer_t x;
+    Teuchos::ArrayRCP<const Scalar> x;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
@@ -112,7 +112,7 @@ namespace Kokkos {
 
   template <class Scalar, class Node>
   struct SumOp {
-    typename Node::template buffer<const Scalar>::buffer_t x;
+    Teuchos::ArrayRCP<const Scalar> x;
     typedef  Scalar ReductionType;
     inline static Scalar identity() {return Teuchos::ScalarTraits<Scalar>::zero();}
     Scalar reduce(Scalar x, Scalar y) {return x+y;}
@@ -123,7 +123,7 @@ namespace Kokkos {
   struct MaxAbsOp {
     typedef  Teuchos::ScalarTraits<Scalar> SCT;
     typedef  typename SCT::magnitudeType   Magnitude;
-    typename Node::template buffer<const Scalar>::buffer_t x;
+    Teuchos::ArrayRCP<const Scalar> x;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     Magnitude reduce(Magnitude x, Magnitude y) {return std::max(x,y);}
@@ -136,7 +136,7 @@ namespace Kokkos {
   struct DotOp1 {
     typedef  Teuchos::ScalarTraits<Scalar> SCT;
     typedef  typename SCT::magnitudeType   Magnitude;
-    typename Node::template buffer<const Scalar>::buffer_t x;
+    Teuchos::ArrayRCP<const Scalar> x;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
@@ -149,7 +149,7 @@ namespace Kokkos {
   template <class Scalar, class Node>
   struct DotOp2 {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
-    typename Node::template buffer<const Scalar>::buffer_t x, y;
+    Teuchos::ArrayRCP<const Scalar> x, y;
     typedef  Scalar ReductionType;
     inline static Scalar identity() {return SCT::zero();}
     Scalar reduce(Scalar x, Scalar y) {return x+y;}
@@ -517,7 +517,7 @@ namespace Kokkos {
             mvdata[j*stride + i] = SCT::random();
           }
         }
-        node.template releaseView<Scalar>(mvdata);
+        mvdata = Teuchos::null;
       }
 
       inline static void Abs(MultiVector<Scalar,Ordinal,Node> &B, const MultiVector<Scalar,Ordinal,Node> &A) {

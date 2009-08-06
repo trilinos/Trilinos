@@ -7,7 +7,7 @@
 
 template <class Scalar, class Node>
 struct InitOp {
-  typename Node::template buffer<Scalar>::buffer_t x;
+  Teuchos::ArrayRCP<Scalar> x;
   inline KERNEL_PREFIX void execute(int i) {
     x[i] = 1;
   }
@@ -26,7 +26,7 @@ struct SumOp {
   typedef Scalar ReductionType;
   typedef Node   NodeType;
 
-  typename Node::template buffer<const Scalar>::buffer_t x;
+  Teuchos::ArrayRCP<const Scalar> x;
 
   static inline KERNEL_PREFIX ReductionType identity() {
     return (Scalar)0;

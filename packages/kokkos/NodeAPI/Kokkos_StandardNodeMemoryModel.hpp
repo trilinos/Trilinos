@@ -3,75 +3,63 @@
 
 #include <stdlib.h>
 #include <algorithm>
+#include <Kokkos_ConfigDefs.hpp>
+#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace Kokkos {
 
-class StandardMemoryModel {
-  public:
-    template <class T>
-    struct buffer {
-      typedef T* buffer_t;
-    };
+  class StandardMemoryModel {
+    public:
 
-    //@{ Memory management
+      //@{ Memory management
 
-    template <class T> inline
-    typename buffer<T>::buffer_t allocBuffer(int size) 
-    {
-      if (size > 0) {
-        return (T *)malloc(sizeof(T)*size);
+      template <class T> inline
+      Teuchos::ArrayRCP<T> allocBuffer(size_type size) {
+        if (size > 0) {
+          return Teuchos::arcp<T>(size);
+        }
+        return Teuchos::null;
       }
-      return 0;
-    }
 
-    template <class T> inline 
-    void freeBuffer(typename buffer<T>::buffer_t buff) {
-      cfree(buff);
-    }
+      template <class T> inline
+      void copyFromBuffer(const Teuchos::ArrayRCP<const T> &buffSrc, size_type src_offset, const Teuchos::ArrayView<T> &hostDest) {
+        Teuchos::ArrayRCP<T> buffDest = Teuchos::arcpFromArrayView(hostDest);
+        copyBuffers(buffDest.size(),buffSrc,src_offset,buffDest,0);
+      }
 
-    template <class T> inline
-    void copyFromBuffer(int size, typename buffer<const T>::buffer_t buff, int offset, T *ptr) {
-      copyBuffers(size,buff,offset,ptr,0);
-    }
+      template <class T> inline
+      void copyToBuffer(Teuchos::ArrayView<const T> hostSrc, Teuchos::ArrayRCP<T> buffDest, size_type dest_offset) {
+        Teuchos::ArrayRCP<const T> buffSrc = Teuchos::arcpFromArrayView(hostSrc);
+        copyBuffers<T>(buffSrc.size(),buffSrc,0,buffDest,dest_offset);
+      }
 
-    template <class T> inline
-    void copyToBuffer(int size, const T *ptr, typename buffer<T>::buffer_t buff, int offset) {
-      copyBuffers<T>(size,ptr,0,buff,offset);
-    }
+      template <class T> inline
+      void copyBuffers(size_type size, const Teuchos::ArrayRCP<const T> &buffSrc , size_type src_offset, 
+                                       const Teuchos::ArrayRCP<      T> &buffDest, size_type dest_offset) {
+        Teuchos::ArrayView<const T> av_src = buffSrc(src_offset,size);
+        Teuchos::ArrayView<T>       av_dst = buffDest(dest_offset,size);
+        std::copy(av_src.begin(),av_src.end(),av_dst.begin());
+      }
 
-    template <class T> inline
-    void copyBuffers(int size, typename buffer<const T>::buffer_t src , int src_offset, 
-                               typename buffer<      T>::buffer_t dest, int dest_offset) 
-    {
-      std::copy(src+src_offset,src+src_offset+size, dest+dest_offset);
-    }
+      template <class T> inline
+      Teuchos::ArrayRCP<const T> viewBufferConst(size_type size, Teuchos::ArrayRCP<const T> buff, size_type offset) {
+        return buff.persistingView(offset,size);
+      }
 
-    template <class T> inline
-    const T * viewBufferConst(int size, typename buffer<const T>::buffer_t buff, int offset) {
-      return buff+offset;
-    }
+      template <class T> inline
+      Teuchos::ArrayRCP<T> viewBuffer(bool writeOnly, size_type size, const Teuchos::ArrayRCP<T> &buff, size_type offset) {
+        return buff.persistingView(offset,size);
+      }
 
-    template <class T> inline
-    T * viewBuffer(bool writeOnly, int size, typename buffer<T>::buffer_t buff, int offset) {
-      return buff+offset;
-    }
+      void readyBuffers(const Teuchos::ArrayView<const void *> &buffers, Teuchos::ArrayView<void *> &ncBuffers) {
+        (void)buffers;
+        (void)ncBuffers;
+      }
 
-    template <class T> inline
-    void releaseView(T * /*view_ptr*/) {}
+      //@}
+  };
 
-    template <class T> inline
-    void releaseView(const T * /*view_ptr*/) {}
-
-    void readyBuffers(const void * const * /*buffers*/, int /*numBuffers*/,
-                            void * const * /*buffers*/, int /*numBuffers*/) {}
-
-  private:
-    void cfree(void *ptr)       {free(ptr);}
-    void cfree(const void *ptr) {free(const_cast<void *>(ptr));}
-
-    //@}
-};
-
-}
+} // end of namespace Kokkos
 
 #endif

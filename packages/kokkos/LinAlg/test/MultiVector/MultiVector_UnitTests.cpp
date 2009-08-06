@@ -32,14 +32,13 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_MultiVector.hpp"
-#include "Kokkos_Vector.hpp"
 #include "Kokkos_Version.hpp"
 
 namespace {
 
   using Kokkos::DefaultNode;
-  using Kokkos::Vector;
   using Kokkos::MultiVector;
+  using Teuchos::ArrayRCP;
 
   int N = 1000;
 
@@ -69,8 +68,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConstructor, Scalar, Ordinal )
   {
     MultiVector<Scalar,Ordinal,Node> A;
-    typename Node::template buffer<Scalar>::buffer_t 
-      buf = A.getNode().template allocBuffer<Scalar>(2*N);
+    ArrayRCP<Scalar> buf = A.getNode().template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
     {
       MultiVector<Scalar,Ordinal,Node> Acopy(A);
@@ -86,60 +84,20 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, InitializeAndAccess, Scalar, Ordinal )
   {
     MultiVector<Scalar,Ordinal,Node> A;
-    typename Node::template buffer<Scalar>::buffer_t 
-      buf = A.getNode().template allocBuffer<Scalar>(2*N);
+    ArrayRCP<Scalar> buf = A.getNode().template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
     TEST_EQUALITY_CONST(A.getNumRows(), N);
     TEST_EQUALITY_CONST(A.getNumCols(), 2);
     TEST_EQUALITY_CONST(A.getStride(), N);
     TEST_EQUALITY(A.getValues(0), buf);
     TEST_INEQUALITY(A.getValues(1), buf);
-     A.getNode().template freeBuffer<Scalar>(buf);
-   }
- 
-   // check that default constructor zeros out, for both V and MV
-   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, DefaultConstructor, Scalar, Ordinal )
-   {
-     Vector<Scalar,Ordinal,Node> a;
-     TEST_EQUALITY_CONST(a.getLength(), 0);
-     TEST_EQUALITY_CONST(a.getInc(), 0);
-   }
- 
-   // check copy constructor
-   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, CopyConstructor, Scalar, Ordinal )
-   {
-     Vector<Scalar,Ordinal,Node> a;
-     typename Node::template buffer<Scalar>::buffer_t 
-       buf = a.getNode().template allocBuffer<Scalar>(N);
-     a.initializeValues(N,buf,1);
-     {
-       Vector<Scalar,Ordinal,Node> acopy(a);
-       TEST_EQUALITY_CONST(acopy.getLength(), N);
-       TEST_EQUALITY_CONST(acopy.getInc(), 1);
-       TEST_EQUALITY(acopy.getValues(), buf);
-     }
-     a.getNode().template freeBuffer<Scalar>(buf);
-   }
- 
-   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, InitializeAndAccess, Scalar, Ordinal )
-   {
-     Vector<Scalar,Ordinal,Node> a;
-     typename Node::template buffer<Scalar>::buffer_t 
-       buf = a.getNode().template allocBuffer<Scalar>(N);
-     a.initializeValues(N,buf,1);
-     TEST_EQUALITY_CONST(a.getLength(), N);
-     TEST_EQUALITY_CONST(a.getInc(), 1);
-     TEST_EQUALITY(a.getValues(), buf);
-     a.getNode().template freeBuffer<Scalar>(buf);
-   }
+    buf = Teuchos::null;
+  }
  
  #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
        TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, DefaultConstructor, SCALAR, ORDINAL ) \
        TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConstructor   , SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, InitializeAndAccess, SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Vector,      DefaultConstructor, SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Vector,      CopyConstructor   , SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Vector,      InitializeAndAccess, SCALAR, ORDINAL )
+       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, InitializeAndAccess, SCALAR, ORDINAL )
  
  #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
           UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \

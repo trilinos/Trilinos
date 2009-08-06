@@ -123,7 +123,7 @@ namespace {
   {
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
-    typename NODE::template buffer<SCALAR>::buffer_t x;
+    Teuchos::ArrayRCP<SCALAR> x;
     NODE &node = getNode<NODE>();
     SCALAR result;
     {
@@ -157,7 +157,7 @@ namespace {
     TEST_EQUALITY(result, expectedResult);
     {
       TimeMonitor localTimer(tFree);
-      node.template freeBuffer<SCALAR>(x);
+      x = Teuchos::null;
     }
     out << "allocBuffer Time: " << tAlloc.totalElapsedTime() << std::endl;
     out << "InitOp Time: " << tInit.totalElapsedTime() << std::endl;
@@ -171,7 +171,7 @@ namespace {
     Time tNoop("Null Op");
     NODE &node = getNode<NODE>();
     NullOp<NODE> noop;
-    int red;
+    int red = 0;
     {
       TimeMonitor localTimer(tNoop);
       for (int i=0; i<NumIters; ++i) {

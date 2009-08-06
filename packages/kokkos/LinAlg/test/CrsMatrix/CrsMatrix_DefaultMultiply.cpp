@@ -45,6 +45,7 @@ namespace {
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultSparseMultiply;
   using Kokkos::size_type;
+  using Teuchos::ArrayRCP;
 
   int N = 1000;
 
@@ -98,7 +99,7 @@ namespace {
     dsm.initializeStructure(A,true);
     dsm.initializeValues(A,true);
 
-    typename Node::template buffer<Scalar>::buffer_t xdat, axdat;
+    ArrayRCP<Scalar> xdat, axdat;
     xdat  = node.template allocBuffer<Scalar>(N);
     axdat = node.template allocBuffer<Scalar>(N);
     MV X, AX;
@@ -106,16 +107,16 @@ namespace {
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init(X,1);
     dsm.Apply(false,1.0,X,0.0,AX);
-    const Scalar *axview = node.template viewBufferConst<Scalar>(N,axdat,0);
+    ArrayRCP<const Scalar> axview = node.template viewBufferConst<Scalar>(N,axdat,0);
     Scalar err = 0.0;
     for (int i=0; i<N; ++i) {
       err = axview[i] * axview[i];
     }
-    node.template releaseView<Scalar>(axview); axview = NULL;
+    axview = Teuchos::null;
     err = Teuchos::ScalarTraits<Scalar>::squareroot(err);
     TEST_EQUALITY_CONST(err, 0.0);
-    node.template freeBuffer<Scalar>(xdat);
-    node.template freeBuffer<Scalar>(axdat);
+    xdat = Teuchos::null;
+    axdat = Teuchos::null;
   }
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \

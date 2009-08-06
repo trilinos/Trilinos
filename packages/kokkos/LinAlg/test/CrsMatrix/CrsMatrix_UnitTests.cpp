@@ -41,6 +41,7 @@ namespace {
   using Kokkos::DefaultNode;
   using Kokkos::CrsMatrix;
   using Kokkos::size_type;
+  using Teuchos::ArrayRCP;
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
@@ -130,14 +131,14 @@ namespace {
     }
     TEST_EQUALITY(A.getNumRows(), N);
     TEST_EQUALITY(A.getNumEntries(), expNNZ);
-    const Scalar  * actVals = node.template viewBufferConst<Scalar >(expNNZ, A.const_values() ,0);
-    const Ordinal * actInds = node.template viewBufferConst<Ordinal>(expNNZ, A.const_indices(),0);
+    ArrayRCP<const Scalar> actVals = node.template viewBufferConst<Scalar >(expNNZ, A.const_values() ,0);
+    ArrayRCP<const Ordinal> actInds = node.template viewBufferConst<Ordinal>(expNNZ, A.const_indices(),0);
     for (size_type i=0; i<expNNZ; ++i) {
       TEST_EQUALITY(expInds[i], actInds[i]);
       TEST_EQUALITY(expVals[i], actVals[i]);
     }
-    node.releaseView(actVals); 
-    node.releaseView(actInds);
+    actVals = Teuchos::null;
+    actInds = Teuchos::null;
   }
 
  #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \

@@ -33,7 +33,6 @@
 
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_Vector.hpp"
 #include "Kokkos_Version.hpp"
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -45,9 +44,9 @@
 namespace {
 
   using Kokkos::MultiVector;
-  using Kokkos::Vector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::SerialNode;
+  using Teuchos::ArrayRCP;
   SerialNode snode;
 #ifdef HAVE_KOKKOS_TBB
   using Kokkos::TBBNode;
@@ -90,8 +89,7 @@ namespace {
     typedef MultiVector<Scalar,Ordinal,Node> MV;
     const int numVecs = 5;
     MV MV1(node), MV2(node), vec(node);
-    typename Node::template buffer<Scalar>::buffer_t 
-      buf = node.template allocBuffer<Scalar>(2*numVecs*N);
+    ArrayRCP<Scalar> buf = node.template allocBuffer<Scalar>(2*numVecs*N);
     MV1.initializeValues(N,numVecs,buf          ,N);
     MV2.initializeValues(N,numVecs,buf+numVecs*N,N);
     vec.initializeValues(N,1,buf,N);                    // MV1 collocated with vec
@@ -100,7 +98,7 @@ namespace {
     DefaultArithmetic<MV>::Multiply(MV2,(const MV)MV1); // MV2 *= MV1 => twos()
     DefaultArithmetic<MV>::Divide(MV2,(const MV)MV1);   // MV2 /= MV1 => ones()
     DefaultArithmetic<MV>::Divide(MV2,(const MV)vec);   // MV2 /= vec => ones()/twos()
-    node.template freeBuffer<Scalar>(buf);
+    buf = Teuchos::null;
   }
 
 

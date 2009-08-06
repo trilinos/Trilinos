@@ -37,9 +37,7 @@ APPEND_SET(HEADERS
     # data structures
     Kokkos_CrsMatrix.hpp
     Kokkos_MultiVector.hpp
-    Kokkos_Vector.hpp
     # computation
-    Kokkos_DefaultScaleOp.hpp
     Kokkos_DefaultArithmetic.hpp
     Kokkos_DefaultSparseMultiply.hpp
     Kokkos_DefaultSparseSolve.hpp

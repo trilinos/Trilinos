@@ -46,10 +46,10 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   struct DefaultSparseMultiplyOp {
-    typename Node::template buffer<const size_type>::buffer_t offsets;
-    typename Node::template buffer<const Ordinal>::buffer_t inds;
-    typename Node::template buffer<const  Scalar>::buffer_t x, vals;
-    typename Node::template buffer<       Scalar>::buffer_t y;
+    Teuchos::ArrayRCP<const size_type> offsets;
+    Teuchos::ArrayRCP<const Ordinal> inds;
+    Teuchos::ArrayRCP<const  Scalar> x, vals;
+    Teuchos::ArrayRCP<       Scalar> y;
     Scalar alpha, beta;
 
     inline KERNEL_PREFIX void execute(int i)
@@ -190,9 +190,6 @@ namespace Kokkos {
     Node &node_;
     mutable DefaultSparseMultiplyOp<Scalar,Ordinal,Node> op_;
 
-    inline void deleteStructure();
-    inline void deleteValues();
-
     Ordinal numRows_;
     size_type numEntries_;
 
@@ -208,29 +205,7 @@ namespace Kokkos {
   }
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::~DefaultSparseMultiply()
-  {
-    deleteStructure();
-    deleteValues();
-  }
-
-  template<class Scalar, class Ordinal, class Node>
-  void DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::deleteStructure() 
-  {
-    if (storedStructure_) {
-      node_.template freeBuffer<const size_type>(op_.offsets); // FINISH: this can't be <const T>; what to do?
-      node_.template freeBuffer<const Ordinal>(op_.inds);   // FINISH: this can't be <const T>; what to do?
-    }
-    storedStructure_ = false;
-  }
-
-  template<class Scalar, class Ordinal, class Node>
-  void DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::deleteValues() 
-  {
-    if (storedValues_) {
-      node_.template freeBuffer<const Scalar>(op_.vals);     // FINISH: this can't be <const T>; what to do?
-    }
-    storedValues_ = false;
+  DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::~DefaultSparseMultiply() {
   }
 
   template<class Scalar, class Ordinal, class Node>
@@ -239,16 +214,15 @@ namespace Kokkos {
     node_ = A.getNode();
     numRows_ = A.getNumRows();
     numEntries_ = A.getNumEntries();
-    deleteStructure();
     if (view) {
       op_.offsets = A.const_offsets();
       op_.inds = A.const_indices();
     }
     else {
-      typename NodeType::template buffer<const size_type>::buffer_t   srcoffsets;
-      typename NodeType::template buffer<const Ordinal>::buffer_t srcindices;
-      typename NodeType::template buffer<size_type>::buffer_t   nc_offsets;
-      typename NodeType::template buffer<Ordinal>::buffer_t nc_indices;
+      Teuchos::ArrayRCP<const size_type> srcoffsets;
+      Teuchos::ArrayRCP<const Ordinal>   srcindices;
+      Teuchos::ArrayRCP<size_type>       nc_offsets;
+      Teuchos::ArrayRCP<Ordinal>         nc_indices;
       srcoffsets = A.const_offsets();
       srcindices = A.const_indices();
       nc_offsets = node_.template allocBuffer<size_type>(numRows_+1);
@@ -269,13 +243,12 @@ namespace Kokkos {
     TEST_FOR_EXCEPTION(A.numRows() != numRows_ || A.numEntries() != numEntries_, std::runtime_error,
         Teuchos::typeName(*this) << "::initializevalues(A): structure of A does not match current structure.");
 #endif
-    deleteValues();
     if (view) {
       op_.vals = A.const_values();
     }
     else {
-      typename NodeType::template buffer<const  Scalar>::buffer_t srcvalues;
-      typename NodeType::template buffer<Scalar>::buffer_t nc_values;
+      Teuchos::ArrayRCP<const Scalar> srcvalues;
+      Teuchos::ArrayRCP<Scalar> nc_values;
       srcvalues = A.const_values();
       nc_values = node_.template allocBuffer<Scalar>(numEntries_);
       node_.template copyBuffers<Scalar>(numEntries_,srcvalues,0,nc_values,0);

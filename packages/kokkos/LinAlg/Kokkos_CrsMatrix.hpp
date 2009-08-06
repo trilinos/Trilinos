@@ -95,32 +95,32 @@ namespace Kokkos {
     size_type getNumEntries() const;
 
     //! Compute buffers (non-const)
-    void data(typename Node::template buffer<size_type>::buffer_t &offsets,
-              typename Node::template buffer<Ordinal>::buffer_t &indices,
-              typename Node::template buffer<Scalar>::buffer_t &values);
+    void data(Teuchos::ArrayRCP<size_type> &offsets,
+              Teuchos::ArrayRCP<  Ordinal> &indices,
+              Teuchos::ArrayRCP<   Scalar> &values);
 
     //! Compute buffers (const)
-    void data(typename Node::template buffer<const size_type>::buffer_t &offsets,
-              typename Node::template buffer<const Ordinal>::buffer_t &indices,
-              typename Node::template buffer<const Scalar>::buffer_t &values) const;
+    void data(Teuchos::ArrayRCP<const size_type> &offsets,
+              Teuchos::ArrayRCP<const Ordinal  > &indices,
+              Teuchos::ArrayRCP<const Scalar   > &values) const;
 
     //! Offset compute buffer (const)
-    typename Node::template buffer<const size_type>::buffer_t const_offsets() const;
+    Teuchos::ArrayRCP<const size_type> const_offsets() const;
 
     //! Offset compute buffer (non-const)
-    typename Node::template buffer<size_type>::buffer_t offsets();
+    Teuchos::ArrayRCP<size_type> offsets();
 
     //! Index compute buffer (const)
-    typename Node::template buffer<const Ordinal>::buffer_t const_indices() const;
+    Teuchos::ArrayRCP<const Ordinal> const_indices() const;
 
     //! Index compute buffer (non-const)
-    typename Node::template buffer<Ordinal>::buffer_t indices();
+    Teuchos::ArrayRCP<Ordinal> indices();
 
     //! Values compute buffer (const)
-    typename Node::template buffer<const Scalar>::buffer_t const_values() const;
+    Teuchos::ArrayRCP<const Scalar> const_values() const;
 
     //! Values compute buffer (non-const)
-    typename Node::template buffer<Scalar>::buffer_t values();
+    Teuchos::ArrayRCP<Scalar> values();
 
     void Print(std::ostream &out);
 
@@ -134,44 +134,39 @@ namespace Kokkos {
     Node &node_;
     Ordinal numRows_; 
     size_type numEntries_;
-    typename Node::template buffer<size_type>::buffer_t offsets_;
-    typename Node::template buffer<Ordinal>::buffer_t indices_;
-    typename Node::template buffer<Scalar>::buffer_t values_;
+    Teuchos::ArrayRCP<size_type> offsets_;
+    Teuchos::ArrayRCP<Ordinal> indices_;
+    Teuchos::ArrayRCP<Scalar> values_;
   };
 
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
   CrsMatrix<Scalar,Ordinal,Node>::CrsMatrix(Node &node)
-  : node_(node), numRows_(0), numEntries_(0) {}
-
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  CrsMatrix<Scalar,Ordinal,Node>::~CrsMatrix()
-  {
-    if (numRows_ > 0) {
-      node_.template freeBuffer<Scalar>(values_);
-      node_.template freeBuffer<Ordinal>(indices_);
-      node_.template freeBuffer<size_type>(offsets_);
-    }
+  : node_(node), numRows_(0), numEntries_(0) {
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(Ordinal N, size_type nnzEachRow)
-  {
+  CrsMatrix<Scalar,Ordinal,Node>::~CrsMatrix() {
+  }
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node>
+  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(Ordinal N, size_type nnzEachRow) {
+    using Teuchos::ArrayRCP;
     numRows_ = N;
     if (numRows_ > 0) {
       numEntries_ = 0;
       offsets_ = node_.template allocBuffer<size_type>(numRows_+1);
-      size_type *h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
+      ArrayRCP<size_type> h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
       numEntries_ = nnzEachRow*N;
       h_offsets[0] = 0;
       for (Ordinal i=1; i<numRows_; ++i) {
         h_offsets[i] = h_offsets[i-1]+nnzEachRow;
       }
       h_offsets[numRows_] = numEntries_;
-      node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
+      h_offsets = Teuchos::null;
       values_  = node_.template allocBuffer<Scalar>(numEntries_);
       indices_ = node_.template allocBuffer<Ordinal>(numEntries_);
     }
@@ -179,19 +174,19 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(Ordinal N, const size_type *nnzPerRow)
-  {
+  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(Ordinal N, const size_type *nnzPerRow) {
+    using Teuchos::ArrayRCP;
     numRows_ = N;
     if (numRows_ > 0) {
       numEntries_ = 0;
       offsets_ = node_.template allocBuffer<size_type>(numRows_+1);
-      size_type *h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
+      ArrayRCP<size_type> h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
       for (Ordinal i=0; i<numRows_; ++i) {
         h_offsets[i] = numEntries_;
         numEntries_ += nnzPerRow[i];
       }
       h_offsets[numRows_] = numEntries_;
-      node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
+      h_offsets = Teuchos::null;
       values_  = node_.template allocBuffer<Scalar>(numEntries_);
       indices_ = node_.template allocBuffer<Ordinal>(numEntries_);
     }
@@ -199,14 +194,14 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  int CrsMatrix<Scalar,Ordinal,Node>::insertEntries(Ordinal row, size_type numEntries, const Ordinal *indices, const Scalar *values)
-  {
+  int CrsMatrix<Scalar,Ordinal,Node>::insertEntries(Ordinal row, size_type numEntries, const Ordinal *indices, const Scalar *values) {
+    using Teuchos::ArrayRCP;
     if (row < 0 || row >= numRows_) return -1;
-    const size_type *h_offsets = node_.template viewBufferConst<size_type>(2,offsets_,row);
+    ArrayRCP<const size_type> h_offsets = node_.template viewBufferConst<size_type>(2,offsets_,row);
     const size_type rowNNZ = h_offsets[1]-h_offsets[0];
     if (numEntries > rowNNZ) return -2;
-    Ordinal *h_indices = node_.template viewBuffer<Ordinal>(true,rowNNZ,indices_,h_offsets[0]);
-    Scalar  *h_values  = node_.template viewBuffer<Scalar >(true,rowNNZ,values_, h_offsets[0]);
+    ArrayRCP<Ordinal> h_indices = node_.template viewBuffer<Ordinal>(true,rowNNZ,indices_,h_offsets[0]);
+    ArrayRCP<Scalar>  h_values  = node_.template viewBuffer<Scalar >(true,rowNNZ,values_, h_offsets[0]);
     size_type e = 0;
     while (e != numEntries) {
       h_indices[e] = indices[e];
@@ -218,33 +213,35 @@ namespace Kokkos {
       h_values[e] = 0;
       ++e;
     }
-    node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
-    node_.template releaseView<Ordinal>(h_indices); h_indices = NULL;
-    node_.template releaseView<Scalar >(h_values);  h_values  = NULL;
+    h_offsets = Teuchos::null;
+    h_indices = Teuchos::null;
+    h_values  = Teuchos::null;
     return 0;
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  Node & CrsMatrix<Scalar,Ordinal,Node>::getNode() const
-  { return node_; }
+  Node & CrsMatrix<Scalar,Ordinal,Node>::getNode() const { 
+    return node_; 
+  }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  Ordinal CrsMatrix<Scalar,Ordinal,Node>::getNumRows() const
-  { return numRows_; }
+  Ordinal CrsMatrix<Scalar,Ordinal,Node>::getNumRows() const { 
+    return numRows_; 
+  }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  size_type CrsMatrix<Scalar,Ordinal,Node>::getNumEntries() const
-  { return numEntries_; }
+  size_type CrsMatrix<Scalar,Ordinal,Node>::getNumEntries() const { 
+    return numEntries_; 
+  }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::data(typename Node::template buffer<size_type>::buffer_t &offsets,
-                       typename Node::template buffer<Ordinal>::buffer_t &indices,
-                       typename Node::template buffer<Scalar>::buffer_t &values)
-  {
+  void CrsMatrix<Scalar,Ordinal,Node>::data(Teuchos::ArrayRCP<size_type> &offsets,
+                                            Teuchos::ArrayRCP<Ordinal>   &indices,
+                                            Teuchos::ArrayRCP<Scalar>    &values) {
     offsets = offsets_;
     indices = indices_;
     values  = values_;
@@ -252,10 +249,9 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::data(typename Node::template buffer<const size_type>::buffer_t &offsets,
-                       typename Node::template buffer<const Ordinal>::buffer_t &indices,
-                       typename Node::template buffer<const Scalar>::buffer_t &values) const
-  {
+  void CrsMatrix<Scalar,Ordinal,Node>::data(Teuchos::ArrayRCP<const size_type> &offsets,
+                                            Teuchos::ArrayRCP<const Ordinal>   &indices,
+                                            Teuchos::ArrayRCP<const Scalar>    &values) const {
     offsets = offsets_;
     indices = indices_;
     values  = values_;
@@ -263,50 +259,43 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<const size_type>::buffer_t 
-  CrsMatrix<Scalar,Ordinal,Node>::const_offsets() const
-  {
+  Teuchos::ArrayRCP<const size_type>
+  CrsMatrix<Scalar,Ordinal,Node>::const_offsets() const {
     return offsets_;
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<size_type>::buffer_t 
-  CrsMatrix<Scalar,Ordinal,Node>::offsets()
-  {
+  Teuchos::ArrayRCP<size_type>
+  CrsMatrix<Scalar,Ordinal,Node>::offsets() {
     return offsets_;
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<const Ordinal>::buffer_t 
-  CrsMatrix<Scalar,Ordinal,Node>::const_indices() const
-  {
-    return indices_;
-  }
-
-
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<Ordinal>::buffer_t 
-  CrsMatrix<Scalar,Ordinal,Node>::indices()
-  {
+  Teuchos::ArrayRCP<const Ordinal>
+  CrsMatrix<Scalar,Ordinal,Node>::const_indices() const {
     return indices_;
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<const Scalar>::buffer_t 
-  CrsMatrix<Scalar,Ordinal,Node>::const_values() const
-  {
+  Teuchos::ArrayRCP<Ordinal>
+  CrsMatrix<Scalar,Ordinal,Node>::indices() {
+    return indices_;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Ordinal, class Node>
+  Teuchos::ArrayRCP<const Scalar>
+  CrsMatrix<Scalar,Ordinal,Node>::const_values() const {
     return values_;
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<Scalar>::buffer_t 
-  CrsMatrix<Scalar,Ordinal,Node>::values()
-  {
+  Teuchos::ArrayRCP<Scalar>
+  CrsMatrix<Scalar,Ordinal,Node>::values() {
     return values_;
   }
 
@@ -314,19 +303,20 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   void CrsMatrix<Scalar,Ordinal,Node>::Print(std::ostream &out)
   {
+    using Teuchos::ArrayRCP;
     using std::endl;
-    const size_type *h_offsets = node_.template viewBufferConst<size_type>(numRows_+1,offsets_,0);
-    const Ordinal *h_indices = node_.template viewBufferConst<Ordinal>(numEntries_,indices_,0);
-    const Scalar  *h_values  = node_.template viewBufferConst<Scalar >(numEntries_,values_ ,0);
+    ArrayRCP<const size_type> h_offsets = node_.template viewBufferConst<size_type>(numRows_+1,offsets_,0);
+    ArrayRCP<const Ordinal> h_indices = node_.template viewBufferConst<Ordinal>(numEntries_,indices_,0);
+    ArrayRCP<const Scalar> h_values  = node_.template viewBufferConst<Scalar >(numEntries_,values_ ,0);
     out << "Matrix data: " << endl;
     for (int i=0; i<numRows_; ++i) {
       for (int j=h_offsets[i]; j!=h_offsets[i+1]; ++j) {
         out << "(" << i << "," << h_indices[j] << ") : " << h_values[j] << endl;
       }
     }
-    node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
-    node_.template releaseView<Ordinal>(h_indices); h_indices = NULL;
-    node_.template releaseView<Scalar >(h_values ); h_values  = NULL;
+    h_offsets = Teuchos::null;
+    h_indices = Teuchos::null;
+    h_values = Teuchos::null;
   }
 
 } // namespace Kokkos
