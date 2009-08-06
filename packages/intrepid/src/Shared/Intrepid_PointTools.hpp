@@ -51,53 +51,171 @@ namespace Intrepid {
       \brief Utility class that provides methods for calculating
              distributions of points on different cells
 
+Simplicial lattices in PointTools are sets
+of points with certain ordering properties.
+They are used for defining degrees of freedom
+for higher order finite elements.
+
+Each lattice has an "order".  In
+general, this is the same as the cardinality
+of the polynomial space of degree "order".
+In terms of binomial coefficients, this is
+\binom{order+d,order} for the simplex in
+d dimensions.  On the line,
+the size is order+1.  On the triangle
+and tetrahedron, there are
+(order+1)(order+2)/2 and (order+1)(order+2)(order+3)/6,
+respectively.
+
+The points are ordered lexicographically from low to
+high in increasing spatial dimension.  For example,
+the line lattice of order 3 looks like:
+
+x--x--x--x
+
+where "x" denotes a point location.
+These are ordered from left to right, so that
+the points are labeled:
+
+0--1--2--3
+
+
+The triangular lattice of order 3 is 
+
+x
+|\
+| \
+x  x
+|   \
+|    \
+x  x  x
+|      \
+|       \
+x--x--x--x
+
+The ordering starts in the bottom left and
+increases first from left to right.  The ordering
+is 
+
+9
+|\
+| \
+8  7
+|   \
+|    \
+4  5  6
+|      \
+|       \
+0--1--2--3
+
+
+Tetrahedral lattices are similar but difficult to
+draw with ASCII art.
+
+Each lattice also has an "offset", which indicates
+a number of layers of points on the bounary taken away.
+All of the lattices above have a 0 offest.  In Intrepid,
+typically only offset = 0 or 1 will be used.  The offset=1
+case is used to generate sets of points properly inside
+a given simplex.  These are used, for example, to construct
+points internal to an edge or face for H(curl) and H(div)
+finite elements.
+
+For example, for a line lattice with order = 3 and
+offset = 1, the points will look like
+
+---x--x---
+
+
+and a triangle with order=3 and offset=1 will 
+contain a single point 
+
+
+.
+|\
+| \
+|  \
+|   \
+|    \
+|  x  \
+|      \
+|       \
+|--------\
+
+
+When points on lattices with nonzero offset are numbered,
+the are numbered contiguously from 0, so that the line and
+triangle above are respectively
+
+---0--1---
+
+
+.
+|\
+| \
+|  \
+|   \
+|    \
+|  0  \
+|      \
+|       \
+|--------\
+
+Additionally, two types of point distributions are currently support.
+The points may be on an equispaced lattice, which is easy to compute
+but can lead to numerical ill-conditioning in finite element bases
+and stiffness matrices.  Alternatively, the warp-blend points of
+Warburton are provided on each lattice (which are just the
+Gauss-Lobatto points on the line).
+
   */
   class PointTools {
   public:
 
-    /** \brief Converts Cartesian coordinates to barycentric coordinates
-	       on a batch of simplices (triangle or tetrahedron).  
-               The input array cartValues is (C,P,D)
-               The output array baryValues is (C,P,D+1).
-               The input array vertices is (C,D+1,D), where
-        \code
-          C - num. integration domains
-          P - number of points per cell
-          D - is the spatial dimension
-        \endcode
 
-        \param  baryValues      [out] - Output array of barycentric coords
-        \param  cartValues      [in]  - Input array of Cartesian coords
-        \param  vertices        [out] - Vertices of each cell.
+//     /** \brief Converts Cartesian coordinates to barycentric coordinates
+// 	       on a batch of simplices (triangle or tetrahedron).  
+//                The input array cartValues is (C,P,D)
+//                The output array baryValues is (C,P,D+1).
+//                The input array vertices is (C,D+1,D), where
+//         \code
+//           C - num. integration domains
+//           P - number of points per cell
+//           D - is the spatial dimension
+//         \endcode
 
-    */
-    template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-    static void cartToBary( ArrayTypeOut & baryValues ,
-	   	            const ArrayTypeIn1 & cartValues ,
-			    const ArrayTypeIn2 & vertices ,
-                            const shards::CellTopology& cellType );
+//         \param  baryValues      [out] - Output array of barycentric coords
+//         \param  cartValues      [in]  - Input array of Cartesian coords
+//         \param  vertices        [out] - Vertices of each cell.
 
-    /** \brief Converts barycentric coordinates to Cartesian coordinates
-	       on a batch of triangles.  
-               The input array baryValues is (C,P,D+1)
-               The output array cartValues is (C,P,D).
-               The input array vertices is (C,D+1,D), where
-        \code
-          C - num. integration domains
-          P - number of points per cell
-          D - is the spatial dimension
-        \endcode
+//     */
+//     template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
+//     static void cartToBary( ArrayTypeOut & baryValues ,
+// 	   	            const ArrayTypeIn1 & cartValues ,
+// 			    const ArrayTypeIn2 & vertices ,
+//                             const shards::CellTopology& cellType );
 
-        \param  baryValues      [out] - Output array of barycentric coords
-        \param  cartValues      [in]  - Input array of Cartesian coords
-        \param  vertices        [out] - Vertices of each cell.
+//     /** \brief Converts barycentric coordinates to Cartesian coordinates
+// 	       on a batch of triangles.  
+//                The input array baryValues is (C,P,D+1)
+//                The output array cartValues is (C,P,D).
+//                The input array vertices is (C,D+1,D), where
+//         \code
+//           C - num. integration domains
+//           P - number of points per cell
+//           D - is the spatial dimension
+//         \endcode
 
-    */
-    template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-    static void baryToCart( ArrayTypeOut & cartValues ,
-	   	            const ArrayTypeIn1 & baryValues ,
-			    const ArrayTypeIn2 & vertices ,
-                            const shards::CellTopology& cellType );
+//         \param  baryValues      [out] - Output array of barycentric coords
+//         \param  cartValues      [in]  - Input array of Cartesian coords
+//         \param  vertices        [out] - Vertices of each cell.
+
+//     */
+//     template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
+//     static void baryToCart( ArrayTypeOut & cartValues ,
+// 	   	            const ArrayTypeIn1 & baryValues ,
+// 			    const ArrayTypeIn2 & vertices ,
+//                             const shards::CellTopology& cellType );
 
 
     /** \brief Computes the number of pointsin a lattice of a given order

@@ -38,6 +38,7 @@
 
 namespace Intrepid {
 
+  /*
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
   void PointTools::cartToBary( ArrayTypeOut & baryValues ,
 			       const ArrayTypeIn1 & cartValues ,
@@ -132,7 +133,7 @@ namespace Intrepid {
 			std::logic_error,
 			">>> ERROR (PointTOols::baryToCartTetrahedron): not implemented" );
   }
-
+  */
   int PointTools::getLatticeSize( const shards::CellTopology& cellType ,
 				  const int order ,
 				  const int offset )

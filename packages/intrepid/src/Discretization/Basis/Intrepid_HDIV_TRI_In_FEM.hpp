@@ -29,7 +29,7 @@
 
 /** \file   Intrepid_HDIV_TRI_In_FEM.hpp
     \brief  Header file for the Intrepid::HDIV_TRI_In_FEM class.
-    \author Created by R. Kirby and P. Bochev and D. Ridzal.
+    \author Created by R. Kirby.
 */
 
 #ifndef INTREPID_HDIV_TRI_In_FEM_HPP
@@ -51,14 +51,30 @@ namespace Intrepid {
     \brief  Implementation of the default H(div)-compatible Raviart-Thomas basis of arbitrary degree  on Triangle cell 
   
             Implements nodal basis of degree n (n>=1) on the reference Triangle cell. The basis has
-            cardinality n(n+2) and spans an INCOMPLETE polynomial space. Basis functions are dual 
-            to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
-  
-  \verbatim
-  \endverbatim
+            cardinality n(n+2) and spans an INCOMPLETE polynomial
+            space of degree n. Basis functions are dual to a
+            unisolvent set of degrees-of-freedom (DoF) defined and
+            enumerated as
+	    
+	    \li The normal component on a lattice of order n+1 and
+	    offset 1 on each edge (see PointTools). This gives one point per edge in
+	    the lowest-order case.  These are the first
+	    3 * n degrees of freedom
+
+	    \li If n > 1, the x and y components at a lattice of
+	    order n+1 and offset on the triangle.  These are the rest
+	    of the degrees of freedom.
+
+
+	    If the pointType argument to the constructor specifies equispaced points, then the edge points
+	    will be equispaced on each edge and the interior points equispaced also.  If
+	    the pointType argument specifies warp-blend points, then Gauss-Lobatto points of order n
+	    are chosen on each edge and the interior of warp-blend lattice of order n+1 is chosen for
+	    the interior points.
+
   
     \remarks
-    \li     DefaultBasisFactory will select this class if the following parameters are specified:
+        DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim
   |=======================|===================================|
@@ -85,9 +101,12 @@ private:
    */
   virtual void initializeTags();
 
+  /** \brief Orthogonal basis out of which the nodal basis is
+      constructed */
   Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,FieldContainer<Scalar> > Phis;
+  /** \brief expansion coefficients of the nodal basis in terms of the
+      orthgonal one */
   FieldContainer<Scalar> coeffs;
-  FieldContainer<Scalar> latticePts;
 
 public:
   

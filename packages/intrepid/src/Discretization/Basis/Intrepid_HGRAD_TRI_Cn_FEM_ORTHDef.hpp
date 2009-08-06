@@ -101,8 +101,7 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
 #endif
   const int deg = this->getDegree();
 
-//   std::vector<void (*)(ArrayScalar &, const int , const ArrayScalar &)> tabulators;
-
+  // add more here and put in appropriate extra case statements below to enable higher derivatives.
   void (*tabulators[])(ArrayScalar &, const int, const ArrayScalar &)
     = { TabulatorTri<Scalar,ArrayScalar,0>::tabulate ,
 	TabulatorTri<Scalar,ArrayScalar,1>::tabulate ,
@@ -118,6 +117,8 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
     break;
   case OPERATOR_D1:
   case OPERATOR_D2:
+    // add more case OPEATOR_Dn statements if you've added more items to the
+    // array above.
     tabulators[operatorType-OPERATOR_D1+1]( outputValues , deg , inputPoints );
     break;
   default:

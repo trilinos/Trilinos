@@ -47,21 +47,36 @@
 namespace Intrepid {
   
 /** \class  Intrepid::Basis_HDIV_TET_In_FEM
-    \brief  Implementation of the default H(div)-compatible Raviart-Thomas basis of arbitrary degree  on Triangle cell 
-  
-            Implements nodal basis of degree n (n>=1) on the reference Tetrahedron cell. The basis has
-            cardinality ??? and spans an INCOMPLETE polynomial space. Basis functions are dual 
+    \brief  Implementation of the default H(div)-compatible
+            Raviart-Thomas basis of arbitrary degree  on Tetrahedron
+	    cell. The lowest order instance starts with n.  Implements
+	    the nodal basis of degree n the reference Tetrahedron cell. The basis has
+	    cardinality n(n+1)(n+3)/2 and spans an INCOMPLETE
+	    polynomial space of degree n. Basis functions are dual 
             to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
-  \verbatim
-  \endverbatim
-  
+	    \li The normal component on a lattice of order n+1 and
+	    offset 1 on each face (see PointTools). This gives one point per edge in
+	    the lowest-order case.  These are the first
+	    4 * (n*(n+1)/2) degrees of freedom.
+
+	    \li If n > 1, the x and y z components at a lattice of
+	    order n+2 and offset on the interior of the tetrahedron.  These are the rest
+	    of the degrees of freedom.  
+
+	    If the pointType argument to the constructor specifies equispaced points, then the face
+ 	    and interior points will be equispaced.  If
+	    the pointType argument specifies warp-blend points, the
+ 	    interior of a warp-blend lattice will be used on each face
+ 	    and also for the cell interior.
+
+
     \remarks
-    \li     DefaultBasisFactory will select this class if the following parameters are specified:
+       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim
   |=======================|===================================|
-  |  CellTopology         |  Tetrahedrond                     |
+  |  CellTopology         |  Tetrahedron                      |
   |-----------------------|-----------------------------------|
   |  EFunctionSpace       |  FUNCTION_SPACE_HDIV              |
   |-----------------------|-----------------------------------|
@@ -84,9 +99,14 @@ private:
    */
   virtual void initializeTags();
 
+  /** \brief Orthogonal basis out of which the nodal basis is
+      constructed */
   Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,FieldContainer<Scalar> > Phis_;
+
+  /** \brief expansion coefficients of the nodal basis in terms of the
+      orthgonal one */
   FieldContainer<Scalar> coeffs_;
-  FieldContainer<Scalar> latticePts_;
+
 
 public:
   

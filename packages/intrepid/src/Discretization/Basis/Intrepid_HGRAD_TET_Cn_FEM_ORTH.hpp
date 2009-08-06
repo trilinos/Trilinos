@@ -30,11 +30,11 @@
 
 /** \file   Intrepid_HGRAD_TET_Cn_FEM.hpp
     \brief  Header file for the Intrepid::HGRAD_TET_Cn_FEM_ORTH class.
-    \author Created by Robert Kirby
+    \author Created by Robert C. Kirby
 */
 
-#ifndef INTREPID_HGRAD_TET_Cn_FEM_ORTHHPP
-#define INTREPID_HGRAD_TET_Cn_FEM_ORTHHPP
+#ifndef INTREPID_HGRAD_TET_Cn_FEM_ORTH_HPP
+#define INTREPID_HGRAD_TET_Cn_FEM_ORTH_HPP
 
 #include "Intrepid_Basis.hpp"
 #include "Sacado.hpp"
@@ -45,7 +45,6 @@ namespace Intrepid {
     \brief  Implementation of the default H(grad)-compatible orthogonal basis of
             arbitrary degree on tetrahedron.
   
-  \verbatim  
     \remarks
     \li     DefaultBasisFactory will select this class if the following parameters are specified:
   \verbatim
@@ -56,7 +55,7 @@ namespace Intrepid {
   |-----------------------|-----------------------------------|
   |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
   |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
+  |  degree               |  n                                |
   |-----------------------|-----------------------------------|
   |  EBasis               |  BASIS_FEM_HIERARCHICAL           |
   |-----------------------|-----------------------------------|
@@ -65,7 +64,6 @@ namespace Intrepid {
   \endverbatim
 
     \li   All degrees of freedom are considered to be internal (ie not assembled)
-  \endverbatim
   */
   
 template<class Scalar, class ArrayScalar> 
@@ -78,6 +76,7 @@ private:
 public:
   
   /** \brief  Constructor.
+      \param  degree            [in] - the degree of polynomials contained in the basis.
    */
   Basis_HGRAD_TET_Cn_FEM_ORTH( int degree );  
   
@@ -106,29 +105,79 @@ public:
 
 };
 
+  /** \class TabulatorTet
+      \brief This is an internal class with a static member function for
+      tabulating derivatives of orthogonal expansion functions.  
+
+      It is a separate class to allow recursive templates partially specialized on
+      derivative order without throwing the HGRAD_TET_Cn_FEM_ORTH class into
+      an infinite compiler loop.
+
+      This class is intended only to be used internally by the HGRAD_TET_Cn_FEM_ORTH basis
+      to implement all the derivative orders in the Basis interface, hiding recursion
+      and calls to Sacado. 
+  */
+
 template<typename Scalar,typename ArrayScalar, unsigned derivOrder>
 class TabulatorTet
 {
 public:
+  /** \brief basic tabulate mathod evaluates the derivOrder^th derivatives
+      of the basis functions at inputPoints into outputValues.
+      
+      \param      [out] outputValues - rank 2 (if derivOrder == 0) or rank 3
+                                       array holding the result
+      \param	  [in]  deg - the degree up to which to tabulate the bases
+      \param	  [in] inputPoints - a rank 2 array containing the
+		                     points at which to evaluate the basis functions.
+   */
   static void tabulate( ArrayScalar & outputValues ,
 			const int deg ,
 			const ArrayScalar &inputPoints );
 };
   
+
+  /** \class TabulatorTet<Scalar,ArrayScalar,0>
+      \brief This is specialized on 0th derivatives to make the
+      tabulate function run through recurrence relations.
+  */
 template<typename Scalar,typename ArrayScalar>
 class TabulatorTet<Scalar,ArrayScalar,0>
 {
 public:
+  /** \brief basic tabulate mathod evaluates the basis functions at inputPoints into outputValues. 
+      
+      \param      [out] outputValues - rank 2 array (F,P) holding
+                                       the basis functions at points.
+      \param	  [in]  deg - the degree up to which to tabulate the bases
+      \param	  [in] inputPoints - a rank 2 array containing the
+		                     points at which to evaluate the basis functions.
+   */
   static void tabulate( ArrayScalar & outputValues ,
 			const int deg ,
 			const ArrayScalar &inputPoints );
     
 };
 
+  /** \class TabulatorTet<Scalar,ArrayScalar,1>
+      \brief This is specialized on 1st derivatives 
+      since it recursively calls the 0th derivative class
+      with Sacado AD types, and so the outputValues it passes
+      to that function needs to have a rank 2 rather than rank 3
+  */
 template<typename Scalar,typename ArrayScalar>
 class TabulatorTet<Scalar,ArrayScalar,1>
 {
 public:
+  /** \brief basic tabulate mathod evaluates the first derivatives
+      of the basis functions at inputPoints into outputValues.
+      
+      \param      [out] outputValues - rank 3 array (F,P,D) holding
+                                       the derivatives of basis functions at points.
+      \param	  [in]  deg - the degree up to which to tabulate the bases
+      \param	  [in] inputPoints - a rank 3 array containing the
+		                     points at which to evaluate the basis functions.
+   */
   static void tabulate( ArrayScalar & outputValues ,
 			const int deg ,
 			const ArrayScalar &inputPoints );

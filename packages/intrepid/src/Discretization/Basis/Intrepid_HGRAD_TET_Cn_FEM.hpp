@@ -49,14 +49,29 @@ namespace Intrepid {
     \brief  Implementation of the default H(grad)-compatible Lagrange basis of arbitrary degree  on Tetrahedron cell 
   
             Implements Lagrangian basis of degree n on the reference Tetrahedron cell. The basis has
-            cardinality (n+1)(n+2)(n+3)/6 and spans a COMPLETE linear polynomial space. Basis functions are dual 
-            to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
-  
-  \verbatim
-  \endverbatim
-  
-    \remarks
-    \li     DefaultBasisFactory will select this class if the following parameters are specified:
+            cardinality (n+1)(n+2)(n+3)/6 and spans a COMPLETE polynomial space of degree n. 
+	    Basis functions are dual to a unisolvent set of
+            degrees-of-freedom (DoF) defined at a lattice of order n
+            (see PointTools).  In particular, the degrees of freedom
+            are point evaluation at
+	    \li The vertices
+	    \li (n-1) points on each edge of the tetrahedron
+	    \li max((n-1)(n-2)/2,0) points on each face of the
+            tetrahedron
+	    \li max((n-1)(n-2)(n-3)/6,0) points in the interior
+	    of the tetrahedron.
+
+	    The distribution of these points is specified by the pointType argument to the class constructor.
+	    Currently, either equispaced lattice points or Warburton's warp-blend points are available.
+
+	    The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
+	    dof number 0 is at the vertex (0,0,0).  The dof increase
+	    along the lattice with points along the lines of constant
+	    x adjacent in the enumeration. 
+
+
+\remarks
+  DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim
   |=======================|===================================|
@@ -83,9 +98,18 @@ private:
    */
   virtual void initializeTags();
 
+  /** \brief  The orthogonal basis on triangles, out of which the nodal basis is constructed
+   */
   Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,FieldContainer<Scalar> > Phis;
+  /** \brief  The Vandermonde matrix with V_{ij} = phi_i(x_j), where x_j is the j_th point in the lattice
+   */
   FieldContainer<Scalar> V;
+  /** \brief  The inverse of V.  The columns of Vinv express the Lagrange basis in terms of the
+      orthogonal basis
+   */
   FieldContainer<Scalar> Vinv;
+  /** \brief stores the points at which degrees of freedom are located. 
+   */
   FieldContainer<Scalar> latticePts;
 
 public:
