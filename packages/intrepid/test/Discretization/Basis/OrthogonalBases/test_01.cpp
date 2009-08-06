@@ -30,9 +30,10 @@
 
 
 /** \file
-\brief  Unit test of FieldContainer class
-\author Created by P. Bochev and D. Ridzal.
+\brief  Unit test of orthogonal bases.  Outdated and unused
+\author Created by R. Kirby
 */
+
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -43,6 +44,10 @@
 #include <iostream>
 using namespace Intrepid;
 
+/** \brief outdated tests for orthogonal bases
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

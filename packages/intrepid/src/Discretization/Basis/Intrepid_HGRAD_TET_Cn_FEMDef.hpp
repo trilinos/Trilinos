@@ -287,6 +287,8 @@ namespace Intrepid {
 	  FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
 	  Phis.getValues( phisCur , inputPoints , operatorType );
 
+	  std::cout << phisCur << std::endl;
+
 	  for (int i=0;i<outputValues.dimension(0);i++) {
 	    for (int j=0;j<outputValues.dimension(1);j++) {
 	      for (int k=0;k<outputValues.dimension(2);k++) {

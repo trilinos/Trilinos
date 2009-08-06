@@ -60,7 +60,7 @@ Each lattice has an "order".  In
 general, this is the same as the cardinality
 of the polynomial space of degree "order".
 In terms of binomial coefficients, this is
-\binom{order+d,order} for the simplex in
+binomial(order+d,order) for the simplex in
 d dimensions.  On the line,
 the size is order+1.  On the triangle
 and tetrahedron, there are
@@ -71,17 +71,21 @@ The points are ordered lexicographically from low to
 high in increasing spatial dimension.  For example,
 the line lattice of order 3 looks like:
 
+\verbatim
 x--x--x--x
+\endverbatim
 
 where "x" denotes a point location.
 These are ordered from left to right, so that
 the points are labeled:
 
+\verbatim
 0--1--2--3
-
+\endverbatim
 
 The triangular lattice of order 3 is 
 
+\verbatim
 x
 |\
 | \
@@ -92,11 +96,13 @@ x  x  x
 |      \
 |       \
 x--x--x--x
+\endverbatim
 
 The ordering starts in the bottom left and
 increases first from left to right.  The ordering
 is 
 
+\verbatim
 9
 |\
 | \
@@ -107,7 +113,7 @@ is
 |      \
 |       \
 0--1--2--3
-
+\endverbatim
 
 Tetrahedral lattices are similar but difficult to
 draw with ASCII art.
@@ -124,13 +130,14 @@ finite elements.
 For example, for a line lattice with order = 3 and
 offset = 1, the points will look like
 
+\verbatim
 ---x--x---
-
+\endverbatim
 
 and a triangle with order=3 and offset=1 will 
 contain a single point 
 
-
+\verbatim
 .
 |\
 | \
@@ -141,15 +148,17 @@ contain a single point
 |      \
 |       \
 |--------\
-
+\endverbatim
 
 When points on lattices with nonzero offset are numbered,
 the are numbered contiguously from 0, so that the line and
 triangle above are respectively
 
+\verbatim
 ---0--1---
+\endverbatim
 
-
+\verbatim
 .
 |\
 | \
@@ -160,6 +169,7 @@ triangle above are respectively
 |      \
 |       \
 |--------\
+\endverbatim
 
 Additionally, two types of point distributions are currently support.
 The points may be on an equispaced lattice, which is easy to compute
@@ -171,53 +181,6 @@ Gauss-Lobatto points on the line).
   */
   class PointTools {
   public:
-
-
-//     /** \brief Converts Cartesian coordinates to barycentric coordinates
-// 	       on a batch of simplices (triangle or tetrahedron).  
-//                The input array cartValues is (C,P,D)
-//                The output array baryValues is (C,P,D+1).
-//                The input array vertices is (C,D+1,D), where
-//         \code
-//           C - num. integration domains
-//           P - number of points per cell
-//           D - is the spatial dimension
-//         \endcode
-
-//         \param  baryValues      [out] - Output array of barycentric coords
-//         \param  cartValues      [in]  - Input array of Cartesian coords
-//         \param  vertices        [out] - Vertices of each cell.
-
-//     */
-//     template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-//     static void cartToBary( ArrayTypeOut & baryValues ,
-// 	   	            const ArrayTypeIn1 & cartValues ,
-// 			    const ArrayTypeIn2 & vertices ,
-//                             const shards::CellTopology& cellType );
-
-//     /** \brief Converts barycentric coordinates to Cartesian coordinates
-// 	       on a batch of triangles.  
-//                The input array baryValues is (C,P,D+1)
-//                The output array cartValues is (C,P,D).
-//                The input array vertices is (C,D+1,D), where
-//         \code
-//           C - num. integration domains
-//           P - number of points per cell
-//           D - is the spatial dimension
-//         \endcode
-
-//         \param  baryValues      [out] - Output array of barycentric coords
-//         \param  cartValues      [in]  - Input array of Cartesian coords
-//         \param  vertices        [out] - Vertices of each cell.
-
-//     */
-//     template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-//     static void baryToCart( ArrayTypeOut & cartValues ,
-// 	   	            const ArrayTypeIn1 & baryValues ,
-// 			    const ArrayTypeIn2 & vertices ,
-//                             const shards::CellTopology& cellType );
-
-
     /** \brief Computes the number of pointsin a lattice of a given order
                on a simplex (currently disabled for
                other cell types).
@@ -248,8 +211,8 @@ Gauss-Lobatto points on the line).
           D - is the spatial dimension
         \endcode
 
-        \param  points      [out] - Output array of point coords
-        \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
+        \param  pts         [out] - Output array of point coords
+        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
         \param  order       [in]  - number of points per side, plus 1
 	\param  pointType   [in]  - flag for point distribution.  Currently equispaced and
                                     warp/blend points are supported
@@ -361,7 +324,7 @@ Gauss-Lobatto points on the line).
         \param  points      [out] - Output array of point coords
         \param  order       [in]  - number of points per side, plus 1
         \param  offset      [in]  - Number of points on boundary to skip
-        \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
+        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
 
     */
    template<class Scalar, class ArrayType>
@@ -383,7 +346,7 @@ Gauss-Lobatto points on the line).
         \param  points      [out] - Output array of point coords
         \param  order       [in]  - number of points per side, plus 1
         \param  offset      [in]  - Number of points on boundary to skip
-        \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
+        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
 	
     */
     template<class Scalar, class ArrayType>
@@ -471,9 +434,9 @@ Gauss-Lobatto points on the line).
 
     /** \brief interpolates Warburton's warp function on the line
         \param  order       [in]  - The polynomial order
-	\param  xnodes      [in] - vector of node locations to interpolate
-	\param  xout        [out]  - warpfunction at xout, \pm 1 roots deflated
-
+	\param  xnodes      [in]  - vector of node locations to interpolate
+	\param  xout        [in]  - warpfunction at xout, +/- 1 roots deflated
+	\param  warp        [out] - the amount to warp each point
     */
     template<class Scalar, class ArrayType>
     static void warpFactor( const int order ,
@@ -518,7 +481,16 @@ Gauss-Lobatto points on the line).
 						const int order ,
 						const int offset = 0 );
 
-    
+
+    /** \brief This is used internally to compute the tetrahedral warp-blend points one each face
+	\param order   [in] - the order of lattice
+	\param pval    [in] - the "alpha" term in the warping function
+	\param L1      [in] - the first barycentric coordinate of the input points
+	\param L2      [in] - the second barycentric coordinate of the input points
+	\param L3      [in] - the third barycentric coordinate of the input points
+	\param L4      [in] - the fourth barycentric coordinate of the input points
+	\param dxy     [out] - contains the amount to shift each point in the x and y direction 
+    */
 
   template<class Scalar, class ArrayType>
   static void warpShiftFace3D( const int order ,
@@ -529,14 +501,29 @@ Gauss-Lobatto points on the line).
 			const ArrayType &L4,
 			ArrayType &dxy);
 
+    /** \brief Used internally to evaluate the point shift for warp-blend points on faces of tets 
+	\param order   [in] - the order of lattice
+	\param pval    [in] - the "alpha" term in the warping function
+	\param L1      [in] - the first barycentric coordinate of the input points
+	\param L2      [in] - the second barycentric coordinate of the input points
+	\param L3      [in] - the third barycentric coordinate of the input points
+	\param dxy     [out] - contains the amount to shift each point in the x and y direction 
+    */
+
   template<class Scalar, class ArrayType>
   static void evalshift( const int order ,
 		  const Scalar pval ,
 		  const ArrayType &L1 ,
 		  const ArrayType &L2 ,
-		  const ArrayType &l3 ,
+		  const ArrayType &L3 ,
 		  ArrayType &dxy );
 
+    /** \brief Used internally to compute the warp on edges of a triangle in warp-blend points
+	\param warp      [out] - a 1d array containing the amount to move each point
+	\param order     [in]  - the order of the lattice 
+	\param xnodes    [in]  - the points to warp to, typically the Gauss-Lobatto points
+	\param xout      [in]  - the equispaced points on the edge
+    */
   template<class Scalar, class ArrayType>
   static void evalwarp( ArrayType &warp ,
 		 const int order ,

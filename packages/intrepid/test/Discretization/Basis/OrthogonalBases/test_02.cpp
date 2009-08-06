@@ -30,7 +30,7 @@
 
 
 /** \file
-\brief  Unit test of FieldContainer class
+\brief  Unit test of OrthogonalBases class
 \author Created by P. Bochev and D. Ridzal.
 */
 
@@ -43,6 +43,10 @@
 #include <iostream>
 using namespace Intrepid;
 
+/** \brief outdated tests for orthogonal bases
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

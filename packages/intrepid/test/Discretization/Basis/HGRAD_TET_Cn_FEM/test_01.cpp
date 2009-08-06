@@ -45,6 +45,12 @@
 #include <iostream>
 using namespace Intrepid;
 
+
+/** \brief Tests for Lagrange basis on tets.  Tests Kronecker property of basis and basic execution
+           of differentiation and dof-tab lookup
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -84,7 +90,7 @@ int main(int argc, char *argv[]) {
 
   // Let's instantiate a basis
   try {
-    const int deg = 10;
+    const int deg = 3;
     Basis_HGRAD_TET_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_WARPBLEND );
 
     // Get a lattice
@@ -144,6 +150,28 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   }
 
+  try {
+    const int deg = 3;
+    Basis_HGRAD_TET_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_EQUISPACED );
+
+    // Get a lattice
+    const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
+    const int nbf = myBasis.getCardinality();
+    FieldContainer<double> lattice( np_lattice , 3 );
+    PointTools::getLattice<double,FieldContainer<double> >( lattice , 
+							    myBasis.getBaseCellTopology() , 
+							    deg , 
+							    0 , 
+							    POINTTYPE_EQUISPACED );         
+    FieldContainer<double> vals( nbf , np_lattice , 3 );
+
+    myBasis.getValues( vals , lattice , OPERATOR_GRAD );
+
+  }
+  catch (std::exception err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  }
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

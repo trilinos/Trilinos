@@ -50,9 +50,9 @@ namespace Intrepid {
   
             Implements Lagrangian basis of degree n on the reference Tetrahedron cell. The basis has
             cardinality (n+1)(n+2)(n+3)/6 and spans a COMPLETE polynomial space of degree n. 
-	    Basis functions are dual to a unisolvent set of
+	    Nodal basis functions are dual to a unisolvent set of
             degrees-of-freedom (DoF) defined at a lattice of order n
-            (see PointTools).  In particular, the degrees of freedom
+            (see \ref PointTools).  In particular, the degrees of freedom
             are point evaluation at
 	    \li The vertices
 	    \li (n-1) points on each edge of the tetrahedron

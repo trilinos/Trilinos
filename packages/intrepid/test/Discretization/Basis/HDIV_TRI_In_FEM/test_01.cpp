@@ -45,6 +45,10 @@
 #include <iostream>
 using namespace Intrepid;
 
+/** \brief Performs a code-code comparison to FIAT for Raviart-Thomas bases on triangles (values and divs)
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

@@ -36,7 +36,30 @@
 
 namespace Intrepid {
   
+  /** \brief file-scope function for indexing from orthogonal expansion indices into linear space
+      p+q = the degree of the polynomial.
+      \param p [in] - the first index
+      \param q [in] - the second index
+  */
   static int idx(int p, int q);
+
+  /** \brief file-scope function for computing the Jacobi recurrence coefficients so that
+      \param alpha [in] - the first Jacobi weight
+      \param beta  [in] - the second Jacobi weight
+      \param n     [n]  - the polynomial degree
+      \param an    [out] - the a weight for recurrence
+      \param bn    [out] - the b weight for recurrence
+      \param cn    [out] - the c weight for recurrence
+
+      The recurrence is
+      \f[
+      P^{\alpha,\beta}_{n+1} = \left( a_n + b_n x\right) P^{\alpha,\beta}_n - c_n P^{\alpha,\beta}_{n-1}
+      \f],
+      where
+      \f[
+      P^{\alpha,\beta}_0 = 1
+      \f]					       
+  */
   template<typename Scalar>
   static void jrc( const Scalar &alpha , const Scalar &beta , 
 		   const int &n ,

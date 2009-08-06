@@ -45,6 +45,11 @@
 #include <iostream>
 using namespace Intrepid;
 
+/** \brief Tests for orthogonal basis on tets.  Tests diagonality of mass matrices
+    and does a code comparison to FIAT for values of derivatives
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

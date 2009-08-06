@@ -45,6 +45,11 @@
 #include <iostream>
 using namespace Intrepid;
 
+/** \brief Tests for Lagrange basis on triangles.  Tests Kronecker property of basis and basic execution
+           of differentiation and dof-tab lookup
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

@@ -46,6 +46,10 @@
 #include <iostream>
 using namespace Intrepid;
 
+/** \brief Performs a code-code comparison to FIAT for Nedelec bases on triangles (values and curls)
+    \param argc [in] - number of command-line arguments
+    \param argv [in] - command-line arguments
+ */
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
