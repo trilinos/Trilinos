@@ -314,7 +314,7 @@ public:
      * \param[in] name String to associate with this object
      * \param[in] clone Pointer to Cloneable object
      */
-   void addPreconditionerFactory(const std::string & name,const RCP<Cloneable> & clone);
+   static void addPreconditionerFactory(const std::string & name,const RCP<Cloneable> & clone);
 
 protected:
 
