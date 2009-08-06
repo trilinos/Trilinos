@@ -583,6 +583,8 @@ color(Teuchos::ParameterList& zoltanParamList,
   zoltanParamList_ = zoltanParamList;
   precompute();
 
+  zoltanParamList_.set("COLORING_PROBLEM", "DISTANCE-2");
+
   //Generate Load Balance
   int  num_gid_entries, num_lid_entries;
 

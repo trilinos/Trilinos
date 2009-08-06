@@ -125,7 +125,7 @@ bool probing_test(Epetra_CrsMatrix & in_mat, bool build_list){
   Teuchos::ParameterList main, zoltan;
 
   if(build_list){
-    zoltan.set("DISTANCE","2");
+//     zoltan.set("DISTANCE","2");
     main.set("ZOLTAN",zoltan);
   }
 
