@@ -175,6 +175,24 @@ APPEND_SET(SOURCES
   )
 
 #
+# src/matrix
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/matrix)
+
+APPEND_SET(NOINSTALLHEADERS
+  matrix/matrix.h
+  )
+
+APPEND_SET(SOURCES
+  matrix/matrix_build.c
+  matrix/matrix_distribute.c
+  matrix/matrix_bipart.c
+  matrix/matrix_utils.c
+  )
+
+
+#
 # src/oct
 #
 
