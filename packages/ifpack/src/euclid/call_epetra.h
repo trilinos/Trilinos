@@ -30,7 +30,8 @@
 #ifndef CALL_EPETRA_H
 #define CALL_EPETRA_H
 
-
+/* This is a true C header file to be used to call Epetra functions from 
+   the Euclid solver. They all pass the matrix as a void-pointer. */
 
 #ifdef __cplusplus
 extern "C"

@@ -83,18 +83,21 @@ enum Hypre_Chooser{
 //! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
 class FunctionParameter{
   public:
+    //! Single int constructor.
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int), int param1) :
       chooser_(chooser),
       option_(0),
       int_func_(funct_name),
       int_param1_(param1) {}
 
+    //! Single double constructor.
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, double), double param1):
       chooser_(chooser),
       option_(1),
       double_func_(funct_name),
       double_param1_(param1) {}
 
+    //! Single double, single int constructor.
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, double, int), double param1, int param2):
       chooser_(chooser),
       option_(2),
@@ -102,6 +105,7 @@ class FunctionParameter{
       int_param1_(param2),
       double_param1_(param1) {}
 
+    //! Two ints constructor.
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int, int), int param1, int param2):
       chooser_(chooser),
       option_(3),
@@ -109,18 +113,21 @@ class FunctionParameter{
       int_param1_(param1),
       int_param2_(param2) {}
 
+    //! Int pointer constructor.
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int*), int *param1):
       chooser_(chooser),
       option_(4),
       int_star_func_(funct_name),
       int_star_param_(param1) {}
 
+    //! Double pointer constructor.
     FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, double*), double* param1):
       chooser_(chooser),
       option_(5),
       double_star_func_(funct_name),
       double_star_param_(param1) {}
 
+    //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
     int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond){
       if(chooser_ == Solver){
         if(option_ == 0){
@@ -150,7 +157,6 @@ class FunctionParameter{
         } else {
           return double_star_func_(precond, double_star_param_);
         }
-
       }
     }
 
@@ -188,10 +194,7 @@ public:
   Ifpack_Hypre(Epetra_RowMatrix* A);
   
   //! Destructor
-  ~Ifpack_Hypre()
-  {
-    Destroy();
-  }
+  ~Ifpack_Hypre(){ Destroy();}
 
   // @}
   // @{ Construction methods
@@ -200,10 +203,7 @@ public:
   int Initialize();
   
   //! Returns \c true if the preconditioner has been successfully initialized.
-  bool IsInitialized() const
-  {
-    return(IsInitialized_);
-  }
+  bool IsInitialized() const{ return(IsInitialized_);}
 
   //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the ILU(k) factors.
@@ -211,10 +211,7 @@ public:
   int Compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.
-  bool IsComputed() const 
-  {
-    return(IsComputed_);
-  }
+  bool IsComputed() const{ return(IsComputed_);}
 
 
   //! Set parameters using a Teuchos::ParameterList object.
@@ -337,7 +334,7 @@ public:
     \return Integer error code, set to 0 if successful.
   */
 
-    int SetParameter(bool UsePreconditioner);
+    int SetParameter(bool UsePreconditioner){ UsePreconditioner = UsePreconditioner_; return 0;}
 
     //! Choose to solve the problem or apply the preconditioner.
     /*!
@@ -346,7 +343,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
   */
-    int SetParameter(Hypre_Chooser chooser);
+    int SetParameter(Hypre_Chooser chooser) { SolveOrPrec_ = chooser; return 0;}
 
   //! Call all the function pointers stored in this object.
     int CallFunctions() const;
@@ -362,15 +359,13 @@ public:
       \return Always returns 0.
   */
   int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
+
   // @}
 
   // @{ Mathematical functions.
   // Applies the matrix to X, returns the result in Y.
   int Apply(const Epetra_MultiVector& X, 
-	       Epetra_MultiVector& Y) const
-  {
-    return(Multiply(false,X,Y));
-  }
+	       Epetra_MultiVector& Y) const{ return(Multiply(false,X,Y));}
 
   //! Returns the result of a Epetra_Operator multiplied with an Epetra_MultiVector X in Y.
   /*! In this implementation, we use the Hypre matrix to multiply with so that the map is the same
@@ -409,10 +404,7 @@ public:
 		 Epetra_RowMatrix* Matrix_in = 0);
 
   //! Returns the computed estimated condition number, or -1.0 if not computed.
-  double Condest() const
-  {
-    return(Condest_);
-  }
+  double Condest() const{ return(Condest_);}
 
   // @}
   // @{ Query methods
@@ -428,10 +420,10 @@ public:
   }
 
   //! Returns a reference to the map that should be used for domain.
-  const Epetra_Map& OperatorDomainMap() const;
+  const Epetra_Map& OperatorDomainMap() const{ return *MySimpleMap_;}
 
   //! Returns a reference to the map that should be used for range.
-  const Epetra_Map& OperatorRangeMap() const;
+  const Epetra_Map& OperatorRangeMap() const{ return *MySimpleMap_;}
   
   //! Returns 0.0 because this class cannot compute Inf-norm.
   double NormInf() const {return(0.0);};
@@ -446,17 +438,13 @@ public:
   const Epetra_Comm & Comm() const{return(A_->Comm());};
 
   //! Returns a reference to the matrix to be preconditioned.
-  const Epetra_RowMatrix& Matrix() const
-  { 
-    return(*A_);
-  }
+  const Epetra_RowMatrix& Matrix() const{ return(*A_);}
 
   //! Returns the Hypre matrix that was created upon construction. 
   const HYPRE_IJMatrix& HypreMatrix()
   {
-    if(IsInitialized() == false){
+    if(IsInitialized() == false)
       Initialize();
-    }
     return(HypreA_);
   }
 
@@ -464,56 +452,31 @@ public:
   virtual ostream& Print(ostream& os) const;
 
   //! Returns the number of calls to Initialize().
-  virtual int NumInitialize() const
-  {
-    return(NumInitialize_);
-  }
+  virtual int NumInitialize() const{ return(NumInitialize_);}
 
   //! Returns the number of calls to Compute().
-  virtual int NumCompute() const
-  {
-    return(NumCompute_);
-  }
+  virtual int NumCompute() const{ return(NumCompute_);}
 
   //! Returns the number of calls to ApplyInverse().
-  virtual int NumApplyInverse() const
-  {
-    return(NumApplyInverse_);
-  }
+  virtual int NumApplyInverse() const{ return(NumApplyInverse_);}
 
   //! Returns the time spent in Initialize().
-  virtual double InitializeTime() const
-  {
-    return(InitializeTime_);
-  }
+  virtual double InitializeTime() const{ return(InitializeTime_);}
 
   //! Returns the time spent in Compute().
-  virtual double ComputeTime() const
-  {
-    return(ComputeTime_);
-  }
+  virtual double ComputeTime() const{ return(ComputeTime_);}
 
   //! Returns the time spent in ApplyInverse().
-  virtual double ApplyInverseTime() const
-  {
-    return(ApplyInverseTime_);
-  }
+  virtual double ApplyInverseTime() const{ return(ApplyInverseTime_);}
 
   //! Returns the number of flops in the initialization phase.
-  virtual double InitializeFlops() const
-  {
-    return(0.0);
-  }
+  virtual double InitializeFlops() const{ return(0.0);}
 
-  virtual double ComputeFlops() const
-  {
-    return(ComputeFlops_);
-  }
+  //! Returns the number of flops in the compute phase.
+  virtual double ComputeFlops() const{ return(ComputeFlops_);}
 
-  virtual double ApplyInverseFlops() const
-  {
-    return(ApplyInverseFlops_);
-  }
+  //! Returns the number of flops in the apply inverse phase.
+  virtual double ApplyInverseFlops() const{ return(ApplyInverseFlops_);}
 
 private:
 
@@ -521,23 +484,17 @@ private:
   // @{ Private methods
 
   //! Copy constructor (should never be used)
-  Ifpack_Hypre(const Ifpack_Hypre& RHS) :
-    Time_(RHS.Comm())
-  {}
+  Ifpack_Hypre(const Ifpack_Hypre& RHS) : Time_(RHS.Comm()){}
 
   //! operator= (should never be used)
-  Ifpack_Hypre& operator=(const Ifpack_Hypre& RHS)
-  {
-    return(*this);
-  }
+  Ifpack_Hypre& operator=(const Ifpack_Hypre& RHS){ return(*this);}
 
   //! Destroys all internal data
   void Destroy();
 
   //! Returns the MPI communicator used in the Epetra matrix
-  MPI_Comm GetMpiComm() const{
-    return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();
-  }
+  MPI_Comm GetMpiComm() const
+    { return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();}
 
   //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y.
   /*! 
@@ -567,28 +524,58 @@ private:
   
   //! Sets the solver type to be the passed in solver type.
   int SetSolverType(Hypre_Solver solver); 
+
   //! Sets the preconditioner type to be the passed in type.
   int SetPrecondType(Hypre_Solver precond);
 
   //! Create the solver.
   int CreateSolver();
+
   //! Create the Preconditioner.
   int CreatePrecond();
 
   //! Add a function to be called in Compute()
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
-  //! The following methods are needed because some of the solver create functions take an MPI_Comm and some don't. These simply always take it and call the appropriate function in Hypre.
-  int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
-  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
+  //! Create a BoomerAMG solver.
+  int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_BoomerAMGCreate(solver);}
+
+  //! Create a ParaSails solver.
+  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParaSailsCreate(comm, solver);}
+
+  //! Create a Euclid solver.
+  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_EuclidCreate(comm, solver);}
+
+  //! Create an AMS solver.
+  int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_AMSCreate(solver);}
+
+  //! Create a Hybrid solver.
+  int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRHybridCreate(solver);}
+
+  //! Create a PCG solver.
+  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRPCGCreate(comm, solver);}
+
+  //! Create a GMRES solver.
+  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRGMRESCreate(comm, solver);}
+
+  //! Create a FlexGMRES solver.
+  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRFlexGMRESCreate(comm, solver);}
+
+  //! Create a LGMRES solver.
+  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRLGMRESCreate(comm, solver);}
+
+  //! Create a BiCGSTAB solver.
+  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
+    { return HYPRE_ParCSRBiCGSTABCreate(comm, solver);}
 
   // @}
   // @{ Internal data
@@ -644,7 +631,7 @@ private:
   mutable HYPRE_Solver Solver_;
   //! The Hypre Solver if applying preconditioner
   mutable HYPRE_Solver Preconditioner_;
-// The following are pointers to functions to use the solver and preconditioner.
+  //  The following are pointers to functions to use the solver and preconditioner.
   int (Ifpack_Hypre::*SolverCreatePtr_)(MPI_Comm, HYPRE_Solver*);
   int (*SolverDestroyPtr_)(HYPRE_Solver);
   int (*SolverSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);

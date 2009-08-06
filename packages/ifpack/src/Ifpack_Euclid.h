@@ -62,6 +62,11 @@ namespace Teuchos {
 
 //! Ifpack_Euclid: A class for constructing and using an ILU factorization of a given Epetra_CrsMatrix, using the Euclid library by Argonne National Laboratories.
 
+/*! 
+  Class Ifpack_Euclid can use the euclid preconditioner as used in Hypre library.
+*/
+
+  //The other files that were modified for Trilinos are getRow.c, call_epetra.{cpp,h}.
 
 class Ifpack_Euclid: public Epetra_Object, public Epetra_CompObject, public virtual Epetra_Operator {
       
@@ -73,10 +78,7 @@ public:
   Ifpack_Euclid(Epetra_CrsMatrix* A);
   
   //! Destructor
-  ~Ifpack_Euclid()
-  {
-    Destroy();
-  }
+  ~Ifpack_Euclid(){ Destroy();}
 
   // @}
   // @{ Construction methods
@@ -85,10 +87,7 @@ public:
   int Initialize();
   
   //! Returns \c true if the preconditioner has been successfully initialized.
-  bool IsInitialized() const
-  {
-    return(IsInitialized_);
-  }
+  bool IsInitialized() const{ return(IsInitialized_);}
 
   //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the ILU(k) factors.
@@ -96,10 +95,7 @@ public:
   int Compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.
-  bool IsComputed() const 
-  {
-    return(IsComputed_);
-  }
+  bool IsComputed() const{ return(IsComputed_);}
 
 
   //! Set parameters using a Teuchos::ParameterList object.
@@ -135,17 +131,26 @@ public:
   */
   int SetParameter(string name, double Value);
 
+  //! If parameter is true, will use transpose operations.
   int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
   // @}
 
   // @{ Mathematical functions.
   // Applies the matrix to X, returns the result in Y.
   int Apply(const Epetra_MultiVector& X, 
-	       Epetra_MultiVector& Y) const
-  {
-    return(Multiply(false,X,Y));
-  }
+	       Epetra_MultiVector& Y) const{ return(Multiply(false,X,Y));}
 
+  //! Returns the result of a Epetra_Operator multiplied with an Epetra_MultiVector X in Y.
+  /*! This calls the multiply function on the stored matrix.
+
+    \param 
+      trans - (In) If true, use do a transpose multiply.
+	   X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with.
+    \param Out
+	   Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful. -1 if compute() hasn't been called. -2 if the multivectors have differing numbers of vectors.
+  */
   int Multiply(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{ return A_->Multiply(Trans, X, Y); }
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
@@ -165,16 +170,11 @@ public:
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Computes the estimated condition number and returns the value.
-  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
-                 const int MaxIters = 1550,
-                 const double Tol = 1e-9,
-		 Epetra_RowMatrix* Matrix_in = 0);
+  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,  const int MaxIters = 1550,
+                 const double Tol = 1e-9, Epetra_RowMatrix* Matrix_in = 0);
 
   //! Returns the computed estimated condition number, or -1.0 if not computed.
-  double Condest() const
-  {
-    return(Condest_);
-  }
+  double Condest() const{ return(Condest_);}
 
   // @}
   // @{ Query methods
@@ -183,10 +183,7 @@ public:
   const char* Label() const {return(Label_);}
 
   //! Sets label for \c this object.
-  void SetLabel(const char* Label_in)
-  {
-    strcpy(Label_,Label_in);
-  }
+  void SetLabel(const char* Label_in){ strcpy(Label_,Label_in);}
   
   //! Returns the domain map from the creating matrix.
   const Epetra_Map &OperatorDomainMap() const{return A_->DomainMap();}
@@ -207,64 +204,34 @@ public:
   const Epetra_Comm & Comm() const{return(A_->Comm());};
 
   //! Returns a reference to the matrix to be preconditioned.
-  const Epetra_CrsMatrix& Matrix() const
-  { 
-    return(*A_);
-  }
+  const Epetra_CrsMatrix& Matrix() const{ return(*A_);}
 
   //! Returns the number of calls to Initialize().
-  virtual int NumInitialize() const
-  {
-    return(NumInitialize_);
-  }
+  virtual int NumInitialize() const{ return(NumInitialize_);}
 
   //! Returns the number of calls to Compute().
-  virtual int NumCompute() const
-  {
-    return(NumCompute_);
-  }
+  virtual int NumCompute() const{ return(NumCompute_);}
 
   //! Returns the number of calls to ApplyInverse().
-  virtual int NumApplyInverse() const
-  {
-    return(NumApplyInverse_);
-  }
+  virtual int NumApplyInverse() const{ return(NumApplyInverse_);}
 
   //! Returns the time spent in Initialize().
-  virtual double InitializeTime() const
-  {
-    return(InitializeTime_);
-  }
+  virtual double InitializeTime() const{ return(InitializeTime_);}
 
   //! Returns the time spent in Compute().
-  virtual double ComputeTime() const
-  {
-    return(ComputeTime_);
-  }
+  virtual double ComputeTime() const{ return(ComputeTime_);}
 
   //! Returns the time spent in ApplyInverse().
-  virtual double ApplyInverseTime() const
-  {
-    return(ApplyInverseTime_);
-  }
+  virtual double ApplyInverseTime() const{ return(ApplyInverseTime_);}
 
   //! Returns the number of flops in the initialization phase.
-  virtual double InitializeFlops() const
-  {
-    return(0.0);
-  }
+  virtual double InitializeFlops() const{ return(0.0);}
 
   //! Returns the number of flops in the compute phase.
-  virtual double ComputeFlops() const
-  {
-    return(ComputeFlops_);
-  }
+  virtual double ComputeFlops() const{ return(ComputeFlops_);}
 
   //! Returns the number of flops in the applyinverse phase.
-  virtual double ApplyInverseFlops() const
-  {
-    return(ApplyInverseFlops_);
-  }
+  virtual double ApplyInverseFlops() const{ return(ApplyInverseFlops_);}
 
 private:
 
@@ -272,23 +239,16 @@ private:
   // @{ Private methods
 
   //! Copy constructor (should never be used)
-  Ifpack_Euclid(const Ifpack_Euclid& RHS) :
-    Time_(RHS.Comm())
-  {}
+  Ifpack_Euclid(const Ifpack_Euclid& RHS) : Time_(RHS.Comm()){}
 
   //! operator= (should never be used)
-  Ifpack_Euclid& operator=(const Ifpack_Euclid& RHS)
-  {
-    return(*this);
-  }
+  Ifpack_Euclid& operator=(const Ifpack_Euclid& RHS){ return(*this);}
 
   //! Destroys all internal data
   void Destroy();
 
   //! Returns the MPI comm used in the matrix that created the preconditioner.
-  MPI_Comm GetMpiComm() const{
-    return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();
-  }
+  MPI_Comm GetMpiComm() const{ return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();}
 
   //! Internal method to call the euclid solve method.
   int CallEuclid(double *x, double *y) const;
@@ -305,7 +265,6 @@ private:
     \return Integer error code, set to 0 if successful.
   */
   int Solve(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
 
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(A_->NumGlobalRows());};
@@ -356,8 +315,6 @@ private:
   mutable Epetra_Time Time_;
   //! This is the Euclid solver.
   Euclid_dh eu;
-  //! true if the row map of provided matrix is in form that Euclid likes
-  bool NiceRowMap_;
   //! Set livel k for ILU(k) factorization
   int SetLevel_;
   //! block-jacobi solver

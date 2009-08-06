@@ -26,6 +26,7 @@
 // ***********************************************************************
 //@HEADER
 */
+
 #include "Ifpack_Euclid.h"
 #if defined(HAVE_EUCLID) && defined(HAVE_MPI)
 
@@ -57,7 +58,6 @@ Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   Time_(A_->Comm()),
-  NiceRowMap_(true),
   SetLevel_(1),
   SetBJ_(0),
   SetStats_(0),
@@ -66,27 +66,6 @@ Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
   SetRowScale_(0),
   SetILUT_(0.0)
 {
-  // First make a copy of the Epetra Matrix as a Euclid Matrix
-  int ilower = A_->RowMap().MinMyGID();
-  int iupper = A_->RowMap().MaxMyGID();
-  // Need to check if the RowMap is the way Euclid expects (if not more difficult)
-  std::vector<int> ilowers; ilowers.resize(Comm().NumProc());
-  std::vector<int> iuppers; iuppers.resize(Comm().NumProc());
-  int myLower[1]; myLower[0] = ilower;
-  int myUpper[1]; myUpper[0] = iupper;
-  Comm().GatherAll(myLower, &ilowers[0], 1);
-  Comm().GatherAll(myUpper, &iuppers[0], 1);
-  for(int i = 0; i < Comm().NumProc()-1; i++){
-    NiceRowMap_ = (NiceRowMap_ && iuppers[i]+1 == ilowers[i+1]);
-  }
-  if(!NiceRowMap_){
-    ilower = (A_->NumGlobalRows() / Comm().NumProc())*Comm().MyPID();
-    iupper = (A_->NumGlobalRows() / Comm().NumProc())*(Comm().MyPID()+1)-1;
-    if(Comm().MyPID() == Comm().NumProc()-1){
-      iupper = A_-> NumGlobalRows()-1;
-    }
-  }
-
   // Here we need to change the view of each row to have global indices. This is
   // because Euclid directly extracts a row view and expects global indices.
   for(int i = 0; i < A_->NumMyRows(); i++){
@@ -97,13 +76,15 @@ Ifpack_Euclid::Ifpack_Euclid(Epetra_CrsMatrix* A):
       indices[j] = A_->GCID(indices[j]);
     }
   }
-}
+} //Constructor
 
 //==============================================================================
 void Ifpack_Euclid::Destroy(){
+  // Destroy the euclid solver, only if it was setup
   if(IsComputed()){
     Euclid_dhDestroy(eu);
   }
+  // Delete these euclid varaiables if they were created
   if(IsInitialized()){
     Parser_dhDestroy(parser_dh);
     parser_dh = NULL;
@@ -121,10 +102,11 @@ void Ifpack_Euclid::Destroy(){
       indices[j] = A_->LCID(indices[j]);
     }
   }
-}
+} //Destroy()
 
 //==============================================================================
 int Ifpack_Euclid::Initialize(){
+  //These are global variables in Euclid
   comm_dh = GetMpiComm();
   MPI_Comm_size(comm_dh, &np_dh);
   MPI_Comm_rank(comm_dh, &myid_dh);
@@ -146,7 +128,7 @@ int Ifpack_Euclid::Initialize(){
   NumInitialize_ = NumInitialize_ + 1;
   InitializeTime_ = InitializeTime_ + Time_.ElapsedTime();
   return 0;
-}
+} //Initialize()
 
 //==============================================================================
 int Ifpack_Euclid::SetParameters(Teuchos::ParameterList& list){
@@ -159,10 +141,11 @@ int Ifpack_Euclid::SetParameters(Teuchos::ParameterList& list){
   SetRowScale_ = list.get("SetRowScale", (int)0);
   SetILUT_ = list.get("SetILUT", (double)0.0);
   return 0;
-}
+} //SetParamters()
 
 //==============================================================================
 int Ifpack_Euclid::SetParameter(string name, int value){
+  //Convert to lowercase (so it's case insensitive)
   locale loc;
   for(size_t i = 0; i < name.length(); i++){
     name[i] = (char) tolower(name[i], loc);
@@ -182,10 +165,11 @@ int Ifpack_Euclid::SetParameter(string name, int value){
     IFPACK_CHK_ERR(-1);
   }
   return 0;
-}
+} //SetParameter() (int)
 
 //==============================================================================
 int Ifpack_Euclid::SetParameter(string name, double value){
+  //Convert to lowercase (so it's case insensitive)
   locale loc;
   for(size_t i; i < name.length(); i++){
     name[i] = (char) tolower(name[i], loc);
@@ -199,7 +183,7 @@ int Ifpack_Euclid::SetParameter(string name, double value){
     IFPACK_CHK_ERR(-1);
   }
   return 0;
-}
+} //SetParameter() (double)
 
 //==============================================================================
 int Ifpack_Euclid::Compute(){
@@ -209,7 +193,6 @@ int Ifpack_Euclid::Compute(){
   Time_.ResetStartTime();
   sprintf(Label_, "IFPACK_Euclid (level=%d, bj=%d, stats=%d, mem=%d, sparse=%f, rowscale=%d, ilut=%f)",
       SetLevel_, SetBJ_, SetStats_, SetMem_, SetSparse_, SetRowScale_, SetILUT_);
-
   // Set the parameters
   eu->level = SetLevel_;
   if(SetBJ_ != 0){
@@ -228,6 +211,7 @@ int Ifpack_Euclid::Compute(){
     eu->logging = true;
     Parser_dhInsert(parser_dh, "-eu_stats", "1");
   }
+  // eu->A is the matrix as a void pointer, eu->m is local rows, eu->n is global rows
   eu->A = (void*) A_.get();
   eu->m = A_->NumMyRows();
   eu->n = A_->NumGlobalRows();
@@ -236,7 +220,7 @@ int Ifpack_Euclid::Compute(){
   NumCompute_ = NumCompute_ + 1;
   ComputeTime_ = ComputeTime_ + Time_.ElapsedTime();
   return 0;
-}
+} //Compute()
 
 //==============================================================================
 int Ifpack_Euclid::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
@@ -248,6 +232,7 @@ int Ifpack_Euclid::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector&
     IFPACK_CHK_ERR(-2);
   }
   Time_.ResetStartTime();
+  // Loop through the vectors
   for(int vecNum = 0; vecNum < NumVectors; vecNum++){
     CallEuclid(X[vecNum], Y[vecNum]);
   }
@@ -257,13 +242,13 @@ int Ifpack_Euclid::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector&
   NumApplyInverse_ = NumApplyInverse_ + 1;
   ApplyInverseTime_ = ApplyInverseTime_ + Time_.ElapsedTime();
   return 0;
-}
+} //ApplyInverse()
 
 //==============================================================================
 int Ifpack_Euclid::CallEuclid(double *x, double *y) const{
   Euclid_dhApply(eu, x, y);
   return 0;
-}
+} //CallEuclid()
 
 //==============================================================================
 ostream& operator << (ostream& os, const Ifpack_Euclid& A){
@@ -299,7 +284,7 @@ ostream& operator << (ostream& os, const Ifpack_Euclid& A){
     os << endl;
   }
   return os;
-}
+} // <<
 
 //==============================================================================
 double Ifpack_Euclid::Condest(const Ifpack_CondestType CT, 
@@ -308,9 +293,7 @@ double Ifpack_Euclid::Condest(const Ifpack_CondestType CT,
                              Epetra_RowMatrix* Matrix_in){
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
-
-
   return(Condest_);
-}
+} //Condest() - not implemented
 
 #endif // HAVE_EUCLID && HAVE_MPI

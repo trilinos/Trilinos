@@ -146,7 +146,6 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
 } //EpetraExt_HYPREIJMatrix(Hypre_IJMatrix) Constructor
 
 //=======================================================
-
 EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
   int ierr = 0;
   ierr += HYPRE_IJVectorDestroy(X_hypre);
@@ -168,7 +167,6 @@ EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
 } //EpetraExt_HypreIJMatrix destructor
 
 //=======================================================
-
 int EpetraExt_HypreIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, 
                      double * Values, int * Indices) const 
 {
@@ -192,10 +190,9 @@ int EpetraExt_HypreIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntr
   }
 
   return 0;
-}
+} //ExtractMyRowCopy()
 
 //=======================================================
-
 int EpetraExt_HypreIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const 
 {
   int my_row[1];
@@ -204,10 +201,10 @@ int EpetraExt_HypreIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const
   EPETRA_CHK_ERR(HYPRE_IJMatrixGetRowCounts(Matrix_, 1, my_row, nentries));
   NumEntries = nentries[0];
   return 0;
-}
-//=======================================================
+} //NumMyRowEntries()
 
- int EpetraExt_HypreIJMatrix::ExtractMyEntryView(int CurEntry, double *&Value, int &RowIndex, int &ColIndex)
+//=======================================================
+int EpetraExt_HypreIJMatrix::ExtractMyEntryView(int CurEntry, double *&Value, int &RowIndex, int &ColIndex)
 {/* 
   This gives a copy, not a view of the values, so is not implemented.
   if(CurEntry >= NumMyNonzeros() || CurEntry < 0){
@@ -234,7 +231,7 @@ int EpetraExt_HypreIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const
   ColIndex = RowMatrixColMap().LID(indices[CurEntry-counter]);
   Value = &values[CurEntry-counter];
   return 0;*/return -1;
-}
+} //ExtractMyEntryView() - not implemented
  
  //=======================================================
  int EpetraExt_HypreIJMatrix::ExtractMyEntryView(int CurEntry, double const * & Value, int & RowIndex, int & ColIndex) const 
@@ -263,7 +260,7 @@ int EpetraExt_HypreIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const
   ColIndex = RowMatrixColMap().LID(indices[CurEntry-counter]);
   Value = &values[CurEntry-counter];
   return 0;*/ return -1;
-}
+} //ExtractMyEntryView() - const version, not implemented
 
 //=======================================================
 int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
@@ -316,12 +313,12 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
     x_local->data = x_temp;
     y_local->data = y_temp;
   }
-
   double flops = (double) NumVectors * (double) NumGlobalNonzeros();
   UpdateFlops(flops);
   return 0;
 } //Multiply() 
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
   if(chooser == Preconditioner){
     EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
@@ -329,8 +326,9 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(
     EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
   return 0;
-}
+} //SetParameter() - int function pointer
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
   if(chooser == Preconditioner){
     EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
@@ -338,8 +336,9 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(
     EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
   return 0;
-}
+} //SetParamater() - double function pointer
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
   if(chooser == Preconditioner){
     EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter1, parameter2));
@@ -347,8 +346,9 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(
     EPETRA_CHK_ERR(pt2Func(Solver_, parameter1, parameter2));
   }
   return 0;
-}
+} //SetParameter() - double,int function pointer
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
   if(chooser == Preconditioner){
     EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter1, parameter2));
@@ -356,8 +356,9 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(
     EPETRA_CHK_ERR(pt2Func(Solver_, parameter1, parameter2));
   }
   return 0;
-}
+} //SetParameter() - int,int function pointer
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
   if(chooser == Preconditioner){
     EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
@@ -365,8 +366,9 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(
     EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
   return 0;
-}
+} //SetParameter() - double* function pointer
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
   if(chooser == Preconditioner){
     EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
@@ -374,8 +376,9 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(
     EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
   return 0;
-}
+} //SetParameter() - int* function pointer
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver, bool transpose){
   if(chooser == Solver){
   if(transpose && solver != BoomerAMG){
@@ -480,7 +483,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver so
     }
   CreateSolver();
   } else {
-
+  // Preconditioner
   switch(solver) {
     case BoomerAMG:
       if(IsPrecondSetup_[0]){
@@ -529,20 +532,23 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver so
 
   }
   return 0;
-}
+} //SetParameter() - Choose solver or preconditioner type
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::CreateSolver(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*SolverCreatePtr_)(comm, &Solver_);
-}
+} //CreateSolver()
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::CreatePrecond(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
-}
+} //CreatePrecond()
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(bool UsePreconditioner){
   if(UsePreconditioner == false){
     return 0;
@@ -554,25 +560,29 @@ int EpetraExt_HypreIJMatrix::SetParameter(bool UsePreconditioner){
       return 0;
     }
   }
-}
+} //SetParameter() - Set the precondioner pointer for solver
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser answer){
   SolveOrPrec_ = answer;
   return 0;
-}
+} //SetParameter() - Choose to solve or precondition
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetupSolver() const{
   SolverSetupPtr_(Solver_, ParMatrix_, par_x, par_y);
   IsSolverSetup_[0] = true;
   return 0;
-}
+} //SetupSolver()
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::SetupPrecond() const{
   PrecondSetupPtr_(Preconditioner_, ParMatrix_, par_x, par_y);
   IsPrecondSetup_[0] = true;
   return 0;
-}
+} //SetupPrecond()
 
+//=======================================================
 int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal, const Epetra_MultiVector & X, Epetra_MultiVector & Y) const {
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
@@ -589,7 +599,6 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
       SetupPrecond();
     }
   }
-     
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
     double * x_values;
@@ -633,11 +642,10 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
     x_local->data = x_temp;
     y_local->data = y_temp;
   }
-
   double flops = (double) NumVectors * (double) NumGlobalNonzeros();
   UpdateFlops(flops);
   return 0;
-}
+} //Solve()
 
 //=======================================================
 int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
@@ -659,9 +667,7 @@ int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
     rows[0] = i+MyRowStart_;
     EPETRA_CHK_ERR(HYPRE_IJMatrixSetValues(Matrix_, 1, &num_entries, rows, &new_indices[0], &new_values[0]));
     // Finally set values of the Matrix for this row
-    
   }
-  
   HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
   return 0;
@@ -702,46 +708,7 @@ int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
   return 0;
 } //RightScale()
 
-int EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_BoomerAMGCreate(solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParaSailsCreate(comm, solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_EuclidCreate(comm, solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_AMSCreate(solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParCSRHybridCreate(solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParCSRPCGCreate(comm, solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParCSRGMRESCreate(comm, solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParCSRFlexGMRESCreate(comm, solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParCSRLGMRESCreate(comm, solver);
-}
-
-int EpetraExt_HypreIJMatrix::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver){
-  return HYPRE_ParCSRBiCGSTABCreate(comm, solver);
-}
-
+//=======================================================
 int EpetraExt_HypreIJMatrix::InitializeDefaults(){
   int my_type;
   // Get type of Hypre IJ Matrix
