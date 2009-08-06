@@ -157,14 +157,14 @@ int Zoltan_Color(
 
 
   static char *yo = "color_fn";
-  indextype *vtxdist, *xadj, *adjncy; /* arrays to store the graph structure */
-  int *adjproc;                     
-  int *input_parts;                 /* Initial partitions for objects. */
+  indextype *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
+  int *adjproc=NULL;                     
+  int *input_parts=NULL;                 /* Initial partitions for objects. */
   int nvtx = num_obj;               /* number of vertices */
   int gvtx;                         /* number of global vertices */
-  float *ewgts, *float_vwgt;        /* weights - not used */
+  float *ewgts=NULL, *float_vwgt=NULL;        /* weights - not used */
   int obj_wgt_dim, edge_wgt_dim;    /* weight dimensions - not used */
-  int *color;                       /* array to store colors of local and D1
+  int *color=NULL;                       /* array to store colors of local and D1
                                        neighbor vertices */
   int graph_type, check_graph;
   int i, j;
@@ -175,7 +175,7 @@ int Zoltan_Color(
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2]; 
 
-  int *partialD2;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
+  int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
   
   /* PARAMETER SETTINGS */
   
