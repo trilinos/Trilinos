@@ -107,7 +107,7 @@ namespace {
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init(X,1);
     dsm.Apply(false,1.0,X,0.0,AX);
-    ArrayRCP<const Scalar> axview = node.template viewBufferConst<Scalar>(N,axdat,0);
+    ArrayRCP<const Scalar> axview = node.template viewBufferConst<Scalar>(N,axdat);
     Scalar err = 0.0;
     for (int i=0; i<N; ++i) {
       err = axview[i] * axview[i];

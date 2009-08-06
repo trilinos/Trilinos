@@ -131,8 +131,8 @@ namespace {
     }
     TEST_EQUALITY(A.getNumRows(), N);
     TEST_EQUALITY(A.getNumEntries(), expNNZ);
-    ArrayRCP<const Scalar> actVals = node.template viewBufferConst<Scalar >(expNNZ, A.const_values() ,0);
-    ArrayRCP<const Ordinal> actInds = node.template viewBufferConst<Ordinal>(expNNZ, A.const_indices(),0);
+    ArrayRCP<const Scalar> actVals = node.template viewBufferConst<Scalar >(expNNZ, A.const_values());
+    ArrayRCP<const Ordinal> actInds = node.template viewBufferConst<Ordinal>(expNNZ, A.const_indices());
     for (size_type i=0; i<expNNZ; ++i) {
       TEST_EQUALITY(expInds[i], actInds[i]);
       TEST_EQUALITY(expVals[i], actVals[i]);

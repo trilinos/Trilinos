@@ -227,8 +227,8 @@ namespace Kokkos {
       srcindices = A.const_indices();
       nc_offsets = node_.template allocBuffer<size_type>(numRows_+1);
       nc_indices = node_.template allocBuffer<Ordinal>(numEntries_);
-      node_.template copyBuffers<size_type>(numRows_+1,srcoffsets,0,nc_offsets,0);
-      node_.template copyBuffers<Ordinal>(numEntries_,srcindices,0,nc_indices,0);
+      node_.template copyBuffers<size_type>(numRows_+1,srcoffsets,nc_offsets);
+      node_.template copyBuffers<Ordinal>(numEntries_,srcindices,nc_indices);
       op_.inds = nc_indices;
       op_.offsets = nc_offsets;
       storedStructure_ = true;
@@ -251,7 +251,7 @@ namespace Kokkos {
       Teuchos::ArrayRCP<Scalar> nc_values;
       srcvalues = A.const_values();
       nc_values = node_.template allocBuffer<Scalar>(numEntries_);
-      node_.template copyBuffers<Scalar>(numEntries_,srcvalues,0,nc_values,0);
+      node_.template copyBuffers<Scalar>(numEntries_,srcvalues,nc_values);
       op_.vals = nc_values;
       storedValues_ = true;
     }

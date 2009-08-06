@@ -72,11 +72,10 @@ namespace Kokkos {
 
 */    
 
-  template<class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
+  template<class Scalar, class Node = DefaultNode::DefaultNodeType>
   class MultiVector {
     public:
       typedef Scalar  ScalarType;
-      typedef Ordinal OrdinalType;
       typedef Node    NodeType;
 
       //! @name Constructors/Destructor
@@ -86,7 +85,6 @@ namespace Kokkos {
       //! Default constructor
       MultiVector(Node &node = DefaultNode::getDefaultNode())
       : node_(node)
-      , dataInitialized_(false)
       , numRows_(0)
       , numCols_(0)
       , stride_(0) {}
@@ -95,7 +93,6 @@ namespace Kokkos {
       MultiVector(const MultiVector& source)
       : node_(source.node_)
       , contigValues_(source.contigValues_)
-      , dataInitialized_(source.dataInitialized_)
       , numRows_(source.numRows_)
       , numCols_(source.numCols_)
       , stride_(source.stride_) {}
@@ -124,15 +121,14 @@ namespace Kokkos {
 
         \return Integer error code, set to 0 if successful.
         */
-      int initializeValues(Ordinal numRows, Ordinal numCols, 
+      int initializeValues(size_type numRows, size_type numCols, 
                            Teuchos::ArrayRCP<Scalar> values,
-                           Ordinal stride)
+                           size_type stride)
       {
         numRows_ = numRows;
         numCols_ = numCols;
         stride_ = stride;
         contigValues_ = values;
-        dataInitialized_ = true;
         return(0);
       };
 
@@ -141,6 +137,18 @@ namespace Kokkos {
       //! @name Multivector entry access methods
 
       //@{
+
+      //! Returns a copy of the ArrayRCP passed to initializeValues().
+      Teuchos::ArrayRCP<Scalar>
+      getValues() {
+        return contigValues_;
+      }
+
+      //! Returns a copy of the ArrayRCP passed to initializeValues().
+      Teuchos::ArrayRCP<const Scalar>
+      getValuesConst() const {
+        return contigValues_;
+      }
 
       //! Returns a pointer to an array of values for the ith column of the multivector.
       /*! Extract a pointer to the values in the ith column of the multivector.  Note that
@@ -152,12 +160,12 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       Teuchos::ArrayRCP<Scalar>
-      getValues(Ordinal i) {
-        TEST_FOR_EXCEPTION(!dataInitialized_ || // No data to return
-                           i<0 || i>=numRows_, // Out of range
+      getValues(size_type i) {
+        TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
+                           i < 0 || i >= numRows_, // Out of range
                            std::runtime_error, 
                            Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
-        return contigValues_ + stride_*i;
+        return contigValues_.persistingView(stride_*i,numRows_);
       };
 
       //! Returns a pointer to an array of values for the ith column of the multivector.
@@ -170,12 +178,12 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       Teuchos::ArrayRCP<const Scalar>
-      getValues(Ordinal i) const {
-        TEST_FOR_EXCEPTION(!dataInitialized_ || // No data to return
-                           i<0 || i>=numRows_, // Out of range
+      getValuesConst(size_type i) const {
+        TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
+                           i < 0 || i >= numRows_, // Out of range
                            std::runtime_error, 
                            Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
-        return contigValues_ + stride_*i;
+        return contigValues_.persistingView(stride_*i,numRows_);
       };
 
       //@}
@@ -187,13 +195,13 @@ namespace Kokkos {
       Node & getNode() const {return node_;}
 
       //! Number of rows
-      Ordinal getNumRows() const {return(numRows_);};
+      size_type getNumRows() const {return(numRows_);};
 
       //! Number of columns
-      Ordinal getNumCols() const{return(numCols_);};
+      size_type getNumCols() const{return(numCols_);};
 
       //! Increment between entries in a row of the multivector, normally = numRows().
-      Ordinal getStride() const {return(stride_);};
+      size_type getStride() const {return(stride_);};
 
       //@}
 
@@ -203,8 +211,8 @@ namespace Kokkos {
       Teuchos::ArrayRCP<Scalar> contigValues_;
 
       bool dataInitialized_;
-      Ordinal numRows_, numCols_;
-      Ordinal stride_;
+      size_type numRows_, numCols_;
+      size_type stride_;
   };
 
 } // namespace Kokkos

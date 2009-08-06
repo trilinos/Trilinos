@@ -159,7 +159,7 @@ namespace Kokkos {
     if (numRows_ > 0) {
       numEntries_ = 0;
       offsets_ = node_.template allocBuffer<size_type>(numRows_+1);
-      ArrayRCP<size_type> h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
+      ArrayRCP<size_type> h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_);
       numEntries_ = nnzEachRow*N;
       h_offsets[0] = 0;
       for (Ordinal i=1; i<numRows_; ++i) {
@@ -180,7 +180,7 @@ namespace Kokkos {
     if (numRows_ > 0) {
       numEntries_ = 0;
       offsets_ = node_.template allocBuffer<size_type>(numRows_+1);
-      ArrayRCP<size_type> h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
+      ArrayRCP<size_type> h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_);
       for (Ordinal i=0; i<numRows_; ++i) {
         h_offsets[i] = numEntries_;
         numEntries_ += nnzPerRow[i];
@@ -197,11 +197,11 @@ namespace Kokkos {
   int CrsMatrix<Scalar,Ordinal,Node>::insertEntries(Ordinal row, size_type numEntries, const Ordinal *indices, const Scalar *values) {
     using Teuchos::ArrayRCP;
     if (row < 0 || row >= numRows_) return -1;
-    ArrayRCP<const size_type> h_offsets = node_.template viewBufferConst<size_type>(2,offsets_,row);
+    ArrayRCP<const size_type> h_offsets = node_.template viewBufferConst<size_type>(2,offsets_+row);
     const size_type rowNNZ = h_offsets[1]-h_offsets[0];
     if (numEntries > rowNNZ) return -2;
-    ArrayRCP<Ordinal> h_indices = node_.template viewBuffer<Ordinal>(true,rowNNZ,indices_,h_offsets[0]);
-    ArrayRCP<Scalar>  h_values  = node_.template viewBuffer<Scalar >(true,rowNNZ,values_, h_offsets[0]);
+    ArrayRCP<Ordinal> h_indices = node_.template viewBuffer<Ordinal>(true,rowNNZ,indices_ + h_offsets[0]);
+    ArrayRCP<Scalar>  h_values  = node_.template viewBuffer<Scalar >(true,rowNNZ, values_ + h_offsets[0]);
     size_type e = 0;
     while (e != numEntries) {
       h_indices[e] = indices[e];
@@ -305,9 +305,9 @@ namespace Kokkos {
   {
     using Teuchos::ArrayRCP;
     using std::endl;
-    ArrayRCP<const size_type> h_offsets = node_.template viewBufferConst<size_type>(numRows_+1,offsets_,0);
-    ArrayRCP<const Ordinal> h_indices = node_.template viewBufferConst<Ordinal>(numEntries_,indices_,0);
-    ArrayRCP<const Scalar> h_values  = node_.template viewBufferConst<Scalar >(numEntries_,values_ ,0);
+    ArrayRCP<const size_type> h_offsets = node_.template viewBufferConst<size_type>(numRows_+1,offsets_);
+    ArrayRCP<const Ordinal> h_indices = node_.template viewBufferConst<Ordinal>(numEntries_,indices_);
+    ArrayRCP<const Scalar> h_values  = node_.template viewBufferConst<Scalar >(numEntries_,values_ );
     out << "Matrix data: " << endl;
     for (int i=0; i<numRows_; ++i) {
       for (int j=h_offsets[i]; j!=h_offsets[i+1]; ++j) {

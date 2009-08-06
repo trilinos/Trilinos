@@ -1,6 +1,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
+#include <Teuchos_Tuple.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "TestOps.hpp"
@@ -16,11 +17,16 @@
 #include "Kokkos_CUDANode.hpp"
 #endif
 
+#define TOCBUF(arr) Teuchos::arcp_reinterpret_cast<const char>(arr)
+#define TONCBUF(arr) Teuchos::arcp_reinterpret_cast<char>(arr)
+
 namespace {
 
+  using Teuchos::ArrayRCP;
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Kokkos::SerialNode;
+  using Teuchos::tuple;
 
   SerialNode serialnode;
 
@@ -121,6 +127,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( NodeAPI, SumTest, SCALAR, NODE )
   {
+    typedef ArrayRCP<const char>  cbuf;
+    typedef ArrayRCP<      char> ncbuf;
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     Teuchos::ArrayRCP<SCALAR> x;
@@ -133,15 +141,17 @@ namespace {
     // set x[i] = 1, i=0:N-1
     {
       TimeMonitor localTimer(tInit);
-      InitOp<SCALAR,NODE> wdp;
-      wdp.x = x;
+      InitOp<SCALAR> wdp;
+      wdp.x = x.get();
+      node.readyBuffers( Teuchos::null, tuple<ncbuf>(TONCBUF(x)) );
       node.parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
       TimeMonitor localTimer(tSum);
-      SumOp<SCALAR,NODE> wdp;
-      wdp.x = x;
+      SumOp<SCALAR> wdp;
+      wdp.x = x.get();
+      node.readyBuffers( tuple<cbuf>(TOCBUF(x)), Teuchos::null );
       result = node.parallel_reduce(0,N,wdp);
     }
     SCALAR expectedResult = (SCALAR)(N);
@@ -149,8 +159,9 @@ namespace {
     // compute sum x[i], i=1:N-2
     {
       TimeMonitor localTimer(tSum);
-      SumOp<SCALAR,NODE> wdp;
-      wdp.x = x;
+      SumOp<SCALAR> wdp;
+      wdp.x = x.get();
+      node.readyBuffers( tuple<cbuf>(TOCBUF(x)), Teuchos::null );
       result = node.parallel_reduce(1,N-1,wdp);
     }
     expectedResult = (SCALAR)(N-2);
@@ -170,7 +181,7 @@ namespace {
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tNoop("Null Op");
     NODE &node = getNode<NODE>();
-    NullOp<NODE> noop;
+    NullOp noop;
     int red = 0;
     {
       TimeMonitor localTimer(tNoop);

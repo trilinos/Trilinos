@@ -2,16 +2,23 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_Tuple.hpp>
 
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_ConfigDefs.hpp"
 #include "TestOps.hpp"
+
+#define TOCBUF(arr) Teuchos::arcp_reinterpret_cast<const char>(arr)
+#define TONCBUF(arr) Teuchos::arcp_reinterpret_cast<char>(arr)
 
 namespace {
 
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Kokkos::DefaultNode;
+  using Teuchos::tuple;
+  using Teuchos::ArrayRCP;
+  using Teuchos::Tuple;
 
   int N = 1000;
 
@@ -31,6 +38,8 @@ namespace {
   {
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     typedef DefaultNode::DefaultNodeType NODE;
+    typedef ArrayRCP<const char>  cbuf;
+    typedef ArrayRCP<      char> ncbuf;
     Teuchos::ArrayRCP<int> x;
     NODE &node = DefaultNode::getDefaultNode();
     out << "Default Node Type: " << Teuchos::typeName(node) << std::endl;
@@ -42,15 +51,17 @@ namespace {
     // set x[i] = 1, i=0:N-1
     {
       TimeMonitor localTimer(tInit);
-      InitOp<int,NODE> wdp;
-      wdp.x = x;
+      InitOp<int> wdp;
+      wdp.x = x.get();
+      node.readyBuffers( Teuchos::null, tuple<ncbuf>(TONCBUF(x)) );
       node.parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
       TimeMonitor localTimer(tSum);
-      SumOp<int,NODE> wdp;
-      wdp.x = x;
+      SumOp<int> wdp;
+      wdp.x = x.get();
+      node.readyBuffers( tuple<cbuf>(TOCBUF(x)), Teuchos::null );
       result = node.parallel_reduce(0,N,wdp);
     }
     int expectedResult = (int)(N);

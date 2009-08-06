@@ -5,15 +5,14 @@
   #define KERNEL_PREFIX
 #endif
 
-template <class Scalar, class Node>
+template <class Scalar>
 struct InitOp {
-  Teuchos::ArrayRCP<Scalar> x;
+  Scalar *x;
   inline KERNEL_PREFIX void execute(int i) {
     x[i] = 1;
   }
 };
 
-template <class Node>
 struct NullOp {
   typedef int ReductionType;
   static inline KERNEL_PREFIX int identity() {return 0;}
@@ -21,12 +20,11 @@ struct NullOp {
   static inline KERNEL_PREFIX int generate(int i) {return 0;}
 };
 
-template <class Scalar, class Node>
+template <class Scalar>
 struct SumOp {
   typedef Scalar ReductionType;
-  typedef Node   NodeType;
 
-  Teuchos::ArrayRCP<const Scalar> x;
+  const Scalar *x;
 
   static inline KERNEL_PREFIX ReductionType identity() {
     return (Scalar)0;
