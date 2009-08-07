@@ -84,7 +84,7 @@ int Zoltan_DD_Update (
 
    /* allocate memory for DD_Update_Msg send buffer */
    if (count)  {
-      sbuff = (char*) ZOLTAN_MALLOC (dd->update_msg_size * count);
+      sbuff = (char*) ZOLTAN_CALLOC (count, dd->update_msg_size);
       if (sbuff == NULL)  {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer");
          err = ZOLTAN_MEMERR;

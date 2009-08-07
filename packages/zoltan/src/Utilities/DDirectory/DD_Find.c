@@ -78,7 +78,7 @@ int Zoltan_DD_Find (
 
    /* allocate memory for DD_Find_Msg send buffer */
    if (count)  {
-      sbuff = (char*) ZOLTAN_MALLOC (dd->find_msg_size * count);
+      sbuff = (char*) ZOLTAN_CALLOC (count, dd->find_msg_size);
       if (sbuff == NULL)  {
          ZOLTAN_FREE (&procs);
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer");
