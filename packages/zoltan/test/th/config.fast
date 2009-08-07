@@ -48,9 +48,9 @@ Test zoltan-octopi_F90_v3_1_OMPI-nightly
 octopi.sandia.gov
 cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
 
-Test zoltan-octopi_MAIN_OMPI-nightly
-octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
+#Test zoltan-octopi_MAIN_OMPI-nightly
+#octopi.sandia.gov
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_v3_1_LAM-nightly
 #octopi.sandia.gov
@@ -87,9 +87,9 @@ cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-bra
 # (2) different random-number generator gives different ParMETIS result.
 ############################################################################
 
-Test zoltan-sun_v3_1-nightly
-seamus
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{hg_*}' 
+#Test zoltan-sun_v3_1-nightly
+#seamus
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build gcctest $tname zdrive 'test/{hg_*}' 
 
 #Test zoltan-sun_CPP_v3_1-nightly
 #seamus
