@@ -36,8 +36,8 @@ struct Zoltan_Struct;
 struct _eval_hg_struct{
   float obj_imbalance;          /* vertex number imbalance */
   float imbalance;              /* vertex weight imbalance */
-  float cutn[EVAL_SIZE];        /* ConCut measure */
-  float cutl[EVAL_SIZE];        /* NetCut measure */
+  float cutl[EVAL_SIZE];        /* ConCut measure */
+  float cutn[EVAL_SIZE];        /* NetCut measure */
   float nobj[EVAL_SIZE];        /* number of partition vertices */
   float obj_wgt[EVAL_SIZE];     /* partition vertex weights */
   float xtra_imbalance[EVAL_MAX_XTRA_VWGTS];
@@ -47,8 +47,8 @@ struct _eval_hg_struct{
 typedef struct _eval_hg_struct HG_EVAL;
 
 struct _eval_graph_struct{
-  float cutn[EVAL_SIZE];        /* HG ConCut measure */
-  float cutl[EVAL_SIZE];        /* HG NetCut measure */
+  float cutl[EVAL_SIZE];        /* HG ConCut measure */
+  float cutn[EVAL_SIZE];        /* HG NetCut measure */
   float cuts[EVAL_SIZE];        /* The number of cut edges */
   float cut_wgt[EVAL_SIZE]  ;   /* The sum of the weights of the cut edges */
   float nnborparts[EVAL_SIZE];  /* The number of neighboring partitions */
