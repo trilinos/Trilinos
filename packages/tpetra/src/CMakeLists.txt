@@ -53,8 +53,6 @@ APPEND_SET(HEADERS
   Tpetra_MapDataDecl.hpp
   Tpetra_MapDecl.hpp
   Tpetra_MultiVector.hpp
-  Tpetra_MultiVectorData.hpp
-  Tpetra_MultiVectorDataDecl.hpp
   Tpetra_MultiVectorDecl.hpp
   Tpetra_Operator.hpp 
   Tpetra_RowGraph.hpp

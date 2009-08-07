@@ -86,7 +86,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, Scale, Scalar, Ordinal, Node )
   {
     Node &node = getNode<Node>();
-    typedef MultiVector<Scalar,Ordinal,Node> MV;
+    typedef MultiVector<Scalar,Node> MV;
     const int numVecs = 5;
     MV MV1(node), MV2(node), vec(node);
     ArrayRCP<Scalar> buf = node.template allocBuffer<Scalar>(2*numVecs*N);

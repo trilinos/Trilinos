@@ -40,7 +40,7 @@ namespace {
   using Kokkos::MultiVector;
   using Teuchos::ArrayRCP;
 
-  int N = 1000;
+  Kokkos::size_type N = 1000;
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
@@ -48,7 +48,9 @@ namespace {
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
-    clp.setOption("test-size",&N,"Vector length for tests.");
+    int n = N;
+    clp.setOption("test-size",&n,"Vector length for tests.");
+    N = n;
   }
 
   //
@@ -58,7 +60,7 @@ namespace {
   // check that default constructor zeros out, for both V and MV
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, DefaultConstructor, Scalar, Ordinal )
   {
-    MultiVector<Scalar,Ordinal,Node> A;
+    MultiVector<Scalar,Node> A;
     TEST_EQUALITY_CONST(A.getNumRows(), 0);
     TEST_EQUALITY_CONST(A.getNumCols(), 0);
     TEST_EQUALITY_CONST(A.getStride(), 0);
@@ -67,11 +69,11 @@ namespace {
   // check copy constructor
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConstructor, Scalar, Ordinal )
   {
-    MultiVector<Scalar,Ordinal,Node> A;
+    MultiVector<Scalar,Node> A;
     ArrayRCP<Scalar> buf = A.getNode().template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
     {
-      MultiVector<Scalar,Ordinal,Node> Acopy(A);
+      MultiVector<Scalar,Node> Acopy(A);
       TEST_EQUALITY_CONST(Acopy.getNumRows(), N);
       TEST_EQUALITY_CONST(Acopy.getNumCols(), 2);
       TEST_EQUALITY_CONST(Acopy.getStride(), N);
@@ -83,7 +85,7 @@ namespace {
   // check that non-default constructor honors given parameters
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, InitializeAndAccess, Scalar, Ordinal )
   {
-    MultiVector<Scalar,Ordinal,Node> A;
+    MultiVector<Scalar,Node> A;
     ArrayRCP<Scalar> buf = A.getNode().template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
     TEST_EQUALITY_CONST(A.getNumRows(), N);

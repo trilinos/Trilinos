@@ -62,35 +62,6 @@ namespace Tpetra {
 
     public:
 
-    //REFACTOR// /** \name Convenient typedefs */
-    //REFACTOR// //@{ 
-    //REFACTOR//
-    //REFACTOR// /*! Non-const pointer-like typedef. 
-    //REFACTOR//     In a debug build (<tt>--enable-teuchos-debug</tt>), this is an 
-    //REFACTOR//     ArrayRCP<Scalar>. In a non-debug build, it is a <tt>Scalar *</tt>. In either case, 
-    //REFACTOR//     the syntax is the same: pointer arithmetic and indexing are supported. */
-    //REFACTOR// typedef typename Teuchos::ArrayView<Scalar>::iterator pointer;
-    //REFACTOR//
-    //REFACTOR// /*! Const pointer-like typedef. 
-    //REFACTOR//     In a debug build (<tt>--enable-teuchos-debug</tt>), this is an 
-    //REFACTOR//     ArrayRCP<const Scalar>. In a non-debug build, it is a <tt>const Scalar *</tt>. In either case, 
-    //REFACTOR//     the syntax is the same: pointer arithmetic and indexing are supported. */
-    //REFACTOR// typedef typename Teuchos::ArrayView<const Scalar>::iterator const_pointer;
-    //REFACTOR//
-    //REFACTOR// /*! Non-const double pointer-like typedef. 
-    //REFACTOR//     In a debug build (<tt>--enable-teuchos-debug</tt>), this is an 
-    //REFACTOR//     ArrayRCP<const ArrayRPC<Scalar> >. In a non-debug build, it is a <tt>Scalar * const *</tt>. In either case, 
-    //REFACTOR//     the syntax is the same, as a two-dimensional data structure. */
-    //REFACTOR// typedef typename Teuchos::ArrayView<const typename Teuchos::ArrayView<Scalar>::iterator>::iterator double_pointer;
-    //REFACTOR//
-    //REFACTOR// /*! Const double pointer-like typedef. 
-    //REFACTOR//     In a debug build (<tt>--enable-teuchos-debug</tt>), this is an 
-    //REFACTOR//     ArrayRCP<const ArrayRCP<const Scalar> >. In a non-debug build, it is a <tt>const Scalar * const *</tt>. In either case, 
-    //REFACTOR//     the syntax is the same, as a two-dimensional data structure. */
-    //REFACTOR// typedef typename Teuchos::ArrayView<const typename Teuchos::ArrayView<const Scalar>::iterator>::iterator const_double_pointer;
-    //REFACTOR//
-    //REFACTOR// //@}
-
     //! @name Constructor/Destructor Methods
     //@{ 
 
@@ -100,37 +71,13 @@ namespace Tpetra {
     //! MultiVector copy constructor.
     MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
-    //! \brief Set multi-vector values from array of pointers using C pointers.
-    /*! \c CopyView indicates whether the data will be copied from the input array or if the MultiVector object will encapsulate the data throughout its existence.
-        \c OwnsMem indicates whether the MultiVector object owns the memory and is therefore responsible for deleting it. This flag is ignored if \c CopyView is \c Teuchos::Copy.
-      
-       Post-condition: constantStride() == false
-     */
-    //REFACTOR// MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos::DataAccess CopyView, Scalar **ArrayOfPtrs, Teuchos_Ordinal NumVectors, bool OwnsMem = false);
-
-    //! \brief Set multi-vector values from two-dimensional array using a C pointer.
-    /*! \c CopyView indicates whether the data will be copied from the input array or if the MultiVector object will encapsulate the data throughout its existence.
-        \c OwnsMem indicates whether the MultiVector object owns the memory and is therefore responsible for deleting it. This flag is ignored if \c CopyView is \c Teuchos::Copy.
-      
-       Post-condition: constantStride() == true
-     */
-    //REFACTOR// MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos::DataAccess CopyView, Scalar *A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors, bool OwnsMem = false);
-
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-    //REFACTOR// MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Scalar> &A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors);
+    MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Scalar> &A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors);
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-    //REFACTOR// MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, Teuchos_Ordinal NumVectors);
-
-    //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (view)
-    /*! Post-condition: constantStride() == true */
-    //REFACTOR// MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayRCP<Scalar> &A, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors);
-
-    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (view)
-    /*! Post-condition: constantStride() == false */
-    //REFACTOR// MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayRCP<Scalar> > &ArrayOfPtrs, Teuchos_Ordinal NumVectors);
+    MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, Teuchos_Ordinal NumVectors);
 
     //! MultiVector destructor.
     virtual ~MultiVector();
@@ -171,33 +118,33 @@ namespace Tpetra {
 
     //@}
 
-    //! @name Data Copy and View extraction methods
-    /** These methods are used to extract the data underlying the MultiVector. They return data in one of three forms: 
+    //! @name Data Copy and View get methods
+    /** These methods are used to get the data underlying the MultiVector. They return data in one of three forms: 
       - a MultiVector with a subset of the columns of the target MultiVector
       - a raw C pointer or array of raw C pointers
       - one of the Teuchos memory management classes
       Not all of these methods are valid for a particular MultiVector. For instance, calling a method that accesses a 
-      view of the data in a 1-D format (i.e., extractView1D) requires that the target MultiVector has constant stride.
+      view of the data in a 1-D format (i.e., get1dView) requires that the target MultiVector has constant stride.
      */
     //@{
 
     //! Returns a MultiVector with copies of selected columns.
-    //REFACTOR// Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const;
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const;
 
     //! Returns a MultiVector with copies of selected columns.
-    //REFACTOR// Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
     //! Returns a MultiVector with views of selected columns.
-    //REFACTOR// Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng);
 
     //! Returns a MultiVector with views of selected columns.
-    //REFACTOR// Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const Teuchos_Index> &cols);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const Teuchos_Index> &cols);
 
     //! Returns a const MultiVector with const views of selected columns.
-    //REFACTOR// Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewConst(const Teuchos::Range1D &colRng) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewConst(const Teuchos::Range1D &colRng) const;
 
     //! Returns a const MultiVector with const views of selected columns.
-    //REFACTOR// Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewConst(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewConst(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
     //! Vector access function.
     Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > operator()(Teuchos_Ordinal j);
@@ -207,41 +154,32 @@ namespace Tpetra {
 
     //! Local vector access function.
     //! Pointer to the local values in a particular vector of this multi-vector.
-    //REFACTOR// inline pointer operator[](Teuchos_Ordinal j);
+    inline Teuchos::ArrayRCP<Scalar> operator[](Teuchos_Ordinal j);
 
     //! Local vector access function.
     //! Pointer to the local values in a particular vector of this multi-vector.
-    //REFACTOR// inline const_pointer operator[](Teuchos_Ordinal j) const;
+    inline Teuchos::ArrayRCP<const Scalar> operator[](Teuchos_Ordinal j) const;
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    void extractCopy1D(typename Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
-
-    //! Return multi-vector values in user-provided two-dimensional array (using C pointers).
-    void extractCopy1D(Scalar *A, Teuchos_Ordinal LDA) const;
+    void get1dCopy(typename Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
 
     //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
-    void extractCopy2D(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
+    void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
 
     //! Return multi-vector values in user-provided array of pointers (using C pointers).
-    void extractCopy2D(Scalar * const * ArrayOfPtrs) const;
+    void get2dCopy(Scalar * const * ArrayOfPtrs) const;
 
-    //! Return non-const non-persisting view of values in a one-dimensional array (using C pointers). Throws std::runtime_error if the underlying data is non-contiguous.
-    //REFACTOR// void extractView1D(Scalar * &A, Teuchos_Ordinal &MyLDA);
+    //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+    void get1dView(Teuchos::ArrayRCP<Scalar> &A, Teuchos_Ordinal &MyLDA);
 
-    //! Return non-const non-persisting view of values in a one-dimensional array (using Teuchos memory management classes). Throws std::runtime_error if the underlying data is non-contiguous.
-    //REFACTOR// void extractView1D(Teuchos::ArrayView<Scalar> &A, Teuchos_Ordinal &MyLDA);
+    //! Return non-const persisting pointers to values.
+    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > getView2D();
 
-    //! Return non-const non-persisting pointers to values.
-    //REFACTOR// inline double_pointer extractView2D();
+    //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+    void get1dViewConst(Teuchos::ArrayRCP<const Scalar> &A, Teuchos_Ordinal &MyLDA) const;
 
-    //! Return const non-persisting view of values in a one-dimensional array (using Teuchos memory management classes). Throws std::runtime_error if the underlying data is non-contiguous.
-    //REFACTOR// void extractConstView1D(Teuchos::ArrayView<const Scalar> &A, Teuchos_Ordinal &MyLDA) const;
-
-    //! Return const non-persisting view of values in a one-dimensional array (using C pointers). Throws std::runtime_error if the underlying data is non-contiguous.
-    //REFACTOR// void extractConstView1D(const Scalar * &A, Teuchos_Ordinal &MyLDA) const;
-
-    //! Return const non-persisting pointers to values.
-    //REFACTOR// inline const_double_pointer extractConstView2D() const;
+    //! Return const persisting pointers to values.
+    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > getView2DConst() const;
 
     //@}
 
@@ -329,13 +267,6 @@ namespace Tpetra {
 
     //@}
 
-/*
-    //! @name Expert-only unsupported methods
-    //@{ 
-
-    //! Reset the view of an existing multivector to point to new user data.
-    void resetView(const Teuchos::ArrayRCP<const Teuchos::ArrayRCP<Scalar> > &ArrayOfPtrs);
-
     //! Get pointer to MultiVector values.
     const Teuchos::ArrayRCP<Scalar> & values();
 
@@ -343,16 +274,15 @@ namespace Tpetra {
     const Teuchos::ArrayRCP<const Scalar> & valuesConst() const;
 
     //@}
-*/
 
     protected:
 
-    typedef Kokkos::MultiVector<Scalar,LocalOrdinal,Node>  KMV;
-    typedef Kokkos::DefaultArithmetic<KMV>                 DMVA;
-    Teuchos::RCP<Kokkos::MultiVector<Scalar,LocalOrdinal,Node> > lclMV_;
+    typedef Kokkos::MultiVector<Scalar,Node>  KMV;
+    typedef Kokkos::DefaultArithmetic<KMV>   DMVA;
+    Teuchos::RCP<KMV> lclMV_;
 
     // Advanced MultiVector constuctor for creating views.
-    MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<Kokkos::MultiVector<Scalar,LocalOrdinal,Node> > &mvdata);
+    MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<KMV> &mvdata);
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &sourceObj, Teuchos_Ordinal &packetSize);
