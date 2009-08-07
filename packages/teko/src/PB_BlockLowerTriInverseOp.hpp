@@ -22,7 +22,7 @@ public:
      * This constructor explicitly takes a lower triangular matrix
      * and inverse diagonal operators and builds a forward substitution operator.
      *
-     * @param[in] L Upper triangular matrix object
+     * @param[in] L Lower triangular matrix object
      * @param[in] invDiag Vector containing the inverse of the diagonal blocks
      */
    BlockLowerTriInverseOp(BlockedLinearOp & L,const std::vector<LinearOp> & invDiag);
