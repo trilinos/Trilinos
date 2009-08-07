@@ -84,17 +84,18 @@ namespace Tpetra {
     //! @name Extraction methods
     //@{
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getCopy1D; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
+    void get1dCopy(Scalar *A) const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getView1D; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView; // overloading, not hiding
     //! Return non-const persisting view of values in a one-dimensional array.
-    inline void get1dView(Teuchos::ArrayView<Scalar> &A);
+    Teuchos::ArrayRCP<Scalar> get1dView();
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getConstView1D; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewConst; // overloading, not hiding
     //! Return const persisting view of values in a one-dimensional array.
-    inline void get1dViewConst(Teuchos::ArrayView<const Scalar> &A) const;
+    Teuchos::ArrayRCP<const Scalar> get1dViewConst() const;
 
     //@}
 

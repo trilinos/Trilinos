@@ -161,7 +161,10 @@ namespace Tpetra {
     inline Teuchos::ArrayRCP<const Scalar> operator[](Teuchos_Ordinal j) const;
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    void get1dCopy(typename Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
+    void get1dCopy(Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
+
+    //! Return multi-vector values in user-provided two-dimensional array (using a C pointer).
+    void get1dCopy(Scalar *A, Teuchos_Ordinal LDA) const;
 
     //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
     void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
@@ -170,16 +173,16 @@ namespace Tpetra {
     void get2dCopy(Scalar * const * ArrayOfPtrs) const;
 
     //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-    void get1dView(Teuchos::ArrayRCP<Scalar> &A, Teuchos_Ordinal &MyLDA);
+    Teuchos::ArrayRCP<Scalar> get1dView();
 
     //! Return non-const persisting pointers to values.
-    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > getView2D();
+    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > get2dView();
 
     //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-    void get1dViewConst(Teuchos::ArrayRCP<const Scalar> &A, Teuchos_Ordinal &MyLDA) const;
+    Teuchos::ArrayRCP<const Scalar> get1dViewConst() const;
 
     //! Return const persisting pointers to values.
-    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > getView2DConst() const;
+    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > get2dViewConst() const;
 
     //@}
 

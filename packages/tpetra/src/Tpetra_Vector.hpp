@@ -41,27 +41,22 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, bool zeroOut) 
     : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node,map,1,zeroOut)
-  { }
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(source)
-  { }
+  {}
 
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //REFACTOR// Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Scalar> &values)
-  //REFACTOR// : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1)
-  //REFACTOR// { }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node,map,values,values.size(),1)
+  {}
 
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //REFACTOR// Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayRCP<Scalar> &values)
-  //REFACTOR// : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1)
-  //REFACTOR// { }
-
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> 
-  //REFACTOR// Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<MultiVectorData<Scalar> > &mvdata) 
-  //REFACTOR//   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,mvdata)
-  //REFACTOR// { }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> 
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<Kokkos::MultiVector<Scalar,Node> > &lclMV) 
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,lclMV)
+  {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~Vector() {}
@@ -92,32 +87,30 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractCopy1D(Teuchos::ArrayView<Scalar> A) const 
-  {
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
     Teuchos_Ordinal lda = this->myLength();
-    this->extractCopy1D(A,lda);
+    this->get1dCopy(A,lda);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractCopy1D(Scalar *A) const 
-  {
-    Teuchos_Ordinal lda = this->myLength();
-    this->extractCopy1D(A,lda);
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Scalar *A) const {
+    this->get1dCopy( Teuchos::arrayView<Scalar>(A,this->myLength()) );
   }
 
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //REFACTOR// void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractView1D(Teuchos::ArrayView<Scalar> &A) 
-  //REFACTOR// {
-  //REFACTOR//   Teuchos_Ordinal dummy;
-  //REFACTOR//   this->extractView1D(A,dummy);
-  //REFACTOR// }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<Scalar> Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView() {
+    Teuchos::ArrayRCP<Scalar> view;
+    Teuchos_Ordinal lda;
+    this->get1dView(view,lda);
+    return view;
+  }
 
-  //REFACTOR// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  //REFACTOR// void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::extractConstView1D(Teuchos::ArrayView<const Scalar> &A) const 
-  //REFACTOR// {
-  //REFACTOR//   Teuchos_Ordinal dummy;
-  //REFACTOR//   this->extractConstView1D(A,dummy);
-  //REFACTOR// }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<const Scalar> Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewConst() const 
+  {
+    Teuchos_Ordinal dummy;
+    this->getConstView1D(A,dummy);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const 
@@ -212,29 +205,6 @@ namespace Tpetra {
     }
     return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->globalLength()));
   }
-
-
-  // FINISH: this is not legal, and will not work for non-trivial buffer<T>::buffer_t tyeps
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar& Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator[](Teuchos_Ordinal index)
-  {
-    TEST_FOR_EXCEPTION(index < this->getMap().getMinLocalIndex() || index > this->getMap().getMaxLocalIndex(),
-        std::runtime_error, "Tpetra::Vector::operator[](j): index j exceeds local dimension.");
-    //Node &node = lclMV_->getNode();
-    //Scalar * mvdata = node.template viewBuffer<Scalar>(myLength(),lclMV_->getValues(0),0);
-    return this->lclMV_->getValues(0)[index];
-    //node.template releaseView<Scalar>(mvdata);
-  }
-
-  // FINISH: this is not legal, and will not work for non-trivial buffer<T>::buffer_t tyeps
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Scalar& Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::operator[](Teuchos_Ordinal index) const
-  {
-    TEST_FOR_EXCEPTION(index < this->getMap().getMinLocalIndex() || index > this->getMap().getMaxLocalIndex(),
-        std::runtime_error, "Tpetra::Vector::operator[](j): index j exceeds local dimension.");
-    return this->lclMV_->getValues(0)[index];
-  }
-
 
 } // namespace Tpetra
 
