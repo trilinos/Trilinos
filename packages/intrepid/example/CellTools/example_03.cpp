@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
   << "|                                                                             |\n" \
   << "|  1) Definition of integration points on edge and face worksets              |\n" \
   << "|  2) Computation of face normals and edge tangents on face and edge worksets |\n" \
+  << "|  2) Computation of side normals on face and edge worksets                   |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov)                      |\n" \
   << "|                      Denis Ridzal (dridzal@sandia.gov), or                  |\n" \
@@ -220,8 +221,6 @@ int main(int argc, char *argv[]) {
   subcellDim = 1;
   subcellOrd = 2;  
   
-  
-  
   /*
    *  3. Obtain the desired Gauss rule on the edge parametrization domain [-1,1]
    */
@@ -237,8 +236,6 @@ int main(int argc, char *argv[]) {
   paramEdgePoints.resize(numCubPoints, cubDim);
   paramEdgeWeights.resize(numCubPoints);
   quadEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
-  
-  
   
   /*
    *  4. Map Gauss points from [-1,1] to every edge in the workset
@@ -263,7 +260,6 @@ int main(int argc, char *argv[]) {
                                 quadNodes,
                                 quadrilateral_4);
   
-  
   /*
    *  5. Print Gauss points on the edges of the workset
    */
@@ -284,7 +280,110 @@ int main(int argc, char *argv[]) {
   
   std::cout << "\n" \
     << "===============================================================================\n"\
-    << "| EXAMPLE 3: Definition of integration points on a Hexahedron edge workset    |\n"\
+    << "| EXAMPLE 3: Edge tangents at Gauss points on a Quadrilateral edge workset    |\n"\
+    << "===============================================================================\n";
+  
+  /*  This task requires Gauss points on edge parametrization domain [-1,1] and on the 
+   *  reference edge whose ordinal matches the edge workset ordinal. This repeats the first few
+   *  steps from Example 2:
+   *  
+   *  1. Define cubature factory and topology for edge parametrization domain [-1,1];
+   *     (Can reuse Step 1, Example 1 because edge parametrization domain is always [-1,1])
+   *  2. Define an edge workset;
+   *  3. Obtain the desired Gauss rule on the edge parametrization domain [-1,1];
+   *  4. Map Gauss points from [-1,1] to reference edge 
+   *     NOTE: this example only demonstrates computation of the edge tangents and so, Gauss 
+   *     points on the edge workset are not needed. Thus we skip mapping Gauss points from 
+   *     reference edge to edge workset
+   *
+   *  5. Compute Jacobians at Gauss points on reference edge for all cells in the workset:
+   */
+  
+  // Step 5.a: Define and allocate storage for workset Jacobians
+  FieldContainer<double> worksetJacobians(worksetSize, numCubPoints, pCellDim, pCellDim);
+  
+  // Step 5.b: Compute Jacobians at Gauss pts. on reference edge for all parent cells:
+  CellTools::setJacobian(worksetJacobians,
+                         refEdgePoints,
+                         quadNodes,
+                         quadrilateral_4);
+  /*
+   * 6. Get the (non-normalized) edge tangents for the edge workset:
+   */
+  // Step 6.a: Allocate storage for edge tangents
+  FieldContainer<double> edgeTangents(worksetSize, numCubPoints, pCellDim);
+  
+  // Step 6.b: Compute the edge tangents:
+  CellTools::getPhysicalEdgeTangents(edgeTangents,
+                                     worksetJacobians,
+                                     subcellOrd,
+                                     quadrilateral_4); 
+  
+  // Step 6.c: Print edge tangents at Gauss points on workset edges (these Gauss points were computed in Example 2)
+  std::cout 
+    << "Edge tangents computed by CellTools::getPhysicalEdgeTangents.\n"
+    << "Local edge ordinal = " << subcellOrd <<"\n";
+  
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    
+    CellTools::printWorksetSubcell(quadNodes, quadrilateral_4, pCell, subcellDim, subcellOrd);
+    
+    for(int pt = 0; pt < numCubPoints; pt++){
+      std::cout << "\t 2D Gauss point: (" 
+      << std::setw(8) << std::right << worksetEdgePoints(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << worksetEdgePoints(pCell, pt, 1) << ")  " 
+      << std::setw(8) << " edge tangent:  " << "(" 
+      << std::setw(8) << std::right << edgeTangents(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << edgeTangents(pCell, pt, 1) << ")\n";
+    }    
+    std::cout << "\n";      
+  }//pCell
+
+  std::cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 4: Side normals at Gauss points on a Quadrilateral side workset     |\n"\
+    << "===============================================================================\n";
+
+  /* For this task we reuse the edge workset from Example 3 as a side workset and compute
+   * normals to the sides in that set. This task repeats the first 5 steps from Example 3
+   * The only difference is that in Step 6 we call CellTools::getPhysicalSideNormals
+   */
+  /*
+   * 6. Get the (non-normalized) side normals for the side (edge) workset:
+   */
+  // Step 6.a: Allocate storage for side normals
+  FieldContainer<double> sideNormals(worksetSize, numCubPoints, pCellDim);
+  
+  // Step 6.b: Compute the side normals:
+  CellTools::getPhysicalSideNormals(sideNormals,
+                                    worksetJacobians,
+                                    subcellOrd,
+                                    quadrilateral_4); 
+  
+  // Step 6.c: Print side normals at Gauss points on workset sides (these Gauss points were computed in Example 2)
+  std::cout 
+    << "Side normals computed by CellTools::getPhysicalSideNormals.\n"
+    << "Local side (edge) ordinal = " << subcellOrd <<"\n";
+  
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    
+    CellTools::printWorksetSubcell(quadNodes, quadrilateral_4, pCell, subcellDim, subcellOrd);
+    
+    for(int pt = 0; pt < numCubPoints; pt++){
+      std::cout << "\t 2D Gauss point: (" 
+      << std::setw(8) << std::right << worksetEdgePoints(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << worksetEdgePoints(pCell, pt, 1) << ")  " 
+      << std::setw(8) << " side normal:  " << "(" 
+      << std::setw(8) << std::right << sideNormals(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << sideNormals(pCell, pt, 1) << ")\n";
+    }    
+    std::cout << "\n";      
+  }//pCell
+  
+    
+  std::cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 5: Definition of integration points on a Hexahedron edge workset    |\n"\
     << "===============================================================================\n";
   
   /*
@@ -331,8 +430,6 @@ int main(int argc, char *argv[]) {
   subcellDim = 1;
   subcellOrd = 5;  
   
-  
-  
   /*
    *  3. Obtain the desired Gauss rule on the edge parametrization domain [-1,1]
    */
@@ -348,8 +445,6 @@ int main(int argc, char *argv[]) {
   paramEdgePoints.resize(numCubPoints, cubDim);
   paramEdgeWeights.resize(numCubPoints);
   hexEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
-  
-  
   
   /*
    *  4. Map Gauss points from [-1,1] to every edge in the workset
@@ -374,7 +469,6 @@ int main(int argc, char *argv[]) {
                                 hexNodes,
                                 hexahedron_8);
   
-  
   /*
    *  5. Print Gauss points on the edges of the workset
    */
@@ -393,29 +487,30 @@ int main(int argc, char *argv[]) {
   }//pCell
   
   
+  
   std::cout << "\n" \
     << "===============================================================================\n"\
-    << "| EXAMPLE 4: Edge tangents at Gauss points on a Hexahedron edge workset       |\n"\
+    << "| EXAMPLE 6: Edge tangents at Gauss points on a Hexahedron edge workset       |\n"\
     << "===============================================================================\n";
   
   /*  This task requires Gauss points on edge parametrization domain [-1,1] and on the 
-    *  reference edge whose ordinal matches the edge workset ordinal. This repeats the first few
-    *  steps from Example 3:
-    *  
-    *  1. Define cubature factory and topology for edge parametrization domain [-1,1];
-    *     (Can reuse Step 1, Example 1 because edge parametrization domain is always [-1,1])
-    *  2. Define an edge workset;
-    *  3. Obtain the desired Gauss rule on the edge parametrization domain [-1,1];
-    *  4. Map Gauss points from [-1,1] to reference edge 
-    *     NOTE: this example only demonstrates computation of the edge tangents and so, Gauss 
-    *     points on the edge workset are not needed. Thus we skip mapping Gauss points from 
-    *     reference edge to edge workset
-    *
-    *  5. Compute Jacobians at Gauss points on reference edge for all cells in the workset:
-    */
+   *  reference edge whose ordinal matches the edge workset ordinal. This repeats the first few
+   *  steps from Example 5:
+   *  
+   *  1. Define cubature factory and topology for edge parametrization domain [-1,1];
+   *     (Can reuse Step 1, Example 1 because edge parametrization domain is always [-1,1])
+   *  2. Define an edge workset;
+   *  3. Obtain the desired Gauss rule on the edge parametrization domain [-1,1];
+   *  4. Map Gauss points from [-1,1] to reference edge 
+   *     NOTE: this example only demonstrates computation of the edge tangents and so, Gauss 
+   *     points on the edge workset are not needed. Thus we skip mapping Gauss points from 
+   *     reference edge to edge workset
+   *
+   *  5. Compute Jacobians at Gauss points on reference edge for all cells in the workset:
+   */
   
   // Step 5.a: Define and allocate storage for workset Jacobians
-  FieldContainer<double> worksetJacobians(worksetSize, numCubPoints, pCellDim, pCellDim);
+  worksetJacobians.resize(worksetSize, numCubPoints, pCellDim, pCellDim);
   
   // Step 5.b: Compute Jacobians at Gauss pts. on reference edge for all parent cells:
   CellTools::setJacobian(worksetJacobians,
@@ -427,7 +522,7 @@ int main(int argc, char *argv[]) {
    * 6. Get the (non-normalized) edge tangents for the edge workset:
    */
   // Step 6.a: Allocate storage for edge tangents
-  FieldContainer<double> edgeTangents(worksetSize, numCubPoints, pCellDim);
+  edgeTangents.resize(worksetSize, numCubPoints, pCellDim);
   
   // Step 6.b: Compute the edge tangents:
   CellTools::getPhysicalEdgeTangents(edgeTangents,
@@ -435,7 +530,7 @@ int main(int argc, char *argv[]) {
                                      subcellOrd,
                                      hexahedron_8); 
   
-  // Step 6.c: Print edge tangents at Gauss points on workset edges (these Gauss points were computed in Example 3)
+  // Step 6.c: Print edge tangents at Gauss points on workset edges (these Gauss points were computed in Example 5)
   std::cout 
     << "Edge tangents computed by CellTools::getPhysicalEdgeTangents.\n"
     << "Local edge ordinal = " << subcellOrd <<"\n";
@@ -460,7 +555,7 @@ int main(int argc, char *argv[]) {
    
  std::cout << "\n" \
     << "===============================================================================\n"\
-    << "| EXAMPLE 5: Definition of integration points on a Hexahedron face workset    |\n"\
+    << "| EXAMPLE 7: Definition of integration points on a Hexahedron face workset    |\n"\
     << "===============================================================================\n";
   /*
    *  1. Common tasks for getting integration points on face worksets: 
@@ -479,9 +574,7 @@ int main(int argc, char *argv[]) {
   
   // Step 1.f: Define storage for cubature points on workset faces
   FieldContainer<double> worksetFacePoints;
-  
-  
-  
+    
   /*
    *  2. Define face workset comprising of 1 face corresponding to reference face 5 on Hexahedron<8>
    *  2.a: Reuse the parent cell topology from Example 3
@@ -491,8 +584,6 @@ int main(int argc, char *argv[]) {
   // Step 2.c: Specify dimension and ordinal (relative to ref. cell) of the subcells in the workset
   subcellDim = 2;
   subcellOrd = 5;  
-  
-  
   
   /*
    *  3. Obtain the desired Gauss rule on the face parametrization domain [-1,1]x[-1,1]
@@ -509,7 +600,6 @@ int main(int argc, char *argv[]) {
   paramFacePoints.resize(numCubPoints, cubDim);
   paramFaceWeights.resize(numCubPoints);
   hexFaceCubature -> getCubature(paramFacePoints, paramFaceWeights);
-  
   
   /*
    *  4. Map Gauss points from [-1,1]x[-1,1] to every face in the workset
@@ -557,7 +647,7 @@ int main(int argc, char *argv[]) {
   
   std::cout << "\n" \
     << "===============================================================================\n"\
-    << "| EXAMPLE 6: Face normals at Gauss points on a Hexahedron face workset        |\n"\
+    << "| EXAMPLE 8: Face normals at Gauss points on a Hexahedron face workset        |\n"\
     << "===============================================================================\n";
   
   /*  This task requires Gauss points on face parametrization domain [-1,1]x[-1,1] and on the 
@@ -618,9 +708,7 @@ int main(int argc, char *argv[]) {
     }    
     std::cout << "\n";      
   }//pCell
-  
-  
-  
+    
   /*
    * 7. Get the (non-normalized) face normals for the face workset using the face tangents. This may
    *    be useful if, for whatever reason,  face tangents are needed independently 
@@ -639,7 +727,7 @@ int main(int argc, char *argv[]) {
   // Step 7.c: Face outer normals (relative to parent cell) are uTan x vTan:
   RealSpaceTools<double>::vecprod(faceNormals, uFaceTan, vFaceTan);
   
-  // Step 7.d: Print face normals at Gauss points on workset faces (these points were computed in Example 4)
+  // Step 7.d: Print face normals at Gauss points on workset faces (these points were computed in Example 7)
   std::cout << "Face normals computed by CellTools::getPhysicalFaceTangents followed by vecprod\n";
   for(int pCell = 0; pCell < worksetSize; pCell++){
     
@@ -658,6 +746,47 @@ int main(int argc, char *argv[]) {
     std::cout << "\n";      
   }//pCell
   
+  
+  std::cout << "\n" \
+    << "===============================================================================\n"\
+    << "| EXAMPLE 8: Side normals at Gauss points on a Hexahedron side workset        |\n"\
+    << "===============================================================================\n";
+  
+  /* For this task we reuse the edge workset from Example 7 as a side workset and compute
+   * normals to the sides in that set. This task repeats the first 5 steps from Example 3
+   * The only difference is that in Step 6 we call CellTools::getPhysicalSideNormals
+   */
+  
+  /*
+   * 6. Get the (non-normalized) side normals for the side (face) workset:
+   */
+  // Step 6.a: Allocate storage for side normals
+  sideNormals.resize(worksetSize, numCubPoints, pCellDim);
+  
+  // Step 6.b: Compute the side normals:
+  CellTools::getPhysicalSideNormals(sideNormals,
+                                    worksetJacobians,
+                                    subcellOrd,
+                                    hexahedron_8); 
+  
+  // Step 7.d: Print side normals at Gauss points on workset sides (these points were computed in Example 7)
+  std::cout << "Side normals computed by CellTools::getPhysicalSideNormals\n";
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    
+    CellTools::printWorksetSubcell(hexNodes, hexahedron_8, pCell, subcellDim, subcellOrd);
+    
+    for(int pt = 0; pt < numCubPoints; pt++){
+      std::cout << "\t 3D Gauss point: (" 
+      << std::setw(8) << std::right << worksetFacePoints(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << worksetFacePoints(pCell, pt, 1) << ", " 
+      << std::setw(8) << std::right << worksetFacePoints(pCell, pt, 2) << ")  " 
+      << std::setw(8) << " side normal:  " << "(" 
+      << std::setw(8) << std::right << sideNormals(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << sideNormals(pCell, pt, 1) << ", " 
+      << std::setw(8) << std::right << sideNormals(pCell, pt, 2) << ")\n";
+    }    
+    std::cout << "\n";      
+  }//pCell
   
   return 0;
 }

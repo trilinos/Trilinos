@@ -756,7 +756,7 @@ public:
                 CellTools<Scalar>::getPhysicalFaceNormals and these two methods are completely equivalent.
               - For 2D cells the physical side normals are defined by \f${\bf n}=(t_2,-t_1)\f$
                 where \f${\bf t}=(t_1,t_2)\f$ are the physical edge tangents computed by 
-                CellTools<Scalar>::getPhysicalEdgeTangents. Therefore, the pair \f$({\bf n},{\bf t})\f$ is positively oriented.
+                CellTools<Scalar>::getPhysicalEdgeTangents. Therefore, the pairs \f$({\bf n},{\bf t})\f$ are positively oriented.
 
 
         \warning

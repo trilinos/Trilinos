@@ -1340,7 +1340,7 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArrayTypeOut &                sid
   if(spaceDim == 2){
 
     // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
-    getPhysicalEdgeTangent(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
+    getPhysicalEdgeTangents(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
     
     // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
     for(int cell = 0; cell < worksetSize; cell++){
