@@ -1046,7 +1046,7 @@ int nrecv = 0;
 int *tmp_hindex, *tmp_hvertex;       /* Pointers into phg->hindex and 
                                         phg->hvertex; set to start of entries
                                         for repartition edges. */
-float *tmp_ewgt;                     /* Edge weights for local repartion
+float *tmp_ewgt = NULL;              /* Edge weights for local repartion
                                         edges */
 int *pins_per_edge = NULL;           /* # of pins in each repartition edge. */
 int i, j, idx;
@@ -1349,7 +1349,7 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
     MPI_Allreduce(tmp_ewgt, &phg->ewgt[phg->nEdge*phg->EdgeWeightDim],
                   nRepartEdge*phg->EdgeWeightDim, MPI_FLOAT, MPI_SUM,
                   phg->comm->row_comm);
-    ZOLTAN_FREE(&tmp_ewgt);
+    if (tmp_ewgt) ZOLTAN_FREE(&tmp_ewgt);
 
     /* Modify hypergraph edge weights to account for the number of 
      * communications done between migrations (the RepartMultiplier).

@@ -335,6 +335,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   if (zoltan_hg->globalObj == 0){
     /* degenerate case - no objects to partition */
     hgp.final_output = 0;
+    *num_exp = 0;
     goto End;
   }
 
