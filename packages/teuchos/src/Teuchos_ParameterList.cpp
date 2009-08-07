@@ -651,6 +651,12 @@ void ParameterList::validateEntryExists(
 
 bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2 )
 {
+  // Check that the top-level names of the two parameter lists are the same
+  //const std::string &paramListName1 = list1.name();
+  //const std::string &paramListName2 = list2.name();
+  //if ( paramListName1 != paramListName2 ) {
+  //  return false;
+  //}
   ParameterList::ConstIterator itr1, itr2;
   for(
     itr1 = list1.begin(), itr2 = list2.begin();
@@ -673,12 +679,22 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
     // held by the ParameterEntry object and this same comparison operator will
     // be used.
   }
+  // Check that the two parameter lists are the same length:
+  if ((itr1 != list1.end()) || (itr2 != list2.end())) {
+    return false;
+  }
   return true;
 }
 
 
 bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& list2 )
 {
+  // Check that the top-level names of the two parameter lists are the same
+  //const std::string &paramListName1 = list1.name();
+  //const std::string &paramListName2 = list2.name();
+  //if ( paramListName1 != paramListName2 ) {
+  //  return false;
+  //}
   ParameterList::ConstIterator itr1, itr2;
   for(
     itr1 = list1.begin(), itr2 = list2.begin();
@@ -712,6 +728,10 @@ bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& l
         return false;
       }
     }
+  }
+  // Check that the two parameter lists are the same length:
+  if ((itr1 != list1.end()) || (itr2 != list2.end())) {
+    return false;
   }
   return true;
 }
