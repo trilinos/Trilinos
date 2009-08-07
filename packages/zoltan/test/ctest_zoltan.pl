@@ -49,7 +49,9 @@ if ($debug) {print "DEBUG:  package $package\n";}
 ### Get the path to mpiexec if it is specified.
 $mpiexec = "mpiexec";
 if ($numArgs > 3) {$mpiexec = $ARGV[3];}
-if ($debug) {print "DEBUG:  mpiexec $mpiexec\n";}
+$mpiexecargs = "--mca mpi_yield_when_idle 1";
+if ($debug) {print "DEBUG:  mpiexec $mpiexec $mpiexecargs\n";}
+
 
 ### Assign the executable.
 $zdrive = "../../src/driver/zdrive.exe";
@@ -156,7 +158,7 @@ TEST:  foreach $file (@inpfiles) {
   ### Execute zdrive.exe.
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $np);
   if ($np > 1) {
-    $cmd = sprintf("$mpiexec -np %d %s %s | tee %s\n", $np, $zdrive, $file, 
+    $cmd = sprintf("$mpiexec $mpiexecargs -np %d %s %s | tee %s\n", $np, $zdrive, $file, 
                    $zouterrfile);
   }
   else {
