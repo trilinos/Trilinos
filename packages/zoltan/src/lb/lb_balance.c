@@ -469,22 +469,19 @@ ZOLTAN_ID_PTR gid;
    *
    *  Unless we were given both maps, compute the inverse map.
    */
+  if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
+    if (*num_import_objs >= 0) 
+      Zoltan_LB_Special_Free_Part(zz, import_global_ids, import_local_ids, 
+                                  import_procs, import_to_part);
+    if (*num_export_objs >= 0) 
+      Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
+                                  export_procs, export_to_part);
+    *num_import_objs = *num_export_objs = -1;
+  }
 
   if (*num_import_objs >= 0){
     if (*num_export_objs >= 0) {
       /* Both maps already available; nothing to do. */;
-
-      if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
-        /* This condition should never happen!! */
-        /* Methods should not return arrays if no lists are requested. */
-        *num_import_objs = *num_export_objs = -1;
-        Zoltan_LB_Special_Free_Part(zz, import_global_ids, import_local_ids, 
-                            import_procs, import_to_part);
-        Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
-                            export_procs, export_to_part);
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-                      "Method returned lists, but no lists requested.");
-      }
     }
     else if (zz->LB.Return_Lists == ZOLTAN_LB_ALL_LISTS || 
              zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS ||
