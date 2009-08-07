@@ -158,11 +158,11 @@ TEST:  foreach $file (@inpfiles) {
   ### Execute zdrive.exe.
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $np);
   if ($np > 1) {
-    $cmd = sprintf("$mpiexec $mpiexecargs -np %d %s %s | tee %s\n", $np, $zdrive, $file, 
-                   $zouterrfile);
+    $cmd = sprintf("$mpiexec $mpiexecargs -np %d %s %s 2>&1 | tee %s\n", 
+                    $np, $zdrive, $file, $zouterrfile);
   }
   else {
-    $cmd = sprintf("%s %s | tee %s\n", $zdrive, $file, $zouterrfile);
+    $cmd = sprintf("%s %s 2>&1 | tee %s\n", $zdrive, $file, $zouterrfile);
   }
   if ($debug) {print "DEBUG Executing now:  $cmd\n";}
   $result = system($cmd);
