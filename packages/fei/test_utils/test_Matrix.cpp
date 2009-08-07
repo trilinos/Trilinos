@@ -85,9 +85,7 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
 
   fei::SharedPtr<fei::MatrixGraph> mgraph(new fei::MatrixGraph_Impl2(rowspace, colspace));
 
-  int patternID1 = 1;
-
-  mgraph->definePattern(patternID1, 2, idType, rowfield);
+  int patternID1 = mgraph->definePattern(2, idType, rowfield);
 
   fei::Pattern* rowpattern = mgraph->getPattern(patternID1);
 
@@ -185,9 +183,7 @@ void test_Matrix_unit4(MPI_Comm comm, int numProcs, int localProc)
 
   fei::SharedPtr<fei::MatrixGraph> mgraph(new fei::MatrixGraph_Impl2(rowspace, colspace));
 
-  int patternID1 = 1;
-
-  mgraph->definePattern(patternID1, 2, idType, rowfield);
+  int patternID1 = mgraph->definePattern(2, idType, rowfield);
 
   fei::Pattern* rowpattern = mgraph->getPattern(patternID1);
 
@@ -341,12 +337,11 @@ test_Matrix::create_matrix(fei::SharedPtr<fei::Factory> factory)
   std::vector<int>& idTypes = test_data.idTypes;
   std::vector<int>& ids = test_data.ids;
 
-  int patternID = 0;
   int numIDs = ids.size();
   int fieldID = fieldIDs[0];
   int idType = idTypes[0];
 
-  mgraph->definePattern(patternID, numIDs, idType, fieldID);
+  int patternID = mgraph->definePattern(numIDs, idType, fieldID);
 
   mgraph->initConnectivityBlock(0, 1, patternID);
 
@@ -418,12 +413,11 @@ int test_Matrix::serialtest1()
   fei::SharedPtr<fei::MatrixGraph>
     matgraph(new fei::MatrixGraph_Impl2(vspc, vspc, "sU_Mat"));
 
-  int patternID = 0;
   int numIDs = ids.size();
   int fieldID = fieldIDs[0];
   int idType = idTypes[0];
 
-  matgraph->definePattern(patternID, numIDs, idType, fieldID);
+  int patternID = matgraph->definePattern(numIDs, idType, fieldID);
 
   CHK_ERR( matgraph->initConnectivityBlock(0, 1, patternID) );
 
@@ -481,11 +475,10 @@ int test_Matrix::serialtest2()
 
   fei::SharedPtr<fei::MatrixGraph> matgraph(new fei::MatrixGraph_Impl2(vspc, vspc, "sU_Mat"));
 
-  int patternID = 0;
   int numIDs = ids.size();
   int idType = idTypes[0];
 
-  matgraph->definePattern(patternID, numIDs, idType);
+  int patternID = matgraph->definePattern(numIDs, idType);
 
   CHK_ERR( matgraph->initConnectivityBlock(0, 1, patternID) );
 
@@ -548,12 +541,11 @@ int test_Matrix::serialtest3()
   fei::SharedPtr<fei::MatrixGraph>
     matgraph(new fei::MatrixGraph_Impl2(vspc, vspc, "sU_Mat3"));
 
-  int patternID = 0;
   int numIDs = ids.size();
   int fieldID = fieldIDs[0];
   int idType = idTypes[0];
 
-  matgraph->definePattern(patternID, numIDs, idType, fieldID);
+  int patternID = matgraph->definePattern(numIDs, idType, fieldID);
 
   CHK_ERR( matgraph->initConnectivityBlock(0, 1, patternID) );
 

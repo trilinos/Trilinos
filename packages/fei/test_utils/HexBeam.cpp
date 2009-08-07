@@ -518,10 +518,10 @@ int init_elem_connectivities(fei::MatrixGraph* matrixGraph, HexBeam& hexcube)
 //  int fieldSize = hexcube.numDofPerNode();
   int nodeIDType = 0;
 
-  int patternID = 0;
 
+  int patternID = 0;
 //  if (fieldSize > 1) {
-    matrixGraph->definePattern(patternID, nodesPerElem,
+    patternID = matrixGraph->definePattern(nodesPerElem,
 			       nodeIDType, fieldID);
 //  }
 //  else {
@@ -529,8 +529,7 @@ int init_elem_connectivities(fei::MatrixGraph* matrixGraph, HexBeam& hexcube)
 //    //our mesh-nodes. fei:: objects assume that identifiers without an
 //    //associated field always have exactly one degree-of-freedom.
 //    //
-//    CHK_ERR( matrixGraph->definePattern(patternID, nodesPerElem,
-//				      nodeIDType) );
+//    patternID = matrixGraph->definePattern(nodesPerElem, nodeIDType);
 //  }
 
   int blockID = 0;

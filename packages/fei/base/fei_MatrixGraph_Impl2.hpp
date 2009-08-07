@@ -96,7 +96,7 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
   fei::SharedPtr<fei::VectorSpace> getColSpace();
 
   /** Define a pattern to use for subsequent blocked-contributions. Examples
-      include element-contributions.<br>
+      include element-contributions. returns patternID.<br>
 
       This is the simplest of the pattern-definition methods. IMPORTANT NOTE:
       this method does not associate a field with the identifiers. Only use
@@ -107,20 +107,18 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
       be used is for non finite-element problems that don't have
       identifier/field pairs.
 
-      @param patternID Input. Identifier to be used later when referring to
-      this pattern.
       @param numIDs Input. number of identifiers per pattern 'instance'.
       @param idType Input. Specifies which type of identifiers are associated
       with instances of this pattern. Must be one of the idTypes defined for a
       VectorSpace that is associated with this MatrixGraph. idTypes are
       defined via the method VectorSpace::defineIDTypes().
+      @return patternID
     */
-  void definePattern(int patternID,
-                      int numIDs,
-                     int idType);
+  int definePattern(int numIDs,
+                    int idType);
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-        include element-contributions.<br>
+        include element-contributions. returns patternID.<br>
 
         This is the simplest of the 3 pattern-definition methods that
         associate fields with identifiers (there is one pattern-definition
@@ -130,23 +128,21 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
         identifier in a list of identifiers, and all the identifiers in the list
         are of the same type.<br>
 
-        @param patternID Input. Identifier to be used later when referring to
-        this pattern.
         @param numIDs Input. number of identifiers per pattern 'instance'.
-        @param idType Input. Specifies which type of identifiers are associated
-        with instances of this pattern. Must be one of the idTypes defined for a
+        @param idType Input. Specifies which type of identifiers are associated with instances of this pattern. Must be one of the idTypes defined for a
         VectorSpace that is associated with this MatrixGraph. idTypes are
         defined via the method VectorSpace::defineIDTypes().
         @param fieldID Input. field-identifier for the single field that is to
         reside at each identifier.
+        @return patternID Identifier to be used later when referring to
+        this pattern.
     */
-  void definePattern(int patternID,
-                    int numIDs,
+  int definePattern(int numIDs,
                     int idType,
                     int fieldID);
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-        include element-contributions.<br>
+        include element-contributions. returns patternID<br>
 
         This is the 'middle' of the pattern-definition methods, in terms of
         the complexity of pattern that can be defined. This method
@@ -154,8 +150,6 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
         same type, but an arbitrary list of fields can be associated with each
         identifier. <br>
 
-        @param patternID Input. Identifier to be used later when referring to
-        this pattern.
         @param numIDs Input. number of identifiers per pattern 'instance'.
         @param idType Input. Specifies which type of identifiers are associated
         with instances of this pattern. Must be one of the idTypes defined for
@@ -167,9 +161,10 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
         @param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
         Contains the fieldIDs to be associated with the identifiers for a
         contribution.
+        @return patternID Identifier to be used later when referring to
+        this pattern.
     */
-   void definePattern(int patternID,
-                     int numIDs,
+   int definePattern(int numIDs,
                      int idType,
                      const int* numFieldsPerID,
                      const int* fieldIDs);
@@ -181,8 +176,6 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
         method defines a pattern consisting of a mixture of identifier-types,
         with each identifier having an arbitrary list of associated fields.<br>
 
-        @param patternID Input. Identifier to be used later when referring to
-        this pattern.
         @param numIDs Input. number of identifiers per pattern 'instance'.
         @param idTypes Input. List of length numIDs. Specifies the type of each
         identifier to be contributed for instances of this pattern. Each of the
@@ -195,9 +188,10 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
         @param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
         Contains the fieldIDs to be associated with the identifiers for a
         contribution.
+        @return patternID Identifier to be used later when referring to
+        this pattern.
     */
-   void definePattern(int patternID,
-                     int numIDs,
+   int definePattern(int numIDs,
                      const int* idTypes,
                      const int* numFieldsPerID,
                      const int* fieldIDs);
@@ -589,6 +583,8 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
                                          fei::ConnectivityBlock* cblock);
    int addBlockToGraph_sparse(fei::Graph* graph,
                               fei::ConnectivityBlock* cblock);
+
+   int addPattern(fei::Pattern* pattern);
 
    int getConnectivityIndices_multiField(fei::Record** records, int numRecords,
                                          const int* numFieldsPerID,

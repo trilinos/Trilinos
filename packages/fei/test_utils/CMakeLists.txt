@@ -48,7 +48,6 @@ APPEND_SET(HEADERS
   HexBeamCR.hpp
   HexBeam.hpp
   InputData.hpp
-  InputFileReader.hpp
   LibraryFactory.hpp
   PoissonData.hpp
   Poisson_Elem.hpp
@@ -96,7 +95,6 @@ APPEND_SET(SOURCES
   FEI_tester.cpp
   HexBeam.cpp
   HexBeamCR.cpp
-  InputFileReader.cpp
   LibraryFactory.cpp
   PoissonData.cpp
   Poisson_Elem.cpp

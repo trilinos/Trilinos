@@ -36,7 +36,6 @@ fei::FEI_Impl::FEI_Impl(fei::SharedPtr<LibraryWrapper> wrapper,
     nodeIDType_(0),
     elemIDType_(1),
     constraintIDType_(2),
-    patternID_(0),
     factory_(1),
     rowSpace_(NULL),
     matGraph_(),
@@ -95,7 +94,6 @@ fei::FEI_Impl::FEI_Impl(const fei::Factory* factory,
     nodeIDType_(0),
     elemIDType_(1),
     constraintIDType_(2),
-    patternID_(0),
     factory_(1),
     createdFactory_(false),
     rowSpace_(NULL),
@@ -332,9 +330,7 @@ int fei::FEI_Impl::initElemBlock(GlobalID elemBlockID,
     any_blocks_have_elem_dof_ = true;
   }
 
-  int pattID = patternID_++;
-  matGraph_->definePattern(pattID,
-			   numIDs,
+  int pattID = matGraph_->definePattern(numIDs,
 			   &idTypes[0],
 			   &numFieldsPerID[0],
 			   &fieldIDs[0]);

@@ -83,10 +83,9 @@ void test_DirBCManager_addBCRecords(MPI_Comm comm)
 
   fei::SharedPtr<fei::MatrixGraph> mgraph(new fei::MatrixGraph_Impl2(vspace, vspace));
 
-  int patternID = 0;
   int numIDs = 1;
 
-  mgraph->definePattern(patternID, numIDs, idtype, fieldID);
+  int patternID = mgraph->definePattern(numIDs, idtype, fieldID);
 
   int blockID = 0;
 
@@ -166,10 +165,9 @@ void test_DirBCManager_finalizeBCEqns(MPI_Comm comm)
 
   fei::SharedPtr<fei::MatrixGraph> mgraph(new fei::MatrixGraph_Impl2(vspace, vspace));
 
-  int patternID = 0;
   int numIDs = 1;
 
-  mgraph->definePattern(patternID, numIDs, idtype);
+  int patternID = mgraph->definePattern(numIDs, idtype);
 
   int blockID = 0;
 

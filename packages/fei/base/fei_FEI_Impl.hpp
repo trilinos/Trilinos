@@ -452,7 +452,6 @@ namespace fei {
     int nodeIDType_;
     int elemIDType_;
     int constraintIDType_;
-    int patternID_;
 
     std::vector<fei::SharedPtr<fei::Factory> > factory_;
     bool createdFactory_;

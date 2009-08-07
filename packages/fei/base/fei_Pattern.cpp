@@ -9,9 +9,8 @@
 #include "fei_Pattern.hpp"
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int patternID, int numIDs, int idType)
+fei::Pattern::Pattern(int numIDs, int idType)
   : type_(Pattern::NO_FIELD),
-    patternID_(patternID),
     numIDs_(numIDs),
     totalNumFields_(0),
     numIndices_(numIDs),
@@ -48,10 +47,9 @@ fei::Pattern::Pattern(int patternID, int numIDs, int idType)
 }
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int patternID, int numIDs, int idType,
+fei::Pattern::Pattern(int numIDs, int idType,
 			  int fieldID, int fieldSize)
   : type_(Pattern::SIMPLE),
-    patternID_(patternID),
     numIDs_(numIDs),
     totalNumFields_(numIDs),
     numIndices_(0), //numIndices_ to be calculated
@@ -90,12 +88,11 @@ fei::Pattern::Pattern(int patternID, int numIDs, int idType,
 }
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int patternID, int numIDs, int idType,
+fei::Pattern::Pattern(int numIDs, int idType,
 			  const int* numFieldsPerID,
 			  const int* fieldIDs,
 			  const int* fieldSizes)
   : type_(Pattern::SINGLE_IDTYPE),
-    patternID_(patternID),
     numIDs_(numIDs),
     totalNumFields_(0), //totalNumFields_ to be calculated
     numIndices_(0), //numIndices_ to be calculated
@@ -151,12 +148,11 @@ fei::Pattern::Pattern(int patternID, int numIDs, int idType,
 }
 
 //-----------------------------------------------------------------------------
-fei::Pattern::Pattern(int patternID, int numIDs, const int* idTypes,
+fei::Pattern::Pattern(int numIDs, const int* idTypes,
 			  const int* numFieldsPerID,
 			  const int* fieldIDs,
 			  const int* fieldSizes)
   : type_(Pattern::GENERAL),
-    patternID_(patternID),
     numIDs_(numIDs),
     totalNumFields_(0), //totalNumFields_ to be calculated
     numIndices_(0), //numIndices_ to be calculated
@@ -224,3 +220,20 @@ fei::Pattern::Pattern(int patternID, int numIDs, const int* idTypes,
 fei::Pattern::~Pattern()
 {
 }
+
+//-----------------------------------------------------------------------------
+bool fei::Pattern::operator==(const fei::Pattern& rhs) const
+{
+  return type_ == rhs.type_ &&
+         numIDs_ == rhs.numIDs_ &&
+         totalNumFields_ == rhs.totalNumFields_ &&
+         numIndices_ == rhs.numIndices_ &&
+         data_ == rhs.data_;
+}
+
+//-----------------------------------------------------------------------------
+bool fei::Pattern::operator!=(const fei::Pattern& rhs) const
+{
+  return !(*this == rhs);
+}
+

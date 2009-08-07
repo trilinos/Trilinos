@@ -28,25 +28,25 @@ namespace fei {
     enum PatternType { NO_FIELD, SIMPLE, SINGLE_IDTYPE, GENERAL };
 
     /** Constructor, Pattern::PatternType == NO_FIELD */
-    Pattern(int patternID, int numIDs, int idType);
+    Pattern(int numIDs, int idType);
 
     /** Constructor, Pattern::PatternType == SIMPLE
 	There is only one id-type, and only one field.
      */
-    Pattern(int patternID, int numIDs, int idType,
+    Pattern(int numIDs, int idType,
 	    int fieldID, int fieldSize);
 
     /** Constructor, Pattern::PatternType == SINGLE_IDTYPE
 	There is only one id-type, but there may be multiple fields per id.
      */
-    Pattern(int patternID, int numIDs, int idType,
+    Pattern(int numIDs, int idType,
 	    const int* numFieldsPerID,
 	    const int* fieldIDs, const int* fieldSizes);
 
     /** Constructor, Pattern::PatternType == GENERAL
 	There may be multiple id-types as well as multiple fields-per-id.
      */
-    Pattern(int patternID, int numIDs, const int* idTypes,
+    Pattern(int numIDs, const int* idTypes,
 	    const int* numFieldsPerID,
 	    const int* fieldIDs, const int* fieldSizes);
 
@@ -55,10 +55,6 @@ namespace fei {
     /** Return pattern-type-identifying enum
      */
     PatternType getPatternType() const { return( type_ ); }
-
-    /** Return integer pattern-identifier
-     */
-    int getPatternID() const { return( patternID_ ); }
 
     /** Return the number of identifiers described by this pattern. */
     int getNumIDs() const { return( numIDs_ ); }
@@ -88,9 +84,16 @@ namespace fei {
     */
     int getNumIndices() const { return( numIndices_ ); }
 
+    /** return true if the 'rhs' pattern is the same as 'this' pattern.
+     */
+    bool operator==(const Pattern& rhs) const;
+
+    /** return true if the 'rhs' pattern is different than 'this' pattern.
+     */
+    bool operator!=(const Pattern& rhs) const;
+
   private:
     PatternType type_;
-    int patternID_;
     int numIDs_;
     int totalNumFields_;
     int numIndices_;

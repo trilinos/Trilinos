@@ -931,10 +931,10 @@ int init_elem_connectivities(fei::MatrixGraph* matrixGraph,
   int numNodesPerElement = poissonData.getNumNodesPerElement();
   int** fieldIDsTable = poissonData.getNodalFieldIDsTable();
 
-  int patternID = 0;
   int nodeIDType = 0;
 
-  matrixGraph->definePattern(patternID, numNodesPerElement,
+  int patternID =
+    matrixGraph->definePattern(numNodesPerElement,
 			     nodeIDType, fieldIDsTable[0][0]);
 
   CHK_ERR( matrixGraph->initConnectivityBlock(elemBlockID,

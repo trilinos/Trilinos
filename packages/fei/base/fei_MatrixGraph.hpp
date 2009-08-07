@@ -92,7 +92,8 @@ class MatrixGraph {
   virtual fei::SharedPtr<fei::VectorSpace> getColSpace() = 0;
 
   /** Define a pattern to use for subsequent blocked-contributions. Examples
-      include element-contributions.<br>
+      include element-contributions. Return an int patternID that can be used
+      to reference this pattern in calls to initConnectivityBlock, etc<br>
 
       This is the simplest of the pattern-definition methods. IMPORTANT NOTE:
       this method does not associate a field with the identifiers. Only use
@@ -103,20 +104,20 @@ class MatrixGraph {
       be used is for non finite-element problems that don't have
       identifier/field pairs.
 
-      @param patternID Input. Identifier to be used later when referring to
-      this pattern.
       @param numIDs Input. number of identifiers per pattern 'instance'.
       @param idType Input. Specifies which type of identifiers are associated
       with instances of this pattern. Must be one of the idTypes defined for a
       VectorSpace that is associated with this MatrixGraph. idTypes are
       defined via the method VectorSpace::defineIDTypes().
+
+      @return patternID
     */
-  virtual void definePattern(int patternID,
-                      int numIDs,
+  virtual int definePattern(int numIDs,
                      int idType) = 0;
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-        include element-contributions.<br>
+      include element-contributions. Return an int patternID that can be used
+      to reference this pattern in calls to initConnectivityBlock, etc<br>
 
         This is the simplest of the 3 pattern-definition methods that
         associate fields with identifiers (there is one pattern-definition
@@ -126,8 +127,6 @@ class MatrixGraph {
         identifier in a list of identifiers, and all the identifiers in the list
         are of the same type.<br>
 
-        @param patternID Input. Identifier to be used later when referring to
-        this pattern.
         @param numIDs Input. number of identifiers per pattern 'instance'.
         @param idType Input. Specifies which type of identifiers are associated
         with instances of this pattern. Must be one of the idTypes defined for a
@@ -135,14 +134,16 @@ class MatrixGraph {
         defined via the method VectorSpace::defineIDTypes().
         @param fieldID Input. field-identifier for the single field that is to
         reside at each identifier.
+
+        @return patternID
     */
-  virtual void definePattern(int patternID,
-                    int numIDs,
+  virtual int definePattern(int numIDs,
                     int idType,
                     int fieldID) = 0;
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-        include element-contributions.<br>
+        include element-contributions. Return an int patternID that can be used
+        to reference this pattern in calls to initConnectivityBlock, etc.<br>
 
         This is the 'middle' of the pattern-definition methods, in terms of
         the complexity of pattern that can be defined. This method
@@ -150,8 +151,6 @@ class MatrixGraph {
         same type, but an arbitrary list of fields can be associated with each
         identifier. <br>
 
-        @param patternID Input. Identifier to be used later when referring to
-        this pattern.
         @param numIDs Input. number of identifiers per pattern 'instance'.
         @param idType Input. Specifies which type of identifiers are associated
         with instances of this pattern. Must be one of the idTypes defined for
@@ -163,22 +162,22 @@ class MatrixGraph {
         @param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
         Contains the fieldIDs to be associated with the identifiers for a
         contribution.
+        @return patternID Input. Identifier to be used later when referring to
+        this pattern.
     */
-   virtual void definePattern(int patternID,
-                     int numIDs,
+   virtual int definePattern(int numIDs,
                      int idType,
                      const int* numFieldsPerID,
                      const int* fieldIDs) = 0;
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-        include element-contributions.<br>
+        include element-contributions. Return an int patternID that can be used
+        to reference this pattern in calls to initConnectivityBlock, etc.<br>
 
         This is the most general of the pattern-definition methods. This
         method defines a pattern consisting of a mixture of identifier-types,
         with each identifier having an arbitrary list of associated fields.<br>
 
-        @param patternID Input. Identifier to be used later when referring to
-        this pattern.
         @param numIDs Input. number of identifiers per pattern 'instance'.
         @param idTypes Input. List of length numIDs. Specifies the type of each
         identifier to be contributed for instances of this pattern. Each of the
@@ -191,9 +190,10 @@ class MatrixGraph {
         @param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
         Contains the fieldIDs to be associated with the identifiers for a
         contribution.
+        @return patternID Input. Identifier to be used later when referring to
+        this pattern.
     */
-   virtual void definePattern(int patternID,
-                     int numIDs,
+   virtual int definePattern(int numIDs,
                      const int* idTypes,
                      const int* numFieldsPerID,
                      const int* fieldIDs) = 0;

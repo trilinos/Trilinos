@@ -228,133 +228,113 @@ void fei::MatrixGraph_Impl2::setColumnSpace(fei::SharedPtr<fei::VectorSpace> col
 }
 
 //----------------------------------------------------------------------------
-void fei::MatrixGraph_Impl2::definePattern(int patternID,
-                                    int numIDs,
-                                    int idType)
+int fei::MatrixGraph_Impl2::addPattern(fei::Pattern* pattern)
 {
   std::map<int,fei::Pattern*>::iterator
-    p_iter = patterns_.find(patternID);
+    p_iter = patterns_.begin(), p_iter_end = patterns_.end();
 
-  if (p_iter != patterns_.end()) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
-        << " already used.";
-    throw std::runtime_error(osstr.str());
+  bool matches_existing_pattern = false;
+  int pattern_id = -1;
+  while(p_iter != p_iter_end && !matches_existing_pattern) {
+    if (*pattern == *(p_iter->second)) {
+      matches_existing_pattern = true;
+      pattern_id = p_iter->first;
+    }
+    else ++p_iter;
   }
 
-  fei::Pattern* pattern = new fei::Pattern(patternID, numIDs, idType);
+  if (!matches_existing_pattern) {
+    pattern_id = patterns_.size();
+    patterns_.insert(std::make_pair(pattern_id, pattern));
+  }
+  else {
+    delete pattern;
+  }
 
-  patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
+  return pattern_id;
 }
 
 //----------------------------------------------------------------------------
-void fei::MatrixGraph_Impl2::definePattern(int patternID,
-                                      int numIDs,
+int fei::MatrixGraph_Impl2::definePattern(int numIDs,
+                                    int idType)
+{
+  fei::Pattern* pattern = new fei::Pattern(numIDs, idType);
+  return addPattern(pattern);
+}
+
+//----------------------------------------------------------------------------
+int fei::MatrixGraph_Impl2::definePattern(int numIDs,
                                       int idType,
                                       int fieldID)
 {
-  std::map<int,fei::Pattern*>::iterator
-    p_iter = patterns_.find(patternID);
-
-  if (p_iter != patterns_.end()) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "fei::MatrixGraph_Impl2::definePattern ERROR, patternID="<<patternID
-        << " already used.";
-    throw std::runtime_error(osstr.str());
-  }
-
+  unsigned fieldsize = 0;
   try {
-  unsigned fieldsize = snl_fei::getFieldSize(fieldID,
-                                             rowSpace_.get(), colSpace_.get());
-
-  fei::Pattern* pattern =
-    new fei::Pattern(patternID, numIDs, idType, fieldID, fieldsize);
-
-  patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
+    fieldsize = snl_fei::getFieldSize(fieldID, rowSpace_.get(), colSpace_.get());
   }
   catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::definePattern caught error: "<<exc.what();
     throw std::runtime_error(osstr.str());
   }
+
+  fei::Pattern* pattern =
+    new fei::Pattern(numIDs, idType, fieldID, fieldsize);
+  return addPattern(pattern);
 }
 
 //----------------------------------------------------------------------------
-void fei::MatrixGraph_Impl2::definePattern(int patternID,
-                                     int numIDs,
+int fei::MatrixGraph_Impl2::definePattern(int numIDs,
                                      int idType,
                                      const int* numFieldsPerID,
                                      const int* fieldIDs)
-{
-  std::map<int,fei::Pattern*>::iterator
-    p_iter = patterns_.find(patternID);
-
-  if (p_iter != patterns_.end()) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
-        << " already used.";
-    throw std::runtime_error(osstr.str());
-  }
-
-  try {
+{ 
   std::vector<int> fieldSizes;
-  int offset = 0;
-  for(int i=0; i<numIDs; ++i) {
-    for(int j=0; j<numFieldsPerID[i]; ++j) {
-      fieldSizes.push_back(snl_fei::getFieldSize(fieldIDs[offset++],
+  try {
+    int offset = 0;
+    for(int i=0; i<numIDs; ++i) {
+      for(int j=0; j<numFieldsPerID[i]; ++j) {
+        fieldSizes.push_back(snl_fei::getFieldSize(fieldIDs[offset++],
                                               rowSpace_.get(), colSpace_.get()));
+      }
     }
-  }
-
-  fei::Pattern* pattern = new fei::Pattern(patternID, numIDs, idType,
-                        numFieldsPerID, fieldIDs, &(fieldSizes[0]));
-
-  patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
   }
   catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::definePattern caught error: "<<exc.what();
     throw std::runtime_error(osstr.str());
   }
+
+
+  fei::Pattern* pattern = new fei::Pattern(numIDs, idType,
+                        numFieldsPerID, fieldIDs, &(fieldSizes[0]));
+  return addPattern(pattern);
 }
 
 //----------------------------------------------------------------------------
-void fei::MatrixGraph_Impl2::definePattern(int patternID,
-                                      int numIDs,
+int fei::MatrixGraph_Impl2::definePattern(int numIDs,
                                       const int* idTypes,
                                       const int* numFieldsPerID,
                                       const int* fieldIDs)
 {
-  std::map<int,fei::Pattern*>::iterator
-    p_iter = patterns_.find(patternID);
-
-  if (p_iter != patterns_.end()) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
-        << " already used.";
-    throw std::runtime_error(osstr.str());
-  }
-
-  try {
   std::vector<int> fieldSizes;
-  int offset = 0;
-  for(int i=0; i<numIDs; ++i) {
-    for(int j=0; j<numFieldsPerID[i]; ++j) {
-      fieldSizes.push_back(snl_fei::getFieldSize(fieldIDs[offset++],
+  try {
+    int offset = 0;
+    for(int i=0; i<numIDs; ++i) {
+      for(int j=0; j<numFieldsPerID[i]; ++j) {
+        fieldSizes.push_back(snl_fei::getFieldSize(fieldIDs[offset++],
                                               rowSpace_.get(), colSpace_.get()));
+      }
     }
-  }
-
-  fei::Pattern* pattern = new fei::Pattern(patternID, numIDs, idTypes,
-                        numFieldsPerID, fieldIDs, &(fieldSizes[0]));
-
-  patterns_.insert(std::pair<int,fei::Pattern*>(patternID, pattern));
   }
   catch (std::runtime_error& exc) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::MatrixGraph_Impl2::definePattern caught error: "<<exc.what();
     throw std::runtime_error(osstr.str());
   }
+
+  fei::Pattern* pattern = new fei::Pattern(numIDs, idTypes,
+                        numFieldsPerID, fieldIDs, &(fieldSizes[0]));
+  return addPattern(pattern);
 }
 
 //------------------------------------------------------------------------------

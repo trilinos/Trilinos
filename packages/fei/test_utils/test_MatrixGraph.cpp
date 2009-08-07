@@ -119,8 +119,8 @@ void test_MatrixGraph_test7(MPI_Comm comm, int numProcs, int localProc)
 
   fei::MatrixGraph_Impl2 mgraph(rowspace, colspace);
 
-  mgraph.definePattern(0, 4, 0, colfield);
-  fei::Pattern* pattern = mgraph.getPattern(0);
+  int pID = mgraph.definePattern(4, 0, colfield);
+  fei::Pattern* pattern = mgraph.getPattern(pID);
 
   if (pattern->getNumIndices() != 4*colfieldsize) {
     FEI_COUT << "getNumIndices: " << pattern->getNumIndices()<<", colfieldsize: " << colfieldsize<<FEI_ENDL;
@@ -147,8 +147,7 @@ void test_MatrixGraph_test8(MPI_Comm comm, int numProcs, int localProc)
   fei::MatrixGraph_Impl2 mgraph(rowspace, colspace);
 
   int numIDs = 4;
-  int patternID = 0;
-  mgraph.definePattern(patternID, numIDs, idType, rowfield);
+  int patternID = mgraph.definePattern(numIDs, idType, rowfield);
   fei::Pattern* pattern = mgraph.getPattern(patternID);
 
   if (pattern->getNumIndices() != 4*rowfieldsize) {
@@ -218,7 +217,7 @@ int test_MatrixGraph::serialtest1()
   std::vector<int> fieldIDs(numIDs, 0);
   std::vector<int> fieldSizes(numIDs, 1);
 
-  fei::Pattern pattern(0, numIDs, &idTypes[0],
+  fei::Pattern pattern(numIDs, &idTypes[0],
 			   &numFieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
 
   fei::Pattern::PatternType pType = pattern.getPatternType();
@@ -327,10 +326,9 @@ int test_MatrixGraph::test2()
 int init_nonsymmetric_block(testData* testdata,
 			    fei::MatrixGraph* matrixGraph)
 {
-  int rowPatternID = 5, colPatternID = 6;
-  matrixGraph->definePattern(rowPatternID, 1, 0,
+  int rowPatternID = matrixGraph->definePattern(1, 0,
 			     testdata->fieldIDs[0]);
-  matrixGraph->definePattern(colPatternID, 1, 0,
+  int colPatternID = matrixGraph->definePattern(1, 0,
 			     testdata->fieldIDs[1]);
 
   CHK_ERR( matrixGraph->initConnectivityBlock(2, 1, rowPatternID, colPatternID) );
@@ -689,12 +687,12 @@ fei::SharedPtr<fei::MatrixGraph> test_MatrixGraph::create_MatrixGraph(testData* 
       fieldIDsArray[i*2+1] = testdata->fieldIDs[1];
     }
 
-    matrixGraphPtr->definePattern(patternID, numIDs, idType,
+    patternID = matrixGraphPtr->definePattern(numIDs, idType,
 					 &numFieldsPerID[0],
 					 &fieldIDsArray[0]);
   }
   else {
-    matrixGraphPtr->definePattern(patternID, numIDs, idType, fieldID);
+    patternID = matrixGraphPtr->definePattern(numIDs, idType, fieldID);
   }
 
   int blockID = 0;
@@ -721,17 +719,17 @@ fei::SharedPtr<fei::MatrixGraph> test_MatrixGraph::create_MatrixGraph(testData* 
       fieldIDsArray[i*2+1] = testdata->fieldIDs[1];
     }
 
-    matrixGraphPtr->definePattern(patternID1, numRowIDs, idType,
+    patternID1 = matrixGraphPtr->definePattern(numRowIDs, idType,
 					 &numFieldsPerID[0],
 					 &fieldIDsArray[0]);
-    matrixGraphPtr->definePattern(patternID2, numColIDs, idType,
+    patternID2 = matrixGraphPtr->definePattern(numColIDs, idType,
 					 &numFieldsPerID[0],
 					 &fieldIDsArray[0]);
   }
   else {
-    matrixGraphPtr->definePattern(patternID1, numRowIDs,
+    patternID1 = matrixGraphPtr->definePattern(numRowIDs,
 					   idType, fieldID);
-    matrixGraphPtr->definePattern(patternID2, numColIDs,
+    patternID2 = matrixGraphPtr->definePattern(numColIDs,
 					   idType, fieldID);
   }
 

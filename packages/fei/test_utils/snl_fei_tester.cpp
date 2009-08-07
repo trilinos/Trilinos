@@ -464,16 +464,14 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
 
   if (numIDTypes == 1 && nodalFieldIDs.size() == 1) {
     //This is a very simple pattern
-    matrixGraph_->definePattern(patternID,
-                                eb.numNodesPerElement_,
+    patternID = matrixGraph_->definePattern(eb.numNodesPerElement_,
                                 idTypes_[nodeTypeOffset_],
                                 nodalFieldIDs[0]);
   }
   else if (numIDTypes == 1) {
     std::vector<int> numFieldsPerID(eb.numNodesPerElement_);
 
-    matrixGraph_->definePattern(patternID,
-                                eb.numNodesPerElement_,
+    patternID = matrixGraph_->definePattern(eb.numNodesPerElement_,
                                 idTypes_[nodeTypeOffset_],
                                 eb.numFieldsPerNode_,
                                 &flatFieldIDsArray[0]);
@@ -494,8 +492,7 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
       fieldIDs.push_back(eb.elemDOFFieldIDs_[i]);
     }
 
-    matrixGraph_->definePattern(patternID,
-                                idTypes.size(),
+    patternID = matrixGraph_->definePattern(idTypes.size(),
                                 &idTypes[0],
                                 &numFieldsPerID[0],
                                 &fieldIDs[0]);
