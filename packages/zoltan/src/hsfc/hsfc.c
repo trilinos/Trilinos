@@ -118,7 +118,7 @@ int Zoltan_HSFC(
       MPI_Barrier(zz->Communicator);
       start_time = Zoltan_Time(zz->Timer);
       }
-   *num_export = *num_import = -1;              /* in case of early error exit */
+   *num_export = *num_import = -1;             /* in case of early error exit */
    Zoltan_Bind_Param (HSFC_params, "FINAL_OUTPUT", (void*) &final_output);
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void*) &param);
    Zoltan_Bind_Param (HSFC_params, "REDUCE_DIMENSIONS", (void*) &idummy);
@@ -128,8 +128,10 @@ int Zoltan_HSFC(
    Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
     zz->Debug_Proc);
 
-   if (sizeof (int) != 4)
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "HSFC tested only for 32 bit integers");
+   if (sizeof (int) != 4) {
+     ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, 
+                       "HSFC implemented only for 32-bit integers");
+   }
 
    /* allocate persistent storage required by box assign and point assign */
 
