@@ -36,6 +36,9 @@
 
 #include "Teuchos_ConstTypeTraits.hpp"
 
+#if defined(__IBMCPP__) && __IBMCPP__ < 900
+# define TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM
+#endif
 
 namespace  Teuchos {
 
@@ -63,7 +66,7 @@ public:
       return demangleName(typeid(T).name());
     }
   /** \brief . */
-#ifndef _AIX
+#ifndef TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM
   static std::string concreteName( const T& t )
 #else
   // the IBM compilers on AIX have a problem with const
@@ -88,7 +91,7 @@ template<typename T>
 std::string typeName( const T &t )
 {
   typedef typename ConstTypeTraits<T>::NonConstType ncT;
-#ifndef _AIX
+#ifndef TEUCHOS_TYPE_NAME_TRAITS_OLD_IBM
   return TypeNameTraits<ncT>::concreteName(t);
 #else
   // You can't pass general objects to AIX by value as above.  This means that
