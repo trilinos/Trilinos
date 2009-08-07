@@ -1,13 +1,25 @@
+/*! \mainpage Trilinos/CMake
+
 ------------------------------------------------------------------------------
                          Trilinos CMake Quickstart
 ------------------------------------------------------------------------------
 
+<ul>
+<li>\ref Getting_started
+<li>\ref Getting_help
+<li>\ref Configuring
+<li>\ref Building
+<li>\ref Testing
+<li>\ref Installing
+<li>\ref Packaging
+<li>\ref Dashboard
+</ul>
 
 Last Updated: 2009/05/04
 
 
 
-A) Getting set up to use CMake
+\section Getting_started A) Getting set up to use CMake
 ------------------------------
 
 
@@ -36,7 +48,7 @@ A) Getting set up to use CMake
 
 
 
-B) Getting Help
+\section Getting_help B) Getting Help
 ---------------
 
 
@@ -53,7 +65,7 @@ B) Getting Help
 
 
 
-C) Configuring (Makefile Generator)
+\section Configuring C) Configuring (Makefile Generator)
 -----------------------------------
 
 
@@ -613,7 +625,7 @@ C) Configuring (Makefile Generator)
 
 
 
-D) Building (Makefile generator)
+\section Building D) Building (Makefile generator)
 --------------------------------
 
 (*) Building all targets:
@@ -686,7 +698,7 @@ D) Building (Makefile generator)
   sure that it gets rebuilt correctly.
 
 
-E) Testing with CTest
+\section Testing E) Testing with CTest
 ---------------------
 
 
@@ -751,7 +763,7 @@ E) Testing with CTest
 
 
 
-F) Installing
+\section Installing F) Installing
 -------------
 
 
@@ -777,7 +789,7 @@ F) Installing
 
 
 
-G) Packaging
+\section Packaging G) Packaging
 ------------
 
 
@@ -795,7 +807,7 @@ G) Packaging
    variable CPACK_SOURCE_IGNORE_FILES when configuring with CMake.
 
 
-H) Dashboard submissions
+\section Dashboard H) Dashboard submissions
 ------------------------
 
 You can use the extended CTest scripting system in Trilinos to submit
@@ -876,3 +888,5 @@ NOTE: Doing a memory check with Valgrind requires that you set
 CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as:
 
   $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard
+
+*/
