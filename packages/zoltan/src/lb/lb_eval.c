@@ -745,9 +745,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
     printf("\n");
 
-    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, 
+    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3f\n", yo, 
            graph->cutn[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, 
+    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3f\n", yo, 
            graph->cutl[EVAL_GLOBAL_SUM]);
     
     printf("\n\n");
@@ -975,8 +975,8 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
     }
     printf("\n");
 
-    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, hg->cutl[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3f\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3f\n", yo, hg->cutl[EVAL_GLOBAL_SUM]);
 
 
     printf("\n\n");
