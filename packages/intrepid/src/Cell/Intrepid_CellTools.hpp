@@ -717,7 +717,10 @@ public:
     /** \brief  Computes (non-normalized) normal vectors to physical sides in a side workset 
                 \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. For every side in the workset the normals are 
                 computed at the points \f${\bf x}_p = F_c(\hat{\Phi}_i(P_p))\in\mathcal{S}_{c,i}\f$ 
-                that are images of points from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.      
+                that are images of points from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.   
+                A side is defined as a subcell of dimension one less than that of its
+                parent cell. Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
+                are 2-subcells (faces).
       
                 Returns rank-3 array with dimensions (C,P,D), D = 2 or 3, such that 
         \f[
