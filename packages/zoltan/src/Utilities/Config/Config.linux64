@@ -100,7 +100,7 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc  -Wall -Werror-implicit-function-declaration
+CC			= mpicc  -Wall -Werror-implicit-function-declaration -ansi
 CPPC			= mpiCC  -Wall 
 
 DBG_FLAGS		= -g -Wall
