@@ -183,7 +183,6 @@ void TabulatorTet<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
 
   // constant term
   idxcur = idx(0,0,0);
-  std::cout << "Writing " << idxcur << "\n";
   for (int i=0;i<np;i++) {
     outputValues(idxcur,i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1) + z(i,2) - z(i,2);
   }

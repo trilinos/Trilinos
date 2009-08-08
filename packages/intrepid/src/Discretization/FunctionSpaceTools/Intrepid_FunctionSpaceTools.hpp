@@ -37,6 +37,9 @@
 
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_ArrayTools.hpp"
+#include "Intrepid_RealSpaceTools.hpp"
+#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid_CellTools.hpp"
 
 
 namespace Intrepid {
@@ -317,6 +320,25 @@ class FunctionSpaceTools {
                              const ArrayDet       & inDet,
                              const ArrayWeights   & inWeights);
 
+  template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
+  static void computeCellMeasure(ArrayOut             & outVals,
+                                 const ArrayDet       & inDet,
+                                 const ArrayWeights   & inWeights);
+
+  template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
+  static void computeFaceMeasure(ArrayOut                   & outVals,
+                                 const ArrayJac             & inJac,
+                                 const ArrayWeights         & inWeights,
+                                 const int                    whichFace,
+                                 const shards::CellTopology & parentCell);
+
+  template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
+  static void computeEdgeMeasure(ArrayOut                   & outVals,
+                                 const ArrayJac             & inJac,
+                                 const ArrayWeights         & inWeights,
+                                 const int                    whichEdge,
+                                 const shards::CellTopology & parentCell);
+
   template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
   static void multiplyMeasure(ArrayTypeOut             & outVals,
                               const ArrayTypeMeasure   & inMeasure,
@@ -353,7 +375,7 @@ class FunctionSpaceTools {
   */
   template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
   static void scalarMultiplyDataField(ArrayOutFields &     outputFields,
-                                      const ArrayInData &  inputData,
+                                      ArrayInData &        inputData,
                                       ArrayInFields &      inputFields,
                                       const bool           reciprocal = false);
 
@@ -376,7 +398,7 @@ class FunctionSpaceTools {
         D2 - second spatial (tensor) dimension index
       \endcode
 
-      \note   The argument <var><b>inputDataRight</b></var> can be changed!
+      \note   The arguments <var><b>inputDataLeft</b></var>, <var><b>inputDataRight</b></var> can be changed!
               This enables in-place multiplication.
 
       \param  outputData      [out] - Output data array.
@@ -387,7 +409,7 @@ class FunctionSpaceTools {
   */
   template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
   static void scalarMultiplyDataData(ArrayOutData &           outputData,
-                                     const ArrayInDataLeft &  inputDataLeft,
+                                     ArrayInDataLeft &        inputDataLeft,
                                      ArrayInDataRight &       inputDataRight,
                                      const bool               reciprocal = false);
 

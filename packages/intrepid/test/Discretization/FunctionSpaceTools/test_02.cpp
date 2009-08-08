@@ -197,10 +197,10 @@ int main(int argc, char *argv[]) {
       fst::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
 
       // Computing stiffness matrices:
-      // tabulate gradients of basis functions at (reference) cubature points
+      // tabulate curls of basis functions at (reference) cubature points
       hexBasis.getValues(curl_of_basis_at_cub_points, cub_points, OPERATOR_CURL);
 
-      // transform gradients of basis functions into physical space
+      // transform curls of basis functions 
       fst::HCURLtransformCURL<double>(transformed_curl_of_basis_at_cub_points,
                                       jacobian,
                                       jacobian_det,
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
       // tabulate values of basis functions at (reference) cubature points
       hexBasis.getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
 
-      // transform gradients of basis functions into physical space
+      // transform values of basis functions 
       fst::HCURLtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
                                        jacobian_inv,
                                        value_of_basis_at_cub_points);

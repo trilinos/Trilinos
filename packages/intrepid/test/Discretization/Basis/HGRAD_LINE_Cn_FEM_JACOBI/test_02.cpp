@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     << "|               Unit Test (Basis_HGRAD_LINE_Cn_FEM_JACOBI)                    |\n" \
     << "|                                                                             |\n" \
     << "|     1) Patch test involving mass and stiffness matrices,                    |\n" \
-    << "|        for the Neumann problem                                              |\n" \
+    << "|        for the Neumann problem on a REFERENCE line:                         |\n" \
     << "|                                                                             |\n" \
     << "|            - u'' + u = f  in (-1,1),  u' = g at -1,1                        |\n" \
     << "|                                                                             |\n" \
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int max_order = 11;
+    int max_order = 10;  // max total order of polynomial solution
 
     // Define array containing points at which the solution is evaluated
     int numIntervals = 100;
@@ -173,13 +173,13 @@ int main(int argc, char *argv[]) {
     DefaultCubatureFactory<double>  cubFactory;                                   // create factory
     shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());   // create cell topology
 
-    for (int soln_order=1; soln_order < max_order; soln_order++) {
+    for (int soln_order=1; soln_order <= max_order; soln_order++) {
 
       // evaluate exact solution
       FieldContainer<double> exact_solution(1, numInterpPoints);
       u_exact(exact_solution, interp_points, soln_order);
 
-      for (int basis_order=soln_order; basis_order < max_order; basis_order++) {
+      for (int basis_order=soln_order; basis_order <= max_order; basis_order++) {
 
         //create basis
         Teuchos::RCP<Basis<double,FieldContainer<double> > > lineBasis =
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
         // tabulate values of basis functions at (reference) cubature points
         lineBasis->getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
 
-        // transform values of basis functions into physical space
+        // transform values of basis functions
         FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
                                                         value_of_basis_at_cub_points);
 
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]) {
         // tabulate gradients of basis functions at (reference) cubature points
         lineBasis->getValues(grad_of_basis_at_cub_points, cub_points, OPERATOR_GRAD);
 
-        // transform gradients of basis functions into physical space
+        // transform gradients of basis functions
         FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_grad_of_basis_at_cub_points,
                                                        jacobian_inv,
                                                        grad_of_basis_at_cub_points);
@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
         // Building interpolant:
         // evaluate basis at interpolation points
         lineBasis->getValues(value_of_basis_at_interp_points, interp_points, OPERATOR_VALUE);
-        // transform values of basis functions into physical space
+        // transform values of basis functions
         FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_interp_points,
                                                         value_of_basis_at_interp_points);
         for (int bf=0; bf<numFields; bf++) {

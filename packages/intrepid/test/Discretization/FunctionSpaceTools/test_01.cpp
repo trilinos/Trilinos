@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
       // tabulate gradients of basis functions at (reference) cubature points
       tetBasis.getValues(grad_of_basis_at_cub_points, cub_points, OPERATOR_GRAD);
 
-      // transform gradients of basis functions into physical space
+      // transform gradients of basis functions
       fst::HGRADtransformGRAD<double>(transformed_grad_of_basis_at_cub_points,
                                       jacobian_inv,
                                       grad_of_basis_at_cub_points);
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
       // tabulate values of basis functions at (reference) cubature points
       tetBasis.getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
 
-      // transform gradients of basis functions into physical space
+      // transform values of basis functions
       fst::HGRADtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
                                        value_of_basis_at_cub_points);
 

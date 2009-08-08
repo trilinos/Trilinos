@@ -458,7 +458,7 @@ void ArrayTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
 
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
 void ArrayTools::scalarMultiplyDataData(ArrayOutData &           outputData,
-                                        const ArrayInDataLeft &  inputDataLeft,
+                                        ArrayInDataLeft &        inputDataLeft,
                                         ArrayInDataRight &       inputDataRight,
                                         const bool               reciprocal) {
 

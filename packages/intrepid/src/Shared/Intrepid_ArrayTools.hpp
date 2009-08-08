@@ -347,7 +347,7 @@ namespace Intrepid {
           D2 - second spatial (tensor) dimension index
         \endcode
 
-        \note   The argument <var><b>inputDataRight</b></var> can be changed!
+        \note   The arguments <var><b>inputDataLeft</b></var>, <var><b>inputDataRight</b></var> can be changed!
                 This enables in-place multiplication.
 
         \param  outputData      [out] - Output data array.
@@ -358,7 +358,7 @@ namespace Intrepid {
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void scalarMultiplyDataData(ArrayOutData &           outputData,
-                                       const ArrayInDataLeft &  inputDataLeft,
+                                       ArrayInDataLeft &        inputDataLeft,
                                        ArrayInDataRight &       inputDataRight,
                                        const bool               reciprocal = false);
 

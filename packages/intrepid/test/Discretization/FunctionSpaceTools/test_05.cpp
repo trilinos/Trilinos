@@ -269,10 +269,10 @@ int main(int argc, char *argv[]) {
 
 
       // Computing stiffness matrices:
-      // tabulate gradients of basis functions at (reference) cubature points
+      // tabulate divergences of basis functions at (reference) cubature points
       hexBasis.getValues(div_of_basis_at_cub_points_FC, cub_points_FC, OPERATOR_DIV);
 
-      // transform gradients of basis functions into physical space
+      // transform divergences of basis functions
       fst::HDIVtransformDIV<double>(transformed_div_of_basis_at_cub_points_FC,
                                     jacobian_det_FC,
                                     div_of_basis_at_cub_points_FC);
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
       // tabulate values of basis functions at (reference) cubature points
       hexBasis.getValues(value_of_basis_at_cub_points_FC, cub_points_FC, OPERATOR_VALUE);
 
-      // transform gradients of basis functions into physical space
+      // transform values of basis functions
       fst::HDIVtransformVALUE<double>(transformed_value_of_basis_at_cub_points_FC,
                                       jacobian_FC,
                                       jacobian_det_FC,

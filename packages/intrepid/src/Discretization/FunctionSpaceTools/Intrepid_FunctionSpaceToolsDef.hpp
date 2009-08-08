@@ -240,6 +240,76 @@ inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
 
 
 
+template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
+inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVals,
+                                                   const ArrayDet       & inDet,
+                                                   const ArrayWeights   & inWeights) {
+
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Input determinants container must have rank 2.");
+#endif
+
+  ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
+  // must use absolute value of inDet, so flip sign where needed
+  for (int cell=0; cell<outVals.dimension(0); cell++) {
+    if (inDet(cell,0) < 0.0) {
+      for (int point=0; point<outVals.dimension(1); point++) {
+        outVals(cell, point) *= -1.0;
+      }
+    }
+  }
+
+} // computeCellMeasure
+
+
+
+template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
+void FunctionSpaceTools::computeFaceMeasure(ArrayOut                   & outVals,
+                                            const ArrayJac             & inJac,
+                                            const ArrayWeights         & inWeights,
+                                            const int                    whichFace,
+                                            const shards::CellTopology & parentCell) {
+
+  // temporary storage for face normals
+  FieldContainer<Scalar> faceNormals(inJac.dimension(0), inJac.dimension(1), inJac.dimension(2));
+
+  // compute normals
+  CellTools<Scalar>::getPhysicalFaceNormals(faceNormals, inJac, whichFace, parentCell);
+
+  // compute lenghts of normals
+  RealSpaceTools<Scalar>::vectorNorm(outVals, faceNormals, NORM_TWO);
+
+  // multiply with weights
+  ArrayTools::scalarMultiplyDataData<Scalar>(outVals, outVals, inWeights);
+
+}
+
+
+
+template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
+void FunctionSpaceTools::computeEdgeMeasure(ArrayOut                   & outVals,
+                                            const ArrayJac             & inJac,
+                                            const ArrayWeights         & inWeights,
+                                            const int                    whichEdge,
+                                            const shards::CellTopology & parentCell) {
+
+  // temporary storage for edge tangents
+  FieldContainer<Scalar> edgeTangents(inJac.dimension(0), inJac.dimension(1), inJac.dimension(2));
+
+  // compute normals
+  CellTools<Scalar>::getPhysicalEdgeTangents(edgeTangents, inJac, whichEdge, parentCell);
+
+  // compute lenghts of tangents
+  RealSpaceTools<Scalar>::vectorNorm(outVals, edgeTangents, NORM_TWO);
+
+  // multiply with weights
+  ArrayTools::scalarMultiplyDataData<Scalar>(outVals, outVals, inWeights);
+
+}
+
+
+
 template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
 void FunctionSpaceTools::multiplyMeasure(ArrayTypeOut             & outVals,
                                          const ArrayTypeMeasure   & inMeasure,
@@ -252,7 +322,7 @@ void FunctionSpaceTools::multiplyMeasure(ArrayTypeOut             & outVals,
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
 void FunctionSpaceTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
-                                                 const ArrayInData &  inputData,
+                                                 ArrayInData &        inputData,
                                                  ArrayInFields &      inputFields,
                                                  const bool           reciprocal) {
 
@@ -263,7 +333,7 @@ void FunctionSpaceTools::scalarMultiplyDataField(ArrayOutFields &     outputFiel
 
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
 void FunctionSpaceTools::scalarMultiplyDataData(ArrayOutData &           outputData,
-                                                const ArrayInDataLeft &  inputDataLeft,
+                                                ArrayInDataLeft &        inputDataLeft,
                                                 ArrayInDataRight &       inputDataRight,
                                                 const bool               reciprocal) {
 
