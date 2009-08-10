@@ -95,6 +95,21 @@ APPEND_SET(SOURCES
   )
 
 #
+# src/graph
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/graph)
+
+APPEND_SET(NOINSTALLHEADERS
+  graph/graph.h
+  )
+
+APPEND_SET(SOURCES
+  graph/graph.c
+  )
+
+
+#
 # src/ha
 #
 

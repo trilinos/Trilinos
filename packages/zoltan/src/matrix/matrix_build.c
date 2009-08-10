@@ -30,9 +30,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   int randomizeInitDist = 0;
   int enforceSquare = 0;
   int nX;
-  float *xWeight;
-  int *Input_Parts = NULL, *xGNO = NULL;
-  ZOLTAN_ID_PTR xGID=NULL, yGID=NULL;
+  int  *xGNO = NULL;
   ZOLTAN_ID_PTR xLID=NULL;
   ZOLTAN_ID_PTR pinID=NULL;
 
@@ -46,16 +44,16 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   /* Obtain vertex information from the application */
   /**************************************************/
 
-  ierr = Zoltan_Get_Obj_List(zz, &nX, &xGID, &xLID,
-			     zz->Obj_Weight_Dim, &xWeight,
-			     &Input_Parts);
+  ierr = Zoltan_Get_Obj_List(zz, &nX, &matrix->xGID, &xLID,
+			     zz->Obj_Weight_Dim, &matrix->xwgt,
+			     &matrix->Input_Parts);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
     goto End;
   }
 
-  ZOLTAN_FREE(&Input_Parts); /* TODO: change --- Not used at this time */
+  ZOLTAN_FREE(&matrix->Input_Parts); /* TODO: change --- Not used at this time */
 
   if (nX) {
     xGNO = (int*) ZOLTAN_MALLOC(nX*sizeof(int));
@@ -77,9 +75,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, zz->Num_GID, zz->Num_LID, 1, nX, 0);
 
   /* Make our new numbering public */
-  Zoltan_DD_Update (matrix->ddX, xGID, xLID, (ZOLTAN_ID_PTR) xGNO, NULL, nX);
+  Zoltan_DD_Update (matrix->ddX, matrix->xGID, xLID, (ZOLTAN_ID_PTR) xGNO, NULL, nX);
 
-  ZOLTAN_FREE(&xGID);
   ZOLTAN_FREE(&xLID);
   ZOLTAN_FREE(&xGNO);
 
@@ -93,7 +90,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
    */
 
   ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
-				   &matrix->nPins, &yGID, &matrix->ystart,
+				   &matrix->nPins, &matrix->yGID, &matrix->ystart,
 				   &pinID);
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
@@ -129,7 +126,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
     ierr = Zoltan_DD_Create (&matrix->ddY, zz->Communicator, zz->Num_GID, 0, 1, matrix->nY, 0);
 
     /* Make our new numbering public */
-    Zoltan_DD_Update (matrix->ddY, yGID, NULL, (ZOLTAN_ID_PTR) matrix->yGNO, NULL, matrix->nY);
+    Zoltan_DD_Update (matrix->ddY, matrix->yGID, NULL, (ZOLTAN_ID_PTR) matrix->yGNO, NULL, matrix->nY);
 
 /*     /\**************************************************************************************** */
 /*      * If it is desired to remove dense edges, divide the list of edges into */
@@ -153,14 +150,12 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
 /*     } */
   }
 
-  Zoltan_DD_Find (matrix->ddY, yGID, NULL, (ZOLTAN_ID_PTR)(matrix->yGNO), NULL,
+  Zoltan_DD_Find (matrix->ddY, matrix->yGID, NULL, (ZOLTAN_ID_PTR)(matrix->yGNO), NULL,
 		  matrix->nY, NULL);
 
  End:
-  ZOLTAN_FREE(&xGID);
   ZOLTAN_FREE(&xLID);
   ZOLTAN_FREE(&xGNO);
-  ZOLTAN_FREE(&yGID);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 

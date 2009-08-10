@@ -11,8 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __MATRIX_BUILD_H
-#define __MATRIX_BUILD_H
+#ifndef __MATRIX_H
+#define __MATRIX_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -22,19 +22,29 @@ extern "C" {
 #include "phg_comm.h"
 #include "zoltan_dd.h"
 
+  /* Would be a lot better in C++ ! */
+
 
 /* This structure is a CS view of a part of the matrix/hypergraph */
 typedef struct Zoltan_matrix_ {
   int           transpose;   /* Need to transpose to have a CSC view ? */
   int           globalX;   /* Overall number of objects */
+  int           nX;
+  ZOLTAN_ID_PTR xGID;
+  int          *Input_Parts;
+  int           xwgtdim;
+  float        *xwgt;
   int           globalY;
   int           offsetY;     /* Used for bipartite graph: GNO >= offsetY are edges */
   int           nY;
+  ZOLTAN_ID_PTR yGID;
+  float        *ywgt;
   int           nPins;
-  int           *yGNO;       /* Local edges gnos */
-  int           *ystart;     /* Indirection array to describe a column */
-  int           *yend;       /* end of local pins, usually ystart+1 */
-  int           *pinGNO;     /* array of gno of other extremtiy */
+  int          *yGNO;       /* Local edges gnos */
+  int          *ystart;     /* Indirection array to describe a column */
+  int          *yend;       /* end of local pins, usually ystart+1 */
+  int          *pinGNO;     /* array of gno of other extremtiy */
+  float        *pinwgt;
   struct Zoltan_DD_Struct *ddX;
   struct Zoltan_DD_Struct *ddY;
 /*   int           xWeightDim; */
@@ -55,6 +65,9 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix);
 
 void
 Zoltan_Matrix_Free(ZZ *zz, Zoltan_matrix *m);
+
+void
+Zoltan_Matrix2d_Free(ZZ *zz, Zoltan_matrix_2d *m);
 
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,

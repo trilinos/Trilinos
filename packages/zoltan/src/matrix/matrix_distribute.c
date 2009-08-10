@@ -91,7 +91,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
   int msg_tag = 1021982;
   int *nonzeros=NULL;
   ZOLTAN_COMM_OBJ *plan;
-  int final_output = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -225,6 +224,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
 
   for (i = 0; i < outmat->mtx.nPins; i++) {
     j = EDGE_GNO_TO_LNO(outmat, nonzeros[2*i]);
+    /* Why do not deal with GNO instead of LNO ? << We own only on the row */
     outmat->mtx.pinGNO[outmat->mtx.ystart[j]+tmparray[j]] = VTX_GNO_TO_LNO(outmat, nonzeros[2*i+1]);
     tmparray[j]++;
   }

@@ -47,8 +47,6 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
   struct Transpose_Elem *tr_tab = NULL;
   int i, j, cnt;
   int newGNOsize = 0;
-  int slice;
-  int offset, nX;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -117,24 +115,15 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
     j++;
   }
   matrix->yend[i] = j;
+  matrix->nX = i + 1;
 
   matrix->offsetY = matrix->globalX;
   matrix->nY = i + 1; /* i is 0 based */
   matrix->nPins *= 2;
 
-  /* Now update the xGNO to be coherent ! */
-  /* Ownership by slices */
-  slice = matrix->globalY/nProc;
-  offset = slice * myProc;
-/*   nX = matrix->nX + MIN(slice*(myProc+1), matrix->globalY)-offset; */
-/*   matrix->xGNO = (int*) ZOLTAN_REALLOC(matrix->xGNO, nX*sizeof(int)); */
-/*   if (nX && matrix->xGNO == NULL) MEMORY_ERROR; */
-/*   for (i = matrix->nX ; i < nX ; ++i) */
-/*     matrix->xGNO[i] = matrix->globalX + offset + i; */
-
-/*   matrix->nX= nX; */
   matrix->globalX += matrix->globalY;
   matrix->globalY += matrix->offsetY;
+
 
  End:
   ZOLTAN_FREE(&ystart);
