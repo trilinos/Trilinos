@@ -51,29 +51,7 @@ int main(int argc, char *argv[])
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
 
-    
-    double a_value = 1.0;
-    double b_value = 1.0;
-    ExprScalar<int,double> a(a_value);
-    ExprScalar<int,double> b(b_value);
-
-    ExprAdd<int,double,ExprScalar<int,double>,ExprScalar<int,double> > 
-      exa(a,b);
-
-    TEST_FOR_EXCEPTION(exa.size() != 0, std::runtime_error,
-		       "Wrong template instatiation selected!");
-
-    cout << "exa.size() = " << exa.size() << endl;
-
-    ExprMult<int,double,ExprScalar<int,double>,ExprScalar<int,double> > 
-      exm(a,b);
-    
-    TEST_FOR_EXCEPTION(exm.size() != 0, std::runtime_error,
-		       "Wrong template instatiation selected!");
-
-    cout << "exm.size() = " << exm.size() << endl;
-
-    const int vec_size = 100;
+    const int vec_size = 1000000;
     ExprArray<std::size_t,double> ea1(vec_size);
     ExprArray<std::size_t,double> ea2(vec_size);
     ExprArray<std::size_t,double> ea3(vec_size);
@@ -88,15 +66,34 @@ int main(int argc, char *argv[])
       ea5[i] = 5.0;
     }
 
-    ea1 = ea2;
+    // Hand coded for loops
+    RCP<Time> loop_time = TimeMonitor::getNewTimer("Hand Coded Loops Time");
+    {
+      TimeMonitor tm(*loop_time);
+      for (int i=0; i < vec_size; ++i)
+	ea1[i] = ea2[i] + ea3[i] + ea4[i] + ea5[i];
+    }
 
-    for (int i=0; i < vec_size; ++i)
-      TEST_FOR_EXCEPTION(ea1[i] - ea2[i] > 1.0e-12, std::runtime_error,
-			 "Error operator= has failed!");
+    for (int i=0; i < vec_size; ++i) {
+      ea1[i] = 1.0;
+      ea2[i] = 2.0;
+      ea3[i] = 3.0;
+      ea4[i] = 4.0;
+      ea5[i] = 5.0;
+    }
+
+    // Expression templates
+    RCP<Time> expr_time = TimeMonitor::getNewTimer("Expr. Templates Time");
+    {
+      TimeMonitor tm(*expr_time);
+      ea1 = ea2 + ea3 + ea4 + ea5;
+    }
+
+    if (loop_time->totalElapsedTime() > 0.0) 
+      cout << "Expr_Time / RawLoop Time = " 
+	   << expr_time->totalElapsedTime() / loop_time->totalElapsedTime()
+	   << endl;
     
-    ea1 = ea2 + ea3;
-
-
     // *********************************************************************
     // *********************************************************************
     std::cout << "\nTest passed!\n" << std::endl; 

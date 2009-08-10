@@ -31,7 +31,7 @@ cmake \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
       -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpif77" \
-      -D CMAKE_CXX_FLAGS:STRING="-O3 -ansi -pedantic -ftrapv -Wall -Wno-long-long" \
+      -D CMAKE_CXX_FLAGS:STRING="-DNDEBUG -O3 -ansi -pedantic -ftrapv -Wall -Wno-long-long" \
       -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/lib -lgfortran" \
       -D HAVE_STRING_H:BOOL=ON \
       -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
