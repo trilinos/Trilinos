@@ -32,7 +32,6 @@
 #ifndef PHALANX_EXPRESSION_TEMPLATES_OPERANDS_HPP
 #define PHALANX_EXPRESSION_TEMPLATES_OPERANDS_HPP
 
-#include <cassert>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_ExpressionTemplates_Traits.hpp"
 
@@ -55,8 +54,28 @@ namespace PHX {
     
     Ordinal size() const 
     {
-      assert( op1.size() == 0 || op2.size() == 0 || 
-	      op1.size() == op2.size() );
+      return op1.size() != 0 ? op1.size() : op2.size(); 
+    } 
+    
+  };
+
+  //! Subtraction
+  template<typename Ordinal, typename Scalar, typename OP1, typename OP2>
+  class ExprSubtr {
+    
+  private:
+
+    typename PHX::ExprTraits<Ordinal,OP1>::ExprRef op1;
+    typename PHX::ExprTraits<Ordinal,OP2>::ExprRef op2;
+    
+  public:
+    
+    ExprSubtr(OP1 const& a, OP2 const& b) : op1(a), op2(b) {};
+    
+    Scalar operator[] (Ordinal idx) const { return op1[idx] - op2[idx]; }
+    
+    Ordinal size() const 
+    {
       return op1.size() != 0 ? op1.size() : op2.size(); 
     } 
     
@@ -79,8 +98,27 @@ namespace PHX {
 
     Ordinal size() const 
     {
-      assert( op1.size() == 0 || op2.size() == 0 || 
-	      op1.size() == op2.size() );
+      return op1.size() != 0 ? op1.size() : op2.size(); 
+    }   
+  };
+  
+  //! Division
+  template<typename Ordinal, typename Scalar, typename OP1, typename OP2>
+  class ExprDiv {
+
+
+  private:
+    typename PHX::ExprTraits<Ordinal,OP1>::ExprRef op1;
+    typename PHX::ExprTraits<Ordinal,OP2>::ExprRef op2;
+
+  public:
+    
+    ExprDiv(OP1 const& a, OP2 const& b) : op1(a), op2(b) {}
+    
+    Scalar operator[] (Ordinal idx) const { return op1[idx] / op2[idx]; }
+
+    Ordinal size() const 
+    {
       return op1.size() != 0 ? op1.size() : op2.size(); 
     }   
   };

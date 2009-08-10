@@ -63,15 +63,11 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION(exa.size() != 0, std::runtime_error,
 		       "Wrong template instatiation selected!");
 
-    cout << "exa.size() = " << exa.size() << endl;
-
     ExprMult<int,double,ExprScalar<int,double>,ExprScalar<int,double> > 
       exm(a,b);
     
     TEST_FOR_EXCEPTION(exm.size() != 0, std::runtime_error,
 		       "Wrong template instatiation selected!");
-
-    cout << "exm.size() = " << exm.size() << endl;
 
     const int vec_size = 100;
     ExprArray<std::size_t,double> ea1(vec_size);
@@ -79,6 +75,7 @@ int main(int argc, char *argv[])
     ExprArray<std::size_t,double> ea3(vec_size);
     ExprArray<std::size_t,double> ea4(vec_size);
     ExprArray<std::size_t,double> ea5(vec_size);
+    ExprArray<std::size_t,double> result(vec_size);
 
     for (int i=0; i < vec_size; ++i) {
       ea1[i] = 1.0;
@@ -88,13 +85,35 @@ int main(int argc, char *argv[])
       ea5[i] = 5.0;
     }
 
-    ea1 = ea2;
+    // operator=
+    result = ea1;
 
     for (int i=0; i < vec_size; ++i)
-      TEST_FOR_EXCEPTION(ea1[i] - ea2[i] > 1.0e-12, std::runtime_error,
+      TEST_FOR_EXCEPTION(result[i] - 1.0 > 1.0e-12, std::runtime_error,
 			 "Error operator= has failed!");
     
-    ea1 = ea2 + ea3;
+    // ExprArray + ExprArray
+    result = ea1 + ea2;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 3.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray + ExprArray\" has failed!");
+
+    // ExprScalar + ExprArray
+    result = 2.0 + ea1;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 3.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprScalar + ExprArray\" has failed!");
+
+    // ExprArray + ExprScalar
+    result = ea1 + 3.0;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 4.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray + ExprScalar\" has failed!");
+
+
 
 
     // *********************************************************************

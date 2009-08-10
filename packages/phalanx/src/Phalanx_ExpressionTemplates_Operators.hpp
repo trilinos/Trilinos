@@ -39,7 +39,7 @@
 
 namespace PHX {
 
-  //! Addition of two arrays
+  //! ExprArray + ExprArray
   template<typename Ordinal, typename Scalar, typename R1, typename R2>
   PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,R1,R2> > 
   operator+(PHX::ExprArray<Ordinal,Scalar,R1> const& a, 
@@ -47,6 +47,24 @@ namespace PHX {
     return 
       PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,R1,R2> > 
       (PHX::ExprAdd<Ordinal,Scalar,R1,R2>(a.rep(), b.rep()));
+  }    
+
+  //! Scalar + ExprArray
+  template<typename Ordinal, typename Scalar, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+  operator+(Scalar const& s, PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+      (PHX::ExprAdd<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2>(ExprScalar<Ordinal,Scalar>(s), b.rep()));
+  }    
+
+  //! ExprArray + Scalar
+  template<typename Ordinal, typename Scalar, typename R1>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+  operator+(PHX::ExprArray<Ordinal,Scalar,R1> const& a, Scalar const& s) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+      (PHX::ExprAdd<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> >(a.rep(), ExprScalar<Ordinal,Scalar>(s)));
   }    
 
 }
