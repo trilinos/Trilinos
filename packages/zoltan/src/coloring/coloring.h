@@ -35,13 +35,6 @@ extern "C" {
 #define ZOLTAN_COLOR_ERROR(error,str) {ierr = error ; \
  ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
 
-#define MEMORY_ERROR { \
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
-  ierr = ZOLTAN_MEMERR; \
-  goto End; \
-}
-
-    
 #ifdef __cplusplus
 }
 #endif

@@ -24,8 +24,6 @@ extern "C" {
 #include "all_allo_const.h"
 #include "zz_const.h"
 
-char phg_mpi_err_str[MPI_MAX_ERROR_STRING];
-int phg_mpi_err_len;
 
 /*
 #define CHECK_LEFTALONE_VERTICES

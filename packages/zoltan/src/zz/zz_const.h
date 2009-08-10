@@ -578,21 +578,46 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
 /*  
  *  Print trace information.
  */
-#define ZOLTAN_TRACE_ENTER(zz,yo) \
+#define ZOLTAN_TRACE_ENTER(zz,yo) do { \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((zz)->Proc == (zz)->Debug_Proc && \
       (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
-    ZOLTAN_TRACE_IN((zz)->Proc, (yo), NULL);
+    ZOLTAN_TRACE_IN((zz)->Proc, (yo), NULL); } while (0)
 
-#define ZOLTAN_TRACE_EXIT(zz,yo) \
+#define ZOLTAN_TRACE_EXIT(zz,yo) do { \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((zz)->Proc == (zz)->Debug_Proc && \
       (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
-    ZOLTAN_TRACE_OUT((zz)->Proc, (yo), NULL);
+    ZOLTAN_TRACE_OUT((zz)->Proc, (yo), NULL); } while (0)
 
-#define ZOLTAN_TRACE_DETAIL(zz,yo,string) \
+#define ZOLTAN_TRACE_DETAIL(zz,yo,string) do { \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_DETAIL) \
-    ZOLTAN_PRINT_INFO((zz)->Proc, (yo), (string));
+    ZOLTAN_PRINT_INFO((zz)->Proc, (yo), (string)); } while (0)
+
+
+  /* Error Handling macro, used in PHG, coloring, matrix, graph ... */
+
+#define MEMORY_ERROR do { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
+  ierr = ZOLTAN_MEMERR; \
+  goto End; \
+} while (0)
+
+#define FATAL_ERROR(s) do { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, s); \
+  ierr = ZOLTAN_FATAL; \
+  goto End; \
+} while (0)
+
+#define CHECK_FOR_MPI_ERROR(rc) do { \
+  if (rc != MPI_SUCCESS){ \
+    char _mpi_err_str[MPI_MAX_ERROR_STRING]; \
+    int _mpi_err_len; \
+    MPI_Error_string(rc, _mpi_err_str, &_mpi_err_len);  \
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, _mpi_err_str); \
+    ierr = ZOLTAN_FATAL; \
+    goto End; \
+  } } while (0)
 
 /*
  *  Debugging macro for Tflop architecture.
@@ -613,6 +638,7 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
 #else
 #define ZOLTAN_HEAP_INFO(Proc,a) ;
 #endif
+
 
 /*****************************************************************************/
 /*****************************************************************************/
