@@ -87,12 +87,12 @@ namespace Kokkos {
       }
 
       template <class T> inline
-      Teuchos::ArrayRCP<const T> viewBufferConst(size_type size, Teuchos::ArrayRCP<const T> buff) {
+      Teuchos::ArrayRCP<const T> viewBuffer(size_type size, Teuchos::ArrayRCP<const T> buff) {
         return buff.persistingView(0,size);
       }
 
       template <class T> inline
-      Teuchos::ArrayRCP<T> viewBuffer(bool writeOnly, size_type size, const Teuchos::ArrayRCP<T> &buff) {
+      Teuchos::ArrayRCP<T> viewBufferNonConst(bool writeOnly, size_type size, const Teuchos::ArrayRCP<T> &buff) {
         return buff.persistingView(0,size);
       }
 

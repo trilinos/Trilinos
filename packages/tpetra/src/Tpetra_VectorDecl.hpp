@@ -89,14 +89,6 @@ namespace Tpetra {
     void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
     void get1dCopy(Scalar *A) const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView; // overloading, not hiding
-    //! Return non-const persisting view of values in a one-dimensional array.
-    Teuchos::ArrayRCP<Scalar> get1dView();
-
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewConst; // overloading, not hiding
-    //! Return const persisting view of values in a one-dimensional array.
-    Teuchos::ArrayRCP<const Scalar> get1dViewConst() const;
-
     //@}
 
     //! @name Mathematical methods
@@ -128,13 +120,14 @@ namespace Tpetra {
 
     //@} 
 
-    //! @name I/O methods
-    //@{ 
+    //! @name Overridden from Teuchos::Describable 
+    //@{
 
-    //! Print method, used by overloaded << operator.
-    void print(std::ostream &os) const;
+    /** \brief Return a simple one-line description of this object. */
+    std::string description() const;
 
-    void printValues(std::ostream &os) const;
+    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
     //@}
 

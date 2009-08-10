@@ -206,6 +206,71 @@ namespace Tpetra {
     return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->globalLength()));
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
+  {
+    std::ostringstream oss;
+    oss << Teuchos::Describable::description();
+    oss << "{length="<<globalLength()
+        << "}";
+    return oss.str();
+  }
+
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    using std::endl;
+    using std::setw;
+    using Teuchos::VERB_DEFAULT;
+    using Teuchos::VERB_NONE;
+    using Teuchos::VERB_LOW;
+    using Teuchos::VERB_MEDIUM;
+    using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    Teuchos::EVerbosityLevel vl = verbLevel;
+    if (vl == VERB_DEFAULT) vl = VERB_LOW;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    int width = 1;
+    for (int dec=10; dec<globalLength(); dec *= 10) {
+      ++width;
+    }
+    Teuchos::OSTab tab(out);
+    if (vl != VERB_NONE) {
+      // VERB_LOW and higher prints description()
+      if (myImageID == 0) out << this->description() << std::endl; 
+      for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+        if (myImageID == imageCtr) {
+          if (vl != VERB_LOW) {
+            // VERB_MEDIUM and higher prints myLength()
+            out << "node " << setw(width) << myImageID << ": local length=" << myLength();
+            if (vl != VERB_MEDIUM) {
+              // VERB_HIGH and higher prints constantStride() and stride()
+              if (constantStride()) out << ", constant stride=" << stride() << endl;
+              else out << ", non-constant stride" << endl;
+              if (vl == VERB_EXTREME && myLength() > 0) {
+                Node &node = lclMV_->getNode();
+                Teuchos::ArrayRCP<const Scalar> myview = node.template viewBufferConst<Scalar>(
+                                                              myLength(), 
+                                                              lclMV_->getValuesConst() );
+                // VERB_EXTREME prints values
+                for (Teuchos_Ordinal i=0; i<myLength(); ++i) {
+                  out << setw(width) << this->getMap().getGlobalIndex(i) 
+                      << ": "
+                      << myview[i] << endl;
+                }
+                myview = Teuchos::null;
+              }
+            }
+            else {
+              out << endl;
+            }
+          }
+        }
+      }
+    }
+  }
+
 } // namespace Tpetra
 
 #endif // TPETRA_VECTOR_HPP

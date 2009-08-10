@@ -136,19 +136,6 @@ namespace Kokkos {
 
     //@{
 
-    //! Returns the result of a Kokkos_BaseSparseSolve multiplied by a vector x in y.
-    /*! 
-      \param x (In) A Kokkos::Vector to solve with.
-      \param y (Out) A Kokkos::Vector containing results.  Note that any implementation must support x and y being 
-             the same object.
-      \param transA (In) If true, solve using the transpose of matrix, otherwise just use matrix.
-      \param conjA (In) If true, solve using the conjugate of matrix values, otherwise just use matrix values.
-
-      \return Integer error code, set to 0 if successful.
-    */
-    virtual int apply(const Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, 
-                      bool transA = false, bool conjA = false) const;
-
     //! Returns the result of a Kokkos_BaseSparseSolve multiplied by multiple vectors in x, results in y.
     /*! 
       \param x (In) A Kokkos::MultiVector to solve with.
@@ -513,109 +500,6 @@ namespace Kokkos {
     return(0);
   }
 
-  //==============================================================================
-  template<typename OrdinalType, typename ScalarType>
-  int BaseSparseSolve<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x, 
-                                                      Vector<OrdinalType, ScalarType> & y,
-                                                      bool transA, bool conjA) const {
-
-    if (!haveValues_) return(-1); // Can't compute without values!
-    if (conjA) return(-2); // Unsupported at this time
-    if (x.getLength()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
-    if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x
-
-    OrdinalType i, j, curNumEntries;
-    OrdinalType * curIndices;
-    ScalarType * curValues;
-
-    OrdinalType * profile = profile_;
-    OrdinalType ** indices = indices_;
-    ScalarType ** values = values_;
-
-    ScalarType * xp = x.getValues();
-    ScalarType * yp = y.getValues();
-
-    if ((isRowOriented_ && !transA) ||
-        (!isRowOriented_ && transA)) {
-
-      if ((!transA && isUpper_) || (transA && !isUpper_)) {
-        profile += numRC_-1; // Point to end of structures
-        indices += numRC_-1;
-        values += numRC_-1;
-
-        OrdinalType j0 = 1;
-        if (hasUnitDiagonal_) j0--;
-        for(i = numRC_-1; i >=0; i--) {
-          curNumEntries = *profile--;
-          curIndices = *indices--;
-          curValues  = *values--;
-          ScalarType sum = 0.0;
-          for(j = j0; j < curNumEntries; j++)
-            sum += curValues[j] * yp[curIndices[j]];
-          if (hasUnitDiagonal_)
-            yp[i] = xp[i] - sum;
-          else
-            yp[i] = (xp[i] - sum)/curValues[0];
-        }
-      }
-      else { // Lower triangular
-        OrdinalType j0 = 1;
-        if (hasUnitDiagonal_) j0--;
-        for(i = 0; i < numRC_; i++) {
-          curNumEntries = *profile++ - j0;
-          curIndices = *indices++;
-          curValues  = *values++;
-          ScalarType sum = 0.0;
-          for(j = 0; j < curNumEntries; j++)
-            sum += curValues[j] * yp[curIndices[j]];
-          if (hasUnitDiagonal_)
-            yp[i] = xp[i] - sum;
-          else
-            yp[i] = (xp[i] - sum)/curValues[curNumEntries];
-        }
-      }
-    }
-    else { // ColOriented and no tranpose or RowOriented and transpose
-
-      for(i = 0; i < numRC_; i++)
-        yp[i] = xp[i]; // Initialize y for transpose multiply
-
-      if ((!transA && !isUpper_) || (transA && isUpper_)) {
-        OrdinalType j0 = 1;
-        if (hasUnitDiagonal_) j0--;
-        for(i = 0; i < numRC_; i++) {
-          curNumEntries = *profile++;
-          curIndices = *indices++;
-          curValues  = *values++;
-          if (!hasUnitDiagonal_) 
-            yp[i] = yp[i]/curValues[0];
-          for(j = j0; j < curNumEntries; j++)
-            yp[curIndices[j]] -= curValues[j] * yp[i];
-        }
-      }
-      else { // Lower triangular
-
-        profile += numRC_-1; // Point to end of structures
-        indices += numRC_-1;
-        values += numRC_-1;
-
-        OrdinalType j0 = 1;
-        if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
-
-        for(i = numRC_-1; i>=0; i--) {
-          curNumEntries = *profile-- - j0;
-          curIndices = *indices--;
-          curValues  = *values--;
-          if (!hasUnitDiagonal_) 
-            yp[i] = yp[i]/curValues[curNumEntries];
-          for(j = 0; j < curNumEntries; j++)
-            yp[curIndices[j]] -= curValues[j] * yp[i];
-        }
-      }
-    }
-    updateFlops(this->costOfSolve_);
-    return(0);
-  }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>

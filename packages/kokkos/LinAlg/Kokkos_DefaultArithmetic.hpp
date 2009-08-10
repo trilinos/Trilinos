@@ -37,6 +37,7 @@
 #include <stdexcept>
 
 #include "Kokkos_MultiVector.hpp"
+#include "Kokkos_NodeHelpers.hpp"
 
 #ifndef KERNEL_PREFIX 
   #define KERNEL_PREFIX
@@ -66,23 +67,23 @@ namespace Kokkos {
 
   template <class Scalar>
   struct ScaleOp {
-    const Scalar *x;
-    Scalar *y;
+    const Scalar *scale;
+    Scalar *x;
     inline KERNEL_PREFIX void execute(int i) const
     {
-      Scalar tmp = y[i];
-      y[i] = x[i]*tmp;
+      Scalar tmp = x[i];
+      x[i] = scale[i]*tmp;
     }
   };
 
   template <class Scalar>
   struct RecipScaleOp {
-    const Scalar *x;
-    Scalar *y;
+    const Scalar *scale;
+    Scalar *x;
     inline KERNEL_PREFIX void execute(int i) const
     {
-      Scalar tmp = y[i];
-      y[i] = tmp / x[i];
+      Scalar tmp = x[i];
+      x[i] = tmp / scale[i];
     }
   };
 
@@ -182,19 +183,6 @@ namespace Kokkos {
   //! class DefaultArithmetic, for Kokkos::MultiVector
   template <class Scalar, class Node>
   class DefaultArithmetic<MultiVector<Scalar,Node> > {
-    private:
-      typedef Teuchos::ArrayRCP<const char>  CBuf;
-      typedef Teuchos::ArrayRCP<      char> NCBuf;
-
-      template <class T>
-      inline static CBuf toCBuf(const Teuchos::ArrayRCP<T> &arr) {
-        return Teuchos::arcp_reinterpret_cast<const char>(arr);
-      }
-
-      template <class T>
-      inline static NCBuf toNCBuf(const Teuchos::ArrayRCP<T> &arr) {
-        return Teuchos::arcp_reinterpret_cast<char>(arr);
-      }
 
     public:
       //! Initialize multivector to constant value.
@@ -203,21 +191,24 @@ namespace Kokkos {
         const size_type nC = A.getNumCols();
         const size_type stride = A.getStride();
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<Scalar> data = A.getValues();
-        node.readyBuffers( Teuchos::null, Teuchos::tuple<NCBuf>(toNCBuf(data)) );
+        Teuchos::ArrayRCP<Scalar> data = A.getValuesNonConst();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addNonConstBuffer<Scalar>(data);
+        rbh.end();
+        // prepare op
+        InitOp<Scalar> wdp;
+        wdp.alpha = alpha;
         if (stride == nR) {
           // one kernel invocation for whole multivector
-          InitOp<Scalar> wdp;
-          wdp.x = data.get();
-          wdp.alpha = alpha;
+          wdp.x = data(0,nR*nC).getRawPtr();
           node.template parallel_for<InitOp<Scalar> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
-          InitOp<Scalar> wdp;
-          wdp.alpha = alpha;
           for (size_type j=0; j<nC; ++j) {
-            wdp.x = data.get();
+            wdp.x = data(0,nR).getRawPtr();
             node.template parallel_for<InitOp<Scalar> >(0,nR,wdp);
             data += stride;
           }
@@ -235,29 +226,35 @@ namespace Kokkos {
                            std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Multiply(A,B): A and B must have the same dimensions.");
         Node &node = B.getNode();
-        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValuesConst();
-        Teuchos::ArrayRCP<Scalar>       Adata = A.getValues();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Bdata)), Teuchos::tuple<NCBuf>(toNCBuf(Adata)) );
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+        Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addNonConstBuffer<Scalar>(Adata);
+        rbh.end();
+        // prepare op
         ScaleOp<Scalar> wdp;
         if (B.getNumCols() == 1) {
-          wdp.x = Bdata.get();
+          wdp.scale = Bdata(0,nR).getRawPtr();
           for (size_type j = 0; j < nC; ++j) {
-            wdp.y = Adata.get();
+            wdp.x = Adata(0,nR).getRawPtr();
             node.template parallel_for<ScaleOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
           }
         }
         else if (Astride == nR && Bstride == nR) {
           // one kernel invocation for whole multivector
-          wdp.y = Adata.get();
-          wdp.x = Bdata.get();
+          wdp.scale = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
           node.template parallel_for<ScaleOp<Scalar> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           for (size_type j=0; j<nC; ++j) {
-            wdp.y = Adata.get();
-            wdp.x = Bdata.get();
+            wdp.scale = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
             node.template parallel_for<ScaleOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
             Bdata += Bstride;
@@ -276,30 +273,35 @@ namespace Kokkos {
                            std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
         Node &node = B.getNode();
-        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValuesConst();
-        Teuchos::ArrayRCP<Scalar>       Adata = A.getValues();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Bdata)), Teuchos::tuple<NCBuf>(toNCBuf(Adata)) );
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+        Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addNonConstBuffer<Scalar>(Adata);
+        rbh.end();
         RecipScaleOp<Scalar> wdp;
         if (B.getNumCols() == 1) {
           // one kernel invocation for each column
-          wdp.x = Bdata.get();
+          wdp.scale = Bdata(0,nR).getRawPtr();
           for (size_type j=0; j<nC; ++j) {
-            wdp.y = Adata.get();
+            wdp.x = Adata(0,nR).getRawPtr();
             node.template parallel_for<RecipScaleOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
           }
         }
         else if (A.getStride() == nR && B.getStride() == nR) {
           // one kernel invocation for whole multivector
-          wdp.x = Bdata.get();
-          wdp.y = Adata.get();
+          wdp.scale = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
           node.template parallel_for<RecipScaleOp<Scalar> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           for (size_type j=0; j<nC; ++j) {
-            wdp.y = Adata.get();
-            wdp.x = Bdata.get();
+            wdp.x = Adata(0,nR).getRawPtr();
+            wdp.scale = Bdata(0,nR).getRawPtr();
             node.template parallel_for<RecipScaleOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
             Bdata += Bstride;
@@ -317,21 +319,27 @@ namespace Kokkos {
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
         if (nC*nR == 0) return;
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValuesConst();
-        Teuchos::ArrayRCP<Scalar>       Adata = A.getValues();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Bdata)), Teuchos::tuple<NCBuf>(toNCBuf(Adata)) );
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+        Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addNonConstBuffer<Scalar>(Adata);
+        rbh.end();
+        // prepare op
         AssignOp<Scalar> wdp;
         if (Astride == nR && Bstride == nR) {
           // one kernel invocation for whole multivector assignment
-          wdp.x = Adata.get();
-          wdp.y = Bdata.get();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
           node.template parallel_for<AssignOp<Scalar> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           for (size_type j=0; j<nC; ++j) {
-            wdp.x = Adata.get();
-            wdp.y = Bdata.get();
+            wdp.x = Adata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
             node.template parallel_for<AssignOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
             Bdata += Bstride;
@@ -346,7 +354,7 @@ namespace Kokkos {
         const size_type Bstride = B.getStride();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): A and B must have the same dimensions.");
-        TEST_FOR_EXCEPTION(nC > dots.size(), std::runtime_error, 
+        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_type>(dots.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Dot(A,B,dots): dots must have length as large as number of columns of A and B.");
         if (nR*nC == 0) {
           for (size_type j=0; j<nC; ++j) {
@@ -355,13 +363,18 @@ namespace Kokkos {
           return;
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValuesConst(),
-                               Adata = A.getValuesConst();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata),toCBuf(Bdata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues(),
+                                        Adata = A.getValues();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         DotOp2<Scalar> op;
         for (size_type j=0; j<nC; ++j) {
-          op.x = Adata.get();
-          op.y = Bdata.get();
+          op.x = Adata(0,nR).getRawPtr();
+          op.y = Bdata(0,nR).getRawPtr();
           dots[j] = node.parallel_reduce(0,nR,op);
           Adata += Astride;
           Bdata += Bstride;
@@ -377,12 +390,17 @@ namespace Kokkos {
           return Teuchos::ScalarTraits<Scalar>::zero();
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValuesConst(0),
-                               Adata = A.getValuesConst(0);
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata),toCBuf(Bdata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues(0),
+                                        Adata = A.getValues(0);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         DotOp2<Scalar> op;
-        op.x = Adata.get();
-        op.y = Bdata.get();
+        op.x = Adata(0,nR).getRawPtr();
+        op.y = Bdata(0,nR).getRawPtr();
         return node.parallel_reduce(0,nR,op);
       }
 
@@ -400,23 +418,28 @@ namespace Kokkos {
                            std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
         Node &node = B.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst();
-        Teuchos::ArrayRCP<Scalar>       Bdata = B.getValues();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::tuple<NCBuf>(toNCBuf(Bdata)) );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+        Teuchos::ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.template addNonConstBuffer<Scalar>(Bdata);
+        rbh.end();
         GESUMOp<Scalar> wdp;
         wdp.alpha = alpha;
         wdp.beta  = beta;
         if (Astride == nR && Bstride == nR) {
           // one kernel invocation for whole multivector
-          wdp.y = Bdata.get();
-          wdp.x = Adata.get();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          wdp.x = Adata(0,nR*nC).getRawPtr();
           node.template parallel_for<GESUMOp<Scalar> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           for (size_type j=0; j<nC; ++j) {
-            wdp.y = Bdata.get();
-            wdp.x = Adata.get();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            wdp.x = Adata(0,nR).getRawPtr();
             node.template parallel_for<GESUMOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
             Bdata += Bstride;
@@ -432,18 +455,22 @@ namespace Kokkos {
         const size_type nR = A.getNumRows();
         const size_type nC = A.getNumCols();
         const size_type Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > norms.size(), std::runtime_error, 
+        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_type>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           for (size_type j=0; j<nC; ++j) {norms[j] = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();}
           return;
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         SumAbsOp<Scalar> op;
         for (size_type j=0; j<nC; ++j) {
-          op.x = Adata.get();
+          op.x = Adata(0,nR).getRawPtr();
           norms[j] = node.parallel_reduce(0,nR,op);
           Adata += Astride;
         }
@@ -457,10 +484,14 @@ namespace Kokkos {
           return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesNonConst(0);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         SumAbsOp<Scalar> op;
-        op.x = Adata.get();
+        op.x = Adata(0,nR).getRawPtr();
         return node.parallel_reduce(0,nR,op);
       }
 
@@ -476,11 +507,15 @@ namespace Kokkos {
           return;
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         SumOp<Scalar> op;
         for (size_type j=0; j<nC; ++j) {
-          op.x = Adata.get();
+          op.x = Adata(0,nR).getRawPtr();
           sums[j] = node.parallel_reduce(0,nR,op);
           Adata += Astride;
         }
@@ -493,10 +528,14 @@ namespace Kokkos {
           return Teuchos::ScalarTraits<Scalar>::zero();
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst(0);
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         SumOp<Scalar> op;
-        op.x = Adata.get();
+        op.x = Adata(0,nR).getRawPtr();
         return node.parallel_reduce(0,nR,op);
       }
 
@@ -507,10 +546,14 @@ namespace Kokkos {
           return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst(0);
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         MaxAbsOp<Scalar> op;
-        op.x = Adata.get();
+        op.x = Adata(0,nR).getRawPtr();
         return node.parallel_reduce(0,nR,op);
       }
 
@@ -518,18 +561,22 @@ namespace Kokkos {
         const size_type nR = A.getNumRows();
         const size_type nC = A.getNumCols();
         const size_type Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > norms.size(), std::runtime_error, 
+        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_type>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::NormInf(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           for (size_type j=0; j<nC; ++j) {norms[j] = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();}
           return;
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         MaxAbsOp<Scalar> op;
         for (size_type j=0; j<nC; ++j) {
-          op.x = Adata.get();
+          op.x = Adata(0,nR).getRawPtr();
           norms[j] = node.parallel_reduce(0,nR,op);
           Adata += Astride;
         }
@@ -539,18 +586,22 @@ namespace Kokkos {
         const size_type nR = A.getNumRows();
         const size_type nC = A.getNumCols();
         const size_type Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > norms.size(), std::runtime_error, 
+        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_type>(norms.size()), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm2Squared(A,norms): norms must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           for (size_type j=0; j<nC; ++j) {norms[j] = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();}
           return;
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst();
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         DotOp1<Scalar> op;
         for (size_type j=0; j<nC; ++j) {
-          op.x = Adata.get();
+          op.x = Adata(0,nR).getRawPtr();
           norms[j] = node.parallel_reduce(0,nR,op);
           Adata += Astride;
         }
@@ -563,10 +614,14 @@ namespace Kokkos {
           return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesConst(0);
-        node.readyBuffers( Teuchos::tuple<CBuf>(toCBuf(Adata)), Teuchos::null );
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
         DotOp1<Scalar> op;
-        op.x = Adata.get();
+        op.x = Adata(0,nR).getRawPtr();
         return node.parallel_reduce(0,nR,op);
       }
 
@@ -583,7 +638,7 @@ namespace Kokkos {
         const size_type nC = A.getNumCols();
         if (nR*nC == 0) return;
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<Scalar> Adata = A.getValues();
+        Teuchos::ArrayRCP<Scalar> Adata = A.getValuesNonConst();
         // we'll overwrite all data covered by the multivector, but not off-stride data
         // therefore, we are write-only only in the case that stride=nR
         bool writeOnly = (stride == nR);

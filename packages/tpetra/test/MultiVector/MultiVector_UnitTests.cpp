@@ -334,15 +334,15 @@ namespace {
       Teuchos::Array<Scalar> check2(4,3); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
       Teuchos::Array<Scalar> check3(9,2); // each entry (of nine) is the product [1 1]*[1 1]' = 2
       // test
-      Array<Scalar> tmpCopy(9);  // FINISH: after extractConstView1D is finished, use it instead of extractCopy1D
+      Array<Scalar> tmpCopy(9);  // FINISH: after get1dViewConst is finished, use it instead of get1dCopy
       mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,S1,mv3x2l,mv2x3l,S0);
-      mv3x3l.extractCopy1D(tmpCopy(),3); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,9),check3,M0);
+      mv3x3l.get1dCopy(tmpCopy(),3); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,9),check3,M0);
       mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,S1,mv2x3l,mv2x3l,S0);
-      mv2x2l.extractCopy1D(tmpCopy(),2); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,4),check2,M0);
+      mv2x2l.get1dCopy(tmpCopy(),2); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,4),check2,M0);
       mv2x2l.multiply(CONJ_TRANS,NO_TRANS  ,S1,mv3x2l,mv3x2l,S0);
-      mv2x2l.extractCopy1D(tmpCopy(),2); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,4),check2,M0);
+      mv2x2l.get1dCopy(tmpCopy(),2); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,4),check2,M0);
       mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,S1,mv2x3l,mv3x2l,S0);
-      mv3x3l.extractCopy1D(tmpCopy(),3); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,9),check3,M0);
+      mv3x3l.get1dCopy(tmpCopy(),3); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,9),check3,M0);
     }
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // random input/output
@@ -354,8 +354,8 @@ namespace {
          tmv2x2(node,lmap2,2),
          tmv3x3(node,lmap3,3);
       // fill multivectors with random, get copy of contents
-      tmv3x2.random();  tmv3x2.extractCopy1D(tmvCopy1(),3); 
-      tmv2x3.random();  tmv2x3.extractCopy1D(tmvCopy2(),2);
+      tmv3x2.random();  tmv3x2.get1dCopy(tmvCopy1(),3); 
+      tmv2x3.random();  tmv2x3.get1dCopy(tmvCopy2(),2);
       // point SerialDenseMatrices at copies
       SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvCopy1.getRawPtr(),3,3,2);
       SerialDenseMatrix<int,Scalar> sdm2x3(View,tmvCopy2.getRawPtr(),2,2,3);
@@ -366,28 +366,28 @@ namespace {
         Array<Scalar> tmpcopy(9);
         tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
         sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
-        tmv3x3.extractCopy1D(tmpcopy(),3); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        tmv3x3.get1dCopy(tmpcopy(),3); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
       {
         Array<Scalar> tmpcopy(4);
         tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
         sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
-        tmv2x2.extractCopy1D(tmpcopy(),2); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        tmv2x2.get1dCopy(tmpcopy(),2); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
       {
         Array<Scalar> tmpcopy(4);
         tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
         sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
-        tmv2x2.extractCopy1D(tmpcopy(),2); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        tmv2x2.get1dCopy(tmpcopy(),2); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
       {
         Array<Scalar> tmpcopy(9);
         tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
         sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
-        tmv3x3.extractCopy1D(tmpcopy(),3); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        tmv3x3.get1dCopy(tmpcopy(),3); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
         TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
     }
@@ -408,13 +408,13 @@ namespace {
     //   Teuchos::Array<Scalar> check(9,3*numImages);
     //   // test
     //   mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0); 
-    //   mv2x2.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+    //   mv2x2.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
     //   mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
-    //   mv2x3.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+    //   mv2x3.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
     //   mv3x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx2,S0);
-    //   mv3x2.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+    //   mv3x2.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
     //   mv3x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx3,S0);
-    //   mv3x3.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+    //   mv3x3.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
     // }
     // // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     // {
@@ -685,7 +685,7 @@ namespace {
     //   set C random
     //   set it to zero by combination with A,B
     {
-      V C(map);
+      V C(node,map);
       C.random();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       norm = C.norm2(); C.norm2(norms());
@@ -696,7 +696,7 @@ namespace {
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
     {
-      V C(map);
+      V C(node,map);
       C.random();
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
@@ -814,8 +814,12 @@ namespace {
     // the the second, do manually, looping over all elements
     // verify that both have identical values
     v1.putScalar(SCT::one());
-    for (int i=map.getMinLocalIndex(); i <= map.getMaxLocalIndex(); ++i) {
-      v2[i] = SCT::one();
+    {
+      ArrayRCP<Scalar> view = v2.get1dView();
+      for (typename ArrayRCP<Scalar>::iterator v = view.begin(); v != view.end(); ++v) {
+        *v = SCT::one();
+      }
+      view = Teuchos::null;
     }
     Magnitude err;
     // subtract v2 from v1; this should result in v1 = zeros

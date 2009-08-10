@@ -140,13 +140,13 @@ namespace Kokkos {
 
       //! Returns a copy of the ArrayRCP passed to initializeValues().
       Teuchos::ArrayRCP<Scalar>
-      getValues() {
+      getValuesNonConst() {
         return contigValues_;
       }
 
       //! Returns a copy of the ArrayRCP passed to initializeValues().
       Teuchos::ArrayRCP<const Scalar>
-      getValuesConst() const {
+      getValues() const {
         return contigValues_;
       }
 
@@ -160,11 +160,11 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       Teuchos::ArrayRCP<Scalar>
-      getValues(size_type i) {
+      getValuesNonConst(size_type i) {
         TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
                            i < 0 || i >= numRows_, // Out of range
                            std::runtime_error, 
-                           Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
+                           Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
         return contigValues_.persistingView(stride_*i,numRows_);
       };
 
@@ -178,7 +178,7 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       Teuchos::ArrayRCP<const Scalar>
-      getValuesConst(size_type i) const {
+      getValues(size_type i) const {
         TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
                            i < 0 || i >= numRows_, // Out of range
                            std::runtime_error, 

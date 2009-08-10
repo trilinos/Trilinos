@@ -119,18 +119,6 @@ namespace Kokkos {
 
     //@{
 	
-    //! Returns the result of a Kokkos_PackedSparseMultiply multiplied by a vector x in y.
-    /*! 
-      \param x (In) A Kokkos::Vector to multiply by.
-      \param y (Out) A Kokkos::Vector containing results.
-      \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
-      \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
-		
-      \return Integer error code, set to 0 if successful.
-    */
-    virtual int apply(const Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, 
-		      bool transA = false, bool conjA = false) const;
-
     //! Returns the result of a Kokkos_PackedSparseMultiply multiplied by multiple vectors in x, results in y.
     /*! 
       \param x (In) A Kokkos::MultiVector to multiply by.
@@ -342,61 +330,6 @@ namespace Kokkos {
     return(0);
   }
 
-  //==============================================================================
-  template<typename OrdinalType, typename ScalarType>
-  int PackedSparseMultiply<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x, 
-						    Vector<OrdinalType, ScalarType> & y,
-						    bool transA, bool conjA) const {
-
-    if (!haveValues_) return(-1); // Can't compute without values!
-    if (conjA) return(-2); // Unsupported at this time
-    if (x.getLength()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
-    if (y.getLength()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x				    
-
-    OrdinalType i, j, curNumEntries;
-    Entry * curEntries = allEntries_;
-
-    OrdinalType * profile = profile_;
-
-    ScalarType * xp = x.getValues();
-    ScalarType * yp = y.getValues();
-
-    if ((isRowOriented_ && !transA) ||
-	(!isRowOriented_ && transA)) {
-
-      
-      ScalarType sum = 0;
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	if (hasUnitDiagonal_)
-	  sum = xp[i];
-	else
-	  sum = 0.0;
-	for(j = 0; j < curNumEntries; j++)
-	  sum += curEntries[j].value * xp[curEntries[j].index];
-	yp[i] = sum;
-	curEntries += curNumEntries;
-      }
-    }
-    else {
-      
-      if (hasUnitDiagonal_)
-	for(i = 0; i < numRC_; i++)
-	  yp[i] = xp[i]; // Initialize y
-      else
-	for(i = 0; i < numRC_; i++)
-	  yp[i] = 0.0; // Initialize y for transpose multiply
-      
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	for(j = 0; j < curNumEntries; j++)
-	  yp[curEntries[j].index] += curEntries[j].value * xp[i];
-	curEntries += curNumEntries;	
-      }
-    }
-    updateFlops(this->costOfMatVec_);
-    return(0);
-  }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>

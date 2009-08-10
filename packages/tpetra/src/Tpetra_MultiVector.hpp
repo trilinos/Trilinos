@@ -166,7 +166,7 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::constantStride() const
+  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isConstantStride() const
   {
     return true;
   }
@@ -659,7 +659,7 @@ namespace Tpetra {
 //REFACTOR// #endif
 //REFACTOR//       TEST_FOR_EXCEPTION(source.numVectors() != numVectors(), std::runtime_error,
 //REFACTOR//           "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-//REFACTOR//       if (constantStride() && source.constantStride() && myLength()==stride() && source.myLength()==source.stride()) {
+//REFACTOR//       if (isConstantStride() && source.isConstantStride() && myLength()==stride() && source.myLength()==source.stride()) {
 //REFACTOR//         // we're both packed, we can copy in one call
 //REFACTOR//         std::copy( source.MVData_->contigValues_.begin(), source.MVData_->contigValues_.end(), MVData_->contigValues_.begin() );
 //REFACTOR//       }
@@ -704,7 +704,7 @@ namespace Tpetra {
   //REFACTOR//   mvdata->contigValues_ = Teuchos::null;
   //REFACTOR//   mvdata->nonContigValues_.resize(numViewVecs);
   //REFACTOR//   if (myLength() > 0) {
-  //REFACTOR//     if (constantStride()) {
+  //REFACTOR//     if (isConstantStride()) {
   //REFACTOR//       for (Teuchos_Ordinal j = 0; j < numViewVecs; ++j) {
   //REFACTOR//         mvdata->nonContigValues_[j] = MVData_->contigValues_.persistingView( stride()*cols[j], myLength() );
   //REFACTOR//       }
@@ -767,7 +767,7 @@ namespace Tpetra {
   //REFACTOR//   Teuchos_Ordinal numViewVecs = colRng.size();
   //REFACTOR//   using Teuchos::ArrayRCP;
   //REFACTOR//   // resulting MultiVector is constant stride only if *this is 
-  //REFACTOR//   if (constantStride()) {
+  //REFACTOR//   if (isConstantStride()) {
   //REFACTOR//     // view goes from first entry of first vector to last entry of last vector
   //REFACTOR//     ArrayRCP<Scalar> data = MVData_->contigValues_.persistingView(stride()*colRng.lbound(),
   //REFACTOR//                                                                   stride()*(numViewVecs-1) + myLength());
@@ -797,7 +797,7 @@ namespace Tpetra {
   //REFACTOR//   Teuchos_Ordinal numViewVecs = colRng.size();
   //REFACTOR//   using Teuchos::ArrayRCP;
   //REFACTOR//   // resulting MultiVector is constant stride only if *this is 
-  //REFACTOR//   if (constantStride()) {
+  //REFACTOR//   if (isConstantStride()) {
   //REFACTOR//     // view goes from first entry of first vector to last entry of last vector
   //REFACTOR//     ArrayRCP<Scalar> data = MVData_->contigValues_.persistingView(stride()*colRng.lbound(),
   //REFACTOR//                                                                   stride()*(numViewVecs-1) + myLength());
@@ -929,7 +929,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView()
   {
-    TEST_FOR_EXCEPTION(!constantStride(), std::runtime_error,
+    TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dView(): cannot call for MultiVectors with non-constant stride.");
     Node & node = lclMV_.getNode();
     return node.template viewBuffer<Scalar>( false, stride()*(numVectors()-1)+myLength(), lclMV_->getValues() );
@@ -939,7 +939,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewConst() const
   {
-    TEST_FOR_EXCEPTION(!constantStride(), std::runtime_error,
+    TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dViewConst(): cannot call for MultiVectors with non-constant stride.");
     Node & node = lclMV_.getNode();
     return node.template viewBuffer<Scalar>( false, stride()*(numVectors()-1)+myLength(), lclMV_->getValues() );
@@ -1042,17 +1042,17 @@ namespace Tpetra {
     // Check if A, B, C have constant stride, if not then make temp copy (strided)
     RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Atmp, Btmp; 
     RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >       Ctmp;
-    if (constantStride() == false) Ctmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*this));
+    if (isConstantStride() == false) Ctmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*this));
     else Ctmp = rcp(this,false);
 
-    if (A.constantStride() == false) Atmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    if (A.isConstantStride() == false) Atmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
     else Atmp = rcp(&A,false);
 
-    if (B.constantStride() == false) Btmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(B));
+    if (B.isConstantStride() == false) Btmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(B));
     else Btmp = rcp(&B,false);
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(!Ctmp->constantStride() || !Btmp->constantStride() || !Atmp->constantStride(), std::logic_error,
+    TEST_FOR_EXCEPTION(!Ctmp->isConstantStride() || !Btmp->isConstantStride() || !Atmp->isConstantStride(), std::logic_error,
         errPrefix << "failed making temporary strided copies of input multivectors.");
 #endif
 
@@ -1071,7 +1071,7 @@ namespace Tpetra {
 
     Node &node = lclMV_->getNode();
     // If *this was not strided, copy the data from the strided version and then delete it
-    if (constantStride() == false) {
+    if (isConstantStride() == false) {
       // *this is not strided, we must put data from Ctmp into *this
       TEST_FOR_EXCEPT(C_mv != lclMV_);
       const Kokkos::size_type numVecs = lclMV_->getNumCols();
@@ -1109,7 +1109,7 @@ namespace Tpetra {
               numCols  = lclMV_->getNumCols(),
               myLen    = lclMV_->getNumRows();
     Teuchos::Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
-    bool packed = constantStride() && (myStride == myLen);
+    bool packed = isConstantStride() && (myStride == myLen);
     ArrayRCP<Scalar> bufView = node.template viewBuffer<Scalar>(
                                           false,myStride*(numCols-1)+myLen,
                                           lclMV_->getValues() );
@@ -1256,6 +1256,7 @@ namespace Tpetra {
     oss << Teuchos::Describable::description();
     oss << "{length="<<globalLength()
         << ",numVectors="<<numVectors()
+        << ",isConstantStride()="<<isConstantStride()
         << "}";
     return oss.str();
   }
@@ -1290,8 +1291,8 @@ namespace Tpetra {
             // VERB_MEDIUM and higher prints myLength()
             out << "node " << setw(width) << myImageID << ": local length=" << myLength();
             if (vl != VERB_MEDIUM) {
-              // VERB_HIGH and higher prints constantStride() and stride()
-              if (constantStride()) out << ", constant stride=" << stride() << endl;
+              // VERB_HIGH and higher prints isConstantStride() and stride()
+              if (isConstantStride()) out << ", constant stride=" << stride() << endl;
               else out << ", non-constant stride" << endl;
               if (vl == VERB_EXTREME && myLength() > 0) {
                 Node &node = lclMV_->getNode();

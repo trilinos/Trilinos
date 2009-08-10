@@ -134,31 +134,31 @@ namespace Tpetra {
     //! Returns a MultiVector with copies of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
-    //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng);
-
-    //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const Teuchos_Index> &cols);
+    //! Returns a const MultiVector with const views of selected columns.
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewConst(const Teuchos::Range1D &colRng) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
 
-    //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewConst(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
+    //! Returns a MultiVector with views of selected columns.
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
+
+    //! Returns a MultiVector with views of selected columns.
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const Teuchos_Index> &cols);
+
+    //! Const Vector access function.
+    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > operator() (Teuchos_Ordinal j) const;
 
     //! Vector access function.
     Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > operator()(Teuchos_Ordinal j);
 
-    //! Vector access function.
-    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > operator() (Teuchos_Ordinal j) const;
+    //! Const Local vector access function.
+    //! Pointer to the local values in a particular vector of this multi-vector.
+    inline Teuchos::ArrayRCP<const Scalar> operator[](Teuchos_Ordinal j) const;
 
     //! Local vector access function.
     //! Pointer to the local values in a particular vector of this multi-vector.
     inline Teuchos::ArrayRCP<Scalar> operator[](Teuchos_Ordinal j);
-
-    //! Local vector access function.
-    //! Pointer to the local values in a particular vector of this multi-vector.
-    inline Teuchos::ArrayRCP<const Scalar> operator[](Teuchos_Ordinal j) const;
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
@@ -172,17 +172,17 @@ namespace Tpetra {
     //! Return multi-vector values in user-provided array of pointers (using C pointers).
     void get2dCopy(Scalar * const * ArrayOfPtrs) const;
 
-    //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-    Teuchos::ArrayRCP<Scalar> get1dView();
-
-    //! Return non-const persisting pointers to values.
-    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > get2dView();
-
     //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-    Teuchos::ArrayRCP<const Scalar> get1dViewConst() const;
+    Teuchos::ArrayRCP<const Scalar> get1dView() const;
 
     //! Return const persisting pointers to values.
-    inline Teuchos::ArrayView<Teuchos::ArrayRCP<Scalar> > get2dViewConst() const;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
+
+    //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.  Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
+    Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
+
+    //! Return non-const persisting pointers to values.
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
     //@}
 
@@ -243,19 +243,19 @@ namespace Tpetra {
     //@{ 
 
     //! Returns the number of vectors in the multi-vector.
-    Teuchos_Ordinal numVectors() const;
+    Teuchos_Ordinal getNumVectors() const;
 
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-    LocalOrdinal myLength() const;
+    LocalOrdinal getMyLength() const;
 
     //! Returns the global vector length of vectors in the multi-vector.
-    GlobalOrdinal globalLength() const;
+    GlobalOrdinal getGlobalLength() const;
 
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
-    Teuchos_Ordinal stride() const;
+    Teuchos_Ordinal getStride() const;
 
     //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
-    bool constantStride() const;
+    bool isConstantStride() const;
 
     //@} 
 
@@ -267,14 +267,6 @@ namespace Tpetra {
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
-    //@}
-
-    //! Get pointer to MultiVector values.
-    const Teuchos::ArrayRCP<Scalar> & values();
-
-    //! Get pointer to MultiVector values.
-    const Teuchos::ArrayRCP<const Scalar> & valuesConst() const;
 
     //@}
 
