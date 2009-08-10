@@ -232,6 +232,8 @@ private:
                      I16 , I17 , I18 , I19 , I20 , I21 , I22 , I23 ,
                      I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 > list ;
 
+  typedef IndexListInverse< list > SelfType ;
+
   enum { length = IndexListLength< list >::value };
 
   enum { J0  = IndexListFind< list ,  0 ,  0 < length >::value ,
@@ -269,22 +271,22 @@ private:
 
 public:
 
-  typedef IndexList< IndexListInverse::J0 ,  IndexListInverse::J1 ,
-                     IndexListInverse::J2 ,  IndexListInverse::J3 , 
-                     IndexListInverse::J4 ,  IndexListInverse::J5 , 
-                     IndexListInverse::J6 ,  IndexListInverse::J7 , 
-                     IndexListInverse::J8 ,  IndexListInverse::J9 , 
-                     IndexListInverse::J10 , IndexListInverse::J11 ,
-                     IndexListInverse::J12 , IndexListInverse::J13 ,
-                     IndexListInverse::J14 , IndexListInverse::J15 ,
-                     IndexListInverse::J16 , IndexListInverse::J17 ,
-                     IndexListInverse::J18 , IndexListInverse::J19 ,
-                     IndexListInverse::J20 , IndexListInverse::J21 ,
-                     IndexListInverse::J22 , IndexListInverse::J23 ,
-                     IndexListInverse::J24 , IndexListInverse::J25 ,
-                     IndexListInverse::J26 , IndexListInverse::J27 ,
-                     IndexListInverse::J28 , IndexListInverse::J29 ,
-                     IndexListInverse::J30 , IndexListInverse::J31 > type ;
+  typedef IndexList< SelfType::J0 ,  SelfType::J1 ,
+                     SelfType::J2 ,  SelfType::J3 , 
+                     SelfType::J4 ,  SelfType::J5 , 
+                     SelfType::J6 ,  SelfType::J7 , 
+                     SelfType::J8 ,  SelfType::J9 , 
+                     SelfType::J10 , SelfType::J11 ,
+                     SelfType::J12 , SelfType::J13 ,
+                     SelfType::J14 , SelfType::J15 ,
+                     SelfType::J16 , SelfType::J17 ,
+                     SelfType::J18 , SelfType::J19 ,
+                     SelfType::J20 , SelfType::J21 ,
+                     SelfType::J22 , SelfType::J23 ,
+                     SelfType::J24 , SelfType::J25 ,
+                     SelfType::J26 , SelfType::J27 ,
+                     SelfType::J28 , SelfType::J29 ,
+                     SelfType::J30 , SelfType::J31 > type ;
 };
 
 #endif /* DOXYGEN_COMPILE */
