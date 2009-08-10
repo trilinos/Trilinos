@@ -56,6 +56,39 @@ public:
 
    /** Return a string that describes this factory */
    virtual std::string toString() const = 0;
+
+   /** \brief Request the additional parameters this preconditioner factory
+     *        needs. 
+     *
+     * Request the additonal parameters needed by this preconditioner factory.
+     * The parameter list will have a set of fields that can be filled with 
+     * the requested values. These fields include all requirements, even those
+     * of the sub-solvers if there are any.  Once correctly filled the object
+     * can be updated by calling the updateRequestedParameters with the filled
+     * parameter list.
+     *
+     * \returns A parameter list with the requested parameters.
+     *
+     * \node The default implementation returns Teuchos::null.
+     */
+   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const
+   { return Teuchos::null; }
+   
+   /** \brief Update this object with the fields from a parameter list.
+     *
+     * Update the requested fields using a parameter list. This method is
+     * expected to pair with the getRequestedParameters method (i.e. the fields
+     * requested are going to be update using this method).
+     *
+     * \param[in] pl Parameter list containing the requested parameters.
+     *
+     * \returns If the method succeeded (found all its required parameters) this
+     *          method returns true, otherwise it returns false.
+     *
+     * \note The default implementation returns true (it does nothing!).
+     */
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl)
+   { return true; }
 };
 
 class SolveInverseFactory : public InverseFactory {
@@ -181,6 +214,37 @@ public:
      * \returns A list used to parameterize this object.
      */
    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+
+   /** \brief Request the additional parameters this preconditioner factory
+     *        needs. 
+     *
+     * Request the additonal parameters needed by this preconditioner factory.
+     * The parameter list will have a set of fields that can be filled with 
+     * the requested values. These fields include all requirements, even those
+     * of the sub-solvers if there are any.  Once correctly filled the object
+     * can be updated by calling the updateRequestedParameters with the filled
+     * parameter list.
+     *
+     * \returns A parameter list with the requested parameters.
+     *
+     * \node The default implementation returns Teuchos::null.
+     */
+   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
+   
+   /** \brief Update this object with the fields from a parameter list.
+     *
+     * Update the requested fields using a parameter list. This method is
+     * expected to pair with the getRequestedParameters method (i.e. the fields
+     * requested are going to be update using this method).
+     *
+     * \param[in] pl Parameter list containing the requested parameters.
+     *
+     * \returns If the method succeeded (found all its required parameters) this
+     *          method returns true, otherwise it returns false.
+     *
+     * \note The default implementation returns true (it does nothing!).
+     */
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
 
    /** Return a string that describes this factory */
    virtual std::string toString() const { return precFactory_->description(); }

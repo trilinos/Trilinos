@@ -9,6 +9,7 @@
 
 // PB includes
 #include "PB_Utilities.hpp"
+#include "PB_BlockPreconditionerFactory.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
@@ -157,6 +158,51 @@ void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,Invers
 Teuchos::RCP<const Teuchos::ParameterList> PreconditionerInverseFactory::getParameterList() const
 { 
    return precFactory_->getParameterList(); 
+}
+
+/** \brief Request the additional parameters this preconditioner factory
+  *        needs. 
+  *
+  * Request the additonal parameters needed by this preconditioner factory.
+  * The parameter list will have a set of fields that can be filled with 
+  * the requested values. These fields include all requirements, even those
+  * of the sub-solvers if there are any.  Once correctly filled the object
+  * can be updated by calling the updateRequestedParameters with the filled
+  * parameter list.
+  *
+  * \returns A parameter list with the requested parameters.
+  *
+  * \node The default implementation returns Teuchos::null.
+  */
+Teuchos::RCP<Teuchos::ParameterList> PreconditionerInverseFactory::getRequestedParameters() const
+{
+   Teuchos::RCP<BlockPreconditionerFactory> bpf = rcp_dynamic_cast<BlockPreconditionerFactory>(precFactory_);
+
+   // request the parameters from a BPF is required
+   if(bpf==Teuchos::null) return Teuchos::null;
+   else return bpf->getRequestedParameters();
+}
+
+/** \brief Update this object with the fields from a parameter list.
+  *
+  * Update the requested fields using a parameter list. This method is
+  * expected to pair with the getRequestedParameters method (i.e. the fields
+  * requested are going to be update using this method).
+  *
+  * \param[in] pl Parameter list containing the requested parameters.
+  *
+  * \returns If the method succeeded (found all its required parameters) this
+  *          method returns true, otherwise it returns false.
+  *
+  * \note The default implementation returns true (it does nothing!).
+  */
+bool PreconditionerInverseFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
+{
+   Teuchos::RCP<BlockPreconditionerFactory> bpf = rcp_dynamic_cast<BlockPreconditionerFactory>(precFactory_);
+
+   // update the parameters of a BPF is required
+   if(bpf==Teuchos::null) return false;
+   else return bpf->updateRequestedParameters(pl);
 }
 
 //! Build an inverse operator using a factory and a linear operator
