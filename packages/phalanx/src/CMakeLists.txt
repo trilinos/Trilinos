@@ -57,6 +57,11 @@ APPEND_SET(HEADERS
   Phalanx_Evaluator_Utilities.hpp
   Phalanx_Evaluator_WithBaseImpl_Def.hpp
   Phalanx_Evaluator_WithBaseImpl.hpp
+  Phalanx_ExpressionTemplates_Array.hpp
+  Phalanx_ExpressionTemplates_ExprScalar.hpp
+  Phalanx_ExpressionTemplates_Operands.hpp
+  Phalanx_ExpressionTemplates_Operators.hpp
+  Phalanx_ExpressionTemplates_Traits.hpp
   Phalanx_Field_Def.hpp
   Phalanx_Field.hpp
   Phalanx_FieldManager_Def.hpp
