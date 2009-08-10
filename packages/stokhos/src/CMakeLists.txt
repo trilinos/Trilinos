@@ -35,19 +35,19 @@ SET(HEADERS ${HEADERS}
   Stokhos_OneDOrthogPolyBasisBaseImp.hpp
   Stokhos_HermiteBasis.hpp
   Stokhos_HermiteBasisImp.hpp
-  Stokhos_SparseGridQuadrature.hpp
-  Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_RysBasis.hpp
   Stokhos_RysBasisImp.hpp
   Stokhos_RecurrenceBasis.hpp
   Stokhos_RecurrenceBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
-  Stokhos_RysBasis.hpp
-  Stokhos_RysBasisImp.hpp
+  Stokhos_StieltjesPCEBasis.hpp
+  Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
+  Stokhos_GramSchmidtBasis.hpp
+  Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_Sparse3Tensor.hpp
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp
@@ -57,6 +57,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_TensorProductQuadratureImp.hpp
   Stokhos_SparseGridQuadrature.hpp
   Stokhos_SparseGridQuadratureImp.hpp
+  Stokhos_UserDefinedQuadrature.hpp
+  Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp

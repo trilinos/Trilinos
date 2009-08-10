@@ -621,8 +621,6 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 		       << " needed).");
 #endif
 
-    // int nup = pc-1;
-    // uq_prod2_(ca, cb, cc, &nup);
     value_type tmp, cijk;
     ordinal_type i,j;
     for (ordinal_type k=0; k<pc; k++) {

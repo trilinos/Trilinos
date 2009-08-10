@@ -248,7 +248,7 @@ namespace Stokhos {
     //! Quad values scaled by norms
     std::vector<double> sqv;
 
-  protected:
+  public:
 
     //! Nonlinear unary function
     template <typename FuncT>
@@ -276,6 +276,8 @@ namespace Stokhos {
                    OrthogPolyApprox<ordinal_type, value_type>& c, 
                    const OrthogPolyApprox<ordinal_type, value_type>& a, 
                    const value_type& b);
+
+  protected:
 
     struct times_quad_func { 
       value_type operator() (const value_type& a, const value_type& b) const { 

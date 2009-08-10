@@ -34,6 +34,30 @@ IF(Stokhos_ENABLE_Quadrature)
     COMM serial mpi
     )
 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    moment_example
+    SOURCES moment_example.cpp
+    COMM serial mpi
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    stieltjes_example
+    SOURCES stieltjes_example.cpp
+    COMM serial mpi
+    )
+
+   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    stieltjes_dependent_example
+    SOURCES stieltjes_dependent_example.cpp
+    COMM serial mpi
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    gram_schmidt_example
+    SOURCES gram_schmidt_example.cpp
+    COMM serial mpi
+    )
+
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(
