@@ -95,17 +95,9 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
         print "Inside EpetraModelEval2DSim.get_f_map"
         return self.__map
 
-    def get_p_map(self):
-        print "Inside EpetraModelEval2DSim.get_p_map"
-        return self.__map
-
     def get_x_init(self):
         print "Inside EpetraModelEval2DSim.get_x_init"
         return self.__x0
-
-    def get_p_init(self, l):
-        print "Inside EpetraModelEval2DSim.get_p_init"
-        return self.__p
 
     def create_W(self):
         print "Inside EpetraModelEval2DSim.createW"
@@ -116,7 +108,6 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
         inArgs = EpetraExt.InArgs()
         inArgs.description = self.getObjectLabel()
         inArgs.x = True
-        inArgs.p = 1
         return inArgs
 
     def createOutArgs(self):
@@ -141,7 +132,7 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
             print outArgs
             d = self.__d
             x = inArgs.x
-            p = inArgs.p
+            p = self.__p
             f = outArgs.f.vector
             W = outArgs.W
 

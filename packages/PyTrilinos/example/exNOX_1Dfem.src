@@ -87,12 +87,12 @@ if options.plot:
 
 # ######################################################################
 
-class Interface(NOX.Epetra.Interface.Required):
+class MyInterface(NOX.Epetra.Interface.Required):
 
     def __init__(self, numGlobalElements, comm, bc0=1.0, bc1=2, xmin=0.0, xmax=1.0):
         # Initialize the base class
         NOX.Epetra.Interface.Required.__init__(self)
-        # Interface initialization
+        # MyInterface initialization
         self.__numGlobalElements = numGlobalElements
         self.__comm              = comm
         self.__bc0               = bc0
@@ -152,7 +152,7 @@ class Interface(NOX.Epetra.Interface.Required):
             if self.__haveBC1: F[-1] = u[-1] - self.__bc1
             return True
         except Exception, e:
-            print "Interface.computeF() has thrown an exception:\n", e
+            print "MyInterface.computeF() has thrown an exception:\n", e
             return False
 
     def getSolution(self):
@@ -225,7 +225,7 @@ def main():
 
     # Create the interface between NOX and the application.  This object is
     # derived from NOX.Epetra.Interface.
-    interface = Interface(numGlobalElements, comm, bc0, bc1)
+    interface = MyInterface(numGlobalElements, comm, bc0, bc1)
 
     # Get the solution vector from the problem
     soln    = interface.getSolution()
@@ -253,8 +253,8 @@ def main():
                 }
     printParams = nlParams["Printing"]
     lsParams    = nlParams["Linear Solver"]
-    outputInfo = NOX.Utils.Error + \
-                 NOX.Utils.TestDetails
+    outputInfo  = NOX.Utils.Error + \
+                  NOX.Utils.TestDetails
     if options.verbosity: outputInfo += NOX.Utils.Debug      + \
                                         NOX.Utils.Warning    + \
                                         NOX.Utils.Details    + \

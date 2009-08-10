@@ -57,11 +57,13 @@ PyObject* Finalize();
 ////////////////////////////////////
 // Teuchos::LabeledObject support //
 ////////////////////////////////////
+%feature("director") Teuchos::LabeledObject;
 %include "Teuchos_LabeledObject.hpp"
 
 //////////////////////////////////
 // Teuchos::Describable support //
 //////////////////////////////////
+%feature("director") Teuchos::Describable;
 %include "Teuchos_Describable.hpp"
 
 //////////////////////////////////

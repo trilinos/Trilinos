@@ -34,6 +34,12 @@
 //#include "NumPyImporter.h"
 
 #include "PythonException.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 #include "Epetra_SerialDenseVector.h"
 
 class Epetra_NumPySerialDenseVector : public Epetra_SerialDenseVector

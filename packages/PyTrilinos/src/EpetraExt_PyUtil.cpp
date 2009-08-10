@@ -47,6 +47,12 @@
 
 // EpetraExt includes
 #include "EpetraExt_ConfigDefs.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 #include "EpetraExt_ModelEvaluator.h"
 
 // Local includes

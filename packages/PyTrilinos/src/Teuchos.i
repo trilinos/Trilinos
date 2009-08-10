@@ -67,6 +67,7 @@ ParameterList will accept a python dictionary.
 %enddef
 
 %module(package      = "PyTrilinos",
+	directors    = "1",
 	autodoc      = "1",
 	implicitconv = "1",
 	docstring    = %teuchos_docstring) Teuchos
@@ -81,6 +82,12 @@ ParameterList will accept a python dictionary.
 %{
 // Configuration includes
 #include "PyTrilinos_config.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 #include "Teuchos_ConfigDefs.hpp"
 
 // Teuchos includes
@@ -143,6 +150,11 @@ using Teuchos::RCP;
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
+//   catch(Swig::DirectorMethodException & e)
+//   {
+//     PyErr_SetString(PyExc_RuntimeError, e.what());
+//     SWIG_fail;
+//   }
   SWIG_CATCH_STDEXCEPT
   catch(...)
   {

@@ -90,6 +90,12 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 #include "Epetra_ConfigDefs.h"
 
 // Import the numpy interface
@@ -101,28 +107,132 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 %feature("autodoc", "1");
 %feature("compactdefaultargs");
 
-// Configuration support
-%include "PyTrilinos_config.h"
-%rename(FormatStdout) Epetra_FormatStdout;
-%warnfilter(315) std::sprintf;
-%warnfilter(315) std::rand;
-%warnfilter(315) std::istream;
-%warnfilter(315) std::ostream;
-%warnfilter(315) std::cerr;
-%warnfilter(315) std::cout;
-%warnfilter(315) std::endl;
-%warnfilter(315) std::flush;
-%include "Epetra_ConfigDefs.h"
-
-// Include Epetra documentation
-%include "Epetra_dox.i"
-
 // SWIG library includes
 using std::string;
 %include "stl.i"
 
 // SWIG NumPy interface file
 %include "numpy.i"
+
+// PyTrilinos configuration support
+%include "PyTrilinos_config.h"
+
+// Epetra configuration support
+
+// The Epetra configuration header file %include'd below contains many
+// 'using' statements, which result in 'Warning(315): Nothing known
+// about ...' messages in newer versions of SWIG.  To get SWIG to
+// learn about these std functions, etc., would require providing an
+// include filepath, which would be difficult to do portably.
+// Instead, I provide forward declarations of the entities causing
+// warnings, after instructing SWIG to ignore (not wrap) them.
+
+%ignore std::FILE;
+%ignore std::istream;
+%ignore std::ostream;
+%ignore std::abort;
+%ignore std::abs;
+%ignore std::asin;
+%ignore std::atof;
+%ignore std::atoi;
+%ignore std::ceil;
+%ignore std::cerr;
+%ignore std::cos;
+%ignore std::cout;
+%ignore std::endl;
+%ignore std::cout;
+%ignore std::endl;
+%ignore std::exit;
+%ignore std::fabs;
+%ignore std::fclose;
+%ignore std::gets;
+%ignore std::fgets;
+%ignore std::floor;
+%ignore std::flush;
+%ignore std::fopen;
+%ignore std::fprintf;
+%ignore std::free;
+%ignore std::malloc;
+%ignore std::memcpy;
+%ignore std::pow;
+%ignore std::rand;
+%ignore std::realloc;
+%ignore std::sin;
+%ignore std::sprintf;
+%ignore std::sqrt;
+%ignore std::sscanf;
+%ignore std::strchr;
+%ignore std::strcmp;
+%ignore std::strcpy;
+%ignore std::strlen;
+%ignore std::strtok;
+
+namespace std
+{
+struct FILE;
+class istream;
+class ostream;
+void abort;
+int abs(int);
+long abs(long);
+float abs(float);
+double abs(double);
+long double abs(long double);
+float asin(float);
+double asin(double);
+long double asin(long double);
+double atof;
+int atoi;
+float ceil(float);
+double ceil(double);
+long double ceil(long double);
+extern ostream cerr;
+float cos(float);
+double cos(double);
+long double cos(long double);
+extern ostream cout;
+ostream & endl(ostream&);
+void exit(int);
+float fabs(float);
+double fabs(double);
+long double fabs(long double);
+int fclose;
+char* gets;
+char* fgets;
+float floor(float);
+double floor(double);
+long double floor(long double);
+int flush;
+FILE* fopen;
+int fprintf;
+void free(void*);
+void* malloc;
+void* memcpy;
+float pow(float);
+double pow(double);
+long double pow(long double);
+int rand;
+void* realloc;
+float sin(float);
+double sin(double);
+long double sin(long double);
+int sprintf;
+float sqrt(float);
+double sqrt(double);
+long double sqrt(long double);
+int sscanf;
+char* strchr;
+int strcmp;
+char* strcpy;
+size_t strlen;
+char* strtok;
+}
+
+%rename(FormatStdout) Epetra_FormatStdout;
+%include "Epetra_ConfigDefs.h"
+
+// Include Epetra documentation
+%include "Epetra_dox.i"
 
 // Epetra interface includes
 %include "Epetra_Base.i"              // Base classes and utility classes

@@ -27,8 +27,6 @@
 // @HEADER
 
 // Include files
-#include "Python.h"
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_PythonParameter.h"
 #include "swigpyrun.h"
 

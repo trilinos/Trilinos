@@ -82,6 +82,12 @@ example subdirectory of the PyTrilinos package:
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
@@ -876,7 +882,8 @@ public:
 
 // Notes:
 //
-// * Describability is not yet exploited or tested
+// * Institute a NOX.Epetra.DefaultSolver function/factory
+// * Add solver to exNOXEpetraExt_2DSim.py and test
 // * Teuchos::Polynomial is not yet wrapped, so the following have
 //   been ignored:
 //   + InArgs::x_poly

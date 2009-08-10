@@ -57,6 +57,12 @@ following class:
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA

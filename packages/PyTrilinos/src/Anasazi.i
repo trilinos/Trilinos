@@ -93,6 +93,12 @@ package:
 
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
+#ifdef HAVE_STDINT_H
+#undef HAVE_STDINT_H
+#endif
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_PythonParameter.h"
 #endif

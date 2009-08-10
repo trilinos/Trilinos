@@ -26,11 +26,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_PYTHONPARAMETER
-#define TEUCHOS_PYTHONPARAMETER
+#ifndef TEUCHOS_PYTHONPARAMETER_H
+#define TEUCHOS_PYTHONPARAMETER_H
 
 // Include python headers
 #include "Python.h"
+#ifdef HAVE_INTTYPES_H
+#undef HAVE_INTTYPES_H
+#endif
 
 // Include Teuchos::ParameterList prototypes
 #include "Teuchos_ParameterList.hpp"
@@ -177,4 +180,4 @@ PyObject * parameterListToNewPyDict(const ParameterList & plist,
 
 }    // namespace Teuchos
 
-#endif // TEUCHOS_PYTHONPARAMETER
+#endif // TEUCHOS_PYTHONPARAMETER_H
