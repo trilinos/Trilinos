@@ -4,6 +4,7 @@
 #include <Teuchos_Tuple.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_NodeHelpers.hpp"
 #include "TestOps.hpp"
 
 #include "Kokkos_SerialNode.hpp"
@@ -26,6 +27,7 @@ namespace {
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Kokkos::SerialNode;
+  using Kokkos::ReadyBufferHelper;
   using Teuchos::tuple;
 
   SerialNode serialnode;
@@ -133,6 +135,7 @@ namespace {
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     Teuchos::ArrayRCP<SCALAR> x;
     NODE &node = getNode<NODE>();
+    ReadyBufferHelper<NODE> rbh(node);
     SCALAR result;
     {
       TimeMonitor localTimer(tAlloc);
@@ -142,16 +145,18 @@ namespace {
     {
       TimeMonitor localTimer(tInit);
       InitOp<SCALAR> wdp;
-      wdp.x = x.get();
-      node.readyBuffers( Teuchos::null, tuple<ncbuf>(TONCBUF(x)) );
+      rbh.begin();
+      wdp.x = rbh.template addNonConstBuffer<SCALAR>(x);
+      rbh.end();
       node.parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
       TimeMonitor localTimer(tSum);
       SumOp<SCALAR> wdp;
-      wdp.x = x.get();
-      node.readyBuffers( tuple<cbuf>(TOCBUF(x)), Teuchos::null );
+      rbh.begin();
+      wdp.x = rbh.template addConstBuffer<SCALAR>(x);
+      rbh.end();
       result = node.parallel_reduce(0,N,wdp);
     }
     SCALAR expectedResult = (SCALAR)(N);
@@ -160,8 +165,9 @@ namespace {
     {
       TimeMonitor localTimer(tSum);
       SumOp<SCALAR> wdp;
-      wdp.x = x.get();
-      node.readyBuffers( tuple<cbuf>(TOCBUF(x)), Teuchos::null );
+      rbh.begin();
+      wdp.x = rbh.template addConstBuffer<SCALAR>(x);
+      rbh.end();
       result = node.parallel_reduce(1,N-1,wdp);
     }
     expectedResult = (SCALAR)(N-2);

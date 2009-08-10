@@ -6,16 +6,15 @@
 
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_NodeHelpers.hpp"
 #include "TestOps.hpp"
-
-#define TOCBUF(arr) Teuchos::arcp_reinterpret_cast<const char>(arr)
-#define TONCBUF(arr) Teuchos::arcp_reinterpret_cast<char>(arr)
 
 namespace {
 
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Kokkos::DefaultNode;
+  using Kokkos::ReadyBufferHelper;
   using Teuchos::tuple;
   using Teuchos::ArrayRCP;
   using Teuchos::Tuple;
@@ -42,6 +41,7 @@ namespace {
     typedef ArrayRCP<      char> ncbuf;
     Teuchos::ArrayRCP<int> x;
     NODE &node = DefaultNode::getDefaultNode();
+    ReadyBufferHelper<NODE> rbh(node);
     out << "Default Node Type: " << Teuchos::typeName(node) << std::endl;
     int result;
     {
@@ -52,16 +52,18 @@ namespace {
     {
       TimeMonitor localTimer(tInit);
       InitOp<int> wdp;
-      wdp.x = x.get();
-      node.readyBuffers( Teuchos::null, tuple<ncbuf>(TONCBUF(x)) );
+      rbh.begin();
+      wdp.x = rbh.addNonConstBuffer(x);
+      rbh.end();
       node.parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
       TimeMonitor localTimer(tSum);
       SumOp<int> wdp;
-      wdp.x = x.get();
-      node.readyBuffers( tuple<cbuf>(TOCBUF(x)), Teuchos::null );
+      rbh.begin();
+      wdp.x = rbh.addConstBuffer<int>(x);
+      rbh.end();
       result = node.parallel_reduce(0,N,wdp);
     }
     int expectedResult = (int)(N);
