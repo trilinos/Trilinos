@@ -123,7 +123,7 @@ Colorer::generateRowMapColoring()
   Teuchos::RCP<Epetra_MapColoring> colorMap;
 
   color(false);
-  colorMap = Teuchos::rcp(new Epetra_MapColoring(*input_map_));
+  colorMap = Teuchos::rcp(new Epetra_MapColoring(*input_map_, 1));
 
   for(unsigned int i = 0; i < properties_.size(); i++ ) {
     (*colorMap)[i] = properties_[i];
@@ -144,7 +144,6 @@ Colorer::generateColMapColoring()
     Teuchos::rcp(new Epetra_MapColoring(*colmap_));
 
   colorMap->Import(*rowColorMap, importer, Insert);
-
   return (colorMap);
 }
 
