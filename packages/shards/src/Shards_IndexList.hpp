@@ -269,22 +269,22 @@ private:
 
 public:
 
-  typedef IndexList< J0 ,  IndexListInverse::J1 ,  IndexListInverse::J2 ,
-                     IndexListInverse::J3 ,  IndexListInverse::J4 ,  
-                     IndexListInverse::J5 ,  IndexListInverse::J6 ,  
-                     IndexListInverse::J7 ,  IndexListInverse::J8 ,  
-                     IndexListInverse::J9 ,  IndexListInverse::J10 , 
-                     IndexListInverse::J11 , IndexListInverse::J12 , 
-                     IndexListInverse::J13 , IndexListInverse::J14 ,
-                     IndexListInverse::J15 , IndexListInverse::J16 , 
-                     IndexListInverse::J17 , IndexListInverse::J18 ,
-                     IndexListInverse::J19 , IndexListInverse::J20 ,
-                     IndexListInverse::J21 , IndexListInverse::J22 , 
-                     IndexListInverse::J23 , IndexListInverse::J24 , 
-                     IndexListInverse::J25 , IndexListInverse::J26 ,
-                     IndexListInverse::J27 , IndexListInverse::J28 ,
-                     IndexListInverse::J29 , IndexListInverse::J30 , 
-                     IndexListInverse::J31 > type ;
+  typedef IndexList< IndexListInverse::J0 ,  IndexListInverse::J1 ,
+                     IndexListInverse::J2 ,  IndexListInverse::J3 , 
+                     IndexListInverse::J4 ,  IndexListInverse::J5 , 
+                     IndexListInverse::J6 ,  IndexListInverse::J7 , 
+                     IndexListInverse::J8 ,  IndexListInverse::J9 , 
+                     IndexListInverse::J10 , IndexListInverse::J11 ,
+                     IndexListInverse::J12 , IndexListInverse::J13 ,
+                     IndexListInverse::J14 , IndexListInverse::J15 ,
+                     IndexListInverse::J16 , IndexListInverse::J17 ,
+                     IndexListInverse::J18 , IndexListInverse::J19 ,
+                     IndexListInverse::J20 , IndexListInverse::J21 ,
+                     IndexListInverse::J22 , IndexListInverse::J23 ,
+                     IndexListInverse::J24 , IndexListInverse::J25 ,
+                     IndexListInverse::J26 , IndexListInverse::J27 ,
+                     IndexListInverse::J28 , IndexListInverse::J29 ,
+                     IndexListInverse::J30 , IndexListInverse::J31 > type ;
 };
 
 #endif /* DOXYGEN_COMPILE */
