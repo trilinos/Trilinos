@@ -191,7 +191,7 @@ createOutArgs() const
   outArgs.set_Np_Ng_sg(me_outargs.Np(), num_g);
   for (int i=0; i<num_g; i++)
     for (int j=0; j<me_outargs.Np(); j++)
-      outArgs.setSupports(OUT_ARG_DgDp_sg, sg_g_index[i], j, 
+      outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
 			  me_outargs.supports(OUT_ARG_DgDp, i, j));
   
   return outArgs;

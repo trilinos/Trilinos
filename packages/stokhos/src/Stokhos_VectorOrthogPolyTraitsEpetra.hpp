@@ -83,7 +83,17 @@ namespace Stokhos {
    */
   class EpetraOperatorCloner {};
 
-  class EpetraDerivativeCloner {};
+  class EpetraDerivativeCloner {
+  public:
+    EpetraDerivativeCloner(const Epetra_BlockMap& map_, int num_vecs_) : 
+      map(&map_), num_vecs(num_vecs_) {}
+    Teuchos::RCP<EpetraExt::ModelEvaluator::Derivative> clone(int i) const {
+      return Teuchos::rcp(new EpetraExt::ModelEvaluator::Derivative(Teuchos::rcp(new Epetra_MultiVector(*map, num_vecs))));
+    }
+  protected:
+    const Epetra_BlockMap* map;
+    int num_vecs;
+  };
 
   //! Cloner for Epetra_CrsMatrix coefficients
   class EpetraCrsMatrixCloner {
