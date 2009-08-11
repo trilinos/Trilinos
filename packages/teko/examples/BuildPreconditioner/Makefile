@@ -1,7 +1,7 @@
 include ../../../make.include
 
-INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_INCLUDE) -I/home/eccyr/Utils/EcUtils++/include
-LDDIR = -L$(TRILINOS_LIB) -L$(PB_LIBDIR) -L/home/eccyr/Utils/EcUtils++/lib
+INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_INCLUDE)
+LDDIR = -L$(TRILINOS_LIB) -L$(PB_LIBDIR) 
 LDLIB = -lpb $(TRILINOS_LIBRARIES)
 CPPFLAGS=-DHAVE_CONFIG_H $(DEBUG_FLAGS)
 
