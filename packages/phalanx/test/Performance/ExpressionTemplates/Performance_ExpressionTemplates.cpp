@@ -51,46 +51,43 @@ int main(int argc, char *argv[])
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
 
-    const int vec_size = 1000000;
+    const int vec_size = 100000;
     ExprArray<std::size_t,double> ea1(vec_size);
     ExprArray<std::size_t,double> ea2(vec_size);
     ExprArray<std::size_t,double> ea3(vec_size);
     ExprArray<std::size_t,double> ea4(vec_size);
-    ExprArray<std::size_t,double> ea5(vec_size);
+    ExprArray<std::size_t,double> result(vec_size);
 
     for (int i=0; i < vec_size; ++i) {
       ea1[i] = 1.0;
       ea2[i] = 2.0;
       ea3[i] = 3.0;
       ea4[i] = 4.0;
-      ea5[i] = 5.0;
     }
 
-    // Hand coded for loops
     RCP<Time> loop_time = TimeMonitor::getNewTimer("Hand Coded Loops Time");
-    {
-      TimeMonitor tm(*loop_time);
-      for (int i=0; i < vec_size; ++i)
-	ea1[i] = ea2[i] + ea3[i] + ea4[i] + ea5[i];
-    }
-
-    for (int i=0; i < vec_size; ++i) {
-      ea1[i] = 1.0;
-      ea2[i] = 2.0;
-      ea3[i] = 3.0;
-      ea4[i] = 4.0;
-      ea5[i] = 5.0;
-    }
-
-    // Expression templates
     RCP<Time> expr_time = TimeMonitor::getNewTimer("Expr. Templates Time");
-    {
-      TimeMonitor tm(*expr_time);
-      ea1 = ea2 + ea3 + ea4 + ea5;
+
+    const int num_loops = 1000;
+    for (int i=0; i < num_loops; ++i) {
+      
+      // Hand coded for loops
+      {
+	TimeMonitor tm(*loop_time);
+	for (int i=0; i < vec_size; ++i)
+	  result[i] = ea1[i] * 2.0 + 3.0 * ea2[i] * ea3[i] / ea4[i];
+      }
+      
+      // Expression templates
+      {
+	TimeMonitor tm(*expr_time);
+	result = ea1 * 2.0 + 3.0 * ea2 * ea3 / ea4;
+      }
+      
     }
 
     if (loop_time->totalElapsedTime() > 0.0) 
-      cout << "Expr_Time / RawLoop Time = " 
+      cout << "\nExpr_Time / RawLoop Time = " 
 	   << expr_time->totalElapsedTime() / loop_time->totalElapsedTime()
 	   << endl;
     

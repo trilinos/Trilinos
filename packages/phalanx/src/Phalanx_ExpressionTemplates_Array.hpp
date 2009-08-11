@@ -32,7 +32,6 @@
 #ifndef PHALANX_EXPRESSION_TEMPLATES_ARRAY_HPP
 #define PHALANX_EXPRESSION_TEMPLATES_ARRAY_HPP
 
-#include <cassert>
 #include <vector>
 #include "Phalanx_ConfigDefs.hpp"
 
@@ -55,7 +54,6 @@ namespace PHX {
     ExprArray(Rep const& r) : expr_rep(r) {}
 
     ExprArray& operator=(ExprArray const& b) {
-      assert(this->size() == b.size());
       for (Ordinal i=0; i < b.size(); ++i)
 	expr_rep[i] = b[i];
       return *this;
@@ -63,7 +61,6 @@ namespace PHX {
 
     template<typename Ordinal2, typename Scalar2, typename Rep2>
     ExprArray& operator=(ExprArray<Ordinal2,Scalar2,Rep2> const& b) {
-      assert(this->size() == b.size());
       for (Ordinal i=0; i < b.size(); ++i)
 	expr_rep[i] = b[i];
       return *this;
@@ -72,12 +69,10 @@ namespace PHX {
     Ordinal size() const { return expr_rep.size(); }
 
     Scalar operator[](Ordinal idx) const {
-      assert(idx<this->size());
       return expr_rep[idx];
     }
 
     Scalar& operator[](Ordinal idx) {
-      assert(idx<this->size());
       return expr_rep[idx];
     }
 

@@ -32,7 +32,6 @@
 #ifndef PHALANX_EXPRESSION_TEMPLATES_OPERATORS_HPP
 #define PHALANX_EXPRESSION_TEMPLATES_OPERATORS_HPP
 
-#include <cassert>
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_ExpressionTemplates_Operands.hpp"
 #include "Phalanx_ExpressionTemplates_Array.hpp"
