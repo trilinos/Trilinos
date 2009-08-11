@@ -75,13 +75,13 @@ int main(int argc, char *argv[])
       {
 	TimeMonitor tm(*loop_time);
 	for (int i=0; i < vec_size; ++i)
-	  result[i] = ea1[i] * 2.0 + 3.0 * ea2[i] * ea3[i] / ea4[i];
+	  result[i] = (ea1[i] * 2.0 + 3.0) * ea2[i] * ea3[i] / ea4[i];
       }
       
       // Expression templates
       {
 	TimeMonitor tm(*expr_time);
-	result = ea1 * 2.0 + 3.0 * ea2 * ea3 / ea4;
+	result = (ea1 * 2.0 + 3.0) * ea2 * ea3 / ea4;
       }
       
     }
