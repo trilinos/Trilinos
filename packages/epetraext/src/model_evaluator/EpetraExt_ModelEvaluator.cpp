@@ -94,7 +94,8 @@ void ModelEvaluator::InArgs::assert_l(int l) const
 
 
 ModelEvaluator::OutArgs::OutArgs()
-  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!")
+  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!"),
+   Np_sg_(0)
 {
   std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
 }
