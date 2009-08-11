@@ -25,7 +25,7 @@
 
    To invoke this example, use something like:
 
-       mpirun -np 5 ./petsc.exe -m 150 -n 150 -petsc_smoother -ksp_monitor_true_residual
+       mpirun -np 5 ./TrilinosCouplings_petsc.exe -m 150 -n 150 -petsc_smoother -ksp_monitor_true_residual
 */
 
 static char help[] = "Demonstrates how to solve a PETSc linear system with KSP\
