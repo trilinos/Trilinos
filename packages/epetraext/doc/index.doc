@@ -153,7 +153,7 @@ the Trilinos build directory is ~/TrilinosBuild, and that your mpi compilers are
 First set the following environmental variables.
 
 \verbatim
-export TRILINOS_HOME=/home/joeblow/Trilinos
+setenv TRILINOS_HOME /home/joeblow/Trilinos
 setenv PETSC_DIR /home/joeblow/petsc-3.0.0-p4
 setenv PETSC_ARCH linux-gnu-c-debug
 setenv PETSC_LIB "-Wl,-rpath,/home/joeblow/petsc-3.0.0-p4/linux-gnu-c-debug/lib
@@ -168,34 +168,69 @@ setenv PETSC_LIB "-Wl,-rpath,/home/joeblow/petsc-3.0.0-p4/linux-gnu-c-debug/lib
 setenv PETSC_INCLUDE_PATH "${PETSC_DIR}/${PETSC_ARCH}/include;${PETSC_DIR}/include;${PETSC_DIR}"
 \endverbatim
 
-Then change directories to TrilinosBuild and issue the following configure line:
+Then change directories to TrilinosBuild and issue the configure line below.
 
 \verbatim
 cmake \
   -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
   -D CMAKE_INSTALL_PREFIX:PATH="${PWD}" \
   -D TPL_ENABLE_MPI:BOOL=ON \
-  -D Trilinos_ENABLE_ML:BOOL=ON \
+\
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+  -D Trilinos_ENABLE_Amesos:BOOL=ON \
+  -D Trilinos_ENABLE_AztecOO:BOOL=ON \
+  -D Trilinos_ENABLE_Belos:BOOL=ON \
+  -D Trilinos_ENABLE_Epetra:BOOL=ON \
   -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+  -D Trilinos_ENABLE_Galeri:BOOL=ON \
+  -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+  -D Trilinos_ENABLE_Isorropia:BOOL=ON \
+  -D Trilinos_ENABLE_ML:BOOL=ON \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
   -D Trilinos_ENABLE_TrilinosCouplings:BOOL=ON \
+  -D Trilinos_ENABLE_Triutils:BOOL=ON \
+  -D Trilinos_ENABLE_Zoltan:BOOL=ON \
+\
   -D EpetraExt_USING_PETSC:BOOL=ON \
-  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-  -D TPL_BLAS_LIBRARIES:STRING="-lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread
-                                -lmkl_core -Wl,--end-group -lguide -lpthread" \
-  -D TPL_LAPACK_LIBRARIES:STRING="-lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread
-                                -lmkl_core -Wl,--end-group -lguide -lpthread" \
   -D TPL_ENABLE_PETSC:BOOL=ON \
   -D PETSC_LIBRARY_DIRS:FILEPATH=${PETSC_LIB_PATH} \
   -D PETSC_INCLUDE_DIRS:FILEPATH=${PETSC_INCLUDE_PATH} \
   -D TPL_PETSC_LIBRARIES:STRING="${PETSC_LIB}" \
   -D TPL_PETSC_INCLUDE_DIRS:STRING="${PETSC_INCLUDE_PATH}" \
-  -D Trilinos_ENABLE_TESTS:BOOL=ON \
-  -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+\
+  -D TrilinosCouplings_ENABLE_TESTS:BOOL=ON \
+  -D TrilinosCouplings_ENABLE_EXAMPLES:BOOL=ON \
+  -D ML_ENABLE_TESTS:BOOL=ON \
+  -D ML_ENABLE_EXAMPLES:BOOL=ON \
   -D DART_TESTING_TIMEOUT:STRING=600 \
   ${TRILINOS_HOME}
 \endverbatim
 
-Finally, in the directory TrilinosBuild type
+You may need to specify the location of your MPI compilers with these cmake options:
+
+\verbatim
+CMAKE_CXX_COMPILER:FILEPATH=/full/path/to/c++/compiler
+CMAKE_C_COMPILER:FILEPATH=/full/path/to/c/compiler
+CMAKE_Fortran_COMPILER:FILEPATH=/full/path/to/fortran/compiler
+\endverbatim
+
+or, if your mpi is installed in a base directory with subdirectories "bin", "lib", and "include":
+
+\verbatim
+MPI_BASE_DIR:PATH=/full/path/to/mpi/base/directory
+\endverbatim
+
+
+You may also need to specify the location and name of the blas and lapack libraries with these cmake options:
+
+\verbatim
+BLAS_LIBRARY_DIRS:FILEPATH="/full/path/to/blas"
+LAPACK_LIBRARY_DIRS:FILEPATH="/full/path/to/blas"
+BLAS_LIBRARY_NAMES:STRING="blasLibraryName"
+LAPACK_LIBRARY_NAMES:STRING="lapackLibraryName"
+\endverbatim
+
+Once Trilinos is configured successfully, in the directory "TrilinosBuild" type
 \verbatim
 make
 make install
