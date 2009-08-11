@@ -32,6 +32,7 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_LabeledObject.hpp>
+#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
@@ -275,6 +276,11 @@ namespace Tpetra {
     typedef Kokkos::MultiVector<Scalar,Node>  KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   DMVA;
     KMV lclMV_;
+    Teuchos::Array<Teuchos_Ordinal> whichVectors_;
+
+    //! Advanced constructor accepting parallel buffer view.
+    MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map,
+                Teuchos::ArrayRCP<Scalar> data, Teuchos_Ordinal LDA, Teuchos::ArrayView<const Teuchos_Ordinal> whichVectors);
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &sourceObj, Teuchos_Ordinal &packetSize);

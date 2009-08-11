@@ -4,6 +4,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_as.hpp>
+#include <Teuchos_Tuple.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -45,6 +46,7 @@ namespace {
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::arrayView;
+  using Teuchos::tuple;
   using Teuchos::rcp;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
@@ -852,9 +854,8 @@ namespace {
     mv.norm2(norms());
     for (Teuchos_Ordinal j=0; j<numVectors; ++j) {
       // get a view of column j, normalize it using update()
-      Array<Teuchos_Ordinal> ind(1,j);
-      RCP<MV> mvj = mv.subViewNonConst(ind());
-      switch (j){
+      RCP<MV> mvj = mv.subViewNonConst(tuple<Teuchos_Ordinal>(j));
+      switch (j) {
       case 0:
         mvj->scale( M1/norms[j] );
         break;
@@ -1230,7 +1231,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
+      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR )*/ \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR ) 
 
 

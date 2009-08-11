@@ -6,7 +6,7 @@ ADD_SUBDIRECTORIES(
   Distributor
   Directory
   #ImportExport
-  #MultiVector
+  MultiVector
   #BasicPerfTest
   Utils
   #CrsGraph
