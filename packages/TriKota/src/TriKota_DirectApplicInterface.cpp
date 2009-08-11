@@ -32,7 +32,7 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
     int num_dakota_vars =  first_model.acv();
     Dakota::RealVector drv(num_dakota_vars);
 
-    TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, logic_error,
+    TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, std::logic_error,
                        "TriKota Adapter Error: number of parameters in ModelEvaluator  "
                        <<  numParameters << "\n is less then the number of continuous variables\n"
                        << " specified in the dakota.in input file " << num_dakota_vars << "\n" );
@@ -54,13 +54,13 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
   if (App != Teuchos::null) {
 
     // test for consistency of problem definition between ModelEval and Dakota
-    TEST_FOR_EXCEPTION(numVars > numParameters, logic_error,
+    TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(numADV != 0, logic_error,
+    TEST_FOR_EXCEPTION(numADV != 0, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(numFns > numResponses, logic_error,
+    TEST_FOR_EXCEPTION(numFns > numResponses, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(hessFlag, logic_error,
+    TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
     EpetraExt::ModelEvaluator::InArgs inArgs = App->createInArgs();
@@ -69,11 +69,11 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
     bool supportsSensitivities =
       !outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_DgDp, 0, 0).none();
 
-    TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, logic_error,
+    TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
 //    TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
-//                       != App->MyMPIComm(), logic_error,
+//                       != App->MyMPIComm(), std::logic_error,
 //     "TriKota Parallelism Error: derived_map_ac called with different MPI_comm");
  
 
@@ -95,7 +95,7 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
   }
   else {
     TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
-                       != MPI_COMM_NULL, logic_error,
+                       != MPI_COMM_NULL, std::logic_error,
                       "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");
   }
 
