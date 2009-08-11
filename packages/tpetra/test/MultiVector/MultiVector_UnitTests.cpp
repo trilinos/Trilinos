@@ -14,6 +14,22 @@
 // FINISH: add test for MultiVector with a node containing zero local entries
 // FINISH: add tests for local MultiVectors 
 
+// test:
+//
+// get1dCopy(*A,LDA)
+// get2dCopy(ArrayView<ArrayView>>)
+// get2dCopy(**A)
+// get2dViewNonConst()
+// get2dView()
+// 
+// reduce()
+// replaceMap()
+// replaceMyValue()
+// sumIntoMyValue()
+// replaceGlobalValue()
+// sumIntoMyValue()
+
+
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -42,6 +58,8 @@ namespace {
   using Teuchos::Comm;
   using Teuchos::RCP;
   using Teuchos::SerialDenseMatrix;
+  using Teuchos::Range1D;
+  using Teuchos::Tuple;
   using Teuchos::as;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
@@ -354,8 +372,8 @@ namespace {
          tmv2x2(node,lmap2,2),
          tmv3x3(node,lmap3,3);
       // fill multivectors with random, get copy of contents
-      tmv3x2.random();  tmv3x2.get1dCopy(tmvCopy1(),3); 
-      tmv2x3.random();  tmv2x3.get1dCopy(tmvCopy2(),2);
+      tmv3x2.randomize();  tmv3x2.get1dCopy(tmvCopy1(),3); 
+      tmv2x3.randomize();  tmv2x3.get1dCopy(tmvCopy2(),2);
       // point SerialDenseMatrices at copies
       SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvCopy1.getRawPtr(),3,3,2);
       SerialDenseMatrix<int,Scalar> sdm2x3(View,tmvCopy2.getRawPtr(),2,2,3);
@@ -536,6 +554,160 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyView, Ordinal, Scalar )
+  {
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    const Mag M0 = ScalarTraits<Mag>::zero();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
+    // create a Map
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 7;
+    const Teuchos_Ordinal numVectors = 13;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    MV A(node,map,numVectors,false);
+    A.randomize();
+    // {
+    //   TEST_FOR_EXCEPT(numVectors != 13);
+    //   Range1D inds1(8,12);
+    //   // get a subview and a subcopy of certain vectors of A
+    //   // check that the norms are the same
+    //   // change the view, delete it, verify that the copy doesn't change but that A does
+    //   A.randomize();
+    //   Array<Mag> A_before(numVectors),
+    //              A_after (numVectors),
+    //              Av_before(inds1.size()),
+    //              Av_after (inds1.size()),
+    //              Ac_before(inds1.size()),
+    //              Ac_after (inds1.size());
+    //   A.norm2(A_before());
+    //   // get view and its norms
+    //   RCP<MV> Av = A.subViewNonConst(inds1);
+    //   Av->norm2(Av_before());
+    //   // get copy and its norms
+    //   RCP<MV> Ac = A.subCopy(inds1);
+    //   Ac->norm2(Ac_before());
+    //   // set view to zero
+    //   Av->putScalar(ScalarTraits<Scalar>::zero());
+    //   // get norms of view
+    //   Av->norm2(Av_after());
+    //   // free the view, copying data back to A
+    //   Av = Teuchos::null;
+    //   // get norms of A and copy
+    //   Ac->norm2(Ac_after());
+    //   A.norm2(A_after());
+    //   // norms of copy and view before should match norms of A
+    //   for (int i=0; i < inds1.size(); ++i) {
+    //     TEST_EQUALITY( A_before[inds1.lbound()+i], Ac_before[i] );
+    //   }
+    //   TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Av_before,M0);
+    //   // norms of copy (before and after) should match
+    //   TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Ac_after,M0);
+    //   // norms of view after should be zero, as should corresponding A norms
+    //   for (int i=0; i < inds1.size(); ++i) {
+    //     TEST_EQUALITY_CONST( Av_after[i], M0 );
+    //     TEST_EQUALITY_CONST( A_after[inds1.lbound()+i], M0 );
+    //   }
+    // }
+    {
+      TEST_FOR_EXCEPT(numVectors != 13);
+      Tuple<Teuchos_Ordinal,5> inds = tuple<Teuchos_Ordinal>(0,5,6,7,12);
+      // get a subview and a subcopy of certain vectors of A
+      // check that the norms are the same
+      // change the view, delete it, verify that the copy doesn't change but that A does
+      A.randomize();
+      Array<Mag> A_before(numVectors),
+                 A_after (numVectors),
+                 Av_before(inds.size()),
+                 Av_after (inds.size()),
+                 Ac_before(inds.size()),
+                 Ac_after (inds.size());
+      A.norm2(A_before());
+      // get view and its norms
+      RCP<MV> Av = A.subViewNonConst(inds);
+      Av->norm2(Av_before());
+      // get copy and its norms
+      RCP<MV> Ac = A.subCopy(inds);
+      Ac->norm2(Ac_before());
+      out << "A: " << endl; A.describe(out,VERB_EXTREME);
+      out << "Ac: " << endl; Ac->describe(out,VERB_EXTREME);
+      out << "Av: " << endl; Av->describe(out,VERB_EXTREME);
+      // set view to zero
+      Av->putScalar(ScalarTraits<Scalar>::zero());
+      // get norms of view
+      Av->norm2(Av_after());
+      // free the view, copying data back to A
+      Av = Teuchos::null;
+      // get norms of A and copy
+      Ac->norm2(Ac_after());
+      A.norm2(A_after());
+      // norms of copy and view before should match norms of A
+      for (int i=0; i < inds.size(); ++i) {
+        TEST_EQUALITY( A_before[inds[i]], Ac_before[i] );
+      }
+      TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Av_before,M0);
+      // norms of copy (before and after) should match
+      TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Ac_after,M0);
+      // norms of view after should be zero, as should corresponding A norms
+      for (int i=0; i < inds.size(); ++i) {
+        TEST_EQUALITY_CONST( Av_after[i], M0 );
+        TEST_EQUALITY_CONST( A_after[inds[i]], M0 );
+      }
+    }
+    {
+      A.randomize();
+      Array<Mag> Anorms(numVectors);
+      A.norm2(Anorms());
+      TEST_FOR_EXCEPT(numVectors != 13);
+      for (int vc=0; vc < 2; ++vc) {
+        // vc == 0 -> view
+        // vc == 1 -> copy
+        for (int t=2; t < 4; ++t) {
+          //  t |   outer   |   inner
+          // ---|-----------|-----------
+          //  0 | ArrayView | ArrayView
+          //  1 |  Range1D  | ArrayView
+          //  2 | ArrayView |  Range1D 
+          //  3 |  Range1D  |  Range1D 
+          //
+          // outer grabs 5-9
+          // inner grabs 1-3 of those, corresponding to 6-8
+          RCP<const MV> sub1, sub2;
+          if ((t & 1) == 0) {
+            Tuple<Teuchos_Ordinal,5> inds = tuple<Teuchos_Ordinal>(5,6,7,8,9);
+            if (vc == 0) sub1 = A.subView(inds);
+            else         sub1 = A.subCopy(inds);
+          }
+          else {
+            Range1D inds(5,9);
+            if (vc == 0) sub1 = A.subView(inds);
+            else         sub1 = A.subCopy(inds);
+          }
+          TEST_EQUALITY_CONST(sub1->getNumVectors(), 5);
+          if ((t & 2) == 0) {
+            Tuple<Teuchos_Ordinal,3> inds = tuple<Teuchos_Ordinal>(1,2,3);
+            if (vc == 0) sub2 = sub1->subView(inds);
+            else         sub2 = sub1->subCopy(inds);
+          }
+          else {
+            Range1D inds(1,3);
+            if (vc == 0) sub2 = sub1->subView(inds);
+            else         sub2 = sub1->subCopy(inds);
+          }
+          TEST_EQUALITY_CONST(sub2->getNumVectors(), 3);
+          Array<Mag> subnorms(3);
+          sub2->norm2(subnorms());
+          TEST_COMPARE_FLOATING_ARRAYS(Anorms(6,3),subnorms(),M0);
+        }
+      }
+    }
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, ZeroScaleUpdate, Ordinal, Scalar )
   {
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
@@ -602,7 +774,7 @@ namespace {
     //   set it to zero by combination with A,B
     {
       MV C(node,map,numVectors);
-      C.random();
+      C.randomize();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       C.norm2(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
@@ -616,6 +788,128 @@ namespace {
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       C.norm2(norms);
       TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
+    }
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, ScaleAndAssign, Ordinal, Scalar )
+  {
+    if (ScalarTraits<Scalar>::isOrdinal) return;
+    Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    const Mag M0 = ScalarTraits<Mag>::zero();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
+    // create a Map
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 23;
+    const Teuchos_Ordinal numVectors = 11;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    // Use random multivector A
+    // Set B = A * 2 manually.
+    // Therefore, if C = 2*A, then C == B
+    // If C = A and C *= 2, then C == B
+    // This test operator= and all of our scale ops
+    // We'll do Vector and MultiVector variations
+    // Also, ensure that other vectors aren't changed
+    MV A(node,map,numVectors,false),
+       B(node,map,numVectors,false);
+    A.randomize();
+    Array<Mag> Anrms(numVectors);
+    A.norm2(Anrms());
+    // set B = A * 2, using different techniques
+    // * get vector, Vector::operator=
+    // * get 1-vector subview(Range1D), MultiVector::operator=
+    // * get 1-vector subview(ArrayView), MultiVector::operator=
+    // * get data view, assign
+    TEST_FOR_EXCEPT(numVectors < 4);
+    for (int j = 0; j < numVectors; ++j) {
+      // assign j-th vector of B to 2 * j-th vector of A
+      switch (j % 4) {
+        case 0:
+          {
+            RCP<V> bj = B.getVectorNonConst(j);
+            RCP<const V> aj = A.getVector(j);
+            (*bj) = (*aj);
+            ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
+            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+              bjview[i] *= as<Scalar>(2);
+            }
+          }
+          break;
+        case 1:
+          {
+            RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
+            RCP<const MV> aj = A.subView(Range1D(j,j));
+            (*bj) = (*aj);
+            ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
+            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+              bjview[i] *= as<Scalar>(2);
+            }
+          }
+          break;
+        case 2:
+          {
+            RCP<MV> bj = B.subViewNonConst(tuple<Teuchos_Ordinal>(j));
+            RCP<const MV> aj = A.subView(tuple<Teuchos_Ordinal>(j));
+            (*bj) = (*aj);
+            ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
+            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+              bjview[i] *= as<Scalar>(2);
+            }
+          }
+          break;
+        case 3:
+          {
+            ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
+            ArrayRCP<const Scalar> ajview = A.getData(j);
+            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+              bjview[i] = as<Scalar>(2) * ajview[i];
+            }
+          }
+          break;
+      }
+    }
+    // check that A wasn't modified
+    {
+      Array<Mag> Anrms_after(numVectors);
+      A.norm2(Anrms_after());
+      TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_after(),M0);
+    }
+    // check that C.Scale(A,2.0) == B
+    {
+      MV C(node,map,numVectors,false);
+      C.scale(as<Scalar>(2), A);
+      C.update(-1.0,B,1.0);
+      Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
+      C.norm2(Cnorms());
+      TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,M0);
+    }
+    // check that C=A, C.Scale(2.0) == B
+    {
+      MV C(node,map,numVectors,false);
+      C = A;
+      C.scale(as<Scalar>(2));
+      C.update(-1.0,B,1.0);
+      Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
+      C.norm2(Cnorms());
+      TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,M0);
+    }
+    // check that C=A, C.Scale(tuple(2)) == B
+    {
+      MV C(node,map,numVectors,false);
+      C = A;
+      Array<Scalar> twos(numVectors,as<Scalar>(2));
+      C.scale(twos());
+      C.update(-1.0,B,1.0);
+      Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
+      C.norm2(Cnorms());
+      TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,M0);
     }
   }
 
@@ -683,7 +977,7 @@ namespace {
     //   set it to zero by combination with A,B
     {
       V C(node,map);
-      C.random();
+      C.randomize();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       norm = C.norm2(); C.norm2(norms());
       TEST_EQUALITY(norm,M0);
@@ -694,7 +988,7 @@ namespace {
     //   check that it equals B: subtraction in situ
     {
       V C(node,map);
-      C.random();
+      C.randomize();
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       norm = C.norm2(); C.norm2(norms());
@@ -721,7 +1015,7 @@ namespace {
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
     MV morig(node,map,numVectors);
-    morig.random();
+    morig.randomize();
     // copy it
     MV mcopy1(morig), mcopy2(morig);
     // verify that all three have identical values
@@ -764,7 +1058,7 @@ namespace {
     Map<Ordinal> map(INVALID,2,0,comm);
     // create random MV
     V morig(node,map);
-    morig.random();
+    morig.randomize();
     // copy it
     V mcopy1(morig), mcopy2(morig);
     // verify that all three have identical values
@@ -804,8 +1098,8 @@ namespace {
     Map<Ordinal> map(INVALID,100,0,comm);
     // create two random Vector objects
     V v1(node,map), v2(node,map);
-    v1.random();
-    v2.random();
+    v1.randomize();
+    v2.randomize();
     // set values in both to 1.0
     // for the first, do via putScalar()
     // the the second, do manually, looping over all elements
@@ -848,7 +1142,7 @@ namespace {
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
     MV mv(node,map,numVectors);
-    mv.random();
+    mv.randomize();
     // compute the norms
     Array<Magnitude> norms(numVectors);
     mv.norm2(norms());
@@ -996,6 +1290,7 @@ namespace {
     //                               [0 1 2]
     // norm1(values) = [0 2 4]
     // over all procs, this is [0 2*nprocs 4*nprocs]
+    // mean is [0 1 2]
     values[0] = as<Scalar>(0);
     values[1] = as<Scalar>(0);
     values[2] = as<Scalar>(1);
@@ -1003,14 +1298,27 @@ namespace {
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
     MV mvec(node,map,values(),2,numVectors);
-    Array<MT> norms(numVectors), answer(numVectors);
-    answer[0] = as<MT>(0);
-    answer[1] = as<MT>(2*numImages);
-    answer[2] = as<MT>(4*numImages);
-    // do the dots
-    mvec.norm1(norms());
-    // check the answers
-    TEST_COMPARE_FLOATING_ARRAYS(norms,answer,M0);
+    // compute, check norms
+    {
+      Array<MT> norms(numVectors), answer(numVectors);
+      answer[0] = as<MT>(0);
+      answer[1] = as<MT>(2*numImages);
+      answer[2] = as<MT>(4*numImages);
+      mvec.norm1(norms());
+      TEST_COMPARE_FLOATING_ARRAYS(norms,answer,M0);
+    }
+    {
+      // compute, check means
+      Array<Scalar> means(numVectors), answer(numVectors);
+      mvec.meanValue(means());
+      answer[0] = as<Scalar>(0);
+      answer[1] = as<Scalar>(1);
+      answer[2] = as<Scalar>(2);
+      TEST_COMPARE_FLOATING_ARRAYS(means,answer,M0);
+      for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+        TEST_EQUALITY( mvec.getVector(j)->meanValue(), answer[j] );
+      }
+    }
   }
 
 
@@ -1069,7 +1377,7 @@ namespace {
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     MV mvec(node,map,2,numVectors);
     // randomize the multivector
-    mvec.random();
+    mvec.randomize();
     // take norms; they should not be zero
     Array<MT> normsRand(numVectors), normsZero(numVectors);
     mvec.norm2(normsRand());
@@ -1084,44 +1392,6 @@ namespace {
       TEST_ARRAY_ELE_EQUALITY(normsZero,i,M0);
     }
     success &= local_success;
-  }
-
-
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MinMaxMean, Ordinal, Scalar )
-  {
-    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
-    typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const MT M0 = ScalarTraits<MT>::zero();
-    // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    Node &node = getDefaultNode();
-    // create a Map
-    const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVectors = 2;
-    const Teuchos_Ordinal LDA = 2;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    Array<Scalar> values(4);
-    // on proc i of n:
-    // values = {i, i+1, n-i, n-i-1} = [ i   n-i ]
-    //                                 [i+1 n-i-1]
-    // min values are [0,0], but from different procs
-    // max values are [numImages,numImages], again from different procs
-    // mean values are 
-    //  1  n-1
-    // --  sum i+i+1 == [(n-1)*n + n]/2n == (n-1)/2 
-    // 2n  i=0
-    //               == n*n/2n == n/2
-    values[0] = as<Scalar>(myImageID);
-    values[1] = as<Scalar>(myImageID+1);
-    values[2] = as<Scalar>(numImages-myImageID);
-    values[3] = as<Scalar>(numImages-myImageID-1);
-    MV mvec(node,map,values(),LDA,numVectors);
-    // FINISH this test
   }
 
 
@@ -1226,8 +1496,10 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNorm1        , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNormInf      , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2             , ORDINAL, SCALAR ) \
+      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyView          , ORDINAL, SCALAR )*/ \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(      Vector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ScaleAndAssign    , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
@@ -1238,7 +1510,7 @@ namespace {
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
+         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)*/
      UNIT_TEST_GROUP_ORDINAL(int)
 
 #else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD

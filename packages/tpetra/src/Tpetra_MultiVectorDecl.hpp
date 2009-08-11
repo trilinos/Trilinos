@@ -104,7 +104,7 @@ namespace Tpetra {
     void putScalar(const Scalar &value);
 
     //! Set multi-vector values to random numbers.
-    void random();
+    void randomize();
 
     //! Replace the underlying Map with a compatible one.
     void replaceMap(const Map<LocalOrdinal,GlobalOrdinal> &map);
@@ -133,19 +133,19 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const;
 
     //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const Teuchos_Ordinal> &cols) const;
 
     //! Returns a const MultiVector with const views of selected columns.
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const Teuchos_Index> &cols) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(Teuchos::ArrayView<const Teuchos_Ordinal> cols) const;
 
     //! Returns a MultiVector with views of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(Teuchos::ArrayView<const Teuchos_Index> cols);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(Teuchos::ArrayView<const Teuchos_Ordinal> cols);
 
     //! Const Vector access function.
     Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(Teuchos_Ordinal j) const;
@@ -154,12 +154,12 @@ namespace Tpetra {
     Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(Teuchos_Ordinal j);
 
     //! Const Local vector access function.
-    //! Pointer to the local values in a particular vector of this multi-vector.
-    inline Teuchos::ArrayRCP<const Scalar> operator[](Teuchos_Ordinal j) const;
+    //! View of the local values in a particular vector of this multi-vector.
+    Teuchos::ArrayRCP<const Scalar> getData(Teuchos_Ordinal j) const;
 
     //! Local vector access function.
-    //! Pointer to the local values in a particular vector of this multi-vector.
-    inline Teuchos::ArrayRCP<Scalar> operator[](Teuchos_Ordinal j);
+    //! View of the local values in a particular vector of this multi-vector.
+    Teuchos::ArrayRCP<Scalar> getDataNonConst(Teuchos_Ordinal j);
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
@@ -278,9 +278,13 @@ namespace Tpetra {
     KMV lclMV_;
     Teuchos::Array<Teuchos_Ordinal> whichVectors_;
 
-    //! Advanced constructor accepting parallel buffer view.
+    //! Advanced constructor for non-contiguous views.
     MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map,
                 Teuchos::ArrayRCP<Scalar> data, Teuchos_Ordinal LDA, Teuchos::ArrayView<const Teuchos_Ordinal> whichVectors);
+
+    //! Advanced constructor for contiguous views.
+    MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map,
+                Teuchos::ArrayRCP<Scalar> data, Teuchos_Ordinal LDA, Teuchos_Ordinal NumVectors);
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &sourceObj, Teuchos_Ordinal &packetSize);

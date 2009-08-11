@@ -118,17 +118,17 @@ namespace Tpetra {
     return dot;
   }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const 
-//  {
-//    typedef Teuchos::ScalarTraits<Scalar> SCT;
-//    Scalar sum = DMVA::Sum(*this->lclMV_);
-//    if (this->isDistributed()) {
-//      Scalar lsum = sum;
-//      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lsum,&sum);
-//    }
-//    return sum / Teuchos::as<Scalar>(this->getGlobalLength());
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const 
+  {
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+    Scalar sum = DMVA::Sum(this->lclMV_);
+    if (this->isDistributed()) {
+      Scalar lsum = sum;
+      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lsum,&sum);
+    }
+    return sum / Teuchos::as<Scalar>(this->getGlobalLength());
+  }
 
 //  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 //  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const

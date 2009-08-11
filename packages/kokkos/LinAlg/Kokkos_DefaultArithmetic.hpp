@@ -571,7 +571,7 @@ namespace Kokkos {
         const size_type nR = A.getNumRows();
         const size_type nC = A.getNumCols();
         const size_type Astride = A.getStride();
-        TEST_FOR_EXCEPTION(nC > sums.size(), std::runtime_error, 
+        TEST_FOR_EXCEPTION(nC > (size_type)sums.size(), std::runtime_error, 
             "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Sum(A,sums): sums must have length as large as number of columns of A.");
         if (nR*nC == 0) {
           Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
