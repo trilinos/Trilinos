@@ -39,6 +39,10 @@
 
 namespace PHX {
 
+  // ***********
+  // Addition
+  // ***********
+
   //! ExprArray + ExprArray
   template<typename Ordinal, typename Scalar, typename R1, typename R2>
   PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,R1,R2> > 
@@ -65,6 +69,102 @@ namespace PHX {
     return 
       PHX::ExprArray<Ordinal, Scalar, PHX::ExprAdd<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
       (PHX::ExprAdd<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> >(a.rep(), ExprScalar<Ordinal,Scalar>(s)));
+  }    
+
+  // ***********
+  // Subtration
+  // ***********
+
+  //! ExprArray - ExprArray
+  template<typename Ordinal, typename Scalar, typename R1, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprSubtr<Ordinal,Scalar,R1,R2> > 
+  operator-(PHX::ExprArray<Ordinal,Scalar,R1> const& a, 
+	    PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprSubtr<Ordinal,Scalar,R1,R2> > 
+      (PHX::ExprSubtr<Ordinal,Scalar,R1,R2>(a.rep(), b.rep()));
+  }    
+
+  //! Scalar - ExprArray
+  template<typename Ordinal, typename Scalar, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprSubtr<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+  operator-(Scalar const& s, PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprSubtr<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+      (PHX::ExprSubtr<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2>(ExprScalar<Ordinal,Scalar>(s), b.rep()));
+  }    
+
+  //! ExprArray - Scalar
+  template<typename Ordinal, typename Scalar, typename R1>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprSubtr<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+  operator-(PHX::ExprArray<Ordinal,Scalar,R1> const& a, Scalar const& s) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprSubtr<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+      (PHX::ExprSubtr<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> >(a.rep(), ExprScalar<Ordinal,Scalar>(s)));
+  }    
+
+  // ***********
+  // Multiplication
+  // ***********
+
+  //! ExprArray * ExprArray
+  template<typename Ordinal, typename Scalar, typename R1, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprMult<Ordinal,Scalar,R1,R2> > 
+  operator*(PHX::ExprArray<Ordinal,Scalar,R1> const& a, 
+	    PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprMult<Ordinal,Scalar,R1,R2> > 
+      (PHX::ExprMult<Ordinal,Scalar,R1,R2>(a.rep(), b.rep()));
+  }    
+
+  //! Scalar * ExprArray
+  template<typename Ordinal, typename Scalar, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprMult<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+  operator*(Scalar const& s, PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprMult<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+      (PHX::ExprMult<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2>(ExprScalar<Ordinal,Scalar>(s), b.rep()));
+  }    
+
+  //! ExprArray * Scalar
+  template<typename Ordinal, typename Scalar, typename R1>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprMult<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+  operator*(PHX::ExprArray<Ordinal,Scalar,R1> const& a, Scalar const& s) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprMult<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+      (PHX::ExprMult<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> >(a.rep(), ExprScalar<Ordinal,Scalar>(s)));
+  }    
+
+  // ***********
+  // Division
+  // ***********
+
+  //! ExprArray / ExprArray
+  template<typename Ordinal, typename Scalar, typename R1, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprDiv<Ordinal,Scalar,R1,R2> > 
+  operator/(PHX::ExprArray<Ordinal,Scalar,R1> const& a, 
+	    PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprDiv<Ordinal,Scalar,R1,R2> > 
+      (PHX::ExprDiv<Ordinal,Scalar,R1,R2>(a.rep(), b.rep()));
+  }    
+
+  //! Scalar / ExprArray
+  template<typename Ordinal, typename Scalar, typename R2>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprDiv<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+  operator/(Scalar const& s, PHX::ExprArray<Ordinal,Scalar,R2> const& b) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprDiv<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2> > 
+      (PHX::ExprDiv<Ordinal,Scalar,PHX::ExprScalar<Ordinal,Scalar>,R2>(ExprScalar<Ordinal,Scalar>(s), b.rep()));
+  }    
+
+  //! ExprArray / Scalar
+  template<typename Ordinal, typename Scalar, typename R1>
+  PHX::ExprArray<Ordinal, Scalar, PHX::ExprDiv<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+  operator/(PHX::ExprArray<Ordinal,Scalar,R1> const& a, Scalar const& s) {
+    return 
+      PHX::ExprArray<Ordinal, Scalar, PHX::ExprDiv<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> > > 
+      (PHX::ExprDiv<Ordinal,Scalar,R1,PHX::ExprScalar<Ordinal,Scalar> >(a.rep(), ExprScalar<Ordinal,Scalar>(s)));
   }    
 
 }

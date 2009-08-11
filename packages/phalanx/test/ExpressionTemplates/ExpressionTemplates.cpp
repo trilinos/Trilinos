@@ -72,49 +72,160 @@ int main(int argc, char *argv[])
     const int vec_size = 100;
     ExprArray<std::size_t,double> ea1(vec_size);
     ExprArray<std::size_t,double> ea2(vec_size);
-    ExprArray<std::size_t,double> ea3(vec_size);
     ExprArray<std::size_t,double> ea4(vec_size);
-    ExprArray<std::size_t,double> ea5(vec_size);
     ExprArray<std::size_t,double> result(vec_size);
 
     for (int i=0; i < vec_size; ++i) {
       ea1[i] = 1.0;
       ea2[i] = 2.0;
-      ea3[i] = 3.0;
       ea4[i] = 4.0;
-      ea5[i] = 5.0;
     }
 
     // operator=
+    cout << "Testing operator=()...";
     result = ea1;
 
     for (int i=0; i < vec_size; ++i)
       TEST_FOR_EXCEPTION(result[i] - 1.0 > 1.0e-12, std::runtime_error,
 			 "Error operator= has failed!");
-    
+   
+    cout << "Passed!" << endl;
+
+    // ************
+    // Addition
+    // ************
+
     // ExprArray + ExprArray
+    cout << "Testing \"ExprArray + ExprArray\"...";
     result = ea1 + ea2;
 
     for (int i=0; i < vec_size; ++i)
       TEST_FOR_EXCEPTION(result[i] - 3.0 > 1.0e-12, std::runtime_error,
 			 "\"ExprArray + ExprArray\" has failed!");
 
+    cout << "Passed!" << endl;
+
     // ExprScalar + ExprArray
+    cout << "Testing \"ExprScalar + ExprArray\"...";
     result = 2.0 + ea1;
 
     for (int i=0; i < vec_size; ++i)
       TEST_FOR_EXCEPTION(result[i] - 3.0 > 1.0e-12, std::runtime_error,
 			 "\"ExprScalar + ExprArray\" has failed!");
 
+    cout << "Passed!" << endl;
+
     // ExprArray + ExprScalar
+    cout << "Testing \"ExprArray + ExprScalar\"...";
     result = ea1 + 3.0;
 
     for (int i=0; i < vec_size; ++i)
       TEST_FOR_EXCEPTION(result[i] - 4.0 > 1.0e-12, std::runtime_error,
 			 "\"ExprArray + ExprScalar\" has failed!");
 
+    cout << "Passed!" << endl;
 
+    // ************
+    // Subtraction
+    // ************
 
+    // ExprArray - ExprArray
+    cout << "Testing \"ExprArray - ExprArray\"...";
+    result = ea2 - ea1;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 1.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray - ExprArray\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ExprScalar - ExprArray
+    cout << "Testing \"ExprScalar - ExprArray\"...";
+    result = 2.0 - ea1;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 1.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprScalar - ExprArray\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ExprArray - ExprScalar
+    cout << "Testing \"ExprArray - ExprScalar\"...";
+    result = ea1 - 3.0;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] + 2.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray - ExprScalar\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ************
+    // Multiplication
+    // ************
+
+    // ExprArray * ExprArray
+    cout << "Testing \"ExprArray * ExprArray\"...";
+    result = ea2 * ea1;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 2.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray * ExprArray\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ExprScalar * ExprArray
+    cout << "Testing \"ExprScalar * ExprArray\"...";
+    result = 2.0 * ea1;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 2.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprScalar * ExprArray\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ExprArray * ExprScalar
+    cout << "Testing \"ExprArray * ExprScalar\"...";
+    result = ea1 * 3.0;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 3.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray * ExprScalar\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ************
+    // Division
+    // ************
+
+    // ExprArray / ExprArray
+    cout << "Testing \"ExprArray / ExprArray\"...";
+    result = ea4 / ea2;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 2.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray / ExprArray\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ExprScalar / ExprArray
+    cout << "Testing \"ExprScalar / ExprArray\"...";
+    result = 2.0 / ea2;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 1.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprScalar / ExprArray\" has failed!");
+
+    cout << "Passed!" << endl;
+
+    // ExprArray / ExprScalar
+    cout << "Testing \"ExprArray / ExprScalar\"...";
+    result = ea4 / 2.0;
+
+    for (int i=0; i < vec_size; ++i)
+      TEST_FOR_EXCEPTION(result[i] - 2.0 > 1.0e-12, std::runtime_error,
+			 "\"ExprArray / ExprScalar\" has failed!");
+
+    cout << "Passed!" << endl;
 
     // *********************************************************************
     // *********************************************************************
