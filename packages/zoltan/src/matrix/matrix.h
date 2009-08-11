@@ -28,29 +28,29 @@ extern "C" {
 /* This structure is a CS view of a part of the matrix/hypergraph */
 typedef struct Zoltan_matrix_ {
   int           transpose;   /* Need to transpose to have a CSC view ? */
+  int           completed;
   int           globalX;   /* Overall number of objects */
-  int           nX;
-  ZOLTAN_ID_PTR xGID;
-  int          *Input_Parts;
-  int           xwgtdim;
-  float        *xwgt;
   int           globalY;
   int           offsetY;     /* Used for bipartite graph: GNO >= offsetY are edges */
   int           nY;
-  ZOLTAN_ID_PTR yGID;
-  float        *ywgt;
+  int           ywgtdim;
   int           nPins;
   int          *yGNO;       /* Local edges gnos */
   int          *ystart;     /* Indirection array to describe a column */
-  int          *yend;       /* end of local pins, usually ystart+1 */
+  int          *yend;       /* end of local pins, usually ystart+1 
+			       (and is ystart+1 after matrix complete) */
   int          *pinGNO;     /* array of gno of other extremtiy */
   float        *pinwgt;
-  struct Zoltan_DD_Struct *ddX;
-  struct Zoltan_DD_Struct *ddY;
-/*   int           xWeightDim; */
-/*   int           yWeightDim; */
-/*   float         *xWeight;  /\* "vertex" weight *\/ */
-/*   float         *pinWeight;  /\* "pin" weight *\/ */
+
+  /* These fields are used only before matrix_complete */
+  /* Allow us to move only pins and CSR structure without having to worry
+   * about vertex and edge data. */
+  struct Zoltan_DD_Struct *ddX; /* Map xGNO -> xGID, xwgt, Input_Parts */
+  struct Zoltan_DD_Struct *ddY; /* Map yGNO -> yGID, ywgt */
+
+  /* These fields are used after matrix_complete */
+  float        *ywgt;
+  ZOLTAN_ID_PTR yGID;
 } Zoltan_matrix;
 
 typedef struct Zoltan_matrix_2d_ {
@@ -69,9 +69,14 @@ Zoltan_Matrix_Free(ZZ *zz, Zoltan_matrix *m);
 void
 Zoltan_Matrix2d_Free(ZZ *zz, Zoltan_matrix_2d *m);
 
+void
+Zoltan_Matrix_Reset(Zoltan_matrix* m);
+
+
+/* if !copy, inmat is not usable after this call */
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
-			    Zoltan_matrix_2d *outmat);
+			    Zoltan_matrix_2d *outmat, int copy);
 
 int
 Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
@@ -84,6 +89,9 @@ int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 
 int
 Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc);
+
+int
+Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m);
 
 
 #ifdef __cplusplus

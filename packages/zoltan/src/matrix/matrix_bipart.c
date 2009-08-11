@@ -47,8 +47,13 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
   struct Transpose_Elem *tr_tab = NULL;
   int i, j, cnt;
   int newGNOsize = 0;
+  ZOLTAN_ID_PTR yGID = NULL;
+  float *ywgt = NULL;
+  int *Input_Parts = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  /* Update the data directories */
 
   tr_tab = (struct Transpose_Elem*) ZOLTAN_MALLOC(sizeof(struct Transpose_Elem)*matrix->nPins);
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;
@@ -70,13 +75,10 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
   newGNOsize = matrix->nY + MIN(matrix->nPins, matrix->globalX); /* Maximum number of vertices we can have */
 
   /* I do array one by one to avoid to allocate all the arrays at the same time */
-  /* First update yGNO: new yGNO = prev yGNO + matrix->globalX */
   matrix->yGNO = (int*) ZOLTAN_REALLOC(matrix->yGNO, newGNOsize*sizeof(int));
   if (newGNOsize && matrix->yGNO == NULL) MEMORY_ERROR;
-  for (i=0 ; i < matrix->nY ; ++i)
-    matrix->yGNO[i] += matrix->globalX;
 
-  /* Then update the pinGNO and ystart */
+  /* Update the pinGNO and ystart */
   /* The output use a compact array */
   tmparray = (int*)ZOLTAN_MALLOC(2*matrix->nPins*sizeof(int));
   if (matrix->nPins && tmparray == NULL) MEMORY_ERROR;
@@ -115,17 +117,60 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
     j++;
   }
   matrix->yend[i] = j;
-  matrix->nX = i + 1;
+  newGNOsize = i + 1; /* i is 0 based */
+  ZOLTAN_FREE(&tr_tab);
+
+
+  /* Update data directories */
+  if (matrix->ywgtdim != zz->Obj_Weight_Dim)
+      FATAL_ERROR("Cannot form bipartite graph: vertex and edge weights are not consistant");
+  Input_Parts = (int*) ZOLTAN_MALLOC(newGNOsize * sizeof(int));
+  yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, newGNOsize);
+  ywgt = (float*) ZOLTAN_MALLOC(newGNOsize * sizeof(float) * matrix->ywgtdim);
+  if (newGNOsize && (Input_Parts == NULL || yGID == NULL
+		     || (matrix->ywgtdim && ywgt == NULL)))
+    MEMORY_ERROR;
+
+  /* Get Informations about Y */
+  Zoltan_DD_Find (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
+		  matrix->nY, NULL);
+  /* Get Informations about X */
+  Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO + matrix->nY, yGID + matrix->nY*zz->Num_GID,
+		  (ZOLTAN_ID_PTR)ywgt + matrix->nY*sizeof(float)*matrix->ywgtdim/sizeof(int),
+		  Input_Parts + matrix->nY,
+		  newGNOsize - matrix->nY, NULL);
+
+  if (matrix->ddY != matrix->ddX)
+    Zoltan_DD_Destroy (&matrix->ddY);
+  Zoltan_DD_Destroy (&matrix->ddX);
+
+  /* Update yGNO: new yGNO = prev yGNO + matrix->globalX */
+  for (i=0 ; i < matrix->nY ; ++i) {
+    matrix->yGNO[i] += matrix->globalX;
+    Input_Parts[i] = -1;
+  }
 
   matrix->offsetY = matrix->globalX;
-  matrix->nY = i + 1; /* i is 0 based */
+  matrix->nY = newGNOsize;
   matrix->nPins *= 2;
 
   matrix->globalX += matrix->globalY;
   matrix->globalY += matrix->offsetY;
 
+  /* I store : xGNO, xGID, xwgt, Input_Part */
+  ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
+			   matrix->ywgtdim*sizeof(float)/sizeof(int), matrix->globalX/zz->Num_Proc, 0);
+  matrix->ddY = matrix->ddX;
+  /* Hope a linear assignment will help a little */
+  Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
+  /* Associate all the data with our xyGNO */
+  Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR) ywgt,
+		    Input_Parts, matrix->nY);
 
  End:
+  ZOLTAN_FREE(&ywgt);
+  ZOLTAN_FREE(&yGID);
+  ZOLTAN_FREE(&Input_Parts);
   ZOLTAN_FREE(&ystart);
   ZOLTAN_FREE(&tmparray);
   ZOLTAN_FREE(&tr_tab);

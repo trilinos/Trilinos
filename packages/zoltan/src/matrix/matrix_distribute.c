@@ -73,9 +73,11 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 }
 
 
+/* if !copy, inmat is not usable after this call */
+
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
-			    Zoltan_matrix_2d *outmat)
+			    Zoltan_matrix_2d *outmat, int copy)
 {
   static char *yo = "Zoltan_Matrix_Build2d";
   int ierr = ZOLTAN_OK;
@@ -90,11 +92,21 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
   int *procptr = NULL, *tmparray = NULL;
   int msg_tag = 1021982;
   int *nonzeros=NULL;
+  int offset;
   ZOLTAN_COMM_OBJ *plan;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  memset(&outmat->mtx, 0, sizeof(Zoltan_matrix));
+  memcpy(&outmat->mtx, &inmat, sizeof(Zoltan_matrix));
+  if(copy) {
+    Zoltan_Matrix_Reset (&outmat->mtx);
+    /* Copy also directories */
+    outmat->mtx.ddX = Zoltan_DD_Copy (inmat.ddX);
+    if (inmat.ddY == inmat.ddX)
+      outmat->mtx.ddY = outmat->mtx.ddX;
+    else
+      outmat->mtx.ddY = Zoltan_DD_Copy (inmat.ddY);
+  }
 
   /****************************************************************************************
    * Compute the distribution of vertices and edges to the 2D data distribution's processor
@@ -203,11 +215,12 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
   /* Unpack the non-zeros received. */
 
   tmparray = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
-  outmat->mtx.ystart = (int *) ZOLTAN_CALLOC(nEdge + 1 , sizeof(int));
-  outmat->mtx.pinGNO = (int *) ZOLTAN_MALLOC((outmat->mtx.nPins) * sizeof(int));
+  outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, (nEdge + 1)*sizeof(int));
+  outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO, (outmat->mtx.nPins) * sizeof(int));
 
   if (!tmparray || !outmat->mtx.ystart || ((outmat->mtx.nPins && !outmat->mtx.pinGNO)))
     MEMORY_ERROR;
+
 
   /* Count the number of nonzeros per hyperedge */
   for (i = 0; i < outmat->mtx.nPins; i++) {
@@ -216,6 +229,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
   }
 
   outmat->mtx.yend= outmat->mtx.ystart + 1; /* Keep in compact mode, no new edges */
+  outmat->mtx.ystart[0] = 0;
   /* Compute prefix sum to represent hindex correctly. */
   for (i = 0; i < nEdge; i++)  {
     outmat->mtx.ystart[i+1] = outmat->mtx.ystart[i] + tmparray[i];
@@ -234,14 +248,14 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
 
   outmat->mtx.nY = nEdge;
 
-/*   /\* Create ObjGNO array from the dist informations *\/ */
-/*   if (myProc_x >= 0) { */
-/*     outmat->mtx.objGNO = (int*) ZOLTAN_MALLOC(nVtx*sizeof(int)); */
-/*     if (nVtx && !outmat->mtx.objGNO) MEMORY_ERROR; */
+  /* Now construct yGNO array */
+  outmat->mtx.yGNO = (int *)ZOLTAN_REALLOC(outmat->mtx.yGNO, nEdge*sizeof(int));
+  if (nEdge && outmat->mtx.yGNO == NULL) MEMORY_ERROR;
+  offset = dist_y[myProc_y];
+  for (i = 0 ; i < nEdge; ++i) {
+    outmat->mtx.yGNO[i] = offset + i;
+  }
 
-/*     for (i = 0 ; i < nVtx ; ++i) */
-/*       outmat->mtx.xGNO[i] = dist_x[myProc_x] + i; */
-/*   } */
 
  End:
   if (procptr != NULL) {

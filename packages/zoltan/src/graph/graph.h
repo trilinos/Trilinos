@@ -8,6 +8,11 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
+=======
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+>>>>>>> d38681a1388a71b0ee4b652621f3b2f81a79e97f:packages/zoltan/src/graph/graph.h
  *    $Revision$
  ****************************************************************************/
 

@@ -22,7 +22,7 @@ extern "C" {
 #include "matrix.h"
 #include "graph.h"
 
-#define CHECK_IERR do {   if (ierr != ZOLTAN_OK || ierr != ZOLTAN_WARN) \
+#define CHECK_IERR do {   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) \
     goto End;  } while (0)
 
 
@@ -47,8 +47,10 @@ ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
   }
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;
-  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx);
+  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
   CHECK_IERR;
+
+  ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);
 
   if (bipartite) {
     int vertlno;
@@ -145,9 +147,10 @@ ZG_Free(ZZ *zz, ZG *graph){
   if (graph->bipartite)
     ZOLTAN_FREE(&graph->fixed_vertices);
 
-  Zoltan_Matrix_Free(zz, &graph->mtx.mtx);
-  Zoltan_Matrix2d_Free(zz, &graph->mtx);
 
+  Zoltan_Matrix_Free(zz, &graph->mtx.mtx);
+  ZOLTAN_FREE(&graph->mtx.comm);
+  Zoltan_Matrix2d_Free(zz, &graph->mtx);
 
 
 }

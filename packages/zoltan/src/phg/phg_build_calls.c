@@ -24,6 +24,13 @@ extern "C" {
 #include "third_library_const.h"
 #include "third_library_tools.h"
 
+/* #define CEDRIC_DEBUG */
+
+#ifdef CEDRIC_DEBUG
+#include "graph.h"
+#endif /* CEDRIC_DEBUG */
+
+
 static int edge_weight_operation(ZZ *zz, float *dest, float *src, int ew_dim, int ew_op, int len);
 
 static int Convert_To_CSR( ZZ *zz, int num_pins, int *col_ptr,
@@ -101,6 +108,7 @@ phg_GID_lookup       *lookup_myObjs = NULL;
 phg_GID_lookup       *lookup_myHshEdges = NULL;
 phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
+
   /* Use the graph or hypergraph query functions to build the hypergraph.
    *
    * Assign a consecutive global numbering system to edges and
@@ -116,6 +124,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
    */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+#ifdef CEDRIC_DEBUG
+ {
+   ZG graph;
+
+   ZG_Build (zz, &graph, 1, 0);
+   ZG_Free (zz, &graph);
+ }
+#endif /* CEDRIC_DEBUG */
+
 
 
   /* initialize temporary search structures */
