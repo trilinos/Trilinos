@@ -83,7 +83,7 @@ namespace Kokkos {
       //@{
 
       //! Default constructor
-      MultiVector(Node &node = DefaultNode::getDefaultNode())
+      MultiVector(Node &node)
       : node_(node)
       , numRows_(0)
       , numCols_(0)

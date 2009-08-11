@@ -642,7 +642,7 @@ namespace Kokkos {
         // we'll overwrite all data covered by the multivector, but not off-stride data
         // therefore, we are write-only only in the case that stride=nR
         bool writeOnly = (stride == nR);
-        Teuchos::ArrayRCP<Scalar> mvdata = node.template viewBuffer<Scalar>(writeOnly,stride*(nC-1)+nR,Adata);
+        Teuchos::ArrayRCP<Scalar> mvdata = node.template viewBufferNonConst<Scalar>(writeOnly,stride*(nC-1)+nR,Adata);
         for (size_type j=0; j<nC; ++j) {
           for (size_type i=0; i<nR; ++i) {
             mvdata[j*stride + i] = SCT::random();

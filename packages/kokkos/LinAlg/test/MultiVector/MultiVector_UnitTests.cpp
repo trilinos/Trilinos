@@ -44,6 +44,8 @@ namespace {
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
+  Node &node = Kokkos::DefaultNode::getDefaultNode();
+
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -60,7 +62,7 @@ namespace {
   // check that default constructor zeros out, for both V and MV
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, DefaultConstructor, Scalar, Ordinal )
   {
-    MultiVector<Scalar,Node> A;
+    MultiVector<Scalar,Node> A(node);
     TEST_EQUALITY_CONST(A.getNumRows(), 0);
     TEST_EQUALITY_CONST(A.getNumCols(), 0);
     TEST_EQUALITY_CONST(A.getStride(), 0);
@@ -69,7 +71,7 @@ namespace {
   // check copy constructor
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConstructor, Scalar, Ordinal )
   {
-    MultiVector<Scalar,Node> A;
+    MultiVector<Scalar,Node> A(node);
     ArrayRCP<Scalar> buf = A.getNode().template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
     {
@@ -85,7 +87,7 @@ namespace {
   // check that non-default constructor honors given parameters
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, InitializeAndAccess, Scalar, Ordinal )
   {
-    MultiVector<Scalar,Node> A;
+    MultiVector<Scalar,Node> A(node);
     ArrayRCP<Scalar> buf = A.getNode().template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
     TEST_EQUALITY_CONST(A.getNumRows(), N);

@@ -33,37 +33,35 @@ namespace Teuchos {
 
 namespace {
 
-  using Teuchos::as;
-  using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
-  using Teuchos::rcp;
-  using Tpetra::Map;
-  using Tpetra::DefaultPlatform;
   using std::vector;
   using std::sort;
-  using Teuchos::arrayViewFromVector;
-  using Teuchos::broadcast;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::RCP;
+  using Teuchos::SerialDenseMatrix;
+  using Teuchos::as;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
-  using Teuchos::Comm;
-  using Tpetra::MultiVector;
-  using std::endl;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
+  using Teuchos::arrayView;
+  using Teuchos::rcp;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
   using Teuchos::CONJ_TRANS;
-  using Teuchos::SerialDenseMatrix;
-  using Teuchos::arrayView;
-  using std::copy;
-  using std::ostream_iterator;
-  using std::string;
   using Teuchos::VERB_DEFAULT;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  using Tpetra::Map;
+  using Tpetra::DefaultPlatform;
+  using Tpetra::MultiVector;
+  using std::endl;
+  using std::copy;
+  using std::ostream_iterator;
+  using std::string;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -115,9 +113,9 @@ namespace {
     const Teuchos_Ordinal numVecs  = 5;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
     MV mvec(node,map,numVecs,true);
-    TEST_EQUALITY( mvec.numVectors(), numVecs );
-    TEST_EQUALITY( mvec.myLength(), numLocal );
-    TEST_EQUALITY( mvec.globalLength(), numImages*numLocal );
+    TEST_EQUALITY( mvec.getNumVectors(), numVecs );
+    TEST_EQUALITY( mvec.getMyLength(), numLocal );
+    TEST_EQUALITY( mvec.getGlobalLength(), numImages*numLocal );
     // we zeroed it out in the constructor; all norms should be zero
     Array<Magnitude> norms(numVecs), zeros(numVecs);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
@@ -240,7 +238,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     Node &node = getDefaultNode();
     const Scalar S1 = ScalarTraits<Scalar>::one(),
-                S0 = ScalarTraits<Scalar>::zero();
+                 S0 = ScalarTraits<Scalar>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
@@ -310,7 +308,7 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    // const int numImages = comm->getSize();
+    const int numImages = comm->getSize();
     Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map3n(INVALID,3,0,comm),
@@ -334,15 +332,15 @@ namespace {
       Teuchos::Array<Scalar> check2(4,3); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
       Teuchos::Array<Scalar> check3(9,2); // each entry (of nine) is the product [1 1]*[1 1]' = 2
       // test
-      Array<Scalar> tmpCopy(9);  // FINISH: after get1dViewConst is finished, use it instead of get1dCopy
+      ArrayRCP<const Scalar> tmpView;
       mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,S1,mv3x2l,mv2x3l,S0);
-      mv3x3l.get1dCopy(tmpCopy(),3); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,9),check3,M0);
+      tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0);
       mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,S1,mv2x3l,mv2x3l,S0);
-      mv2x2l.get1dCopy(tmpCopy(),2); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,4),check2,M0);
+      tmpView = mv2x2l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,4),check2,M0);
       mv2x2l.multiply(CONJ_TRANS,NO_TRANS  ,S1,mv3x2l,mv3x2l,S0);
-      mv2x2l.get1dCopy(tmpCopy(),2); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,4),check2,M0);
+      tmpView = mv2x2l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,4),check2,M0);
       mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,S1,mv2x3l,mv3x2l,S0);
-      mv3x3l.get1dCopy(tmpCopy(),3); TEST_COMPARE_FLOATING_ARRAYS(tmpCopy(0,9),check3,M0);
+      tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0);
     }
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // random input/output
@@ -362,64 +360,61 @@ namespace {
       // space for answers
       SerialDenseMatrix<int,Scalar> sdm2x2(2,2), sdm3x3(3,3);
       // test: perform local Tpetra::MultiVector multiply and Teuchos::SerialDenseMatrix multiply, then check that answers are equivalent
+      ArrayRCP<const Scalar> tmpView;
       {
-        Array<Scalar> tmpcopy(9);
         tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
         sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
-        tmv3x3.get1dCopy(tmpcopy(),3); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
+        tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
       {
-        Array<Scalar> tmpcopy(4);
         tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
         sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
-        tmv2x2.get1dCopy(tmpcopy(),2); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
+        tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
       {
-        Array<Scalar> tmpcopy(4);
         tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
         sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
-        tmv2x2.get1dCopy(tmpcopy(),2); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
+        tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
       {
-        Array<Scalar> tmpcopy(9);
         tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
         sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
-        tmv3x3.get1dCopy(tmpcopy(),3); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpcopy(),sdmView,ScalarTraits<Mag>::eps() * 10.);
+        tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,ScalarTraits<Mag>::eps() * 10.);
       }
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
-    // {
-    //   MV mv3nx2(node,map3n,2),
-    //      mv3nx3(node,map3n,3),
-    //      // locals
-    //      mv2x2(node,lmap2,2),
-    //      mv2x3(node,lmap2,3),
-    //      mv3x2(node,lmap3,2),
-    //      mv3x3(node,lmap3,3);
-    //   // fill multivectors with ones
-    //   mv3nx3.putScalar(ScalarTraits<Scalar>::one());
-    //   mv3nx2.putScalar(ScalarTraits<Scalar>::one());
-    //   // fill expected answers Array
-    //   ArrayView<const Scalar> tmpView(Teuchos::null); Teuchos_Ordinal dummy;
-    //   Teuchos::Array<Scalar> check(9,3*numImages);
-    //   // test
-    //   mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0); 
-    //   mv2x2.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
-    //   mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
-    //   mv2x3.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
-    //   mv3x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx2,S0);
-    //   mv3x2.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
-    //   mv3x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx3,S0);
-    //   mv3x3.get1dViewConst(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
-    // }
-    // // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
-    // {
-    //   // FINISH
-    // }
+    {
+      MV mv3nx2(node,map3n,2),
+         mv3nx3(node,map3n,3),
+         // locals
+         mv2x2(node,lmap2,2),
+         mv2x3(node,lmap2,3),
+         mv3x2(node,lmap3,2),
+         mv3x3(node,lmap3,3);
+      // fill multivectors with ones
+      mv3nx3.putScalar(ScalarTraits<Scalar>::one());
+      mv3nx2.putScalar(ScalarTraits<Scalar>::one());
+      // fill expected answers Array
+      ArrayRCP<const Scalar> tmpView;
+      Teuchos::Array<Scalar> check(9,3*numImages);
+      // test
+      mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0); 
+      tmpView = mv2x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
+      tmpView = mv2x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      mv3x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx2,S0);
+      tmpView = mv3x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      mv3x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx3,S0);
+      tmpView = mv3x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+    }
+    // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
+    {
+      // FINISH
+    }
   }
 
 
@@ -534,7 +529,7 @@ namespace {
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
     TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
-    TEST_EQUALITY_CONST( mvec1(0)->dot(*mvec2(0)), S0);
+    TEST_EQUALITY_CONST( mvec1.getVector(0)->dot(*mvec2.getVector(0)), S0);
   }
 
 
@@ -815,7 +810,7 @@ namespace {
     // verify that both have identical values
     v1.putScalar(SCT::one());
     {
-      ArrayRCP<Scalar> view = v2.get1dView();
+      ArrayRCP<Scalar> view = v2.get1dViewNonConst();
       for (typename ArrayRCP<Scalar>::iterator v = view.begin(); v != view.end(); ++v) {
         *v = SCT::one();
       }
@@ -858,7 +853,7 @@ namespace {
     for (Teuchos_Ordinal j=0; j<numVectors; ++j) {
       // get a view of column j, normalize it using update()
       Array<Teuchos_Ordinal> ind(1,j);
-      RCP<MV> mvj = mv.subView(ind());
+      RCP<MV> mvj = mv.subViewNonConst(ind());
       switch (j){
       case 0:
         mvj->scale( M1/norms[j] );
@@ -867,16 +862,16 @@ namespace {
         mvj->update( M1/norms[j], *mvj, M0 );
         break;
       case 2:
-        mvj->update( M0        , *mvj, M1/norms[j] );
+        mvj->update( M0         , *mvj, M1/norms[j] );
         break;
       case 3:
-        mvj->update( M0        , *mvj, M1/norms[j], *mvj, M0 );
+        mvj->update( M0         , *mvj, M1/norms[j], *mvj, M0 );
         break;
       case 4:
-        mvj->update( M1/norms[j], *mvj, M0        , *mvj, M0 );
+        mvj->update( M1/norms[j], *mvj, M0         , *mvj, M0 );
         break;
       case 5:
-        mvj->update( M0        , *mvj, M0        , *mvj, M1/norms[j] );
+        mvj->update( M0         , *mvj, M0         , *mvj, M1/norms[j] );
         break;
       }
     }
@@ -1183,30 +1178,6 @@ namespace {
     TEST_THROW(m1n2.reciprocal(m1n1), std::runtime_error);                  // reciprocal
     TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
   }
-
-
-  /* TODO 
-     Many constructors left to test
-     MultiVector (const Map< Ordinal > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &arrayOfArrays, Ordinal numVectors)
-
-     MultiVector<Ordinal,Scalar> subCopy(const Teuchos::Range1D &colRng) const;
-     MultiVector<Ordinal,Scalar> subCopy(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
-     MultiVector<Ordinal,Scalar> subView(const Teuchos::Range1D &colRng);
-     MultiVector<Ordinal,Scalar> subView(const Teuchos::ArrayView<Teuchos_Index> &cols);
-     const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::Range1D &colRng) const;
-     const MultiVector<Ordinal,Scalar> subViewConst(const Teuchos::ArrayView<Teuchos_Index> &cols) const;
-
-     Mod routines left to test
-     void replaceGlobalValue (Ordinal globalRow, Ordinal vectorIndex, const Scalar &value)
-     void sumIntoGlobalValue (Ordinal globalRow, Ordinal vectorIndex, const Scalar &value)
-     void replaceMyValue (Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue)
-     void sumIntoMyValue (Ordinal MyRow, Ordinal VectorIndex, const Scalar &ScalarValue)
-
-     Arithmetic methods left to test:
-     void multiply (Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
-     void multiply (const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
-     void reciprocalMultiply (const Scalar &alpha, const MultiVector< Ordinal, Scalar > &A, const MultiVector< Ordinal, Scalar > &B, const Scalar &beta)
-  */
 
 // 
 // INSTANTIATIONS

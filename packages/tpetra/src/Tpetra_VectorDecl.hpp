@@ -136,9 +136,6 @@ namespace Tpetra {
     typedef Kokkos::MultiVector<Scalar,Node>  KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   DMVA;
 
-    // Advanced Vector constuctor for creating views.
-    Vector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<Kokkos::MultiVector<Scalar,Node> > &mvdata);
-
   }; // class Vector
 
 } // namespace Tpetra

@@ -144,13 +144,13 @@ namespace Tpetra {
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const Teuchos_Index> &cols);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(Teuchos::ArrayView<const Teuchos_Index> cols);
 
     //! Const Vector access function.
-    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > operator() (Teuchos_Ordinal j) const;
+    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(Teuchos_Ordinal j) const;
 
     //! Vector access function.
-    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > operator()(Teuchos_Ordinal j);
+    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(Teuchos_Ordinal j);
 
     //! Const Local vector access function.
     //! Pointer to the local values in a particular vector of this multi-vector.
@@ -274,10 +274,7 @@ namespace Tpetra {
 
     typedef Kokkos::MultiVector<Scalar,Node>  KMV;
     typedef Kokkos::DefaultArithmetic<KMV>   DMVA;
-    Teuchos::RCP<KMV> lclMV_;
-
-    // Advanced MultiVector constuctor for creating views.
-    MultiVector(const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::RCP<KMV> &mvdata);
+    KMV lclMV_;
 
     // four functions needed for DistObject derivation
     bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &sourceObj, Teuchos_Ordinal &packetSize);
