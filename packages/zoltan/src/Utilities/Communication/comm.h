@@ -107,7 +107,11 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
  */
 
 #ifndef MPI_RECV_LIMIT
-#define MPI_RECV_LIMIT 2000
+/* Decided for Trilinos v10/Zoltan v3.2 would almost always use */
+/* MPI_Alltoall communication instead of point-to-point.        */
+/* August 2009 */
+/* #define MPI_RECV_LIMIT 2000 */
+#define MPI_RECV_LIMIT 4
 #endif
 
 
