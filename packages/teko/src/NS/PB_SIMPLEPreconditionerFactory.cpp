@@ -48,8 +48,8 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp H = getInvDiagonalOp(F);
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
-   const LinearOp hatS = explicitAdd(scale(-1.0,C), 
-                                     explicitMultiply(B,H,Bt));
+   const LinearOp HBt = explicitMultiply(H,Bt);
+   const LinearOp hatS = explicitAdd(C,scale(-1.0,explicitMultiply(B,HBt)));
 
    // build the inverse for F 
    InverseLinearOp invF = state.getInverse("invF");
@@ -71,12 +71,12 @@ LinearOp SIMPLEPreconditionerFactory
    endBlockFill(L);
 
    invDiag[0] = invF;
-   invDiag[1] = scale(-1.0,invS);
+   invDiag[1] = invS;
    LinearOp invL = createBlockLowerTriInverseOp(L,invDiag);
 
    // build upper triangular matrix
    BlockedLinearOp U = zeroBlockedOp(blockOp);
-   setBlock(0,1,U,scale(1.0/alpha_,multiply(H,Bt)));
+   setBlock(0,1,U,scale(1.0/alpha_,HBt));
    endBlockFill(U);
 
    invDiag[0] = identity(rangeSpace(invF));
