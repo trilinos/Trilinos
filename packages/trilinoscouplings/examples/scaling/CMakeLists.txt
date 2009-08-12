@@ -4,7 +4,8 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_ML AND
    Trilinos_ENABLE_AztecOO AND Trilinos_ENABLE_Teuchos AND
-   Trilinos_ENABLE_Pamgen AND TPL_ENABLE_MPI)
+   Trilinos_ENABLE_Pamgen AND TPL_ENABLE_MPI AND
+   Trilinos_ENABLE_Intrepid)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_02
     SOURCES example_02.cpp
@@ -17,7 +18,8 @@ ENDIF()
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_AztecOO AND
-    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_ML)
+   Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_ML AND
+   Trilinos_ENABLE_Intrepid)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_01
     SOURCES example_01.cpp
