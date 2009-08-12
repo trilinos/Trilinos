@@ -1,4 +1,4 @@
-  
+
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
@@ -47,10 +47,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/g++"
       "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc"
-      "-DCMAKE_Forgtran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran"
       )
 
-    SET_DEFAULT(COMPILER_VERSION "GCC-4.1.2")
+    SET_DEFAULT(COMPILER_VERSION "GCC-4.2.0")
   
   ENDIF()
 
