@@ -10,7 +10,7 @@
 namespace Kokkos {
 
   /*! A default implementation of the Node memory architecture for Node with a single memory space. */
-  class StandardMemoryModel {
+  class StandardNodeMemoryModel {
     public:
 
       //@{ Memory management

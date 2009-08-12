@@ -84,7 +84,7 @@ void tpi_reduction_init(TPI_Work * work)
   *(static_cast<ReductionType*>(work->reduce)) = WDP::identity();
 }
 
-class TPINode : public StandardMemoryModel {
+class TPINode : public StandardNodeMemoryModel {
   public:
 
     TPINode(int numThreads=0)

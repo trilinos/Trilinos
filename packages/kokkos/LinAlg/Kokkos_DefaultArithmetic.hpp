@@ -38,6 +38,14 @@
 
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#include "Kokkos_TPINode.hpp"
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TBBNode.hpp"
+#endif
+#include "Kokkos_SerialNode.hpp"
+#include <Teuchos_BLAS.hpp>
 
 #ifndef KERNEL_PREFIX 
   #define KERNEL_PREFIX
@@ -195,9 +203,48 @@ namespace Kokkos {
     }
   };
 
-  //REFACTOR// //! Class for providing GEMM for a particular Node
-  //REFACTOR// template <class Scalar, class Node> 
-  //REFACTOR// GEMM
+  //! Class for providing GEMM for a particular Node
+  template <class Scalar, class Node> 
+  class NodeGEMM {
+    public:
+      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B, Scalar beta, MultiVector<Scalar,Node> &C) {
+        TEST_FOR_EXCEPT(true);
+      }
+  };
+
+  template <class Scalar> 
+  class NodeGEMM<Scalar,SerialNode> {
+    public:
+      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,SerialNode> &A, const MultiVector<Scalar,SerialNode> &B, Scalar beta, MultiVector<Scalar,SerialNode> &C) {
+        Teuchos::BLAS<int,Scalar> blas;
+        const int k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows());
+        blas.GEMM(transA, transB, C.getNumRows(), C.getNumCols(), k, alpha, A.getValues().getRawPtr(), A.getStride(), B.getValues().getRawPtr(), B.getStride(), beta, C.getValuesNonConst().getRawPtr(), C.getStride());
+      }
+  };
+
+#ifdef HAVE_KOKKOS_TBB
+  template <class Scalar> 
+  class NodeGEMM<Scalar,TBBNode> {
+    public:
+      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TBBNode> &A, const MultiVector<Scalar,TBBNode> &B, Scalar beta, MultiVector<Scalar,TBBNode> &C) {
+        Teuchos::BLAS<int,Scalar> blas;
+        const int k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows());
+        blas.GEMM(transA, transB, C.getNumRows(), C.getNumCols(), k, alpha, A.getValues().getRawPtr(), A.getStride(), B.getValues().getRawPtr(), B.getStride(), beta, C.getValuesNonConst().getRawPtr(), C.getStride());
+      }
+  };
+#endif
+
+#ifdef HAVE_KOKKOS_THREADPOOL
+  template <class Scalar> 
+  class NodeGEMM<Scalar,TPINode> {
+    public:
+      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TPINode> &A, const MultiVector<Scalar,TPINode> &B, Scalar beta, MultiVector<Scalar,TPINode> &C) {
+        Teuchos::BLAS<int,Scalar> blas;
+        const int k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows());
+        blas.GEMM(transA, transB, C.getNumRows(), C.getNumCols(), k, alpha, A.getValues().getRawPtr(), A.getStride(), B.getValues().getRawPtr(), B.getStride(), beta, C.getValuesNonConst().getRawPtr(), C.getStride());
+      }
+  };
+#endif
 
   //! Class DefaultArithmetic, unimplemented
   template <class MV>
@@ -439,7 +486,7 @@ namespace Kokkos {
       }
 
       inline static void GEMM(MultiVector<Scalar,Node> &C, Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B, Scalar beta) {
-        TEST_FOR_EXCEPT(true);
+        NodeGEMM<Scalar,Node>::GEMM(transA, transB, alpha, A, B, beta, C);
       }
 
       inline static void GESUM(MultiVector<Scalar,Node> &B, Scalar alpha, const MultiVector<Scalar,Node> &A, Scalar beta) {

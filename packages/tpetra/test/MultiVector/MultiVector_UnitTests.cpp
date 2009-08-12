@@ -16,20 +16,18 @@
 
 namespace Teuchos {
   template <>
-    ScalarTraits<int>::magnitudeType
-    relErr( const int &s1, const int &s2 )
-    {
-      typedef ScalarTraits<int> ST;
-      return ST::magnitude(s1-s2);
-    }
+  ScalarTraits<int>::magnitudeType
+  relErr( const int &s1, const int &s2 ) {
+    typedef ScalarTraits<int> ST;
+    return ST::magnitude(s1-s2);
+  }
 
   template <>
-    ScalarTraits<char>::magnitudeType
-    relErr( const char &s1, const char &s2 )
-    {
-      typedef ScalarTraits<char> ST;
-      return ST::magnitude(s1-s2);
-    }
+  ScalarTraits<char>::magnitudeType
+  relErr( const char &s1, const char &s2 ) {
+    typedef ScalarTraits<char> ST;
+    return ST::magnitude(s1-s2);
+  }
 }
 
 namespace {
@@ -417,7 +415,22 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      // FINISH
+      MV mv3nx2(node,map3n,2),
+         mv3nx3(node,map3n,3),
+         // locals
+         mv2x3(node,lmap2,3);
+      // fill multivectors with ones
+      mv2x3.putScalar(S1);
+      // fill expected answers Array
+      ArrayRCP<const Scalar> tmpView;
+      Teuchos::Array<Scalar> check2(9,2), check3(6,3);
+      // test
+      mv3nx3.putScalar(S1); mv3nx2.putScalar(S1);
+      mv3nx3.multiply(NO_TRANS,  NO_TRANS,S1,mv3nx2,mv2x3,S0);
+      tmpView = mv3nx3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,M0);
+      mv3nx3.putScalar(S1); mv3nx2.putScalar(S1);
+      mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx3,mv2x3,S0);
+      tmpView = mv3nx2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
     }
   }
 
@@ -1556,7 +1569,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \
@@ -1580,7 +1593,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR )*/ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR ) 
 
 

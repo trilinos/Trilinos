@@ -5,7 +5,7 @@
 
 namespace Kokkos {
 
-class SerialNode : public StandardMemoryModel {
+class SerialNode : public StandardNodeMemoryModel {
   public:
     SerialNode() {}
     template <class WDP>
