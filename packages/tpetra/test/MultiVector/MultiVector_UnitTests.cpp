@@ -1092,46 +1092,70 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConst, Ordinal, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Magnitude M0 = ScalarTraits<Magnitude>::zero();
+    const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVectors = 2;
+    const Ordinal numLocal = 13;
+    const Teuchos_Ordinal numVectors = 7;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    // create random MV
-    MV morig(node,map,numVectors);
-    morig.randomize();
-    // copy it
-    MV mcopy1(morig), mcopy2(morig);
-    // verify that all three have identical values
-    Array<Magnitude> norig(numVectors), ncopy1(numVectors), ncopy2(numVectors);
-    morig.normInf(norig);
-    mcopy1.normInf(ncopy1);
-    mcopy2.normInf(ncopy2);
-    TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy1,M0);
-    TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy2,M0);
-    TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ncopy2,M0);
-    // modify all three
-    morig.putScalar(as<Scalar>(0));
-    mcopy1.putScalar(as<Scalar>(1));
-    mcopy2.putScalar(as<Scalar>(2));
-    // compute norms
-    morig.normInf(norig);
-    mcopy1.normInf(ncopy1);
-    mcopy2.normInf(ncopy2);
-    // check them
-    bool local_success = true;
-    for (Teuchos_Ordinal i=0; i<numVectors; ++i) {
-      TEST_ARRAY_ELE_EQUALITY( norig,  i, as<Scalar>(0) );
-      TEST_ARRAY_ELE_EQUALITY( ncopy1, i, as<Scalar>(1) );
-      TEST_ARRAY_ELE_EQUALITY( ncopy2, i, as<Scalar>(2) );
+    {
+      // create random MV
+      MV mvorig(node,map,numVectors);
+      mvorig.randomize();
+      // create non-const subview, test copy constructor
+      TEST_FOR_EXCEPT(numVectors != 7);
+      Tuple<Teuchos_Ordinal,3> inds = tuple<Teuchos_Ordinal>(1,3,5);
+      RCP<MV> mvview = mvorig.subViewNonConst(inds);
+      Array<Mag> norig(numVectors), nsub(inds.size()), ncopy(inds.size());
+      mvorig.normInf(norig());
+      for (Teuchos_Ordinal j=0; j < inds.size(); ++j) {
+        nsub[j] = norig[inds[j]];
+      }
+      MV mvcopy(*mvview);
+      mvcopy.normInf(ncopy());
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
+      // reset both the view and the copy of the view, ensure that they are independent
+      Teuchos::Array<Mag> nsub_after(inds.size()), ones(inds.size(),as<Mag>(1));
+      Teuchos::Array<Mag> ncopy_after(inds.size()), twos(inds.size(),as<Mag>(2));
+      mvview->putScalar(as<Scalar>(1));
+      mvcopy.putScalar(as<Scalar>(2));
+      mvview->normInf(nsub_after());
+      mvcopy.normInf(ncopy_after());
+      TEST_COMPARE_FLOATING_ARRAYS(nsub_after,ones,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy_after,twos,M0);
     }
-    success &= local_success;
+    {
+      // create random MV
+      MV morig(node,map,numVectors);
+      morig.randomize();
+      // test copy constructor with 
+      // copy it
+      MV mcopy1(morig), mcopy2(morig);
+      // verify that all three have identical values
+      Array<Mag> norig(numVectors), ncopy1(numVectors), ncopy2(numVectors);
+      morig.normInf(norig);
+      mcopy1.normInf(ncopy1);
+      mcopy2.normInf(ncopy2);
+      TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy1,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy2,M0);
+      // modify all three
+      morig.putScalar(as<Scalar>(0));
+      mcopy1.putScalar(as<Scalar>(1));
+      mcopy2.putScalar(as<Scalar>(2));
+      // compute norms, check
+      Array<Mag> zeros(numVectors,as<Mag>(0)), ones(numVectors,as<Mag>(1)), twos(numVectors,as<Mag>(2));
+      morig.normInf(norig);
+      mcopy1.normInf(ncopy1);
+      mcopy2.normInf(ncopy2);
+      TEST_COMPARE_FLOATING_ARRAYS(norig,zeros,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ones,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy2,twos,M0);
+    }
   }
 
 

@@ -603,7 +603,7 @@ namespace Kokkos {
           return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
         }
         Node &node = A.getNode();
-        Teuchos::ArrayRCP<const Scalar> Adata = A.getValuesNonConst(0);
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0);
         // prepare buffers
         ReadyBufferHelper<Node> rbh(node);
         rbh.begin();

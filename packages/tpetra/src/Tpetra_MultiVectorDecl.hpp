@@ -272,6 +272,10 @@ namespace Tpetra {
     KMV lclMV_;
     Teuchos::Array<Teuchos_Ordinal> whichVectors_;
 
+    template <class T>
+    //! Get persisting view of j-th column in given ArrayRCP, considering isConstantStride(). ArrayRCP may correspond to a compute buffer or host view.
+    Teuchos::ArrayRCP<T> getSubArrayRCP(Teuchos::ArrayRCP<T> arr, Teuchos_Ordinal j) const;
+
     //! Advanced constructor for non-contiguous views.
     MultiVector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map,
                 Teuchos::ArrayRCP<Scalar> data, Teuchos_Ordinal LDA, Teuchos::ArrayView<const Teuchos_Ordinal> whichVectors);
