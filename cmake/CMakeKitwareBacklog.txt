@@ -35,6 +35,13 @@ Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
 
 
+(*) [CMake] [P1] Do not select compilers from different compiler sets.
+If a compiler, or an mpi compiler wrapper is found in some directory,
+only that directory should be searched for the remaining compilers that
+need to be found.  In our experience, mixing compiler vendors, or even
+versions within the same vendor tends not to work.  If a user definitely
+wants to mix versions, they should have to manually specify all compilers.
+
 (*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
 machine purple.sandia.gov.  See Trilinos bug
 https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
