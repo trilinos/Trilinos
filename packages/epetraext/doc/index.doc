@@ -259,8 +259,8 @@ TRILINOS_BUILD_DIR=/home/joeblow/TrilinosBuild
 include $(TRILINOS_BUILD_DIR)/include/Makefile.export.ML
 
 all:
-    $(ML_CXX_COMPILER) -c -o $@ $(CXXFLAGS) -I$(TRILINOS_BUILD_DIR)/include $(ML_TPL_INCLUDES) EpetraExt_petsc.cpp
-    $(ML_CXX_COMPILER) -o petsc.exe $(ML_CXX_FLAGS) -L$(TRILINOS_BUILD_DIR)/lib $(ML_LIBRARIES) \
+    $(ML_CXX_COMPILER) -c -o EpetraExt_petsc.o $(CXXFLAGS) -I$(TRILINOS_BUILD_DIR)/include $(ML_TPL_INCLUDES) EpetraExt_petsc.cpp
+    $(ML_CXX_COMPILER) -o petsc.exe EpetraExt_petsc.o $(ML_CXX_FLAGS) -L$(TRILINOS_BUILD_DIR)/lib $(ML_LIBRARIES) \
                  $(ML_TPL_LIBRARIES) $(ML_EXTRA_LD_FLAGS)
 \endverbatim
 
