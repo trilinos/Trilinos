@@ -744,6 +744,11 @@ namespace Kokkos {
         return node.parallel_reduce(0,nR,op);
       }
 
+      inline static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+      WeightedNorm(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &weightVector) {
+        TEST_FOR_EXCEPT(true);
+      }
+
       inline static void WeightedNorm(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &weightVector, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
         TEST_FOR_EXCEPT(true);
       }

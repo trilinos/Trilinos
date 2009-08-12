@@ -371,7 +371,9 @@ namespace Tpetra {
       const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
       const Teuchos::ArrayView<Scalar> &dots) const 
   {
-    TEST_FOR_EXCEPT(!isConstantStride());
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
+    const Teuchos_Ordinal myLen   = getMyLength();
     const Teuchos_Ordinal numVecs = getNumVectors();
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
@@ -386,7 +388,22 @@ namespace Tpetra {
         "Tpetra::MultiVector::dots(): MultiVectors must have the same number of vectors.");
     TEST_FOR_EXCEPTION(dots.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::dots(A,dots): dots.size() must be as large as the number of vectors in *this and A.");
-    DMVA::Dot(lclMV_,A.lclMV_,dots);
+    if (isConstantStride() && A.isConstantStride()) {
+      DMVA::Dot(lclMV_,A.lclMV_,dots);
+    }
+    else {
+      TEST_FOR_EXCEPT(true);  // still untested
+      KMV v(lclMV_.getNode()), a(lclMV_.getNode());
+      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar>(  lclMV_.getValues()),
+                      avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
+      for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
+                        avj = A.getSubArrayRCP(avptr,j);
+        a.initializeValues(myLen, 1, avj, myLen);
+        v.initializeValues(myLen, 1,  vj, myLen);
+        dots[j] = DMVA::Dot((const KMV&)v,(const KMV &)a);
+      }
+    }
     if (this->isDistributed()) {
       Teuchos::Array<Scalar> ldots(dots);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,ldots.getRawPtr(),dots.getRawPtr());
@@ -429,9 +446,10 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(
           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights,
           const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const {
-    TEST_FOR_EXCEPT(!isConstantStride());
     using Teuchos::ScalarTraits;
     using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
     const Mag OneOverN = ScalarTraits<Mag>::one() / Teuchos::as<Mag>(getGlobalLength());
@@ -453,10 +471,30 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( getMyLength() != weights.getMyLength(), std::runtime_error,
         "Tpetra::MultiVector::normWeighted(): MultiVectors do not have the same local length.");
 #endif
+    const Teuchos_Ordinal myLen = getMyLength();
     // 
     TEST_FOR_EXCEPTION(norms.size() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::normWeighted(): norms.size() must be as large as the number of vectors in *this.");
-    DMVA::WeightedNorm(lclMV_,weights.lclMV_,norms);
+    TEST_FOR_EXCEPT(true); // still untested
+    if (isConstantStride() && weights.isConstantStride()) {
+      DMVA::WeightedNorm(lclMV_,weights.lclMV_,norms);
+    }
+    else {
+      TEST_FOR_EXCEPT(true);  // still untested
+      KMV v(lclMV_.getNode()), w(lclMV_.getNode());
+      ArrayRCP<Scalar> vptr = arcp_const_cast<Scalar>(        lclMV_.getValues()),
+                       wptr = arcp_const_cast<Scalar>(weights.lclMV_.getValues());
+      ArrayRCP<Scalar> wj = wptr.persistingView(0,myLen);
+      for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j);
+        v.initializeValues(myLen, 1,  vj, myLen);
+        if (!OneW) {
+          wj = weights.getSubArrayRCP(wptr,j);
+          w.initializeValues(myLen, 1, wj, myLen);
+        }
+        norms[j] = DMVA::WeightedNorm((const KMV&)v,(const KMV &)w);
+      }
+    }
     if (this->isDistributed()) {
       Teuchos::Array<Mag> lnorms(norms);
       Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,numVecs,lnorms.getRawPtr(),norms.getRawPtr());
@@ -478,7 +516,7 @@ namespace Tpetra {
       DMVA::Norm1(lclMV_,norms);
     }
     else {
-      TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT(true);  // still untested
       KMV v(lclMV_.getNode());
       Teuchos::ArrayRCP<Scalar> vj;
       for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
@@ -526,7 +564,7 @@ namespace Tpetra {
       DMVA::Random(lclMV_);
     }
     else {
-      TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT(true);  // still untested
       const Teuchos_Ordinal numVecs = this->getNumVectors();
       KMV v(lclMV_.getNode());
       Teuchos::ArrayRCP<Scalar> vj;
@@ -570,7 +608,7 @@ namespace Tpetra {
       DMVA::Scale(lclMV_,alpha);
     }
     else {
-      TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT(true);  // still untested
       KMV v(lclMV_.getNode());
       Teuchos::ArrayRCP<Scalar> vj;
       for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
@@ -603,8 +641,10 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
-    TEST_FOR_EXCEPT(!isConstantStride());
-    const Teuchos_Ordinal numVecs = this->getNumVectors();
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
+    const Teuchos_Ordinal numVecs = getNumVectors();
+    const Teuchos_Ordinal myLen   = getMyLength();
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -616,20 +656,30 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.getNumVectors() != numVecs, std::runtime_error,
         "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
-    if (alpha == Teuchos::ScalarTraits<Scalar>::one()) {
-      // set me = A
-      DMVA::Assign(lclMV_,(const KMV&)A.lclMV_);
-    }
-    else {
+    if (isConstantStride() && A.isConstantStride()) {
       // set me == alpha*A
       DMVA::Scale(lclMV_,alpha,(const KMV&)A.lclMV_);
+    }
+    else {
+      TEST_FOR_EXCEPT(true);
+      KMV v(lclMV_.getNode()), a(lclMV_.getNode());
+      ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
+                      avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
+      for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
+                        avj = A.getSubArrayRCP(avptr,j);
+        a.initializeValues(myLen, 1, avj, myLen);
+        v.initializeValues(myLen, 1,  vj, myLen);
+        DMVA::Scale(v,alpha,(const KMV &)a);
+      }
     }
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
-    TEST_FOR_EXCEPT(!isConstantStride());
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -641,8 +691,25 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
         "Tpetra::MultiVector::reciprocal(): MultiVectors must have the same number of vectors.");
+    const Teuchos_Ordinal numVecs = getNumVectors();
+    const Teuchos_Ordinal myLen = getMyLength();
     try {
-      DMVA::Divide(lclMV_,(const KMV&)A.lclMV_);
+      if (isConstantStride() && A.isConstantStride()) {
+        DMVA::Divide(lclMV_,(const KMV&)A.lclMV_);
+      }
+      else {
+        TEST_FOR_EXCEPT(true);
+        KMV v(lclMV_.getNode()), a(lclMV_.getNode());
+        ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
+                        avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
+        for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+          ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
+            avj = A.getSubArrayRCP(avptr,j);
+          a.initializeValues(myLen, 1, avj, myLen);
+          v.initializeValues(myLen, 1,  vj, myLen);
+          DMVA::Divide(v,(const KMV &)a);
+        }
+      }
     }
     catch (std::runtime_error &e) {
       TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -654,7 +721,8 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) {
-    TEST_FOR_EXCEPT(!isConstantStride());
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -666,7 +734,24 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
         "Tpetra::MultiVector::scale(): MultiVectors must have the same number of vectors.");
-    DMVA::Abs(lclMV_,(const KMV&)A.lclMV_);
+    const Teuchos_Ordinal myLen = getMyLength();
+    const Teuchos_Ordinal numVecs = getNumVectors();
+    if (isConstantStride() && A.isConstantStride()) {
+      DMVA::Abs(lclMV_,(const KMV&)A.lclMV_);
+    }
+    else {
+      TEST_FOR_EXCEPT(true);
+      KMV v(lclMV_.getNode()), a(lclMV_.getNode());
+      ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
+                      avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
+      for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
+                        avj = A.getSubArrayRCP(avptr,j);
+        a.initializeValues(myLen, 1, avj, myLen);
+        v.initializeValues(myLen, 1,  vj, myLen);
+        DMVA::Abs(v,(const KMV &)a);
+      }
+    }
   }
 
 
@@ -674,11 +759,11 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::update(
                       const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
                       const Scalar &beta) {
-    TEST_FOR_EXCEPT(!isConstantStride());
     // this = beta*this + alpha*A
     // must support case where &this == &A
     // can't short circuit on alpha==0.0 or beta==0.0, because 0.0*NaN != 0.0
-    using Teuchos::ArrayView;
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -688,9 +773,26 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( getMyLength() != A.getMyLength(), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have the same local length.");
 #endif
+    const Teuchos_Ordinal myLen = getMyLength();
+    const Teuchos_Ordinal numVecs = getNumVectors();
     TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors(), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    DMVA::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta);
+    if (isConstantStride() && A.isConstantStride()) {
+      DMVA::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta);
+    }
+    else {
+      TEST_FOR_EXCEPT(true);
+      KMV v(lclMV_.getNode()), a(lclMV_.getNode());
+      ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
+                      avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
+      for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
+                        avj = A.getSubArrayRCP(avptr,j);
+        a.initializeValues(myLen, 1, avj, myLen);
+        v.initializeValues(myLen, 1,  vj, myLen);
+        DMVA::GESUM(v,alpha,(const KMV &)a,beta);
+      }
+    }
   }
 
 
@@ -699,7 +801,8 @@ namespace Tpetra {
                       const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, 
                       const Scalar &beta,  const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, 
                       const Scalar &gamma) {
-    TEST_FOR_EXCEPT(!isConstantStride());
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
     // this = alpha*A + beta*B + gamma*this
     // must support case where &this == &A or &this == &B
     // can't short circuit on alpha==0.0 or beta==0.0 or gamma==0.0, because 0.0*NaN != 0.0
@@ -716,7 +819,27 @@ namespace Tpetra {
 #endif
     TEST_FOR_EXCEPTION(A.getNumVectors() != this->getNumVectors() || B.getNumVectors() != this->getNumVectors(), std::runtime_error,
         "Tpetra::MultiVector::update(): MultiVectors must have the same number of vectors.");
-    DMVA::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta,(const KMV&)B.lclMV_,gamma);
+    const Teuchos_Ordinal myLen = getMyLength();
+    const Teuchos_Ordinal numVecs = getNumVectors();
+    if (isConstantStride() && A.isConstantStride() && B.isConstantStride()) {
+      DMVA::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta,(const KMV&)B.lclMV_,gamma);
+    }
+    else {
+      TEST_FOR_EXCEPT(true);
+      KMV v(lclMV_.getNode()), a(lclMV_.getNode()), b(lclMV_.getNode());
+      ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
+                      avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues()),
+                      bvptr = arcp_const_cast<Scalar>(B.lclMV_.getValues());
+      for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
+        ArrayRCP<Scalar> vj =   getSubArrayRCP( vptr,j),
+                        avj = A.getSubArrayRCP(avptr,j),
+                        bvj = B.getSubArrayRCP(bvptr,j);
+        b.initializeValues(myLen, 1, bvj, myLen);
+        a.initializeValues(myLen, 1, avj, myLen);
+        v.initializeValues(myLen, 1,  vj, myLen);
+        DMVA::GESUM(v,alpha,(const KMV&)a,beta,(const KMV&)b,gamma);
+      }
+    }
   }
 
 
