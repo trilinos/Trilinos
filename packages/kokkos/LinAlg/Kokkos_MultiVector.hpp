@@ -162,7 +162,7 @@ namespace Kokkos {
       Teuchos::ArrayRCP<Scalar>
       getValuesNonConst(size_type i) {
         TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
-                           i < 0 || i >= numRows_, // Out of range
+                           i < 0 || i >= numCols_, // Out of range
                            std::runtime_error, 
                            Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
         return contigValues_.persistingView(stride_*i,numRows_);

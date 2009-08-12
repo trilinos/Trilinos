@@ -164,14 +164,8 @@ namespace Tpetra {
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView<Scalar> A, Teuchos_Ordinal LDA) const;
 
-    //! Return multi-vector values in user-provided two-dimensional array (using a C pointer).
-    void get1dCopy(Scalar *A, Teuchos_Ordinal LDA) const;
-
     //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
     void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
-
-    //! Return multi-vector values in user-provided array of pointers (using C pointers).
-    void get2dCopy(Scalar * const * ArrayOfPtrs) const;
 
     //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
     Teuchos::ArrayRCP<const Scalar> get1dView() const;

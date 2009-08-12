@@ -87,7 +87,6 @@ namespace Tpetra {
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
-    void get1dCopy(Scalar *A) const;
 
     //@}
 

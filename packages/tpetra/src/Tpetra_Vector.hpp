@@ -62,40 +62,35 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~Vector() {}
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
-//  {
-//    this->replaceGlobalValue(globalRow,0,value);
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
+  {
+    this->replaceGlobalValue(globalRow,0,value);
+  }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
-//  {
-//    this->sumIntoGlobalValue(globalRow,0,value);
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
+  {
+    this->sumIntoGlobalValue(globalRow,0,value);
+  }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceMyValue(LocalOrdinal myRow, const Scalar &value) 
-//  {
-//    this->replaceMyValue(myRow,0,value);
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceMyValue(LocalOrdinal myRow, const Scalar &value) 
+  {
+    this->replaceMyValue(myRow,0,value);
+  }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoMyValue(LocalOrdinal myRow, const Scalar &value) 
-//  {
-//    this->sumIntoMyValue(myRow,0,value);
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoMyValue(LocalOrdinal myRow, const Scalar &value) 
+  {
+    this->sumIntoMyValue(myRow,0,value);
+  }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
-//    Teuchos_Ordinal lda = this->getMyLength();
-//    this->get1dCopy(A,lda);
-//  }
-
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Scalar *A) const {
-//    this->get1dCopy( Teuchos::arrayView<Scalar>(A,this->getMyLength()) );
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
+    Teuchos_Ordinal lda = this->getMyLength();
+    this->get1dCopy(A,lda);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const 
