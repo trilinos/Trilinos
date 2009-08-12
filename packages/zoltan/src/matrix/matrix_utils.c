@@ -106,6 +106,29 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
   return (ierr);
 }
 
+int
+Zoltan_Matrix2d_adjproc (ZZ* zz, const Zoltan_matrix_2d * const mat, int **adjproc)
+{
+  static char *yo = "Zoltan_Matrix2d_adjproc";
+  int ierr = ZOLTAN_OK;
+  int i;
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  *adjproc = (int*) ZOLTAN_MALLOC(mat->mtx.nPins*sizeof(int));
+  if (mat->mtx.nPins && (*adjproc == NULL))
+    MEMORY_ERROR;
+
+  for (i = 0 ; i < mat->mtx.nPins ; ++i ) {
+    (*adjproc)[i] = EDGE_TO_PROC_Y(mat, mat->mtx.pinGNO[i]);
+  }
+
+ End:
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
+  return (ierr);
+}
+
+
 
 #ifdef __cplusplus
 }

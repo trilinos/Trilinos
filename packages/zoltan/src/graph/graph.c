@@ -76,6 +76,22 @@ ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
   return (ierr);
 }
 
+int
+ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
+	   int **vtxdist, int **xadj, int **adjncy, int **adjproc, int **partialD2)
+{
+  *gvtx = graph->mtx.mtx.globalY;
+  *nvtx = graph->mtx.mtx.nY;
+  *vtxdist = graph->mtx.dist_y;
+  *xadj = graph->mtx.mtx.ystart;
+  *adjncy = graph->mtx.mtx.pinGNO;
+  *partialD2 = graph->fixed_vertices;
+
+  return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
+}
+
+
+
 
   /* This function may work on any distribution of the bipartite graph */
 int
@@ -89,7 +105,6 @@ ZG_Register(ZZ* zz, ZG* graph, int* properties)
   ZOLTAN_ID_PTR GID;
 
   size = graph->mtx.mtx.nY;
-  dd = graph->mtx.mtx.ddY;
 
   if (graph->bipartite) { /* Need to construct another properties array with only the fixed elements ! */
     int vertlno;
@@ -113,6 +128,13 @@ ZG_Register(ZZ* zz, ZG* graph, int* properties)
   else {
     props = properties;
     GID = graph->mtx.mtx.yGID;
+    if (graph->mtx.mtx.ddY == NULL) {
+      ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
+			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
+      dd = graph->mtx.mtx.ddY;
+      /* Hope a linear assignment will help a little */
+      Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, graph->mtx.mtx.globalX/zz->Num_Proc);
+    }
   }
   /* Make our new numbering public */
   ierr = Zoltan_DD_Update (dd, GID, NULL, NULL, props, size);
@@ -128,8 +150,8 @@ ZG_Register(ZZ* zz, ZG* graph, int* properties)
 
 /* This function may work with any distribution of the bipartite graph */
 int
-ZG_Query (ZZ* zz, ZG* graph,
-		    ZOLTAN_ID_PTR GID, int GID_length, int* properties)
+ZG_Query (ZZ* zz, const ZG* const graph,
+	  ZOLTAN_ID_PTR GID, int GID_length, int* properties)
 {
   struct Zoltan_DD_Struct *dd;
 

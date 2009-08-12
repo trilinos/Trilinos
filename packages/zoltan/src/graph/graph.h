@@ -36,11 +36,17 @@ typedef struct ZG_ {
 int
 ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj);
 
+/* TODO : add weights */
+int
+ZG_Export (ZZ* zz, const ZG * const graph, int *gvtx, int *ntvx,
+	   int **vtxdist, int **xadj, int **adjncy, int **adjproc, int **fixed_vertices);
+
 int
 ZG_Register(ZZ* zz, ZG* graph, int* properties);
 
 int
-ZG_Query (ZZ* zz, ZG* graph, ZOLTAN_ID_PTR GID, int GID_length, int* properties);
+ZG_Query (ZZ* zz, const ZG *graph, const ZOLTAN_ID_PTR GID,
+	  int GID_length, int* properties);
 
 void
 ZG_Free(ZZ *zz, ZG *m);

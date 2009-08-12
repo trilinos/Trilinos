@@ -93,6 +93,8 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc);
 int
 Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m);
 
+int
+Zoltan_Matrix2d_adjproc (ZZ* zz, const Zoltan_matrix_2d * const mat, int **adjproc);
 
 #ifdef __cplusplus
 }

@@ -31,3 +31,20 @@
 
 /* Define if want to build with zlib enabled */
 #cmakedefine HAVE_GZIP
+
+/* To test new graph implementation */
+#cmakedefine HAVE_NEW_GRAPH
+
+#ifdef HAVE_NEW_GRAPH
+#define COLORING_NEW_GRAPH
+#endif
+
+/* To test new graph implementation */
+#cmakedefine HAVE_NEW_GRAPH
+
+#ifdef HAVE_NEW_GRAPH
+#define COLORING_NEW_GRAPH
+#endif
+
+/* Use to have only filename when debugging memory */
+#define SHORT_FILE
