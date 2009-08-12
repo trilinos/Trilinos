@@ -1,0 +1,82 @@
+##
+## This simple structure is used by many of the nightly Zoltan tests.
+## It can be interpreted as a mesh, a graph, a hypergraph, or simply
+## as 25 objects to be partitioned.
+##
+##  21----22----23----24---25
+##  |     |     |     |    |
+##  16----17----18----19---20
+##  |     |     |     |    |
+##  11----12----13----14---15
+##  |     |     |     |    |
+##  6-----7-----8-----9----10
+##  |     |     |     |    |
+##  1-----2-----3-----4----5
+##
+##  Regarded as a hypergraph, we associate each of the 25 objects with a
+##  hyperedge.  The hyperedge is composed of the object and its neighbors
+##  in the above structure.  For example, hyperedge 1 contains vertices
+##  1, 2 and 6.  Hyperedge 13 contains vertices 13, 8, 12, 14 and 18.
+##
+
+##  Number of vertices:
+25
+
+##  Here we list the global ID of each vertex.
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+
+##  Number of hyperedges:
+25
+
+##  Here we list for each hyperedge, its global ID, the number of vertices it links,
+##  and the global ID of each vertex in the hyperedge.
+
+1   3  1  2  6   
+2   4  1  2  3  7
+3   4  2  3  4  8
+4   4  3  4  5  9
+5   3  4  5  10
+6   4  1  6  7  11
+7   5  2  6  7  8  12
+8   5  3  7  8  9  13
+9   5  4  8  9  10  14
+10  4  5  9  10  15
+11  4  6  11  12  16
+12  5  7  11  12  13  17
+13  5  8  12  13  14  18
+14  5  9  13  14  15  19
+15  4  10  14  15  20
+16  4  11  16  17  21
+17  5  12  16  17  18  22
+18  5  13  17  18  19  23
+19  5  14  18  19  20  24
+20  4  15  19  20  25
+21  3  16  21  22
+22  4  17  21  22  23
+23  4  18  22  23  24
+24  4  19  23  24  25
+25  3  20  24  25
