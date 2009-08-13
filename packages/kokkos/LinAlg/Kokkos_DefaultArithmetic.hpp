@@ -39,10 +39,10 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #ifdef HAVE_KOKKOS_TBB
-#include "Kokkos_TPINode.hpp"
+#include "Kokkos_TBBNode.hpp"
 #endif
 #ifdef HAVE_KOKKOS_THREADPOOL
-#include "Kokkos_TBBNode.hpp"
+#include "Kokkos_TPINode.hpp"
 #endif
 #include "Kokkos_SerialNode.hpp"
 #include <Teuchos_BLAS.hpp>
