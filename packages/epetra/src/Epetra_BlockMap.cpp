@@ -418,9 +418,24 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
   // First check if number of element is the same in each map
   if (numMyElements != Map.NumMyElements()) MySameMap = 0;
   
-  if (MySameMap==1) // If numMyElements is the same, check to see that list of GIDs is the same
-    for (int i = 0; i < numMyElements; i++)
-      if (GID(i) != Map.GID(i)) MySameMap = 0;
+  // If numMyElements is the same, check to see that list of GIDs is the same
+  if (MySameMap==1) {
+    if (LinearMap() && Map.LinearMap() ) {
+      // For linear maps, just need to check whether lower bound is the same
+      if (MinMyGID() != Map.MinMyGID() )
+        MySameMap = 0;
+    }
+    else {
+      for (int i = 0; i < numMyElements; i++) {
+        if (GID(i) != Map.GID(i)) {
+          MySameMap = 0;
+          break;
+        }
+      }
+    }
+  }
+//    for (int i = 0; i < numMyElements; i++)
+//      if (GID(i) != Map.GID(i)) MySameMap = 0;
 
   // If GIDs are the same, check to see element sizes are the same
   if (MySameMap==1 && !BlockMapData_->ConstantElementSize_) {
