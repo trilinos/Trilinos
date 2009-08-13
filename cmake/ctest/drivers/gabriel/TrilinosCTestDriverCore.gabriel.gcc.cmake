@@ -45,12 +45,13 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran"
+      #"-DCMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/g++"
+      #"-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc"
+      #"-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran"
       )
 
-    SET_DEFAULT(COMPILER_VERSION "GCC-4.2.0")
+    SET_DEFAULT(COMPILER_VERSION "GCC-3.4.6")
+    #SET_DEFAULT(COMPILER_VERSION "GCC-4.2.0")
   
   ENDIF()
 
