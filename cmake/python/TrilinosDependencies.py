@@ -11,11 +11,11 @@ from GeneralScriptSupport import *
 # Default file locations
 #
 
-defaultTrilinosDepsXmlInFile = getScriptsDir()+"/data/TrilinosPackageDependencies.xml"
+defaultTrilinosDepsXmlInFile = getScriptBaseDir()+"/data/TrilinosPackageDependencies.xml"
 
-defaultTrilinosDepsHtmlOutFile = getScriptsDir()+"/data/TrilinosPackageDependenciesTable.html"
+defaultTrilinosDepsHtmlOutFile = getScriptBaseDir()+"/data/TrilinosPackageDependenciesTable.html"
 
-defaultCDashDepsXmlFile = getScriptsDir()+"/data/CDashSubprojectDependencies.xml"
+defaultCDashDepsXmlFile = getScriptBaseDir()+"/data/CDashSubprojectDependencies.xml"
 
 
 #
