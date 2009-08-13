@@ -87,7 +87,8 @@ namespace Kokkos {
       : node_(node)
       , numRows_(0)
       , numCols_(0)
-      , stride_(0) {}
+      , stride_(0) {
+      }
 
       //! Copy constructor.
       MultiVector(const MultiVector& source)
@@ -95,10 +96,12 @@ namespace Kokkos {
       , contigValues_(source.contigValues_)
       , numRows_(source.numRows_)
       , numCols_(source.numCols_)
-      , stride_(source.stride_) {}
+      , stride_(source.stride_) {
+      }
 
       //! MultiVector Destructor
-      ~MultiVector() {}
+      ~MultiVector() {
+      }
 
       //@}
 
@@ -121,15 +124,13 @@ namespace Kokkos {
 
         \return Integer error code, set to 0 if successful.
         */
-      int initializeValues(size_type numRows, size_type numCols, 
-                           Teuchos::ArrayRCP<Scalar> values,
-                           size_type stride)
-      {
+      void initializeValues(size_t numRows, size_t numCols, 
+                            Teuchos::ArrayRCP<Scalar> values,
+                            size_t stride) {
         numRows_ = numRows;
         numCols_ = numCols;
         stride_ = stride;
         contigValues_ = values;
-        return(0);
       };
 
       //@}
@@ -160,7 +161,7 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       Teuchos::ArrayRCP<Scalar>
-      getValuesNonConst(size_type i) {
+      getValuesNonConst(size_t i) {
         TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
                            i < 0 || i >= numCols_, // Out of range
                            std::runtime_error, 
@@ -178,7 +179,7 @@ namespace Kokkos {
         \param i (In) The column that should be returned.
         */
       Teuchos::ArrayRCP<const Scalar>
-      getValues(size_type i) const {
+      getValues(size_t i) const {
         TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
                            i < 0 || i >= numCols_, // Out of range
                            std::runtime_error, 
@@ -195,13 +196,13 @@ namespace Kokkos {
       Node & getNode() const {return node_;}
 
       //! Number of rows
-      size_type getNumRows() const {return(numRows_);};
+      size_t getNumRows() const {return(numRows_);};
 
       //! Number of columns
-      size_type getNumCols() const{return(numCols_);};
+      size_t getNumCols() const{return(numCols_);};
 
       //! Increment between entries in a row of the multivector, normally = numRows().
-      size_type getStride() const {return(stride_);};
+      size_t getStride() const {return(stride_);};
 
       //@}
 
@@ -211,8 +212,7 @@ namespace Kokkos {
       Teuchos::ArrayRCP<Scalar> contigValues_;
 
       bool dataInitialized_;
-      size_type numRows_, numCols_;
-      size_type stride_;
+      size_t numRows_, numCols_, stride_;
   };
 
 } // namespace Kokkos

@@ -114,8 +114,5 @@
 #endif /*ndef TRILINOS_NO_CONFIG_H */
 
 #include <cstddef> 
-namespace Kokkos {
-  typedef std::size_t size_type;
-}
 
 #endif /* KOKKOS_CONFIGDEFS_H */

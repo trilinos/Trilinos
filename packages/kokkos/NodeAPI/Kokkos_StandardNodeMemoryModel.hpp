@@ -29,7 +29,7 @@ namespace Kokkos {
                 and is guaranteed to have size large enough to reference \c size number of entries of type \c T.
       */
       template <class T> inline
-      Teuchos::ArrayRCP<T> allocBuffer(size_type size) {
+      Teuchos::ArrayRCP<T> allocBuffer(size_t size) {
         Teuchos::ArrayRCP<T> ptr;
         if (size > 0) {
           ptr = Teuchos::arcp<T>(size);
@@ -49,7 +49,7 @@ namespace Kokkos {
           \post On return, entries in the range <tt>[0 , size)</tt> of \c buffSrc have been copied to \c hostDest entries in the range <tt>[0 , size)</tt>.
       */
       template <class T> inline
-      void copyFromBuffer(size_type size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest) {
+      void copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest) {
         Teuchos::ArrayRCP<T> buffDest = Teuchos::arcpFromArrayView(hostDest);
         copyBuffers(size,buffSrc,buffDest);
       }
@@ -66,7 +66,7 @@ namespace Kokkos {
           \post On return, entries in the range <tt>[0 , size)</tt> of \c hostSrc are allowed to be written to. The data is guaranteed to be present in \c buffDest before it is used in a parallel computation.
       */
       template <class T> inline
-      void copyToBuffer(size_type size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest) {
+      void copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest) {
         Teuchos::ArrayRCP<const T> buffSrc = Teuchos::arcpFromArrayView(hostSrc);
         copyBuffers<T>(size,buffSrc,buffDest);
       }
@@ -80,19 +80,19 @@ namespace Kokkos {
         \post The data is guaranteed to have been copied before any other usage of buffSrc or buffDest occurs.
       */
       template <class T> inline
-      void copyBuffers(size_type size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest) {
+      void copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest) {
         Teuchos::ArrayView<const T> av_src = buffSrc(0,size);
         Teuchos::ArrayView<T>       av_dst = buffDest(0,size);
         std::copy(av_src.begin(),av_src.end(),av_dst.begin());
       }
 
       template <class T> inline
-      Teuchos::ArrayRCP<const T> viewBuffer(size_type size, Teuchos::ArrayRCP<const T> buff) {
+      Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
         return buff.persistingView(0,size);
       }
 
       template <class T> inline
-      Teuchos::ArrayRCP<T> viewBufferNonConst(bool writeOnly, size_type size, const Teuchos::ArrayRCP<T> &buff) {
+      Teuchos::ArrayRCP<T> viewBufferNonConst(bool writeOnly, size_t size, const Teuchos::ArrayRCP<T> &buff) {
         return buff.persistingView(0,size);
       }
 

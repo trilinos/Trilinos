@@ -40,7 +40,7 @@ namespace {
   using Kokkos::MultiVector;
   using Teuchos::ArrayRCP;
 
-  Kokkos::size_type N = 1000;
+  size_t N = 1000;
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
