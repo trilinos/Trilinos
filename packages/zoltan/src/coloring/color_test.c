@@ -142,6 +142,9 @@ int Zoltan_Color_Test(
   if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
       return ZOLTAN_OK;
 
+#ifdef COLORING_NEW_GRAPH
+  return ZOLTAN_OK;
+#endif /* COLORING_NEW_GRAPH */
 
   /* BUILD THE GRAPH */
   /* Check that the user has allocated space for the return args. */

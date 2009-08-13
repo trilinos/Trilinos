@@ -28,6 +28,7 @@ extern "C" {
 /* This structure is a CS view of a part of the matrix/hypergraph */
 typedef struct Zoltan_matrix_ {
   int           transpose;   /* Need to transpose to have a CSC view ? */
+  int           enforceSquare;
   int           completed;
   int           globalX;   /* Overall number of objects */
   int           globalY;

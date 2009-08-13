@@ -22,6 +22,21 @@ extern "C" {
 #include "phg.h"
 #include "matrix.h"
 
+static int
+matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID,
+		 int nX, ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID);
+
+  /* In build_graph.c, may be moved here soon */
+extern int Zoltan_Get_Num_Edges_Per_Obj(
+  ZZ *zz,
+  int num_obj,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int **edges_per_obj,
+  int *max_edges,
+  int *num_edges
+  );
+
 int
 Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
 {
@@ -52,7 +67,6 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   ierr = Zoltan_Get_Obj_List(zz, &nX, &xGID, &xLID,
 			     zz->Obj_Weight_Dim, &xwgt,
 			     &Input_Parts);
-  ZOLTAN_FREE(&xLID);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
@@ -90,28 +104,25 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   /* Associate all the data with our xGNO */
   Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xwgt, Input_Parts, nX);
 
-  ZOLTAN_FREE(&xGNO);
-  ZOLTAN_FREE(&xGID);
   ZOLTAN_FREE(&xwgt);
   ZOLTAN_FREE(&Input_Parts);
 
-  /*
-   * Each processor:
-   *   owns a set of pins (nonzeros)
-   *   may provide some edge weights
-   *
-   * We assume that no two processes will supply the same pin.
-   * But more than one process may supply pins for the same edge.
-   */
-
-  ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
-				   &matrix->nPins, &yGID, &matrix->ystart,
-				   &pinID);
+  matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID);
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
     goto End;
   }
-  matrix->yend = matrix->ystart + 1;
+
+  if (matrix->enforceSquare) {
+    /* Convert yGID to yGNO using the same translation as x */
+    /* Needed for graph : rowID = colID */
+    matrix->yGNO = xGNO;
+    xGNO = NULL;
+    matrix->globalY = matrix->globalX;
+    matrix->ddY = matrix->ddX;
+  }
+  ZOLTAN_FREE(&xGNO);
+
 
   matrix->pinGNO = (int*)ZOLTAN_CALLOC(matrix->nPins, sizeof(int));
   if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
@@ -122,13 +133,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   Zoltan_DD_Destroy(&dd);
   dd = NULL;
 
-  if (enforceSquare) {
-    /* Convert yGID to yGNO using the same translation as x */
-    /* Needed for graph : rowID = colID */
-    matrix->globalY = matrix->globalX;
-    matrix->ddY = matrix->ddX;
-  }
-  else { /* Hyperedges name translation is different from the one of vertices */
+  if (!matrix->enforceSquare) { /* Hyperedges name translation is different from the one of vertices */
     matrix->yGNO = (int*)ZOLTAN_CALLOC(matrix->nY, sizeof(int));
     if (matrix->nY && matrix->yGNO == NULL) MEMORY_ERROR;
 
@@ -161,6 +166,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
 /*	goto End; */
 /*       } */
 /*     } */
+
     Zoltan_DD_Find (dd, yGID, NULL, (ZOLTAN_ID_PTR)(matrix->yGNO), NULL,
 		    matrix->nY, NULL);
     Zoltan_DD_Destroy(&dd);
@@ -193,8 +199,120 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   return (ierr);
 }
 
+  /*
+   * Each processor:
+   *   owns a set of pins (nonzeros)
+   *   may provide some edge weights
+   *
+   * We assume that no two processes will supply the same pin.
+   * But more than one process may supply pins for the same edge.
+   */
+static int
+matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID, int nX,
+		 ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID)
+{
+  static char *yo = "Zoltan_Matrix_Build";
+  int ierr = ZOLTAN_OK;
+  int hypergraph_callbacks = 0, graph_callbacks = 0;
+  int *nbors_proc = NULL; /* Pointers are global for the function to ensure proper free */
+  int *edgeSize = NULL;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+  if (zz->Get_HG_Size_CS && zz->Get_HG_CS) {
+    hypergraph_callbacks = 1;
+  }
+  if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
+    graph_callbacks = 1;
+  }
+
+  if (graph_callbacks && hypergraph_callbacks){
+/*     if (hgraph_model == GRAPH) */
+/*       hypergraph_callbacks = 0; */
+    graph_callbacks = 0; /* I prefer hypergraph ! */
+  }
+
+  if (hypergraph_callbacks) {
+    ZOLTAN_FREE(xGID);
+    ZOLTAN_FREE(xLID);
+
+    ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
+				     &matrix->nPins, yGID, &matrix->ystart,
+				     pinID);
+    matrix->yend = matrix->ystart + 1;
+  }
+  else if (graph_callbacks) {
+    int max_edges = 0;
+    int vertex;
+    int numGID, numLID;
 
 
+    matrix->enforceSquare = 1;
+    matrix->nY = nX; /* It is square ! */
+    *yGID = NULL;
+
+    numGID = zz->Num_GID;
+    numLID = zz->Num_LID;
+
+    /* TODO : support local graphs */
+    /* TODO : support weights ! */
+    /* Get edge data */
+    Zoltan_Get_Num_Edges_Per_Obj(zz, matrix->nY, *xGID, *xLID,
+				 &edgeSize, &max_edges, &matrix->nPins);
+
+    (*pinID) = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nPins);
+    nbors_proc = (int *)ZOLTAN_MALLOC(matrix->nPins * sizeof(int));
+
+    if (matrix->nPins && ((*pinID) == NULL || nbors_proc == NULL))
+      MEMORY_ERROR;
+
+    if (zz->Get_Edge_List_Multi) {
+      zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data,
+			      numGID, numLID,
+			      matrix->nY, *xGID, *xLID,
+			      edgeSize,
+			      (*pinID), nbors_proc, 0,
+			      NULL, &ierr);
+    }
+    else {
+      int edge;
+      for (vertex = 0, edge = 0 ; vertex < matrix->nY ; ++vertex) {
+	zz->Get_Edge_List(zz->Get_Edge_List_Data, numGID, numLID,
+                          (*xGID)+vertex*numGID, (*xLID)+vertex*numLID,
+                          (*pinID)+edge*numGID, nbors_proc+edge, 0,
+                          NULL, &ierr);
+	edge += edgeSize[vertex];
+      }
+    }
+    /* Not Useful anymore */
+    ZOLTAN_FREE(xLID);
+    ZOLTAN_FREE(xGID);
+    ZOLTAN_FREE(&nbors_proc);
+
+    /* Now construct CSR indexing */
+    matrix->ystart = (int*) ZOLTAN_MALLOC((matrix->nY+1)*sizeof(int));
+    if (matrix->ystart == NULL)
+      MEMORY_ERROR;
+
+    matrix->ystart[0] = 0;
+    matrix->yend = matrix->ystart + 1;
+    for (vertex = 0 ; vertex < matrix->nY ; ++vertex)
+      matrix->ystart[vertex+1] = matrix->ystart[vertex] + edgeSize[vertex];
+  }
+  else {
+    FATAL_ERROR ("You have to define Hypergraph or Graph queries");
+  }
+
+ End:
+  ZOLTAN_FREE(&edgeSize);
+  ZOLTAN_FREE(&nbors_proc);
+  ZOLTAN_FREE(xLID);
+  ZOLTAN_FREE(xGID);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
+  return (ierr);
+}
 
 #ifdef __cplusplus
 }

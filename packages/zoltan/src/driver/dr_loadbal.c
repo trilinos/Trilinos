@@ -868,7 +868,6 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (Debug_Driver > 0) {
 	  if (Proc == 0)
 	      printf("\nVerifying coloring result\n");
-#ifdef COLORING_NEW_GRAPH
 	  if (Zoltan_Color_Test(zz, &num_gid_entries, &num_lid_entries,
 				mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
 	      Gen_Error(0, "fatal:  error returned from Zoltan_Color_Test()\n");
@@ -876,9 +875,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	      safe_free((void **)(void *) &gids);
 	      safe_free((void **)(void *) &lids);
 	      return 0;
-	  } else
-#endif /* COLORING_NEW_GRAPH */
-	  {
+	  }
+	  else {
 	    int maxcolor = 0, gmaxcolor;
 	    for (i = 0; i < mesh->num_elems; i++)
 	      if (color[i] > maxcolor) maxcolor++;

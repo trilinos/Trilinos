@@ -311,7 +311,7 @@ int Zoltan_Build_Graph_Cedric(
                           num_gid_entries, num_lid_entries,
                           &(global_ids[vertex*num_gid_entries]), &(local_ids[vertex*num_lid_entries]),
                           nbors_global+edge*num_gid_entries, nbors_proc+edge, edge_wgt_dim,
-                          tmp_ewgts+edge, &ierr);
+                          tmp_ewgts+edge*edge_wgt_dim, &ierr);
 	edge += edges_per_obj[vertex];
       }
     }
