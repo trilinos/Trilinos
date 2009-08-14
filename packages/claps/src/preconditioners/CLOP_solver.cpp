@@ -618,7 +618,7 @@ int CLOP_solver::initialize_subdomains()
     //
     // construct coarse space (pass 1)
     //
-    ncdof_proc = 0; max_csdim = 0;
+    ncdof_proc = 0; max_csdim = 0; ndof_rot = 0;
     for (i=0; i<npart; i++) {
       Asub[i].construct_coarse1(AOverlap, rhs_work, sol_work, tmp_work,
 				rowbeg_work, colidx_work, A_work, imap, 
@@ -1035,8 +1035,8 @@ void CLOP_solver::factor_coarse_stiff()
   if (print_flag > 9) fout << "factoring coarse matrix" << endl;
   int i;
   Kc_gathered->MakeDataContiguous();
-  int *rowbeg_KC, *colidx_KC, NumEntries;
-  double *KC;
+  int *rowbeg_KC(0), *colidx_KC(0), NumEntries;
+  double *KC(0);
   int nnz_KC = Kc_gathered->NumMyNonzeros();
   double *Xvecs = 0;
   if (MyPID == 0) {
