@@ -39,18 +39,3 @@
 
 /* Define if want to build with experimental rythmos code enabled */
 #define HAVE_RYTHMOS_EXPERIMENTAL 1
-
-/* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "tscoffe@sandia.gov"
-
-/* Define to the full name of this package. */
-#define PACKAGE_NAME "rythmos"
-
-/* Define to the full name and version of this package. */
-#define PACKAGE_STRING "rythmos Development Version"
-
-/* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "rythmos"
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "Development Version"
