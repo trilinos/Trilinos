@@ -155,6 +155,20 @@ namespace Kokkos {
   };
 
   template <class Scalar>
+  struct WeightNormOp {
+    typedef  Teuchos::ScalarTraits<Scalar> SCT;
+    typedef  typename SCT::magnitudeType   Magnitude;
+    const Scalar *x, *w;
+    typedef  Magnitude ReductionType;
+    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
+    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
+    Magnitude generate(size_t i) {
+      Scalar tmp = x[i] / w[i];
+      return SCT::real( SCT::conjugate(tmp)*tmp );
+    }
+  };
+
+  template <class Scalar>
   struct SumOp {
     const Scalar *x;
     typedef  Scalar ReductionType;
@@ -758,11 +772,65 @@ namespace Kokkos {
 
       inline static typename Teuchos::ScalarTraits<Scalar>::magnitudeType
       WeightedNorm(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &weightVector) {
-        TEST_FOR_EXCEPT(true);
+        const size_t nR = A.getNumRows();
+        const size_t nC = A.getNumCols();
+        if (nR*nC == 0) {
+          return Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero();
+        }
+        Node &node = A.getNode();
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(0),
+                                        Wdata = weightVector.getValues(0);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.template addConstBuffer<Scalar>(Wdata);
+        rbh.end();
+        WeightNormOp<Scalar> op;
+        op.x = Adata(0,nR).getRawPtr();
+        op.w = Wdata(0,nR).getRawPtr();
+        return node.parallel_reduce(0,nR,op);
       }
 
       inline static void WeightedNorm(const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &weightVector, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) {
-        TEST_FOR_EXCEPT(true);
+        const size_t nR = A.getNumRows();
+        const size_t nC = A.getNumCols();
+        const size_t Astride = A.getStride(),
+                     Wstride = weightVector.getStride();
+        TEST_FOR_EXCEPTION(nC > Teuchos::as<size_t>(norms.size()), std::runtime_error, 
+            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Norm1(A,norms): norms must have length as large as number of columns of A.");
+        if (nR*nC == 0) {
+          std::fill( norms.begin(), norms.begin() + nC, Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero() );
+          return;
+        }
+        Node &node = A.getNode();
+        Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(),
+                                        Wdata = weightVector.getValues();
+        const bool OneW = (weightVector.getNumCols() == 1);
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.template addConstBuffer<Scalar>(Wdata);
+        rbh.end();
+        WeightNormOp<Scalar> op;
+        if (OneW) {
+          op.w = Wdata(0,nR).getRawPtr();
+          for (size_t j=0; j<nC; ++j) {
+            op.x = Adata(0,nR).getRawPtr();
+            norms[j] = node.parallel_reduce(0,nR,op);
+            Adata += Astride;
+          }
+        }
+        else {
+          for (size_t j=0; j<nC; ++j) {
+            op.x = Adata(0,nR).getRawPtr();
+            op.w = Wdata(0,nR).getRawPtr();
+            norms[j] = node.parallel_reduce(0,nR,op);
+            Adata += Astride;
+            Wdata += Wstride;
+          }
+        }
       }
 
       inline static void Random(MultiVector<Scalar,Node> &A) {

@@ -8,6 +8,8 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
 
+// FINISH: make sure to test import/export with source/target of non-contig multivector views
+
 namespace {
 
   using Teuchos::as;

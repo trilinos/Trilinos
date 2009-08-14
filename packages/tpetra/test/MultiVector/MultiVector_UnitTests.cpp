@@ -111,8 +111,8 @@ namespace {
     const int numImages = comm->getSize();
     Node &node = getDefaultNode();
     // create a Map
-    const Ordinal numLocal = 10;
-    const Teuchos_Ordinal numVecs  = 5;
+    const Ordinal numLocal = 13;
+    const Teuchos_Ordinal numVecs  = 7;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
     MV mvec(node,map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
@@ -141,7 +141,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     Node &node = getDefaultNode();
     // create a Map
-    const Ordinal numLocal = 10;
+    const Ordinal numLocal = 13;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
     TEST_THROW(MV mvec(node,map,0), std::invalid_argument);
     TEST_THROW(MV mvec(node,map,-1), std::invalid_argument);
@@ -178,6 +178,121 @@ namespace {
 #endif
     // LDA < numLocal throws an exception anytime
     TEST_THROW(MV mvec(node,map,values(0,4),1,numVecs), std::runtime_error);
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, NonContigView, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> V;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
+    // create a Map
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 13;
+    const Teuchos_Ordinal numVecs = 7;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    //
+    // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
+    Tuple<Teuchos_Ordinal,4> inView1 = tuple<Teuchos_Ordinal>(1,4,1,2);
+    Tuple<Teuchos_Ordinal,4> exView1 = tuple<Teuchos_Ordinal>(0,3,5,6);
+    Tuple<Teuchos_Ordinal,4> inView2 = tuple<Teuchos_Ordinal>(0,2,4,6);
+    const Teuchos_Ordinal numView = 4;
+    TEST_FOR_EXCEPT(numView != inView1.size());
+    TEST_FOR_EXCEPT(numView != inView2.size());
+    {
+      // test dot, all norms, randomize
+      MV mvOrig1(node,map,numVecs), mvOrig2(node,map,numVecs), mvWeights(node,map,numVecs);
+      mvWeights.randomize();
+      RCP<const MV> mvW1 = mvWeights.subView(tuple<Teuchos_Ordinal>(0));
+      RCP<const MV> mvSubWeights = mvWeights.subView(inView1);
+      mvOrig1.randomize();
+      mvOrig2.randomize();
+      // 
+      Array<Mag> nOrig2(numVecs), nOrig1(numVecs), nOrigI(numVecs), nOrigW(numVecs), nOrigW1(numVecs);
+      Array<Scalar> meansOrig(numVecs), dotsOrig(numView);
+      mvOrig1.norm1(nOrig1());
+      mvOrig1.norm2(nOrig2());
+      mvOrig1.normInf(nOrigI());
+      mvOrig1.normWeighted(mvWeights,nOrigW());
+      mvOrig1.normWeighted(*mvW1,nOrigW1());
+      mvOrig1.meanValue(meansOrig());
+      for (Teuchos_Ordinal j=0; j < numView; ++j) {
+        RCP<const V> v1 = mvOrig1.getVector(inView1[j]),
+          v2 = mvOrig2.getVector(inView2[j]);
+        dotsOrig[j] = v1->dot(*v2);
+      }
+      // create the views, compute and test
+      RCP<      MV> mvView1 = mvOrig1.subViewNonConst(inView1);
+      RCP<const MV> mvView2 = mvOrig2.subView(inView2);
+      Array<Mag> nView2(numView), nView1(numView), nViewI(numView), nViewW(numView), nViewW1(numView);
+      Array<Scalar> meansView(numView), dotsView(numView);
+      mvView1->norm1(nView1());
+      mvView1->norm2(nView2());
+      mvView1->normInf(nViewI());
+      mvView1->normWeighted(*mvSubWeights,nViewW());
+      mvView1->normWeighted(*mvW1,nViewW1());
+      mvView1->meanValue(meansView());
+      mvView1->dot( *mvView2, dotsView() );
+      for (Teuchos_Ordinal j=0; j < numView; ++j) {
+        TEST_FLOATING_EQUALITY(nOrig1[inView1[j]],  nView1[j],  tol);
+        TEST_FLOATING_EQUALITY(nOrig2[inView1[j]],  nView2[j],  tol);
+        TEST_FLOATING_EQUALITY(nOrigI[inView1[j]],  nViewI[j],  tol);
+        TEST_FLOATING_EQUALITY(nOrigW[inView1[j]],  nViewW[j],  tol);
+        TEST_FLOATING_EQUALITY(nOrigW1[inView1[j]], nViewW1[j], tol);
+        TEST_FLOATING_EQUALITY(meansOrig[inView1[j]], meansView[j], tol);
+        TEST_FLOATING_EQUALITY(dotsOrig[j], dotsView[j], tol);
+      }
+      // randomize the view, compute view one-norms, test difference
+      mvView2 = Teuchos::null;
+      mvView1->randomize();
+      Array<Mag> nView1_after(numView);
+      mvView1->norm1(nView1_after());
+      for (Teuchos_Ordinal j=0; j < numView; ++j) {
+        TEST_INEQUALITY(nView1[j], nView1_after[j]);
+      }
+      // release the view, test that viewed columns changed, others didn't
+      mvView1 = Teuchos::null;
+      Array<Mag> nOrig1_after(numVecs);
+      mvOrig1.norm1(nOrig1_after());
+      for (Teuchos_Ordinal j=0; j < inView1.size(); ++j) {
+        TEST_INEQUALITY(nOrig1[inView1[j]], nOrig1_after[inView1[j]]);
+      }
+      for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
+        TEST_FLOATING_EQUALITY(nOrig1[exView1[j]], nOrig1_after[exView1[j]], tol);
+      }
+    }
+    {
+      // FINISH / // FINISH HERE
+      // FINISH / //
+      // FINISH / // test the following:
+      // FINISH / //   scale(alpha,A)
+      // FINISH / //   scale(alpha)
+      // FINISH / //   operator=()
+      // FINISH / //   update(alpha,A,beta)
+      // FINISH / //   update(alpha,A,beta,B,gamma)
+      // FINISH / //   reciprocal()
+      // FINISH / // use all of these to put multivector to .5
+      // FINISH / // abs() tested to conserve norm1, norm2, normInf, but moves the mean
+      // FINISH / //
+      // FINISH / // make sure that columns do not share values, so that erors in views will be noticed
+      // FINISH / //
+      // FINISH / MV mvOrigA(node,map,numVecs), mvOrigB(node,map,numVecs), mvOrigC(node,map,numVecs);
+      // FINISH / mvOrigA.randomize();
+      // FINISH / mvOrigB.randomize();
+      // FINISH / mvOrigC.randomize();
+      // FINISH / RCP<const MV> mvViewA = mvOrigA.subView(inView1);
+      // FINISH / RCP<const MV> mvViewB = mvOrigB.subView(inView1);
+      // FINISH / RCP<      MV> mvViewC = mvOrigC.subViewNonConst(inView1);
+      // FINISH / // 
+      // FINISH / Array<Mag> nrmOrigA(numVectors), nrmOrigB(numVectors), nrmOrigC(numVectors);
+      // FINISH / // HERE FINISH
+    }
   }
 
 
@@ -1486,10 +1601,10 @@ namespace {
     Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Ordinal numVectors = 2;
+    const Ordinal numLocal = 13;
+    const Ordinal numVectors = 7;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    MV mvec(node,map,2,numVectors);
+    MV mvec(node,map,numVectors);
     // randomize the multivector
     mvec.randomize();
     // take norms; they should not be zero
@@ -1509,8 +1624,55 @@ namespace {
   }
 
 
-#define PRINT_TYPE_AND_VALUE(val) { out << std::setw(30) << #val << std::setw(30) << Teuchos::typeName(val) << ": " << val << endl; }
-
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, NormWeighted, Ordinal, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    Node &node = getDefaultNode();
+    // create a Map
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 13;
+    const Ordinal numVectors = 7;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    MV    mvec(node,map,numVectors),
+       weights(node,map,numVectors),
+       weight1(node,map,1);
+    // randomize the multivector
+    mvec.randomize();
+    // set the weights
+    Array<Scalar> wvec(numVectors);
+    Scalar w1 = ScalarTraits<Scalar>::random();
+    for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+      wvec[j] = ScalarTraits<Scalar>::random();
+    }
+    weights.putScalar(ScalarTraits<Scalar>::one());
+    weights.scale(wvec());
+    weight1.putScalar(w1);
+    // take norms
+    Array<Mag> normsW(numVectors), normsW1(numVectors);
+    Array<Scalar> dots(numVectors);
+    mvec.dot(mvec,dots());
+    mvec.normWeighted(weights,normsW());
+    mvec.normWeighted(weight1,normsW1());
+    for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+      Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
+      Mag expnorm = ScalarTraits<Mag>::squareroot( 
+                      ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww)
+                    );
+      Mag ww1 = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(w1) * w1 );
+      Mag expnorm1 = ScalarTraits<Mag>::squareroot(
+                       ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww1)
+                     );
+      TEST_FLOATING_EQUALITY( expnorm, normsW[j], tol );
+      TEST_FLOATING_EQUALITY( expnorm1, normsW1[j], tol );
+    }
+  }
 
 
   ////
@@ -1610,6 +1772,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNorm1        , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CountNormInf      , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Norm2             , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, NormWeighted      , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyView          , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(      Vector, ZeroScaleUpdate   , ORDINAL, SCALAR ) \
@@ -1618,7 +1781,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, NonContigView     , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR )
 
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
