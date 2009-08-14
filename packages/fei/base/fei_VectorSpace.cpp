@@ -458,11 +458,11 @@ int fei::VectorSpace::initSharedIDs(int numShared,
 
   if (numShared == 0) return(0);
 
-  fei::SharedIDs* shIDs = NULL;
-  CHK_ERR( getSharedIDs_private(idType, shIDs) );
-
   int idx = snl_fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
+
+  fei::SharedIDs* shIDs = NULL;
+  getSharedIDs_private(idType, shIDs);
 
   int offset = 0;
   for(int i=0; i<numShared; ++i) {
@@ -505,7 +505,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
   if (numShared == 0) return(0);
 
   fei::SharedIDs* shIDs = NULL;
-  CHK_ERR( getSharedIDs_private(idType, shIDs) );
+  getSharedIDs_private(idType, shIDs);
 
   int idx = snl_fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
@@ -569,7 +569,7 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getSharedIDs_private(int idType,
+void fei::VectorSpace::getSharedIDs_private(int idType,
                                            fei::SharedIDs*& shIDs)
 {
   int insertPoint = -1;
@@ -582,8 +582,6 @@ int fei::VectorSpace::getSharedIDs_private(int idType,
     sharedIDTables_.insert(sharedIDTables_.begin()+insertPoint, shIDs);
   }
   else shIDs = sharedIDTables_[idx];
-
-  return( 0 );
 }
 
 //----------------------------------------------------------------------------
@@ -606,7 +604,7 @@ int fei::VectorSpace::initComplete()
     //setOwners_lowestSharing is a local operation (no communication), which
     //basically assumes that each processor holds CORRECT (globally symmetric)
     //shared-id/sharing-proc tables. No correctness-checking is performed here.
-    CHK_ERR( setOwners_lowestSharing() );
+    setOwners_lowestSharing();
 
     //synchronizeSharedRecords ensures that each sharing processor has the same
     //view of the shared records, with respect to the layout of fields, which
@@ -1156,7 +1154,7 @@ int fei::VectorSpace::getNumOwnedIDs(int idType)
   if (idx < 0) return(0);
 
   fei::RecordAttributeCounter attrCounter(fei::localProc(comm_));
-  CHK_ERR( runRecords(attrCounter) );
+  runRecords(attrCounter);
 
   return( attrCounter.numLocallyOwnedIDs_ );
 }
@@ -1280,7 +1278,7 @@ int fei::VectorSpace::getBlkIndices_SharedAndOwned(int lenBlkIndices,
 
   fei::BlkIndexAccessor blkIndAccessor(lenBlkIndices,
                                   globalBlkIndices, blkSizes);
-  CHK_ERR( runRecords(blkIndAccessor) );
+  runRecords(blkIndAccessor);
 
   numBlkIndices = blkIndAccessor.numBlkIndices_;
 
@@ -1369,7 +1367,7 @@ int fei::VectorSpace::getBlkIndices_Owned(int lenBlkIndices,
   int localProc = fei::localProc(comm_);
   fei::BlkIndexAccessor blkIndAccessor(localProc, lenBlkIndices,
                                            globalBlkIndices, blkSizes);
-  CHK_ERR( runRecords(blkIndAccessor) );
+  runRecords(blkIndAccessor);
 
   numBlkIndices = blkIndAccessor.numBlkIndices_;
 
@@ -1447,8 +1445,7 @@ int fei::VectorSpace::setOwners_lowestSharing()
       recordCollections_[idx]->setDebugOutput(output_stream_);
     }
 
-    CHK_ERR( recordCollections_[idx]->
-                   setOwners_lowestSharing(sharedIDTables_[i]) );
+    recordCollections_[idx]->setOwners_lowestSharing(sharedIDTables_[i]);
   }
 
   return(0);
@@ -1468,7 +1465,7 @@ int fei::VectorSpace::calculateGlobalIndices()
   //first we'll calculate the number of local degrees of freedom, and the
   //number of local identifiers.
   fei::RecordAttributeCounter counter(localProc);
-  CHK_ERR( runRecords(counter) );
+  runRecords(counter);
 
   int numLocalDOF = counter.numLocalDOF_;
   int numLocalIDs = counter.numLocalIDs_;
@@ -1714,7 +1711,7 @@ int fei::VectorSpace::exchangeGlobalIndices()
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::runRecords(fei::Record_Operator& record_op)
+void fei::VectorSpace::runRecords(fei::Record_Operator& record_op)
 {
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
@@ -1731,8 +1728,6 @@ int fei::VectorSpace::runRecords(fei::Record_Operator& record_op)
       record_op(thisrecord);
     }
   }
-
-  return(0);
 }
 
 //----------------------------------------------------------------------------

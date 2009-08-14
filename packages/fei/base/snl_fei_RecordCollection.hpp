@@ -69,7 +69,7 @@ namespace snl_fei {
 
     /** set owner-proc attribute for specified IDs, to be the
        lowest-numbered sharing processor */
-    int setOwners_lowestSharing(fei::SharedIDs* sharedIDs);
+    void setOwners_lowestSharing(fei::SharedIDs* sharedIDs);
 
     /** Query the number of records in this collection */
     size_t getNumRecords()

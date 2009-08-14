@@ -325,7 +325,7 @@ int FEDataFilter::initLinSysCore()
     CHK_ERR( problemStructure_->getBlockDescriptor_index(blk, block) );
 
     numElemsPerBlock[blk] = block->getNumElements();
-    numNodesPerElem[blk]  = block->numNodesPerElement;
+    numNodesPerElem[blk]  = block->getNumNodesPerElement();
 
     int* fieldsPerNode = block->fieldsPerNodePtr();
     int** fieldIDsTable = block->fieldIDsTablePtr();
@@ -433,7 +433,7 @@ int FEDataFilter::initLinSysCore()
     ConnectivityTable& ctbl =
       problemStructure_->getBlockConnectivity(block->getGlobalBlockID());
 
-    std::vector<int> cNodeList(block->numNodesPerElement);
+    std::vector<int> cNodeList(block->getNumNodesPerElement());
 
     int* fieldsPerNode = block->fieldsPerNodePtr();
     int** fieldIDsTable = block->fieldIDsTablePtr();
@@ -449,7 +449,7 @@ int FEDataFilter::initLinSysCore()
       }
     }
 
-    int nodesPerElement = block->numNodesPerElement;
+    int nodesPerElement = block->getNumNodesPerElement();
     NodeDescriptor** elemConn = &((*ctbl.elem_conn_ptrs)[0]);
     int offset = 0;
     int numElems = block->getNumElements();
@@ -462,7 +462,7 @@ int FEDataFilter::initLinSysCore()
       }
 
       CHK_ERR( feData_->setConnectivity(i, ctbl.elemNumbers[j],
-                                        block->numNodesPerElement,
+                                        block->getNumNodesPerElement(),
                                         &cNodeList[0],
                                         &numDofPerNode[0]) );
     }
@@ -721,7 +721,7 @@ int FEDataFilter::sumInElem(GlobalID elemBlockID,
                       << "# elemID " << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor(elemBlockID, block) );
-    int numNodes = block->numNodesPerElement;
+    int numNodes = block->getNumNodesPerElement();
     (*logStream()) << "#num-nodes" << FEI_ENDL << numNodes << FEI_ENDL;
     (*logStream()) << "#connected nodes" << FEI_ENDL;
     for(int i=0; i<numNodes; ++i) {
@@ -748,7 +748,7 @@ int FEDataFilter::sumInElemMatrix(GlobalID elemBlockID,
                       << "# elemID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor(elemBlockID, block) );
-    int numNodes = block->numNodesPerElement;
+    int numNodes = block->getNumNodesPerElement();
     (*logStream()) << "#num-nodes" << FEI_ENDL << numNodes << FEI_ENDL;
     (*logStream()) << "#connected nodes" << FEI_ENDL;
     for(int i=0; i<numNodes; ++i) {
@@ -774,7 +774,7 @@ int FEDataFilter::sumInElemRHS(GlobalID elemBlockID,
                       << "# elemID " << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor(elemBlockID, block) );
-    int numNodes = block->numNodesPerElement;
+    int numNodes = block->getNumNodesPerElement();
     (*logStream()) << "#num-nodes" << FEI_ENDL << numNodes << FEI_ENDL;
     (*logStream()) << "#connected nodes" << FEI_ENDL;
     for(int i=0; i<numNodes; ++i) {
@@ -880,7 +880,7 @@ int FEDataFilter::generalElemInput(GlobalID elemBlockID,
 
   int elemNumber = connTable.elemNumbers[elemIndex];
 
-  int numNodes = block->numNodesPerElement;
+  int numNodes = block->getNumNodesPerElement();
   int* fieldsPerNode = block->fieldsPerNodePtr();
   int** fieldIDsTable = block->fieldIDsTablePtr();
 

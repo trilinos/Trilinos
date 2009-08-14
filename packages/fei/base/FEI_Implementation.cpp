@@ -1179,7 +1179,7 @@ int FEI_Implementation::getNumNodesPerElement(GlobalID blockID,
   BlockDescriptor* block = NULL;
   CHK_ERR( problemStructure_->getBlockDescriptor(blockID, block) );
 
-  nodesPerElem = block->numNodesPerElement;
+  nodesPerElem = block->getNumNodesPerElement();
   return(FEI_SUCCESS);
 }
  

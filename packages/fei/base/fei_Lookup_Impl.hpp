@@ -170,8 +170,7 @@ namespace fei {
     const int* getSharedNodeNumbers()
       {
 	fei::SharedIDs* sharedIDs = NULL;
-	int err = vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
-	if (err < 0) return(NULL);
+	vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
 
 	int numShared = sharedIDs->getSharedIDs().getMap().size();
 	workspace_.resize(numShared*2);
@@ -179,8 +178,7 @@ namespace fei {
 	fei::copyKeysToArray(sharedIDs->getSharedIDs().getMap(), numShared, wkPtr);
 
 	snl_fei::RecordCollection* collection = NULL;
-	err = vspace_->getRecordCollection(nodeIDType_, collection);
-	if (err < 0) return(NULL);
+	vspace_->getRecordCollection(nodeIDType_, collection);
 
 	for(int i=0; i<numShared; ++i) {
 	  fei::Record* node = collection->getRecordWithID(wkPtr[i]);
@@ -202,8 +200,7 @@ namespace fei {
 	fei::Record* node = (*nnp_iter).second;
 
 	fei::SharedIDs* sharedIDs = NULL;
-	int err = vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
-	if (err < 0) return(NULL);
+	vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
 
 	int shID = node->getID();
 
@@ -226,8 +223,7 @@ namespace fei {
 	fei::Record* node = (*nnp_iter).second;
 
 	fei::SharedIDs* sharedIDs = NULL;
-	int err = vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
-	if (err < 0) return(err);
+	vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
 
 	int shID = node->getID();
 

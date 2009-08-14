@@ -180,9 +180,7 @@ int fei::Lookup_Impl::buildDatabases()
 
   fei::SharedIDs* subdomainIDs = NULL;
   fei::SharedIDs* sharedIDs = NULL;
-  int i;
-  err = vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
-  if (err < 0) return(-1);
+  vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
 
   if (noconstraints == false) {
     subdomainIDs = new fei::SharedIDs;
@@ -216,7 +214,7 @@ int fei::Lookup_Impl::buildDatabases()
     sd_iter = sdIDTable.begin(),
     sd_end  = sdIDTable.end();
 
-  for(i=0; sd_iter != sd_end; ++i, ++sd_iter) {
+  for(int i=0; sd_iter != sd_end; ++i, ++sd_iter) {
     int id = (*sd_iter).first;
     fei::SharedIDs::table_type::row_type* procList = (*sd_iter).second;
 

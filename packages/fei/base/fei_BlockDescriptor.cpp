@@ -13,8 +13,8 @@
 
 //====Constructor===============================================================
 BlockDescriptor::BlockDescriptor()
- : numNodesPerElement(0),
-   blockID_(-1),
+ : blockID_(-1),
+   numNodesPerElement_(0),
    numFieldsPerNode_(NULL),
    nodalFieldIDs_(NULL),
    fieldIDsAllocated_(false),
@@ -43,9 +43,9 @@ BlockDescriptor::~BlockDescriptor() {
 
 //==============================================================================
 void BlockDescriptor::destroyFieldArrays() {
-   if (numNodesPerElement == 0) return;
+   if (numNodesPerElement_ == 0) return;
 
-   for(int i=0; i<numNodesPerElement; i++) {
+   for(int i=0; i<numNodesPerElement_; i++) {
       delete [] nodalFieldIDs_[i];
    }
 
@@ -53,7 +53,7 @@ void BlockDescriptor::destroyFieldArrays() {
    nodalFieldIDs_ = NULL;
    delete [] numFieldsPerNode_;
    numFieldsPerNode_ = NULL;
-   numNodesPerElement = 0;
+   numNodesPerElement_ = 0;
 }
 
 //==============================================================================
@@ -65,11 +65,11 @@ int BlockDescriptor::setNumNodesPerElement(int numNodes)
 
   destroyFieldArrays();
 
-  numNodesPerElement = numNodes;
+  numNodesPerElement_ = numNodes;
 
-  numFieldsPerNode_ = new int[numNodesPerElement];
+  numFieldsPerNode_ = new int[numNodesPerElement_];
 
-  for(int i=0; i<numNodesPerElement; i++) {
+  for(int i=0; i<numNodesPerElement_; i++) {
     numFieldsPerNode_[i] = 0;
   }
   return(0);
@@ -84,10 +84,10 @@ int* BlockDescriptor::fieldsPerNodePtr() {
 //==============================================================================
 int BlockDescriptor::allocateFieldIDsTable()
 {
-  nodalFieldIDs_ = new int*[numNodesPerElement];
+  nodalFieldIDs_ = new int*[numNodesPerElement_];
   bool rowsAllZeroLength = true;
 
-  for(int i=0; i<numNodesPerElement; i++) {
+  for(int i=0; i<numNodesPerElement_; i++) {
     if (numFieldsPerNode_[i] > 0) {
       nodalFieldIDs_[i] = new int[numFieldsPerNode_[i]];
       rowsAllZeroLength = false;
@@ -95,7 +95,7 @@ int BlockDescriptor::allocateFieldIDsTable()
     else nodalFieldIDs_[i] = NULL;
   }
 
-  if (rowsAllZeroLength || numNodesPerElement == 0) {
+  if (rowsAllZeroLength || numNodesPerElement_ == 0) {
     FEI_CERR << "BlockDescriptor::allocateFieldIDsTable: ERROR, all rows of"
 	 << " fieldIDs table have zero length. Set fieldsPerNode entries"
 	 << " first." << FEI_ENDL;
@@ -127,7 +127,7 @@ bool BlockDescriptor::containsField(int fieldID) {
 //also, unless the node lies on a block boundary and 'fieldID' is only in
 //the other block.
 //
-   for(int i=0; i<numNodesPerElement; i++) {
+   for(int i=0; i<numNodesPerElement_; i++) {
       for(int j=0; j<numFieldsPerNode_[i]; j++) {
          if (nodalFieldIDs_[i][j] == fieldID) return(true);
       }

@@ -73,11 +73,9 @@ class BlockDescriptor {
    void setGlobalBlockID(GlobalID blockID) {blockID_ = blockID;}
 
    /** Number of nodes per element, in this element-block.
-       !!! Only set this attribute using the 'setNumNodesPerElement()'
-       method. !!!
    */
-   int numNodesPerElement;
    int setNumNodesPerElement(int numNodes);
+   int getNumNodesPerElement() const { return numNodesPerElement_; }
 
    int* fieldsPerNodePtr();  //length of this list = getNumNodesPerElement()
 
@@ -127,7 +125,7 @@ class BlockDescriptor {
 
  private:
    BlockDescriptor(const BlockDescriptor& /*src*/)
-     : numNodesPerElement(0), blockID_(0), numFieldsPerNode_(NULL),
+     : blockID_(0), numNodesPerElement_(0), numFieldsPerNode_(NULL),
      nodalFieldIDs_(NULL), fieldIDsAllocated_(false),
      numDistinctFields_(0), elemDofFieldIDs_(), interleaveStrategy_(0),
      lumpingStrategy_(0), numElements_(0), numElemDOFPerElement_(0),
@@ -143,9 +141,11 @@ class BlockDescriptor {
 
    GlobalID blockID_;
 
-   int* numFieldsPerNode_; //list: length = numNodesPerElement
+   int numNodesPerElement_;
 
-   int** nodalFieldIDs_;   //table: number-of-rows = numNodesPerElement
+   int* numFieldsPerNode_; //list: length = numNodesPerElement_
+
+   int** nodalFieldIDs_;   //table: number-of-rows = numNodesPerElement_
                            //       length-of-row[i] = numFieldsPerNode_[i]
    bool fieldIDsAllocated_;
 

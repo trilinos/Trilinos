@@ -330,7 +330,7 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::RecordCollection::
+void snl_fei::RecordCollection::
 setOwners_lowestSharing(fei::SharedIDs* sharedIDs)
 {
   fei::SharedIDs::table_type::iterator
@@ -360,8 +360,6 @@ setOwners_lowestSharing(fei::SharedIDs* sharedIDs)
 
     record->setOwnerProc(proc);
   }
-
-  return(0);
 }
 
 fei::Record* snl_fei::RecordCollection::getRecordWithID(int ID)

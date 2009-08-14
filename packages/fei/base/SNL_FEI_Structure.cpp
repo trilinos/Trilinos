@@ -309,7 +309,7 @@ void SNL_FEI_Structure::getElemBlockInfo(GlobalID blockID,
   lumpingStrategy = block->getLumpingStrategy();
   numElemDOF = block->getNumElemDOFPerElement();
   numElements = block->getNumElements();
-  numNodesPerElem = block->numNodesPerElement;
+  numNodesPerElem = block->getNumNodesPerElement();
   numEqnsPerElem = block->getNumEqnsPerElement();
 }
 
@@ -526,7 +526,7 @@ int SNL_FEI_Structure::initElem(GlobalID elemBlockID,
     elemIDList.insert(std::make_pair(elemID,elemIndex));
   }
 
-  int numNodes = block->numNodesPerElement;
+  int numNodes = block->getNumNodesPerElement();
 
   if (debugOutput_ && outputLevel_ > 2) {
     FEI_OSTREAM& os = dbgOut();
@@ -2827,7 +2827,7 @@ int SNL_FEI_Structure::allocateBlockConnectivity(GlobalID blockID) {
    }
 
    connTables_[index]->numNodesPerElem = 
-                         blocks_[index]->numNodesPerElement;
+                         blocks_[index]->getNumNodesPerElement();
 
    int numRows = blocks_[index]->getNumElements();
    int numCols = connTables_[index]->numNodesPerElem;
@@ -3780,7 +3780,7 @@ int SNL_FEI_Structure::getBlkScatterIndices_index(int blockIndex,
 						  int* scatterIndices)
 {
   BlockDescriptor& block = *(blocks_[blockIndex]);
-  int numNodes = block.numNodesPerElement;
+  int numNodes = block.getNumNodesPerElement();
   work_nodePtrs_.resize(numNodes);
   NodeDescriptor** nodes = &work_nodePtrs_[0];
   int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
@@ -3803,7 +3803,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
 // and be of length the number of equations per element.
 //
    BlockDescriptor& block = *(blocks_[blockIndex]);
-   int numNodes = block.numNodesPerElement;
+   int numNodes = block.getNumNodesPerElement();
    int* fieldsPerNode = block.fieldsPerNodePtr();
    int** fieldIDs = block.fieldIDsTablePtr();
 
@@ -3863,7 +3863,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
 // and be of length the number of equations per element.
 //
    BlockDescriptor& block = *(blocks_[blockIndex]);
-   int numNodes = block.numNodesPerElement;
+   int numNodes = block.getNumNodesPerElement();
    int* fieldsPerNode = block.fieldsPerNodePtr();
    int** fieldIDs = block.fieldIDsTablePtr();
 

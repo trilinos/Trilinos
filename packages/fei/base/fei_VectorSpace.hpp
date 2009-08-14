@@ -687,7 +687,7 @@ namespace fei {
 
     int calculateGlobalIndices();
 
-    int runRecords(fei::Record_Operator& record_op);
+    void runRecords(fei::Record_Operator& record_op);
 
     int synchronizeSharedRecords();
 
@@ -700,7 +700,7 @@ namespace fei {
                           snl_fei::RecordCollection* recordCollection,
                           std::vector<fei::FieldMask*>& fieldMasks);
 
-    int getSharedIDs_private(int idType, fei::SharedIDs*& shIDs);
+    void getSharedIDs_private(int idType, fei::SharedIDs*& shIDs);
 
     void setName(const char* name);
 
