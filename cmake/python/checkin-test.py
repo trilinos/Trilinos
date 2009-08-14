@@ -154,10 +154,17 @@ clp.add_option(
   +" the set of modified files from the version control update log." )
 
 clp.add_option(
+  "--no-enable-all-packages", dest="enableAllPackages", action="store_false",
+  help="Do not enable all (Stable) Trilinos packages." )
+clp.add_option(
+  "--enable-all-packages", dest="enableAllPackages", action="store_true",
+  help="Enable all (Stable) Trilinos packages", default=False )
+
+clp.add_option(
   "--no-enable-fwd-packages", dest="enableFwdPackages", action="store_false",
   help="Do not enable forward Trilinos packages" )
 clp.add_option(
-  "--enable-fwd-packages", dest="enableFwdPackages", action="store_false",
+  "--enable-fwd-packages", dest="enableFwdPackages", action="store_true",
   help="Enable forward Trilinos packages", default=True )
 
 clp.add_option(
@@ -226,7 +233,9 @@ clp.add_option(
 clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
   default=os.environ["USER"]+"@sandia.gov",
-  help="List of comma-separated email addresses to send notification to." )
+  help="List of comma-separated email addresses to send email notification to." \
+  +"  By default, this is your Sandia User ID.  In order to turn off email" \
+  +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
   "--show-defaults", dest="showDefaults", action="store_true",
@@ -256,6 +265,10 @@ if options.doConfigure:
 else:
   print "  --skip-configure \\"
 print "  --enable-packages='"+options.enablePackages+"' \\"
+if options.enableAllPackages:
+  print "  --enable-all-packages \\"
+else:
+  print "  --no-enable-all-packages \\"
 if options.enableFwdPackages:
   print "  --enable-fwd-packages \\"
 else:

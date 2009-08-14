@@ -8,14 +8,20 @@
 #
 # ToDo:
 #
-#  (*) Enable writing skeleton files SERIAL_RELEASE.config and COMMON.config
-#  (*) Enable reading from files SERIAL_RELEASE.config and COMMON.config
 #  (*) Enable figuring out packages to enable from examining update.out
 #  (*) Enable auto-commit
 
 
 from GeneralScriptSupport import *
 import time
+
+
+def getCommonConfigFileName():
+  return "COMMON.config"
+
+
+def getBuildSpecificConfigFileName(serialOrMpi, buildType):
+  return serialOrMpi + "_" + buildType + ".config"
 
 
 def getUpdateOutputFileName():
@@ -60,38 +66,116 @@ def getEmailAddressesSpaceString(emailAddressesCommasStr):
 
 
 def writeDefaultCommonConfigFile():
-  None
+
+  commonConfigFileName = getCommonConfigFileName()
+
+  if os.path.exists(commonConfigFileName):
+
+    print "\nThe file "+commonConfigFileName+" already exists!"
+
+  else:
+
+    print "\nCreating a default skeleton file "+commonConfigFileName+" ..."
+
+    commonConfigFileStr = \
+      "# Fill in the minimum CMake options that are needed to build and link\n" \
+      "# that are common to all builds such as the following:\n" \
+      "#\n" \
+      "#-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      "#-DBUILD_SHARED:BOOL=ON\n" \
+      "#-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      "#-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      "#\n" \
+      "# NOTE: Please do not add any options here that would select what pacakges\n" \
+      "# get enabled or disabled.\n"
+
+    open(commonConfigFileName, 'w').write(commonConfigFileStr)
 
 
 def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
-  None
+
+  buildSpecificConfigFileName = getBuildSpecificConfigFileName(serialOrMpi, buildType)
+
+  if os.path.exists(buildSpecificConfigFileName):
+
+    print "\nThe file "+buildSpecificConfigFileName+" already exists!"
+
+  else:
+
+    print "\nCreating a default skeleton file "+buildSpecificConfigFileName+" ..."
+
+    buildSpecificConfigFileStr = \
+      "# Fill in the minimum CMake options that are needed to build and link\n" \
+      "# that are specific to the "+serialOrMpi+" build such as:\n" \
+      "#\n" \
+      "#-DBUILD_SHARED:BOOL=ON\n"
+
+    if serialOrMpi == "MPI":
+      buildSpecificConfigFileStr += \
+        "#-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
+        "#-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
+        "#-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
+        "#-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n"
+    elif serialOrMpi == "SERIAL":
+      buildSpecificConfigFileStr += \
+        "#-DCMAKE_CXX_COMPILER:PATHNAME=/usr/local/bin/g++\n" \
+        "#-DCMAKE_C_COMPILER:PATHNAME=/usr/local/bin/gcc\n" \
+        "#-DCMAKE_Fortran_COMPILER:PATHNAME=/usr/local/bin/gfortran\n"
+    else:
+      raise Exception("Invalid value for serialOrMpi="+serialOrMpi)
+      
+    buildSpecificConfigFileStr += \
+      "#\n" \
+      "# NOTE: Please do not add any options here that would select what pacakges\n" \
+      "# get enabled or disabled.\n"
+
+    open(buildSpecificConfigFileName, 'w').write(buildSpecificConfigFileStr)
 
 
-def createConfigureFile(cmakeOptions, trilinosSrcDir):
+def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
+
+  if not os.path.exists(fileName):
+    return
+
+  print "\nAppending options from "+fileName+":"
+
+  cmakeOptionsFile = open(fileName, 'r')
+
+  for line in cmakeOptionsFile:
+    if line[0] != '#':
+      print "  Appnding: "+line
+      cmakeOptions_inout.append(line.strip())
+
+
+def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
 
     doConfigStr = ""
   
     doConfigStr += \
       "EXTRA_ARGS=$@\n" \
       "\n" \
-      "cmake \\\n"
+      +baseCmnd+ " \\\n"
   
     for opt in cmakeOptions:
       doConfigStr += opt + " \\\n"
     
     doConfigStr += \
-      "$EXTRA_ARGS \\\n" \
-      +trilinosSrcDir+"\n"
+      "$EXTRA_ARGS"
+
+    if trilinosSrcDir:
+      doConfigStr += " \\\n"+trilinosSrcDir
+    
+    doConfigStr += "\n"
   
-    open('do-configure', 'w').write(doConfigStr)
-    echoRunSysCmnd('chmod a+x do-configure')
+    open(configFileName, 'w').write(doConfigStr)
+    echoRunSysCmnd('chmod a+x '+configFileName)
 
 
 reCtestFailTotal = re.compile(r".+, ([0-9]+) tests failed out of ([0-9]+)")
 
 
 def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
-  enabledPackagesList, startingTime ) \
+  enabledPackagesList, cmakeOptions, startingTime ) \
   :
 
   print ""
@@ -261,6 +345,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   emailBody += "Do Configure: " + str(inOptions.doConfigure) + "\n"
   emailBody += "Do Build: " + str(inOptions.doBuild) + "\n"
   emailBody += "Do Test: " + str(inOptions.doTest) + "\n"
+  emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   emailBody += "\n"
 
   if inOptions.doTest and testOutputExists and numTotalTests:
@@ -333,36 +418,59 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     print ""
     print "A) Get the CMake configure options ..."
     print ""
+
+    # A.1) Set the base options
   
-    cmakeOptions = [
+    cmakeBaseOptions = [
       "-DCMAKE_BUILD_TYPE:STRING="+buildType
       ]
   
     if serialOrMpi:
   
-      cmakeOptions.append("-DTPL_ENABLE_MPI:BOOL=ON")
+      cmakeBaseOptions.append("-DTPL_ENABLE_MPI:BOOL=ON")
   
-    cmakeOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
+    cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
   
-    cmakeOptions.extend(extraCMakeOptions)
-  
-    # ToDo: Read from buildDirName.config and COMMON.conf and append those
-    # options ...
+    cmakeBaseOptions.extend(extraCMakeOptions)
+
+    readAndAppendCMakeOptions(
+      os.path.join("..", getCommonConfigFileName()),
+      cmakeBaseOptions)
+
+    readAndAppendCMakeOptions(
+      os.path.join("..", getBuildSpecificConfigFileName(serialOrMpi, buildType)),
+      cmakeBaseOptions)
+
+    print "\ncmakeBaseOptions:", cmakeBaseOptions
+
+    # A.2) Set the package enable options
+
+    cmakePkgOptions = []
   
     if inOptions.enablePackages:
       print "\nEnabling the specified packages '"+inOptions.enablePackages+"' ...\n"
       enablePackagesList = inOptions.enablePackages.split(',')
       for pkg in enablePackagesList:
-        cmakeOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
+        cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
     else:
       print "\nDetermining the set of packages to enable by examining update.out ...\n"
       # ToDo: Implement this!
 
-    cmakeOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+  
+    if inOptions.enableAllPackages:
+      print "\nEnabling all packages on request ..."
+      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
   
     if inOptions.enableFwdPackages:
       print "\nEnabling forward packages on request ..."
-      cmakeOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON")
+      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON")
+
+    print "\ncmakePkgOptions:", cmakePkgOptions
+
+    # A.3) Set the combined options
+
+    cmakeOptions    = cmakeBaseOptions + cmakePkgOptions
   
     print "\ncmakeOptions =", cmakeOptions
   
@@ -370,9 +478,11 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     print "B) Do the configuration with CMake ..."
     print ""
   
-    print "Creating configure file do-configure ..."
+    print "Creating base configure file do-configure.base ..."
+    createConfigureFile(cmakeBaseOptions, "cmake", trilinosSrcDir, "do-configure.base")
   
-    createConfigureFile(cmakeOptions, trilinosSrcDir)
+    print "Creating package-enabled configure file do-configure ..."
+    createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
   
     if inOptions.doConfigure:
   
@@ -440,7 +550,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   print ""
 
   success = analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
-    enablePackagesList, startingTime)
+    enablePackagesList, cmakeOptions, startingTime)
 
   return success
 
@@ -454,11 +564,10 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
   if runTestCaseBool:
 
     try:
-  
+      writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType)
       echoChDir(baseTestDir)
       result = runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions)
       if not result: success = False
-
     except Exception, e:
       traceback.print_exc()
 
