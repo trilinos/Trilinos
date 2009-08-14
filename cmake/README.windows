@@ -1,0 +1,36 @@
+To build Trilinos on Windows you need to install CVS CMake and build CLAPACK.
+
+
+Prerequsite software:
+
+- Install CVS and SVN for windows.  SVN only needed for CLAPACK.
+1. Install CVS CMake A
+2. Get the source for CLAPACK using svn:
+
+repository: https://icl.eecs.utk.edu/svn/lapack-dev/clapack/
+username: guest
+password: dev2007
+
+For a source .zip file email bill.hoffman@kitware.com.
+
+3. Run cmake-gui to configure and build clapack.  Make sure it is built using
+the same build type as you are going to build Trilinos with (Debug, Release,
+etc. ).  Right now it is important that you run cmake-gui, if not you have to
+specify the path to clapack.
+
+
+
+Experimental  build
+
+1. checkout Trilinos
+2. run cmake-gui and select the source and a different than source build tree
+for Trilinos.
+3. configure/generate (it should find the clapack from prerequsite software
+step. If not, set CLAPACK_DIR to the path to the binary tree for CLAPACK.
+4. run ctest -S Trilinos/cmake/ctest -S experimental_build_test.cmake
+
+
+Nightly build
+
+See cmake/ctest/drivers/corrin for an example, should just need to change 
+task_driver_corrin.bat to build.
