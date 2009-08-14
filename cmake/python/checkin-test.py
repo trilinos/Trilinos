@@ -117,7 +117,7 @@ Common use cases for using this script are as follows:
 
   --without-serial-release
 
-(*) Seeing the default option values without doing anything:
+(*) See the default option values without doing anything:
 
    --show-defaults
 

@@ -8,8 +8,8 @@
 #
 # ToDo:
 #
-#  (*) Enable reading from files SERIAL_RELEASE.config and COMMON.config
 #  (*) Enable writing skeleton files SERIAL_RELEASE.config and COMMON.config
+#  (*) Enable reading from files SERIAL_RELEASE.config and COMMON.config
 #  (*) Enable figuring out packages to enable from examining update.out
 #  (*) Enable auto-commit
 
@@ -57,6 +57,14 @@ def getEmailBodyFileName():
 def getEmailAddressesSpaceString(emailAddressesCommasStr):
   emailAddressesList = emailAddressesCommasStr.split(',')
   return ' '.join(emailAddressesList)
+
+
+def writeDefaultCommonConfigFile():
+  None
+
+
+def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
+  None
 
 
 def createConfigureFile(cmakeOptions, trilinosSrcDir):
@@ -437,6 +445,30 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   return success
 
 
+def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buildType,
+  trilinosSrcDir, extraCMakeOptions ) \
+  :
+
+  success = True
+  
+  if runTestCaseBool:
+
+    try:
+  
+      echoChDir(baseTestDir)
+      result = runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions)
+      if not result: success = False
+
+    except Exception, e:
+      traceback.print_exc()
+
+  else:
+
+    print "\nSkipping "+serialOrMpi+" "+buildType+" build on request!\n"
+
+  return success
+
+
 def checkinTest(inOptions):
 
   print "\n***"
@@ -472,46 +504,26 @@ def checkinTest(inOptions):
     else:
   
       print "\nSkipping update on request!\n"
-  
-    if inOptions.withMpiDebug:
 
-      try:
-  
-        echoChDir(baseTestDir)
-        result = runTestCase(inOptions, "MPI", "DEBUG", trilinosSrcDir,
-          [
-            "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
-            "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-          ]
-          )
-        if not result: success = False
+    writeDefaultCommonConfigFile()
 
-      except Exception, e:
-        traceback.print_exc()
+    result = runTestCaseDriver(inOptions.withMpiDebug, inOptions, baseTestDir,
+      "MPI", "DEBUG", trilinosSrcDir,
+      [
+        "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
+        "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+      ]
+      )
+    if not result: success = False
 
-    else:
-
-      print "\nSkipping MPI DEBUG build on request!\n"
-
-    if inOptions.withSerialRelease:
-
-      try:
-  
-        echoChDir(baseTestDir)
-        result = runTestCase(inOptions, "SERIAL", "RELEASE", trilinosSrcDir,
-          [
-            "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
-            "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
-          ]
-          )
-        if not result: success = False
-
-      except Exception, e:
-        traceback.print_exc()
-
-    else:
-
-      print "\nSkipping SERIAL RELEASE build on request!\n"
+    result = runTestCaseDriver(inOptions.withSerialRelease, inOptions, baseTestDir,
+      "SERIAL", "RELEASE", trilinosSrcDir,
+      [
+        "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
+        "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
+      ]
+      )
+    if not result: success = False
 
     if inOptions.doCommit:
 
