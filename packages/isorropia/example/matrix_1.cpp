@@ -27,7 +27,7 @@
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_CrsGraph
-//and Epetra_CrsMatrix object, and using Isorropia's create_balanced_copy
+//and Epetra_CrsMatrix object, and using Isorropia's createBalancedCopy
 //function to rebalance them.
 //--------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
-  //Now call Isorropia::create_balanced_copy to create a balanced
+  //Now call Isorropia::createBalancedCopyto create a balanced
   //copy of crsgraph. 
 
   if (localProc == 0) {
@@ -108,13 +108,14 @@ int main(int argc, char** argv) {
   //partitioning, treating the graph columns as hyperedges and the
   //graph rows as vertices.
 
-  Teuchos::RCP<Epetra_CrsGraph> balanced_graph;
+  Epetra_CrsGraph *balanced_graph = NULL;
   try {
     balanced_graph =
-      Isorropia::Epetra::create_balanced_copy(*crsgraph, paramlist);
+      Isorropia::Epetra::createBalancedCopy(*crsgraph, paramlist);
+
   }
   catch(std::exception& exc) {
-    std::cout << "matrix_1 example: Isorropia::create_balanced_copy threw "
+    std::cout << "matrix_1 example: Isorropia::createBalancedCopy threw "
          << "exception '" << exc.what() << "' on proc "
          << localProc << std::endl;
     MPI_Finalize();
@@ -151,7 +152,7 @@ int main(int argc, char** argv) {
 
   //Next, do a similar exercise with a Epetra_CrsMatrix. Like the
   //Epetra_CrsGraph example above, we'll create a matrix to use as input,
-  //and then have Isorropia::create_balanced_copy create a copy which is
+  //and then have Isorropia::createBalancedCopy create a copy which is
   //balanced so that the number of nonzeros are equal on each processor.
 
   Teuchos::RCP<Epetra_CrsMatrix> crsmatrix;
@@ -184,13 +185,13 @@ int main(int argc, char** argv) {
     std::cout << "Specifying GRAPH partitioning." << std::endl;
   }
 
-  Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix;
+  Epetra_CrsMatrix *balanced_matrix;
   try {
     balanced_matrix =
-      Isorropia::Epetra::create_balanced_copy(*crsmatrix, paramlist);
+      Isorropia::Epetra::createBalancedCopy(*crsmatrix, paramlist);
   }
   catch(std::exception& exc) {
-    std::cout << "matrix_1 example: Isorropia::create_balanced_copy(matrix)"
+    std::cout << "matrix_1 example: Isorropia::createBalancedCopy(matrix)"
         << " threw exception '" << exc.what() << "' on proc "
          << localProc << std::endl;
     MPI_Finalize();
