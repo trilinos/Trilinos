@@ -85,4 +85,16 @@ inline double round(double val)
 {   
     return floor(val + 0.5);
 }
+
+inline void srand48(double seed)
+{
+  srand(seed);
+}
+
+inline double drand48()
+{
+  return (double(rand()) / RAND_MAX);
+}
+
+
 #endif
