@@ -413,7 +413,8 @@ createBalancedCopy(const Epetra_MultiVector &coords,
 
   Teuchos::RCP<Epetra_MultiVector> newVec = rd.redistribute(coords);
 
-// Should we release() newVec? 
+  newVec.release();
+
   return newVec.get();
 }
 
@@ -440,7 +441,8 @@ createBalancedCopy(const Epetra_CrsGraph& input_graph,
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     rd.redistribute(input_graph);
 
-// Should we release() balanced_graph? */
+  balanced_graph.release();
+
   return balanced_graph.get();
 }
 
@@ -467,7 +469,7 @@ createBalancedCopy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     rd.redistribute(input_matrix);
 
-// Should we release() balanced_matrix? */
+  balanced_matrix.release();
   return balanced_matrix.get();
 }
 
