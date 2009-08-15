@@ -357,7 +357,7 @@ getTripleProductTensor() const
   if (this->Cijk == Teuchos::null) {
     std::vector<value_type> points, weights;
     std::vector< std::vector<value_type> > values;
-    getQuadPoints(2*ceil((3*(this->p+1))/2), points, weights, values);
+    getQuadPoints(2*ceil((double)(3*(this->p+1))/2), points, weights, values);
     this->Cijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
     
     
