@@ -70,7 +70,7 @@ void computeMeanSolution(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::R
 
   Eofu.PutScalar(0.0);
   
-  Epetra_Map::Epetra_Map Map(N_x, 0, Comm);
+  Epetra_Map Map(N_x, 0, Comm);
   // Form x and y into block vectors.
   Epetra_MultiVector uBlock(Map,N_xi);
   
