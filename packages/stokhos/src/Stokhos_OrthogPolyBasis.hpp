@@ -68,6 +68,9 @@ namespace Stokhos {
     //! Compute triple product tensor
     virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > getTripleProductTensor() const = 0;
 
+    virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    getLowOrderTripleProductTensor(ordinal_type order) const = 0;
+    
     //! Compute derivative triple product tensor
     virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getDerivTripleProductTensor() const = 0;
 

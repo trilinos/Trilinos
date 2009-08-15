@@ -272,7 +272,8 @@ getQuadPoints(ordinal_type quad_order,
 	      std::vector<value_type>& quad_weights,
 	      std::vector< std::vector<value_type> >& quad_values) const
 {
-  //This is a transposition into C++ of Gautschi's code for taking the first N recurrance coefficients
+  
+//This is a transposition into C++ of Gautschi's code for taking the first N recurrance coefficients
   //and generating a N point quadrature rule.  The MATLAB version is available at
   // http://www.cs.purdue.edu/archives/2002/wxg/codes/gauss.m
   ordinal_type num_points = static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
@@ -283,7 +284,7 @@ getQuadPoints(ordinal_type quad_order,
   if(num_points > this->p+1){
     
     basos = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>
-                         (num_points,label_,weightFn_,leftEndPt_,rightEndPt_,normalize_));
+                      (num_points,label_,weightFn_,leftEndPt_,rightEndPt_,normalize_));
     basos->getAlpha(alpha);
     basos->getBeta(beta);
   }else{  //else just take the ones we already have.
@@ -336,8 +337,8 @@ getQuadPoints(ordinal_type quad_order,
     quad_points[i] = eig_real[i];
     quad_weights[i] = beta[0]*pow(eig_vectors[idx[i]][0],2);
   }
-
-  // Evalute basis at gauss points
+  
+    // Evalute basis at gauss points
   quad_values.resize(num_points);
   for (ordinal_type i=0; i<num_points; i++) {
     quad_values[i].resize(this->p+1);
@@ -379,3 +380,5 @@ getTripleProductTensor() const
   
   return this->Cijk;
 }
+
+

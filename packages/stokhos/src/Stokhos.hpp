@@ -61,6 +61,7 @@
 // Operators
 #include "Stokhos_StochGalerkin_Precon.hpp"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
+#include "Stokhos_MeanEpetraOp.hpp"
 #include "Stokhos_KLMatrixFreeEpetraOp.hpp"
 
 //#include "Stokhos_StochGalerkin_FiniteDiff.hpp"

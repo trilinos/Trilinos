@@ -24,7 +24,7 @@
 // 
 // ***********************************************************************
 
-// -div(a(x,xi) grad u) = f.
+// -div(a(x,xi) grad u) + cu = f.
 //  a is expanded in a KL expansion as a = mean + sigma\sum^M xi_i f_i(x).
 //  evalEigenfunction evaluates the ith deterministic dunction in the KL
 //  expansion of the diffusion coefficient.  RHS_function evaluates f.
@@ -32,7 +32,17 @@
 //////////////////////////////////////////////////////
 //GLOBALS
 //////////////////////////////////////////////////////
-double sigma, mean, rysCut;
+double sigma, mean, weightCut;
+
+//For the exponential random field.
+std::vector<double> lambda, alpha, omega;
+std::vector<int> xind, yind;
+
+
+//The probability distribution of the random variables.
+const double weight(const double x){
+  return 1;
+}
 
 
 //Diffusion term is expanded in a KL expansion
@@ -40,76 +50,49 @@ double sigma, mean, rysCut;
 //This function evaluates the ith spatial component of the
 //expansion.
 double evalEigenfunction(double x,double y, int idx){
+  
+   if(idx == 0){
+      return mean;
+   }else{
+      double omegax = omega[xind[idx-1]];
+      double omegay = omega[yind[idx-1]];
+      double result = 1;
+      if(xind[idx-1]%2 == 1){
+         result = result * sin(omegax*x);
+      }else{
+         result = result * cos(omegax*x);
+      }
 
-  if(idx == 0){
-    return mean;
-  }else{
-    return sigma*(1/pow(idx*PI,2))*cos(6*PI*idx*(x*x + y*y));   
-  }
-
-  //Anisotropic diffusion
-  /*
-  if(idx == 0){
-    return mean;
-  }else{
-    return sigma*(1/pow(idx*PI,2))*cos(6*PI*idx*(3*x*x + y*y));   
-  }
-  */
+      if(yind[idx-1]%2 == 1){
+         result = result * sin(omegay*y);
+      }else{
+         result = result * cos(omegay*y);
+      }
+      return sigma*result*sqrt(lambda[idx-1])*alpha[idx-1];
+      
+   }
+ 
 }
 
+//The loading term is expanded as a PC expansion,
+// this function returns the value of the idx spatial
+// function evaluated at x,y.
+double RHS_function_PC(double x, double y, int idx){
+
+double result;
+if(idx==0)
+  result = 1;
+else result = 0;
+return result;  
+
+}
 
 //Function for the righ hand side.
 double RHS_function(double x, double y, std::vector<double>& xi){
-
-int d = xi.size();
-double r2 = x*x + y*y;
-double z = 0;
-double negExpMagxiSquared = 0;
-for(int i = 0; i<d; i++) negExpMagxiSquared = negExpMagxiSquared + xi[i]*xi[i];
-negExpMagxiSquared = exp(-negExpMagxiSquared);
-
-for(int j = 0; j<d+1; j++){
-  if(j == 0){
-    z = z - mean*(32*(y*y - .25) + 32*(x*x - .25));
-      //z = -32;
-  }else{
-    double pt1 = 32*(y*y - .25);
-    double pt2 = 32*(x*x - .25);
-    double pt3 = 2*6*32*y*y*(x*x - .25);
-    double pt4 = 2*6*32*x*x*(y*y - .25);
-    double pt5 = (1/(j*PI))*sin(6*PI*j*r2);
-    double pt6 = (1/(j*j*PI*PI))*cos(6*PI*j*r2);
-    z = z - xi[j-1]*sigma*((pt1+ pt2)*pt6 - (pt3+pt4)*pt5);
-  }
+   
+   double result = RHS_function_PC(x,y,0);
+   for(int idx = 1; idx<=xi.size(); idx++){
+      result = result + RHS_function_PC(x,y,idx)*xi[idx-1];
+   }
+   return result;
 }
-
-return negExpMagxiSquared*z;
-
-//////////////////////////////////////////////////////////
-//return 1;
-}
-
-
-//Exact solution if known.
-double uExact(double x,double y, std::vector<double>& xi){
-  //double ans = 16*(x*x -.25)*(y*y -.25);
-  //return ans;
-  
-  // u = exp(-|xi|^2) 16*(x*x -.25)*(y*y -.25)
-  int d = xi.size();
-  double negExpMagxiSquared = 0;
-  for(int i = 0; i<d; i++) negExpMagxiSquared = negExpMagxiSquared + xi[i]*xi[i];
-  negExpMagxiSquared = exp(-negExpMagxiSquared);
-  double ans = 16*(x*x -.25)*(y*y -.25)*negExpMagxiSquared;
-  return ans;
-  
-  /*
-  // u = sum(xi_i^3) 16*(x*x -.25)*(y*y -.25)
-  int d = xi.size();
-  double MagxiSquared = 0;
-  for(int i = 0; i<d; i++) MagxiSquared = MagxiSquared + xi[i]*xi[i]*xi[i];
-  double ans = 16*(x*x -.25)*(y*y -.25)*MagxiSquared;
-  return ans;
-  */
-}
-

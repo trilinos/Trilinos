@@ -169,11 +169,37 @@ getTripleProductTensor() const
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    std::vector<value_type> a(sz+1);
+    std::vector<value_type> a(sz);
     for (ordinal_type j=0; j<sz; j++) {
       for (ordinal_type i=0; i<sz; i++) {
 	projectProduct(i, j, a);
 	for (ordinal_type k=0; k<sz; k++) {
+          //std::cout << "k = " << k << " " << a[k] << "\n";
+	  if (std::abs(a[k]) > sparse_tol) {
+	    Cijk->add_term(i,j,k,a[k]);
+	  }
+	}
+      }
+    }
+  }
+
+  return Cijk;
+  
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getLowOrderTripleProductTensor(ordinal_type order) const
+{
+  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
+  if (Cijk == Teuchos::null) {
+    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+    std::vector<value_type> a(order+1);
+    for (ordinal_type i=0; i<sz; i++) {
+      for (ordinal_type j=0; j<sz; j++) {
+	projectProduct(i, j, a);
+	for (ordinal_type k=0; k<=order; k++) {
 	  if (std::abs(a[k]) > sparse_tol) {
 	    Cijk->add_term(i,j,k,a[k]);
 	  }
@@ -252,46 +278,19 @@ projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) 
   }
 
   double val;
-  for (ordinal_type k=0; k<sz; k++) {
+  for (ordinal_type k=0; k<coeffs.size()-1; k++) {
     value_type c = value_type(1.0);
     for (ordinal_type l=0; l<static_cast<ordinal_type>(bases.size()); l++) {
       val = (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
-      if(val>sparse_tol){
-        c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
-      }else{
+      if(val < sparse_tol){
         c = 0;
         break;
-      }
-      //bases[l]->norm_squared(terms[k][l]);
+      }else c *= val;      
     }
     coeffs[k] = c;
   }
 }
 
-// template <typename ordinal_type, typename value_type>
-// void
-// Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-// projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
-// {
-//   // Initialize
-//   for (ordinal_type j=0; j<coeffs.size(); j++)
-//     coeffs[j] = value_type(0.0);
-
-//   // Project derivative of each basis polynomial for term i
-//   std::vector<value_type> bases_coeffs(p+1);
-//   std::vector<ordinal_type> term(d);
-//   ordinal_type index;
-//   for (ordinal_type j=0; j<d; j++) {
-//     bases[j]->projectDerivative(terms[i][j],bases_coeffs);
-
-//     term = terms[i];
-//     for (ordinal_type k=0; k<terms[i][j]; k++) {
-//       term[j] = k;
-//       index = compute_index(term);
-//       coeffs[index] += deriv_coeffs[j]*bases_coeffs[k];
-//     }
-//   }
-// }
 
 template <typename ordinal_type, typename value_type>
 void

@@ -98,7 +98,7 @@ namespace Stokhos {
 		  std::vector< std::vector<value_type> >& values) const;
 
     //! Get sparse grid rule number
-    virtual ordinal_type getRule() const { return 5; }
+    virtual ordinal_type getRule() const { return 10; }
 
     //! Get quadrature weight factor
     virtual value_type getQuadWeightFactor() const { return 1; }
@@ -109,7 +109,6 @@ namespace Stokhos {
 
     virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
     
-
   private:
 
     // Prohibit copying

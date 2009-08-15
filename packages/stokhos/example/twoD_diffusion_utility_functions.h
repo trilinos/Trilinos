@@ -24,15 +24,56 @@
 // 
 // ***********************************************************************
 
+
+//If the RHS function is expanded in a KL-expansion, use this to generate the RHS vector.
+void generateRHS(double (*rhs_function)(double, double, int), std::vector<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
+
+  int N_xi = basis->size();
+  int N_x = mesh.size();
+  int d = basis->dimension();
+  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->getLowOrderTripleProductTensor(d);
+  RHS.PutScalar(0);
+
+  double doubleProd;
+  int i,k;
+
+  std::vector<double> one(d);
+  for(int j = 0; j<d; j++)one[j] = 1;
+  std::vector< double > values(N_xi);
+  values = basis->evaluateBases(one);
+  std::vector< double > norms = basis->norm_squared();
+  for(int stochIdx = 0; stochIdx <= d; stochIdx++){
+    double gamma = values[stochIdx]/(1-basis->evaluateZero(stochIdx));
+    Cijk->value(0, stochIdx, i, k, doubleProd);
+    if( stochIdx!=0 ){
+      doubleProd /= gamma;
+      if( i == k) doubleProd = doubleProd -basis->evaluateZero(stochIdx)*norms[i];
+    }else{
+      if( i == k ) doubleProd = norms[i];
+    }
+    
+    for(int xmeshIdx = 1; xmeshIdx < N_x-1; xmeshIdx++){
+      for(int ymeshIdx = 1; ymeshIdx < N_x-1; ymeshIdx++){
+        RHS[stochIdx*N_x*N_x + xmeshIdx + N_x*ymeshIdx] = 
+          RHS[stochIdx*N_x*N_x + xmeshIdx + N_x*ymeshIdx]
+          +
+          rhs_function(mesh[xmeshIdx],mesh[ymeshIdx],stochIdx)*doubleProd;
+      }
+    }
+  }
+}
+
+// for an arbitary RHS function f(x,\xi) computes the RHS vector via quadrature. VERY SLOW if there are many basis functions
+// and the dimension is high.
 void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), std::vector<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
   int N_xi = basis->size();
   int N_x = mesh.size();
   double quadOrder;
   quadOrder = 5*basis->order();
+  std::cout << basis->order()<< "\n";
+  Stokhos::SparseGridQuadrature<int,double> quadRule(basis,basis->order());
   
-  Stokhos::TensorProductQuadrature<int,double> quadRule(basis,quadOrder);
-  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
 
   std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
   std::vector<double> quadWeights = quadRule.getQuadWeights();
@@ -40,6 +81,7 @@ void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), s
   
   
   for(int quadIdx = 0; quadIdx < quadPts.size(); quadIdx++){
+    std::cout << quadIdx << "/" << quadPts.size()-1 << "\n";
     basisVals = basis->evaluateBases(quadPts[quadIdx]);
     for(int stochIdx = 0; stochIdx < N_xi; stochIdx++){
       for(int ymeshIdx = 1; ymeshIdx < N_x-1; ymeshIdx++){
@@ -52,16 +94,10 @@ void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), s
   }
 }
 
+//Given the computed sfem solution, computes the mean solution.
 void computeMeanSolution(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
-  /*
-  #ifdef HAVE_MPI
-    MPI_INIT(&argc, &argv);
-    Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  #else
-    Epetra_SerialComm Comm;
-  #endif
-  */
+  
   const Epetra_Comm& Comm = u.Map().Comm();
 
   //Roll up solution vector into a multivector containing deterministic components.
@@ -85,22 +121,16 @@ void computeMeanSolution(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::R
     Cijk->value(0,l,i,j,val);
     if(i==0 && j == 0) break;
   }
+  std::cout << "val = " << val << "\n";
   for(int i = 0; i< N_x; i++){
     Eofu[i] = val*u[i];
   }
 
 }
 
+//Given the computed SFEM solution and the mean solution, computes the variance via <u^2> - <u>^2
 void computeVarianceSolution(const Epetra_Vector& u, const Epetra_Vector& Eofu, Epetra_Vector& varOfu, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
-  /*
-  #ifdef HAVE_MPI
-    MPI_INIT(&argc, &argv);
-    Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  #else
-    Epetra_SerialComm Comm;
-  #endif
-  */
   const Epetra_Comm& Comm = u.Map().Comm();
    
   int N_x = u.MyLength()/basis->size();
@@ -126,6 +156,7 @@ void computeVarianceSolution(const Epetra_Vector& u, const Epetra_Vector& Eofu, 
   
 }
 
+//Given a value of \xi returns the SFEM approximation of the solution at \xi.
 void generateRealization(const Epetra_Vector& u, std::vector<double>& xi, Epetra_Vector& u_xi, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
   int N_xi = basis->size();
@@ -135,52 +166,91 @@ void generateRealization(const Epetra_Vector& u, std::vector<double>& xi, Epetra
 
   u_xi.PutScalar(0);
 
-  //std::cout<< "N_xi = "<<N_xi<<"\n";
   for(int i = 0; i<N_xi; i++){
     for( int j = 0; j< N_x; j++){
       u_xi[j] = u_xi[j] + u[j+N_x*i]*basisValues[i];
-      //std::cout << "i = "<<i<<" u_xi["<<j<<"] = " << u_xi[j] <<" " << u[j+N_x*i]*basisValues[i]<< "\n";
     }
   }
 }
 
-double computeError(const Epetra_Vector& u, double (*exact_solution)(double, double, std::vector<double>&), std::vector<double> mesh, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
-  /*
-  #ifdef HAVE_MPI
-    MPI_INIT(&argc, &argv);
-    Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  #else
-    Epetra_SerialComm Comm;
-  #endif
-  */
-  const Epetra_Comm& Comm = u.Map().Comm();
-  
-  int N_xi = basis->size();
-  int N_x = mesh.size();
-  double quadOrder;
-  quadOrder = 5*basis->order();
-  Stokhos::TensorProductQuadrature<int,double> quadRule(basis, quadOrder);
-  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
+//Generates the KL expansion of the field with covariance defined by C(x,y) = exp(-|x_1-x_2|*corrx - |y_1-y_2|*corrx)
+void generateExponentialRF(const int orderKL, const double corrx, std::vector<double>& lambda,
+                           std::vector<double>& alpha_out,std::vector<double>& omega,
+                           std::vector<int>& xind, std::vector<int>& yind){
+   
+   
+   omega.resize(orderKL);
+   lambda.resize(orderKL);
+   std::vector<double> alpha(orderKL);
+   double lower, upper, midpoint;
+   for(int i = 0; i<=ceil(((double)orderKL)/2); i++){
+      
+      if(i>0 && 2*i <= orderKL){
+         if( (2*i-1)*PI+.000000001 > 0)lower = (2*i-1)*PI+.000000001;
+         else lower = 0;
+         upper = (2*i+1)*PI-.000000001;
+         while(fabs(lower - upper) > 2*1e-8){
+           midpoint = (lower + upper)/2;
+           if((lower + corrx*tan(lower*.5)>0 && midpoint + corrx*tan(midpoint*.5)>0) || (lower + corrx*tan(lower*.5)<0 && midpoint + corrx*tan(midpoint*.5)<0)){
+              lower = midpoint;
+           }else{
+              upper = midpoint;
+           }
+         }
+         omega[2*i-1] = (lower + upper)/2;
+         lambda[2*i-1] = 2*corrx/(omega[2*i - 1]*omega[2*i - 1] + corrx*corrx);
+         alpha[2*i-1] = 1/sqrt(.5 - sin(omega[2*i - 1])/(2*omega[2*i - 1]));
+      } 
+      
+      if(2*i + 1<= orderKL){
+         if( (2*i-1)*PI+.000000001 > 0)lower = (2*i-1)*PI+.000000001;
+         else lower = 0;
+         upper = (2*i+1)*PI-.000000001;
+         while(fabs(lower - upper) > 2*1e-8){
+            midpoint = (lower + upper)/2;
+            if((corrx - lower*tan(lower*.5)>0 && corrx - midpoint*tan(midpoint*.5)>0) || (corrx - lower*tan(lower*.5)<0 && corrx - midpoint*tan(midpoint*.5)<0)){
+               lower = midpoint;
+            }else{
+               upper = midpoint;
+            }
+         }
+         omega[2*i] = (lower + upper)/2;
+         lambda[2*i] = 2*corrx/(omega[2*i]*omega[2*i] + corrx*corrx);
+         alpha[2*i] = 1/sqrt(.5 + sin(omega[2*i])/(2*omega[2*i]));
+      }   
+   }
 
-  std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
-  std::vector<double> quadWeights = quadRule.getQuadWeights();
-  std::vector< double > basisVals(N_xi);
-  Epetra_Map EMap(N_x*N_x,0,Comm);
-  Epetra_Vector localSolution(EMap,true);
+   std::vector<std::vector<double> > productEigs(orderKL);
+   for(int i = 0; i<orderKL; i++){
+     productEigs[i] = std::vector<double>(orderKL);
+     for(int j = 0; j<orderKL; j++){
+        productEigs[i][j] = lambda[i]*lambda[j];
+     }
+   }
 
-  double globalError = 0;
-  for(int quadIdx = 0; quadIdx < quadPts.size(); quadIdx++){
-    double linfSquared = 0;
-    generateRealization(u, quadPts[quadIdx], localSolution, basis);
-    for(int ymeshIdx = 1; ymeshIdx < N_x-1; ymeshIdx++){
-      for(int xmeshIdx = 1; xmeshIdx < N_x-1; xmeshIdx++){
-        double localError = fabs(localSolution[xmeshIdx + N_x*ymeshIdx] - exact_solution(mesh[xmeshIdx],mesh[ymeshIdx],quadPts[quadIdx]));
-        linfSquared = (localError>linfSquared)?localError:linfSquared;
+   int maxx, maxy;
+   double max;
+   for(int l = 0; l<orderKL; l++){
+      max = 0;
+      maxx = 0;
+      maxy = 0;
+      for(int i = 0; i<orderKL; i++){
+         
+         for(int j = 0; j<orderKL; j++){
+            if(productEigs[i][j] > max){
+               max = productEigs[i][j];
+               maxx = i;
+               maxy = j;
+            }
+         }
       }
-    }
-    linfSquared*=linfSquared;
-    globalError = globalError + quadWeights[quadIdx]*linfSquared;
-  }
-  return globalError;
+
+      alpha_out[l] = alpha[maxx]*alpha[maxy];
+      lambda[l] = productEigs[maxx][maxy];
+      xind[l] = maxx;
+      yind[l] = maxy;
+      productEigs[maxx][maxy] = 0;
+   }  
+   
 }

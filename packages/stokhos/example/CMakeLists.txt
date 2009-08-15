@@ -18,6 +18,12 @@ IF(Stokhos_ENABLE_ML)
     SOURCES twoD_diffusion_example.cpp
     COMM serial mpi
     )
+
+  PACKAGE_ADD_EXECUTABLE(
+    sparse_grid_example
+    SOURCES twoD_diffusion_sparse_grid.cpp
+    COMM serial mpi
+    )
  ENDIF()
 
 IF(Stokhos_ENABLE_Quadrature)

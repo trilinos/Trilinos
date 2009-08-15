@@ -41,6 +41,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include <Teuchos_Time.hpp>
 
 namespace Stokhos {
     
@@ -121,6 +122,10 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    /*!
+     * \brief Returns the time spent applying this operator
+     */
+    virtual const double ApplyTime() const{return this->ApplyTimer->totalElapsedTime(false);};
   private:
     
     //! Private to prohibit copying
@@ -166,6 +171,9 @@ namespace Stokhos {
 
     //! Temporary multivector
     mutable Teuchos::RCP<Epetra_MultiVector> tmp2;
+
+    //! Operation Timer
+    Teuchos::RCP<Teuchos::Time> ApplyTimer;
 
   }; // class MatrixFreeEpetraOp
   

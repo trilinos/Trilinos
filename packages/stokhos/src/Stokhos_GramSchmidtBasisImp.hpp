@@ -213,6 +213,31 @@ getTripleProductTensor() const
 }
 
 template <typename ordinal_type, typename value_type>
+Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
+getLowOrderTripleProductTensor(ordinal_type order) const
+
+{
+  if (Cijk == Teuchos::null) {
+    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+    ordinal_type nqp = weights.size();
+    for (ordinal_type j=0; j<sz; j++) {
+      for (ordinal_type i=0; i<sz; i++) {
+    	for (ordinal_type k=0; k<order; k++) {
+	  value_type t = 0.0;
+	  for (ordinal_type l=0; l<nqp; l++)
+	    t += weights[l]*basis_values[l][i]*basis_values[l][j]*basis_values[l][k];
+	  if (std::abs(t) > sparse_tol)
+	    Cijk->add_term(i,j,k,t);
+	}
+      }
+    }
+  }
+
+  return Cijk;
+}
+
+template <typename ordinal_type, typename value_type>
 Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> >
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 getDerivTripleProductTensor() const

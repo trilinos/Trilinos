@@ -87,6 +87,10 @@ namespace Stokhos {
     std::vector< std::vector<value_type> >  quad_values;
 
   }; // class SparseGridQuadrature
+  
+  void getMyPoints( int order, int np, double p[], double x[] );
+  
+  void getMyWeights( int order, int np, double p[], double w[] );
 
 } // namespace Stokhos
 

@@ -61,8 +61,11 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 
   // Compute quad points, weights, values
   std::vector<int> rules(d);
+  
   std::vector< void (*) ( int order, int np, double p[], double x[] ) > compute1DPoints(d);
   std::vector< void (*) ( int order, int np, double p[], double w[] ) > compute1DWeights(d);
+  std::vector<int> nparams(d);
+  std::vector<double> params(d);
   for (ordinal_type i=0; i<d; i++) {
     rules[i] = coordinate_bases[i]->getRule();
     if (rules[i] == 5) {
@@ -73,13 +76,19 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
       compute1DPoints[i] = webbur::clenshaw_curtis_compute_points_np;
       compute1DWeights[i] = webbur::clenshaw_curtis_compute_weights_np;
     }
+    else if (rules[i] == 10) {
+      //coordinate_bases[i].release();
+      compute1DPoints[i] = &(Stokhos::getMyPoints);
+      compute1DWeights[i] = &(Stokhos::getMyWeights);
+      nparams[i]=1; 
+      double * pp = (double*) &(*(coordinate_bases[i]));
+      params[i] = (double) ((unsigned long int) pp);
+    }
     else if (rules[i] == 4) {
       compute1DPoints[i] = webbur::legendre_compute_points_np;
       compute1DWeights[i] = webbur::legendre_compute_weights_np;
     }
   }
-  std::vector<int> nparams(d);
-  std::vector<double> params(d);
   int num_total_pts  =
     webbur::sparse_grid_mixed_growth_size_total(d, level, &rules[0],
 						webbur::level_to_order_default);
@@ -177,6 +186,38 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
   //   std::cout << ") -- " << sgi << "\t" << exact << "\t" << error << "\n";
   // }
   // std::cout << "max error = " << max_error << std::endl;
+}
+
+void 
+Stokhos::getMyPoints( int order, int np, double p[], double x[] ){
+
+  long int pointer = p[0];
+  const OneDOrthogPolyBasis<int,double>* basis = (const OneDOrthogPolyBasis<int,double>*) pointer;
+  std::vector<double> quad_points;
+  std::vector<double> quad_weights;
+  std::vector< std::vector<double> > quad_values;
+  basis->getQuadPoints(2*order-1, quad_points, quad_weights, quad_values);
+  for(int i = 0; i<quad_points.size(); i++){
+    x[i] = quad_points[i];
+  }
+  
+}
+
+
+void 
+Stokhos::getMyWeights( int order, int np, double p[], double w[] ){
+
+  long int pointer = p[0];
+  const OneDOrthogPolyBasis<int,double>* basis = (const OneDOrthogPolyBasis<int,double>*) pointer;
+  std::vector<double> quad_points;
+  std::vector<double> quad_weights;
+  std::vector< std::vector<double> > quad_values;
+  basis->getQuadPoints(2*order-1, quad_points, quad_weights, quad_values);
+
+  for(int i = 0; i<quad_points.size(); i++){
+    w[i] = quad_weights[i];
+  }
+
 }
 
 template <typename ordinal_type, typename value_type>

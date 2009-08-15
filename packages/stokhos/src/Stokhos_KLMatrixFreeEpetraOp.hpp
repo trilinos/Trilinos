@@ -42,6 +42,7 @@
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 
+
 namespace Stokhos {
     
   /*! 
@@ -120,6 +121,7 @@ namespace Stokhos {
      * range of this matrix operator.
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
+
 
   private:
     
