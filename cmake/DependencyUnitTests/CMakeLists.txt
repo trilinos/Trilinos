@@ -4,7 +4,7 @@ INCLUDE(PackageAddAdvancedTest)
 INCLUDE(ParseVariableArguments)
 
 
-SET(PACKAGE_NAME TrilinosDep)
+SET(PACKAGE_NAME TrilinosFramework_Dep)
 
 
 FUNCTION(CREATE_DEPENCENCY_HANDLING_TEST_CASE TEST_NAME)

@@ -1,17 +1,22 @@
 
 #
+# ToDo:
+#
+#  (*) Remove every output file/directory first with --from-scrarch ...
+#  (*) Enable auto-commit with embedded email.out files at end ...
+#  (*) Make it clear that all code and tests and examples should pass before committing!
+#  (*) Turn off framework tests by default and turn them in pre-checkin testing ...
+#  (*) Turn off generation of HTML/XML files by default and turn them on in pre-checkin testing ...
+#
+
+#
 # General scripting support
 #
 # NOTE: Included first to check the version of python!
 #
 
-#
-# ToDo:
-#
-#  (*) Enable figuring out packages to enable from examining update.out
-#  (*) Enable auto-commit
-
-
+from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
+from TrilinosDependencies import defaultTrilinosDepsXmlInFile
 from GeneralScriptSupport import *
 import time
 
@@ -143,8 +148,73 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
 
   for line in cmakeOptionsFile:
     if line[0] != '#':
-      print "  Appnding: "+line
+      print "  Appnding: "+line.strip()
       cmakeOptions_inout.append(line.strip())
+
+
+reModifedFiles = re.compile(r"^M (.+)$")
+
+
+def isGlobalCmakeBuildFile(modifiedFileFullPathArray):
+  if len(modifiedFileFullPathArray)==1 and modifiedFileFullPathArray[0] == "CMakeLists.txt":
+    return True
+  if modifiedFileFullPathArray[0] == 'cmake':
+    if modifiedFileFullPathArray[1] == 'ctest':
+      return False
+    if modifiedFileFullPathArray[1] == 'DependencyUnitTests':
+      return False
+    if modifiedFileFullPathArray[1] == 'TPLs':
+      if ['FindTPLBLAS.cmake', 'FindTPLLAPACK.cmake', 'FindTPLMPI.cmake'].count(
+        modifiedFileFullPathArray[2]) == 1 \
+        :
+        return True
+      return False
+    if modifiedFileFullPathArray[-1].rfind(".cmake") != -1:
+      return True
+  return False
+
+
+def getPackageNameFromPathArray(trilinosDependencies, modifiedFileFullPathArray):
+  if modifiedFileFullPathArray[0] == "packages":
+    packageDir = modifiedFileFullPathArray[1]
+    packageStruct = trilinosDependencies.getPackageByDir(packageDir)
+    if packageStruct:
+      return packageStruct.packageName
+  return ""
+
+
+def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
+   enablePackagesList_inout )\
+  :
+
+  trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+
+  for updateLine in updateOutputStr.split('\n'):
+    
+    #print "\nupdateLine =", updateLine
+
+    reModifiedFilesMatch = reModifedFiles.match(updateLine)
+
+    if reModifiedFilesMatch:
+
+      modifedFileFullPath = reModifiedFilesMatch.group(1).strip()
+      #print "\nmodifedFileFullPath =", modifedFileFullPath
+
+      modifiedFileFullPathArray = modifedFileFullPath.split('/')
+      #print "\nmodifiedFileFullPathArray =", modifiedFileFullPathArray
+
+      if isGlobalCmakeBuildFile(modifiedFileFullPathArray):
+
+        if inOptions_inout.enableAllPackages == 'default':
+          print "\nModifed file: '"+modifedFileFullPath+"'\n" \
+            "  => Enabling all Trilinos packages!"
+          inOptions_inout.enableAllPackages = 'on'
+
+      packageName = getPackageNameFromPathArray(trilinosDependencies, modifiedFileFullPathArray)
+      if packageName and findInSequence(enablePackagesList_inout, packageName) == -1:
+        print "\nModified file: '"+modifedFileFullPath+"'\n" \
+          "  => Enabling '"+packageName+"'!"
+        enablePackagesList_inout.append(packageName)
 
 
 def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
@@ -346,6 +416,10 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   emailBody += "Do Build: " + str(inOptions.doBuild) + "\n"
   emailBody += "Do Test: " + str(inOptions.doTest) + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
+  if inOptions.extraCmakeOptions:
+    emailBody += "\nExtra CMake Options: " + inOptions.extraCmakeOptions + "\n"
+  if inOptions.ctestOptions:
+    emailBody += "\nCTest Options: " + inOptions.ctestOptions + "\n"
   emailBody += "\n"
 
   if inOptions.doTest and testOutputExists and numTotalTests:
@@ -361,9 +435,9 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   totalTime = (endingTime - startingTime) / 60.0
 
   emailBody += "\n\nFinal:\n------\n\n"
-  emailBody += "total time for "+buildDirName+" = "+str(totalTime) + " minutes"
+  emailBody += "Total time for "+buildDirName+" = "+str(totalTime) + " minutes"
 
-  print "emailBody:\n\n", emailBody
+  print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
   open(getEmailBodyFileName(),'w').write(emailBody)
 
@@ -380,7 +454,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
 
     print "Not sending email because no email addresses where given!"
 
-  # ToDo: Implement!
+  # 3) Return final result
 
   return success
 
@@ -422,7 +496,8 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     # A.1) Set the base options
   
     cmakeBaseOptions = [
-      "-DCMAKE_BUILD_TYPE:STRING="+buildType
+      "-DCMAKE_BUILD_TYPE:STRING="+buildType,
+      "-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF"
       ]
   
     if serialOrMpi:
@@ -446,25 +521,32 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     # A.2) Set the package enable options
 
     cmakePkgOptions = []
+    enablePackagesList = []
   
     if inOptions.enablePackages:
       print "\nEnabling the specified packages '"+inOptions.enablePackages+"' ...\n"
       enablePackagesList = inOptions.enablePackages.split(',')
-      for pkg in enablePackagesList:
-        cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
     else:
       print "\nDetermining the set of packages to enable by examining update.out ...\n"
-      # ToDo: Implement this!
+      updateOutputStr = open("../update.out", 'r').read()
+      extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
+
+    for pkg in enablePackagesList:
+      cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
 
     cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
   
-    if inOptions.enableAllPackages:
+    if inOptions.enableAllPackages == 'on':
       print "\nEnabling all packages on request ..."
       cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
   
     if inOptions.enableFwdPackages:
       print "\nEnabling forward packages on request ..."
-      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON")
+      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+
+    if inOptions.extraCmakeOptions:
+      print "\nAppending extra CMake options from command-line ..."
+      cmakePkgOptions.extend(inOptions.extraCmakeOptions.split(" "))
 
     print "\ncmakePkgOptions:", cmakePkgOptions
 
@@ -653,3 +735,142 @@ def checkinTest(inOptions):
     traceback.print_exc()
 
   return success
+
+
+  return (allKeywords, ' '. join(testDirs))
+
+
+#
+# Unit testing code
+# 
+
+
+import unittest
+
+
+
+class MockOptions:
+  def __init__(self):
+    self.enableAllPackages = 'default'
+
+
+trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
+
+
+class testCheckinTest(unittest.TestCase):
+
+
+  def test_isGlobalCmakeBuildFile_01(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['CMakeLists.txt'] ), True )
+
+
+  def test_isGlobalCmakeBuildFile_02(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TrilinosPackages.cmake' ] ), True )
+
+
+  def test_isGlobalCmakeBuildFile_03(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TrilinosCMakeQuickstart.txt' ] ), False )
+
+
+  def test_isGlobalCmakeBuildFile_04(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'ctest', 'experimental_build_test.cmake' ] ),
+      False )
+
+
+  def test_isGlobalCmakeBuildFile_05(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'DependencyUnitTests', 'blah' ] ),
+      False )
+
+
+  def test_isGlobalCmakeBuildFile_06(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLBLAS.cmake' ] ),
+      True )
+
+
+  def test_isGlobalCmakeBuildFile_07(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLLAPACK.cmake' ] ),
+      True )
+
+
+  def test_isGlobalCmakeBuildFile_08(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLMPI.cmake' ] ),
+      True )
+
+
+  def test_isGlobalCmakeBuildFile_09(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLDummy.cmake' ] ),
+      False )
+
+
+  def test_isGlobalCmakeBuildFile_10(self):
+    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'utils', 'SetNotFound.cmake' ] ),
+      True )
+
+
+  def test_getPackageNameFromPathArray_01(self):
+    self.assertEqual(
+      getPackageNameFromPathArray( trilinosDependencies, ['packages', 'teuchos', 'CMakeLists.txt' ] ), 'Teuchos' )
+
+
+  def test_getPackageNameFromPathArray_02(self):
+    self.assertEqual(
+      getPackageNameFromPathArray( trilinosDependencies, ['packages', 'thyra', 'src', 'blob.cpp' ] ), 'Thyra' )
+
+
+  def test_getPackageNameFromPathArray_03(self):
+    self.assertEqual(
+      getPackageNameFromPathArray( trilinosDependencies, ['packages', 'blob', 'blob' ] ), '' )
+
+
+  def test_extractPackageEnablesFromChangeStatus_1(self):
+
+    updateOutputStr = """
+? packages/tpetra/doc/html
+? packages/trilinoscouplings/doc/html
+? packages/triutils/doc/html
+? sampleScripts/checkin-test-gabriel.sh
+M cmake/TrilinosPackages.cmake
+M cmake/python/checkin-test.py
+M cmake/python/dump-cdash-deps-xml-file.py
+M packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
+"""
+
+    options = MockOptions()
+    enablePackagesList = []
+
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+      enablePackagesList)
+
+    self.assertEqual( options.enableAllPackages, 'on' )
+    self.assertEqual( enablePackagesList, ['Teuchos'] )
+
+
+  def test_extractPackageEnablesFromChangeStatus_2(self):
+
+    updateOutputStr = """
+? packages/triutils/doc/html
+M cmake/python/checkin-test.py
+M cmake/python/dump-cdash-deps-xml-file.py
+M packages/nox/src/dummy.C
+M packages/thyra/src/Thyra_ConfigDefs.hpp
+M packages/thyra/CMakeLists.txt
+"""
+
+    options = MockOptions()
+    enablePackagesList = []
+
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+      enablePackagesList)
+
+    self.assertEqual( options.enableAllPackages, 'default' )
+    self.assertEqual( enablePackagesList, ['NOX', 'Thyra'] )
+
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(testCheckinTest))
+    return suite
+
+
+if __name__ == '__main__':
+  unittest.TextTestRunner(verbosity=2).run(suite())

@@ -13,23 +13,33 @@
 MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
   
   IF (WIN32)
-    SET(Trilinos_ENABLE_UNIT_TESTS_DEFAULT OFF)
+    SET(Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS_DEFAULT OFF)
   ELSE()
-    SET(Trilinos_ENABLE_UNIT_TESTS_DEFAULT ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE})
+    SET(Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS_DEFAULT ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE})
   ENDIF()
   
   # 2008/10/17: rabartl: Above, I can not turn these tests on by default
   # with cygwin because the custom script target is not working for some
   # reason.
   
+  ADVANCED_OPTION(Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS
+    "Enable all Trilinos framework unit tests by default."
+    ${Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS_DEFAULT}
+    )
+  
   ADVANCED_OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
-    "Enable dependency unit tests."
-    ${Trilinos_ENABLE_UNIT_TESTS_DEFAULT}
+    "Enable Trilinos Framework dependency unit tests."
+    ${Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS}
     )
   
   ADVANCED_OPTION(Trilinos_ENABLE_TESTING_UNIT_TESTS
-    "Enable testing support unit tests."
-    ${Trilinos_ENABLE_UNIT_TESTS_DEFAULT}
+    "Enable Trilinos CTest testing support unit tests."
+    ${Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS}
+    )
+  
+  ADVANCED_OPTION(Trilinos_ENABLE_PYTHON_UNIT_TESTS
+    "Enable Trilinos python script unit tests."
+    ${Trilinos_ENABLE_FRAMEWORK_UNIT_TESTS}
     )
 
   # Add the directory for the unit tests

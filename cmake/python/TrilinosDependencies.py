@@ -24,18 +24,12 @@ defaultCDashDepsXmlFile = getScriptBaseDir()+"/data/CDashSubprojectDependencies.
 
 class PackageDependencies:
 
-  packageName = None
-  packageID = None
-  libRequiredDepPackages = None
-  libOptionalDepPackages = None
-  testRequiredDepPackages = None
-  testOptionalDepPackages = None
-
-  def __init__(self, packageName_in,
+  def __init__(self, packageName_in, packageDir_in,
     libRequiredDepPackages_in, libOptionalDepPackages_in,
     testRequiredDepPackages_in, testOptionalDepPackages_in
     ):
     self.packageName = packageName_in
+    self.packageDir = packageDir_in
     self.packageID = -1
     self.libRequiredDepPackages = libRequiredDepPackages_in
     self.libOptionalDepPackages = libOptionalDepPackages_in
@@ -46,6 +40,7 @@ class PackageDependencies:
     return "{\n"+\
       "  packageName="+self.packageName+",\n"+\
       "  packageID="+str(self.packageID)+",\n"+\
+      "  packageDir="+str(self.packageDir)+",\n"+\
       "  libRequiredDepPackages="+str(self.libRequiredDepPackages)+",\n"+\
       "  libOptionalDepPackages="+str(self.libOptionalDepPackages)+",\n"+\
       "  testRequiredDepPackages="+str(self.testRequiredDepPackages)+",\n"+\
@@ -137,20 +132,19 @@ class DepStats:
 class TrilinosDependencies:
 
 
-  __packagesList = None
-  __packagesDirToList = None
-
-
   def __init__(self):
     self.__packagesList = []
-    self.__packagesDirToList = {}
+    self.__packagesNameToID = {}
+    self.__packagesDirToID = {}
 
 
   def addPackageDependencies(self, packageDeps):
     packageName = packageDeps.packageName
+    packageDir = packageDeps.packageDir
     self.__packagesList.append(packageDeps)
     packageDeps.packageID = len(self.__packagesList)-1 
-    self.__packagesDirToList.update(      { packageName : packageDeps.packageID } )
+    self.__packagesNameToID.update( { packageName : packageDeps.packageID } )
+    self.__packagesDirToID.update( { packageDir : packageDeps.packageID } )
 
 
   def numPackages(self):
@@ -158,7 +152,14 @@ class TrilinosDependencies:
 
 
   def getPackageByName(self, packageName):
-    return self.__packagesList[self.__packagesDirToList[packageName]]
+    return self.__packagesList[self.__packagesNameToID[packageName]]
+
+
+  def getPackageByDir(self, packageDir):
+    packageID = self.__packagesDirToID.get(packageDir, -1)
+    if packageID >= 0:
+      return self.__packagesList[packageID]
+    return None
 
 
   def __str__(self):
@@ -488,8 +489,9 @@ def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
   for ele in packageDepXmlDom.childNodes[0].childNodes:
     if ele.nodeType == ele.ELEMENT_NODE:
       packageName = ele.getAttribute('name')
+      packageDir = ele.getAttribute('dir')
       #print "\npackageName =", packageName
-      packageDeps = PackageDependencies(packageName,
+      packageDeps = PackageDependencies(packageName, packageDir,
         getDependenciesByType(ele, "LIB_REQUIRED_DEP_PACKAGES"),
         getDependenciesByType(ele, "LIB_OPTIONAL_DEP_PACKAGES"),
         getDependenciesByType(ele, "TEST_REQUIRED_DEP_PACKAGES"),

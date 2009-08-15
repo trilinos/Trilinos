@@ -8,8 +8,8 @@
 usageHelp = r"""dump-package-deps-table.py [OPTIONS]
 
 Tool that dumps an XML file that can be read by CTest/CDash to specify the
-Trilinos pacakge dependenices in a way that is independent of Trilinos.  In
-CTest/CDash terminology, a Trilinos package is a"Subproject".
+Trilinos package dependenices in a way that is independent of Trilinos.  In
+CTest/CDash terminology, a Trilinos package is a "Subproject".
 
 By default, if you just run:
 
@@ -18,8 +18,8 @@ By default, if you just run:
 then the XML file will get written into the main Trilinos source directory
 where it can be checked in on the next checkin.
 
-You can also change what XML input file is used and wha XML file is written.
-This is maining to facilitate unit testing of this code.
+You can also change what XML input file is used and what XML file is written.
+This is maily to facilitate unit testing of this script.
 
 Have fun looking through all of the Trilinos dependencies!
 

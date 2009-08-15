@@ -10,12 +10,13 @@ SET(COMMON_SOURCES evilMain.cpp EvilBase.cpp AEvil.cpp BEvil.cpp)
 PACKAGE_ADD_EXECUTABLE(
   EvilFourFileImplicit
   SOURCES ${COMMON_SOURCES}
-  COMM serial mpi  
+  COMM serial mpi
   )
 
 PACKAGE_ADD_TEST(
   EvilFourFileImplicit
   COMM serial mpi
+  #PASS_REGULAR_EXPRESSION "blobby"
   )
 
 #

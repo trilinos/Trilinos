@@ -32,7 +32,9 @@
 #include "Thyra_VectorSpaceTesterDecl.hpp"
 #include "Thyra_TestingTools.hpp"
 
+
 namespace Thyra {
+
 
 template <class Scalar>
 VectorSpaceTester<Scalar>::VectorSpaceTester(
@@ -56,6 +58,7 @@ VectorSpaceTester<Scalar>::VectorSpaceTester(
   vectorTester_.show_all_tests(show_all_tests);
   vectorTester_.dump_all(dump_all);
 }
+
 
 template <class Scalar>
 bool VectorSpaceTester<Scalar>::check(
@@ -126,6 +129,8 @@ bool VectorSpaceTester<Scalar>::check(
 
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_VECTOR_SPACE_TESTER_HPP
