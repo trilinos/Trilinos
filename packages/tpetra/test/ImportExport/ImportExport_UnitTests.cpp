@@ -32,6 +32,8 @@ namespace {
   using std::ostream_iterator;
   using std::endl;
 
+  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
@@ -63,6 +65,11 @@ namespace {
     return rcp(new Teuchos::SerialComm<int>());
   }
 
+  Node& getDefaultNode()
+  {
+    return DefaultPlatform::getDefaultPlatform().getNode();
+  }
+
   //
   // UNIT TESTS
   // 
@@ -70,10 +77,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ImportExport, basic, Ordinal )
   {
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const int numImages = comm->getSize();
-    //const int myImageID = comm->getRank();
     // create Maps
     Map<Ordinal> source(as<Ordinal>(-1),as<Ordinal>(10),ZERO,comm),
                  target(as<Ordinal>(-1),as<Ordinal>(5) ,ZERO,comm);
@@ -100,8 +105,9 @@ namespace {
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = OrdinalTraits<Ordinal>::one();
     const Ordinal NEGONE = ZERO - ONE;
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -118,7 +124,7 @@ namespace {
     Map<Ordinal> smap(NEGONE,numLocal,indexBase,comm), 
                  tmap(NEGONE,neighbors(),indexBase,comm);
     // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
-    MV mvMine(smap,numVectors); 
+    MV mvMine(node,smap,numVectors); 
     for (int j=0; j<numVectors; ++j) {
       mvMine.replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
     }
@@ -142,25 +148,25 @@ namespace {
     //                   [ 0    n     2n    3n    4n ]
     // mvWithNeighbors = [...  ....  ....  ....  ....]
     //                   [n-1  2n-1  3n-1  4n-1  5n-1]
-    MV mvWithNeighbors(tmap,numVectors);
+    MV mvWithNeighbors(node,tmap,numVectors);
     mvWithNeighbors.doImport(mvMine,importer,REPLACE);
     if (myImageID == 0) {
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)); // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)); // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(j*numImages)+ST::one()); // neighbor
       }
     }
     else if (myImageID == numImages-1) {
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
       }
     }
     else {
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
       }
     }
     // export values, test 
@@ -169,13 +175,13 @@ namespace {
     if (myImageID == 0 || myImageID == numImages-1) {
       for (int j=0; j<numVectors; ++j) {
         // contribution from me and one neighbor: double original value
-        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
       }
     }
     else {
       for (int j=0; j<numVectors; ++j) {
         // contribution from me and two neighbors: triple original value
-        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
       }
     }
     // 
@@ -198,8 +204,9 @@ namespace {
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = OrdinalTraits<Ordinal>::one();
     const Ordinal NEGONE = ZERO - ONE;
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -216,7 +223,7 @@ namespace {
     Map<Ordinal> smap(NEGONE,numLocal,indexBase,comm), 
                  tmap(NEGONE,neighbors(),indexBase,comm);
     // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
-    MV mvMine(smap,numVectors); 
+    MV mvMine(node,smap,numVectors); 
     for (int j=0; j<numVectors; ++j) {
       mvMine.replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
     }
@@ -240,25 +247,25 @@ namespace {
     //                   [ 0    n     2n    3n    4n ]
     // mvWithNeighbors = [...  ....  ....  ....  ....]
     //                   [n-1  2n-1  3n-1  4n-1  5n-1]
-    MV mvWithNeighbors(tmap,numVectors);
+    MV mvWithNeighbors(node,tmap,numVectors);
     mvWithNeighbors.doImport(mvMine,exporter,REPLACE);
     if (myImageID == 0) {
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)); // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)); // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(j*numImages)+ST::one()); // neighbor
       }
     }
     else if (myImageID == numImages-1) {
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
       }
     }
     else {
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],1,as<Scalar>(myImageID+j*numImages));           // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors[j],2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
       }
     }
     // export values, test 
@@ -267,13 +274,13 @@ namespace {
     if (myImageID == 0 || myImageID == numImages-1) {
       for (int j=0; j<numVectors; ++j) {
         // contribution from me and one neighbor: double original value
-        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
       }
     }
     else {
       for (int j=0; j<numVectors; ++j) {
         // contribution from me and two neighbors: triple original value
-        TEST_EQUALITY(mvMine[j][0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
       }
     }
     // 

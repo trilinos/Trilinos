@@ -252,6 +252,9 @@ namespace Tpetra {
     //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
     bool isConstantStride() const;
 
+    //! Return the underlying node object.
+    Node &getNode() const;
+
     //@} 
 
     //! @name Overridden from Teuchos::Describable 

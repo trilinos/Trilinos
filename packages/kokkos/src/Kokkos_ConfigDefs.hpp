@@ -72,19 +72,6 @@
 # include <string.h>
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-# ifdef HAVE_SYS_RESOURCE_H
-#   include <sys/resource.h>
-# endif
-#else
-# ifdef HAVE_TIME_H
-#   include <time.h>
-# else
-#   include <ctime>
-# endif
-#endif
-
 #ifdef HAVE_CASSERT
 # include <cassert>
 #else

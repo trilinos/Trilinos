@@ -194,6 +194,11 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Node & MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNode() const {
+    return lclMV_.getNode();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isConstantStride() const {
     return whichVectors_.empty();
   }
@@ -673,7 +678,6 @@ namespace Tpetra {
       DMVA::Scale(lclMV_,alpha);
     }
     else {
-      TEST_FOR_EXCEPT(true);  // still untested
       KMV v(lclMV_.getNode());
       Teuchos::ArrayRCP<Scalar> vj;
       for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
@@ -731,7 +735,6 @@ namespace Tpetra {
       DMVA::Scale(lclMV_,alpha,(const KMV&)A.lclMV_);
     }
     else {
-      TEST_FOR_EXCEPT(true); // still untested
       KMV v(lclMV_.getNode()), a(lclMV_.getNode());
       ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
                       avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
@@ -768,7 +771,6 @@ namespace Tpetra {
         DMVA::Divide(lclMV_,(const KMV&)A.lclMV_);
       }
       else {
-        TEST_FOR_EXCEPT(true); // still untested
         KMV v(lclMV_.getNode()), a(lclMV_.getNode());
         ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
                         avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
@@ -810,7 +812,6 @@ namespace Tpetra {
       DMVA::Abs(lclMV_,(const KMV&)A.lclMV_);
     }
     else {
-      TEST_FOR_EXCEPT(true); // still untested
       KMV v(lclMV_.getNode()), a(lclMV_.getNode());
       ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
                       avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
@@ -851,7 +852,6 @@ namespace Tpetra {
       DMVA::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta);
     }
     else {
-      TEST_FOR_EXCEPT(true); // still untested
       KMV v(lclMV_.getNode()), a(lclMV_.getNode());
       ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
                       avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues());
@@ -895,7 +895,6 @@ namespace Tpetra {
       DMVA::GESUM(lclMV_,alpha,(const KMV&)A.lclMV_,beta,(const KMV&)B.lclMV_,gamma);
     }
     else {
-      TEST_FOR_EXCEPT(true); // still untested
       KMV v(lclMV_.getNode()), a(lclMV_.getNode()), b(lclMV_.getNode());
       ArrayRCP<Scalar> vptr = lclMV_.getValuesNonConst(),
                       avptr = arcp_const_cast<Scalar>(A.lclMV_.getValues()),
@@ -946,13 +945,13 @@ namespace Tpetra {
       TEST_FOR_EXCEPTION(source.getNumVectors() != getNumVectors(), std::runtime_error,
           "Tpetra::MultiVector::operator=(): MultiVectors must have the same number of vectors.");
       Node &node = lclMV_.getNode();
+      const Teuchos_Ordinal numVecs = getNumVectors();
       if (isConstantStride() && source.isConstantStride() && getMyLength()==getStride() && source.getMyLength()==source.getStride()) {
         // we're both packed, we can copy in one call
-        node.template copyBuffers<Scalar>(getMyLength()*getNumVectors(), source.lclMV_.getValues(), lclMV_.getValuesNonConst() );
+        node.template copyBuffers<Scalar>(getMyLength()*numVecs, source.lclMV_.getValues(), lclMV_.getValuesNonConst() );
       }
       else {
-        TEST_FOR_EXCEPT(true); // still untested
-        for (size_t j=0; j < lclMV_.getNumCols(); ++j) {
+        for (Teuchos_Ordinal j=0; j < numVecs; ++j) {
           node.template copyBuffers<Scalar>(getMyLength(), source.getSubArrayRCP(source.lclMV_.getValues(),j),  
                                                                   getSubArrayRCP(       lclMV_.getValuesNonConst(),j) );
         }
@@ -1067,8 +1066,8 @@ namespace Tpetra {
     // resulting MultiVector is constant stride only if *this is 
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
-      ArrayRCP<Scalar> subdata = ncbuf.persistingView( getStride() * colRng.lbound(),
-                                                       getStride() * (numViewVecs-1) + getMyLength() );
+      ArrayRCP<Scalar> subdata = ncbuf.persistingView( lclMV_.getStride() * colRng.lbound(),
+                                                       lclMV_.getStride() * (numViewVecs-1) + getMyLength() );
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lclMV_.getNode(),this->getMap(),
                                                                                   subdata,lclMV_.getStride(),numViewVecs) );
     }
@@ -1110,17 +1109,19 @@ namespace Tpetra {
     // resulting MultiVector is constant stride only if *this is 
     if (isConstantStride()) {
       // view goes from first entry of first vector to last entry of last vector
+      const Teuchos_Ordinal stride = lclMV_.getStride();
       ArrayRCP<Scalar> data = lclMV_.getValuesNonConst();
-      ArrayRCP<Scalar> subdata = data.persistingView( getStride() * colRng.lbound(),
-                                                      getStride() * (numViewVecs-1) + getMyLength() );
+      ArrayRCP<Scalar> subdata = data.persistingView( stride * colRng.lbound(),
+                                                      stride * (numViewVecs-1) + getMyLength() );
       return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lclMV_.getNode(),this->getMap(),
-                                                                                  subdata,getStride(),numViewVecs) );
+                                                                                  subdata,stride,numViewVecs) );
     }
     // otherwise, use a subset of this whichVectors_ to construct new multivector
     Teuchos::Array<Teuchos_Ordinal> whchvecs( whichVectors_.begin()+colRng.lbound(), whichVectors_.begin()+colRng.ubound()+1 );
+    const Teuchos_Ordinal stride = lclMV_.getStride();
     ArrayRCP<Scalar> data = lclMV_.getValuesNonConst();
     return Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(lclMV_.getNode(),this->getMap(),  
-                                                                                data,getStride(),whchvecs) );
+                                                                                data,stride,whchvecs) );
   }
 
 

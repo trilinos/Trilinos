@@ -184,10 +184,12 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, NonContigView, Ordinal, Scalar )
   {
+    if (ScalarTraits<Scalar>::isOrdinal) return;
     typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
     typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const Mag M0  = ScalarTraits<Mag>::zero();
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -199,15 +201,17 @@ namespace {
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
-    Tuple<Teuchos_Ordinal,4> inView1 = tuple<Teuchos_Ordinal>(1,4,1,2);
-    Tuple<Teuchos_Ordinal,4> exView1 = tuple<Teuchos_Ordinal>(0,3,5,6);
-    Tuple<Teuchos_Ordinal,4> inView2 = tuple<Teuchos_Ordinal>(0,2,4,6);
+    Tuple<Teuchos_Ordinal,4> inView1 = tuple<Teuchos_Ordinal>(1,4,3,2);
+    Tuple<Teuchos_Ordinal,3> exView1 = tuple<Teuchos_Ordinal>(0,5,6);
+    Tuple<Teuchos_Ordinal,4> inView2 = tuple<Teuchos_Ordinal>(6,0,4,3);
+    Tuple<Teuchos_Ordinal,4> exView2 = tuple<Teuchos_Ordinal>(1,2,5,7);
     const Teuchos_Ordinal numView = 4;
-    TEST_FOR_EXCEPT(numView != inView1.size());
-    TEST_FOR_EXCEPT(numView != inView2.size());
+    TEST_FOR_EXCEPTION(numView != inView1.size(), std::logic_error, "Someone ruined a test invariant.");
+    TEST_FOR_EXCEPTION(numView != inView1.size(), std::logic_error, "Someone ruined a test invariant.");
+    TEST_FOR_EXCEPTION(numView != inView2.size(), std::logic_error, "Someone ruined a test invariant.");
     {
       // test dot, all norms, randomize
-      MV mvOrig1(node,map,numVecs), mvOrig2(node,map,numVecs), mvWeights(node,map,numVecs);
+      MV mvOrig1(node,map,numVecs), mvOrig2(node,map,numVecs+1), mvWeights(node,map,numVecs);
       mvWeights.randomize();
       RCP<const MV> mvW1 = mvWeights.subView(tuple<Teuchos_Ordinal>(0));
       RCP<const MV> mvSubWeights = mvWeights.subView(inView1);
@@ -251,47 +255,129 @@ namespace {
       // randomize the view, compute view one-norms, test difference
       mvView2 = Teuchos::null;
       mvView1->randomize();
-      Array<Mag> nView1_after(numView);
-      mvView1->norm1(nView1_after());
+      Array<Mag> nView1_aft(numView);
+      mvView1->norm1(nView1_aft());
       for (Teuchos_Ordinal j=0; j < numView; ++j) {
-        TEST_INEQUALITY(nView1[j], nView1_after[j]);
+        TEST_INEQUALITY(nView1[j], nView1_aft[j]);
       }
       // release the view, test that viewed columns changed, others didn't
       mvView1 = Teuchos::null;
-      Array<Mag> nOrig1_after(numVecs);
-      mvOrig1.norm1(nOrig1_after());
+      Array<Mag> nOrig1_aft(numVecs);
+      mvOrig1.norm1(nOrig1_aft());
       for (Teuchos_Ordinal j=0; j < inView1.size(); ++j) {
-        TEST_INEQUALITY(nOrig1[inView1[j]], nOrig1_after[inView1[j]]);
+        TEST_INEQUALITY(nOrig1[inView1[j]], nOrig1_aft[inView1[j]]);
       }
       for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
-        TEST_FLOATING_EQUALITY(nOrig1[exView1[j]], nOrig1_after[exView1[j]], tol);
+        TEST_FLOATING_EQUALITY(nOrig1[exView1[j]], nOrig1_aft[exView1[j]], tol);
       }
     }
     {
-      // FINISH / // FINISH HERE
-      // FINISH / //
-      // FINISH / // test the following:
-      // FINISH / //   scale(alpha,A)
-      // FINISH / //   scale(alpha)
-      // FINISH / //   operator=()
-      // FINISH / //   update(alpha,A,beta)
-      // FINISH / //   update(alpha,A,beta,B,gamma)
-      // FINISH / //   reciprocal()
-      // FINISH / // use all of these to put multivector to .5
-      // FINISH / // abs() tested to conserve norm1, norm2, normInf, but moves the mean
-      // FINISH / //
-      // FINISH / // make sure that columns do not share values, so that erors in views will be noticed
-      // FINISH / //
-      // FINISH / MV mvOrigA(node,map,numVecs), mvOrigB(node,map,numVecs), mvOrigC(node,map,numVecs);
-      // FINISH / mvOrigA.randomize();
-      // FINISH / mvOrigB.randomize();
-      // FINISH / mvOrigC.randomize();
-      // FINISH / RCP<const MV> mvViewA = mvOrigA.subView(inView1);
-      // FINISH / RCP<const MV> mvViewB = mvOrigB.subView(inView1);
-      // FINISH / RCP<      MV> mvViewC = mvOrigC.subViewNonConst(inView1);
-      // FINISH / // 
-      // FINISH / Array<Mag> nrmOrigA(numVectors), nrmOrigB(numVectors), nrmOrigC(numVectors);
-      // FINISH / // HERE FINISH
+      MV mvOrigA(node,map,numVecs), mvOrigB(node,map,numVecs), mvOrigC(node,map,numVecs+1);
+      mvOrigA.randomize();
+      mvOrigB.randomize();
+      mvOrigC.randomize();
+      Array<Mag> nrmOrigA(numVecs), nrmOrigB(numVecs), nrmOrigC(numVecs+1);
+      mvOrigA.norm2(nrmOrigA());
+      mvOrigB.norm2(nrmOrigB());
+      mvOrigC.norm2(nrmOrigC());
+      RCP<MV> mvViewA = mvOrigA.subViewNonConst(inView1);
+      RCP<MV> mvViewB = mvOrigB.subViewNonConst(inView1);
+      RCP<MV> mvViewC = mvOrigC.subViewNonConst(inView2);
+      // set C = abs(A)
+      {
+        Array<Scalar> mnA_bef(inView1.size()), mnC_bef(inView1.size()),
+                      mnA_aft(inView1.size()), mnC_aft(inView1.size());
+        mvViewA->meanValue(mnA_bef());
+        mvViewC->meanValue(mnC_bef());
+        mvViewC->abs(*mvViewA);
+        mvViewA->meanValue(mnA_aft());
+        mvViewC->meanValue(mnC_aft());
+        for (int j=0; j < inView1.size(); ++j) {
+          TEST_FLOATING_EQUALITY(mnA_bef[j], mnA_aft[j], tol);
+          TEST_INEQUALITY(mnC_bef[j], mnC_aft[j]);
+        }
+      }
+      // then set A = B = C
+      // good excuse for some double views
+      // use full views of C and B for this, check means before and after
+      // to make sure that only A and B change.
+      {
+        Array<Scalar> A_bef(inView1.size()), B_bef(inView1.size()), C_bef(inView2.size());
+        mvViewA->meanValue(A_bef());
+        mvViewB->meanValue(B_bef());
+        mvViewC->meanValue(C_bef());
+        RCP<MV> doubleViewA = mvViewA->subViewNonConst(Range1D(0,inView1.size()-1));
+        RCP<MV> doubleViewB = mvViewB->subViewNonConst(Range1D(0,inView1.size()-1));
+        RCP<const MV> doubleViewC = mvViewC->subView(Range1D(0,inView1.size()-1));
+        (*doubleViewA) = (*doubleViewB) = (*doubleViewC);
+        doubleViewA = Teuchos::null;
+        doubleViewB = Teuchos::null;
+        doubleViewC = Teuchos::null;
+        Array<Scalar> A_aft(inView1.size()), B_aft(inView1.size()), C_aft(inView2.size());
+        mvViewA->meanValue(A_aft());
+        mvViewB->meanValue(B_aft());
+        mvViewC->meanValue(C_aft());
+        for (int j=0; j < inView1.size(); ++j) {
+          TEST_FLOATING_EQUALITY(C_bef[j], C_aft[j], tol);
+          TEST_FLOATING_EQUALITY(C_bef[j], B_aft[j], tol);
+          TEST_FLOATING_EQUALITY(C_bef[j], A_aft[j], tol);
+          TEST_INEQUALITY(A_bef[j], A_aft[j]);
+          TEST_INEQUALITY(B_bef[j], B_aft[j]);
+        }
+      }
+      {
+        TEST_FOR_EXCEPTION(inView1.size() != 4, std::logic_error, "Someone ruined a test invariant.");
+        Tuple<Teuchos_Ordinal,4> reorder = tuple<Teuchos_Ordinal>(3,1,0,2);
+        RCP<MV> dvA = mvViewA->subViewNonConst(reorder);
+        RCP<MV> dvB = mvViewB->subViewNonConst(reorder);
+        RCP<MV> dvC = mvViewC->subViewNonConst(reorder);
+        // C == B == A
+        //   C *= 2                ->  C == 2*A == 2*B            scale(alpha)
+        dvC->scale( as<Scalar>(2) );
+        //   A = -C + 2*A          ->  C == 2*B, A == 0           update(alpha,mv,beta)
+        dvA->update(as<Scalar>(-1),*dvC, as<Scalar>(2));
+        //   C = 2*A + 2*B - .5*C ->   C == B, A == 0,            update(alpha,mv,beta,mv,gamma)
+        dvC->update(as<Scalar>(2),*dvA, as<Scalar>(2), *dvB, as<Scalar>(-.5));
+        //   B.recip(C)           ->   B == 1, A == 0,            reciprocal(mv)
+        dvB->reciprocal(*dvC);
+        //   C = 2*B              ->   A == 0, B == 1, C == 2
+        dvC->scale(as<Mag>(2),*dvB);
+        dvA = Teuchos::null;
+        dvB = Teuchos::null;
+        dvC = Teuchos::null;
+        Array<Mag> nrmA(4), nrmB(4), nrmC(4);
+        mvViewA->norm1(nrmA()); // norm1(0)   = 0
+        mvViewB->norm1(nrmB()); // norm1(1.0) = N
+        mvViewC->norm1(nrmC()); // norm1(2.0) = 2 * N
+        const Mag  OneN = as<Mag>(mvViewA->getGlobalLength());
+        const Mag  TwoN = OneN + OneN;
+        for (int j=0; j < 4; ++j) {
+          TEST_FLOATING_EQUALITY( nrmA[j],    M0, tol );
+          TEST_FLOATING_EQUALITY( nrmB[j],  OneN, tol );
+          TEST_FLOATING_EQUALITY( nrmC[j],  TwoN, tol );
+        }
+      }
+      // done with these views; clear them, ensure that only the viewed
+      // vectors changed in the original multivectors
+      mvViewA = Teuchos::null;
+      mvViewB = Teuchos::null;
+      mvViewC = Teuchos::null;
+      Array<Mag> nrmOrigA_aft(numVecs), nrmOrigB_aft(numVecs), nrmOrigC_aft(numVecs+1);
+      mvOrigA.norm2(nrmOrigA_aft());
+      mvOrigB.norm2(nrmOrigB_aft());
+      mvOrigC.norm2(nrmOrigC_aft());
+      for (Teuchos_Ordinal j=0; j < inView1.size(); ++j) {
+        TEST_INEQUALITY(nrmOrigA[inView1[j]], nrmOrigA_aft[inView1[j]]);
+        TEST_INEQUALITY(nrmOrigB[inView1[j]], nrmOrigB_aft[inView1[j]]);
+        TEST_INEQUALITY(nrmOrigC[inView2[j]], nrmOrigC_aft[inView2[j]]);
+      }
+      for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
+        TEST_FLOATING_EQUALITY(nrmOrigA[exView1[j]], nrmOrigA_aft[exView1[j]], tol);
+        TEST_FLOATING_EQUALITY(nrmOrigB[exView1[j]], nrmOrigB_aft[exView1[j]], tol);
+      }
+      for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
+        TEST_FLOATING_EQUALITY(nrmOrigC[exView2[j]], nrmOrigC_aft[exView2[j]], tol);
+      }
     }
   }
 
@@ -723,39 +809,39 @@ namespace {
       // check that the norms are the same
       // change the view, delete it, verify that the copy doesn't change but that A does
       A.randomize();
-      Array<Mag> A_before(numVectors),
-                 A_after (numVectors),
-                 Av_before(inds1.size()),
-                 Av_after (inds1.size()),
-                 Ac_before(inds1.size()),
-                 Ac_after (inds1.size());
-      A.norm2(A_before());
+      Array<Mag> A_bef(numVectors),
+                 A_aft (numVectors),
+                 Av_bef(inds1.size()),
+                 Av_aft (inds1.size()),
+                 Ac_bef(inds1.size()),
+                 Ac_aft (inds1.size());
+      A.norm2(A_bef());
       // get view and its norms
       RCP<MV> Av = A.subViewNonConst(inds1);
-      Av->norm2(Av_before());
+      Av->norm2(Av_bef());
       // get copy and its norms
       RCP<MV> Ac = A.subCopy(inds1);
-      Ac->norm2(Ac_before());
+      Ac->norm2(Ac_bef());
       // set view to zero
       Av->putScalar(ScalarTraits<Scalar>::zero());
       // get norms of view
-      Av->norm2(Av_after());
+      Av->norm2(Av_aft());
       // free the view, copying data back to A
       Av = Teuchos::null;
       // get norms of A and copy
-      Ac->norm2(Ac_after());
-      A.norm2(A_after());
+      Ac->norm2(Ac_aft());
+      A.norm2(A_aft());
       // norms of copy and view before should match norms of A
       for (int i=0; i < inds1.size(); ++i) {
-        TEST_EQUALITY( A_before[inds1.lbound()+i], Ac_before[i] );
+        TEST_EQUALITY( A_bef[inds1.lbound()+i], Ac_bef[i] );
       }
-      TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Av_before,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Av_bef,M0);
       // norms of copy (before and after) should match
-      TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Ac_after,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Ac_aft,M0);
       // norms of view after should be zero, as should corresponding A norms
       for (int i=0; i < inds1.size(); ++i) {
-        TEST_EQUALITY_CONST( Av_after[i], M0 );
-        TEST_EQUALITY_CONST( A_after[inds1.lbound()+i], M0 );
+        TEST_EQUALITY_CONST( Av_aft[i], M0 );
+        TEST_EQUALITY_CONST( A_aft[inds1.lbound()+i], M0 );
       }
     }
     {
@@ -765,39 +851,39 @@ namespace {
       // get a subview and a subcopy of certain vectors of A
       // check that the norms are the same
       // change the view, delete it, verify that the copy doesn't change but that A does
-      Array<Mag> A_before(numVectors),
-                 A_after (numVectors),
-                 Av_before(inds.size()),
-                 Av_after (inds.size()),
-                 Ac_before(inds.size()),
-                 Ac_after (inds.size());
-      A.norm2(A_before());
+      Array<Mag> A_bef(numVectors),
+                 A_aft (numVectors),
+                 Av_bef(inds.size()),
+                 Av_aft (inds.size()),
+                 Ac_bef(inds.size()),
+                 Ac_aft (inds.size());
+      A.norm2(A_bef());
       // get view and its norms
       RCP<MV> Av = A.subViewNonConst(inds);
-      Av->norm2(Av_before());
+      Av->norm2(Av_bef());
       // get copy and its norms
       RCP<MV> Ac = A.subCopy(inds);
-      Ac->norm2(Ac_before());
+      Ac->norm2(Ac_bef());
       // set view to zero
       Av->putScalar(ScalarTraits<Scalar>::zero());
       // get norms of view
-      Av->norm2(Av_after());
+      Av->norm2(Av_aft());
       // free the view, copying data back to A
       Av = Teuchos::null;
       // get norms of A and copy
-      Ac->norm2(Ac_after());
-      A.norm2(A_after());
+      Ac->norm2(Ac_aft());
+      A.norm2(A_aft());
       // norms of copy and view before should match norms of A
       for (int i=0; i < inds.size(); ++i) {
-        TEST_EQUALITY( A_before[inds[i]], Ac_before[i] );
+        TEST_EQUALITY( A_bef[inds[i]], Ac_bef[i] );
       }
-      TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Av_before,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Av_bef,M0);
       // norms of copy (before and after) should match
-      TEST_COMPARE_FLOATING_ARRAYS(Ac_before,Ac_after,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Ac_aft,M0);
       // norms of view after should be zero, as should corresponding A norms
       for (int i=0; i < inds.size(); ++i) {
-        TEST_EQUALITY_CONST( Av_after[i], M0 );
-        TEST_EQUALITY_CONST( A_after[inds[i]], M0 );
+        TEST_EQUALITY_CONST( Av_aft[i], M0 );
+        TEST_EQUALITY_CONST( A_aft[inds[i]], M0 );
       }
     }
     {
@@ -1082,9 +1168,9 @@ namespace {
     }
     // check that A wasn't modified
     {
-      Array<Mag> Anrms_after(numVectors);
-      A.norm2(Anrms_after());
-      TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_after(),M0);
+      Array<Mag> Anrms_aft(numVectors);
+      A.norm2(Anrms_aft());
+      TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_aft(),M0);
     }
     // check that C.Scale(A,2.0) == B
     {
@@ -1235,14 +1321,14 @@ namespace {
       mvcopy.normInf(ncopy());
       TEST_COMPARE_FLOATING_ARRAYS(ncopy,nsub,M0);
       // reset both the view and the copy of the view, ensure that they are independent
-      Teuchos::Array<Mag> nsub_after(inds.size()), ones(inds.size(),as<Mag>(1));
-      Teuchos::Array<Mag> ncopy_after(inds.size()), twos(inds.size(),as<Mag>(2));
+      Teuchos::Array<Mag> nsub_aft(inds.size()), ones(inds.size(),as<Mag>(1));
+      Teuchos::Array<Mag> ncopy_aft(inds.size()), twos(inds.size(),as<Mag>(2));
       mvview->putScalar(as<Scalar>(1));
       mvcopy.putScalar(as<Scalar>(2));
-      mvview->normInf(nsub_after());
-      mvcopy.normInf(ncopy_after());
-      TEST_COMPARE_FLOATING_ARRAYS(nsub_after,ones,M0);
-      TEST_COMPARE_FLOATING_ARRAYS(ncopy_after,twos,M0);
+      mvview->normInf(nsub_aft());
+      mvcopy.normInf(ncopy_aft());
+      TEST_COMPARE_FLOATING_ARRAYS(nsub_aft,ones,M0);
+      TEST_COMPARE_FLOATING_ARRAYS(ncopy_aft,twos,M0);
     }
     {
       // create random MV
@@ -1755,7 +1841,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \

@@ -107,6 +107,16 @@ namespace Kokkos {
   };
 
   template <class Scalar>
+  struct AbsOp {
+    const Scalar *y;
+    Scalar *x;
+    inline KERNEL_PREFIX void execute(size_t i) const
+    {
+      x[i] = Teuchos::ScalarTraits<Scalar>::magnitude(y[i]);
+    }
+  };
+
+  template <class Scalar>
   struct RecipScaleOp {
     const Scalar *scale;
     Scalar *x;
@@ -426,7 +436,7 @@ namespace Kokkos {
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Assign(A,B): A and B must have the same dimensions.");
         if (nC*nR == 0) return;
         Node &node = A.getNode();
         Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
@@ -522,7 +532,7 @@ namespace Kokkos {
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(B,alpha,A,beta): A and B must have the same dimensions.");
         Node &node = B.getNode();
         Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
         Teuchos::ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
@@ -560,7 +570,7 @@ namespace Kokkos {
         const size_t Bstride = B.getStride();
         const size_t Cstride = C.getStride();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
         Node &node = B.getNode();
         Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(),
                                         Bdata = B.getValues();
@@ -855,8 +865,41 @@ namespace Kokkos {
         mvdata = Teuchos::null;
       }
 
-      inline static void Abs(MultiVector<Scalar,Node> &B, const MultiVector<Scalar,Node> &A) {
-        TEST_FOR_EXCEPT(true);
+      inline static void Abs(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
+        const size_t nR = A.getNumRows();
+        const size_t nC = A.getNumCols();
+        const size_t Astride = A.getStride();
+        const size_t Bstride = B.getStride();
+        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Abs(A,B): A and B must have the same dimensions.");
+        if (nC*nR == 0) return;
+        Node &node = A.getNode();
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+        Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addNonConstBuffer<Scalar>(Adata);
+        rbh.end();
+        // prepare op
+        AbsOp<Scalar> wdp;
+        if (Astride == nR && Bstride == nR) {
+          // one kernel invocation for whole multivector assignment
+          wdp.x = Adata(0,nR*nC).getRawPtr();
+          wdp.y = Bdata(0,nR*nC).getRawPtr();
+          node.template parallel_for<AbsOp<Scalar> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (size_t j=0; j<nC; ++j) {
+            wdp.x = Adata(0,nR).getRawPtr();
+            wdp.y = Bdata(0,nR).getRawPtr();
+            node.template parallel_for<AbsOp<Scalar> >(0,nR,wdp);
+            Adata += Astride;
+            Bdata += Bstride;
+          }
+        }
       }
 
       inline static void Scale(MultiVector<Scalar,Node> &B, Scalar alpha, const MultiVector<Scalar,Node> &A) {
@@ -865,7 +908,7 @@ namespace Kokkos {
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Scale(B,alpha,A): A and B must have the same dimensions.");
         Node &node = B.getNode();
         Teuchos::ArrayRCP<const Scalar> Adata = A.getValues();
         Teuchos::ArrayRCP<Scalar>       Bdata = B.getValuesNonConst();
