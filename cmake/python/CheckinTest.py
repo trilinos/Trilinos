@@ -2,9 +2,8 @@
 #
 # ToDo:
 #
-#  (*) Remove every output file/directory first with --from-scrarch ...
 #  (*) Enable auto-commit with embedded email.out files at end ...
-#  (*) Make it clear that all code and tests and examples should pass before committing!
+#  (*) Add option --disable-packages to make --extra-cmake-options less necessary ...
 #  (*) Turn off framework tests by default and turn them in pre-checkin testing ...
 #  (*) Turn off generation of HTML/XML files by default and turn them on in pre-checkin testing ...
 #
@@ -25,8 +24,12 @@ def getCommonConfigFileName():
   return "COMMON.config"
 
 
+def getTestCaseNamee(serialOrMpi, buildType):
+  return serialOrMpi + "_" + buildType
+
+
 def getBuildSpecificConfigFileName(serialOrMpi, buildType):
-  return serialOrMpi + "_" + buildType + ".config"
+  return getTestCaseNamee(serialOrMpi, buildType) + ".config"
 
 
 def getUpdateOutputFileName():
@@ -65,9 +68,37 @@ def getEmailBodyFileName():
   return "email.out"
 
 
+def getEmailSuccessFileName():
+  return "email.success"
+
+
+def getSummaryCommitEmailBodyFileName():
+  return "summaryCommitEmailBody.out"
+
+
+def getHostname():
+  return getCmndOutput("hostname", True)
+
+
 def getEmailAddressesSpaceString(emailAddressesCommasStr):
   emailAddressesList = emailAddressesCommasStr.split(',')
   return ' '.join(emailAddressesList)
+
+
+def performAnyActions(inOptions):
+  if inOptions.doUpdate or inOptions.doConfigure or inOptions.doBuild \
+    or inOptions.doTest or inOptions.doAll \
+    :
+    return True
+  return False
+
+
+def doGenerateOutputFiles(inOptions):
+  return performAnyActions(inOptions)
+
+
+def doRemoveOutputFiles(inOptions):
+  return performAnyActions(inOptions)
 
 
 def writeDefaultCommonConfigFile():
@@ -184,7 +215,7 @@ def getPackageNameFromPathArray(trilinosDependencies, modifiedFileFullPathArray)
 
 
 def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
-   enablePackagesList_inout )\
+  enablePackagesList_inout ) \
   :
 
   trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
@@ -267,8 +298,11 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
     if os.path.exists(getConfigureSuccessFileName()):
       print "\nThe configure passed!\n"
       configurePassed = True
-    else:
+    elif configureOutputExists:
       print "\nThe configure FAILED!\n"
+      configurePassed = False
+    else:
+      print "\nThe configure was never attempted!\n"
       configurePassed = False
 
   else:
@@ -288,8 +322,11 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
     if os.path.exists(getBuildSuccessFileName()):
       print "\nThe build passed!\n"
       buildPassed = True
+    elif buildOutputExists:
+      print "\nThe build FAILED!\n"
+      buildPassed = False
     else:
-      print "\nThe configure FAILED!\n"
+      print "\nThe build was never attempted!\n"
       buildPassed = False
 
   else:
@@ -307,13 +344,13 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
       testOutputExists = True
 
     if os.path.exists(getTestSuccessFileName()):
-
       print "\nAll of the tests ran passed!\n"
       testsPassed = True
-
-    else:
-
+    elif testOutputExists:
       print "\nAt least one of the tests ran FAILED!\n"
+      testsPassed = False
+    else:
+      print "\nThe tests when never even run!\n"
       testsPassed = False
 
     if testOutputExists:
@@ -366,7 +403,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
       overallPassed = True
       selectedFinalStatus = True
     elif buildOutputExists:
-      subjectLine += ": build FAILED"
+      subjectLine += ": build failed"
       overallPassed = False
       selectedFinalStatus = True
 
@@ -376,7 +413,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
       overallPassed = True
       selectedFinalStatus = True
     elif configureOutputExists:
-      subjectLine += ": configure FAILED"
+      subjectLine += ": configure failed"
       overallPassed = False
       selectedFinalStatus = True
       selectedFinalStatus = True
@@ -408,7 +445,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   emailBody = subjectLine + "\n\n"
 
   emailBody += "Enabled Packages: " + ', '.join(enabledPackagesList) + "\n"
-  emailBody += "Hostname: " + getCmndOutput("hostname", True) + "\n"
+  emailBody += "Hostname: " + getHostname() + "\n"
   emailBody += "Trilinos Source Dir: " + trilinosSrcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
   emailBody += "Do Update: " + str(inOptions.doUpdate) + "\n"
@@ -441,6 +478,9 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
 
   open(getEmailBodyFileName(),'w').write(emailBody)
 
+  if overallPassed:
+    echoRunSysCmnd("touch "+getEmailSuccessFileName())
+
   print ""
   print "3) Send the email message ..."
   print ""
@@ -452,18 +492,43 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
 
   else:
 
-    print "Not sending email because no email addresses where given!"
+    print "Not sending email because no email addresses were given!"
 
   # 3) Return final result
 
   return success
 
 
+def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
+  summaryEmailSectionStr = ""
+  if doTestCaseBool:
+    summaryEmailSectionStr += \
+      "\n"+testCaseName+" Results:\n" \
+      "------------------------\n" \
+      "\n"
+    testCaseEmailStrArray = open(testCaseName+"/"+getEmailBodyFileName(), 'r').readlines()
+    for line in testCaseEmailStrArray:
+      summaryEmailSectionStr += "  " + line
+    summaryEmailSectionStr += "\n"
+  return summaryEmailSectionStr
+
+
+def getSummaryEmailSectionStr(inOptions):
+  summaryEmailSectionStr = \
+    "\nSummary of tests performed:\n" \
+    "--------------------------------\n" \
+    "\n"
+  print summaryEmailSectionStr
+  summaryEmailSectionStr += \
+    getTestCaseEmailSummary(inOptions.withMpiDebug, "MPI_DEBUG")
+  summaryEmailSectionStr += \
+    getTestCaseEmailSummary(inOptions.withSerialRelease, "SERIAL_RELEASE")
+  return summaryEmailSectionStr
+
+  
 def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions):
 
-  print "\n***"
-  print "*** Doing build and test of "+serialOrMpi+" "+buildType+" ..."
-  print "***\n"
+  success = True
 
   startingTime = time.time()
 
@@ -483,10 +548,6 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
 
   echoChDir(absBuildDir)
 
-  removeIfExists(getConfigureSuccessFileName())
-  removeIfExists(getBuildSuccessFileName())
-  removeIfExists(getTestSuccessFileName())
-
   try:
 
     print ""
@@ -497,7 +558,6 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   
     cmakeBaseOptions = [
       "-DCMAKE_BUILD_TYPE:STRING="+buildType,
-      "-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF"
       ]
   
     if serialOrMpi:
@@ -528,8 +588,12 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       enablePackagesList = inOptions.enablePackages.split(',')
     else:
       print "\nDetermining the set of packages to enable by examining update.out ...\n"
-      updateOutputStr = open("../update.out", 'r').read()
-      extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
+      updateOutFileName = "../"+getUpdateOutputFileName()
+      if os.path.exists(updateOutFileName):
+        updateOutputStr = open(updateOutFileName, 'r').read()
+        extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
+      else:
+        print "\nThe file "+updateOutFileName+" does not exist!\n"
 
     for pkg in enablePackagesList:
       cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
@@ -544,10 +608,6 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       print "\nEnabling forward packages on request ..."
       cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
 
-    if inOptions.extraCmakeOptions:
-      print "\nAppending extra CMake options from command-line ..."
-      cmakePkgOptions.extend(inOptions.extraCmakeOptions.split(" "))
-
     print "\ncmakePkgOptions:", cmakePkgOptions
 
     # A.3) Set the combined options
@@ -556,21 +616,25 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   
     print "\ncmakeOptions =", cmakeOptions
   
-    print ""
-    print "B) Do the configuration with CMake ..."
-    print ""
-  
     print "Creating base configure file do-configure.base ..."
     createConfigureFile(cmakeBaseOptions, "cmake", trilinosSrcDir, "do-configure.base")
   
     print "Creating package-enabled configure file do-configure ..."
     createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
   
+    print ""
+    print "B) Do the configuration with CMake ..."
+    print ""
+  
     if inOptions.doConfigure:
   
       removeIfExists("CMakeCache.txt")
-  
-      echoRunSysCmnd("./do-configure",
+
+      cmnd = "./do-configure"
+      if inOptions.extraCmakeOptions:
+        cmnd += " " + inOptions.extraCmakeOptions
+
+      echoRunSysCmnd(cmnd,
         outFile=getConfigureOutputFileName(),
         timeCmnd=True
         )
@@ -625,16 +689,47 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
 
   except Exception, e:
 
+    success = False
+
     traceback.print_exc()
 
   print ""
   print "E) Analyze the overall results and send email notification ..."
   print ""
 
-  success = analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
-    enablePackagesList, cmakeOptions, startingTime)
+  if performAnyActions(inOptions):
+
+    result = analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
+      enablePackagesList, cmakeOptions, startingTime)
+    if not result: succcess = False
+
+  else:
+
+    print "No actions performed, nothing to analyze!"
 
   return success
+
+
+def cleanTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
+  serialOrMpi, buildType ) \
+  :
+  buildDirName = serialOrMpi+"_"+buildType
+  if runTestCaseBool and doRemoveOutputFiles(inOptions) \
+    and os.path.exists(buildDirName) \
+    :
+    echoChDir(buildDirName)
+    if inOptions.doConfigure:
+      removeIfExists(getConfigureOutputFileName())
+      removeIfExists(getConfigureSuccessFileName())
+    if inOptions.doConfigure or inOptions.doBuild:
+      removeIfExists(getBuildOutputFileName())
+      removeIfExists(getBuildSuccessFileName())
+    if inOptions.doConfigure or inOptions.doBuild or inOptions.doTest:
+      removeIfExists(getTestOutputFileName())
+      removeIfExists(getTestSuccessFileName())
+    removeIfExists(getEmailBodyFileName())
+    removeIfExists(getEmailSuccessFileName())
+    echoChDir("..")
 
 
 def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buildType,
@@ -642,15 +737,20 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
   :
 
   success = True
+
+  print "\n***"
+  print "*** Doing build and test of "+serialOrMpi+" "+buildType+" ..."
+  print "***\n"
   
   if runTestCaseBool:
 
     try:
-      writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType)
       echoChDir(baseTestDir)
+      writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType)
       result = runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions)
       if not result: success = False
     except Exception, e:
+      success = False
       traceback.print_exc()
 
   else:
@@ -662,9 +762,9 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
 
 def checkinTest(inOptions):
 
-  print "\n***"
-  print "*** Performing pre-checkin testing of Trilinos! ..."
-  print "***"
+  print "\n**********************************************"
+  print "*** Performing checkin testing of Trilinos ***"
+  print "**********************************************"
 
   scriptsDir = getScriptBaseDir()
   #print "\nscriptsDir =", scriptsDir
@@ -675,9 +775,30 @@ def checkinTest(inOptions):
   baseTestDir = os.getcwd()
   print "\nbaseTestDir =", baseTestDir
 
+  if inOptions.doAll:
+    inOptions.doUpdate = True
+    inOptions.doConfigure = True
+    inOptions.doBuild = True
+    inOptions.doTest = True
+
   success = True
 
   try:
+
+    print "\n***"
+    print "*** Clean old output files .."
+    print "***"
+
+    removeIfExists(getSummaryCommitEmailBodyFileName())
+
+    if doRemoveOutputFiles(inOptions):
+      removeIfExists(getUpdateOutputFileName())
+
+    cleanTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
+      "MPI", "DEBUG" )
+
+    cleanTestCaseOutputFiles(inOptions.withSerialRelease, inOptions, baseTestDir,
+      "SERIAL", "RELEASE" )
 
     print "\n***"
     print "*** Update the Trilinos sources ..."
@@ -686,6 +807,7 @@ def checkinTest(inOptions):
     if inOptions.doUpdate:
   
       echoChDir(baseTestDir)
+      removeIfExists(getUpdateOutputFileName())
       echoRunSysCmnd(inOptions.updateCommand,
         workingDir=trilinosSrcDir,
         outFile=os.path.join(baseTestDir, "update.out"),
@@ -695,6 +817,8 @@ def checkinTest(inOptions):
     else:
   
       print "\nSkipping update on request!\n"
+
+    echoChDir(baseTestDir)
 
     writeDefaultCommonConfigFile()
 
@@ -716,22 +840,71 @@ def checkinTest(inOptions):
       )
     if not result: success = False
 
+    print "\n***"
+    print "*** Consider overall commit readiness ..."
+    print "***"
+
+    echoChDir(baseTestDir)
+
+    commitOkay = True
+
+    if inOptions.withMpiDebug and not os.path.exists("MPI_DEBUG/"+getEmailSuccessFileName()):
+      print "\nMPI_DEBUG failed since MPI_DEBUG/"+getEmailSuccessFileName()+" is missing!"
+      commitOkay = False
+
+    if inOptions.withSerialRelease and not os.path.exists("SERIAL_RELEASE/"+getEmailSuccessFileName()):
+      print "\nSERIAL_RELEASE failed since SERIAL_RELEASE/"+getEmailSuccessFileName()+" is missing!"
+      commitOkay = False
+
+    if commitOkay:
+      print "\nAll actions performed passed!\n\n" \
+        "  => A COMMIT IS OKAY TO BE PERFORMED!"
+    else:
+      print "\nAt least one of the options (update, configure, built, test) failed!\n\n" \
+        "  => A COMMIT IS *NOT* READY TO BE PERFORMED!"
+
+    summaryCommitEmailBodyFileName = getSummaryCommitEmailBodyFileName()
+
     if inOptions.doCommit:
 
-      if inOptions.doUpdate and inOptions.doConfigure and inOptions.doBuild \
-        and inOptions.doTest \
-        :
+      print "\nToDo: Do the commit!"
 
-        print "\nToDo: Perform the commit if everything passed!\n"
+    else:
+
+      print "\nNot doing the commit but sending an email about the commit status ..."
+
+      if inOptions.sendEmailTo:
+
+        if commitOkay:
+          subjectLine = "READY TO COMMIT"
+        else:
+          subjectLine = "NOT READY TO COMMIT"
+        subjectLine += ": Trilinos: "+getHostname()
+  
+        emailBodyStr = subjectLine + "\n\n"
+        emailBodyStr += getSummaryEmailSectionStr(inOptions)
+
+        print "\nEmail being sent:\n-----------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
+
+        open(summaryCommitEmailBodyFileName, 'w').write(emailBodyStr)
+
+        emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
+        echoRunSysCmnd("sleep 2s && mailx -s \""+subjectLine+"\" "+emailAddresses+" < "+summaryCommitEmailBodyFileName)
 
       else:
 
-        print "\nRefusing to do a commit since --do-update --do-configure" \
-          " --do-build and --do-test are not specified!"
+        print "\nNot sending email because --send-email-to is empty!"
+  
+    if not performAnyActions(inOptions):
 
-        success = false
-
+      print "\n***"
+      print "*** WARNING: No actions where performed! Specify --do-all to perform full test!"
+      print "***\n"
+  
   except Exception, e:
+
+    success = False
+
     traceback.print_exc()
 
   return success

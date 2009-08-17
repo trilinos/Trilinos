@@ -26,6 +26,10 @@ In order to do a solid checkin, do the following:
   NOTE: If you see any files/directories that you need to add in '?' lines,
   then please do a 'cvs add' on these first.
 
+  NOTE: TRILINOS_HOME is just a mock variable here. You can of course just
+  replace $TRILINOS_HOME with the absoute or relative path to the base
+  Trilinos source directory.
+
 2) Create a commit log file in the main source directory:
 
   $ cd $TRILINOS_HOME
@@ -34,13 +38,13 @@ In order to do a solid checkin, do the following:
   NOTE: Fill out this checkin message listing what you have changed.  Please
   use the Trilinos template for this file.
 
-3) Do the checkin test and commit with:
+3) Do the checkin test (and commit) with:
 
   $ cd SOME_BASE_DIR
-  $ mkdir PRECHECKIN
-  $ cd PRECHECKIN
+  $ mkdir CHECKIN
+  $ cd CHECKIN
   $ $TRILINOS_HOME/cmake/python/checkin-test.py \
-      --do-commit --commit-msg-header-file=checkin_message
+      --do-all --commit --commit-msg-header-file=checkin_message
 
   NOTE: The above will automatically enable the correct packages and then
   build the code, run the tests, send you emails about what happened, and then
@@ -55,8 +59,10 @@ In order to do a solid checkin, do the following:
 
   NOTE: You can actually finish this commit message file while the
   checkin-test.py script is running.  Just make sure you finish it in time or
-  don't pass in --do-commit and do the commit manually later (or run
-  --do-commit to append the results to the checkin message).
+  don't pass in --commit and do the commit manually later (or run
+  --commit to append the results to the checkin message).
+
+  NOTE: You can do the commit in a second step with a follow-up --commit.
 
   NOTE: For more details on using this script, see below.
 
@@ -75,7 +81,7 @@ SERIAL_RELEASE build to be run as well.
 The following steps are performed by this script:
 
 1) Do a CVS update of the code (and detect the files that have changed
-locally).  (if --do-update is set.)
+locally).  (if --update is set.)
 
 2) Select the list of packages to enable forward based on the directories
 where there are changed files (or from a list passed in by the user).  NOTE:
@@ -85,28 +91,28 @@ This can be overridden with the --enable-packages option.
 
   3.a) Configure build directory in a standard way for all of the packages
   that have changed and all of the packages that depend on these packages
-  forward.  Again, this behavior can be modified.  (if --do-configure is set.)
+  forward.  Again, this behavior can be modified.  (if --configure is set.)
   
-  3.b) Build all configured code with 'make' (with -jN).  (if --do-build is
+  3.b) Build all configured code with 'make' (with -jN).  (if --build is
   set.)
   
-  3.c) Run all tests for enabled packages.  (if --do-test is set.)
+  3.c) Run all tests for enabled packages.  (if --test is set.)
   
   3.d) Analyze the results of the CVS update, configure, build, and tests and
   send email about results.  (emails only sent out if --send-emails-to is not
   set to ''.)
 
-4) Commit the code given a commit message.  (if --do-commit is set.)
+4) Commit the code given a commit message.  (if --commit is set.)
 
 The recommended way to use this script is to create a new base directory apart
 from your standard build directories such as:
 
   $ cd SOME_BASE_DIR
-  $ mkdir PRECHECKIN
+  $ mkdir CHECKIN
 
 The most basic way to do the checkin test is:
 
-  $ cd SOME_BASE_DIR/PRECHECKIN
+  $ cd SOME_BASE_DIR/CHECKIN
   $ $TRILINOS_HOME/cmake/python/checkin-test.py
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
@@ -114,9 +120,9 @@ LAPACK) can be found automatically, then that is all you will need to do.
 However, if the setup can not be determined automatically, then you can append
 a set of CMake variables that will get read in the files:
 
-  SOME_BASE_DIR/PRECHECKIN/SERIAL_RELEASE.config
-  SOME_BASE_DIR/PRECHECKIN/MPI_DEBUG.config
-  SOME_BASE_DIR/PRECHECKIN/COMMON.config
+  SOME_BASE_DIR/CHECKIN/SERIAL_RELEASE.config
+  SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
+  SOME_BASE_DIR/CHECKIN/COMMON.config
 
 Actually, skeletons of these files will automatically be written out with all
 of the CMake cache variables commented out.  Any CMake cache variables in
@@ -147,22 +153,15 @@ Common use cases for using this script are as follows:
 
 (*) Basic full testing without commit:
 
-   [no options]
+   --do-all
 
 (*) Basic full testing with commit:
 
-   --do-commit --commit-msg-header-file=<SOME_FILE_NAME>
-
-(*) The minimum acceptable testing where code has been changed:
-
-  --no-enable-fwd-packages --without-serial-release
-
-  NOTE: This will do only an MPI DEBUG build and will only build and run the
-  tests for the packages that have been changed.
+   --do-all --commit --commit-msg-header-file=<SOME_FILE_NAME>
 
 (*) Test only the packages modified and not forward dependent packages:
 
-  --no-enable-fwd-packages
+  --do-all --no-enable-fwd-packages
 
   NOTE: This is a safe thing to do when only tests in the given modified
   packages are changed and not library code.  This can speed up the testing
@@ -171,20 +170,27 @@ Common use cases for using this script are as follows:
   code has changed because every Trilinos package does not follow a set
   pattern.
 
+(*) MPI DEBUG only (run at least this if nothing else):
+
+  --do-all --without-serial-release
+
+(*) The minimum acceptable testing where code has been changed:
+
+  --do-all --no-enable-fwd-packages --without-serial-release
+
+  NOTE: This will do only an MPI DEBUG build and will only build and run the
+  tests for the packages that have been changed.
+
 (*) Test only a specific set of packages and no others:
 
-  --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> --no-enable-fwd-packages \
-  --enable-all-packages=off
-
+  --do-all --enable-all-packages=off \
+  --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> --no-enable-fwd-packages
+  
   NOTE: This will override all logic in the script about which packages will
   be enabled and only the given packages will be enabled.
 
   NOTE: Using this option is greatly preferred to not running this script at
   all!
-
-(*) MPI DEBUG only (run at least this if nothing else):
-
-  --without-serial-release
 
 (*) See the default option values without doing anything:
 
@@ -198,24 +204,11 @@ from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
 
-clp.add_option(
-  "--do-update", dest="doUpdate", action="store_true",
-  help="Do the CVS update of Trilinos." )
-clp.add_option(
-  "--skip-update", dest="doUpdate", action="store_false",
-  help="Skip the update of Trilinos.", default=True )
 
 clp.add_option(
   "--update-command", dest="updateCommand", type="string",
   default="cvs -q update -dP",
   help="Command used to update the working copy of Trilinos." )
-
-clp.add_option(
-  "--do-configure", dest="doConfigure", action="store_true",
-  help="Do the configure of Trilinos." )
-clp.add_option(
-  "--skip-configure", dest="doConfigure", action="store_false",
-  help="Skip the configure of Trilinos.", default=True )
 
 clp.add_option(
   "--enable-packages", dest="enablePackages", type="string", default="",
@@ -249,22 +242,8 @@ clp.add_option(
   +" testing) then it is okay to use this to disable some packages.")
 
 clp.add_option(
-  "--do-build", dest="doBuild", action="store_true",
-  help="Do the build of Trilinos." )
-clp.add_option(
-  "--skip-build", dest="doBuild", action="store_false",
-  help="Skip the build of Trilinos.", default=True )
-
-clp.add_option(
   "--make-options", dest="makeOptions", type="string", default="",
   help="The options to pass to make (e.g. -j4)." )
-
-clp.add_option(
-  "--do-test", dest="doTest", action="store_true",
-  help="Do the running of the enabled Trilinos tests." )
-clp.add_option(
-  "--skip-test", dest="doTest", action="store_false",
-  help="Skip the running the enabled Trilinos tests.", default=True )
 
 clp.add_option(
   "--ctest-options", dest="ctestOptions", type="string", default="",
@@ -279,7 +258,7 @@ clp.add_option(
   default=False )
 
 clp.add_option(
-  "--do-commit", dest="doCommit", action="store_true",
+  "--commit", dest="doCommit", action="store_true",
   help="Do the commit at the end if everything works out." \
   + "  Note: You must have SSH public/private keys set up with" \
   + " software.sandia.gov for the commit to happen without having to" \
@@ -290,7 +269,7 @@ clp.add_option(
 
 clp.add_option(
   "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
-  help="Custom commit message file if commiting with --do-commit." \
+  help="Custom commit message file if commiting with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
   +" base source directory for Trilinos." )
 
@@ -323,6 +302,27 @@ clp.add_option(
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
+  "--update", dest="doUpdate", action="store_true",
+  help="Do the CVS update of Trilinos.", default=False )
+
+clp.add_option(
+  "--configure", dest="doConfigure", action="store_true",
+  help="Do the configure of Trilinos.", default=False )
+
+clp.add_option(
+  "--build", dest="doBuild", action="store_true",
+  help="Do the build of Trilinos.", default=False )
+
+clp.add_option(
+  "--test", dest="doTest", action="store_true",
+  help="Do the running of the enabled Trilinos tests.", default=False )
+
+clp.add_option(
+  "--do-all", dest="doAll", action="store_true",
+  help="Do update, configure, build, and test (same as --update --configure" \
+  +" --build --test)", default=False )
+
+clp.add_option(
   "--show-defaults", dest="showDefaults", action="store_true",
   help="Show the default option values and do nothing at all.",
   default=False )
@@ -340,15 +340,7 @@ clp.add_option(
 print ""
 print "**************************************************************************"
 print "Script: checkin-test.py \\"
-if options.doUpdate:
-  print "  --do-update \\"
-else:
-  print "  --skip-update \\"
 print "  --update-command='"+options.updateCommand+"' \\"
-if options.doConfigure:
-  print "  --do-configure \\"
-else:
-  print "  --skip-configure \\"
 print "  --enable-packages='"+options.enablePackages+"' \\"
 print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
 if options.enableFwdPackages:
@@ -356,24 +348,12 @@ if options.enableFwdPackages:
 else:
   print "  --no-enable-fwd-packages \\"
 print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
-if options.doBuild:
-  print "  --do-build \\"
-else:
-  print "  --skip-build \\"
 print "  --make-options='"+options.makeOptions+"' \\"
-if options.doTest:
-  print "  --do-test \\"
-else:
-  print "  --skip-test \\"
 print "  --ctest-options='"+options.ctestOptions+"' \\"
 if options.showAllTests:
   print "  --show-all-tests \\"
 else:
   print "  --no-show-all-tests \\"
-if options.doCommit:
-  print "  --do-commit \\"
-else:
-  print "  --skip-commit \\"
 print "  --commit-msg-header-file='"+options.commitMsgHeaderFile+"' \\"
 if options.withMpiDebug:
   print "  --with-mpi-debug \\"
@@ -388,6 +368,18 @@ if options.rebuild:
 else:
   print "  --from-scratch \\"
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
+if options.doUpdate:
+  print "  --update \\"
+if options.doConfigure:
+  print "  --configure \\"
+if options.doBuild:
+  print "  --build \\"
+if options.doTest:
+  print "  --test \\"
+if options.doAll:
+  print "  --do-all \\"
+if options.doCommit:
+  print "  --commit \\"
 
 #
 # Execute

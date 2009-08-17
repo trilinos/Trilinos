@@ -28,7 +28,10 @@ cmndLineArgs = []
 cmndLineArgs.extend(sys.argv)
 
 # See if the help option is set or not
-helpOpt = len( set(cmndLineArgs) & set( ("--help", "-h") ) ) > 0
+helpOpt = len( set(cmndLineArgs) & set(("--help", "-h")) ) > 0
+
+# See if --show-defaults was set or not
+showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) > 0
 
 #
 # Forward the options but tee the output
@@ -36,7 +39,7 @@ helpOpt = len( set(cmndLineArgs) & set( ("--help", "-h") ) ) > 0
 
 scriptsDir = getScriptBaseDir()
 
-if not helpOpt:
+if (not helpOpt) and (not showDefaultsOpt):
   logFileName = "checkin-test.out"
 else:
   logFileName = ""
