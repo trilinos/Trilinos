@@ -1,4 +1,4 @@
-// $Id$ 
+// $Id$
 // $Source$ 
 // @HEADER
 // ***********************************************************************
@@ -195,11 +195,11 @@ getLowOrderTripleProductTensor(ordinal_type order) const
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    std::vector<value_type> a(order+1);
+    std::vector<value_type> a(order);
     for (ordinal_type i=0; i<sz; i++) {
       for (ordinal_type j=0; j<sz; j++) {
 	projectProduct(i, j, a);
-	for (ordinal_type k=0; k<=order; k++) {
+	for (ordinal_type k=0; k<order; k++) {
 	  if (std::abs(a[k]) > sparse_tol) {
 	    Cijk->add_term(i,j,k,a[k]);
 	  }
