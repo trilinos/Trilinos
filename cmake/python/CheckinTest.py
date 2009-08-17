@@ -3,7 +3,6 @@
 # ToDo:
 #
 #  (*) Enable auto-commit with embedded email.out files at end ...
-#  (*) Add option --disable-packages to make --extra-cmake-options less necessary ...
 #  (*) Turn off framework tests by default and turn them in pre-checkin testing ...
 #  (*) Turn off generation of HTML/XML files by default and turn them on in pre-checkin testing ...
 #
@@ -40,6 +39,10 @@ def getUpdateSuccessFileName():
   return "update.success"
 
 
+def getUpdateOutput2FileName():
+  return "update2.out"
+
+
 def getConfigureOutputFileName():
   return "do-configure.out"
 
@@ -72,8 +75,16 @@ def getEmailSuccessFileName():
   return "email.success"
 
 
-def getSummaryCommitEmailBodyFileName():
-  return "summaryCommitEmailBody.out"
+def getCommitEmailBodyFileName():
+  return "commitEmailBody.out"
+
+
+def getCommitStatusEmailBodyFileName():
+  return "commitStatusEmailBody.out"
+
+
+def getCommitOutputFileName():
+  return "commit.out"
 
 
 def getHostname():
@@ -444,7 +455,11 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
 
   emailBody = subjectLine + "\n\n"
 
+  emailBody += getCmndOutput("date", True) + "\n\n"
+
   emailBody += "Enabled Packages: " + ', '.join(enabledPackagesList) + "\n"
+  if inOptions.disablePackages:
+    emailBody += "Disabled Packages: " + inOptions.disablePackages + "\n"
   emailBody += "Hostname: " + getHostname() + "\n"
   emailBody += "Trilinos Source Dir: " + trilinosSrcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
@@ -516,9 +531,8 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
 def getSummaryEmailSectionStr(inOptions):
   summaryEmailSectionStr = \
     "\nSummary of tests performed:\n" \
-    "--------------------------------\n" \
+    "-----------------------------\n" \
     "\n"
-  print summaryEmailSectionStr
   summaryEmailSectionStr += \
     getTestCaseEmailSummary(inOptions.withMpiDebug, "MPI_DEBUG")
   summaryEmailSectionStr += \
@@ -607,6 +621,12 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     if inOptions.enableFwdPackages:
       print "\nEnabling forward packages on request ..."
       cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+
+    if inOptions.disablePackages:
+      print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
+      disablePackagesList = inOptions.disablePackages.split(',')
+      for pkg in disablePackagesList:
+        cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
 
     print "\ncmakePkgOptions:", cmakePkgOptions
 
@@ -789,9 +809,11 @@ def checkinTest(inOptions):
     print "*** Clean old output files .."
     print "***"
 
-    removeIfExists(getSummaryCommitEmailBodyFileName())
+    removeIfExists(getCommitEmailBodyFileName())
+    removeIfExists(getCommitStatusEmailBodyFileName())
+    removeIfExists(getCommitOutputFileName())
 
-    if doRemoveOutputFiles(inOptions):
+    if inOptions.doUpdate:
       removeIfExists(getUpdateOutputFileName())
 
     cleanTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
@@ -807,10 +829,9 @@ def checkinTest(inOptions):
     if inOptions.doUpdate:
   
       echoChDir(baseTestDir)
-      removeIfExists(getUpdateOutputFileName())
       echoRunSysCmnd(inOptions.updateCommand,
         workingDir=trilinosSrcDir,
-        outFile=os.path.join(baseTestDir, "update.out"),
+        outFile=os.path.join(baseTestDir, getUpdateOutputFileName()),
         timeCmnd=True
         )
   
@@ -841,12 +862,14 @@ def checkinTest(inOptions):
     if not result: success = False
 
     print "\n***"
-    print "*** Consider overall commit readiness ..."
+    print "*** Determine overall commit readiness ..."
     print "***"
 
     echoChDir(baseTestDir)
 
     commitOkay = True
+    subjectLine = None
+    commitEmailBodyExtra = ""
 
     if inOptions.withMpiDebug and not os.path.exists("MPI_DEBUG/"+getEmailSuccessFileName()):
       print "\nMPI_DEBUG failed since MPI_DEBUG/"+getEmailSuccessFileName()+" is missing!"
@@ -863,39 +886,115 @@ def checkinTest(inOptions):
       print "\nAt least one of the options (update, configure, built, test) failed!\n\n" \
         "  => A COMMIT IS *NOT* READY TO BE PERFORMED!"
 
-    summaryCommitEmailBodyFileName = getSummaryCommitEmailBodyFileName()
+    print "\n***"
+    print "*** Do commit or send email about commit readiness status ..."
+    print "***"
 
     if inOptions.doCommit:
 
-      print "\nToDo: Do the commit!"
+      print "\nAttempting to do a commit ..."
+
+      if commitOkay:
+
+        print "\nDoing a last update to avoid not-up-to-date status ..."
+
+        update2Rtn = echoRunSysCmnd(inOptions.updateCommand,
+          workingDir=trilinosSrcDir,
+          outFile=os.path.join(baseTestDir, getUpdateOutput2FileName()),
+          throwExcept=False,
+          timeCmnd=True
+          )
+        if update2Rtn != 0: commitOkay = False
+
+        absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
+        if not os.path.isabs(absCommitMsgHeaderFile):
+          absCommitMsgHeaderFile = os.path.join(trilinosSrcDir,absCommitMsgHeaderFile)
+
+        print "\nExtracting commit message subject and header from '" \
+          +absCommitMsgHeaderFile+"' ...\n"
+
+        commitMsgHeaderFileStrList = open(absCommitMsgHeaderFile, 'r').readlines()
+
+        commitSubjectLine = commitMsgHeaderFileStrList[0].strip()
+        print "\ncommitSubjectLine = '"+commitSubjectLine+"'"
+
+        commitEmailBodyStr = ''.join(commitMsgHeaderFileStrList)
+        commitEmailBodyStr += "\n\n\n\n" \
+          "=============================\n" \
+          "Automated status information\n" \
+          "=============================\n" \
+          "\n\n" \
+          + getCmndOutput("date", True) + "\n\n" \
+          + getSummaryEmailSectionStr(inOptions)
+
+        print "\nCommit email being sent:\n" \
+          "-------------------------\n\n\n\n"+commitEmailBodyStr+"\n\n\n\n"
+
+        commitMsgFile = getCommitEmailBodyFileName()
+        open(commitMsgFile, 'w').write(commitEmailBodyStr)
+
+        if commitOkay:
+          commitRtn = echoRunSysCmnd(
+            "cvs commit -F "+os.path.join(baseTestDir,commitMsgFile),
+            workingDir=trilinosSrcDir,
+            outFile=os.path.join(baseTestDir,getCommitOutputFileName()),
+            throwExcept=False,
+            timeCmnd=True
+            )
+
+        if update2Rtn != 0:
+          commitOkay = False
+          subjectLine = "COMMIT FAILED"
+          commitEmailBodyExtra = "\n\nCommit failed because update failed!  See 'update2.out'\n\n"
+        elif commitRtn == 0:
+          subjectLine = "DID COMMIT"
+        else:
+          subjectLine = "COMMIT FAILED"
+          commitEmailBodyExtra = "\n\nCommit failed!  See the file 'commit.out'\n\n"
+
+      else:
+
+        subjectLine = "ABORTED COMMIT"
+
+        commitEmailBodyExtra = "\n\nCommit was never attempted since commit criteria failed!\n\n"
 
     else:
 
       print "\nNot doing the commit but sending an email about the commit status ..."
 
-      if inOptions.sendEmailTo:
-
-        if commitOkay:
-          subjectLine = "READY TO COMMIT"
-        else:
-          subjectLine = "NOT READY TO COMMIT"
-        subjectLine += ": Trilinos: "+getHostname()
-  
-        emailBodyStr = subjectLine + "\n\n"
-        emailBodyStr += getSummaryEmailSectionStr(inOptions)
-
-        print "\nEmail being sent:\n-----------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
-
-        open(summaryCommitEmailBodyFileName, 'w').write(emailBodyStr)
-
-        emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
-        echoRunSysCmnd("sleep 2s && mailx -s \""+subjectLine+"\" "+emailAddresses+" < "+summaryCommitEmailBodyFileName)
-
+      if commitOkay:
+        subjectLine = "READY TO COMMIT"
       else:
+        subjectLine = "NOT READY TO COMMIT"
 
-        print "\nNot sending email because --send-email-to is empty!"
+    print "\nCreate and send out commit status notification email ..."
+
+    subjectLine += ": Trilinos: "+getHostname()
+
+    emailBodyStr = subjectLine + "\n\n"
+    emailBodyStr += getCmndOutput("date", True) + "\n\n"
+    emailBodyStr += commitEmailBodyExtra
+    emailBodyStr += getSummaryEmailSectionStr(inOptions)
+
+    print "\nCommit status email being sent:\n" \
+      "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
+
+    summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
+    open(summaryCommitEmailBodyFileName, 'w').write(emailBodyStr)
+
+    if inOptions.sendEmailTo:
+
+      emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
+      echoRunSysCmnd("sleep 2s && mailx -s \""+subjectLine+"\" " \
+        +emailAddresses+" < "+summaryCommitEmailBodyFileName)
+      # Above, we use 'sleep 2s' to try to make sure this email is posted
+      # after the last pass/fail email!
+
+    else:
+
+      print "\nNot sending commit status email because --send-email-to is empty!"
   
-    if not performAnyActions(inOptions):
+    if not performAnyActions(inOptions) and not inOptions.doCommit:
 
       print "\n***"
       print "*** WARNING: No actions where performed! Specify --do-all to perform full test!"

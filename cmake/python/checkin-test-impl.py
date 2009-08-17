@@ -85,16 +85,18 @@ locally).  (if --update is set.)
 
 2) Select the list of packages to enable forward based on the directories
 where there are changed files (or from a list passed in by the user).  NOTE:
-This can be overridden with the --enable-packages option.
+This can be overridden with the --enable-packages and --disable-packages
+options.
 
 3) For each build case (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
 
-  3.a) Configure build directory in a standard way for all of the packages
+  3.a) Configure a build directory in a standard way for all of the packages
   that have changed and all of the packages that depend on these packages
-  forward.  Again, this behavior can be modified.  (if --configure is set.)
+  forward. What gets eanbled can be modified (see the 'enable-xxx' options).
+  (if --configure is set.)
   
-  3.b) Build all configured code with 'make' (with -jN).  (if --build is
-  set.)
+  3.b) Build all configured code with 'make' (e.g. with -jN set through
+  --make-options).  (if --build is set.)
   
   3.c) Run all tests for enabled packages.  (if --test is set.)
   
@@ -113,7 +115,7 @@ from your standard build directories such as:
 The most basic way to do the checkin test is:
 
   $ cd SOME_BASE_DIR/CHECKIN
-  $ $TRILINOS_HOME/cmake/python/checkin-test.py
+  $ $TRILINOS_HOME/cmake/python/checkin-test.py --do-all
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
 LAPACK) can be found automatically, then that is all you will need to do.
@@ -132,22 +134,24 @@ WARNING: Please do not add any CMake cache variables in the *.config files
 that will alter what packages are built or what tests are run.  The goal of
 these configuration files is to allow you to specify the minimum environment
 to find MPI and your compilers and basic TPLs.  If you need to fudge what
-packages are enabled, please use the --extra-cmake-options argument.
+packages are enabled, please use the arguments --enable-packages,
+--disable-packages, --no-enable-fwd-packages, and/or
+--enable-all-packages=off.
 
 NOTE: Before running this script, you should first do an CVS update and
 examine what files are changed to make sure you want to commit what you have.
-Also, please look out for unknown files that you many need to add to the VC
+Also, please look out for unknown files that you may need to add to the VC
 repository with 'cvs add'.  Your working directory needs to be 100% ready to
 commit before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
-affect the build or the tests.  For example, if all you have changed is
+affect the build or the tests.  For example, if all you have changed are
 document files, then you don't need to run this script before committing.
 
-NOTE: You can directly call the scripts 'do-configure.base' in your other
-build directories in order to match the basic configuration options that are
-used for checkin testing.  You just need to set the other various package and
-TPL enables for your local work.
+NOTE: You can directly call the scripts 'do-configure.base' that get created
+by this script in your other build directories in order to match the basic
+configuration options that are used for checkin testing.  You just need to set
+the other various package and TPL enables for your local work.
 
 Common use cases for using this script are as follows:
 
@@ -158,6 +162,13 @@ Common use cases for using this script are as follows:
 (*) Basic full testing with commit:
 
    --do-all --commit --commit-msg-header-file=<SOME_FILE_NAME>
+
+(*) Commit after a completed set of tests:
+
+   --commit --commit-msg-header-file=<SOME_FILE_NAME>
+
+   NOTE: This will pick up the results for the last completed test run and
+   append the results of those tests to the checkin-message.
 
 (*) Test only the packages modified and not forward dependent packages:
 
@@ -217,6 +228,16 @@ clp.add_option(
   +" the list of packages to enable will be determined automatically by examining" \
   +" the set of modified files from the version control update log." )
 
+clp.add_option(
+  "--disable-packages", dest="disablePackages", type="string", default="",
+  help="List of comma separated Trilinos packages to explicitly disable" \
+  +" (example, 'Tpetra,NOX').  This list of disables will be appended after" \
+  +" all of the listed enables no mater how they are determined (see" \
+  +" --enable-packages option).  NOTE: Only use this option to remove packages" \
+  +" that will not build for some reason.  You can disable tests that run" \
+  +" by using the CTest option -E passed through the --ctest-options argument" \
+  +" in this script." )
+
 addOptionParserChoiceOption(
   "--enable-all-packages", "enableAllPackages", ('default', 'on', 'off'), 0,
   "Determine if all Trilinos packages are enabled 'on', or 'off', or let" \
@@ -236,10 +257,8 @@ clp.add_option(
 clp.add_option(
   "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
   help="Extra options to pass to 'cmake' after all other options." \
-  +" This should be used only as a last result to change what is enabled and" \
-  +" other configure-time behavior.  For example, if some package is just not" \
-  +" building and it is not your fault (i.e. it is currently failing in the CI" \
-  +" testing) then it is okay to use this to disable some packages.")
+  +" This should be used only as a last result.  To disable packages, instead use" \
+  +" --disable-packages." )
 
 clp.add_option(
   "--make-options", dest="makeOptions", type="string", default="",
@@ -271,7 +290,8 @@ clp.add_option(
   "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
   help="Custom commit message file if commiting with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
-  +" base source directory for Trilinos." )
+  +" base source directory for Trilinos.  The very first line of this file should" \
+  +" be the email summary line that will be used for the commit." )
 
 clp.add_option(
   "--with-mpi-debug", dest="withMpiDebug", action="store_true",
@@ -332,6 +352,8 @@ clp.add_option(
 # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
 # takes effect!  That is whay the commands are ordered the way they are!
 
+if options.doCommit and not options.commitMsgHeaderFile:
+  print "\nError, if you specify --commit you must also set --commit-msg-header-file!\n"
 
 #
 # Echo the commandline
@@ -342,6 +364,7 @@ print "*************************************************************************
 print "Script: checkin-test.py \\"
 print "  --update-command='"+options.updateCommand+"' \\"
 print "  --enable-packages='"+options.enablePackages+"' \\"
+print "  --disable-packages='"+options.disablePackages+"' \\"
 print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
 if options.enableFwdPackages:
   print "  --enable-fwd-packages \\"
