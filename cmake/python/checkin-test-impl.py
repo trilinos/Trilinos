@@ -163,6 +163,13 @@ Common use cases for using this script are as follows:
 
    --do-all --commit --commit-msg-header-file=<SOME_FILE_NAME>
 
+(*) Check commit readiness status:
+
+   [no arguments]
+
+   NOTE: This will examine results for the last testing process and send out
+   an email stating if the a commit is ready to perform or not.
+
 (*) Commit after a completed set of tests:
 
    --commit --commit-msg-header-file=<SOME_FILE_NAME>

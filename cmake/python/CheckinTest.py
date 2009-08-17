@@ -521,10 +521,14 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
       "\n"+testCaseName+" Results:\n" \
       "------------------------\n" \
       "\n"
-    testCaseEmailStrArray = open(testCaseName+"/"+getEmailBodyFileName(), 'r').readlines()
-    for line in testCaseEmailStrArray:
-      summaryEmailSectionStr += "  " + line
-    summaryEmailSectionStr += "\n"
+    absEmailBodyFileName = testCaseName+"/"+getEmailBodyFileName()
+    if os.path.exists(absEmailBodyFileName):
+      testCaseEmailStrArray = open(absEmailBodyFileName, 'r').readlines()
+      for line in testCaseEmailStrArray:
+        summaryEmailSectionStr += "  " + line
+        summaryEmailSectionStr += "\n"
+    else:
+        summaryEmailSectionStr += "Error, the file '"+absEmailBodyFileName+"' does not exist!\n"
   return summaryEmailSectionStr
 
 
@@ -553,7 +557,11 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   if not inOptions.rebuild:
     print "\nRemoving the existing build directory ..."
     if os.path.exists(buildDirName):
-      echoRunSysCmnd("rm -rf "+buildDirName) 
+      echoRunSysCmnd("rm -rf "+buildDirName)
+
+  if not performAnyActions(inOptions):
+    print "\nNo other actions to perform!\n"
+    return success
 
   print "Creating a new build directory if it does not already exist ..."
   createDir(buildDirName)
@@ -954,14 +962,14 @@ def checkinTest(inOptions):
 
     else:
 
-      print "\nNot doing the commit but sending an email about the commit status ..."
+      print "\nNot doing the commit but sending an email about the commit readiness status ..."
 
       if commitOkay:
         subjectLine = "READY TO COMMIT"
       else:
         subjectLine = "NOT READY TO COMMIT"
 
-    print "\nCreate and send out commit status notification email ..."
+    print "\nCreate and send out commit (readiness) status notification email ..."
 
     subjectLine += ": Trilinos: "+getHostname()
 
@@ -991,8 +999,9 @@ def checkinTest(inOptions):
     if not performAnyActions(inOptions) and not inOptions.doCommit:
 
       print "\n***"
-      print "*** WARNING: No actions where performed! Specify --do-all to perform full test"
-      print "*** or --commit to commit a previously run test!"
+      print "*** WARNING: No actions were performed!"
+      print "***"
+      print "*** Specify --do-all to perform full test or --commit to commit a previously run test!"
       print "***\n"
   
   except Exception, e:
