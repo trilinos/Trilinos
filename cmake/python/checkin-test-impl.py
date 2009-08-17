@@ -291,7 +291,7 @@ clp.add_option(
   help="Custom commit message file if commiting with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
   +" base source directory for Trilinos.  The very first line of this file should" \
-  +" be the email summary line that will be used for the commit." )
+  +" be the summary line that will be used for the commit." )
 
 clp.add_option(
   "--with-mpi-debug", dest="withMpiDebug", action="store_true",

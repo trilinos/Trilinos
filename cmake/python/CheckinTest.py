@@ -910,15 +910,12 @@ def checkinTest(inOptions):
         if not os.path.isabs(absCommitMsgHeaderFile):
           absCommitMsgHeaderFile = os.path.join(trilinosSrcDir,absCommitMsgHeaderFile)
 
-        print "\nExtracting commit message subject and header from '" \
+        print "\nExtracting commit message subject and header from the file '" \
           +absCommitMsgHeaderFile+"' ...\n"
 
-        commitMsgHeaderFileStrList = open(absCommitMsgHeaderFile, 'r').readlines()
+        commitMsgHeaderFileStr = open(absCommitMsgHeaderFile, 'r').read()
 
-        commitSubjectLine = commitMsgHeaderFileStrList[0].strip()
-        print "\ncommitSubjectLine = '"+commitSubjectLine+"'"
-
-        commitEmailBodyStr = ''.join(commitMsgHeaderFileStrList)
+        commitEmailBodyStr = commitMsgHeaderFileStr
         commitEmailBodyStr += "\n\n\n\n" \
           "=============================\n" \
           "Automated status information\n" \
@@ -926,9 +923,6 @@ def checkinTest(inOptions):
           "\n\n" \
           + getCmndOutput("date", True) + "\n\n" \
           + getSummaryEmailSectionStr(inOptions)
-
-        print "\nCommit email being sent:\n" \
-          "-------------------------\n\n\n\n"+commitEmailBodyStr+"\n\n\n\n"
 
         commitMsgFile = getCommitEmailBodyFileName()
         open(commitMsgFile, 'w').write(commitEmailBodyStr)
@@ -997,7 +991,8 @@ def checkinTest(inOptions):
     if not performAnyActions(inOptions) and not inOptions.doCommit:
 
       print "\n***"
-      print "*** WARNING: No actions where performed! Specify --do-all to perform full test!"
+      print "*** WARNING: No actions where performed! Specify --do-all to perform full test"
+      print "*** or --commit to commit a previously run test!"
       print "***\n"
   
   except Exception, e:
