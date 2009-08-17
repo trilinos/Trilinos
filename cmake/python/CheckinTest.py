@@ -39,6 +39,10 @@ def getUpdateSuccessFileName():
   return "update.success"
 
 
+def getUpdateSuccessFileName():
+  return "update.success"
+
+
 def getUpdateOutput2FileName():
   return "update2.out"
 
@@ -518,7 +522,7 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
   summaryEmailSectionStr = ""
   if doTestCaseBool:
     summaryEmailSectionStr += \
-      "\n"+testCaseName+" Results:\n" \
+      "\n\n"+testCaseName+" Results:\n" \
       "------------------------\n" \
       "\n"
     absEmailBodyFileName = testCaseName+"/"+getEmailBodyFileName()
@@ -526,7 +530,7 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
       testCaseEmailStrArray = open(absEmailBodyFileName, 'r').readlines()
       for line in testCaseEmailStrArray:
         summaryEmailSectionStr += "  " + line
-        summaryEmailSectionStr += "\n"
+      summaryEmailSectionStr += "\n"
     else:
         summaryEmailSectionStr += "Error, the file '"+absEmailBodyFileName+"' does not exist!\n"
   return summaryEmailSectionStr
@@ -535,8 +539,7 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
 def getSummaryEmailSectionStr(inOptions):
   summaryEmailSectionStr = \
     "\nSummary of tests performed:\n" \
-    "-----------------------------\n" \
-    "\n"
+    "-----------------------------\n"
   summaryEmailSectionStr += \
     getTestCaseEmailSummary(inOptions.withMpiDebug, "MPI_DEBUG")
   summaryEmailSectionStr += \
@@ -582,8 +585,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       "-DCMAKE_BUILD_TYPE:STRING="+buildType,
       ]
   
-    if serialOrMpi:
-  
+    if serialOrMpi == "MPI":
       cmakeBaseOptions.append("-DTPL_ENABLE_MPI:BOOL=ON")
   
     cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
@@ -823,6 +825,7 @@ def checkinTest(inOptions):
 
     if inOptions.doUpdate:
       removeIfExists(getUpdateOutputFileName())
+      removeIfExists(getUpdateSuccessFileName())
 
     cleanTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
       "MPI", "DEBUG" )
@@ -835,39 +838,59 @@ def checkinTest(inOptions):
     print "***"
   
     if inOptions.doUpdate:
+    
+      try:
   
-      echoChDir(baseTestDir)
-      echoRunSysCmnd(inOptions.updateCommand,
-        workingDir=trilinosSrcDir,
-        outFile=os.path.join(baseTestDir, getUpdateOutputFileName()),
-        timeCmnd=True
-        )
+        echoChDir(baseTestDir)
+        echoRunSysCmnd(inOptions.updateCommand,
+          workingDir=trilinosSrcDir,
+          outFile=os.path.join(baseTestDir, getUpdateOutputFileName()),
+          timeCmnd=True
+          )
+
+	echoRunSysCmnd("touch "+getUpdateSuccessFileName())
+
+	updatePassed = True
+
+      except Exception, e:
+        success = False
+	updatePassed = False
+        traceback.print_exc()
   
     else:
   
       print "\nSkipping update on request!\n"
 
-    echoChDir(baseTestDir)
+      updatePassed = os.path.exists(getUpdateSuccessFileName())
 
-    writeDefaultCommonConfigFile()
 
-    result = runTestCaseDriver(inOptions.withMpiDebug, inOptions, baseTestDir,
-      "MPI", "DEBUG", trilinosSrcDir,
-      [
-        "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
-        "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-      ]
-      )
-    if not result: success = False
+    if updatePassed:
 
-    result = runTestCaseDriver(inOptions.withSerialRelease, inOptions, baseTestDir,
-      "SERIAL", "RELEASE", trilinosSrcDir,
-      [
-        "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
-        "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
-      ]
-      )
-    if not result: success = False
+      echoChDir(baseTestDir)
+  
+      writeDefaultCommonConfigFile()
+  
+      result = runTestCaseDriver(inOptions.withMpiDebug, inOptions, baseTestDir,
+        "MPI", "DEBUG", trilinosSrcDir,
+        [
+          "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
+          "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+        ]
+        )
+      if not result: success = False
+  
+      result = runTestCaseDriver(inOptions.withSerialRelease, inOptions, baseTestDir,
+        "SERIAL", "RELEASE", trilinosSrcDir,
+        [
+          "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
+          "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
+        ]
+        )
+      if not result: success = False
+
+    else:
+
+      print "\nNot doing any builds because the update failed!\n"
 
     print "\n***"
     print "*** Determine overall commit readiness ..."
@@ -947,18 +970,18 @@ def checkinTest(inOptions):
         if update2Rtn != 0:
           commitOkay = False
           subjectLine = "COMMIT FAILED"
-          commitEmailBodyExtra = "\n\nCommit failed because update failed!  See 'update2.out'\n\n"
+          commitEmailBodyExtra += "\n\nCommit failed because update failed!  See 'update2.out'\n\n"
         elif commitRtn == 0:
           subjectLine = "DID COMMIT"
         else:
           subjectLine = "COMMIT FAILED"
-          commitEmailBodyExtra = "\n\nCommit failed!  See the file 'commit.out'\n\n"
+          commitEmailBodyExtra += "\n\nCommit failed!  See the file 'commit.out'\n\n"
 
       else:
 
         subjectLine = "ABORTED COMMIT"
 
-        commitEmailBodyExtra = "\n\nCommit was never attempted since commit criteria failed!\n\n"
+        commitEmailBodyExtra += "\n\nCommit was never attempted since commit criteria failed!\n\n"
 
     else:
 
@@ -972,6 +995,9 @@ def checkinTest(inOptions):
     print "\nCreate and send out commit (readiness) status notification email ..."
 
     subjectLine += ": Trilinos: "+getHostname()
+
+    if not updatePassed:
+      commitEmailBodyExtra += "The update failed!  See the file 'update.out'!\n"
 
     emailBodyStr = subjectLine + "\n\n"
     emailBodyStr += getCmndOutput("date", True) + "\n\n"

@@ -49,6 +49,6 @@ cmnd = scriptsDir+"/checkin-test-impl.py " + requoteCmndLineArgs(sys.argv[1:])
 if logFileName:
   cmnd = cmnd + " 2>&1 | tee "+logFileName
 
-rtn = echoRunSysCmnd(cmnd, throwExcept=False)
+rtnVal = echoRunSysCmnd(cmnd, throwExcept=False)
 
-exit(rtn)
+sys.exit(rtnVal)

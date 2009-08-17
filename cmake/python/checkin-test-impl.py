@@ -429,6 +429,6 @@ if not options.showDefaults:
   print "\nFinal time:", getCmndOutput("date",True)
   
   if success:
-    exit(0)
+    sys.exit(0)
   else:
-    exit(1)
+    sys.exit(1)
