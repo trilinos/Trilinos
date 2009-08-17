@@ -34,6 +34,7 @@
     \author Created by P. Bochev, H. Carter Edwards and D. Ridzal
 */
 #include <iostream>
+#include <iomanip>
 #include "Shards_CellTopology.hpp"
 
 
@@ -160,11 +161,14 @@ void printSelectTopologies(const std::vector<CellTopology>&   topologies,
  
   }
   std::cout << shards::ETopologyTypeToString(topologyType) << " topology types  (total of " 
-  << topologies.size() << " cells)\n\n";
+  << topologies.size() << " cells)\n";
 
+  std::cout << "-------------------------------------------------------------------------------\n";
+  std::cout << setw(25) << " Cell Topology " << setw(25) << " Base topology" << setw(30) << "|\n";
+  std::cout << "-------------------------------------------------------------------------------\n";
   
   for(unsigned i = 0; i < topologies.size(); i++){
-    std::cout << topologies[i].getName() << "\n"; 
+    std::cout << setw(25) << topologies[i].getName() << setw(25) << topologies[i].getBaseName() << "\n"; 
   }
   std::cout << "===============================================================================\n\n";
 }  

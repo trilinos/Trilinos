@@ -206,13 +206,34 @@ public:
     }
 
         
-  /** \brief  Unique key for this cell topology;
+  /** \brief  Unique key for this cell's base topology;
    *          under certain subcell uniformity conditions.
+   */
+  unsigned getBaseKey() const
+    {
+      SHARDS_REQUIRE( requireCell() );
+      return m_cell->base->key ;
+    }
+        
+        
+        
+  /** \brief  Unique name for this cell topology;
+   *          
    */
   const char* getName() const
     {
         SHARDS_REQUIRE( requireCell() );
         return m_cell->name ;
+    }
+
+        
+  /** \brief  Unique name for this cell's base topology.
+   *          
+   */
+  const char* getBaseName() const
+    {
+      SHARDS_REQUIRE( requireCell() );
+      return m_cell->base->name ;
     }
         
         
