@@ -603,7 +603,7 @@ namespace Intrepid {
     // This method is not restricted to work only on 1 and 2D subcells because getting subcell
     // vertices should be defined for any subcell, including the trivial cases of a vertex and
     // the cell itself
-    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim < (int)parentCell.getDimension()) ), std::invalid_argument,
+    TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <= (int)parentCell.getDimension()) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::getReferenceSubcellVertices): subcell dimension out of range.");
     
     TEST_FOR_EXCEPTION( !( (0 <= subcellOrd) && (subcellOrd < (int)parentCell.getSubcellCount(subcellDim) ) ), std::invalid_argument,
@@ -719,6 +719,8 @@ namespace Intrepid {
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
         
+      // Pyramid is Standard topology that is yet not supported   
+      case shards::Pyramid<5>::key:  
       // Standard Extended topologies
       case shards::Triangle<6>::key:                        // curved triangle: use quadratic basis!
       case shards::Quadrilateral<8>::key:
@@ -728,6 +730,8 @@ namespace Intrepid {
       case shards::Hexahedron<27>::key:
       case shards::Wedge<15>::key:
       case shards::Wedge<18>::key:
+      case shards::Pyramid<13>::key:  
+      case shards::Pyramid<14>::key:  
         TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                             ">>> ERROR (Intrepid::CellTools::setJacobian): Cell topology not supported. ");
         break;

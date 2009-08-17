@@ -34,9 +34,11 @@
 */
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
+#include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 using namespace std;
 using namespace Intrepid;
@@ -192,39 +194,178 @@ int main(int argc, char *argv[]) {
     
     /***********************************************************************************************
       *
-      * Common for test 3 and 4
+      * Common for test 3 and 4: edge tangents and face normals for standard cells with base topo
       *
       **********************************************************************************************/
     
+    // Allocate storage and extract all standard cells with base topologies
+    std::vector<shards::CellTopology> standardBaseTopologies;    
+    shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);
 
+    // Define topologies for the edge and face parametrization domains. (faces are Tri or Quad)
+    CellTopology paramEdge    (shards::getCellTopologyData<shards::Line<2> >() );
+    CellTopology paramTriFace (shards::getCellTopologyData<shards::Triangle<3> >() );
+    CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    
+    // Define CubatureFactory:
+    DefaultCubatureFactory<double>  cubFactory;   
     
     *outStream \
       << "\n"
       << "===============================================================================\n"\
-      << "| Test 3: edge tangents:                                                      |\n"\
+      << "| Test 3: edge tangents/normals for stand. cells with base topologies:        |\n"\
       << "===============================================================================\n\n";
-    // This test loops over all topologies, creates a set of cell nodes for that topology and then tests tangents
-    
-    
+    // This test loops over standard cells with base topologies, creates a set of nodes and tests tangents/normals 
     std::vector<shards::CellTopology>::iterator cti;
     
+    // Define cubature on the edge parametrization domain:
+    Teuchos::RCP<Cubature<double> > edgeCubature = cubFactory.create(paramEdge, 6); 
+    int cubDim       = edgeCubature -> getDimension();
+    int numCubPoints = edgeCubature -> getNumPoints();
+
+    // Allocate storage for cubature points and weights on edge parameter domain and fill with points:
+    FieldContainer<double> paramEdgePoints(numCubPoints, cubDim);
+    FieldContainer<double> paramEdgeWeights(numCubPoints);
+    edgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
     
-    for(cti = allTopologies.begin(); cti !=allTopologies.end(); ++cti){
-      int cellDim = (*cti).getDimension();
-      int vCount = (*cti).getVertexCount();
-      FieldContainer<double> cellVertices(vCount, cellDim);
+
+    // Loop over admissible topologies 
+    for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
       
-      // now fill with vertices, perturb and compute tangents!
-      
-    }
+      // Exclude 0D (node), 1D (Line) and Pyramid<5> cells
+      if( ( (*cti).getDimension() >= 2) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
+        
+        int cellDim = (*cti).getDimension();
+        int vCount  = (*cti).getVertexCount();
+        FieldContainer<double> refCellVertices(vCount, cellDim);
+        CellTools::getReferenceSubcellVertices(refCellVertices, cellDim, 0, (*cti) );
+        
+        *outStream << " Testing edge tangents";
+          if(cellDim == 2) { *outStream << " and normals"; }          
+        *outStream <<" for cell topology " <<  (*cti).getName() <<"\n";
+        
+        
+        // Array for physical cell vertices ( must have rank 3 for cetJacobians)
+        FieldContainer<double> physCellVertices(1, vCount, cellDim);
+
+        // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
+        // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
+        for(int v = 0; v < vCount; v++){
+          for(int d = 0; d < cellDim; d++){
+            double delta = Teuchos::ScalarTraits<double>::random()/8.0;
+            physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
+          } //for d
+        }// for v     
+        
+        // Allocate storage for cub. points on a ref. edge; Jacobians, phys. edge tangents/normals and 
+        // benchmark tangents. The benchmark tangents are stored in array sized for a general case of  
+        // non-affine edges to make it easier to add these tests later.
+        FieldContainer<double> refEdgePoints(numCubPoints, cellDim);        
+        FieldContainer<double> edgePointsJacobians(1, numCubPoints, cellDim, cellDim);
+        FieldContainer<double> edgePointTangents(1, numCubPoints, cellDim);
+        FieldContainer<double> edgePointNormals(1, numCubPoints, cellDim);
+        FieldContainer<double> edgeBenchmarkTangents(1, numCubPoints, cellDim);
+        
+
+        // Loop over edges:
+        for(int edgeOrd = 0; edgeOrd < (*cti).getEdgeCount(); edgeOrd++){
+          
+          /* 
+           * Compute tangents on the specified edge using CellTools:
+           *    1. Map points from edge parametrization domain to ref. edge with specified ordinal
+           *    2. Compute parent cell Jacobians at ref. edge points
+           *    3. Compute physical edge tangents
+           */
+          CellTools::mapToReferenceSubcell(refEdgePoints, paramEdgePoints, 1, edgeOrd, (*cti) );
+          CellTools::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, (*cti) );
+          CellTools::getPhysicalEdgeTangents(edgePointTangents, edgePointsJacobians, edgeOrd, (*cti)); 
+          
+          /*
+           * Compute tangents on the specified edge directly and compare with CellTools tangents.
+           *    1. Get edge vertices
+           *    2. For affine edges tangent coordinates are given by s'(t) = (v1-v0)/2
+           *       (for now we only test affine edges, but later we will test edges for cells 
+           *        with extended topologies.)
+           */
+          int v0ord = (*cti).getNodeMap(1, edgeOrd, 0);
+          int v1ord = (*cti).getNodeMap(1, edgeOrd, 1);
+          
+          for(int pt = 0; pt < numCubPoints; pt++){
+            for(int d = 0; d < cellDim; d++){
+              edgeBenchmarkTangents(0, pt, d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
+              
+              // Compare with d-component of edge tangent by CellTools
+              if( abs(edgeBenchmarkTangents(0, pt, d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
+                errorFlag++;
+                *outStream
+                  << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                  << " Edge tangent computation by CellTools failed for: \n"
+                  << "       Cell Topology = " << (*cti).getName() << "\n"
+                  << "        Edge ordinal = " << edgeOrd << "\n"
+                  << "  Tangent coordinate = " << d << " edge point number = " << pt << "\n"
+                  << "     CellTools value = " <<  edgePointTangents(0, pt, d)
+                  << "     Benchmark value = " <<  edgeBenchmarkTangents(0, pt, d) << "\n\n";
+              }
+            } // for d
+            
+            // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
+            if(cellDim == 2) {
+              CellTools::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, (*cti));
+              if( abs(edgeBenchmarkTangents(0, pt, 1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
+                errorFlag++;
+                *outStream
+                  << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                  << " Edge Normal computation by CellTools failed for: \n"
+                  << "       Cell Topology = " << (*cti).getName() << "\n"
+                  << "        Edge ordinal = " << edgeOrd << "\n"
+                  << "  Normal coordinate = " << 0 << " edge point number = " << pt << "\n"
+                  << "     CellTools value = " <<  edgePointNormals(0, pt, 0)
+                  << "     Benchmark value = " <<  edgeBenchmarkTangents(0, pt, 1) << "\n\n";
+              }
+              if( abs(edgeBenchmarkTangents(0, pt, 0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
+                errorFlag++;
+                *outStream
+                  << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                  << " Edge Normal computation by CellTools failed for: \n"
+                  << "       Cell Topology = " << (*cti).getName() << "\n"
+                  << "        Edge ordinal = " << edgeOrd << "\n"
+                  << "  Normal coordinate = " << 1 << " edge point number = " << pt << "\n"
+                  << "     CellTools value = " <<  edgePointNormals(0, pt, 1)
+                  << "     Benchmark value = " << -edgeBenchmarkTangents(0, pt, 0) << "\n\n";
+              }
+            } // edge normals
+            
+            
+          } // for pt
+        }// for edgeOrd
+      }// if admissible cell
+    }// for cti
+    
     
     
     *outStream \
       << "\n"
       << "===============================================================================\n"\
-      << "| Test 4: face normals:                                                      |\n"\
+      << "| Test 4: face/side normals for stand. 3D cells with base topologies:         |                                                      |\n"\
       << "===============================================================================\n\n";
+    // This test loops over standard 3D cells with base topologies, creates a set of nodes and tests normals 
+
+    // Define cubature on the edge parametrization domain:
+    Teuchos::RCP<Cubature<double> > triFaceCubature  = cubFactory.create(paramTriFace, 6); 
+    Teuchos::RCP<Cubature<double> > quadFaceCubature = cubFactory.create(paramQuadFace, 6); 
     
+    int faceCubDim           = triFaceCubature -> getDimension();
+    int numTriFaceCubPoints  = triFaceCubature -> getNumPoints();
+    int numQuadFaceCubPoints = quadFaceCubature -> getNumPoints();    
+    
+    // Allocate storage for cubature points and weights on face parameter domain and fill with points:
+    FieldContainer<double> paramTriFacePoints(numTriFaceCubPoints, faceCubDim);
+    FieldContainer<double> paramTriFaceWeights(numTriFaceCubPoints);
+    FieldContainer<double> paramQuadFacePoints(numQuadFaceCubPoints, faceCubDim);
+    FieldContainer<double> paramQuadFaceWeights(numQuadFaceCubPoints);
+    
+    triFaceCubature -> getCubature(paramTriFacePoints, paramTriFaceWeights);
+    quadFaceCubature -> getCubature(paramQuadFacePoints, paramQuadFaceWeights);
     
     
   }// try

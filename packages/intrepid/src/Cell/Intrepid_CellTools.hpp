@@ -941,10 +941,14 @@ public:
     /** \brief  Returns rank-2 array with the Cartesian coordinates of the vertices of the 
                 specified reference cell subcell. Requires cell topology with a reference cell.
       
-        \param  subcellVertices   [out]
-        \param  subcellDim        [in]
-        \param  subcellOrd        [in]
-        \param  parentCell        [in]
+        \param  subcellVertices   [out] - array with the Cartesian coordinates of the reference subcell
+        \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
+        \param  subcellOrd        [in]  - ordinal of the subcell
+        \param  parentCell        [in]  - topology of the cell that owns the subcell
+      
+        \remark When \e subcellDim = dimension of the \e parentCell this method returns the Cartesian 
+                coordinates of the vertices of the reference cell itself. 
+                Note that this requires \e subcellOrd=0.
       */
     template<class ArrayOut>
     static void getReferenceSubcellVertices(ArrayOut&                   subcellVertices,
