@@ -23,7 +23,7 @@ namespace {
 
   template <class PLAT>
   RCP<PLAT> getPlatform() {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type not defined.");
+    TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type " << Teuchos::TypeNameTraits<PLAT>::name() << " not defined.");
   }
 
   SerialNode snode;
@@ -32,7 +32,7 @@ namespace {
     return rcp(new SerialPlatform<SerialNode>(snode));
   }
 
-#ifdef TPETRA_HAVE_MPI
+#ifdef HAVE_TPETRA_MPI
   template <>
   RCP<MpiPlatform<SerialNode> > getPlatform() {
     return rcp(new MpiPlatform<SerialNode>(snode));

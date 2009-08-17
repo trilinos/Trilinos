@@ -295,30 +295,29 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(exports.size() != getNumVectors()*exportLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::packAndPrepare(): sizing of exports buffer should be appropriate for the amount of data to be exported.");
     const KMV &srcData = sourceMV.lclMV_;
-    const int numCols = getNumVectors(),
-             myStride = lclMV_.getStride();
+    const int numCols = sourceMV.getNumVectors(),
+               stride = srcData.getStride();
     typename ArrayView<const LocalOrdinal>::iterator idptr;
     typename ArrayView<Scalar>::iterator expptr;
     expptr = exports.begin();
     Node &node = srcData.getNode();
-    ArrayRCP<const Scalar> mybuff = lclMV_.getValues();
-    ArrayRCP<const Scalar> myview = node.template viewBuffer<Scalar>(mybuff.size(), mybuff);
-    if (isConstantStride()) {
+    ArrayRCP<const Scalar> srcbuff = srcData.getValues();
+    ArrayRCP<const Scalar> srcview = node.template viewBuffer<Scalar>(srcbuff.size(), srcbuff);
+    if (sourceMV.isConstantStride()) {
       for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr) {
         for (Teuchos_Ordinal j = 0; j < numCols; ++j) {
-          *expptr++ = myview[j*myStride + (*idptr)];
+          *expptr++ = srcview[j*stride + (*idptr)];
         }
       }
     }
     else {
-      TEST_FOR_EXCEPT(true); // still untested
       for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr) {
         for (Teuchos_Ordinal j = 0; j < numCols; ++j) {
-          *expptr++ = myview[whichVectors_[j]*myStride + (*idptr)];
+          *expptr++ = srcview[sourceMV.whichVectors_[j]*stride + (*idptr)];
         }
       }
     }
-    myview = Teuchos::null;
+    srcview = Teuchos::null;
   }
 
 
@@ -350,8 +349,7 @@ namespace Tpetra {
     typename ArrayView<const       Scalar>::iterator impptr;
     typename ArrayView<const LocalOrdinal>::iterator  idptr;
     impptr = imports.begin();
-    if (CM == INSERT || CM == REPLACE) 
-    {
+    if (CM == INSERT || CM == REPLACE) {
       if (isConstantStride()) {
         for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
           for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
@@ -360,7 +358,6 @@ namespace Tpetra {
         }
       }
       else {
-        TEST_FOR_EXCEPT(true); // still untested
         for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
           for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
             myview[myStride*whichVectors_[j] + *idptr] = *impptr++;
@@ -377,7 +374,6 @@ namespace Tpetra {
         }
       }
       else {
-        TEST_FOR_EXCEPT(true); // still untested
         for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
           for (Teuchos_Ordinal j = 0; j < numVecs; ++j) {
             myview[myStride*whichVectors_[j] + *idptr] += *impptr++;

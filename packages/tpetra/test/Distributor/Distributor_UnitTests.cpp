@@ -49,7 +49,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform::getDefaultPlatform().getComm();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -600,12 +600,15 @@ namespace {
     {
       typename Array<Packet>::iterator eI = expectedImports.begin(), 
                                         E = exports.begin()+myImageID;
-      for (int i=0; i<numImages; ++i) {
+      for (int i=0; i<numImages-1; ++i) {
         (*eI++) = *E;
         E += numImages;
         (*eI++) = *E;
         E += numImages;
       }
+      (*eI++) = *E;
+      E += numImages;
+      (*eI++) = *E;
     }
     // check the values 
     TEST_COMPARE_ARRAYS(expectedImports,imports);

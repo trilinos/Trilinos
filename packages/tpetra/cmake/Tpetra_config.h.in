@@ -12,6 +12,9 @@
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TPETRA_DEBUG
 
+/* Define if we have MPI */
+#cmakedefine HAVE_TPETRA_MPI
+
 /* Define if want to build tpetra-throw_warnings */
 #cmakedefine HAVE_TPETRA_THROW_WARNINGS
 

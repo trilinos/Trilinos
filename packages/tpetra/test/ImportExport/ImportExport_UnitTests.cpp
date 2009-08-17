@@ -2,13 +2,12 @@
 
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_as.hpp>
+#include <Teuchos_Tuple.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
-
-// FINISH: make sure to test import/export with source/target of non-contig multivector views
 
 namespace {
 
@@ -21,6 +20,8 @@ namespace {
   using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
+  using Teuchos::tuple;
+  using Teuchos::Range1D;
   using Tpetra::Map;
   using Tpetra::Import;
   using Tpetra::Export;
@@ -36,13 +37,6 @@ namespace {
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
-
-#define PRINT_VECTOR(v) \
-   { \
-     out << #v << ": "; \
-     copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
-     out << endl; \
-   }
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -60,7 +54,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform::getDefaultPlatform().getComm();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -123,69 +117,82 @@ namespace {
     // two maps: one has one entries per node, the other is the 1-D neighbors
     Map<Ordinal> smap(NEGONE,numLocal,indexBase,comm), 
                  tmap(NEGONE,neighbors(),indexBase,comm);
-    // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
-    MV mvMine(node,smap,numVectors); 
-    for (int j=0; j<numVectors; ++j) {
-      mvMine.replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
-    }
-    // create Import from smap to tmap, Export from tmap to smap, test them
-    Import<Ordinal> importer(smap,tmap);
-    Export<Ordinal> exporter(tmap,smap);
-    bool local_success = true;
-    // importer testing: FINISH
-    TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
-    TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
-    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-    TEST_EQUALITY( importer.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
-    TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-    TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-    // exporter testing: FINISH
-    TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
-    TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
-    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-    TEST_EQUALITY( exporter.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
-    // import neighbors, test their proper arrival
-    //                   [ 0    n     2n    3n    4n ]
-    // mvWithNeighbors = [...  ....  ....  ....  ....]
-    //                   [n-1  2n-1  3n-1  4n-1  5n-1]
-    MV mvWithNeighbors(node,tmap,numVectors);
-    mvWithNeighbors.doImport(mvMine,importer,REPLACE);
-    if (myImageID == 0) {
-      for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)); // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+    for (int tnum=0; tnum < 2; ++tnum) {
+      RCP<MV> mvMine, mvWithNeighbors;
+      // for tnum=0, these are contiguously allocated multivectors 
+      // for tnum=1, these are non-contiguous views of multivectors
+      if (tnum == 0) {
+        mvMine = rcp(new MV(node,smap,numVectors));
+        mvWithNeighbors = rcp(new MV(node,tmap,numVectors));
       }
-    }
-    else if (myImageID == numImages-1) {
-      for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+      else {
+        MV mineParent(node,smap,2+numVectors),
+           neigParent(node,tmap,2+numVectors);
+        TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
+        mvMine = mineParent.subViewNonConst(tuple<Teuchos_Ordinal>(0,6,3,4,5));
+        mvWithNeighbors = neigParent.subViewNonConst(tuple<Teuchos_Ordinal>(0,6,3,4,5));
       }
-    }
-    else {
+      // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+        mvMine->replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
       }
-    }
-    // export values, test 
-    mvMine.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-    mvMine.doExport(mvWithNeighbors,exporter,ADD);
-    if (myImageID == 0 || myImageID == numImages-1) {
-      for (int j=0; j<numVectors; ++j) {
-        // contribution from me and one neighbor: double original value
-        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+      // create Import from smap to tmap, Export from tmap to smap, test them
+      Import<Ordinal> importer(smap,tmap);
+      Export<Ordinal> exporter(tmap,smap);
+      bool local_success = true;
+      // importer testing
+      TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
+      TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
+      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( importer.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      // exporter testing
+      TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
+      TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
+      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( exporter.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+      // import neighbors, test their proper arrival
+      //                   [ 0    n     2n    3n    4n ]
+      // mvWithNeighbors = [...  ....  ....  ....  ....]
+      //                   [n-1  2n-1  3n-1  4n-1  5n-1]
+      mvWithNeighbors->doImport(*mvMine,importer,REPLACE);
+      if (myImageID == 0) {
+        for (int j=0; j<numVectors; ++j) {
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,as<Scalar>(myImageID+j*numImages)); // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+        }
       }
-    }
-    else {
-      for (int j=0; j<numVectors; ++j) {
-        // contribution from me and two neighbors: triple original value
-        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+      else if (myImageID == numImages-1) {
+        for (int j=0; j<numVectors; ++j) {
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+        }
       }
+      else {
+        for (int j=0; j<numVectors; ++j) {
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+        }
+      }
+      // export values, test 
+      mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+      mvMine->doExport(*mvWithNeighbors,exporter,ADD);
+      if (myImageID == 0 || myImageID == numImages-1) {
+        for (int j=0; j<numVectors; ++j) {
+          // contribution from me and one neighbor: double original value
+          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+        }
+      }
+      else {
+        for (int j=0; j<numVectors; ++j) {
+          // contribution from me and two neighbors: triple original value
+          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+        }
+      }
+      success &= local_success;
     }
-    // 
-    success &= local_success;
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -222,69 +229,83 @@ namespace {
     // two maps: one has one entries per node, the other is the 1-D neighbors
     Map<Ordinal> smap(NEGONE,numLocal,indexBase,comm), 
                  tmap(NEGONE,neighbors(),indexBase,comm);
-    // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
-    MV mvMine(node,smap,numVectors); 
-    for (int j=0; j<numVectors; ++j) {
-      mvMine.replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
-    }
-    // create Import from smap to tmap, Export from tmap to smap, test them
-    Import<Ordinal> importer(smap,tmap);
-    Export<Ordinal> exporter(tmap,smap);
-    bool local_success = true;
-    // importer testing: FINISH
-    TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
-    TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
-    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-    TEST_EQUALITY( importer.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
-    TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-    TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
-    // exporter testing: FINISH
-    TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
-    TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
-    TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-    TEST_EQUALITY( exporter.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
-    // import neighbors, test their proper arrival
-    //                   [ 0    n     2n    3n    4n ]
-    // mvWithNeighbors = [...  ....  ....  ....  ....]
-    //                   [n-1  2n-1  3n-1  4n-1  5n-1]
-    MV mvWithNeighbors(node,tmap,numVectors);
-    mvWithNeighbors.doImport(mvMine,exporter,REPLACE);
-    if (myImageID == 0) {
-      for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)); // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+    for (int tnum=0; tnum < 2; ++tnum) {
+      RCP<MV> mvMine, mvWithNeighbors;
+      // for tnum=0, these are contiguously allocated multivectors 
+      // for tnum=1, these are non-contiguous views of multivectors
+      if (tnum == 0) {
+        mvMine = rcp(new MV(node,smap,numVectors));
+        mvWithNeighbors = rcp(new MV(node,tmap,numVectors));
       }
-    }
-    else if (myImageID == numImages-1) {
-      for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+      else {
+        MV mineParent(node,smap,2+numVectors),
+           neigParent(node,tmap,2+numVectors);
+        TEST_FOR_EXCEPTION(numVectors != 5, std::logic_error, "Test assumption broken.");
+        mvMine = mineParent.subViewNonConst(tuple<Teuchos_Ordinal>(0,6,3,4,5));
+        mvWithNeighbors = neigParent.subViewNonConst(tuple<Teuchos_Ordinal>(0,6,3,4,5));
       }
-    }
-    else {
+      // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
       for (int j=0; j<numVectors; ++j) {
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
-        TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors.getData(j),2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+        mvMine->replaceMyValue(0,j,as<Scalar>(myImageID + j*numImages));
       }
-    }
-    // export values, test 
-    mvMine.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-    mvMine.doExport(mvWithNeighbors,importer,ADD);
-    if (myImageID == 0 || myImageID == numImages-1) {
-      for (int j=0; j<numVectors; ++j) {
-        // contribution from me and one neighbor: double original value
-        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+      // create Import from smap to tmap, Export from tmap to smap, test them
+      Import<Ordinal> importer(smap,tmap);
+      Export<Ordinal> exporter(tmap,smap);
+      bool local_success = true;
+      // importer testing: FINISH
+      TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
+      TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
+      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( importer.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      // exporter testing: FINISH
+      TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
+      TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
+      TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
+      TEST_EQUALITY( exporter.getNumPermuteIDs(), (myImageID == 0 ? 0 : 1) );
+      // import neighbors, test their proper arrival
+      //                   [ 0    n     2n    3n    4n ]
+      // mvWithNeighbors = [...  ....  ....  ....  ....]
+      //                   [n-1  2n-1  3n-1  4n-1  5n-1]
+      mvWithNeighbors->doImport(*mvMine,exporter,REPLACE);
+      if (myImageID == 0) {
+        for (int j=0; j<numVectors; ++j) {
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,as<Scalar>(myImageID+j*numImages)); // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,as<Scalar>(j*numImages)+ST::one()); // neighbor
+        }
       }
-    }
-    else {
-      for (int j=0; j<numVectors; ++j) {
-        // contribution from me and two neighbors: triple original value
-        TEST_EQUALITY(mvMine.getData(j)[0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+      else if (myImageID == numImages-1) {
+        for (int j=0; j<numVectors; ++j) {
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+        }
       }
+      else {
+        for (int j=0; j<numVectors; ++j) {
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,as<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,as<Scalar>(myImageID+j*numImages));           // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,as<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+        }
+      }
+      // export values, test 
+      mvMine->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+      mvMine->doExport(*mvWithNeighbors,importer,ADD);
+      if (myImageID == 0 || myImageID == numImages-1) {
+        for (int j=0; j<numVectors; ++j) {
+          // contribution from me and one neighbor: double original value
+          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::as<Scalar>(2.0)*as<Scalar>(myImageID+j*numImages));
+        }
+      }
+      else {
+        for (int j=0; j<numVectors; ++j) {
+          // contribution from me and two neighbors: triple original value
+          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::as<Scalar>(3.0)*as<Scalar>(myImageID+j*numImages));
+        }
+      }
+      success &= local_success;
     }
     // 
-    success &= local_success;
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );

@@ -42,7 +42,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform::getDefaultPlatform().getComm();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }

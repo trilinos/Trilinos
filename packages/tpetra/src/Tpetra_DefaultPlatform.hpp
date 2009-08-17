@@ -30,6 +30,7 @@
 #define TPETRA_DEFAULT_PLATFORM_HPP
 
 #include <Kokkos_DefaultNode.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_SerialPlatform.hpp"
 #ifdef HAVE_MPI
 #  include "Tpetra_MpiPlatform.hpp"
@@ -50,7 +51,7 @@ namespace Tpetra {
  */
 class DefaultPlatform {
 public:
-#if HAVE_TPETRA_MPI
+#ifdef HAVE_TPETRA_MPI
   typedef MpiPlatform<Kokkos::DefaultNode::DefaultNodeType> DefaultPlatformType;
 #else
   typedef SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> DefaultPlatformType;

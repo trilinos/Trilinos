@@ -1,4 +1,5 @@
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -38,7 +39,11 @@ namespace {
     TEST_EQUALITY_CONST( comm != Teuchos::null, true );
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    TEST_EQUALITY( myImageID < numImages, true );
+    out << "Default node type: " << Teuchos::TypeNameTraits<Node>::name() << std::endl;
+    out << "Default platform type: " << Teuchos::typeName(platform) << std::endl;
+    out << "numImages: " << numImages << std::endl;
+    out << "myImageID: " << myImageID << std::endl;
+    TEST_EQUALITY_CONST( myImageID < numImages, true );
     Node &node = platform.getNode();
     (void)node;
   }

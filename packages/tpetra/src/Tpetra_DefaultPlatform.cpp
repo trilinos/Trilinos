@@ -1,3 +1,4 @@
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 
 Teuchos::RCP<Tpetra::DefaultPlatform::DefaultPlatformType> Tpetra::DefaultPlatform::platform_ = Teuchos::null;

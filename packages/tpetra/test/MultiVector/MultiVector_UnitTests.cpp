@@ -86,7 +86,7 @@ namespace {
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      DefaultPlatform::getDefaultPlatform().getComm();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
@@ -1881,11 +1881,9 @@ namespace {
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_FLOAT(ORDINAL) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)  \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
-     UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
-     typedef long int LongInt;   UNIT_TEST_GROUP_ORDINAL(LongInt)
+     UNIT_TEST_GROUP_ORDINAL(int)
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
         typedef long long int LongLongInt; UNIT_TEST_GROUP_ORDINAL(LongLongInt)
 #    endif
