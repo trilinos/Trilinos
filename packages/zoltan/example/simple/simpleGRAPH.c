@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
+#include "zz_util_const.h"
 
 /* Name of file containing graph to be partitioned */
 
@@ -15,13 +16,12 @@ static char *fname="graph.txt";
 /* Structure to hold graph data */
 
 typedef struct{
-  int numGlobalVertices; /* total vertices in graph */
-  int numMyVertices;     /* total in my partition */
-  int numAllNbors;  /* total number of neighbors of my vertices */
-  int *vertexGID;  /* global ID of each of my vertices */
-  int *nborIndex;  /* nborIndex[i] is location of start of neighbors for vertex i */
-  int *nborGID;    /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
-  int *nborProc;   /* process owning each nbor in nborGID */
+  int numMyVertices; /* total vertices in in my partition */
+  int numAllNbors;   /* total number of neighbors of my vertices */
+  int *vertexGID;    /* global ID of each of my vertices */
+  int *nborIndex;    /* nborIndex[i] is location of start of neighbors for vertex i */
+  int *nborGID;      /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
+  int *nborProc;     /* process owning each nbor in nborGID */
 } GRAPH_DATA;
 
 /* Application defined query functions */
@@ -43,20 +43,21 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
 /* Functions to read graph in from file, distribute it, view it, handle errors */
 
 static int get_next_line(FILE *fp, char *buf, int bufsize);
+static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
-static void showSimpleGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts);
+static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts);
 static void read_input_file(int myRank, int numProcs, char *fname, GRAPH_DATA *myData);
 
 int main(int argc, char *argv[])
 {
-  int rc, i, ngids, nextIdx;
+  int i, rc;
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
+  int myRank, numProcs;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  float *wgt_list;
-  int *gid_flags, *gid_list, *lid_list;
+  int *parts;
   FILE *fp;
   GRAPH_DATA myGraph;
 
@@ -107,31 +108,18 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
-  Zoltan_Set_Param(zz, "FINAL_OUTPUT", "0");  /* save all info needed for stats */
-
-#ifdef USE_EDGE_WEIGHTS
-  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "1");
-#else
-  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "0");
-#endif
 
   /* Graph parameters */
 
-  Zoltan_Set_Param(zz, "PHG_EDGE_WEIGHT_OPERATION", "SUM");
   Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
-  Zoltan_Set_Param(zz, "PHG_FROM_GRAPH_METHOD", "neighbors");
   Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".35");  /* 0-remove all, 1-remove none */
 
   /* Query functions - defined in simpleQueries.h */
 
-  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_vertices, NULL);
-  Zoltan_Set_Obj_List_Fn(zz, get_vertex_list, NULL);
-  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list, NULL);
-  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, NULL);
-
-  /* get balance and cut info before partitioning */
-
-  rc = Zoltan_LB_Eval_Graph(zz, 1, &evalInfo);
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_vertices, &myGraph);
+  Zoltan_Set_Obj_List_Fn(zz, get_vertex_list, &myGraph);
+  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list, &myGraph);
+  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, &myGraph);
 
   /******************************************************************
   ** Zoltan can now partition the simple graph.
@@ -163,52 +151,30 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
-  ** In a real application, you would rebalance the problem now by
-  ** sending the objects to their new partitions.  Your query 
-  ** functions would need to reflect the new partitioning.
+  ** Visualize the graph partitioning before and after calling Zoltan.
   ******************************************************************/
 
-  /******************************************************************
-  ** Visualize the partitions just created.
-  ** Create a list of GIDs now assigned to my partition, let
-  ** process zero display the partitioning.
-  ******************************************************************/
-  
+  parts = (int *)malloc(sizeof(int) * myGraph.numMyVertices);
 
-  ngids = get_number_of_vertices(NULL, &rc);
-  gid_flags = (int *)calloc(sizeof(int) , simpleNumVertices);
-  gid_list = (int *)malloc(sizeof(int) * ngids);
-  lid_list = (int *)malloc(sizeof(int) * ngids);
-  wgt_list = (float *)malloc(sizeof(float) * simpleNumVertices);
-  get_vertex_list(NULL, 1, 1,
-                  (ZOLTAN_ID_PTR)gid_list, (ZOLTAN_ID_PTR)lid_list,
-                  1, wgt_list, &rc);
+  for (i=0; i < myGraph.numMyVertices; i++){
+    parts[i] = myRank;
+  }
 
-  draw_partitions("initial distribution", ngids, gid_list, 1, wgt_list, 1);
+  if (myRank== 0){
+    printf("\nGraph partition before calling Zoltan\n");
+  }
 
-  for (i=0; i<ngids; i++){
-    gid_flags[gid_list[i]-1] = 1;    /* my original vertices */
-  }
-  for (i=0; i<numImport; i++){
-    gid_flags[importGlobalGids[i] - 1] = 1;  /* my imports */
-  }
-  for (i=0; i<numExport; i++){
-    gid_flags[exportGlobalGids[i] - 1] = 0;  /* my exports */
-  }
-  nextIdx = 0;
-  for (i=0; i<simpleNumVertices; i++){
-    if (gid_flags[i]){
-      gid_flags[nextIdx] = i+1; /* my new GID list */
-      wgt_list[nextIdx] = simpleNumEdges[i];
-      nextIdx++;
-    }
-  }
-  draw_partitions("new partitioning", nextIdx, gid_flags, 1, wgt_list, 1);
+  showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts);
 
-  if (gid_flags) free(gid_flags);
-  if (gid_list) free(gid_list);
-  if (lid_list) free(lid_list);
-  if (wgt_list) free(wgt_list);
+  for (i=0; i < numExport; i++){
+    parts[exportLocalGids[i]] = exportToPart[i];
+  }
+
+  if (myRank == 0){
+    printf("Graph partition after calling Zoltan\n");
+  }
+
+  showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -229,9 +195,12 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 
   if (myGraph.numMyVertices > 0){
-    free(myGraph.vertexGIDs);
+    free(myGraph.vertexGID);
     free(myGraph.nborIndex);
-    free(myGraph.nborGIDs);
+    if (myGraph.numAllNbors > 0){
+      free(myGraph.nborGID);
+      free(myGraph.nborProc);
+    }
   }
 
   return 0;
@@ -281,7 +250,7 @@ int i, idx;
 
   for (i=0;  i < num_obj ; i++){
     idx = localID[i];
-    numEdges[i] = num = graph->nborIndex[idx+1] - graph->nborIndex[idx];
+    numEdges[i] = graph->nborIndex[idx+1] - graph->nborIndex[idx];
   }
 
   *ierr = ZOLTAN_OK;
@@ -294,7 +263,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         ZOLTAN_ID_PTR nborGID, int *nborProc,
         int wgt_dim, float *ewgts, int *ierr)
 {
-int i, j, idx, num;
+int i, j, from, to;
 int *nextNbor, *nextProc;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
@@ -317,20 +286,17 @@ int *nextNbor, *nextProc;
      * set each edge to weight 1.0.
      */
 
-    idx = localID[i];
-    num = graph->nborIndex[idx+1] - graph->nborIndex[idx];
-    if (num != num_edges[i]){
+    to = graph->nborIndex[localID[i]+1];
+    from = graph->nborIndex[localID[i]];
+    if ((to - from) != num_edges[i]){
       *ierr = ZOLTAN_FATAL;
       return;
     }
 
-    idx = graph->nborIndex[idx];
+    for (j=from; j < to; j++){
 
-    for (j=0; j < num; j++){
-
-      *nextNbor++ = graph->nborGID[idx];
-      *nextProc++ = graph->nborProc[idx];
-      idx++;
+      *nextNbor++ = graph->nborGID[j];
+      *nextProc++ = graph->nborProc[j];
     }
   }
   return;
@@ -368,23 +334,52 @@ char *c;
   return strlen(buf);  /* number of characters */
 }
 
+/* Function to return the list of non-negative integers in a line */
+
+static int get_line_ints(char *buf, int bufsize, int *vals)
+{
+char *c = buf;
+int count=0;
+
+  while (1){
+    while (!(isdigit(*c))){
+      if ((c - buf) >= bufsize) break;
+      c++;
+    }
+  
+    if ( (c-buf) >= bufsize) break;
+  
+    vals[count++] = atoi(c);
+  
+    while (isdigit(*c)){
+      if ((c - buf) >= bufsize) break;
+      c++;
+    }
+  
+    if ( (c-buf) >= bufsize) break;
+  }
+
+  return count;
+}
+
+
 /* Proc 0 notifies others of error and exits */
 
 static void input_file_error(int numProcs, int tag, int startProc)
 {
-int i, val;
+int i, val[2];
 
-  val = -1;
+  val[0] = -1;   /* error flag */
 
   fprintf(stderr,"ERROR in input file.\n");
 
   for (i=startProc; i < numProcs; i++){
-    /* these procs have posted receive for "tag" */
-    MPI_Send(&val, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+    /* these procs have posted a receive for "tag" expecting counts */
+    MPI_Send(val, 2, MPI_INT, i, tag, MPI_COMM_WORLD);
   }
   for (i=1; i < startProc; i++){
-    /* these procs are done */
-    MPI_Send(&val, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+    /* these procs are done and waiting for ok-to-go */
+    MPI_Send(val, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
   }
 
   MPI_Finalize();
@@ -393,10 +388,10 @@ int i, val;
 
 /* Draw the partition assignments of the objects */
 
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts)
 {
 int partAssign[25], allPartAssign[25];
-int i, j, part;
+int i, j, part, cuts, prevPart;
 
   memset(partAssign, 0, sizeof(int) * 25);
 
@@ -408,112 +403,227 @@ int i, j, part;
 
   if (myProc == 0){
 
+    cuts = 0;
+
     for (i=20; i >= 0; i-=5){
       for (j=0; j < 5; j++){
         part = allPartAssign[i + j];
-        if (j < 4)
-          printf("%d-----",part);
-        else
-          printf("%d\n",part);
+        if (j > 0){
+          if (part == prevPart){
+            printf("-----%d",part);
+          }
+          else{
+            printf("--x--%d",part);
+            cuts++;
+            prevPart = part;
+          }
+        }
+        else{
+          printf("%d",part);
+          prevPart = part;
+        }
       }
-      if (i > 0)
-        printf("|     |     |     |     |\n");
+      printf("\n");
+      if (i > 0){
+        for (j=0; j < 5; j++){
+          if (allPartAssign[i+j] != allPartAssign[i+j-5]){
+            printf("x     ");
+            cuts++;
+          }
+          else{
+            printf("|     ");
+          }
+        }
+        printf("\n");
+      }
     }
     printf("\n");
+
+    printf("Total number of edge cuts: %d\n\n",cuts);
   }
 }
 
-typedef struct{
-  int numGlobalVertices; /* total vertices in graph */
-  int numMyVertices;     /* total in my partition */
-  int numAllNbors;  /* total number of neighbors of my vertices */
-  int *vertexGID;  /* global ID of each of my vertices */
-  int *nborIndex;  /* nborIndex[i] is location of start of neighbors for vertex i */
-  int *nborGID;    /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
-  int *nborProc;   /* process owning each nbor in nborGID */
-} GRAPH_DATA;
+/*
+ * Read the graph in the input file and distribute the vertices.
+ */
 
 void read_input_file(int myRank, int numProcs, char *fname, GRAPH_DATA *graph)
 {
-char *buf;
-int bufsize = 512;
-int num, nobj, remaining, ack=0;
-int i, j;
-int *gids, *procs, *nbors, *idx;
+char buf[512];
+int bufsize;
+int numGlobalVertices, numGlobalNeighbors;
+int num, nnbors, ack=0;
+int vGID;
+int i, j, procID;
+int vals[128], send_count[2];
+int *idx;
+unsigned int id;
 FILE *fp;
 MPI_Status status;
 int ack_tag = 5, count_tag = 10, id_tag = 15;
+GRAPH_DATA *send_graph;
 
   if (myRank == 0){
 
-    buf = (char *)malloc(sizeof(char) * bufsize);
+    bufsize = 512;
+
     fp = fopen(fname, "r");
+
+    /* Get the number of vertices */
 
     num = get_next_line(fp, buf, bufsize);
     if (num == 0) input_file_error(numProcs, count_tag, 1);
-    num = sscanf(buf, "%d", &graph->numGlobalVertices);
+    num = sscanf(buf, "%d", &numGlobalVertices);
     if (num != 1) input_file_error(numProcs, count_tag, 1);
 
-    if (numProcs > 1){
-      nobj = graph->numGlobalObjects / 2;
-      remaining = graph->numGlobalObjects - nobj;
-    }
-    else{
-      nobj = graph->numGlobalObjects;
-      remaining = 0;
-    }
+    /* Get the number of vertex neighbors  */
 
-    graph->myGlobalIDs = (int *)malloc(sizeof(int) * nobj);
-    graph->numMyObjects = nobj;
+    num = get_next_line(fp, buf, bufsize);
+    if (num == 0) input_file_error(numProcs, count_tag, 1);
+    num = sscanf(buf, "%d", &numGlobalNeighbors);
+    if (num != 1) input_file_error(numProcs, count_tag, 1);
 
-    for (i=0; i < nobj; i++){
+    /* Allocate arrays to read in entire graph */
+
+    graph->vertexGID = (int *)malloc(sizeof(int) * numGlobalVertices);
+    graph->nborIndex = (int *)malloc(sizeof(int) * (numGlobalVertices + 1));
+    graph->nborGID = (int *)malloc(sizeof(int) * numGlobalNeighbors);
+    graph->nborProc = (int *)malloc(sizeof(int) * numGlobalNeighbors);
+
+    graph->nborIndex[0] = 0;
+
+    for (i=0; i < numGlobalVertices; i++){
 
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
-      num = sscanf(buf, "%d", graph->myGlobalIDs + i);
-      if (num != 1) input_file_error(numProcs, count_tag, 1);
-  
+
+      num = get_line_ints(buf, bufsize, vals);
+
+      if (num < 2) input_file_error(numProcs, count_tag, 1);
+
+      vGID = vals[0];
+      nnbors = vals[1];
+
+      if (num < (nnbors + 2)) input_file_error(numProcs, count_tag, 1);
+
+      graph->vertexGID[i] = vGID;
+
+      for (j=0; j < nnbors; j++){
+        graph->nborGID[graph->nborIndex[i] + j] = vals[2 + j];
+      }
+
+      graph->nborIndex[i+1] = graph->nborIndex[i] + nnbors;
     }
 
-    gids = (int *)malloc(sizeof(int) * (nobj + 1));
+    fclose(fp);
+
+    /* Assign each vertex to a process using a hash function */
+
+    for (i=0; i <numGlobalNeighbors; i++){
+      id = (unsigned int)graph->nborGID[i];
+      graph->nborProc[i] = Zoltan_Hash(&id, 1, numProcs);
+    } 
+
+    /* Create a sub graph for each process */
+
+    send_graph = (GRAPH_DATA *)calloc(sizeof(GRAPH_DATA) , numProcs);
+
+    for (i=0; i < numGlobalVertices; i++){
+      id = (unsigned int)graph->vertexGID[i];
+      procID = Zoltan_Hash(&id, 1, numProcs);
+      send_graph[procID].numMyVertices++;
+    }
+
+    for (i=0; i < numProcs; i++){
+      num = send_graph[i].numMyVertices;
+      send_graph[i].vertexGID = (int *)malloc(sizeof(int) * num);
+      send_graph[i].nborIndex = (int *)calloc(sizeof(int) , (num + 1));
+    }
+
+    idx = (int *)calloc(sizeof(int), numProcs);
+
+    for (i=0; i < numGlobalVertices; i++){
+
+      id = (unsigned int)graph->vertexGID[i];
+      nnbors = graph->nborIndex[i+1] - graph->nborIndex[i];
+      procID = Zoltan_Hash(&id, 1, numProcs);
+
+      j = idx[procID];
+      send_graph[procID].vertexGID[j] = id;
+      send_graph[procID].nborIndex[j+1] = send_graph[procID].nborIndex[j] + nnbors;
+
+      idx[procID] = j+1;
+    }
+
+    for (i=0; i < numProcs; i++){
+
+      num = send_graph[i].nborIndex[send_graph[i].numMyVertices];
+
+      send_graph[i].nborGID = (int *)malloc(sizeof(int) * num);
+      send_graph[i].nborProc= (int *)malloc(sizeof(int) * num);
+
+      send_graph[i].numAllNbors = num;
+    }
+
+    memset(idx, 0, sizeof(int) * numProcs);
+
+    for (i=0; i < numGlobalVertices; i++){
+
+      id = (unsigned int)graph->vertexGID[i];
+      nnbors = graph->nborIndex[i+1] - graph->nborIndex[i];
+      procID = Zoltan_Hash(&id, 1, numProcs);
+      j = idx[procID];
+
+      if (nnbors > 0){
+        memcpy(send_graph[procID].nborGID + j, graph->nborGID + graph->nborIndex[i],
+               nnbors * sizeof(int));
+  
+        memcpy(send_graph[procID].nborProc + j, graph->nborProc + graph->nborIndex[i],
+               nnbors * sizeof(int));
+  
+        idx[procID] = j + nnbors;
+      }
+    }
+
+    free(idx);
+
+    /* Process zero sub-graph */
+
+    free(graph->vertexGID);
+    free(graph->nborIndex);
+    free(graph->nborGID);
+    free(graph->nborProc);
+
+    *graph = send_graph[0];
+
+    /* Send other processes their subgraph */
 
     for (i=1; i < numProcs; i++){
-    
-      if (remaining > 1){
-        nobj = remaining / 2;
-        remaining -= nobj;
-      }
-      else if (remaining == 1){
-        nobj = 1;
-        remaining = 0;
-      }
-      else{
-        nobj = 0;
-      }
+      send_count[0] = send_graph[i].numMyVertices;
+      send_count[1] = send_graph[i].numAllNbors;
 
-      if ((i == numProcs - 1) && (remaining > 0))
-        nobj += remaining;
-
-      if (nobj > 0){
-        for (j=0; j < nobj; j++){
-          num = get_next_line(fp, buf, bufsize);
-          if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, "%d", gids + j);
-          if (num != 1) input_file_error(numProcs, count_tag, i);
-        }
-      }
-
-      MPI_Send(&nobj, 1, MPI_INT, i, count_tag, MPI_COMM_WORLD);
+      MPI_Send(send_count, 2, MPI_INT, i, count_tag, MPI_COMM_WORLD);
       MPI_Recv(&ack, 1, MPI_INT, i, ack_tag, MPI_COMM_WORLD, &status);
 
-      if (nobj > 0)
-        MPI_Send(gids, nobj, MPI_INT, i, id_tag, MPI_COMM_WORLD);
-      
+      if (send_count[0] > 0){
+
+        MPI_Send(send_graph[i].vertexGID, send_count[0], MPI_INT, i, id_tag, MPI_COMM_WORLD);
+        free(send_graph[i].vertexGID);
+
+        MPI_Send(send_graph[i].nborIndex, send_count[0] + 1, MPI_INT, i, id_tag + 1, MPI_COMM_WORLD);
+        free(send_graph[i].nborIndex);
+
+        if (send_count[1] > 0){
+          MPI_Send(send_graph[i].nborGID, send_count[1], MPI_INT, i, id_tag + 2, MPI_COMM_WORLD);
+          free(send_graph[i].nborGID);
+
+          MPI_Send(send_graph[i].nborProc, send_count[1], MPI_INT, i, id_tag + 3, MPI_COMM_WORLD);
+          free(send_graph[i].nborProc);
+        }
+      }
     }
 
-    free(gids);
-    fclose(fp);
-    free(buf);
+    free(send_graph);
 
     /* signal all procs it is OK to go on */
     ack = 0;
@@ -523,21 +633,42 @@ int ack_tag = 5, count_tag = 10, id_tag = 15;
   }
   else{
 
-    MPI_Recv(&graph->numMyObjects, 1, MPI_INT, 0, count_tag, MPI_COMM_WORLD, &status);
-    ack = 0;
-    if (graph->numMyObjects > 0){
-      graph->myGlobalIDs = (int *)malloc(sizeof(int) * graph->numMyObjects);
-      MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
-      MPI_Recv(graph->myGlobalIDs, graph->numMyObjects, MPI_INT, 0, 
-               id_tag, MPI_COMM_WORLD, &status);
-    }
-    else if (graph->numMyObjects == 0){
-      MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
-    }
-    else{
+    MPI_Recv(send_count, 2, MPI_INT, 0, count_tag, MPI_COMM_WORLD, &status);
+
+    if (send_count[0] < 0){
       MPI_Finalize();
       exit(1);
     }
+
+    ack = 0;
+
+    graph->numMyVertices = send_count[0];
+    graph->numAllNbors  = send_count[1];
+
+    if (send_count[0] > 0){
+
+      graph->vertexGID = (int *)malloc(sizeof(int) * send_count[0]);
+      graph->nborIndex = (int *)malloc(sizeof(int) * (send_count[0] + 1));
+
+      if (send_count[1] > 0){
+        graph->nborGID  = (int *)malloc(sizeof(int) * send_count[1]);
+        graph->nborProc = (int *)malloc(sizeof(int) * send_count[1]);
+      }
+    }
+
+    MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
+
+    if (send_count[0] > 0){
+      MPI_Recv(graph->vertexGID,send_count[0], MPI_INT, 0, id_tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(graph->nborIndex,send_count[0] + 1, MPI_INT, 0, id_tag + 1, MPI_COMM_WORLD, &status);
+
+      if (send_count[1] > 0){
+        MPI_Recv(graph->nborGID,send_count[1], MPI_INT, 0, id_tag + 2, MPI_COMM_WORLD, &status);
+        MPI_Recv(graph->nborProc,send_count[1], MPI_INT, 0, id_tag + 3, MPI_COMM_WORLD, &status);
+      }
+    }
+
+    /* ok to go on? */
 
     MPI_Recv(&ack, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     if (ack < 0){
