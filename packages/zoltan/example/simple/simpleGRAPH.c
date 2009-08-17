@@ -45,7 +45,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
-static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts);
+static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, int nparts);
 static void read_input_file(int myRank, int numProcs, char *fname, GRAPH_DATA *myData);
 
 int main(int argc, char *argv[])
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
     printf("\nGraph partition before calling Zoltan\n");
   }
 
-  showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts);
+  showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts, numProcs);
 
   for (i=0; i < numExport; i++){
     parts[exportLocalGids[i]] = exportToPart[i];
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     printf("Graph partition after calling Zoltan\n");
   }
 
-  showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts);
+  showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts, numProcs);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -388,10 +388,14 @@ int i, val[2];
 
 /* Draw the partition assignments of the objects */
 
-static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, int nparts)
 {
 int partAssign[25], allPartAssign[25];
 int i, j, part, cuts, prevPart;
+float imbal, localImbal, sum;
+int *partCount;
+
+  partCount = (int *)calloc(sizeof(int), nparts);
 
   memset(partAssign, 0, sizeof(int) * 25);
 
@@ -408,6 +412,7 @@ int i, j, part, cuts, prevPart;
     for (i=20; i >= 0; i-=5){
       for (j=0; j < 5; j++){
         part = allPartAssign[i + j];
+        partCount[part]++;
         if (j > 0){
           if (part == prevPart){
             printf("-----%d",part);
@@ -439,8 +444,22 @@ int i, j, part, cuts, prevPart;
     }
     printf("\n");
 
+    for (sum=0, i=0; i < nparts; i++){
+      sum += partCount[i];
+    }
+    imbal = 0;
+    for (i=0; i < nparts; i++){
+      /* An imbalance measure.  1.0 is perfect balance, larger is worse */
+      localImbal = (nparts * partCount[i]) / sum;
+      if (localImbal > imbal) imbal = localImbal;
+    }
+
+    printf("Object imbalance (1.0 perfect, larger numbers are worse): %f\n",imbal);
     printf("Total number of edge cuts: %d\n\n",cuts);
+
+    if (nparts) free(partCount);
   }
+
 }
 
 /*
