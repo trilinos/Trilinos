@@ -278,7 +278,7 @@ projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) 
   }
 
   double val;
-  for (ordinal_type k=0; k<coeffs.size()-1; k++) {
+  for (ordinal_type k=0; k<coeffs.size(); k++) {
     value_type c = value_type(1.0);
     for (ordinal_type l=0; l<static_cast<ordinal_type>(bases.size()); l++) {
       val = (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
