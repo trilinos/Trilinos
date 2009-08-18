@@ -25,6 +25,14 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
                     -I$(SRC)/params \
                     -I$(SRC)/Utilities/shared
 
+#
+# If Zoltan was built with ParMETIS, provide the information required
+# to link with the ParMETIS library.
+#
+
+PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
+PAR_LIBS=-lparmetis -lmetis
+
 # Preferred compiler
 CC=mpicc
 
@@ -39,8 +47,9 @@ all:   simpleBLOCK  simpleRCB simpleGRAPH simplePHG
 
 
 %: %.c
-	$(CC) $(CFLAGS) -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a -lm $(MPI_LIBS)
+	$(CC) $(CFLAGS) $(PAR_LIB_DIR)  \
+        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
+        -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
 
 clean:
 	@rm -rf $(all)
