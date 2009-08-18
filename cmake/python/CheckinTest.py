@@ -487,13 +487,17 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
     else:
       emailBody += getCmndOutput("grep -A 10000 '\% tests passed, ' "+getTestOutputFileName())
 
+  else:
+
+    emailBody += "\n***\n*** WARNING: There are no test results!\n***\n\n"
+
   endingTime = time.time()
   totalTime = (endingTime - startingTime) / 60.0
 
   emailBody += "\n\nFinal:\n------\n\n"
   emailBody += "Total time for "+buildDirName+" = "+str(totalTime) + " minutes"
 
-  print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
+  #print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
   open(getEmailBodyFileName(),'w').write(emailBody)
 
@@ -538,8 +542,9 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
 
 def getSummaryEmailSectionStr(inOptions):
   summaryEmailSectionStr = \
-    "\nSummary of tests performed:\n" \
-    "-----------------------------\n"
+    "\n\n-------------------\n" \
+    "Summary of Results:\n" \
+    "-------------------\n"
   summaryEmailSectionStr += \
     getTestCaseEmailSummary(inOptions.withMpiDebug, "MPI_DEBUG")
   summaryEmailSectionStr += \
@@ -631,6 +636,8 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     if inOptions.enableFwdPackages:
       print "\nEnabling forward packages on request ..."
       cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+    else:
+      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
 
     if inOptions.disablePackages:
       print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
@@ -790,6 +797,34 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
   return success
 
 
+def checkBuildCheckinStatus(runTestCaseBool, serialOrMpi, buildType):
+
+  buildName = serialOrMpi+"_"+buildType
+
+  statusMsg = ""
+
+  if not runTestCaseBool:
+    return (True,
+      "\nTest case "+buildName+" was not run!  Does not affect commit readiness!\n")
+
+  if not os.path.exists(buildName):
+    statusMsg += "\nThe directory "+buildName+" does not exist!  Not ready to commit!\n"
+    return (False, statusMsg)
+
+  testSuccessFileName = buildName+"/"+getTestSuccessFileName()
+  if not os.path.exists(testSuccessFileName):
+     statusMsg += "\nThe file "+testSuccessFileName+" does not exist!  Not ready to commit!\n"
+     return (False, statusMsg)
+
+  emailSuccessFileName = buildName+"/"+getEmailSuccessFileName()
+  if not os.path.exists(emailSuccessFileName):
+    statusMsg += "\nThe file "+emailSuccessFileName+" does not exist!  Not ready to commit!\n"
+    return (False, statusMsg)
+
+  statusMsg += "\nThe tests successfully passed for "+buildName+"!\n"
+  return (True, statusMsg)
+
+
 def checkinTest(inOptions):
 
   print "\n**********************************************"
@@ -815,8 +850,9 @@ def checkinTest(inOptions):
 
   try:
 
+
     print "\n***"
-    print "*** Clean old output files .."
+    print "*** 1) Clean old output files .."
     print "***"
 
     removeIfExists(getCommitEmailBodyFileName())
@@ -827,14 +863,17 @@ def checkinTest(inOptions):
       removeIfExists(getUpdateOutputFileName())
       removeIfExists(getUpdateSuccessFileName())
 
+    removeIfExists(getUpdateOutput2FileName())
+
     cleanTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
       "MPI", "DEBUG" )
 
     cleanTestCaseOutputFiles(inOptions.withSerialRelease, inOptions, baseTestDir,
       "SERIAL", "RELEASE" )
 
+
     print "\n***"
-    print "*** Update the Trilinos sources ..."
+    print "*** 2) Update the Trilinos sources ..."
     print "***"
   
     if inOptions.doUpdate:
@@ -861,8 +900,17 @@ def checkinTest(inOptions):
   
       print "\nSkipping update on request!\n"
 
-      updatePassed = os.path.exists(getUpdateSuccessFileName())
+      if os.path.exists(getUpdateSuccessFileName()):
+        print "\nA previous update was performed and was successful!"
+        updatePassed = True
+      else:
+        print "\nA previous update was *not* performed or was *not* successful!"
+        updatePassed = False
 
+
+    print "\n***"
+    print "*** 3) Running the different build cases ..."
+    print "***"
 
     if updatePassed:
 
@@ -890,10 +938,10 @@ def checkinTest(inOptions):
 
     else:
 
-      print "\nNot doing any builds because the update failed!\n"
+      print "\nNot doing any builds because the update was not performed or failed!\n"
 
     print "\n***"
-    print "*** Determine overall commit readiness ..."
+    print "*** 4) Determine overall commit readiness ..."
     print "***"
 
     echoChDir(baseTestDir)
@@ -902,23 +950,31 @@ def checkinTest(inOptions):
     subjectLine = None
     commitEmailBodyExtra = ""
 
-    if inOptions.withMpiDebug and not os.path.exists("MPI_DEBUG/"+getEmailSuccessFileName()):
-      print "\nMPI_DEBUG failed since MPI_DEBUG/"+getEmailSuccessFileName()+" is missing!"
+    (buildOkay, statusMsg) = \
+      checkBuildCheckinStatus(inOptions.withMpiDebug, "MPI", "DEBUG")
+    print statusMsg
+    commitEmailBodyExtra += statusMsg
+    if not buildOkay:
+      commitOkay = False
+      
+    (buildOkay, statusMsg) = \
+      checkBuildCheckinStatus(inOptions.withSerialRelease, "SERIAL", "RELEASE")
+    print statusMsg
+    commitEmailBodyExtra += statusMsg
+    if not buildOkay:
       commitOkay = False
 
-    if inOptions.withSerialRelease and not os.path.exists("SERIAL_RELEASE/"+getEmailSuccessFileName()):
-      print "\nSERIAL_RELEASE failed since SERIAL_RELEASE/"+getEmailSuccessFileName()+" is missing!"
-      commitOkay = False
 
     if commitOkay:
-      print "\nAll actions performed passed!\n\n" \
+      print "\nThe tests ran and all passed!\n\n" \
         "  => A COMMIT IS OKAY TO BE PERFORMED!"
     else:
-      print "\nAt least one of the options (update, configure, built, test) failed!\n\n" \
+      print "\nAt least one of the actions (update, configure, built, test)" \
+        " failed or was not performed correctly!\n\n" \
         "  => A COMMIT IS *NOT* READY TO BE PERFORMED!"
 
     print "\n***"
-    print "*** Do commit or send email about commit readiness status ..."
+    print "*** 5) Do commit or send email about commit readiness status ..."
     print "***"
 
     if inOptions.doCommit:
