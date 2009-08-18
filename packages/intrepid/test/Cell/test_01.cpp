@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
         *outStream <<" for cell topology " <<  (*cti).getName() <<"\n";
         
         
-        // Array for physical cell vertices ( must have rank 3 for cetJacobians)
+        // Array for physical cell vertices ( must have rank 3 for setJacobians)
         FieldContainer<double> physCellVertices(1, vCount, cellDim);
 
         // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
@@ -257,21 +257,16 @@ int main(int argc, char *argv[]) {
           } //for d
         }// for v     
         
-        // Allocate storage for cub. points on a ref. edge; Jacobians, phys. edge tangents/normals and 
-        // benchmark tangents. The benchmark tangents are stored in array sized for a general case of  
-        // non-affine edges to make it easier to add these tests later.
+        // Allocate storage for cub. points on a ref. edge; Jacobians, phys. edge tangents/normals
         FieldContainer<double> refEdgePoints(numCubPoints, cellDim);        
         FieldContainer<double> edgePointsJacobians(1, numCubPoints, cellDim, cellDim);
         FieldContainer<double> edgePointTangents(1, numCubPoints, cellDim);
-        FieldContainer<double> edgePointNormals(1, numCubPoints, cellDim);
-        FieldContainer<double> edgeBenchmarkTangents(1, numCubPoints, cellDim);
-        
+        FieldContainer<double> edgePointNormals(1, numCubPoints, cellDim);        
 
         // Loop over edges:
         for(int edgeOrd = 0; edgeOrd < (*cti).getEdgeCount(); edgeOrd++){
-          
           /* 
-           * Compute tangents on the specified edge using CellTools:
+           * Compute tangents on the specified physical edge using CellTools:
            *    1. Map points from edge parametrization domain to ref. edge with specified ordinal
            *    2. Compute parent cell Jacobians at ref. edge points
            *    3. Compute physical edge tangents
@@ -279,11 +274,10 @@ int main(int argc, char *argv[]) {
           CellTools::mapToReferenceSubcell(refEdgePoints, paramEdgePoints, 1, edgeOrd, (*cti) );
           CellTools::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, (*cti) );
           CellTools::getPhysicalEdgeTangents(edgePointTangents, edgePointsJacobians, edgeOrd, (*cti)); 
-          
           /*
-           * Compute tangents on the specified edge directly and compare with CellTools tangents.
+           * Compute tangents directly using parametrization of phys. edge and compare with CellTools tangents.
            *    1. Get edge vertices
-           *    2. For affine edges tangent coordinates are given by s'(t) = (v1-v0)/2
+           *    2. For affine edges tangent coordinates are given by F'(t) = (V1-V0)/2
            *       (for now we only test affine edges, but later we will test edges for cells 
            *        with extended topologies.)
            */
@@ -291,51 +285,56 @@ int main(int argc, char *argv[]) {
           int v1ord = (*cti).getNodeMap(1, edgeOrd, 1);
           
           for(int pt = 0; pt < numCubPoints; pt++){
+
+            // Temp storage for directly computed edge tangents
+            FieldContainer<double> edgeBenchmarkTangents(3);
+            
             for(int d = 0; d < cellDim; d++){
-              edgeBenchmarkTangents(0, pt, d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
+              edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
               
               // Compare with d-component of edge tangent by CellTools
-              if( abs(edgeBenchmarkTangents(0, pt, d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > INTREPID_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
                   << " Edge tangent computation by CellTools failed for: \n"
                   << "       Cell Topology = " << (*cti).getName() << "\n"
                   << "        Edge ordinal = " << edgeOrd << "\n"
-                  << "  Tangent coordinate = " << d << " edge point number = " << pt << "\n"
-                  << "     CellTools value = " <<  edgePointTangents(0, pt, d)
-                  << "     Benchmark value = " <<  edgeBenchmarkTangents(0, pt, d) << "\n\n";
+                  << "   Edge point number = " << pt << "\n"
+                  << "  Tangent coordinate = " << d << "\n"
+                  << "     CellTools value = " <<  edgePointTangents(0, pt, d) << "\n"
+                  << "     Benchmark value = " <<  edgeBenchmarkTangents(d) << "\n\n";
               }
             } // for d
             
             // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
             if(cellDim == 2) {
               CellTools::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, (*cti));
-              if( abs(edgeBenchmarkTangents(0, pt, 1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > INTREPID_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
                   << " Edge Normal computation by CellTools failed for: \n"
                   << "       Cell Topology = " << (*cti).getName() << "\n"
                   << "        Edge ordinal = " << edgeOrd << "\n"
-                  << "  Normal coordinate = " << 0 << " edge point number = " << pt << "\n"
-                  << "     CellTools value = " <<  edgePointNormals(0, pt, 0)
-                  << "     Benchmark value = " <<  edgeBenchmarkTangents(0, pt, 1) << "\n\n";
+                  << "   Edge point number = " << pt << "\n"
+                  << "   Normal coordinate = " << 0 << "\n"
+                  << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
+                  << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
               }
-              if( abs(edgeBenchmarkTangents(0, pt, 0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
+              if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID_THRESHOLD ){
                 errorFlag++;
                 *outStream
                   << std::setw(70) << "^^^^----FAILURE!" << "\n"
                   << " Edge Normal computation by CellTools failed for: \n"
                   << "       Cell Topology = " << (*cti).getName() << "\n"
                   << "        Edge ordinal = " << edgeOrd << "\n"
-                  << "  Normal coordinate = " << 1 << " edge point number = " << pt << "\n"
-                  << "     CellTools value = " <<  edgePointNormals(0, pt, 1)
-                  << "     Benchmark value = " << -edgeBenchmarkTangents(0, pt, 0) << "\n\n";
+                  << "   Edge point number = " << pt << "\n"
+                  << "   Normal coordinate = " << 1  << "\n"
+                  << "     CellTools value = " <<  edgePointNormals(0, pt, 1) << "\n"
+                  << "     Benchmark value = " << -edgeBenchmarkTangents(0) << "\n\n";
               }
-            } // edge normals
-            
-            
+            } // edge normals            
           } // for pt
         }// for edgeOrd
       }// if admissible cell
@@ -357,7 +356,7 @@ int main(int argc, char *argv[]) {
     int faceCubDim           = triFaceCubature -> getDimension();
     int numTriFaceCubPoints  = triFaceCubature -> getNumPoints();
     int numQuadFaceCubPoints = quadFaceCubature -> getNumPoints();    
-    
+        
     // Allocate storage for cubature points and weights on face parameter domain and fill with points:
     FieldContainer<double> paramTriFacePoints(numTriFaceCubPoints, faceCubDim);
     FieldContainer<double> paramTriFaceWeights(numTriFaceCubPoints);
@@ -368,6 +367,192 @@ int main(int argc, char *argv[]) {
     quadFaceCubature -> getCubature(paramQuadFacePoints, paramQuadFaceWeights);
     
     
+    // Loop over admissible topologies 
+    for(cti = standardBaseTopologies.begin(); cti !=standardBaseTopologies.end(); ++cti){
+      
+      // Exclude 2D and Pyramid<5> cells
+      if( ( (*cti).getDimension() == 3) && ( (*cti).getKey() != shards::Pyramid<5>::key) ){ 
+        
+        int cellDim = (*cti).getDimension();
+        int vCount  = (*cti).getVertexCount();
+        FieldContainer<double> refCellVertices(vCount, cellDim);
+        CellTools::getReferenceSubcellVertices(refCellVertices, cellDim, 0, (*cti) );
+        
+        *outStream << " Testing face/side normals for cell topology " <<  (*cti).getName() <<"\n";
+        
+        // Array for physical cell vertices ( must have rank 3 for setJacobians)
+        FieldContainer<double> physCellVertices(1, vCount, cellDim);
+        
+        // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
+        // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
+        for(int v = 0; v < vCount; v++){
+          for(int d = 0; d < cellDim; d++){
+            double delta = Teuchos::ScalarTraits<double>::random()/8.0;
+            physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
+          } //for d
+        }// for v     
+        
+        // Allocate storage for cub. points on a ref. face; Jacobians, phys. face normals and 
+        // benchmark normals.
+        FieldContainer<double> refTriFacePoints(numTriFaceCubPoints, cellDim);        
+        FieldContainer<double> refQuadFacePoints(numQuadFaceCubPoints, cellDim);        
+        FieldContainer<double> triFacePointsJacobians(1, numTriFaceCubPoints, cellDim, cellDim);
+        FieldContainer<double> quadFacePointsJacobians(1, numQuadFaceCubPoints, cellDim, cellDim);
+        FieldContainer<double> triFacePointNormals(1, numTriFaceCubPoints, cellDim);
+        FieldContainer<double> triSidePointNormals(1, numTriFaceCubPoints, cellDim);
+        FieldContainer<double> quadFacePointNormals(1, numQuadFaceCubPoints, cellDim);
+        FieldContainer<double> quadSidePointNormals(1, numQuadFaceCubPoints, cellDim);
+        
+        
+        // Loop over faces:
+        for(int faceOrd = 0; faceOrd < (*cti).getSideCount(); faceOrd++){
+          
+          // This test presently includes only Triangle<3> and Quadrilateral<4> faces. Once we support
+          // cells with extended topologies we will add their faces as well.
+          switch( (*cti).getTopology(2, faceOrd) -> key ) {
+            
+            case shards::Triangle<3>::key: 
+              {
+                // Compute face normals using CellTools
+                CellTools::mapToReferenceSubcell(refTriFacePoints, paramTriFacePoints, 2, faceOrd, (*cti) );
+                CellTools::setJacobian(triFacePointsJacobians, refTriFacePoints, physCellVertices, (*cti) );
+                CellTools::getPhysicalFaceNormals(triFacePointNormals, triFacePointsJacobians, faceOrd, (*cti));               
+                CellTools::getPhysicalSideNormals(triSidePointNormals, triFacePointsJacobians, faceOrd, (*cti));               
+                /* 
+                 * Compute face normals using direct linear parametrization of the face: the map from
+                 * standard 2-simplex to physical Triangle<3> face in 3D is 
+                 * F(x,y) = V0 + (V1-V0)x + (V2-V0)*y 
+                 * Face normal is vector product Tx X Ty where Tx = (V1-V0); Ty = (V2-V0)
+                 */
+                int v0ord = (*cti).getNodeMap(2, faceOrd, 0);
+                int v1ord = (*cti).getNodeMap(2, faceOrd, 1);
+                int v2ord = (*cti).getNodeMap(2, faceOrd, 2);
+                
+                // Loop over face points: redundant for affine faces, but CellTools gives one vector 
+                // per point so need to check all points anyways.
+                for(int pt = 0; pt < numTriFaceCubPoints; pt++){
+                  FieldContainer<double> tanX(3), tanY(3), faceNormal(3);
+                  for(int d = 0; d < cellDim; d++){
+                    tanX(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d));
+                    tanY(d) = (physCellVertices(0, v2ord, d) - physCellVertices(0, v0ord, d));
+                  }// for d
+                  
+                  RealSpaceTools<double>::vecprod(faceNormal, tanX, tanY); 
+                  
+                  // Compare direct normal with d-component of the face/side normal by CellTools
+                  for(int d = 0; d < cellDim; d++){
+                    
+                    // face normal method
+                    if( abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                      errorFlag++;
+                      *outStream
+                        << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                        << " Face normal computation by CellTools failed for: \n"
+                        << "       Cell Topology = " << (*cti).getName() << "\n"
+                        << "       Face Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "        Face ordinal = " << faceOrd << "\n"
+                        << "   Face point number = " << pt << "\n"
+                        << "   Normal coordinate = " << d  << "\n"
+                        << "     CellTools value = " <<  triFacePointNormals(0, pt, d)
+                        << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                    }
+                    //side normal method
+                    if( abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                      errorFlag++;
+                      *outStream
+                        << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                        << " Side normal computation by CellTools failed for: \n"
+                        << "       Cell Topology = " << (*cti).getName() << "\n"
+                        << "       Side Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "        Side ordinal = " << faceOrd << "\n"
+                        << "   Side point number = " << pt << "\n"
+                        << "   Normal coordinate = " << d  << "\n"
+                        << "     CellTools value = " <<  triSidePointNormals(0, pt, d)
+                        << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                    }
+                  } // for d
+                } // for pt
+              }
+              break;
+              
+            case shards::Quadrilateral<4>::key:
+              {
+                // Compute face normals using CellTools
+                CellTools::mapToReferenceSubcell(refQuadFacePoints, paramQuadFacePoints, 2, faceOrd, (*cti) );
+                CellTools::setJacobian(quadFacePointsJacobians, refQuadFacePoints, physCellVertices, (*cti) );
+                CellTools::getPhysicalFaceNormals(quadFacePointNormals, quadFacePointsJacobians, faceOrd, (*cti));               
+                CellTools::getPhysicalSideNormals(quadSidePointNormals, quadFacePointsJacobians, faceOrd, (*cti)); 
+                /*
+                 * Compute face normals using direct bilinear parametrization of the face: the map from
+                 * [-1,1]^2 to physical Quadrilateral<4> face in 3D is 
+                 * F(x,y) = ((V0+V1+V2+V3) + (-V0+V1+V2-V3)*X + (-V0-V1+V2+V3)*Y + (V0-V1+V2-V3)*X*Y)/4 
+                 * Face normal is vector product Tx X Ty where
+                 *          Tx = ((-V0+V1+V2-V3) + (V0-V1+V2-V3)*Y)/4
+                 *          Ty = ((-V0-V1+V2+V3) + (V0-V1+V2-V3)*X)/4
+                 */
+                int v0ord = (*cti).getNodeMap(2, faceOrd, 0);
+                int v1ord = (*cti).getNodeMap(2, faceOrd, 1);
+                int v2ord = (*cti).getNodeMap(2, faceOrd, 2);
+                int v3ord = (*cti).getNodeMap(2, faceOrd, 3);
+                
+                // Loop over face points (redundant for affine faces, but needed for later when we handle non-affine ones)
+                for(int pt = 0; pt < numTriFaceCubPoints; pt++){
+                  FieldContainer<double> tanX(3), tanY(3), faceNormal(3);
+                  for(int d = 0; d < cellDim; d++){
+                    tanX(d) = (physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,1) )  +
+                               physCellVertices(0, v1ord, d)*( 1.0 - paramQuadFacePoints(pt,1) ) + 
+                               physCellVertices(0, v2ord, d)*( 1.0 + paramQuadFacePoints(pt,1) ) + 
+                               physCellVertices(0, v3ord, d)*(-1.0 - paramQuadFacePoints(pt,1) ) )/4.0;
+                    
+                    tanY(d) = (physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,0) ) +
+                               physCellVertices(0, v1ord, d)*(-1.0 - paramQuadFacePoints(pt,0) ) + 
+                               physCellVertices(0, v2ord, d)*( 1.0 + paramQuadFacePoints(pt,0) ) + 
+                               physCellVertices(0, v3ord, d)*( 1.0 - paramQuadFacePoints(pt,0) ) )/4.0;
+                  }// for d
+                  
+                  RealSpaceTools<double>::vecprod(faceNormal, tanX, tanY); 
+                  // Compare direct normal with d-component of the face/side normal by CellTools
+                  for(int d = 0; d < cellDim; d++){
+                    
+                    // face normal method
+                    if( abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                      errorFlag++;
+                      *outStream
+                        << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                        << " Face normal computation by CellTools failed for: \n"
+                        << "       Cell Topology = " << (*cti).getName() << "\n"
+                        << "       Face Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "        Face ordinal = " << faceOrd << "\n"
+                        << "   Face point number = " << pt << "\n"
+                        << "   Normal coordinate = " << d  << "\n"
+                        << "     CellTools value = " <<  quadFacePointNormals(0, pt, d)
+                        << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                    }
+                    //side normal method
+                    if( abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > INTREPID_THRESHOLD ){
+                      errorFlag++;
+                      *outStream
+                        << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                        << " Side normal computation by CellTools failed for: \n"
+                        << "       Cell Topology = " << (*cti).getName() << "\n"
+                        << "       Side Topology = " << (*cti).getTopology(2, faceOrd) -> name << "\n"
+                        << "        Side ordinal = " << faceOrd << "\n"
+                        << "   Side point number = " << pt << "\n"
+                        << "   Normal coordinate = " << d  << "\n"
+                        << "     CellTools value = " <<  quadSidePointNormals(0, pt, d)
+                        << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                    }
+                  } // for d
+                }// for pt
+              }// case Quad
+              break;
+            default:
+              errorFlag++;
+              *outStream << " Face normals test failure: face topology not supported \n\n";
+          } // switch 
+        }// for faceOrd
+      }// if admissible
+      }// for cti
   }// try
   
   //============================================================================================//

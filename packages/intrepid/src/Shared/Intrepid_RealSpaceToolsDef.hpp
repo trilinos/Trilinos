@@ -1238,39 +1238,86 @@ template<class VecArrayOut, class VecArrayIn>
 void RealSpaceTools<Scalar>::vecprod(VecArrayOut &       vecProd, 
                                      const VecArrayIn &  inLeft, 
                                      const VecArrayIn &  inRight){
-  int dim0 = inLeft.dimension(0);
-  int dim1 = inLeft.dimension(1);
-  int spaceDim = inLeft.dimension(2);
   
-  if(spaceDim == 3) {
-    for(int i0 = 0; i0 < dim0; i0++){
-      for(int i1 = 0; i1 < dim1; i1++){
-        vecProd(i0, i1, 0) = \
-        inLeft(i0, i1, 1)*inRight(i0, i1, 2) - inLeft(i0, i1, 2)*inRight(i0, i1, 1);
-        
-        vecProd(i0, i1, 1) = \
-          inLeft(i0, i1, 2)*inRight(i0, i1, 0) - inLeft(i0, i1, 0)*inRight(i0, i1, 2);
-        
-        vecProd(i0, i1, 2) = \
-          inLeft(i0, i1, 0)*inRight(i0, i1, 1) - inLeft(i0, i1, 1)*inRight(i0, i1, 0);
-      }// i1
-    }// i0
-  } //spaceDim == 3
+#ifdef HAVE_INTREPID_DEBUG
+  /*
+   *   Check array rank and spatial dimension range (if applicable)
+   *      (1) all array arguments are required to have matching dimensions and rank: (D), (I0,D) or (I0,I1,D)
+   *      (2) spatial dimension should be 2 or 3
+   */
+  std::string errmsg = ">>> ERROR (RealSpaceTools::vecprod):";
   
-  else if(spaceDim == 2){
-    for(int i0 = 0; i0 < dim0; i0++){
-      for(int i1 = 0; i1 < dim1; i1++){
-        
-        // vecprod is scalar - do we still want result to be (i0,i1,D)?
-        vecProd(i0, i1, 0) = \
-        inLeft(i0, i1, 0)*inRight(i0, i1, 1) - inLeft(i0, i1, 1)*inRight(i0, i1, 0);
-      }// i1
-    }// i0
-  }// spaceDim == 2
-  else{
-    TEST_FOR_EXCEPTION(true, std::invalid_argument, 
-                       ">>> ERROR (RealSpaceTools::vecprod): vectors must have dimension 2 or 3");
+  // (1) check rank range on inLeft and then compare the other arrays with inLeft
+  TEST_FOR_EXCEPTION( !requireRankRange(errmsg, inLeft,  1,3), std::invalid_argument, errmsg);
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, inRight), std::invalid_argument, errmsg);    
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, inLeft, vecProd), std::invalid_argument, errmsg);   
+  
+  // (2) spatial dimension ordinal = array rank - 1. Suffices to check only one array because we just
+  //     checked whether or not the arrays have matching dimensions. 
+  TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inLeft, inLeft.rank() - 1,  2,3), std::invalid_argument, errmsg);
+  
+#endif HAVE_INTREPID_DEBUG
+  
+  int spaceDim = inLeft.dimension(inLeft.rank() - 1);
+
+  switch(inLeft.rank() ){
+    
+    case 1:
+      {        
+        vecProd(0) = inLeft(1)*inRight(2) - inLeft(2)*inRight(1);
+        vecProd(1) = inLeft(2)*inRight(0) - inLeft(0)*inRight(2);              
+        vecProd(2) = inLeft(0)*inRight(1) - inLeft(1)*inRight(0);    
+      }
+      break;
+      
+    case 2:
+      {
+        int dim0 = inLeft.dimension(0);
+        if(spaceDim == 3) {
+          for(int i0 = 0; i0 < dim0; i0++){
+            vecProd(i0, 0) = inLeft(i0, 1)*inRight(i0, 2) - inLeft(i0, 2)*inRight(i0, 1);
+            vecProd(i0, 1) = inLeft(i0, 2)*inRight(i0, 0) - inLeft(i0, 0)*inRight(i0, 2);              
+            vecProd(i0, 2) = inLeft(i0, 0)*inRight(i0, 1) - inLeft(i0, 1)*inRight(i0, 0);
+          }// i0
+        } //spaceDim == 3
+        else if(spaceDim == 2){
+          for(int i0 = 0; i0 < dim0; i0++){
+            // vecprod is scalar - do we still want result to be (i0,i1,D)?
+            vecProd(i0, 0) = inLeft(i0, 0)*inRight(i0, 1) - inLeft(i0, 1)*inRight(i0, 0);
+          }// i0
+        }// spaceDim == 2
+      }// case 2
+      break;
+      
+    case 3:
+      {
+        int dim0 = inLeft.dimension(0);
+        int dim1 = inLeft.dimension(1);
+        if(spaceDim == 3) {
+          for(int i0 = 0; i0 < dim0; i0++){
+            for(int i1 = 0; i1 < dim1; i1++){
+              vecProd(i0, i1, 0) = inLeft(i0, i1, 1)*inRight(i0, i1, 2) - inLeft(i0, i1, 2)*inRight(i0, i1, 1);
+              vecProd(i0, i1, 1) = inLeft(i0, i1, 2)*inRight(i0, i1, 0) - inLeft(i0, i1, 0)*inRight(i0, i1, 2);              
+              vecProd(i0, i1, 2) = inLeft(i0, i1, 0)*inRight(i0, i1, 1) - inLeft(i0, i1, 1)*inRight(i0, i1, 0);
+            }// i1
+          }// i0
+        } //spaceDim == 3
+        else if(spaceDim == 2){
+          for(int i0 = 0; i0 < dim0; i0++){
+            for(int i1 = 0; i1 < dim1; i1++){
+              // vecprod is scalar - do we still want result to be (i0,i1,D)?
+              vecProd(i0, i1, 0) = inLeft(i0, i1, 0)*inRight(i0, i1, 1) - inLeft(i0, i1, 1)*inRight(i0, i1, 0);
+            }// i1
+          }// i0
+        }// spaceDim == 2
+      } // case 3
+      break;
+      
+    default:
+      TEST_FOR_EXCEPTION(true, std::invalid_argument, 
+                         ">>> ERROR (RealSpaceTools::vecprod): rank-1,2,3 arrays required");      
   }
+  
 }
 
 
