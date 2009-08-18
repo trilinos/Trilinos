@@ -29,6 +29,7 @@
 #ifndef TPETRA_ROWMATRIX_HPP
 #define TPETRA_ROWMATRIX_HPP
 
+#include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Operator.hpp"
@@ -43,7 +44,7 @@ namespace Tpetra
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
      type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
+  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowMatrix : public Operator<Scalar,LocalOrdinal,GlobalOrdinal>
   {
     public:
@@ -62,19 +63,22 @@ namespace Tpetra
       virtual bool isFillComplete() const = 0;
 
       //! \brief If matrix indices are stored as local indices, this function returns true. Otherwise, it returns false.
-      virtual bool indicesAreLocal() const = 0;
+      virtual bool isLocallyIndexed() const = 0;
 
       //! \brief If matrix indices are stored as global indices, this function returns false. Otherwise, it returns true.
-      virtual bool indicesAreGlobal() const = 0;
+      virtual bool isGloballyIndexed() const = 0;
 
       //! \brief Indicates whether the matrix is lower triangular.
-      virtual bool lowerTriangular() const = 0;
+      virtual bool isLowerTriangular() const = 0;
 
       //! \brief Indicates whether the matrix is upper triangular.
-      virtual bool upperTriangular() const = 0;
+      virtual bool isUpperTriangular() const = 0;
 
       //! Returns the communicator.
       virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
+
+      //! Returns the underlying node.
+      virtual Node& getNode() const = 0;
 
       //! \brief Indicates whether the matrix has a well-defined column map. 
       /*! The column map does not exist until after fillComplete(), unless the matrix was constructed with one. */
@@ -91,53 +95,53 @@ namespace Tpetra
       virtual const Map<LocalOrdinal,GlobalOrdinal> & getColMap() const = 0;
 
       //! Returns the number of global matrix rows. 
-      virtual GlobalOrdinal numGlobalRows() const = 0;
+      virtual GlobalOrdinal getNumGlobalRows() const = 0;
 
       //! \brief Returns the number of global matrix columns. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual GlobalOrdinal numGlobalCols() const = 0;
+      virtual GlobalOrdinal getNumGlobalCols() const = 0;
 
       //! Returns the number of matrix rows owned by the calling image. 
-      virtual Teuchos_Ordinal numLocalRows() const = 0;
+      virtual size_t getNumLocalRows() const = 0;
 
       //! \brief Returns the number of matrix columns needed by the calling image to apply the forward operator.
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual Teuchos_Ordinal numLocalCols() const = 0;
+      virtual size_t getNumLocalCols() const = 0;
 
       //! Returns the index base for global indices for this matrix. 
-      virtual Teuchos_Ordinal getIndexBase() const = 0;
+      virtual GlobalOrdinal getIndexBase() const = 0;
 
       //! \brief Returns the number of nonzero entries in the global matrix. 
       /*! Returns the number of global entries in the associated graph. */
-      virtual GlobalOrdinal numGlobalEntries() const = 0;
+      virtual global_size_t getNumGlobalEntries() const = 0;
 
       //! \brief Returns the number of nonzero entries in the calling image's portion of the matrix. 
       /*! Before fillComplete() is called, this could include duplicated entries. */
-      virtual Teuchos_Ordinal numMyEntries() const = 0;
+      virtual size_t getNumLocalEntries() const = 0;
 
       //! \brief Returns the current number of nonzero entries on this node in the specified global row .
       /*! Throws exception std::runtime_error if the specified global row does not belong to this node. */
-      virtual Teuchos_Ordinal numEntriesForGlobalRow(GlobalOrdinal globalRow) const = 0;
+      virtual size_t getNumEntriesForGlobalRow(GlobalOrdinal globalRow) const = 0;
 
       //! Returns the current number of nonzero entries on this node in the specified local row.
       /*! Throws exception std::runtime_error if the specified local row is not valid for this node. */
-      virtual Teuchos_Ordinal numEntriesForMyRow(LocalOrdinal localRow) const = 0;
+      virtual size_t getNumEntriesForLocalRow(LocalOrdinal localRow) const = 0;
 
       //! \brief Returns the number of global nonzero diagonal entries, based on global row/column index comparisons. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual GlobalOrdinal numGlobalDiagonals() const = 0;
+      virtual GlobalOrdinal getNumGlobalDiags() const = 0;
 
       //! \brief Returns the number of local nonzero diagonal entries, based on global row/column index comparisons. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual Teuchos_Ordinal numMyDiagonals() const = 0;
+      virtual size_t getNumLocalDiags() const = 0;
 
       //! \brief Returns the maximum number of nonzero entries across all rows/columns on all images. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual GlobalOrdinal globalMaxNumRowEntries() const = 0;
+      virtual GlobalOrdinal getGlobalMaxNumRowEntries() const = 0;
 
       //! \brief Returns the maximum number of nonzero entries across all rows/columns on this image. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual Teuchos_Ordinal myMaxNumRowEntries() const = 0;
+      virtual size_t getLocalMaxNumRowEntries() const = 0;
 
       //@}
 
@@ -153,17 +157,17 @@ namespace Tpetra
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries.
        * \pre hasColMap() == true
        */
-      virtual void extractMyRowCopy(LocalOrdinal localRow, 
+      virtual void getLocalRowCopy(LocalOrdinal localRow, 
                                     const Teuchos::ArrayView<LocalOrdinal> &indices, 
                                     const Teuchos::ArrayView<Scalar> &values,
-                                    Teuchos_Ordinal &numEntries) const  = 0;
+                                    size_t &numEntries) const  = 0;
 
       //! Returns a copy of the specified (and locally owned) row, using global indices.
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries. */
-      virtual void extractGlobalRowCopy(GlobalOrdinal globalRow, 
+      virtual void getGlobalRowCopy(GlobalOrdinal globalRow, 
                                         const Teuchos::ArrayView<GlobalOrdinal> &indices,
                                         const Teuchos::ArrayView<Scalar> &values,
-                                        Teuchos_Ordinal &numEntries) const = 0;
+                                        size_t &numEntries) const = 0;
 
       //! Get a non-persisting view of the elements in a specified global row of the graph.
       /*!
@@ -171,14 +175,13 @@ namespace Tpetra
         \param Indices - (Out) Indices for the global row.
         \param Values - (Out) Values for the global row.
 
-         Note: If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
-         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+         Note: If \c GlobalRow does not belong to this node, then \c indices and \c values are set to <tt>Teuchos::null</t>>.
 
-        \pre indicesAreGlobal()==true
+        \pre isGloballyIndexed()==true
        */
-      virtual void extractGlobalRowConstView(GlobalOrdinal GlobalRow, 
-                                             Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                                             Teuchos::ArrayView<const Scalar> &values) const = 0;
+      virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
+                                    Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                                    Teuchos::ArrayView<const Scalar> &values) const = 0;
 
       //! Get a view of the elements in a specified local row of the graph.
       /*!
@@ -186,12 +189,11 @@ namespace Tpetra
         \param Indices - (Out) Indices for the local row.
         \param Values - (Out) Values for the local row.
 
-         Note: If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is 
-         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+         Note: If \c LocalRow is not valid for this node, then \c indices and \c values are set to <tt>Teuchos::null</tt>.
 
-        \pre indicesAreLocal()==true
+        \pre isLocallyIndexed()==true
        */
-      virtual void extractMyRowConstView(LocalOrdinal LocalRow, 
+      virtual void getLocalRowView(LocalOrdinal LocalRow, 
                                          Teuchos::ArrayView<const LocalOrdinal> &indices,
                                          Teuchos::ArrayView<const Scalar> &values) const = 0;
 

@@ -1,10 +1,10 @@
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_as.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_Tuple.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_as.hpp>
-#include <Teuchos_Tuple.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"

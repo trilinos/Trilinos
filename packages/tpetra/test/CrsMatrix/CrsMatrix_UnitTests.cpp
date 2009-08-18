@@ -44,7 +44,6 @@ namespace {
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
-  using Tpetra::Platform;
   using std::vector;
   using std::sort;
   using Teuchos::arrayViewFromVector;
@@ -68,6 +67,8 @@ namespace {
   using Tpetra::Import;
   using std::string;
   using Teuchos::tuple;
+
+  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -119,14 +120,15 @@ namespace {
 
   RCP<const Comm<int> > getDefaultComm()
   {
-    RCP<Platform<double> > plat;
     if (testMpi) {
-      plat = DefaultPlatform<double>::getPlatform();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
-    else {
-      plat = rcp(new Tpetra::SerialPlatform<double>());
-    }
-    return plat->getComm();
+    return rcp(new Teuchos::SerialComm<int>());
+  }
+
+  Node& getDefaultNode()
+  {
+    return DefaultPlatform::getDefaultPlatform().getNode();
   }
 
   //
@@ -137,21 +139,22 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, BadCalls, LO, GO, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Teuchos_Ordinal numLocal = 10;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
-    // create a random multivector
-    MV mv1(map,1), mv2(map,2), mv3(map,3);
+    MV mv1(node,map,1), mv2(node,map,2), mv3(node,map,3);
     // create the zero matrix
     RCP<RowMatrix<Scalar,LO,GO> > zero;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > zero_crs = rcp( new CrsMatrix<Scalar,LO,GO>(map,0) );
+      RCP<MAT> zero_crs = rcp( new MAT(map,0) );
       TEST_THROW(zero_crs->apply(mv1,mv1)            , std::runtime_error);
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
       TEST_THROW(zero_crs->insertGlobalValues(map.getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
@@ -172,12 +175,14 @@ namespace {
   {
     // generate a tridiagonal matrix
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     // create a Map
     const Teuchos_Ordinal numLocal = 10;
@@ -197,7 +202,7 @@ namespace {
     }
     graph.fillComplete();
     // create a matrix using the graph
-    CrsMatrix<Scalar,LO,GO> matrix(graph);
+    MAT matrix(graph);
     TEST_EQUALITY_CONST( matrix.isStaticGraph(), true );
     // insert throws exception: not allowed with static graph
     TEST_THROW( matrix.insertGlobalValues(map.getMinGlobalIndex(),tuple<GO>(map.getMinGlobalIndex()),tuple<Scalar>(ST::one())), std::runtime_error );
@@ -231,16 +236,18 @@ namespace {
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
     typedef typename ST::magnitudeType Mag;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     // create a Map
     const Teuchos_Ordinal numLocal = 10;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     {
-      CrsMatrix<Scalar,LO,GO> matrix(map,1,true);
+      MAT matrix(map,1,true);
       // room for one on each row
       for (GO r=map.getMinGlobalIndex(); r<=map.getMaxGlobalIndex(); ++r) 
       {
@@ -252,7 +259,7 @@ namespace {
     }
     if (numImages > 1) {
       // add too many entries globally
-      CrsMatrix<Scalar,LO,GO> matrix(map,1,true);
+      MAT matrix(map,1,true);
       // room for one on each row
       for (GO r=map.getMinGlobalIndex(); r<=map.getMaxGlobalIndex(); ++r) 
       {
@@ -276,19 +283,21 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, MultipleFillCompletes, LO, GO, Scalar )
   {
     // test that an exception is thrown when we exceed statically allocated memory
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     // create a Map
     const Teuchos_Ordinal numLocal = 1; // change to 10
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     {
       // room for two on each row
-      CrsMatrix<Scalar,LO,GO> matrix(map,2,true);
+      MAT matrix(map,2,true);
       for (GO r=map.getMinGlobalIndex(); r<=map.getMaxGlobalIndex(); ++r) 
       {
         TEST_NOTHROW( matrix.insertGlobalValues(r,tuple(r),tuple(ST::one())) );
@@ -337,11 +346,13 @@ namespace {
   {
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     const int myImageID = rank(*comm);
     if (numImages < 2) return;
@@ -371,7 +382,7 @@ namespace {
     for (int T=0; T<4; ++T) {
       bool StaticProfile = (T & 1) == 1;
       bool OptimizeStorage = (T & 2) == 2;
-      CrsMatrix<Scalar,LO,GO> matrix(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
+      MAT matrix(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
       ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
@@ -433,26 +444,27 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TheEyeOfTruth, LO, GO, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
     const LO numLocal = 10;
     const Teuchos_Ordinal numVecs  = 5;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
-    // create a random multivector
-    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
-    mvrand.random();
+    MV mvrand(node,map,numVecs,false), mvres(node,map,numVecs,false);
+    mvrand.randomize();
     // create the identity matrix
     GO base = numLocal*myImageID;
     RCP<RowMatrix<Scalar,LO,GO> > eye;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > eye_crs = rcp(new CrsMatrix<Scalar,LO,GO>(map,1));
+      RCP<MAT> eye_crs = rcp(new MAT(map,1));
       for (int i=0; i<numLocal; ++i) {
         eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
       }
@@ -475,7 +487,7 @@ namespace {
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getRangeMap()) , true);
     // test the action
-    mvres.random();
+    mvres.randomize();
     eye->apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
@@ -488,12 +500,14 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, NonSquare, LO, GO, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const GO M = 3;
     const GO P = 5;
     const int N = comm->getSize();
@@ -533,7 +547,7 @@ namespace {
     Map<LO,GO> rowmap(INVALID,M,0,comm);
     Map<LO,GO> lclmap(P,0,comm,true);
     // create the matrix
-    CrsMatrix<Scalar,LO,GO> A(rowmap,P);
+    MAT A(rowmap,P);
     for (GO i=0; i<M; ++i) {
       for (GO j=0; j<P; ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
@@ -543,21 +557,21 @@ namespace {
     TEST_EQUALITY_CONST( A.isStaticGraph(), false );
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
-    MV X(lclmap,numVecs);
+    MV X(node,lclmap,numVecs);
     for (GO i=0; i<P; ++i) {
       for (GO j=0; j<numVecs; ++j) {
         X.replaceGlobalValue(i,j,as<Scalar>(i+j*P));
       }
     }
     // build the expected output multivector B
-    MV Bexp(rowmap,numVecs), Bout(rowmap,numVecs);
+    MV Bexp(node,rowmap,numVecs), Bout(node,rowmap,numVecs);
     for (GO i=myImageID*M; i<myImageID*M+M; ++i) {
       for (GO j=0; j<numVecs; ++j) {
         Bexp.replaceGlobalValue(i,j,as<Scalar>(j*i*P*P + (i+j*M*N*P)*(P*P-P)/2 + M*N*P*(P-1)*(2*P-1)/6));
       }
     }
     // test the action
-    Bout.random();
+    Bout.randomize();
     A.apply(X,Bout);
     Bout.update(-ST::one(),Bexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
@@ -571,12 +585,14 @@ namespace {
   {
     // this is the same matrix as in test NonSquare, but we will apply the transpose
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const GO M = 3;
     const GO P = 5;
     const int N = comm->getSize();
@@ -625,7 +641,7 @@ namespace {
     Map<LO,GO> rowmap(INVALID,M,0,comm);
     Map<LO,GO> lclmap(P,0,comm,true);
     // create the matrix
-    CrsMatrix<Scalar,LO,GO> A(rowmap,P);
+    MAT A(rowmap,P);
     for (int i=0; i<M; ++i) {
       for (int j=0; j<P; ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
@@ -636,21 +652,21 @@ namespace {
     A.fillComplete(lclmap,rowmap);
     out << "A: " << endl << A << endl;
     // build the input multivector X
-    MV X(rowmap,numVecs);
+    MV X(node,rowmap,numVecs);
     for (int i=myImageID*M; i<myImageID*M+M; ++i) {
       for (int j=0; j<numVecs; ++j) {
         X.replaceGlobalValue(i,j,as<Scalar>( i + j*M*N ) );
       }
     }
     // build the expected output multivector B
-    MV Bexp(lclmap,numVecs), Bout(lclmap,numVecs);
+    MV Bexp(node,lclmap,numVecs), Bout(node,lclmap,numVecs);
     for (int i=0; i<P; ++i) {
       for (int j=0; j<numVecs; ++j) {
         Bexp.replaceGlobalValue(i,j,as<Scalar>( (i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6 ));
       }
     }
     // test the action
-    Bout.random();
+    Bout.randomize();
     A.apply(X,Bout,CONJ_TRANS);
 
     Bout.update(-ST::one(),Bexp,ST::one());
@@ -664,12 +680,14 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, DomainRange, LO, GO, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages == 1) return;
@@ -712,7 +730,7 @@ namespace {
     Map<LO,GO> rngmap(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm);
     RCP<RowMatrix<Scalar,LO,GO> > tri;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > tri_crs = rcp(new CrsMatrix<Scalar,LO,GO>(rowmap,3) );
+      RCP<MAT> tri_crs = rcp(new MAT(rowmap,3) );
       Array<Scalar>  vals(3,ST::one());
       if (myImageID == 0) {
         Array<GO> cols( tuple<GO>(2*myImageID,2*myImageID+1,2*myImageID+2) );
@@ -748,7 +766,7 @@ namespace {
     TEST_EQUALITY_CONST(tri->getRangeMap().isSameAs(rngmap), true);
     TEST_EQUALITY_CONST(tri->getDomainMap().isSameAs(rowmap), true);
     // build the input and corresponding output multivectors
-    MV mvin(rowmap,numVecs), mvout(rngmap,numVecs), mvexp(rngmap,numVecs);
+    MV mvin(node,rowmap,numVecs), mvout(node,rngmap,numVecs), mvexp(node,rngmap,numVecs);
     for (int j=0; j<numVecs; ++j) {
       mvin.replaceMyValue(0,j,as<Scalar>(j*2*numImages+2*myImageID  )); // entry (2*myImageID  ,j)
       mvin.replaceMyValue(1,j,as<Scalar>(j*2*numImages+2*myImageID+1)); // entry (2*myImageID+1,j)
@@ -768,7 +786,7 @@ namespace {
       }
     }
     // test the action
-    mvout.random();
+    mvout.randomize();
     tri->apply(mvin,mvout);
     mvout.update(-ST::one(),mvexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
@@ -781,25 +799,26 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
     const LO numLocal = 10;
     const Teuchos_Ordinal numVecs  = 5;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
-    // create a random multivector
-    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
-    mvrand.random();
+    MV mvrand(node,map,numVecs,false), mvres(node,map,numVecs,false);
+    mvrand.randomize();
     // create the identity matrix
     RCP<RowMatrix<Scalar,LO,GO> > eye;
     {
-      RCP<CrsMatrix<Scalar,LO,GO> > eye_crs = rcp(new CrsMatrix<Scalar,LO,GO>(map,1) );
+      RCP<MAT> eye_crs = rcp(new MAT(map,1) );
       if (myImageID == 0) {
         for (int i=0; i<map.getNumGlobalEntries(); ++i) {
           eye_crs->insertGlobalValues(i,tuple<GO>(i),tuple<Scalar>(ST::one()));
@@ -823,7 +842,7 @@ namespace {
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getRangeMap()) , true);
     // test the action
-    mvres.random();
+    mvres.randomize();
     eye->apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
@@ -835,21 +854,23 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SimpleEigTest, LO, GO, Scalar )
   {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const LO ONE = OrdinalTraits<LO>::one();
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
     Map<LO,GO> map(INVALID,ONE,0,comm);
     // create a multivector ones(n,1)
-    MV ones(map,ONE,false), threes(map,ONE,false);
+    MV ones(node,map,ONE,false), threes(node,map,ONE,false);
     ones.putScalar(ST::one());
     /* create the following matrix:
        [2 1           ]
@@ -863,7 +884,7 @@ namespace {
      this matrix has an eigenvalue lambda=3, with eigenvector v = [1 ... 1]
     */
     Teuchos_Ordinal myNNZ;
-    CrsMatrix<Scalar,LO,GO> A(map,3);
+    MAT A(map,3);
     if (myImageID == 0) {
       myNNZ = 2;
       Array<Scalar> vals(tuple<Scalar>(as<Scalar>(2)*ST::one(), ST::one()));
@@ -898,7 +919,7 @@ namespace {
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
     // test the action
-    threes.random();
+    threes.randomize();
     A.apply(ones,threes);
     // now, threes should be 3*ones
     threes.update(as<Scalar>(-3)*ST::one(),ones,ST::one());
@@ -913,14 +934,16 @@ namespace {
   {
     // do a FEM-type communication, then apply to a MultiVector containing the identity
     // this will check more difficult communication and test multivector apply
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const LO ONE = OrdinalTraits<LO>::one();
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 3) return;
@@ -938,8 +961,8 @@ namespace {
    n-1 [       1 2]
     */
     Teuchos_Ordinal myNNZ;
-    CrsMatrix<Scalar,LO,GO> A(map,4);
-    MV mveye(map,numImages), mvans(map,numImages), mvres(map,numImages,false);
+    MAT A(map,4);
+    MV mveye(node,map,numImages), mvans(node,map,numImages), mvres(node,map,numImages,false);
     if (myImageID != numImages-1) { // last image assigns none
       Array<Scalar> vals(tuple<Scalar>(as<Scalar>(2)*ST::one(),ST::one(),as<Scalar>(2)*ST::one()));
       Array<GO> cols(tuple<GO>(myImageID,myImageID + 1));
@@ -994,12 +1017,14 @@ namespace {
   {
     // assumes that Scalar has a constructor of the form: Scalar(realpart,imagpart)
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
@@ -1035,9 +1060,9 @@ namespace {
     }
     // create map: partition matrix equally among all procs
     Map<LO,GO> map_shared(dim,0,comm), map_AllOnRoot(dim,(myImageID==0?dim:0),0,comm);
-    CrsMatrix<Scalar,LO,GO> A_crs(map_shared,rnnzmax);
+    MAT A_crs(map_shared,rnnzmax);
     // create a multivector with the entire matrix on Root, we will export it to the other procs
-    MV A_mv(map_shared,dim), A_mv_AllOnRoot(map_AllOnRoot,dim), mvres(map_shared,dim), mveye(map_shared,dim);
+    MV A_mv(node,map_shared,dim), A_mv_AllOnRoot(node,map_AllOnRoot,dim), mvres(node,map_shared,dim), mveye(node,map_shared,dim);
     Import<LO,GO> AllFromRoot(map_AllOnRoot,map_shared);
     if (myImageID == 0) {
       // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
@@ -1091,12 +1116,13 @@ namespace {
   {
     // assumes that Scalar has a constructor of the form: Scalar(realpart,imagpart)
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
@@ -1132,7 +1158,7 @@ namespace {
     }
     // create map: partition matrix equally among all procs
     Map<LO,GO> map_shared(dim,0,comm);
-    CrsMatrix<Scalar,LO,GO> A_crs(map_shared,rnnzmax);
+    MAT A_crs(map_shared,rnnzmax);
     if (myImageID == 0) {
       // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
       // HB format is compressed column. CrsMatrix is compressed row. Convert.
@@ -1189,12 +1215,14 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, FullMatrix, LO, GO, Scalar )
   {
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
@@ -1230,9 +1258,9 @@ namespace {
     }
     // create map: partition matrix equally among all procs
     Map<LO,GO> map_shared(dim,0,comm), map_AllOnRoot(dim,(myImageID==0?dim:0),0,comm);
-    CrsMatrix<Scalar,LO,GO> A_crs(map_shared,rnnzmax);
+    MAT A_crs(map_shared,rnnzmax);
     // create a multivector with the entire matrix on Root, we will export it to the other procs
-    MV A_mv(map_shared,dim), A_mv_AllOnRoot(map_AllOnRoot,dim), mvres(map_shared,dim), mveye(map_shared,dim);
+    MV A_mv(node,map_shared,dim), A_mv_AllOnRoot(node,map_AllOnRoot,dim), mvres(node,map_shared,dim), mveye(node,map_shared,dim);
     Import<LO,GO> AllFromRoot(map_AllOnRoot,map_shared);
     if (myImageID == 0) {
       // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
@@ -1286,12 +1314,14 @@ namespace {
   {
     // what happens when we call CrsMatrix::insertGlobalValues() for a row that isn't on the Map?
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
@@ -1299,7 +1329,7 @@ namespace {
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     {
       // create the matrix
-      CrsMatrix<Scalar,LO,GO> A(map,1);
+      MAT A(map,1);
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others it will induce communication
       A.insertGlobalValues(map.getMaxGlobalIndex()+1,tuple<GO>(map.getIndexBase()),tuple<Scalar>(ST::one()));
@@ -1307,7 +1337,7 @@ namespace {
     }
     {
       // create the matrix
-      CrsMatrix<Scalar,LO,GO> A(map,1);
+      MAT A(map,1);
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others there is nothing
       if (myImageID == numImages-1) {
@@ -1321,24 +1351,25 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, ZeroMatrix, LO, GO, Scalar )
   {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO> MV;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const LO numLocal = 10;
     const Teuchos_Ordinal numVecs  = 5;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
-    // create a random multivector
-    MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
-    mvrand.random();
+    MV mvrand(node,map,numVecs,false), mvres(node,map,numVecs,false);
+    mvrand.randomize();
     // create the zero matrix
-    CrsMatrix<Scalar,LO,GO> zero(map,0);
+    MAT zero(map,0);
     zero.fillComplete();
-    mvres.random();
+    mvres.randomize();
     zero.apply(mvrand,mvres);
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvres.norm2(norms());
@@ -1381,7 +1412,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR ) \
@@ -1405,15 +1436,16 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)
+         UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT( LO, GO )
      UNIT_TEST_GROUP_ORDINAL(int)
+
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)  \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double) \
-         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)*/ \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 
      UNIT_TEST_GROUP_ORDINAL(int)
 

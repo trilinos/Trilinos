@@ -1,6 +1,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+// #include <Tpetra_CrsMatrix.hpp>
 
 #include "BelosConfigDefs.hpp"
 #include "BelosMVOPTester.hpp"
@@ -23,7 +23,7 @@ namespace {
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
   using Tpetra::MultiVector;
-  using Tpetra::CrsMatrix;
+  // using Tpetra::CrsMatrix;
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;

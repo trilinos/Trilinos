@@ -29,6 +29,7 @@
 #ifndef TPETRA_MULTIVECTOR_HPP
 #define TPETRA_MULTIVECTOR_HPP
 
+#include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_as.hpp>

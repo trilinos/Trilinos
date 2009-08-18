@@ -9,7 +9,6 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
 #ifdef HAVE_TPETRA_TRIUTILS
@@ -25,7 +24,6 @@ namespace {
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
-  using Tpetra::Platform;
   using std::vector;
   using std::sort;
   using Teuchos::arrayViewFromVector;
@@ -33,7 +31,6 @@ namespace {
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
-  using Tpetra::MultiVector;
   using std::endl;
   using std::swap;
   using std::min;
@@ -50,6 +47,8 @@ namespace {
   using std::string;
   using std::unique;
   using Teuchos::tuple;
+
+  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -88,14 +87,15 @@ namespace {
 
   RCP<const Comm<int> > getDefaultComm()
   {
-    RCP<Platform<double> > plat;
     if (testMpi) {
-      plat = DefaultPlatform<double>::getPlatform();
+      return DefaultPlatform::getDefaultPlatform().getComm();
     }
-    else {
-      plat = rcp(new Tpetra::SerialPlatform<double>());
-    }
-    return plat->getComm();
+    return rcp(new Teuchos::SerialComm<int>());
+  }
+
+  Node& getDefaultNode()
+  {
+    return DefaultPlatform::getDefaultPlatform().getNode();
   }
 
   //
@@ -106,27 +106,28 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, BadConst, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     // create a Map
     const Teuchos_Ordinal indexBase = 0;
     const Teuchos_Ordinal numLocal = 10;
     Map<LO,GO> map(INVALID,numLocal,indexBase,comm);
     {
       // bad constructor
-      TEST_THROW( GRAPH badgraph(map,-1), std::runtime_error ); // allocation hint must be >= 0
+      TEST_THROW( GRAPH badgraph(node,node,map,-1), std::runtime_error ); // allocation hint must be >= 0
     }
     {
       // bad constructor
       Array<Teuchos_Ordinal> hints(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
       hints[0] = -1;    // invalid
-      TEST_THROW( GRAPH badgraph(map,hints(0,numLocal+1)), std::runtime_error ); // too many
-      TEST_THROW( GRAPH badgraph(map,hints(0,numLocal-1)), std::runtime_error ); // too few
-      TEST_THROW( GRAPH badgraph(map,hints(0,numLocal))  , std::runtime_error ); // one is invalid
+      TEST_THROW( GRAPH badgraph(node,map,hints(0,numLocal+1)), std::runtime_error ); // too many
+      TEST_THROW( GRAPH badgraph(node,map,hints(0,numLocal-1)), std::runtime_error ); // too few
+      TEST_THROW( GRAPH badgraph(node,map,hints(0,numLocal))  , std::runtime_error ); // one is invalid
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -138,10 +139,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, BadGIDs, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
@@ -152,7 +154,7 @@ namespace {
       Array<GO> gids(1);
       gids[0] = myImageID*numLocal+numLocal;    // off this node, except on the last proc, where it is off the map
       // bad gid on the last node (not in domain map), discovered at fillComplete()
-      GRAPH goodgraph(map,1);
+      GRAPH goodgraph(node,map,1);
       goodgraph.insertGlobalIndices(map.getMinGlobalIndex(),gids());
       TEST_THROW( goodgraph.fillComplete(), std::runtime_error );
     }
@@ -166,7 +168,7 @@ namespace {
       }
       // bad gid on the last node (not in column map)
       // this gid doesn't throw an exception; it is ignored, because the column map acts as a filter
-      GRAPH goodgraph(map,map,1);
+      GRAPH goodgraph(node,map,map,1);
       goodgraph.insertGlobalIndices(map.getMinGlobalIndex(),gids());
       goodgraph.fillComplete();
       TEST_EQUALITY( goodgraph.numEntriesForGlobalRow(map.getMinGlobalIndex()),
@@ -182,11 +184,12 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, BadLIDs, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
@@ -203,13 +206,13 @@ namespace {
         lids[0] = 0;
       }
       {
-        GRAPH diaggraph(map,map,1);
+        GRAPH diaggraph(node,map,map,1);
         TEST_EQUALITY(diaggraph.hasColMap(), true);
         // insert on bad row
         TEST_THROW(diaggraph.insertMyIndices(numLocal,lids()), std::runtime_error);
       }
       {
-        GRAPH diaggraph(map,map,1);
+        GRAPH diaggraph(node,map,map,1);
         TEST_EQUALITY(diaggraph.hasColMap(), true);
         diaggraph.insertMyIndices(0,lids());
         TEST_EQUALITY( diaggraph.numEntriesForMyRow(0), (myImageID == numImages-1) ? 0 : 1 );
@@ -225,13 +228,14 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, CopiesAndViews, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     if (numImages < 2) return;
@@ -265,7 +269,7 @@ namespace {
     for (int T=0; T<4; ++T) {
       bool StaticProfile   = (T & 1) == 1;
       bool OptimizeStorage = (T & 2) == 2;
-      GRAPH trigraph(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
+      GRAPH trigraph(node,rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4);
       ArrayView<const GO> GView; ArrayView<const LO> LView;
       Teuchos_Ordinal numindices;
@@ -311,11 +315,12 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, StaticProfile, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     // create a Map, one row per processor
     const Teuchos_Ordinal indexBase = 0;
@@ -325,7 +330,7 @@ namespace {
       // add too many entries to a static graph
       // let node i contribute to row i+1, where node the last node contributes to row 0
       bool StaticProfile = true;
-      GRAPH diaggraph(map,1,StaticProfile);
+      GRAPH diaggraph(node,map,1,StaticProfile);
       GO grow = myImageID;
       Array<GO> colinds(1);
       colinds[0] = grow;
@@ -343,8 +348,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraph, LO, GO )
   {
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     int numImages = size(*comm);
     // create a Map
     const Teuchos_Ordinal indexBase = 0;
@@ -353,7 +359,7 @@ namespace {
     // create the empty graph
     RCP<RowGraph<LO,GO> > zero;
     {
-      RCP<CrsGraph<LO,GO> > zero_crs = rcp(new CrsGraph<LO,GO>(map,0));
+      RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
       zero_crs->fillComplete(true);
       zero = zero_crs;
     }
@@ -383,10 +389,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, DottedDiag, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     // create a Map, three rows per processor
     const Teuchos_Ordinal indexBase = 0;
@@ -401,7 +408,7 @@ namespace {
         // let node i contribute to row i+1, where node the last node contributes to row 0
         Array<Teuchos_Ordinal> toalloc(3,0);
         toalloc[1] = 1;
-        GRAPH ddgraph(map,toalloc,StaticProfile);
+        GRAPH ddgraph(node,map,toalloc,StaticProfile);
         ddgraph.insertGlobalIndices(mymiddle, arrayView(&mymiddle,1));
         // before globalAssemble(), there should be one local entry on middle, none on the others
         ArrayView<const GO> myrow_gbl;
@@ -441,11 +448,12 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, NonLocals, LO, GO )
   {
-    typedef CrsGraph<LO,GO> GRAPH;
+    typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // create a comm  
+    // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
+    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map, one row per processor
@@ -459,7 +467,7 @@ namespace {
       {
         // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
         // let node i contribute to row i+1, where node the last node contributes to row 0
-        GRAPH diaggraph(map,1,StaticProfile);
+        GRAPH diaggraph(node,map,1,StaticProfile);
         GO grow = myImageID+1;
         if (grow == numImages) {
           grow = 0;
@@ -496,7 +504,7 @@ namespace {
         // let node i add the contributions for column i of the graph: (i-1,i), (i,i), (i+1,i)
         // allocate only as much space as we need
         // some hacking here to support this test when numImages == 1 or 2
-        GRAPH ngraph(map,3,StaticProfile);
+        GRAPH ngraph(node,map,3,StaticProfile);
         Array<GO> grows(3);
         grows[0] = (numImages+myImageID-1) % numImages;   // my left neighbor
         grows[1] = (numImages+myImageID  ) % numImages;   // myself

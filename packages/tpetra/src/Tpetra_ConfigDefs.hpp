@@ -93,4 +93,8 @@
   #define TPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
+namespace Tpetra {
+  typedef size_t global_size_t;
+}
+
 #endif // TPETRA_CONFIGDEFS_HPP
