@@ -143,3 +143,238 @@ import StatusTest
 __all__.append('Epetra')
 %}
 #endif
+
+// defaultSolver() and supporting functions
+%pythoncode
+%{
+def defaultNonlinearParameters(comm=None, verbosity=0, outputPrec=3,
+                               maxIterations=800, tolerance=1.0e-4):
+    """
+    defaultNonlinearParameters(comm=None, verbosity=0, outputPrec=3,
+                               maxIterations=800, tolerance=1.0e-4) -> dict
+
+    Return a dictionary that can serve as a default list of parameters for a NOX
+    solver.  Entries can be altered before passing to a NOX solver constructor.
+
+    comm          - Epetra communicator object.  If not provided, the function
+                    uses an Epetra.SerialComm communicator.
+
+    verbosity     - A simple indication of verbosity level.  0: errors and test
+                    details.  1: debugging, warnings, details, parameters and
+                    linear solver details.  2: inner iteration, outer iteration
+                    status test and outer iteration.  Default 0.
+
+    outputPrec    - Number of significant digits to output.  Default 3.
+
+    maxIterations - Maximum allowable linear (inner) iterations.  Default 800.
+
+    tolerance     - Linear solver tolerance level.  Default 1.0e-4.
+    """
+    # Communicator
+    if comm is None:
+        comm = Epetra.SerialComm()
+    myPID = comm.MyPID()
+
+    # Create the printing parameter list
+    outputInfo = Utils.Error + Utils.TestDetails
+    if verbosity: outputInfo += Utils.Debug      + \
+                                Utils.Warning    + \
+                                Utils.Details    + \
+                                Utils.Parameters + \
+                                Utils.LinearSolverDetails
+    if verbosity > 1: outputInfo += Utils.InnerIteration           + \
+                                    Utils.OuterIterationStatusTest + \
+                                    Utils.OuterIteration
+    printParams = {"MyPID"              : myPID,
+                   "Output Precision"   : outputPrec,
+                   "Output Processor"   : 0,
+                   "Output Information" : outputInfo}
+
+    # Create the linear solver parameter list
+    lsParams = {"Aztec Solver"    : "GMRES",
+                "Max Iterations"  : maxIterations,
+                "Tolerance"       : tolerance,
+                "Preconditioner"  : "Ifpack",
+                "Max Age Of Prec" : 5       }
+
+    # Create the nonlinear solver parameter list
+    nlParams = {"Nonlinear Solver" : "Line Search Based",
+                "Printing"         : printParams,
+                "Line Search"      : {"Method" : "Full Step"},
+                "Direction"        : {"Method" : "Newton"},
+                "Newton"           : {"Forcing Term Method" : "Constant"},
+                "Linear Solver"    : lsParams,
+                "Solver Options"   : {"Status Test Check Type" : "Complete"}
+                }
+    
+    return nlParams
+
+def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None,
+                 jacobian=None, precInterface=None, preconditioner=None):
+    """
+    defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None,
+                 jacobian=None, precInterface=None, preconditioner=None) -> Group
+
+    Return a NOX.Epetra.Group based upon the given input arguments:
+
+    nonlinearParameters - a dict with nonlinear parameters.  Can be obtained
+                          from defaultNonlinearParameters()
+    initGuess           - an initial guess Epetra.Vector.
+    reqInterface        - an Interface.Required object
+    jacInterface        - an Interface.Jacobian object
+    jacobian            - if jacInterface is given, this should be the
+                          Epetra.Operator that is the Jacobian matrix
+    precInterface       - an Interface.Preconditioner object
+    preconditioner      - if precInterface is given, this should be the
+                          Epetra.Operator that is the Preconditioner
+    """
+    # Extract parameter lists
+    printParams = nonlinearParameters["Printing"     ]
+    lsParams    = nonlinearParameters["Linear Solver"]
+
+    # Construct a NOX.Epetra.Vector from the Epetra.Vector
+    clone = Epetra.Vector(initGuess, Epetra.Vector.CreateView)
+
+    # Construct the linear system
+    if jacInterface:
+        if precInterface:
+            linSys = Epetra.LinearSystemAztecOO(printParams, lsParams,
+                                                jacInterface, jacobian,
+                                                precInterface, preconditioner,
+                                                clone)
+        else:
+            linSys = Epetra.LinearSystemAztecOO(printParams, lsParams,
+                                                reqInterface,
+                                                jacInterface, jacobian,
+                                                clone)
+    else:
+        if precInterface:
+            linSys = Epetra.LinearSystemAztecOO(printParams, lsParams,
+                                                reqInterface,
+                                                precInterface, preconditioner,
+                                                clone)
+        else:
+            linSys = Epetra.LinearSystemAztecOO(printParams, lsParams,
+                                                reqInterface,
+                                                clone)
+
+    # Construct and return the default Group
+    group = Epetra.Group(printParams, reqInterface, clone, linSys)
+    group.linSys = linSys
+    return group
+
+def defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
+                      wAbsTol=None, wRelTol=None, maxIters=None,
+                      finiteValue=False):
+    """
+    defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
+                      wAbsTol=None, wRelTol=None, maxIters=None,
+                      finiteValue=False) -> StatusTest
+
+    Return a StatusTest object based upon the input arguments:
+
+    absTol      - if specified, include an absolute residual status test, using
+                  this value as the tolerance
+    relTol      - if specified, along with relGroup, include a relative residual
+                  status test, using this value as the tolerance
+    relGroup    - if specified, along with relTol, include a relative residual
+                  status test, using this Group to determine the scaling
+    updateTol   - if specified, include an update status test, using this value
+                  as the tolerance
+    wAbsTol     - if specified, along with wRelTol, include a weighted RMS
+                  status test, using this value as the absolute tolerance
+    wRelTol     - if specified, along with wAbsTol, include a weighted RMS
+                  status test, using this value as the relative tolerance
+    maxIters    - if specified, include a maximum iterations status test, using
+                  this value as the maximum allowable iterations
+    finiteValue - if True, include a finite value status test.  Default False.
+    """
+    # Build the convergence portion of the status test
+    converged = StatusTest.Combo(StatusTest.Combo.AND)
+    converged.tests = [ ]
+    if absTol:
+        absTest = StatusTest.NormF(absTol)
+        converged.addStatusTest(absTest)
+        converged.tests.append(absTest)
+    if relGroup and relTol:
+        relTest = StatusTest.NormF(relGroup,relTol)
+        converged.addStatusTest(relTest)
+        converged.tests.append(relTest)
+    if wAbsTol and wRelTol:
+        wrmsTest = StatusTest.NormWRMS(wRelTol,wAbsTol)
+        converged.addStatusTest(wrmsTest)
+        converged.tests.append(wrmsTest)
+    if updateTol:
+        updateTest = StatusTest.NormUpdate(updateTol)
+        converged.addStatusTest(updateTest)
+        converged.tests.append(updateTest)
+
+    # Return if done
+    if not (maxIters or finiteValue):
+        return converged
+
+    # Add the divergence portion of the default status test
+    combo = StatusTest.Combo(StatusTest.Combo.OR)
+    combo.tests = [ ]
+    if finiteValue:
+        fvTest = StatusTest.FiniteValue()
+        combo.addStatusTest(fvTest)
+        combo.tests.append(fvTest)
+    combo.addStatusTest(converged)
+    combo.tests.append(converged)
+    if maxIters:
+        maxIterTest = StatusTest.MaxIters(maxIters)
+        combo.addStatusTest(maxIterTest)
+        combo.tests.append(maxIterTest)
+    return combo
+
+def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
+                  precInterface=None, preconditioner=None, nlParams=None):
+    """
+    defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
+                  precInterface=None, preconditioner=None, nlParams=None) -> Solver
+
+    Return a default NOX Solver based on the given arguments:
+
+    initGuess      - an Epetra.Vector initial guess
+    reqInterface   - a NOX.Epetra.Interface.Required object that defines the
+                     interface to the nonlinear problem
+    jacInterface   - a NOX.Epetra.Interface.Jacobian object that defines the
+                     Jacobian of the nonlinear problem. Default None.
+    jacobian       - an Epetra.Operator that defines the Jacobian matrix.
+                     Default None.
+    precInterface  - a NOX.Epetra.Interface.Preconditioner object that defines
+                     the preconditioner to the nonlinear problem. Default None.
+    preconditioner - an Epetra.Operator that defines the preconditioner.
+                     Default None.
+    nlParams       - dict that contains a list of nonlinear parameters.  Default
+                     None, in which case defaultNonlinearParameters() is used.
+    """
+    # Get the communicator
+    comm = initGuess.Comm()
+
+    # Get the nonlinear parameters
+    if nlParams is None:
+        nlParams = defaultNonlinearParameters(comm,2)
+
+    # Build the default Group
+    group = defaultGroup(nlParams, initGuess, reqInterface, jacInterface,
+                         jacobian, precInterface, preconditioner)
+
+    # Get the default StatusTest
+    statusTest = defaultStatusTest(absTol      = 1.0e-8,
+                                   relTol      = 1.0e-2,
+                                   relGroup    = group,
+                                   updateTol   = 1.0e-5,
+                                   wAbsTol     = 1.0e-8,
+                                   wRelTol     = 1.0e-2,
+                                   maxIters    = 20,
+                                   finiteValue = True)
+
+    # Return the default Solver
+    solver = Solver.buildSolver(group, statusTest, nlParams)
+    solver.group      = group
+    solver.statusTest = statusTest
+    solver.nlParams   = nlParams
+    return solver
+%}

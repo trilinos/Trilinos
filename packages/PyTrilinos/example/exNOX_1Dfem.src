@@ -227,78 +227,33 @@ def main():
     # derived from NOX.Epetra.Interface.
     interface = MyInterface(numGlobalElements, comm, bc0, bc1)
 
-    # Get the solution vector from the problem
-    soln    = interface.getSolution()
-    noxSoln = NOX.Epetra.Vector(soln,NOX.Epetra.Vector.CreateView)
+    # Get the initial solution vector from the problem
+    initGuess    = interface.getSolution()
+    noxInitGuess = NOX.Epetra.Vector(initGuess,NOX.Epetra.Vector.CreateView)
 
     # Set the nonlinear forcing constant
     interface.setPDEfactor(options.k)
 
-    ### Begin Nonlinear Solve ###
-
-    # Create the nonlinear solver parameters
-    nlParams = {"Nonlinear Solver" : "Line Search Based",
-                "Printing"         : {"MyPID"            : myPID,
-                                      "Output Precision" : 3,
-                                      "Output Processor" : 0    },
-                "Line Search"      : {"Method" : "Full Step"},
-                "Direction"        : {"Method" : "Newton"},
-                "Newton"           : {"Forcing Term Method" : "Constant"},
-                "Linear Solver"    : {"Aztec Solver"    : "GMRES",
-                                      "Max Iterations"  : 800,
-                                      "Tolerance"       : 1e-4,
-                                      "Preconditioner"  : "Ifpack",
-                                      "Max Age Of Prec" : 5       },
-                "Solver Options"   : {"Status Test Check Type" : "Complete"}
-                }
+    # Define the ParameterLists
+    nlParams    = NOX.defaultNonlinearParameters(comm,2)
     printParams = nlParams["Printing"]
     lsParams    = nlParams["Linear Solver"]
-    outputInfo  = NOX.Utils.Error + \
-                  NOX.Utils.TestDetails
-    if options.verbosity: outputInfo += NOX.Utils.Debug      + \
-                                        NOX.Utils.Warning    + \
-                                        NOX.Utils.Details    + \
-                                        NOX.Utils.Parameters + \
-                                        NOX.Utils.LinearSolverDetails
-    if options.verbosity > 1: outputInfo += NOX.Utils.InnerIteration           + \
-                                            NOX.Utils.OuterIterationStatusTest + \
-                                            NOX.Utils.OuterIteration
-    printParams["Output Information"] = outputInfo
 
-    # Define the Jacobian linear system
-    mf     = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
+    # Define the Jacobian interface/operator
+    mf     = NOX.Epetra.MatrixFree(printParams,interface,noxInitGuess)
+    # Define the Preconditioner interface/operator
     fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
-                                                 soln, interface.getGraph(),
+                                                 initGuess, interface.getGraph(),
                                                  True)
-    linSys = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
-                                            fdc, soln)
-
-    # Create the Group
-    initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
-    group        = NOX.Epetra.Group(printParams, interface, initialGuess, linSys)
-
-    # Create the convergence tests
-    absResid  = NOX.StatusTest.NormF(1.0e-8)
-    relResid  = NOX.StatusTest.NormF(group,1.0e-2)
-    update    = NOX.StatusTest.NormUpdate(1.0e-5)
-    wrms      = NOX.StatusTest.NormWRMS(1.0e-2,1.0e-8)
-    converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.AND)
-    converged.addStatusTest(absResid)
-    converged.addStatusTest(relResid)
-    converged.addStatusTest(wrms)
-    converged.addStatusTest(update)
-    maxIters = NOX.StatusTest.MaxIters(20)
-    fv       = NOX.StatusTest.FiniteValue()
-    combo    = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR)
-    combo.addStatusTest(fv       )
-    combo.addStatusTest(converged)
-    combo.addStatusTest(maxIters )
 
     # Create and execute the solver
-    solver      = NOX.Solver.buildSolver(group, combo, nlParams)
+    solver = NOX.defaultSolver(initGuess, interface, mf, mf, fdc, fdc, nlParams)
+
+    ### Begin Nonlinear Solve ###
+
     solveStatus = solver.solve()
 
-    ### End Nonlinear Solver ###
+    ### End Nonlinear Solve ###
 
     # Obtain the final solution
     finalGroup = solver.getSolutionGroup()
@@ -311,26 +266,11 @@ def main():
             solver.getList()._print()
             print
 
-    # Print solution
-    #f = open("output." + str(myPID),"w")
-    #finalSoln.Print(f)
-    #close(f)
-
     # Tests
     status = 0
     if solveStatus != NOX.StatusTest.Converged:
         status += 1
         if myPID == 0: print "Nonlinear solver failed to converge"
-    #if numProc == 0:
-    #    if solver.getList().get("Direction").get("Newton").get("Linear Solver").get(
-    #        "Output").get("Total Number of Linear Iterations") != 53:
-    #        status += 1
-    #if solver.getList().get("Output").get("Nonlinear Iterations") != 10:
-    #    status += 1
-    #if ppo.getNumRunPreIterate()  != 10: status += 1
-    #if ppo.getNumRunPostIterate() != 10: status += 1
-    #if ppo.getNumRunPreSolve()    !=  1: status += 1
-    #if ppo.getNumRunPostSolve()   !=  1: status += 1
 
     # Summarize the test results
     if myPID == 0:
@@ -342,7 +282,7 @@ def main():
     # Plot the results
     if options.plot:
         if myPID == 0: print "Plotting results..."
-        noxSoln.update(1.0,finalSoln,0.0)    # Copy the final solution into a NOX.Epetra.Vector
+        noxInitGuess.update(1.0,finalSoln,0.0)    # Copy the final solution into a NOX.Epetra.Vector
         f1 = noxSoln.getEpetraVector()       # Obtain the underlying Epetra.Epetra_Vector
         f2 = Epetra.Vector(Epetra.View,f1,0) # Convert to Epetra.Vector
         x  = interface.getMesh()
