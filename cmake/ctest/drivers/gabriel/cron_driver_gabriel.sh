@@ -27,11 +27,11 @@ cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 
   
 echo
-echo "Doing mpi optimized build: `date`"
+echo "Doing mpi debug build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_gabriel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_gabriel.out
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_gabriel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_debug_gabriel.out
 
 
 echo
@@ -42,11 +42,11 @@ killall -s 9 orted
 
 
 echo
-echo "Doing serial debug build: `date`"
+echo "Doing serial release build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_gabriel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_serial_debug_gabriel.out
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_release_gabriel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_release_gabriel.out
 
 
 echo
