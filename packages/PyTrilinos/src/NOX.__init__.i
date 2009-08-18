@@ -260,7 +260,10 @@ def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None
 
     # Construct and return the default Group
     group = Epetra.Group(printParams, reqInterface, clone, linSys)
-    group.linSys = linSys
+    group.linSys = linSys   ### By adding linSys as an attribute to the Group
+                            ### variable, we ensure that linSys does not get
+                            ### destroyed.  This is a workaround for a
+                            ### Teuchos::RCP wrapper bug.
     return group
 
 def defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
@@ -291,7 +294,11 @@ def defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
     """
     # Build the convergence portion of the status test
     converged = StatusTest.Combo(StatusTest.Combo.AND)
-    converged.tests = [ ]
+    converged.tests = [ ]   ### By adding this list of tests as an attribute to
+                            ### the StatusTest variables, we ensure that linSys
+                            ### does not get destroyed.  This is a workaround
+                            ### for a Teuchos::RCP wrapper bug.
+
     if absTol:
         absTest = StatusTest.NormF(absTol)
         converged.addStatusTest(absTest)
@@ -373,8 +380,10 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
 
     # Return the default Solver
     solver = Solver.buildSolver(group, statusTest, nlParams)
-    solver.group      = group
-    solver.statusTest = statusTest
-    solver.nlParams   = nlParams
+    solver.group      = group        ### By adding group, statusTest and
+    solver.statusTest = statusTest   ### nlParams as attributes to the Solver
+    solver.nlParams   = nlParams     ### variable, we ensure that they do not
+                                     ### get destroyed.  This is a workaround for
+                                     ### a Teuchos::RCP wrapper bug.
     return solver
 %}
