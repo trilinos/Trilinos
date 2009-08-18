@@ -55,7 +55,7 @@ static void get_hypergraph(void *data, int sizeGID, int num_edges, int num_nonze
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
-static void showHypergraph(int myProc, int numIDs, int *GIDs, int *parts);
+static void showHypergraph(int myProc, int numProc, int numIDs, int *GIDs, int *parts);
 static void read_input_file(int myRank, int numProcs, char *fname, HGRAPH_DATA *data);
 
 static HGRAPH_DATA global_hg; 
@@ -126,10 +126,10 @@ int main(int argc, char *argv[])
   /* PHG parameters  - see the Zoltan User's Guide for many more
    *   (The "REPARTITION" approach asks Zoltan to create a partitioning that is
    *    better but is not too far from the current partitioning, rather than partitioning 
-   *    from scratch.)
+   *    from scratch.  It may be faster but of lower quality that LB_APPROACH=PARTITION.)
   */
 
-  Zoltan_Set_Param(zz, "LB_APPROACH", "REPARTITION"); 
+  Zoltan_Set_Param(zz, "LB_APPROACH", "REPARTITION");
 
   /* Application defined query functions */
 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
     printf("\nHypergraph partition before calling Zoltan\n");
   }
 
-  showHypergraph(myRank, hg.numMyVertices, hg.vtxGID, parts);
+  showHypergraph(myRank, numProcs, hg.numMyVertices, hg.vtxGID, parts);
 
   for (i=0; i < numExport; i++){
     parts[exportLocalGids[i]] = exportToPart[i];
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
     printf("Graph partition after calling Zoltan\n");
   }
 
-  showHypergraph(myRank, hg.numMyVertices, hg.vtxGID, parts);
+  showHypergraph(myRank, numProcs, hg.numMyVertices, hg.vtxGID, parts);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -385,15 +385,16 @@ int i, val[3];
 
 /* Draw the partition assignments of the objects */
 
-static void showHypergraph(int myProc, int numIDs, int *GIDs, int *parts)
+static void showHypergraph(int myProc, int numProcs, int numIDs, int *GIDs, int *parts)
 {
 int *partAssign, *allPartAssign;
 int i, j, part, count, numVtx, numEdges;
 int edgeID, edgeIdx, vtxID, vtxIdx;
 int maxPart, nPart, partIdx;
 int **M;
-int *nextID, *partNums;
+int *nextID, *partNums, *partCount;
 int cutn, cutl;
+float imbal, localImbal;
 
   numVtx = 25;
   numEdges = 25;
@@ -413,6 +414,7 @@ int cutn, cutl;
     free(allPartAssign);
     return;
   }
+
 
   /* Creating a dense matrix containing hyperedges, because this is small
    * example problem, and it is simpler.
@@ -445,7 +447,25 @@ int cutn, cutl;
     }
   }
 
+  /* Calculate vertex balance measure 1.0 is perfect, higher is worse */
+
+  imbal = 0;
+  partCount = (int *)calloc(sizeof(int), maxPart+1);
+
+  for (i=0; i < numVtx; i++){
+    partCount[allPartAssign[i]]++;
+  }
+
+  imbal = 0.0;
+  for (part=0; part <= maxPart; part++){
+     localImbal = (float)(numProcs * partCount[part]) / (float)numVtx;
+     if (localImbal > imbal) imbal = localImbal;
+  }
+
+  free(partCount);
   free(allPartAssign);
+
+  /* Print the hypergraph as a matrix */
 
   printf("\n                VERTICES\n    ");
   for (j=0; j < numVtx; j++){
@@ -503,6 +523,7 @@ int cutn, cutl;
   }
   printf("Total number of cut edges: %d\n",cutn);
   printf("Sum of NPARTS-1:           %d\n",cutl);
+  printf("Balance of vertices across partitions: %f\n",imbal);
   printf("\n");
 
   for (i=0; i < numEdges; i++){
