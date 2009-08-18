@@ -133,11 +133,19 @@ int main(int argc, char *argv[]) {
     
       // Create a FieldContainer using a deep copy via Teuchos::Array.
       FieldContainer<double> fc_array(dimensions, data);
+
       // modify the (1,1,1,1) entry
       fc_array(1,1,1,1) = 1.0;
       // verify that the data array has NOT changed
       if (std::abs(data[dimensions[1]*dimensions[2]*dimensions[3] + dimensions[2]*dimensions[3] + dimensions[3] + 1]) > zero) {
         *outStream << "\n\nError in constructor using Array (ArrayView) and deep copy.\n\n";
+        errorFlag = -1000;
+      }
+
+      // test getData access function
+      if (std::abs((fc_array.getData())[dimensions[1]*dimensions[2]*dimensions[3] +
+                                        dimensions[2]*dimensions[3] + dimensions[3] + 1] - fc_array(1,1,1,1)) > zero) {
+        *outStream << "\n\nError in getData() member of FieldContainer.\n\n";
         errorFlag = -1000;
       }
 

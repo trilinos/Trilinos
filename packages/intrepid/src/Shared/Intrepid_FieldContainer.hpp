@@ -602,14 +602,14 @@ namespace Intrepid {
     
     /** \brief Exposes data of FieldContainer, data can be modified.
     */
-    Teuchos::ArrayView<Scalar> & getData() {
+    Teuchos::ArrayRCP<Scalar> getData() {
       return data_;
     }    
 
 
     /** \brief Exposes data of FieldContainer, data cannot be modified.
     */
-    const Teuchos::ArrayView<Scalar> & getData() const {
+    Teuchos::ArrayRCP<const Scalar> getData() const {
       return data_;
     }    
 
