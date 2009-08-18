@@ -52,6 +52,10 @@
 ##  Number of hyperedges:
 25
 
+##  Sum of the number of vertices in each hyperedge
+
+105
+
 ##  Here we list for each hyperedge, its global ID, the number of vertices it links,
 ##  and the global ID of each vertex in the hyperedge.
 

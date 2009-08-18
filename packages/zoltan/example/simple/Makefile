@@ -35,7 +35,7 @@ MPI_LIBS=
 
 CFLAGS=-g -Wall
 
-all:   simpleBLOCK  simpleRCB simpleGRAPH
+all:   simpleBLOCK  simpleRCB simpleGRAPH simplePHG
 
 
 %: %.c
