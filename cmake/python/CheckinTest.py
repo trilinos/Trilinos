@@ -293,8 +293,37 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
 reCtestFailTotal = re.compile(r".+, ([0-9]+) tests failed out of ([0-9]+)")
 
 
+class Timings:
+  def __init__(self):
+    self.update = -1.0
+    self.configure = -1.0
+    self.build = -1.0
+    self.test = -1.0
+  def deepCopy(self):
+    copyTimings = Timings()
+    copyTimings.update = self.update
+    copyTimings.configure = self.configure
+    copyTimings.build = self.build
+    copyTimings.test = self.test
+    return copyTimings
+
+
+def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
+  stageStatusStr = stageName + ": "
+  if stageDoBool:
+    if stagePassed:
+      stageStatusStr += "Passed"
+    else:
+      stageStatusStr += "FAILED"
+    stageStatusStr += " ("+str(stageTiming)+" min)"
+  else:
+    stageStatusStr += "Not Performed"
+  stageStatusStr += "\n"
+  return stageStatusStr
+
+
 def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
-  enabledPackagesList, cmakeOptions, startingTime ) \
+  enabledPackagesList, cmakeOptions, startingTime, timings ) \
   :
 
   print ""
@@ -302,6 +331,30 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   print ""
 
   success = False
+
+  # Determine if the update passed
+
+  updatePassed = None
+  updateOutputExists = False
+
+  if inOptions.doUpdate:
+
+    if os.path.exists("../"+getUpdateOutputFileName()):
+      updateOutputExists = True
+
+    if os.path.exists("../"+getUpdateSuccessFileName()):
+      print "\nThe update passed!\n"
+      updatePassed = True
+    elif updateOutputExists:
+      print "\nThe update FAILED!\n"
+      updatePassed = False
+    else:
+      print "\nThe update was never attempted!\n"
+      updatePassed = False
+
+  else:
+
+    print "\nThe update step was not performed!\n"
 
   # Determine if the configured passed
 
@@ -470,15 +523,16 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   emailBody += "Hostname: " + getHostname() + "\n"
   emailBody += "Trilinos Source Dir: " + trilinosSrcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
-  emailBody += "Do Update: " + str(inOptions.doUpdate) + "\n"
-  emailBody += "Do Configure: " + str(inOptions.doConfigure) + "\n"
-  emailBody += "Do Build: " + str(inOptions.doBuild) + "\n"
-  emailBody += "Do Test: " + str(inOptions.doTest) + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
     emailBody += "\nExtra CMake Options: " + inOptions.extraCmakeOptions + "\n"
   if inOptions.ctestOptions:
     emailBody += "\nCTest Options: " + inOptions.ctestOptions + "\n"
+  emailBody += "\n"
+  emailBody += getStageStatus("Update", inOptions.doUpdate, updatePassed, timings.update)
+  emailBody += getStageStatus("Configure", inOptions.doConfigure, configurePassed, timings.configure)
+  emailBody += getStageStatus("Build", inOptions.doBuild, buildPassed, timings.build)
+  emailBody += getStageStatus("Test", inOptions.doTest, testsPassed, timings.test)
   emailBody += "\n"
 
   if inOptions.doTest and testOutputExists and numTotalTests:
@@ -555,7 +609,9 @@ def getSummaryEmailSectionStr(inOptions):
   return summaryEmailSectionStr
 
   
-def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions):
+def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions,
+  timings ) \
+  :
 
   success = True
 
@@ -656,10 +712,10 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   
     print "\ncmakeOptions =", cmakeOptions
   
-    print "Creating base configure file do-configure.base ..."
+    print "\nCreating base configure file do-configure.base ..."
     createConfigureFile(cmakeBaseOptions, "cmake", trilinosSrcDir, "do-configure.base")
   
-    print "Creating package-enabled configure file do-configure ..."
+    print "\nCreating package-enabled configure file do-configure ..."
     createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
   
     print ""
@@ -674,12 +730,17 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       if inOptions.extraCmakeOptions:
         cmnd += " " + inOptions.extraCmakeOptions
 
-      echoRunSysCmnd(cmnd,
+      (configureRtn, timings.configure) = echoRunSysCmnd(cmnd,
         outFile=getConfigureOutputFileName(),
-        timeCmnd=True
+        timeCmnd=True, returnTimeCmnd=True, throwExcept=False
         )
-    
-      echoRunSysCmnd("touch "+getConfigureSuccessFileName())
+
+      if configureRtn == 0:
+        print "\nConfigure passed!\n"
+        echoRunSysCmnd("touch "+getConfigureSuccessFileName())
+      else:
+        print "\nConfigure failed returning "+str(configureRtn)+"!\n"
+        raise Exception("Configure failed!")
   
     else:
   
@@ -695,15 +756,20 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       if inOptions.makeOptions:
         cmnd += " " + inOptions.makeOptions
   
-      echoRunSysCmnd(cmnd,
+      (buildRtn, timings.build) = echoRunSysCmnd(cmnd,
         outFile=getBuildOutputFileName(),
-        timeCmnd=True
+        timeCmnd=True, returnTimeCmnd=True, throwExcept=False
         )
-  
-      echoRunSysCmnd("touch "+getBuildSuccessFileName())
+
+      if buildRtn == 0:
+        print "\nBuild passed!\n"
+        echoRunSysCmnd("touch "+getBuildSuccessFileName())
+      else:
+        print "\nBuild failed returning "+str(buildRtn)+"!\n"
+        raise Exception("Build failed!")
   
     else:
-  
+
       print "\nSkipping the build on request!\n"
   
     print ""
@@ -716,12 +782,17 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       if inOptions.ctestOptions:
         cmnd += " " + inOptions.ctestOptions
   
-      echoRunSysCmnd(cmnd,
+      (testRtn, timings.test) = echoRunSysCmnd(cmnd,
         outFile=getTestOutputFileName(),
-        timeCmnd=True
+        timeCmnd=True, returnTimeCmnd=True, throwExcept=False
         )
   
-      echoRunSysCmnd("touch "+getTestSuccessFileName())
+      if testRtn == 0:
+        print "\nTest passed!\n"
+        echoRunSysCmnd("touch "+getTestSuccessFileName())
+      else:
+        print "\nTest failed returning "+str(testRtn)+"!\n"
+        raise Exception("Test failed!")
   
     else:
   
@@ -740,7 +811,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   if performAnyActions(inOptions):
 
     result = analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
-      enablePackagesList, cmakeOptions, startingTime)
+      enablePackagesList, cmakeOptions, startingTime, timings)
     if not result: succcess = False
 
   else:
@@ -773,7 +844,7 @@ def cleanTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
 
 
 def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buildType,
-  trilinosSrcDir, extraCMakeOptions ) \
+  trilinosSrcDir, extraCMakeOptions, timings ) \
   :
 
   success = True
@@ -787,7 +858,8 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
     try:
       echoChDir(baseTestDir)
       writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType)
-      result = runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions)
+      result = runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir,
+        extraCMakeOptions, timings.deepCopy())
       if not result: success = False
     except Exception, e:
       success = False
@@ -851,6 +923,8 @@ def checkinTest(inOptions):
 
   success = True
 
+  timings = Timings()
+
   try:
 
 
@@ -884,15 +958,20 @@ def checkinTest(inOptions):
       try:
   
         echoChDir(baseTestDir)
-        echoRunSysCmnd(inOptions.updateCommand,
+        (updateRtn, timings.update) = echoRunSysCmnd(inOptions.updateCommand,
           workingDir=trilinosSrcDir,
           outFile=os.path.join(baseTestDir, getUpdateOutputFileName()),
-          timeCmnd=True
+          timeCmnd=True, returnTimeCmnd=True, throwExcept=False
           )
 
-	echoRunSysCmnd("touch "+getUpdateSuccessFileName())
-
-	updatePassed = True
+        if updateRtn == 0:
+          "\nUpdate passed!\n"
+          echoRunSysCmnd("touch "+getUpdateSuccessFileName())
+          updatePassed = True
+        else:
+          "\nUpdate failed!\n"
+          echoRunSysCmnd("touch "+getUpdateSuccessFileName())
+          updatePassed = False
 
       except Exception, e:
         success = False
@@ -926,7 +1005,8 @@ def checkinTest(inOptions):
         [
           "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
           "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-        ]
+        ],
+        timings
         )
       if not result: success = False
   
@@ -935,7 +1015,8 @@ def checkinTest(inOptions):
         [
           "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
           "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
-        ]
+        ],
+        timings
         )
       if not result: success = False
 

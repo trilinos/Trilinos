@@ -130,11 +130,6 @@ def echoChDir(dirName):
   print "\nCurrent directory is \'"+os.getcwd()+"\'\n"
 
 
-def removeIfExists(fileName):
-  if os.path.exists(fileName):
-    echoRunSysCmnd("rm "+fileName)
-
-
 def expandDirsDict(trilinosDirsDict_inout):
 
   for dir in trilinosDirsDict_inout.keys():
@@ -170,7 +165,7 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
 
 
 def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
-  timeCmnd=False, verbose=True, workingDir=""
+  timeCmnd=False, verbose=True, workingDir="", returnTimeCmnd=False
   ):
   """Echo command to be run and run command with runSysCmnd()"""
   if verbose:
@@ -182,14 +177,23 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   if msg and verbose:
     print "  "+msg+"\n"
   t1 = time.time()
+  totalTimeMin = -1.0
   try:
     rtn = runSysCmnd(cmnd, throwExcept, outFile, workingDir)
   finally:
     if timeCmnd:
       t2 = time.time()
+      totalTimeMin = (t2-t1)/60.0
       if verbose:
-        print "\n  Runtime for command = %f minutes" % ((t2-t1)/60.0)
+        print "\n  Runtime for command = %f minutes" % totalTimeMin
+  if returnTimeCmnd:
+    return (rtn, totalTimeMin)
   return rtn
+
+
+def removeIfExists(fileName):
+  if os.path.exists(fileName):
+    echoRunSysCmnd("rm "+fileName)
 
 
 def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True):
