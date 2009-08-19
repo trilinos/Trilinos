@@ -217,7 +217,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //@}
 
   
-    //! @name Accessor methods
+  //! @name Accessor methods
   //@{ 
 
   //! Get a constant reference to the linear problem.

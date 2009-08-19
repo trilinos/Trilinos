@@ -45,7 +45,6 @@ CORE_H = \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
-	$(srcdir)/BelosSimpleOutputManager.hpp \
 	$(srcdir)/BelosPseudoBlockCGIter.hpp \
 	$(srcdir)/BelosPseudoBlockCGSolMgr.hpp \
 	$(srcdir)/BelosPseudoBlockGmresIter.hpp \
@@ -57,6 +56,7 @@ CORE_H = \
 	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
 	$(srcdir)/BelosStatusTestOutput.hpp \
+	$(srcdir)/BelosStatusTestSimpleOutput.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosStatusTestGenResNorm.hpp \
 	$(srcdir)/BelosStatusTestImpResNorm.hpp \

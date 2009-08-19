@@ -8480,7 +8480,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile example/PCPG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/PCPG/Makefile test/MVOPTester/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile tpetra/test/BlockGmres/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile example/PCPG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/PCPG/Makefile test/TFQMR/Makefile test/MVOPTester/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile tpetra/test/BlockGmres/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9201,6 +9201,7 @@ do
     "test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
     "test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES test/GCRODR/Makefile" ;;
     "test/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES test/PCPG/Makefile" ;;
+    "test/TFQMR/Makefile") CONFIG_FILES="$CONFIG_FILES test/TFQMR/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
     "tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/Makefile" ;;
     "tpetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/src/Makefile" ;;

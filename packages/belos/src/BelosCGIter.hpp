@@ -308,7 +308,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
     if (newstate.R != Teuchos::null) {
 
@@ -337,7 +337,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     else {
 
       TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
-                         "Belos::CGIter::initialize(): CGStateIterState does not have initial residual.");
+                         "Belos::CGIter::initialize(): CGIterationState does not have initial residual.");
     }
 
     // The solver is initialized

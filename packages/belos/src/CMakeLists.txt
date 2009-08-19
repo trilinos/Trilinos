@@ -68,6 +68,8 @@ APPEND_SET(HEADERS
   BelosStatusTestResNorm.hpp
   BelosStatusTestGenResNorm.hpp
   BelosStatusTestImpResNorm.hpp
+  BelosTFQMRIter.hpp
+  BelosTFQMRSolMgr.hpp
   BelosTypes.hpp
   ) 
 
@@ -86,11 +88,15 @@ APPEND_SET(SOURCES
 APPEND_SET(HEADERS
   BelosBlockCGSolMgr.hpp
   BelosBlockGmresSolMgr.hpp
+  BelosPseudoBlockCGSolMgr.hpp
   BelosPseudoBlockGmresSolMgr.hpp
+  BelosTFQMRSolMgr.hpp
   BelosCGIter.hpp
   BelosBlockCGIter.hpp
   BelosBlockGmresIter.hpp
+  BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockGmresIter.hpp
+  BelosTFQMRIter.hpp
   )
 
 ASSERT_DEFINED(Belos_ENABLE_Tpetra)

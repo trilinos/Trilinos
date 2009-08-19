@@ -191,7 +191,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = BlockCG BlockGmres GCRODR PCPG MVOPTester
+SUBDIRS = BlockCG BlockGmres GCRODR PCPG TFQMR MVOPTester
 EXTRA_DIST = definition
 all: all-recursive
 

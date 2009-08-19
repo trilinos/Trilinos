@@ -16,10 +16,10 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-BELOS_BTFQMR_NOPREC_EX = tfqmr_hb Dummy 
+BELOS_TFQMR_NOPREC_EX = tfqmr_hb Dummy 
 endif
 
-noinst_PROGRAMS = $(BELOS_BTFQMR_NOPREC_EX) 
+noinst_PROGRAMS = $(BELOS_TFQMR_NOPREC_EX) 
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/example/BlockGmres/orsirr1.hb orsirr1.hb 

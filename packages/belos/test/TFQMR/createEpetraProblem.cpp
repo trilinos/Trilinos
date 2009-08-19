@@ -114,6 +114,7 @@ int Belos::createEpetraProblem(
     int info = (*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
     assert( info == 0 );
     info = (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
+    assert( info == 0 );
   }
   //
   // Finish up
@@ -121,6 +122,7 @@ int Belos::createEpetraProblem(
   int info = (*A)->FillComplete();
   assert( info == 0 );
   info = (*A)->OptimizeStorage();
+  assert( info == 0 );
   (*A)->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
   //
   // Construct the right-hand side and solution multivectors.

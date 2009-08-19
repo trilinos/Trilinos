@@ -357,6 +357,7 @@ AC_CONFIG_FILES([
 		test/BlockGmres/Makefile
 		test/GCRODR/Makefile
 		test/PCPG/Makefile
+		test/TFQMR/Makefile
 		test/MVOPTester/Makefile
 		tpetra/Makefile
 		tpetra/src/Makefile
