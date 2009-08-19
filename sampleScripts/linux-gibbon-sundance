@@ -73,6 +73,8 @@ CHECK_STL=OFF
 # Whether to enable a paranoid level of compiler warnings. This can cause
 # problems with Python. Default: on. 
 PARANOID_COMPILER=ON
+# Whether to do explicit template instantiation
+EXPLICIT_TEMPLATES=ON
 # ----------------------------------------------------------------------------
 # Verbosity of configuration
 VERBOSE_CONFIGURE=OFF
@@ -110,7 +112,7 @@ TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,explicit,no-explicit,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -136,6 +138,8 @@ while true ; do
       --exodus) HAVE_EXODUS=ON; shift;;
       --no-exodus) HAVE_EXODUS=OFF; shift;;
       --meros) ENABLE_MEROS=ON; shift;;
+      --explicit) EXPLICIT_TEMPLATES=ON; shift;;
+      --no-explicit) EXPLICIT_TEMPLATES=OFF; shift;;
       --src)
             TRILINOS_SRC_DIR="$2"; shift 2;;
       --extra-cxxflags)
@@ -167,6 +171,7 @@ while true ; do
             echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
             echo "--no-exodus      disable ExodusII readers"
             echo "--meros          enable Meros block preconditioners (default: off)"
+            echo "--explicit       enable explicit template instantiation (default: on)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
             echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
             echo "--extra-cflags <f>     extra C flags (default: none)"
@@ -204,6 +209,7 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=${PARANOID_COMPILER} \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
 -D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
