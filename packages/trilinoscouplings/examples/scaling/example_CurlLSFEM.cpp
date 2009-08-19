@@ -98,14 +98,11 @@
 #define ABS(x) ((x)>0?(x):-(x))
 
 #define DUMP_DATA
+#define DUMP_DATAE
+#define DUMP_DATAX
 
 using namespace std;
 using namespace Intrepid;
-
-
-
-#ifdef HAVE_MPI
-
 
 struct fecomp{
   bool operator () ( topo_entity* x,  topo_entity*  y )const
@@ -114,10 +111,6 @@ struct fecomp{
     return false;
   }
 };
-
-
-#endif
-
 
 void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
@@ -208,7 +201,6 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "===============================================================================\n";
 
-#ifdef HAVE_MPI
   long long *  node_comm_proc_ids   = NULL;
   long long *  node_cmap_node_cnts  = NULL;
   long long *  node_cmap_ids        = NULL;
@@ -222,7 +214,6 @@ int main(int argc, char *argv[]) {
   std::vector < topo_entity * > face_vector;
 
   std::vector < int > edge_comm_procs;
-#endif
 
 // ************************************ GET INPUTS **************************************
 
@@ -397,7 +388,6 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,2)=nodeCoordz[i];
     }
 
-#ifdef HAVE_MPI
     /*parallel info*/
     long long num_internal_nodes;
     long long num_border_nodes;
@@ -459,7 +449,6 @@ int main(int argc, char *argv[]) {
                          comm_node_ids,
                          rank);
 
-#endif
 
     FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
     FieldContainer<int> elemToFace(numElems,numFacesPerElem);
@@ -472,7 +461,7 @@ int main(int argc, char *argv[]) {
       else if (nodes_per_element[b] == 8){
         //loop over all elements and push their edges onto a set if they are not there already
         for(long long el = 0; el < elements[b]; el++){
-          std::set< topo_entity * > ::iterator fit;
+          std::set< topo_entity *, fecomp > ::iterator fit;
           for (int i=0; i < numEdgesPerElem; i++){
             topo_entity * teof = new topo_entity;
             for(int j = 0; j < numNodesPerEdge;j++){
@@ -561,7 +550,7 @@ int main(int argc, char *argv[]) {
     std::cout << "    Number of Faces: " << numFaces << " \n\n";
   }
 
-#ifdef HAVE_MPI
+   // Calculate global edge and face numbering
     std::string doing_type;
     doing_type = "EDGES";
     calc_global_ids(edge_vector,
@@ -571,7 +560,7 @@ int main(int argc, char *argv[]) {
                num_node_comm_maps,
                rank,
                doing_type);
-
+     
 
     doing_type = "FACES";
     calc_global_ids(face_vector,
@@ -581,7 +570,6 @@ int main(int argc, char *argv[]) {
                num_node_comm_maps,
                rank,
                doing_type);
-#endif
 
 #ifdef DUMP_DATAE
   // Output element to face connectivity
@@ -1097,6 +1085,7 @@ int main(int argc, char *argv[]) {
     DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
 
 #ifdef DUMP_DATAX
+    EpetraExt::RowMatrixToMatlabFile("m1_0.dat",StiffC);
     EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
     EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
 #endif
@@ -1360,7 +1349,6 @@ int main(int argc, char *argv[]) {
    delete [] nodeCoordy;
    delete [] nodeCoordz;
 
-#ifdef HAVE_MPI
    delete [] globalNodeIds;
    delete [] nodeIsOwned;
    if(num_node_comm_maps > 0){
@@ -1375,13 +1363,14 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_ids;
       delete [] comm_node_proc_ids;
    }
-#endif
 
 
  // reset format state of std::cout
  std::cout.copyfmt(oldFormatState);
 
+#ifdef HAVE_MPI
    MPI_Finalize();
+#endif
  
    exit(0);
 }
@@ -1574,8 +1563,8 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
     uExact0 = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-    
  /*
+    
     uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
@@ -1584,13 +1573,13 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
     uExact1 = sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
     uExact2 = sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
  
+*/
+ /*
  
     uExact0 = x*(y*y - 1.0)*(z*z-1.0);
     uExact1 = y*(x*x - 1.0)*(z*z-1.0);
     uExact2 = z*(x*x - 1.0)*(y*y-1.0);
 
- */
- /*
     uExact0 = (y*y - 1.0)*(z*z-1.0);
     uExact1 = (x*x - 1.0)*(z*z-1.0);
     uExact2 = (x*x - 1.0)*(y*y-1.0);
@@ -1607,18 +1596,20 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double divu = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-
  /*
+
    double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
 
    double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+  */
 
+/*
    double divu = (y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  + (x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  + (x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-  */
+*/
 
   // double divu = 0.0;
 
@@ -1637,8 +1628,8 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double duzdx = exp(x+y+z)*(y*y-1.0)*(x*x+2.0*x-1.0);
    double duzdy = exp(x+y+z)*(x*x-1.0)*(y*y+2.0*y-1.0);
 
- 
  /*
+ 
    double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
    double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
    double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
@@ -1654,15 +1645,15 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
    double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
  
+ */
 
+ /*
    double duxdy = 2.0*x*y*(z*z-1);
    double duxdz = 2.0*x*z*(y*y-1);
    double duydx = 2.0*y*x*(z*z-1);
    double duydz = 2.0*y*z*(x*x-1);
    double duzdx = 2.0*z*x*(y*y-1);
    double duzdy = 2.0*z*y*(x*x-1);
- */
- /*
   
    double duxdy = 2.0*y*(z*z-1);
    double duxdz = 2.0*z*(y*y-1);
@@ -1689,8 +1680,8 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    gradDivu1 = exp(x+y+z)*((y*y+2.0*y-1.0)*(z*z-1.0)+(x*x-1.0)*(z*z-1.0)+(x*x-1.0)*(y*y+2.0*y-1.0));
    gradDivu2 = exp(x+y+z)*((y*y-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(y*y-1.0));
  
-   
   /*
+   
     gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                   -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
                   -M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
@@ -1706,14 +1697,14 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
 
+ */
 
+ /*
    gradDivu0 = 2.0*x*((z*z-1.0)+(y*y-1.0));
    gradDivu1 = 2.0*y*((z*z-1.0)+(x*x-1.0));
    gradDivu2 = 2.0*z*((x*x-1.0)+(y*y-1.0));
 
- */
  
- /*
    gradDivu0 = 0;
    gradDivu1 = 0;
    gradDivu2 = 0;
@@ -1727,7 +1718,4 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    return 0;
 }
 
-#ifdef HAVE_MPI
-
-#endif
 
