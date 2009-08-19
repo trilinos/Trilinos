@@ -35,17 +35,14 @@ Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
 
 
-(*) [CMake] [P1] Do not select compilers from different compiler sets.
-If a compiler, or an mpi compiler wrapper is found in some directory,
-only that directory should be searched for the remaining compilers that
-need to be found.  In our experience, mixing compiler vendors, or even
-versions within the same vendor tends not to work.  If a user definitely
-wants to mix versions, they should have to manually specify all compilers.
+(*) [CMake] [P1] Verify compatibility of compilers.  If compilers are not
+specified in the environment and a compiler, or an mpi compiler wrapper, is
+found in some directory, that directory should be searched first for the
+remaining compilers that need to be found.  In our experience, mixing compiler
+vendors, or even versions within the same vendor tends not to work.  After
+finding all compilers, if any mixed language linking is to take place, the
+compilers should be tested for compatibility.
 
-(*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
-machine purple.sandia.gov.  See Trilinos bug
-https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
- 
 
 (*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
 looping for continuous integration testing.  Assist in getting 
@@ -480,6 +477,10 @@ function PACKAGE_ADD_ADVANCED_TEST(...).
 
 Done:
 -----
+
+(*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
+machine purple.sandia.gov.  See Trilinos bug
+https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
 
 (*) [CTest] [P2] By default, automatically widen the main summary
 output to show the full test names: Currently, only the first 30
