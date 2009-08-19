@@ -2,9 +2,12 @@
 #
 # ToDo:
 #
-#  (*) Enable auto-commit with embedded email.out files at end ...
-#  (*) Turn off framework tests by default and turn them in pre-checkin testing ...
-#  (*) Turn off generation of HTML/XML files by default and turn them on in pre-checkin testing ...
+#  (*) Keep track of timmings for update, configure, build, and test and
+#      embed these in the email messages ...
+#  (*) Turn off framework tests by default and turn them in checkin
+#      testing ...
+#  (*) Turn off generation of HTML/XML files by default and turn them on in
+#      checkin testing ...
 #
 
 #
@@ -571,7 +574,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     print "\nNo other actions to perform!\n"
     return success
 
-  print "Creating a new build directory if it does not already exist ..."
+  print "\nCreating a new build directory if it does not already exist ..."
   createDir(buildDirName)
 
   absBuildDir = os.path.join(baseTestDir, buildDirName)
@@ -701,7 +704,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   
     else:
   
-      print "\nSkipping the build on request ...\n"
+      print "\nSkipping the build on request!\n"
   
     print ""
     print "D) Run the tests ..."
@@ -792,7 +795,7 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
 
   else:
 
-    print "\nSkipping "+serialOrMpi+" "+buildType+" build on request!\n"
+    print "\nSkipping "+serialOrMpi+" "+buildType+" build/test on request!\n"
 
   return success
 
@@ -852,7 +855,7 @@ def checkinTest(inOptions):
 
 
     print "\n***"
-    print "*** 1) Clean old output files .."
+    print "*** 1) Clean old output files ..."
     print "***"
 
     removeIfExists(getCommitEmailBodyFileName())

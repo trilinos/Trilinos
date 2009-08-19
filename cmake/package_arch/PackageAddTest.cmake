@@ -11,6 +11,7 @@ INCLUDE(PackageAddTestHelpers)
 #     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
 #     [DIRECTORY <directory>]
 #     [ADD_DIR_TO_NAME]
+#     [CREATE_WORKING_DIR]
 #     [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
 #       | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
 #         POSTFIX_AND_ARGS_1 ... ]
@@ -78,6 +79,15 @@ INCLUDE(PackageAddTestHelpers)
 #     name of the test. the directory will have the package's base directory
 #     stripped off so only the unique part of the test directory will be used.
 #     All directory seperators will be changed into underscores.
+#
+#   CREATE_WORKING_DIR
+#
+#     If specified then a single temporary working directory will be created
+#     based on the full name of the test and the test will be run in that
+#     directory.  This allows tests to run in parallel even if they might
+#     otherwise write the same files.  NOTE: If you use this option, then you
+#     will need to adjust the path to your executable or other command.  Also,
+#     input file locations will need to point down a directory.
 #
 #   ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
 #

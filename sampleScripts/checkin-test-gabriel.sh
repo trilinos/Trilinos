@@ -11,9 +11,8 @@ if [ "$TRILINOS_HOME" == "" ] ; then
   TRILINOS_HOME=/home/rabartl/PROJECTS/Trilinos.base/Trilinos
 fi
 
-echo "-DBUILD_SHARED:BOOL=ON" > COMMON.config
+echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
 
 $TRILINOS_HOME/cmake/python/checkin-test.py \
 --make-options="-j4" \
---ctest-options="-W 100 -j4" \
 $EXTRA_ARGS  

@@ -2,6 +2,8 @@
 #define KOKKOS_NODE_HELPERS_HPP_
 
 #include <Kokkos_ConfigDefs.hpp>
+#include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 namespace Kokkos {
 
