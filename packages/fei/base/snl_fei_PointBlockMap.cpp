@@ -214,7 +214,7 @@ bool snl_fei::PointBlockMap::isExactlyBlkEqn(int ptEqn)
   std::map<int,int>::iterator
     p_iter = ptEqns_->find(ptEqn);
   if (p_iter == ptEqns_->end()) {
-    return(-1);
+    return(false);
   }
 
   return( getBlkEqnOffset((*p_iter).first, ptEqn) == 0 );

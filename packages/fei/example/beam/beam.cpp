@@ -138,7 +138,7 @@ int main(int argc, char** argv)
   try {
     factory = fei::create_fei_Factory(comm, solverName.c_str());
   }
-  catch (std::runtime_error& exc) {
+  catch (...) {
     FEI_COUT << "library " << solverName << " not available."<<FEI_ENDL;
 
 #ifndef FEI_SER

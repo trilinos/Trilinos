@@ -85,7 +85,7 @@ void test_misc_FieldMask()
   try {
     fieldMask.addField(-1, 0, 1);
   }
-  catch (std::runtime_error& exc) {
+  catch (...) {
     exc_caught = true;
   }
 

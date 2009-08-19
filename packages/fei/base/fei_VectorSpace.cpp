@@ -712,7 +712,7 @@ int fei::VectorSpace::getGlobalIndices(int numIDs,
         }
       }
     }
-    catch (std::runtime_error& exc) {
+    catch (...) {
       for(unsigned j=0; j<fieldSize; ++j) {
         globalIndices[offset+j] = -1;
       }

@@ -44,7 +44,7 @@ class Filter {
    virtual int deleteMultCRs() = 0;
 
    virtual int loadNodeBCs(int /*numNodes*/,
-                   const GlobalID */*nodeIDs*/,
+                   const GlobalID* /*nodeIDs*/,
                    int /*fieldID*/,
                    const int* /*offsetsIntoField*/,
                    const double* /*prescribedValues*/)

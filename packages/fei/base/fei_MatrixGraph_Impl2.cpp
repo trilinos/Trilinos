@@ -55,7 +55,7 @@ static unsigned getFieldSize(int fieldID,
       fieldsize = space1->getFieldSize(fieldID);
       foundfield = true;
     }
-    catch (std::runtime_error& exc) {
+    catch (...) {
       foundfield = false;
     }
   }

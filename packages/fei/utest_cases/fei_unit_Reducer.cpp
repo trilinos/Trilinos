@@ -62,7 +62,7 @@ int test_reducer_unit1()
   try {
     reducer.translateToReducedEqn(1);
   }
-  catch(std::runtime_error& exc) {
+  catch(...) {
     exception_caught = true;
   }
 
@@ -192,7 +192,7 @@ int test_Reducer_test1(MPI_Comm comm)
   try {
     factory = fei::create_fei_Factory(comm, "Trilinos");
   }
-  catch(std::runtime_error& exc) {
+  catch(...) {
     FEI_COUT << "couldn't create Trilinos factory."<<FEI_ENDL;
     return(0);
   }

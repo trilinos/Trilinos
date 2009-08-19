@@ -197,7 +197,7 @@ int test_benchmarks::test1()
     passfail = fei_test_utils::check_test_result(value, goldvalue, 10);
     if (passfail != "passed") returnValue = -1;
   }
-  catch(std::runtime_error& exc) {
+  catch(...) {
     goldvalue = -1.0;
     passfail = " ";
   }
@@ -214,7 +214,7 @@ int test_benchmarks::test1()
     passfail = fei_test_utils::check_test_result(value, goldvalue, 10);
     if (passfail != "passed") returnValue = -1;
   }
-  catch(std::runtime_error& exc) {
+  catch(...) {
     goldvalue = -1.0;
     passfail = " ";
   }
@@ -377,7 +377,7 @@ int test_benchmarks::test2()
     passfail = fei_test_utils::check_test_result(value, goldvalue, 10);
     if (passfail != "passed") returnValue = -1;
   }
-  catch(std::runtime_error& exc) {
+  catch(...) {
     goldvalue = -1.0;
     passfail = " ";
   }
@@ -416,7 +416,7 @@ int test_benchmarks::test2()
     passfail = fei_test_utils::check_test_result(value, goldvalue, 10);
     if (passfail != "passed") returnValue = -1;
   }
-  catch(std::runtime_error& exc) {
+  catch(...) {
     goldvalue = -1.0;
     passfail = " ";
   }

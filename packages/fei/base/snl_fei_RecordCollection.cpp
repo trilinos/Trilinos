@@ -408,7 +408,7 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
   try {
     mask->getFieldEqnOffset(fieldID, offset, numInstances);
   }
-  catch (std::runtime_error& exc) {
+  catch (...) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "failed to get eqn-offset for fieldID " << fieldID
           << " on record with ID " << ID << ".";
