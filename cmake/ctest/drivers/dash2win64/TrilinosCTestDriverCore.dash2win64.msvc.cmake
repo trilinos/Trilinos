@@ -2,7 +2,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for godel using gcc
+# Platform/compiler specific options for Kitware Windows machine dash2win64
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
@@ -23,7 +23,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DDART_TESTING_TIMEOUT:STRING=120"
     )
-  
 
   TRILINOS_CTEST_DRIVER()
 
