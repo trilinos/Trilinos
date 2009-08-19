@@ -1556,9 +1556,9 @@ namespace Tpetra {
   {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
-    oss << "{length="<<getGlobalLength()
-        << ",getNumVectors="<<getNumVectors()
-        << ",isConstantStride()="<<isConstantStride()
+    oss << "{length = "<<getGlobalLength()
+        << ", getNumVectors = "<<getNumVectors()
+        << ", isConstantStride() = "<<isConstantStride()
         << "}";
     return oss.str();
   }

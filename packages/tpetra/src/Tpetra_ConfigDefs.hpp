@@ -95,6 +95,17 @@
 
 namespace Tpetra {
   typedef size_t global_size_t;
+
+  enum LocalGlobal {
+    LocallyReplicated,
+    GloballyDistributed
+  };
+
+  enum LookupStatus {
+    AllIDsPresent,
+    IDNotPresent
+  };
+
 }
 
 #endif // TPETRA_CONFIGDEFS_HPP

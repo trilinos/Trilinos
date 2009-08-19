@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+// FINISH: HERE: Directory should take an RCP<const Map> in constructor
+
 #ifndef TPETRA_DIRECTORY_HPP
 #define TPETRA_DIRECTORY_HPP
 
@@ -71,32 +73,29 @@ namespace Tpetra {
   Directory<LocalOrdinal,GlobalOrdinal>::~Directory() {}
 
   template<class LocalOrdinal, class GlobalOrdinal>
-  bool Directory<LocalOrdinal,GlobalOrdinal>::getDirectoryEntries(
-      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-      const Teuchos::ArrayView<int> &nodeIDs) const 
-  {
+  LookupStatus Directory<LocalOrdinal,GlobalOrdinal>::getDirectoryEntries(
+              const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+              const Teuchos::ArrayView<int> &nodeIDs) const {
     return getEntries(globalIDs, nodeIDs, Teuchos::ArrayView<LocalOrdinal>(Teuchos::null), false);
   }
 
   template<class LocalOrdinal, class GlobalOrdinal>
-  bool Directory<LocalOrdinal,GlobalOrdinal>::getDirectoryEntries(
-      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-      const Teuchos::ArrayView<int> &nodeIDs, 
-      const Teuchos::ArrayView<LocalOrdinal> &localIDs) const 
-  {
+  LookupStatus Directory<LocalOrdinal,GlobalOrdinal>::getDirectoryEntries(
+              const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+              const Teuchos::ArrayView<int> &nodeIDs, 
+              const Teuchos::ArrayView<LocalOrdinal> &localIDs) const {
     return getEntries(globalIDs, nodeIDs, localIDs, true);
   }
 
   template<class LocalOrdinal, class GlobalOrdinal>
-  bool Directory<LocalOrdinal,GlobalOrdinal>::getEntries(
-      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-      const Teuchos::ArrayView<int> &nodeIDs, 
-      const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-            bool computeLIDs) const 
-  {
+  LookupStatus Directory<LocalOrdinal,GlobalOrdinal>::getEntries(
+              const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+              const Teuchos::ArrayView<int> &nodeIDs, 
+              const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
+              bool computeLIDs) const {
     const LocalOrdinal LINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 
-    bool invalidGIDs = false;
+    LookupStatus res = AllIDsPresent;
 
     // fill nodeIDs and localIDs with -1s
     TEST_FOR_EXCEPTION(nodeIDs.size() != globalIDs.size(), std::runtime_error,
@@ -132,7 +131,7 @@ namespace Tpetra {
           if (computeLIDs) {
             lidptr++;
           }
-          invalidGIDs = true;
+          res = IDNotPresent;
         }
       }
     }
@@ -169,7 +168,7 @@ namespace Tpetra {
           LID = Teuchos::as<LocalOrdinal>(GID - allMinGIDs_[image]);
         }
         else {
-          invalidGIDs = true;
+          res = IDNotPresent;
         }
         *imgptr++ = image;
         if (computeLIDs) {
@@ -190,10 +189,10 @@ namespace Tpetra {
 
       // Get directory locations for the requested list of entries
       Teuchos::Array<int> dirImages(numEntries);
-      invalidGIDs = directoryMap_->getRemoteIndexList(globalIDs, dirImages());
+      res = directoryMap_->getRemoteIndexList(globalIDs, dirImages());
       // Check for unfound globalIDs and set corresponding nodeIDs to -1
       Teuchos_Ordinal numMissing = 0;
-      if (invalidGIDs) {
+      if (res == IDNotPresent) {
         for (int i=0; i < numEntries; ++i) {
           if (dirImages[i] == -1) {
             nodeIDs[i] = -1;
@@ -248,7 +247,7 @@ namespace Tpetra {
         }
       }
     }
-    return invalidGIDs;
+    return res;
   }
 
 
@@ -269,7 +268,7 @@ namespace Tpetra {
 
     // Obviously, we can't afford to store the whole directory on each node
     // Create a uniform linear map to contain the directory to split up the storage among all nodes
-    directoryMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal>(numGlobalEntries, minAllGID, map_.getComm()));
+    directoryMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal>(numGlobalEntries, minAllGID, comm_));
 
     Teuchos_Ordinal dir_numMyEntries = as<Teuchos_Ordinal>(directoryMap_->getNumMyEntries());
 

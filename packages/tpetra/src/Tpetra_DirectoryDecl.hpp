@@ -59,7 +59,6 @@ namespace Tpetra {
     //! Constructor
     Directory(const Map<LocalOrdinal,GlobalOrdinal> & map);
     
- public:
     //! Destructor.
     ~Directory();
     
@@ -77,13 +76,13 @@ namespace Tpetra {
       \param nodeIDs [out] On return, contains node IDs for the global IDs in question. 
       -1 corresponds to global entries not present in the directory.
 
-      \returns \c true signifies at least one specified global entry was not present in the directory; 
-               \c false signifies that all specified global entries were present in the directory.
+      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
+               Otherwise, returns AllIDsPresent.
 
       \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, then a \c std::runtime_error exception is thrown.
     */
-    bool getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-                             const Teuchos::ArrayView<int> &nodeIDs) const;
+    LookupStatus getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+                                     const Teuchos::ArrayView<int> &nodeIDs) const;
     
     //! \brief Returns node info for non-local Map entries.
     /*! Given a list of global IDs, this function returns the corresponding list of
@@ -97,15 +96,15 @@ namespace Tpetra {
       \param localIDs [out] On return contains the local ID of the global on the owning node. 
       Teuchos::OrdinalTraits<LocalOrdinal>::invalid() corresponds to global entries not present in the directory.
 
-      \returns \c true signifies at least one specified global entry was not present in the directory.
-               \c false signifies that all specified global entries were present in the directory.
+      \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
+               Otherwise, returns AllIDsPresent.
 
       \note If <tt>nodeIDs.size() != globalIDs.size()</tt> or 
                <tt>localIDs.size() != globalIDs.size()</tt>, then a \c std::runtime_error exception is thrown.
     */
-    bool getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-                             const Teuchos::ArrayView<int> &nodeIDs, 
-                             const Teuchos::ArrayView<LocalOrdinal> &localIDs) const;
+    LookupStatus getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+                                     const Teuchos::ArrayView<int> &nodeIDs, 
+                                     const Teuchos::ArrayView<LocalOrdinal> &localIDs) const;
     //@}
     
   private:
@@ -117,21 +116,21 @@ namespace Tpetra {
     Teuchos::RCP< Map<LocalOrdinal,GlobalOrdinal> > directoryMap_;
 
     Directory(const Directory<LocalOrdinal,GlobalOrdinal> &directory);
-    
+
     //! declared but not defined, to prevent default implementation, do not use
     Directory<LocalOrdinal,GlobalOrdinal> & operator = (const Directory<LocalOrdinal,GlobalOrdinal> &source);
 
     // common code for both versions of getDirectoryEntries
-    bool getEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
-                    const Teuchos::ArrayView<int> &nodeIDs, 
-                    const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
-                          bool computeLIDs) const;
-    
+    LookupStatus getEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+                            const Teuchos::ArrayView<int> &nodeIDs, 
+                            const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
+                            bool computeLIDs) const;
+
     // directory setup for non-contiguous ES
     void generateDirectory();
-    
+
   }; // class Directory
-  
+
 } // namespace Tpetra
 
 #endif // TPETRA_DIRECTORY_DECL_HPP
