@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   // Command line for xml file, otherwise use default
     std::string   xmlInFileName;
     if(argc>=2) xmlInFileName=string(argv[1]);
-    else xmlInFileName="CurlLSFEMin.xml";
+    else xmlInFileName="DivLSFEMin.xml";
 
   // Read xml file into parameter list
     Teuchos::ParameterList inputList;
@@ -438,7 +438,7 @@ int main(int argc, char *argv[]) {
       else if (nodes_per_element[b] == 8){
 	//loop over all elements and push their edges onto a set if they are not there already
 	for(long long el = 0; el < elements[b]; el++){
-	  std::set< topo_entity * > ::iterator fit;
+	  std::set< topo_entity *, fecomp > ::iterator fit;
 	  for (int i=0; i < numEdgesPerElem; i++){
 	    topo_entity * teof = new topo_entity;
 	    for(int j = 0; j < numNodesPerEdge;j++){
@@ -531,7 +531,6 @@ int main(int argc, char *argv[]) {
     std::cout << "    Number of Faces: " << numFaces << " \n\n";
   }
    
-#ifdef HAVE_MPI
     std::string doing_type;
     doing_type = "EDGES";
     calc_global_ids(edge_vector,
@@ -551,7 +550,6 @@ int main(int argc, char *argv[]) {
 	       num_node_comm_maps,
 	       rank,
 	       doing_type);
-#endif
 
 #ifdef DUMP_DATA 
    // Output element to face connectivity

@@ -452,7 +452,7 @@ int main(int argc, char *argv[]) {
       else if (nodes_per_element[b] == 8){
 	//loop over all elements and push their edges onto a set if they are not there already
 	for(long long el = 0; el < elements[b]; el++){
-	  std::set< topo_entity * > ::iterator fit;
+	  std::set< topo_entity *, fecomp > ::iterator fit;
 	  for (int i=0; i < numEdgesPerElem; i++){
 	    topo_entity * teof = new topo_entity;
 	    for(int j = 0; j < numNodesPerEdge;j++){
