@@ -36,7 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = $(am__EXEEXT_1)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test/TFQMR
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -66,17 +66,24 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = tfqmr_hb$(EXEEXT) Dummy$(EXEEXT)
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 =  \
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	ptfqmr_hb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
 Dummy_LDADD = $(LDADD)
-am_tfqmr_hb_OBJECTS = tfqmr_hb-test_tfqmr_hb.$(OBJEXT) \
-	tfqmr_hb-createEpetraProblem.$(OBJEXT)
-tfqmr_hb_OBJECTS = $(am_tfqmr_hb_OBJECTS)
+am_ptfqmr_hb_OBJECTS = ptfqmr_hb-test_ptfqmr_hb.$(OBJEXT) \
+	ptfqmr_hb-createEpetraProblem.$(OBJEXT)
+ptfqmr_hb_OBJECTS = $(am_ptfqmr_hb_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
+ptfqmr_hb_LINK = $(CXXLD) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_tfqmr_hb_OBJECTS = tfqmr_hb-test_tfqmr_hb.$(OBJEXT) \
+	tfqmr_hb-createEpetraProblem.$(OBJEXT)
+tfqmr_hb_OBJECTS = $(am_tfqmr_hb_OBJECTS)
 tfqmr_hb_LINK = $(CXXLD) $(tfqmr_hb_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -91,8 +98,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(Dummy_SOURCES) $(tfqmr_hb_SOURCES)
-DIST_SOURCES = $(Dummy_SOURCES) $(tfqmr_hb_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(ptfqmr_hb_SOURCES) $(tfqmr_hb_SOURCES)
+DIST_SOURCES = $(Dummy_SOURCES) $(ptfqmr_hb_SOURCES) \
+	$(tfqmr_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -215,6 +223,7 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_TRIUTILS_TRUE@BELOS_TFQMR_NOPREC_EX = tfqmr_hb Dummy 
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_TFQMR_PREC_EX = ptfqmr_hb
 Dummy_SOURCES = Dummy
 tfqmr_hb_SOURCES = $(srcdir)/test_tfqmr_hb.cpp $(srcdir)/createEpetraProblem.cpp
 tfqmr_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
@@ -223,6 +232,14 @@ tfqmr_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 
 tfqmr_hb_CXXFLAGS = -I$(top_srcdir)/src 
 tfqmr_hb_LDADD = $(EXPORT_LIBS)
+ptfqmr_hb_SOURCES = $(srcdir)/test_ptfqmr_hb.cpp $(srcdir)/createEpetraProblem.cpp
+ptfqmr_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+ptfqmr_hb_CXXFLAGS = -I$(top_srcdir)/src 
+ptfqmr_hb_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -259,6 +276,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+ptfqmr_hb$(EXEEXT): $(ptfqmr_hb_OBJECTS) $(ptfqmr_hb_DEPENDENCIES) 
+	@rm -f ptfqmr_hb$(EXEEXT)
+	$(ptfqmr_hb_LINK) $(ptfqmr_hb_OBJECTS) $(ptfqmr_hb_LDADD) $(LIBS)
 tfqmr_hb$(EXEEXT): $(tfqmr_hb_OBJECTS) $(tfqmr_hb_DEPENDENCIES) 
 	@rm -f tfqmr_hb$(EXEEXT)
 	$(tfqmr_hb_LINK) $(tfqmr_hb_OBJECTS) $(tfqmr_hb_LDADD) $(LIBS)
@@ -269,6 +289,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptfqmr_hb-createEpetraProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tfqmr_hb-createEpetraProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tfqmr_hb-test_tfqmr_hb.Po@am__quote@
 
@@ -285,6 +307,34 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ptfqmr_hb-test_ptfqmr_hb.o: $(srcdir)/test_ptfqmr_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -MT ptfqmr_hb-test_ptfqmr_hb.o -MD -MP -MF $(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Tpo -c -o ptfqmr_hb-test_ptfqmr_hb.o `test -f '$(srcdir)/test_ptfqmr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_ptfqmr_hb.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Tpo $(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_ptfqmr_hb.cpp' object='ptfqmr_hb-test_ptfqmr_hb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -c -o ptfqmr_hb-test_ptfqmr_hb.o `test -f '$(srcdir)/test_ptfqmr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_ptfqmr_hb.cpp
+
+ptfqmr_hb-test_ptfqmr_hb.obj: $(srcdir)/test_ptfqmr_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -MT ptfqmr_hb-test_ptfqmr_hb.obj -MD -MP -MF $(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Tpo -c -o ptfqmr_hb-test_ptfqmr_hb.obj `if test -f '$(srcdir)/test_ptfqmr_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_ptfqmr_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_ptfqmr_hb.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Tpo $(DEPDIR)/ptfqmr_hb-test_ptfqmr_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_ptfqmr_hb.cpp' object='ptfqmr_hb-test_ptfqmr_hb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -c -o ptfqmr_hb-test_ptfqmr_hb.obj `if test -f '$(srcdir)/test_ptfqmr_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_ptfqmr_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_ptfqmr_hb.cpp'; fi`
+
+ptfqmr_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -MT ptfqmr_hb-createEpetraProblem.o -MD -MP -MF $(DEPDIR)/ptfqmr_hb-createEpetraProblem.Tpo -c -o ptfqmr_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ptfqmr_hb-createEpetraProblem.Tpo $(DEPDIR)/ptfqmr_hb-createEpetraProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='ptfqmr_hb-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -c -o ptfqmr_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
+
+ptfqmr_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -MT ptfqmr_hb-createEpetraProblem.obj -MD -MP -MF $(DEPDIR)/ptfqmr_hb-createEpetraProblem.Tpo -c -o ptfqmr_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ptfqmr_hb-createEpetraProblem.Tpo $(DEPDIR)/ptfqmr_hb-createEpetraProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='ptfqmr_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ptfqmr_hb_CXXFLAGS) $(CXXFLAGS) -c -o ptfqmr_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
 
 tfqmr_hb-test_tfqmr_hb.o: $(srcdir)/test_tfqmr_hb.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tfqmr_hb_CXXFLAGS) $(CXXFLAGS) -MT tfqmr_hb-test_tfqmr_hb.o -MD -MP -MF $(DEPDIR)/tfqmr_hb-test_tfqmr_hb.Tpo -c -o tfqmr_hb-test_tfqmr_hb.o `test -f '$(srcdir)/test_tfqmr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_tfqmr_hb.cpp

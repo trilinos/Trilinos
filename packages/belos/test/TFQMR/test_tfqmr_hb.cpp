@@ -98,13 +98,15 @@ int main(int argc, char *argv[]) {
   //
   // *****Construct initial guess and random right-hand-sides *****
   //
-  if (numrhs != 1) {
+  if (numrhs == 1) {
+    MVT::MvInit( *X, 1.0 );    
+  } else {
     X = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
     MVT::MvRandom( *X );
     B = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-    OPT::Apply( *A, *X, *B );
-    MVT::MvInit( *X, 0.0 );
   }
+  OPT::Apply( *A, *X, *B );
+  MVT::MvInit( *X, 0.0 );
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
@@ -138,7 +140,7 @@ int main(int argc, char *argv[]) {
   //
   // Create an iterative solver manager.
   //
-  RCP< Belos::SolverManager<double,MV,OP> > newSolver
+  RCP< Belos::SolverManager<double,MV,OP> > solver
     = rcp( new Belos::TFQMRSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
   //
   // **********Print out information about problem*******************
@@ -155,7 +157,7 @@ int main(int argc, char *argv[]) {
   //
   // Perform solve
   //
-  Belos::ReturnType ret = newSolver->solve();
+  Belos::ReturnType ret = solver->solve();
   //
   // Compute actual residuals.
   //

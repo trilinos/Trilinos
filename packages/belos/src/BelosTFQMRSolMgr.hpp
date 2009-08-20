@@ -553,7 +553,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Get the current residual for this block of linear systems.
-      Teuchos::RCP<MV> R_0 = MVT::CloneView( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
+      Teuchos::RCP<MV> R_0 = MVT::CloneView( *(Teuchos::rcp_const_cast<MV>(problem_->getInitPrecResVec())), currIdx );
 
       // Set the new state and initialize the solver.
       TFQMRIterState<ScalarType,MV> newstate;

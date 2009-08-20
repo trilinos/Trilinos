@@ -200,12 +200,12 @@ namespace Belos {
     RCP<const MV> getRHS() const { return(B_); }
     
     //! Get a pointer to the initial residual vector.
-    /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
+    /*! \note This is the unpreconditioned residual.
      */
     RCP<const MV> getInitResVec() const { return(R0_); }
     
     //! Get a pointer to the preconditioned initial residual vector.
-    /*! \note This is the unpreconditioned residual.
+    /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
     RCP<const MV> getInitPrecResVec() const { return(PR0_); }
     

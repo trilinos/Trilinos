@@ -433,28 +433,24 @@ namespace Belos {
         MVT::MvAddMv( one, *newstate.R, STzero, *newstate.R, *R_ );
       }
 
-      // Compute initial direction vectors
+      // Compute initial vectors
       // Initially, they are set to the preconditioned residuals
       //
-      if ( lp_->getLeftPrec() != Teuchos::null ) {
-	// Need to see what we do here.
-      } else {
-        W_ = MVT::CloneCopy( *R_ );
-        U_ = MVT::CloneCopy( *R_ );
-        Rtilde_ = MVT::CloneCopy( *R_ );
-	MVT::MvInit( *D_ );
-	// Multiply the current residual by Op and store in V_
-	//       V_ = Op * R_ 
-	//
-	lp_->apply( *U_, *V_ );
-	AU_ = MVT::CloneCopy( *V_ ); 
-	//
-	// Compute initial scalars: theta, eta, tau, rho_old
-	//
-	theta_[0] = MTzero;
-	MVT::MvNorm( *R_, tau_ );                         // tau = ||r_0||
-	MVT::MvTransMv( one, *Rtilde_, *R_, rho_old_ );   // rho = (r_0, r_tilde)
-      }
+      W_ = MVT::CloneCopy( *R_ );
+      U_ = MVT::CloneCopy( *R_ );
+      Rtilde_ = MVT::CloneCopy( *R_ );
+      MVT::MvInit( *D_ );
+      // Multiply the current residual by Op and store in V_
+      //       V_ = Op * R_ 
+      //
+      lp_->apply( *U_, *V_ );
+      AU_ = MVT::CloneCopy( *V_ ); 
+      //
+      // Compute initial scalars: theta, eta, tau, rho_old
+      //
+      theta_[0] = MTzero;
+      MVT::MvNorm( *R_, tau_ );                         // tau = ||r_0||
+      MVT::MvTransMv( one, *Rtilde_, *R_, rho_old_ );   // rho = (r_0, r_tilde)
     }
     else {
 
@@ -500,9 +496,6 @@ namespace Belos {
     //
     while (stest_->checkStatus(this) != Passed) {
 
-      // Increment the iteration
-      iter_++;
-
       //
       //--------------------------------------------------------
       // Compute the new alpha if we need to
@@ -514,18 +507,18 @@ namespace Belos {
       }
       //
       //--------------------------------------------------------
-      // Update d.
-      //   d = u + (theta^2/alpha)eta*d
-      //--------------------------------------------------------
-      //
-      MVT::MvAddMv( STone, *U_, (theta_[0]*theta_[0]/alpha_(0,0))*eta, *D_, *D_ );
-      //
-      //--------------------------------------------------------
       // Update w.
       //   w = w - alpha*Au
       //--------------------------------------------------------
       //
       MVT::MvAddMv( STone, *W_, -alpha_(0,0), *AU_, *W_ );
+      //
+      //--------------------------------------------------------
+      // Update d.
+      //   d = u + (theta^2/alpha)eta*d
+      //--------------------------------------------------------
+      //
+      MVT::MvAddMv( STone, *U_, (theta_[0]*theta_[0]/alpha_(0,0))*eta, *D_, *D_ );
       //
       //--------------------------------------------------------
       // Update u if we need to.
@@ -535,7 +528,11 @@ namespace Belos {
       //--------------------------------------------------------
       //
       if (iter_%2 == 0) {
+        // Compute new U.
 	MVT::MvAddMv( STone, *U_, -alpha_(0,0), *V_, *U_ );
+
+	// Update Au for the next iteration.
+	lp_->apply( *U_, *AU_ );                       
       }
       //
       //--------------------------------------------------------
@@ -544,9 +541,7 @@ namespace Belos {
       //
       MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
       theta_[0] /= tau_[0];
-      
       cs_[0] = MTone / SCT::squareroot(STone + theta_[0]*theta_[0]);  // cs = 1.0 / sqrt(1.0 + theta^2)
-      
       tau_[0] *= theta_[0]*cs_[0];     // tau = tau * theta * cs
       eta = cs_[0]*cs_[0]*alpha_(0,0);     // eta = cs^2 * alpha
       
@@ -563,7 +558,7 @@ namespace Belos {
 	// Compute the new rho, beta if we need to.
 	//--------------------------------------------------------
 	//
-	MVT::MvTransMv( STone, *W_, *Rtilde_, rho_ );       // rho = ( w, r_tilde )
+	MVT::MvTransMv( STone, *W_, *Rtilde_, rho_ );     // rho = ( w, r_tilde )
 	beta = rho_(0,0)/rho_old_(0,0);                   // beta = rho / rho_old
 	rho_old_(0,0) = rho_(0,0);                        // rho_old = rho
 	//
@@ -578,11 +573,14 @@ namespace Belos {
 	MVT::MvAddMv( STone, *AU_, beta, *V_, *V_ );      // v = Au + beta*v 
 	
 	// Update Au.
-	lp_->apply( *U_, *AU_ );                       // Au = A*u
+	lp_->apply( *U_, *AU_ );                          // Au = A*u
 	
 	// Second stage of v update.
 	MVT::MvAddMv( STone, *AU_, beta, *V_, *V_ );      // v = Au + beta*v
       }
+
+      // Increment the iteration
+      iter_++;
       
     } // end while (sTest_->checkStatus(this) != Passed)
   } 
