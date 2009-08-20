@@ -328,7 +328,7 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
   
   // Verify that operatorType is admissible for HDIV fields
   TEST_FOR_EXCEPTION( !( (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_DIV) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid::getValues_HCURL_Args) operator = VALUE or DIV required for HDIV fields."); 
+                      ">>> ERROR: (Intrepid::getValues_HDIV_Args) operator = VALUE or DIV required for HDIV fields."); 
   
   
   // Check rank of outputValues 

@@ -27,22 +27,22 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_TET_I1_FEM.hpp
-    \brief  Header file for the Intrepid::HDIV_TET_I1_FEM class.
+/** \file   Intrepid_HDIV_TRI_I1_FEM.hpp
+    \brief  Header file for the Intrepid::HDIV_TRI_I1_FEM class.
     \author Created by P. Bochev and D. Ridzal.
  */
 
-#ifndef INTREPID_HDIV_TET_I1_FEM_HPP
-#define INTREPID_HDIV_TET_I1_FEM_HPP
+#ifndef INTREPID_HDIV_TRI_I1_FEM_HPP
+#define INTREPID_HDIV_TRI_I1_FEM_HPP
 #include "Intrepid_Basis.hpp"
 
 namespace Intrepid {
   
-/** \class  Intrepid::Basis_HDIV_TET_I1_FEM
-    \brief  Implementation of the default H(div)-compatible FEM basis of degree 1 on Tetrahedron cell 
+/** \class  Intrepid::Basis_HDIV_TRI_I1_FEM
+    \brief  Implementation of the default H(div)-compatible FEM basis of degree 1 on a Triangle cell.
   
             Implements Raviart-Thomas basis of degree 1 on the reference Tetrahedron cell. The basis has
-            cardinality 4 and spans an INCOMPLETE tri-linear polynomial space. Basis functions are dual 
+            cardinality 3 and spans an INCOMPLETE linear polynomial space. Basis functions are dual 
             to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
   \verbatim
@@ -51,15 +51,13 @@ namespace Intrepid {
   |   DoF   |----------------------------------------------------------|       DoF definition             |
   | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                                  |
   |=========|==============|==============|==============|=============|==================================|
-  |    0    |       2      |       0      |       0      |      1      | L_0(u) = (u.n)(1/3,0,1/3)        |
+  |    0    |       2      |       0      |       0      |      1      | L_0(u) = (u.n)(1/2,0)            |
   |---------|--------------|--------------|--------------|-------------|----------------------------------|
-  |    1    |       2      |       1      |       0      |      1      | L_1(u) = (u.n)(1/3,1/3,1/3)      |
+  |    1    |       2      |       1      |       0      |      1      | L_1(u) = (u.n)(1/2,1/2)          |
   |---------|--------------|--------------|--------------|-------------|----------------------------------|
-  |    2    |       2      |       2      |       0      |      1      | L_2(u) = (u.n)(0,1/3,1/3)        |
-  |---------|--------------|--------------|--------------|-------------|----------------------------------|
-  |    3    |       2      |       3      |       0      |      1      | L_4(u) = (u.n)(1/3,1/3,0)        |
+  |    2    |       2      |       2      |       0      |      1      | L_2(u) = (u.n)(0,1/2)            |
   |=========|==============|==============|==============|=============|==================================|
-  |   MAX   |  maxScDim=2  |  maxScOrd=3  |  maxDfOrd=0  |      -      |                                  |
+  |   MAX   |  maxScDim=2  |  maxScOrd=2  |  maxDfOrd=0  |      -      |                                  |
   |=========|==============|==============|==============|=============|==================================|
   \endverbatim
   
@@ -84,7 +82,7 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HDIV_TET_I1_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HDIV_TRI_I1_FEM : public Basis<Scalar, ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -95,13 +93,13 @@ public:
 
   /** \brief  Constructor.
     */
-  Basis_HDIV_TET_I1_FEM();
+  Basis_HDIV_TRI_I1_FEM();
   
     
-  /** \brief  Evaluation of a FEM basis on a <strong>reference Tetrahedron</strong> cell. 
+  /** \brief  Evaluation of a FEM basis on a <strong>reference Triangle</strong> cell. 
     
               Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Tetrahedron</strong> cell. For rank and dimensions of
+              points in the <strong>reference Triangle</strong> cell. For rank and dimensions of
               I/O array arguments see Section \ref basis_md_array_sec.
   
       \param  outputValues      [out] - rank-3 or 4 array with the computed basis values
@@ -122,6 +120,6 @@ public:
 };
 }// namespace Intrepid
 
-#include "Intrepid_HDIV_TET_I1_FEMDef.hpp"
+#include "Intrepid_HDIV_TRI_I1_FEMDef.hpp"
 
 #endif
