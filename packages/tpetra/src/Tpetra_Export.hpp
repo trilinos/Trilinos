@@ -346,8 +346,8 @@ namespace Tpetra {
 
     // Construct list of entries that calling image needs to send as a result
     // of everyone asking for what it needs to receive.
-    Teuchos_Ordinal numRemoteIDs;
-    ExportData_->distributor_.createFromSends(ExportData_->exportImageIDs_(), numRemoteIDs);
+    size_t numRemoteIDs;
+    numRemoteIDs = ExportData_->distributor_.createFromSends(ExportData_->exportImageIDs_());
 
     // Use comm plan with ExportGIDs to find out who is sending to us and
     // get proper ordering of GIDs for remote entries 

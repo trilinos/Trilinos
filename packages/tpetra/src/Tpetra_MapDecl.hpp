@@ -38,6 +38,9 @@
 
 namespace Tpetra {
 
+  // forward dec
+  template <class LO, class GO> class Directory;
+
   //! A class for partitioning distributed objects.
   /*!
    This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
@@ -52,32 +55,32 @@ namespace Tpetra {
     //@{ 
 
     /*! \brief Map constructor with Tpetra-defined contiguous uniform distribution.
-     *   The entries are distributed among nodes so that the subsets of global entries
+     *   The elements are distributed among nodes so that the subsets of global elements
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map(global_size_t numGlobalEntries, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=GloballyDistributed);
+    Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=GloballyDistributed);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
-     *  The entries are distributed among the nodes so that the subsets of global entries
+     *  The elements are distributed among the nodes so that the subsets of global elements
      *  are non-overlapping and contiguous 
      *  
-     *  If numGlobalEntries == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local entries across all 
+     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
+     *  Otherwise, it must be equal to the sum of the local elements across all 
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map(global_size_t numGlobalEntries, size_t numLocalEntries, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+    Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
         
 
     /*! \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
-     *  If numGlobalEntries == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local entries across all 
+     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
+     *  Otherwise, it must be equal to the sum of the local elements across all 
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map(global_size_t numGlobalEntries, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, 
+    Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, 
         GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
     //! Map destructor. 
@@ -89,11 +92,11 @@ namespace Tpetra {
     //! @name Map Attribute Methods
     //@{ 
 
-    //! Returns the number of entries in this Map.
-    inline global_size_t getNumGlobalEntries() const;
+    //! Returns the number of elements in this Map.
+    inline global_size_t getGlobalNumElements() const;
 
-    //! Returns the number of entries belonging to the calling node.
-    inline size_t getNumLocalEntries() const;
+    //! Returns the number of elements belonging to the calling node.
+    inline size_t getLocalNumElements() const;
 
     //! Returns the index base for this Map.
     inline GlobalOrdinal getIndexBase() const;
@@ -142,7 +145,7 @@ namespace Tpetra {
                                     const Teuchos::ArrayView<                int> & nodeIDList) const;
 
     //! Return a list of the global indices owned by this node.
-    Teuchos::ArrayView<const GlobalOrdinal> getMyGlobalIndices() const;
+    Teuchos::ArrayView<const GlobalOrdinal> getElementList() const;
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
     bool isMyLocalIndex(LocalOrdinal localIndex) const;
@@ -182,7 +185,7 @@ namespace Tpetra {
     std::string description() const;
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
-    void describe( FancyOStream &out, const EVerbosityLevel verbLevel = verbLevel_default) const;
+    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
     //@}
 
@@ -208,9 +211,9 @@ namespace Tpetra {
     // The based for global IDs in this Map.
 		GlobalOrdinal indexBase_;
     //! The number of global IDs located in this Map across all nodes.
-		GlobalOrdinal numGlobalEntries_;
+		global_size_t numGlobalElements_;
     //! The number of global IDs located in this Map on this node.
-		size_t numLocalEntries_;
+		size_t numLocalElements_;
     //! The minimum and maximum global IDs located in this Map on this node.
     GlobalOrdinal minMyGID_, maxMyGID_;
     //! The minimum and maximum global IDs located in this Map across all nodes.
@@ -220,7 +223,7 @@ namespace Tpetra {
     //! Indicates that global indices of the map are non-identically distributed among different nodes.
     bool distributed_;
     //! A direct mapping from local IDs to global IDs.
-    Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
+    mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
     //! A mapping from global IDs to local IDs.
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
     //! A Directory for looking up nodes for this Map.
@@ -229,9 +232,11 @@ namespace Tpetra {
   }; // Map class
 
   //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
+  template <class LocalOrdinal, class GlobalOrdinal>
   bool operator== (const Map<LocalOrdinal,GlobalOrdinal> &map1, const Map<LocalOrdinal,GlobalOrdinal> &map2);
 
   //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
+  template <class LocalOrdinal, class GlobalOrdinal>
   bool operator!= (const Map<LocalOrdinal,GlobalOrdinal> &map1, const Map<LocalOrdinal,GlobalOrdinal> &map2);
 
 

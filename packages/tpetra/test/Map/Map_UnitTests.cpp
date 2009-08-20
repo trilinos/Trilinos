@@ -1,4 +1,6 @@
-#include "Teuchos_UnitTestHarness.hpp"
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_Tuple.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -10,15 +12,16 @@
 
 namespace {
 
+  using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::arcp;
   using Teuchos::rcp;
+  using Teuchos::Tuple;
+  using Teuchos::tuple;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
-  using std::vector;
   using std::sort;
-  using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
@@ -127,14 +130,14 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // bad constructor calls: (num global, entry list, index base)
-    TEST_THROW(M map(-2, arcp(rcp(new vector<GO>(1,myImageID+1))).getConst()     ,1, comm), std::invalid_argument);    // nG not valid
-    TEST_THROW(M map(numImages, arcp(rcp(new vector<GO>(1,-myImageID))).getConst()  ,1, comm), std::invalid_argument); // GID less than iB
+    TEST_THROW(M map(-2, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG not valid
+    TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
-      TEST_THROW(M map( 1, arcp(rcp(new vector<GO>(1,myImageID+1))).getConst()     ,1, comm), std::invalid_argument);    // nG != sum nL
-      TEST_THROW(M map((myImageID == 0 ? -2 : -1),arcp(rcp(new vector<GO>(1,myImageID+1))).getConst(),1, comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -2 :  0),arcp(rcp(new vector<GO>(1,myImageID+1))).getConst(),1, comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -1 :  0),arcp(rcp(new vector<GO>(1,myImageID+1))).getConst(),1, comm), std::invalid_argument);
-      TEST_THROW(M map(0,arcp(rcp(new vector<GO>(1,myImageID+1))).getConst(),(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+      TEST_THROW(M map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
+      TEST_THROW(M map((myImageID == 0 ? -2 : -1),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? -2 :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? -1 :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
     // All procs fail if any proc fails 
     int globalSuccess_int = -1;
@@ -217,28 +220,24 @@ namespace {
     const int myImageID = comm->getRank();
     // create a contiguous uniform distributed map with two entries per node
     // this map will have the following entries:
-    vector<GO> myGlobal;
-    vector<LO> myLocal;
-    myLocal.push_back(0);
-    myLocal.push_back(1);
-    myGlobal.push_back(myImageID*2);
-    myGlobal.push_back(myImageID*2+1);
+    Array<GO> myGlobal( tuple<GO>(0,1) );
+    Array<LO>  myLocal( tuple<LO>(myImageID*2, myImageID*2+1) );
 
-    const GO numGlobalEntries = numImages*2;
+    const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
     M map(numGlobalEntries,indexBase,comm);
 
     TEST_EQUALITY_CONST(map.isContiguous(), true);
     TEST_EQUALITY_CONST(map.isDistributed(), numImages > 1);
-    TEST_EQUALITY(map.getNumGlobalEntries(), numGlobalEntries);
-    TEST_EQUALITY_CONST(map.getNumMyEntries(), 2);
+    TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
+    TEST_EQUALITY_CONST(map.getLocalNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), indexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
     TEST_EQUALITY_CONST(map.getMinGlobalIndex(), myGlobal[indexBase]);
     TEST_EQUALITY_CONST(map.getMaxGlobalIndex(), myGlobal[1]);
     TEST_EQUALITY_CONST(map.getMinAllGlobalIndex(), indexBase);
-    TEST_EQUALITY_CONST(map.getMaxAllGlobalIndex(), numGlobalEntries-1);
+    TEST_EQUALITY_CONST(map.getMaxAllGlobalIndex(), as<GO>(numGlobalEntries-1));
     TEST_EQUALITY( map.getLocalIndex(myGlobal[0]), myLocal[0] );
     TEST_EQUALITY( map.getLocalIndex(myGlobal[1]), myLocal[1] );
     TEST_EQUALITY( map.getGlobalIndex(myLocal[0]), myGlobal[0] );
@@ -246,12 +245,12 @@ namespace {
     TEST_EQUALITY( map.getLocalIndex(numGlobalEntries), OrdinalTraits<LO>::invalid() );
     TEST_EQUALITY( map.getGlobalIndex(2),               OrdinalTraits<GO>::invalid() );
     TEST_EQUALITY( map.getLocalIndex(numGlobalEntries-1), myImageID == numImages-1 ? 1 : OrdinalTraits<LO>::invalid() );
-    TEST_COMPARE_ARRAYS( map.getMyGlobalEntries(), myGlobal);
+    TEST_COMPARE_ARRAYS( map.getElementList(), myGlobal);
     TEST_EQUALITY_CONST( map.isMyLocalIndex(0), true );
     TEST_EQUALITY_CONST( map.isMyLocalIndex(1), true );
     TEST_EQUALITY_CONST( map.isMyLocalIndex(2), false ); // just try a couple
     TEST_EQUALITY_CONST( map.isMyLocalIndex(3), false );
-    for (Teuchos_Ordinal i=0; i < numGlobalEntries; ++i) {
+    for (size_t i=0; i < numGlobalEntries; ++i) {
       if (find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
         TEST_EQUALITY_CONST( map.isMyGlobalIndex(i), false );
       }

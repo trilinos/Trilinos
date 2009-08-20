@@ -52,21 +52,21 @@ namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
   class Directory : public Teuchos::Describable {
   public:
-    
+
     //! @name Constructors/Destructor.
     //@{ 
-    
+
     //! Constructor
-    Directory(const Map<LocalOrdinal,GlobalOrdinal> & map);
-    
+    Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &map);
+
     //! Destructor.
     ~Directory();
-    
+
     //@}
-    
+
     //! @name Query methods.
     //@{ 
-    
+
     //! \brief Returns node info for non-local Map entries.
     /*! Given a list of global IDs, this function returns the corresponding list of
       owning node IDs.
@@ -108,12 +108,11 @@ namespace Tpetra {
     //@}
     
   private:
-    const Map<LocalOrdinal,GlobalOrdinal> map_;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > map_, directoryMap_;
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     std::vector<GlobalOrdinal> allMinGIDs_; // size comm_->getSize()+1; entry i contains minGID for ith node, except last entry contains maxGID in the directory
     std::vector<int> nodeIDs_;
     std::vector<LocalOrdinal> LIDs_;
-    Teuchos::RCP< Map<LocalOrdinal,GlobalOrdinal> > directoryMap_;
 
     Directory(const Directory<LocalOrdinal,GlobalOrdinal> &directory);
 

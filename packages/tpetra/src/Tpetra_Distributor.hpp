@@ -36,6 +36,7 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
@@ -87,12 +88,10 @@ namespace Tpetra {
              doPosts() or doPostsAndWaits() is skipped.
              For this reason, a negative entry is sufficient to break contiguity.
 
-      \param numImports [out]
-             Number of imports this node will be receiving.
+      \return Number of imports this node will be receiving.
 
     */
-    void createFromSends(const Teuchos::ArrayView<const int> &exportNodeIDs,
-                               Teuchos_Ordinal &numImports);
+    size_t createFromSends(const Teuchos::ArrayView<const int> &exportNodeIDs);
 
     //! \brief Create Distributor object using list of node IDs to receive from
     /*! Take a list of node IDs and construct a plan for efficiently scattering to those nodes.
@@ -127,20 +126,20 @@ namespace Tpetra {
     //@{ 
 
     //! The number of nodes from which we will receive data, not include this node ("myself").
-    int getNumReceives() const;
+    size_t getNumReceives() const;
 
     //! The number of nodes to which we will send data, not include this node ("myself").
-    int getNumSends() const;
+    size_t getNumSends() const;
 
     //! Indicates whether values are being sent to/recieved from this node.
     /*! If we are sending any elements to ourself, returns true. If we aren't, returns false. */
-    bool getSelfMessage() const;
+    bool hasSelfMessage() const;
 
     //! Maximum number of values that this node is sending to another single node.
-    Teuchos_Ordinal getMaxSendLength() const;
+    size_t getMaxSendLength() const;
 
     //! Total number of values that this nodes is receiving from other nodes.
-    Teuchos_Ordinal getTotalReceiveLength() const;
+    size_t getTotalReceiveLength() const;
 
     //! A list of images sending values to this node. (non-persisting view)
     Teuchos::ArrayView<const int> getImagesFrom() const;
@@ -150,11 +149,11 @@ namespace Tpetra {
 
     //! Number of values we're receiving from each node. (non-persisting view)
     /*! We will receive <tt>getLengthsFrom[i]</tt> values from node <tt>getImagesFrom[i]</tt>. */
-    Teuchos::ArrayView<const Teuchos_Ordinal> getLengthsFrom() const;
+    Teuchos::ArrayView<const size_t> getLengthsFrom() const;
 
     //! Number of values we're sending to each node. (non-persisting view)
     /*! We will send <tt>getLengthsTo[i]</tt> values to image <tt>getImagesTo[i]</tt>. */
-    Teuchos::ArrayView<const Teuchos_Ordinal> getLengthsTo() const;
+    Teuchos::ArrayView<const size_t> getLengthsTo() const;
 
     //@}
 
@@ -186,7 +185,7 @@ namespace Tpetra {
     */
     template <class Packet>
     void doPostsAndWaits(const Teuchos::ArrayView<const Packet> &exports,
-                         Teuchos_Ordinal numPackets,
+                         size_t numPackets,
                          const Teuchos::ArrayView<Packet> &imports);
 
     //! \brief Post the data for a distributor plan, but do not execute the waits yet.
@@ -203,7 +202,7 @@ namespace Tpetra {
     */
     template <class Packet>
     void doPosts(const Teuchos::ArrayView<const Packet> &exports,
-                 Teuchos_Ordinal numPackets,
+                 size_t numPackets,
                  const Teuchos::ArrayRCP<Packet> &imports);
 
     //! Wait on any outstanding posts to complete.
@@ -223,7 +222,7 @@ namespace Tpetra {
     */
     template <class Packet>
     void doReversePostsAndWaits(const Teuchos::ArrayView<const Packet> &exports,
-                                Teuchos_Ordinal numPackets,
+                                size_t numPackets,
                                 const Teuchos::ArrayView<Packet> &imports);
 
     //! \brief Post the data for a reverse plan, but do not execute the waits yet.
@@ -240,7 +239,7 @@ namespace Tpetra {
     */
     template <class Packet>
     void doReversePosts(const Teuchos::ArrayView<const Packet> &exports,
-                        Teuchos_Ordinal numPackets,
+                        size_t numPackets,
                         const Teuchos::ArrayRCP<Packet> &imports);
 
     //! Wait on any outstanding reverse waits to complete.
@@ -264,34 +263,34 @@ namespace Tpetra {
     // private data members
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    Teuchos_Ordinal numExports_;
+    size_t numExports_;
     // selfMessage_ is whether I have a send for myself
     bool selfMessage_;
     // numSends_ is number of sends to other nodes; is less than or equal to the number of nodes
-    int numSends_;
+    size_t numSends_;
     // imagesTo_, startsTo_ and lengthsTo_ each have size 
     //   numSends_ + selfMessage_
     Teuchos::Array<int> imagesTo_;
     /* Given an export buffer that contains all of the item being sent by this node,
        the block of values for node i will start at position startsTo_[i]  */
-    Teuchos::Array<Teuchos_Ordinal> startsTo_;
-    Teuchos::Array<Teuchos_Ordinal> lengthsTo_;
+    Teuchos::Array<size_t> startsTo_;
+    Teuchos::Array<size_t> lengthsTo_;
     // maxSendLength_ is the maximum send to another node: 
     //   max(lengthsTo_[i]) for i != me
-    Teuchos_Ordinal maxSendLength_;
-    Teuchos::Array<Teuchos_Ordinal> indicesTo_;
+    size_t maxSendLength_;
+    Teuchos::Array<size_t> indicesTo_;
     // numReceives_ is the number of receives by me from other procs, not
     // counting self receives
-    int numReceives_;
+    size_t numReceives_;
     // totalReceiveLength_ is the total number of Packet received, used to 
     // allocate the receive buffer
-    Teuchos_Ordinal totalReceiveLength_;
+    size_t totalReceiveLength_;
     // imagesFrom_, startsFrom_ and lengthsFrom_ each have size 
     //   numReceives_ + selfMessage_
-    Teuchos::Array<Teuchos_Ordinal> lengthsFrom_;
+    Teuchos::Array<size_t> lengthsFrom_;
     Teuchos::Array<int> imagesFrom_;
-    Teuchos::Array<Teuchos_Ordinal> startsFrom_;
-    Teuchos::Array<Teuchos_Ordinal> indicesFrom_;
+    Teuchos::Array<size_t> startsFrom_;
+    Teuchos::Array<size_t> indicesFrom_;
 
     // requests associated with non-blocking receives
     Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> > requests_;
@@ -343,31 +342,31 @@ namespace Tpetra {
         Teuchos::typeName(*this) << "::Distributor~(): Destructor called with outstanding posts.");
   }
 
-  Teuchos_Ordinal Distributor::getTotalReceiveLength() const 
+  size_t Distributor::getTotalReceiveLength() const 
   { return totalReceiveLength_; }
 
-  Teuchos_Ordinal Distributor::getNumReceives() const 
+  size_t Distributor::getNumReceives() const 
   { return numReceives_; }
 
-  bool Distributor::getSelfMessage() const 
+  bool Distributor::hasSelfMessage() const 
   { return selfMessage_; }
 
-  Teuchos_Ordinal Distributor::getNumSends() const 
+  size_t Distributor::getNumSends() const 
   { return numSends_; }
 
-  Teuchos_Ordinal Distributor::getMaxSendLength() const 
+  size_t Distributor::getMaxSendLength() const 
   { return maxSendLength_; }
 
   Teuchos::ArrayView<const int> Distributor::getImagesFrom() const 
   { return imagesFrom_; }
 
-  Teuchos::ArrayView<const Teuchos_Ordinal> Distributor::getLengthsFrom() const 
+  Teuchos::ArrayView<const size_t> Distributor::getLengthsFrom() const 
   { return lengthsFrom_; }
 
   Teuchos::ArrayView<const int> Distributor::getImagesTo() const 
   { return imagesTo_; }
 
-  Teuchos::ArrayView<const Teuchos_Ordinal> Distributor::getLengthsTo() const 
+  Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const 
   { return lengthsTo_; }
 
   Teuchos::RCP<Distributor> Distributor::getReverse() const
@@ -385,12 +384,12 @@ namespace Tpetra {
     reverseDistributor_ = Teuchos::rcp(new Distributor(comm_));
 
     // compute new totalSendLength
-    Teuchos_Ordinal totalSendLength = std::accumulate(lengthsTo_.begin(),lengthsTo_.end(),0);
+    size_t totalSendLength = std::accumulate(lengthsTo_.begin(),lengthsTo_.end(),0);
 
     // compute new maxReceiveLength
-    Teuchos_Ordinal maxReceiveLength = 0;
+    size_t maxReceiveLength = 0;
     const int myImageID = comm_->getRank();
-    for (Teuchos_Ordinal i=0; i < numReceives_; ++i) {
+    for (size_t i=0; i < numReceives_; ++i) {
       if (imagesFrom_[i] != myImageID) {
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
@@ -422,7 +421,7 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::doPostsAndWaits(
       const Teuchos::ArrayView<const Packet>& exports,
-      Teuchos_Ordinal numPackets,
+      size_t numPackets,
       const Teuchos::ArrayView<Packet>& imports) 
   {
     TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
@@ -438,14 +437,14 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::doPosts(
       const Teuchos::ArrayView<const Packet>& exports,
-      Teuchos_Ordinal numPackets,
+      size_t numPackets,
       const Teuchos::ArrayRCP<Packet>& imports) 
   {
     using Teuchos::ArrayRCP;
 
     // start of actual doPosts function
     const int myImageID = comm_->getRank();
-    Teuchos_Ordinal selfReceiveOffset = 0;
+    size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(imports.size() != totalReceiveLength_ * numPackets, std::runtime_error,
@@ -458,8 +457,8 @@ namespace Tpetra {
 
     // start up the Irecv's
     {
-      Teuchos_Ordinal curBufferOffset = 0;
-      for (Teuchos_Ordinal i = 0; i < numReceives_ + (selfMessage_ ? 1 : 0); ++i) {
+      size_t curBufferOffset = 0;
+      for (size_t i = 0; i < numReceives_ + (selfMessage_ ? 1 : 0); ++i) {
         if (imagesFrom_[i] != myImageID) { 
           // receiving this one from another image
           // setup reference into imports of the appropriate size and at the appropriate place
@@ -481,8 +480,8 @@ namespace Tpetra {
 
     // setup scan through imagesTo_ list starting with higher numbered images
     // (should help balance message traffic)
-    Teuchos_Ordinal numBlocks = numSends_+ selfMessage_;
-    Teuchos_Ordinal imageIndex = 0;
+    size_t numBlocks = numSends_+ selfMessage_;
+    size_t imageIndex = 0;
     while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
       ++imageIndex;
     }
@@ -490,12 +489,12 @@ namespace Tpetra {
       imageIndex = 0;
     }
 
-    Teuchos_Ordinal selfNum = 0;
-    Teuchos_Ordinal selfIndex = 0;
+    size_t selfNum = 0;
+    size_t selfIndex = 0;
 
     if (indicesTo_.empty()) { // data is already blocked by processor
-      for (Teuchos_Ordinal i = 0; i < numBlocks; ++i) {
-        Teuchos_Ordinal p = i + imageIndex;
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
@@ -520,8 +519,8 @@ namespace Tpetra {
       // allocate sendArray buffer
       Teuchos::Array<Packet> sendArray(maxSendLength_*numPackets); 
 
-      for (Teuchos_Ordinal i = 0; i < numBlocks; ++i) {
-        Teuchos_Ordinal p = i + imageIndex;
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
         if (p > (numBlocks - 1)) {
           p -= numBlocks;
         }
@@ -529,9 +528,9 @@ namespace Tpetra {
         if (imagesTo_[p] != myImageID) { 
           // sending it to another image
           typename Teuchos::ArrayView<const Packet>::iterator srcBegin, srcEnd;
-          Teuchos_Ordinal sendArrayOffset = 0;
-          Teuchos_Ordinal j = startsTo_[p];
-          for (Teuchos_Ordinal k = 0; k < lengthsTo_[p]; ++k, ++j) {
+          size_t sendArrayOffset = 0;
+          size_t j = startsTo_[p];
+          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
             srcBegin = exports.begin() + indicesTo_[j]*numPackets;
             srcEnd   = srcBegin + numPackets;
             std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
@@ -548,7 +547,7 @@ namespace Tpetra {
       }
 
       if (selfMessage_) {
-        for (Teuchos_Ordinal k = 0; k < lengthsTo_[selfNum]; ++k) {
+        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
           std::copy( exports.begin()+indicesTo_[selfIndex]*numPackets,
                      exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
                      imports.begin() + selfReceiveOffset );
@@ -562,8 +561,7 @@ namespace Tpetra {
 
   void Distributor::doWaits() 
   {
-    const Teuchos_Ordinal numReceives = getNumReceives();
-    if (numReceives > 0) {
+    if (getNumReceives() > 0) {
       Teuchos::waitAll(*comm_,requests_());
       // Requests should all be null, clear them
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -582,7 +580,7 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::doReversePostsAndWaits(
       const Teuchos::ArrayView<const Packet>& exports,
-      Teuchos_Ordinal numPackets,
+      size_t numPackets,
       const Teuchos::ArrayView<Packet>& imports) 
   {
     // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
@@ -596,7 +594,7 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::doReversePosts(
       const Teuchos::ArrayView<const Packet>& exports,
-      Teuchos_Ordinal numPackets,
+      size_t numPackets,
       const Teuchos::ArrayRCP<Packet>& imports) 
   {
     TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
@@ -645,20 +643,20 @@ namespace Tpetra {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
             out << "[Node " << myImageID << " of " << numImages << "]" << endl;
-            out << " selfMessage: " << selfMessage_ << endl;
-            out << " numSends: " << numSends_ << endl;
+            out << " selfMessage: " << hasSelfMessage() << endl;
+            out << " numSends: " << getNumSends() << endl;
             if (vl == VERB_HIGH || vl == VERB_EXTREME) {
               out << " imagesTo: " << toString(imagesTo_) << endl;
               out << " lengthsTo: " << toString(lengthsTo_) << endl;
-              out << " maxSendLength: " << maxSendLength_ << endl;
+              out << " maxSendLength: " << getMaxSendLength() << endl;
             }
             if (vl == VERB_EXTREME) {
               out << " startsTo: " << toString(startsTo_) << endl;
               out << " indicesTo: " << toString(indicesTo_) << endl;
             }
             if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << " numReceives: " << numReceives_ << endl;
-              out << " totalReceiveLength: " << totalReceiveLength_ << endl;
+              out << " numReceives: " << getNumReceives() << endl;
+              out << " totalReceiveLength: " << getTotalReceiveLength() << endl;
               out << " lengthsFrom: " << toString(lengthsFrom_) << endl;
               out << " imagesFrom: " << toString(imagesFrom_) << endl;
             }
@@ -679,11 +677,11 @@ namespace Tpetra {
     // the info in numSends_, imagesTo_, lengthsTo_ concerns the contiguous sends
     // therefore, each node will be listed in imagesTo_ at most once
     {
-      std::vector<Teuchos_Ordinal> to_nodes_from_me(numImages,0);
+      Teuchos::Array<size_t> to_nodes_from_me(numImages,0);
 #     ifdef HAVE_TEUCHOS_DEBUG 
         bool counting_error = false;
 #     endif
-      for (int i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
+      for (size_t i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
 #       ifdef HAVE_TEUCHOS_DEBUG
           if (to_nodes_from_me[imagesTo_[i]] != 0) counting_error = true;
 #       endif
@@ -696,8 +694,8 @@ namespace Tpetra {
       // each proc will get back only one item (hence, counts = ones) from the array of globals sums, 
       // namely that entry corresponding to the node, and detailing how many receives it has.
       // this total includes self sends
-      std::vector<Teuchos_Ordinal> counts(numImages, 1);
-      Teuchos::reduceAllAndScatter<Teuchos_Ordinal>(*comm_,Teuchos::REDUCE_SUM,numImages,&to_nodes_from_me[0],&counts[0],&numReceives_);
+      Teuchos::Array<int> counts(numImages, 1);
+      Teuchos::reduceAllAndScatter<int,size_t>(*comm_,Teuchos::REDUCE_SUM,numImages,&to_nodes_from_me[0],&counts[0],&numReceives_);
     }
 
     // assign these to length numReceives, with zero entries
@@ -708,7 +706,7 @@ namespace Tpetra {
     // FINISH: consider switching them to non-blocking
     // NOTE: epetra has both, old (non-blocking) and new (mysterious)
 
-    for (Teuchos_Ordinal i=0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
+    for (size_t i=0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
       if (imagesTo_[i] != myImageID ) {
         // send a message to imagesTo_[i], telling him that our pattern sends him lengthsTo_[i] blocks of packets
         Teuchos::send(*comm_,lengthsTo_[i],imagesTo_[i]);
@@ -721,7 +719,7 @@ namespace Tpetra {
     }
 
     //
-    for (Teuchos_Ordinal i=0; i < numReceives_ - (selfMessage_ ? 1 : 0); ++i) {
+    for (size_t i=0; i < numReceives_ - (selfMessage_ ? 1 : 0); ++i) {
       // receive one variable from any sender.
       // store the value in lengthsFrom_[i], and store the sender's ImageID in imagesFrom_[i]
       // imagesFrom_[i] = comm_->receive(&lengthsFrom_[i], 1, -1);
@@ -735,13 +733,13 @@ namespace Tpetra {
     totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), 0);
     indicesFrom_.clear();
     indicesFrom_.reserve(totalReceiveLength_);
-    for (Teuchos_Ordinal i=0; i < totalReceiveLength_; ++i) {
+    for (size_t i=0; i < totalReceiveLength_; ++i) {
       indicesFrom_.push_back(i);
     }
 
     startsFrom_.clear();
     startsFrom_.reserve(numReceives_);
-    for (Teuchos_Ordinal i=0, j = 0; i < numReceives_; ++i) {
+    for (size_t i=0, j = 0; i < numReceives_; ++i) {
       startsFrom_.push_back(j);
       j += lengthsFrom_[i];
     }
@@ -752,8 +750,7 @@ namespace Tpetra {
   }
 
 
-  // note: assumes that Teuchos_Ordinal >= Ordinal
-  // Ordinal will either be GlobalOrdinal or LocalOrdinal, so this is safe
+  // note: assumes that size_t >= Ordinal
   //////////////////////////////////////////////////////////////////////////////////////////
   template <class Ordinal>
   void Distributor::computeSends(
@@ -764,25 +761,25 @@ namespace Tpetra {
   {
     int myImageID = comm_->getRank();
 
-    Teuchos_Ordinal numImports = importNodeIDs.size();
-    Teuchos::Array<Teuchos_Ordinal> importObjs(2*numImports);
-    for (Teuchos_Ordinal i = 0; i < numImports; ++i ) {  
-      importObjs[2*i]   = Teuchos::as<Teuchos_Ordinal>(importIDs[i]);
-      importObjs[2*i+1] = myImageID;
+    size_t numImports = importNodeIDs.size();
+    Teuchos::Array<size_t> importObjs(2*numImports);
+    for (size_t i = 0; i < numImports; ++i ) {  
+      importObjs[2*i]   = Teuchos::as<size_t>(importIDs[i]);
+      importObjs[2*i+1] = Teuchos::as<size_t>(myImageID);
     }
 
-    Teuchos_Ordinal numExports;
+    size_t numExports;
     Distributor tempPlan(comm_);
-    tempPlan.createFromSends(importNodeIDs, numExports);
+    numExports = tempPlan.createFromSends(importNodeIDs);
     if (numExports > 0) {
       exportIDs = Teuchos::arcp<Ordinal>(numExports);
       exportNodeIDs = Teuchos::arcp<int>(numExports);
     }
 
-    Teuchos::Array<Teuchos_Ordinal> exportObjs(tempPlan.getTotalReceiveLength()*2);
-    tempPlan.doPostsAndWaits<Teuchos_Ordinal>(importObjs(),2,exportObjs());
+    Teuchos::Array<size_t> exportObjs(tempPlan.getTotalReceiveLength()*2);
+    tempPlan.doPostsAndWaits<size_t>(importObjs(),2,exportObjs());
 
-    for (Teuchos_Ordinal i = 0; i < numExports; ++i) {
+    for (size_t i = 0; i < numExports; ++i) {
       exportIDs[i]     = Teuchos::as<Ordinal>(exportObjs[2*i]);
       exportNodeIDs[i] = exportObjs[2*i+1];
     }
@@ -790,10 +787,7 @@ namespace Tpetra {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////
-  void Distributor::createFromSends(
-      const Teuchos::ArrayView<const int> &exportNodeIDs,
-      Teuchos_Ordinal &numImports) 
-  {
+  size_t Distributor::createFromSends(const Teuchos::ArrayView<const int> &exportNodeIDs) {
     numExports_ = exportNodeIDs.size();
 
     const int myImageID = comm_->getRank();
@@ -835,14 +829,14 @@ namespace Tpetra {
 
     // Setup data structures for quick traversal of arrays.
     // This contains the number of sends for each image id.
-    Teuchos::Array<Teuchos_Ordinal> starts(numImages + 1, 0);
+    Teuchos::Array<size_t> starts(numImages + 1, 0);
 
     // numActive is the number of sends that are not Null
-    Teuchos_Ordinal numActive = 0;
+    size_t numActive = 0;
     char needSendBuff = 0;
 
     int badID = -1;
-    for (int i = 0; i < numExports_; ++i) {
+    for (size_t i = 0; i < numExports_; ++i) {
       int exportID = exportNodeIDs[i];
       if (exportID >= numImages) {
         badID = myImageID;
@@ -914,8 +908,8 @@ namespace Tpetra {
       // in interpretting this code, remember that we are assuming contiguity
       // that is why index skips through the ranks
       {
-        Teuchos_Ordinal index = 0, nodeIndex = 0;
-        for (Teuchos_Ordinal i = 0; i < numSends_; ++i) {
+        size_t index = 0, nodeIndex = 0;
+        for (size_t i = 0; i < numSends_; ++i) {
           while (exportNodeIDs[nodeIndex] < 0) {
             ++nodeIndex; // skip all negative node IDs
           }
@@ -938,7 +932,7 @@ namespace Tpetra {
       }
       // compute the maximum send length
       maxSendLength_ = 0;
-      for (int i = 0; i < numSends_; ++i) {
+      for (size_t i = 0; i < numSends_; ++i) {
         int imageID = imagesTo_[i];
         lengthsTo_[i] = starts[imageID];
         if ((imageID != myImageID) && (lengthsTo_[i] > maxSendLength_)) {
@@ -959,8 +953,8 @@ namespace Tpetra {
       else {
         numSends_ = 1;
       }
-      for (Teuchos::Array<Teuchos_Ordinal>::iterator i=starts.begin()+1,
-                                                   im1=starts.begin();
+      for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
+                                            im1=starts.begin();
            i != starts.end(); ++i) 
       {
         if (*i != 0) ++numSends_;
@@ -969,8 +963,8 @@ namespace Tpetra {
       }
       // starts[i] now contains the number of exports to nodes 0 through i
 
-      for (Teuchos::Array<Teuchos_Ordinal>::reverse_iterator ip1=starts.rbegin(),
-                                                               i=starts.rbegin()+1;
+      for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
+                                                      i=starts.rbegin()+1;
            i != starts.rend(); ++i)
       {
         *ip1 = *i;
@@ -982,7 +976,7 @@ namespace Tpetra {
 
       indicesTo_.resize(numActive);
 
-      for (Teuchos_Ordinal i = 0; i < numExports_; ++i) {
+      for (size_t i = 0; i < numExports_; ++i) {
         if (exportNodeIDs[i] >= 0) {
           // record the offset to the sendBuffer for this export
           indicesTo_[starts[exportNodeIDs[i]]] = i;
@@ -1049,7 +1043,7 @@ namespace Tpetra {
     // Invert map to see what msgs are received and what length
     computeReceives();
 
-    numImports = totalReceiveLength_;
+    return totalReceiveLength_;
   }
 
 
@@ -1072,8 +1066,7 @@ namespace Tpetra {
           << gbl_err << ").");
     }
     computeSends(remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
-    Teuchos_Ordinal testNumRemoteIDs; // dummy
-    createFromSends(exportNodeIDs(), testNumRemoteIDs);
+    (void)createFromSends(exportNodeIDs());
   }
 
 } // namespace Tpetra
