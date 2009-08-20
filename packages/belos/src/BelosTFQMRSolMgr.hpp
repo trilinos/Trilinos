@@ -220,6 +220,24 @@ namespace Belos {
     
   private:
 
+    // Method to convert std::string to enumerated type for residual.
+    Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
+      if (scaleType == "Norm of Initial Residual") {
+	return Belos::NormOfInitRes;
+      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
+	return Belos::NormOfPrecInitRes;
+      } else if (scaleType == "Norm of RHS") {
+	return Belos::NormOfRHS;
+      } else if (scaleType == "None") {
+	return Belos::None;
+      } else 
+	TEST_FOR_EXCEPTION( true ,std::logic_error,
+			    "Belos::TFQMRSolMgr(): Invalid residual scaling type.");
+    }
+
+    // Method for checking current status test against defined linear problem.
+    bool checkStatusTest();
+    
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
     
@@ -230,7 +248,8 @@ namespace Belos {
     // Status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
     Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
     
     // Current parameter list.
@@ -239,8 +258,11 @@ namespace Belos {
     // Default solver values.
     static const MagnitudeType convtol_default_;
     static const int maxIters_default_;
+    static const bool expResTest_default_;
     static const int verbosity_default_;
     static const int outputFreq_default_;
+    static const std::string impResScale_default_; 
+    static const std::string expResScale_default_; 
     static const std::string label_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
@@ -249,13 +271,15 @@ namespace Belos {
     int maxIters_, numIters_;
     int verbosity_, outputFreq_;
     int blockSize_;
+    bool expResTest_;
+    std::string impResScale_, expResScale_;
     
     // Timers.
     std::string label_;
     Teuchos::RCP<Teuchos::Time> timerSolve_;
 
     // Internal state variables.
-    bool isSet_;
+    bool isSet_, isSTSet_;
   };
 
 
@@ -267,10 +291,19 @@ template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
+const bool TFQMRSolMgr<ScalarType,MV,OP>::expResTest_default_ = false;
+
+template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+
+template<class ScalarType, class MV, class OP>
+const std::string TFQMRSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
+
+template<class ScalarType, class MV, class OP>
+const std::string TFQMRSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
 
 template<class ScalarType, class MV, class OP>
 const std::string TFQMRSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
@@ -288,8 +321,12 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr() :
   verbosity_(verbosity_default_),
   outputFreq_(outputFreq_default_),
   blockSize_(1),
+  expResTest_(expResTest_default_),
+  impResScale_(impResScale_default_),
+  expResScale_(expResScale_default_),
   label_(label_default_),
-  isSet_(false)
+  isSet_(false),
+  isSTSet_(false)
 {}
 
 
@@ -305,8 +342,12 @@ TFQMRSolMgr<ScalarType,MV,OP>::TFQMRSolMgr(
   verbosity_(verbosity_default_),
   outputFreq_(outputFreq_default_),
   blockSize_(1),
+  expResTest_(expResTest_default_),
+  impResScale_(impResScale_default_),
+  expResScale_(expResScale_default_),
   label_(label_default_),
-  isSet_(false)
+  isSet_(false),
+  isSTSet_(false)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
@@ -401,43 +442,70 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
   }  
   
-  // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
-
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
     convtol_ = params->get("Convergence Tolerance",convtol_default_);
 
     // Update parameter in our list and residual tests.
     params_->set("Convergence Tolerance", convtol_);
-    if (convTest_ != Teuchos::null)
-      convTest_->setTolerance( convtol_ );
+    if (impConvTest_ != Teuchos::null)
+      impConvTest_->setTolerance( convtol_ );
+    if (expConvTest_ != Teuchos::null)
+      expConvTest_->setTolerance( convtol_ );
   }
   
-  // Create status tests if we need to.
+// Check for a change in scaling, if so we need to build new residual tests.
+  if (params->isParameter("Implicit Residual Scaling")) {
+    std::string tempImpResScale = Teuchos::getParameter<std::string>( *params, "Implicit Residual Scaling" );
 
-  // Basic test checks maximum iterations and native residual.
-  if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+    // Only update the scaling if it's different.
+    if (impResScale_ != tempImpResScale) {
+      Belos::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
+      impResScale_ = tempImpResScale;
+
+      // Update parameter in our list and residual tests
+      params_->set("Implicit Residual Scaling", impResScale_);
+      if (impConvTest_ != Teuchos::null) {
+        try { 
+          impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
+        }
+        catch (std::exception& e) { 
+          // Make sure the convergence test gets constructed again.
+          isSTSet_ = false;
+        }
+      }
+    }      
+  }
   
-  // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (convTest_ == Teuchos::null)
-    convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
-  
-  if (sTest_ == Teuchos::null)
-    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
-  if (outputTest_ == Teuchos::null) {
-    if (outputFreq_ > 0) {
-      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-									  sTest_, 
-									  outputFreq_, 
-									  Passed+Failed+Undefined ) ); 
-    }
-    else {
-      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-									  sTest_, 1 ) );
+  if (params->isParameter("Explicit Residual Scaling")) {
+    std::string tempExpResScale = Teuchos::getParameter<std::string>( *params, "Explicit Residual Scaling" );
+
+    // Only update the scaling if it's different.
+    if (expResScale_ != tempExpResScale) {
+      Belos::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
+      expResScale_ = tempExpResScale;
+
+      // Update parameter in our list and residual tests
+      params_->set("Explicit Residual Scaling", expResScale_);
+      if (expConvTest_ != Teuchos::null) {
+        try { 
+          expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
+        }
+        catch (std::exception& e) {
+          // Make sure the convergence test gets constructed again.
+          isSTSet_ = false;
+        }
+      }
+    }      
+  }
+
+  if (params->isParameter("Explicit Residual Test")) {
+    expResTest_ = Teuchos::getParameter<bool>( *params,"Explicit Residual Test" );
+
+    // Reconstruct the convergence test if the explicit residual test is not being used.
+    params_->set("Explicit Residual Test", expResTest_);
+    if (expConvTest_ == Teuchos::null) {
+      isSTSet_ = false;
     }
   }
 
@@ -449,6 +517,66 @@ void TFQMRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::P
 
   // Inform the solver manager that the current parameters were set.
   isSet_ = true;
+}
+
+
+// Check the status test versus the defined linear problem
+template<class ScalarType, class MV, class OP>
+bool TFQMRSolMgr<ScalarType,MV,OP>::checkStatusTest() {
+
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestGenResNorm_t;
+
+  // Basic test checks maximum iterations and native residual.
+  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+
+  if (expResTest_) {
+   
+    // Implicit residual test, using the native residual to determine if convergence was achieved.
+    Teuchos::RCP<StatusTestGenResNorm_t> tmpImpConvTest =
+      Teuchos::rcp( new StatusTestGenResNorm_t( convtol_ ) );
+    tmpImpConvTest->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
+    impConvTest_ = tmpImpConvTest;
+
+    // Explicit residual test once the native residual is below the tolerance
+    Teuchos::RCP<StatusTestGenResNorm_t> tmpExpConvTest =
+      Teuchos::rcp( new StatusTestGenResNorm_t( convtol_ ) );
+    tmpExpConvTest->defineResForm( StatusTestGenResNorm_t::Explicit, Belos::TwoNorm );
+    tmpExpConvTest->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );
+    expConvTest_ = tmpExpConvTest;
+
+    // The convergence test is a combination of the "cheap" implicit test and explicit test.
+    convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
+  }
+  else {
+
+    // Implicit residual test, using the native residual to determine if convergence was achieved.
+    Teuchos::RCP<StatusTestGenResNorm_t> tmpImpConvTest =
+      Teuchos::rcp( new StatusTestGenResNorm_t( convtol_ ) );
+    tmpImpConvTest->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
+    impConvTest_ = tmpImpConvTest;
+
+    // Set the explicit and total convergence test to this implicit test that checks for accuracy loss.
+    expConvTest_ = impConvTest_;
+    convTest_ = impConvTest_;
+  }
+  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+
+  if (outputFreq_ > 0) {
+    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_,
+									sTest_,
+									outputFreq_,
+									Passed+Failed+Undefined ) );
+  }
+  else {
+    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_,
+									sTest_, 1 ) );
+  }
+  
+  // The status test is now set.
+  isSTSet_ = true;
+
+  return false;
 }
 
     
@@ -476,6 +604,12 @@ TFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
     pl->set("Output Stream", outputStream_default_,
       "A reference-counted pointer to the output stream where all\n"
       "solver output is sent.");
+    pl->set("Explicit Residual Test", expResTest_default_,
+      "Whether the explicitly computed residual should be used in the convergence test.");
+    pl->set("Implicit Residual Scaling", impResScale_default_,
+      "The type of scaling used in the implicit residual convergence test.");
+    pl->set("Explicit Residual Scaling", expResScale_default_,
+      "The type of scaling used in the explicit residual convergence test.");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
@@ -498,9 +632,17 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
 
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
-  
+
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,TFQMRSolMgrLinearProblemFailure,
+		     "Belos::TFQMRSolMgr::solve(): Linear problem is not a valid object.");
+
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),TFQMRSolMgrLinearProblemFailure,
                      "Belos::TFQMRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+
+  if (!isSTSet_) {
+    TEST_FOR_EXCEPTION( checkStatusTest(),TFQMRSolMgrLinearProblemFailure,
+			"Belos::TFQMRSolMgr::solve(): Linear problem and requested status tests are incompatible.");
+  }
 
   // Create indices for the linear systems to be solved.
   int startPtr = 0;
@@ -572,55 +714,8 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  if ( convTest_->getStatus() == Passed ) {
-	    // We have convergence of at least one linear system.
-
-	    // Figure out which linear systems converged.
-	    std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
-
-	    // If the number of converged linear systems is equal to the
-            // number of current linear systems, then we are done with this block.
-	    if (convIdx.size() == currRHSIdx.size())
-	      break;  // break from while(1){tfqmr_iter->iterate()}
-
-	    // Inform the linear problem that we are finished with this current linear system.
-	    problem_->setCurrLS();
-
-	    // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
-	    int have = 0;
-            std::vector<int> unconvIdx(currRHSIdx.size());
-	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-	      bool found = false;
-	      for (unsigned int j=0; j<convIdx.size(); ++j) {
-		if (currRHSIdx[i] == convIdx[j]) {
-		  found = true;
-		  break;
-		}
-	      }
-	      if (!found) {
-                currIdx2[have] = currIdx2[i];
-		currRHSIdx[have++] = currRHSIdx[i];
-	      }
-              else {
-              } 
-	    }
-	    currRHSIdx.resize(have);
-	    currIdx2.resize(have);
-
-	    // Set the remaining indices after deflation.
-	    problem_->setLSIndex( currRHSIdx );
-
-	    // Get the current residual vector.
-	    std::vector<MagnitudeType> norms;
-            R_0 = MVT::CloneCopy( *(tfqmr_iter->getNativeResiduals(&norms)),currIdx2 );
-	    for (int i=0; i<have; ++i) { currIdx2[i] = i; }
-
-	    // Set the new blocksize for the solver.
-	    tfqmr_iter->setBlockSize( have );
-
-	    // Set the new state and initialize the solver.
-	    TFQMRIterState<ScalarType,MV> defstate;
-	    defstate.R = R_0;
-	    tfqmr_iter->initializeTFQMR(defstate);
+	    // We have convergence of the linear system.
+	    break;  // break from while(1){tfqmr_iter->iterate()}
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //

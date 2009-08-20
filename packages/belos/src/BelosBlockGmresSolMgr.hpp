@@ -646,10 +646,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
   }  
   
-  // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
-
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
     convtol_ = params->get("Convergence Tolerance",convtol_default_);
