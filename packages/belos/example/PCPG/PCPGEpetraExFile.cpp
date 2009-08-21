@@ -69,7 +69,6 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-//#include "BelosBlockCGSolMgr.hpp"
 #include "BelosPCPGSolMgr.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -312,7 +311,6 @@ int main(int argc, char *argv[]) {
   bool set = problem->setProblem();
   if (set == false) {
     if (proc_verbose)
-      delete &Prec; // destroy the preconditioner
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
@@ -344,7 +342,6 @@ int main(int argc, char *argv[]) {
       set = problem->setProblem(LHS,RHS);
       if (set == false) {
         if (proc_verbose)
-          delete &Prec; // destroy the preconditioner
           std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
         return -1;
       }
@@ -379,7 +376,6 @@ int main(int argc, char *argv[]) {
     }
     if (ret!=Belos::Converged || badRes) {
       if (proc_verbose)
-        delete &Prec; // destroy the preconditioner
         std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
       return -1;
     }
@@ -388,7 +384,6 @@ int main(int argc, char *argv[]) {
   // Default return value
   //
   if (proc_verbose)
-    delete &Prec; // destroy the preconditioner
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   return 0;
 
