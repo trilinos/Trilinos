@@ -136,7 +136,7 @@ struct OrdinalTraits<size_t> {
   static const bool hasMachineParameters = false;
   static inline size_t zero()              {return(static_cast<size_t>(0));}
   static inline size_t one()               {return(static_cast<size_t>(1));}
-  static inline size_t invalid()           {return(std::numeric_limits<size_t>::is_signed ? -1 : std::numeric_limits<size_t>::max());}
+  static inline size_t invalid()           {return(std::numeric_limits<size_t>::is_signed ? static_cast<size_t>(-1)            : std::numeric_limits<size_t>::max()  );}
   static inline size_t max()               {return(std::numeric_limits<size_t>::is_signed ? std::numeric_limits<size_t>::max() : std::numeric_limits<size_t>::max()-1);}
   static inline std::string name()         {return("size_t");}
 };
