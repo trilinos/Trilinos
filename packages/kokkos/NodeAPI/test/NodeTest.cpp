@@ -23,33 +23,41 @@
 
 namespace {
 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ArrayRCP;
   using Teuchos::Time;
+  using Teuchos::null;
   using Teuchos::TimeMonitor;
   using Kokkos::SerialNode;
   using Kokkos::ReadyBufferHelper;
   using Teuchos::tuple;
 
-  SerialNode serialnode;
-
   int N = 100;
   int NumIters = 1000;
   template <class NODE>
-  NODE & getNode() {
+  RCP<NODE> getNode() {
     TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
   }
 
+  RCP<SerialNode> serialnode;
   template <>
-  SerialNode & getNode<SerialNode>() {
+  RCP<SerialNode> getNode<SerialNode>() {
+    if (serialnode == null) {
+      serialnode = rcp(new SerialNode());
+    }
     return serialnode;
   }
 
 #ifdef HAVE_KOKKOS_TBB
   using Kokkos::TBBNode;
   int tbb_nT = 0;
-  TBBNode tbbnode;
+  RCP<TBBNode> tbbnode;
   template <>
-  TBBNode & getNode<TBBNode>() {
+  RCP<TBBNode> getNode<TBBNode>() {
+    if (tbbnode == null) {
+      tbbnode = rcp(new TBBNode());
+    }
     return tbbnode;
   }
 #endif
@@ -57,9 +65,12 @@ namespace {
 #ifdef HAVE_KOKKOS_THREADPOOL
   using Kokkos::TPINode;
   int tpi_nT = 1;
-  TPINode tpinode;
+  RCP<TPINode> tpinode;
   template <>
-  TPINode & getNode<TPINode>() {
+  RCP<TPINode> getNode<TPINode>() {
+    if (tpinode == null) {
+      tpinode = rcp(new TPINode());
+    }
     return tpinode;
   }
 #endif
@@ -70,9 +81,12 @@ namespace {
   int cuda_nT  = 64;
   int cuda_nB  = 64;
   int cuda_verb = 0;
-  CUDANode cudanode;
+  RCP<CUDANode> cudanode;
   template <>
-  CUDANode & getNode<CUDANode>() {
+  RCP<CUDANode> getNode<CUDANode>() {
+    if (cudanode == null) {
+      cudanode = rcp(new CUDANode());
+    }
     return cudanode;
   }
 #endif
@@ -112,16 +126,16 @@ namespace {
   {
 #ifdef HAVE_KOKKOS_TBB
     out << "Initializing TBB node to " << tbb_nT << " threads." << std::endl;
-    tbbnode.init(tbb_nT);
+    getNode<TBBNode>()->init(tbb_nT);
 #endif
 #ifdef HAVE_KOKKOS_THREADPOOL
     out << "Initializing TPI node to " << tpi_nT << " threads." << std::endl;
-    tpinode.init(tpi_nT);
+    getNode<TPINode>()->init(tpi_nT);
 #endif
 #ifdef HAVE_KOKKOS_CUDA
     out << "Initializing CUDA device " << cuda_dev 
         << " with " << cuda_nB << " blocks and " << cuda_nT << " threads." << std::endl;
-    cudanode.init(cuda_dev,cuda_nB,cuda_nT,cuda_verb);
+    getNode<CUDANode>()->init(cuda_dev,cuda_nB,cuda_nT,cuda_verb);
 #endif
     TEST_EQUALITY(0,0);
   }
@@ -134,12 +148,12 @@ namespace {
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     Teuchos::ArrayRCP<SCALAR> x;
-    NODE &node = getNode<NODE>();
+    RCP<NODE> node = getNode<NODE>();
     ReadyBufferHelper<NODE> rbh(node);
     SCALAR result;
     {
       TimeMonitor localTimer(tAlloc);
-      x = node.template allocBuffer<SCALAR>(N);
+      x = node->template allocBuffer<SCALAR>(N);
     }
     // set x[i] = 1, i=0:N-1
     {
@@ -148,7 +162,7 @@ namespace {
       rbh.begin();
       wdp.x = rbh.template addNonConstBuffer<SCALAR>(x);
       rbh.end();
-      node.parallel_for(0,N,wdp);
+      node->parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
@@ -157,7 +171,7 @@ namespace {
       rbh.begin();
       wdp.x = rbh.template addConstBuffer<SCALAR>(x);
       rbh.end();
-      result = node.parallel_reduce(0,N,wdp);
+      result = node->parallel_reduce(0,N,wdp);
     }
     SCALAR expectedResult = (SCALAR)(N);
     TEST_EQUALITY(result, expectedResult);
@@ -168,7 +182,7 @@ namespace {
       rbh.begin();
       wdp.x = rbh.template addConstBuffer<SCALAR>(x);
       rbh.end();
-      result = node.parallel_reduce(1,N-1,wdp);
+      result = node->parallel_reduce(1,N-1,wdp);
     }
     expectedResult = (SCALAR)(N-2);
     TEST_EQUALITY(result, expectedResult);
@@ -186,13 +200,13 @@ namespace {
   {
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tNoop("Null Op");
-    NODE &node = getNode<NODE>();
+    RCP<NODE> node = getNode<NODE>();
     NullOp noop;
     int red = 0;
     {
       TimeMonitor localTimer(tNoop);
       for (int i=0; i<NumIters; ++i) {
-        red = node.parallel_reduce(0,1,noop);
+        red = node->parallel_reduce(0,1,noop);
       }
     }
     TEST_EQUALITY_CONST(red,0);

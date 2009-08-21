@@ -447,7 +447,7 @@ namespace Tpetra {
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(imports.size() != totalReceiveLength_ * numPackets, std::runtime_error,
+    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalReceiveLength_ * numPackets, std::runtime_error,
         Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
 #endif
 
@@ -1012,7 +1012,7 @@ namespace Tpetra {
       // the length, and the offset for this send into the 
       // send buffer (startsTo_)
       maxSendLength_ = 0;
-      int snd = 0;
+      size_t snd = 0;
       for (int node = 0; node < numImages; ++node ) {
         if (starts[node+1] != starts[node]) {
           lengthsTo_[snd] = starts[node+1] - starts[node];

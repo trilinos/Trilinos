@@ -32,6 +32,7 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -83,7 +84,7 @@ namespace Kokkos {
       //@{
 
       //! Default constructor
-      MultiVector(Node &node)
+      MultiVector(Teuchos::RCP<Node> node)
       : node_(node)
       , numRows_(0)
       , numCols_(0)
@@ -193,7 +194,7 @@ namespace Kokkos {
 
       //@{
 
-      Node & getNode() const {return node_;}
+      Teuchos::RCP<Node> getNode() const {return node_;}
 
       //! Number of rows
       size_t getNumRows() const {return(numRows_);};
@@ -207,7 +208,7 @@ namespace Kokkos {
       //@}
 
     protected:
-      Node &node_;
+      Teuchos::RCP<Node> node_;
 
       Teuchos::ArrayRCP<Scalar> contigValues_;
 

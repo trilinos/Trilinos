@@ -51,7 +51,7 @@ namespace Tpetra {
     //@{ 
 
     //! Constructor
-    SerialPlatform(Node &node);
+    SerialPlatform(Teuchos::RCP<Node> node);
 
     //! Destructor
     ~SerialPlatform();
@@ -65,18 +65,18 @@ namespace Tpetra {
     Teuchos::RCP< Teuchos::Comm<int> > getComm() const;
 
     //! Get Get a node for parallel computation.
-    Node & getNode() const;
+    Teuchos::RCP<Node> getNode() const;
 
     //@}
     private:
     SerialPlatform(const SerialPlatform<Node> &platform);
 
     protected: 
-    Node &node_;
+    Teuchos::RCP<Node> node_;
   };
 
   template<class Node>
-  SerialPlatform<Node>::SerialPlatform(Node &node) 
+  SerialPlatform<Node>::SerialPlatform(Teuchos::RCP<Node> node) 
   : node_(node) {}
 
   template<class Node>
@@ -90,7 +90,7 @@ namespace Tpetra {
   }
 
   template<class Node>
-  Node & SerialPlatform<Node>::getNode() const 
+  Teuchos::RCP<Node> SerialPlatform<Node>::getNode() const 
   { return node_; }
 
 } // namespace Tpetra

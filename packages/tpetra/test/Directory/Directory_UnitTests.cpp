@@ -60,7 +60,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform map
     const GO numEntries = 2;
-    M map(numEntries,0,comm);
+    RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
     D dir(map);
     
@@ -86,7 +86,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform map
     const GO numEntries = 1;
-    M map(numEntries,0,comm);
+    RCP<M> map = rcp( new M(numEntries,0,comm) );
     // create a directory
     D dir(map);
     {
@@ -131,7 +131,7 @@ namespace {
     // create a uniform map
     const GO remainder = numImages/2;
     const GO numEntries = 2*numImages + remainder;
-    M map(numEntries,0,comm);
+    RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
     D dir(map);
     // all GIDs
@@ -200,7 +200,7 @@ namespace {
     const GO numEntries = as<GO>(numImages+1);
     // the last image gets two entries, others get one
     const LO numMyEntries = (myImageID == numImages-1 ? 2 : 1);
-    M map(numEntries,numMyEntries,0,comm);
+    RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
     D dir(map);
     // all GIDs
@@ -268,7 +268,7 @@ namespace {
     const LO numMyEntries = as<LO>(myImageID+1);
     // number of entries is (numImages+1)*numImages/2
     const GO numEntries = as<GO>((numImages*numImages+numImages)/2);
-    M map(numEntries,numMyEntries,0,comm);
+    RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
     D dir(map);
     // all GIDs
@@ -331,7 +331,7 @@ namespace {
     // number of entries is 3*numImages
     // we will stripe the GIDs across images
     const GO numEntries = as<GO>(3*numImages);
-    M map(numEntries, tuple<GO>(myImageID, myImageID+numImages, myImageID+2*numImages) ,0,comm);
+    RCP<M> map = rcp(new M(numEntries, tuple<GO>(myImageID, myImageID+numImages, myImageID+2*numImages) ,0,comm));
     // create a directory
     D dir(map);
     // all GIDs

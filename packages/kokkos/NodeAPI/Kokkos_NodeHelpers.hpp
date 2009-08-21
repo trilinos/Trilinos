@@ -12,7 +12,7 @@ namespace Kokkos {
   class ReadyBufferHelper {
     public:
       /*! The node via which buffers are being readied. */
-      ReadyBufferHelper(Node &node);
+      ReadyBufferHelper(Teuchos::RCP<Node> node);
 
       /*! Destructor. */
       virtual ~ReadyBufferHelper();
@@ -33,13 +33,13 @@ namespace Kokkos {
 
 
     protected:
-      Node &node_;
+      Teuchos::RCP<Node> node_;
       Teuchos::Array< Teuchos::ArrayRCP<const char> >  cbufs_;
       Teuchos::Array< Teuchos::ArrayRCP<      char> > ncbufs_;
   };
 
   template <class Node>
-  ReadyBufferHelper<Node>::ReadyBufferHelper(Node &node)
+  ReadyBufferHelper<Node>::ReadyBufferHelper(Teuchos::RCP<Node> node)
   : node_(node) {
   }
 
@@ -69,7 +69,7 @@ namespace Kokkos {
 
   template <class Node>
   void ReadyBufferHelper<Node>::end() {
-    node_.readyBuffers(cbufs_(), ncbufs_());  
+    node_->readyBuffers(cbufs_(), ncbufs_());  
   }
 
 } // end of namespace Kokkos

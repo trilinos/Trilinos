@@ -26,15 +26,22 @@ namespace {
     TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type " << Teuchos::TypeNameTraits<PLAT>::name() << " not defined.");
   }
 
-  SerialNode snode;
+  RCP<SerialNode> snode;
+
   template <>
   RCP<SerialPlatform<SerialNode> > getPlatform() {
+    if (snode == Teuchos::null) {
+      snode = rcp(new SerialNode());
+    }
     return rcp(new SerialPlatform<SerialNode>(snode));
   }
 
 #ifdef HAVE_TPETRA_MPI
   template <>
   RCP<MpiPlatform<SerialNode> > getPlatform() {
+    if (snode == Teuchos::null) {
+      snode = rcp(new SerialNode());
+    }
     return rcp(new MpiPlatform<SerialNode>(snode));
   }
 #endif
@@ -63,7 +70,7 @@ namespace {
     const int myImageID = comm->getRank();
     TEST_EQUALITY( myImageID < numImages, true );
     TEST_EQUALITY_CONST( comm != Teuchos::null, true );
-    N &node  = platform->getNode();
+    RCP<N> node  = platform->getNode();
     (void)node;
   }
 

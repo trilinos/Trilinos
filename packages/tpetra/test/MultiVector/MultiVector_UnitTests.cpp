@@ -57,6 +57,8 @@ namespace {
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  using Tpetra::LocallyReplicated;
+  using Tpetra::GloballyDistributed;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
   using Tpetra::MultiVector;
@@ -91,11 +93,6 @@ namespace {
     return rcp(new Teuchos::SerialComm<int>());
   }
 
-  Node& getDefaultNode()
-  {
-    return DefaultPlatform::getDefaultPlatform().getNode();
-  }
-
   //
   // UNIT TESTS
   // 
@@ -109,14 +106,13 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
-    const Ordinal numLocal = 13;
-    const Teuchos_Ordinal numVecs  = 7;
+    const size_t numLocal = 13;
+    const size_t numVecs  = 7;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
-    MV mvec(node,map,numVecs,true);
+    MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
-    TEST_EQUALITY( mvec.getMyLength(), numLocal );
+    TEST_EQUALITY( mvec.getLocalLength(), numLocal );
     TEST_EQUALITY( mvec.getGlobalLength(), numImages*numLocal );
     // we zeroed it out in the constructor; all norms should be zero
     Array<Magnitude> norms(numVecs), zeros(numVecs);
@@ -139,12 +135,11 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
-    const Ordinal numLocal = 13;
+    const size_t numLocal = 13;
     Map<Ordinal> map(INVALID,numLocal,0,comm);
-    TEST_THROW(MV mvec(node,map,0), std::invalid_argument);
-    TEST_THROW(MV mvec(node,map,-1), std::invalid_argument);
+    TEST_THROW(MV mvec(map,0), std::invalid_argument);
+    TEST_THROW(MV mvec(map,-1), std::invalid_argument);
   }
 
 
@@ -159,25 +154,23 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
-    // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVecs = 2;
+    const size_t numLocal = 2;
+    const size_t numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
-    TEST_THROW(MV mvec(node,map,values(0,3),2,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
     // it could also be too small for the given LDA: 
-    TEST_THROW(MV mvec(node,map,values(),2+1,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::runtime_error);
     // too small for number of entries in a Vector
-    TEST_THROW(V   vec(node,map,values(0,1)), std::runtime_error);
+    TEST_THROW(V   vec(map,values(0,1)), std::runtime_error);
 #endif
     // LDA < numLocal throws an exception anytime
-    TEST_THROW(MV mvec(node,map,values(0,4),1,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(0,4),1,numVecs), std::runtime_error);
   }
 
 
@@ -193,27 +186,26 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 13;
-    const Teuchos_Ordinal numVecs = 7;
+    const size_t numLocal = 13;
+    const size_t numVecs = 7;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
-    Tuple<Teuchos_Ordinal,4> inView1 = tuple<Teuchos_Ordinal>(1,4,3,2);
-    Tuple<Teuchos_Ordinal,3> exView1 = tuple<Teuchos_Ordinal>(0,5,6);
-    Tuple<Teuchos_Ordinal,4> inView2 = tuple<Teuchos_Ordinal>(6,0,4,3);
-    Tuple<Teuchos_Ordinal,4> exView2 = tuple<Teuchos_Ordinal>(1,2,5,7);
-    const Teuchos_Ordinal numView = 4;
-    TEST_FOR_EXCEPTION(numView != inView1.size(), std::logic_error, "Someone ruined a test invariant.");
-    TEST_FOR_EXCEPTION(numView != inView1.size(), std::logic_error, "Someone ruined a test invariant.");
-    TEST_FOR_EXCEPTION(numView != inView2.size(), std::logic_error, "Someone ruined a test invariant.");
+    Tuple<size_t,4> inView1 = tuple<size_t>(1,4,3,2);
+    Tuple<size_t,3> exView1 = tuple<size_t>(0,5,6);
+    Tuple<size_t,4> inView2 = tuple<size_t>(6,0,4,3);
+    Tuple<size_t,4> exView2 = tuple<size_t>(1,2,5,7);
+    const size_t numView = 4;
+    TEST_FOR_EXCEPTION(numView != as<size_t>(inView1.size()), std::logic_error, "Someone ruined a test invariant.");
+    TEST_FOR_EXCEPTION(numView != as<size_t>(inView1.size()), std::logic_error, "Someone ruined a test invariant.");
+    TEST_FOR_EXCEPTION(numView != as<size_t>(inView2.size()), std::logic_error, "Someone ruined a test invariant.");
     {
       // test dot, all norms, randomize
-      MV mvOrig1(node,map,numVecs), mvOrig2(node,map,numVecs+1), mvWeights(node,map,numVecs);
+      MV mvOrig1(map,numVecs), mvOrig2(map,numVecs+1), mvWeights(map,numVecs);
       mvWeights.randomize();
-      RCP<const MV> mvW1 = mvWeights.subView(tuple<Teuchos_Ordinal>(0));
+      RCP<const MV> mvW1 = mvWeights.subView(tuple<size_t>(0));
       RCP<const MV> mvSubWeights = mvWeights.subView(inView1);
       mvOrig1.randomize();
       mvOrig2.randomize();
@@ -226,7 +218,7 @@ namespace {
       mvOrig1.normWeighted(mvWeights,nOrigW());
       mvOrig1.normWeighted(*mvW1,nOrigW1());
       mvOrig1.meanValue(meansOrig());
-      for (Teuchos_Ordinal j=0; j < numView; ++j) {
+      for (size_t j=0; j < numView; ++j) {
         RCP<const V> v1 = mvOrig1.getVector(inView1[j]),
           v2 = mvOrig2.getVector(inView2[j]);
         dotsOrig[j] = v1->dot(*v2);
@@ -243,7 +235,7 @@ namespace {
       mvView1->normWeighted(*mvW1,nViewW1());
       mvView1->meanValue(meansView());
       mvView1->dot( *mvView2, dotsView() );
-      for (Teuchos_Ordinal j=0; j < numView; ++j) {
+      for (size_t j=0; j < numView; ++j) {
         TEST_FLOATING_EQUALITY(nOrig1[inView1[j]],  nView1[j],  tol);
         TEST_FLOATING_EQUALITY(nOrig2[inView1[j]],  nView2[j],  tol);
         TEST_FLOATING_EQUALITY(nOrigI[inView1[j]],  nViewI[j],  tol);
@@ -257,22 +249,22 @@ namespace {
       mvView1->randomize();
       Array<Mag> nView1_aft(numView);
       mvView1->norm1(nView1_aft());
-      for (Teuchos_Ordinal j=0; j < numView; ++j) {
+      for (size_t j=0; j < numView; ++j) {
         TEST_INEQUALITY(nView1[j], nView1_aft[j]);
       }
       // release the view, test that viewed columns changed, others didn't
       mvView1 = Teuchos::null;
       Array<Mag> nOrig1_aft(numVecs);
       mvOrig1.norm1(nOrig1_aft());
-      for (Teuchos_Ordinal j=0; j < inView1.size(); ++j) {
+      for (size_t j=0; j < as<size_t>(inView1.size()); ++j) {
         TEST_INEQUALITY(nOrig1[inView1[j]], nOrig1_aft[inView1[j]]);
       }
-      for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
+      for (size_t j=0; j < as<size_t>(exView1.size()); ++j) {
         TEST_FLOATING_EQUALITY(nOrig1[exView1[j]], nOrig1_aft[exView1[j]], tol);
       }
     }
     {
-      MV mvOrigA(node,map,numVecs), mvOrigB(node,map,numVecs), mvOrigC(node,map,numVecs+1);
+      MV mvOrigA(map,numVecs), mvOrigB(map,numVecs), mvOrigC(map,numVecs+1);
       mvOrigA.randomize();
       mvOrigB.randomize();
       mvOrigC.randomize();
@@ -292,7 +284,7 @@ namespace {
         mvViewC->abs(*mvViewA);
         mvViewA->meanValue(mnA_aft());
         mvViewC->meanValue(mnC_aft());
-        for (int j=0; j < inView1.size(); ++j) {
+        for (size_t j=0; j < as<size_t>(inView1.size()); ++j) {
           TEST_FLOATING_EQUALITY(mnA_bef[j], mnA_aft[j], tol);
           TEST_INEQUALITY(mnC_bef[j], mnC_aft[j]);
         }
@@ -317,7 +309,7 @@ namespace {
         mvViewA->meanValue(A_aft());
         mvViewB->meanValue(B_aft());
         mvViewC->meanValue(C_aft());
-        for (int j=0; j < inView1.size(); ++j) {
+        for (size_t j=0; j < as<size_t>(inView1.size()); ++j) {
           TEST_FLOATING_EQUALITY(C_bef[j], C_aft[j], tol);
           TEST_FLOATING_EQUALITY(C_bef[j], B_aft[j], tol);
           TEST_FLOATING_EQUALITY(C_bef[j], A_aft[j], tol);
@@ -327,7 +319,7 @@ namespace {
       }
       {
         TEST_FOR_EXCEPTION(inView1.size() != 4, std::logic_error, "Someone ruined a test invariant.");
-        Tuple<Teuchos_Ordinal,4> reorder = tuple<Teuchos_Ordinal>(3,1,0,2);
+        Tuple<size_t,4> reorder = tuple<size_t>(3,1,0,2);
         RCP<MV> dvA = mvViewA->subViewNonConst(reorder);
         RCP<MV> dvB = mvViewB->subViewNonConst(reorder);
         RCP<MV> dvC = mvViewC->subViewNonConst(reorder);
@@ -351,7 +343,7 @@ namespace {
         mvViewC->norm1(nrmC()); // norm1(2.0) = 2 * N
         const Mag  OneN = as<Mag>(mvViewA->getGlobalLength());
         const Mag  TwoN = OneN + OneN;
-        for (int j=0; j < 4; ++j) {
+        for (size_t j=0; j < 4; ++j) {
           TEST_FLOATING_EQUALITY( nrmA[j],    M0, tol );
           TEST_FLOATING_EQUALITY( nrmB[j],  OneN, tol );
           TEST_FLOATING_EQUALITY( nrmC[j],  TwoN, tol );
@@ -366,16 +358,16 @@ namespace {
       mvOrigA.norm2(nrmOrigA_aft());
       mvOrigB.norm2(nrmOrigB_aft());
       mvOrigC.norm2(nrmOrigC_aft());
-      for (Teuchos_Ordinal j=0; j < inView1.size(); ++j) {
+      for (size_t j=0; j < as<size_t>(inView1.size()); ++j) {
         TEST_INEQUALITY(nrmOrigA[inView1[j]], nrmOrigA_aft[inView1[j]]);
         TEST_INEQUALITY(nrmOrigB[inView1[j]], nrmOrigB_aft[inView1[j]]);
         TEST_INEQUALITY(nrmOrigC[inView2[j]], nrmOrigC_aft[inView2[j]]);
       }
-      for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
+      for (size_t j=0; j < as<size_t>(exView1.size()); ++j) {
         TEST_FLOATING_EQUALITY(nrmOrigA[exView1[j]], nrmOrigA_aft[exView1[j]], tol);
         TEST_FLOATING_EQUALITY(nrmOrigB[exView1[j]], nrmOrigB_aft[exView1[j]], tol);
       }
-      for (Teuchos_Ordinal j=0; j < exView1.size(); ++j) {
+      for (size_t j=0; j < as<size_t>(exView1.size()); ++j) {
         TEST_FLOATING_EQUALITY(nrmOrigC[exView2[j]], nrmOrigC_aft[exView2[j]], tol);
       }
     }
@@ -390,12 +382,11 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
-    Node &node = getDefaultNode();
     // create Map
     Map<LO,GO> map(INVALID,3,0,comm);
     // test labeling
     const string lbl("mvecA");
-    MV mvecA(node,map,2);
+    MV mvecA(map,2);
     string desc1 = mvecA.description();
     if (myImageID==0) out << desc1 << endl;
     mvecA.setObjectLabel(lbl);
@@ -439,17 +430,16 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      Map<Ordinal> map3l(3,0,comm,true),
-                   map2l(2,0,comm,true);
-      MV mvecA(node,map3l,2),
-         mvecB(node,map2l,3),
-         mvecD(node,map2l,2);
+      Map<Ordinal> map3l(3,0,LocallyReplicated,comm),
+                   map2l(2,0,LocallyReplicated,comm);
+      MV mvecA(map3l,2),
+         mvecB(map2l,3),
+         mvecD(map2l,2);
       // failures, 8 combinations:
       // [NTC],[NTC]: A,B don't match
       // [NTC],[NTC]: C doesn't match A,B
@@ -466,14 +456,14 @@ namespace {
     {
       Map<Ordinal> map3n(INVALID,3,0,comm),
                    map2n(INVALID,2,0,comm),
-                   map2l(2,0,comm,true),
-                   map3l(3,0,comm,true);
-      MV mv3nx2(node,map3n,2),
-         mv2nx2(node,map2n,2),
-         mv2lx2(node,map2l,2),
-         mv2lx3(node,map2l,3),
-         mv3lx2(node,map3l,2),
-         mv3lx3(node,map3l,3);
+                   map2l(2,0,LocallyReplicated,comm),
+                   map3l(3,0,LocallyReplicated,comm);
+      MV mv3nx2(map3n,2),
+         mv2nx2(map2n,2),
+         mv2lx2(map2l,2),
+         mv2lx3(map2l,3),
+         mv3lx2(map3l,2),
+         mv3lx3(map3l,3);
       // non-matching input lengths
       TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv2nx2,S0), std::runtime_error);   // (2 x 3n) x (2n x 2) not compat
       TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv2nx2,mv3nx2,S0), std::runtime_error);   // (2 x 2n) x (3n x 2) not compat
@@ -486,12 +476,12 @@ namespace {
     {
       Map<Ordinal> map3n(INVALID,3,0,comm),
                    map2n(INVALID,2,0,comm),
-                   map2l(2,0,comm,true),
-                   map3l(3,0,comm,true);
-      MV mv3nx2(node,map3n,2),
-         mv2nx2(node,map2n,2),
-         mv2x3(node,map2l,3),
-         mv3x2(node,map3l,2);
+                   map2l(2,0,LocallyReplicated,comm),
+                   map3l(3,0,LocallyReplicated,comm);
+      MV mv3nx2(map3n,2),
+         mv2nx2(map2n,2),
+         mv2x3(map2l,3),
+         mv3x2(map3l,2);
       // non-matching input lengths
       TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (trans) not compat
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (nontrans) not compat
@@ -512,22 +502,21 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map3n(INVALID,3,0,comm),
                  map2n(INVALID,2,0,comm),
-                 lmap3(3,0,comm,true),
-                 lmap2(2,0,comm,true);
+                 lmap3(3,0,LocallyReplicated,comm),
+                 lmap2(2,0,LocallyReplicated,comm);
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     const Mag    M0 = ScalarTraits<Mag>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // deterministic input/output
     {
-      MV mv3x2l(node,lmap3,2),
-         mv2x3l(node,lmap2,3),
-         mv2x2l(node,lmap2,2),
-         mv3x3l(node,lmap3,3);
+      MV mv3x2l(lmap3,2),
+         mv2x3l(lmap2,3),
+         mv2x2l(lmap2,2),
+         mv3x3l(lmap3,3);
       // fill multivectors with ones
       mv3x2l.putScalar(ScalarTraits<Scalar>::one());
       mv2x3l.putScalar(ScalarTraits<Scalar>::one());
@@ -550,10 +539,10 @@ namespace {
     {
       Array<Scalar>     tmvCopy1(6), tmvCopy2(6);
       ArrayView<Scalar> sdmView(Teuchos::null);
-      MV tmv3x2(node,lmap3,2),
-         tmv2x3(node,lmap2,3),
-         tmv2x2(node,lmap2,2),
-         tmv3x3(node,lmap3,3);
+      MV tmv3x2(lmap3,2),
+         tmv2x3(lmap2,3),
+         tmv2x2(lmap2,2),
+         tmv3x3(lmap3,3);
       // fill multivectors with random, get copy of contents
       tmv3x2.randomize();  tmv3x2.get1dCopy(tmvCopy1(),3); 
       tmv2x3.randomize();  tmv2x3.get1dCopy(tmvCopy2(),2);
@@ -591,13 +580,13 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      MV mv3nx2(node,map3n,2),
-         mv3nx3(node,map3n,3),
+      MV mv3nx2(map3n,2),
+         mv3nx3(map3n,3),
          // locals
-         mv2x2(node,lmap2,2),
-         mv2x3(node,lmap2,3),
-         mv3x2(node,lmap3,2),
-         mv3x3(node,lmap3,3);
+         mv2x2(lmap2,2),
+         mv2x3(lmap2,3),
+         mv3x2(lmap3,2),
+         mv3x3(lmap3,3);
       // fill multivectors with ones
       mv3nx3.putScalar(ScalarTraits<Scalar>::one());
       mv3nx2.putScalar(ScalarTraits<Scalar>::one());
@@ -616,10 +605,10 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      MV mv3nx2(node,map3n,2),
-         mv3nx3(node,map3n,3),
+      MV mv3nx2(map3n,2),
+         mv3nx3(map3n,3),
          // locals
-         mv2x3(node,lmap2,3);
+         mv2x3(lmap2,3);
       // fill multivectors with ones
       mv2x3.putScalar(S1);
       // fill expected answers Array
@@ -646,10 +635,9 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
+    const size_t numLocal = 2;
     // multivector has two vectors, each proc having two values per vector
     Map<Ordinal> map2(INVALID,numLocal  ,indexBase,comm),
                  map3(INVALID,numLocal+1,indexBase,comm);
@@ -660,10 +648,10 @@ namespace {
     arrOfarr[0] = values(0,2);
     arrOfarr[1] = values(2,2);
     // arrOfarr.size() == 0
-    TEST_THROW(MV mvec(node,map2,emptyArr(),0), std::runtime_error);
+    TEST_THROW(MV mvec(map2,emptyArr(),0), std::runtime_error);
 #ifdef HAVE_TPETRA_DEBUG
     // individual ArrayViews could be too small
-    TEST_THROW(MV mvec(node,map3,arrOfarr(),2), std::runtime_error);
+    TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif
   }
 
@@ -675,16 +663,15 @@ namespace {
     typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>       V;
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     Map<Ordinal> map1(INVALID,1,indexBase,comm),
                  map2(INVALID,2,indexBase,comm);
     {
-      MV mv12(node,map1,1),
-         mv21(node,map2,1),
-         mv22(node,map2,2);
+      MV mv12(map1,1),
+         mv21(map2,1),
+         mv22(map2,2);
       Array<Scalar> dots(2);
       // incompatible maps
       TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
@@ -696,8 +683,8 @@ namespace {
 #endif
     }
     {
-      V v1(node,map1),
-        v2(node,map2);
+      V v1(map1),
+        v2(map2);
       // incompatible maps
       TEST_THROW(v1.dot(v2),std::runtime_error);
       TEST_THROW(v2.dot(v1),std::runtime_error);
@@ -722,15 +709,14 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVectors = 3;
+    const size_t numLocal = 2;
+    const size_t numVectors = 3;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     const bool zeroOut = true;
-    MV mvec1(node,map,numVectors,zeroOut),
-       mvec2(node,map,numVectors,zeroOut);
+    MV mvec1(map,numVectors,zeroOut),
+       mvec2(map,numVectors,zeroOut);
     Array<Scalar> dots1(numVectors), dots2(numVectors), zeros(numVectors);
     Array<Mag>    norms1(numVectors), norms2(numVectors), ans(numVectors);
     std::fill(zeros.begin(),zeros.end(),ScalarTraits<Scalar>::zero());
@@ -749,8 +735,8 @@ namespace {
     // mvec1 = [1 1]  and  mvec2 = [0 0]
     //         [0 0]               [1 1]
     // still numerically orthogonal even in finite arithmetic. norms are numImages.
-    for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
-      mvec1.replaceMyValue(0,j,ScalarTraits<Scalar>::one());
+    for (size_t j=0; j < numVectors; ++j) {
+      mvec1.replaceLocalValue(0,j,ScalarTraits<Scalar>::one());
       mvec2.replaceGlobalValue(map.getGlobalIndex(1),j,ScalarTraits<Scalar>::one());
     }
     mvec1.dot(mvec2,dots1());
@@ -767,8 +753,8 @@ namespace {
     // mvec1 = [1 1]  and  mvec2 = [-1 -1]
     //         [1 1]               [ 1  1]
     // still numerically orthogonal even in finite arithmetic. norms are 2*numImages.
-    for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
-      mvec1.sumIntoMyValue(1,j,ScalarTraits<Scalar>::one());
+    for (size_t j=0; j < numVectors; ++j) {
+      mvec1.sumIntoLocalValue(1,j,ScalarTraits<Scalar>::one());
       mvec2.sumIntoGlobalValue(map.getGlobalIndex(0),j,-ScalarTraits<Scalar>::one());
     }
     mvec1.dot(mvec2,dots1());
@@ -794,13 +780,12 @@ namespace {
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 7;
-    const Teuchos_Ordinal numVectors = 13;
+    const size_t numLocal = 7;
+    const size_t numVectors = 13;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    MV A(node,map,numVectors,false);
+    MV A(map,numVectors,false);
     {
       A.randomize();
       TEST_FOR_EXCEPT(numVectors != 13);
@@ -832,14 +817,14 @@ namespace {
       Ac->norm2(Ac_aft());
       A.norm2(A_aft());
       // norms of copy and view before should match norms of A
-      for (int i=0; i < inds1.size(); ++i) {
+      for (size_t i=0; i < as<size_t>(inds1.size()); ++i) {
         TEST_EQUALITY( A_bef[inds1.lbound()+i], Ac_bef[i] );
       }
       TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Av_bef,M0);
       // norms of copy (before and after) should match
       TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Ac_aft,M0);
       // norms of view after should be zero, as should corresponding A norms
-      for (int i=0; i < inds1.size(); ++i) {
+      for (size_t i=0; i < as<size_t>(inds1.size()); ++i) {
         TEST_EQUALITY_CONST( Av_aft[i], M0 );
         TEST_EQUALITY_CONST( A_aft[inds1.lbound()+i], M0 );
       }
@@ -847,7 +832,7 @@ namespace {
     {
       A.randomize();
       TEST_FOR_EXCEPT(numVectors != 13);
-      Tuple<Teuchos_Ordinal,5> inds = tuple<Teuchos_Ordinal>(0,5,6,7,12);
+      Tuple<size_t,5> inds = tuple<size_t>(0,5,6,7,12);
       // get a subview and a subcopy of certain vectors of A
       // check that the norms are the same
       // change the view, delete it, verify that the copy doesn't change but that A does
@@ -874,14 +859,14 @@ namespace {
       Ac->norm2(Ac_aft());
       A.norm2(A_aft());
       // norms of copy and view before should match norms of A
-      for (int i=0; i < inds.size(); ++i) {
+      for (size_t i=0; i < as<size_t>(inds.size()); ++i) {
         TEST_EQUALITY( A_bef[inds[i]], Ac_bef[i] );
       }
       TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Av_bef,M0);
       // norms of copy (before and after) should match
       TEST_COMPARE_FLOATING_ARRAYS(Ac_bef,Ac_aft,M0);
       // norms of view after should be zero, as should corresponding A norms
-      for (int i=0; i < inds.size(); ++i) {
+      for (size_t i=0; i < as<size_t>(inds.size()); ++i) {
         TEST_EQUALITY_CONST( Av_aft[i], M0 );
         TEST_EQUALITY_CONST( A_aft[inds[i]], M0 );
       }
@@ -891,10 +876,10 @@ namespace {
       Array<Mag> Anorms(numVectors);
       A.norm2(Anorms());
       TEST_FOR_EXCEPT(numVectors != 13);
-      for (int vc=0; vc < 2; ++vc) {
+      for (size_t vc=0; vc < 2; ++vc) {
         // vc == 0 -> view
         // vc == 1 -> copy
-        for (int t=0; t < 4; ++t) {
+        for (size_t t=0; t < 4; ++t) {
           //  t |   outer   |   inner
           // ---|-----------|-----------
           //  0 | ArrayView | ArrayView
@@ -906,7 +891,7 @@ namespace {
           // inner grabs 1-3 of those, corresponding to 6-8
           RCP<const MV> sub1, sub2;
           if ((t & 1) == 0) {
-            Tuple<Teuchos_Ordinal,5> inds = tuple<Teuchos_Ordinal>(5,6,7,8,9);
+            Tuple<size_t,5> inds = tuple<size_t>(5,6,7,8,9);
             if (vc == 0) sub1 = A.subView(inds);
             else         sub1 = A.subCopy(inds);
           }
@@ -917,7 +902,7 @@ namespace {
           }
           TEST_EQUALITY_CONST(sub1->getNumVectors(), 5);
           if ((t & 2) == 0) {
-            Tuple<Teuchos_Ordinal,3> inds = tuple<Teuchos_Ordinal>(1,2,3);
+            Tuple<size_t,3> inds = tuple<size_t>(1,2,3);
             if (vc == 0) sub2 = sub1->subView(inds);
             else         sub2 = sub1->subCopy(inds);
           }
@@ -963,12 +948,12 @@ namespace {
         ArrayRCP<ArrayRCP<const Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
-        for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+        for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
         views = A.get2dView();
         A.get2dCopy(copies());
-        for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+        for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
       }
@@ -977,16 +962,16 @@ namespace {
         ArrayRCP<ArrayRCP<Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
-        for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+        for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
         views = A.get2dViewNonConst();
         A.get2dCopy(copies());
-        for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+        for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
         // clear view, ensure that A is zero
-        for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+        for (size_t j=0; j < numVectors; ++j) {
           std::fill(views[j].begin(), views[j].end(), S0);
         }
         views = Teuchos::null;
@@ -1007,12 +992,11 @@ namespace {
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVectors = 2;
-    const Teuchos_Ordinal LDA = 2;
+    const size_t numLocal = 2;
+    const size_t numVectors = 2;
+    const size_t LDA = 2;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
@@ -1030,8 +1014,8 @@ namespace {
     values[3] = as<Scalar>(2);
     values[4] = as<Scalar>(4);
     values[5] = as<Scalar>(4);
-    MV A(node,map,values(0,4),LDA,numVectors),
-       B(node,map,values(2,4),LDA,numVectors);
+    MV A(map,values(0,4),LDA,numVectors),
+       B(map,values(2,4),LDA,numVectors);
     Array<Mag> norms(numVectors), zeros(numVectors);
     std::fill(zeros.begin(),zeros.end(),M0);
     //
@@ -1064,7 +1048,7 @@ namespace {
     //   set C random
     //   set it to zero by combination with A,B
     {
-      MV C(node,map,numVectors);
+      MV C(map,numVectors);
       C.randomize();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       C.norm2(norms);
@@ -1074,7 +1058,7 @@ namespace {
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
     {
-      MV C(node,map,numVectors);
+      MV C(map,numVectors);
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       C.norm2(norms);
@@ -1095,11 +1079,10 @@ namespace {
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 23;
-    const Teuchos_Ordinal numVectors = 11;
+    const size_t numLocal = 23;
+    const size_t numVectors = 11;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // Use random multivector A
     // Set B = A * 2 manually.
@@ -1108,8 +1091,8 @@ namespace {
     // This test operator= and all of our scale ops
     // We'll do Vector and MultiVector variations
     // Also, ensure that other vectors aren't changed
-    MV A(node,map,numVectors,false),
-       B(node,map,numVectors,false);
+    MV A(map,numVectors,false),
+       B(map,numVectors,false);
     A.randomize();
     Array<Mag> Anrms(numVectors);
     A.norm2(Anrms());
@@ -1119,7 +1102,7 @@ namespace {
     // * get 1-vector subview(ArrayView), MultiVector::operator=
     // * get data view, assign
     TEST_FOR_EXCEPT(numVectors < 4);
-    for (int j = 0; j < numVectors; ++j) {
+    for (size_t j = 0; j < numVectors; ++j) {
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
         case 0:
@@ -1128,7 +1111,7 @@ namespace {
             RCP<const V> aj = A.getVector(j);
             (*bj) = (*aj);
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
-            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+            for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
             }
           }
@@ -1139,18 +1122,18 @@ namespace {
             RCP<const MV> aj = A.subView(Range1D(j,j));
             (*bj) = (*aj);
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
-            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+            for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
             }
           }
           break;
         case 2:
           {
-            RCP<MV> bj = B.subViewNonConst(tuple<Teuchos_Ordinal>(j));
-            RCP<const MV> aj = A.subView(tuple<Teuchos_Ordinal>(j));
+            RCP<MV> bj = B.subViewNonConst(tuple<size_t>(j));
+            RCP<const MV> aj = A.subView(tuple<size_t>(j));
             (*bj) = (*aj);
             ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
-            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+            for (size_t i=0; i < numLocal; ++i) {
               bjview[i] *= as<Scalar>(2);
             }
           }
@@ -1159,7 +1142,7 @@ namespace {
           {
             ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
             ArrayRCP<const Scalar> ajview = A.getData(j);
-            for (Teuchos_Ordinal i=0; i < numLocal; ++i) {
+            for (size_t i=0; i < numLocal; ++i) {
               bjview[i] = as<Scalar>(2) * ajview[i];
             }
           }
@@ -1174,7 +1157,7 @@ namespace {
     }
     // check that C.Scale(A,2.0) == B
     {
-      MV C(node,map,numVectors,false);
+      MV C(map,numVectors,false);
       C.scale(as<Scalar>(2), A);
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
@@ -1183,7 +1166,7 @@ namespace {
     }
     // check that C=A, C.Scale(2.0) == B
     {
-      MV C(node,map,numVectors,false);
+      MV C(map,numVectors,false);
       C = A;
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
@@ -1193,7 +1176,7 @@ namespace {
     }
     // check that C=A, C.Scale(tuple(2)) == B
     {
-      MV C(node,map,numVectors,false);
+      MV C(map,numVectors,false);
       C = A;
       Array<Scalar> twos(numVectors,as<Scalar>(2));
       C.scale(twos());
@@ -1214,7 +1197,6 @@ namespace {
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map(INVALID,2,0,comm);
     Array<Scalar> values(6);
@@ -1231,8 +1213,8 @@ namespace {
     values[1] = as<Scalar>(1);
     values[2] = as<Scalar>(2);
     values[3] = as<Scalar>(2);
-    V A(node,map,values(0,2)),
-      B(node,map,values(2,2));
+    V A(map,values(0,2)),
+      B(map,values(2,2));
     Mag norm;
     Array<Mag> norms(1);
     //
@@ -1267,7 +1249,7 @@ namespace {
     //   set C random
     //   set it to zero by combination with A,B
     {
-      V C(node,map);
+      V C(map);
       C.randomize();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       norm = C.norm2(); C.norm2(norms());
@@ -1278,7 +1260,7 @@ namespace {
     //   scale it ex-situ
     //   check that it equals B: subtraction in situ
     {
-      V C(node,map);
+      V C(map);
       C.randomize();
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
@@ -1298,23 +1280,22 @@ namespace {
     const Mag M0 = ScalarTraits<Mag>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 13;
-    const Teuchos_Ordinal numVectors = 7;
+    const size_t numLocal = 13;
+    const size_t numVectors = 7;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     {
       // create random MV
-      MV mvorig(node,map,numVectors);
+      MV mvorig(map,numVectors);
       mvorig.randomize();
       // create non-const subview, test copy constructor
       TEST_FOR_EXCEPT(numVectors != 7);
-      Tuple<Teuchos_Ordinal,3> inds = tuple<Teuchos_Ordinal>(1,3,5);
+      Tuple<size_t,3> inds = tuple<size_t>(1,3,5);
       RCP<MV> mvview = mvorig.subViewNonConst(inds);
       Array<Mag> norig(numVectors), nsub(inds.size()), ncopy(inds.size());
       mvorig.normInf(norig());
-      for (Teuchos_Ordinal j=0; j < inds.size(); ++j) {
+      for (size_t j=0; j < as<size_t>(inds.size()); ++j) {
         nsub[j] = norig[inds[j]];
       }
       MV mvcopy(*mvview);
@@ -1332,7 +1313,7 @@ namespace {
     }
     {
       // create random MV
-      MV morig(node,map,numVectors);
+      MV morig(map,numVectors);
       morig.randomize();
       // test copy constructor with 
       // copy it
@@ -1368,11 +1349,10 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map(INVALID,2,0,comm);
     // create random MV
-    V morig(node,map);
+    V morig(map);
     morig.randomize();
     // copy it
     V mcopy1(morig), mcopy2(morig);
@@ -1408,11 +1388,10 @@ namespace {
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     Map<Ordinal> map(INVALID,100,0,comm);
     // create two random Vector objects
-    V v1(node,map), v2(node,map);
+    V v1(map), v2(map);
     v1.randomize();
     v2.randomize();
     // set values in both to 1.0
@@ -1449,21 +1428,20 @@ namespace {
     const Magnitude M0 = ScalarTraits<Magnitude>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 10;
-    const Teuchos_Ordinal numVectors = 6;
+    const size_t numLocal = 10;
+    const size_t numVectors = 6;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
-    MV mv(node,map,numVectors);
+    MV mv(map,numVectors);
     mv.randomize();
     // compute the norms
     Array<Magnitude> norms(numVectors);
     mv.norm2(norms());
-    for (Teuchos_Ordinal j=0; j<numVectors; ++j) {
+    for (size_t j=0; j<numVectors; ++j) {
       // get a view of column j, normalize it using update()
-      RCP<MV> mvj = mv.subViewNonConst(tuple<Teuchos_Ordinal>(j));
+      RCP<MV> mvj = mv.subViewNonConst(tuple<size_t>(j));
       switch (j) {
       case 0:
         mvj->scale( M1/norms[j] );
@@ -1501,11 +1479,10 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVectors = 3;
+    const size_t numLocal = 2;
+    const size_t numVectors = 3;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
@@ -1518,8 +1495,8 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec1(node,map,values(),2,numVectors),
-       mvec2(node,map,values(),2,numVectors);
+    MV mvec1(map,values(),2,numVectors),
+       mvec2(map,values(),2,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -1544,12 +1521,11 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Teuchos_Ordinal numVectors = 3;
-    const Teuchos_Ordinal LDA = 3;
+    const size_t numLocal = 2;
+    const size_t numVectors = 3;
+    const size_t LDA = 3;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
@@ -1569,8 +1545,8 @@ namespace {
     values[6] = as<Scalar>(2);
     values[7] = as<Scalar>(2);
     values[8] = as<Scalar>(-1);
-    MV mvec1(node,map,values(),LDA,numVectors),
-       mvec2(node,map,values(),LDA,numVectors);
+    MV mvec1(map,values(),LDA,numVectors),
+       mvec2(map,values(),LDA,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -1594,11 +1570,10 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Ordinal numVectors = 3;
+    const size_t numLocal = 2;
+    const size_t numVectors = 3;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
@@ -1612,7 +1587,7 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(node,map,values(),2,numVectors);
+    MV mvec(map,values(),2,numVectors);
     // compute, check norms
     {
       Array<MT> norms(numVectors), answer(numVectors);
@@ -1630,7 +1605,7 @@ namespace {
       answer[1] = as<Scalar>(1);
       answer[2] = as<Scalar>(2);
       TEST_COMPARE_FLOATING_ARRAYS(means,answer,M0);
-      for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+      for (size_t j=0; j < numVectors; ++j) {
         TEST_EQUALITY( mvec.getVector(j)->meanValue(), answer[j] );
       }
     }
@@ -1646,11 +1621,10 @@ namespace {
     const MT M0 = ScalarTraits<MT>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 2;
-    const Ordinal numVectors = 3;
+    const size_t numLocal = 2;
+    const size_t numVectors = 3;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
@@ -1663,7 +1637,7 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(node,map,values(),2,numVectors);
+    MV mvec(map,values(),2,numVectors);
     Array<MT> norms(numVectors), answer(numVectors);
     answer[0] = as<MT>(0);
     answer[1] = as<MT>(1);
@@ -1684,13 +1658,12 @@ namespace {
     const MT M0 = ScalarTraits<MT>::zero();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 13;
-    const Ordinal numVectors = 7;
+    const size_t numLocal = 13;
+    const size_t numVectors = 7;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    MV mvec(node,map,numVectors);
+    MV mvec(map,numVectors);
     // randomize the multivector
     mvec.randomize();
     // take norms; they should not be zero
@@ -1702,7 +1675,7 @@ namespace {
     mvec.norm2(normsZero());
     // check the answers
     bool local_success = true;
-    for (Teuchos_Ordinal i=0; i<numVectors; ++i) {
+    for (size_t i=0; i<numVectors; ++i) {
       TEST_ARRAY_ELE_INEQUALITY(normsRand,i,M0);
       TEST_ARRAY_ELE_EQUALITY(normsZero,i,M0);
     }
@@ -1720,21 +1693,20 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
-    const Ordinal numLocal = 13;
-    const Ordinal numVectors = 7;
+    const size_t numLocal = 13;
+    const size_t numVectors = 7;
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
-    MV    mvec(node,map,numVectors),
-       weights(node,map,numVectors),
-       weight1(node,map,1);
+    MV    mvec(map,numVectors),
+       weights(map,numVectors),
+       weight1(map,1);
     // randomize the multivector
     mvec.randomize();
     // set the weights
     Array<Scalar> wvec(numVectors);
     Scalar w1 = ScalarTraits<Scalar>::random();
-    for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+    for (size_t j=0; j < numVectors; ++j) {
       wvec[j] = ScalarTraits<Scalar>::random();
     }
     weights.putScalar(ScalarTraits<Scalar>::one());
@@ -1746,7 +1718,7 @@ namespace {
     mvec.dot(mvec,dots());
     mvec.normWeighted(weights,normsW());
     mvec.normWeighted(weight1,normsW1());
-    for (Teuchos_Ordinal j=0; j < numVectors; ++j) {
+    for (size_t j=0; j < numVectors; ++j) {
       Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
       Mag expnorm = ScalarTraits<Mag>::squareroot( 
                       ScalarTraits<Scalar>::real(dots[j]) / (as<Mag>(numImages * numLocal) * ww)
@@ -1770,7 +1742,6 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
-    Node &node = getDefaultNode();
     // create a Map
     const Ordinal indexBase = 0;
     const Scalar rnd = ScalarTraits<Scalar>::random();
@@ -1780,7 +1751,7 @@ namespace {
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns
-    MV m1n1(node,map1,1), m1n2(node,map1,2), m2n2(node,map2,2), m1n2_2(node,map1,2);
+    MV m1n1(map1,1), m1n2(map1,2), m2n2(map2,2), m1n2_2(map1,2);
     Array<Scalar> dots(1);
     Array<Mag>    norms(1);
     // FINISH: test multiply (both), reciprocalMultiply

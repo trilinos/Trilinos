@@ -2,9 +2,9 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   Platform
-  #Map
-  #Distributor
-  #Directory
+  Map
+  Distributor
+  Directory
   #ImportExport
   #MultiVector
   #BasicPerfTest

@@ -26,7 +26,7 @@ namespace Kokkos {
 #  endif
 #endif
 
-      static DefaultNodeType & getDefaultNode();
+      static Teuchos::RCP<DefaultNodeType> getDefaultNode();
 
     private:
       static Teuchos::RCP<DefaultNodeType> node_;

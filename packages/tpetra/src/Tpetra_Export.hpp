@@ -29,6 +29,7 @@
 #ifndef TPETRA_EXPORT_HPP
 #define TPETRA_EXPORT_HPP
 
+#include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -55,7 +56,7 @@ namespace Tpetra {
       The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
    */
 
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Export: public Teuchos::Describable {
 
   public:
@@ -64,10 +65,10 @@ namespace Tpetra {
     //@{ 
 
     //! Constructs a Export object from the source and target Map.
-    Export(const Map<LocalOrdinal,GlobalOrdinal> & source, const Map<LocalOrdinal,GlobalOrdinal> & target);
+    Export(const Map<LocalOrdinal,GlobalOrdinal,Node> & source, const Map<LocalOrdinal,GlobalOrdinal,Node> & target);
 
     //! copy constructor. 
-    Export(Export<LocalOrdinal,GlobalOrdinal> const& rhs);
+    Export(Export<LocalOrdinal,GlobalOrdinal,Node> const& rhs);
 
     //! destructor.
     ~Export();
@@ -78,10 +79,10 @@ namespace Tpetra {
     //@{ 
 
     //! Returns the number of entries that are identical between the source and target Maps, up to the first different ID.
-    Teuchos_Ordinal getNumSameIDs() const;
+    size_t getNumSameIDs() const;
 
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
-    Teuchos_Ordinal getNumPermuteIDs() const;
+    size_t getNumPermuteIDs() const;
 
     //! List of entries in the source Map that are permuted. (non-persisting view)
     Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const;
@@ -90,13 +91,13 @@ namespace Tpetra {
     Teuchos::ArrayView<const LocalOrdinal> getPermuteToLIDs() const;
 
     //! Returns the number of entries that are not on the calling image.
-    Teuchos_Ordinal getNumRemoteIDs() const;
+    size_t getNumRemoteIDs() const;
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
     Teuchos::ArrayView<const LocalOrdinal> getRemoteLIDs() const;
 
     //! Returns the number of entries that must be sent by the calling image to other images.
-    Teuchos_Ordinal getNumExportIDs() const;
+    size_t getNumExportIDs() const;
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
     Teuchos::ArrayView<const LocalOrdinal> getExportLIDs() const;
@@ -105,15 +106,15 @@ namespace Tpetra {
     Teuchos::ArrayView<const int> getExportImageIDs() const;
 
     //! Returns the Source Map used to construct this exporter.
-    const Map<LocalOrdinal,GlobalOrdinal> & getSourceMap() const;
+    const Map<LocalOrdinal,GlobalOrdinal,Node> & getSourceMap() const;
 
     //! Returns the Target Map used to construct this exporter.
-    const Map<LocalOrdinal,GlobalOrdinal> & getTargetMap() const;
+    const Map<LocalOrdinal,GlobalOrdinal,Node> & getTargetMap() const;
 
     Distributor & getDistributor() const;
 
     //! Assignment operator
-    Export<LocalOrdinal,GlobalOrdinal>& operator = (const Export<LocalOrdinal,GlobalOrdinal> & Source);
+    Export<LocalOrdinal,GlobalOrdinal,Node>& operator = (const Export<LocalOrdinal,GlobalOrdinal,Node> & Source);
 
     //@}
 
@@ -127,7 +128,7 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal> > ExportData_;
+    Teuchos::RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ExportData_;
 
     // subfunctions used by constructor
     //==============================================================================
@@ -138,11 +139,9 @@ namespace Tpetra {
     void setupRemote();
   };
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-    Export<LocalOrdinal,GlobalOrdinal>::Export(const Map<LocalOrdinal,GlobalOrdinal> & source, const Map<LocalOrdinal,GlobalOrdinal> & target)
-    : ExportData_()
-  {
-    ExportData_ = Teuchos::rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal>(source, target));
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::Export(const Map<LocalOrdinal,GlobalOrdinal,Node> & source, const Map<LocalOrdinal,GlobalOrdinal,Node> & target) {
+    ExportData_ = Teuchos::rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal,Node>(source, target));
     // call subfunctions
     setupSamePermuteExport();
     if(source.isDistributed()) {
@@ -150,93 +149,93 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal>::Export(const Export<LocalOrdinal,GlobalOrdinal> & rhs)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::Export(const Export<LocalOrdinal,GlobalOrdinal,Node> & rhs)
   : ExportData_(rhs.ExportData_)
   {}
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal>::~Export() 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>::~Export() 
   {}
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos_Ordinal Export<LocalOrdinal,GlobalOrdinal>::getNumSameIDs() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Export<LocalOrdinal,GlobalOrdinal,Node>::getNumSameIDs() const {
     return ExportData_->numSameIDs_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos_Ordinal Export<LocalOrdinal,GlobalOrdinal>::getNumPermuteIDs() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Export<LocalOrdinal,GlobalOrdinal,Node>::getNumPermuteIDs() const {
     return ExportData_->permuteFromLIDs_.size();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal> 
-  Export<LocalOrdinal,GlobalOrdinal>::getPermuteFromLIDs() const {
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getPermuteFromLIDs() const {
     return ExportData_->permuteFromLIDs_();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal>::getPermuteToLIDs() const {
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getPermuteToLIDs() const {
     return ExportData_->permuteToLIDs_();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos_Ordinal Export<LocalOrdinal,GlobalOrdinal>::getNumRemoteIDs() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Export<LocalOrdinal,GlobalOrdinal,Node>::getNumRemoteIDs() const {
     return ExportData_->remoteLIDs_.size();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal> 
-  Export<LocalOrdinal,GlobalOrdinal>::getRemoteLIDs() const {
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getRemoteLIDs() const {
     return ExportData_->remoteLIDs_();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Teuchos_Ordinal Export<LocalOrdinal,GlobalOrdinal>::getNumExportIDs() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Export<LocalOrdinal,GlobalOrdinal,Node>::getNumExportIDs() const {
     return ExportData_->exportLIDs_.size();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal> 
-  Export<LocalOrdinal,GlobalOrdinal>::getExportLIDs() const {
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getExportLIDs() const {
     return ExportData_->exportLIDs_();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const int> 
-  Export<LocalOrdinal,GlobalOrdinal>::getExportImageIDs() const {
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getExportImageIDs() const {
     return ExportData_->exportImageIDs_();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  const Map<LocalOrdinal,GlobalOrdinal> & 
-  Export<LocalOrdinal,GlobalOrdinal>::getSourceMap() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Map<LocalOrdinal,GlobalOrdinal,Node> & 
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getSourceMap() const {
     return ExportData_->source_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  const Map<LocalOrdinal,GlobalOrdinal> & 
-  Export<LocalOrdinal,GlobalOrdinal>::getTargetMap() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Map<LocalOrdinal,GlobalOrdinal,Node> & 
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getTargetMap() const {
     return ExportData_->target_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Distributor & 
-  Export<LocalOrdinal,GlobalOrdinal>::getDistributor() const {
+  Export<LocalOrdinal,GlobalOrdinal,Node>::getDistributor() const {
     return ExportData_->distributor_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Export<LocalOrdinal,GlobalOrdinal>& 
-  Export<LocalOrdinal,GlobalOrdinal>::operator=(const Export<LocalOrdinal,GlobalOrdinal> & Source) 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Export<LocalOrdinal,GlobalOrdinal,Node>& 
+  Export<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Export<LocalOrdinal,GlobalOrdinal,Node> & Source) 
   {
     ExportData_ = Source.ExportData_;
     return *this;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void Export<LocalOrdinal,GlobalOrdinal>::print(std::ostream& os) const 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Export<LocalOrdinal,GlobalOrdinal,Node>::print(std::ostream& os) const 
   {
     using std::endl;
     Teuchos::ArrayView<const LocalOrdinal> av;
@@ -276,11 +275,11 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void Export<LocalOrdinal,GlobalOrdinal>::setupSamePermuteExport() 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Export<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteExport() 
   {
-    const Map<LocalOrdinal,GlobalOrdinal> & source = getSourceMap();
-    const Map<LocalOrdinal,GlobalOrdinal> & target = getTargetMap();
+    const Map<LocalOrdinal,GlobalOrdinal,Node> & source = getSourceMap();
+    const Map<LocalOrdinal,GlobalOrdinal,Node> & target = getTargetMap();
     Teuchos::ArrayView<const GlobalOrdinal> sourceGIDs = source.getMyGlobalEntries();
     Teuchos::ArrayView<const GlobalOrdinal> targetGIDs = target.getMyGlobalEntries();
 
@@ -334,10 +333,10 @@ namespace Tpetra {
   }
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void Export<LocalOrdinal,GlobalOrdinal>::setupRemote() 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Export<LocalOrdinal,GlobalOrdinal,Node>::setupRemote() 
   {
-    const Map<LocalOrdinal,GlobalOrdinal> & target = getTargetMap();
+    const Map<LocalOrdinal,GlobalOrdinal,Node> & target = getTargetMap();
 
     // make sure export IDs are ordered by image
     // sort exportImageIDs_ in ascending order,

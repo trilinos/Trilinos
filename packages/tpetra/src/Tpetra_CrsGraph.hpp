@@ -44,9 +44,11 @@
 namespace Tpetra 
 {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
   template <class S, class LO, class GO, class N>
   class CrsMatrix;
+#endif
 
   //! \brief A class for constructing and using sparse compressed index graphs with row access.
   /*! This class is templated on \c LocalOrdinal and \c GlobalOrdinal. If the \c GlobalOrdinal is not specified, then 

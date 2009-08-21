@@ -50,13 +50,15 @@
 
 namespace Tpetra {
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal>::Map(
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::Map(
                         global_size_t numGlobalElements_in, 
                         GlobalOrdinal indexBase_in, 
-                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in, 
-                        LocalGlobal lOrG) : 
-    comm_(comm_in) {
+                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+                        LocalGlobal lOrG, 
+                        const Teuchos::RCP<Node> &node_in)
+  : comm_(comm_in), 
+    node_(node_in) {
     // distribute the elements across the nodes so that they are 
     // - non-overlapping
     // - contiguous
@@ -64,6 +66,7 @@ namespace Tpetra {
     using Teuchos::as;
     const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
     const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
+    const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
     const GlobalOrdinal G1 = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
 
     std::string errPrefix;
@@ -108,7 +111,7 @@ namespace Tpetra {
         }
       }
       // numGlobalElements is coherent, but is it valid? this comparison looks funny, but it avoids compiler warnings on unsigned types.
-      TEST_FOR_EXCEPTION(numGlobalElements_in < GST1 && numGlobalElements_in != GST0, std::invalid_argument,
+      TEST_FOR_EXCEPTION((numGlobalElements_in < GST1 && numGlobalElements_in != GST0) || numGlobalElements_in == GSTI, std::invalid_argument,
           errPrefix << "numGlobalElements (== " << rootNGE << ") must be >= 0.");
 
       indexBase_ = rootIB;
@@ -191,10 +194,12 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal>::Map(global_size_t numGlobalElements_in, size_t numLocalElements_in, GlobalOrdinal indexBase_in, 
-                                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in) :
-    comm_(comm_in) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::Map(global_size_t numGlobalElements_in, size_t numLocalElements_in, GlobalOrdinal indexBase_in, 
+                                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+                                       const Teuchos::RCP<Node> &node_in) 
+  : comm_(comm_in), 
+    node_(node_in) {
     // Distribute the elements across the nodes so that they are 
     // - non-overlapping
     // - contiguous
@@ -310,10 +315,12 @@ namespace Tpetra {
     setupDirectory();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal>::Map (global_size_t numGlobalElements_in, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, 
-                                        GlobalOrdinal indexBase_in, const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in) :
-    comm_(comm_in) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::Map (global_size_t numGlobalElements_in, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, GlobalOrdinal indexBase_in, 
+                                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+                                        const Teuchos::RCP<Node> &node_in)
+  : comm_(comm_in),
+    node_(node_in) {
     using Teuchos::as;
     // Distribute the elements across the nodes in an arbitrary user-specified manner
     // They are not necessarily contiguous or evenly distributed
@@ -440,57 +447,57 @@ namespace Tpetra {
     setupDirectory();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal>::~Map () 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::~Map () 
   {}
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  global_size_t Map<LocalOrdinal,GlobalOrdinal>::getGlobalNumElements() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumElements() const {
     return numGlobalElements_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  size_t Map<LocalOrdinal,GlobalOrdinal>::getLocalNumElements() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalNumElements() const {
     return numLocalElements_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getIndexBase() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const {
     return indexBase_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getMinLocalIndex() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinLocalIndex() const {
     return Teuchos::OrdinalTraits<LocalOrdinal>::zero();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getMaxLocalIndex() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxLocalIndex() const {
     return Teuchos::as<LocalOrdinal>(numLocalElements_-1);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getMinGlobalIndex() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinGlobalIndex() const {
     return minMyGID_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getMaxGlobalIndex() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxGlobalIndex() const {
     return maxMyGID_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getMinAllGlobalIndex() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinAllGlobalIndex() const {
     return minAllGID_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getMaxAllGlobalIndex() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxAllGlobalIndex() const {
     return maxAllGID_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getLocalIndex(GlobalOrdinal globalIndex) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalIndex(GlobalOrdinal globalIndex) const {
     if (contiguous_) {
       if (globalIndex < getMinGlobalIndex() || globalIndex > getMaxGlobalIndex()) {
         return Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
@@ -507,8 +514,8 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal>::getGlobalIndex(LocalOrdinal localIndex) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalIndex(LocalOrdinal localIndex) const {
     if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
       return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
     }
@@ -520,16 +527,16 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::isMyLocalIndex(LocalOrdinal localIndex) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isMyLocalIndex(LocalOrdinal localIndex) const {
     if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
       return false;
     }
     return true;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::isMyGlobalIndex(GlobalOrdinal globalIndex) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isMyGlobalIndex(GlobalOrdinal globalIndex) const {
     if (contiguous_) {
       return (getMinGlobalIndex() <= globalIndex) && (globalIndex <= getMaxGlobalIndex());
     }
@@ -540,13 +547,13 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::isContiguous() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isContiguous() const {
     return contiguous_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::isCompatible (const Map< LocalOrdinal,GlobalOrdinal> &map) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
     // check to make sure distribution is the same
     char iscompat_lcl;
     if (getGlobalNumElements() != map.getGlobalNumElements() ||
@@ -563,8 +570,8 @@ namespace Tpetra {
     return (iscompat_gbl == 1);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::isSameAs (const Map<LocalOrdinal,GlobalOrdinal> &map) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isSameAs(const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
     if (this == &map) {
       // we should assume that this is globally coherent
       // if they share the same underlying MapData, then they must be equivalent maps
@@ -627,9 +634,9 @@ namespace Tpetra {
     return (isSame_gbl == 1);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal>::getElementList() const {
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getElementList() const {
     // if so (and we have local entries), then fill it.
     if (lgMap_ == Teuchos::null && numLocalElements_ > 0) {
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -646,13 +653,13 @@ namespace Tpetra {
     return lgMap_();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::isDistributed() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
     return distributed_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  std::string Map<LocalOrdinal,GlobalOrdinal>::description() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string Map<LocalOrdinal,GlobalOrdinal,Node>::description() const {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
     oss << "{getGlobalNumElements() = " << getGlobalNumElements()
@@ -663,8 +670,8 @@ namespace Tpetra {
     return oss.str();
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void Map<LocalOrdinal,GlobalOrdinal>::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Map<LocalOrdinal,GlobalOrdinal,Node>::describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
     using std::endl;
     using std::setw;
     using Teuchos::VERB_DEFAULT;
@@ -735,8 +742,8 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  void Map<LocalOrdinal,GlobalOrdinal>::setupDirectory() {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory() {
     if (getGlobalNumElements() != Teuchos::OrdinalTraits<global_size_t>::zero()) {
       if (directory_ == Teuchos::null) {
         directory_ = Teuchos::rcp( new Directory<LocalOrdinal,GlobalOrdinal>(Teuchos::rcp(this,false)) );
@@ -744,8 +751,8 @@ namespace Tpetra {
     }
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  LookupStatus Map<LocalOrdinal,GlobalOrdinal>::getRemoteIndexList(
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList, 
                     const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
@@ -755,8 +762,8 @@ namespace Tpetra {
     return directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  LookupStatus Map<LocalOrdinal,GlobalOrdinal>::getRemoteIndexList(
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList) const {
     if (GIDList.size() == 0) return AllIDsPresent;
@@ -765,14 +772,20 @@ namespace Tpetra {
     return directory_->getDirectoryEntries(GIDList, imageIDList);
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::Comm<int> >
-  Map<LocalOrdinal,GlobalOrdinal>::getComm() const {
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getComm() const {
     return comm_;
   }
 
-  template <class LocalOrdinal,class GlobalOrdinal>
-  bool Map<LocalOrdinal,GlobalOrdinal>::checkIsDist() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getNode() const {
+    return node_;
+  }
+
+  template <class LocalOrdinal,class GlobalOrdinal, class Node>
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::checkIsDist() const {
     bool global = false;
     if(comm_->getSize() > 1) {
       char localRep = 0;
@@ -789,14 +802,14 @@ namespace Tpetra {
   }
 
   //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool operator== (const Map<LocalOrdinal,GlobalOrdinal> &map1, const Map<LocalOrdinal,GlobalOrdinal> &map2) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool operator== (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
     return map1.isSameAs(map2);
   }
 
   //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool operator!= (const Map<LocalOrdinal,GlobalOrdinal> &map1, const Map<LocalOrdinal,GlobalOrdinal> &map2) {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
     return !map1.isSameAs(map2);
   }
 

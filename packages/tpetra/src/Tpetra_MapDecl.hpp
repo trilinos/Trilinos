@@ -29,6 +29,7 @@
 #ifndef TPETRA_MAP_DECL_HPP
 #define TPETRA_MAP_DECL_HPP
 
+#include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_Comm.hpp>
@@ -38,15 +39,17 @@
 
 namespace Tpetra {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward dec
   template <class LO, class GO> class Directory;
+#endif
 
   //! A class for partitioning distributed objects.
   /*!
    This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
    The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
   */
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
+  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
 
   public:
@@ -59,7 +62,8 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, LocalGlobal lg=GloballyDistributed);
+    Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+        LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
@@ -70,7 +74,8 @@ namespace Tpetra {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+    Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
+        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
         
 
     /*! \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
@@ -80,8 +85,8 @@ namespace Tpetra {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, 
-        GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+    Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
+        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
     //! Map destructor. 
     ~Map();
@@ -165,10 +170,10 @@ namespace Tpetra {
     //@{ 
 
     //! Returns true if \c map is compatible with this Map.
-    bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal> &map) const;
+    bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //! Returns true if \c map is identical to this Map.
-    bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal> &map) const;
+    bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const;
 
     //@}
 
@@ -176,6 +181,9 @@ namespace Tpetra {
 
     //! Get the Comm object for this Map
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+
+    //! Get the Node object for this Map
+    Teuchos::RCP<Node> getNode() const;
 
     //@}
 
@@ -199,14 +207,18 @@ namespace Tpetra {
     bool checkIsDist() const;
 
 		//! Declared but not defined; do not use.
-		Map(const Map<LocalOrdinal,GlobalOrdinal> & source);
+		Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
 		//! Declared but not defined; do not use.
-		Map<LocalOrdinal,GlobalOrdinal>& operator=(const Map<LocalOrdinal,GlobalOrdinal> & source);
+		Map<LocalOrdinal,GlobalOrdinal,Node>& operator=(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
 
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
 		Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+
+    // Map doesn't need node yet, but it likely will later. In the meantime, passing a Node to Map means that we don't have to 
+    // pass a Node to downstream classes such as MultiVector, Vector, CrsGraph and CrsMatrix
+    Teuchos::RCP<Node> node_;
 
     // The based for global IDs in this Map.
 		GlobalOrdinal indexBase_;
@@ -232,12 +244,12 @@ namespace Tpetra {
   }; // Map class
 
   //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool operator== (const Map<LocalOrdinal,GlobalOrdinal> &map1, const Map<LocalOrdinal,GlobalOrdinal> &map2);
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool operator== (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
   //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-  template <class LocalOrdinal, class GlobalOrdinal>
-  bool operator!= (const Map<LocalOrdinal,GlobalOrdinal> &map1, const Map<LocalOrdinal,GlobalOrdinal> &map2);
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
 
 } // Tpetra namespace

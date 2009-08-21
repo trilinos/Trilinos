@@ -51,10 +51,10 @@ namespace Tpetra {
       //@{ 
 
       //! Constructor
-      MpiPlatform(Node &node);
+      MpiPlatform(Teuchos::RCP<Node> node);
 
       //! Constructor
-      MpiPlatform(Node &node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
+      MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
 
       //! Destructor
       ~MpiPlatform();
@@ -68,12 +68,12 @@ namespace Tpetra {
       Teuchos::RCP< Teuchos::Comm<int> > getComm() const;
 
       //! Get Get a node for parallel computation.
-      Node & getNode() const;
+      Teuchos::RCP<Node> getNode() const;
 
       //@}
 
     protected: 
-      Node &node_;
+      Teuchos::RCP<Node> node_;
 
     private:
       Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
@@ -81,14 +81,14 @@ namespace Tpetra {
   };
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(Node &node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
+  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
   : node_(node)
   {
     comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
   }
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(Node &node)
+  MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
   : node_(node)
   {
     comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
@@ -111,7 +111,7 @@ namespace Tpetra {
   }
 
   template <class Node>
-  Node & MpiPlatform<Node>::getNode() const 
+  Teuchos::RCP<Node> MpiPlatform<Node>::getNode() const 
   { return node_; }
 
 } // namespace Tpetra

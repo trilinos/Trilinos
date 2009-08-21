@@ -20,8 +20,10 @@ namespace {
   using Teuchos::Tuple;
   using Teuchos::tuple;
   using Tpetra::Map;
+  using Tpetra::global_size_t;
   using Tpetra::DefaultPlatform;
   using std::sort;
+  using std::find;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
@@ -79,10 +81,11 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    // bad constructor calls: (global entries, index base)
-    TEST_THROW(M map(-1,0,comm), std::invalid_argument);
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    // bad constructor calls: (num global elements, index base)
+    TEST_THROW(M map(GSTI,0,comm), std::invalid_argument);
     if (numImages > 1) {
-      TEST_THROW(M map((myImageID == 0 ? -1 : 0),0,comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
       TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
       TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
@@ -101,16 +104,11 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    // bad constructor calls: (global entries, local entries, index base, )
-    TEST_THROW(M map(-2,0,0,comm), std::invalid_argument);
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    // bad constructor calls: (num global elements, num local elements, index base)
     TEST_THROW(M map(1,0,0, comm),  std::invalid_argument);
-    TEST_THROW(M map(0,-1,0,comm), std::invalid_argument);
     if (numImages > 1) {
-      TEST_THROW(M map(numImages-2,(myImageID == 0 ? -1 : 1),0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -2 : -1),0,0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -2 :  0),0,0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -2 :  1),0,0,comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -1 :  1),0,0,comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? GSTI :  1),0,0,comm), std::invalid_argument);
       TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
       TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
     }
@@ -129,14 +127,12 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // bad constructor calls: (num global, entry list, index base)
-    TEST_THROW(M map(-2, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG not valid
     TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
       TEST_THROW(M map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
-      TEST_THROW(M map((myImageID == 0 ? -2 : -1),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -2 :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
-      TEST_THROW(M map((myImageID == 0 ? -1 :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
       TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
     // All procs fail if any proc fails 
@@ -154,6 +150,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // test isCompatible()
     // m1.isCompatible(m2) should be true if m1 and m2 have the same number of global entries and the same number of local entries on
     // corresponding nodes
@@ -166,11 +163,23 @@ namespace {
     // for each, also:
     // test symmetry   : m1.isCompatible(m2) <=> m2.isCompatible(m1)
     // test reflexivity: m1.isCompatible(m1), m2.isCompatible(m2)
-    TEST_IS_COMPATIBLE( M(-1,myImageID,0,comm), M(-1,myImageID,0,comm), true );
-    TEST_IS_COMPATIBLE( M(-1,myImageID+1,0,comm), M(-1,myImageID,0,comm), false);
+    {
+      M m1(GSTI,myImageID,0,comm), 
+        m2(GSTI,myImageID,0,comm);
+      TEST_IS_COMPATIBLE( m1, m2, true );
+    }
+    {
+      M m1(GSTI,myImageID+1,0,comm),
+        m2(GSTI,myImageID,0,comm);
+      TEST_IS_COMPATIBLE( m1, m2, false);
+    }
     if (numImages > 1) {
       // want different num local on every proc; map1:numLocal==[0,...,numImages-1], map2:numLocal==[1,...,numImages-1,0]
-      TEST_IS_COMPATIBLE( M(-1,myImageID,0,comm), M(-1,(myImageID+1)%numImages,0,comm), false);
+      {
+        M m1(GSTI,myImageID,0,comm),
+          m2(GSTI,(myImageID+1)%numImages,0,comm);
+        TEST_IS_COMPATIBLE( m1, m2, false);
+      }
       if (numImages > 2) {
         // want different num local on a subset of procs
         // image 0 and numImages-1 get map1:numLocal==[0,numImages-1] and map2:numLocal==[numImages-1,0], the others get numLocal==myImageID
@@ -186,7 +195,11 @@ namespace {
         else {
           mynl1 = mynl2 = myImageID;
         }
-        TEST_IS_COMPATIBLE( M(-1,mynl1,0,comm), M(-1,mynl2,0,comm), false);
+        {
+          M m1(GSTI,mynl1,0,comm),
+            m2(GSTI,mynl2,0,comm);
+          TEST_IS_COMPATIBLE( m1, m2, false);
+        }
       }
     }
   }
@@ -200,12 +213,29 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    TEST_IS_SAME_AS(M(-1,0,0,comm), M(-1,0,0,comm), true);
-    TEST_IS_SAME_AS(M(-1,myImageID,0,comm), M(-1,myImageID,0,comm), true);
-    TEST_IS_SAME_AS(M(-1,myImageID,0,comm), M(-1,myImageID+1,0,comm), false);
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    {
+      M m1(GSTI,0,0,comm),
+        m2(GSTI,0,0,comm);
+      TEST_IS_SAME_AS(m1, m2, true);
+    }
+    {
+      M m1(GSTI,myImageID,0,comm),
+        m2(GSTI,myImageID,0,comm);
+      TEST_IS_SAME_AS(m1, m2, true);
+    }
+    {
+      M m1(GSTI,myImageID,0,comm),
+        m2(GSTI,myImageID+1,0,comm);
+      TEST_IS_SAME_AS(m1, m2, false);
+    }
     if (numImages > 1) {
       // FINISH: test all multi-node scenarios, esp. divergent paths
-      TEST_IS_SAME_AS(M(-1,myImageID,0,comm), M(-1,myImageID+(myImageID==1?1:0),0,comm), false);
+      {
+        M m1(GSTI,myImageID,0,comm),
+          m2(GSTI,myImageID+(myImageID==1?1:0),0,comm);
+        TEST_IS_SAME_AS(m1, m2, false);
+      }
     }
   }
 
@@ -220,8 +250,8 @@ namespace {
     const int myImageID = comm->getRank();
     // create a contiguous uniform distributed map with two entries per node
     // this map will have the following entries:
-    Array<GO> myGlobal( tuple<GO>(0,1) );
-    Array<LO>  myLocal( tuple<LO>(myImageID*2, myImageID*2+1) );
+    Array<GO> myGlobal( tuple<GO>(myImageID*2, myImageID*2+1) );
+    Array<LO>  myLocal( tuple<LO>(0,1) );
 
     const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
@@ -250,7 +280,7 @@ namespace {
     TEST_EQUALITY_CONST( map.isMyLocalIndex(1), true );
     TEST_EQUALITY_CONST( map.isMyLocalIndex(2), false ); // just try a couple
     TEST_EQUALITY_CONST( map.isMyLocalIndex(3), false );
-    for (size_t i=0; i < numGlobalEntries; ++i) {
+    for (GO i=0; i < as<GO>(numGlobalEntries); ++i) {
       if (find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
         TEST_EQUALITY_CONST( map.isMyGlobalIndex(i), false );
       }

@@ -45,14 +45,15 @@ struct BlockedRangeWDPReducer {
 class TBBNode : public StandardNodeMemoryModel {
   public:
 
-    TBBNode(int numThreads=0) : alreadyInit_(false) {
-      init(numThreads);
+    TBBNode(int numThreads=-1) : alreadyInit_(false), tsi_(tbb::task_scheduler_init::deferred) {
+      if (numThreads >= 0) init(numThreads);
     }
 
     void init(int numThreads) {
       if (alreadyInit_) {
         tsi_.terminate();
       }
+      // 
       if (numThreads >= 1) {
         tsi_.initialize(numThreads);
       }
@@ -79,7 +80,7 @@ class TBBNode : public StandardNodeMemoryModel {
 
   private:
     bool alreadyInit_;
-    static tbb::task_scheduler_init tsi_;
+    tbb::task_scheduler_init tsi_;
 
 };
 

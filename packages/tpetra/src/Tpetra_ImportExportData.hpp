@@ -39,16 +39,16 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Import,Export, needed to prevent circular inclusions
-  template<class LocalOrdinal, class GlobalOrdinal> class Import;
-  template<class LocalOrdinal, class GlobalOrdinal> class Export;
+  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Import;
+  template<class LocalOrdinal, class GlobalOrdinal, class Node> class Export;
 #endif
 
-  template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
+  template<class LocalOrdinal, class GlobalOrdinal, class Node>
   class ImportExportData : public Teuchos::Object {
-    friend class Import<LocalOrdinal,GlobalOrdinal>;
-    friend class Export<LocalOrdinal,GlobalOrdinal>;
+    friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
+    friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
   public:
-    ImportExportData(const Map<LocalOrdinal,GlobalOrdinal> & source, const Map<LocalOrdinal,GlobalOrdinal> & target);
+    ImportExportData(const Map<LocalOrdinal,GlobalOrdinal,Node> & source, const Map<LocalOrdinal,GlobalOrdinal,Node> & target);
     ~ImportExportData();
 
   protected:
@@ -61,12 +61,11 @@ namespace Tpetra {
     Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
     Teuchos::ArrayRCP<int> exportImageIDs_;
 
-    // OTs
-    Teuchos_Ordinal numSameIDs_;
+    size_t numSameIDs_;
 
     // Maps
-    const Map<LocalOrdinal,GlobalOrdinal> source_;
-    const Map<LocalOrdinal,GlobalOrdinal> target_;
+    const Map<LocalOrdinal,GlobalOrdinal,Node> source_;
+    const Map<LocalOrdinal,GlobalOrdinal,Node> target_;
 
     // Comm, Distributor
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
@@ -74,14 +73,14 @@ namespace Tpetra {
 
   private:
     //! Copy constructor (declared but not defined, do not use)
-    ImportExportData(const ImportExportData<LocalOrdinal,GlobalOrdinal> &rhs);
+    ImportExportData(const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportExportData<LocalOrdinal,GlobalOrdinal> & operator = (ImportExportData<LocalOrdinal,GlobalOrdinal> const& rhs);
+    ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & operator = (ImportExportData<LocalOrdinal,GlobalOrdinal,Node> const& rhs);
   }; // class ImportExportData
 
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  ImportExportData<LocalOrdinal,GlobalOrdinal>::ImportExportData(const Map<LocalOrdinal,GlobalOrdinal> & source, const Map<LocalOrdinal,GlobalOrdinal> & target)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::ImportExportData(const Map<LocalOrdinal,GlobalOrdinal,Node> & source, const Map<LocalOrdinal,GlobalOrdinal,Node> & target)
   : numSameIDs_(0)
   , source_(source)
   , target_(target)
@@ -89,8 +88,8 @@ namespace Tpetra {
   , distributor_(comm_)
   {}
 
-  template <class LocalOrdinal, class GlobalOrdinal>
-  ImportExportData<LocalOrdinal,GlobalOrdinal>::~ImportExportData() 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::~ImportExportData() 
   {}
 
 } // namespace Tpetra

@@ -40,8 +40,8 @@
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, bool zeroOut) 
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node,map,1,zeroOut) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, bool zeroOut) 
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -50,13 +50,13 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, const Teuchos::ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node,map,values,values.size(),1) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, const Teuchos::ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> 
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(Node &node, const Map<LocalOrdinal,GlobalOrdinal> &map, Teuchos::ArrayRCP<Scalar> values)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node,map,values,map.getNumMyEntries(),Teuchos::tuple<Teuchos_Ordinal>(0)) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, Teuchos::ArrayRCP<Scalar> values)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,map.getNumLocalElements(),Teuchos::tuple<Teuchos_Ordinal>(0)) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -75,20 +75,20 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceMyValue(LocalOrdinal myRow, const Scalar &value) 
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) 
   {
-    this->replaceMyValue(myRow,0,value);
+    this->replaceLocalValue(myRow,0,value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoMyValue(LocalOrdinal myRow, const Scalar &value) 
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) 
   {
-    this->sumIntoMyValue(myRow,0,value);
+    this->sumIntoLocalValue(myRow,0,value);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
-    Teuchos_Ordinal lda = this->getMyLength();
+    Teuchos_Ordinal lda = this->getLocalLength();
     this->get1dCopy(A,lda);
   }
 
@@ -101,7 +101,7 @@ namespace Tpetra {
         << "this->getMap(): " << std::endl << this->getMap() 
         << "a.getMap(): " << std::endl << a.getMap() << std::endl);
 #else
-    TEST_FOR_EXCEPTION( this->getMyLength() != a.getMyLength(), std::runtime_error,
+    TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
     Scalar dot;
@@ -175,7 +175,7 @@ namespace Tpetra {
 //        << "this->getMap(): " << std::endl << this->getMap() 
 //        << "weights.getMap(): " << std::endl << weights.getMap() << std::endl);
 //#else
-//    TEST_FOR_EXCEPTION( this->getMyLength() != weights.getMyLength(), std::runtime_error,
+//    TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
 //        "Tpetra::Vector::normWeighted(): Vectors do not have the same local length.");
 //#endif
 //    Mag norm = DMVA::WeightedNorm(*this->lclMV_,*weights.lclMV_);
@@ -223,17 +223,17 @@ namespace Tpetra {
       for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
         if (myImageID == imageCtr) {
           if (vl != VERB_LOW) {
-            // VERB_MEDIUM and higher prints getMyLength()
-            out << "node " << setw(width) << myImageID << ": local length=" << this->getMyLength() << endl;
+            // VERB_MEDIUM and higher prints getLocalLength()
+            out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
             if (vl != VERB_MEDIUM) {
               // VERB_HIGH and higher prints isConstantStride() and stride()
-              if (vl == VERB_EXTREME && this->getMyLength() > 0) {
-                Node &node = this->lclMV_.getNode();
-                Teuchos::ArrayRCP<const Scalar> myview = node.template viewBuffer<Scalar>(
-                                                              this->getMyLength(), 
-                                                              this->lclMV_.getValues() );
+              if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
+                Teuchos::RCP<Node> node = this->lclMV_.getNode();
+                Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
+                                                               this->getLocalLength(), 
+                                                               this->lclMV_.getValues() );
                 // VERB_EXTREME prints values
-                for (Teuchos_Ordinal i=0; i<this->getMyLength(); ++i) {
+                for (Teuchos_Ordinal i=0; i<this->getLocalLength(); ++i) {
                   out << setw(width) << this->getMap().getGlobalIndex(i) 
                       << ": "
                       << myview[i] << endl;

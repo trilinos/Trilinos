@@ -47,10 +47,14 @@ namespace {
   using Kokkos::DefaultArithmetic;
   using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
-  SerialNode snode;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::null;
+
+  RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOS_TBB
   using Kokkos::TBBNode;
-  TBBNode tnode;
+  RCP<TBBNode> tnode;
 #endif
 
   int N = 1000;
@@ -63,18 +67,24 @@ namespace {
   }
 
   template <class Node>
-  Node &getNode() {
+  RCP<Node> getNode() {
     assert(false);
   }
 
   template <>
-  SerialNode& getNode<SerialNode>() {
+  RCP<SerialNode> getNode<SerialNode>() {
+    if (snode == null) {
+      snode = rcp(new SerialNode());
+    }
     return snode;
   }
 
 #ifdef HAVE_KOKKOS_TBB
   template <>
-  TBBNode& getNode<TBBNode>() {
+  RCP<TBBNode> getNode<TBBNode>() {
+    if (tnode == null) {
+      tnode = rcp(new TBBNode(0));
+    }
     return tnode;
   }
 #endif
@@ -85,11 +95,11 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, Scale, Scalar, Ordinal, Node )
   {
-    Node &node = getNode<Node>();
+    RCP<Node> node = getNode<Node>();
     typedef MultiVector<Scalar,Node> MV;
     const int numVecs = 5;
     MV MV1(node), MV2(node), vec(node);
-    ArrayRCP<Scalar> buf = node.template allocBuffer<Scalar>(2*numVecs*N);
+    ArrayRCP<Scalar> buf = node->template allocBuffer<Scalar>(2*numVecs*N);
     MV1.initializeValues(N,numVecs,buf          ,N);
     MV2.initializeValues(N,numVecs,buf+numVecs*N,N);
     vec.initializeValues(N,1,buf,N);                    // MV1 collocated with vec

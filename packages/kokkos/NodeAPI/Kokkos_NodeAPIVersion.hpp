@@ -4,7 +4,7 @@
 #include <string>
 
 namespace Kokkos {
-  std::string Kokkos_NodeAPIVersion();
+  std::string NodeAPIVersion();
 }
 
 #endif

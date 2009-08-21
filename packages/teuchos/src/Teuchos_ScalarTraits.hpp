@@ -306,6 +306,38 @@ struct ScalarTraits<long int>
   static inline long int pow(long int x, long int y) { return (long int) std::pow((double)x,(double)y); }
 };
 
+template<>
+struct ScalarTraits<size_t>
+{
+  typedef size_t magnitudeType;
+  typedef size_t halfPrecision;
+  typedef size_t doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(size_t a) { return a; }
+  static inline size_t zero()  { return 0; }
+  static inline size_t one()   { return 1; }
+  static inline size_t conjugate(size_t x) { return x; }
+  static inline size_t real(size_t x) { return x; }
+  static inline size_t imag(size_t) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline size_t random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "size_t"; }
+  static inline size_t squareroot(size_t x) { return (size_t) std::sqrt((double) x); }
+  static inline size_t pow(size_t x, size_t y) { return (size_t) std::pow((double)x,(double)y); }
+};
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
 struct ScalarTraits<long long int>

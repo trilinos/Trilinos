@@ -4,8 +4,8 @@ Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> Kokkos::DefaultNode::node_ = 
 
 namespace Kokkos {
 
-  DefaultNode::DefaultNodeType &DefaultNode::getDefaultNode() {
-    if (!node_.get()) {
+  Teuchos::RCP<DefaultNode::DefaultNodeType> DefaultNode::getDefaultNode() {
+    if (node_ == Teuchos::null) {
 #ifdef HAVE_KOKKOS_THREADPOOL
       node_ = Teuchos::rcp<TPINode>(new TPINode(0));
 #else
@@ -16,7 +16,7 @@ namespace Kokkos {
 #  endif
 #endif
     }
-    return *node_;
+    return node_;
   }
 
 }

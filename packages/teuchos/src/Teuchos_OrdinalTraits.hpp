@@ -37,7 +37,7 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
-#include <limits.h>
+#include <limits>
 
 /*! \struct Teuchos::OrdinalTraits
   \brief This structure defines some basic traits for the ordinal field type.
@@ -97,7 +97,7 @@ struct OrdinalTraits<char> {
   static inline char zero()                   {return(0);}
   static inline char one()                    {return(1);}
   static inline char invalid()                {return(-1);}
-  static inline char max()                    {return(CHAR_MAX);}
+  static inline char max()                    {return(std::numeric_limits<char>::max());}
   static inline std::string name()            {return("char");}
 };
 
@@ -107,7 +107,7 @@ struct OrdinalTraits<short int> {
   static inline short int zero()              {return(0);}
   static inline short int one()               {return(1);}
   static inline short int invalid()           {return(-1);}
-  static inline short int max()               {return(SHRT_MAX);}
+  static inline short int max()               {return(std::numeric_limits<short int>::max());}
   static inline std::string name()            {return("short int");}
 };
 
@@ -117,7 +117,7 @@ struct OrdinalTraits<int> {
   static inline int zero()                   {return(0);}
   static inline int one()                    {return(1);}
   static inline int invalid()                {return(-1);}
-  static inline int max()                    {return(INT_MAX);}
+  static inline int max()                    {return(std::numeric_limits<int>::max());}
   static inline std::string name()           {return("int");}
 };
 
@@ -127,8 +127,18 @@ struct OrdinalTraits<long int> {
   static inline long int zero()              {return(static_cast<long int>(0));}
   static inline long int one()               {return(static_cast<long int>(1));}
   static inline long int invalid()           {return(static_cast<long int>(-1));}
-  static inline long int max()               {return(LONG_MAX);}
+  static inline long int max()               {return(std::numeric_limits<long int>::max());}
   static inline std::string name()           {return("long int");}
+};
+
+template<>
+struct OrdinalTraits<size_t> {
+  static const bool hasMachineParameters = false;
+  static inline size_t zero()              {return(static_cast<size_t>(0));}
+  static inline size_t one()               {return(static_cast<size_t>(1));}
+  static inline size_t invalid()           {return(std::numeric_limits<size_t>::is_signed ? -1 : std::numeric_limits<size_t>::max());}
+  static inline size_t max()               {return(std::numeric_limits<size_t>::is_signed ? std::numeric_limits<size_t>::max() : std::numeric_limits<size_t>::max()-1);}
+  static inline std::string name()         {return("size_t");}
 };
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT

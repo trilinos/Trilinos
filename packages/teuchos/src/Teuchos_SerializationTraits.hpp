@@ -212,6 +212,11 @@ class SerializationTraits<Ordinal,long int>
 {};
 
 template<typename Ordinal>
+class SerializationTraits<Ordinal,size_t>
+  : public DirectSerializationTraits<Ordinal,size_t>
+{};
+
+template<typename Ordinal>
 class SerializationTraits<Ordinal,float>
   : public DirectSerializationTraits<Ordinal,float>
 {};

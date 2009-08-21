@@ -18,6 +18,8 @@ namespace {
   using Teuchos::tuple;
   using Teuchos::ArrayRCP;
   using Teuchos::Tuple;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
 
   int N = 1000;
 
@@ -40,13 +42,13 @@ namespace {
     typedef ArrayRCP<const char>  cbuf;
     typedef ArrayRCP<      char> ncbuf;
     Teuchos::ArrayRCP<int> x;
-    NODE &node = DefaultNode::getDefaultNode();
+    RCP<NODE> node = DefaultNode::getDefaultNode();
     ReadyBufferHelper<NODE> rbh(node);
-    out << "Default Node Type: " << Teuchos::typeName(node) << std::endl;
+    out << "Default Node Type: " << Teuchos::typeName(*node) << std::endl;
     int result;
     {
       TimeMonitor localTimer(tAlloc);
-      x = node.allocBuffer<int>(N);
+      x = node->allocBuffer<int>(N);
     }
     // set x[i] = 1, i=0:N-1
     {
@@ -55,7 +57,7 @@ namespace {
       rbh.begin();
       wdp.x = rbh.addNonConstBuffer(x);
       rbh.end();
-      node.parallel_for(0,N,wdp);
+      node->parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
@@ -64,7 +66,7 @@ namespace {
       rbh.begin();
       wdp.x = rbh.addConstBuffer<int>(x);
       rbh.end();
-      result = node.parallel_reduce(0,N,wdp);
+      result = node->parallel_reduce(0,N,wdp);
     }
     int expectedResult = (int)(N);
     TEST_EQUALITY(result, expectedResult);

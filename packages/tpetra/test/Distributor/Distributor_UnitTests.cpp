@@ -66,7 +66,7 @@ namespace {
     const int numImages = comm->getSize();
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Teuchos_Ordinal numImports = 0;
+    size_t numImports = 0;
     // fill exportImageIDs with {0,0, -1,-1, 1,1, 2,2, ... numImages-1,numImages-1}
     // two sends to each image, contiguous, in order
     // note the -1s after 0,0; these should not hurt contiguity or be reflected in numImports
@@ -82,22 +82,22 @@ namespace {
     }
     // create from contiguous sends
     Distributor distributor(comm);
-    distributor.createFromSends(exportImageIDs, numImports);
+    numImports = distributor.createFromSends(exportImageIDs);
     // tests
-    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
-    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), numImages-1);
-    TEST_EQUALITY(distributor.getNumReceives(), numImages-1);
+    TEST_EQUALITY(numImports, as<size_t>(2*numImages));
+    TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
+    TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numImages > 1 ? 2 : 0))
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), 2*numImages);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
     {
       ArrayView<const int> imgFrom(distributor.getImagesFrom());
       ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
+      ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
       TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
       TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
@@ -120,15 +120,15 @@ namespace {
     // each node i sends to node i+1
     // for the last node, this results in an invalid node id, which should throw an exception on 
     // every node
-    Teuchos_Ordinal numImports = 0;
+    size_t numImports = 0;
     // create from sends with bad node IDs
     {
       Distributor distributor(comm);
-      TEST_THROW( distributor.createFromSends( tuple<int>(myImageID+1), numImports), std::runtime_error );
+      TEST_THROW( numImports = distributor.createFromSends( tuple<int>(myImageID+1)), std::runtime_error );
     }
     {
       Distributor distributor(comm);
-      TEST_THROW( distributor.createFromSends( tuple<int>(0,myImageID+1,0), numImports), std::runtime_error );
+      TEST_THROW( numImports = distributor.createFromSends( tuple<int>(0,myImageID+1,0)), std::runtime_error );
     }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -149,7 +149,7 @@ namespace {
     // two exports to each image, including myself
     // on even imageIDs, send data contig
     // on odd imageIDs, send data non-contig
-    Teuchos_Ordinal numImports = 0;
+    size_t numImports = 0;
     Array<int> exportImageIDs(0);
     exportImageIDs.reserve(numImages*2);
     if (even) {
@@ -171,24 +171,24 @@ namespace {
     // create from sends, contiguous and non-contiguous
     Distributor distributor(comm);
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs, numImports), std::runtime_error );
+    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
 #else
-    TEST_NOTHROW( distributor.createFromSends(exportImageIDs, numImports) );
+    TEST_NOTHROW( numImports = distributor.createFromSends(exportImageIDs) );
     // tests
-    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
-    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(numImports, as<size_t>(2*numImages));
+    TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
+    TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(2*numImages));
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
     {
       ArrayView<const int> imgFrom(distributor.getImagesFrom());
       ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
+      ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
       TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
       TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
@@ -214,8 +214,8 @@ namespace {
     // partition world into red/black (according to imageID even/odd)
     // even is black, odd is red
     bool black = ((myImageID % 2) == 0);
-    Teuchos_Ordinal numInMyPartition = 0;
-    Teuchos_Ordinal numImports = 0;
+    size_t numInMyPartition = 0;
+    size_t numImports = 0;
     // fill exportImageIDs with all images from partition
     Array<int> exportImageIDs(0);
     if (black) {
@@ -234,10 +234,10 @@ namespace {
     }
     // create from contiguous sends
     Distributor distributor(comm);
-    distributor.createFromSends(exportImageIDs, numImports);
+    numImports = distributor.createFromSends(exportImageIDs);
     // tests
     TEST_EQUALITY(numImports, numInMyPartition);
-    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
+    TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), numInMyPartition-1);
     TEST_EQUALITY(distributor.getNumReceives(), numInMyPartition-1);
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numInMyPartition > 1 ? 1 : 0));
@@ -248,13 +248,13 @@ namespace {
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),numInMyPartition);
-      TEST_EQUALITY(lenTo.size()  ,numInMyPartition);
-      for (int i=0; i<numInMyPartition; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Teuchos_Ordinal>(1) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Teuchos_Ordinal>(1) );
+      ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
+      ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
+      TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numInMyPartition));
+      TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numInMyPartition));
+      for (size_t i=0; i<numInMyPartition; ++i) {
+        TEST_EQUALITY_CONST( lenFrom[i], 1);
+        TEST_EQUALITY_CONST( lenTo[i],   1);
       }
     }
     // All procs fail if any proc fails
@@ -273,7 +273,7 @@ namespace {
     if (numImages < 2) return;
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Teuchos_Ordinal numImports = 0;
+    size_t numImports = 0;
     // fill exportImageIDs with {0,1,...,myImageID-1,myImageID+1,...,numImages-1}
     // one send to each image, contiguous, in order, but not to myself
     Array<int> exportImageIDs(0);
@@ -286,22 +286,22 @@ namespace {
     }
     // create from contiguous sends
     Distributor distributor(comm);
-    distributor.createFromSends(exportImageIDs, numImports);
+    numImports = distributor.createFromSends(exportImageIDs);
     // tests
-    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getSelfMessage(), false);
-    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(numImports, as<size_t>(numImages-1));
+    TEST_EQUALITY_CONST(distributor.hasSelfMessage(), false);
+    TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 1);
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(numImages-1));
     {
       ArrayView<const int> imgFrom(distributor.getImagesFrom());
       ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      ArrayView<const size_t> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const size_t> lenTo(distributor.getLengthsTo());
       TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages-1));
       TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages-1));
       for (int i=0; i<numImages-1; ++i) {
@@ -324,7 +324,7 @@ namespace {
     if (numImages < 3) return;
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Teuchos_Ordinal numImports = 0;
+    size_t numImports = 0;
     // fill exportImageIDs with {0,0,0, 1,1,1, 2,2,2, ... numImages-1,numImages-1,numImages-1}
     // three sends to each image, out of order (even first, then odd)
     // only test if numImages > 2
@@ -344,22 +344,22 @@ namespace {
     }
     // create from contiguous sends
     Distributor distributor(comm);
-    distributor.createFromSends(exportImageIDs, numImports);
+    numImports = distributor.createFromSends(exportImageIDs);
     // tests
-    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(3*numImages));
-    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(numImports, as<size_t>(3*numImages));
+    TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
+    TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 3);
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(3*numImages));
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(3*numImages));
     {
       ArrayView<const int> imgFrom(distributor.getImagesFrom());
       ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
+      ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
       TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
       TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
@@ -382,7 +382,7 @@ namespace {
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
-    Teuchos_Ordinal numImports = 0;
+    size_t numImports = 0;
     // put some -1s in there
     // fill exportImageIDs with {0, 1, 2, ... numImages-1,
     //                           -1,
@@ -399,29 +399,29 @@ namespace {
     // create from non-contiguous sends
     Distributor distributor(comm);
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs, numImports), std::runtime_error );
+    TEST_THROW( distributor.createFromSends(exportImageIDs), std::runtime_error );
 #else
-    distributor.createFromSends(exportImageIDs, numImports);
+    numImports = distributor.createFromSends(exportImageIDs);
     // tests
-    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
-    TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(numImports, as<size_t>(2*numImages));
+    TEST_EQUALITY_CONST(distributor.hasSelfMessage(), true);
+    TEST_EQUALITY(distributor.getNumSends(), as<size_t>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<size_t>(numImages-1));
     if (numImages == 1) {
       TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 0);
     }
     else {
       TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
     }
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(2*numImages));
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
     {
       ArrayView<const int> imgFrom(distributor.getImagesFrom());
       ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      ArrayView<const size_t> lenFrom = distributor.getLengthsFrom();
+      ArrayView<const size_t> lenTo   = distributor.getLengthsTo();
       TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
       TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
@@ -445,28 +445,28 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // send data to each image, including myself
-    const Teuchos_Ordinal numExportIDs = numImages; 
-    Teuchos_Ordinal numRemoteIDs = 0;
+    const size_t numExportIDs = numImages; 
+    size_t numRemoteIDs = 0;
     // fill exportImageIDs with {0, -1, 1, -1, 2, -1, ... numImages-1}
     // on root node only, interlace node IDs with invalid nodes, corresponding to untouched data in import/export buffers
     Array<int> exportImageIDs; 
     if (myImageID == 0) {
       exportImageIDs.reserve(2*numExportIDs-1);
       exportImageIDs.push_back(0);
-      for(int i=1; i < numExportIDs; ++i) {
+      for(int i=1; i < as<int>(numExportIDs); ++i) {
         exportImageIDs.push_back(-1);
         exportImageIDs.push_back(i);
       }
     } 
     else { 
       exportImageIDs.reserve(numExportIDs);
-      for(int i=0; i < numExportIDs; ++i) {
+      for(int i=0; i < as<int>(numExportIDs); ++i) {
         exportImageIDs.push_back(i);
       }
     }
     Distributor distributor(comm);
-    distributor.createFromSends(exportImageIDs, numRemoteIDs);
-    TEST_EQUALITY(numRemoteIDs, numImages);
+    numRemoteIDs = distributor.createFromSends(exportImageIDs);
+    TEST_EQUALITY(numRemoteIDs, as<size_t>(numImages));
     // generate global random data set: each image sends 1 packet to each image
     // we need numImages*numImages "unique" values (we don't want redundant data allowing false positives)
     // root node generates all values, sends them to the others.
@@ -530,7 +530,7 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // send data to each image, including myself
-    Teuchos_Ordinal numRemoteIDs = 0;
+    size_t numRemoteIDs = 0;
     // exportImageIDs = {0, 1, 2, ..., numImages-1, 0, 1, 2, ..., numImages-1}
     //
     // on root node only, put some invalid nodes in the middle, corresponding to untouched data in import/export buffers
@@ -559,10 +559,10 @@ namespace {
     }
     Distributor distributor(comm);
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
-    TEST_THROW( distributor.createFromSends(exportImageIDs, numRemoteIDs), std::runtime_error );
+    TEST_THROW( numRemoteIDs = distributor.createFromSends(exportImageIDs), std::runtime_error );
 #else
-    distributor.createFromSends(exportImageIDs, numRemoteIDs);
-    TEST_EQUALITY(numRemoteIDs, 2*numImages);
+    numRemoteIDs = distributor.createFromSends(exportImageIDs);
+    TEST_EQUALITY(numRemoteIDs, as<size_t>(2*numImages));
     // generate global random data set: each image sends 2 packets to each image
     // we need 2*numImages*numImages "unique" values (we don't want redundant data allowing false positives)
     // root node generates all values, sends them to the others.

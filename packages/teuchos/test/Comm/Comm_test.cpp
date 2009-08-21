@@ -448,6 +448,9 @@ bool masterTestComm(
   result = testComm<Ordinal,int>(*comm,out);
   if(!result) success = false;
   
+  result = testComm<Ordinal,size_t>(*comm,out);
+  if(!result) success = false;
+  
   result = testComm<Ordinal,float>(*comm,out);
   if(!result) success = false;
   
