@@ -29,6 +29,7 @@
 // @HEADER
 
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_BLAS.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
@@ -46,7 +47,8 @@ StieltjesPCEBasis(
   pce_vals(),
   phi_vals(),
   Cijk(),
-  use_pce_quad_points(use_pce_quad_points_)
+  use_pce_quad_points(use_pce_quad_points_),
+  fromStieltjesMat(p+1,pce_basis.size())
 {
   // Evaluate PCE at quad points
   const std::vector< std::vector<value_type> >& quad_points =
@@ -64,6 +66,17 @@ StieltjesPCEBasis(
   
   // Compute coefficients via Stieltjes
   stieltjes(0, p+1, pce_weights, pce_vals, alpha, beta, norms, phi_vals);
+
+  ordinal_type sz = pce_basis.size();
+  fromStieltjesMat.putScalar(0.0);
+  for (ordinal_type i=0; i<=p; i++) {
+    for (ordinal_type j=0; j<sz; j++) {
+      for (ordinal_type k=0; k<nqp; k++)
+	fromStieltjesMat(i,j) += 
+	  pce_weights[k]*phi_vals[k][i]*basis_values[k][j];
+      fromStieltjesMat(i,j) /= pce_basis.norm_squared(j);
+    }
+  }
 
   /*
   std::cout << "pce_weights = ";
@@ -433,6 +446,8 @@ stieltjes(ordinal_type nstart,
   }
   for (ordinal_type i=start; i<nfinish; i++) {
     integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
+    //std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
+    //	      << std::endl;
     TEST_FOR_EXCEPTION(val1 < 1.0e-14, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::stieltjes():  "
 		     << " Polynomial is zero!  Try increasing number of quadrature points");
@@ -483,4 +498,15 @@ evaluateRecurrence(ordinal_type k,
     for (ordinal_type i=0; i<np; i++)
       values[i][k] = 
 	(points[i] - a[k-1])*values[i][k-1] - b[k-1]*values[i][k-2];
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
+transformCoeffsFromStieltjes(const value_type *in, value_type *out) const
+{
+  Teuchos::BLAS<ordinal_type, value_type> blas;
+  blas.GEMV(Teuchos::TRANS, fromStieltjesMat.numRows(), 
+	    fromStieltjesMat.numCols(), 1.0, fromStieltjesMat.values(), 
+	    fromStieltjesMat.numRows(), in, 1, 0.0, out, 1);
 }

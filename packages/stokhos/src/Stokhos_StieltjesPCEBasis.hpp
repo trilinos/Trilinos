@@ -38,6 +38,8 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Quadrature.hpp"
 
+#include "Teuchos_SerialDenseMatrix.hpp"
+
 namespace Stokhos {
 
   template <typename ordinal_type, typename value_type>
@@ -122,6 +124,8 @@ namespace Stokhos {
     //! Get quadrature point factor
     virtual value_type getQuadPointFactor() const;
 
+    void transformCoeffsFromStieltjes(const value_type *in, value_type *out) const;
+
   protected:
 
     //! Compute 3-term recurrence using Stieljtes procedure
@@ -189,6 +193,9 @@ namespace Stokhos {
 
     //! Use underlying pce's quadrature data
     bool use_pce_quad_points;
+
+    //! Matrix mapping coefficients in Stieltjes basis back to original basis
+    Teuchos::SerialDenseMatrix<ordinal_type, value_type> fromStieltjesMat;
 
   }; // class StieltjesPCEBasis
 
