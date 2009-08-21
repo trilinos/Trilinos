@@ -300,6 +300,10 @@ inline int fei::Matrix_Impl<T>::globalAssemble()
   }
 
   globalAssembleCalled_ = true;
+
+  if (haveBlockMatrix()) {
+    return( snl_fei::BlockMatrixTraits<T>::globalAssemble(matrix_.get()) );
+  }
   return( fei::MatrixTraits<T>::globalAssemble(matrix_.get()) );
 }
 
@@ -952,7 +956,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
   snl_fei::PointBlockMap* pointBlockMap = vecSpace()->getPointBlockMap();
 
-  if (sumInto) {
+  if (sumInto && numProcs() == 1) {
     std::vector<int> temp((numRows+numCols)*2);
     int* tempPtr = &temp[0];
     int* blkRows = tempPtr;

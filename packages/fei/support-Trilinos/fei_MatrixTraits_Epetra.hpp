@@ -288,10 +288,14 @@ namespace snl_fei {
         int* nc_cols = const_cast<int*>(cols);
         double** nc_values = const_cast<double**>(values);
         int err = mat->BeginSumIntoGlobalValues(row,numCols,nc_cols);
-        if (err != 0) return(err);
+        if (err != 0) {
+          return(err);
+        }
         for(int i=0; i<numCols; ++i) {
           err = mat->SubmitBlockEntry(nc_values[i], LDAs[i], rowDim, colDims[i]);
-          if (err != 0) return(err);
+          if (err != 0) {
+            return(err);
+          }
         }
         err = mat->EndSubmitEntries();
 
@@ -322,8 +326,6 @@ namespace snl_fei {
 
     static int globalAssemble(Epetra_VbrMatrix* mat)
     {
-      const Epetra_Map& map = mat->RowMatrixRowMap();
-      (void)map;
       return( mat->FillComplete() );
     }
   };//struct BlockMatrixTraits<Epetra_VbrMatrix>

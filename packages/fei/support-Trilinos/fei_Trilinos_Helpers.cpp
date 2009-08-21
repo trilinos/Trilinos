@@ -206,6 +206,7 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 
       tmpmat.reset(new fei::Matrix_Impl<Epetra_VbrMatrix>(epetraMatrix,
                                                    matrixGraph, localSize));
+      zero_Epetra_VbrMatrix(epetraMatrix.get());
     }
     else {
       fei::SharedPtr<Epetra_CrsMatrix>
@@ -455,6 +456,48 @@ void get_Epetra_pointers(fei::SharedPtr<fei::Matrix> feiA,
     opA = crsA;
   }
 }
+
+int zero_Epetra_VbrMatrix(Epetra_VbrMatrix* mat)
+{
+  const Epetra_CrsGraph& crsgraph = mat->Graph();
+  const Epetra_BlockMap& rowmap = crsgraph.RowMap();
+  const Epetra_BlockMap& colmap = crsgraph.ColMap();
+  int maxBlkRowSize = mat->GlobalMaxRowDim();
+  int maxBlkColSize = mat->GlobalMaxColDim();
+  std::vector<double> zeros(maxBlkRowSize*maxBlkColSize, 0);
+  int numMyRows = rowmap.NumMyElements();
+  int* myRows = rowmap.MyGlobalElements();
+  for(int i=0; i<numMyRows; ++i) {
+    int row = myRows[i];
+    int rowlength = 0;
+    int* colindicesView = NULL;
+    int localrow = rowmap.LID(row);
+    int err = crsgraph.ExtractMyRowView(localrow, rowlength, colindicesView);
+    if (err != 0) {
+      return err;
+    }
+    err = mat->BeginReplaceMyValues(localrow, rowlength, colindicesView);
+    if (err != 0) {
+      return err;
+    }
+    int blkRowSize = rowmap.ElementSize(localrow);
+    for(int j=0; j<rowlength; ++j) {
+      int blkColSize = colmap.ElementSize(colindicesView[j]);
+      err = mat->SubmitBlockEntry(&zeros[0], maxBlkRowSize,
+                            blkRowSize, blkColSize);
+      if (err != 0) {
+        return err;
+      }
+    }
+    err = mat->EndSubmitEntries();
+    if (err != 0) {
+      return err;
+    }
+  }
+
+  return 0;
+}
+
 #endif //HAVE_FEI_EPETRA
 
 }//namespace Trilinos_Helpers

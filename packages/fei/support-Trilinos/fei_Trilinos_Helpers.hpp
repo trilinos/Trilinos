@@ -101,6 +101,10 @@ namespace Trilinos_Helpers {
                            Epetra_Operator*& opA,
                            Epetra_MultiVector*& x,
                            Epetra_MultiVector*& b);
+
+  /** Fill the VbrMatrix with zeros. */
+  int zero_Epetra_VbrMatrix(Epetra_VbrMatrix* mat);
+
 #endif // HAVE_FEI_EPETRA
 
 }//namespace Trilinos_Helpers

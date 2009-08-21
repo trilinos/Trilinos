@@ -114,7 +114,7 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
     factory = fei::create_fei_Factory(comm, "Trilinos");
     factory_created = true;
   }
-  catch(std::runtime_error& ex) {}
+  catch(...) {}
 
   if (!factory_created) {
     FEI_COUT << "failed to create Trilinos factory."<<FEI_ENDL;
@@ -211,7 +211,7 @@ void test_Matrix_unit4(MPI_Comm comm, int numProcs, int localProc)
   try {
     factory = fei::create_fei_Factory(comm, "Trilinos");
   }
-  catch(std::runtime_error& exc2) {
+  catch(...) {
     FEI_COUT << "Trilinos not available."<<FEI_ENDL;
     return;
   }
