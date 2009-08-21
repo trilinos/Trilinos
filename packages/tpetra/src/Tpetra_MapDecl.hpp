@@ -41,7 +41,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward dec
-  template <class LO, class GO> class Directory;
+  template <class LO, class GO, class N> class Directory;
 #endif
 
   //! A class for partitioning distributed objects.
@@ -101,7 +101,7 @@ namespace Tpetra {
     inline global_size_t getGlobalNumElements() const;
 
     //! Returns the number of elements belonging to the calling node.
-    inline size_t getLocalNumElements() const;
+    inline size_t getNodeNumElements() const;
 
     //! Returns the index base for this Map.
     inline GlobalOrdinal getIndexBase() const;
@@ -150,13 +150,13 @@ namespace Tpetra {
                                     const Teuchos::ArrayView<                int> & nodeIDList) const;
 
     //! Return a list of the global indices owned by this node.
-    Teuchos::ArrayView<const GlobalOrdinal> getElementList() const;
+    Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
-    bool isMyLocalIndex(LocalOrdinal localIndex) const;
+    bool isNodeLocalElement(LocalOrdinal localIndex) const;
 
     //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
-    bool isMyGlobalIndex(GlobalOrdinal globalIndex) const;
+    bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
 
     //! Returns true if this Map is distributed contiguously; returns false otherwise.
     bool isContiguous() const;
@@ -180,10 +180,10 @@ namespace Tpetra {
     //@{ Misc. 
 
     //! Get the Comm object for this Map
-    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
     //! Get the Node object for this Map
-    Teuchos::RCP<Node> getNode() const;
+    const Teuchos::RCP<Node> & getNode() const;
 
     //@}
 
@@ -238,8 +238,9 @@ namespace Tpetra {
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
     //! A mapping from global IDs to local IDs.
     std::map<GlobalOrdinal, LocalOrdinal> glMap_;
-    //! A Directory for looking up nodes for this Map.
-    Teuchos::RCP< Directory<LocalOrdinal,GlobalOrdinal> > directory_;
+    //! A Directory for looking up nodes for this Map. This directory has an rcp(this,false) and is therefore not allowed to persist beyond
+    //! the lifetime of this Map. Do not under any circumstance pass this outside of the Map.
+    Teuchos::RCP< Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
 

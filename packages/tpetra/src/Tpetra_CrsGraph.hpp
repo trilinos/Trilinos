@@ -543,7 +543,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowView(): local indices do not exist.");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
     size_t rnnz = RNNZ(LocalRow);
     if (indicesAreAllocated() == false || rnnz == 0) {
@@ -588,7 +588,7 @@ namespace Tpetra
   { 
     TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowViewNonConst(): local indices do not exist.");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowViewNonConst(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
     size_t rnnz = RNNZ(LocalRow);
     if (indicesAreAllocated() == false || rnnz == 0) {
@@ -634,7 +634,7 @@ namespace Tpetra
     // can only do this if we have local indices
     TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowCopy(): local indices do not exist.");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
     size_t rnnz = RNNZ(LocalRow);
     TEST_FOR_EXCEPTION(indices.size() < rnnz, std::runtime_error,
@@ -800,7 +800,7 @@ namespace Tpetra
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal>::getNumEntriesForLocalRow(LocalOrdinal localRow) const
   {
     using Teuchos::OrdinalTraits;
-    if (!getRowMap().isMyLocalIndex(localRow)) return OrdinalTraits<size_t>::invalid();
+    if (!getRowMap().isNodeLocalElement(localRow)) return OrdinalTraits<size_t>::invalid();
     return RNNZ(localRow);
   }
 
@@ -823,7 +823,7 @@ namespace Tpetra
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal>::numAllocatedEntriesForLocalRow(LocalOrdinal localRow) const
   {
     using Teuchos::OrdinalTraits;
-    if (!getRowMap().isMyLocalIndex(localRow)) return OrdinalTraits<size_t>::invalid();
+    if (!getRowMap().isNodeLocalElement(localRow)) return OrdinalTraits<size_t>::invalid();
     return RNumAlloc(localRow);
   }
 
@@ -846,7 +846,7 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::insertLocalIndices(): graph indices are global; use insertGlobalIndices().");
     TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::insertLocalIndices(): cannot insert local indices without a column map.");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(lrow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(lrow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::insertLocalIndices(): row does not belong to this node.");
     if (indicesAreAllocated() == false) {
       bool local = true;
@@ -885,7 +885,7 @@ namespace Tpetra
     dstind = dstbeg + rowNE;
     while (srcind != indices.end()) 
     {
-      if (getColMap().isMyLocalIndex(*srcind)) {
+      if (getColMap().isNodeLocalElement(*srcind)) {
         (*dstind++) = (*srcind);
       }
       ++srcind;
@@ -942,7 +942,7 @@ namespace Tpetra
         typename ArrayView<const GlobalOrdinal>::iterator srcind = indices.begin();
         while (srcind != indices.end()) 
         {
-          if (getColMap().isMyGlobalIndex(*srcind)) {
+          if (getColMap().isNodeGlobalElement(*srcind)) {
             (*dstind++) = (*srcind);
           }
           ++srcind;

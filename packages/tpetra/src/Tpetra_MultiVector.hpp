@@ -46,7 +46,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
-        const Map<LocalOrdinal,GlobalOrdinal,Node> &map, 
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
         size_t NumVectors, 
         bool zeroOut  /* default is true */
   ) 
@@ -91,7 +91,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(
-                        const Map<LocalOrdinal,GlobalOrdinal,Node> &map, 
+                        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
                         const Teuchos::ArrayView<const Scalar> &A, size_t LDA, 
                         size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map.getNode()) {
@@ -122,7 +122,7 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, 
                                                                    const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, 
                                                                    size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map.getNode()) {
@@ -151,7 +151,7 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map,
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
               Teuchos::ArrayRCP<Scalar> data, size_t LDA, Teuchos::ArrayView<const size_t> WhichVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map.getNode()), whichVectors_(WhichVectors) {
     const size_t myLen = getLocalLength();
@@ -176,7 +176,7 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map,
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
                 Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors)
   : DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map), lclMV_(map.getNode()) {
     TEST_FOR_EXCEPTION(NumVectors < 1, std::invalid_argument,
@@ -203,7 +203,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalLength() const {
-    return this->getMap().getLocalNumElements();
+    return this->getMap().getNodeNumElements();
   }
 
 

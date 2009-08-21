@@ -29,6 +29,7 @@
 #ifndef TPETRA_DIRECTORY_DECL_HPP
 #define TPETRA_DIRECTORY_DECL_HPP
 
+#include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include "Tpetra_MapDecl.hpp"
@@ -49,7 +50,7 @@ namespace Tpetra {
       type, if omitted, defaults to the \c LocalOrdinal type.
   */
 
-  template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
+  template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Directory : public Teuchos::Describable {
   public:
 
@@ -57,7 +58,7 @@ namespace Tpetra {
     //@{ 
 
     //! Constructor
-    Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &map);
+    Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Destructor.
     ~Directory();
@@ -108,16 +109,16 @@ namespace Tpetra {
     //@}
     
   private:
-    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > map_, directoryMap_;
+    Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_, directoryMap_;
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     std::vector<GlobalOrdinal> allMinGIDs_; // size comm_->getSize()+1; entry i contains minGID for ith node, except last entry contains maxGID in the directory
     std::vector<int> nodeIDs_;
     std::vector<LocalOrdinal> LIDs_;
 
-    Directory(const Directory<LocalOrdinal,GlobalOrdinal> &directory);
+    Directory(const Directory<LocalOrdinal,GlobalOrdinal,Node> &directory);
 
     //! declared but not defined, to prevent default implementation, do not use
-    Directory<LocalOrdinal,GlobalOrdinal> & operator = (const Directory<LocalOrdinal,GlobalOrdinal> &source);
+    Directory<LocalOrdinal,GlobalOrdinal,Node> & operator = (const Directory<LocalOrdinal,GlobalOrdinal,Node> &source);
 
     // common code for both versions of getDirectoryEntries
     LookupStatus getEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 

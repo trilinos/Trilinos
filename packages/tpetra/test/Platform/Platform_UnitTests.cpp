@@ -65,7 +65,7 @@ namespace {
     RCP<PlatformType> platform = getPlatform<PlatformType>();
     platform->setObjectLabel("not the default label");
     // get the comm for this platform
-    RCP<Comm<int> > comm = platform->getComm();
+    RCP<const Comm<int> > comm = platform->getComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     TEST_EQUALITY( myImageID < numImages, true );

@@ -109,7 +109,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    Map<Ordinal> map(INVALID,numLocal,0,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,0,comm) );
     MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
     TEST_EQUALITY( mvec.getLocalLength(), numLocal );
@@ -137,7 +137,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 13;
-    Map<Ordinal> map(INVALID,numLocal,0,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,0,comm) );
     TEST_THROW(MV mvec(map,0), std::invalid_argument);
     TEST_THROW(MV mvec(map,-1), std::invalid_argument);
   }
@@ -158,7 +158,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
@@ -190,7 +190,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVecs = 7;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
     Tuple<size_t,4> inView1 = tuple<size_t>(1,4,3,2);
@@ -383,7 +383,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create Map
-    Map<LO,GO> map(INVALID,3,0,comm);
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,3,0,comm) );
     // test labeling
     const string lbl("mvecA");
     MV mvecA(map,2);
@@ -435,8 +435,8 @@ namespace {
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      Map<Ordinal> map3l(3,0,LocallyReplicated,comm),
-                   map2l(2,0,LocallyReplicated,comm);
+      RCP<Map<Ordinal,Ordinal,Node> > map3l = rcp( Map<Ordinal,Ordinal,Node>(3,0,LocallyReplicated,comm) ),
+                                      map2l = rcp( Map<Ordinal,Ordinal,Node>(2,0,LocallyReplicated,comm) );
       MV mvecA(map3l,2),
          mvecB(map2l,3),
          mvecD(map2l,2);
@@ -454,10 +454,10 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      Map<Ordinal> map3n(INVALID,3,0,comm),
-                   map2n(INVALID,2,0,comm),
-                   map2l(2,0,LocallyReplicated,comm),
-                   map3l(3,0,LocallyReplicated,comm);
+      RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,3,0,comm) ),
+                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,0,comm) ),
+                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(2,0,LocallyReplicated,comm) ),
+                                      map3l = rcp( new Map<Ordinal,Ordinal,Node>(3,0,LocallyReplicated,comm) );
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2lx2(map2l,2),
@@ -474,10 +474,10 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      Map<Ordinal> map3n(INVALID,3,0,comm),
-                   map2n(INVALID,2,0,comm),
-                   map2l(2,0,LocallyReplicated,comm),
-                   map3l(3,0,LocallyReplicated,comm);
+      RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,3,0,comm) ),
+                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,0,comm) ),
+                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(2,0,LocallyReplicated,comm) ),
+                                      map3l = rcp( new Map<Ordinal,Ordinal,Node>(3,0,LocallyReplicated,comm) );
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2x3(map2l,3),
@@ -503,10 +503,10 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    Map<Ordinal> map3n(INVALID,3,0,comm),
-                 map2n(INVALID,2,0,comm),
-                 lmap3(3,0,LocallyReplicated,comm),
-                 lmap2(2,0,LocallyReplicated,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,3,0,comm) ),
+                                    map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,0,comm) ),
+                                    lmap3 = rcp( new Map<Ordinal,Ordinal,Node>(3,0,LocallyReplicated,comm) ),
+                                    lmap2 = rcp( new Map<Ordinal,Ordinal,Node>(2,0,LocallyReplicated,comm) );
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     const Mag    M0 = ScalarTraits<Mag>::zero();
@@ -639,8 +639,8 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     // multivector has two vectors, each proc having two values per vector
-    Map<Ordinal> map2(INVALID,numLocal  ,indexBase,comm),
-                 map3(INVALID,numLocal+1,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map2 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal  ,indexBase,comm) ),
+                                    map3 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal+1,indexBase,comm) );
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
     Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const Scalar>(Teuchos::null));
@@ -666,8 +666,8 @@ namespace {
     // create a Map
     const Ordinal indexBase = 0;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    Map<Ordinal> map1(INVALID,1,indexBase,comm),
-                 map2(INVALID,2,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map1 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,1,indexBase,comm) ),
+                                    map2 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,indexBase,comm) );
     {
       MV mv12(map1,1),
          mv21(map2,1),
@@ -713,7 +713,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     const bool zeroOut = true;
     MV mvec1(map,numVectors,zeroOut),
        mvec2(map,numVectors,zeroOut);
@@ -784,7 +784,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 7;
     const size_t numVectors = 13;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     MV A(map,numVectors,false);
     {
       A.randomize();
@@ -997,7 +997,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 2;
     const size_t LDA = 2;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -1083,7 +1083,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 23;
     const size_t numVectors = 11;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     // Use random multivector A
     // Set B = A * 2 manually.
     // Therefore, if C = 2*A, then C == B
@@ -1198,7 +1198,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    Map<Ordinal> map(INVALID,2,0,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,0,comm) );
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2}
     // values(0,2) = {1, 1} = [1]
@@ -1284,7 +1284,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     {
       // create random MV
       MV mvorig(map,numVectors);
@@ -1350,7 +1350,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    Map<Ordinal> map(INVALID,2,0,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,0,comm) );
     // create random MV
     V morig(map);
     morig.randomize();
@@ -1389,7 +1389,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    Map<Ordinal> map(INVALID,100,0,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,100,0,comm) );
     // create two random Vector objects
     V v1(map), v2(map);
     v1.randomize();
@@ -1432,7 +1432,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 10;
     const size_t numVectors = 6;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     // create random MV
     MV mv(map,numVectors);
     mv.randomize();
@@ -1483,7 +1483,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1526,7 +1526,7 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 3;
     const size_t LDA = 3;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -1574,7 +1574,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1625,7 +1625,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1662,7 +1662,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     MV mvec(map,numVectors);
     // randomize the multivector
     mvec.randomize();
@@ -1697,7 +1697,7 @@ namespace {
     const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) );
     MV    mvec(map,numVectors),
        weights(map,numVectors),
        weight1(map,1);
@@ -1746,8 +1746,8 @@ namespace {
     const Ordinal indexBase = 0;
     const Scalar rnd = ScalarTraits<Scalar>::random();
     // two maps: one has two entires per node, the other disagrees on node 0
-    Map<Ordinal> map1(INVALID,2,indexBase,comm),
-                 map2(INVALID,(myImageID == 0 ? 1 : 2),indexBase,comm);
+    RCP<Map<Ordinal,Ordinal,Node> > map1 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,2,indexBase,comm) ),
+                                    map2 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,(myImageID == 0 ? 1 : 2) ),indexBase,comm);
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns

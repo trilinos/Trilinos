@@ -65,7 +65,7 @@ namespace Tpetra {
       //@{ 
 
       //! Comm Instance
-      Teuchos::RCP< Teuchos::Comm<int> > getComm() const;
+      Teuchos::RCP< const Teuchos::Comm<int> > getComm() const;
 
       //! Get Get a node for parallel computation.
       Teuchos::RCP<Node> getNode() const;
@@ -104,7 +104,7 @@ namespace Tpetra {
   }
 
   template <class Node>
-  Teuchos::RCP< Teuchos::Comm<int> > 
+  Teuchos::RCP< const Teuchos::Comm<int> > 
   MpiPlatform<Node>::getComm() const 
   {
     return comm_;

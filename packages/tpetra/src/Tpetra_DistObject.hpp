@@ -112,7 +112,7 @@ namespace Tpetra {
     inline bool isDistributed() const;
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    inline Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const;
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getMap() const;
 
     //@}
 
@@ -211,12 +211,12 @@ namespace Tpetra {
   }; // class DistObject
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const Map<LocalOrdinal,GlobalOrdinal,Node>& map)
+  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map)
   : map_(map)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source)
+  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & source)
   : map_(source.map_)
   {}
 
@@ -255,9 +255,10 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A,
-                                            const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, CombineMode CM)
-  {
+  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport(
+                                                const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A,
+                                                const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
+                                                CombineMode CM) {
     TEST_FOR_EXCEPTION( getMap() != exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
     TEST_FOR_EXCEPTION( A.getMap() != exporter.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = exporter.getNumSameIDs();
@@ -270,9 +271,9 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A,
-                                            const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM)
-  {
+  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport(
+                                                const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A,
+                                                const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) {
     TEST_FOR_EXCEPTION( getMap() != importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
     TEST_FOR_EXCEPTION( A.getMap() != importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
     size_t numSameIDs = importer.getNumSameIDs();
@@ -285,14 +286,13 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const 
-  {
+  bool DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
     return map_.isDistributed();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Map<LocalOrdinal,GlobalOrdinal,Node> & DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getMap() const 
-  {
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
+  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getMap() const {
     return map_;
   }
 

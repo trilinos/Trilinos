@@ -35,7 +35,7 @@ namespace {
     DefaultPlatform::DefaultPlatformType &platform = DefaultPlatform::getDefaultPlatform();
     platform.setObjectLabel("not the default label");
     // get the comm for this platform
-    RCP<Comm<int> > comm = platform.getComm();
+    RCP<const Comm<int> > comm = platform.getComm();
     TEST_EQUALITY_CONST( comm != Teuchos::null, true );
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();

@@ -634,7 +634,7 @@ namespace Tpetra
   size_t CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getNumEntriesForLocalRow(LocalOrdinal localRow) const
   { 
     using Teuchos::OrdinalTraits;
-    if (!getRowMap().isMyLocalIndex(localRow)) return OrdinalTraits<size_t>::invalid();
+    if (!getRowMap().isNodeLocalElement(localRow)) return OrdinalTraits<size_t>::invalid();
     return graph_.RNNZ(localRow);
   }
 
@@ -686,14 +686,14 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::insertMyValues(): matrix was constructed with static graph; cannot insert new entries.");
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         Teuchos::typeName(*this) << "::insertMyValues(): values.size() must equal indices.size().");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(localRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(localRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::insertMyValues(): row does not belong to this node.");
     Teuchos::Array<LocalOrdinal> finds;
     Teuchos::Array<Scalar>       fvals;
     // use column map to filter the entries:
     const Tpetra::Map<LocalOrdinal,GlobalOrdinal> &cmap = getColMap();
     for (size_t i=0; i<indices.size(); ++i) {
-      if (cmap.isMyLocalIndex(indices[i])) {
+      if (cmap.isNodeLocalElement(indices[i])) {
         finds.push_back(indices[i]);
         fvals.push_back(values[i]);
       }
@@ -755,7 +755,7 @@ namespace Tpetra
     if (hasColMap() && myRow != LOT::invalid()) {
       const Tpetra::Map<LocalOrdinal,GlobalOrdinal> &cmap = getColMap();
       for (size_t i=0; i<indices.size(); ++i) {
-        if (cmap.isMyGlobalIndex(indices[i])) {
+        if (cmap.isNodeGlobalElement(indices[i])) {
           finds.push_back(indices[i]);
           fvals.push_back(values[i]);
         }
@@ -914,7 +914,7 @@ namespace Tpetra
                                                                      size_t &numEntries) const
   {
     numEntries = getNumEntriesForLocalRow(LocalRow);
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,...): specified row (==" << LocalRow << ") is not valid on this node.");
     TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
         Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
@@ -992,7 +992,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::extractMyRowView(): local indices do not exist; call extractGlobalRowVie().");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::extractMyRowView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
     size_t rnnz = getNumEntriesForLocalRow(LocalRow);
     graph_.extractMyRowView(LocalRow,indices);
@@ -1045,7 +1045,7 @@ namespace Tpetra
   {
     TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowView(): local indices do not exist; call getGlobalRowView().");
-    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
     size_t rnnz = getNumEntriesForLocalRow(LocalRow);
     graph_.getLocalRowView(LocalRow,indices);
@@ -1776,7 +1776,7 @@ namespace Tpetra
     for (size_t r=0; r < nlrs; ++r) {
       *ov = Teuchos::ScalarTraits<Scalar>::zero();
       GlobalOrdinal rgid = getRowMap().getGlobalIndex(r);
-      if (getColMap().isMyGlobalIndex(rgid)) {
+      if (getColMap().isNodeGlobalElement(rgid)) {
         LocalOrdinal rlid = getColMap().getLocalIndex(rgid);
         graph_.getLocalRowView(r,cinds);
         i = cinds.begin();

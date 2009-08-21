@@ -41,8 +41,8 @@
 
 namespace Tpetra {
 
-  template<class LocalOrdinal, class GlobalOrdinal>
-  Directory<LocalOrdinal,GlobalOrdinal>::Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &map_in)
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Directory<LocalOrdinal,GlobalOrdinal,Node>::Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map_in)
   : map_(map_in) {
     // initialize Comm instance
     comm_ = map_->getComm();
@@ -68,19 +68,19 @@ namespace Tpetra {
     }
   }
 
-  template<class LocalOrdinal, class GlobalOrdinal>
-  Directory<LocalOrdinal,GlobalOrdinal>::~Directory() {}
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Directory<LocalOrdinal,GlobalOrdinal,Node>::~Directory() {}
 
-  template<class LocalOrdinal, class GlobalOrdinal>
-  LookupStatus Directory<LocalOrdinal,GlobalOrdinal>::getDirectoryEntries(
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LookupStatus Directory<LocalOrdinal,GlobalOrdinal,Node>::getDirectoryEntries(
               const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
               const Teuchos::ArrayView<int> &nodeIDs) const {
     const bool computeLIDs = false;
     return getEntries(globalIDs, nodeIDs, Teuchos::null, computeLIDs);
   }
 
-  template<class LocalOrdinal, class GlobalOrdinal>
-  LookupStatus Directory<LocalOrdinal,GlobalOrdinal>::getDirectoryEntries(
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LookupStatus Directory<LocalOrdinal,GlobalOrdinal,Node>::getDirectoryEntries(
               const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
               const Teuchos::ArrayView<int> &nodeIDs, 
               const Teuchos::ArrayView<LocalOrdinal> &localIDs) const {
@@ -88,8 +88,8 @@ namespace Tpetra {
     return getEntries(globalIDs, nodeIDs, localIDs, computeLIDs);
   }
 
-  template<class LocalOrdinal, class GlobalOrdinal>
-  LookupStatus Directory<LocalOrdinal,GlobalOrdinal>::getEntries(
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LookupStatus Directory<LocalOrdinal,GlobalOrdinal,Node>::getEntries(
               const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
               const Teuchos::ArrayView<int> &nodeIDs, 
               const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
@@ -120,7 +120,7 @@ namespace Tpetra {
       typename Teuchos::ArrayView<const GlobalOrdinal>::iterator gid;
       for (gid = globalIDs.begin(); gid != globalIDs.end(); ++gid) 
       {
-        if (map_->isMyGlobalIndex(*gid)) {
+        if (map_->isNodeGlobalElement(*gid)) {
           *imgptr++ = myImageID;
           if (computeLIDs) {
             *lidptr++ = map_->getLocalIndex(*gid);
@@ -255,8 +255,8 @@ namespace Tpetra {
 
 
   // directory setup for non-contiguous Map
-  template<class LocalOrdinal, class GlobalOrdinal>
-  void Directory<LocalOrdinal,GlobalOrdinal>::generateDirectory() {
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Directory<LocalOrdinal,GlobalOrdinal,Node>::generateDirectory() {
     using Teuchos::as;
     const GlobalOrdinal GONE     = Teuchos::OrdinalTraits<GlobalOrdinal>::one();
     const LocalOrdinal  LINVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
@@ -270,9 +270,9 @@ namespace Tpetra {
 
     // Obviously, we can't afford to store the whole directory on each node
     // Create a uniform linear map to contain the directory to split up the storage among all nodes
-    directoryMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal>(numGlobalEntries, minAllGID, comm_));
+    directoryMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalEntries, minAllGID, comm_));
 
-    const size_t dir_numMyEntries = directoryMap_->getLocalNumElements();
+    const size_t dir_numMyEntries = directoryMap_->getNodeNumElements();
 
     // Allocate imageID List and LID List.  Initialize to -1s.
     // Initialize values to -1 in case the user global element list does
@@ -283,9 +283,9 @@ namespace Tpetra {
 
     // Get list of nodeIDs owning the directory entries for the Map GIDs
     const int myImageID = comm_->getRank();
-    const size_t numMyEntries = map_->getLocalNumElements();
+    const size_t numMyEntries = map_->getNodeNumElements();
     Teuchos::Array<int> sendImageIDs(numMyEntries);
-    Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = map_->getElementList();
+    Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = map_->getNodeElementList();
     // a "true" return here indicates that one of myGlobalEntries (from map_) is not on the map directoryMap_, indicating that 
     // it lies outside of the range [minAllGID,maxAllGID] (from map_). this means something is wrong with map_.
     TEST_FOR_EXCEPTION( directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs) == true, std::logic_error,

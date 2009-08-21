@@ -79,7 +79,7 @@
 
 #ifdef __cplusplus
 
-#ifdef _MSC_VER 
+#if defined(_MSC_VER) || defined(__APPLE__)
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
 

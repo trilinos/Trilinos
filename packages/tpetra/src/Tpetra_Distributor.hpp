@@ -164,7 +164,7 @@ namespace Tpetra {
     /*! This method creates the reverse Distributor the first time the function
         is called.
     */
-    Teuchos::RCP<Distributor> getReverse() const;
+    const Teuchos::RCP<Distributor> & getReverse() const;
 
     //@}
 
@@ -369,8 +369,8 @@ namespace Tpetra {
   Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const 
   { return lengthsTo_; }
 
-  Teuchos::RCP<Distributor> Distributor::getReverse() const
-  {
+  const Teuchos::RCP<Distributor> & 
+  Distributor::getReverse() const {
     if (reverseDistributor_ == Teuchos::null) { 
       // need to create reverse distributor
       createReverseDistributor();
@@ -435,13 +435,10 @@ namespace Tpetra {
 
 
   template <class Packet>
-  void Distributor::doPosts(
-      const Teuchos::ArrayView<const Packet>& exports,
-      size_t numPackets,
-      const Teuchos::ArrayRCP<Packet>& imports) 
-  {
+  void Distributor::doPosts(const Teuchos::ArrayView<const Packet>& exports,
+                            size_t numPackets,
+                            const Teuchos::ArrayRCP<Packet>& imports) {
     using Teuchos::ArrayRCP;
-
     // start of actual doPosts function
     const int myImageID = comm_->getRank();
     size_t selfReceiveOffset = 0;
@@ -559,8 +556,7 @@ namespace Tpetra {
   }
 
 
-  void Distributor::doWaits() 
-  {
+  void Distributor::doWaits() {
     if (getNumReceives() > 0) {
       Teuchos::waitAll(*comm_,requests_());
       // Requests should all be null, clear them

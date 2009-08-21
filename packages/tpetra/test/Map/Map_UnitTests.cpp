@@ -260,7 +260,7 @@ namespace {
     TEST_EQUALITY_CONST(map.isContiguous(), true);
     TEST_EQUALITY_CONST(map.isDistributed(), numImages > 1);
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
-    TEST_EQUALITY_CONST(map.getLocalNumElements(), 2);
+    TEST_EQUALITY_CONST(map.getNodeNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), indexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
@@ -275,17 +275,17 @@ namespace {
     TEST_EQUALITY( map.getLocalIndex(numGlobalEntries), OrdinalTraits<LO>::invalid() );
     TEST_EQUALITY( map.getGlobalIndex(2),               OrdinalTraits<GO>::invalid() );
     TEST_EQUALITY( map.getLocalIndex(numGlobalEntries-1), myImageID == numImages-1 ? 1 : OrdinalTraits<LO>::invalid() );
-    TEST_COMPARE_ARRAYS( map.getElementList(), myGlobal);
-    TEST_EQUALITY_CONST( map.isMyLocalIndex(0), true );
-    TEST_EQUALITY_CONST( map.isMyLocalIndex(1), true );
-    TEST_EQUALITY_CONST( map.isMyLocalIndex(2), false ); // just try a couple
-    TEST_EQUALITY_CONST( map.isMyLocalIndex(3), false );
+    TEST_COMPARE_ARRAYS( map.getNodeElementList(), myGlobal);
+    TEST_EQUALITY_CONST( map.isNodeLocalElement(0), true );
+    TEST_EQUALITY_CONST( map.isNodeLocalElement(1), true );
+    TEST_EQUALITY_CONST( map.isNodeLocalElement(2), false ); // just try a couple
+    TEST_EQUALITY_CONST( map.isNodeLocalElement(3), false );
     for (GO i=0; i < as<GO>(numGlobalEntries); ++i) {
       if (find(myGlobal.begin(),myGlobal.end(),i) == myGlobal.end()) {
-        TEST_EQUALITY_CONST( map.isMyGlobalIndex(i), false );
+        TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), false );
       }
       else {
-        TEST_EQUALITY_CONST( map.isMyGlobalIndex(i), true );
+        TEST_EQUALITY_CONST( map.isNodeGlobalElement(i), true );
       }
     }
     // All procs fail if any proc fails 

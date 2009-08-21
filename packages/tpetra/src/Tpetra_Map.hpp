@@ -196,8 +196,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::Map(global_size_t numGlobalElements_in, size_t numLocalElements_in, GlobalOrdinal indexBase_in, 
-                                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-                                       const Teuchos::RCP<Node> &node_in) 
+                                            const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+                                            const Teuchos::RCP<Node> &node_in) 
   : comm_(comm_in), 
     node_(node_in) {
     // Distribute the elements across the nodes so that they are 
@@ -317,8 +317,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::Map (global_size_t numGlobalElements_in, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, GlobalOrdinal indexBase_in, 
-                                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
-                                        const Teuchos::RCP<Node> &node_in)
+                                             const Teuchos::RCP<const Teuchos::Comm<int> > &comm_in,
+                                             const Teuchos::RCP<Node> &node_in)
   : comm_(comm_in),
     node_(node_in) {
     using Teuchos::as;
@@ -457,7 +457,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalNumElements() const {
+  size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumElements() const {
     return numLocalElements_;
   }
 
@@ -528,7 +528,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isMyLocalIndex(LocalOrdinal localIndex) const {
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isNodeLocalElement(LocalOrdinal localIndex) const {
     if (localIndex < getMinLocalIndex() || localIndex > getMaxLocalIndex()) {
       return false;
     }
@@ -536,7 +536,7 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isMyGlobalIndex(GlobalOrdinal globalIndex) const {
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isNodeGlobalElement(GlobalOrdinal globalIndex) const {
     if (contiguous_) {
       return (getMinGlobalIndex() <= globalIndex) && (globalIndex <= getMaxGlobalIndex());
     }
@@ -557,7 +557,7 @@ namespace Tpetra {
     // check to make sure distribution is the same
     char iscompat_lcl;
     if (getGlobalNumElements() != map.getGlobalNumElements() ||
-         getLocalNumElements() != map.getLocalNumElements()) {
+          getNodeNumElements() != map.getNodeNumElements()) {
       // NOT compat on this node
       iscompat_lcl = 0;
     }
@@ -596,7 +596,7 @@ namespace Tpetra {
     char isSame_lcl = 1;
 
     // check number of entries owned by this node
-    if (getLocalNumElements() != map.getLocalNumElements()) {
+    if (getNodeNumElements() != map.getNodeNumElements()) {
       isSame_lcl = 0;
     }
 
@@ -617,11 +617,11 @@ namespace Tpetra {
          * We know the ranges have equal length, because they have the same number of 
          * local entries. 
          * However, we only know that lgMap_ has been filled for the Map that is not
-         * contiguous (one is potentially contiguous.) Calling getElementList()
+         * contiguous (one is potentially contiguous.) Calling getNodeElementList()
          * will create it. */
         Teuchos::ArrayView<const GlobalOrdinal> ge1, ge2;
-        ge1 =     getElementList();
-        ge2 = map.getElementList();
+        ge1 =     getNodeElementList();
+        ge2 = map.getNodeElementList();
         if (!std::equal(ge1.begin(),ge1.end(),ge2.begin())) {
           isSame_lcl = 0;
         }
@@ -636,13 +636,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getElementList() const {
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList() const {
     // if so (and we have local entries), then fill it.
     if (lgMap_ == Teuchos::null && numLocalElements_ > 0) {
 #ifdef HAVE_TEUCHOS_DEBUG
       // this would have been set up for a non-contiguous map
       TEST_FOR_EXCEPTION(contiguous_ != true, std::logic_error,
-          "Tpetra::Map::getElementList: logic error. Please notify the Tpetra team.");
+          "Tpetra::Map::getNodeElementList: logic error. Please notify the Tpetra team.");
 #endif
       lgMap_ = Teuchos::arcp<GlobalOrdinal>(numLocalElements_);
       Teuchos::ArrayRCP<GlobalOrdinal> lgptr = lgMap_;
@@ -663,7 +663,7 @@ namespace Tpetra {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
     oss << "{getGlobalNumElements() = " << getGlobalNumElements()
-        << ", getLocalNumElements() = " << getLocalNumElements()
+        << ", getNodeNumElements() = " << getNodeNumElements()
         << ", isContiguous() = " << isContiguous()
         << ", isDistributed() = " << isDistributed()
         << "}";
@@ -681,8 +681,8 @@ namespace Tpetra {
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
 
-    const size_t nME = getLocalNumElements();
-    Teuchos::ArrayView<const GlobalOrdinal> myEntries = getElementList();
+    const size_t nME = getNodeNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> myEntries = getNodeElementList();
     int myImageID = comm_->getRank();
     int numImages = comm_->getSize();
 
@@ -773,13 +773,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Teuchos::Comm<int> >
+  const Teuchos::RCP<const Teuchos::Comm<int> > &
   Map<LocalOrdinal,GlobalOrdinal,Node>::getComm() const {
     return comm_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Node>
+  const Teuchos::RCP<Node> &
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNode() const {
     return node_;
   }
