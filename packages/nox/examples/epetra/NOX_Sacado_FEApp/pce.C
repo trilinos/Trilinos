@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
   bool do_pce = true;
   bool do_dakota = false;
-  SG_METHOD SG_Method = SG_NI;
+  SG_METHOD SG_Method = SG_AD;
 
   int MyPID;
 
