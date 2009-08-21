@@ -62,6 +62,8 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
+    \li       The outer normal \s n in the definition of DoF functionals is the \s non-normalized
+              outer normal to the triangle sides. 
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim

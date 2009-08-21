@@ -64,20 +64,20 @@ int main(int argc, char *argv[]) {
   oldFormatState.copyfmt(std::cout);
 
   *outStream \
-  << "===============================================================================\n" \
-  << "|                                                                             |\n" \
-  << "|                      Unit Test (FunctionSpaceTools)                         |\n" \
-  << "|                                                                             |\n" \
-  << "|     1) basic operator transformations and integration in HDIV               |\n" \
-  << "|                                                                             |\n" \
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-  << "|                                                                             |\n" \
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-  << "|                                                                             |\n" \
-  << "===============================================================================\n";
-
+    << "===============================================================================\n" \
+    << "|                                                                             |\n" \
+    << "|                      Unit Test (FunctionSpaceTools)                         |\n" \
+    << "|                                                                             |\n" \
+    << "|     1) Basic operator transformations and integration in HDIV:              |\n" \
+    << "|                                                                             |\n" \
+    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+    << "|                                                                             |\n" \
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|                                                                             |\n" \
+    << "===============================================================================\n";
+  
 
   int errorFlag = 0;
 
@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
   outStream->precision(20);
 
   try {
+    
       shards::CellTopology cellType = shards::getCellTopologyData< shards::Hexahedron<> >();    // cell type: hex
 
       /* Related to cubature. */
@@ -328,7 +329,7 @@ int main(int argc, char *argv[]) {
       /******************* STOP COMPARISON ***********************/
 
       *outStream << "\n";
-  }
+  }// try Basis_HDIV_HEX_I1
   catch (std::logic_error err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';

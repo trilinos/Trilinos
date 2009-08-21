@@ -107,8 +107,8 @@ void Basis_HDIV_TRI_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
         outputValues(0, i0, 0) = x;
         outputValues(0, i0, 1) = y - 1.0;
 
-        outputValues(1, i0, 0) = 1.4142135623730951*x;
-        outputValues(1, i0, 1) = 1.4142135623730951*y;
+        outputValues(1, i0, 0) = x;
+        outputValues(1, i0, 1) = y;
 
         outputValues(2, i0, 0) = x - 1.0;
         outputValues(2, i0, 1) = y;
@@ -119,7 +119,7 @@ void Basis_HDIV_TRI_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
       // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
       for (int i0 = 0; i0 < dim0; i0++) {
          outputValues(0, i0) = 2.0;
-         outputValues(1, i0) = 2.8284271247461903;
+         outputValues(1, i0) = 2.0;
          outputValues(2, i0) = 2.0;
        }
       break;

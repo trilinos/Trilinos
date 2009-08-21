@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( triBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, 3);
+    FieldContainer<double> badPoints2(4, triBasis.getBaseCellTopology().getDimension() + 1);
     INTREPID_TEST_COMMAND( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE
@@ -262,8 +262,8 @@ int main(int argc, char *argv[]) {
     0.0,-1.0,                  1.0,-1.0,                               0.0, 0.0,  
     0.5,-1.0,                  0.5,-0.5,                               0.0,-0.5,
     // basis function 1 at 3 vertices followed by 3 midpoints
-    0.0, 0.0,                  1.4142135623730951, 0.0,                0.0, 1.4142135623730951,
-    0.7071067811865474, 0.0,   0.7071067811865474, 0.7071067811865474, 0.0, 0.7071067811865474,
+    0.0, 0.0,                  1.0, 0.0,                0.0, 1.0,
+    0.5, 0.0,                  0.5, 0.5,                0.0, 0.5,
     // basis function 2 at 3 vertices followed by 3 midpoints
     -1.0, 0.0,                 0.0, 0.0,                              -1.0, 1.0,
     -0.5, 0.0,                -0.5, 0.5,                              -1.0, 0.5
@@ -272,13 +272,13 @@ int main(int argc, char *argv[]) {
   // DIV: each row gives the 3 correct values of the divergence of the 3 basis functions
   double basisDivs[] = {   
     // 3 vertices
-    2.0,  2.8284271247461903,   2.0,
-    2.0,  2.8284271247461903,   2.0,
-    2.0,  2.8284271247461903,   2.0,
+    2.0,  2.0,   2.0,
+    2.0,  2.0,   2.0,
+    2.0,  2.0,   2.0,
     // 3 edge centers
-    2.0,  2.8284271247461903,   2.0,
-    2.0,  2.8284271247461903,   2.0,
-    2.0,  2.8284271247461903,   2.0,
+    2.0,  2.0,   2.0,
+    2.0,  2.0,   2.0,
+    2.0,  2.0,   2.0,
   };
   
   try{
