@@ -149,6 +149,8 @@ int main(int argc, char *argv[]) {
   ParameterList belosList;
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (leftprec)
+    belosList.set( "Explicit Residual Test", true );     // Need to check for the explicit residual before returning
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::StatusTestDetails );
