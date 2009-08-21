@@ -34,6 +34,8 @@
 #include "Teuchos_TestForException.hpp"
 #ifdef HAVE_MPI
 #include "EpetraExt_MultiMpiComm.h"
+#else
+#include "EpetraExt_MultiSerialComm.h"
 #endif
 #include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_BlockCrsMatrix.h"
@@ -81,23 +83,21 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   if (x_map != Teuchos::null)
     supports_x = true;
 
+  Teuchos::RCP<EpetraExt::MultiComm> multiComm;
 #ifdef HAVE_MPI
   // No parallelism over blocks, so spatial partition is unchanged 
   // as comm->NumProc()
-  Teuchos::RCP<EpetraExt::MultiMpiComm> multiComm =
+  multiComm =
     Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, 
 					     comm->NumProc(), 
 					     num_sg_blocks));
+#else
+  multiComm = Teuchos::rcp(new EpetraExt::MultiSerialComm(num_sg_blocks));
+#endif
+  sg_comm = multiComm;
   int numBlockRows =  multiComm->NumTimeSteps();
   int myBlockRows  =  multiComm->NumTimeStepsOnDomain();
   int myFirstBlockRow = multiComm->FirstTimeStepOnDomain();
-  sg_comm = multiComm;
-#else
-  int numBlockRows =  1;
-  int myBlockRows  =  1;
-  int myFirstBlockRow = 0;
-  sg_comm = comm;
-#endif
 
   // DENSE STENCIL for Stochastic Galerkin
   // For 3 blocks on 2 procs, this should be:
@@ -227,6 +227,10 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
      sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
      Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
      sg_x_init->LoadBlockValues(*xinit, 0);
+     // for (int d=0; d<sg_basis->dimension(); d++)
+     //   (*(sg_x_init->GetBlock(d+1)))[d] = 1.0;
+     // for (int d=0; d<sg_basis->dimension(); d++)
+     //   sg_x_init->GetBlock(d+1)->PutScalar(1.0);
 
      // Get preconditioner factory for matrix-free
      if (jacobianMethod == MATRIX_FREE)
