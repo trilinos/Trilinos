@@ -242,6 +242,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     x_sg = inArgs.get_x_sg();
     if (x_sg != Teuchos::null) {
       basis = x_sg->basis();
+      if (x_sg->quadrature() != Teuchos::null)
+	quad = x_sg->quadrature();
       do_quad = true;
     }
   }
@@ -249,6 +251,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     x_dot_sg = inArgs.get_x_dot_sg();
     if (x_dot_sg != Teuchos::null) {
       basis = x_dot_sg->basis();
+      if (x_dot_sg->quadrature() != Teuchos::null)
+	quad = x_dot_sg->quadrature();
       do_quad = true;
     }
   }
@@ -256,6 +260,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     p_sg[i] = inArgs.get_p_sg(i);
     if (p_sg[i] != Teuchos::null) {
       basis = p_sg[i]->basis();
+      if (p_sg[i]->quadrature() != Teuchos::null)
+	quad = p_sg[i]->quadrature();
       do_quad = true;
     }
   }

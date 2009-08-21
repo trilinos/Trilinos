@@ -105,7 +105,7 @@ namespace Stokhos {
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
 
     //! Quadrature class
-    Teuchos::RCP< const Stokhos::Quadrature<int,double> > quad;
+    mutable Teuchos::RCP< const Stokhos::Quadrature<int,double> > quad;
 
     //! Index of stochastic parameters
     std::vector<int> sg_p_index;

@@ -34,6 +34,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_Quadrature.hpp"
 
 namespace Stokhos {
 
@@ -62,7 +63,8 @@ namespace Stokhos {
      * \brief Create a polynomial for basis \c basis with empty 
      * coefficients
      */
-    VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis);
+    VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+		     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
 
     /*! 
      * \brief Create a polynomial for basis \c basis where each coefficient is 
@@ -70,7 +72,8 @@ namespace Stokhos {
      * for the coefficient.
      */
     VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-	       const typename traits_type::cloner_type& cloner);
+		     const typename traits_type::cloner_type& cloner,
+		     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
 
     //! Destructor
     ~VectorOrthogPoly();
@@ -93,6 +96,10 @@ namespace Stokhos {
     //! Get basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > 
     basis() const;
+
+    //! Get quadrature
+    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> > 
+    quadrature() const;
 
     //! Return ref-count pointer to coefficient \c i
     Teuchos::RCP<coeff_type>
@@ -152,6 +159,9 @@ namespace Stokhos {
 
     //! Basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis_;
+
+    //! Quadrature
+    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> > quad_;
 
     //! Array of polynomial coefficients
     Teuchos::Array< Teuchos::RCP<coeff_type> > coeff_;
