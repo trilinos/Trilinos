@@ -29,6 +29,7 @@
 // @HEADER
 
 #include "sparse_grid_mixed_growth.H"
+#include "sandia_rules.H"
 
 // namespace webbur {
 //   int sparse_grid_mixed_size ( int dim_num, int level_max, int rule[] );
@@ -186,38 +187,6 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
   //   std::cout << ") -- " << sgi << "\t" << exact << "\t" << error << "\n";
   // }
   // std::cout << "max error = " << max_error << std::endl;
-}
-
-void 
-Stokhos::getMyPoints( int order, int np, double p[], double x[] ){
-
-  long int pointer = p[0];
-  const OneDOrthogPolyBasis<int,double>* basis = (const OneDOrthogPolyBasis<int,double>*) pointer;
-  std::vector<double> quad_points;
-  std::vector<double> quad_weights;
-  std::vector< std::vector<double> > quad_values;
-  basis->getQuadPoints(2*order-1, quad_points, quad_weights, quad_values);
-  for(int i = 0; i<quad_points.size(); i++){
-    x[i] = quad_points[i];
-  }
-  
-}
-
-
-void 
-Stokhos::getMyWeights( int order, int np, double p[], double w[] ){
-
-  long int pointer = p[0];
-  const OneDOrthogPolyBasis<int,double>* basis = (const OneDOrthogPolyBasis<int,double>*) pointer;
-  std::vector<double> quad_points;
-  std::vector<double> quad_weights;
-  std::vector< std::vector<double> > quad_values;
-  basis->getQuadPoints(2*order-1, quad_points, quad_weights, quad_values);
-
-  for(int i = 0; i<quad_points.size(); i++){
-    w[i] = quad_weights[i];
-  }
-
 }
 
 template <typename ordinal_type, typename value_type>

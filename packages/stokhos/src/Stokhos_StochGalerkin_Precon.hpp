@@ -172,8 +172,7 @@ class StochGalerkinPrecon: public virtual Epetra_Operator {
   ML_Epetra::MultiLevelPreconditioner* MLPrec;
 
 };
-} 
-#include "Stokhos_StochGalerkin_PreconImp.hpp"
+}
 
 #endif // HAVE_STOKHOS_ML
 

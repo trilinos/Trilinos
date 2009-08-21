@@ -69,7 +69,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
   Stokhos_StochGalerkin_Precon.hpp
-  Stokhos_StochGalerkin_PreconImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
@@ -82,6 +81,8 @@ SET(HEADERS ${HEADERS}
 
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
+  Stokhos_SparseGridQuadrature.cpp
+  Stokhos_StochGalerkin_Precon.cpp
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
