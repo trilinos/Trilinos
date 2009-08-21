@@ -253,7 +253,7 @@ int exchangeData(MPI_Comm comm,
   mpiReqs.resize(recvProcs.size());
   recvLengths.resize(recvProcs.size());
 
-  int tag = 20080926;
+  int tag = 11119;
   std::vector<int> tmpIntData;
   MPI_Datatype mpi_dtype = fei::mpiTraits<T>::mpi_type();
 
@@ -325,7 +325,7 @@ int exchangeData(MPI_Comm comm,
   if (sendProcs.size() == 0 && recvProcs.size() == 0) return(0);
   if (sendProcs.size() != sendData.size()) return(-1);
 #ifndef FEI_SER
-  int tag = 200809263;
+  int tag = 11115;
   MPI_Datatype mpi_dtype = fei::mpiTraits<T>::mpi_type();
   std::vector<MPI_Request> mpiReqs;
 

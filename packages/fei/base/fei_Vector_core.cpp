@@ -129,8 +129,8 @@ int fei::Vector_core::scatterToOverlap()
 
   std::vector<MPI_Request> mpiReqs(sendProcs.size()+recvProcs.size());
   std::vector<MPI_Status> mpiStatuses(sendProcs.size()+recvProcs.size());
-  int tag1 = 20070430;
-  int tag2 = 20070460;
+  int tag1 = 11111;
+  int tag2 = 11112;
 
   //first, the procs we're going to send to, have to let us know
   //how much data we're supposed to send. So we have to receive
@@ -339,8 +339,8 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
 
   std::vector<MPI_Request> mpiReqs(recvProcs.size()*2);
   std::vector<MPI_Status> mpiStatuses(recvProcs.size()*2);
-  int tag1 = 20070430;
-  int tag2 = 20070460;
+  int tag1 = 11111;
+  int tag2 = 11112;
 
   //post the recvs for the sizes.
   for(size_t i=0; i<recvProcs.size(); ++i) {

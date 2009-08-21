@@ -223,7 +223,7 @@ int fei::Graph_Impl::gatherFromOverlap()
   std::vector<MPI_Request> mpiReqs(recvProcs.size());
   std::vector<MPI_Status> mpiStatuses(recvProcs.size());
 
-  int tag1 = 20070503;
+  int tag1 = 11113;
 
   unsigned offset = 0;
   for(unsigned i=0; i<recvProcs.size(); ++i) {

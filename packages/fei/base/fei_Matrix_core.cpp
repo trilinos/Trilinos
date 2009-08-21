@@ -172,8 +172,8 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   std::vector<MPI_Request> mpiReqs(recvProcs.size()*2);
   std::vector<MPI_Status> mpiStatuses(recvProcs.size()*2);
 
-  int tag1 = 20070430;
-  int tag2 = 20070460;
+  int tag1 = 11111;
+  int tag2 = 11112;
 
   unsigned offset = 0;
   for(size_t i=0; i<recvProcs.size(); ++i) {

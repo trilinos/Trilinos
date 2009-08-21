@@ -68,7 +68,7 @@ int mirrorProcs(MPI_Comm comm, std::vector<int>& toProcs, std::vector<int>& from
 
   int numRecvProcs = buf[num_procs];
 
-  int tag = 200809264;
+  int tag = 11116;
   std::vector<MPI_Request> mpiReqs(numRecvProcs);
 
   int offset = 0;
@@ -131,7 +131,7 @@ int mirrorCommPattern(MPI_Comm comm, comm_map* inPattern, comm_map*& outPattern)
   MPI_Request* requests = &mpiReqs[0];
   MPI_Status* statuses = &mpiStss[0];
 
-  int firsttag = 200809265;
+  int firsttag = 11117;
   int offset = 0;
   int* outProcsPtr = &outProcs[0];
   for(unsigned i=0; i<outProcs.size(); ++i) {
@@ -169,7 +169,7 @@ int mirrorCommPattern(MPI_Comm comm, comm_map* inPattern, comm_map*& outPattern)
   //lists that other procs send to us.
   std::vector<int> recvData(totalRecvLen, 999999);
 
-  int tag2 = 200809266;
+  int tag2 = 11118;
   offset = 0;
   for(int ii=0; ii<numOutProcs; ++ii) {
     CHK_MPI(MPI_Irecv(&(recvData[offset]), lengths[ii], mpi_ttype,
@@ -225,7 +225,7 @@ int exchangeIntData(MPI_Comm comm,
   std::vector<MPI_Request> mpiReqs;
   mpiReqs.resize(recvProcs.size());
 
-  int tag = 200809262;
+  int tag = 11114;
   MPI_Datatype mpi_dtype = MPI_INT;
 
   //launch Irecv's for recvData:
