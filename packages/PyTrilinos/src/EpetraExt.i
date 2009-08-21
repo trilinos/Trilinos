@@ -558,21 +558,25 @@ class InArgs(PropertyBase):
 %typemap(out) EpetraExt::ModelEvaluator::InArgs
 {
   $result = convertInArgsToPython($1);
+  if (PyErr_Occurred()) SWIG_fail;
 }
 
 %typemap(directorin) const EpetraExt::ModelEvaluator::InArgs &
 {
   $input = convertInArgsToPython($1_name);
+  if (PyErr_Occurred()) throw PythonException();
 }
 
 %typemap(directorout) EpetraExt::ModelEvaluator::InArgs
 {
   $result = EpetraExt::convertInArgsFromPython($1);
+  if (PyErr_Occurred()) throw PythonException();
 }
 
 %typemap(in) const EpetraExt::ModelEvaluator::InArgs &
 {
   *$1 = EpetraExt::convertInArgsFromPython($input);
+  if (PyErr_Occurred()) SWIG_fail;
 }
 
 //////////////////////
@@ -815,21 +819,25 @@ class OutArgs(PropertyBase):
 %typemap(out) EpetraExt::ModelEvaluator::OutArgs
 {
   $result = convertOutArgsToPython($1);
+  if (PyErr_Occurred()) SWIG_fail;
 }
 
 %typemap(directorin) const EpetraExt::ModelEvaluator::OutArgs &
 {
   $input = convertOutArgsToPython($1_name);
+  if (PyErr_Occurred()) throw PythonException();
 }
 
 %typemap(directorout) EpetraExt::ModelEvaluator::OutArgs
 {
   $result = EpetraExt::convertOutArgsFromPython($1);
+  if (PyErr_Occurred()) throw PythonException();
 }
 
 %typemap(in) const EpetraExt::ModelEvaluator::OutArgs &
 {
   *$1 = EpetraExt::convertOutArgsFromPython($input);
+  if (PyErr_Occurred()) SWIG_fail;
 }
 
 //////////////////////////////////////

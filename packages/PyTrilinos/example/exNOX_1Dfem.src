@@ -226,13 +226,11 @@ def main():
     # Create the interface between NOX and the application.  This object is
     # derived from NOX.Epetra.Interface.
     interface = MyInterface(numGlobalElements, comm, bc0, bc1)
+    interface.setPDEfactor(options.k)
 
     # Get the initial solution vector from the problem
     initGuess    = interface.getSolution()
     noxInitGuess = NOX.Epetra.Vector(initGuess,NOX.Epetra.Vector.CreateView)
-
-    # Set the nonlinear forcing constant
-    interface.setPDEfactor(options.k)
 
     # Define the ParameterLists
     nlParams    = NOX.defaultNonlinearParameters(comm,2)

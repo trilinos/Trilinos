@@ -55,22 +55,21 @@
 #include "EpetraExt_ModelEvaluator.h"
 
 ////////////////////////////////////////////////////////////////////////
-// Helper functions.  Ultimately, we want to implement the two
-// functions 'convertInArgsFromPython' and 'convertOutArgsFromPython'
-// (which are friends of EpetraExt::ModelEvaluator).  The following
-// helper functions all support the imlpementation of these two
-// conversion functions.
+// Helper functions.  Ultimately, we want to implement the functions
+// 'convertInArgsFromPython', 'convertInArgsToPython',
+// 'convertOutArgsFromPython' and 'convertOutArgsToPython' (where the
+// '...ToPython' functions are friends of EpetraExt::ModelEvaluator).
+// The following helper functions all support the imlpementation of
+// these four conversion functions.
 ////////////////////////////////////////////////////////////////////////
 
-// Given the name of a python object, extract it from the global
-// python namespace.  If it does not exist in the global namespace,
-// return NULL.
-PyObject * getObjectFromGlobals(CONST char * name);
+// Given the name of a python object, extract it from the named python
+// module.  If it does not exist in the given module, return NULL.
+PyObject * getObjectFromModule(char * modName, CONST char * objName);
 
-// Given the name of a python class, extract it from the global
-// python namespace.  If it does not exist in the global namespace,
-// return NULL.
-PyObject * getClassFromGlobals(CONST char * name);
+// Given the name of a python class, extract it from the named python
+// module.  If it does not exist in the given module, return NULL.
+PyObject * getClassFromModule(char * modName, CONST char * clsName);
 
 // Given a python object and an attribute name, return 'true' if the
 // attribute exists and is python 'None'.  If the attribute does not

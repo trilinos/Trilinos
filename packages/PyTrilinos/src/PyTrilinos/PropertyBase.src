@@ -98,8 +98,8 @@ class PropertyBase(object):
             else:
                 raise ValueError, \
                       "For attribute '%s', value '%s'\n" \
-                      "is not among the enumerated values:\n" \
-                      "%s" % (name, str(value), str(propSpecs))
+                      "and type %s is not among the enumerated values:\n" \
+                      "%s" % (name, str(value), type(value), str(propSpecs))
 
     def __getattr__(self, name):
         # For illegal property names, raise an exception

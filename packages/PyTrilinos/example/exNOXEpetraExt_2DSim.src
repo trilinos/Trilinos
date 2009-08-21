@@ -88,30 +88,24 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
         return self.getObjectLabel()
 
     def get_x_map(self):
-        print "Inside EpetraModelEval2DSim.get_x_map"
         return self.__map
 
     def get_f_map(self):
-        print "Inside EpetraModelEval2DSim.get_f_map"
         return self.__map
 
     def get_x_init(self):
-        print "Inside EpetraModelEval2DSim.get_x_init"
         return self.__x0
 
     def create_W(self):
-        print "Inside EpetraModelEval2DSim.createW"
         return Epetra.CrsMatrix(Epetra.Copy, self.__W_graph)
 
     def createInArgs(self):
-        print "Inside EpetraModelEval2DSim.createInArgs"
         inArgs = EpetraExt.InArgs()
         inArgs.description = self.getObjectLabel()
         inArgs.x = True
         return inArgs
 
     def createOutArgs(self):
-        print "Inside EpetraModelEval2DSim.createOutArgs"
         outArgs = EpetraExt.OutArgs()
         outArgs.description = self.getObjectLabel()
         outArgs.f = True
@@ -123,13 +117,7 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
         return outArgs
 
     def evalModel(self, inArgs, outArgs):
-        print "Inside EpetraModelEval2DSim.evalModel"
         try:
-            print 'inArgs ='
-            print inArgs
-            print
-            print 'outArgs ='
-            print outArgs
             d = self.__d
             x = inArgs.x
             p = self.__p
@@ -145,11 +133,16 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
                 W.SumIntoGlobalValues(1, [2*d*x[0],     -d], [0, 1])
         except Exception, e:
             print '\n\nException raised in EpetraModelEval2DSim.evalModel():'
+            print type(e)
             print e, '\n'
 
 def main():
-    model     = EpetraModelEval2DSim()  # Use default initialization
-    interface = NOX.Epetra.ModelEvaluatorInterface(model)
+    model        = EpetraModelEval2DSim()  # Use default initialization
+    interface    = NOX.Epetra.ModelEvaluatorInterface(model)
+    initGuess    = model.get_x_init()
+    jacobian     = model.create_W()
+    interface.computeJacobian(initGuess, jacobian)
+    solver       = NOX.defaultSolver(initGuess, interface, interface, jacobian)
     print "End Result: TEST PASSED"
 
 if __name__ == "__main__":
