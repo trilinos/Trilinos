@@ -75,8 +75,14 @@ SERIAL_RELEASE.  Several configure options are varied in these two builds to
 try to catch as much conditional configuration behavior has possible.  If
 nothing else, please at least do the MPI_DEBUG build since that will cover the
 most code and best supports day-to-day development efforts.  However, if you
-are changing code that might break the serial build, please allow the
-SERIAL_RELEASE build to be run as well.
+are changing code that might break the serial build or break non-debug code,
+please allow the SERIAL_RELEASE build to be run as well.  Note that the
+MPI_DEBUG build actually uses -DCMAKE_BUILD_TYPE=RELEASE with
+-DTrilinos_ENABLE_DEBUG=ON to use optimized compiler options but with runtime
+debug checking turned on.  This helps to make the tests run faster but still
+builds and runs the runtime debug checking code.  Therefore, you should not
+use the MPI_DEBUG confgiure options when building a debug version for yourself
+to do debugging.
 
 The following steps are performed by this script:
 
@@ -85,14 +91,14 @@ locally).  (if --update is set.)
 
 2) Select the list of packages to enable forward based on the directories
 where there are changed files (or from a list passed in by the user).  NOTE:
-This can be overridden with the --enable-packages and --disable-packages
-options.
+This can be overridden with the options --enable-packages, --disable-packages
+and --no-enable-fwd-packages.
 
 3) For each build case (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
 
   3.a) Configure a build directory in a standard way for all of the packages
   that have changed and all of the packages that depend on these packages
-  forward. What gets eanbled can be modified (see the 'enable-xxx' options).
+  forward. What gets eanbled can be modified (see the enable options above).
   (if --configure is set.)
   
   3.b) Build all configured code with 'make' (e.g. with -jN set through
@@ -118,7 +124,7 @@ The most basic way to do the checkin test is:
   $ $TRILINOS_HOME/cmake/python/checkin-test.py --do-all
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
-LAPACK) can be found automatically, then that is all you will need to do.
+LAPACK) can be found automatically, then this is all you will need to do.
 However, if the setup can not be determined automatically, then you can append
 a set of CMake variables that will get read in the files:
 
@@ -126,17 +132,16 @@ a set of CMake variables that will get read in the files:
   SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
   SOME_BASE_DIR/CHECKIN/COMMON.config
 
-Actually, skeletons of these files will automatically be written out with all
-of the CMake cache variables commented out.  Any CMake cache variables in
-these files will be read into and passed on the configure line to 'cmake'.
+Actually, skeletons of these files will automatically be written out with
+typical CMake cache variables commented out.  Any CMake cache variables listed
+in these files will be read into and passed on the configure line to 'cmake'.
 
 WARNING: Please do not add any CMake cache variables in the *.config files
 that will alter what packages are built or what tests are run.  The goal of
 these configuration files is to allow you to specify the minimum environment
-to find MPI and your compilers and basic TPLs.  If you need to fudge what
-packages are enabled, please use the arguments --enable-packages,
---disable-packages, --no-enable-fwd-packages, and/or
---enable-all-packages=off.
+to find MPI, your compilers, and the basic TPLs.  If you need to fudge what
+packages are enabled, please use the script arguments --enable-packages,
+--disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages.
 
 NOTE: Before running this script, you should first do an CVS update and
 examine what files are changed to make sure you want to commit what you have.
@@ -174,19 +179,19 @@ Common use cases for using this script are as follows:
 
    --commit --commit-msg-header-file=<SOME_FILE_NAME>
 
-   NOTE: This will pick up the results for the last completed test run and
+   NOTE: This will pick up the results for the last completed test runs and
    append the results of those tests to the checkin-message.
 
-(*) Test only the packages modified and not forward dependent packages:
+(*) Test only the packages modified and not the forward dependent packages:
 
   --do-all --no-enable-fwd-packages
 
-  NOTE: This is a safe thing to do when only tests in the given modified
-  packages are changed and not library code.  This can speed up the testing
-  process and is to be preferred over not running this script at all.  It
-  would be very hard to make this script automatically determine if only test
-  code has changed because every Trilinos package does not follow a set
-  pattern.
+  NOTE: This is a safe thing to do when only tests in the modified packages
+  are changed and not library code.  This can speed up the testing process and
+  is to be preferred over not running this script at all.  It would be very
+  hard to make this script automatically determine if only test code has
+  changed because every Trilinos package does not follow a set pattern for
+  tests and test code.
 
 (*) MPI DEBUG only (run at least this if nothing else):
 
@@ -197,7 +202,8 @@ Common use cases for using this script are as follows:
   --do-all --no-enable-fwd-packages --without-serial-release
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
-  tests for the packages that have been changed.
+  tests for the packages that have directly been changed and not forward
+  packages.
 
 (*) Test only a specific set of packages and no others:
 

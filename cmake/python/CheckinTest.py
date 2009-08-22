@@ -645,10 +645,8 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
 
     # A.1) Set the base options
   
-    cmakeBaseOptions = [
-      "-DCMAKE_BUILD_TYPE:STRING="+buildType,
-      ]
-  
+    cmakeBaseOptions = []
+    
     if serialOrMpi == "MPI":
       cmakeBaseOptions.append("-DTPL_ENABLE_MPI:BOOL=ON")
   
@@ -1003,6 +1001,8 @@ def checkinTest(inOptions):
       result = runTestCaseDriver(inOptions.withMpiDebug, inOptions, baseTestDir,
         "MPI", "DEBUG", trilinosSrcDir,
         [
+          "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
+          "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
           "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
           "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
         ],
@@ -1013,6 +1013,8 @@ def checkinTest(inOptions):
       result = runTestCaseDriver(inOptions.withSerialRelease, inOptions, baseTestDir,
         "SERIAL", "RELEASE", trilinosSrcDir,
         [
+          "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
+          "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
           "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
           "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
         ],
