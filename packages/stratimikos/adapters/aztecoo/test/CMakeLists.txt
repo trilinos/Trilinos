@@ -31,12 +31,19 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
+IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+  SET(testEpetraOperatorWrapper_tol 1e-4)
+ELSE()
+  SET(testEpetraOperatorWrapper_tol 1e-3)
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   testEpetraOperatorWrapper
   SOURCES
     testEpetraOperatorWrapper.cpp
     ${COMMON_SOURCES}
+  ARGS --tol=${testEpetraOperatorWrapper_tol}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )

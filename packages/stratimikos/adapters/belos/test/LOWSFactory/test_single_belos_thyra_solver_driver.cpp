@@ -34,6 +34,7 @@ int main(int argc, char* argv[])
     bool            outputMaxResOnly       = true;
     int             blockSize              = 1;
     double          maxResid               = 1e-6;
+    double          maxResidErrorSlack     = 2.0;
     double          maxSolutionError       = 1e-6;
     bool            showAllTests           = false;
     bool            dumpAll                = false;
@@ -54,6 +55,7 @@ int main(int argc, char* argv[])
     clp.setOption( "output-max-res-only", "output-all-res", &outputMaxResOnly, "Determines if only the max residual is printed or if all residuals are printed per iteration." );
     clp.setOption( "block-size", &blockSize, "???." );
     clp.setOption( "max-resid", &maxResid, "The maximum relative error in the residual." );
+    clp.setOption( "max-resid-error-slack", &maxResidErrorSlack, "Scale factor for error check of --max-resid." );
     clp.setOption( "max-solution-error", &maxSolutionError, "The maximum relative error in the solution of the linear system." );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
     clp.setOption( "show-all-tests", "no-show-all-tests", &showAllTests, "Set if all the tests are shown or not." );
@@ -90,7 +92,7 @@ int main(int argc, char* argv[])
     success
       = Thyra::test_single_belos_thyra_solver(
         matrixFile,testTranspose,usePreconditioner,numRhs,numRandomVectors
-        ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
+        ,maxFwdError,maxResid,maxResidErrorSlack,maxSolutionError,showAllTests,dumpAll
         ,&belosLOWSFPL,&precPL
         ,verbose?&*out:0
         );

@@ -94,6 +94,9 @@ int main(int argc, char *argv[])
       bool verbose = true;
       clp.setOption( "verbose", "quiet", &verbose, 
                      "Determines if any output is printed or not." );
+      double tol  = 1e-4;
+      clp.setOption( "tol", &tol, 
+                     "Tolerance for final test." );
 
       
       CommandLineProcessor::EParseCommandLineReturn parse_return 
@@ -135,7 +138,6 @@ int main(int argc, char *argv[])
       Vector<double> soln1 = Ainv * b;
 
       double err1 = norm2(soln1 - ans);
-      double tol  = 1e-4;
 
       bool ok1 = err1 < tol;
 

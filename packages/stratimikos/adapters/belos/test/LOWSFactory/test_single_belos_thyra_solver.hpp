@@ -20,6 +20,7 @@ bool test_single_belos_thyra_solver(
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
   ,const double                           maxResid
+  ,const double                           maxResidErrorSlack
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll

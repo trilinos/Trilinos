@@ -6,7 +6,6 @@ ADD_SUBDIRECTORIES(
   BLAS
   Comm
   Containers
-  CTestScriptsUnitTests
   DenseMatrix
   FancyOutputting
   LAPACK
@@ -25,3 +24,9 @@ ADD_SUBDIRECTORIES(
   dyn_cast
   exit
   )
+
+
+ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
+IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+  ADD_SUBDIRECTORY(CTestScriptsUnitTests)
+ENDIF()
