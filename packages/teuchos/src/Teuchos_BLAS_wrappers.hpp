@@ -1,4 +1,4 @@
-// @HEADER
+/*// @HEADER
 // ***********************************************************************
 // 
 //                    Teuchos: Common Tools Package
@@ -25,16 +25,14 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-// Kris
-// 07.08.03 -- Move into Teuchos package/namespace
+*/
 
 #ifndef _TEUCHOS_BLAS_WRAPPERS_HPP_
 #define _TEUCHOS_BLAS_WRAPPERS_HPP_
 
 #include "Teuchos_ConfigDefs.hpp"
 #ifdef _MSC_VER
-// disable warning for C-linkage returning complex clas
+/* disable warning for C-linkage returning complex class */
 #pragma warning ( disable : 4190 )
 #endif
 
@@ -210,11 +208,11 @@
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) lcase
-#define F77_BLAS_MANGLE(lcase,UCASE) lcase
+#  define F77_FUNC(lcase,UCASE) lcase
+#  define F77_BLAS_MANGLE(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) lcase ## _
-#define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
+#  define F77_FUNC(lcase,UCASE) lcase ## _
+#  define F77_BLAS_MANGLE(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 
 #endif /* TRILINOS_NO_CONFIG_H */
@@ -318,7 +316,7 @@ void PREFIX DSCAL_F77(const int* n, const double* alpha, double *x, const int* i
 int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
 
 /* Double std::complex precision BLAS 1 */
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
 void PREFIX ZROTG_F77(std::complex<double>* da, std::complex<double>* db, double* c, std::complex<double>* s);
 void PREFIX ZROT_F77(const int* n, std::complex<double>* dx, const int* incx, std::complex<double>* dy, const int* incy, double* c, std::complex<double>* s);
@@ -334,7 +332,7 @@ double PREFIX ZNRM2_F77(const int* n, const std::complex<double> x[], const int*
 void PREFIX ZSCAL_F77(const int* n, const std::complex<double>* alpha, std::complex<double> *x, const int* incx);
 int PREFIX IZAMAX_F77(const int* n, const std::complex<double> *x, const int* incx);
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 /* Single precision BLAS 1 */ 
 void PREFIX SROTG_F77(float* da, float* db, float* c, float* s);
@@ -348,7 +346,7 @@ void PREFIX SSCAL_F77(const int* n, const float* alpha, float *x, const int* inc
 int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 
 /* Single std::complex precision BLAS 1 */ 
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
 void PREFIX CROTG_F77(std::complex<float>* da, std::complex<float>* db, float* c, std::complex<float>* s);
 void PREFIX CROT_F77(const int* n, std::complex<float>* dx, const int* incx, std::complex<float>* dy, const int* incy, float* c, std::complex<float>* s);
@@ -364,7 +362,7 @@ float PREFIX CNRM2_F77(const int* n, const std::complex<float> x[], const int* i
 void PREFIX CSCAL_F77(const int* n, const std::complex<float>* alpha, std::complex<float> *x, const int* incx);
 int PREFIX ICAMAX_F77(const int* n, const std::complex<float> *x, const int* incx);
 
-#endif //  defined(HAVE_TEUCHOS_COMPLEX)
+#endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 /* Double precision BLAS 2 */
 void PREFIX DGEMV_F77(Teuchos_fcd, const int* m, const int* n, const double* alpha, const double A[], const int* lda,
@@ -375,7 +373,7 @@ void PREFIX DGER_F77(const int *m, const int *n, const double *alpha, const doub
                const int *incy, double *a, const int *lda);
 
 /* Double precision BLAS 2 */
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
 void PREFIX ZGEMV_F77(Teuchos_fcd, const int* m, const int* n, const std::complex<double>* alpha, const std::complex<double> A[], const int* lda,
                  const std::complex<double> x[], const int* incx, const std::complex<double>* beta, std::complex<double> y[], const int* incy);
@@ -384,7 +382,7 @@ void PREFIX ZTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n,
 void PREFIX ZGER_F77(const int *m, const int *n, const std::complex<double> *alpha, const std::complex<double> *x, const int *incx, const std::complex<double> *y,
                const int *incy, std::complex<double> *a, const int *lda);
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 /* Single precision BLAS 2 */
 void PREFIX SGEMV_F77(Teuchos_fcd, const int* m, const int* n, const float* alpha, const float A[], const int* lda,
@@ -395,7 +393,7 @@ void PREFIX SGER_F77(const int *m, const int *n, const float *alpha, const float
                const int *incy, float *a, const int *lda);
 
 /* Single std::complex precision BLAS 2 */
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
 void PREFIX CGEMV_F77(Teuchos_fcd, const int* m, const int* n, const std::complex<float>* alpha, const std::complex<float> A[], const int* lda,
                  const std::complex<float> x[], const int* incx, const std::complex<float>* beta, std::complex<float> y[], const int* incy);
@@ -404,7 +402,7 @@ void PREFIX CTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n,
 void PREFIX CGER_F77(const int *m, const int *n, const std::complex<float> *alpha, const std::complex<float> *x, const int *incx, const std::complex<float> *y,
                const int *incy, std::complex<float> *a, const int *lda);
 
-#endif // defined(HAVE_TEUCHOS_COMPLEX)
+#endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 /* Double precision BLAS 3 */
 void PREFIX DGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * 
@@ -420,7 +418,7 @@ void PREFIX DTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 lda, double *b, const int *ldb);
 
 /* Double std::complex precision BLAS 3 */
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
 void PREFIX ZGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * 
                 n, const int *k, const std::complex<double> *alpha, const std::complex<double> *a, const int *lda, 
@@ -434,7 +432,7 @@ void PREFIX ZTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 const int *m, const int *n, const std::complex<double> *alpha, const std::complex<double> *a, const int *
                 lda, std::complex<double> *b, const int *ldb);
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 /* Single precision BLAS 3 */
 void PREFIX SGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
@@ -451,7 +449,7 @@ void PREFIX STRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
 
 /* Single std::complex precision BLAS 3 */
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus)
 
 void PREFIX CGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
                 n, const int *k, const std::complex<float> *alpha, const std::complex<float> *a, const int *lda, 
@@ -465,10 +463,10 @@ void PREFIX CTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 const int *m, const int *n, const std::complex<float> *alpha, const std::complex<float> *a, const int *
                 lda, std::complex<float> *b, const int *ldb);
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // end of TEUCHOS_BLAS_WRAPPERS_HPP_
+#endif /* end of TEUCHOS_BLAS_WRAPPERS_HPP_ */
