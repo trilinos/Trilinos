@@ -146,6 +146,11 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       isBlockPrecond = itr!=blockPrecond_.end();
    }
 
+   PB_DEBUG_MSG("PB: Inverse \"" << label << "\" is of type " 
+             << "strat prec = " << isStratPrecond << ", "
+             << "strat solv = " << isStratSolver << ", " 
+             << "block prec = " << isBlockPrecond,3);
+
    // Must be one of Strat solver, strat preconditioner, block preconditioner
    if(not (isStratSolver || isStratPrecond || isBlockPrecond)) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -158,11 +163,11 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
    
    RCP<const Teuchos::ParameterList> pl = itr->second;
 
-   Stratimikos::DefaultLinearSolverBuilder strat;
-   strat.setParameterList(rcp(new Teuchos::ParameterList(*pl)));
-
    // build inverse factory
    if(isStratPrecond) {
+      Stratimikos::DefaultLinearSolverBuilder strat;
+      strat.setParameterList(rcp(new Teuchos::ParameterList(*pl)));
+
       // try to build a preconditioner factory
       std::string type = pl->get<std::string>("Preconditioner Type");
       RCP<Thyra::PreconditionerFactoryBase<double> > precFact = strat.createPreconditioningStrategy(type);
@@ -173,6 +178,9 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       return rcp(new PreconditionerInverseFactory(precFact));
    }
    else if(isStratSolver) {
+      Stratimikos::DefaultLinearSolverBuilder strat;
+      strat.setParameterList(rcp(new Teuchos::ParameterList(*pl)));
+
       // try to build a solver factory
       std::string type = pl->get<std::string>("Linear Solver Type");
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFact = strat.createLinearSolveStrategy(type);
@@ -183,18 +191,33 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       return rcp(new SolveInverseFactory(solveFact));
    }
    else if(isBlockPrecond) {
-      std::string type = pl->get<std::string>("Preconditioner Type");
-      const Teuchos::ParameterList & settings = pl->sublist("Preconditioner Settings");
+      try {
+         std::string type = pl->get<std::string>("Preconditioner Type");
+         const Teuchos::ParameterList & settings = pl->sublist("Preconditioner Settings");
+   
+         // build preconditioner factory from the string
+         RCP<BlockPreconditionerFactory> precFact 
+               = BlockPreconditionerFactory::buildPreconditionerFactory(type,settings,Teuchos::rcpFromRef(*this));
+    
+         TEUCHOS_ASSERT(precFact!=Teuchos::null);
+   
+         PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Block preconditioner)",10);
 
-      // build preconditioner factory from the string
-      RCP<BlockPreconditionerFactory> precFact = BlockPreconditionerFactory::buildPreconditionerFactory(type,settings,Teuchos::rcpFromRef(*this));
- 
-      TEUCHOS_ASSERT(precFact!=Teuchos::null);
+         // return the inverse factory object
+         return rcp(new PreconditionerInverseFactory(precFact));   
+      }
+      catch(std::exception & e) {
+         RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
+         
+         *out << "PB: \"getInverseFactory\" failed, Parameter List =\n";
+         pl->print(*out);
 
-      PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Block preconditioner)",10);
-
-      // return the inverse factory object
-      return rcp(new PreconditionerInverseFactory(precFact));   
+         *out << "*** THROWN EXCEPTION ***\n";
+         *out << e.what() << std::endl;
+         *out << "************************\n";
+         
+         throw e;
+      }
    }
 
    PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (FAILURE)",10);

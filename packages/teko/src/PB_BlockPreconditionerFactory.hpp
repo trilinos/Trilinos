@@ -316,10 +316,10 @@ private:
 public:
 
    /** \brief Builder function for creating preconditioner factories (yes
-     *        this is a factory factory.
+     *        this is a factory factory).
      *
      * Builder function for creating preconditioner factories (yes
-     * this is a factory factory.
+     * this is a factory factory).
      * 
      * \param[in] name     String name of factory to build
      * \param[in] settings Parameter list describing the parameters for the

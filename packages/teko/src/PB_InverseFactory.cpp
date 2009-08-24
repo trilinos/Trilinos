@@ -215,7 +215,8 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
    catch(std::exception & e) {
       RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
 
-      *out << "PB: \"buildInverse\" could not construct the inverse operator\n";
+      *out << "PB: \"buildInverse\" could not construct the inverse operator using ";
+      *out << "\"" << factory.toString() << "\"" << std::endl;
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
@@ -239,7 +240,8 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
    catch(std::exception & e) {
       RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
 
-      *out << "PB: \"rebuildInverse\" could not construct the inverse operator\n";
+      *out << "PB: \"rebuildInverse\" could not construct the inverse operator using ";
+      *out << "\"" << factory.toString() << "\"" << std::endl;
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
       *out << e.what() << std::endl;
