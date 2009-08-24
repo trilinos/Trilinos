@@ -190,7 +190,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="LO"/>
