@@ -32,13 +32,36 @@
     \brief  Example building stiffness matrix and right hand side for a Poisson equation 
             using nodal (Hgrad) elements.
 
-                            div grad u = f in Omega
-                                     u = 0 on Gamma 
+    \verbatim
+             div grad u = f in Omega
+                      u = 0 on Gamma 
+
+     Discrete linear system for nodal coefficients(x):
+        
+                 Kx = b
+
+            K - HGrad stiffness matrix
+            b - right hand side vector 
+                
+    \endverbatim
 
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
- 
+
+    
+     \remark Usage
+     \verbatim
+
+     ./Intrepid_example_Drivers_Example_03.exe NX NY NZ verbose
+
+        int NX              - num intervals in x direction (assumed box domain, 0,1)
+        int NY              - num intervals in y direction (assumed box domain, 0,1)
+        int NZ              - num intervals in z direction (assumed box domain, 0,1)
+        verbose (optional)  - any character, indicates verbose output
+
+     \endverbatim
+
     \remark Sample command line
-    \code   ./example_03.exe 10 10 10 \endcode
+    \code   ./Intrepid_example_Drivers_Example_03.exe 10 10 10 \endcode
 */
 
 // Intrepid includes
@@ -80,17 +103,25 @@ double evalDivGradu(double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
 
-   //Check number of arguments
-    TEST_FOR_EXCEPTION( ( argc < 4 ),
-                      std::invalid_argument,
-                      ">>> ERROR (example_Poisson): Invalid number of arguments. See code listing for requirements.");
+  //Check number of arguments
+   if (argc < 4) {
+      std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
+      std::cout <<"Usage:\n\n";
+      std::cout <<"  ./Intrepid_example_Drivers_Example_03.exe NX NY NZ verbose\n\n";
+      std::cout <<" where \n";
+      std::cout <<"   int NX              - num intervals in x direction (assumed box domain, 0,1) \n";
+      std::cout <<"   int NY              - num intervals in y direction (assumed box domain, 0,1) \n";
+      std::cout <<"   int NZ              - num intervals in z direction (assumed box domain, 0,1) \n";
+      std::cout <<"   verbose (optional)  - any character, indicates verbose output \n\n";
+      exit(1);
+   }
   
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 4)
+  if (iprint > 3)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
@@ -102,7 +133,8 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|          Example: Poisson Equation on Hexahedral Mesh                       |\n" \
+    << "|  Example: Generate Stiffness Matrix and Right Hand Side Vector for          |\n" \
+    << "|                   Poisson Equation on Hexahedral Mesh                       |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
@@ -132,18 +164,18 @@ int main(int argc, char *argv[]) {
 
 // *********************************** GENERATE MESH ************************************
 
-    std::cout << "Generating mesh ... \n\n";
+    *outStream << "Generating mesh ... \n\n";
 
-    std::cout << "    NX" << "   NY" << "   NZ\n";
-    std::cout << std::setw(5) << NX <<
+    *outStream << "   NX" << "   NY" << "   NZ\n";
+    *outStream << std::setw(5) << NX <<
                  std::setw(5) << NY <<
                  std::setw(5) << NZ << "\n\n";
 
    // Print mesh information
     int numElems = NX*NY*NZ;
     int numNodes = (NX+1)*(NY+1)*(NZ+1);
-    std::cout << " Number of Elements: " << numElems << " \n";
-    std::cout << "    Number of Nodes: " << numNodes << " \n\n";
+    *outStream << " Number of Elements: " << numElems << " \n";
+    *outStream << "    Number of Nodes: " << numNodes << " \n\n";
 
    // Cube
     double leftX = 0.0, rightX = 1.0;
@@ -198,7 +230,7 @@ int main(int argc, char *argv[]) {
 
 // ************************************ CUBATURE **************************************
 
-    std::cout << "Getting cubature ... \n\n";
+    *outStream << "Getting cubature ... \n\n";
 
    // Get numerical integration points and weights
     DefaultCubatureFactory<double>  cubFactory;                                   
@@ -216,7 +248,7 @@ int main(int argc, char *argv[]) {
 
 // ************************************** BASIS ***************************************
 
-     std::cout << "Getting basis ... \n\n";
+     *outStream << "Getting basis ... \n\n";
 
    // Define basis 
      Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
@@ -231,7 +263,7 @@ int main(int argc, char *argv[]) {
 
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL STIFFNESS MATRIX *************
 
-    std::cout << "Building stiffness matrix and right hand side ... \n\n";
+    *outStream << "Building stiffness matrix and right hand side ... \n\n";
 
  // Settings and data structures for mass and stiffness matrices
     typedef CellTools<double>  CellTools;

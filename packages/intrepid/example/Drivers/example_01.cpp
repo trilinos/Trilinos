@@ -33,6 +33,7 @@
             for a div-curl system on a hexahedral mesh using curl-conforming
             (edge) elements.
 
+    \verbatim
                        curl u = g  in Omega
                         div u = h  in Omega
                         u x n = 0  on Gamma
@@ -46,12 +47,33 @@
                       Dg    - Node to edge incidence matrix
                       MgInv - Hgrad mass matrix inverse
                       b     - right hand side vector
-
+    \endverbatim
 
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
  
+     \remark Usage
+     \verbatim
+
+     ./Intrepid_example_Drivers_Example_01.exe NX NY NZ randomMesh mu1 mu2 mu1LX mu1RX mu1LY mu1RY mu1LZ mu1RZ verbose
+
+        int NX              - num intervals in x direction (assumed box domain, -1,1) 
+        int NY              - num intervals in y direction (assumed box domain, -1,1)
+        int NZ              - num intervals in z direction (assumed box domain, -1,1)
+        int randomMesh      - 1 if mesh randomizer is to be used 0 if not 
+        double mu1          - material property value for region 1 
+        double mu2          - material property value for region 2 
+        double mu1LX        - left X boundary for region 1 
+        double mu1RX        - right X boundary for region 1 
+        double mu1LY        - left Y boundary for region 1 
+        double mu1RY        - right Y boundary for region 1 
+        double mu1LZ        - bottom Z boundary for region 1 
+        double mu1RZ        - top Z boundary for region 1 
+        verbose (optional)  - any character, indicates verbose output 
+
+     \endverbatim
+
     \remark Sample command line
-    \code   ./example_01.exe 10 10 10 false 1.0 1.0 -1.0 1.0 -1.0 1.0 -1.0 1.0 \endcode
+    \code   ./Intrepid_example_Drivers_Example_01.exe 10 10 10 0 1.0 1.0 -1.0 1.0 -1.0 1.0 -1.0 1.0 \endcode
 */
 
 // Intrepid includes
@@ -97,9 +119,26 @@ int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, dou
 int main(int argc, char *argv[]) {
 
    //Check number of arguments
-    TEST_FOR_EXCEPTION( ( argc < 13 ),
-                      std::invalid_argument,
-                      ">>> ERROR (example_01): Invalid number of arguments. See code listing for requirements.");
+   if (argc < 13) {
+      std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
+      std::cout <<"Usage:\n\n";
+      std::cout <<"  ./Intrepid_example_Drivers_Example_01.exe NX NY NZ randomMesh mu1 mu2 mu1LX mu1RX mu1LY mu1RY mu1LZ mu1RZ verbose\n\n";
+      std::cout <<" where \n";
+      std::cout <<"   int NX              - num intervals in x direction (assumed box domain, -1,1) \n";
+      std::cout <<"   int NY              - num intervals in y direction (assumed box domain, -1,1) \n";
+      std::cout <<"   int NZ              - num intervals in z direction (assumed box domain, -1,1) \n";
+      std::cout <<"   int randomMesh      - 1 if mesh randomizer is to be used 0 if not \n";
+      std::cout <<"   double mu1          - material property value for region 1 \n";
+      std::cout <<"   double mu2          - material property value for region 2 \n";
+      std::cout <<"   double mu1LX        - left X boundary for region 1 \n";
+      std::cout <<"   double mu1RX        - right X boundary for region 1 \n";
+      std::cout <<"   double mu1LY        - left Y boundary for region 1 \n";
+      std::cout <<"   double mu1RY        - right Y boundary for region 1 \n";
+      std::cout <<"   double mu1LZ        - bottom Z boundary for region 1 \n";
+      std::cout <<"   double mu1RZ        - top Z boundary for region 1 \n";
+      std::cout <<"   verbose (optional)  - any character, indicates verbose output \n\n";
+      exit(1);
+   }
   
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
@@ -118,7 +157,8 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|   Example: Div-Curl System on Hexahedral Mesh (Curl-Conforming)             |\n" \
+    << "|  Example: Generate Mass and Stiffness Matrices and Right-Hand Side Vector   |\n"
+    << "|    for Div-Curl System on Hexahedral Mesh with Curl-Conforming Elements     |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
@@ -173,10 +213,10 @@ int main(int argc, char *argv[]) {
 
 // *********************************** GENERATE MESH ************************************
 
-    std::cout << "Generating mesh ... \n\n";
+    *outStream << "Generating mesh ... \n\n";
 
-    std::cout << "    NX" << "   NY" << "   NZ\n";
-    std::cout << std::setw(5) << NX <<
+    *outStream << "    NX" << "   NY" << "   NZ\n";
+    *outStream << std::setw(5) << NX <<
                  std::setw(5) << NY <<
                  std::setw(5) << NZ << "\n\n";
 
@@ -185,10 +225,10 @@ int main(int argc, char *argv[]) {
     int numNodes = (NX+1)*(NY+1)*(NZ+1);
     int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
     int numFaces = (NX)*(NY)*(NZ + 1) + (NX)*(NY + 1)*(NZ) + (NX + 1)*(NY)*(NZ);
-    std::cout << " Number of Elements: " << numElems << " \n";
-    std::cout << "    Number of Nodes: " << numNodes << " \n";
-    std::cout << "    Number of Edges: " << numEdges << " \n";
-    std::cout << "    Number of Faces: " << numFaces << " \n\n";
+    *outStream << " Number of Elements: " << numElems << " \n";
+    *outStream << "    Number of Nodes: " << numNodes << " \n";
+    *outStream << "    Number of Edges: " << numEdges << " \n";
+    *outStream << "    Number of Faces: " << numFaces << " \n\n";
 
    // Cube
     double leftX = -1.0, rightX = 1.0;
@@ -575,7 +615,7 @@ int main(int argc, char *argv[]) {
 // **************************** INCIDENCE MATRIX **************************************
 
    // Node to edge incidence matrix
-    std::cout << "Building incidence matrix ... \n\n";
+    *outStream << "Building incidence matrix ... \n\n";
 
     Epetra_SerialComm Comm;
     Epetra_Map globalMapC(numEdges, 0, Comm);
@@ -596,7 +636,7 @@ int main(int argc, char *argv[]) {
 // ************************************ CUBATURE **************************************
 
    // Get numerical integration points and weights for element
-    std::cout << "Getting cubature ... \n\n";
+    *outStream << "Getting cubature ... \n\n";
 
     DefaultCubatureFactory<double>  cubFactory;                                   
     int cubDegree = 2;
@@ -634,7 +674,7 @@ int main(int argc, char *argv[]) {
 // ************************************** BASIS ***************************************
 
    // Define basis 
-    std::cout << "Getting basis ... \n\n";
+    *outStream << "Getting basis ... \n\n";
     Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
     Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
 
@@ -656,7 +696,7 @@ int main(int argc, char *argv[]) {
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL MASS and STIFFNESS MATRICES *************
 
 
-    std::cout << "Building mass and stiffness matrices ... \n\n";
+    *outStream << "Building mass and stiffness matrices ... \n\n";
 
  // Settings and data structures for mass and stiffness matrices
     typedef CellTools<double>  CellTools;
