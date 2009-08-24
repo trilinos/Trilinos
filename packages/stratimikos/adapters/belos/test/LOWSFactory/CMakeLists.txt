@@ -43,8 +43,8 @@ IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     test_single_belos_thyra_solver_driver
     POSTFIX_AND_ARGS_0 nos1_bs8
       --no-use-preconditioner --show-all-tests --num-rhs=8 --block-size=8
-      --gmres-krylov-length=300 --max-fwd-error=1e-13 --max-resid=-13
-      --max-resid-error-slack=2.0 --max-iters=1000 --max-solution-error=1e-6
+      --gmres-krylov-length=300 --max-fwd-error=1e-13 --max-resid=1e-13
+      --max-iters=1000 --max-solution-error=1e-6
       --matrix-file=nos1.mtx
     COMM serial
     )
