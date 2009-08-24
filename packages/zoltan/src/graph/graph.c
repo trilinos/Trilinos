@@ -37,10 +37,12 @@ Zoltan_Verify_Graph(MPI_Comm comm, int *vtxdist, int *xadj,
   /* This function needs a distribution : rows then cols to work properly */
 
 int
-ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
 {
   static char *yo = "ZG_Build";
   int ierr = ZOLTAN_OK;
+  int diag;
+  int *diagarray=NULL;
 
   memset (graph, 0, sizeof(ZG));
 
@@ -49,6 +51,13 @@ ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
 
   ierr = Zoltan_Matrix_Build(zz, &graph->mtx.mtx);
   CHECK_IERR;
+  ierr = Zoltan_Matrix_Mark_Diag (zz, &graph->mtx.mtx, &diag, &diagarray);
+  CHECK_IERR;
+  if (diag) { /* Some Diagonal Terms have to be removed */
+    ierr = Zoltan_Matrix_Delete_nnz(zz, &graph->mtx.mtx, diag, diagarray);
+    ZOLTAN_FREE(&diagarray);
+    CHECK_IERR;
+  }
   if (bipartite) {
     ierr = Zoltan_Matrix_Bipart(zz, &graph->mtx.mtx, zz->Num_Proc, zz->Proc);
     CHECK_IERR;
@@ -81,11 +90,12 @@ ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
   }
 
  End:
+  ZOLTAN_FREE(&diagarray);
   return (ierr);
 }
 
 int
-ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
+Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
 	   int **xwgt, int **partialD2)
 {
@@ -110,7 +120,7 @@ ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 
   /* This function may work on any distribution of the bipartite graph */
 int
-ZG_Register(ZZ* zz, ZG* graph, int* properties)
+Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
 {
   static char *yo = "ZG_Register";
   int ierr = ZOLTAN_OK;
@@ -148,7 +158,7 @@ ZG_Register(ZZ* zz, ZG* graph, int* properties)
       ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
 			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
       /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, graph->mtx.mtx.globalX/zz->Num_Proc);
+      Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);
     }
     dd = graph->mtx.mtx.ddY;
   }
@@ -166,7 +176,7 @@ ZG_Register(ZZ* zz, ZG* graph, int* properties)
 
 /* This function may work with any distribution of the bipartite graph */
 int
-ZG_Query (ZZ* zz, const ZG* const graph,
+Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 	  ZOLTAN_ID_PTR GID, int GID_length, int* properties)
 {
   struct Zoltan_DD_Struct *dd;
@@ -179,18 +189,17 @@ ZG_Query (ZZ* zz, const ZG* const graph,
 }
 
 void
-ZG_Free(ZZ *zz, ZG *graph){
+Zoltan_ZG_Free(ZZ *zz, ZG *graph){
   /* TODO : free the communicators properly */
 
   if (graph->bipartite)
     ZOLTAN_FREE(&graph->fixed_vertices);
 
 
-  Zoltan_Matrix_Free(zz, &graph->mtx.mtx);
-  ZOLTAN_FREE(&graph->mtx.comm);
+/*   Zoltan_Matrix_Free(zz, &graph->mtx.mtx); */
+
   Zoltan_Matrix2d_Free(zz, &graph->mtx);
-
-
+  ZOLTAN_FREE(&graph->mtx.comm);
 }
 
 

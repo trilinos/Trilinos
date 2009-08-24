@@ -26,6 +26,7 @@ extern "C" {
 struct Transpose_Elem {
   int xGNO;
   int pinGNO;
+  int offset;  /* keep track of the weigths, no copy at this time */
 };
 
 int
@@ -50,6 +51,7 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
   ZOLTAN_ID_PTR yGID = NULL;
   float *ywgt = NULL;
   int *Input_Parts = NULL;
+  float *pinwgt=NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -62,6 +64,7 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {
       tr_tab[cnt].xGNO = matrix->pinGNO[j];
       tr_tab[cnt].pinGNO = matrix->yGNO[i] + matrix->globalX; /* new ordering */
+      tr_tab[cnt].offset = j;
       cnt ++;
     }
   }
@@ -102,6 +105,11 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
   matrix->pinGNO = tmparray;
   tmparray = NULL;
 
+  pinwgt = matrix->pinwgt;
+  matrix->pinwgt = (float*)ZOLTAN_MALLOC(matrix->pinwgtdim*sizeof(float)*matrix->nPins);
+  if (matrix->nPins && matrix->pinwgtdim && matrix->pinwgt == NULL)
+    MEMORY_ERROR;
+
   /* Now deal with the new nnz */
   for (cnt = 0,j =matrix->nPins, i=matrix->nY-1 ;
        cnt < matrix->nPins ; ++cnt) {
@@ -114,12 +122,15 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
       matrix->yGNO[i] = xGNO;
     }
     matrix->pinGNO[j] = tr_tab[cnt].pinGNO;
+    memcpy(matrix->pinwgt+j*matrix->pinwgtdim, 
+	   pinwgt + tr_tab[cnt].offset*matrix->pinwgtdim,
+	   matrix->pinwgtdim*sizeof(float));
     j++;
   }
   matrix->yend[i] = j;
   newGNOsize = i + 1; /* i is 0 based */
   ZOLTAN_FREE(&tr_tab);
-
+  ZOLTAN_FREE(&pinwgt);
 
   /* Update data directories */
   if (matrix->ywgtdim != zz->Obj_Weight_Dim)
@@ -168,6 +179,7 @@ Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc)
 		    Input_Parts, matrix->nY);
 
  End:
+  ZOLTAN_FREE(&pinwgt);
   ZOLTAN_FREE(&ywgt);
   ZOLTAN_FREE(&yGID);
   ZOLTAN_FREE(&Input_Parts);

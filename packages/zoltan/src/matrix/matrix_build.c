@@ -263,21 +263,25 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     if (matrix->nPins && ((*pinID) == NULL || nbors_proc == NULL))
       MEMORY_ERROR;
 
+    matrix->pinwgt = (float*)ZOLTAN_MALLOC(matrix->nPins*matrix->pinwgtdim*sizeof(float));
+    if (matrix->nPins && matrix->pinwgtdim && matrix->pinwgt == NULL)
+      MEMORY_ERROR;
+
     if (zz->Get_Edge_List_Multi) {
       zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data,
 			      numGID, numLID,
 			      matrix->nY, *xGID, *xLID,
 			      edgeSize,
-			      (*pinID), nbors_proc, 0,
-			      NULL, &ierr);
+			      (*pinID), nbors_proc, matrix->pinwgtdim,
+			      matrix->pinwgt, &ierr);
     }
     else {
       int edge;
       for (vertex = 0, edge = 0 ; vertex < matrix->nY ; ++vertex) {
 	zz->Get_Edge_List(zz->Get_Edge_List_Data, numGID, numLID,
                           (*xGID)+vertex*numGID, (*xLID)+vertex*numLID,
-                          (*pinID)+edge*numGID, nbors_proc+edge, 0,
-                          NULL, &ierr);
+                          (*pinID)+edge*numGID, nbors_proc+edge, matrix->pinwgtdim,
+                          matrix->pinwgt, &ierr);
 	edge += edgeSize[vertex];
       }
     }
