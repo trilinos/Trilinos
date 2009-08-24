@@ -67,12 +67,12 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   SuperLU        SS
   Zlib		 SS
   UMFPACK        SS
-  MUMPS          SS
   MA28           TS
   AMD            TS
   PETSC          SS
   HYPRE          EX
   SCALAPACK      SS
+  MUMPS          SS
   Oski           SS
   TAUCS          SS
   ForUQTK	 EX
