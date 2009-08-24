@@ -245,6 +245,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries.  (Cannot
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
 AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetra, BELOS_EPETRA, BUILD_EPETRA, yes, [Build tests that use Epetra. Can be overridden with --disable-belos-epetra.], [Build tests that use Epetra.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])
@@ -348,17 +350,22 @@ AC_CONFIG_FILES([
 		Makefile.export.belos
 		src/Makefile
 		example/Makefile
-		example/BlockGmres/Makefile
-		example/BlockCG/Makefile
-		example/GCRODR/Makefile
-		example/PCPG/Makefile
 		test/Makefile
-		test/BlockCG/Makefile
-		test/BlockGmres/Makefile
-		test/GCRODR/Makefile
-		test/PCPG/Makefile
-		test/TFQMR/Makefile
 		test/MVOPTester/Makefile
+		epetra/Makefile
+		epetra/src/Makefile
+		epetra/example/Makefile
+		epetra/example/BlockGmres/Makefile
+		epetra/example/BlockCG/Makefile
+		epetra/example/GCRODR/Makefile
+		epetra/example/PCPG/Makefile
+		epetra/test/Makefile
+		epetra/test/MVOPTester/Makefile
+		epetra/test/BlockCG/Makefile
+		epetra/test/BlockGmres/Makefile
+		epetra/test/GCRODR/Makefile
+		epetra/test/PCPG/Makefile
+		epetra/test/TFQMR/Makefile
 		tpetra/Makefile
 		tpetra/src/Makefile
 		tpetra/test/Makefile

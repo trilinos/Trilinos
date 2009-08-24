@@ -103,6 +103,7 @@ tests:
 	@echo "Now building belos tests."
 	@echo ""
 	cd $(top_builddir)/test && $(MAKE) && \
+			cd $(abs_top_builddir)/epetra/test && $(MAKE) && \
 			cd $(abs_top_builddir)/tpetra/test && $(MAKE)
 	@echo ""
 	@echo "Finished building belos tests."
@@ -117,13 +118,13 @@ examples:
 	@echo ""
 	@echo "Now building belos examples."
 	@echo ""
-	cd $(top_builddir)/example && $(MAKE)
+	cd $(top_builddir)/example && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE)
 	@echo ""
 	@echo "Finished building belos examples."
 	@echo ""
 
 install-examples:
-	cd $(top_builddir)/example && $(MAKE) install
+	cd $(top_builddir)/example && $(MAKE) install && cd $(abs_top_builddir)/epetra/example && $(MAKE) install
 else
 examples:
 	@echo "belos examples were disabled at configure time"
@@ -134,6 +135,7 @@ endif
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean && \
+			cd $(abs_top_builddir)/epetra/test && $(MAKE) clean \
 			cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
@@ -148,12 +150,15 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
+if BUILD_EPETRA
+EPETRA_SUBDIR = epetra
+endif
 
 if BUILD_TPETRA
 TPETRA_SUBDIR = tpetra
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(TPETRA_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(TPETRA_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

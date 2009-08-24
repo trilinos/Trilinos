@@ -4,6 +4,9 @@
 #undef HAVE_ASSERT_H
 
 /* Define if want to build with belos enabled */
+#undef HAVE_BELOS_EPETRA
+
+/* Define if want to build with belos enabled */
 #undef HAVE_BELOS_EPETRAEXT
 
 /* Define if want to build belos-examples */

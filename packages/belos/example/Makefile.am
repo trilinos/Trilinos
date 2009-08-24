@@ -5,5 +5,6 @@
 
 all-local:
 
-SUBDIRS = BlockGmres BlockCG GCRODR PCPG
+SUBDIRS = 
+#SUBDIRS = BlockGmres BlockCG GCRODR PCPG
 

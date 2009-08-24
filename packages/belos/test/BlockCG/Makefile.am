@@ -16,74 +16,27 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-if BUILD_IFPACK
-BELOS_BCG_IFPACK_EX = bl_pcg_hb 
-endif
-BELOS_BCG_HB_EX = bl_cg_hb resolve_cg_hb Dummy
-endif
-
-if BUILD_TRIUTILS
 if BUILD_TEUCHOS_COMPLEX
 BELOS_BCG_COMPLEX_TEST = bl_cg_complex_hb ComplexDummy
 endif
 endif
 
-noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) $(BELOS_BCG_HB_EX) $(BELOS_BCG_COMPLEX_TEST)
-
-Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(top_srcdir)/example/BlockCG/bcsstk14.hb bcsstk14.hb
-	cp  $(top_srcdir)/example/BlockCG/bcsstk15.hb bcsstk15.hb
-
-Dummy_SOURCES = Dummy
+noinst_PROGRAMS = $(BELOS_BCG_COMPLEX_TEST)
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
 
 ComplexDummy_SOURCES = Dummy
 
-bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
-
-bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
-
-resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
-
 bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp $(srcdir)/createEpetraProblem.cpp
-
-bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
-
-bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
-
-resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
-			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 			$(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
-
-bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
-
-resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
-
 bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
-
-bl_pcg_hb_LDADD = $(EXPORT_LIBS)
-
-bl_cg_hb_LDADD = $(EXPORT_LIBS)
-
-resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 
 bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 
-
-EXTRA_DIST = \
-	$(srcdir)/createEpetraProblem.hpp

@@ -33,8 +33,6 @@ APPEND_SET(HEADERS
   BelosCGIteration.hpp
   BelosConfigDefs.hpp
   BelosDGKSOrthoManager.hpp
-  BelosEpetraAdapter.hpp
-  BelosEpetraOperator.h
   BelosPCPGIter.hpp
   BelosPCPGSolMgr.hpp
   BelosGCRODRIter.hpp
@@ -75,8 +73,6 @@ APPEND_SET(HEADERS
 
 # CORE
 APPEND_SET(SOURCES
-  BelosEpetraAdapter.cpp
-  BelosEpetraOperator.cpp
   )
 
 # UTIL

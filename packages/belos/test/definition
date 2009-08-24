@@ -8,44 +8,44 @@ PACKAGE_NAME=Belos
 #
 # --filename=$ABS_TOP_SRCDIR/packages/belos/test/MVOPTester/mhd1280b.cua;
 #
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockCG/bl_cg_hb.exe,
-            BlockCG/bl_pcg_hb.exe,
-            BlockCG/resolve_cg_hb.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/BlockCG/bl_cg_hb.exe,
+            ../epetra/test/BlockCG/bl_pcg_hb.exe,
+            ../epetra/test/BlockCG/resolve_cg_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockCG/bcsstk14.hb";
+    ARGS = --verbose --filename="../epetra/test/BlockCG/bcsstk14.hb";
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/bl_gmres_hb.exe,
-            BlockGmres/bl_pgmres_hb.exe,
-            BlockGmres/bl_fgmres_hb.exe,
-	    BlockGmres/resolve_gmres_hb.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/BlockGmres/bl_gmres_hb.exe,
+            ../epetra/test/BlockGmres/bl_pgmres_hb.exe,
+            ../epetra/test/BlockGmres/bl_fgmres_hb.exe,
+	    ../epetra/test/BlockGmres/resolve_gmres_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb";
+    ARGS = --verbose --filename="../epetra/test/BlockGmres/orsirr1.hb";
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/pseudo_gmres_hb.exe,
-            BlockGmres/pseudo_pgmres_hb.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/BlockGmres/pseudo_gmres_hb.exe,
+            ../epetra/test/BlockGmres/pseudo_pgmres_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb";
+    ARGS = --verbose --filename="../epetra/test/BlockGmres/orsirr1.hb";
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/bl_gmres_hb.exe,
-            BlockGmres/bl_pgmres_hb.exe,
-            BlockGmres/resolve_gmres_hb.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/BlockGmres/bl_gmres_hb.exe,
+            ../epetra/test/BlockGmres/bl_pgmres_hb.exe,
+            ../epetra/test/BlockGmres/resolve_gmres_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb" --pseudo;
+    ARGS = --verbose --filename="../epetra/test/BlockGmres/orsirr1.hb" --pseudo;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/bl_gmres_diag.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/BlockGmres/bl_gmres_diag.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI;
 }
@@ -54,43 +54,43 @@ PACKAGE_NAME=Belos
     TESTS = BlockCG/bl_cg_complex_hb.exe,
             BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua";
+    ARGS = --verbose --filename="../epetra/test/BlockCG/mhd1280b.cua";
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,BelosComplexTests) {
     TESTS = BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua" --pseudo;
+    ARGS = --verbose --filename="../epetra/test/BlockCG/mhd1280b.cua" --pseudo;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,BelosComplexTests) {
     TESTS = BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./BlockGmres/mhd1280a.cua" --subspace-length=200 --tol=1e-4;
+    ARGS = --verbose --filename="../epetra/test/BlockGmres/mhd1280a.cua" --subspace-length=200 --tol=1e-4;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = GCRODR/gcrodr_hb.exe,
-            GCRODR/prec_gcrodr_hb.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/GCRODR/gcrodr_hb.exe,
+            ../epetra/test/GCRODR/prec_gcrodr_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75;
+    ARGS = --debug --verbose --filename="../epetra/test/GCRODR/sherman5.hb" --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75;
     COMM = SERIAL, MPI;
     X-HOST = gabriel.sandia.gov;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = GCRODR/prec_gcrodr_hb.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/GCRODR/prec_gcrodr_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --debug --verbose --filename="./GCRODR/sherman5.hb" --tol=1e-10 --num-rhs=2 --max-subspace=10 --recycle=2;
+    ARGS = --debug --verbose --filename="../epetra/test/GCRODR/sherman5.hb" --tol=1e-10 --num-rhs=2 --max-subspace=10 --recycle=2;
     COMM = SERIAL, MPI;
     X-HOST = gabriel.sandia.gov;
 }
 
-(FRAMEWORK,INSTALL) {
-    TESTS = MVOPTester/MVOPTester_test.exe;
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/MVOPTester/MVOPTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;

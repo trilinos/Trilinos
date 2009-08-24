@@ -743,6 +743,8 @@ SUB_EXAMPLE_TRUE
 SUB_EXAMPLE_FALSE
 BUILD_TEUCHOS_COMPLEX_TRUE
 BUILD_TEUCHOS_COMPLEX_FALSE
+BUILD_EPETRA_TRUE
+BUILD_EPETRA_FALSE
 BUILD_TRIUTILS_TRUE
 BUILD_TRIUTILS_FALSE
 BUILD_IFPACK_TRUE
@@ -1378,6 +1380,9 @@ Optional Features:
   --enable-teuchos-complex
                           Build examples/tests which use complex scalar type
                           (default is yes)
+  --enable-epetra         Build tests that use Epetra.
+  --enable-belos-epetra   Build tests that use Epetra. Can be overridden with
+                          --disable-belos-epetra.
   --enable-triutils       Build tests that use Triutils.
   --enable-belos-triutils Build tests that use Triutils. Can be overridden
                           with --disable-belos-triutils.
@@ -7933,6 +7938,57 @@ fi
 
 
 
+# Check whether --enable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_belos_using_epetra_default=$ac_cv_implicit_use_epetra
+else
+  ac_cv_belos_using_epetra_default=no
+fi
+
+# Check whether --enable-belos-epetra was given.
+if test "${enable_belos_epetra+set}" = set; then
+  enableval=$enable_belos_epetra; ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_belos_using_epetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in belos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_EPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetra" = "Xyes"; then
+  BUILD_EPETRA_TRUE=
+  BUILD_EPETRA_FALSE='#'
+else
+  BUILD_EPETRA_TRUE='#'
+  BUILD_EPETRA_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-triutils was given.
 if test "${enable_triutils+set}" = set; then
   enableval=$enable_triutils; ac_cv_implicit_use_triutils=$enableval
@@ -8480,7 +8536,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile example/GCRODR/Makefile example/PCPG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/GCRODR/Makefile test/PCPG/Makefile test/TFQMR/Makefile test/MVOPTester/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile tpetra/test/BlockGmres/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile test/Makefile test/MVOPTester/Makefile epetra/Makefile epetra/src/Makefile epetra/example/Makefile epetra/example/BlockGmres/Makefile epetra/example/BlockCG/Makefile epetra/example/GCRODR/Makefile epetra/example/PCPG/Makefile epetra/test/Makefile epetra/test/MVOPTester/Makefile epetra/test/BlockCG/Makefile epetra/test/BlockGmres/Makefile epetra/test/GCRODR/Makefile epetra/test/PCPG/Makefile epetra/test/TFQMR/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile tpetra/test/BlockGmres/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8681,6 +8737,13 @@ if test -z "${BUILD_TEUCHOS_COMPLEX_TRUE}" && test -z "${BUILD_TEUCHOS_COMPLEX_F
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRA_TRUE}" && test -z "${BUILD_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9192,17 +9255,22 @@ do
     "Makefile.export.belos") CONFIG_FILES="$CONFIG_FILES Makefile.export.belos" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-    "example/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockGmres/Makefile" ;;
-    "example/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES example/BlockCG/Makefile" ;;
-    "example/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES example/GCRODR/Makefile" ;;
-    "example/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES example/PCPG/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-    "test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
-    "test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
-    "test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES test/GCRODR/Makefile" ;;
-    "test/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES test/PCPG/Makefile" ;;
-    "test/TFQMR/Makefile") CONFIG_FILES="$CONFIG_FILES test/TFQMR/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
+    "epetra/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/Makefile" ;;
+    "epetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/src/Makefile" ;;
+    "epetra/example/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/Makefile" ;;
+    "epetra/example/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/BlockGmres/Makefile" ;;
+    "epetra/example/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/BlockCG/Makefile" ;;
+    "epetra/example/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/GCRODR/Makefile" ;;
+    "epetra/example/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/PCPG/Makefile" ;;
+    "epetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/Makefile" ;;
+    "epetra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/MVOPTester/Makefile" ;;
+    "epetra/test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockCG/Makefile" ;;
+    "epetra/test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockGmres/Makefile" ;;
+    "epetra/test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/GCRODR/Makefile" ;;
+    "epetra/test/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/PCPG/Makefile" ;;
+    "epetra/test/TFQMR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/TFQMR/Makefile" ;;
     "tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/Makefile" ;;
     "tpetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/src/Makefile" ;;
     "tpetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES tpetra/test/Makefile" ;;
@@ -9440,6 +9508,8 @@ SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
 SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 BUILD_TEUCHOS_COMPLEX_TRUE!$BUILD_TEUCHOS_COMPLEX_TRUE$ac_delim
 BUILD_TEUCHOS_COMPLEX_FALSE!$BUILD_TEUCHOS_COMPLEX_FALSE$ac_delim
+BUILD_EPETRA_TRUE!$BUILD_EPETRA_TRUE$ac_delim
+BUILD_EPETRA_FALSE!$BUILD_EPETRA_FALSE$ac_delim
 BUILD_TRIUTILS_TRUE!$BUILD_TRIUTILS_TRUE$ac_delim
 BUILD_TRIUTILS_FALSE!$BUILD_TRIUTILS_FALSE$ac_delim
 BUILD_IFPACK_TRUE!$BUILD_IFPACK_TRUE$ac_delim
@@ -9455,7 +9525,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 46; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

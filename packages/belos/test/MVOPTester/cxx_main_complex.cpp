@@ -32,7 +32,6 @@
 //
 
 #include "BelosConfigDefs.hpp"
-#include "BelosEpetraAdapter.hpp"
 #include "BelosMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "BelosOutputManager.hpp"
@@ -105,7 +104,6 @@ int main(int argc, char *argv[])
 #endif
 
   // Issue several useful typedefs;
-  //typedef Belos::MultiVec<ST> MV;
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
   typedef Belos::MultiVecTraits<ST,MV> MVT;

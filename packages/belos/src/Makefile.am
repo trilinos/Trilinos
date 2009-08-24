@@ -25,8 +25,6 @@ CORE_H = \
 	$(srcdir)/BelosCGIteration.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
-	$(srcdir)/BelosEpetraAdapter.hpp \
-	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosPCPGIter.hpp \
 	$(srcdir)/BelosPCPGSolMgr.hpp \
 	$(srcdir)/BelosGCRODRIter.hpp \
@@ -62,9 +60,7 @@ CORE_H = \
 	$(srcdir)/BelosStatusTestImpResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
 
-CORE = \
-	$(srcdir)/BelosEpetraAdapter.cpp \
-	$(srcdir)/BelosEpetraOperator.cpp
+CORE = 
 
 UTIL = \
 	$(srcdir)/BelosVersion.cpp

@@ -47,7 +47,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = MVOPTester_test $(BELOS_COMPLEX_TEST)
+noinst_PROGRAMS = $(BELOS_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/mhd1280a.cua mhd1280a.cua; cp  $(srcdir)/mhd1280b.cua mhd1280b.cua; fi
@@ -55,32 +55,24 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-MVOPTester_test_SOURCES = $(srcdir)/cxx_main.cpp
-
 MVOPComplexTester_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
 Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-MVOPTester_test_DEPENDENCIES = \
-	$(top_builddir)/src/libbelos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
 
 MVOPComplexTester_test_DEPENDENCIES = \
 	$(top_builddir)/src/libbelos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-MVOPTester_test_CXXFLAGS = -I$(top_srcdir)/src
 
 MVOPComplexTester_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-MVOPTester_test_LDADD = $(EXPORT_LIBS) 
 
 MVOPComplexTester_test_LDADD = $(EXPORT_LIBS) 
 

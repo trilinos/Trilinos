@@ -37,7 +37,10 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "createEpetraProblem.hpp"
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_BELOS_TRIUTILS
@@ -47,6 +50,17 @@
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
 #include "MyOperator.hpp"
+
+namespace Belos {
+  class MPIFinalize {
+  public:
+    ~MPIFinalize() {
+#ifdef HAVE_MPI
+      MPI_Finalize();
+#endif
+    }
+  };
+}
 
 using namespace Teuchos;
 
