@@ -594,7 +594,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
     offsets[i] = i;
   }
 
-  memcpy(sortedGE, GlobalEntries, NumEntries*sizeof(int));
+  std::memcpy(sortedGE, GlobalEntries, NumEntries*sizeof(int));
   Epetra_Util Utils;
   Utils.Sort(true, NumEntries, sortedGE, 0, 0, 1, &offsets);
 

@@ -187,7 +187,7 @@ Epetra_IntSerialDenseMatrix& Epetra_IntSerialDenseMatrix::operator = (const Epet
 	if((CV_ == View) && (Source.CV_ == View) && (A_ == Source.A_))
 		return(*this); // Special case of both are views to same data.
 
-	if(strcmp(Label(), Source.Label()) != 0)
+	if(std::strcmp(Label(), Source.Label()) != 0)
 		throw ReportError("operator= type mismatch (lhs = " + string(Label()) + 
 											", rhs = " + string(Source.Label()) + ").", -5);
 	
@@ -263,7 +263,7 @@ bool Epetra_IntSerialDenseMatrix::operator==(const Epetra_IntSerialDenseMatrix& 
 
 //=============================================================================
 int Epetra_IntSerialDenseMatrix::MakeViewOf(const Epetra_IntSerialDenseMatrix& Source) {
-	if(strcmp(Label(), Source.Label()) != 0)
+	if(std::strcmp(Label(), Source.Label()) != 0)
 		return(-1);
 
 	if(CV_ == Copy) {

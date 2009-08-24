@@ -2474,7 +2474,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 	for (int j=0; j<ColDim; j++) {
 	  double * curEntry = A + j*LDA;
 	  for (int k=0; k<RowDim; k++)
-	    xptr[k] += fabs(*curEntry++);
+	    xptr[k] += std::abs(*curEntry++);
 	}
       }
     }
@@ -2489,7 +2489,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 	for (int j=0; j<ColDim; j++) {
 	  double * curEntry = A + j*LDA;
 	  for (int k=0; k<RowDim; k++)
-	    curx[j] += fabs(*curEntry++);
+	    curx[j] += std::abs(*curEntry++);
 	}
       }
     }
@@ -2692,7 +2692,7 @@ void Epetra_VbrMatrix::BlockRowNormInf(int RowDim, int NumEntries,
     int LDA = As[i]->LDA();
     int ColDim = As[i]->N();
     for (j=0; j<ColDim; j++) {
-      for (k=0; k<RowDim; k++) Y[k] += fabs(A[k]);
+      for (k=0; k<RowDim; k++) Y[k] += std::abs(A[k]);
       A += LDA;
     }
   }
@@ -2837,7 +2837,7 @@ void Epetra_VbrMatrix::BlockRowNormOne(int RowDim, int NumEntries, int * BlockRo
     int ColDim = As[i]->N();
     double * curx = x + ColFirstPointInElementList[BlockRowIndices[i]];
     for (j=0; j<ColDim; j++) {
-      for (k=0; k<RowDim; k++) curx[j] += fabs(A[k]);
+      for (k=0; k<RowDim; k++) curx[j] += std::abs(A[k]);
       A += LDA;
     }
   }

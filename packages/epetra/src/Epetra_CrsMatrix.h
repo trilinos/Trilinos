@@ -1046,6 +1046,9 @@ or if the number of entries in this row exceed the Length parameter.
   */
 	int NumMyRowEntries(int MyRow, int& NumEntries) const;
 
+  //! Map() method inherited from Epetra_DistObject
+  const Epetra_BlockMap& Map() const { return Epetra_DistObject::Map(); }
+
 	//! Returns the Epetra_Map object associated with the rows of this matrix.
 	const Epetra_Map& RowMatrixRowMap() const {return(RowMap());}
 	

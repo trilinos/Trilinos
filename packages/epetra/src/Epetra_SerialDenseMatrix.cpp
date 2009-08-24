@@ -211,7 +211,7 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator = (const Epetra_Ser
 	if((CV_ == View) && (Source.CV_ == View) && (A_ == Source.A_))
 		return(*this); // Special case of both are views to same data.
 
-	if(strcmp(Label(), Source.Label()) != 0)
+	if(std::strcmp(Label(), Source.Label()) != 0)
 		throw ReportError("operator= type mismatch (lhs = " + string(Label()) + 
 											", rhs = " + string(Source.Label()) + ").", -5);
 	

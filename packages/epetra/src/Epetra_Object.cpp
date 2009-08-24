@@ -125,7 +125,7 @@ void Epetra_Object::SetLabel(const char * const Label_in)
     Label_ = 0;
   }
   if (Label_in==0) return;
-  Label_ = new char[strlen(Label_in)+1];
-  strcpy(Label_,Label_in);
+  Label_ = new char[std::strlen(Label_in)+1];
+  std::strcpy(Label_,Label_in);
   return;
 }
