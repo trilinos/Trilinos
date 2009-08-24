@@ -105,8 +105,8 @@ void tSIMPLEPreconditionerFactory::initializeTest()
    invF_ = rcp(new StaticOpInverseFactory(Thyra::epetraLinearOp(ptrInvF,"ptrInvF")));
 
    // build inv(Pschur) matrix
-   row0[0] =-0.037037037037037; row0[1] =-0.222222222222222;
-   row1[0] =-0.222222222222222; row1[1] =-0.333333333333333;
+   row0[0] = 0.037037037037037; row0[1] = 0.222222222222222;
+   row1[0] = 0.222222222222222; row1[1] = 0.333333333333333;
    ptrInvS->InsertGlobalValues(0,2,&row0[0],&indicies[0]);
    ptrInvS->InsertGlobalValues(1,2,&row1[0],&indicies[0]);
    ptrInvS->FillComplete();
@@ -276,7 +276,7 @@ bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os
    vec[0] = 1.0; vec[1] = 0.5;
    LinearOp iF = PB::Test::DiagMatrix(2,vec,"inv(F)");
 
-   vec[0] = 0.03125; vec[1] = 0.05;
+   vec[0] = -0.03125; vec[1] = -0.05;
    LinearOp iS = PB::Test::DiagMatrix(2,vec,"inv(S)");
 
    RCP<PB::InverseFactory> invF = rcp(new PB::StaticOpInverseFactory(iF));

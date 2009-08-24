@@ -6,7 +6,7 @@ C = [ 3 0 ; 0 4 ];
 
 alpha = 0.9;
 H = diag(1./diag(F),0);
-S = -C + D*H*G;
+S = -C + D*H*G
 
 L = [ F, 0*G ; D, -S ];
 U = [ eye(size(F)), H*G/alpha ; 0*D, eye(size(C))/alpha ];
