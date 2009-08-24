@@ -24,7 +24,7 @@ extern "C" {
 
 static int
 matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID,
-		 int nX, ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID);
+		 int nX, ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, int** xGNO, float** xwgt);
 
   /* In build_graph.c, may be moved here soon */
 extern int Zoltan_Get_Num_Edges_Per_Obj(
@@ -43,14 +43,13 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   static char *yo = "Zoltan_Matrix_Build";
   int ierr = ZOLTAN_OK;
   int randomizeInitDist = 0;
-  int enforceSquare = 0;
   int nX;
   int  *xGNO = NULL;
   ZOLTAN_ID_PTR xLID=NULL;
   ZOLTAN_ID_PTR xGID=NULL;
   ZOLTAN_ID_PTR yGID=NULL;
   ZOLTAN_ID_PTR pinID=NULL;
-  float *xwgt = NULL, *ywgt = NULL;
+  float *xwgt = NULL;
   int * Input_Parts=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
 
@@ -91,10 +90,11 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
     goto End;
   }
 
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 0, 1, nX, 0);
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
+			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 0);
 
   /* Make our new numbering public */
-  Zoltan_DD_Update (dd, xGID, NULL, (ZOLTAN_ID_PTR) xGNO, NULL, nX);
+  Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, (ZOLTAN_ID_PTR)xwgt,  NULL, nX);
 
   /* I store : xGNO, xGID, xwgt, Input_Part */
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
@@ -104,30 +104,30 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   /* Associate all the data with our xGNO */
   Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xwgt, Input_Parts, nX);
 
-  ZOLTAN_FREE(&xwgt);
   ZOLTAN_FREE(&Input_Parts);
 
-  matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID);
+  matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
     goto End;
   }
 
-  if (matrix->enforceSquare) {
+  if (matrix->enforceSquare && matrix->fromHG) {
     /* Convert yGID to yGNO using the same translation as x */
     /* Needed for graph : rowID = colID */
-    matrix->yGNO = xGNO;
-    xGNO = NULL;
-    matrix->globalY = matrix->globalX;
-    matrix->ddY = matrix->ddX;
+    /* y and x may have different distributions */
+    matrix->ywgt = (float*)ZOLTAN_MALLOC(matrix->ywgtdim * sizeof(float));
+    if (matrix->ywgtdim && matrix->ywgt == NULL)
+      MEMORY_ERROR;
+    Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
+		    matrix->nY, NULL);
   }
-  ZOLTAN_FREE(&xGNO);
 
 
   matrix->pinGNO = (int*)ZOLTAN_CALLOC(matrix->nPins, sizeof(int));
   if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
   /* Convert pinID to pinGNO using the same translation as x */
-  Zoltan_DD_Find (dd, pinID, NULL, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL,
+  Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
 		  matrix->nPins, NULL);
   ZOLTAN_FREE(&pinID);
   Zoltan_DD_Destroy(&dd);
@@ -140,11 +140,6 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
     /*     int nGlobalEdges = 0; */
     ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, matrix->yGNO, matrix->nY,
 					     randomizeInitDist, &matrix->globalY);
-
-    ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 0, 1, matrix->nY, 0);
-
-    /* Make our new numbering public */
-    Zoltan_DD_Update (dd, yGID, NULL, (ZOLTAN_ID_PTR) matrix->yGNO, NULL, matrix->nY);
 
 /*     /\**************************************************************************************** */
 /*      * If it is desired to remove dense edges, divide the list of edges into */
@@ -167,21 +162,15 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
 /*       } */
 /*     } */
 
-    Zoltan_DD_Find (dd, yGID, NULL, (ZOLTAN_ID_PTR)(matrix->yGNO), NULL,
-		    matrix->nY, NULL);
-    Zoltan_DD_Destroy(&dd);
-    dd = NULL;
-
-    /* We have to define ddY : yGNO, yGID, ywgt */
-    ierr = Zoltan_DD_Create (&matrix->ddY, zz->Communicator, 1, zz->Num_GID,
-			     matrix->ywgtdim*sizeof(float)/sizeof(int), matrix->globalY/zz->Num_Proc, 0);
-    /* Hope a linear assignment will help a little */
-    Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddY, matrix->globalY/zz->Num_Proc);
-    /* Associate all the data with our xGNO */
-    Zoltan_DD_Update (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO,
-		      yGID, (ZOLTAN_ID_PTR) ywgt, NULL, matrix->nY);
+      /* We have to define ddY : yGNO, yGID, ywgt */
+      ierr = Zoltan_DD_Create (&matrix->ddY, zz->Communicator, 1, zz->Num_GID,
+			       matrix->ywgtdim*sizeof(float)/sizeof(int), matrix->globalY/zz->Num_Proc, 0);
+      /* Hope a linear assignment will help a little */
+      Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddY, matrix->globalY/zz->Num_Proc);
+      /* Associate all the data with our yGNO */
+      Zoltan_DD_Update (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO,
+			yGID, (ZOLTAN_ID_PTR) matrix->ywgt, NULL, matrix->nY);
   }
-
 
  End:
   ZOLTAN_FREE(&xLID);
@@ -191,8 +180,9 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   ZOLTAN_FREE(&Input_Parts);
   if (dd != NULL)
     Zoltan_DD_Destroy(&dd);
+  /* Already stored in the DD */
   ZOLTAN_FREE(&yGID);
-  ZOLTAN_FREE(&ywgt);
+  ZOLTAN_FREE(&matrix->ywgt);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
@@ -209,7 +199,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
    */
 static int
 matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID, int nX,
-		 ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID)
+		 ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, int **xGNO, float **xwgt)
 {
   static char *yo = "Zoltan_Matrix_Build";
   int ierr = ZOLTAN_OK;
@@ -233,8 +223,10 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
   }
 
   if (hypergraph_callbacks) {
+    matrix->fromHG = 1;
     ZOLTAN_FREE(xGID);
     ZOLTAN_FREE(xLID);
+    ZOLTAN_FREE(xGNO);
 
     ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
 				     &matrix->nPins, yGID, &matrix->ystart,
@@ -249,7 +241,12 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
     matrix->enforceSquare = 1;
     matrix->nY = nX; /* It is square ! */
+    matrix->yGNO = *xGNO;
+    *xGNO = NULL;
     *yGID = NULL;
+    matrix->ywgtdim = zz->Obj_Weight_Dim;
+    matrix->ywgt = *xwgt;
+    *xwgt = NULL;
 
     numGID = zz->Num_GID;
     numLID = zz->Num_LID;
@@ -303,11 +300,19 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     FATAL_ERROR ("You have to define Hypergraph or Graph queries");
   }
 
+  if (matrix->enforceSquare) {
+    matrix->globalY = matrix->globalX;
+    matrix->ddY = matrix->ddX;
+    matrix->ywgtdim = zz->Obj_Weight_Dim;
+  }
+
  End:
   ZOLTAN_FREE(&edgeSize);
   ZOLTAN_FREE(&nbors_proc);
   ZOLTAN_FREE(xLID);
   ZOLTAN_FREE(xGID);
+  ZOLTAN_FREE(xGNO);
+  ZOLTAN_FREE(xwgt);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 

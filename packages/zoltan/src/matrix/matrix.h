@@ -27,8 +27,8 @@ extern "C" {
 
 /* This structure is a CS view of a part of the matrix/hypergraph */
 typedef struct Zoltan_matrix_ {
-  int           transpose;   /* Need to transpose to have a CSC view ? */
   int           enforceSquare;
+  int           fromHG;
   int           completed;
   int           globalX;   /* Overall number of objects */
   int           globalY;
@@ -38,7 +38,7 @@ typedef struct Zoltan_matrix_ {
   int           nPins;
   int          *yGNO;       /* Local edges gnos */
   int          *ystart;     /* Indirection array to describe a column */
-  int          *yend;       /* end of local pins, usually ystart+1 
+  int          *yend;       /* end of local pins, usually ystart+1
 			       (and is ystart+1 after matrix complete) */
   int          *pinGNO;     /* array of gno of other extremtiy */
   float        *pinwgt;

@@ -29,22 +29,23 @@ typedef struct ZG_ {
 } ZG;
 
 int
-ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj);
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj);
 
 /* TODO : add weights */
 int
-ZG_Export (ZZ* zz, const ZG * const graph, int *gvtx, int *ntvx,
-	   int **vtxdist, int **xadj, int **adjncy, int **adjproc, int **fixed_vertices);
+Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
+	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
+	   int **xwgt, int **partialD2);
 
 int
-ZG_Register(ZZ* zz, ZG* graph, int* properties);
+Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties);
 
 int
-ZG_Query (ZZ* zz, const ZG *graph, const ZOLTAN_ID_PTR GID,
+Zoltan_ZG_Query (ZZ* zz, const ZG *graph, const ZOLTAN_ID_PTR GID,
 	  int GID_length, int* properties);
 
 void
-ZG_Free(ZZ *zz, ZG *m);
+Zoltan_ZG_Free(ZZ *zz, ZG *m);
 
 
 #ifdef __cplusplus

@@ -303,7 +303,7 @@ int Zoltan_Color(
     ZG_Build (zz, &graph, 1, 1); /* Bipartite & we color vertices */
   else
     ZG_Build (zz, &graph, 0, 0); /* Normal graph */
-  ZG_Export (zz, &graph, &gvtx, &nvtx, &vtxdist, &xadj, &adjncy, &adjproc, &partialD2);
+  ZG_Export (zz, &graph, &gvtx, &nvtx, &vtxdist, &xadj, &adjncy, &adjproc, NULL, &partialD2);
 #endif
 
   /* CREATE THE HASH TABLE */

@@ -25,12 +25,14 @@ extern "C" {
 #define CHECK_IERR do {   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) \
     goto End;  } while (0)
 
+#define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
+
+  /* At this time function is in parmetis directory but it will change soon */
 extern int
 Zoltan_Verify_Graph(MPI_Comm comm, int *vtxdist, int *xadj,
 		    int *adjncy, int *vwgt, int *adjwgt,
 		    int vwgt_dim, int ewgt_dim,
 		    int graph_type, int check_graph, int output_level);
-
 
   /* This function needs a distribution : rows then cols to work properly */
 
@@ -84,27 +86,27 @@ ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
 
 int
 ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
-	   int **vtxdist, int **xadj, int **adjncy, int **adjproc, int **partialD2)
+	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
+	   int **xwgt, int **partialD2)
 {
   int ierr;
 
-  *gvtx = graph->mtx.mtx.globalY;
-  *nvtx = graph->mtx.mtx.nY;
-  *vtxdist = graph->mtx.dist_y;
-  *xadj = graph->mtx.mtx.ystart;
-  *adjncy = graph->mtx.mtx.pinGNO;
-  *partialD2 = graph->fixed_vertices;
+  AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
+  AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
+  AFFECT_NOT_NULL(vtxdist, graph->mtx.dist_y);
+  AFFECT_NOT_NULL(xadj, graph->mtx.mtx.ystart);
+  AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
+  AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
+  /* I have to convert from float to int */
+/*   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt); */
 
   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj,
 			     *adjncy, NULL, NULL,
-			     0, 0,
+			     graph->mtx.mtx.ywgtdim, 0,
 			     0, 2, 2);
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
 }
-
-
-
 
   /* This function may work on any distribution of the bipartite graph */
 int
