@@ -1,6 +1,5 @@
 
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
