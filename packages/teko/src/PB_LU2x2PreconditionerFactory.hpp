@@ -93,39 +93,100 @@ namespace PB {
  * LU2x2PreconditionerFactory what those operators are.
  **/
 class LU2x2PreconditionerFactory : public BlockPreconditionerFactory {
-   public:
-      //! @name Constructors.
-      //@{
+public:
+   //! @name Constructors.
+   //@{
  
-      /** @brief Build a simple static LU2x2 preconditioner */
-      LU2x2PreconditionerFactory(LinearOp & invA00,LinearOp & invS);
+   /** @brief Build a simple static LU2x2 preconditioner */
+   LU2x2PreconditionerFactory(LinearOp & invA00,LinearOp & invS);
 
-      /** @brief Build a simple static LU2x2 preconditioner */
-      LU2x2PreconditionerFactory(LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS);
+   /** @brief Build a simple static LU2x2 preconditioner */
+   LU2x2PreconditionerFactory(LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS);
 
-      /** @brief Constructor that permits the most generality in building \f$A_{00}^{-1}\f$ and
-        *        \f$S^{-1}\f$.
-        *
-        * Constructor that permits the most generality in building \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$.
-        *
-        * @param[in] strategy  Strategy object that takes a 2x2 block matrix and
-        *                      and constructs the \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ objects.
-        */
-      LU2x2PreconditionerFactory(const Teuchos::RCP<const LU2x2Strategy> & strategy);
+   /** @brief Constructor that permits the most generality in building \f$A_{00}^{-1}\f$ and
+     *        \f$S^{-1}\f$.
+     *
+     * Constructor that permits the most generality in building \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$.
+     *
+     * @param[in] strategy  Strategy object that takes a 2x2 block matrix and
+     *                      and constructs the \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ objects.
+     */
+   LU2x2PreconditionerFactory(const Teuchos::RCP<const LU2x2Strategy> & strategy);
 
-      //@}
 
-      /** \brief Create the LU 2x2 preconditioner operator.
-        *
-        * This method breaks apart the BlockLinearOp and builds a block
-        * LU preconditioner. This will require two applications of the inverse
-        * of the (0,0) block and one application of the inverse Schur complement.
-        */
-      LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
+   /** \brief Default constructor for use with AutoClone
+     *
+     * Default constructor for use with AutoClone
+     */
+   LU2x2PreconditionerFactory();
+
+   //@}
+
+   /** \brief Create the LU 2x2 preconditioner operator.
+     *
+     * This method breaks apart the BlockLinearOp and builds a block
+     * LU preconditioner. This will require two applications of the inverse
+     * of the (0,0) block and one application of the inverse Schur complement.
+     */
+   LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
+
+   /** \brief This function builds the internals of the preconditioner factory
+     *        from a parameter list.
+     *        
+     * This function builds the internals of the preconditioner factory
+     * from a parameter list. Furthermore, it allows a preconditioner factory
+     * developer to easily add a factory to the build system. This function
+     * is required for building a preconditioner from a parameter list.
+     *
+     * \param[in] settings Parmaeter list to use as the internal settings
+     *
+     * \note The default implementation does nothing.
+     */
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & settings);
  
-   protected: 
-      //! some members
-      Teuchos::RCP<const LU2x2Strategy> invOpsStrategy_;
+protected: 
+   //! some members
+   Teuchos::RCP<const LU2x2Strategy> invOpsStrategy_;
+
+public:
+   /** \brief Builder function for creating strategies.
+     *
+     * Builder function for creating strategies.
+     * 
+     * \param[in] name     String name of strategy to build
+     * \param[in] settings Parameter list describing the parameters for the
+     *                     strategy to build
+     * \param[in] invLib   Inverse library for the strategy to use.
+     *
+     * \returns If the name is associated with a strategy
+     *          a pointer is returned, otherwise Teuchos::null is returned.
+     */
+   static RCP<LU2x2Strategy> 
+   buildStrategy(const std::string & name, 
+                 const Teuchos::ParameterList & settings,
+                 const RCP<const InverseLibrary> & invLib=Teuchos::null);
+
+   /** \brief Add a strategy to the builder. This is done using the
+     *        clone pattern. 
+     *
+     * Add a strategy to the builder. This is done using the
+     * clone pattern. If your class does not support the Cloneable interface then
+     * you can use the AutoClone class to construct your object.
+     *
+     * \note If this method is called twice with the same string, the latter clone pointer
+     *       will be used.
+     *
+     * \param[in] name String to associate with this object
+     * \param[in] clone Pointer to Cloneable object
+     */
+   static void addStrategy(const std::string & name,const RCP<Cloneable> & clone);
+
+protected:
+   //! for creating the strategy objects
+   static CloneFactory<LU2x2Strategy> strategyBuilder_;
+
+   //! This is where the default objects are put into the strategyBuilder_
+   static void initializeStrategyBuilder();
 };
 
 } // end namespace PB

@@ -69,6 +69,21 @@ public:
    /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01}\f$ */
    virtual const PB::LinearOp
    getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+
+   /** \brief This function builds the internals of the state from a parameter list.
+     *        
+     * This function builds the internals of the LU 2x2 state
+     * from a parameter list. Furthermore, it allows a 
+     * developer to easily add a factory to the build system.
+     *
+     * \param[in] settings Parameter list to use as the internal settings
+     * \param[in] invLib Inverse library to use for building inverse factory objects
+     *
+     * \note The default implementation does nothing.
+     */
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & settings,
+                                            const InverseLibrary & invLib)
+   { }
 };
 
 /** @brief A simple strategy for use with LU2x2PreconditionerFactory, that
