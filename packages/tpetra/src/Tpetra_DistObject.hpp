@@ -287,7 +287,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
-    return map_.isDistributed();
+    return map_->isDistributed();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

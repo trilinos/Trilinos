@@ -51,13 +51,13 @@ namespace Tpetra {
     //@{ 
 
     //! Sets all vector entries to zero.
-    Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, bool zeroOut=true);
+    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
 
     //! Vector copy constructor.
     Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
     //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, const Teuchos::ArrayView<const Scalar> &A);
+    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A);
 
     //! Destructor.  
     virtual ~Vector();
@@ -136,7 +136,7 @@ namespace Tpetra {
     typedef Kokkos::DefaultArithmetic<KMV>   DMVA;
 
     //! Advanced constructor accepting parallel buffer view.
-    Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, Teuchos::ArrayRCP<Scalar> data);
+    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data);
 
   }; // class Vector
 

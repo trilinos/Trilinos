@@ -146,7 +146,7 @@ namespace Tpetra {
     ImportData_ = Teuchos::rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal,Node>(source, target));
     // call subfunctions
     setupSamePermuteRemote();
-    if(source.isDistributed()) {
+    if( source->isDistributed()) {
       setupExport();
     }
     // don't need remoteGIDs_ anymore
@@ -282,8 +282,8 @@ namespace Tpetra {
   void Import<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteRemote() {
     const Map<LocalOrdinal,GlobalOrdinal,Node> & source = *getSourceMap();
     const Map<LocalOrdinal,GlobalOrdinal,Node> & target = *getTargetMap();
-    Teuchos::ArrayView<const GlobalOrdinal> sourceGIDs = source.getMyGlobalEntries();
-    Teuchos::ArrayView<const GlobalOrdinal> targetGIDs = target.getMyGlobalEntries();
+    Teuchos::ArrayView<const GlobalOrdinal> sourceGIDs = source.getNodeElementList();
+    Teuchos::ArrayView<const GlobalOrdinal> targetGIDs = target.getNodeElementList();
 
     // -- compute numSameIDs_ ---
     // go through GID lists of source and target. if the ith GID on both is the same, 

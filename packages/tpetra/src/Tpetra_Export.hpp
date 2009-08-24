@@ -146,7 +146,7 @@ namespace Tpetra {
     ExportData_ = Teuchos::rcp(new ImportExportData<LocalOrdinal,GlobalOrdinal,Node>(source, target));
     // call subfunctions
     setupSamePermuteExport();
-    if(source.isDistributed()) {
+    if (source->isDistributed()) {
       setupRemote();
     }
   }
@@ -229,8 +229,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>& 
-  Export<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Export<LocalOrdinal,GlobalOrdinal,Node> & Source) {
-    ExportData_ = Source.ExportData_;
+  Export<LocalOrdinal,GlobalOrdinal,Node>::operator=(const Export<LocalOrdinal,GlobalOrdinal,Node> & source) {
+    ExportData_ = source.ExportData_;
     return *this;
   }
 
@@ -279,8 +279,8 @@ namespace Tpetra {
   void Export<LocalOrdinal,GlobalOrdinal,Node>::setupSamePermuteExport() {
     const Map<LocalOrdinal,GlobalOrdinal,Node> & source = *getSourceMap();
     const Map<LocalOrdinal,GlobalOrdinal,Node> & target = *getTargetMap();
-    Teuchos::ArrayView<const GlobalOrdinal> sourceGIDs = source.getMyGlobalEntries();
-    Teuchos::ArrayView<const GlobalOrdinal> targetGIDs = target.getMyGlobalEntries();
+    Teuchos::ArrayView<const GlobalOrdinal> sourceGIDs = source.getNodeElementList();
+    Teuchos::ArrayView<const GlobalOrdinal> targetGIDs = target.getNodeElementList();
 
     // -- compute numSameIDs_ ---
     // go through GID lists of source and target. if the ith GID on both is the same, 

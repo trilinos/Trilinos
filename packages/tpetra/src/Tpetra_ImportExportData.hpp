@@ -48,7 +48,7 @@ namespace Tpetra {
     friend class Import<LocalOrdinal,GlobalOrdinal,Node>;
     friend class Export<LocalOrdinal,GlobalOrdinal,Node>;
   public:
-    ImportExportData(const Map<LocalOrdinal,GlobalOrdinal,Node> & source, const Map<LocalOrdinal,GlobalOrdinal,Node> & target);
+    ImportExportData(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target);
     ~ImportExportData();
 
   protected:
@@ -64,8 +64,8 @@ namespace Tpetra {
     size_t numSameIDs_;
 
     // Maps
-    const Map<LocalOrdinal,GlobalOrdinal,Node> source_;
-    const Map<LocalOrdinal,GlobalOrdinal,Node> target_;
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > source_;
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > target_;
 
     // Comm, Distributor
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
@@ -75,16 +75,17 @@ namespace Tpetra {
     //! Copy constructor (declared but not defined, do not use)
     ImportExportData(const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & operator = (ImportExportData<LocalOrdinal,GlobalOrdinal,Node> const& rhs);
+    ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & operator = (const ImportExportData<LocalOrdinal,GlobalOrdinal,Node> & rhs);
   }; // class ImportExportData
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::ImportExportData(const Map<LocalOrdinal,GlobalOrdinal,Node> & source, const Map<LocalOrdinal,GlobalOrdinal,Node> & target)
+  ImportExportData<LocalOrdinal,GlobalOrdinal,Node>::ImportExportData(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & source, 
+                                                                      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & target)
   : numSameIDs_(0)
   , source_(source)
   , target_(target)
-  , comm_(source.getComm())
+  , comm_(source->getComm())
   , distributor_(comm_)
   {}
 

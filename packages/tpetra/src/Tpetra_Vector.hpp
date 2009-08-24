@@ -40,7 +40,7 @@
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, bool zeroOut) 
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut) 
     : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut) {
   }
 
@@ -50,13 +50,13 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, const Teuchos::ArrayView<const Scalar> &values)
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &values)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> 
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Map<LocalOrdinal,GlobalOrdinal,Node> &map, Teuchos::ArrayRCP<Scalar> values)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,map.getNumLocalElements(),Teuchos::tuple<Teuchos_Ordinal>(0)) {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> values)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,map->getNodeNumElements(),1) {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -88,7 +88,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
-    Teuchos_Ordinal lda = this->getLocalLength();
+    size_t lda = this->getLocalLength();
     this->get1dCopy(A,lda);
   }
 
@@ -96,10 +96,10 @@ namespace Tpetra {
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const 
   {
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
+    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
-        << "this->getMap(): " << std::endl << this->getMap() 
-        << "a.getMap(): " << std::endl << a.getMap() << std::endl);
+        << "this->getMap(): " << std::endl << *this->getMap() 
+        << "a.getMap(): " << std::endl << *a.getMap() << std::endl);
 #else
     TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
@@ -108,7 +108,7 @@ namespace Tpetra {
     dot = DMVA::Dot(this->lclMV_,a.lclMV_);
     if (this->isDistributed()) {
       Scalar lcl = dot;
-      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lcl,&dot);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcl,&dot);
     }
     return dot;
   }
@@ -120,22 +120,22 @@ namespace Tpetra {
     Scalar sum = DMVA::Sum(this->lclMV_);
     if (this->isDistributed()) {
       Scalar lsum = sum;
-      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lsum,&sum);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,&sum);
     }
     return sum / Teuchos::as<Scalar>(this->getGlobalLength());
   }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const
-//  {
-//    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-//    Mag norm = DMVA::Norm1(*this->lclMV_);
-//    if (this->isDistributed()) {
-//      Mag lnorm = norm;
-//      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
-//    }
-//    return norm;
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const
+  {
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    Mag norm = DMVA::Norm1(*this->lclMV_);
+    if (this->isDistributed()) {
+      Mag lnorm = norm;
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+    }
+    return norm;
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2() const
@@ -145,7 +145,7 @@ namespace Tpetra {
     Mag norm = DMVA::Norm2Squared(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
     }
     return ScalarTraits<Mag>::squareroot(norm);
   }
@@ -157,7 +157,7 @@ namespace Tpetra {
     Mag norm = DMVA::NormInf(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_MAX,lnorm,&norm);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_MAX,lnorm,&norm);
     }
     return norm;
   }
@@ -170,7 +170,7 @@ namespace Tpetra {
 //    TEST_FOR_EXCEPTION(weights.getNumVectors() != 1, std::runtime_error,
 //        "Tpetra::Vector::normWeighted(): Vector of weights must contain one vector.");
 //#ifdef HAVE_TPETRA_DEBUG
-//    TEST_FOR_EXCEPTION( !this->getMap().isCompatible(weights.getMap()), std::runtime_error,
+//    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(weights.getMap()), std::runtime_error,
 //        "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
 //        << "this->getMap(): " << std::endl << this->getMap() 
 //        << "weights.getMap(): " << std::endl << weights.getMap() << std::endl);
@@ -181,7 +181,7 @@ namespace Tpetra {
 //    Mag norm = DMVA::WeightedNorm(*this->lclMV_,*weights.lclMV_);
 //    if (this->isDistributed()) {
 //      Mag lnorm = norm;
-//      Teuchos::reduceAll(*this->getMap().getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+//      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
 //    }
 //    return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->getGlobalLength()));
 //  }
@@ -209,11 +209,11 @@ namespace Tpetra {
     using Teuchos::VERB_EXTREME;
     Teuchos::EVerbosityLevel vl = verbLevel;
     if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
-    int width = 1;
-    for (int dec=10; dec<this->getGlobalLength(); dec *= 10) {
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+    const int myImageID = comm->getRank(),
+              numImages = comm->getSize();
+    size_t width = 1;
+    for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
       ++width;
     }
     Teuchos::OSTab tab(out);
@@ -233,8 +233,8 @@ namespace Tpetra {
                                                                this->getLocalLength(), 
                                                                this->lclMV_.getValues() );
                 // VERB_EXTREME prints values
-                for (Teuchos_Ordinal i=0; i<this->getLocalLength(); ++i) {
-                  out << setw(width) << this->getMap().getGlobalIndex(i) 
+                for (size_t i=0; i<this->getLocalLength(); ++i) {
+                  out << setw(width) << this->getMap()->getGlobalIndex(i) 
                       << ": "
                       << myview[i] << endl;
                 }

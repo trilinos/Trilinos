@@ -5,8 +5,8 @@ ADD_SUBDIRECTORIES(
   Map
   Distributor
   Directory
-  #ImportExport
-  #MultiVector
+  ImportExport
+  MultiVector
   #BasicPerfTest
   Utils
   #CrsGraph
