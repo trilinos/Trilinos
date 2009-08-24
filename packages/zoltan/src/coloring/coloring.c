@@ -300,10 +300,12 @@ int Zoltan_Color(
 #else /* COLORING_NEW_GRAPH */
   /* CC: TODO choose good construction method */
   if (coloring_problem == 'P')
-    ZG_Build (zz, &graph, 1, 1); /* Bipartite & we color vertices */
+    Zoltan_ZG_Build (zz, &graph, 1, 1); /* Bipartite & we color vertices */
   else
-    ZG_Build (zz, &graph, 0, 0); /* Normal graph */
-  ZG_Export (zz, &graph, &gvtx, &nvtx, &vtxdist, &xadj, &adjncy, &adjproc, NULL, &partialD2);
+    Zoltan_ZG_Build (zz, &graph, 0, 0); /* Normal graph */
+  Zoltan_ZG_Export (zz, &graph,
+		    &gvtx, &nvtx, &vtxdist, &xadj, &adjncy, &adjproc,
+		    NULL, &partialD2);
 #endif
 
   /* CREATE THE HASH TABLE */
@@ -363,7 +365,7 @@ int Zoltan_Color(
   for (i=0; i<nvtx; i++)
       color_exp[i] = color[i];
 #else /* COLORING_NEW_GRAPH */
-  ZG_Register (zz, &graph, color);
+  Zoltan_ZG_Register (zz, &graph, color);
 
   /* Get object ids and part information */
   {
@@ -376,7 +378,7 @@ int Zoltan_Color(
     ZOLTAN_FREE(&vtxwgt);
     ZOLTAN_FREE(&input_part);
   }
-  ZG_Query(zz, &graph, global_ids, nvtx, color_exp);
+  Zoltan_ZG_Query(zz, &graph, global_ids, nvtx, color_exp);
 #endif /* COLORING_NEW_GRAPH */
 
 #if 0
@@ -395,7 +397,7 @@ int Zoltan_Color(
  End:
   /* First, free graph */
 #ifdef COLORING_NEW_GRAPH
-  ZG_Free (zz, &graph);
+  Zoltan_ZG_Free (zz, &graph);
 #else /* COLORING_NEW_GRAPH */
   Zoltan_Multifree(__FILE__,__LINE__, 4, &vtxdist, &xadj, &adjncy, &input_parts);
   ZOLTAN_FREE(&partialD2);
