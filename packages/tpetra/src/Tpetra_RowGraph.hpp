@@ -34,7 +34,7 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_Map.hpp"
+#include "Tpetra_MapDecl.hpp"
 
 namespace Tpetra 
 {
@@ -52,52 +52,52 @@ namespace Tpetra
       //@{ 
 
       //! Returns the communicator.
-      virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
+      virtual const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
       //! Return the underlying node.
-      virtual Node &getNode() const = 0;
+      virtual const Teuchos::RCP<Node> & getNode() const = 0;
 
       //! Returns the Map that describes the row distribution in this graph.
-      virtual const Map<LocalOrdinal,GlobalOrdinal> & getRowMap() const = 0;
+      virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const = 0;
 
       //! \brief Returns the Map that describes the column distribution in this graph.
       /*! */
-      virtual const Map<LocalOrdinal,GlobalOrdinal> & getColMap() const = 0;
+      virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const = 0;
 
       //! Returns the Map associated with the domain of this graph.
-      virtual const Map<LocalOrdinal,GlobalOrdinal> & getDomainMap() const = 0;
+      virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
 
       //! Returns the Map associated with the domain of this graph.
-      virtual const Map<LocalOrdinal,GlobalOrdinal> & getRangeMap() const = 0;
+      virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
       //! Returns the importer associated with this graph.
-      virtual Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal> > getImporter() const = 0;
+      virtual Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const = 0;
 
       //! Returns the exporter associated with this graph.
-      virtual Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal> > getExporter() const = 0;
+      virtual Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const = 0;
 
       //! Returns the number of global rows in the graph.
-      virtual GlobalOrdinal getNumGlobalRows() const = 0;
+      virtual global_size_t getGlobalNumRows() const = 0;
 
       //! \brief Returns the number of global columns in the graph.
       /*! */
-      virtual GlobalOrdinal getNumGlobalCols() const = 0;
+      virtual global_size_t getGlobalNumCols() const = 0;
 
       //! Returns the number of rows owned on the calling node.
-      virtual size_t getNumLocalRows() const = 0;
+      virtual size_t getNodeNumRows() const = 0;
+
+      //! Returns the number of columns connected to the locally owned rows of this graph.
+      /*! */
+      virtual size_t getNodeNumCols() const = 0;
 
       //! Returns the index base for global indices for this graph. 
       virtual GlobalOrdinal getIndexBase() const = 0;
 
-      //! Returns the number of columns connected to the locally owned rows of this graph.
-      /*! */
-      virtual size_t getNumLocalCols() const = 0;
-
       //! Returns the global number of entries in the graph.
-      virtual global_size_t getNumGlobalEntries() const = 0;
+      virtual global_size_t getGlobalNumEntries() const = 0;
 
       //! Returns the local number of entries in the graph.
-      virtual size_t getNumLocalEntries() const = 0;
+      virtual size_t getNodeNumEntries() const = 0;
 
       //! \brief Returns the current number of graph entries on this node in the specified global row .
       /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
@@ -109,7 +109,7 @@ namespace Tpetra
 
       //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
       /*! */
-      virtual GlobalOrdinal getNumGlobalDiags() const = 0;
+      virtual global_size_t getNumGlobalDiags() const = 0;
 
       //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
       /*! */
@@ -121,7 +121,7 @@ namespace Tpetra
 
       //! \brief Returns the maximum number of entries across all rows/columns on this node. 
       /*! */
-      virtual size_t getLocalmaxNumRowEntries() const = 0;
+      virtual size_t getLocalMaxNumRowEntries() const = 0;
 
       //! \brief Indicates whether the graph has a well-defined column map. 
       /*! */
@@ -161,7 +161,7 @@ namespace Tpetra
          with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
          returned as Teuchos::OrdinalTraits<size_t>::invalid().
        */
-      virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow, Teuchos::ArrayView<GlobalOrdinal> indices, size_t &NumIndices) const = 0;
+      virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow, const Teuchos::ArrayView<GlobalOrdinal> &indices, size_t &NumIndices) const = 0;
 
       //! Extract a list of elements in a specified local row of the graph. Put into storage allocated by calling routine.
       /*!
@@ -175,29 +175,27 @@ namespace Tpetra
 
         \pre isLocallyIndexed()==true
        */
-      virtual void getLocalRowCopy(LocalOrdinal LocalRow, Teuchos::ArrayView<LocalOrdinal> indices, size_t& NumIndices) const = 0;
+      virtual void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView<LocalOrdinal> &indices, size_t &NumIndices) const = 0;
 
-      //! Get a non-persisting view of the elements in a specified global row of the graph.
+      //! Get a persisting const view of the elements in a specified global row of the graph.
       /*!
         \param GlobalRow - (In) Global row number to get indices.
-        \param Indices - (Out) Global column indices corresponding to values.
 
-         Note: If \c GlobalRow does not belong to this node, then \c indices is set to <tt>Teuchos::null</tt>.
+         Note: If \c GlobalRow does not belong to this node, then returns <tt>Teuchos::null</tt>.
 
-        \pre isLocallyIndexed()==false
+        \pre isGloballyIndexed()==true
        */
-      virtual void getGlobalRowView(GlobalOrdinal GlobalRow, Teuchos::ArrayView<const GlobalOrdinal> &indices) const = 0;
+      virtual Teuchos::ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const = 0;
 
-      //! Get a view of the elements in a specified local row of the graph.
+      //! Get a persisting const view of the elements in a specified local row of the graph.
       /*!
         \param LocalRow - (In) Local row number to get indices.
-        \param Indices - (Out) Local column indices corresponding to values.
 
-         Note: If \c LocalRow is not valid for this node, then \c indices is set to <tt>Teuchos::null</tt>.
+         Note: If \c LocalRow is not valid for this node, then returns <tt>Teuchos::null</tt>.
 
         \pre isLocallyIndexed()==true
        */
-      virtual void getLocalRowView(LocalOrdinal LocalRow, Teuchos::ArrayView<const LocalOrdinal> &indices) const = 0;
+      virtual Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const = 0;
 
       //@}
 

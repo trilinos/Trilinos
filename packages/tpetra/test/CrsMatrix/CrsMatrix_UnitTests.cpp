@@ -88,18 +88,18 @@ namespace {
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     Teuchos_Ordinal STMAX = 0; \
-    for (Teuchos_Ordinal STR=0; STR<matrix.numLocalRows(); ++STR) { \
-      LO numEntries = matrix.numEntriesForMyRow(STR); \
-      TEST_EQUALITY( numEntries, matrix.numEntriesForGlobalRow( STMYGIDS[STR] ) ); \
+    for (Teuchos_Ordinal STR=0; STR<matrix.getNodeNumRows(); ++STR) { \
+      LO numEntries = matrix.getNumEntriesForGlobalRow(STR); \
+      TEST_EQUALITY( numEntries, matrix.getNumEntriesForGlobalRow( STMYGIDS[STR] ) ); \
       matrix.extractMyRowConstView(0,loview,sview); \
       TEST_EQUALITY( loview.size(), numEntries ); \
       TEST_EQUALITY(  sview.size(), numEntries ); \
-      STMAX = std::max( STMAX, matrix.numEntriesForMyRow(STR) ); \
+      STMAX = std::max( STMAX, matrix.getNumEntriesForGlobalRow(STR) ); \
     } \
-    TEST_EQUALITY( matrix.myMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     Teuchos_Ordinal STGMAX; \
     reduceAll( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
-    TEST_EQUALITY( matrix.globalMaxNumRowEntries(), STGMAX ); \
+    TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
   }
 
 
@@ -224,9 +224,9 @@ namespace {
       matrix.sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
     }
     matrix.fillComplete();
-    TEST_EQUALITY( matrix.numMyDiagonals(), numLocal );
-    TEST_EQUALITY( matrix.numGlobalDiagonals(), numImages*numLocal );
-    TEST_EQUALITY( matrix.numGlobalEntries(), 3*numImages*numLocal - 2 );
+    TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+    TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
   }
 
 
@@ -322,10 +322,10 @@ namespace {
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
       // test that matrix is 3*I
-      TEST_EQUALITY( matrix.numGlobalDiagonals(), numLocal*numImages );
-      TEST_EQUALITY( matrix.numMyDiagonals(), numLocal );
-      TEST_EQUALITY( matrix.numGlobalEntries(), numLocal*numImages );
-      TEST_EQUALITY( matrix.numMyEntries(), numLocal );
+      TEST_EQUALITY( matrix.getGlobalNumDiags(), numLocal*numImages );
+      TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( matrix.getGlobalNumEntries(), numLocal*numImages );
+      TEST_EQUALITY( matrix.getNodeNumEntries(), numLocal );
       for (LO r=0; r<numLocal; ++r) {
         ArrayView<const LO> inds;
         ArrayView<const Scalar> vals;
@@ -399,7 +399,7 @@ namespace {
       for (Teuchos_Ordinal j=0; j<(Teuchos_Ordinal)ginds.size(); ++j) {
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
       }
-      TEST_EQUALITY( matrix.numEntriesForMyRow(0), matrix.getCrsGraph().numAllocatedEntriesForMyRow(0) ); // test that we only allocated as much room as necessary
+      TEST_EQUALITY( matrix.getNumEntriesForGlobalRow(0), matrix.getCrsGraph().getNumAllocatedEntriesForLocalRow(0) ); // test that we only allocated as much room as necessary
       // if static graph, insert one additional entry on my row and verify that an exception is thrown
       if (StaticProfile) {
         TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
@@ -473,15 +473,15 @@ namespace {
       eye = eye_crs;
     }
     // test the properties
-    TEST_EQUALITY(eye->numGlobalEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->numMyEntries()      , numLocal);
-    TEST_EQUALITY(eye->numGlobalRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->numLocalRows()          , numLocal);
-    TEST_EQUALITY(eye->numLocalCols()          , numLocal);
-    TEST_EQUALITY(eye->numGlobalDiagonals() , numImages*numLocal);
-    TEST_EQUALITY(eye->numMyDiagonals()     , numLocal);
-    TEST_EQUALITY(eye->globalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->myMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
+    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getGlobalNumDiags() , numImages*numLocal);
+    TEST_EQUALITY(eye->getNodeNumDiags()     , numLocal);
+    TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
@@ -752,15 +752,15 @@ namespace {
       tri = tri_crs;
     }
     // test the properties
-    TEST_EQUALITY(tri->numGlobalEntries()  , 6*numImages-2);          
-    TEST_EQUALITY(tri->numMyEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
-    TEST_EQUALITY(tri->numGlobalRows()      , 2*numImages);
-    TEST_EQUALITY(tri->numLocalRows()          , 2);
-    TEST_EQUALITY(tri->numLocalCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
-    TEST_EQUALITY(tri->numGlobalDiagonals() , 2*numImages);
-    TEST_EQUALITY(tri->numMyDiagonals()     , 2);
-    TEST_EQUALITY(tri->globalMaxNumRowEntries(), 3);
-    TEST_EQUALITY(tri->myMaxNumRowEntries()    , 3);
+    TEST_EQUALITY(tri->getGlobalNumEntries()  , 6*numImages-2);          
+    TEST_EQUALITY(tri->getNodeNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
+    TEST_EQUALITY(tri->getGlobalNumRows()      , 2*numImages);
+    TEST_EQUALITY(tri->getNodeNumRows()          , 2);
+    TEST_EQUALITY(tri->getNodeNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
+    TEST_EQUALITY(tri->getGlobalNumDiags() , 2*numImages);
+    TEST_EQUALITY(tri->getNodeNumDiags()     , 2);
+    TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
+    TEST_EQUALITY(tri->getLocalMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(tri->getRowMap().isSameAs(rowmap), true);
     TEST_EQUALITY_CONST(tri->getRangeMap().isSameAs(rngmap), true);
@@ -820,7 +820,7 @@ namespace {
     {
       RCP<MAT> eye_crs = rcp(new MAT(map,1) );
       if (myImageID == 0) {
-        for (int i=0; i<map.getNumGlobalEntries(); ++i) {
+        for (int i=0; i<map.getGlobalNumEntries(); ++i) {
           eye_crs->insertGlobalValues(i,tuple<GO>(i),tuple<Scalar>(ST::one()));
         }
       }
@@ -828,15 +828,15 @@ namespace {
       eye = eye_crs;
     }
     // test the properties
-    TEST_EQUALITY(eye->numGlobalEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->numMyEntries()      , numLocal);
-    TEST_EQUALITY(eye->numGlobalRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->numLocalRows()          , numLocal);
-    TEST_EQUALITY(eye->numLocalCols()          , numLocal);
-    TEST_EQUALITY(eye->numGlobalDiagonals() , numImages*numLocal);
-    TEST_EQUALITY(eye->numMyDiagonals()     , numLocal);
-    TEST_EQUALITY(eye->globalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->myMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
+    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getGlobalNumDiags() , numImages*numLocal);
+    TEST_EQUALITY(eye->getNodeNumDiags()     , numLocal);
+    TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
@@ -905,15 +905,15 @@ namespace {
     }
     A.fillComplete();
     // test the properties
-    TEST_EQUALITY(A.numGlobalEntries()   , 3*numImages-2);
-    TEST_EQUALITY(A.numMyEntries()       , myNNZ);
-    TEST_EQUALITY(A.numGlobalRows()       , numImages);
-    TEST_EQUALITY_CONST(A.numLocalRows()     , ONE);
-    TEST_EQUALITY(A.numLocalCols()           , myNNZ);
-    TEST_EQUALITY(A.numGlobalDiagonals()  , numImages);
-    TEST_EQUALITY_CONST(A.numMyDiagonals(), ONE);
-    TEST_EQUALITY(A.globalMaxNumRowEntries() , (numImages > 2 ? 3 : 2));
-    TEST_EQUALITY(A.myMaxNumRowEntries()     , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumEntries()   , 3*numImages-2);
+    TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumRows()       , numImages);
+    TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
+    TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumDiags()  , numImages);
+    TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
+    TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , (numImages > 2 ? 3 : 2));
+    TEST_EQUALITY(A.getLocalMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
@@ -989,15 +989,15 @@ namespace {
     }
     A.fillComplete();
     // test the properties
-    TEST_EQUALITY(A.numGlobalEntries()   , 3*numImages-2);
-    TEST_EQUALITY(A.numMyEntries()       , myNNZ);
-    TEST_EQUALITY(A.numGlobalRows()       , numImages);
-    TEST_EQUALITY_CONST(A.numLocalRows()     , ONE);
-    TEST_EQUALITY(A.numLocalCols()           , myNNZ);
-    TEST_EQUALITY(A.numGlobalDiagonals()  , numImages);
-    TEST_EQUALITY_CONST(A.numMyDiagonals(), ONE);
-    TEST_EQUALITY(A.globalMaxNumRowEntries() , 3);
-    TEST_EQUALITY(A.myMaxNumRowEntries()     , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumEntries()   , 3*numImages-2);
+    TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumRows()       , numImages);
+    TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
+    TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
+    TEST_EQUALITY(A.getGlobalNumDiags()  , numImages);
+    TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
+    TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
+    TEST_EQUALITY(A.getLocalMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
@@ -1096,8 +1096,8 @@ namespace {
       mveye.replaceGlobalValue(gid,gid,ST::one());
     }
     // test the properties
-    TEST_EQUALITY(A_crs.numGlobalEntries()   , nnz);
-    TEST_EQUALITY(A_crs.numGlobalRows()       , dim);
+    TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
+    TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A_crs.getRowMap().isSameAs(A_crs.getRangeMap()) , true);
     // test the action
@@ -1295,8 +1295,8 @@ namespace {
       mveye.replaceGlobalValue(gid,gid,ST::one());
     }
     // test the properties
-    TEST_EQUALITY(A_crs.numGlobalEntries()   , nnz);
-    TEST_EQUALITY(A_crs.numGlobalRows()       , dim);
+    TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
+    TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A_crs.getRowMap().isSameAs(A_crs.getRangeMap()) , true);
     // test the action

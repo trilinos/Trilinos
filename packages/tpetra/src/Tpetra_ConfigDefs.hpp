@@ -106,6 +106,16 @@ namespace Tpetra {
     IDNotPresent
   };
 
+  enum ProfileType {
+    StaticProfile,
+    DynamicProfile
+  };
+
+  enum OptimizeOption {
+    DoOptimizeStorage,
+    DoNotOptimizeStorage
+  };
+
 }
 
 #endif // TPETRA_CONFIGDEFS_HPP
