@@ -565,7 +565,7 @@ static int D1coloring(
 	MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
 	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
-	rand_key[i] = ((double)Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000;
+	rand_key[i] = (int) (((double)Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
     }
 
     /* Color internal vertices and determine the visit order */
@@ -949,7 +949,7 @@ static int D2coloring(
     }
     for (i=0; i<zz->Num_Proc; i++)
 	if (i != zz->Proc)
-	    ssendsize[i] += ceil((double)nbound / (double)ss) + 1;
+	    ssendsize[i] += (int) (ceil((double)nbound / (double)ss) + 1);
     /* Send the superstep info size so that other processors will allocate enough space */
     for (sreqcntC=p=0; p<zz->Num_Proc; ++p)
 	if (p != zz->Proc)
@@ -1040,7 +1040,7 @@ static int D2coloring(
 	MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
 	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
-	rand_key[i] = ((double)Zoltan_Rand(NULL)/(double)ZOLTAN_RAND_MAX)*1000000;
+	rand_key[i] = (int) (((double)Zoltan_Rand(NULL)/(double)ZOLTAN_RAND_MAX)*1000000);
     }
 
     /* Color internal vertices and determine the visit order */
