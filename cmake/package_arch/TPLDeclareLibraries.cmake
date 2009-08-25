@@ -63,7 +63,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       " same directories as the library, you do not need to set"
       " ${TPL_NAME}_LIBRARY_DIRS."
       )
-    ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE STRING ${DOCSTR})
+    ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
 
     # Libraries
   
@@ -97,7 +97,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       " command to find the headers for ${TPL_NAME} (which are known in advance)."
       )
     ADVANCED_SET(${TPL_NAME}_INCLUDE_DIRS ${${TPL_NAME}_LIBRARY_DIRS}
-      CACHE STRING ${DOCSTR})
+      CACHE PATH ${DOCSTR})
   
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
@@ -185,7 +185,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         " This variable, however, is the final value and will not be touched."
         )
       ADVANCED_SET( TPL_${TPL_NAME}_LIBRARIES ${LIBRARIES_FOUND}
-        CACHE PATH ${DOCSTR} )
+        CACHE FILEPATH ${DOCSTR} )
     
       IF (NOT TPL_${TPL_NAME}_LIBRARIES)
         MULTILINE_SET(ERRMSG
