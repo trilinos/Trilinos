@@ -42,8 +42,13 @@ int Basis<Scalar, ArrayScalar>::getDofOrdinal(const int subcDim,
     basisTagsAreSet_ = true;
   }
   // Use .at() for bounds checking
-  return tagToOrdinal_.at(subcDim).at(subcOrd).at(subcDofOrd);
+  int dofOrdinal = tagToOrdinal_.at(subcDim).at(subcOrd).at(subcDofOrd);
+  TEST_FOR_EXCEPTION( (dofOrdinal == -1), std::invalid_argument, 
+                      ">>> ERROR (Basis): Invalid DoF tag");
+  return dofOrdinal;
 }
+
+
 template<class Scalar,class ArrayScalar>
 const std::vector<std::vector<std::vector<int> > > & Basis<Scalar, ArrayScalar>::getDofOrdinalData( ) 
 {
