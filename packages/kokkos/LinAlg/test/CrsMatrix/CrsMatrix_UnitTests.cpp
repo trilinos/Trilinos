@@ -28,13 +28,12 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_Array.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_CrsMatrix.hpp"
 #include "Kokkos_Version.hpp"
-
-#include <vector>
 
 namespace {
 
@@ -42,6 +41,7 @@ namespace {
   using Kokkos::CrsMatrix;
   using Kokkos::size_type;
   using Teuchos::ArrayRCP;
+  using Teuchos::Array;
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
@@ -86,7 +86,7 @@ namespace {
       TEST_EQUALITY_CONST(A.getNumEntries(), 0);
       // something interesting...
       // NNZperRow = {0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, ...}
-      std::vector<size_type> NNZperRow(N);
+      Array<size_type> NNZperRow(N);
       size_type expNNZ = 0;
       for (int i=0; i < N; ++i) {NNZperRow[i] = i%6; expNNZ += NNZperRow[i];}
       A.initializeProfile(N,&NNZperRow[0]);
@@ -103,13 +103,13 @@ namespace {
     TEST_EQUALITY_CONST(A.getNumRows(), 0);
     TEST_EQUALITY_CONST(A.getNumEntries(), 0);
     Node &node = A.getNode();
-    std::vector<size_type> NNZperRow(N);
+    Array<size_type> NNZperRow(N);
     NNZperRow[0] = 2;
     for (int i=1; i<N-1; ++i) NNZperRow[i] = 3;
     NNZperRow[N-1] = 2;
     size_type expNNZ = 4 + (N-2)*3;
-    std::vector<Ordinal> expInds;
-    std::vector<Scalar>  expVals;
+    Array<Ordinal> expInds;
+    Array<Scalar>  expVals;
     {
       expInds.reserve(expNNZ);
       expVals.reserve(expNNZ);
