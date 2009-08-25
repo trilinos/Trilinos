@@ -18,17 +18,6 @@ Prioritized Backlog Items:
 Trilinos bug https://software.sandia.gov/bugzilla/show_bug.cgi?id=4448
 
 
-(*) [CDash] [P1] Fix behavior of CDash error email notification
-reporting: Currently, when errors occur in dependent subprojects
-during a given subproject build, either the proper emails don't go out
-or emails with improper subjects and/or contents go out to various
-subproject emails lists.  The logic of the subproject email
-notification reports needs to be revised to send the right emails with
-the right contents to the right subproject email lists.  The current
-CDash system is also just not sending out any emails for some
-failures.
-
-
 (*) [General] [P1] MS Windows port and installer: We would like
 Kitware to set up our MS Windows HPC Server 2008 machine and get the
 Trilinos CMake build going with nightly testing.  We would also like
@@ -477,6 +466,16 @@ function PACKAGE_ADD_ADVANCED_TEST(...).
 
 Done:
 -----
+
+(*) [CDash] [P1] Fix behavior of CDash error email notification
+reporting: Currently, when errors occur in dependent subprojects
+during a given subproject build, either the proper emails don't go out
+or emails with improper subjects and/or contents go out to various 
+subproject emails lists.  The logic of the subproject email
+notification reports needs to be revised to send the right emails with
+the right contents to the right subproject email lists.  The current
+CDash system is also just not sending out any emails for some
+failures.
 
 (*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
 machine purple.sandia.gov.  See Trilinos bug
