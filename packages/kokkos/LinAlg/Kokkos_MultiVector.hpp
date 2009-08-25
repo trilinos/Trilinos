@@ -126,7 +126,7 @@ namespace Kokkos {
         \return Integer error code, set to 0 if successful.
         */
       void initializeValues(size_t numRows, size_t numCols, 
-                            Teuchos::ArrayRCP<Scalar> values,
+                            const Teuchos::ArrayRCP<Scalar> &values,
                             size_t stride) {
         numRows_ = numRows;
         numCols_ = numCols;

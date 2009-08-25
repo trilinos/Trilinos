@@ -288,19 +288,10 @@ namespace Kokkos {
   //! Class DefaultArithmetic, unimplemented
   template <class MV>
   class DefaultArithmetic {
-    public:
-      //! Multiply one MultiVector by another, element-wise: B *= A
-      static void Multiply(const MV &A, MV &B) { 
-        TEST_FOR_EXCEPTION(true,std::logic_error,"DefaultArithmetic<" << Teuchos::typeName(A) << ">: no specialization exists for given multivector type.");
-      }
-
-      //! Divide one MultiVector by another, element-wise: B /= A
-      static void Divide(MV &A, const MV &B) {
-        TEST_FOR_EXCEPTION(true,std::logic_error,"DefaultArithmetic<" << Teuchos::typeName(A) << ": no specialization exists for given multivector type.");
-      }
+    // nothing here
   };
 
-  //! class DefaultArithmetic, for Kokkos::MultiVector
+  //! partial specialization of class DefaultArithmetic, for Kokkos::MultiVector<Scalar,Node>
   template <class Scalar, class Node>
   class DefaultArithmetic<MultiVector<Scalar,Node> > {
 
@@ -965,6 +956,45 @@ namespace Kokkos {
             data += stride;
           }
         }
+      }
+
+      inline static void initializeValues(MultiVector<Scalar,Node> &A,
+                                   size_t numRows, size_t numCols, 
+                                   const Teuchos::ArrayRCP<Scalar> &values,
+                                   size_t stride) {
+        A.initializeValues(numRows,numCols,values,stride);
+      }
+
+      inline static Teuchos::ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A) {
+        return A.getValues();
+      }
+
+      inline static Teuchos::ArrayRCP<const Scalar> getValues(const MultiVector<Scalar,Node> &A, size_t j) {
+        return A.getValues(j);
+      }
+
+      inline static Teuchos::ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A) {
+        return A.getValuesNonConst();
+      }
+
+      inline static Teuchos::ArrayRCP<Scalar> getValuesNonConst(MultiVector<Scalar,Node> &A, size_t j) {
+        return A.getValuesNonConst(j);
+      }
+
+      inline static size_t getNumRows(const MultiVector<Scalar,Node> &A) {
+        return A.getNumRows();
+      }
+
+      inline static size_t getNumCols(const MultiVector<Scalar,Node> &A) {
+        return A.getNumCols();
+      }
+
+      inline static size_t getStride(const MultiVector<Scalar,Node> &A) {
+        return A.getStride();
+      }
+
+      inline static Teuchos::RCP<Node> getNode(const MultiVector<Scalar,Node> &A) {
+        return A.getNode();
       }
 
   };

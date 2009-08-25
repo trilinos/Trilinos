@@ -39,11 +39,11 @@ namespace Tpetra {
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
      type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType, class LocalMV=Kokkos::MultiVector<Scalar,Node>, class LocalMVTraits=Kokkos::DefaultArithmetic<LocalMV> >
+  class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> {
 
     // need this so that MultiVector::operator() can call Vector's private constructor
-    friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>;
 
   public:
 
@@ -54,7 +54,7 @@ namespace Tpetra {
     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
 
     //! Vector copy constructor.
-    Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+    Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &source);
 
     //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A);
@@ -84,7 +84,7 @@ namespace Tpetra {
     //! @name Extraction methods
     //@{
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::get1dCopy; // overloading, not hiding
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
     void get1dCopy(Teuchos::ArrayView<Scalar> A) const;
 
@@ -93,27 +93,27 @@ namespace Tpetra {
     //! @name Mathematical methods
     //@{ 
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+    Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &a) const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &weights) const;
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
+    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
     Scalar meanValue() const;
 
@@ -132,8 +132,7 @@ namespace Tpetra {
 
     protected:
 
-    typedef Kokkos::MultiVector<Scalar,Node>  KMV;
-    typedef Kokkos::DefaultArithmetic<KMV>   DMVA;
+    typedef LocalMVTraits MVT;
 
     //! Advanced constructor accepting parallel buffer view.
     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data);

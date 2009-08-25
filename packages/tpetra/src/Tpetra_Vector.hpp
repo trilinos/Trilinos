@@ -39,61 +39,61 @@
 
 namespace Tpetra {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut) 
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut) 
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>(map,1,zeroOut) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(source) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &source)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>(source) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &values)
-  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,values.size(),1) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &values)
+  : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>(map,values,values.size(),1) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> 
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> values)
-    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,values,map->getNodeNumElements(),1) {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> values)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>(map,values,map->getNodeNumElements(),1) {
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~Vector() {}
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::~Vector() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
   {
     this->replaceGlobalValue(globalRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) 
   {
     this->sumIntoGlobalValue(globalRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::replaceLocalValue(LocalOrdinal myRow, const Scalar &value) 
   {
     this->replaceLocalValue(myRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) 
   {
     this->sumIntoLocalValue(myRow,0,value);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::get1dCopy(Teuchos::ArrayView<Scalar> A) const {
     size_t lda = this->getLocalLength();
     this->get1dCopy(A,lda);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &a) const 
   {
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
@@ -105,7 +105,7 @@ namespace Tpetra {
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
     Scalar dot;
-    dot = DMVA::Dot(this->lclMV_,a.lclMV_);
+    dot = MVT::Dot(this->lclMV_,a.lclMV_);
     if (this->isDistributed()) {
       Scalar lcl = dot;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcl,&dot);
@@ -113,11 +113,11 @@ namespace Tpetra {
     return dot;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::meanValue() const 
   {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
-    Scalar sum = DMVA::Sum(this->lclMV_);
+    Scalar sum = MVT::Sum(this->lclMV_);
     if (this->isDistributed()) {
       Scalar lsum = sum;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,&sum);
@@ -125,11 +125,11 @@ namespace Tpetra {
     return sum / Teuchos::as<Scalar>(this->getGlobalLength());
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::norm1() const
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = DMVA::Norm1(*this->lclMV_);
+    Mag norm = MVT::Norm1(*this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
@@ -137,12 +137,12 @@ namespace Tpetra {
     return norm;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2() const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::norm2() const
   {
     using Teuchos::ScalarTraits;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = DMVA::Norm2Squared(this->lclMV_);
+    Mag norm = MVT::Norm2Squared(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
@@ -150,11 +150,11 @@ namespace Tpetra {
     return ScalarTraits<Mag>::squareroot(norm);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf() const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::normInf() const
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = DMVA::NormInf(this->lclMV_);
+    Mag norm = MVT::NormInf(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_MAX,lnorm,&norm);
@@ -162,32 +162,30 @@ namespace Tpetra {
     return norm;
   }
 
-//  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const
-//  {
-//    using Teuchos::ScalarTraits;
-//    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-//    TEST_FOR_EXCEPTION(weights.getNumVectors() != 1, std::runtime_error,
-//        "Tpetra::Vector::normWeighted(): Vector of weights must contain one vector.");
-//#ifdef HAVE_TPETRA_DEBUG
-//    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(weights.getMap()), std::runtime_error,
-//        "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
-//        << "this->getMap(): " << std::endl << this->getMap() 
-//        << "weights.getMap(): " << std::endl << weights.getMap() << std::endl);
-//#else
-//    TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
-//        "Tpetra::Vector::normWeighted(): Vectors do not have the same local length.");
-//#endif
-//    Mag norm = DMVA::WeightedNorm(*this->lclMV_,*weights.lclMV_);
-//    if (this->isDistributed()) {
-//      Mag lnorm = norm;
-//      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
-//    }
-//    return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->getGlobalLength()));
-//  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &weights) const
+  {
+    using Teuchos::ScalarTraits;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
+        "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
+        << "this->getMap(): " << std::endl << *this->getMap() 
+        << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
+#else
+    TEST_FOR_EXCEPTION( this->getLocalLength() != weights.getLocalLength(), std::runtime_error,
+        "Tpetra::Vector::normWeighted(): Vectors do not have the same local length.");
+#endif
+    Mag norm = MVT::WeightedNorm(this->lclMV_,weights.lclMV_);
+    if (this->isDistributed()) {
+      Mag lnorm = norm;
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+    }
+    return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->getGlobalLength()));
+  }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  std::string Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::description() const
   {
     std::ostringstream oss;
     oss << Teuchos::Describable::description();
@@ -196,8 +194,8 @@ namespace Tpetra {
     return oss.str();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
+  void Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
     using std::setw;
@@ -231,7 +229,7 @@ namespace Tpetra {
                 Teuchos::RCP<Node> node = this->lclMV_.getNode();
                 Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
                                                                this->getLocalLength(), 
-                                                               this->lclMV_.getValues() );
+                                                               MVT::getValues(this->lclMV_) );
                 // VERB_EXTREME prints values
                 for (size_t i=0; i<this->getLocalLength(); ++i) {
                   out << setw(width) << this->getMap()->getGlobalIndex(i) 

@@ -1722,6 +1722,10 @@ namespace {
     mvec.dot(mvec,dots());
     mvec.normWeighted(weights,normsW());
     mvec.normWeighted(weight1,normsW1());
+    {
+      Mag vnrm = mvec.getVector(0)->normWeighted(*weight1.getVector(0));
+      TEST_EQUALITY( vnrm, normsW1[0] );
+    }
     for (size_t j=0; j < numVectors; ++j) {
       Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
       Mag expnorm = ScalarTraits<Mag>::squareroot( 

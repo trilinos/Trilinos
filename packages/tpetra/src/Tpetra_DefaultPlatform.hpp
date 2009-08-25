@@ -57,7 +57,6 @@ public:
   typedef SerialPlatform<Kokkos::DefaultNode::DefaultNodeType> DefaultPlatformType;
 #endif
 
-
   /** \brief Return the default platform.
    */
   static DefaultPlatformType & getDefaultPlatform();
