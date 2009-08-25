@@ -116,17 +116,19 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
 
 /* Performs a permutation of the matrix, perm_y A perm_y^t.
  * At this time we only do symmetric permutations (don't know xGNO !).
- * This call "uncomplete" the matrix and must be followed by 
+ * This call "uncomplete" the matrix and must be followed by
  * Zoltan_Matrix2d_Distribute.
  */
 int
 Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y);
 
-/* Distribute the matrix in the 2D layout defined by user in outmat */ 
-/* if !copy, inmat is not usable after this call */
+/* Distribute the matrix in the 2D layout defined by user in outmat
+ * if no_redist is set, the current distribution on Y is kept. (only
+ * works for 1D distribution.
+ * if !copy, inmat is not usable after this call */
 int
-Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
-			    Zoltan_matrix_2d *outmat, int copy);
+Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat,
+			    Zoltan_matrix_2d *outmat, int copy, int no_redist);
 
 /* Compute a 2D datalayout that fit the constraints given.
  */

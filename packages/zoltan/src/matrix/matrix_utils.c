@@ -229,7 +229,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
   ZOLTAN_ID_PTR yGID=NULL;
   float *ywgt=NULL;
   struct Zoltan_DD_Struct *dd;
-  
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* First apply y permutation */
@@ -255,7 +255,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
     Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
 		    m->nY, NULL);
   }
-  
+
   memcpy (m->yGNO, perm_y, m->nY*sizeof(int));
 
   /* Get Informations about Y */
@@ -281,7 +281,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
   ZOLTAN_FREE(&m->pinGNO);
   m->pinGNO = pinGNO;
   pinGNO = NULL;
-  
+
  End:
   ZOLTAN_FREE (&pinGNO);
   ZOLTAN_FREE (&yGID);

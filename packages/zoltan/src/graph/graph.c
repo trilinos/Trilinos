@@ -64,7 +64,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
   }
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;
-  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
+  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0, 0);
   CHECK_IERR;
 
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);

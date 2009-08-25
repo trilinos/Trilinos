@@ -31,7 +31,6 @@ compar_couple (const int* e1, const int* e2)
   return (e1[0] - e1[0]);
 }
 
-
 int Zoltan_Distribute_Square (ZZ * zz, PHGComm *layout)
 {
   return Zoltan_Distribute_layout(zz, NULL, 0, zz->Num_Proc-1, -1, -1, layout);
@@ -86,8 +85,8 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 /* for pin wgt, we may do a "savage cast" to avoid padding problem */
 
 int
-Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
-			    Zoltan_matrix_2d *outmat, int copy)
+Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as we can share it inside outmat */
+			    Zoltan_matrix_2d *outmat, int copy, int no_redist)
 {
   static char *yo = "Zoltan_Matrix_Build2d";
   int ierr = ZOLTAN_OK;
@@ -106,6 +105,10 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
   int prev_x, prev_y;
   ZOLTAN_COMM_OBJ *plan;
   int elem_size = 2;
+  MPI_Comm communicator = MPI_COMM_NULL;
+  int nProc;
+  int *yGNO = NULL;
+  int *pinGNO = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -120,6 +123,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
       outmat->mtx.ddY = Zoltan_DD_Copy (inmat.ddY);
   }
 
+  communicator = outmat->comm->Communicator;
+  nProc = outmat->comm->nProc;
   /****************************************************************************************
    * Compute the distribution of vertices and edges to the 2D data distribution's processor
    * columns and rows. For now, these distributions are described by arrays dist_x  and dist_y;
@@ -136,15 +141,47 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
 
   if (!dist_x || !dist_y) MEMORY_ERROR;
 
-  frac_x = (float) inmat.globalX / (float) nProc_x;
-  for (i = 1; i < nProc_x; i++)
-    dist_x[i] = (int) (i * frac_x);
-  dist_x[nProc_x] = inmat.globalX;
+  if ((nProc_x> 1) || !no_redist) { /* Do a redistribution by "slice" on X and Y */
+    frac_x = (float) inmat.globalX / (float) nProc_x;
+    for (i = 1; i < nProc_x; i++)
+      dist_x[i] = (int) (i * frac_x);
+    dist_x[nProc_x] = inmat.globalX;
 
-  frac_y = (float) inmat.globalY / (float) nProc_y;
-  for (i = 1; i < nProc_y; i++)
-    dist_y[i] = (int) (i * frac_y);
-  dist_y[nProc_y] = inmat.globalY;
+    frac_y = (float) inmat.globalY / (float) nProc_y;
+    for (i = 1; i < nProc_y; i++)
+      dist_y[i] = (int) (i * frac_y);
+    dist_y[nProc_y] = inmat.globalY;
+  }
+  else {
+    int nY;
+    int flag;
+    int general_flag;
+
+    nY = inmat.nY;
+    /* This code only works for a linear distribution on Y */
+    MPI_Allgather (&nY, 1, MPI_INT, dist_y + 1, 1, MPI_INT, communicator);
+    for (i = 1 ; i <= nProc_y ; i++) {
+      dist_y[i] += dist_y[i-1];
+    }
+    dist_x[0] = 0; dist_x[1] = inmat.globalX;
+
+    /* Perhaps we have to insure that the permutation is correct ? */
+    /* I will check to avoid a call to really permute things */
+    for (i = 0, flag=0 ; i < nY ; ++i)
+      flag |= ((inmat.yGNO[i] < dist_y[myProc_y]) || (inmat.yGNO[i] >= dist_y[myProc_y+1]));
+    MPI_Allreduce(&flag, &general_flag, 1, MPI_INT, MPI_MAX, communicator);
+    if (general_flag) { /* We have to compute the "permutation" */
+      int offset;
+
+      tmparray = (int*)ZOLTAN_MALLOC(nY *sizeof(int));
+      if (tmparray == NULL) MEMORY_ERROR;
+      offset = dist_y[myProc_y];
+      for (i=0 ; i < nY ; ++i)
+	tmparray[i] = offset + i;
+      Zoltan_Matrix_Permute(zz, &outmat->mtx, tmparray);
+      ZOLTAN_FREE(&tmparray);
+    }
+  }
 
   /* myProc_y and myProc_x can be -1 when we use a 2D decomposition.
    * Some processor may be excluded from the 2D communicator; for it,
@@ -155,16 +192,16 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
   /* Construct procptr, the array to know what are the correct procnumber in
    * the big communicator.
    */
-  tmparray = (int*)ZOLTAN_CALLOC (zz->Num_Proc, sizeof(int));
+  tmparray = (int*)ZOLTAN_CALLOC (nProc, sizeof(int));
   /* Trick : +1 to avoid a test in the loop */
   procptr = (int*)ZOLTAN_CALLOC (nProc_x*nProc_y+1, sizeof(int));
   if (tmparray == NULL || procptr == NULL) MEMORY_ERROR;
   procptr ++;
 
   myProcId = (myProc_x >= 0)?(myProc_y*nProc_x+myProc_x):-1;
-  MPI_Allgather (&myProcId, 1, MPI_INT, tmparray, 1, MPI_INT, zz->Communicator);
+  MPI_Allgather (&myProcId, 1, MPI_INT, tmparray, 1, MPI_INT, communicator);
 
-  for (i=0 ; i < zz->Num_Proc ; ++i)
+  for (i=0 ; i < nProc ; ++i)
     procptr[tmparray[i]] = i;            /* Don't worry about the -1 */
   ZOLTAN_FREE(&tmparray);
 
@@ -181,17 +218,25 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
 
   if ((nPins >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
+  if (!copy) {
+    yGNO = outmat->mtx.yGNO;
+    pinGNO = outmat->mtx.pinGNO;
+  }
+  else {
+    yGNO = inmat.yGNO;
+    pinGNO = inmat.pinGNO;
+  }
   cnt = 0;
   for (i = 0; i < inmat.nY; i++) {
     int edge_gno=-1, edge_Proc_y=-1;
     /* processor row for the edge */
-    edge_gno = inmat.yGNO[i];
+    edge_gno = yGNO[i];
     edge_Proc_y = EDGE_TO_PROC_Y(outmat, edge_gno);
 
     for (j = inmat.ystart[i]; j < inmat.yend[i]; j++) {
       int vtx_gno=-1, vtx_Proc_x=-1;
       /* processor column for the vertex */
-      vtx_gno = inmat.pinGNO[j];
+      vtx_gno = pinGNO[j];
       vtx_Proc_x = VTX_TO_PROC_X(outmat, vtx_gno);
 
       proclist[cnt] = procptr[edge_Proc_y * nProc_x + vtx_Proc_x];
@@ -215,7 +260,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, const Zoltan_matrix inmat,
    */
 
   msg_tag--;
-  ierr = Zoltan_Comm_Create(&plan, cnt, proclist, zz->Communicator, msg_tag, &outmat->mtx.nPins);
+  ierr = Zoltan_Comm_Create(&plan, cnt, proclist, communicator, msg_tag, &outmat->mtx.nPins);
 
   ZOLTAN_FREE(&proclist);
 
