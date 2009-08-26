@@ -904,6 +904,8 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   int ierr, debug_level, i;
   int nparts, nonempty_nparts, req_nparts;
+  int vwgt_dim = zz->Obj_Weight_Dim;
+  int part_dim = (vwgt_dim > 0 ? vwgt_dim : 1);
 
   int *localCount = NULL;
   PHGPartParams hgp;
@@ -943,13 +945,13 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
    * Get the hypergraph, via the hypergraph or graph query functions
    */
 
-  part_sizes = (float*)ZOLTAN_MALLOC(sizeof(float) * req_nparts);
+  part_sizes = (float*)ZOLTAN_MALLOC(sizeof(float) * part_dim * req_nparts);
   if (req_nparts && !part_sizes){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
-  Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, 1, part_sizes);
+  Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim, part_sizes);
 
   debug_level = zz->Debug_Level;
   zz->Debug_Level = 0;
