@@ -1150,6 +1150,9 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the maximum of NumMyRowEntries() over all rows.
     int MaxNumEntries() const;
 
+    //! Map() method inherited from Epetra_DistObject
+    const Epetra_BlockMap& Map() const { return Epetra_DistObject::Map(); }
+
     //! Returns the EpetraMap object associated with the rows of this matrix.
     const Epetra_Map & RowMatrixRowMap() const 
 			{ if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixRowMap_); };
