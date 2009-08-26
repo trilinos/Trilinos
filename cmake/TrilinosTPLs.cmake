@@ -71,6 +71,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   AMD            TS
   PETSC          SS
   HYPRE          EX
+  BLACS          SS
   SCALAPACK      SS
   MUMPS          SS
   Oski           SS
