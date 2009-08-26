@@ -49,24 +49,24 @@
 
 //=============================================================================
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
-  Problem_(&prob),
+  IsComputeSchurComplementOK_(false),
   NoDestroy_(false),
   MaxProcs_(-1),
-  NumSchurComplementRows_(-1),
-  IsComputeSchurComplementOK_(false),
-  RowSca_(0),
-  ColSca_(0),
-  PermIn_(0),
-#ifdef HAVE_MPI  
-  MUMPSComm_(0),
-#endif
   UseTranspose_(false),
   MtxConvTime_(-1), 
   MtxRedistTime_(-1), 
   VecRedistTime_(-1),
   SymFactTime_(-1), 
   NumFactTime_(-1), 
-  SolveTime_(-1)
+  SolveTime_(-1),
+  RowSca_(0),
+  ColSca_(0),
+  PermIn_(0),
+  NumSchurComplementRows_(-1),
+#ifdef HAVE_MPI  
+  MUMPSComm_(0),
+#endif
+  Problem_(&prob)
 {
   // -777 is for me. It means: I never called MUMPS, so
   // SymbolicFactorization should not call Destroy() and ask MUMPS to

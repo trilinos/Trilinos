@@ -389,6 +389,11 @@ protected:
   //! Pointer to the Schur complement,as DenseMatrix.
   RCP<Epetra_SerialDenseMatrix> DenseSchurComplement_;
 
+#ifdef HAVE_MPI
+  //! MPI communicator used by MUMPS
+  MPI_Comm MUMPSComm_;
+#endif
+
   //! Pointer to the linear problem to be solved.
   const Epetra_LinearProblem* Problem_;
 
@@ -402,11 +407,6 @@ protected:
   RCP<Epetra_Map> SerialMap_;
   //! Importer from Matrix.OperatorDomainMap() to SerialMap_.
   RCP<Epetra_Import> SerialImporter_;
-
-#ifdef HAVE_MPI
-  //! MPI communicator used by MUMPS
-  MPI_Comm MUMPSComm_;
-#endif
   
   DMUMPS_STRUC_C MDS;
 

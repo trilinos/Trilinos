@@ -60,8 +60,8 @@ Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob ):
   SolTime_(0.0),
   VecTime_(0.0),
   MatTime_(0.0),
-  Time_(0),
-  FatOut_(0)
+  FatOut_(0),
+  Time_(0)
 {
     Teuchos::ParameterList ParamList ;
     SetParameters( ParamList ) ; 
@@ -667,7 +667,6 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   //  We have to set these to their defaults here because user codes 
   //  are not guaranteed to have a "Scalapack" parameter list.
   //
-  bool UseTrans = false ; 
   TwoD_distribution_ = true; 
   grid_nb_ = 32; 
   
@@ -838,7 +837,6 @@ int Amesos_Scalapack::Solve() {
   double *ScalapackXvalues ;
   
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
   Time_->ResetStartTime(); // track time to broadcast vectors
   //
   //  Copy B to the scalapack version of B
