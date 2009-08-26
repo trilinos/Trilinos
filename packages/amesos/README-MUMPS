@@ -1,0 +1,125 @@
+August 26, 2008
+
+These cmake scripts worked on octopi.sandia.gov to build the Trilinos
+head with MUMPS 4.7.3 and with MUMPS 4.9.  The -DMUMPS_4_9 causes
+Amesos_Mumps.cpp to set 4.9 parameters instead of 4.7.3.  This should
+probably be the default once we're certain it's working.
+
+To build with MUMPS 4.7.3:
+
+#!/bin/bash
+
+TPLDIR=/home/lafisk/system
+MPIDIR=/usr/local
+F90LIB="/usr/local/lib/libmpi_f90.so"
+F77LIB="/usr/local/lib/libmpi_f77.so"
+LIBGFORTRAN="/usr/lib/gcc/x86_64-redhat-linux5E/4.1.2/libgfortran.a"
+
+cmake \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D Trilinos_ENABLE_Fortran:BOOL=ON \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+  -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+  -D Trilinos_ENABLE_Amesos:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR=PATH=$MPIDIR \
+  -D MPI_C_COMPILER:FILEPATH=$MPIDIR/bin/mpicc \
+  -D MPI_CXX_COMPILER:FILEPATH=$MPIDIR/bin/mpicxx \
+  -D MPI_Fortran_COMPILER:FILEPATH=$MPIDIR/bin/mpif90 \
+  -D TPL_ENABLE_LAPACK:BOOL=ON \
+  -D LAPACK_LIBRARY_DIRS:FILEPATH="/usr/lib64" \
+  -D TPL_ENABLE_BLAS:BOOL=ON \
+  -D BLAS_LIBRARY_DIRS:FILEPATH="/usr/lib64" \
+  -D Amesos_ENABLE_MUMPS:BOOL=ON \
+  -D MUMPS_INCLUDE_DIRS:FILEPATH="$TPLDIR/MUMPS_4.7.3/include" \
+  -D MUMPS_LIBRARY_DIRS:FILEPATH="$TPLDIR/MUMPS_4.7.3/lib" \
+  -D MUMPS_LIBRARY_NAMES:STRING="dmumps;pord" \
+  -D Amesos_ENABLE_SCALAPACK:BOOL=ON \
+  -D SCALAPACK_INCLUDE_DIRS:FILEPATH="$TPLDIR/scalapack-1.8.0/SRC" \
+  -D SCALAPACK_LIBRARY_DIRS:FILEPATH="$TPLDIR/scalapack-1.8.0" \
+  -D SCALAPACK_LIBRARY_NAMES:STRING="scalapack" \
+  -D Amesos_ENABLE_BLACS:BOOL=ON \
+  -D BLACS_INCLUDE_DIRS:FILEPATH="$TPLDIR/BLACS/SRC/MPI" \
+  -D BLACS_LIBRARY_DIRS:FILEPATH="$TPLDIR/BLACS/LIB" \
+  -D BLACS_LIBRARY_NAMES:STRING="blacs;blacsF77init;blacs" \
+  -D Trilinos_EXTRA_LINK_FLAGS:STRING="$F90LIB;$F77LIB;$LIBGFORTRAN" \
+  ..
+
+To build with MUMPS 4.9:
+
+#!/bin/bash
+TPLDIR=/home/lafisk/system
+MPIDIR=/usr/local
+F90LIB="/usr/local/lib/libmpi_f90.so"
+F77LIB="/usr/local/lib/libmpi_f77.so"
+LIBGFORTRAN="/usr/lib/gcc/x86_64-redhat-linux5E/4.1.2/libgfortran.a"
+
+cmake \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D Trilinos_ENABLE_Fortran:BOOL=ON \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+  -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+  -D Trilinos_ENABLE_Amesos:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR=PATH=$MPIDIR \
+  -D MPI_C_COMPILER:FILEPATH=$MPIDIR/bin/mpicc \
+  -D MPI_CXX_COMPILER:FILEPATH=$MPIDIR/bin/mpicxx \
+  -D MPI_Fortran_COMPILER:FILEPATH=$MPIDIR/bin/mpif90 \
+  -D TPL_ENABLE_LAPACK:BOOL=ON \
+  -D LAPACK_LIBRARY_DIRS:FILEPATH="/usr/lib64" \
+  -D TPL_ENABLE_BLAS:BOOL=ON \
+  -D BLAS_LIBRARY_DIRS:FILEPATH="/usr/lib64" \
+  -D Amesos_ENABLE_MUMPS:BOOL=ON \
+  -D MUMPS_INCLUDE_DIRS:FILEPATH="$TPLDIR/MUMPS_4.9/include" \
+  -D MUMPS_LIBRARY_DIRS:FILEPATH="$TPLDIR/MUMPS_4.9/lib" \
+  -D MUMPS_LIBRARY_NAMES:STRING="dmumps;mumps_common;pord" \
+  -D Amesos_ENABLE_SCALAPACK:BOOL=ON \
+  -D SCALAPACK_INCLUDE_DIRS:FILEPATH="$TPLDIR/scalapack-1.8.0/SRC" \
+  -D SCALAPACK_LIBRARY_DIRS:FILEPATH="$TPLDIR/scalapack-1.8.0" \
+  -D SCALAPACK_LIBRARY_NAMES:STRING="scalapack" \
+  -D Amesos_ENABLE_BLACS:BOOL=ON \
+  -D BLACS_INCLUDE_DIRS:FILEPATH="$TPLDIR/BLACS/SRC/MPI" \
+  -D BLACS_LIBRARY_DIRS:FILEPATH="$TPLDIR/BLACS/LIB" \
+  -D BLACS_LIBRARY_NAMES:STRING="blacs;blacsF77init;blacs" \
+  -D CMAKE_CXX_FLAGS:STRING="-DMUMPS_4_9" \
+  -D Trilinos_EXTRA_LINK_FLAGS:STRING="$F90LIB;$F77LIB;$LIBGFORTRAN" \
+  ..
+
+There is one MUMPS test in the amesos directory.  Here are the results of the
+test under MUMPS 4.7.3 and MUMPS 4.9:
+
+Changing directory into: /home/lafisk/projects/trilinos/Trilinos-new/build4.7.3/packages/amesos/test/Test_MUMPS
+104/108 Testing: Amesos_Test_MUMPS_MPI_4
+104/108 Test: Amesos_Test_MUMPS_MPI_4
+Command: "/usr/local/bin/mpiexec" "-np" "4" "/home/lafisk/projects/trilinos/Trilinos-new/build4.7.3/packages/amesos/test/Test_MUMPS/Amesos_Test_MUMPS.exe"
+Directory: /home/lafisk/projects/trilinos/Trilinos-new/build4.7.3/packages/amesos/test/Test_MUMPS
+"Amesos_Test_MUMPS_MPI_4" start time: Aug 26 15:32 MDT
+Output:
+----------------------------------------------------------
+||Ax - b||  = 4.9734e-12
+||Ax - b||  = 1.40042e-11
+----------------------------------------------------------
+"Amesos_Test_MUMPS_MPI_4" end time: Aug 26 15:32 MDT
+"Amesos_Test_MUMPS_MPI_4" time elapsed: 00:00:01
+----------------------------------------------------------
+
+Changing directory into: /home/lafisk/projects/trilinos/Trilinos-new/build4.9/packages/amesos/test/Test_MUMPS
+104/108 Testing: Amesos_Test_MUMPS_MPI_4
+104/108 Test: Amesos_Test_MUMPS_MPI_4
+Command: "/usr/local/bin/mpiexec" "-np" "4" "/home/lafisk/projects/trilinos/Trilinos-new/build4.9/packages/amesos/test/Test_MUMPS/Amesos_Test_MUMPS.exe"
+Directory: /home/lafisk/projects/trilinos/Trilinos-new/build4.9/packages/amesos/test/Test_MUMPS
+"Amesos_Test_MUMPS_MPI_4" start time: Aug 26 15:38 MDT
+Output:
+----------------------------------------------------------
+||Ax - b||  = 6.99454e-12
+||Ax - b||  = 1.63404e-11
+----------------------------------------------------------
+"Amesos_Test_MUMPS_MPI_4" end time: Aug 26 15:38 MDT
+"Amesos_Test_MUMPS_MPI_4" time elapsed: 00:00:01
+----------------------------------------------------------
+
+
+
+

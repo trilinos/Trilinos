@@ -78,19 +78,53 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   ICNTL[2]  = -1;  // Turn off diagnostic printing  6=on, -1=off
   ICNTL[3]  = -1;  // Turn off global information messages   6=on, -1=off
   ICNTL[4]  = -1;  // 3 = most msgs; -1= none  
+
+#ifdef MUMPS_4_9
+
+  ICNTL[5]  = 0;   // Matrix is given in assembled (i.e. triplet) from
+  ICNTL[6]  = 7;   // Choose column permutation automatically
+  ICNTL[7]  = 7;   // Choose ordering method automatically
+  ICNTL[8]  = 77;  // Choose scaling automatically
+  ICNTL[9]  = 1;   // Compute A x = b 
+  ICNTL[10] = 0;   // Maximum steps of iterative refinement
+  ICNTL[11] = 0;   // Do not collect statistics
+  ICNTL[12] = 0;   // Automatic choice of ordering strategy
+  ICNTL[13] = 0;   // Use ScaLAPACK for root node 
+  ICNTL[14] = 20;  // Increase memory allocation 20% at a time 
+
+  // 15, 16 and 17 are not used
+  // 18 is set after we know NumProc
+  // 19 is set after we know Schur status
+
+  ICNTL[20] = 0;   // RHS is given in dense form
+  ICNTL[21] = 0;   // Solution is assembled at end, not left distributed
+  ICNTL[22] = 0;   // Do all computations in-core
+  ICNTL[23] = 0;   // We don't supply maximum MB of working memory
+  ICNTL[24] = 0;   // Do not perform null pivot detection
+  ICNTL[25] = 0;   // No null space basis computation, return 1 possible solution
+  ICNTL[26] = 0;   // Do not condense/reduce Schur RHS
+  ICNTL[27] = -8;  // Blocking factor for multiple RHSs
+  ICNTL[28] = 0;   // Automatic choice of sequential/parallel analysis phase
+  ICNTL[29] = 0;   // Parallel analysis uses PT-SCOTCH or ParMetis? (none)
+
+  // 30 - 40 are not used
+
+#else
   ICNTL[5]  = 0;   // Matrix is given in elemental (i.e. triplet) from
   ICNTL[6]  = 7;   // Choose column permutation automatically
   ICNTL[7]  = 7;   // Choose ordering method automatically
   ICNTL[8]  = 7;   // Choose scaling automatically
-  ICNTL[9]  = 1;   // Compute A x = b 
+  ICNTL[8]  = 7;   // Choose scaling automatically
+  ICNTL[9]  = 1;   // Compute A x = b
   ICNTL[10] = 0;   // Maximum steps of iterative refinement
   ICNTL[11] = 0;   // Do not collect statistics
   ICNTL[12] = 0;   // Use Node level parallelism
-  ICNTL[13] = 0;   // Use ScaLAPACK for root node 
-  ICNTL[14] = 20;  // Increase memory allocation 20% at a time 
+  ICNTL[13] = 0;   // Use ScaLAPACK for root node
+  ICNTL[14] = 20;  // Increase memory allocation 20% at a time
   ICNTL[15] = 0;   // Minimize memory use (not flop count)
   ICNTL[16] = 0;   // Do not perform null space detection
   ICNTL[17] = 0;   // Unused (null space dimension)
+#endif
 
   Teuchos::ParameterList ParamList;
   SetParameters(ParamList);
@@ -407,20 +441,34 @@ int Amesos_Mumps::SymbolicFactorization()
     MPI_Comm_group(MPI_COMM_WORLD, &OrigGroup);
     MPI_Group_incl(OrigGroup, MaxProcs_, &ProcsInGroup[0], &MumpsGroup);
     MPI_Comm_create(MPI_COMM_WORLD, MumpsGroup, &MUMPSComm_);
+
+#ifdef MUMPS_4_9
+    MDS.comm_fortran = (MUMPS_INT) MPI_Comm_c2f( MUMPSComm_);
+#else
+
 #ifndef HAVE_AMESOS_OLD_MUMPS
     MDS.comm_fortran = (DMUMPS_INT) MPI_Comm_c2f( MUMPSComm_);
 #else
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MUMPSComm_);
 #endif
+
+#endif
+
   } 
   else 
   {
     const Epetra_MpiComm* MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
     assert (MpiComm != 0);
+#ifdef MUMPS_4_9
+    MDS.comm_fortran = (MUMPS_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
+#else
+
 #ifndef HAVE_AMESOS_OLD_MUMPS
     MDS.comm_fortran = (DMUMPS_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
 #else
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
+#endif
+
 #endif
   }
 #else
