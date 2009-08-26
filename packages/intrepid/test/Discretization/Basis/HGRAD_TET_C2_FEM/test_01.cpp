@@ -29,11 +29,11 @@
 // @HEADER
 
 /** \file test_01.cpp
-\brief  Unit tests for the Intrepid::G_TET_C1_FEM class.
+\brief  Unit tests for the Intrepid::HGRAD_TET_C2_FEM class.
 \author Created by P. Bochev, D. Ridzal, and K. Peterson.
 */
 #include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid_HGRAD_TET_C2_FEM.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -76,10 +76,10 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                 Unit Test (Basis_HGRAD_TET_C1_FEM)                          |\n" \
+    << "|                 Unit Test (Basis_HGRAD_TET_C2_FEM)                          |\n" \
     << "|                                                                             |\n" \
     << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" \
-    << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n" \
+    << "|     2) Basis values for VALUE, GRAD, and Dk operators                       |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
@@ -93,23 +93,26 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n";
   
   // Define basis and error flag
-  Basis_HGRAD_TET_C1_FEM<double, FieldContainer<double> > tetBasis;
+  Basis_HGRAD_TET_C2_FEM<double, FieldContainer<double> > tetBasis;
   int errorFlag = 0;
 
   // Initialize throw counter for exception testing
   int nException     = 0;
   int throwCounter   = 0;
 
-  // Define array containing the 4 vertices of the reference TET and its center.  
-  FieldContainer<double> tetNodes(8, 3);
+  // Define array containing the 10 nodes of Tetrahedron<10>: 4 vertices + 6 edge midpoints  
+  FieldContainer<double> tetNodes(10, 3);
   tetNodes(0,0) =  0.0;  tetNodes(0,1) =  0.0;  tetNodes(0,2) =  0.0;  
   tetNodes(1,0) =  1.0;  tetNodes(1,1) =  0.0;  tetNodes(1,2) =  0.0;  
   tetNodes(2,0) =  0.0;  tetNodes(2,1) =  1.0;  tetNodes(2,2) =  0.0;
   tetNodes(3,0) =  0.0;  tetNodes(3,1) =  0.0;  tetNodes(3,2) =  1.0;  
-  tetNodes(4,0) =  0.25; tetNodes(4,1) =  0.5;  tetNodes(4,2) =  0.1;
+  
+  tetNodes(4,0) =  0.5;  tetNodes(4,1) =  0.0;  tetNodes(4,2) =  0.0;
   tetNodes(5,0) =  0.5;  tetNodes(5,1) =  0.5;  tetNodes(5,2) =  0.0;  
-  tetNodes(6,0) =  0.5;  tetNodes(6,1) =  0.0;  tetNodes(6,2) =  0.5;  
-  tetNodes(7,0) =  0.0;  tetNodes(7,1) =  0.5;  tetNodes(7,2) =  0.5;  
+  tetNodes(6,0) =  0.0;  tetNodes(6,1) =  0.5;  tetNodes(6,2) =  0.0;  
+  tetNodes(7,0) =  0.0;  tetNodes(7,1) =  0.0;  tetNodes(7,2) =  0.5;  
+  tetNodes(8,0) =  0.5;  tetNodes(8,1) =  0.0;  tetNodes(8,2) =  0.5;  
+  tetNodes(9,0) =  0.0;  tetNodes(9,1) =  0.5;  tetNodes(9,2) =  0.5;  
 
 
   // Generic array for the output values; needs to be properly resized depending on the operator type
@@ -135,7 +138,7 @@ int main(int argc, char *argv[]) {
     // exception #5
     INTREPID_TEST_COMMAND( tetBasis.getDofOrdinal(0,4,0), throwCounter, nException );
     // exception #6
-    INTREPID_TEST_COMMAND( tetBasis.getDofTag(5), throwCounter, nException );
+    INTREPID_TEST_COMMAND( tetBasis.getDofTag(10), throwCounter, nException );
     // exception #7
     INTREPID_TEST_COMMAND( tetBasis.getDofTag(-1), throwCounter, nException );
     
@@ -146,7 +149,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( tetBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, hexBasis.getBaseCellTopology().getDimension() - 1);
+    FieldContainer<double> badPoints2(4, tetBasis.getBaseCellTopology().getDimension() - 1);
     INTREPID_TEST_COMMAND( tetBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #10 output values must be of rank-2 for OPERATOR_VALUE
@@ -172,7 +175,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( tetBasis.getValues(badVals4, tetNodes, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
-    FieldContainer<double> badVals5(tetBasis.getCardinality(), tetNodes.dimension(0), hexBasis.getBaseCellTopology().getDimension() + 1);
+    FieldContainer<double> badVals5(tetBasis.getCardinality(), tetNodes.dimension(0), tetBasis.getBaseCellTopology().getDimension() + 1);
     INTREPID_TEST_COMMAND( tetBasis.getValues(badVals5, tetNodes, OPERATOR_GRAD), throwCounter, nException );
     
     // exception #17: incorrect 2nd dimension of output array (must equal D2 cardinality in 2D)
@@ -262,29 +265,97 @@ int main(int argc, char *argv[]) {
   
   outStream -> precision(20);
   
-  // VALUE: Each row gives the 4 correct basis set values at an evaluation point
+  // VALUE: in (F,P) format
   double basisValues[] = {
-    1.0, 0.0, 0.0, 0.0,
-    0.0, 1.0, 0.0, 0.0,
-    0.0, 0.0, 1.0, 0.0,
-    0.0, 0.0, 0.0, 1.0,
-    0.15,0.25,0.5, 0.1,
-    0.0, 0.5, 0.5, 0.0,
-    0.0, 0.5, 0.0, 0.5,
-    0.0, 0.0, 0.5, 0.5
+    1.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.00000, 0, 0, 0, 0, 0, 0, 0, \
+    0, 0, 0, 1.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.00000, 0, 0, 0, 0, \
+    0, 0, 0, 0, 0, 0, 1.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.00000, 0, \
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    1.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.00000, 0, 0, 0, 0, 0, 0, 0, \
+    0, 0, 0, 1.00000 };
+  
+  // GRAD and D1: in (F,P,D) format
+  double basisGrads[] = {
+    -3.00000, -3.00000, -3.00000, 1.00000, 1.00000, 1.00000, 1.00000, \
+    1.00000, 1.00000, 1.00000, 1.00000, 1.00000, -1.00000, -1.00000, \
+    -1.00000, 1.00000, 1.00000, 1.00000, -1.00000, -1.00000, -1.00000, \
+    -1.00000, -1.00000, -1.00000, 1.00000, 1.00000, 1.00000, 1.00000, \
+    1.00000, 1.00000, -1.00000, 0, 0, 3.00000, 0, 0, -1.00000, 0, 0, \
+    -1.00000, 0, 0, 1.00000, 0, 0, 1.00000, 0, 0, -1.00000, 0, 0, \
+    -1.00000, 0, 0, 1.00000, 0, 0, -1.00000, 0, 0, 0, -1.00000, 0, 0, \
+    -1.00000, 0, 0, 3.00000, 0, 0, -1.00000, 0, 0, -1.00000, 0, 0, \
+    1.00000, 0, 0, 1.00000, 0, 0, -1.00000, 0, 0, -1.00000, 0, 0, \
+    1.00000, 0, 0, 0, -1.00000, 0, 0, -1.00000, 0, 0, -1.00000, 0, 0, \
+    3.00000, 0, 0, -1.00000, 0, 0, -1.00000, 0, 0, -1.00000, 0, 0, \
+    1.00000, 0, 0, 1.00000, 0, 0, 1.00000, 4.00000, 0, 0, -4.00000, \
+    -4.00000, -4.00000, 0, 0, 0, 0, 0, 0, 0, -2.00000, -2.00000, \
+    -2.00000, -2.00000, -2.00000, 2.00000, 0, 0, 2.00000, 0, 0, -2.00000, \
+    -2.00000, -2.00000, 0, 0, 0, 0, 0, 0, 0, 4.00000, 0, 4.00000, 0, 0, \
+    0, 0, 0, 0, 2.00000, 0, 2.00000, 2.00000, 0, 2.00000, 0, 0, 0, 0, 0, \
+    0, 2.00000, 0, 2.00000, 0, 0, 0, 4.00000, 0, 0, 0, 0, -4.00000, \
+    -4.00000, -4.00000, 0, 0, 0, 0, 2.00000, 0, -2.00000, -2.00000, \
+    -2.00000, -2.00000, 0, -2.00000, 0, 2.00000, 0, 0, 0, 0, -2.00000, \
+    -2.00000, -2.00000, 0, 0, 4.00000, 0, 0, 0, 0, 0, 0, -4.00000, \
+    -4.00000, -4.00000, 0, 0, 2.00000, 0, 0, 0, 0, 0, 2.00000, -2.00000, \
+    -2.00000, 0, -2.00000, -2.00000, -2.00000, -2.00000, -2.00000, \
+    -2.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 4.00000, 0, 0, 0, 0, \
+    2.00000, 0, 0, 2.00000, 0, 0, 0, 2.00000, 0, 0, 2.00000, 0, 2.00000, \
+    2.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4.00000, 0, 4.00000, 0, 0, 0, \
+    0, 0, 0, 2.00000, 0, 0, 2.00000, 0, 2.00000, 0, 0, 2.00000, 0, 0, \
+    2.00000, 2.00000};
+  
+  // D2 values in (F,P, Dk) format
+  double basisD2[]={
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 4.00000, \
+    4.00000, 4.00000, 4.00000, 4.00000, 4.00000, 0, 0, 0, 0, 0, 4.00000, \
+    0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, \
+    4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, \
+    0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, \
+    0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, \
+    4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, \
+    0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, \
+    0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 0, 0, 4.00000, \
+    0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, \
+    4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, \
+    0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, \
+    0, 0, 4.00000, -8.00000, -4.00000, -4.00000, 0, 0, 0, -8.00000, \
+    -4.00000, -4.00000, 0, 0, 0, -8.00000, -4.00000, -4.00000, 0, 0, 0, \
+    -8.00000, -4.00000, -4.00000, 0, 0, 0, -8.00000, -4.00000, -4.00000, \
+    0, 0, 0, -8.00000, -4.00000, -4.00000, 0, 0, 0, -8.00000, -4.00000, \
+    -4.00000, 0, 0, 0, -8.00000, -4.00000, -4.00000, 0, 0, 0, -8.00000, \
+    -4.00000, -4.00000, 0, 0, 0, -8.00000, -4.00000, -4.00000, 0, 0, 0, \
+    0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, \
+    0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, \
+    0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, \
+    0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, -4.00000, 0, -8.00000, -4.00000, \
+    0, 0, -4.00000, 0, -8.00000, -4.00000, 0, 0, -4.00000, 0, -8.00000, \
+    -4.00000, 0, 0, -4.00000, 0, -8.00000, -4.00000, 0, 0, -4.00000, 0, \
+    -8.00000, -4.00000, 0, 0, -4.00000, 0, -8.00000, -4.00000, 0, 0, \
+    -4.00000, 0, -8.00000, -4.00000, 0, 0, -4.00000, 0, -8.00000, \
+    -4.00000, 0, 0, -4.00000, 0, -8.00000, -4.00000, 0, 0, -4.00000, 0, \
+    -8.00000, -4.00000, 0, 0, 0, -4.00000, 0, -4.00000, -8.00000, 0, 0, \
+    -4.00000, 0, -4.00000, -8.00000, 0, 0, -4.00000, 0, -4.00000, \
+    -8.00000, 0, 0, -4.00000, 0, -4.00000, -8.00000, 0, 0, -4.00000, 0, \
+    -4.00000, -8.00000, 0, 0, -4.00000, 0, -4.00000, -8.00000, 0, 0, \
+    -4.00000, 0, -4.00000, -8.00000, 0, 0, -4.00000, 0, -4.00000, \
+    -8.00000, 0, 0, -4.00000, 0, -4.00000, -8.00000, 0, 0, -4.00000, 0, \
+    -4.00000, -8.00000, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, \
+    0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, \
+    0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, \
+    0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 0, 0, \
+    4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, \
+    0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, \
+    0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, 0, 0, 0, 4.00000, 0, 0, \
+    0, 0, 0, 4.00000, 0
   };
   
-  // GRAD and D1: each row gives the 3 x 4 correct values of the gradients of the 4 basis functions
-  double basisGrads[] = {
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-    -1.0, -1.0, -1.0,    1.0, 0.0, 0.0,    0.0, 1.0, 0.0,    0.0, 0.0, 1.0, 
-  };
   
   try{
         
@@ -292,7 +363,6 @@ int main(int argc, char *argv[]) {
     int numFields = tetBasis.getCardinality();
     int numPoints = tetNodes.dimension(0);
     int spaceDim  = tetBasis.getBaseCellTopology().getDimension();
-    int D2Cardin  = Intrepid::getDkCardinality(OPERATOR_D2, spaceDim);
     
     // Generic array for values, grads, curls, etc. that will be properly sized before each call
     FieldContainer<double> vals;
@@ -322,7 +392,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
-           int l = k + i * spaceDim + j * spaceDim * numFields;
+ 
+          // basisGrads is (F,P,D), compute offset:
+          int l = k + j * spaceDim + i * spaceDim * numPoints;
            if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -342,7 +414,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
-           int l = k + i * spaceDim + j * spaceDim * numFields;
+          
+          // basisGrads is (F,P,D), compute offset:
+          int l = k + j * spaceDim + i * spaceDim * numPoints;
            if (std::abs(vals(i,j,k) - basisGrads[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -357,8 +431,33 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // Check D2 of basis function
+    int D2cardinality = Intrepid::getDkCardinality(OPERATOR_D2, spaceDim);
+    vals.resize(numFields, numPoints, D2cardinality);    
+    tetBasis.getValues(vals, tetNodes, OPERATOR_D2);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        for (int k = 0; k < D2cardinality; k++) {
+          
+          // basisD2 is (F,P,Dk), compute offset:
+          int l = k + j * D2cardinality + i * D2cardinality * numPoints;
+          if (std::abs(vals(i,j,k) - basisD2[l]) > INTREPID_TOL) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            
+            // Output the multi-index of the value where the error is:
+            *outStream << " At multi-index { ";
+            *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+            *outStream << "}  computed D2 component: " << vals(i,j,k)
+              << " but reference D2 component: " << basisD2[l] << "\n";
+          }
+        }
+      }
+    }
+    
+    
     // Check all higher derivatives - must be zero. 
-    for(EOperator op = OPERATOR_D2; op < OPERATOR_MAX; op++) {
+    for(EOperator op = OPERATOR_D3; op < OPERATOR_MAX; op++) {
       
       // The last dimension is the number of kth derivatives and needs to be resized for every Dk
       int DkCardin  = Intrepid::getDkCardinality(op, spaceDim);
