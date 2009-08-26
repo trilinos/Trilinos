@@ -33,6 +33,9 @@
 /* Define if want to build amesos-mumps */
 #cmakedefine HAVE_AMESOS_MUMPS
 
+/* Define if have BLACS */
+#cmakedefine HAVE_AMESOS_BLACS
+
 /* Define if want to build amesos-old_mumps */
 #cmakedefine HAVE_AMESOS_OLD_MUMPS
 
