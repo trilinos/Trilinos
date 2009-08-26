@@ -277,7 +277,6 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" || 
 	test "X$ac_cv_use_meros" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_aristos" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
         test "X$ac_cv_use_isorropia" != "Xno" ||
