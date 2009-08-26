@@ -16,6 +16,9 @@ namespace {
   using Tpetra::Map;
   using Tpetra::Directory;
   using Tpetra::DefaultPlatform;
+  using Tpetra::LookupStatus;
+  using Tpetra::IDNotPresent;
+  using Tpetra::AllIDsPresent;
   using Teuchos::Array;
   using Teuchos::tuple;
   using std::sort;
@@ -90,26 +93,26 @@ namespace {
     // create a directory
     D dir(map);
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(numEntries);
       Array<LO>  localIDs(numEntries); 
-      invalid = dir.getDirectoryEntries(tuple<GO>(0),imageIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(tuple<GO>(0),imageIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
-      invalid = dir.getDirectoryEntries(tuple<GO>(0),imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(tuple<GO>(0),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0), localIDs );
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(numEntries+1);
       Array<LO>  localIDs(numEntries+1);
-      invalid = dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      invalid = dir.getDirectoryEntries(tuple<GO>(0,1),imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries(tuple<GO>(0,1),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
     }
@@ -157,26 +160,26 @@ namespace {
       }
     }
     {
-      bool invalid;
+      bool stat;
       Array<int> imageIDs(numEntries);
       Array<LO> localIDs(numEntries);
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
     {
-      bool invalid;
+      bool stat;
       Array<int> imageIDs(2);
       Array<LO> localIDs(2);
-      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
     }
@@ -224,26 +227,26 @@ namespace {
       }
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(numEntries);
       Array<LO> localIDs(numEntries); 
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(2);
       Array<LO> localIDs(2); 
-      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
     }
@@ -288,26 +291,26 @@ namespace {
       }
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(numEntries);                           
       Array<LO> localIDs(numEntries); 
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(2);                           
       Array<LO> localIDs(2); 
-      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
     }
@@ -352,26 +355,26 @@ namespace {
       }
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(numEntries);                           
       Array<LO> localIDs(numEntries); 
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, false );
+      stat = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, AllIDsPresent );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
     {
-      bool invalid;
+      LookupStatus stat;
       Array<int> imageIDs(2);                           
       Array<LO> localIDs(2); 
-      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries), imageIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries), imageIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
-      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
-      TEST_EQUALITY_CONST( invalid, true );
+      stat = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( stat, IDNotPresent );
       TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
       TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
     }

@@ -35,6 +35,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DirectoryDecl.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
@@ -286,9 +287,9 @@ namespace Tpetra {
     const size_t numMyEntries = map_->getNodeNumElements();
     Teuchos::Array<int> sendImageIDs(numMyEntries);
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = map_->getNodeElementList();
-    // a "true" return here indicates that one of myGlobalEntries (from map_) is not on the map directoryMap_, indicating that 
-    // it lies outside of the range [minAllGID,maxAllGID] (from map_). this means something is wrong with map_.
-    TEST_FOR_EXCEPTION( directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs) == true, std::logic_error,
+    // an ID not present in this lookup indicates that it lies outside of the range [minAllGID,maxAllGID] (from map_). 
+    // this means something is wrong with map_, our fault.
+    TEST_FOR_EXCEPTION( directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs) == IDNotPresent, std::logic_error,
         Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please contact Tpetra team.");
 
     // Create distributor & call createFromSends
