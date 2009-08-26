@@ -17,6 +17,16 @@ IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND NOT ${PACKAGE_NAME}_ENABLE_ParMETIS)
   MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
 ENDIF()
 
+# if using parallel MUMPS, must also link in scalapack and BLACS
+
+IF(${PACKAGE_NAME}_ENABLE_MUMPS AND ${PACKAGE_NAME}_ENABLE_MPI AND NOT ${PACKAGE_NAME}_ENABLE_SCALAPACK)
+  MESSAGE(FATAL_ERROR "The Amesos support for parallel MUMPS requires SCALAPACK.")
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_MUMPS AND ${PACKAGE_NAME}_ENABLE_MPI AND NOT ${PACKAGE_NAME}_ENABLE_BLACS)
+  MESSAGE(FATAL_ERROR "The Amesos support for parallel MUMPS requires BLACS.")
+ENDIF()
+
 ## Most of the options below are bogus.  The handling of TPLs is done
 ## through the dependencies file.  This needs to be cleaned up. I'm
 ## leaving them for now so that we have a list of all options.  They
