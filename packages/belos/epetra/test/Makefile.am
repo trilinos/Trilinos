@@ -5,6 +5,10 @@
 
 all-local:
 
-SUBDIRS = BlockCG BlockGmres GCRODR PCPG TFQMR MVOPTester
+if BUILD_EPETRA
+EPETRA_TEST_SUBDIRS = BlockCG BlockGmres GCRODR PCPG TFQMR MVOPTester
+endif
+
+SUBDIRS = $(EPETRA_TEST_SUBDIRS)
 
 EXTRA_DIST = definition

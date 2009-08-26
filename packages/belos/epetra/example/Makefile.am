@@ -5,5 +5,9 @@
 
 all-local:
 
-SUBDIRS = BlockCG BlockGmres GCRODR PCPG
+if BUILD_EPETRA
+EPETRA_EX_SUBDIRS = BlockCG BlockGmres GCRODR PCPG
+endif
+
+SUBDIRS = $(EPETRA_EX_SUBDIRS)
 
