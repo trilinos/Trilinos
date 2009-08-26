@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( tetBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, hexBasis.getBaseCellTopology().getDimension() - 1);
+    FieldContainer<double> badPoints2(4, tetBasis.getBaseCellTopology().getDimension() - 1);
     INTREPID_TEST_COMMAND( tetBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #10 output values must be of rank-2 for OPERATOR_VALUE
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( tetBasis.getValues(badVals4, tetNodes, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
-    FieldContainer<double> badVals5(tetBasis.getCardinality(), tetNodes.dimension(0), hexBasis.getBaseCellTopology().getDimension() + 1);
+    FieldContainer<double> badVals5(tetBasis.getCardinality(), tetNodes.dimension(0), tetBasis.getBaseCellTopology().getDimension() + 1);
     INTREPID_TEST_COMMAND( tetBasis.getValues(badVals5, tetNodes, OPERATOR_GRAD), throwCounter, nException );
     
     // exception #17: incorrect 2nd dimension of output array (must equal D2 cardinality in 2D)
@@ -292,7 +292,6 @@ int main(int argc, char *argv[]) {
     int numFields = tetBasis.getCardinality();
     int numPoints = tetNodes.dimension(0);
     int spaceDim  = tetBasis.getBaseCellTopology().getDimension();
-    int D2Cardin  = Intrepid::getDkCardinality(OPERATOR_D2, spaceDim);
     
     // Generic array for values, grads, curls, etc. that will be properly sized before each call
     FieldContainer<double> vals;
