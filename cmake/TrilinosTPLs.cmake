@@ -47,6 +47,8 @@
 SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   TBB            EX
   Pthread        SS
+  ARPREC         SS
+  QD             SS
   MPI            PS
   BLAS           PS
   LAPACK         PS

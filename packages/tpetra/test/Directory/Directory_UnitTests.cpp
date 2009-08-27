@@ -160,7 +160,7 @@ namespace {
       }
     }
     {
-      bool stat;
+      LookupStatus stat;
       Array<int> imageIDs(numEntries);
       Array<LO> localIDs(numEntries);
       stat = dir.getDirectoryEntries(allGIDs,imageIDs);
@@ -172,7 +172,7 @@ namespace {
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
     {
-      bool stat;
+      LookupStatus stat;
       Array<int> imageIDs(2);
       Array<LO> localIDs(2);
       stat = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs);

@@ -1,0 +1,6 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( QD
+  REQUIRED_HEADERS qd/qd_real.h
+  REQUIRED_LIBS_NAMES qd
+  )

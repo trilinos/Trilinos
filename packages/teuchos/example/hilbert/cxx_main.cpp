@@ -65,7 +65,7 @@
 #include <typeinfo>
 
 #ifdef HAVE_TEUCHOS_ARPREC
-#include "mp/mpreal.h"
+#include <arprec/mp_real.h>
 #endif
 
 #ifdef HAVE_TEUCHOS_GNU_MP

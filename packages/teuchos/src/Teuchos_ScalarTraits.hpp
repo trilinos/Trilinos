@@ -49,7 +49,6 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 #ifdef HAVE_TEUCHOS_ARPREC
-// #include <mp/mpreal.h>       // CGB: this is not correct, circa ARPREC 2005. 
 #include <arprec/mp_real.h>
 #endif
 
@@ -485,8 +484,10 @@ struct ScalarTraits<double>
      in the shortterm, this should be specified at configure time. I have inserted a configure-time option (--enable-teuchos-double-to-dd) 
      which uses QD's DD when available. This must be used alongside --enable-teuchos-qd.
    */
-#ifdef HAVE_TEUCHOS_DOUBLE_TO_DD
+#if defined(HAVE_TEUCHOS_DOUBLE_TO_QD)
   typedef dd_real doublePrecision;
+#elif defined(HAVE_TEUCHOS_DOUBLE_TO_ARPREC)
+  typedef mp_real doublePrecision;
 #else
   typedef double doublePrecision;     // don't double "double" in this case
 #endif
@@ -755,18 +756,19 @@ template<>
 struct ScalarTraits<mp_real>
 {
   typedef mp_real magnitudeType;
-  typedef mp_real halfPrecision;
+  typedef double halfPrecision;
   typedef mp_real doublePrecision;
   static const bool isComplex = false;
   static const bool isComparable = true;
+  static const bool isOrdinal = false;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-  static magnitudeType magnitude(mp_real a) { return std::abs(a); }
+  static magnitudeType magnitude(mp_real a) { return abs(a); }
   static inline mp_real zero() { mp_real zero = 0.0; return zero; }
   static inline mp_real one() { mp_real one = 1.0; return one; }    
   static inline mp_real conjugate(mp_real x) { return x; }
   static inline mp_real real(mp_real x) { return(x); }
-  static inline mp_real imag(mp_real x) { return(0); }
+  static inline mp_real imag(mp_real x) { return zero(); }
   static inline bool isnaninf(mp_real x) { return false; } // ToDo: Change this?
   static inline void seedrandom(unsigned int s) { 
     long int seedVal = static_cast<long int>(s);
@@ -774,7 +776,7 @@ struct ScalarTraits<mp_real>
   }
   static inline mp_real random() { return mp_rand(); }
   static inline std::string name() { return "mp_real"; }
-  static inline mp_real squareroot(mp_real x) { return std::sqrt(x); }
+  static inline mp_real squareroot(mp_real x) { return sqrt(x); }
   static inline mp_real pow(mp_real x, mp_real y) { return pow(x,y); }
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };

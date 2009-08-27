@@ -5,7 +5,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="Boost,MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS value="Boost,MPI,ARPREC,QD"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -131,7 +131,7 @@
   </Package>
   <Package name="Isorropia" dir="isorropia">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Kokkos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>

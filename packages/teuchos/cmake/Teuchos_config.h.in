@@ -46,9 +46,6 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #cmakedefine HAVE_SYS_TYPES_H
 
-/* Define if want to build teuchos-arprec */
-#cmakedefine HAVE_TEUCHOS_ARPREC
-
 /* Define if want to build teuchos-abc */
 #cmakedefine HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -57,6 +54,18 @@
 
 /* Define if want to build teuchos-boost */
 #cmakedefine HAVE_TEUCHOS_BOOST
+
+/* Define if want to build teuchos-qd */
+#cmakedefine HAVE_TEUCHOS_QD
+
+/* Define if ScalarTraits promotes double to QD */
+#cmakedefine HAVE_TEUCHOS_DOUBLE_TO_QD
+
+/* Define if want to build teuchos-arprec */
+#cmakedefine HAVE_TEUCHOS_ARPREC
+
+/* Define if ScalarTraits promotes double to ARPREC */
+#cmakedefine HAVE_TEUCHOS_DOUBLE_TO_ARPREC
 
 /* Define if want to build teuchos-comm_timers */
 #cmakedefine HAVE_TEUCHOS_COMM_TIMERS
@@ -67,7 +76,7 @@
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
 /* Define if want to build teuchos-long-long */
-#cmakedefine HAVE_TEUCHOS_LONG_LONG
+#cmakedefine HAVE_TEUCHOS_LONG_LONG_INT
 
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TEUCHOS_DEBUG

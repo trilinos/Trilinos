@@ -1,0 +1,6 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( ARPREC
+  REQUIRED_HEADERS arprec/mp_real.h
+  REQUIRED_LIBS_NAMES arprec
+  )

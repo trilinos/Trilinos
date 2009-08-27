@@ -27,7 +27,7 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_LONG_LONG
+  ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
   "Enable Teuchos features for long long data type."
   OFF
@@ -104,6 +104,29 @@ ADD_OPTION_AND_DEFINE(
   "Enable Teuchos calls to GCC demangle library function if it exists (see HAVE_TEUCHOS_BLASFLOAT)."
   ON
   )
+
+IF (Teuchos_ENABLE_QD)
+  ADD_OPTION_AND_DEFINE(
+    ${PACKAGE_NAME}_PROMOTE_DOUBLE_VIA_QD
+    HAVE_TEUCHOS_DOUBLE_TO_QD
+    "Instruct Teuchos::ScalarTraits to promote double precision to the double-double of the QD library (see HAVE_TEUCHOS_QD)."
+    NO
+    )
+ENDIF()
+
+IF (Teuchos_ENABLE_ARPREC)
+  ADD_OPTION_AND_DEFINE(
+    ${PACKAGE_NAME}_PROMOTE_DOUBLE_VIA_ARPREC
+    HAVE_TEUCHOS_DOUBLE_TO_ARPREC
+    "Instruct Teuchos::ScalarTraits to promote double precision to the double-double of the QD library (see HAVE_TEUCHOS_ARPREC)."
+    NO
+    )
+ENDIF()
+
+IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD) 
+    MESSAGE("Cannot promote double to both ARPREC and QD. Will use ARPREC.")
+    SET(HAVE_TEUCHOS_DOUBLE_TO_QD OFF)
+ENDIF()
 
 #
 # D) Add the libraries, tests, and examples
