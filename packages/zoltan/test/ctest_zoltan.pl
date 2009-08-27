@@ -67,8 +67,6 @@ $dirname = $tmparr[-1];
 $dirname =~ s/ch_//g;
 $dirname =~ s/hg_//g;
 $dirname =~ s/nem_//g;
-$zoutfilebase = sprintf("%s.out.%d.", $dirname, $np);
-$zoutdropbase = sprintf("%s.drops.%d.", $dirname, $np);
 if ($debug) {
   print "DEBUG  Dir $dir dirname $dirname\n";
   print "DEBUG  Outfilebase: $zoutfilebase;  Dropbase: $zoutdropbase\n";
@@ -83,6 +81,7 @@ print LOG "$time\n";
 
 ### If output subdirectory does not exist, create it.
 mkdir "output" unless -d "output";
+
 
 ### Get list of input files
 if ($package eq "Zoltan") {
@@ -102,6 +101,7 @@ if ($package eq "Zoltan") {
 } 
 if ($package eq "ParMETIS") {
   ### ParMETIS tests
+  @oneprocfiles = glob("zdrive.inp.*order-metis-*");
   if ($np > 1) {
     @inpfiles = glob("zdrive.inp.adp*
                       zdrive.inp.part* 
@@ -115,6 +115,7 @@ if ($package eq "ParMETIS") {
 if ($package eq "Scotch") {
   ### Scotch tests
   @inpfiles = glob("zdrive.inp.*scotch*");
+  @oneprocfiles = glob("zdrive.inp.*order-scotch*");
 } 
 if ($package eq "PaToH") {
   ### PaToH tests
@@ -128,25 +129,40 @@ $passcnt = 0;
 
 ### For each zdrive.inp file, run the test.
 TEST:  foreach $file (@inpfiles) {
-  if ($debug) {print "DEBUG  Running test $testcnt on $file\n";}
+  ### By default run on $np cpus
+  $loop_np = $np;
 
-  ### Remove zdrive output files from previous runs.
-  unlink glob("$zoutfilebase*");
-  unlink glob("$zoutdropbase*");
+  if ($debug) {print "DEBUG  Running test $testcnt on $file\n";}
 
   ### Create filenames for soon-to-be-created zdrive output files.
   $testname = $file;
   $testname =~ s/zdrive\.inp\.//g;
 
-  $archfilebase = sprintf("%s.%s.%s.", $dirname, $testname, $np);
-  $archdropbase = sprintf("%s.%s.drops.%s.", $dirname, $testname, $np);
+  ### Skip serial ordering tests run on more than 1 cpu
+  if ($loop_np > 1) {
+    if (grep /$file/, @oneprocfiles) {
+      $loop_np = 1;
+      print LOG "Test $dirname:$testname run on 1 cpu as serial only\n";
+      print "Test $dirname:$testname run on 1 cpu as serial only\n";
+    }
+  }
+  ### Define template names here as number of processors may change.
+  $zoutfilebase = sprintf("%s.out.%d.", $dirname, $loop_np);
+  $zoutdropbase = sprintf("%s.drops.%d.", $dirname, $loop_np);
+
+  ### Remove zdrive output files from previous runs.
+  unlink glob("$zoutfilebase*");
+  unlink glob("$zoutdropbase*");
+
+  $archfilebase = sprintf("%s.%s.%s.", $dirname, $testname, $loop_np);
+  $archdropbase = sprintf("%s.%s.drops.%s.", $dirname, $testname, $loop_np);
   if ($debug) {
     print "DEBUG  Test name:  $testname\n";
     print "DEBUG  Archfilebase: $archfilebase; Dropbase: $archdropbase\n";
   }
 
   ### For serial tests only...if answer file doesn't exist, skip the test.
-  if ($np == 1) {
+  if ($loop_np == 1) {
     $zoutfile = sprintf("%s%d", $archfilebase, 0);
     if (!(-e "answers/$zoutfile")) {
       print LOG "Test $dirname:$testname SKIPPED (no answer file)\n";
@@ -156,10 +172,10 @@ TEST:  foreach $file (@inpfiles) {
   }
 
   ### Execute zdrive.exe.
-  $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $np);
-  if ($np > 1) {
+  $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $loop_np);
+  if ($loop_np > 1) {
     $cmd = sprintf("$mpiexec $mpiexecargs -np %d %s %s 2>&1 | tee %s\n", 
-                    $np, $zdrive, $file, $zouterrfile);
+                    $loop_np, $zdrive, $file, $zouterrfile);
   }
   else {
     $cmd = sprintf("%s %s 2>&1 | tee %s\n", $zdrive, $file, $zouterrfile);
@@ -171,8 +187,8 @@ TEST:  foreach $file (@inpfiles) {
   ### Copy zdrive output files to output directory.
   $failed = 0;
   move($zouterrfile, "output/$zouterrfile");
-  foreach $ii (0..$np-1) {
-    if ($np < 10) {$format = "%s%d";}
+  foreach $ii (0..$loop_np-1) {
+    if ($loop_np < 10) {$format = "%s%d";}
     else {$format = "%s%02d";}
     $zoutfile = sprintf("$format", $zoutfilebase, $ii);
     $zoutdrop = sprintf("$format", $zoutdropbase, $ii);
@@ -194,7 +210,7 @@ TEST:  foreach $file (@inpfiles) {
       ### Failure if no output files.
       $failed = -1;
       last;
-    }  
+    }
     if (!(-e "$answfile")) {
       ### Failure if no answer files.
       $failed = -2;

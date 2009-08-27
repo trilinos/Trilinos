@@ -129,9 +129,9 @@ int Zoltan_Order(
   /* Set default parameter values */
   strncpy(opt.method, "PARMETIS", MAX_PARAM_STRING_LEN);
 #ifdef HAVE_MPI
-  strncpy(opt.order_type, "GLOBAL", MAX_PARAM_STRING_LEN);
+  strncpy(opt.order_type, "DIST", MAX_PARAM_STRING_LEN);
 #else
-  strncpy(opt.order_type, "LOCAL", MAX_PARAM_STRING_LEN);
+  strncpy(opt.order_type, "SERIAL", MAX_PARAM_STRING_LEN);
 #endif /* HAVE_MPI */
 
   opt.use_order_info = 0;

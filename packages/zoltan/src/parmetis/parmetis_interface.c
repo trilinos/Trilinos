@@ -577,6 +577,7 @@ int Zoltan_ParMetis_Order(
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
+  memset(times, 0, sizeof(times));
 
   ord.order_opt = order_opt;
 
@@ -615,11 +616,17 @@ int Zoltan_ParMetis_Order(
       SET_GLOBAL_GRAPH(&gr.graph_type); /* GLOBAL by default */
 
 #ifdef ZOLTAN_PARMETIS
-    if (strcmp(order_opt->order_type, "LOCAL") == 0)
+    if ((strcmp(order_opt->order_type, "SERIAL") == 0) ||
+	(strcmp(order_opt->order_type, "LOCAL") == 0)) /* For compatibility reason */
 #endif /* ZOLTAN_PARMETIS */
       SET_LOCAL_GRAPH(&gr.graph_type);
   }
   gr.get_data = 1;
+
+  if (IS_LOCAL_GRAPH(gr.graph_type) && zz->Num_Proc > 1) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Serial ordering on more than 1 process: set ParMetis instead.");
+    return(ZOLTAN_FATAL);
+  }
 
   /* If reorder is true, we already have the id lists. Ignore weights. */
   if ((order_opt && order_opt->reorder))

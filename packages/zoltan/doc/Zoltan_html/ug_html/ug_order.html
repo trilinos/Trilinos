@@ -80,12 +80,10 @@ dissection by ParMETIS or METIS</a>),
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="ORDER_TYPE"></a>&nbsp;&nbsp; <i>ORDER_TYPE</i></td>
 
-<td>"LOCAL" or "GLOBAL". If LOCAL is selected, then each processor
-constructs a local (sub-)graph. All inter-processor edges are simply
-ignored.&nbsp; The ordering arrays returned, <i>rank</i> and
-<i>iperm,</i> are local permutation vectors in this case. If LOCAL is
-selected, the serial version of the ordering routine is used,
-i.e. Metis for ParMetis or Scotch for PT-Scotch.</td> </tr>
+<td>"SERIAL" or "DIST". If SERIAL is selected, the serial version of
+the ordering routine is used, i.e. Metis for ParMetis or Scotch for
+PT-Scotch. SERIAL can be selected only on non distributed graph.</td>
+</tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a

@@ -119,6 +119,7 @@ int Zoltan_Scotch_Order(
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
+  memset(times, 0, sizeof(times));
 
   strcpy (alg, "NODEND");
   strcpy (graph_type, "GLOBAL");
@@ -161,18 +162,17 @@ int Zoltan_Scotch_Order(
   gr.num_obj = num_obj;
 
   /* Check what ordering type is requested */
-  SET_LOCAL_GRAPH(&gr.graph_type);
-  if (order_opt){
-    if (strcmp(order_opt->order_type, "LOCAL") == 0)
-      SET_LOCAL_GRAPH(&gr.graph_type);
 #ifdef ZOLTAN_PTSCOTCH
-    else if (strcmp(order_opt->order_type, "GLOBAL") == 0)
-      SET_GLOBAL_GRAPH(&gr.graph_type);
-#endif /* ZOLTAN_PTSCOTCH */
-    else {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Scotch needs a graph.");
-      return(ZOLTAN_FATAL);
-    }
+  SET_GLOBAL_GRAPH(&gr.graph_type);
+  if (order_opt && ((strcmp(order_opt->order_type, "SERIAL") == 0) ||
+		    (strcmp(order_opt->order_type, "LOCAL") == 0))) /* For compatibility reason */
+#else
+  SET_LOCAL_GRAPH(&gr.graph_type);
+#endif
+
+  if (IS_GLOBAL_GRAPH(gr.graph_type) && (zz->Num_Proc > 1)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Serial ordering needs exactly 1 CPU.");
+    return(ZOLTAN_FATAL);
   }
   gr.get_data = 1;
 
@@ -518,7 +518,7 @@ int Zoltan_Scotch(
 
 
 #ifndef ZOLTAN_SCOTCH
-  ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo,
 		     "Scotch requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
@@ -551,7 +551,7 @@ int Zoltan_Scotch(
   if (strcmp (graph_type, "GLOBAL") != 0) {
     SET_LOCAL_GRAPH(&gr.graph_type);
     if (zz->Num_Proc > 1) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call serial Scotch, switching to PT-Scotch");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Distributed graph: cannot call serial Scotch, switching to PT-Scotch");
       SET_GLOBAL_GRAPH(&gr.graph_type);
       retval = ZOLTAN_WARN;
     }

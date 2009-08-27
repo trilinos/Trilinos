@@ -7,7 +7,7 @@
   <meta name="sandia.approved" content="SAND2007-4748W">
   <meta name="author" content="Zoltan PI">
 
-   <title>Zoltan User's Guide:  Nested Dissection by ParMETIS</title>
+   <title>Zoltan User's Guide:  Nested Dissection by Scotch</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
@@ -28,16 +28,26 @@
 |&nbsp; <a href="ug_color.html">Next</a>&nbsp; |&nbsp; <a href="ug_order_parmetis.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="PT-Scotch"></a>Nested Dissection by Scotch</h2>
-Nested Dissection is a popular method to compute fill-reducing orderings
-for graphs and sparse matrices. It can also be used for other 
-ordering purposes. 
-The algorithm recursively finds a separator (bisector) in a graph,
-orders the nodes in the two subsets first, and nodes in the separator last.
+<a NAME="PT-Scotch"></a>Nested Dissection by Scotch</h2> Nested
+Dissection is a popular method to compute fill-reducing orderings for
+graphs and sparse matrices. It can also be used for other ordering
+purposes.  The algorithm recursively finds a separator (bisector) in a
+graph, orders the nodes in the two subsets first, and nodes in the
+separator last.
 <p>
-Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We use the names Scotch and PT-Scotch interchangeably.) Scotch is a third-party library in Zoltan and should be obtained separately from the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled with the support of PT-Scotch and <i>int</i> coding for vertices, not <i>long</i> (on architectures where <i>sizeof(int) != sizeof(long)</i>).
+Scotch is a library for ordering and partitioning, developed at LaBRI
+in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We
+use the names Scotch and PT-Scotch interchangeably.) Scotch is a
+third-party library in Zoltan and should be obtained separately from
+the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web
+site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled
+with the support of PT-Scotch and <i>int</i> coding for vertices, not
+<i>long</i> (on architectures where <i>sizeof(int) !=
+sizeof(long)</i>).
 <p>
-If the parameter <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a> is set to LOCAL, it's the sequential version of Scotch which is called, not the parallel.
+If the parameter <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a> is
+set to SERIAL, it's the sequential version of Scotch which is called,
+not the parallel.
 </p>
 
 
