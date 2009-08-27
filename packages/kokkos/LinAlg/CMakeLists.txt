@@ -35,6 +35,7 @@ APPEND_SET(HEADERS
     # standard
     Kokkos_LinAlgVersion.hpp
     # data structures
+    Kokkos_CrsGraph.hpp
     Kokkos_CrsMatrix.hpp
     Kokkos_MultiVector.hpp
     # computation

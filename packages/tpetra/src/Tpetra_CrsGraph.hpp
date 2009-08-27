@@ -32,6 +32,9 @@
 // TODO: filter column indices first in insertLocalIndices()
 // TODO: filter column indices first in insertGlobalIndices()
 
+#include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_CrsGraph.hpp>
+
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Array.hpp>
@@ -57,14 +60,8 @@ namespace Tpetra
    */
   template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class CrsGraph : public RowGraph<LocalOrdinal,GlobalOrdinal,Node> {
-    template <class S, class LO, class GO, class N>
+    template <class S, class LO, class GO, class N, class SpMV>
     friend class CrsMatrix;
-
-    protected:
-      union IDUnion {
-        GlobalOrdinal gid;
-        LocalOrdinal  lid;
-      };
 
     public: 
 
@@ -338,6 +335,26 @@ namespace Tpetra
       inline typename Teuchos::ArrayRCP<LocalOrdinal>::iterator getLptr(size_t row);
       inline typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator getGptr(size_t row);
 
+      // Tpetra support objects
+      Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+      Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap_, colMap_, rangeMap_, domainMap_;
+      Teuchos::RCP<Import<LocalOrdinal,GlobalOrdinal,Nod> > importer_;
+      Teuchos::RCP<Export<LocalOrdinal,GlobalOrdinal,Nod> > exporter_;
+
+      // Local and Global Counts
+      global_size_t globalNumEntries_, globalNumDiags_, globalMaxNumRowEntries_;
+      size_t          nodeNumEntries_,   nodeNumDiags_,   nodeMaxNumRowEntries_, nodeNumAllocated_;
+    
+      // 
+      ProfileType pftype_;
+
+      // local data. two graphs: one of GIDs and one of LIDs. 
+      // except during makeIndicesLocal(), at most one of these is active, as indicated by isLocallyIndexed() and isGloballyIndexed()
+      // we provide the buffers to the graphs
+      Kokkos::CrsGraph<GlobalOrdinal,Node> gidGraph_;
+      Kokkos::CrsGraph< LocalOrdinal,Node> lidGraph_;
+
+      // non-local data
       std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
   };
 
@@ -346,53 +363,41 @@ namespace Tpetra
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
-  : 
-  {
+  : rowMap_(rowMap), lclGraph_(rowMap.getNode()), pftype_(pftype) {
     staticAssertions();
-    profile_ = pftype;
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,maxNumEntriesPerRow): maxNumEntriesPerRow must be non-negative.");
-    std::fill(rowNumToAlloc_.begin(), rowNumToAlloc_.end(), maxNumEntriesPerRow);
-    totalNumAllocated_ = std::accumulate(rowNumToAlloc_.begin(), rowNumToAlloc_.end(), 0);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype)
-  : 
-  {
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
+                                                      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
+                                                      size_t maxNumEntriesPerRow, ProfileType pftype)
+  : rowMap_(rowMap), colMap_(colMap), lclGraph_(rowMap.getNode()), pftype_(pftype) {
     staticAssertions();
-    profile_ = pftype;
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,colMap,maxNumEntriesPerRow): maxNumEntriesPerRow must be non-negative.");
-    std::fill(rowNumToAlloc_.begin(), rowNumToAlloc_.end(), maxNumEntriesPerRow);
-    totalNumAllocated_ = std::accumulate(rowNumToAlloc_.begin(), rowNumToAlloc_.end(), 0);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const Teuchos::ArrayView<size_t> &NumEntriesPerRowToAlloc, ProfileType pftype)
-  : 
-  {
+  CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
+                                                      const Teuchos::ArrayView<size_t> &NumEntriesPerRowToAlloc, ProfileType pftype)
+  : rowMap_(rowMap), lclGraph_(rowMap.getNode()), pftype_(pftype) {
     staticAssertions();
-    profile_ = pftype;
     TEST_FOR_EXCEPTION(NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,NumEntriesPerRowToAlloc): NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
-    initNumAlloc(NumEntriesPerRowToAlloc);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const Teuchos::ArrayView<size_t> &NumEntriesPerRowToAlloc, ProfileType pftype)
-  : 
-  {
+  : rowMap_(rowMap), colMap_(colMap), lclGraph_(rowMap.getNode()), pftype_(pftype) {
     staticAssertions();
-    profile_ = pftype;
     TEST_FOR_EXCEPTION(NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc): NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
-    initNumAlloc(NumEntriesPerRowToAlloc);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::allocateIndices(bool local)
-  {
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::allocateIndices(bool local) {
     // this is a protected function, only callable by us. if it was called incorrectly, it is our fault.
     TEST_FOR_EXCEPTION(isLocallyIndexed() && local==false, std::logic_error,
         Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");

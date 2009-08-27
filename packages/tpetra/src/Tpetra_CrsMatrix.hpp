@@ -33,6 +33,8 @@
 // TODO: row-wise insertion of entries in globalAssemble()
 
 #include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_CrsMatrix.hpp>
+
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_getRawPtr.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -40,6 +42,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
+
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
@@ -97,9 +100,8 @@ namespace Tpetra
    * The class utilizes CrsGraph object which has the same local and global ordinal types.
    *
    */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
-  {
+  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,Ordinal,Node> >
+  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
       //! @name Constructor/Destructor Methods
       //@{ 
