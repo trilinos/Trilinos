@@ -114,7 +114,6 @@
 
 #define GRAPH_PARTITIONING            1
 #define HYPERGRAPH_PARTITIONING       2
-#define NO_ZOLTAN                     3
 
 #define SUPPLY_EQUAL_WEIGHTS               1
 #define SUPPLY_UNEQUAL_WEIGHTS             2
@@ -152,9 +151,7 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
 	  int edgeWeightType, int objectType)
 {
   std::cout << "TEST: ";
-  if (partitioningType == NO_ZOLTAN)
-    std::cout << "isorropia simple linear row partitioner, ";
-  else if (partitioningType == GRAPH_PARTITIONING)
+  if (partitioningType == GRAPH_PARTITIONING)
     std::cout << "graph partitioning, ";
   else
     std::cout << "hypergraph partitioning, ";
@@ -164,15 +161,9 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
   else if (vertexWeightType == SUPPLY_UNEQUAL_WEIGHTS)
     std::cout << "created unequal vertex (row) weights, ";
   else
-    if (partitioningType == NO_ZOLTAN){
-      std::cout << std::endl << "      ";
-      std::cout << "did not supply row weights, default is number of row nonzeros,";
-    }
-    else
-      std::cout << "did not supply vertex (row) weights, ";
+    std::cout << "did not supply vertex (row) weights, ";
 
-  if (partitioningType != NO_ZOLTAN){
-    std::cout << std::endl << "      ";
+  std::cout << std::endl << "      ";
 
     if (partitioningType == GRAPH_PARTITIONING){
       if (edgeWeightType == SUPPLY_EQUAL_WEIGHTS)
@@ -190,10 +181,6 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
       else
 	std::cout << "did not supply hyperedge (column) weights, ";
     }
-  }
-  else{
-    std::cout << std::endl << "      ";
-  }
 
   if (objectType == EPETRA_CRSGRAPH)
     std::cout << "using Epetra_CrsGraph interface";
@@ -234,10 +221,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 #else
   const Epetra_SerialComm &Comm = dynamic_cast<const Epetra_SerialComm &>(matrix->Comm());
 #endif
-
-  if (contract && (partitioningType == NO_ZOLTAN)){
-    ERRORRETURN((localProc==0), "#Partitions < #Processes only works with Zoltan");
-  }
 
   int numRows = matrix->NumGlobalRows();
 
@@ -381,8 +364,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
 
-  if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS) ||
-      (partitioningType == NO_ZOLTAN)){
+  if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS)){
 
     const Epetra_Map &rowmap = matrix->RowMap();
     int nrows = rowmap.NumMyElements();
@@ -399,18 +381,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       else if (vertexWeightType == SUPPLY_UNEQUAL_WEIGHTS){
 	for (int i=0; i<nrows; i++){
 	  val[i] = 1.0 + ((localProc+1) / 2);
-	}
-      }
-      else{
-	// partitioningType is NO_ZOLTAN
-	//
-	// Isorropia will use row weights equal to the count of
-	// non zeros in the row when doing its own row balancing.
-	// We need to create that weight vector for the compute_*_metric
-	// calls even though we don't give it to create_partition().
-
-	for (int i=0; i<nrows; i++){
-	  val[i] = matrix->NumMyEntries(i);
 	}
       }
     }
@@ -451,15 +421,11 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   Teuchos::ParameterList params;
 
-  if (partitioningType == NO_ZOLTAN){
-    params.set("partitioning_method", "SIMPLE_LINEAR");
-  }
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
   // Set the Zoltan parameters for this problem
 
-  if (partitioningType != NO_ZOLTAN){
     Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
 
     if (numPartitions > 0){
@@ -489,12 +455,9 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       // throw out if .25 or more of the columns are non-zero
       sublist.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
     }
-  }
 #else
-  if (partitioningType != NO_ZOLTAN){
     ERRORRETURN((localProc==0),
-      "Zoltan partitioning required but Zoltan not available.")
-  }
+		"Zoltan partitioning required but Zoltan not available.")
 #endif
 
   // Perform partitioning with Zoltan (if we have it)
@@ -541,8 +504,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   // Redistribute the vertex weights
 
-  if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS) ||
-      (partitioningType == NO_ZOLTAN)){
+  if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS)){
 
     Teuchos::RCP<Epetra_Vector> newvwgts = rd.redistribute(*vptr);
     costs->setVertexWeights(newvwgts);
@@ -624,14 +586,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     }
   }
   else{
-    if (partitioningType == NO_ZOLTAN){
-      fail = (balance2 > balance1);
-      why = "New balance is worse";
-    }
-    else{
       fail = (cutl2 > cutl1);         // Zoltan hypergraph partitioning
       why = "New cutl is worse";
-    }
 
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
@@ -825,35 +781,6 @@ int main(int argc, char** argv) {
 
 #endif
 
-    fail = run_test(testm,
-	       verbose,
-	       false,
-	       NO_ZOLTAN,
-	       SUPPLY_UNEQUAL_WEIGHTS,
-	       SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-	       EPETRA_CRSMATRIX);
-
-    CHECK_FAILED();
-
-    fail = run_test(testm,
-	       verbose,
-	       false,
-	       NO_ZOLTAN,
-	       SUPPLY_EQUAL_WEIGHTS,
-	       SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-	       EPETRA_CRSGRAPH);
-
-    CHECK_FAILED();
-
-    fail = run_test(testm,
-	       verbose,
-	       false,
-	       NO_ZOLTAN,
-	       NO_APPLICATION_SUPPLIED_WEIGHTS,
-	       SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-	       EPETRA_CRSGRAPH);
-
-    CHECK_FAILED();
   } // end if square
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
@@ -900,35 +827,6 @@ int main(int argc, char** argv) {
 #endif
 
   // Default row weight is number of non zeros in the row
-  fail = run_test(testm,
-	     verbose,
-	     false,
-	     NO_ZOLTAN,
-	     NO_APPLICATION_SUPPLIED_WEIGHTS,
-	     SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-	     EPETRA_CRSGRAPH);
-
-  CHECK_FAILED();
-
-  fail = run_test(testm,
-	     verbose,
-	     false,
-	     NO_ZOLTAN,
-	     SUPPLY_EQUAL_WEIGHTS,
-	     SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-	     EPETRA_CRSGRAPH);
-
-  CHECK_FAILED();
-
-  fail = run_test(testm,
-	     verbose,
-	     false,
-	     NO_ZOLTAN,
-	     SUPPLY_UNEQUAL_WEIGHTS,
-	     SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-	     EPETRA_CRSGRAPH);
-
-  CHECK_FAILED();
 #endif // SHORT_TEST
 
 #else

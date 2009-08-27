@@ -65,7 +65,6 @@ SET(HEADERS ${HEADERS}
   epetra/Isorropia_Epetra.hpp
   epetra/Isorropia_EpetraRedistributor.hpp
   epetra/Isorropia_EpetraLibrary.hpp
-  epetra/Isorropia_EpetraInternalPartitioner.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -78,7 +77,6 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_Epetra.cpp
   epetra/Isorropia_EpetraRedistributor.cpp
   epetra/Isorropia_EpetraLibrary.cpp
-  epetra/Isorropia_EpetraInternalPartitioner.cpp
   )
 
 # zoltan

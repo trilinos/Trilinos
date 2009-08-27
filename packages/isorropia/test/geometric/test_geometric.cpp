@@ -267,61 +267,6 @@ int main(int argc, char** argv) {
 
   // *************************************************************
 
-  if (localProc == 0){
-    std::cerr << "No Zoltan - unit weights" << std::endl;
-  }
-
-  fail = run_test(coords, unit_weights_rcp, internalParams);
-
-  if (fail) goto failure; 
-
-  if (localProc == 0){
-    std::cerr << "PASS" << std::endl << std::endl;
-  }
-
-  // *************************************************************
-
-  if (localProc == 0){
-    std::cerr << "No Zoltan - V weights" << std::endl;
-  }
-
-  fail = run_test(coords, vee_weights_rcp, internalParams);
-
-  if (fail) goto failure; 
-
-  if (localProc == 0){
-    std::cerr << "PASS" << std::endl << std::endl;
-  }
-  // *************************************************************
-
-  if (localProc == 0){
-    std::cerr << "No Zoltan - alternate weights" << std::endl;
-  }
-
-  fail = run_test(coords, alt_weights_rcp, internalParams);
-
-  if (fail) goto failure; 
-
-  if (localProc == 0){
-    std::cerr << "PASS" << std::endl << std::endl;
-  }
-
-  // *************************************************************
-
-  if (localProc == 0){
-    std::cerr << "No Zoltan - no weights supplied" << std::endl;
-  }
-
-  fail = run_test(coords, internalParams);
-
-  if (fail) goto failure; 
-
-  if (localProc == 0){
-    std::cerr << "PASS" << std::endl << std::endl;
-  }
-
-  // *************************************************************
-
   goto done;
 
 

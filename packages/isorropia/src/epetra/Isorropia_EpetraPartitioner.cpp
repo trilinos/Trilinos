@@ -31,7 +31,6 @@ USA
 #ifdef HAVE_ISORROPIA_ZOLTAN
 #include <Isorropia_EpetraZoltanLib.hpp>
 #endif
-#include <Isorropia_EpetraInternalPartitioner.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -162,7 +161,6 @@ void Partitioner::
 partition(bool force_repartitioning)
 {
 
-  bool use_zoltan = false;
   int input_type = Library::unspecified_input_;
   Teuchos::ParameterList sublist = paramlist_;
 
@@ -176,55 +174,32 @@ partition(bool force_repartitioning)
     return;
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
-  if (partitioning_method != "SIMPLE_LINEAR") {
-    use_zoltan = true;
+  if (partitioning_method == "SIMPLE_LINEAR") {
+    throw Isorropia::Exception("Partitioner::partition - Only Zoltan Partitionner is now supported.");
   }
 
-  if (use_zoltan) {
-    if (input_graph_.get() != 0)
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
-    else if (input_matrix_.get() != 0)
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
-    else if (input_coords_.get() != 0){
-      if (weights_.get()){
-        lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
-      }
-      else{
-        lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_));
-      }
+  if (input_graph_.get() != 0)
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
+  else if (input_matrix_.get() != 0)
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
+  else if (input_coords_.get() != 0){
+    if (weights_.get()){
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
     }
     else{
-      throw Isorropia::Exception("Partitioner::partition - no input object.");
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_));
     }
-    sublist = (paramlist_.sublist(zoltan));
-
-    lib_->numPartSizes = numPartSizes;
-    lib_->partGIDs = partGIDs;
-    lib_->partSizes = partSizes;
   }
-
-#else /* HAVE_ISORROPIA_ZOLTAN */
-  if (paramlist_.isSublist(zoltan)) {
-    throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
+  else{
+    throw Isorropia::Exception("Partitioner::partition - no input object.");
   }
+  sublist = (paramlist_.sublist(zoltan));
+
+  lib_->numPartSizes = numPartSizes;
+  lib_->partGIDs = partGIDs;
+  lib_->partSizes = partSizes;
+
 #endif /* HAVE_ISORROPIA_ZOLTAN */
-
-  if (use_zoltan == false) {
-    if (input_matrix_.get() != 0)
-      lib_ = Teuchos::rcp(new InternalPartitioner(input_matrix_, costs_));
-    else if (input_graph_.get() != 0)
-      lib_ = Teuchos::rcp(new InternalPartitioner(input_graph_, costs_));
-    else if (input_coords_.get() != 0)
-      if (weights_.get()){
-        lib_ = Teuchos::rcp(new InternalPartitioner(input_coords_, weights_));
-      }
-      else{
-        lib_ = Teuchos::rcp(new InternalPartitioner(input_coords_));
-      }
-    else{
-      throw Isorropia::Exception("Partitioner::partition - no input object.");
-    }
-  }
 
   if (input_coords_.get() != 0){
     input_type = Library::geometric_input_;

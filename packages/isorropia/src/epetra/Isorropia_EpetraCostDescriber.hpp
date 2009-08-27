@@ -109,7 +109,6 @@ namespace Epetra {
 namespace ZoltanLib{
   class QueryObject;
 }
-class InternalPartitioner;
 class ZoltanLibClass;
 
 class CostDescriber : public Isorropia::CostDescriber {
@@ -119,7 +118,6 @@ class CostDescriber : public Isorropia::CostDescriber {
 
   friend class Isorropia::Operator;
   friend class Isorropia::Epetra::ZoltanLib::QueryObject;
-  friend class Isorropia::Epetra::InternalPartitioner;
   friend class Isorropia::Epetra::ZoltanLibClass;
 
 public:

@@ -32,7 +32,6 @@ USA
 #include <Isorropia_EpetraPartitioner2D.hpp>
 #include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_EpetraZoltanLib.hpp>
-#include <Isorropia_EpetraInternalPartitioner.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
