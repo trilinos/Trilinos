@@ -40,7 +40,7 @@ endif
 
 if BUILD_EPETRAEXT
 MTX_TEST_DIR = mtx
-MTX_TESTS = test_simple.exe test_colorer.exe
+MTX_TESTS = test_simple.exe test_colorer.exe test_create_balanced_copy.exe
 endif
 
 SUBDIRS = geometric utest rebalance_1d_default probing $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
