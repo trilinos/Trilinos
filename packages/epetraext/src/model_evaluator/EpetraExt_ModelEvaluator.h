@@ -37,6 +37,9 @@
 #include "Teuchos_Array.hpp"
 
 #ifdef HAVE_PYTRILINOS
+#undef HAVE_INTTYPES_H
+#undef HAVE_STDINT_H
+#undef HAVE_SYS_TIME_H
 #include "Python.h"
 #endif
 
