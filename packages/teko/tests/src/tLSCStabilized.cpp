@@ -1,5 +1,6 @@
 #include "tLSCStabilized.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
+#include "NS/PB_InvLSCStrategy.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

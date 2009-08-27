@@ -17,13 +17,7 @@ namespace NS { // Navier-Stokes specialization
   */
 class LSCPrecondState : public BlockPreconditionerState {
 public:
-   LSCPrecondState() : initialized_(false) {}
-
-   //! Is this state constructed?
-   // bool isInitialized() { return initialized_; }
-
-   //! Is this state constructed?
-   // void setInitialized(bool i) { initialized_ = i; }
+   LSCPrecondState() {}
 
    //! Inverse mass operator (\f$Q_u^{-1}\f$)
    LinearOp invMass_;
@@ -48,9 +42,6 @@ public:
      * \f$D = diag(B \; diag(F)^{-1} B^T + C)\f$.
      */
    double alpha_;
-
-protected:
-   bool initialized_;
 };
 
 class LSCPreconditionerFactory 
@@ -69,7 +60,7 @@ public:
                             const LinearOp & invMass);
 
    //! fully generic constructor
-   LSCPreconditionerFactory(const Teuchos::RCP<const LSCStrategy> & strategy);
+   LSCPreconditionerFactory(const Teuchos::RCP<LSCStrategy> & strategy);
 
    //! Default constructor
    LSCPreconditionerFactory();
@@ -82,12 +73,59 @@ public:
    virtual RCP<BlockPreconditionerState> buildPreconditionerState() const
    { return rcp(new LSCPrecondState()); }
 
+   //! For assiting in construction of the preconditioner
+   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
+
+   //! For assiting in construction of the preconditioner
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
+
 protected:
    // Gimmie object
-   Teuchos::RCP<const LSCStrategy> invOpsStrategy_;
+   Teuchos::RCP<LSCStrategy> invOpsStrategy_;
+   bool useMass_;
 
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
+
+public:
+   /** \brief Builder function for creating strategies.
+     *
+     * Builder function for creating strategies.
+     * 
+     * \param[in] name     String name of strategy to build
+     * \param[in] settings Parameter list describing the parameters for the
+     *                     strategy to build
+     * \param[in] invLib   Inverse library for the strategy to use.
+     *
+     * \returns If the name is associated with a strategy
+     *          a pointer is returned, otherwise Teuchos::null is returned.
+     */
+   static RCP<LSCStrategy> 
+   buildStrategy(const std::string & name, 
+                 const Teuchos::ParameterList & settings,
+                 const RCP<const InverseLibrary> & invLib=Teuchos::null);
+
+   /** \brief Add a strategy to the builder. This is done using the
+     *        clone pattern. 
+     *
+     * Add a strategy to the builder. This is done using the
+     * clone pattern. If your class does not support the Cloneable interface then
+     * you can use the AutoClone class to construct your object.
+     *
+     * \note If this method is called twice with the same string, the latter clone pointer
+     *       will be used.
+     *
+     * \param[in] name String to associate with this object
+     * \param[in] clone Pointer to Cloneable object
+     */
+   static void addStrategy(const std::string & name,const RCP<Cloneable> & clone);
+
+protected:
+   //! for creating the strategy objects
+   static CloneFactory<LSCStrategy> strategyBuilder_;
+
+   //! This is where the default objects are put into the strategyBuilder_
+   static void initializeStrategyBuilder();
 };
 
 } // end namespace NS

@@ -1,22 +1,28 @@
-#ifndef __PB_LSCStrategy_hpp__
-#define __PB_LSCStrategy_hpp__
+#ifndef __PB_StaticLSCStrategy_hpp__
+#define __PB_StaticLSCStrategy_hpp__
 
-#include "Teuchos_RCP.hpp"
-
-#include "Thyra_LinearOpBase.hpp"
-
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_BlockPreconditionerFactory.hpp"
+#include "NS/PB_LSCStrategy.hpp"
 
 namespace PB {
 namespace NS {
 
 class LSCPrecondState; // forward declaration
 
-// simple strategy for driving LSCPreconditionerFactory
-class LSCStrategy {
+// constant, not very flexible strategy for driving LSCPreconditioenrFactory
+class StaticLSCStrategy : public LSCStrategy {
 public:
+
+   // Staiblized constructor
+   StaticLSCStrategy(const LinearOp & invF,
+                     const LinearOp & invBQBtmC,
+                     const LinearOp & invD,
+                     const LinearOp & invMass);
+ 
+   // Stable constructor
+   StaticLSCStrategy(const LinearOp & invF,
+                     const LinearOp & invBQBtmC,
+                     const LinearOp & invMass);
+
    /** This informs the strategy object to build the state associated
      * with this operator.
      *
@@ -24,17 +30,7 @@ public:
      * \param[in] state State object for storying reusable information about
      *                  the operator A.
      */
-   virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
-
-   /** Get the inverse of \f$B Q_u^{-1} B^T\f$. 
-     *
-     * \param[in] A The linear operator to be preconditioned by LSC.
-     * \param[in] state State object for storying reusable information about
-     *                  the operator A.
-     *
-     * \returns An (approximate) inverse of \f$B Q_u^{-1} B^T\f$.
-     */
-   virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const {}
 
    /** Get the inverse of the \f$F\f$ block.
      *
@@ -44,7 +40,19 @@ public:
      *
      * \returns An (approximate) inverse of \f$F\f$.
      */
-   virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return invF_; }
+
+   /** Get the inverse of \f$B Q_u^{-1} B^T\f$. 
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns An (approximate) inverse of \f$B Q_u^{-1} B^T\f$.
+     */
+   virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return invBQBtmC_; }
 
    /** Get the inverse for stabilizing the whole schur complement approximation.
      *
@@ -54,7 +62,8 @@ public:
      *
      * \returns The operator to stabilize the whole Schur complement.
      */
-   virtual LinearOp getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual LinearOp getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return invD_; }
 
    /** Get the inverse mass matrix.
      *
@@ -64,7 +73,8 @@ public:
      *
      * \returns The inverse of the mass matrix \f$Q_u\f$.
      */
-   virtual LinearOp getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual LinearOp getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return invMass_; }
 
    /** Should the approximation of the inverse use a full LDU decomposition, or
      * is a upper triangular approximation sufficient.
@@ -72,16 +82,14 @@ public:
      * \returns True if the full LDU decomposition should be used, otherwise
      *          only an upper triangular version is used.
      */
-   virtual bool useFullLDU() const = 0;
+   virtual bool useFullLDU() const { return false; }
 
-   //! Initialize from a parameter list
-   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) {}
-
-   //! For assiting in construction of the preconditioner
-   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const {}
-
-   //! For assiting in construction of the preconditioner
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl) {}
+protected:
+   // protected memebers
+   LinearOp invF_;
+   LinearOp invBQBtmC_;
+   LinearOp invD_;
+   LinearOp invMass_;
 };
 
 } // end namespace NS

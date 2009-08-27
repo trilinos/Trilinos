@@ -1,4 +1,4 @@
-#include "NS/PB_LSCStrategy.hpp"
+#include "NS/PB_InvLSCStrategy.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -25,21 +25,6 @@ using Teuchos::rcp_const_cast;
 
 namespace PB {
 namespace NS {
-
-   // Staiblized constructor
-StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
-                                     const LinearOp & invBQBtmC,
-                                     const LinearOp & invD,
-                                     const LinearOp & invMass)
-   : invF_(invF), invBQBtmC_(invBQBtmC), invD_(invD), invMass_(invMass)
-{ }
- 
-   // Stable constructor
-StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
-                                     const LinearOp & invBQBtmC,
-                                     const LinearOp & invMass)
-   : invF_(invF), invBQBtmC_(invBQBtmC), invD_(Teuchos::null), invMass_(invMass)
-{ }
 
 //////////////////////////////////////////////
 // InvLSCStrategy Implementation
@@ -92,28 +77,33 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
 }
 
 // constructors
+InvLSCStrategy::InvLSCStrategy()
+   : massMatrix_(Teuchos::null), invFactoryF_(Teuchos::null), invFactoryS_(Teuchos::null), eigSolveParam_(5)
+   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false)
+{ }
+
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false),presZeroingNeeded_(false)
+   , useFullLDU_(false), useMass_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
                                const Teuchos::RCP<const InverseFactory> & invFactS,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false),presZeroingNeeded_(false)
+   , useFullLDU_(false), useMass_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false),presZeroingNeeded_(false)
+   , useFullLDU_(false), useMass_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
                                const Teuchos::RCP<const InverseFactory> & invFactS,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false),presZeroingNeeded_(false)
+   , useFullLDU_(false), useMass_(false)
 { }
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
@@ -145,32 +135,10 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
 
    // (re)build the inverse of the Schur complement
    PB::ModifiableLinearOp BQBtmC = state.getInverse("BQBtmC");
-   #if 0
-   {
-      PB_DEBUG_MSG("   Reducing BQBt",10);
-      BQBtmC = reduceCrsOperator(BQBtmC,nullPresIndices_);
-   }
-   #endif
    if(lscState->invBQBtmC_==Teuchos::null)
       lscState->invBQBtmC_ = buildInverse(*invFactoryS_,BQBtmC);
    else
       rebuildInverse(*invFactoryS_,BQBtmC,lscState->invBQBtmC_);
-
-   if(nullPresIndices_.size()>0) {
-      PB::LinearOp inv = lscState->invBQBtmC_;
-      RCP<Epetra_Operator> eOp = rcp(new PB::Epetra::EpetraOperatorWrapper(inv));
-   
-      PB_DEBUG_MSG_BEGIN(5);
-         DEBUG_STREAM << "Zeroing invBQBt" << std::endl;
-         DEBUG_STREAM << "Pinned pressures = ";
-         for(int i=0;i<nullPresIndices_.size();i++) 
-            DEBUG_STREAM << nullPresIndices_[i] << " ";
-         DEBUG_STREAM << std::endl;
-      PB_DEBUG_MSG_END();
-      PB_DEBUG_MSG("END InvLSCStrategy::getInvBQBt",10);
-   
-      return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(nullPresIndices_,eOp)));
-   } 
 
    PB_DEBUG_EXPR(timer.stop());
    PB_DEBUG_MSG("LSC::getInvBQBt RunTime = " << timer.totalElapsedTime(),1);
@@ -245,6 +213,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    const LinearOp Bt = getBlock(0,1,A);
 
    if(massMatrix_!=Teuchos::null) {
+      PB_DEBUG_MSG("LSC::init using passed in mass matrix for scaling",1); 
       state->invMass_ = getInvDiagonalOp(massMatrix_);
 
       PB_DEBUG_EXPR(Teuchos::Time matTimer(""));
@@ -278,6 +247,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    bool isStabilized = (not isZeroOp(C));
 
    if(massMatrix_==Teuchos::null) {
+      PB_DEBUG_MSG("LSC::reinit using diag(F) for scaling",1); 
       state->invMass_ = getInvDiagonalOp(F);
 
       PB_DEBUG_EXPR(matTimer.start(true));
@@ -316,22 +286,6 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       }
    }
 
-   // Next few lines don't seem to help...probably can be deleted.
-   /////////////////////////////////////////////
-   // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
-   const RCP<const Epetra_Operator> epC = Thyra::get_Epetra_Operator(*C);
-   if(epC!=Teuchos::null && presZeroingNeeded_) {
-      // try to get a CRS matrix
-      const RCP<const Epetra_CrsMatrix> crsC = rcp_dynamic_cast<const Epetra_CrsMatrix>(epC);
-
-      // if it is a CRS matrix get rows that need to be zeroed
-      nullPresIndices_.clear();
-      if(crsC!=Teuchos::null) {
-         PB::Epetra::identityRowIndicies(crsC->RowMap(), *crsC,nullPresIndices_);
-      }
-   }
-   /////////////////////////////////////////////
-
    // compute gamma
    LinearOp iQuF;
    if(state->invMass_!=Teuchos::null) 
@@ -340,13 +294,15 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       iQuF = modF;
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
+   PB::LinearOp stabMatrix; // this is the pressure stabilization matrix to use
    state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
-
-   if(graphLaplacian_!=Teuchos::null) {
-      PB::LinearOp invDGl = PB::getInvDiagonalOp(graphLaplacian_);
+   if(userPresStabMat_!=Teuchos::null) {
+      PB::LinearOp invDGl = PB::getInvDiagonalOp(userPresStabMat_);
       PB::LinearOp gammaOp = multiply(invDGl,C);
       state->gamma_ *= std::fabs(PB::computeSpectralRad(gammaOp,5e-2,false,eigSolveParam_));
-   }
+      stabMatrix = userPresStabMat_;
+   } else 
+      stabMatrix = C;
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    const LinearOp invDiagF = getInvDiagonalOp(F);
@@ -373,10 +329,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    // now build B*Q*Bt-gamma*C
    PB::ModifiableLinearOp BQBtmC = state->getInverse("BQBtmC");
    PB_DEBUG_EXPR(matTimer.start(true));
-   if(graphLaplacian_==Teuchos::null)
-      BQBtmC = explicitAdd(state->BQBt_,scale(-state->gamma_,C),BQBtmC);
-   else
-      BQBtmC = explicitAdd(state->BQBt_,scale(state->gamma_,graphLaplacian_),BQBtmC);
+   BQBtmC = explicitAdd(state->BQBt_,scale(-state->gamma_,stabMatrix),BQBtmC);
    PB_DEBUG_EXPR(matTimer.stop());
    PB_DEBUG_MSG("LSC::reinit BFBtgC AddTime = " << matTimer.totalElapsedTime(),1); 
    state->addInverse("BQBtmC",BQBtmC);
@@ -388,6 +341,88 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    PB_DEBUG_EXPR(totalTimer.stop());
    PB_DEBUG_MSG("LSC reinit TotalTime = " << totalTimer.totalElapsedTime(),1);
    PB_DEBUG_MSG("END InvLSCStrategy::reinitializeState: " << totalTimer.totalElapsedTime(),10);
+}
+
+//! Initialize from a parameter list
+void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) 
+{
+   // get string specifying inverse
+   std::string invStr="", invVStr="", invPStr="";
+   bool rowZeroing = true;
+   bool useLDU = false;
+
+   // "parse" the parameter list
+   if(pl.isParameter("Inverse Type"))
+      invStr = pl.get<std::string>("Inverse Type");
+   if(pl.isParameter("Inverse Velocity Type"))
+      invVStr = pl.get<std::string>("Inverse Velocity Type");
+   if(pl.isParameter("Inverse Pressure Type")) 
+      invPStr = pl.get<std::string>("Inverse Pressure Type");
+   if(pl.isParameter("Ignore Boundary Rows"))
+      rowZeroing = pl.get<bool>("Ignore Boundary Rows");
+   if(pl.isParameter("Use LDU"))
+      useLDU = pl.get<bool>("Use LDU");
+   if(pl.isParameter("Use Mass Scaling"))
+      useMass_ = pl.get<bool>("Use Mass Scaling");
+
+   PB_DEBUG_MSG_BEGIN(5)
+      DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
+      DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
+      DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
+      DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
+      DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
+      DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
+      DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
+      DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
+      pl.print(DEBUG_STREAM);
+   PB_DEBUG_MSG_END()
+
+   // set defaults as needed
+   if(invStr=="") invVStr = "Amesos";
+   if(invVStr=="") invVStr = invStr;
+   if(invPStr=="") invPStr = invStr;
+
+   //  two inverse factory objects
+   RCP<const InverseFactory> invVFact, invPFact;
+
+   // build velocity inverse factory
+   invFactoryF_ = invLib.getInverseFactory(invVStr);
+   invFactoryS_ = invFactoryF_; // by default these are the same
+   if(invVStr!=invPStr) // if different, build pressure inverse factory
+      invFactoryS_ = invLib.getInverseFactory(invPStr);
+
+   // set other parameters
+   setUseFullLDU(useLDU);
+   setRowZeroing(rowZeroing);
+}
+
+//! For assiting in construction of the preconditioner
+Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() const 
+{
+   Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
+
+   // use the mass matrix
+   if(useMass_)
+      pl->set<PB::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
+
+   return Teuchos::null;
+}
+
+//! For assiting in construction of the preconditioner
+bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
+{
+   // set the mass matrix: throw if the strategy is not the right type
+   if(useMass_) {
+      PB::LinearOp mass = pl.get<PB::LinearOp>("Velocity Mass Matrix");
+
+      // we must have a mass matrix
+      if(mass==Teuchos::null) return false;
+
+      // set the mass matrix
+      setMassMatrix(mass);
+   }
+
+   return true;
 }
 
 } // end namespace NS

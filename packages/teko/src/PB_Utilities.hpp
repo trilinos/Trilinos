@@ -29,7 +29,7 @@
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
 // #define PB_DEBUG_OFF
-#define PB_DEBUG_INT 4
+#define PB_DEBUG_INT 5
 
 namespace PB {
 

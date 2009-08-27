@@ -18,6 +18,7 @@
 #include "Epetra/PB_EpetraHelpers.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
+#include "NS/PB_InvLSCStrategy.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
 
