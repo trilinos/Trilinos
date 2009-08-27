@@ -2627,8 +2627,21 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
     }
 #endif
 
-    int izero = 0;
-    EPETRA_DCRSMV_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, x, y);
+     {
+       const double *val_ptr    = Values;
+       const int    *colnum_ptr = Indices;
+       double       * dst_ptr = y;
+ 	
+       for (unsigned int row=0; row<NumMyRows_; ++row)
+ 	{
+ 	  double s = 0.;
+ 	  const double *const val_end_of_row = &Values[IndexOffset[row+1]];
+ 	  while (val_ptr != val_end_of_row)
+ 	    s += *val_ptr++ * x[*colnum_ptr++];
+ 	  *dst_ptr++ = s;
+ 	}
+     }
+
 #ifdef EPETRA_CACHE_BYPASS
     { // make sure variables are local
       int numMyEntries = Graph().NumMyEntries();
