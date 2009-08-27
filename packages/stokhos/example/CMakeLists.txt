@@ -12,19 +12,23 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-IF(Stokhos_ENABLE_ML)
-  PACKAGE_ADD_EXECUTABLE(
-    twoD_diffusion_example
-    SOURCES twoD_diffusion_example.cpp
-    COMM serial mpi
-    )
+IF(TPL_ENABLE_Dakota)
 
-  PACKAGE_ADD_EXECUTABLE(
-    sparse_grid_example
-    SOURCES twoD_diffusion_sparse_grid.cpp
-    COMM serial mpi
-    )
- ENDIF()
+  IF(Stokhos_ENABLE_ML)
+     PACKAGE_ADD_EXECUTABLE(
+       twoD_diffusion_example
+       SOURCES twoD_diffusion_example.cpp
+       COMM serial mpi
+     )
+
+     PACKAGE_ADD_EXECUTABLE(
+       sparse_grid_example
+       SOURCES twoD_diffusion_sparse_grid.cpp
+       COMM serial mpi
+     )
+  ENDIF()
+
+ENDIF()
 
 IF(Stokhos_ENABLE_Quadrature)
 
@@ -68,12 +72,6 @@ ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(
   dakota_pce
-  SOURCES dakota_pce.cpp
-  COMM serial mpi
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  dakota_exp
   SOURCES dakota_pce.cpp
   COMM serial mpi
   )
