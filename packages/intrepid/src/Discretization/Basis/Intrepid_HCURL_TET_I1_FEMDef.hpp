@@ -113,8 +113,8 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         outputValues(0, i0, 1) = x;
         outputValues(0, i0, 2) = x;
 
-        outputValues(1, i0, 0) =-1.4142135623730950488*y;
-        outputValues(1, i0, 1) = 1.4142135623730950488*x;
+        outputValues(1, i0, 0) =-y;
+        outputValues(1, i0, 1) = x;
         outputValues(1, i0, 2) = 0.0;
 
         outputValues(2, i0, 0) = -y;
@@ -125,13 +125,13 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         outputValues(3, i0, 1) = z;
         outputValues(3, i0, 2) = 1.0 - x - y;
 
-        outputValues(4, i0, 0) =-1.4142135623730950488*z;
+        outputValues(4, i0, 0) =-z;
         outputValues(4, i0, 1) = 0.0;
-        outputValues(4, i0, 2) = 1.4142135623730950488*x;
+        outputValues(4, i0, 2) = x;
 
         outputValues(5, i0, 0) = 0.0;
-        outputValues(5, i0, 1) =-1.4142135623730950488*z;
-        outputValues(5, i0, 2) = 1.4142135623730950488*y;
+        outputValues(5, i0, 1) =-z;
+        outputValues(5, i0, 2) = y;
       }
       break;
       
@@ -149,7 +149,7 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
 
         outputValues(1, i0, 0) = 0.0;
         outputValues(1, i0, 1) = 0.0;
-        outputValues(1, i0, 2) = 2.8284271247461900976;
+        outputValues(1, i0, 2) = 2.0;
 
         outputValues(2, i0, 0) =-2.0;
         outputValues(2, i0, 1) = 0.0; 
@@ -160,10 +160,10 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         outputValues(3, i0, 2) = 0.0;
 
         outputValues(4, i0, 0) = 0.0;
-        outputValues(4, i0, 1) =-2.8284271247461900976;
+        outputValues(4, i0, 1) =-2.0;
         outputValues(4, i0, 2) = 0.0;
 
-        outputValues(5, i0, 0) = 2.8284271247461900976;
+        outputValues(5, i0, 0) = 2.0;
         outputValues(5, i0, 1) = 0.0;
         outputValues(5, i0, 2) = 0.0;
       }
@@ -189,15 +189,15 @@ void Basis_HCURL_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    &&
-                            (operatorType == OPERATOR_D2)    &&
-                            (operatorType == OPERATOR_D3)    &&
-                            (operatorType == OPERATOR_D4)    &&
-                            (operatorType == OPERATOR_D5)    &&
-                            (operatorType == OPERATOR_D6)    &&
-                            (operatorType == OPERATOR_D7)    &&
-                            (operatorType == OPERATOR_D8)    &&
-                            (operatorType == OPERATOR_D9)    &&
+      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+                            (operatorType == OPERATOR_D2)    ||
+                            (operatorType == OPERATOR_D3)    ||
+                            (operatorType == OPERATOR_D4)    ||
+                            (operatorType == OPERATOR_D5)    ||
+                            (operatorType == OPERATOR_D6)    ||
+                            (operatorType == OPERATOR_D7)    ||
+                            (operatorType == OPERATOR_D8)    ||
+                            (operatorType == OPERATOR_D9)    ||
                             (operatorType == OPERATOR_D10) ),
                           std::invalid_argument,
                           ">>> ERROR (Basis_HCURL_TET_I1_FEM): Invalid operator type");

@@ -1357,7 +1357,7 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArrayTypeOut &                sid
                       ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): two or three-dimensional parent cell required");
   
   // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
-  TEST_FOR_EXCEPTION( !( (0 <= worksetSideOrd) && (worksetSideOrd < parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( (0 <= worksetSideOrd) && (worksetSideOrd < (int)parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
   

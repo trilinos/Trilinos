@@ -116,8 +116,8 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
         outputValues(0, i0, 1) = x*(1.0 - z)/2.0;
         outputValues(0, i0, 2) = 0.0;
 
-        outputValues(1, i0, 0) = 0.70710678118654752440*y*(z - 1.0);
-        outputValues(1, i0, 1) = 0.70710678118654752440*x*(1.0 - z);
+        outputValues(1, i0, 0) = y*(z - 1.0)/2.0;
+        outputValues(1, i0, 1) = x*(1.0 - z)/2.0;
         outputValues(1, i0, 2) = 0.0;
 
         outputValues(2, i0, 0) = y*(z - 1.0)/2.0;
@@ -128,8 +128,8 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
         outputValues(3, i0, 1) = x*(1.0 + z)/2.0;
         outputValues(3, i0, 2) = 0.0;
 
-        outputValues(4, i0, 0) = -0.70710678118654752440*y*(1.0 + z);
-        outputValues(4, i0, 1) = 0.70710678118654752440*x*(1.0 + z);
+        outputValues(4, i0, 0) =-y*(1.0 + z)/2.0;
+        outputValues(4, i0, 1) = x*(1.0 + z)/2.0;
         outputValues(4, i0, 2) = 0.0;
 
         outputValues(5, i0, 0) = -y*(1.0 + z)/2.0;
@@ -138,15 +138,15 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
 
         outputValues(6, i0, 0) = 0.0;
         outputValues(6, i0, 1) = 0.0;
-        outputValues(6, i0, 2) = 1.0 - x - y;
+        outputValues(6, i0, 2) = (1.0 - x - y)/2.0;
 
         outputValues(7, i0, 0) = 0.0;
         outputValues(7, i0, 1) = 0.0;
-        outputValues(7, i0, 2) = x;
+        outputValues(7, i0, 2) = x/2.0;
 
         outputValues(8, i0, 0) = 0.0;
         outputValues(8, i0, 1) = 0.0;
-        outputValues(8, i0, 2) = y;
+        outputValues(8, i0, 2) = y/2.0;
 
       }
       break;
@@ -163,9 +163,9 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
         outputValues(0, i0, 1) = (y - 1.0)/2.0;
         outputValues(0, i0, 2) = 1.0 - z;
 
-        outputValues(1, i0, 0) = 0.70710678118654752440*x;
-        outputValues(1, i0, 1) = 0.70710678118654752440*y;
-        outputValues(1, i0, 2) = 1.4142135623730950488*(1.0 - z);
+        outputValues(1, i0, 0) = x/2.0;
+        outputValues(1, i0, 1) = y/2.0;
+        outputValues(1, i0, 2) = 1.0 - z;
 
         outputValues(2, i0, 0) = (x - 1.0)/2.0;
         outputValues(2, i0, 1) = y/2.0; 
@@ -175,23 +175,23 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
         outputValues(3, i0, 1) = (1.0 - y)/2.0;
         outputValues(3, i0, 2) = 1.0 + z;
 
-        outputValues(4, i0, 0) = -0.70710678118654752440*x;
-        outputValues(4, i0, 1) = -0.70710678118654752440*y;
-        outputValues(4, i0, 2) = 1.4142135623730950488*(1.0 + z);
+        outputValues(4, i0, 0) = -x/2.0;
+        outputValues(4, i0, 1) = -y/2.0;
+        outputValues(4, i0, 2) = 1.0 + z;
 
         outputValues(5, i0, 0) = (1.0 - x)/2.0;
         outputValues(5, i0, 1) = -y/2.0;
         outputValues(5, i0, 2) = 1.0 + z;
 
-        outputValues(6, i0, 0) =-1.0;
-        outputValues(6, i0, 1) = 1.0;
+        outputValues(6, i0, 0) =-0.5;
+        outputValues(6, i0, 1) = 0.5;
         outputValues(6, i0, 2) = 0.0;
 
         outputValues(7, i0, 0) = 0.0;
-        outputValues(7, i0, 1) =-1.0;
+        outputValues(7, i0, 1) =-0.5;
         outputValues(7, i0, 2) = 0.0;
 
-        outputValues(8, i0, 0) = 1.0;
+        outputValues(8, i0, 0) = 0.5;
         outputValues(8, i0, 1) = 0.0;
         outputValues(8, i0, 2) = 0.0;
       }
@@ -217,15 +217,15 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    &&
-                            (operatorType == OPERATOR_D2)    &&
-                            (operatorType == OPERATOR_D3)    &&
-                            (operatorType == OPERATOR_D4)    &&
-                            (operatorType == OPERATOR_D5)    &&
-                            (operatorType == OPERATOR_D6)    &&
-                            (operatorType == OPERATOR_D7)    &&
-                            (operatorType == OPERATOR_D8)    &&
-                            (operatorType == OPERATOR_D9)    &&
+      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+                            (operatorType == OPERATOR_D2)    ||
+                            (operatorType == OPERATOR_D3)    ||
+                            (operatorType == OPERATOR_D4)    ||
+                            (operatorType == OPERATOR_D5)    ||
+                            (operatorType == OPERATOR_D6)    ||
+                            (operatorType == OPERATOR_D7)    ||
+                            (operatorType == OPERATOR_D8)    ||
+                            (operatorType == OPERATOR_D9)    ||
                             (operatorType == OPERATOR_D10) ),
                           std::invalid_argument,
                           ">>> ERROR (Basis_HCURL_WEDGE_I1_FEM): Invalid operator type");

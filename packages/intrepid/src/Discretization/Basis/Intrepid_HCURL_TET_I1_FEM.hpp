@@ -42,7 +42,7 @@ namespace Intrepid {
     \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Tetrahedron cell 
   
             Implements Nedelec basis of degree 1 on the reference Tetrahedron cell. The basis has
-            cardinality 6 and spans an INCOMPLETE tri-linear polynomial space. Basis functions are dual 
+            cardinality 6 and spans an INCOMPLETE linear polynomial space. Basis functions are dual 
             to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
   \verbatim
@@ -68,6 +68,13 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
+    \li         The edge tangent \c t in the DoF definition is normalized by the \s edge length.
+                As a result, the DoF functional is the value of the tangent component of a vector field 
+                at the edge midpoint times the edge length. The so defined basis is equivalent to
+                a basis defined by using the edge circulation as a DoF functional. Note that edges
+                0, 2 and 3 of reference Tetrahedron<> cells have unit lengths and edges 1, 4, and 5 
+                have length Sqrt(2).
+  
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim

@@ -115,53 +115,53 @@ void Basis_HCURL_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         z = inputPoints(i0, 2);
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = (1.0 - y)*(1.0 - z)/4.0;
+        outputValues(0, i0, 0) = (1.0 - y)*(1.0 - z)/8.0;
         outputValues(0, i0, 1) = 0.0;
         outputValues(0, i0, 2) = 0.0;
 
         outputValues(1, i0, 0) = 0.0;
-        outputValues(1, i0, 1) = (1.0 + x)*(1.0 - z)/4.0;
+        outputValues(1, i0, 1) = (1.0 + x)*(1.0 - z)/8.0;
         outputValues(1, i0, 2) = 0.0;
 
-        outputValues(2, i0, 0) = -(1.0 + y)*(1.0 - z)/4.0;
+        outputValues(2, i0, 0) = -(1.0 + y)*(1.0 - z)/8.0;
         outputValues(2, i0, 1) = 0.0;
         outputValues(2, i0, 2) = 0.0;
 
         outputValues(3, i0, 0) = 0.0;
-        outputValues(3, i0, 1) = -(1.0 - x)*(1.0 - z)/4.0;
+        outputValues(3, i0, 1) = -(1.0 - x)*(1.0 - z)/8.0;
         outputValues(3, i0, 2) = 0.0;
 
-        outputValues(4, i0, 0) = (1.0 - y)*(1.0 + z)/4.0;
+        outputValues(4, i0, 0) = (1.0 - y)*(1.0 + z)/8.0;
         outputValues(4, i0, 1) = 0.0;
         outputValues(4, i0, 2) = 0.0;
 
         outputValues(5, i0, 0) = 0.0;
-        outputValues(5, i0, 1) = (1.0 + x)*(1.0 + z)/4.0;
+        outputValues(5, i0, 1) = (1.0 + x)*(1.0 + z)/8.0;
         outputValues(5, i0, 2) = 0.0;
 
-        outputValues(6, i0, 0) = -(1.0 + y)*(1.0 + z)/4.0;
+        outputValues(6, i0, 0) = -(1.0 + y)*(1.0 + z)/8.0;
         outputValues(6, i0, 1) = 0.0;
         outputValues(6, i0, 2) = 0.0;
 
         outputValues(7, i0, 0) = 0.0;
-        outputValues(7, i0, 1) = -(1.0 - x)*(1.0 + z)/4.0;
+        outputValues(7, i0, 1) = -(1.0 - x)*(1.0 + z)/8.0;
         outputValues(7, i0, 2) = 0.0;
 
         outputValues(8, i0, 0) = 0.0;
         outputValues(8, i0, 1) = 0.0;
-        outputValues(8, i0, 2) = (1.0 - x)*(1.0 - y)/4.0;
+        outputValues(8, i0, 2) = (1.0 - x)*(1.0 - y)/8.0;
 
         outputValues(9, i0, 0) = 0.0;
         outputValues(9, i0, 1) = 0.0;
-        outputValues(9, i0, 2) = (1.0 + x)*(1.0 - y)/4.0;
+        outputValues(9, i0, 2) = (1.0 + x)*(1.0 - y)/8.0;
 
         outputValues(10, i0, 0) = 0.0;
         outputValues(10, i0, 1) = 0.0;
-        outputValues(10, i0, 2) = (1.0 + x)*(1.0 + y)/4.0;
+        outputValues(10, i0, 2) = (1.0 + x)*(1.0 + y)/8.0;
 
         outputValues(11, i0, 0) = 0.0;
         outputValues(11, i0, 1) = 0.0;
-        outputValues(11, i0, 2) = (1.0 - x)*(1.0 + y)/4.0;
+        outputValues(11, i0, 2) = (1.0 - x)*(1.0 + y)/8.0;
       }
       break;
       
@@ -174,51 +174,51 @@ void Basis_HCURL_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
         outputValues(0, i0, 0) = 0.0;
-        outputValues(0, i0, 1) = -(1.0 - y)/4.0;
-        outputValues(0, i0, 2) = (1.0 - z)/4.0;
+        outputValues(0, i0, 1) = -(1.0 - y)/8.0;
+        outputValues(0, i0, 2) = (1.0 - z)/8.0;
 
-        outputValues(1, i0, 0) = (1.0 + x)/4.0;
+        outputValues(1, i0, 0) = (1.0 + x)/8.0;
         outputValues(1, i0, 1) = 0.0;
-        outputValues(1, i0, 2) = (1.0 - z)/4.0;
+        outputValues(1, i0, 2) = (1.0 - z)/8.0;
 
         outputValues(2, i0, 0) = 0.0;
-        outputValues(2, i0, 1) = (1.0 + y)/4.0;
-        outputValues(2, i0, 2) = (1.0 - z)/4.0;
+        outputValues(2, i0, 1) = (1.0 + y)/8.0;
+        outputValues(2, i0, 2) = (1.0 - z)/8.0;
 
-        outputValues(3, i0, 0) = -(1.0 - x)/4.0;
+        outputValues(3, i0, 0) = -(1.0 - x)/8.0;
         outputValues(3, i0, 1) = 0.0;
-        outputValues(3, i0, 2) = (1.0 - z)/4.0;
+        outputValues(3, i0, 2) = (1.0 - z)/8.0;
 
         outputValues(4, i0, 0) = 0.0;
-        outputValues(4, i0, 1) = (1.0 - y)/4.0;
-        outputValues(4, i0, 2) = (1.0 + z)/4.0;
+        outputValues(4, i0, 1) = (1.0 - y)/8.0;
+        outputValues(4, i0, 2) = (1.0 + z)/8.0;
 
-        outputValues(5, i0, 0) = -(1.0 + x)/4.0;
+        outputValues(5, i0, 0) = -(1.0 + x)/8.0;
         outputValues(5, i0, 1) = 0.0;
-        outputValues(5, i0, 2) = (1.0 + z)/4.0;
+        outputValues(5, i0, 2) = (1.0 + z)/8.0;
 
         outputValues(6, i0, 0) = 0.0;
-        outputValues(6, i0, 1) = -(1.0 + y)/4.0;
-        outputValues(6, i0, 2) = (1.0 + z)/4.0;
+        outputValues(6, i0, 1) = -(1.0 + y)/8.0;
+        outputValues(6, i0, 2) = (1.0 + z)/8.0;
 
-        outputValues(7, i0, 0) = (1.0 - x)/4.0;
+        outputValues(7, i0, 0) = (1.0 - x)/8.0;
         outputValues(7, i0, 1) = 0.0;
-        outputValues(7, i0, 2) = (1.0 + z)/4.0;
+        outputValues(7, i0, 2) = (1.0 + z)/8.0;
 
-        outputValues(8, i0, 0) = -(1.0 - x)/4.0;
-        outputValues(8, i0, 1) = (1.0 - y)/4.0;
+        outputValues(8, i0, 0) = -(1.0 - x)/8.0;
+        outputValues(8, i0, 1) = (1.0 - y)/8.0;
         outputValues(8, i0, 2) = 0.0;
 
-        outputValues(9, i0, 0) = -(1.0 + x)/4.0;
-        outputValues(9, i0, 1) = -(1.0 - y)/4.0;
+        outputValues(9, i0, 0) = -(1.0 + x)/8.0;
+        outputValues(9, i0, 1) = -(1.0 - y)/8.0;
         outputValues(9, i0, 2) = 0.0;
 
-        outputValues(10, i0, 0) = (1.0 + x)/4.0;
-        outputValues(10, i0, 1) = -(1.0 + y)/4.0;
+        outputValues(10, i0, 0) = (1.0 + x)/8.0;
+        outputValues(10, i0, 1) = -(1.0 + y)/8.0;
         outputValues(10, i0, 2) = 0.0;
 
-        outputValues(11, i0, 0) = (1.0 - x)/4.0;
-        outputValues(11, i0, 1) = (1.0 + y)/4.0;
+        outputValues(11, i0, 0) = (1.0 - x)/8.0;
+        outputValues(11, i0, 1) = (1.0 + y)/8.0;
         outputValues(11, i0, 2) = 0.0;
       }
       break;
@@ -243,15 +243,15 @@ void Basis_HCURL_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    &&
-                            (operatorType == OPERATOR_D2)    &&
-                            (operatorType == OPERATOR_D3)    &&
-                            (operatorType == OPERATOR_D4)    &&
-                            (operatorType == OPERATOR_D5)    &&
-                            (operatorType == OPERATOR_D6)    &&
-                            (operatorType == OPERATOR_D7)    &&
-                            (operatorType == OPERATOR_D8)    &&
-                            (operatorType == OPERATOR_D9)    &&
+      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+                            (operatorType == OPERATOR_D2)    ||
+                            (operatorType == OPERATOR_D3)    ||
+                            (operatorType == OPERATOR_D4)    ||
+                            (operatorType == OPERATOR_D5)    ||
+                            (operatorType == OPERATOR_D6)    ||
+                            (operatorType == OPERATOR_D7)    ||
+                            (operatorType == OPERATOR_D8)    ||
+                            (operatorType == OPERATOR_D9)    ||
                             (operatorType == OPERATOR_D10) ),
                           std::invalid_argument,
                           ">>> ERROR (Basis_HCURL_HEX_I1_FEM): Invalid operator type");

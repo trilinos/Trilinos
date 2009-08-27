@@ -473,7 +473,6 @@ int main(int argc, char *argv[]) {
     int numFields = quadBasis.getCardinality();
     int numPoints = quadNodes.dimension(0);
     int spaceDim  = quadBasis.getBaseCellTopology().getDimension();
-    int D2Cardin  = Intrepid::getDkCardinality(OPERATOR_D2, spaceDim);
     
     // Generic array for values, grads, curls, etc. that will be properly sized before each call
     FieldContainer<double> vals;

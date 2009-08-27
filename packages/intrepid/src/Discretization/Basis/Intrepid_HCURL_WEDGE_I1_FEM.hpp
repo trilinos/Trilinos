@@ -63,17 +63,24 @@ namespace Intrepid {
   |---------|--------------|--------------|--------------|-------------|----------------------------|
   |    5    |       1      |       5      |       0      |      1      |  L_5(u) = (u.t)(0,0.5,1)   |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    6    |       1      |       6      |       0      |      1      |  L_3(u) = (u.t)(0,0,0)     |
+  |    6    |       1      |       6      |       0      |      1      |  L_6(u) = (u.t)(0,0,0)     |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    7    |       1      |       7      |       0      |      1      |  L_4(u) = (u.t)(1,0,0)     |
+  |    7    |       1      |       7      |       0      |      1      |  L_7(u) = (u.t)(1,0,0)     |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    8    |       1      |       8      |       0      |      1      |  L_4(u) = (u.t)(0,1,0)     |
+  |    8    |       1      |       8      |       0      |      1      |  L_8(u) = (u.t)(0,1,0)     |
   |=========|==============|==============|==============|=============|============================|
   |   MAX   |  maxScDim=1  |  maxScOrd=8  |  maxDfOrd=0  |      -      |                            |
   |=========|==============|==============|==============|=============|============================|
   \endverbatim
   
     \remarks
+    \li         The edge tangent \c t in the DoF definition is normalized by the \s edge length.
+                As a result, the DoF functional is the value of the tangent component of a vector field 
+                at the edge midpoint times the edge length. The so defined basis is equivalent to
+                a basis defined by using the edge circulation as a DoF functional. Note that edges
+                0, 2, 3 and 5 of reference Wedge<> cells have unit lengths; edges 1 and 4 have length 
+                Sqrt(2), and edges 6, 7, and 8 have length 2.
+  
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim

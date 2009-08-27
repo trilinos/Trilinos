@@ -80,6 +80,11 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
+    \li       The edge tangent \c t in the DoF definition is normalized by the \s edge length.
+              As a result, the DoF functional is the value of the tangent component of a vector field 
+              at the edge midpoint times the edge length. The so defined basis is equivalent to
+              a basis defined by using the edge circulation as a DoF functional.
+  
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim

@@ -168,7 +168,7 @@ void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
         outputValues(7, i0, 1) = -4.*z;
         outputValues(7, i0, 2) = -4.*(-1.+ x + y + 2*z);
 
-        outputValues(8, i0, 0) =  4.*z;     0.;     
+        outputValues(8, i0, 0) =  4.*z;     
         outputValues(8, i0, 1) =  0.;
         outputValues(8, i0, 2) =  4.*x;
 
