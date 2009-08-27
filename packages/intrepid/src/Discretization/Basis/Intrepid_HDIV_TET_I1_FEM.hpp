@@ -42,7 +42,7 @@ namespace Intrepid {
     \brief  Implementation of the default H(div)-compatible FEM basis of degree 1 on Tetrahedron cell 
   
             Implements Raviart-Thomas basis of degree 1 on the reference Tetrahedron cell. The basis has
-            cardinality 4 and spans an INCOMPLETE tri-linear polynomial space. Basis functions are dual 
+            cardinality 4 and spans an INCOMPLETE linear polynomial space. Basis functions are dual 
             to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
   \verbatim
@@ -57,13 +57,19 @@ namespace Intrepid {
   |---------|--------------|--------------|--------------|-------------|----------------------------------|
   |    2    |       2      |       2      |       0      |      1      | L_2(u) = (u.n)(0,1/3,1/3)        |
   |---------|--------------|--------------|--------------|-------------|----------------------------------|
-  |    3    |       2      |       3      |       0      |      1      | L_4(u) = (u.n)(1/3,1/3,0)        |
+  |    3    |       2      |       3      |       0      |      1      | L_3(u) = (u.n)(1/3,1/3,0)        |
   |=========|==============|==============|==============|=============|==================================|
   |   MAX   |  maxScDim=2  |  maxScOrd=3  |  maxDfOrd=0  |      -      |                                  |
   |=========|==============|==============|==============|=============|==================================|
   \endverbatim
   
     \remarks
+    \li       The face outer normal \c n in the DoF definition is normalized by the \s face area.
+              As a result, the DoF functional is the value of the normal component of a vector field 
+              at the face center times the face area. The so defined basis is equivalent to
+              a basis defined by using the face flux as a DoF functional. Note that faces 0, 2, and 3 
+              of reference Tetrahedron<> cells have area 1/2 and face 1 has area Sqrt(3)/2.
+  
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim

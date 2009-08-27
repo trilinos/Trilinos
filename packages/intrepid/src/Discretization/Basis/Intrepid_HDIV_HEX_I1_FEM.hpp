@@ -71,7 +71,8 @@ namespace Intrepid {
     \li         The face outer normal \c n in the DoF definition is normalized by the \s face area.
                 As a result, the DoF functional is the value of the normal component of a vector field 
                 at the face center times the face area. The so defined basis is equivalent to
-                a basis defined by using the face flux as a DoF functional.
+                a basis defined by using the face flux as a DoF functional. Note that the faces of 
+                reference Hexahedron<> cells all have the same area equal to 4.
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   

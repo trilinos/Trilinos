@@ -108,22 +108,21 @@ void Basis_HDIV_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
         z = inputPoints(i0, 2);
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = x;
-        outputValues(0, i0, 1) = y - 1.0;
-        outputValues(0, i0, 2) = z;
+        outputValues(0, i0, 0) = 2.0*x;
+        outputValues(0, i0, 1) = 2.0*(y - 1.0);
+        outputValues(0, i0, 2) = 2.0*z;
 
-        outputValues(1, i0, 0) = 1.7320508075688772935*x;
-        outputValues(1, i0, 1) = 1.7320508075688772935*y;
-        outputValues(1, i0, 2) = 1.7320508075688772935*z;
+        outputValues(1, i0, 0) = 2.0*x;
+        outputValues(1, i0, 1) = 2.0*y;
+        outputValues(1, i0, 2) = 2.0*z;
 
-        outputValues(2, i0, 0) = x - 1.0;
-        outputValues(2, i0, 1) = y;
-        outputValues(2, i0, 2) = z;
+        outputValues(2, i0, 0) = 2.0*(x - 1.0);
+        outputValues(2, i0, 1) = 2.0*y;
+        outputValues(2, i0, 2) = 2.0*z;
 
-        outputValues(3, i0, 0) = x;
-        outputValues(3, i0, 1) = y;
-        outputValues(3, i0, 2) = z - 1.0;
-
+        outputValues(3, i0, 0) = 2.0*x;
+        outputValues(3, i0, 1) = 2.0*y;
+        outputValues(3, i0, 2) = 2.0*(z - 1.0);
       }
       break;
 
@@ -131,7 +130,7 @@ void Basis_HDIV_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
       // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
       for (int i0 = 0; i0 < dim0; i0++) {
          outputValues(0, i0) = 3.0;
-         outputValues(1, i0) = 5.1961524227066318806;
+         outputValues(1, i0) = 3.0;
          outputValues(2, i0) = 3.0;
          outputValues(3, i0) = 3.0;
        }
@@ -157,20 +156,19 @@ void Basis_HDIV_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    &&
-                            (operatorType == OPERATOR_D2)    &&
-                            (operatorType == OPERATOR_D3)    &&
-                            (operatorType == OPERATOR_D4)    &&
-                            (operatorType == OPERATOR_D5)    &&
-                            (operatorType == OPERATOR_D6)    &&
-                            (operatorType == OPERATOR_D7)    &&
-                            (operatorType == OPERATOR_D8)    &&
-                            (operatorType == OPERATOR_D9)    &&
+      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+                            (operatorType == OPERATOR_D2)    ||
+                            (operatorType == OPERATOR_D3)    ||
+                            (operatorType == OPERATOR_D4)    ||
+                            (operatorType == OPERATOR_D5)    ||
+                            (operatorType == OPERATOR_D6)    ||
+                            (operatorType == OPERATOR_D7)    ||
+                            (operatorType == OPERATOR_D8)    ||
+                            (operatorType == OPERATOR_D9)    ||
                             (operatorType == OPERATOR_D10) ),
                           std::invalid_argument,
                           ">>> ERROR (Basis_HDIV_TET_I1_FEM): Invalid operator type");
       break;
-      
       
     default:
       TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
