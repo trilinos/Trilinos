@@ -306,22 +306,22 @@ struct ScalarTraits<long int>
 };
 
 template<>
-struct ScalarTraits<size_t>
+struct ScalarTraits<long unsigned int>
 {
-  typedef size_t magnitudeType;
-  typedef size_t halfPrecision;
-  typedef size_t doublePrecision;
+  typedef long unsigned int magnitudeType;
+  typedef long unsigned int halfPrecision;
+  typedef long unsigned int doublePrecision;
   static const bool isComplex = false;
   static const bool isOrdinal = true;
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-  static inline magnitudeType magnitude(size_t a) { return a; }
-  static inline size_t zero()  { return 0; }
-  static inline size_t one()   { return 1; }
-  static inline size_t conjugate(size_t x) { return x; }
-  static inline size_t real(size_t x) { return x; }
-  static inline size_t imag(size_t) { return 0; }
+  static inline magnitudeType magnitude(long unsigned int a) { return static_cast<long unsigned int>(std::fabs(static_cast<double>(a))); }
+  static inline long unsigned int zero()  { return 0; }
+  static inline long unsigned int one()   { return 1; }
+  static inline long unsigned int conjugate(long unsigned int x) { return x; }
+  static inline long unsigned int real(long unsigned int x) { return x; }
+  static inline long unsigned int imag(long unsigned int) { return 0; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__
@@ -331,10 +331,10 @@ struct ScalarTraits<size_t>
 #endif
   }
   //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
-  static inline size_t random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
-  static inline std::string name() { return "size_t"; }
-  static inline size_t squareroot(size_t x) { return (size_t) std::sqrt((double) x); }
-  static inline size_t pow(size_t x, size_t y) { return (size_t) std::pow((double)x,(double)y); }
+  static inline long unsigned int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "long unsigned int"; }
+  static inline long unsigned int squareroot(long unsigned int x) { return (long unsigned int) std::sqrt((double) x); }
+  static inline long unsigned int pow(long unsigned int x, long unsigned int y) { return (long unsigned int) std::pow((double)x,(double)y); }
 };
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT

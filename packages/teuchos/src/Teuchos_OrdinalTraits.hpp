@@ -132,17 +132,16 @@ struct OrdinalTraits<long int> {
 };
 
 template<>
-struct OrdinalTraits<size_t> {
+struct OrdinalTraits<long unsigned int> {
   static const bool hasMachineParameters = false;
-  static inline size_t zero()              {return(static_cast<size_t>(0));}
-  static inline size_t one()               {return(static_cast<size_t>(1));}
-  static inline size_t invalid()           {return(std::numeric_limits<size_t>::is_signed ? static_cast<size_t>(-1)            : std::numeric_limits<size_t>::max()  );}
-  static inline size_t max()               {return(std::numeric_limits<size_t>::is_signed ? std::numeric_limits<size_t>::max() : std::numeric_limits<size_t>::max()-1);}
-  static inline std::string name()         {return("size_t");}
+  static inline long unsigned int zero()              {return(static_cast<long unsigned int>(0));}
+  static inline long unsigned int one()               {return(static_cast<long unsigned int>(1));}
+  static inline long unsigned int invalid()           {return(std::numeric_limits<long unsigned int>::max());}
+  static inline long unsigned int max()               {return(std::numeric_limits<long unsigned int>::max()-1);}
+  static inline std::string name()           {return("long unsigned int");}
 };
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
 template<>
 struct OrdinalTraits<long long int> {
   static const bool hasMachineParameters = false;
@@ -152,7 +151,6 @@ struct OrdinalTraits<long long int> {
   static inline long long int max()           {return(LLONG_MAX);}
   static inline std::string name()            {return("long long int");}
 };
-
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

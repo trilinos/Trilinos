@@ -34,7 +34,7 @@
 
 // Specializations of Teuchos::SerializationTraits<>:
 //     unsigned char, short, unsigned short, unsigned int, long,
-//     unsigned long, long long, unsigned long long
+//     long long, unsigned long long
 namespace Teuchos
 {
 template<typename Ordinal>
@@ -48,10 +48,6 @@ class SerializationTraits<Ordinal,unsigned short>
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned int>
   : public DirectSerializationTraits<Ordinal,unsigned int>
-{};
-template<typename Ordinal>
-class SerializationTraits<Ordinal,unsigned long>
-  : public DirectSerializationTraits<Ordinal,unsigned long>
 {};
 template<typename Ordinal>
 class SerializationTraits<Ordinal,long long>
@@ -155,34 +151,6 @@ struct ScalarTraits<unsigned int>
   { return (unsigned int) std::sqrt((double) x); }
   static inline unsigned int pow(unsigned int x, unsigned int y)
   { return (unsigned int) std::pow((double)x,(double)y); }
-};
-
-// Type unsigned long
-template<>
-struct ScalarTraits<unsigned long>
-{
-  typedef unsigned long magnitudeType;
-  static const bool isComplex = false;
-  static const bool isComparable = true;
-  static const bool hasMachineParameters = false;
-  static inline magnitudeType magnitude(unsigned long a)
-  { return static_cast<unsigned long>(std::fabs(static_cast<double>(a))); }
-  static inline unsigned long zero()  { return 0; }
-  static inline unsigned long one()   { return 1; }
-  static inline unsigned long conjugate(unsigned long x) { return x; }
-  static inline unsigned long real(unsigned long x) { return x; }
-  static inline unsigned long imag(unsigned long x) { return 0; }
-  static inline void seedrandom(unsigned int s) { std::srand(s); 
-#ifdef __APPLE__
-    random(); // throw away first random number to address bug 3655
-#endif
-  }
-  static inline unsigned long random() { return std::rand(); }
-  static inline std::string name() { return "unsigned long"; }
-  static inline unsigned long squareroot(unsigned long x)
-  { return (unsigned long) std::sqrt((double) x); }
-  static inline unsigned long pow(unsigned long x, unsigned long y)
-  { return (unsigned long) std::pow((double)x,(double)y); }
 };
 
 // Type long long

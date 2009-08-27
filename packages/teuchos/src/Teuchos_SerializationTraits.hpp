@@ -212,8 +212,8 @@ class SerializationTraits<Ordinal,long int>
 {};
 
 template<typename Ordinal>
-class SerializationTraits<Ordinal,size_t>
-  : public DirectSerializationTraits<Ordinal,size_t>
+class SerializationTraits<Ordinal,long unsigned int>
+  : public DirectSerializationTraits<Ordinal,long unsigned int>
 {};
 
 template<typename Ordinal>
