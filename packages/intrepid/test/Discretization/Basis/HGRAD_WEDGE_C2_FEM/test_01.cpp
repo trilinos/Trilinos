@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                 Unit Test (Basis_HGRAD_TRIPRISM_C1_FEM)                     |\n" \
+    << "|                 Unit Test (Basis_HGRAD_WEDGE_C2_FEM)                        |\n" \
     << "|                                                                             |\n" \
     << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" \
     << "|     2) Basis values for VALUE, GRAD, and Dk operators                       |\n" \

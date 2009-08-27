@@ -847,39 +847,59 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
   switch( cellTopo.getKey() ){
     
     // Standard Base topologies (number of nodes = number of vertices)
+    case shards::Line<2>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
     case shards::Triangle<3>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
+      
     case shards::Quadrilateral<4>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
+      
     case shards::Tetrahedron<4>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
+      
     case shards::Hexahedron<8>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
+      
     case shards::Wedge<6>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
       
-      // Standard Extended topologies
-    case shards::Triangle<6>::key:                        // curved triangle: use quadratic basis!
-    case shards::Quadrilateral<8>::key:
+    // Standard Extended topologies
+    case shards::Triangle<6>::key:    
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TRI_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
     case shards::Quadrilateral<9>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_QUAD_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
     case shards::Tetrahedron<10>::key:
-    case shards::Hexahedron<20>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_TET_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
     case shards::Hexahedron<27>::key:
-    case shards::Wedge<15>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_HEX_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
     case shards::Wedge<18>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_WEDGE_C2_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
+      
+    // These extended topologies are not used for mapping purposes
+    case shards::Quadrilateral<8>::key:
+    case shards::Hexahedron<20>::key:
+    case shards::Wedge<15>::key:
       TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::setJacobian): Cell topology not supported. ");
       break;
       
-      // Base and Extended Line, Beam and Shell topologies  
-    case shards::Line<2>::key:
-      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
-      break;
+    // Base and Extended Line, Beam and Shell topologies  
     case shards::Line<3>::key:
     case shards::Beam<2>::key:
     case shards::Beam<3>::key:

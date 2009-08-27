@@ -49,6 +49,12 @@
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
 
+#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid_HGRAD_WEDGE_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+
 #include "Shards_CellTopology.hpp"
 #include "Shards_BasicTopologies.hpp"
 
@@ -346,7 +352,11 @@ public:
                 \mbox{physPoints}(p,d)   = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad \mbox{for $0\le c < C$ - fixed}    
         \f]
                 Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
-                for definition of the mapping function.
+                for definition of the mapping function. Presently supported cell topologies are
+        
+        \li     1D:   \c Line<2>
+        \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
+        \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
       
                 The default <var>whichCell</var> = -1
                 forces application of all reference-to-physical frame mappings corresponding to the
@@ -368,7 +378,7 @@ public:
         \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
         \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map 
       
-        \todo   Implement method for extended and non-standard (shell, beam, etc) topologies.
+        \todo   Implement method for non-standard (shell, beam, etc) topologies.
      */
     template<class ArrayScalar>
     static void mapToPhysicalFrame(ArrayScalar &                 physPoints,
@@ -384,7 +394,11 @@ public:
                 \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d         
         \f]
                 Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
-                for definition of the mapping function.
+                for definition of the mapping function. Presently supported cell topologies are
+      
+        \li     1D:   \c Line<2>
+        \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
+        \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
       
                 \warning 
                 The array <var>physPoints</var> represents an arbitrary set of points in the physical

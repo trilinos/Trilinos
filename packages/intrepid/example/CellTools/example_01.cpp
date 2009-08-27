@@ -566,7 +566,7 @@ else{
 
 std::cout << std::setprecision(4) << "\n" \
 << "===============================================================================\n"\
-<< "| EXAMPLE 6: mapping to physical cells                                        |\n"\
+<< "| EXAMPLE 6: mapping to physical cells with base topology                     |\n"\
 << "===============================================================================\n";
 
 // Rank-3 array with dimensions (P, D) for points on the reference triangle
@@ -597,10 +597,55 @@ for(int cell = 0; cell < triNodes.dimension(0); cell++){
 }
 
 
+std::cout << std::setprecision(4) << "\n" \
+<< "===============================================================================\n"\
+<< "| EXAMPLE 7: mapping to physical cells with extended topologies               |\n"\
+<< "===============================================================================\n";
+/*
+ * This example illustrates the mapping for a triangle with curved sides. This triangle
+ * is defined as follows:
+ * - edge 0 starts at (0,0), ends at (1, -1/2) and lies on the parabola y = -1/2 x^2
+ * - edge 1 is vertical line from(1, -1/2) to (1,1)
+ * - edge 2 starts at (1,1), ends at (0,0) and lies on the parabola y = x^2
+ * This triangle can be specified using 6 nodes. Therefore, to define mapping to this triangle we
+ * need to use Triangle<6> for its topology
+ */
+
+// Array with the 6 nodes of the physical Triangle<6> in (C,V,D) format
+FieldContainer<double> tri6Nodes(1,6,2);
+tri6Nodes(0,0,0) = 0.0;    tri6Nodes(0,0,1) =  0.0;
+tri6Nodes(0,1,0) = 1.0;    tri6Nodes(0,1,1) = -0.5;
+tri6Nodes(0,2,0) = 1.0;    tri6Nodes(0,2,1) =  1.0;
+
+tri6Nodes(0,3,0) = 0.5;    tri6Nodes(0,3,1) = -0.125;
+tri6Nodes(0,4,0) = 1.0;    tri6Nodes(0,4,1) =  0.0;
+tri6Nodes(0,5,0) = 0.5;    tri6Nodes(0,5,1) =  0.25;
+
+// Array with the 6 nodes of the reference Triangle<6> plus some extra points
+FieldContainer<double> ref6Points(9,2);
+ref6Points(0,0) = 0.0;    ref6Points(0,1) =  0.0;
+ref6Points(1,0) = 1.0;    ref6Points(1,1) =  0.0;
+ref6Points(2,0) = 0.0;    ref6Points(2,1) =  1.0;
+
+ref6Points(3,0) = 0.5;    ref6Points(3,1) =  0.0;
+ref6Points(4,0) = 0.5;    ref6Points(4,1) =  0.5;
+ref6Points(5,0) = 0.0;    ref6Points(5,1) =  0.5;
+
+ref6Points(6,0) = 0.75;   ref6Points(6,1) =  0.0;      // on ref edge 0
+ref6Points(7,0) = 0.25;   ref6Points(7,1) =  0.75;     // on ref edge 1
+ref6Points(8,0) = 0.00;   ref6Points(8,1) =  0.25;     // on ref edge 2
+
+CellTopology tri_6(shards::getCellTopologyData<Triangle<6> >() );
+
+
+
+
+
+
 
 std::cout << "\n" \
 << "===============================================================================\n"\
-<< "| EXAMPLE 7: mapping to reference cells                                        |\n"\
+<< "| EXAMPLE 8: mapping to reference cells                                        |\n"\
 << "===============================================================================\n";
 
 // Rank-2 arrays with dimensions (P, D) for physical points and their preimages

@@ -862,7 +862,7 @@ namespace Intrepid {
  |  4   | (P,F,D,K)       | (p,f,d,k)      | kth deriv. of F vector fields evaluated at P points   |       
  |  5   | (P,F,D,D,K)     | (p,f,d,d,k)    | kth deriv. of F tensor fields evaluated at P points   |           
  |-------------------------------------------------------------------------------------------------|
- |  3   | (C,V,D)         | (c,v,d )       | Vertex coords. of C cells having V nodes each      |
+ |  3   | (C,V,D)         | (c,v,d )       | Vertex coords. of C cells having V vertices each      |
  |  3   | (C,P,D)         | (c,p,d )       | Coords. of C*P points in C cells, P per cell          |
  |-------------------------------------------------------------------------------------------------| 
  \endverbatim

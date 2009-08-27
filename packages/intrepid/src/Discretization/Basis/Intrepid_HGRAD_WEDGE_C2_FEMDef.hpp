@@ -578,68 +578,70 @@ void Basis_HGRAD_WEDGE_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &    o
       break;
       
     case OPERATOR_D4:
-      // There are only few constant non-zero entries. Initialize by zero and then assign non-zero entries.
-      int DkCardinality = Intrepid::getDkCardinality(operatorType, this -> basisCellTopology_.getDimension() );
-      for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
-        for (int i0 = 0; i0 < dim0; i0++) {
-          for(int dkOrd = 0; dkOrd < DkCardinality; dkOrd++){
-            outputValues(dofOrd, i0, dkOrd) = 0.0;
+      {
+        // There are only few constant non-zero entries. Initialize by zero and then assign non-zero entries.
+        int DkCardinality = Intrepid::getDkCardinality(operatorType, this -> basisCellTopology_.getDimension() );
+        for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
+          for (int i0 = 0; i0 < dim0; i0++) {
+            for(int dkOrd = 0; dkOrd < DkCardinality; dkOrd++){
+              outputValues(dofOrd, i0, dkOrd) = 0.0;
+            }
           }
+        }    
+        
+        for (int i0 = 0; i0 < dim0; i0++) {
+          
+          outputValues(0, i0, 5) = 4.;
+          outputValues(0, i0, 8) = 4.;
+          outputValues(0, i0,12) = 4.;
+          
+          outputValues(1, i0, 5) = 4.;
+          
+          outputValues(2, i0,12) = 4.;
+          
+          outputValues(3, i0, 5) = 4.;
+          outputValues(3, i0, 8) = 4.;
+          outputValues(3, i0,12) = 4.;
+          
+          outputValues(4, i0, 5) = 4.0;
+          
+          outputValues(5, i0,12) = 4.0;
+          
+          outputValues(6, i0, 5) =-8.;
+          outputValues(6, i0, 8) =-4.;
+          
+          outputValues(7, i0, 8) = 4.;
+          
+          outputValues(8, i0, 8) =-4.;
+          outputValues(8, i0,12) =-8.;
+          
+          outputValues(9, i0, 5) =-8.;
+          outputValues(9, i0, 8) =-8.;
+          outputValues(9, i0,12) =-8.;
+          
+          outputValues(10,i0, 5) =-8.;
+          
+          outputValues(11,i0,12) =-8.;
+          
+          outputValues(12,i0, 5) =-8.;
+          outputValues(12,i0, 8) =-4.;
+          
+          outputValues(13,i0, 8) = 4.;
+          
+          outputValues(14,i0, 8) =-4;
+          outputValues(14,i0,12) =-8.;
+          
+          outputValues(15,i0, 5) =16.;
+          outputValues(15,i0, 8) = 8.;
+          
+          outputValues(16,i0, 8) =-8.;
+          
+          
+          outputValues(17,i0, 8) = 8.;
+          outputValues(17,i0,12) =16.;   
         }
-      }        
-      
-      for (int i0 = 0; i0 < dim0; i0++) {
-
-        outputValues(0, i0, 5) = 4.;
-        outputValues(0, i0, 8) = 4.;
-        outputValues(0, i0,12) = 4.;
-                    
-        outputValues(1, i0, 5) = 4.;
-        
-        outputValues(2, i0,12) = 4.;
-        
-        outputValues(3, i0, 5) = 4.;
-        outputValues(3, i0, 8) = 4.;
-        outputValues(3, i0,12) = 4.;
-        
-        outputValues(4, i0, 5) = 4.0;
-        
-        outputValues(5, i0,12) = 4.0;
-        
-        outputValues(6, i0, 5) =-8.;
-        outputValues(6, i0, 8) =-4.;
-        
-        outputValues(7, i0, 8) = 4.;
-        
-        outputValues(8, i0, 8) =-4.;
-        outputValues(8, i0,12) =-8.;
-          
-        outputValues(9, i0, 5) =-8.;
-        outputValues(9, i0, 8) =-8.;
-        outputValues(9, i0,12) =-8.;
-          
-        outputValues(10,i0, 5) =-8.;
-        
-        outputValues(11,i0,12) =-8.;
-
-        outputValues(12,i0, 5) =-8.;
-        outputValues(12,i0, 8) =-4.;
-          
-        outputValues(13,i0, 8) = 4.;
-
-        outputValues(14,i0, 8) =-4;
-        outputValues(14,i0,12) =-8.;
-
-        outputValues(15,i0, 5) =16.;
-        outputValues(15,i0, 8) = 8.;
-          
-        outputValues(16,i0, 8) =-8.;
-
-
-        outputValues(17,i0, 8) = 8.;
-        outputValues(17,i0,12) =16.;   
       }
-        break;
+      break;
       
     case OPERATOR_D5:
     case OPERATOR_D6:
