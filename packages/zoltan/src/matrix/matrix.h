@@ -39,11 +39,24 @@ extern "C" {
  * X and Y are the same entities and pins are the edges.
  ************/
 
+typedef enum {ADD_WEIGHT=0, MAX_WEIGHT, CMP_WEIGHT} WgtOp;
+
+/* This structure defines how the matrix will be constructed */
+typedef struct Zoltan_matrix_options_ {
+  int enforceSquare;           /* Want to build a graph */
+                               /* Cols & rows will have a consistent numbering */
+  WgtOp pinwgtop;              /* How to deal with duplicate arcs */
+  int randomize;               /* Do we have to randomize input ? */
+  int pinwgt;                  /* Do we want pinwgt ? */
+  int local;                   /* If only local edges have to be kept */
+  int final_output;            /* final_output flag, not used yet */
+  int symmetrize;              /* What kind of symmetry we have to apply, not used yet */
+} Zoltan_matrix_options;
+
 /* This structure is a CS view of a part of the matrix/hypergraph */
 typedef struct Zoltan_matrix_ {
-  int           enforceSquare; /* Want to build a graph */
-                               /* Cols & rows will have a consistent numbering */
-  int           fromHG;        /* HG queries have been used */
+  Zoltan_matrix_options opts;  /* How to build the matrix */
+  int           redist;        /* HG queries have been used or matrix distribution has changed*/
   int           completed;     /* Matrix is ready to be specialized in HG or G */
   int           globalX;       /* Overall number on X dimension */
   int           globalY;       /* Overall number on Y dimension */
@@ -78,17 +91,23 @@ typedef struct Zoltan_matrix_2d_ {
   int             *dist_y;      /* Distribution on y axis */
 } Zoltan_matrix_2d;
 
+/* Auxiliary struct used internaly */
+typedef struct Zoltan_Arc_ {
+    int yGNO;
+    int pinGNO;
+    int offset;
+} Zoltan_Arc;
+
 /*--------------
  * FUNCTIONS
  */
-
 
 /* Build a matrix from the user data get by the queries.
  * The matrix is only a translation of user data from GID space to GNO space.
  * The matrix cannot be directly used as a graph or hypergraph, you have
  * to make a distribution of this matrix. */
 int
-Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix);
+Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix);
 
 /* Free a matrix object */
 void
@@ -144,17 +163,27 @@ int Zoltan_Distribute_Square (ZZ * zz, PHGComm *layout) ;
 /* Distribute in a linear 1D way, typically for a graph */
 int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 
-/* Compute a bipartite graph of a matrix (matrix can have any shape)
- * TODO: Use this code also for doing symmetrization A+At
+/* Compute a symmertrization of the matrix.
+ * if bipartite == 0, A+At transformation is done (matrix has to be square).
+ * else, a bipartite graph of the matrix is built (matrix can have any shape).
  */
 int
-Zoltan_Matrix_Bipart(ZZ* zz, Zoltan_matrix *matrix, int nProc, int myProc);
+Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite);
+
+
+int
+Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
+			     Zoltan_matrix *outmat);
+
+/* Function that group duplicate nnz */
+int
+Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outmat);
 
 /* This code has to be called just before specializing the matrix into
  * a graph or an hypergraph.
  */
 int
-Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m);
+Zoltan_Matrix_Complete(ZZ* zz, Zoltan_matrix* m);
 
 /* This code is used to fill the adjproc array which is used in some
  * place in Zoltan.

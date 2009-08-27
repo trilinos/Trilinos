@@ -23,13 +23,7 @@ extern "C" {
 #include "phg.h"
 #include "matrix.h"
 
-static int
-compar_couple (const int* e1, const int* e2)
-{
-  if (e1[0] == e2[0])
-    return (e1[1] - e1[1]);
-  return (e1[0] - e1[0]);
-}
+/* Layout related functions */
 
 int Zoltan_Distribute_Square (ZZ * zz, PHGComm *layout)
 {
@@ -81,6 +75,7 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 }
 
 
+
 /* if !copy, inmat is not usable after this call */
 /* for pin wgt, we may do a "savage cast" to avoid padding problem */
 
@@ -95,16 +90,16 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int *dist_x=NULL, *dist_y=NULL;
   int frac_x, frac_y;
   int i, j, cnt;
-  int *proclist = NULL, *sendbuf = NULL;
+  int *proclist = NULL;
   int nPins, nEdge, nVtx;
   int myProcId;
-  int *procptr = NULL, *tmparray = NULL;
+  int *procptr = NULL;
+  Zoltan_Arc *nonzeros= NULL, *sendbuf= NULL;
+  int *tmparray=NULL;
+  float *tmpwgtarray = NULL;
   int msg_tag = 1021982;
-  int *nonzeros=NULL;
   int offset;
-  int prev_x, prev_y;
   ZOLTAN_COMM_OBJ *plan;
-  int elem_size = 2;
   MPI_Comm communicator = MPI_COMM_NULL;
   int nProc;
   int *yGNO = NULL;
@@ -114,6 +109,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   memcpy(&outmat->mtx, &inmat, sizeof(Zoltan_matrix));
   if(copy) {
+    /* TODO: We need to copy the arrays also */
     Zoltan_Matrix_Reset (&outmat->mtx);
     /* Copy also directories */
     outmat->mtx.ddX = Zoltan_DD_Copy (inmat.ddX);
@@ -141,7 +137,12 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   if (!dist_x || !dist_y) MEMORY_ERROR;
 
-  if ((nProc_x> 1) || !no_redist) { /* Do a redistribution by "slice" on X and Y */
+  /* Do we need to redistribute the graph ? *
+   * redistribute if the matrix is defined using hypergraph queries or if there is
+   * more than one proc on x axis.
+   */
+  if (inmat.redist || (nProc_x> 1) || !no_redist) {
+    /* Do a redistribution by "slice" on X and Y */
     frac_x = (float) inmat.globalX / (float) nProc_x;
     for (i = 1; i < nProc_x; i++)
       dist_x[i] = (int) (i * frac_x);
@@ -153,6 +154,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     dist_y[nProc_y] = inmat.globalY;
   }
   else {
+    /* No redistribution, code is only here to finish "symmetrization" */
     int nY;
     int flag;
     int general_flag;
@@ -206,53 +208,44 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ZOLTAN_FREE(&tmparray);
 
   offset = dist_y[myProc_y];
-  nPins = inmat.nPins;
+
+  ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
+  nPins = outmat->mtx.nPins;
+
   /*
    * Build comm plan for sending non-zeros to their target processors in
    * 2D data distribution.
    */
-  if (inmat.pinwgtdim > 0)
-    elem_size = 3;
   proclist = (int *)ZOLTAN_MALLOC(nPins *sizeof(int));
-  sendbuf = (int *) ZOLTAN_MALLOC(nPins * elem_size * sizeof(int));
+  sendbuf = (Zoltan_Arc*) ZOLTAN_MALLOC(nPins * sizeof(Zoltan_Arc));
 
   if ((nPins >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
-  if (!copy) {
-    yGNO = outmat->mtx.yGNO;
-    pinGNO = outmat->mtx.pinGNO;
-  }
-  else {
-    yGNO = inmat.yGNO;
-    pinGNO = inmat.pinGNO;
-  }
+  yGNO = outmat->mtx.yGNO;
+  pinGNO = outmat->mtx.pinGNO;
+
   cnt = 0;
-  for (i = 0; i < inmat.nY; i++) {
+  for (i = 0; i < outmat->mtx.nY; i++) {
     int edge_gno=-1, edge_Proc_y=-1;
     /* processor row for the edge */
     edge_gno = yGNO[i];
     edge_Proc_y = EDGE_TO_PROC_Y(outmat, edge_gno);
 
-    for (j = inmat.ystart[i]; j < inmat.yend[i]; j++) {
+    for (j = outmat->mtx.ystart[i]; j < outmat->mtx.yend[i]; j++) {
       int vtx_gno=-1, vtx_Proc_x=-1;
       /* processor column for the vertex */
       vtx_gno = pinGNO[j];
       vtx_Proc_x = VTX_TO_PROC_X(outmat, vtx_gno);
 
       proclist[cnt] = procptr[edge_Proc_y * nProc_x + vtx_Proc_x];
-      sendbuf[elem_size*cnt] = edge_gno;
-      sendbuf[elem_size*cnt+1] = vtx_gno;
-      if (inmat.pinwgtdim > 0)
-	sendbuf[elem_size*cnt+2] = j; /* Where is the corresponding pinwgt */
+      sendbuf[cnt].yGNO = edge_gno;
+      sendbuf[cnt].pinGNO = vtx_gno;
+      sendbuf[cnt].offset = j;
       cnt++;
     }
   }
   procptr -= 1;
   ZOLTAN_FREE(&procptr);
-
-  /* May be interesting to remove local duplicates now ! */
-  /* Will require more memory as we have to copy "sendbuf" */
-  /* However we can add the weights only now */
 
   /*
    * Send pins to their target processors.
@@ -261,73 +254,45 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   msg_tag--;
   ierr = Zoltan_Comm_Create(&plan, cnt, proclist, communicator, msg_tag, &outmat->mtx.nPins);
-
   ZOLTAN_FREE(&proclist);
 
-  if (outmat->mtx.nPins) {
-    nonzeros = (int *) ZOLTAN_MALLOC(outmat->mtx.nPins * elem_size * sizeof(int));
-    if (!nonzeros) MEMORY_ERROR;
-  }
+  nonzeros = (Zoltan_Arc *) ZOLTAN_MALLOC(outmat->mtx.nPins * sizeof(Zoltan_Arc));
+  if (outmat->mtx.nPins && nonzeros == NULL) MEMORY_ERROR;
 
   msg_tag--;
-  Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, elem_size*sizeof(int),
+  Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(Zoltan_Arc),
 		 (char *) nonzeros);
-
   ZOLTAN_FREE(&sendbuf);
 
-  /* Not yet destruction, I need to transfert pinWgt */
+  if (outmat->mtx.pinwgtdim) { /* We have to take care about weights */
+    tmpwgtarray = (float*) ZOLTAN_MALLOC(outmat->mtx.nPins*outmat->mtx.pinwgtdim*sizeof(float));
+    if (outmat->mtx.nPins && tmpwgtarray == NULL) MEMORY_ERROR;
+
+    msg_tag--;
+    Zoltan_Comm_Do_Post(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
+		   (char *) tmpwgtarray);
+    for (i = 0 ; i < outmat->mtx.nPins ; ++i) { /* Fill indirection structure */
+      nonzeros[i].offset = i;
+    }
+    Zoltan_Comm_Do_Wait(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
+		   (char *) tmpwgtarray);
+    ZOLTAN_FREE(&outmat->mtx.pinwgt);
+  }
   Zoltan_Comm_Destroy(&plan);
 
   /* Unpack the non-zeros received. */
-
   outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, (nEdge + 1)*sizeof(int));
+  if (outmat->mtx.ystart == NULL) MEMORY_ERROR;
   outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO, (outmat->mtx.nPins) * sizeof(int));
+  if (outmat->mtx.nPins && (outmat->mtx.pinGNO == NULL)) MEMORY_ERROR;
+  outmat->mtx.pinwgt = (float *) ZOLTAN_REALLOC(outmat->mtx.pinwgt,
+	     (outmat->mtx.nPins * outmat->mtx.pinwgtdim) * sizeof(float));
+  if (outmat->mtx.nPins && outmat->mtx.pinwgtdim && outmat->mtx.pinwgt == NULL)
+    MEMORY_ERROR;
 
-  if ( outmat->mtx.ystart == NULL || ((outmat->mtx.nPins && outmat->mtx.pinGNO == NULL)))
-     MEMORY_ERROR;
-
-  /* Sort Edges: Allow to easily remove duplicates */
-  /* inconvenient: make pin weight association harder */
-  qsort ((void*)nonzeros, outmat->mtx.nPins, sizeof(int)*2,
-	 (int (*)(const void*,const void*))compar_couple);
-
-  if (!copy && inmat.yend != inmat.ystart + 1)
-    ZOLTAN_FREE(&outmat->mtx.yend);
-
-  outmat->mtx.yend= outmat->mtx.ystart + 1; /* Keep in compact mode, no new edges */
-  outmat->mtx.ystart[0] = 0;
-
-  for (i = 0, prev_x=-1, prev_y=-1; i < outmat->mtx.nPins; i++) {
-    int x = VTX_GNO_TO_LNO(outmat, nonzeros[elem_size*i+1]);
-    int y = EDGE_GNO_TO_LNO(outmat, nonzeros[elem_size*i]);
-    /* Why do not deal with GNO instead of LNO ? << We own only on the row */
-
-    if (y == prev_y && x == prev_x) /* If it is a duplicate edge, skip ! */
-      continue;
-    for (j=prev_y+1 ; j <= y ; j++)               /* Some y may be empty */
-      outmat->mtx.yend[j] = outmat->mtx.ystart[j]; /* Compact mode */
-
-    prev_y = y; prev_x = x;
-    outmat->mtx.pinGNO[outmat->mtx.yend[y]++] = x;
-  }
-  for (j=prev_y+1 ; j < nEdge ; j++)               /* Some y may be empty */
-    outmat->mtx.yend[j] = outmat->mtx.ystart[j]; /* Compact mode */
-
-  ZOLTAN_FREE(&nonzeros);
-
-  outmat->mtx.nPins = outmat->mtx.yend[nEdge - 1];
-  /* Try to minimize memory */
-  outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO,
-			       (outmat->mtx.nPins) * sizeof(int));
-
-  outmat->mtx.nY = nEdge;
-
-  /* Now construct yGNO array */
-  outmat->mtx.yGNO = (int *)ZOLTAN_REALLOC(outmat->mtx.yGNO, nEdge*sizeof(int));
-  if (nEdge && outmat->mtx.yGNO == NULL) MEMORY_ERROR;
-  for (i = 0 ; i < nEdge; ++i) {
-    outmat->mtx.yGNO[i] = offset + i;
-  }
+  /* TODO: Ensure that we don't have empty vertex */
+  Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
+			       &outmat->mtx);
 
  End:
   if (procptr != NULL) {
@@ -338,11 +303,13 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ZOLTAN_FREE(&sendbuf);
   ZOLTAN_FREE(&nonzeros);
   ZOLTAN_FREE(&tmparray);
+  ZOLTAN_FREE(&tmpwgtarray);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return (ierr);
 }
+
 
 #ifdef __cplusplus
 }

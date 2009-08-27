@@ -27,29 +27,36 @@ extern "C" {
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
 
-  /* At this time function is in parmetis directory but it will change soon */
+/* At this time function is in parmetis directory but it will change soon */
 extern int
 Zoltan_Verify_Graph(MPI_Comm comm, int *vtxdist, int *xadj,
 		    int *adjncy, int *vwgt, int *adjwgt,
 		    int vwgt_dim, int ewgt_dim,
 		    int graph_type, int check_graph, int output_level);
 
-  /* This function needs a distribution : rows then cols to work properly */
-
+/* This function needs a distribution : rows then cols to work properly */
 int
-Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
 {
   static char *yo = "ZG_Build";
   int ierr = ZOLTAN_OK;
   int diag;
   int *diagarray=NULL;
+  Zoltan_matrix_options opt;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   memset (graph, 0, sizeof(ZG));
 
   graph->mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (graph->mtx.comm == NULL) MEMORY_ERROR;
 
-  ierr = Zoltan_Matrix_Build(zz, &graph->mtx.mtx);
+  memset(&opt, 0, sizeof(Zoltan_matrix_options));
+  opt.enforceSquare = 1;
+  opt.pinwgtop = ADD_WEIGHT;
+  opt.randomize = 0;
+  opt.local = local;
+
+  ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx);
   CHECK_IERR;
   ierr = Zoltan_Matrix_Mark_Diag (zz, &graph->mtx.mtx, &diag, &diagarray);
   CHECK_IERR;
@@ -58,13 +65,13 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
     ZOLTAN_FREE(&diagarray);
     CHECK_IERR;
   }
-  if (bipartite) {
-    ierr = Zoltan_Matrix_Bipart(zz, &graph->mtx.mtx, zz->Num_Proc, zz->Proc);
-    CHECK_IERR;
-  }
+
+/*   ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite); */
+/*   CHECK_IERR; */
+
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;
-  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0, 0);
+  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0, 1);
   CHECK_IERR;
 
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);
@@ -91,13 +98,15 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj)
 
  End:
   ZOLTAN_FREE(&diagarray);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
 
 int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
-	   int **xwgt, int **partialD2)
+	   float **xwgt, float **ewgt, int **partialD2)
 {
   int ierr;
 
@@ -108,7 +117,8 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
   AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
   AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
   /* I have to convert from float to int */
-/*   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt); */
+  AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt);
+  AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj,
 			     *adjncy, NULL, NULL,
@@ -117,6 +127,38 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
 }
+
+int
+Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
+		      ZOLTAN_ID_PTR *pgid, int **pinput_part) {
+  static char *yo = "Zoltan_ZG_Vertex_Info";
+  int ierr = ZOLTAN_OK;
+  int nX;
+  ZOLTAN_ID_PTR gid = NULL;
+  int *input_part = NULL;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  nX = graph->mtx.mtx.nY;
+  gid = ZOLTAN_MALLOC_GID_ARRAY(zz, nX);
+  if (nX && gid == NULL) MEMORY_ERROR;
+  (*pgid) = gid;
+  if (pinput_part != NULL) {
+    input_part = (int*) ZOLTAN_MALLOC(nX * sizeof(int));
+    if (nX && input_part == NULL) MEMORY_ERROR;
+    (*pinput_part) = input_part;
+  }
+  else {
+    input_part = NULL;
+  }
+
+  ierr = Zoltan_DD_Find(graph->mtx.mtx.ddX, (ZOLTAN_ID_PTR)graph->mtx.mtx.yGNO,
+			gid, NULL, input_part, nX, NULL);
+ End:
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return (ierr);
+}
+
 
   /* This function may work on any distribution of the bipartite graph */
 int
@@ -129,6 +171,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
   int size;
   ZOLTAN_ID_PTR GID;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   size = graph->mtx.mtx.nY;
   dd = graph->mtx.mtx.ddY;
 
@@ -170,6 +213,8 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
     ZOLTAN_FREE(&props);
     ZOLTAN_FREE(&GID);
   }
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
 

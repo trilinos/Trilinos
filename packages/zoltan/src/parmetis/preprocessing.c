@@ -25,7 +25,9 @@ extern "C" {
 #include "params_const.h"
 #include "order_const.h"
 #include "third_library.h"
-
+#ifdef TPL_NEW_GRAPH
+#include "graph.h"
+#endif
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
@@ -101,7 +103,11 @@ int Zoltan_Preprocess_Graph(
   int ierr;
   float *float_vwgt, *float_ewgts;
   char msg[256];
-
+#ifdef TPL_NEW_GRAPH
+  ZG graph;
+  int nvtx;
+  int local;
+#endif /* TPL_NEW_GRAPH */
 
   char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
@@ -163,6 +169,7 @@ int Zoltan_Preprocess_Graph(
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
+
   /* If reorder is true, we already have the id lists. Ignore weights. */
   if ((*global_ids == NULL) || (!gr->id_known)){
     int *input_part = NULL;
@@ -179,12 +186,30 @@ int Zoltan_Preprocess_Graph(
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
   }
-
-
   /* Build Graph for third party library data structures, or just get vtxdist. */
+
+#ifndef TPL_NEW_GRAPH
   ierr = Zoltan_Build_Graph(zz, &gr->graph_type, gr->check_graph, gr->num_obj,
 			    *global_ids, *local_ids, gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			    &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
+#else
+  local = IS_LOCAL_GRAPH(gr->graph_type);
+  ierr = Zoltan_ZG_Build (zz, &graph, 0, 0, local); /* Normal graph */
+  ierr = Zoltan_ZG_Export (zz, &graph,
+		    &gr->num_obj, &gr->num_obj, &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
+		    &float_vwgt, &float_ewgts, NULL);
+/*   if (prt) */
+/*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &prt->input_part); */
+/*   else */
+/*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, NULL); */
+
+/*     /\* Just to try *\/ */
+/*     if (prt) { */
+/*       prt->input_part = (int *)ZOLTAN_CALLOC(gr->num_obj, sizeof(int)); */
+/*     } */
+
+#endif
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }

@@ -46,7 +46,7 @@ typedef int(*WgtFctPtr)(float*, float*, int);
 
 
 /* This function compare if the wgt are the same for both arcs*/
-int
+static int
 wgtFctCmp(float* current, float* new, int dim)
 {
   int i; int diff;
@@ -58,7 +58,7 @@ wgtFctCmp(float* current, float* new, int dim)
 }
 
 /* This function adds the weights */
-int
+static int
 wgtFctAdd(float* current, float* new, int dim)
 {
   int i;
@@ -69,7 +69,7 @@ wgtFctAdd(float* current, float* new, int dim)
 }
 
 /* This function chooses the maximum weight */ 
-int
+static int
 wgtFctMax(float* current, float* new, int dim)
 {
   int i;

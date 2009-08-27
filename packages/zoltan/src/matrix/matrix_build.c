@@ -38,11 +38,10 @@ extern int Zoltan_Get_Num_Edges_Per_Obj(
   );
 
 int
-Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
+Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 {
   static char *yo = "Zoltan_Matrix_Build";
   int ierr = ZOLTAN_OK;
-  int randomizeInitDist = 0;
   int nX;
   int  *xGNO = NULL;
   ZOLTAN_ID_PTR xLID=NULL;
@@ -52,12 +51,12 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   float *xwgt = NULL;
   int * Input_Parts=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
-
-/*   int final_output = 0; */
+  int *proclist = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   memset (matrix, 0, sizeof(Zoltan_matrix)); /* Set all fields to 0 */
+  memcpy (&matrix->opts, opt, sizeof(Zoltan_matrix_options));
 
   /**************************************************/
   /* Obtain vertex information from the application */
@@ -82,8 +81,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   /* Assign vertex consecutive numbers (gnos)                        */
   /*******************************************************************/
 
-  ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, xGNO, nX,
-					   randomizeInitDist, &matrix->globalX);
+  ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, xGNO, nX, matrix->opts.randomize, &matrix->globalX);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error assigning global numbers to vertices");
@@ -106,13 +104,19 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
 
   ZOLTAN_FREE(&Input_Parts);
 
+
+  if (matrix->opts.pinwgt)
+    matrix->pinwgtdim = zz->Edge_Weight_Dim;
+  else
+    matrix->pinwgtdim = 0;
+
   matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
     goto End;
   }
 
-  if (matrix->enforceSquare && matrix->fromHG) {
+  if (matrix->opts.enforceSquare && matrix->redist) {
     /* Convert yGID to yGNO using the same translation as x */
     /* Needed for graph : rowID = colID */
     /* y and x may have different distributions */
@@ -123,23 +127,45 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
 		    matrix->nY, NULL);
   }
 
-
-  matrix->pinGNO = (int*)ZOLTAN_CALLOC(matrix->nPins, sizeof(int));
+  matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
   if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
+
+  if (matrix->opts.local) { /* keep only local edges */
+    proclist = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
+    if (matrix->nPins && proclist == NULL) MEMORY_ERROR;
+  }
+  else
+    proclist = NULL;
   /* Convert pinID to pinGNO using the same translation as x */
   Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
-		  matrix->nPins, NULL);
+		  matrix->nPins, proclist);
   ZOLTAN_FREE(&pinID);
   Zoltan_DD_Destroy(&dd);
   dd = NULL;
 
-  if (!matrix->enforceSquare) { /* Hyperedges name translation is different from the one of vertices */
+/*   if (matrix->opts.local) {  /\* keep only local edges *\/ */
+/*     int *nnz_list; /\* nnz offset to delete *\/ */
+/*     int nnz;       /\* number of nnz to delete *\/ */
+/*     int i; */
+
+/*     nnz_list = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int)); */
+/*     if (matrix->nPins && nnz_list == NULL) MEMORY_ERROR; */
+/*     for (i = 0, nnz=0 ; i < matrix->nPins ; ++i) { */
+/*       if (proclist[i] == zz->Proc) continue; */
+/*       nnz_list[nnz++] = i; */
+/*     } */
+/*     ZOLTAN_FREE(&proclist); */
+/*     Zoltan_Matrix_Delete_nnz(zz, matrix, nnz, nnz_list); */
+/*   } */
+
+  if (!matrix->opts.enforceSquare) {
+    /* Hyperedges name translation is different from the one of vertices */
     matrix->yGNO = (int*)ZOLTAN_CALLOC(matrix->nY, sizeof(int));
     if (matrix->nY && matrix->yGNO == NULL) MEMORY_ERROR;
 
     /*     int nGlobalEdges = 0; */
     ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, matrix->yGNO, matrix->nY,
-					     randomizeInitDist, &matrix->globalY);
+					     matrix->opts.randomize, &matrix->globalY);
 
 /*     /\**************************************************************************************** */
 /*      * If it is desired to remove dense edges, divide the list of edges into */
@@ -178,6 +204,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix* matrix)
   ZOLTAN_FREE(&xGID);
   ZOLTAN_FREE(&xwgt);
   ZOLTAN_FREE(&Input_Parts);
+  ZOLTAN_FREE(&proclist);
   if (dd != NULL)
     Zoltan_DD_Destroy(&dd);
   /* Already stored in the DD */
@@ -219,11 +246,11 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
   if (graph_callbacks && hypergraph_callbacks){
 /*     if (hgraph_model == GRAPH) */
 /*       hypergraph_callbacks = 0; */
-    graph_callbacks = 0; /* I prefer hypergraph ! */
+    graph_callbacks = 1; /* I prefer graph (allow to do "inplace") ! */
   }
 
   if (hypergraph_callbacks) {
-    matrix->fromHG = 1;
+    matrix->redist = 1;
     ZOLTAN_FREE(xGID);
     ZOLTAN_FREE(xLID);
     ZOLTAN_FREE(xGNO);
@@ -239,7 +266,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     int numGID, numLID;
 
 
-    matrix->enforceSquare = 1;
+    matrix->opts.enforceSquare = 1;
     matrix->nY = nX; /* It is square ! */
     matrix->yGNO = *xGNO;
     *xGNO = NULL;
@@ -304,7 +331,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     FATAL_ERROR ("You have to define Hypergraph or Graph queries");
   }
 
-  if (matrix->enforceSquare) {
+  if (matrix->opts.enforceSquare) {
     matrix->globalY = matrix->globalX;
     matrix->ddY = matrix->ddX;
     matrix->ywgtdim = zz->Obj_Weight_Dim;

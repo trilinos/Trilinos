@@ -29,13 +29,16 @@ typedef struct ZG_ {
 } ZG;
 
 int
-Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj);
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local);
 
-/* TODO : add weights */
 int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
-	   int **xwgt, int **partialD2);
+	   float **xwgt, float **ewgt, int **partialD2);
+
+int
+Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
+		      ZOLTAN_ID_PTR *gid, int **input_part);
 
 int
 Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties);

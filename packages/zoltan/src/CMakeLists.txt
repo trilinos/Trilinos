@@ -202,7 +202,8 @@ APPEND_SET(NOINSTALLHEADERS
 APPEND_SET(SOURCES
   matrix/matrix_build.c
   matrix/matrix_distribute.c
-  matrix/matrix_bipart.c
+  matrix/matrix_operations.c
+  matrix/matrix_sym.c
   matrix/matrix_utils.c
   )
 

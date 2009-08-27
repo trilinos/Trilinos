@@ -300,12 +300,12 @@ int Zoltan_Color(
 #else /* COLORING_NEW_GRAPH */
   /* CC: TODO choose good construction method */
   if (coloring_problem == 'P')
-    Zoltan_ZG_Build (zz, &graph, 1, 1); /* Bipartite & we color vertices */
+    Zoltan_ZG_Build (zz, &graph, 1, 1, 0); /* Bipartite & we color vertices */
   else
-    Zoltan_ZG_Build (zz, &graph, 0, 0); /* Normal graph */
+    Zoltan_ZG_Build (zz, &graph, 0, 0, 0); /* Normal graph */
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, &vtxdist, &xadj, &adjncy, &adjproc,
-		    NULL, &partialD2);
+		    NULL, NULL, &partialD2);
 #endif
 
   /* CREATE THE HASH TABLE */
