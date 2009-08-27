@@ -827,13 +827,13 @@ def cleanTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
     and os.path.exists(buildDirName) \
     :
     echoChDir(buildDirName)
-    if inOptions.doConfigure:
+    if inOptions.doConfigure or inOptions.doUpdate:
       removeIfExists(getConfigureOutputFileName())
       removeIfExists(getConfigureSuccessFileName())
-    if inOptions.doConfigure or inOptions.doBuild:
+    if inOptions.doBuild or inOptions.doConfigure or inOptions.doUpdate:
       removeIfExists(getBuildOutputFileName())
       removeIfExists(getBuildSuccessFileName())
-    if inOptions.doConfigure or inOptions.doBuild or inOptions.doTest:
+    if inOptions.doTest or inOptions.doBuild or inOptions.doConfigure or inOptions.doUpdate:
       removeIfExists(getTestOutputFileName())
       removeIfExists(getTestSuccessFileName())
     removeIfExists(getEmailBodyFileName())
