@@ -26,6 +26,6 @@ call "%CVS_EXE%" -q -d :ext:software.sandia.gov:/space/CVS co Trilinos/cmake Tri
 
 rem Now run ctest on each of the ctest build scripts for this machine
 
-call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\dash2win64\ctest_windows_nightly_serial_release.cmake" -VV > "%BASEDIR%\ctest_msvc_nightly_serial_optimized_dash2win64.out"
+call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\dash2win64\ctest_windows_nightly_serial_release.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_serial_optimized_dash2win64.out" 2>&1
 
 endlocal
