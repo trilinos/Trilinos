@@ -262,18 +262,20 @@ Last Updated: 2009/05/04
       -D CMAKE_C_FLAGS:STRING="-04 -funrool-loops" \
       -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
 
-  f) Enable shadowing warnings for all Trilinos packages:
+  f) Enable and disable shadowing warnings for all Trilinos packages:
   
     To enable shadowing warnings for all Trilinos packages (that don't already
-    have them), add the following option to the cmake configure command:
+    have them turned on) then use:
   
       -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON
+
+    To disable shadowing warnings for all Trilinos packages then use:
   
-    NOTE: You can *not* turn off shadowing warnings for all packages with this
-    option.  If Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF, shadowing warnings
-    in packages that have them explicitly enabled will still have them turned
-    on.  To turn off shadowing warnings for all Trilinos packages you must
-    turn off all strong warning options.  However, this is not recommended.
+      -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF
+
+    NOTE: The default value is empty '' which lets each Trilinos package
+    decide for itself if shadowing warnings will be turned on or off for that
+    package.
   
   g) Removing warnings as errors for CLEANED packages:
   

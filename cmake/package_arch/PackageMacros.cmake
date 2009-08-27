@@ -33,7 +33,8 @@ INCLUDE(RemoveGlobalDuplicates)
 #
 #     If specified, then shadowing warnings will be turned on for supported
 #     platforms/compilers.  The default is for shadowing warnings to be turned
-#     off.
+#     off.  Note that this can be overridden globally by setting the cache
+#     variable ${PROJECT_NAME}_ENABLE_SHADOWING_WARNIGNS.
 #
 #   DISABLE_STRONG_WARNINGS
 #
@@ -104,6 +105,8 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
   STRING(REGEX REPLACE "/.+/(.+)" "\\1" PACKAGE_DIR_NAME "${STANDARD_PACKAGE_SOURCE_DIR}")
 
   # Set up strong warning flags
+
+  
 
   IF (NOT PARSE_DISABLE_STRONG_WARNINGS)
     PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS(${PARSE_ENABLE_SHADOWING_WARNINGS})

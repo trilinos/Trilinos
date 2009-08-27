@@ -40,19 +40,25 @@ MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS
     )
 
   MULTILINE_SET( ENABLE_SHADOW_WARNINGS_DOC
-    "Turn on shadowing warnings for all packages where strong warnings have"
-    " not been explicitly disabled." )
-  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS OFF
-    CACHE BOOL "${ENABLE_SHADOW_WARNINGS_DOC}" )
-  
-  IF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS OR ENABLE_SHADOWING_WARNINGS)
+    "Turn ON or OFF shadowing warnings for all packages where strong warnings have"
+    " not been explicitly disabled.  Setting the empty '' let's each package decide." )
+  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS ""
+    "${ENABLE_SHADOW_WARNINGS_DOC}" )
 
+  IF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
+    SET(LOCAL_ENABLE_SHADOWING_WARNINGS ON)
+  ELSEIF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS STREQUAL "OFF")
+    SET(LOCAL_ENABLE_SHADOWING_WARNINGS OFF)
+  ELSE()
+    SET(LOCAL_ENABLE_SHADOWING_WARNINGS ${ENABLE_SHADOWING_WARNINGS})
+  ENDIF()
+  
+  IF (LOCAL_ENABLE_SHADOWING_WARNINGS)
     MULTILINE_SET(CXX_STRONG_COMPILE_WARNING_FLAGS
       ${CXX_STRONG_COMPILE_WARNING_FLAGS}
       " -Wshadow" # Warn about general shadowing issues
       " -Woverloaded-virtual" # Warn about hiding virtual functions
       )
-
   ENDIF()
 
   IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
