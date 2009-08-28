@@ -507,7 +507,6 @@ int main(int argc, char *argv[]) {
 #ifdef DUMP_DATA
    // Output connectivity
     ofstream fe2nout("elem2node.dat");
-    ofstream fe2eout("elem2edge.dat");
     ofstream fe2fout("elem2face.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
@@ -517,10 +516,6 @@ int main(int argc, char *argv[]) {
               fe2nout << elemToNode(ielem,m) <<"  ";
            }
           fe2nout <<"\n";
-          for (int l=0; l<numEdgesPerElem; l++) {
-             fe2eout << elemToEdge(ielem,l) << "  ";
-          }
-          fe2eout << "\n";
           for (int n=0; n<numFacesPerElem; n++) {
              fe2fout << elemToFace(ielem,n) << "  ";
           }
@@ -529,16 +524,10 @@ int main(int argc, char *argv[]) {
       }
     }
     fe2nout.close();
-    fe2eout.close();
     fe2fout.close();
+#endif
 
-    ofstream fed2nout("edge2node.dat");
-    for (int i=0; i<numEdges; i++) {
-       fed2nout << edgeToNode(i,0) <<" ";
-       fed2nout << edgeToNode(i,1) <<"\n";
-    }
-    fed2nout.close();
-
+#ifdef DUMP_DATA_EXTRA
     ofstream ff2nout("face2node.dat");
     ofstream ff2eout("face2edge.dat");
     for (int i=0; i<numFaces; i++) {
@@ -555,22 +544,16 @@ int main(int argc, char *argv[]) {
     ff2eout.close();
 
     ofstream fBnodeout("nodeOnBndy.dat");
-    ofstream fBedgeout("edgeOnBndy.dat");
     ofstream fBfaceout("faceOnBndy.dat");
     for (int i=0; i<numNodes; i++) {
         fBnodeout << nodeOnBoundary(i) <<"\n";
-    }
-    for (int i=0; i<numEdges; i++) {
-        fBedgeout << edgeOnBoundary(i) <<"\n";
     }
     for (int i=0; i<numFaces; i++) {
         fBfaceout << faceOnBoundary(i) <<"\n";
     }
     fBnodeout.close();
-    fBedgeout.close();
     fBfaceout.close();
 #endif
-
 
    // Set material properties using undeformed grid assuming each element has only one value of mu
     FieldContainer<double> muVal(numElems);
@@ -634,7 +617,7 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 2);
 
     double vals[4];
-    vals[0]=0.5; vals[1]=0.5; vals[2]=-0.5; vals[3]=-0.5;
+    vals[0]=1.0; vals[1]=1.0; vals[2]=-1.0; vals[3]=-1.0;
     for (int j=0; j<numFaces; j++){
         int rowNum = j;
         int colNum[4];
@@ -1024,9 +1007,6 @@ int main(int argc, char *argv[]) {
    fSignsout.close();
 #endif
 
-   EpetraExt::RowMatrixToMatlabFile("m2_0.dat",MassD);
-   EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
-
   // Build the inverse diagonal for MassC
    Epetra_CrsMatrix MassCinv(Copy,MassC.RowMap(),MassC.RowMap(),1);
    Epetra_Vector DiagC(MassC.RowMap());
@@ -1088,7 +1068,6 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA
   // Dump matrices to disk
-   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
    EpetraExt::RowMatrixToMatlabFile("mag_m1inv_matrix.dat",MassCinv);
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);

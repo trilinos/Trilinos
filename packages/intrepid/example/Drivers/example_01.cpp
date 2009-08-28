@@ -498,7 +498,6 @@ int main(int argc, char *argv[]) {
    // Output connectivity
     ofstream fe2nout("elem2node.dat");
     ofstream fe2eout("elem2edge.dat");
-    ofstream fe2fout("elem2face.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
@@ -511,17 +510,14 @@ int main(int argc, char *argv[]) {
              fe2eout << elemToEdge(ielem,l) << "  ";
           }
           fe2eout << "\n";
-          for (int n=0; n<numFacesPerElem; n++) {
-             fe2fout << elemToFace(ielem,n) << "  ";
-          }
-          fe2fout << "\n";
         }
       }
     }
     fe2nout.close();
     fe2eout.close();
-    fe2fout.close();
+#endif
 
+#ifdef DUMP_DATA_EXTRA
     ofstream fed2nout("edge2node.dat");
     for (int i=0; i<numEdges; i++) {
        fed2nout << edgeToNode(i,0) <<" ";
@@ -529,36 +525,16 @@ int main(int argc, char *argv[]) {
     }
     fed2nout.close();
 
-    ofstream ff2nout("face2node.dat");
-    ofstream ff2eout("face2edge.dat");
-    for (int i=0; i<numFaces; i++) {
-       for (int j=0; j<numNodesPerFace; j++) {
-           ff2nout << faceToNode(i,j) << "  ";
-       }
-       for (int k=0; k<numEdgesPerFace; k++) {
-           ff2eout << faceToEdge(i,k) << "  ";
-       }
-       ff2nout << "\n";
-       ff2eout << "\n";
-    }
-    ff2nout.close();
-    ff2eout.close();
-
     ofstream fBnodeout("nodeOnBndy.dat");
     ofstream fBedgeout("edgeOnBndy.dat");
-    ofstream fBfaceout("faceOnBndy.dat");
     for (int i=0; i<numNodes; i++) {
         fBnodeout << nodeOnBoundary(i) <<"\n";
     }
     for (int i=0; i<numEdges; i++) {
         fBedgeout << edgeOnBoundary(i) <<"\n";
     }
-    for (int i=0; i<numFaces; i++) {
-        fBfaceout << faceOnBoundary(i) <<"\n";
-    }
     fBnodeout.close();
     fBedgeout.close();
-    fBfaceout.close();
 #endif
 
    // Set material properties using undeformed grid assuming each element has only one value of mu
@@ -623,7 +599,7 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
 
     double vals[2];
-    vals[0]=-0.5; vals[1]=0.5;
+    vals[0]=-1.0; vals[1]=1.0;
     for (int j=0; j<numEdges; j++){
         int rowNum = j;
         int colNum[2];
@@ -737,6 +713,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobInv(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceNweighted(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetCValsTransformed(numCells, numFieldsC, numFacePoints, spaceDim);
     FieldContainer<double> divuFace(numCells, numFacePoints);
@@ -959,6 +936,16 @@ int main(int argc, char *argv[]) {
                                               worksetJacobians,
                                               i, hex_8);
 
+         // multiply with weights
+            for(int nPt = 0; nPt < numFacePoints; nPt++){
+                for (int dim = 0; dim < spaceDim; dim++){
+                   worksetFaceNweighted(0,nPt,dim) = worksetFaceN(0,nPt,dim) * paramGaussWeights(nPt);
+                } //dim
+             } //nPt
+
+            fst::dotMultiplyDataField<double>(worksetFieldDotNormal, worksetFaceNweighted, 
+                                               worksetCValsTransformed);
+
          // Evaluate div u at face points
            for(int nPt = 0; nPt < numFacePoints; nPt++){
 
@@ -968,17 +955,6 @@ int main(int argc, char *argv[]) {
 
              divuFace(0,nPt)=evalDivu(x, y, z);
            }
-
-          // Compute the dot product and multiply by the Gauss weights
-           for (int nF = 0; nF < numFieldsC; nF++){
-              for(int nPt = 0; nPt < numFacePoints; nPt++){
-                 worksetFieldDotNormal(0,nF,nPt)=0.0;
-                  for (int dim = 0; dim < spaceDim; dim++){
-                      worksetFieldDotNormal(0,nF,nPt) += worksetCValsTransformed(0,nF,nPt,dim)
-                                              * worksetFaceN(0,nPt,dim) * paramGaussWeights(nPt);
-                  } //dim
-              } //nPt
-           } //nF
 
           // Integrate
           fst::integrate<double>(hCBoundary, divuFace, worksetFieldDotNormal,
@@ -1101,7 +1077,7 @@ int main(int argc, char *argv[]) {
     uExact0 = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-    
+
  /*
    // function 2
     uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
@@ -1129,18 +1105,18 @@ int main(int argc, char *argv[]) {
     double divu = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  + exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+
  /*
    // function 2
     double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-   
+
    // function 3
     double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
 
    // function 4
     double divu = 0.0;
-
   */
 
    return divu;
