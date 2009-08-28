@@ -22,14 +22,15 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
 /** \file   Intrepid_HDIV_TRI_In_FEM_Def.hpp
     \brief  Definition file for FEM basis functions (Raviart-Thomas)
-    of degree n for H(div) functions on TRI.  
+            of degree n for H(div) functions on TRI.  
     \author Created by R. Kirby.
 */
 

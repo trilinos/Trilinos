@@ -22,7 +22,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER

@@ -22,14 +22,15 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
 /** \file   Intrepid_HDIV_TET_I1_FEM.hpp
     \brief  Header file for the Intrepid::HDIV_TET_I1_FEM class.
-    \author Created by P. Bochev and D. Ridzal.
+    \author Created by P. Bochev and D. Ridzal and K. Petrson.
  */
 
 #ifndef INTREPID_HDIV_TET_I1_FEM_HPP
@@ -66,7 +67,7 @@ namespace Intrepid {
     \remarks
     \li       The face outer normal \c n in the DoF definition is normalized by the \s face area.
               As a result, the DoF functional is the value of the normal component of a vector field 
-              at the face center times the face area. The so defined basis is equivalent to
+              at the face center times the face area. The resulting basis is equivalent to
               a basis defined by using the face flux as a DoF functional. Note that faces 0, 2, and 3 
               of reference Tetrahedron<> cells have area 1/2 and face 1 has area Sqrt(3)/2.
   

@@ -28,22 +28,22 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_QUAD_I1_FEM.hpp
-    \brief  Header file for the Intrepid::HCURL_QUAD_I1_FEM class.
-    \author Created by P. Bochev and D. Ridzal and K. Peterson.
+/** \file   Intrepid_HCURL_TRI_I1_FEM.hpp
+    \brief  Header file for the Intrepid::HCURL_TRI_I1_FEM class.
+    \author Created by P. Bochev, D. Ridzal and K. Peterson.
  */
 
-#ifndef INTREPID_HCURL_QUAD_I1_FEM_HPP
-#define INTREPID_HCURL_QUAD_I1_FEM_HPP
+#ifndef INTREPID_HCURL_TRI_I1_FEM_HPP
+#define INTREPID_HCURL_TRI_I1_FEM_HPP
 #include "Intrepid_Basis.hpp"
 
 namespace Intrepid {
   
-/** \class  Intrepid::Basis_HCURL_QUAD_I1_FEM
-    \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Quadrilateral cell 
+/** \class  Intrepid::Basis_HCURL_TRI_I1_FEM
+    \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Triangle cell 
   
-            Implements Nedelec basis of the first kind of degree 1 on the reference Quadrilateral cell. 
-            The basis has cardinality 4 and spans an INCOMPLETE bi-linear polynomial space. Basis functions 
+            Implements Nedelec basis of the first kind of degree 1 on the reference Triangle cell. 
+            The basis has cardinality 3 and spans an INCOMPLETE linear polynomial space. Basis functions  
             are dual to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
   \verbatim
@@ -52,15 +52,13 @@ namespace Intrepid {
   |   DoF   |----------------------------------------------------------|       DoF definition       |
   | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                            |
   |=========|==============|==============|==============|=============|============================|
-  |    0    |       1      |       0      |       0      |      1      |   L_0(u) = (u.t)( 0,-1)    |
+  |    0    |       1      |       0      |       0      |      1      |  L_0(u) = (u.t)(0.5, 0)    |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    1    |       1      |       1      |       0      |      1      |   L_1(u) = (u.t)( 1, 0)    |
+  |    1    |       1      |       1      |       0      |      1      |  L_1(u) = (u.t)(0.5,0.5)   |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    2    |       1      |       2      |       0      |      1      |   L_2(u) = (u.t)( 0, 1)    |
-  |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    3    |       1      |       3      |       0      |      1      |   L_3(u) = (u.t)(-1, 0)    |
+  |    2    |       1      |       2      |       0      |      1      |  L_2(u) = (u.t)( 0,0.5)    |
   |=========|==============|==============|==============|=============|============================|
-  |   MAX   |  maxScDim=1  |  maxScOrd=3  |  maxDfOrd=0  |      -      |                            |
+  |   MAX   |  maxScDim=1  |  maxScOrd=2  |  maxDfOrd=0  |      -      |                            |
   |=========|==============|==============|==============|=============|============================|
   \endverbatim
   
@@ -68,18 +66,20 @@ namespace Intrepid {
     \li     The edge tangent \c t in the DoF definition is normalized by the \s edge length.
             As a result, the DoF functional is the value of the tangent component of a vector field 
             at the edge midpoint times the edge length. The resulting basis is equivalent to
-            a basis defined by using the edge circulation as a DoF functional.
+            a basis defined by using the edge circulation as a DoF functional. Note that edges
+            0 and 2 of reference Triangle<> cells have unit lengths and edge 1 has length Sqrt(2).
   
     \li     Orientation of edge tangents \c t in DoF definition follows orientation of their associated
-            reference edges implied by the cell topology of the reference cell. For example, edge 2 of 
-            all Quadrilateral cells has vertices {2,3} with reference coordinates (1,1) and (-1,1). 
-            Consequently, the edge tangent for this edge is given by (-2,0).
+            reference edges implied by the cell topology of the reference cell. For example, edge 1 of 
+            all Triangle cells has vertices {1,2} with reference coordinates (1,0) and (0,1). 
+            Consequently, the edge tangent for this edge is given by (-1,1) and has length Sqrt(2).
+  
   
     \li     DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim
   |=======================|===================================|
-  |  CellTopology         |  Quadrilateral                       |
+  |  CellTopology         |  Triangle                         |
   |-----------------------|-----------------------------------|
   |  EFunctionSpace       |  FUNCTION_SPACE_HCURL             |
   |-----------------------|-----------------------------------|
@@ -95,7 +95,7 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HCURL_QUAD_I1_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HCURL_TRI_I1_FEM : public Basis<Scalar, ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -106,13 +106,13 @@ public:
 
   /** \brief  Constructor.
     */
-  Basis_HCURL_QUAD_I1_FEM();
+  Basis_HCURL_TRI_I1_FEM();
   
     
-  /** \brief  Evaluation of a FEM basis on a <strong>reference Quadrilateral</strong> cell. 
+  /** \brief  Evaluation of a FEM basis on a <strong>reference Triangle</strong> cell. 
     
               Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of
+              points in the <strong>reference Triangle</strong> cell. For rank and dimensions of
               I/O array arguments see Section \ref basis_md_array_sec.
   
       \param  outputValues      [out] - rank-3 array with the computed basis values
@@ -133,6 +133,6 @@ public:
 };
 }// namespace Intrepid
 
-#include "Intrepid_HCURL_QUAD_I1_FEMDef.hpp"
+#include "Intrepid_HCURL_TRI_I1_FEMDef.hpp"
 
 #endif

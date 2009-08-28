@@ -23,13 +23,14 @@
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
 //                    Denis Ridzal (dridzal@sandia.gov).
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
 /** \file   Intrepid_HCURL_HEX_I1_FEM.hpp
     \brief  Header file for the Intrepid::HCURL_HEX_I1_FEM class.
-    \author Created by P. Bochev and D. Ridzal.
+    \author Created by P. Bochev, D. Ridzal and K. Peterson.
  */
 
 #ifndef INTREPID_HCURL_HEX_I1_FEM_HPP
@@ -82,7 +83,7 @@ namespace Intrepid {
     \remarks
     \li       The edge tangent \c t in the DoF definition is normalized by the \s edge length.
               As a result, the DoF functional is the value of the tangent component of a vector field 
-              at the edge midpoint times the edge length. The so defined basis is equivalent to
+              at the edge midpoint times the edge length. The resulting basis is equivalent to
               a basis defined by using the edge circulation as a DoF functional.
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:

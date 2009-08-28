@@ -29,7 +29,7 @@
 // @HEADER
 
 /** \file   test_01.cpp
-    \brief  Unit tests for the Intrepid::C_HEX_I1_FEM class.
+    \brief  Unit tests for the Intrepid::HCURL_TET_I1_FEM class.
     \author Created by P. Bochev, D. Ridzal, and K. Peterson.
 */
 #include "Intrepid_FieldContainer.hpp"

@@ -23,6 +23,7 @@
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
 //                    Denis Ridzal (dridzal@sandia.gov).
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER

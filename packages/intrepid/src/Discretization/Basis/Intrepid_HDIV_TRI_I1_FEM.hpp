@@ -22,14 +22,15 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
 /** \file   Intrepid_HDIV_TRI_I1_FEM.hpp
     \brief  Header file for the Intrepid::HDIV_TRI_I1_FEM class.
-    \author Created by P. Bochev and D. Ridzal.
+    \author Created by P. Bochev and D. Ridzal and K. Peterson.
  */
 
 #ifndef INTREPID_HDIV_TRI_I1_FEM_HPP
@@ -64,7 +65,7 @@ namespace Intrepid {
     \remarks
     \li       The outer normal to a side in the DoF definition is normalized by the \s side length.
               As a result, the DoF functional is the value of the normal component of a vector field 
-              at the side center times the side length. The so defined basis is equivalent to
+              at the side center times the side length. The resulting basis is equivalent to
               a basis defined by using the side flux as a DoF functional. Note that sides 0 and 2 of 
               reference Triangle<> cells have length 1 and side 1 has length Sqrt(2).
   

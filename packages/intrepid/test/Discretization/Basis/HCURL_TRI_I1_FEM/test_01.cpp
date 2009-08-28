@@ -21,19 +21,19 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
+// Questions? Contact Pavel Bochev  (pbboche@sandia.gov), 
+//                    Denis Ridzal  (dridzal@sandia.gov), 
 //                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
 /** \file   test_01.cpp
-    \brief  Unit tests for the Intrepid::HCURL_QUAD_I1_FEM class.
-    \author Created by P. Bochev, D. Ridzal and K. Peterson.
+    \brief  Unit tests for the Intrepid::HCURL_TRI_I1_FEM class.
+    \author Created by P. Bochev, D. Ridzal, and K. Peterson.
 */
 #include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HCURL_QUAD_I1_FEM.hpp"
+#include "Intrepid_HCURL_TRI_I1_FEM.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -56,7 +56,7 @@ using namespace Intrepid;
 }
 
 int main(int argc, char *argv[]) {
-
+  
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                 Unit Test (Basis_HCURL_QUAD_I1_FEM)                          |\n" \
+    << "|                 Unit Test (Basis_HCURL_TRI_I1_FEM)                          |\n" \
     << "|                                                                             |\n" \
     << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" \
     << "|     2) Basis values for VALUE and CURL operators                            |\n" \
@@ -93,89 +93,89 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n";
   
   // Define basis and error flag
-  Basis_HCURL_QUAD_I1_FEM<double, FieldContainer<double> > quadBasis;
+  Basis_HCURL_TRI_I1_FEM<double, FieldContainer<double> > triBasis;
   int errorFlag = 0;
 
-  // Initialize throw counter for exception testing
+  // Define throw number for exception testing
   int nException     = 0;
   int throwCounter   = 0;
 
-  // Array with the 4 vertices of the reference Quadrilateral, its center and 4 more points
-  FieldContainer<double> quadNodes(9, 2);
-  quadNodes(0,0) = -1.0;  quadNodes(0,1) = -1.0;  
-  quadNodes(1,0) =  1.0;  quadNodes(1,1) = -1.0;  
-  quadNodes(2,0) =  1.0;  quadNodes(2,1) =  1.0;  
-  quadNodes(3,0) = -1.0;  quadNodes(3,1) =  1.0;  
-  
-  quadNodes(4,0) =  0.0;  quadNodes(4,1) =  0.0;
-  quadNodes(5,0) =  0.0;  quadNodes(5,1) = -0.5;  
-  quadNodes(6,0) =  0.0;  quadNodes(6,1) =  0.5;  
-  quadNodes(7,0) = -0.5;  quadNodes(7,1) =  0.0;    
-  quadNodes(8,0) =  0.5;  quadNodes(8,1) =  0.0;    
-    
+  // Define array containing the 3 vertices of the reference TRI and its 3 edge midpoints.
+  FieldContainer<double> triNodes(7, 2);
+  triNodes(0,0) =  0.0;  triNodes(0,1) =  0.0;  
+  triNodes(1,0) =  1.0;  triNodes(1,1) =  0.0;  
+  triNodes(2,0) =  0.0;  triNodes(2,1) =  1.0;  
+  // edge midpoints
+  triNodes(3,0) =  0.5;  triNodes(3,1) =  0.0;  
+  triNodes(4,0) =  0.5;  triNodes(4,1) =  0.5;  
+  triNodes(5,0) =  0.0;  triNodes(5,1) =  0.5;  
+  // Inside Triangle
+  triNodes(6,0) =  0.25; triNodes(6,1) =  0.25;  
+
   // Generic array for the output values; needs to be properly resized depending on the operator type
   FieldContainer<double> vals;
+
 
   try{
     // exception #1: GRAD cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-    vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0), 4 );
-    INTREPID_TEST_COMMAND( quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD), throwCounter, nException );
-
+    vals.resize(triBasis.getCardinality(), triNodes.dimension(0), 4 );
+    INTREPID_TEST_COMMAND( triBasis.getValues(vals, triNodes, OPERATOR_GRAD), throwCounter, nException );
+    
     // exception #2: DIV cannot be applied to HCURL functions
     // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
-    vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0) );
-    INTREPID_TEST_COMMAND( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV), throwCounter, nException );
-        
+    vals.resize(triBasis.getCardinality(), triNodes.dimension(0) );
+    INTREPID_TEST_COMMAND( triBasis.getValues(vals, triNodes, OPERATOR_DIV), throwCounter, nException );
+    
     // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
     // getDofTag() to access invalid array elements thereby causing bounds check exception
     // exception #3
-    INTREPID_TEST_COMMAND( quadBasis.getDofOrdinal(3,0,0), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getDofOrdinal(3,0,0), throwCounter, nException );
     // exception #4
-    INTREPID_TEST_COMMAND( quadBasis.getDofOrdinal(1,1,1), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getDofOrdinal(1,1,1), throwCounter, nException );
     // exception #5
-    INTREPID_TEST_COMMAND( quadBasis.getDofOrdinal(0,4,1), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getDofOrdinal(0,4,1), throwCounter, nException );
     // exception #6
-    INTREPID_TEST_COMMAND( quadBasis.getDofTag(12), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getDofTag(12), throwCounter, nException );
     // exception #7
-    INTREPID_TEST_COMMAND( quadBasis.getDofTag(-1), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getDofTag(-1), throwCounter, nException );
     
 #ifdef HAVE_INTREPID_DEBUG
     // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
     // exception #8: input points array must be of rank-2
     FieldContainer<double> badPoints1(4, 5, 3);
-    INTREPID_TEST_COMMAND( quadBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, quadBasis.getBaseCellTopology().getDimension() + 1);
-    INTREPID_TEST_COMMAND( quadBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
+    FieldContainer<double> badPoints2(4, triBasis.getBaseCellTopology().getDimension() + 1);
+    INTREPID_TEST_COMMAND( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
     
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE in 2D
     FieldContainer<double> badVals1(4, 3);
-    INTREPID_TEST_COMMAND( quadBasis.getValues(badVals1, quadNodes, OPERATOR_VALUE), throwCounter, nException );
- 
+    INTREPID_TEST_COMMAND( triBasis.getValues(badVals1, triNodes, OPERATOR_VALUE), throwCounter, nException );
+    
     FieldContainer<double> badCurls1(4,3,2);
     // exception #11 output values must be of rank-2 for OPERATOR_CURL
-    INTREPID_TEST_COMMAND( quadBasis.getValues(badCurls1, quadNodes, OPERATOR_CURL), throwCounter, nException );
+    INTREPID_TEST_COMMAND( triBasis.getValues(badCurls1, triNodes, OPERATOR_CURL), throwCounter, nException );
     
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-    FieldContainer<double> badVals2(quadBasis.getCardinality() + 1, quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension());
-    INTREPID_TEST_COMMAND( quadBasis.getValues(badVals2, quadNodes, OPERATOR_VALUE), throwCounter, nException ) ;
+    FieldContainer<double> badVals2(triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
+    INTREPID_TEST_COMMAND( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE), throwCounter, nException ) ;
     
     // exception #13 incorrect 1st  dimension of output array (must equal number of points)
-    FieldContainer<double> badVals3(quadBasis.getCardinality(), quadNodes.dimension(0) + 1, quadBasis.getBaseCellTopology().getDimension() );
-    INTREPID_TEST_COMMAND( quadBasis.getValues(badVals3, quadNodes, OPERATOR_VALUE), throwCounter, nException ) ;
-
+    FieldContainer<double> badVals3(triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension() );
+    INTREPID_TEST_COMMAND( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE), throwCounter, nException ) ;
+    
     // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
-    FieldContainer<double> badVals4(quadBasis.getCardinality(), quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension() - 1);
-    INTREPID_TEST_COMMAND( quadBasis.getValues(badVals4, quadNodes, OPERATOR_VALUE), throwCounter, nException ) ;
-        
+    FieldContainer<double> badVals4(triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() - 1);
+    INTREPID_TEST_COMMAND( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE), throwCounter, nException ) ;
+    
     // exception #15: D2 cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-    vals.resize(quadBasis.getCardinality(), 
-                quadNodes.dimension(0),  
-                Intrepid::getDkCardinality(OPERATOR_D2, quadBasis.getBaseCellTopology().getDimension()));
-    INTREPID_TEST_COMMAND( quadBasis.getValues(vals, quadNodes, OPERATOR_D2), throwCounter, nException );
+    vals.resize(triBasis.getCardinality(), 
+                triNodes.dimension(0),  
+                Intrepid::getDkCardinality(OPERATOR_D2, triBasis.getBaseCellTopology().getDimension()));
+    INTREPID_TEST_COMMAND( triBasis.getValues(vals, triNodes, OPERATOR_D2), throwCounter, nException );
 #endif
     
   }
@@ -186,13 +186,12 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
   
-  // Check if number of thrown exceptions matches the one we expect 
+  // Check if number of thrown exceptions matches the one we expect
   // Note Teuchos throw number will not pick up exceptions 3-7 and therefore will not match.
   if (throwCounter != nException) {
     errorFlag++;
     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
   }
-//#endif
   
   *outStream \
     << "\n"
@@ -201,13 +200,13 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n";
   
   try{
-    std::vector<std::vector<int> > allTags = quadBasis.getAllDofTags();
+    std::vector<std::vector<int> > allTags = triBasis.getAllDofTags();
     
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
     for (unsigned i = 0; i < allTags.size(); i++) {
-      int bfOrd  = quadBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
+      int bfOrd  = triBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
       
-      std::vector<int> myTag = quadBasis.getDofTag(bfOrd);
+      std::vector<int> myTag = triBasis.getDofTag(bfOrd);
        if( !( (myTag[0] == allTags[i][0]) &&
               (myTag[1] == allTags[i][1]) &&
               (myTag[2] == allTags[i][2]) &&
@@ -228,9 +227,9 @@ int main(int argc, char *argv[]) {
     }
     
     // Now do the same but loop over basis functions
-    for( int bfOrd = 0; bfOrd < quadBasis.getCardinality(); bfOrd++) {
-      std::vector<int> myTag  = quadBasis.getDofTag(bfOrd);
-      int myBfOrd = quadBasis.getDofOrdinal(myTag[0], myTag[1], myTag[2]);
+    for( int bfOrd = 0; bfOrd < triBasis.getCardinality(); bfOrd++) {
+      std::vector<int> myTag  = triBasis.getDofTag(bfOrd);
+      int myBfOrd = triBasis.getDofOrdinal(myTag[0], myTag[1], myTag[2]);
       if( bfOrd != myBfOrd) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -259,55 +258,49 @@ int main(int argc, char *argv[]) {
   
   outStream -> precision(20);
   
-  // VALUE: Each row pair gives the 4x2 correct basis set values at an evaluation point: (P,F,D) layout
+  // VALUE: correct values in (P,F,D) layout
   double basisValues[] = {
-    0.500000, 0, 0, 0, 0, 0, 0, -0.500000, 0.500000, 0, 0, 0.500000, 0, \
-    0, 0, 0, 0, 0, 0, 0.500000, -0.500000, 0, 0, 0, 0, 0, 0, 0, \
-    -0.500000, 0, 0, -0.500000, 0.250000, 0, 0, 0.250000, -0.250000, 0, \
-    0, -0.250000, 0.375000, 0, 0, 0.250000, -0.125000, 0, 0, -0.250000, \
-    0.125000, 0, 0, 0.250000, -0.375000, 0, 0, -0.250000, 0.250000, 0, 0, \
-    0.125000, -0.250000, 0, 0, -0.375000, 0.250000, 0, 0, 0.375000, \
-    -0.250000, 0, 0, -0.125000
-  };
+    1.000, 0, 0, 0, 0, -1.000, 1.000, 1.000, 0, 1.000, 0, 0, 0, 0, \
+    -1.000, 0, -1.000, -1.000, 1.000, 0.5000, 0, 0.5000, 0, -0.5000, \
+    0.5000, 0.5000, -0.5000, 0.5000, -0.5000, -0.5000, 0.5000, 0, \
+    -0.5000, 0, -0.5000, -1.000, 0.7500, 0.2500, -0.2500, 0.2500, \
+    -0.2500, -0.7500};
   
-  // CURL: correct values in (F,P) format
-  double basisCurls[] = {
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25,
-    0.25, 0.25, 0.25, 0.25
+  // CURL: correct values in (P,F) layout
+  double basisCurls[] = {   
+    2.0,  2.0,  2.0,  
+    2.0,  2.0,  2.0,  
+    2.0,  2.0,  2.0,  
+    2.0,  2.0,  2.0,  
+    2.0,  2.0,  2.0,  
+    2.0,  2.0,  2.0,  
+    2.0,  2.0,  2.0  
   };
-
   
   try{
         
     // Dimensions for the output arrays:
-    int numFields = quadBasis.getCardinality();
-    int numPoints = quadNodes.dimension(0);
-    int spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+    int numFields = triBasis.getCardinality();
+    int numPoints = triNodes.dimension(0);
+    int spaceDim  = triBasis.getBaseCellTopology().getDimension();
     
     // Generic array for values and curls that will be properly sized before each call
     FieldContainer<double> vals;
     
     // Check VALUE of basis functions: resize vals to rank-3 container:
     vals.resize(numFields, numPoints, spaceDim);
-    quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
+    triBasis.getValues(vals, triNodes, OPERATOR_VALUE);
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
         for (int k = 0; k < spaceDim; k++) {
-           
+          
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-          int l = k + i * spaceDim + j * spaceDim * numFields;
+           int l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        
-             // Output the multi-index of the value where the error is: 
+
+             // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
              *outStream << "}  computed value: " << vals(i,j,k)
@@ -316,10 +309,10 @@ int main(int argc, char *argv[]) {
          }
       }
     }
-
+    
     // Check CURL of basis function: resize vals to rank-2 container
     vals.resize(numFields, numPoints);
-    quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
+    triBasis.getValues(vals, triNodes, OPERATOR_CURL);
     for (int i = 0; i < numFields; i++) {
       for (int j = 0; j < numPoints; j++) {
         int l =  i + j * numFields;
@@ -335,7 +328,8 @@ int main(int argc, char *argv[]) {
         }
       }
     }  
-   }    
+  }    
+  
   
   // Catch unexpected errors
   catch (std::logic_error err) {

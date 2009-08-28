@@ -22,7 +22,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
@@ -76,7 +77,7 @@ namespace Intrepid {
     \remarks
     \li         The edge tangent \c t in the DoF definition is normalized by the \s edge length.
                 As a result, the DoF functional is the value of the tangent component of a vector field 
-                at the edge midpoint times the edge length. The so defined basis is equivalent to
+                at the edge midpoint times the edge length. The resulting basis is equivalent to
                 a basis defined by using the edge circulation as a DoF functional. Note that edges
                 0, 2, 3 and 5 of reference Wedge<> cells have unit lengths; edges 1 and 4 have length 
                 Sqrt(2), and edges 6, 7, and 8 have length 2.

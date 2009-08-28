@@ -28,26 +28,26 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_WEDGE_I1_FEMDef.hpp
-    \brief  Definition file for FEM basis functions of degree 1 for H(curl) functions on WEDGE cells.
-    \author Created by P. Bochev, D. Ridzal and K. Peterson.
+/** \file   Intrepid_HCURL_TRI_I1_FEMDef.hpp
+    \brief  Definition file for default FEM basis functions of degree 1 for H(curl) functions on Triangle cells.
+    \author Created by P. Bochev and D. Ridzal and K. Peterson.
 */
 
 namespace Intrepid {
 
 template<class Scalar, class ArrayScalar>
-Basis_HCURL_WEDGE_I1_FEM<Scalar,ArrayScalar>::Basis_HCURL_WEDGE_I1_FEM()
+Basis_HCURL_TRI_I1_FEM<Scalar,ArrayScalar>::Basis_HCURL_TRI_I1_FEM()
   {
-    this -> basisCardinality_  = 9;
+    this -> basisCardinality_  = 3;
     this -> basisDegree_       = 1;
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
+    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
   }
   
 template<class Scalar, class ArrayScalar>
-void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::initializeTags() {
+void Basis_HCURL_TRI_I1_FEM<Scalar, ArrayScalar>::initializeTags() {
   
   // Basis-dependent intializations
   int tagSize  = 4;        // size of DoF tag
@@ -59,13 +59,7 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::initializeTags() {
   int tags[]  = {
                   1, 0, 0, 1,
                   1, 1, 0, 1,
-                  1, 2, 0, 1,
-                  1, 3, 0, 1,
-                  1, 4, 0, 1,
-                  1, 5, 0, 1,
-                  1, 6, 0, 1,
-                  1, 7, 0, 1,
-                  1, 8, 0, 1 };
+                  1, 2, 0, 1 };
   
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
   Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
@@ -81,7 +75,7 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::initializeTags() {
 
 
 template<class Scalar, class ArrayScalar>
-void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
+void Basis_HCURL_TRI_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                             const ArrayScalar &  inputPoints,
                                                             const EOperator      operatorType) const {
 
@@ -97,55 +91,25 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
  // Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
 
-  // Temporaries: (x,y,z) coordinates of the evaluation point
+  // Temporaries: (x,y) coordinates of the evaluation point
   Scalar x = 0.0;                                    
   Scalar y = 0.0;                                    
-  Scalar z = 0.0;                                    
   
   switch (operatorType) {
     case OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0, 0);
         y = inputPoints(i0, 1);
-        z = inputPoints(i0, 2);
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = (1.0 - z)*(1.0 - y)/2.0;
-        outputValues(0, i0, 1) = x*(1.0 - z)/2.0;
-        outputValues(0, i0, 2) = 0.0;
+        outputValues(0, i0, 0) =  1.0 - y;
+        outputValues(0, i0, 1) =  x;
 
-        outputValues(1, i0, 0) = y*(z - 1.0)/2.0;
-        outputValues(1, i0, 1) = x*(1.0 - z)/2.0;
-        outputValues(1, i0, 2) = 0.0;
+        outputValues(1, i0, 0) = -y;
+        outputValues(1, i0, 1) =  x;
 
-        outputValues(2, i0, 0) = y*(z - 1.0)/2.0;
-        outputValues(2, i0, 1) = (1.0 - x)*(z - 1.0)/2.0;
-        outputValues(2, i0, 2) = 0.0;
-
-        outputValues(3, i0, 0) = (1.0 - y)*(1.0 + z)/2.0;
-        outputValues(3, i0, 1) = x*(1.0 + z)/2.0;
-        outputValues(3, i0, 2) = 0.0;
-
-        outputValues(4, i0, 0) =-y*(1.0 + z)/2.0;
-        outputValues(4, i0, 1) = x*(1.0 + z)/2.0;
-        outputValues(4, i0, 2) = 0.0;
-
-        outputValues(5, i0, 0) = -y*(1.0 + z)/2.0;
-        outputValues(5, i0, 1) = (x - 1.0)*(1.0 + z)/2.0;
-        outputValues(5, i0, 2) = 0.0;
-
-        outputValues(6, i0, 0) = 0.0;
-        outputValues(6, i0, 1) = 0.0;
-        outputValues(6, i0, 2) = (1.0 - x - y)/2.0;
-
-        outputValues(7, i0, 0) = 0.0;
-        outputValues(7, i0, 1) = 0.0;
-        outputValues(7, i0, 2) = x/2.0;
-
-        outputValues(8, i0, 0) = 0.0;
-        outputValues(8, i0, 1) = 0.0;
-        outputValues(8, i0, 2) = y/2.0;
-
+        outputValues(2, i0, 0) = -y;
+        outputValues(2, i0, 1) = -1.0 + x;
       }
       break;
       
@@ -153,55 +117,22 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0, 0);
         y = inputPoints(i0, 1);
-        z = inputPoints(i0, 2);
         
-        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = x/2.0;
-        outputValues(0, i0, 1) = (y - 1.0)/2.0;
-        outputValues(0, i0, 2) = 1.0 - z;
-
-        outputValues(1, i0, 0) = x/2.0;
-        outputValues(1, i0, 1) = y/2.0;
-        outputValues(1, i0, 2) = 1.0 - z;
-
-        outputValues(2, i0, 0) = (x - 1.0)/2.0;
-        outputValues(2, i0, 1) = y/2.0; 
-        outputValues(2, i0, 2) = 1.0 - z;
-
-        outputValues(3, i0, 0) = -x/2.0;
-        outputValues(3, i0, 1) = (1.0 - y)/2.0;
-        outputValues(3, i0, 2) = 1.0 + z;
-
-        outputValues(4, i0, 0) = -x/2.0;
-        outputValues(4, i0, 1) = -y/2.0;
-        outputValues(4, i0, 2) = 1.0 + z;
-
-        outputValues(5, i0, 0) = (1.0 - x)/2.0;
-        outputValues(5, i0, 1) = -y/2.0;
-        outputValues(5, i0, 2) = 1.0 + z;
-
-        outputValues(6, i0, 0) =-0.5;
-        outputValues(6, i0, 1) = 0.5;
-        outputValues(6, i0, 2) = 0.0;
-
-        outputValues(7, i0, 0) = 0.0;
-        outputValues(7, i0, 1) =-0.5;
-        outputValues(7, i0, 2) = 0.0;
-
-        outputValues(8, i0, 0) = 0.5;
-        outputValues(8, i0, 1) = 0.0;
-        outputValues(8, i0, 2) = 0.0;
+        // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+        outputValues(0, i0) = 2.0;
+        outputValues(1, i0) = 2.0;
+        outputValues(2, i0) = 2.0;
       }
       break;
       
     case OPERATOR_DIV:
        TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_WEDGE_I1_FEM): DIV is invalid operator for HCURL Basis Functions");
+                          ">>> ERROR (Basis_HCURL_TRI_I1_FEM): DIV is invalid operator for HCURL Basis Functions");
       break;
       
     case OPERATOR_GRAD:
        TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_WEDGE_I1_FEM): GRAD is invalid operator for HCURL Basis Functions");
+                          ">>> ERROR (Basis_HCURL_TRI_I1_FEM): GRAD is invalid operator for HCURL Basis Functions");
       break;
 
     case OPERATOR_D1:
@@ -225,7 +156,7 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
                             (operatorType == OPERATOR_D9)    ||
                             (operatorType == OPERATOR_D10) ),
                           std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_WEDGE_I1_FEM): Invalid operator type");
+                          ">>> ERROR (Basis_HCURL_TRI_I1_FEM): Invalid operator type");
       break;
 
     default:
@@ -244,19 +175,19 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
                             (operatorType != OPERATOR_D9)    &&
                             (operatorType != OPERATOR_D10) ),
                           std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_WEDGE_I1_FEM): Invalid operator type");
+                          ">>> ERROR (Basis_HCURL_TRI_I1_FEM): Invalid operator type");
   }
 }
 
 
   
 template<class Scalar, class ArrayScalar>
-void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
+void Basis_HCURL_TRI_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
                                                             const ArrayScalar &    inputPoints,
                                                             const ArrayScalar &    cellVertices,
                                                             const EOperator        operatorType) const {
   TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HCURL_WEDGE_I1_FEM): FEM Basis calling an FVD member function");
+                      ">>> ERROR (Basis_HCURL_TRI_I1_FEM): FEM Basis calling an FVD member function");
                                                              }
 
 }// namespace Intrepid

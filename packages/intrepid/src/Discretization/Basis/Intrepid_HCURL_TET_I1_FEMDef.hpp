@@ -23,13 +23,14 @@
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
 //                    Denis Ridzal (dridzal@sandia.gov).
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
 /** \file   Intrepid_HCURL_TET_I1_FEMDef.hpp
     \brief  Definition file for FEM basis functions of degree 1 for H(curl) functions on TET cells.
-    \author Created by P. Bochev and D. Ridzal and K. Peterson.
+    \author Created by P. Bochev, D. Ridzal and K. Peterson.
 */
 
 namespace Intrepid {

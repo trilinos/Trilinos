@@ -22,7 +22,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
@@ -91,7 +92,7 @@ void Basis_HCURL_QUAD_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
  // Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
 
-  // Temporaries: (x,y,z) coordinates of the evaluation point
+  // Temporaries: (x,y) coordinates of the evaluation point
   Scalar x = 0.0;                                    
   Scalar y = 0.0;                                    
   
