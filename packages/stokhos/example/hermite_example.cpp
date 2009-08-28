@@ -55,15 +55,15 @@ int main(int argc, char **argv)
 {
   try {
     const int pmax = 10;
-    std::vector<double> sd(pmax+1);
-    std::vector<double> me(pmax+1);
+    Teuchos::Array<double> sd(pmax+1);
+    Teuchos::Array<double> me(pmax+1);
     for (int p=0; p<=pmax; p++) {
-      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
       bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
       Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
         Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
       Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
-      Stokhos::OrthogPolyApprox<int,double> u(p+1),v(p+1),w(p+1);
+      Stokhos::OrthogPolyApprox<int,double> u(basis),v(basis),w(basis);
       u[0] = 1.0;
       if (p >= 1)
         u[1] = 0.4;
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
       double mean = w[0];
       double std_dev = 0.0;
-      const std::vector<double> nrm2 = basis->norm_squared();
+      const Teuchos::Array<double> nrm2 = basis->norm_squared();
       for (int i=1; i<basis->size(); i++)
         std_dev += w[i]*w[i]*nrm2[i];
       std_dev = std::sqrt(std_dev);

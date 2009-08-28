@@ -68,7 +68,7 @@
 #define PI 3.1415926535897932384626433832795
 #endif
 
-double evalRF(double x, double y, std::vector<double> xi,
+double evalRF(double x, double y, Teuchos::Array<double> xi,
                        Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis);
 
 int main(int argc, char **argv)
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     double xyLeft = -.5;
     double xyRight = .5;
     double mesh_size = (xyRight - xyLeft)/((double)(n-1));
-    std::vector<double> x(n);
+    Teuchos::Array<double> x(n);
     for(int idx = 0; idx < n; idx++){
       x[idx] = xyLeft + (idx)*mesh_size;
     }
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     
     Teuchos::Time PolyBasisTimer("Poly Basis Timer",false);
     PolyBasisTimer.start();
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
     for (int i=0; i<d; i++) {
       bases[i] = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"Beta",&weight,leftEndPt,rightEndPt,true));
     }
@@ -133,19 +133,19 @@ int main(int argc, char **argv)
     PolyBasisTimer.stop();
     
     //Generate the random field.
-    lambda = std::vector<double>(d);
-    alpha = std::vector<double>(d);
-    omega = std::vector<double>(d);
-    xind = std::vector<int>(d);
-    yind = std::vector<int>(d);
+    lambda = Teuchos::Array<double>(d);
+    alpha = Teuchos::Array<double>(d);
+    omega = Teuchos::Array<double>(d);
+    xind = Teuchos::Array<int>(d);
+    yind = Teuchos::Array<int>(d);
     generateExponentialRF(d, 1,lambda, alpha, omega, xind, yind);
     
     //Construct the Sparse grid quadrature rule.
     Teuchos::Time SparseGridSetup("SP grid timer",false);
     SparseGridSetup.start();
     Stokhos::SparseGridQuadrature<int,double> my_quadrature(basis, level);
-    std::vector< std::vector<double> > quad_points = my_quadrature.getQuadPoints();
-    std::vector<double> quad_weights = my_quadrature.getQuadWeights();
+    Teuchos::Array< Teuchos::Array<double> > quad_points = my_quadrature.getQuadPoints();
+    Teuchos::Array<double> quad_weights = my_quadrature.getQuadWeights();
     SparseGridSetup.stop();
 
 
@@ -160,12 +160,12 @@ int main(int argc, char **argv)
 
     double *Values = new double[4];
     int *Indices = new int[4];
-    double two, two2;
+    double two;
     int NumEntries;
     int * bcIndices = new int[NumMyElements];
     
     for( int i=0 ; i<NumMyElements; ++i ) {
-    if((MyGlobalElements[i] < x.size() || MyGlobalElements[i]%x.size() == 0 || (MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= n*n - x.size())){
+      if((MyGlobalElements[i] < static_cast<int>(x.size()) || MyGlobalElements[i]%x.size() == 0 || (MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= n*n - static_cast<int>(x.size()))){
       NumNz[i] = 1;
       bcIndices[i] = 1;
     }else{
@@ -173,14 +173,13 @@ int main(int argc, char **argv)
       bcIndices[i] = 0;
     }
     }
-    int fl = 1;
     Epetra_Vector b(*BaseMap,true);
     Epetra_Vector Eofu(*BaseMap,true);
     Epetra_Vector Eofu2(*BaseMap,true);
     Epetra_Vector varOfu(*BaseMap,true);
     Epetra_Vector EofUSquared(*BaseMap);
    
-    std::vector<Teuchos::RCP<Epetra_CrsMatrix> > A_k(d+1);
+    Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > A_k(d+1);
     Teuchos::Time AssemblyTimer("Matrix_assembly",false);
     AssemblyTimer.start();
     for(int k = 0; k<=d; k++){
@@ -190,7 +189,7 @@ int main(int argc, char **argv)
         // MyGlobalElements[i]+1%x.size() == 0 ==> right edge.
         // MyGlobalElements[i] >= n - x.size() ==> top edge.
 
-        if((MyGlobalElements[i] < x.size() || MyGlobalElements[i]%x.size() == 0 || (MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= n*n - x.size())){
+        if((MyGlobalElements[i] < static_cast<int>(x.size()) || MyGlobalElements[i]%x.size() == 0 || (MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= n*n - static_cast<int>(x.size()))){
           if(k==0){
             NumNz[i] = 1;
           } else NumNz[i] = 0;
@@ -259,7 +258,7 @@ int main(int argc, char **argv)
     //Loop over sparse grid points and accumulate results for the mean
     //and variance of the solution.
     //////////////////////////////////////////////////////////////////////
-    std::vector<double> xi;
+    Teuchos::Array<double> xi;
     Epetra_Vector x2(*BaseMap);
     Epetra_Vector x22(*BaseMap);
     Teuchos::Time SolutionTimer("solution Timer", false);
@@ -277,7 +276,7 @@ int main(int argc, char **argv)
     
     int iters = 0;
     SolutionTimer.start();
-    for( int sp_idx = 0; sp_idx < quad_points.size(); sp_idx++){
+    for( std::size_t sp_idx = 0; sp_idx < quad_points.size(); sp_idx++){
       AssemblyTimer.start();
       if(sp_idx%100 ==0) std::cout << sp_idx <<'/' << quad_points.size() << "\n";
       xi = quad_points[sp_idx];

@@ -46,8 +46,8 @@
 Stokhos::SGModelEvaluator::SGModelEvaluator(
      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
-     const std::vector<int>& sg_p_index_,
-     const std::vector<int>& sg_g_index_,
+     const Teuchos::Array<int>& sg_p_index_,
+     const Teuchos::Array<int>& sg_g_index_,
      const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
      const Teuchos::RCP<Teuchos::ParameterList>& params_,
      const Teuchos::RCP<const Epetra_Comm>& comm) 
@@ -257,7 +257,7 @@ Stokhos::SGModelEvaluator::get_f_map() const
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGModelEvaluator::get_p_map(int l) const
 {
-  std::vector<int>::const_iterator it
+  Teuchos::Array<int>::const_iterator it
     = std::find(sg_p_index.begin(), sg_p_index.end(), l);
   if (it != sg_p_index.end()) {
     int offset = it - sg_p_index.begin();
@@ -270,7 +270,7 @@ Stokhos::SGModelEvaluator::get_p_map(int l) const
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGModelEvaluator::get_g_map(int l) const
 {
-  std::vector<int>::const_iterator it
+  Teuchos::Array<int>::const_iterator it
     = std::find(sg_g_index.begin(), sg_g_index.end(), l);
   if (it != sg_g_index.end()) {
     int offset = it - sg_g_index.begin();
@@ -283,7 +283,7 @@ Stokhos::SGModelEvaluator::get_g_map(int l) const
 Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::SGModelEvaluator::get_p_names(int l) const
 {
-  std::vector<int>::const_iterator it
+  Teuchos::Array<int>::const_iterator it
     = std::find(sg_p_index.begin(), sg_p_index.end(), l);
   if (it != sg_p_index.end()) {
     int offset = it - sg_p_index.begin();
@@ -302,7 +302,7 @@ Stokhos::SGModelEvaluator::get_x_init() const
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGModelEvaluator::get_p_init(int l) const
 {
-  std::vector<int>::const_iterator it
+  Teuchos::Array<int>::const_iterator it
     = std::find(sg_p_index.begin(), sg_p_index.end(), l);
   if (it != sg_p_index.end()) {
     int offset = it - sg_p_index.begin();
@@ -468,7 +468,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   // Pass parameters
   for (int i=0; i<inArgs.Np(); i++) {
     Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(i);
-    std::vector<int>::const_iterator it = 
+    Teuchos::Array<int>::const_iterator it = 
       std::find(sg_p_index.begin(), sg_p_index.end(), i);
     if (it != sg_p_index.end()) {
       int offset = it - sg_p_index.begin();
@@ -502,7 +502,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Pass responses
   for (int i=0; i<outArgs.Ng(); i++) {
-    std::vector<int>::const_iterator it = 
+    Teuchos::Array<int>::const_iterator it = 
       std::find(sg_g_index.begin(), sg_g_index.end(), i);
     if (it != sg_g_index.end()) {
       int offset = it - sg_g_index.begin();

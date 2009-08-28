@@ -31,44 +31,36 @@
 template <typename ordinal_type, typename value_type> 
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 OrthogPolyApprox() :
-  coeff_(1)
+  basis_(),
+  coeff_(1, value_type(0.0))
 {
 }
 
 template <typename ordinal_type, typename value_type> 
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(const value_type& x) :
-  coeff_(1)
+OrthogPolyApprox(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis) :
+  basis_(basis),
+  coeff_()
 {
-  coeff_[0] = x;
+  if (basis != Teuchos::null)
+    coeff_.resize(basis->size(), value_type(0.0));
+  else
+    coeff_.resize(1, value_type(0.0));
 }
 
 template <typename ordinal_type, typename value_type> 
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(ordinal_type sz, const value_type& x) :
-  coeff_(sz)
+OrthogPolyApprox(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+		 ordinal_type sz) :
+  basis_(basis),
+  coeff_(sz, value_type(0.0))
 {
-  coeff_[0] = x;
-}
-
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(ordinal_type sz) :
-  coeff_(sz)
-{
-}
-
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(ordinal_type sz, ordinal_type l) :
-  coeff_(l)
-{
-  coeff_.resize(sz);
 }
 
 template <typename ordinal_type, typename value_type> 
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 OrthogPolyApprox(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x) :
+  basis_(x.basis_),
   coeff_(x.coeff_) 
 {
 }
@@ -84,6 +76,7 @@ Stokhos::OrthogPolyApprox<ordinal_type, value_type>&
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 operator=(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x) 
 {
+  basis_ = x.basis_;
   if (this != &x) {
     coeff_ = x.coeff_;
   }
@@ -91,147 +84,111 @@ operator=(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
   return *this;
 }
 
-template <typename ordinal_type, typename value_type> 
-void
+template <typename ordinal_type, typename value_type>
+void 
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-resize(ordinal_type sz)
+init(const value_type& v) 
 {
-  coeff_.resize(sz);
-}
-
-template <typename ordinal_type, typename value_type> 
-void
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-reserve(ordinal_type sz)
-{
-  coeff_.reserve(sz);
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-term(const BasisT& basis, 
-     int i0, int i1, int i2, int i3, int i4,
-     int i5, int i6, int i7, int i8, int i9)
-{
-  std::vector<ordinal_type> trm;
-  ordinal_type d = basis.dimension();
-  if (i0 >= 0 && d >= 1)
-    trm.push_back(i0);
-  if (i1 >= 0 && d >= 2)
-    trm.push_back(i1);
-  if (i2 >= 0 && d >= 3)
-    trm.push_back(i2);
-  if (i3 >= 0 && d >= 4)
-    trm.push_back(i3);
-  if (i4 >= 0 && d >= 5)
-    trm.push_back(i4);
-  if (i5 >= 0 && d >= 6)
-    trm.push_back(i5);
-  if (i6 >= 0 && d >= 7)
-    trm.push_back(i6);
-  if (i7 >= 0 && d >= 8)
-    trm.push_back(i7);
-  if (i8 >= 0 && d >= 9)
-    trm.push_back(i8);
-  if (i9 >= 0 && d >= 10)
-    trm.push_back(i9);
-
-  ordinal_type index = basis.getIndex(trm);
-  return coeff_[index];
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-const value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-term(const BasisT& basis, 
-     int i0, int i1, int i2, int i3, int i4,
-     int i5, int i6, int i7, int i8, int i9) const
-{
-  std::vector<ordinal_type> trm;
-  ordinal_type d = basis.dimension();
-  if (i0 >= 0 && d >= 1)
-    trm.push_back(i0);
-  if (i1 >= 0 && d >= 2)
-    trm.push_back(i1);
-  if (i2 >= 0 && d >= 3)
-    trm.push_back(i2);
-  if (i3 >= 0 && d >= 4)
-    trm.push_back(i3);
-  if (i4 >= 0 && d >= 5)
-    trm.push_back(i4);
-  if (i5 >= 0 && d >= 6)
-    trm.push_back(i5);
-  if (i6 >= 0 && d >= 7)
-    trm.push_back(i6);
-  if (i7 >= 0 && d >= 8)
-    trm.push_back(i7);
-  if (i8 >= 0 && d >= 9)
-    trm.push_back(i8);
-  if (i9 >= 0 && d >= 10)
-    trm.push_back(i9);
-
-  ordinal_type index = basis.getIndex(trm);
-  return coeff_[index];
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-term2(const BasisT& basis, ordinal_type dimension, ordinal_type order)
-{
-  ordinal_type d = basis.dimension();
-  std::vector<ordinal_type> term(d);
-  term[dimension] = order;
-  ordinal_type index = basis.getIndex(term);
-  return coeff_[index];
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-const value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-term2(const BasisT& basis, ordinal_type dimension, ordinal_type order) const
-{
-  ordinal_type d = basis.dimension();
-  std::vector<ordinal_type> term(d);
-  term[dimension] = order;
-  ordinal_type index = basis.getIndex(term);
-  return coeff_[index];
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-Stokhos::Polynomial<value_type>
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-toStandardBasis(const BasisT& basis) const
-{
-  return basis.toStandardBasis(&coeff_[0], coeff_.size());
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-evaluate(const BasisT& basis, const std::vector<value_type>& point) const
-{
-  const std::vector<value_type>& basis_pts = basis.evaluateBases(point);
-  value_type val = value_type(0.0);
   for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++)
-    val += coeff_[i]*basis_pts[i];
+    coeff_[i] = v;
+}
 
-  return val;
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+basis() const
+{
+  return basis_;
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis)
+{
+  basis_ = new_basis;
+  coeff_.resize(basis_->size());
 }
 
 template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
+ordinal_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+size() const 
+{ 
+  return coeff_.size(); 
+}
+
+template <typename ordinal_type, typename value_type> 
+value_type*
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+coeff() 
+{ 
+  return &coeff_[0]; 
+}
+
+template <typename ordinal_type, typename value_type> 
+const value_type*
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+coeff() const 
+{ 
+  return &coeff_[0]; 
+}
+
+template <typename ordinal_type, typename value_type> 
+value_type&
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+operator[](ordinal_type i) 
+{ 
+  return coeff_[i]; 
+}
+
+template <typename ordinal_type, typename value_type> 
+const value_type&
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+operator[](ordinal_type i) const
+{ 
+  return coeff_[i]; 
+}
+
+template <typename ordinal_type, typename value_type> 
+value_type&
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+term(ordinal_type dimension, ordinal_type order)
+{
+  ordinal_type d = basis_->dimension();
+  Teuchos::Array<ordinal_type> term(d);
+  term[dimension] = order;
+  ordinal_type index = basis_->getIndex(term);
+  return coeff_[index];
+}
+
+template <typename ordinal_type, typename value_type> 
+const value_type&
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+term(ordinal_type dimension, ordinal_type order) const
+{
+  ordinal_type d = basis_->dimension();
+  Teuchos::Array<ordinal_type> term(d);
+  term[dimension] = order;
+  ordinal_type index = basis_->getIndex(term);
+  return coeff_[index];
+}
+
+template <typename ordinal_type, typename value_type> 
 value_type
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-evaluate(const BasisT& basis, const std::vector<value_type>& point,
-         const std::vector<value_type>& basis_vals) const
+evaluate(const Teuchos::Array<value_type>& point) const
+{
+  Teuchos::Array<value_type> basis_vals(basis_->size()); 
+  basis_->evaluateBases(point, basis_vals);
+  return evaluate(point, basis_vals);
+}
+
+template <typename ordinal_type, typename value_type> 
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+evaluate(const Teuchos::Array<value_type>& point,
+	 const Teuchos::Array<value_type>& basis_vals) const
 {
   value_type val = value_type(0.0);
   for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++)
@@ -241,16 +198,36 @@ evaluate(const BasisT& basis, const std::vector<value_type>& point,
 }
 
 template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+mean() const
+{
+  return coeff_[0];
+}
+
+template <typename ordinal_type, typename value_type> 
+value_type
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+standard_deviation() const
+{
+  value_type std_dev = 0.0;
+  for (ordinal_type i=1; i<static_cast<ordinal_type>(coeff_.size()); i++) {
+    std_dev += coeff_[i]*coeff_[i]*basis_->norm_squared(i);
+  }
+  std_dev = std::sqrt(std_dev);
+  return std_dev;
+}
+
+template <typename ordinal_type, typename value_type> 
 std::ostream&
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-print(const BasisT& basis, std::ostream& os) const
+print(std::ostream& os) const
 {
-  std::vector<ordinal_type> trm;
+  Teuchos::Array<ordinal_type> trm;
   os << "Stokhos::OrthogPolyApprox of size " << coeff_.size() << " in basis "
-     << "\n\t" << basis.getName() << ":" << std::endl;
+     << "\n\t" << basis_->getName() << ":" << std::endl;
   for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++) {
-    trm = basis.getTerm(i);
+    trm = basis_->getTerm(i);
     os << "\t\t(";
     for (ordinal_type j=0; j<static_cast<ordinal_type>(trm.size())-1; j++)
       os << trm[j] << ", ";
@@ -273,27 +250,4 @@ Stokhos::operator << (std::ostream& os,
 
   os << "]\n";
   return os;
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-mean(const BasisT& basis) const
-{
-  return coeff_[0];
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename BasisT>
-value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-standard_deviation(const BasisT& basis) const
-{
-  value_type std_dev = 0.0;
-  for (ordinal_type i=1; i<static_cast<ordinal_type>(coeff_.size()); i++) {
-    std_dev += coeff_[i]*coeff_[i]*basis.norm_squared(i);
-  }
-  std_dev = std::sqrt(std_dev);
-  return std_dev;
 }

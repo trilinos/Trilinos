@@ -31,33 +31,38 @@
 #ifndef STOKHOS_ORTHOGPOLYAPPROX_HPP
 #define STOKHOS_ORTHOGPOLYAPPROX_HPP
 
-#include <ostream>	// for std::ostream
-
-#include "Teuchos_RCP.hpp"
-
-#include "Stokhos_Polynomial.hpp"
+#include "Teuchos_RCP.hpp"             // class data member
+#include "Teuchos_Array.hpp"           // class data member
+#include "Stokhos_OrthogPolyBasis.hpp" // class data member
+#include <ostream>	               // for std::ostream
 
 namespace Stokhos {
 
-  //! General polynomial class
+  /*! 
+   * \brief Class to store coefficients of a projection onto an orthogonal
+   * polynomial basis.
+   */
   template <typename ordinal_type, typename value_type>
   class OrthogPolyApprox {
   public:
 
-    //! Default constructor
+    //! Constructor with no basis
+    /*!
+     * Use with care!  Sets size to 1 to store constant term
+     */
     OrthogPolyApprox();
+
+    //! Constructor
+    OrthogPolyApprox(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis);
     
-    //! Constructor with supplied value \c x
-    OrthogPolyApprox(const value_type& x);
-    
-    //! Constructor with size \c sz and value \c x
-    OrthogPolyApprox(ordinal_type sz, const value_type& x);
-    
-    //! Constructor with size \c sz
-    OrthogPolyApprox(ordinal_type sz);
-    
-    //! Constructor with basis, size \c sz and length \c l
-    OrthogPolyApprox(ordinal_type sz, ordinal_type l);
+    //! Constructor with supplied size \c sz
+    /*!
+     * Normally \c sz should equal the basis size, however this is not
+     * enforced since other situations can arise, e.g., using a size of 1
+     * for a constant expansion.
+     */
+    OrthogPolyApprox(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+		     ordinal_type sz);
     
     //! Copy constructor
     OrthogPolyApprox(const OrthogPolyApprox& x);
@@ -68,89 +73,67 @@ namespace Stokhos {
     //! Assignment operator (deep copy)
     OrthogPolyApprox& operator=(const OrthogPolyApprox& x);
 
-    //! Resize to size \c sz
-    /*!
-     * Coefficients are preserved.
-     */
-    void resize(ordinal_type sz);
+    //! Intialize coefficients to value
+    void init(const value_type& v);
 
-    //! Reserve space for a size \c sz expansion
+    //! Return basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > 
+    basis() const;
+
+    //! Reset to a new basis
     /*!
-     * Coefficients are preserved.
+     * This resizes array to fit new basis.  Coefficients are preserved.
      */
-    void reserve(ordinal_type sz);
+    void reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis);
 
     //! Return size
-    ordinal_type size() const { return coeff_.size(); }
+    ordinal_type size() const;
 
     //! Return coefficient array
-    value_type* coeff() { return &coeff_[0]; }
+    value_type* coeff();
 
     //! Return coefficient array
-    const value_type* coeff() const { return &coeff_[0]; }
+    const value_type* coeff() const;
 
     //! Array access
-    value_type& operator[](ordinal_type i) { return coeff_[i]; }
+    value_type& operator[](ordinal_type i);
 
     //! Array access
-    const value_type& operator[](ordinal_type i) const { return coeff_[i]; }
+    const value_type& operator[](ordinal_type i) const;
 
-    //! Get term
-    template <typename BasisT>
-    value_type& 
-    term(const BasisT& basis, 
-	 int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
-	 int i5 = -1, int i6 = -1, int i7 = -1, int i8 = -1, int i9 = -1);
+    //! Get coefficient term for given dimension and order
+    value_type& term(ordinal_type dimension, ordinal_type order);
 
-    //! Get term
-    template <typename BasisT>
-    const value_type& 
-    term(const BasisT& basis, 
-	 int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
-	 int i5 = -1, int i6 = -1, int i7 = -1, int i8 = -1, int i9 = -1) const;
-
-    template <typename BasisT>
-    value_type& 
-    term2(const BasisT& basis, ordinal_type dimension, ordinal_type order);
-
-    template <typename BasisT>
-    const value_type& 
-    term2(const BasisT& basis, ordinal_type dimension, ordinal_type order) const;
-
-    //! Write polynomial approximation in standard basis
-    template <typename BasisT>
-    Polynomial<value_type> toStandardBasis(const BasisT& basis) const;
+    //! Get coefficient term for given dimension and order
+    const value_type& term(ordinal_type dimension, ordinal_type order) const;
 
     //! Evaluate polynomial approximation at a point
-    template <typename BasisT>
-    value_type 
-    evaluate(const BasisT& basis, const std::vector<value_type>& point) const;
+    value_type evaluate(const Teuchos::Array<value_type>& point) const;
 
     //! Evaluate polynomial approximation at a point with supplied basis values
-    template <typename BasisT>
-    value_type 
-    evaluate(const BasisT& basis, const std::vector<value_type>& point,
-	     const std::vector<value_type>& basis_vals) const;
+    value_type evaluate(const Teuchos::Array<value_type>& point,
+			const Teuchos::Array<value_type>& basis_vals) const;
+
+    //! Compute mean of expansion
+    value_type mean() const;
+
+    //! Compute standard deviation of expansion
+    value_type standard_deviation() const;
 
     //! Print approximation in basis
-    template <typename BasisT>
-    std::ostream& print(const BasisT& basis, std::ostream& os) const;
-
-    template <typename BasisT>
-    value_type mean(const BasisT& basis) const;
-
-    template <typename BasisT>
-    value_type standard_deviation(const BasisT& basis) const;
-
-    
+    std::ostream& print(std::ostream& os) const;
 
   protected:
 
+    //! Basis expansion is relative to
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > basis_;
+
     //! OrthogPolyApprox coefficients
-    std::vector<value_type> coeff_;
+    Teuchos::Array<value_type> coeff_;
     
   }; // class OrthogPolyApprox
 
+  //! Prints the array of coefficients (more compact than print())
   template <typename ordinal_type, typename value_type> std::ostream& 
   operator << (std::ostream& os, 
 	       const OrthogPolyApprox<ordinal_type,value_type>& a);

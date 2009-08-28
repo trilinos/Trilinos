@@ -37,11 +37,11 @@ Stokhos::getMyPoints( int order, int np, double p[], double x[] ){
 
   long int pointer = p[0];
   const OneDOrthogPolyBasis<int,double>* basis = (const OneDOrthogPolyBasis<int,double>*) pointer;
-  std::vector<double> quad_points;
-  std::vector<double> quad_weights;
-  std::vector< std::vector<double> > quad_values;
+  Teuchos::Array<double> quad_points;
+  Teuchos::Array<double> quad_weights;
+  Teuchos::Array< Teuchos::Array<double> > quad_values;
   basis->getQuadPoints(2*order-1, quad_points, quad_weights, quad_values);
-  for(int i = 0; i<quad_points.size(); i++){
+  for(std::size_t i = 0; i<quad_points.size(); i++){
     x[i] = quad_points[i];
   }
   
@@ -53,12 +53,12 @@ Stokhos::getMyWeights( int order, int np, double p[], double w[] ){
 
   long int pointer = p[0];
   const OneDOrthogPolyBasis<int,double>* basis = (const OneDOrthogPolyBasis<int,double>*) pointer;
-  std::vector<double> quad_points;
-  std::vector<double> quad_weights;
-  std::vector< std::vector<double> > quad_values;
+  Teuchos::Array<double> quad_points;
+  Teuchos::Array<double> quad_weights;
+  Teuchos::Array< Teuchos::Array<double> > quad_values;
   basis->getQuadPoints(2*order-1, quad_points, quad_weights, quad_values);
 
-  for(int i = 0; i<quad_points.size(); i++){
+  for(std::size_t i = 0; i<quad_points.size(); i++){
     w[i] = quad_weights[i];
   }
 

@@ -31,8 +31,8 @@
 #ifndef STOKHOS_POLYNOMIAL_HPP
 #define STOKHOS_POLYNOMIAL_HPP
 
-#include <vector>
 #include <ostream>
+#include "Teuchos_Array.hpp"
 
 namespace Stokhos {
 
@@ -44,7 +44,7 @@ namespace Stokhos {
     Polynomial(unsigned int deg);
     
     //! Constructor with specified coefficients
-    Polynomial(const std::vector<T>& coefficients);
+    Polynomial(const Teuchos::Array<T>& coefficients);
     
     //! Copy constructor
     Polynomial(const Polynomial& p);
@@ -102,7 +102,7 @@ namespace Stokhos {
   protected:
     
     //! Vector of coefficients
-    std::vector<T> coeffs;
+    Teuchos::Array<T> coeffs;
     
   }; // class Polynomial
 

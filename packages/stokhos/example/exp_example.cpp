@@ -29,14 +29,6 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
-//
-//  usage: 
-//     hermite_example
-//
-//  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
-
 #include <iostream>
 #include <iomanip>
 
@@ -59,7 +51,7 @@ void pce_moments(const Stokhos::OrthogPolyApprox<int,double>& pce,
                  double& mean, double& std_dev) {
   mean = pce[0];
   std_dev = 0.0;
-  const std::vector<double> nrm2 = basis.norm_squared();
+  const Teuchos::Array<double> nrm2 = basis.norm_squared();
   for (int i=1; i<basis.size(); i++)
     std_dev += pce[i]*pce[i]*nrm2[i];
   std_dev = std::sqrt(std_dev);
@@ -72,8 +64,8 @@ int main(int argc, char **argv)
     // Compute "true" 1-D mean, std. dev using quadrature
     const unsigned int true_quad_order = 200;
     basis_type tmp_basis(1);
-    std::vector<double> true_quad_points, true_quad_weights;
-    std::vector< std::vector<double> > true_quad_values;
+    Teuchos::Array<double> true_quad_points, true_quad_weights;
+    Teuchos::Array< Teuchos::Array<double> > true_quad_values;
     tmp_basis.getQuadPoints(true_quad_order, true_quad_points, 
 			    true_quad_weights, true_quad_values);
     double mean_1d = 0.0;
@@ -101,7 +93,7 @@ int main(int argc, char **argv)
       std::cout << "true mean = " << true_mean << "\t true std. dev. = "
                 << true_sd << std::endl;
 
-      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
 
       // Loop over orders
       for (unsigned int p=pmin; p<=pmax; p++) {
@@ -114,9 +106,9 @@ int main(int argc, char **argv)
 
 	// Create approximation
 	int sz = basis->size();
-	Stokhos::OrthogPolyApprox<int,double> x(sz), u_quad(sz);
+	Stokhos::OrthogPolyApprox<int,double> x(basis), u_quad(basis);
 	for (unsigned int i=0; i<d; i++) {
-	  x.term2(*basis, i,1) = 1.0;
+	  x.term(i,1) = 1.0;
 	}
 
 	// Tensor product quadrature

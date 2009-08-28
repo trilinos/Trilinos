@@ -34,8 +34,8 @@ template <typename ordinal_type, typename value_type>
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 GramSchmidtBasis(
    const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis_,
-   const std::vector< std::vector<value_type> >& points,
-   const std::vector<value_type>& weights_,
+   const Teuchos::Array< Teuchos::Array<value_type> >& points,
+   const Teuchos::Array<value_type>& weights_,
    const value_type& sparse_tol_) :
   name("Gram Schmidt Basis"),
   basis(basis_),
@@ -46,13 +46,13 @@ GramSchmidtBasis(
   sz(basis->size()),
   norms(sz),
   gs_mat(sz,sz),
-  basis_pts(sz)
+  basis_vals_tmp(sz)
 {
   // Get quadrature data
   ordinal_type nqp = weights.size();
-  std::vector< std::vector<value_type> > values(nqp);
+  Teuchos::Array< Teuchos::Array<value_type> > values(nqp);
   for (ordinal_type k=0; k<nqp; k++)
-    values[k] = basis->evaluateBases(points[k]);
+    basis->evaluateBases(points[k], values[k]);
 
   // Compute all inner products
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> inner_product(sz,sz);
@@ -143,7 +143,7 @@ size() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+const Teuchos::Array<value_type>&
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 norm_squared() const
 {
@@ -262,7 +262,7 @@ getDerivDoubleProductTensor() const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const
+projectProduct(ordinal_type i, ordinal_type j, Teuchos::Array<value_type>& coeffs) const
 {
   TEST_FOR_EXCEPTION(true, std::logic_error,
   		     "Stokhos::GramSchmidtBasis::projectProduct():"
@@ -272,7 +272,7 @@ projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) 
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
+projectDerivative(ordinal_type i, Teuchos::Array<value_type>& coeffs) const
 {
   TEST_FOR_EXCEPTION(true, std::logic_error,
   		     "Stokhos::GramSchmidtBasis::projectDerivative():"
@@ -292,19 +292,18 @@ evaluateZero(ordinal_type i) const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+void
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-evaluateBases(const std::vector<value_type>& point) const
+evaluateBases(const Teuchos::Array<value_type>& point,
+	      Teuchos::Array<value_type>& basis_vals) const
 {
-  const std::vector<value_type>& basis_vals = basis->evaluateBases(point);
+  basis->evaluateBases(point, basis_vals_tmp);
   for (ordinal_type i=0; i<sz; i++) {
     value_type t = 0.0;
     for (ordinal_type j=0; j<sz; j++)
-      t += gs_mat(i,j)*basis_vals[j];
-    basis_pts[i] = t;
+      t += gs_mat(i,j)*basis_vals_tmp[j];
+    basis_vals[i] = t;
   }
-
-  return basis_pts;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -324,7 +323,7 @@ print(std::ostream& os) const
 }
 
 template <typename ordinal_type, typename value_type>
-std::vector<ordinal_type>
+Teuchos::Array<ordinal_type>
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 getTerm(ordinal_type i) const
 {
@@ -337,7 +336,7 @@ getTerm(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getIndex(const std::vector<ordinal_type>& term) const
+getIndex(const Teuchos::Array<ordinal_type>& term) const
 {
   TEST_FOR_EXCEPTION(true, std::logic_error,
   		     "Stokhos::GramSchmidtBasis::getIndex():"
@@ -354,7 +353,7 @@ getName() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >&
+const Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >&
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 getCoordinateBases() const
 {

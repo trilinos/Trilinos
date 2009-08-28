@@ -29,25 +29,20 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
-//
-//  usage: 
-//     hermite_example
-//
-//  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
-
 #include <iostream>
 #include <iomanip>
 
 #include "Stokhos.hpp"
+
+// This example demonstrates computing a multi-variate polynomial chaos
+// expansion using a product basis.
 
 int main(int argc, char **argv)
 {
   try {
     const int d = 3;
     const int p = 5;
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
     for (int i=0; i<d; i++) {
       bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
     }
@@ -56,16 +51,15 @@ int main(int argc, char **argv)
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, quad);
-    int sz = basis->size();
-    Stokhos::OrthogPolyApprox<int,double> u(sz),v(sz),w(sz);
-    u.term2(*basis, 0,0) = 1.0;
+    Stokhos::OrthogPolyApprox<int,double> u(basis), v(basis), w(basis);
+    u.term(0,0) = 1.0;
 
     for (int i=0; i<d; i++) {
-      u.term2(*basis, i,1) = 0.4 / d;
-      u.term2(*basis, i,2) = 0.06 / d;
-      u.term2(*basis, i,3) = 0.002 / d;
+      u.term(i,1) = 0.4 / d;
+      u.term(i,2) = 0.06 / d;
+      u.term(i,3) = 0.002 / d;
     }
-    u.print(*basis, std::cout);
+    u.print(std::cout);
 
     expn.log(v,u);
     expn.times(w,v,v);
@@ -73,11 +67,11 @@ int main(int argc, char **argv)
     expn.divide(v,1.0,w);
 
     std::cout.precision(16);
-    v.print(*basis, std::cout);
+    v.print(std::cout);
 
     double mean = v[0];
     double std_dev = 0.0;
-    const std::vector<double> nrm2 = basis->norm_squared();
+    const Teuchos::Array<double> nrm2 = basis->norm_squared();
     for (int i=1; i<basis->size(); i++)
       std_dev += v[i]*v[i]*nrm2[i];
     std_dev = std::sqrt(std_dev);

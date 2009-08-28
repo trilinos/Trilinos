@@ -57,9 +57,9 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
 //polynomial has norm 1.  If normalization is not enabled then the gammas are set to 1.
   this->scaleFactor = 1;
   this->cutoff = c;
-  std::vector<value_type> alpha(p+1,0);
-  std::vector<value_type> beta(p+1,0);
-  std::vector<value_type> gamma(p+1,1);
+  Teuchos::Array<value_type> alpha(p+1,0);
+  Teuchos::Array<value_type> beta(p+1,0);
+  Teuchos::Array<value_type> gamma(p+1,1);
   this->alpha = alpha;
   this->beta = beta;
   this->gamma = gamma;
@@ -129,15 +129,15 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
 
 template <typename ordinal_type, typename value_type>
 Stokhos::RysBasis<ordinal_type,value_type>::
-RysBasis(ordinal_type p , value_type c, const std::vector< value_type >& alpha, const std::vector< value_type >& beta, bool normalize) :
+RysBasis(ordinal_type p , value_type c, const Teuchos::Array< value_type >& alpha, const Teuchos::Array< value_type >& beta, bool normalize) :
   OneDOrthogPolyBasisBase<ordinal_type,value_type>("Rys",p)
 { 
 //Alternative constructor for when we already know the first n recurrance coefficients.
   this->scaleFactor = 1;
   this->cutoff = c;
-  //std::vector<value_type> alpha(p+1,0);
-  //std::vector<value_type> beta(p+1,0);
-  std::vector<value_type> gamma(p+1,1);
+  //Teuchos::Array<value_type> alpha(p+1,0);
+  //Teuchos::Array<value_type> beta(p+1,0);
+  Teuchos::Array<value_type> gamma(p+1,1);
   ordinal_type known_recurrance = alpha.size();
   this->normalize = normalize;
   this->alpha = alpha;
@@ -231,7 +231,7 @@ evaluateWeight(value_type x) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::RysBasis<ordinal_type,value_type>::
-projectPoly(const Stokhos::Polynomial<value_type>& x, std::vector<value_type>& coeffs) const
+projectPoly(const Stokhos::Polynomial<value_type>& x, Teuchos::Array<value_type>& coeffs) const
 {
   //This method not yet implimented.
 }
@@ -239,7 +239,7 @@ projectPoly(const Stokhos::Polynomial<value_type>& x, std::vector<value_type>& c
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::RysBasis<ordinal_type,value_type>::
-projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
+projectDerivative(ordinal_type i, Teuchos::Array<value_type>& coeffs) const
 {
   //This method not yet implimented.
 }
@@ -247,7 +247,7 @@ projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::RysBasis<ordinal_type,value_type>::
-evaluateBases(const value_type& x, std::vector<value_type>& basis_pts) const
+evaluateBases(const value_type& x, Teuchos::Array<value_type>& basis_pts) const
 {
   // Evaluate basis polynomials P(x) using 3 term recurrence
   // P_0(x) = 1 P_-1 = 0
@@ -273,7 +273,7 @@ evaluateBasesOrder_p(const value_type& x, const ordinal_type& order) const
   // P_0(x) = 1, P_-1 = 0
   // P_i(x) = gamma[i]*[(x-alpha[i-1])*P_{i-1}(x) - beta[i-1]*P_{i-2}(x)], i=2,3,...
   value_type value;
-  std::vector<value_type> basis_pts(order+1,0);
+  Teuchos::Array<value_type> basis_pts(order+1,0);
   basis_pts[0] = value_type(1.0);
   if (order >= 1){
     basis_pts[1] = (x-this->alpha[0])*basis_pts[0];
@@ -377,16 +377,16 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::RysBasis<ordinal_type,value_type>::
 getQuadPoints(ordinal_type quad_order,
-	      std::vector<value_type>& quad_points,
-	      std::vector<value_type>& quad_weights,
-	      std::vector< std::vector<value_type> >& quad_values) const
+	      Teuchos::Array<value_type>& quad_points,
+	      Teuchos::Array<value_type>& quad_weights,
+	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
 {
   //This is a transposition into C++ of Gautschi's code for taking the first N recurrance coefficients
   //and generating a N point quadrature rule.  The MATLAB version is available at
   // http://www.cs.purdue.edu/archives/2002/wxg/codes/gauss.m
   ordinal_type num_points = quad_order+1;
-  std::vector<value_type> alpha(num_points,0);
-  std::vector<value_type> beta(num_points,0);
+  Teuchos::Array<value_type> alpha(num_points,0);
+  Teuchos::Array<value_type> beta(num_points,0);
   Teuchos::RCP<const Stokhos::RysBasis<int,double> > basis;
   //If we don't have enough recurrance coefficients, get some more.
   if(num_points > this->p+1){
@@ -424,7 +424,7 @@ getQuadPoints(ordinal_type quad_order,
   quad_weights.resize(num_points);
   
   //the eigenvalues are the quadrature points, sort these and keep track of the indices.
-  std::vector< ordinal_type > idx(num_points,0);
+  Teuchos::Array< ordinal_type > idx(num_points,0);
   value_type temp1,temp2;
   for(ordinal_type i = 0; i< num_points; i++) idx[i] = i;
   for(ordinal_type i = 0; i< num_points; i++){
@@ -478,8 +478,8 @@ getTripleProductTensor() const
   
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (this->Cijk == Teuchos::null) {
-    std::vector<value_type> points, weights;
-    std::vector< std::vector<value_type> > values;
+    Teuchos::Array<value_type> points, weights;
+    Teuchos::Array< Teuchos::Array<value_type> > values;
     getQuadPoints(ceil((double)(3*this->p+1)/2), points, weights, values);
     this->Cijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
     

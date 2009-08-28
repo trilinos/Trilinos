@@ -115,11 +115,11 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   //    \sum_{j=0}^P \sum_{k=0}^P J_k v_j < \psi_i \psi_j \psi_k > / <\psi_i^2>
   // for i=0,...,P where P = num_blocks w_j is the jth input block, w_i
   // is the ith result block, and J_k is the kth block operator
-  const std::vector<double>& norms = sg_basis->norm_squared();
+  const Teuchos::Array<double>& norms = sg_basis->norm_squared();
   for (unsigned int k=0; k<num_blocks; k++) {
     unsigned int nj = Cijk->num_j(k);
     const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    std::vector<double*> j_ptr(nj);
+    Teuchos::Array<double*> j_ptr(nj);
     for (unsigned int l=0; l<nj; l++)
       j_ptr[l] = input_block[j_indices[l]]->Values();
     Epetra_MultiVector input_tmp(View, *base_map, &j_ptr[0], nj);

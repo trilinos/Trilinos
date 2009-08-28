@@ -46,12 +46,12 @@ int main(int argc, char **argv)
 {
   try {
     const int d = 7;
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
     bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(d));
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
-    Stokhos::OrthogPolyApprox<int,double> u(d+1),v(d+1),w(d+1);
+    Stokhos::OrthogPolyApprox<int,double> u(basis),v(basis),w(basis);
     u[0] = 1.0;
     u[1] = 0.4;
     u[2] = 0.06;

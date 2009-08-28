@@ -35,8 +35,8 @@
 double sigma, mean, weightCut;
 
 //For the exponential random field.
-std::vector<double> lambda, alpha, omega;
-std::vector<int> xind, yind;
+Teuchos::Array<double> lambda, alpha, omega;
+Teuchos::Array<int> xind, yind;
 
 
 //The probability distribution of the random variables.
@@ -88,10 +88,10 @@ return result;
 }
 
 //Function for the righ hand side.
-double RHS_function(double x, double y, std::vector<double>& xi){
+double RHS_function(double x, double y, Teuchos::Array<double>& xi){
    
    double result = RHS_function_PC(x,y,0);
-   for(int idx = 1; idx<=xi.size(); idx++){
+   for(std::size_t idx = 1; idx<=xi.size(); idx++){
       result = result + RHS_function_PC(x,y,idx)*xi[idx-1];
    }
    return result;

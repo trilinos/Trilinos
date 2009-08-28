@@ -31,9 +31,9 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 CompletePolynomialBasis(
-	const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
+	const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
 	const value_type& sparse_tol_,
-	const Teuchos::RCP< std::vector<value_type> >& deriv_coeffs_) :
+	const Teuchos::RCP< Teuchos::Array<value_type> >& deriv_coeffs_) :
   p(0),
   d(0),
   sz(0),
@@ -71,14 +71,13 @@ CompletePolynomialBasis(
   name += bases[bases.size()-1]->getName() + ")";
 
   // Allocate array for basis evaluation
-  basis_pts.resize(sz);
   basis_eval_tmp.resize(bases.size());
   for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
     basis_eval_tmp[j].resize(bases[j]->order()+1);
 
   // Set up deriv_coeffs
   if (deriv_coeffs == Teuchos::null) {
-    deriv_coeffs = Teuchos::rcp(new std::vector<value_type>(bases.size()));
+    deriv_coeffs = Teuchos::rcp(new Teuchos::Array<value_type>(bases.size()));
     for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
       (*deriv_coeffs)[j] = value_type(1.0);
   }
@@ -115,7 +114,7 @@ size() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+const Teuchos::Array<value_type>&
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 norm_squared() const
 {
@@ -139,8 +138,8 @@ getTripleProductTensor() const
   
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
-    std::vector<value_type> points, weights;
-    std::vector< std::vector<value_type> > values;
+    Teuchos::Array<value_type> points, weights;
+    Teuchos::Array< Teuchos::Array<value_type> > values;
     getQuadPoints(ceil((3*p+1)/2), points, weights, values);
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
     
@@ -169,7 +168,7 @@ getTripleProductTensor() const
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    std::vector<value_type> a(sz);
+    Teuchos::Array<value_type> a(sz);
     for (ordinal_type j=0; j<sz; j++) {
       for (ordinal_type i=0; i<sz; i++) {
 	projectProduct(i, j, a);
@@ -195,7 +194,7 @@ getLowOrderTripleProductTensor(ordinal_type order) const
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    std::vector<value_type> a(order);
+    Teuchos::Array<value_type> a(order);
     for (ordinal_type i=0; i<sz; i++) {
       for (ordinal_type j=0; j<sz; j++) {
 	projectProduct(i, j, a);
@@ -255,7 +254,7 @@ getDerivDoubleProductTensor() const
   if (Bij == Teuchos::null) {
     Bij = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type>(sz,sz));
     for (ordinal_type i=0; i<sz; i++) {
-      std::vector<value_type> b(sz);
+      Teuchos::Array<value_type> b(sz);
       projectDerivative(i, b);
       for (ordinal_type j=0; j<sz; j++)
 	(*Bij)(i,j) = b[j]*norms[j];
@@ -268,7 +267,7 @@ getDerivDoubleProductTensor() const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const
+projectProduct(ordinal_type i, ordinal_type j, Teuchos::Array<value_type>& coeffs) const
 {
   // Create products
   if (Cijk_1d.size() == 0) {
@@ -277,15 +276,28 @@ projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) 
       Cijk_1d[i] = bases[i]->getTripleProductTensor();
   }
 
+  // Commenting out this modification for now.  There seem to be cases where
+  // truncating at sparse_tol gives incorrect answers
+
+  // double val;
+  // for (ordinal_type k=0; k<coeffs.size(); k++) {
+  //   value_type c = value_type(1.0);
+  //   for (ordinal_type l=0; l<static_cast<ordinal_type>(bases.size()); l++) {
+  //     val = (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
+  //     if(val < sparse_tol){
+  //       c = 0;
+  //       break;
+  //     }else c *= val;      
+  //   }
+  //   coeffs[k] = c;
+  // }
+
   double val;
-  for (ordinal_type k=0; k<coeffs.size(); k++) {
+  for (ordinal_type k=0; k<static_cast<ordinal_type>(coeffs.size()); k++) {
     value_type c = value_type(1.0);
     for (ordinal_type l=0; l<static_cast<ordinal_type>(bases.size()); l++) {
       val = (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
-      if(val < sparse_tol){
-        c = 0;
-        break;
-      }else c *= val;      
+      c *= val;      
     }
     coeffs[k] = c;
   }
@@ -295,7 +307,7 @@ projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) 
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
+projectDerivative(ordinal_type i, Teuchos::Array<value_type>& coeffs) const
 {
   // Create products
   if (Bij_1d.size() == 0) {
@@ -341,9 +353,10 @@ evaluateZero(ordinal_type i) const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-evaluateBases(const std::vector<value_type>& point) const
+evaluateBases(const Teuchos::Array<value_type>& point,
+	      Teuchos::Array<value_type>& basis_vals) const
 {
   for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
     bases[j]->evaluateBases(point[j], basis_eval_tmp[j]);
@@ -353,10 +366,8 @@ evaluateBases(const std::vector<value_type>& point) const
     value_type t = value_type(1.0);
     for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
       t *= basis_eval_tmp[j][terms[i][j]];
-    basis_pts[i] = t;
+    basis_vals[i] = t;
   }
-
-  return basis_pts;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -375,7 +386,7 @@ print(std::ostream& os) const
 }
 
 template <typename ordinal_type, typename value_type>
-std::vector<ordinal_type>
+Teuchos::Array<ordinal_type>
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getTerm(ordinal_type i) const
 {
@@ -385,7 +396,7 @@ getTerm(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getIndex(const std::vector<ordinal_type>& term) const
+getIndex(const Teuchos::Array<ordinal_type>& term) const
 {
   return compute_index(term);
 }
@@ -399,7 +410,7 @@ getName() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >&
+const Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >&
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getCoordinateBases() const
 {
@@ -486,7 +497,7 @@ compute_terms()
 
   // The array "cnt" stores the number of terms we need to increment for each
   // dimension.  
-  std::vector<ordinal_type> cnt(d);
+  Teuchos::Array<ordinal_type> cnt(d);
 
   // Set order 1 terms
   for (ordinal_type j=0; j<d; j++) {
@@ -537,7 +548,7 @@ compute_terms()
 template <typename ordinal_type, typename value_type>
 ordinal_type 
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-compute_index(const std::vector<ordinal_type>& term) const
+compute_index(const Teuchos::Array<ordinal_type>& term) const
 {
   // The approach here for computing the index is essentially recursive
   // on the number of dimensions.  Given the basis orders for each dimenion

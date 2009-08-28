@@ -44,28 +44,28 @@ namespace Stokhos {
     //! Constructor
     UserDefinedQuadrature(
      const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis,
-     const Teuchos::RCP<const std::vector< std::vector<value_type> > >& points,
-     const Teuchos::RCP<const std::vector<value_type> >& weights);
+     const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& points,
+     const Teuchos::RCP<const Teuchos::Array<value_type> >& weights);
 
     //! Constructor
     UserDefinedQuadrature(
-     const Teuchos::RCP<const std::vector< std::vector<value_type> > >& points,
-     const Teuchos::RCP<const std::vector<value_type> >& weights,
-     const Teuchos::RCP<const std::vector< std::vector<value_type> > >& values);
+     const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& points,
+     const Teuchos::RCP<const Teuchos::Array<value_type> >& weights,
+     const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& values);
 
     //! Destructor
     virtual ~UserDefinedQuadrature() {}
 
     //! Get quadrature points
-    virtual const std::vector< std::vector<value_type> >& 
+    virtual const Teuchos::Array< Teuchos::Array<value_type> >& 
     getQuadPoints() const;
 
     //! Get quadrature weights
-    virtual const std::vector<value_type>& 
+    virtual const Teuchos::Array<value_type>& 
     getQuadWeights() const;
 
     //! Get values of basis at quadrature points
-    virtual const std::vector< std::vector<value_type> > & 
+    virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
     getBasisAtQuadPoints() const;
 
   private:
@@ -79,13 +79,13 @@ namespace Stokhos {
   protected:
 
     //! Quadrature points
-    Teuchos::RCP<const std::vector< std::vector<value_type> > > quad_points;
+    Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > > quad_points;
 
     //! Quadrature weights
-    Teuchos::RCP<const std::vector<value_type> > quad_weights;
+    Teuchos::RCP<const Teuchos::Array<value_type> > quad_weights;
 
     //! Quadrature values
-    Teuchos::RCP<const std::vector< std::vector<value_type> > > quad_values;
+    Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > > quad_values;
 
   }; // class UserDefinedQuadrature
 

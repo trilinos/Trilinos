@@ -35,10 +35,12 @@
 #include <string>
 #include "Stokhos_Polynomial.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Stokhos {
 
+  //! Base class for 1-D orthogonal polynomials
   template <typename ordinal_type, typename value_type>
   class OneDOrthogPolyBasis {
   public:
@@ -52,14 +54,11 @@ namespace Stokhos {
     //! Return order of basis
     virtual ordinal_type order() const = 0;
 
-    //! Return dimension of basis
-    virtual ordinal_type dimension() const = 0;
-
     //! Return total size of basis
     virtual ordinal_type size() const = 0;
 
     //! Compute norm squared of each basis element
-    virtual const std::vector<value_type>& norm_squared() const = 0;
+    virtual const Teuchos::Array<value_type>& norm_squared() const = 0;
 
     //! Compute norm squared of ith element
     virtual const value_type& norm_squared(ordinal_type i) const = 0;
@@ -72,26 +71,22 @@ namespace Stokhos {
 
     //! Project a polynomial into this basis
     virtual void projectPoly(const Polynomial<value_type>& poly, 
-                             std::vector<value_type>& coeffs) const = 0;
+                             Teuchos::Array<value_type>& coeffs) const = 0;
 
     //! Project product of two basis polynomials into this basis
     virtual void projectProduct(ordinal_type i, ordinal_type j,
-                                std::vector<value_type>& coeffs) const = 0;
+                                Teuchos::Array<value_type>& coeffs) const = 0;
 
     //! Project derivative of basis polynomial into this basis
     virtual void projectDerivative(ordinal_type i, 
-                                   std::vector<value_type>& coeffs) const = 0;
-
-    //! Write polynomial in standard basis
-    virtual Polynomial<value_type> toStandardBasis(const value_type coeffs[], 
-                                          ordinal_type n) const = 0;
+                                   Teuchos::Array<value_type>& coeffs) const = 0;
 
     //! Evaluate basis polynomial at zero
     virtual value_type evaluateZero(ordinal_type i) const = 0;
 
     //! Evaluate basis polynomials at given point
     virtual void evaluateBases(const value_type& point,
-                               std::vector<value_type>& basis_pts) const = 0;
+                               Teuchos::Array<value_type>& basis_pts) const = 0;
 
     //! Print basis
     virtual void print(std::ostream& os) const = 0;
@@ -102,9 +97,9 @@ namespace Stokhos {
     //! Get Gauss quadrature points, weights, and values of basis at points
     virtual void 
     getQuadPoints(ordinal_type quad_order,
-		  std::vector<value_type>& points,
-		  std::vector<value_type>& weights,
-		  std::vector< std::vector<value_type> >& values) const = 0;
+		  Teuchos::Array<value_type>& points,
+		  Teuchos::Array<value_type>& weights,
+		  Teuchos::Array< Teuchos::Array<value_type> >& values) const = 0;
 
     //! Get sparse grid rule number
     virtual ordinal_type getRule() const = 0;

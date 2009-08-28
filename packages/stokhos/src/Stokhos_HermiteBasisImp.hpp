@@ -70,7 +70,7 @@ Stokhos::HermiteBasis<ordinal_type,value_type>::
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::HermiteBasis<ordinal_type,value_type>::
-projectPoly(const Stokhos::Polynomial<value_type>& x, std::vector<value_type>& coeffs) const
+projectPoly(const Stokhos::Polynomial<value_type>& x, Teuchos::Array<value_type>& coeffs) const
 {
   // Initialize
   for (ordinal_type i=0; i<=this->p; i++)
@@ -87,7 +87,7 @@ projectPoly(const Stokhos::Polynomial<value_type>& x, std::vector<value_type>& c
   }
 
   // Temporary array
-  std::vector<value_type> h(px+1,value_type(0.));
+  Teuchos::Array<value_type> h(px+1,value_type(0.));
 
   coeffs[0] = x.coeff(px-1);
   coeffs[1] = x.coeff(px);
@@ -114,7 +114,7 @@ projectPoly(const Stokhos::Polynomial<value_type>& x, std::vector<value_type>& c
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::HermiteBasis<ordinal_type,value_type>::
-projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
+projectDerivative(ordinal_type i, Teuchos::Array<value_type>& coeffs) const
 {
   for (ordinal_type j=0; j<static_cast<ordinal_type>(coeffs.size()); j++)
     coeffs[j] = value_type(0.0);
@@ -125,7 +125,7 @@ projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::HermiteBasis<ordinal_type,value_type>::
-evaluateBases(const value_type& x, std::vector<value_type>& basis_pts) const
+evaluateBases(const value_type& x, Teuchos::Array<value_type>& basis_pts) const
 {
   // Evaluate basis polynomials He(x) using 3 term recurrence
   // He_0(x) = 1
@@ -142,13 +142,13 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::HermiteBasis<ordinal_type,value_type>::
 getQuadPoints(ordinal_type quad_order,
-	      std::vector<value_type>& quad_points,
-	      std::vector<value_type>& quad_weights,
-	      std::vector< std::vector<value_type> >& quad_values) const
+	      Teuchos::Array<value_type>& quad_points,
+	      Teuchos::Array<value_type>& quad_weights,
+	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
 {
   // Compute gauss points, weights
   ordinal_type n = static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
-  std::vector<double> x(n), w(n);
+  Teuchos::Array<double> x(n), w(n);
   
 #ifdef HAVE_STOKHOS_DAKOTA
   webbur::hermite_compute(n, &x[0], &w[0]);
@@ -157,7 +157,7 @@ getQuadPoints(ordinal_type quad_order,
   int kind = 4;
   int kpts = 0;
   double endpts[2] = {0.0, 0.0};
-  std::vector<double> b(n);
+  Teuchos::Array<double> b(n);
   int ni = n;
   double alpha = 0.0;
   double beta = 0.0;

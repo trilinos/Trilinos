@@ -7,10 +7,10 @@
 //==============================================================================
 // constructor -- it's presumed that the user has constructed the ML
 // object somewhere else.  Uses AMG to invert the mean stiffness matrix.
-Stokhos::StochGalerkinPrecon::StochGalerkinPrecon(const Epetra_CrsMatrix& mean_op,const std::vector<double>& norms, const Epetra_Comm& Comm, const Epetra_Map& DMap,const Epetra_Map& RMap)
+Stokhos::StochGalerkinPrecon::StochGalerkinPrecon(const Epetra_CrsMatrix& mean_op,const Teuchos::Array<double>& norms, const Epetra_Comm& Comm, const Epetra_Map& DMap,const Epetra_Map& RMap)
   : //Epetra_Operator(),
-    Label_(0),
     Comm_(Comm),
+    Label_(0),
     DomainMap_(DMap),
     RangeMap_(RMap),
     norms_(norms)

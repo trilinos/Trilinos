@@ -39,8 +39,8 @@ Stokhos::SGQuadModelEvaluator::
 SGQuadModelEvaluator(
 	    const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
 	    const Teuchos::RCP< const Stokhos::Quadrature<int,double> >& quad_,
-	    const std::vector<int>& sg_p_index_,
-	    const std::vector<int>& sg_g_index_) : 
+	    const Teuchos::Array<int>& sg_p_index_,
+	    const Teuchos::Array<int>& sg_g_index_) : 
   me(me_),
   quad(quad_),
   sg_p_index(sg_p_index_),
@@ -291,13 +291,13 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 
   if (do_quad) {
     // Get quadrature data
-    const std::vector< std::vector<double> >& quad_points = 
+    const Teuchos::Array< Teuchos::Array<double> >& quad_points = 
       quad->getQuadPoints();
-    const std::vector<double>& quad_weights = 
+    const Teuchos::Array<double>& quad_weights = 
       quad->getQuadWeights();
-    const std::vector< std::vector<double> > & quad_values = 
+    const Teuchos::Array< Teuchos::Array<double> > & quad_values = 
       quad->getBasisAtQuadPoints();
-    const std::vector<double>& basis_norms = basis->norm_squared();
+    const Teuchos::Array<double>& basis_norms = basis->norm_squared();
 
     // Perform integrations
     for (unsigned int qp=0; qp<quad_points.size(); qp++) {

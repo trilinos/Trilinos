@@ -29,14 +29,6 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
-//
-//  usage: 
-//     hermite_example
-//
-//  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
-
 #include <iostream>
 #include <iomanip>
 
@@ -59,7 +51,7 @@ void pce_moments(const Stokhos::OrthogPolyApprox<int,double>& pce,
                  double& mean, double& std_dev) {
   mean = pce[0];
   std_dev = 0.0;
-  const std::vector<double> nrm2 = basis.norm_squared();
+  const Teuchos::Array<double> nrm2 = basis.norm_squared();
   for (int i=1; i<basis.size(); i++)
     std_dev += pce[i]*pce[i]*nrm2[i];
   std_dev = std::sqrt(std_dev);
@@ -72,8 +64,8 @@ int main(int argc, char **argv)
     // Compute "true" 1-D mean, std. dev using quadrature
     const unsigned int true_quad_order = 200;
     basis_type tmp_basis(1);
-    std::vector<double> true_quad_points, true_quad_weights;
-    std::vector< std::vector<double> > true_quad_values;
+    Teuchos::Array<double> true_quad_points, true_quad_weights;
+    Teuchos::Array< Teuchos::Array<double> > true_quad_values;
     tmp_basis.getQuadPoints(true_quad_order, true_quad_points, 
 			    true_quad_weights, true_quad_values);
 
@@ -94,7 +86,7 @@ int main(int argc, char **argv)
       std::cout.precision(12);
       std::cout << "true moment = " << moment_true << std::endl;
 
-      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
 
       // Loop over orders
       for (unsigned int p=pmin; p<=pmax; p++) {
@@ -106,10 +98,9 @@ int main(int argc, char **argv)
 	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
 	// Create approximation
-	int sz = basis->size();
-	Stokhos::OrthogPolyApprox<int,double> x(sz), u(sz), v(sz);
+	Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis);
 	for (unsigned int i=0; i<d; i++) {
-	  x.term2(*basis, i,1) = 1.0;
+	  x.term(i,1) = 1.0;
 	}
 
 	// Tensor product quadrature
@@ -123,23 +114,22 @@ int main(int argc, char **argv)
 	quad_exp.exp(u,x);
 
 	for (unsigned int order=p; order<=3*p; order++) {
-	  std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > moment_bases(d);
+	  Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > moment_bases(d);
 	  for (unsigned int i=0; i<d; i++)
 	    moment_bases[i] = Teuchos::rcp(new basis_type(order));
 	  Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > moment_basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(moment_bases));
 	  Teuchos::RCP<const Stokhos::Quadrature<int,double> > moment_quad = 
 	    Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(moment_basis));
-	  const std::vector<double>& moment_quad_weights = 
+	  const Teuchos::Array<double>& moment_quad_weights = 
 	    moment_quad->getQuadWeights();
-	  const std::vector< std::vector<double> >& moment_quad_points = 
+	  const Teuchos::Array< Teuchos::Array<double> >& moment_quad_points = 
 	    moment_quad->getQuadPoints();
-	  const std::vector< std::vector<double> >& moment_quad_values =
+	  const Teuchos::Array< Teuchos::Array<double> >& moment_quad_values =
 	    moment_quad->getBasisAtQuadPoints();
 	  
 	  double moment_numerical = 0.0;
 	  for (unsigned int i=0; i<moment_quad_weights.size(); i++) {
-	    double t = u.evaluate(*moment_basis, 
-				  moment_quad_points[i], 
+	    double t = u.evaluate(moment_quad_points[i], 
 				  moment_quad_values[i]);
 	    moment_numerical += std::pow(t,static_cast<double>(n))*moment_quad_weights[i];
 	  }

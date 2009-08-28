@@ -51,16 +51,16 @@ StieltjesPCEBasis(
   fromStieltjesMat(p+1,pce_basis.size())
 {
   // Evaluate PCE at quad points
-  const std::vector< std::vector<value_type> >& quad_points =
+  const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
     quad.getQuadPoints();
   pce_weights = quad.getQuadWeights();
-  const std::vector< std::vector<value_type> >& basis_values =
+  const Teuchos::Array< Teuchos::Array<value_type> >& basis_values =
     quad.getBasisAtQuadPoints();
   ordinal_type nqp = pce_weights.size();
   pce_vals.resize(nqp);
   phi_vals.resize(nqp);
   for (ordinal_type i=0; i<nqp; i++) {
-    pce_vals[i] = pce.evaluate(pce_basis, quad_points[i], basis_values[i]);
+    pce_vals[i] = pce.evaluate(quad_points[i], basis_values[i]);
     phi_vals[i].resize(p+1);
   }
   
@@ -130,21 +130,13 @@ order() const
 template <typename ordinal_type, typename value_type>
 ordinal_type 
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-dimension() const
-{
-  return 1;
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type 
-Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 size() const
 {
   return p+1;
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+const Teuchos::Array<value_type>&
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 norm_squared() const
 {
@@ -168,8 +160,8 @@ getTripleProductTensor() const
   
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
-    std::vector<value_type> points, weights;
-    std::vector< std::vector<value_type> > values;
+    Teuchos::Array<value_type> points, weights;
+    Teuchos::Array< Teuchos::Array<value_type> > values;
     getQuadPoints(3*p, points, weights, values);
     Cijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
     
@@ -206,7 +198,7 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 projectPoly(const Stokhos::Polynomial<value_type>& x, 
-	    std::vector<value_type>& coeffs) const
+	    Teuchos::Array<value_type>& coeffs) const
 {
   TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::projectPoly():  "
@@ -217,7 +209,7 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 projectProduct(ordinal_type i, ordinal_type j,
-	       std::vector<value_type>& coeffs) const
+	       Teuchos::Array<value_type>& coeffs) const
 {
   TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::projectProduct():  "
@@ -227,7 +219,7 @@ projectProduct(ordinal_type i, ordinal_type j,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
+projectDerivative(ordinal_type i, Teuchos::Array<value_type>& coeffs) const
 {
   TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::projectDerivative():  "
@@ -257,7 +249,7 @@ evaluateZero(ordinal_type i) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-evaluateBases(const value_type& x, std::vector<value_type>& basis_pts) const
+evaluateBases(const value_type& x, Teuchos::Array<value_type>& basis_pts) const
 {
   // Evaluate basis polynomials P(x) using 3 term recurrence
   basis_pts[0] = 1.0;
@@ -291,9 +283,9 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 getQuadPoints(ordinal_type quad_order,
-	      std::vector<value_type>& quad_points,
-	      std::vector<value_type>& quad_weights,
-	      std::vector< std::vector<value_type> >& quad_values) const
+	      Teuchos::Array<value_type>& quad_points,
+	      Teuchos::Array<value_type>& quad_weights,
+	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
 {
   // Use underlying pce's quad points, weights, values
   if (use_pce_quad_points) {
@@ -306,18 +298,18 @@ getQuadPoints(ordinal_type quad_order,
   // Compute gauss points, weights
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
-  std::vector<double> x(num_points), w(num_points);
+  Teuchos::Array<double> x(num_points), w(num_points);
   
   //This is a transposition into C++ of Gautschi's code for taking the first N recurrance coefficients
   //and generating a N point quadrature rule.  The MATLAB version is available at
   // http://www.cs.purdue.edu/archives/2002/wxg/codes/gauss.m
   
   //If we don't have enough recurrance coefficients, get some more.
-  std::vector<value_type> a(num_points), b(num_points);
+  Teuchos::Array<value_type> a(num_points), b(num_points);
   if (num_points > p+1) {
     ordinal_type nqp = phi_vals.size();
-    std::vector<value_type> nrm(num_points);
-    std::vector< std::vector<value_type> > vals(nqp);
+    Teuchos::Array<value_type> nrm(num_points);
+    Teuchos::Array< Teuchos::Array<value_type> > vals(nqp);
     for (ordinal_type i=0; i<nqp; i++)
       vals[i].resize(num_points);
     stieltjes(0, num_points, pce_weights, pce_vals, a, b, nrm, vals);
@@ -359,7 +351,7 @@ getQuadPoints(ordinal_type quad_order,
   quad_weights.resize(num_points);
   
   //the eigenvalues are the quadrature points, sort these and keep track of the indices.
-  std::vector< ordinal_type > idx(num_points,0);
+  Teuchos::Array< ordinal_type > idx(num_points,0);
   value_type temp1,temp2;
   for(ordinal_type i = 0; i< num_points; i++) 
     idx[i] = i;
@@ -428,12 +420,12 @@ void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 stieltjes(ordinal_type nstart,
 	  ordinal_type nfinish,
-	  const std::vector<value_type>& weights,
-	  const std::vector<value_type>& points,
-	  std::vector<value_type>& a,
-	  std::vector<value_type>& b,
-	  std::vector<value_type>& nrm,
-	  std::vector< std::vector<value_type> >& phi_vals) const
+	  const Teuchos::Array<value_type>& weights,
+	  const Teuchos::Array<value_type>& points,
+	  Teuchos::Array<value_type>& a,
+	  Teuchos::Array<value_type>& b,
+	  Teuchos::Array<value_type>& nrm,
+	  Teuchos::Array< Teuchos::Array<value_type> >& phi_vals) const
 {
   value_type val1, val2;   
   ordinal_type start = nstart;
@@ -461,11 +453,11 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 integrateBasisSquared(ordinal_type k, 
-		      const std::vector<value_type>& a,
-		      const std::vector<value_type>& b,
-		      const std::vector<value_type>& weights,
-		      const std::vector<value_type>& points,
-		      std::vector< std::vector<value_type> >& phi_vals,
+		      const Teuchos::Array<value_type>& a,
+		      const Teuchos::Array<value_type>& b,
+		      const Teuchos::Array<value_type>& weights,
+		      const Teuchos::Array<value_type>& points,
+		      Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
 		      value_type& val1, value_type& val2) const
 {
   evaluateRecurrence(k, a, b, points, phi_vals);
@@ -482,10 +474,10 @@ template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 evaluateRecurrence(ordinal_type k,
-		   const std::vector<value_type>& a,
-		   const std::vector<value_type>& b,
-		   const std::vector<value_type>& points,
-		   std::vector< std::vector<value_type> >& values) const
+		   const Teuchos::Array<value_type>& a,
+		   const Teuchos::Array<value_type>& b,
+		   const Teuchos::Array<value_type>& points,
+		   Teuchos::Array< Teuchos::Array<value_type> >& values) const
 {
   ordinal_type np = points.size();
   if (k == 0)

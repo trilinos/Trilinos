@@ -56,6 +56,8 @@
 //#include "Epetra_LinearProblem.h"
 //#include "Epetra_Object.h"
 
+#include "Teuchos_Array.hpp"
+
   
 //! MultiLevelOperator: An implementation of the Epetra_Operator class.
 /*! MultiLevelOperator class implements Epetra_Operator using a
@@ -70,7 +72,7 @@ class StochGalerkinPrecon: public virtual Epetra_Operator {
  public:
 
   //@{ \name Constructor.
-  StochGalerkinPrecon(const Epetra_CrsMatrix& mean_op, const std::vector<double>& norms, const Epetra_Comm& Comm, const Epetra_Map& DMap, const Epetra_Map& RMap);
+  StochGalerkinPrecon(const Epetra_CrsMatrix& mean_op, const Teuchos::Array<double>& norms, const Epetra_Comm& Comm, const Epetra_Map& DMap, const Epetra_Map& RMap);
   //@{ \name Destructor.
     //! Destructor
   ~StochGalerkinPrecon(){}
@@ -167,7 +169,7 @@ class StochGalerkinPrecon: public virtual Epetra_Operator {
   //! Reference to Range Map.
   const Epetra_Map& RangeMap_;
 
-  const std::vector<double>& norms_;
+  const Teuchos::Array<double>& norms_;
 
   ML_Epetra::MultiLevelPreconditioner* MLPrec;
 

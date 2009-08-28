@@ -29,14 +29,6 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
-//
-//  usage: 
-//     hermite_example
-//
-//  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
-
 #include <iostream>
 #include <iomanip>
 
@@ -56,11 +48,11 @@ struct pce_quad_func {
   double operator() (const double& a, double& b) const {
     vec[0] = a;
     vec[1] = b;
-    return pce.evaluate(basis, vec);
+    return pce.evaluate(vec);
   }
   const Stokhos::OrthogPolyApprox<int,double>& pce;
   const Stokhos::OrthogPolyBasis<int,double>& basis;
-  mutable std::vector<double> vec;
+  mutable Teuchos::Array<double> vec;
 };
 
 int main(int argc, char **argv)
@@ -71,17 +63,17 @@ int main(int argc, char **argv)
     const unsigned int p = 5;
 
     // Create product basis
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
     for (unsigned int i=0; i<d; i++)
       bases[i] = Teuchos::rcp(new basis_type(p));
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
     // Create approximation
-    int sz = basis->size();
-    Stokhos::OrthogPolyApprox<int,double> x(sz), u(sz), v(sz), w(sz), w2(sz), w3(sz);
+    Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
+      w(basis), w2(basis), w3(basis);
     for (unsigned int i=0; i<d; i++) {
-      x.term2(*basis, i, 1) = 1.0;
+      x.term(i, 1) = 1.0;
     }
 
     // Tensor product quadrature
@@ -97,7 +89,7 @@ int main(int argc, char **argv)
     quad_exp.times(w,v,u);
     
     // Compute tensor product Stieltjes basis for u and v
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
     st_bases[0] = 
       Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *basis, 
 							      *quad, true));
@@ -106,12 +98,12 @@ int main(int argc, char **argv)
 							      *quad, true));
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > st_basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
-    int st_sz = st_basis->size();
-    Stokhos::OrthogPolyApprox<int,double>  u_st(st_sz), v_st(st_sz), w_st(st_sz);
-    u_st.term2(*st_basis, 0, 0) = u.mean(*basis);
-    u_st.term2(*st_basis, 0, 1) = 1.0;
-    v_st.term2(*st_basis, 0, 0) = v.mean(*basis);
-    v_st.term2(*st_basis, 1, 1) = 1.0;
+    Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis), 
+      w_st(st_basis);
+    u_st.term(0, 0) = u.mean();
+    u_st.term(0, 1) = 1.0;
+    v_st.term(0, 0) = v.mean();
+    v_st.term(1, 1) = 1.0;
     
     // Stieltjes quadrature expansion
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
@@ -123,21 +115,21 @@ int main(int argc, char **argv)
     st_quad_exp.times(w_st, u_st, v_st);
     
     // Use Gram-Schmidt to orthogonalize Stieltjes basis of u and v
-    std::vector<double> st_points_0;
-    std::vector<double> st_weights_0;
-    std::vector< std::vector<double> > st_values_0;
+    Teuchos::Array<double> st_points_0;
+    Teuchos::Array<double> st_weights_0;
+    Teuchos::Array< Teuchos::Array<double> > st_values_0;
     st_bases[0]->getQuadPoints(p+1, st_points_0, st_weights_0, st_values_0);
-    std::vector<double> st_points_1;
-    std::vector<double> st_weights_1;
-    std::vector< std::vector<double> > st_values_1;
+    Teuchos::Array<double> st_points_1;
+    Teuchos::Array<double> st_weights_1;
+    Teuchos::Array< Teuchos::Array<double> > st_values_1;
     st_bases[1]->getQuadPoints(p+1, st_points_1, st_weights_1, st_values_1);
-    std::vector< std::vector<double> > st_points(st_points_0.size());
+    Teuchos::Array< Teuchos::Array<double> > st_points(st_points_0.size());
     for (unsigned int i=0; i<st_points_0.size(); i++) {
       st_points[i].resize(2);
       st_points[i][0] = st_points_0[i];
       st_points[i][1] = st_points_1[i];
     }
-    std::vector<double> st_weights = st_weights_0;
+    Teuchos::Array<double> st_weights = st_weights_0;
     
     Teuchos::RCP< Stokhos::GramSchmidtBasis<int,double> > gs_basis = 
       Teuchos::rcp(new Stokhos::GramSchmidtBasis<int,double>(st_basis,
@@ -147,9 +139,9 @@ int main(int argc, char **argv)
     
     // Create quadrature for Gram-Schmidt basis using quad points and 
     // and weights from original basis mapped to Stieljtes basis
-    Teuchos::RCP< const std::vector< std::vector<double> > > points =
+    Teuchos::RCP< const Teuchos::Array< Teuchos::Array<double> > > points =
       Teuchos::rcp(&st_points,false);
-    Teuchos::RCP< const std::vector<double> > weights =
+    Teuchos::RCP< const Teuchos::Array<double> > weights =
       Teuchos::rcp(&st_weights,false);
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad = 
       Teuchos::rcp(new Stokhos::UserDefinedQuadrature<int,double>(gs_basis,
@@ -160,7 +152,8 @@ int main(int argc, char **argv)
     Stokhos::QuadOrthogPolyExpansion<int,double> gs_quad_exp(gs_basis, 
 							     gs_quad);
     
-    Stokhos::OrthogPolyApprox<int,double>  u_gs(st_sz), v_gs(st_sz), w_gs(st_sz);
+    Stokhos::OrthogPolyApprox<int,double>  u_gs(gs_basis), v_gs(gs_basis), 
+      w_gs(gs_basis);
     
     // Map expansion in Stieltjes basis to Gram-Schmidt basis
     gs_basis->transformCoeffs(u_st.coeff(), u_gs.coeff());
@@ -185,21 +178,16 @@ int main(int argc, char **argv)
     std::cout << "w_st = " << std::endl << w_st;
     
     std::cout.setf(std::ios::scientific);
-    std::cout << "w.mean()       = " << w.mean(*basis) << std::endl
-	      << "w2.mean()      = " << w2.mean(*basis) << std::endl
-	      << "w3.mean()      = " << w3.mean(*basis) << std::endl
-	      << "w_gs.mean()    = " << w_gs.mean(*gs_basis) << std::endl
-	      << "w_st.mean()    = " << w_st.mean(*st_basis) << std::endl
-	      << "w.std_dev()    = " << w.standard_deviation(*basis) 
-	      << std::endl
-	      << "w2.std_dev()   = " << w2.standard_deviation(*basis)
-	      << std::endl
-	      << "w3.std_dev()   = " << w3.standard_deviation(*basis)
-	      << std::endl
-	      << "w_gs.std_dev() = " << w_gs.standard_deviation(*gs_basis)
-	      << std::endl
-	      << "w_st.std_dev() = " << w_st.standard_deviation(*st_basis)
-	      << std::endl;
+    std::cout << "w.mean()       = " << w.mean() << std::endl
+	      << "w2.mean()      = " << w2.mean() << std::endl
+	      << "w3.mean()      = " << w3.mean() << std::endl
+	      << "w_gs.mean()    = " << w_gs.mean() << std::endl
+	      << "w_st.mean()    = " << w_st.mean() << std::endl
+	      << "w.std_dev()    = " << w.standard_deviation() << std::endl
+	      << "w2.std_dev()   = " << w2.standard_deviation() << std::endl
+	      << "w3.std_dev()   = " << w3.standard_deviation() << std::endl
+	      << "w_gs.std_dev() = " << w_gs.standard_deviation() << std::endl
+	      << "w_st.std_dev() = " << w_st.standard_deviation() << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

@@ -48,22 +48,22 @@ namespace Stokhos {
     
     //! Project a polynomial into this basis
     void projectPoly(const Polynomial<value_type>& poly, 
-		     std::vector<value_type>& coeffs) const;
+		     Teuchos::Array<value_type>& coeffs) const;
 
     //! Project derivative of basis polynomial into this basis
     void projectDerivative(ordinal_type i, 
-			   std::vector<value_type>& coeffs) const;
+			   Teuchos::Array<value_type>& coeffs) const;
 
     //! Evaluate basis polynomials at given point
     virtual void evaluateBases(const value_type& point,
-                               std::vector<value_type>& basis_pts) const;
+                               Teuchos::Array<value_type>& basis_pts) const;
 
     //! Get Gauss quadrature points, weights, and values of basis at points
     virtual void 
     getQuadPoints(ordinal_type quad_order,
-		  std::vector<value_type>& points,
-		  std::vector<value_type>& weights,
-		  std::vector< std::vector<value_type> >& values) const;
+		  Teuchos::Array<value_type>& points,
+		  Teuchos::Array<value_type>& weights,
+		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
     //! Get sparse grid rule number
     virtual ordinal_type getRule() const { return 5; }

@@ -35,15 +35,15 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
   ordinal_type d = product_basis->dimension();
   ordinal_type sz = product_basis->size();
 
-  const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
+  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
 
   
 
   // Compute quad points, weights, values
-  std::vector< std::vector<value_type> > gp(d);
-  std::vector< std::vector<value_type> > gw(d);
-  std::vector< std::vector< std::vector<value_type> > > gv(d);
-  std::vector<ordinal_type> n(d);
+  Teuchos::Array< Teuchos::Array<value_type> > gp(d);
+  Teuchos::Array< Teuchos::Array<value_type> > gw(d);
+  Teuchos::Array< Teuchos::Array< Teuchos::Array<value_type> > > gv(d);
+  Teuchos::Array<ordinal_type> n(d);
   ordinal_type ntot = 1;
   for (ordinal_type i=0; i<d; i++) {
     coordinate_bases[i]->getQuadPoints(2*(coordinate_bases[i]->order()), 
@@ -54,7 +54,7 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
   quad_points.resize(ntot);
   quad_weights.resize(ntot);
   quad_values.resize(ntot);
-  std::vector<ordinal_type> index(d);
+  Teuchos::Array<ordinal_type> index(d);
   for (ordinal_type i=0; i<d; i++)
     index[i] = 0;
   ordinal_type cnt = 0;
@@ -68,7 +68,7 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
     }
     for (ordinal_type k=0; k<sz; k++) {
       quad_values[cnt][k] = value_type(1.0);
-      std::vector<ordinal_type> term = product_basis->getTerm(k);
+      Teuchos::Array<ordinal_type> term = product_basis->getTerm(k);
       for (ordinal_type j=0; j<d; j++) 
         quad_values[cnt][k] *= gv[j][index[j]][term[j]];
     }
@@ -101,15 +101,15 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
   ordinal_type d = product_basis->dimension();
   ordinal_type sz = product_basis->size();
 
-  const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
+  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
 
   
 
   // Compute quad points, weights, values
-  std::vector< std::vector<value_type> > gp(d);
-  std::vector< std::vector<value_type> > gw(d);
-  std::vector< std::vector< std::vector<value_type> > > gv(d);
-  std::vector<ordinal_type> n(d);
+  Teuchos::Array< Teuchos::Array<value_type> > gp(d);
+  Teuchos::Array< Teuchos::Array<value_type> > gw(d);
+  Teuchos::Array< Teuchos::Array< Teuchos::Array<value_type> > > gv(d);
+  Teuchos::Array<ordinal_type> n(d);
   ordinal_type ntot = 1;
   for (ordinal_type i=0; i<d; i++) {
     coordinate_bases[i]->getQuadPoints(quad_order, 
@@ -120,7 +120,7 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
   quad_points.resize(ntot);
   quad_weights.resize(ntot);
   quad_values.resize(ntot);
-  std::vector<ordinal_type> index(d);
+  Teuchos::Array<ordinal_type> index(d);
   for (ordinal_type i=0; i<d; i++)
     index[i] = 0;
   ordinal_type cnt = 0;
@@ -134,7 +134,7 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
     }
     for (ordinal_type k=0; k<sz; k++) {
       quad_values[cnt][k] = value_type(1.0);
-      std::vector<ordinal_type> term = product_basis->getTerm(k);
+      Teuchos::Array<ordinal_type> term = product_basis->getTerm(k);
       for (ordinal_type j=0; j<d; j++) 
         quad_values[cnt][k] *= gv[j][index[j]][term[j]];
     }
@@ -161,7 +161,7 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< std::vector<value_type> >&
+const Teuchos::Array< Teuchos::Array<value_type> >&
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
 getQuadPoints() const
 {
@@ -169,7 +169,7 @@ getQuadPoints() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+const Teuchos::Array<value_type>&
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
 getQuadWeights() const
 {
@@ -177,7 +177,7 @@ getQuadWeights() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< std::vector<value_type> >&
+const Teuchos::Array< Teuchos::Array<value_type> >&
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
 getBasisAtQuadPoints() const
 {

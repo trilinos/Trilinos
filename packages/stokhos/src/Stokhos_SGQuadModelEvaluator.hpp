@@ -57,8 +57,8 @@ namespace Stokhos {
     SGQuadModelEvaluator(
 	      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
 	      const Teuchos::RCP< const Stokhos::Quadrature<int,double> >& quad,
-	      const std::vector<int>& sg_p_index,
-	      const std::vector<int>& sg_g_index);
+	      const Teuchos::Array<int>& sg_p_index,
+	      const Teuchos::Array<int>& sg_g_index);
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -108,10 +108,10 @@ namespace Stokhos {
     mutable Teuchos::RCP< const Stokhos::Quadrature<int,double> > quad;
 
     //! Index of stochastic parameters
-    std::vector<int> sg_p_index;
+    Teuchos::Array<int> sg_p_index;
 
     //! Index of stochastic responses
-    std::vector<int> sg_g_index;
+    Teuchos::Array<int> sg_g_index;
 
     //! Number of parameter vectors
     int num_p;

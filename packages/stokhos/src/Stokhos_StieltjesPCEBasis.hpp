@@ -32,7 +32,6 @@
 #define STOKHOS_STIELTJESPCEBASIS_HPP
 
 #include <string>
-#include <vector>
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
@@ -61,14 +60,11 @@ namespace Stokhos {
     //! Return order of basis
     virtual ordinal_type order() const;
 
-    //! Return dimension of basis
-    virtual ordinal_type dimension() const;
-
     //! Return total size of basis
     virtual ordinal_type size() const;
 
     //! Compute norm squared of each basis element
-    virtual const std::vector<value_type>& norm_squared() const;
+    virtual const Teuchos::Array<value_type>& norm_squared() const;
 
     //! Compute norm squared of ith element
     virtual const value_type& norm_squared(ordinal_type i) const;
@@ -81,15 +77,15 @@ namespace Stokhos {
 
     //! Project a polynomial into this basis
     virtual void projectPoly(const Polynomial<value_type>& poly, 
-                             std::vector<value_type>& coeffs) const;
+                             Teuchos::Array<value_type>& coeffs) const;
 
     //! Project product of two basis polynomials into this basis
     virtual void projectProduct(ordinal_type i, ordinal_type j,
-                                std::vector<value_type>& coeffs) const;
+                                Teuchos::Array<value_type>& coeffs) const;
 
     //! Project derivative of basis polynomial into this basis
     virtual void projectDerivative(ordinal_type i, 
-                                   std::vector<value_type>& coeffs) const;
+                                   Teuchos::Array<value_type>& coeffs) const;
 
     //! Write polynomial in standard basis
     virtual Polynomial<value_type> toStandardBasis(const value_type coeffs[], 
@@ -100,7 +96,7 @@ namespace Stokhos {
 
     //! Evaluate basis polynomials at given point
     virtual void evaluateBases(const value_type& point,
-                               std::vector<value_type>& basis_pts) const;
+                               Teuchos::Array<value_type>& basis_pts) const;
 
     //! Print basis
     virtual void print(std::ostream& os) const;
@@ -111,9 +107,9 @@ namespace Stokhos {
     //! Get Gauss quadrature points, weights, and values of basis at points
     virtual void 
     getQuadPoints(ordinal_type quad_order,
-		  std::vector<value_type>& points,
-		  std::vector<value_type>& weights,
-		  std::vector< std::vector<value_type> >& values) const;
+		  Teuchos::Array<value_type>& points,
+		  Teuchos::Array<value_type>& weights,
+		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
     //! Get sparse grid rule number
     virtual ordinal_type getRule() const;
@@ -131,28 +127,28 @@ namespace Stokhos {
     //! Compute 3-term recurrence using Stieljtes procedure
     void stieltjes(ordinal_type nstart,
 		   ordinal_type nfinish,
-		   const std::vector<value_type>& weights,
-		   const std::vector<value_type>& points,
-		   std::vector<value_type>& a,
-		   std::vector<value_type>& b,
-		   std::vector<value_type>& nrm,
-		   std::vector< std::vector<value_type> >& phi_vals) const;
+		   const Teuchos::Array<value_type>& weights,
+		   const Teuchos::Array<value_type>& points,
+		   Teuchos::Array<value_type>& a,
+		   Teuchos::Array<value_type>& b,
+		   Teuchos::Array<value_type>& nrm,
+		   Teuchos::Array< Teuchos::Array<value_type> >& phi_vals) const;
 
     //! Compute \int \phi^2_k(t) d\lambda(t) and \int t\phi^2_k(t) d\lambda(t)
     void integrateBasisSquared(ordinal_type k, 
-			       const std::vector<value_type>& a,
-			       const std::vector<value_type>& b,
-			       const std::vector<value_type>& weights,
-			       const std::vector<value_type>& points,
-			       std::vector< std::vector<value_type> >& phi_vals,
+			       const Teuchos::Array<value_type>& a,
+			       const Teuchos::Array<value_type>& b,
+			       const Teuchos::Array<value_type>& weights,
+			       const Teuchos::Array<value_type>& points,
+			       Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
 			       value_type& val1, value_type& val2) const;
 
     //! Evaluate polynomials via 3-term recurrence
     void evaluateRecurrence(ordinal_type k,
-			    const std::vector<value_type>& a,
-			    const std::vector<value_type>& b,
-			    const std::vector<value_type>& points,
-			    std::vector< std::vector<value_type> >& values) const;
+			    const Teuchos::Array<value_type>& a,
+			    const Teuchos::Array<value_type>& b,
+			    const Teuchos::Array<value_type>& points,
+			    Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
   private:
 
@@ -171,22 +167,22 @@ namespace Stokhos {
     ordinal_type p;
 
     //! Polynomial norms
-    mutable std::vector<value_type> norms;
+    mutable Teuchos::Array<value_type> norms;
 
     //! 3-term recurrence alpha coefficients
-    mutable std::vector<value_type> alpha;
+    mutable Teuchos::Array<value_type> alpha;
 
     //! 3-term recurrence beta coefficients
-    mutable std::vector<value_type> beta;
+    mutable Teuchos::Array<value_type> beta;
 
     //! Values of PCE at quadrature points
-    mutable std::vector<value_type> pce_vals;
+    mutable Teuchos::Array<value_type> pce_vals;
 
     //! PCE quadrature weights
-    std::vector<value_type> pce_weights;
+    Teuchos::Array<value_type> pce_weights;
 
     //! Values of generated polynomials at PCE quadrature points
-    mutable std::vector< std::vector<value_type> > phi_vals;
+    mutable Teuchos::Array< Teuchos::Array<value_type> > phi_vals;
 
     //! Triple product tensor
     mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Cijk;

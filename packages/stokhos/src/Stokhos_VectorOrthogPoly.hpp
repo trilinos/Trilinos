@@ -118,33 +118,23 @@ namespace Stokhos {
     //! Array access
     const coeff_type& operator[](ordinal_type i) const;
 
-    //! Get term with supplied order for each dimension
-    coeff_type& 
-    term(int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
-	 int i5 = -1, int i6 = -1, int i7 = -1, int i8 = -1, int i9 = -1);
-
-    //! Get term with supplied order for each dimension
-    const coeff_type& 
-    term(int i0 = -1, int i1 = -1, int i2 = -1, int i3 = -1, int i4 = -1,
-	 int i5 = -1, int i6 = -1, int i7 = -1, int i8 = -1, int i9 = -1) const;
+    //! Get term for dimension \c dimension and order \c order
+    coeff_type& term(ordinal_type dimension, ordinal_type order);
 
     //! Get term for dimension \c dimension and order \c order
-    coeff_type& term2(ordinal_type dimension, ordinal_type order);
-
-    //! Get term for dimension \c dimension and order \c order
-    const coeff_type& term2(ordinal_type dimension, ordinal_type order) const;
+    const coeff_type& term(ordinal_type dimension, ordinal_type order) const;
 
     //! Initialize polynomial coefficients
     void init(const value_type& val);
 
     //! Evaluate polynomial at supplied basis values
-    void evaluate(const std::vector<value_type>& basis_values, 
+    void evaluate(const Teuchos::Array<value_type>& basis_values, 
 		  coeff_type& result) const;
 
     //! Evaluate polynomial at supplied basis values
     void sumIntoAllTerms(const value_type& weight,
-			 const std::vector<value_type>& basis_values, 
-			 const std::vector<value_type>& basis_norms,
+			 const Teuchos::Array<value_type>& basis_values, 
+			 const Teuchos::Array<value_type>& basis_norms,
 			 const coeff_type& vec);
 
   private:

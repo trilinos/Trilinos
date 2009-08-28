@@ -29,14 +29,6 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
-//
-//  usage: 
-//     hermite_example
-//
-//  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
-
 #include <iostream>
 #include <iomanip>
 
@@ -62,11 +54,11 @@ struct stieltjes_pce_quad_func {
   
   double operator() (const double& a) const {
     vec[0] = a;
-    return pce.evaluate(basis, vec);
+    return pce.evaluate(vec);
   }
   const Stokhos::OrthogPolyApprox<int,double>& pce;
   const Stokhos::OrthogPolyBasis<int,double>& basis;
-  mutable std::vector<double> vec;
+  mutable Teuchos::Array<double> vec;
 };
 
 int main(int argc, char **argv)
@@ -81,7 +73,7 @@ int main(int argc, char **argv)
     // Loop over dimensions
     for (unsigned int d=dmin; d<=dmax; d++) {
 
-      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
 
       // Loop over orders
       for (unsigned int p=pmin; p<=pmax; p++) {
@@ -94,10 +86,10 @@ int main(int argc, char **argv)
 	std::cout << *basis << std::endl;
 
 	// Create approximation
-	int sz = basis->size();
-	Stokhos::OrthogPolyApprox<int,double> x(sz), u(sz), v(sz), v2(sz);
+	Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
+	  v2(basis);
 	for (unsigned int i=0; i<d; i++) {
-	  x.term2(*basis, i, 1) = 1.0;
+	  x.term(i, 1) = 1.0;
 	}
 
 	// Tensor product quadrature
@@ -119,18 +111,17 @@ int main(int argc, char **argv)
 	quad_exp.times(v,u,u);
 
 	// Compute Stieltjes basis
-	std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(1);
+	Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(1);
 	st_bases[0] = 
 	  Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *basis, 
 								  *quad, true));
 	Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > st_basis = 
 	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
-	int st_sz = st_basis->size();
 	std::cout << *st_basis << std::endl;
 
-	Stokhos::OrthogPolyApprox<int,double>  u_st(st_sz), v_st(st_sz);
-	u_st.term2(*st_basis, 0, 0) = u.mean(*basis);
-	u_st.term2(*st_basis, 0, 1) = 1.0;
+	Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis);
+	u_st.term(0, 0) = u.mean();
+	u_st.term(0, 1) = 1.0;
 	
         // Tensor product quadrature
 	Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
@@ -154,14 +145,13 @@ int main(int argc, char **argv)
 	std::cout << v_st;
 	
 	std::cout.setf(std::ios::scientific);
-	std::cout << "v.mean()       = " << v.mean(*basis) << std::endl
-		  << "v_st.mean()    = " << v_st.mean(*st_basis) << std::endl
-		  << "v2.mean()      = " << v2.mean(*basis) << std::endl
-		  << "v.std_dev()    = " << v.standard_deviation(*basis) 
+	std::cout << "v.mean()       = " << v.mean() << std::endl
+		  << "v_st.mean()    = " << v_st.mean() << std::endl
+		  << "v2.mean()      = " << v2.mean() << std::endl
+		  << "v.std_dev()    = " << v.standard_deviation() << std::endl
+		  << "v_st.std_dev() = " << v_st.standard_deviation() 
 		  << std::endl
-		  << "v_st.std_dev() = " << v_st.standard_deviation(*st_basis)
-		  << std::endl
-		  << "v2.std_dev()   = " << v2.standard_deviation(*basis)
+		  << "v2.std_dev()   = " << v2.standard_deviation()
 		  << std::endl;
       }
       

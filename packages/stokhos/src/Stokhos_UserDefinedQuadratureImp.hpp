@@ -31,26 +31,26 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::UserDefinedQuadrature<ordinal_type, value_type>::
 UserDefinedQuadrature(
-     const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis,
-     const Teuchos::RCP<const std::vector< std::vector<value_type> > >& points,
-     const Teuchos::RCP<const std::vector<value_type> >& weights)
+const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis,
+const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& points,
+     const Teuchos::RCP<const Teuchos::Array<value_type> >& weights)
   : quad_points(points),
     quad_weights(weights)
 {
   ordinal_type nqp = points->size();
-  Teuchos::RCP<std::vector< std::vector<value_type> > > qv = 
-    Teuchos::rcp(new std::vector< std::vector<value_type> >(nqp));
+  Teuchos::RCP<Teuchos::Array< Teuchos::Array<value_type> > > qv = 
+    Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(nqp));
   for (ordinal_type i=0; i<nqp; i++) 
-    (*qv)[i] = basis->evaluateBases((*points)[i]);
+    basis->evaluateBases((*points)[i], (*qv)[i]);
   quad_values = qv;
 }
 
 template <typename ordinal_type, typename value_type>
 Stokhos::UserDefinedQuadrature<ordinal_type, value_type>::
 UserDefinedQuadrature(
-     const Teuchos::RCP<const std::vector< std::vector<value_type> > >& points,
-     const Teuchos::RCP<const std::vector<value_type> >& weights,
-     const Teuchos::RCP<const std::vector< std::vector<value_type> > >& values)
+const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& points,
+const Teuchos::RCP<const Teuchos::Array<value_type> >& weights,
+const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& values)
   : quad_points(points),
     quad_weights(weights),
     quad_values(values)
@@ -58,7 +58,7 @@ UserDefinedQuadrature(
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< std::vector<value_type> >&
+const Teuchos::Array< Teuchos::Array<value_type> >&
 Stokhos::UserDefinedQuadrature<ordinal_type, value_type>::
 getQuadPoints() const
 {
@@ -66,7 +66,7 @@ getQuadPoints() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+const Teuchos::Array<value_type>&
 Stokhos::UserDefinedQuadrature<ordinal_type, value_type>::
 getQuadWeights() const
 {
@@ -74,7 +74,7 @@ getQuadWeights() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< std::vector<value_type> >&
+const Teuchos::Array< Teuchos::Array<value_type> >&
 Stokhos::UserDefinedQuadrature<ordinal_type, value_type>::
 getBasisAtQuadPoints() const
 {

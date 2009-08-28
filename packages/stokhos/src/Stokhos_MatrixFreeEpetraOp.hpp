@@ -32,6 +32,8 @@
 #define STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Time.hpp"
 
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
@@ -41,7 +43,6 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
-#include <Teuchos_Time.hpp>
 
 namespace Stokhos {
     
@@ -161,10 +162,10 @@ namespace Stokhos {
     unsigned int num_blocks;
 
     //! MultiVectors for each block for Apply() input
-    mutable std::vector< Teuchos::RCP<const Epetra_MultiVector> > input_block;
+    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
 
     //! MultiVectors for each block for Apply() result
-    mutable std::vector< Teuchos::RCP<Epetra_MultiVector> > result_block;
+    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
 
     //! Temporary multivector
     mutable Teuchos::RCP<Epetra_MultiVector> tmp;

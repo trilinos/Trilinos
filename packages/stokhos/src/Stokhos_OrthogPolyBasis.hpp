@@ -36,6 +36,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Stokhos {
@@ -60,7 +61,7 @@ namespace Stokhos {
     virtual ordinal_type size() const = 0;
 
     //! Compute norm squared of each basis element
-    virtual const std::vector<value_type>& norm_squared() const = 0;
+    virtual const Teuchos::Array<value_type>& norm_squared() const = 0;
 
     //! Compute norm squared of ith element
     virtual const value_type& norm_squared(ordinal_type i) const = 0;
@@ -78,34 +79,34 @@ namespace Stokhos {
     virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const = 0;
 
     //! Project product of basis polynomials i and j onto this basis
-    virtual void projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const = 0;
+    virtual void projectProduct(ordinal_type i, ordinal_type j, Teuchos::Array<value_type>& coeffs) const = 0;
     
     //! Project derivative of basis polynomial into this basis
     virtual void projectDerivative(ordinal_type i, 
-                                   std::vector<value_type>& coeffs) const = 0;
+                                   Teuchos::Array<value_type>& coeffs) const = 0;
 
     //! Evaluate basis polynomial at zero
     virtual value_type evaluateZero(ordinal_type i) const = 0;
 
     //! Evaluate basis polynomials at given point
-    virtual const std::vector<value_type>& 
-    evaluateBases(const std::vector<value_type>& point) const = 0;
+    virtual void evaluateBases(const Teuchos::Array<value_type>& point,
+			       Teuchos::Array<value_type>& basis_vals) const = 0;
 
     //! Print basis
     virtual void print(std::ostream& os) const = 0;
 
     //! Get term
-    virtual std::vector<ordinal_type> getTerm(ordinal_type i) const = 0;
+    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const = 0;
 
     //! Get index
     virtual ordinal_type 
-    getIndex(const std::vector<ordinal_type>& term) const = 0;
+    getIndex(const Teuchos::Array<ordinal_type>& term) const = 0;
 
     //! Return name of basis
     virtual const std::string& getName() const = 0;
 
     //! Return coordinate bases
-    virtual const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& getCoordinateBases() const = 0;
+    virtual const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& getCoordinateBases() const = 0;
 
   private:
 

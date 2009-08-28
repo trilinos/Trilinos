@@ -31,6 +31,8 @@
 #ifndef STOKHOS_SGMODELEVALUATOR_HPP
 #define STOKHOS_SGMODELEVALUATOR_HPP
 
+#include <vector>
+
 #include "EpetraExt_ModelEvaluator.h"
 
 #include "Teuchos_RCP.hpp"
@@ -87,8 +89,8 @@ namespace Stokhos {
     SGModelEvaluator(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-      const std::vector<int>& sg_p_index,
-      const std::vector<int>& sg_g_index,
+      const Teuchos::Array<int>& sg_p_index,
+      const Teuchos::Array<int>& sg_g_index,
       const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
       const Teuchos::RCP<Teuchos::ParameterList>& params_,
       const Teuchos::RCP<const Epetra_Comm>& comm);
@@ -155,10 +157,10 @@ namespace Stokhos {
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> > sg_basis;
 
     //! Index of stochastic parameters
-    std::vector<int> sg_p_index;
+    Teuchos::Array<int> sg_p_index;
 
     //! Index of stochastic responses
-    std::vector<int> sg_g_index;
+    Teuchos::Array<int> sg_g_index;
 
     //! Algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> params;

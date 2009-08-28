@@ -31,7 +31,7 @@
 #ifndef STOKHOS_QUADRATURE
 #define STOKHOS_QUADRATURE
 
-#include <vector>
+#include "Teuchos_Array.hpp"
 
 namespace Stokhos {
 
@@ -46,15 +46,15 @@ namespace Stokhos {
     virtual ~Quadrature() {}
 
     //! Get quadrature points
-    virtual const std::vector< std::vector<value_type> >& 
+    virtual const Teuchos::Array< Teuchos::Array<value_type> >& 
     getQuadPoints() const = 0;
 
     //! Get quadrature weights
-    virtual const std::vector<value_type>& 
+    virtual const Teuchos::Array<value_type>& 
     getQuadWeights() const = 0;
 
     //! Get values of basis at quadrature points
-    virtual const std::vector< std::vector<value_type> > & 
+    virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
     getBasisAtQuadPoints() const = 0;
 
   private:

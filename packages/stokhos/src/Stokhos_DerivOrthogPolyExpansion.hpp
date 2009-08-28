@@ -34,6 +34,7 @@
 #include "Stokhos_OrthogPolyExpansion.hpp"
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -235,7 +236,7 @@ namespace Stokhos {
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> B;
 
     //! Pivot array
-    std::vector<ordinal_type> piv;
+    Teuchos::Array<ordinal_type> piv;
     
     //! LAPACK wrappers
     Teuchos::LAPACK<ordinal_type,value_type> lapack;

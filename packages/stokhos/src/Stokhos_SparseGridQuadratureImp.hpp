@@ -58,15 +58,15 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 
   std::cout << "Sparse grid level = " << level << std::endl;
 
-  const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
+  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
 
   // Compute quad points, weights, values
-  std::vector<int> rules(d);
+  Teuchos::Array<int> rules(d);
   
-  std::vector< void (*) ( int order, int np, double p[], double x[] ) > compute1DPoints(d);
-  std::vector< void (*) ( int order, int np, double p[], double w[] ) > compute1DWeights(d);
-  std::vector<int> nparams(d);
-  std::vector<double> params(d);
+  Teuchos::Array< void (*) ( int order, int np, double p[], double x[] ) > compute1DPoints(d);
+  Teuchos::Array< void (*) ( int order, int np, double p[], double w[] ) > compute1DWeights(d);
+  Teuchos::Array<int> nparams(d);
+  Teuchos::Array<double> params(d);
   for (ordinal_type i=0; i<d; i++) {
     rules[i] = coordinate_bases[i]->getRule();
     if (rules[i] == 5) {
@@ -99,13 +99,13 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 					  &compute1DPoints[0],
 					  1e-15,
 					  webbur::level_to_order_default);
-  std::vector<int> sparse_order(ntot*d);
-  std::vector<int> sparse_index(ntot*d);
-  std::vector<int> sparse_unique_index(num_total_pts);
+  Teuchos::Array<int> sparse_order(ntot*d);
+  Teuchos::Array<int> sparse_index(ntot*d);
+  Teuchos::Array<int> sparse_unique_index(num_total_pts);
   quad_points.resize(ntot);
   quad_weights.resize(ntot);
   quad_values.resize(ntot);
-  std::vector<value_type> gp(ntot*d);
+  Teuchos::Array<value_type> gp(ntot*d);
 
   webbur::sparse_grid_mixed_growth_unique_index(d, level, &rules[0],
 						&nparams[0], 
@@ -134,7 +134,7 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 					 &gp[0]);
   
   value_type weight_factor = 1.0;
-  std::vector<value_type> point_factor(d);
+  Teuchos::Array<value_type> point_factor(d);
   for (ordinal_type i=0; i<d; i++) {
     weight_factor *= coordinate_bases[i]->getQuadWeightFactor();
     point_factor[i] = coordinate_bases[i]->getQuadPointFactor();
@@ -145,7 +145,7 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
     quad_weights[i] *= weight_factor;
     for (ordinal_type j=0; j<d; j++)
       quad_points[i][j] = gp[i*d+j]*point_factor[j];
-    quad_values[i] = product_basis->evaluateBases(quad_points[i]);
+    product_basis->evaluateBases(quad_points[i], quad_values[i]);
   }
 
   std::cout << "Number of quadrature points = " << ntot << std::endl;
@@ -190,7 +190,7 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< std::vector<value_type> >&
+const Teuchos::Array< Teuchos::Array<value_type> >&
 Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
 getQuadPoints() const
 {
@@ -198,7 +198,7 @@ getQuadPoints() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector<value_type>&
+const Teuchos::Array<value_type>&
 Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
 getQuadWeights() const
 {
@@ -206,7 +206,7 @@ getQuadWeights() const
 }
 
 template <typename ordinal_type, typename value_type>
-const std::vector< std::vector<value_type> >&
+const Teuchos::Array< Teuchos::Array<value_type> >&
 Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
 getBasisAtQuadPoints() const
 {

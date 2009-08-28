@@ -37,7 +37,7 @@ Stokhos::KLMatrixFreeEpetraOp::KLMatrixFreeEpetraOp(
  const Teuchos::RCP<const Epetra_Map>& sg_map_,
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
- const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& ops_) 
+ const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops_) 
   : label("Stokhos::MatrixFreeEpetraOp"),
     base_map(base_map_),
     sg_map(sg_map_),
@@ -58,12 +58,12 @@ Stokhos::KLMatrixFreeEpetraOp::~KLMatrixFreeEpetraOp()
 
 void 
 Stokhos::KLMatrixFreeEpetraOp::reset(
-   const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& ops)
+   const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops)
 {
   block_ops = ops;
 }
 
-const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >&
+const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >&
 Stokhos::KLMatrixFreeEpetraOp::getOperatorBlocks()
 {
   return block_ops;
@@ -116,23 +116,23 @@ Stokhos::KLMatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   
   //Compute K_i*x_k for all i and k.
   int d = sg_basis->dimension();
-  std::vector<Teuchos::RCP<Epetra_MultiVector> > blockProducts(d+1);
+  Teuchos::Array<Teuchos::RCP<Epetra_MultiVector> > blockProducts(d+1);
   for(int k = 0; k<=d; k++){
     blockProducts[k] = Teuchos::rcp(new Epetra_MultiVector(*base_map,num_blocks)); 
-    for(int i = 0; i<num_blocks; i++){
+    for(unsigned int i = 0; i<num_blocks; i++){
      (block_ops)[k]->Apply(*input_block[i],*(*blockProducts[k])(i));
     }
   }
   
   double cijk, gamma;
-  int i, j, k;
-  std::vector< double > norms = sg_basis->norm_squared();
-  std::vector<double> one(d);
+  int i, k;
+  Teuchos::Array< double > norms = sg_basis->norm_squared();
+  Teuchos::Array<double> one(d);
   for(int j = 0; j<d; j++)one[j] = 1;
-  std::vector< double > values(num_blocks);
-  values = sg_basis->evaluateBases(one);
+  Teuchos::Array< double > values(num_blocks);
+  sg_basis->evaluateBases(one, values);
     
-  for (unsigned int j=0; j<=d; j++) {
+  for (int j=0; j<=d; j++) {
     gamma = values[j]/(1-sg_basis->evaluateZero(j));
     unsigned int nl = Cijk->num_values(j);
     for (unsigned int l=0; l<nl; l++) {

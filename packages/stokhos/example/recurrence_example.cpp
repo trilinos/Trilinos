@@ -63,10 +63,10 @@ int main(int argc, char **argv)
     //Stokhos::OneDOrthogPolyBasis<int,double> basis = new Stokhos::RysBasis<int,double>(p,5,true);
     Teuchos::RCP<const Stokhos::RecurrenceBasis<int,double> > basis;
     basis = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"Beta",&weightFunction,leftEndPt,rightEndPt,true));
-    std::vector<double> alpha;
-    std::vector<double> beta;
-    std::vector<double> gamma;
-    std::vector<double> norm_sq;
+    Teuchos::Array<double> alpha;
+    Teuchos::Array<double> beta;
+    Teuchos::Array<double> gamma;
+    Teuchos::Array<double> norm_sq;
     norm_sq = basis->norm_squared();
     basis->getAlpha(alpha);
     basis->getBeta(beta);
@@ -83,11 +83,11 @@ int main(int argc, char **argv)
     }
     
     
-    std::vector<double> quad_points;
-    std::vector<double> quad_weights;
-    std::vector<std::vector< double > > quad_values;
+    Teuchos::Array<double> quad_points;
+    Teuchos::Array<double> quad_weights;
+    Teuchos::Array<Teuchos::Array< double > > quad_values;
     basis->getQuadPoints(20, quad_points, quad_weights, quad_values);
-    for(int i = 0; i<quad_points.size(); i++){
+    for(std::size_t i = 0; i<quad_points.size(); i++){
       std::cout << "x_i = "<<quad_points[i]<<" w_i = "<< quad_weights[i] <<" " << i << " / " << quad_points.size()<< "\n";
     }
 

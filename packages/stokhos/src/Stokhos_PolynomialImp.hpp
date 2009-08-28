@@ -37,7 +37,7 @@ Polynomial(unsigned int deg) :
 
 template <typename T>
 Stokhos::Polynomial<T>::
-Polynomial(const std::vector<T>& coefficients) :
+Polynomial(const Teuchos::Array<T>& coefficients) :
   coeffs(coefficients)
 {
 }

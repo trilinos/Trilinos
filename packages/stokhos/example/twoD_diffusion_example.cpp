@@ -95,11 +95,11 @@ TotalTimer.start();
 //Parse the input arguments.
 //
 int n, p, d;
-char polyType;
-double * evaluationPoint = new double(d);
+//char polyType;
+//double * evaluationPoint = new double(d);
 if(argc < 7){
   std::cout<< "Usage is: Stokhos_twoD_diffusion_example.cpp <# meshPoints> <PC Degree> <PC Dimension> <sigma> <mu> <Weight Cut>\n";
-  std:cout << "assuming: Stokhos_twoD_diffusion_example.cpp 32 5 1 3 1 3\n";
+  std::cout << "assuming: Stokhos_twoD_diffusion_example.cpp 32 5 1 3 1 3\n";
   n = 32; //Number of mesh points
   p = 5; //Polynomial degree
   d = 1;  //Terms in KL expansion
@@ -130,7 +130,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 double xyLeft = -.5;
 double xyRight = .5;
 double mesh_size = (xyRight - xyLeft)/((double)(n-1));
-std::vector<double> x(n);
+Teuchos::Array<double> x(n);
 for(int idx = 0; idx < n; idx++){
   x[idx] = xyLeft + (idx)*mesh_size;
 }
@@ -140,7 +140,7 @@ double meshSize = x[1]-x[0];
 /////////////////////////////////////////////////////////////////////////////////
 //Generate the polynomial chaos basis.
 /////////////////////////////////////////////////////////////////////////////////
-std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
+Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
 for (int i = 0; i< d; i++){
   bases[i] = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"beta",&weight,-weightCut,weightCut,true));
 }
@@ -154,11 +154,11 @@ const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->getL
 ////////////////////////////////////////////////////////////////////////
 //Discretize the random field.
 ///////////////////////////////////////////////////////////////////////
-lambda = std::vector<double>(d);
-alpha = std::vector<double>(d);
-omega = std::vector<double>(d);
-xind = std::vector<int>(d);
-yind = std::vector<int>(d);
+lambda = Teuchos::Array<double>(d);
+alpha = Teuchos::Array<double>(d);
+omega = Teuchos::Array<double>(d);
+xind = Teuchos::Array<int>(d);
+yind = Teuchos::Array<int>(d);
 generateExponentialRF(d, 1,lambda, alpha, omega, xind, yind);
 
 
@@ -167,7 +167,7 @@ generateExponentialRF(d, 1,lambda, alpha, omega, xind, yind);
 //the implicit MAT-VEC operator
 ////////////////////////////////////////////////////////////////////// 
 
-std::vector<Teuchos::RCP<Epetra_CrsMatrix> > A_k(d+1);
+Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > A_k(d+1);
 const Teuchos::RCP<const Epetra_Map> StochMap = Teuchos::rcp(new Epetra_Map(n*n*basis->size(),0,Comm));
 const Teuchos::RCP<const Epetra_Map> BaseMap = Teuchos::rcp(new Epetra_Map(n*n,0,Comm));
 int NumMyElements = (*BaseMap).NumMyElements();
@@ -176,7 +176,7 @@ int * NumNz = new int[NumMyElements];
   
 double *Values = new double[4];
 int *Indices = new int[4];
-double two, two2;
+double two;
 int NumEntries;
 int * bcIndices = new int[NumMyElements]; 
 
@@ -187,8 +187,8 @@ for(int k = 0; k<=d; k++){
     // MyGlobalElements[i]+1%x.size() == 0 ==> right edge.
     // MyGlobalElements[i] >= n - x.size() ==> top edge.
 
-    if((MyGlobalElements[i] < x.size() || MyGlobalElements[i]%x.size() == 0 ||
-       (MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= n*n - x.size())){
+    if((MyGlobalElements[i] < static_cast<int>(x.size()) || MyGlobalElements[i]%x.size() == 0 ||
+	(MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= n*n - static_cast<int>(x.size()))){
       if(k==0){
         NumNz[i] = 1;
       } else NumNz[i] = 0;

@@ -32,11 +32,14 @@
 #define STOKHOS_ONEDORTHOGPOLYBASISBASE_HPP
 
 #include <string>
-#include <vector>
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
 
 namespace Stokhos {
 
+  /*! 
+   * \brief Partial concrete implementation of OneDOrthogPolyBasis suitable for
+   * many classes of polynomials.
+   */
   template <typename ordinal_type, typename value_type>
   class OneDOrthogPolyBasisBase : 
     public OneDOrthogPolyBasis<ordinal_type, value_type> {
@@ -48,14 +51,11 @@ namespace Stokhos {
     //! Return order of basis
     virtual ordinal_type order() const;
 
-    //! Return dimension of basis
-    virtual ordinal_type dimension() const;
-
     //! Return total size of basis
     virtual ordinal_type size() const;
 
     //! Compute norm squared of each basis element
-    virtual const std::vector<value_type>& norm_squared() const;
+    virtual const Teuchos::Array<value_type>& norm_squared() const;
 
     //! Compute norm squared of ith element
     virtual const value_type& norm_squared(ordinal_type i) const;
@@ -68,28 +68,15 @@ namespace Stokhos {
 
     //! Project product of two basis polynomials into this basis
     virtual void projectProduct(ordinal_type i, ordinal_type j,
-                                std::vector<value_type>& coeffs) const;
-
-    //! Write polynomial in standard basis
-    virtual Polynomial<value_type> toStandardBasis(const value_type coeffs[], 
-						   ordinal_type n) const;
+                                Teuchos::Array<value_type>& coeffs) const;
 
     //! Evaluate basis polynomial at zero
     virtual value_type evaluateZero(ordinal_type i) const;
 
     virtual void print(std::ostream& os) const;
 
-    //! Get term
-    virtual std::vector<ordinal_type> getTerm(ordinal_type i) const;
-
-    //! Get index
-    virtual ordinal_type 
-    getIndex(const std::vector<ordinal_type>& term) const;
-
     //! Return name of basis
     virtual const std::string& getName() const;
-
-    
 
   protected:
 
@@ -113,13 +100,13 @@ namespace Stokhos {
     ordinal_type p;
 
     //! Basis polynomials
-    std::vector< Polynomial<value_type> > basis;
+    Teuchos::Array< Polynomial<value_type> > basis;
 
     //! double-sized basis polynomials for accurately projecting products
-    std::vector< Polynomial<value_type> > double_basis;
+    Teuchos::Array< Polynomial<value_type> > double_basis;
 
     //! Norms
-    std::vector<value_type> norms;
+    Teuchos::Array<value_type> norms;
 
     //! Triple product tensor
     mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Cijk;

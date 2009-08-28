@@ -26,7 +26,7 @@
 
 
 //If the RHS function is expanded in a KL-expansion, use this to generate the RHS vector.
-void generateRHS(double (*rhs_function)(double, double, int), std::vector<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
+void generateRHS(double (*rhs_function)(double, double, int), Teuchos::Array<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
   int N_xi = basis->size();
   int N_x = mesh.size();
@@ -37,11 +37,11 @@ void generateRHS(double (*rhs_function)(double, double, int), std::vector<double
   double doubleProd;
   int i,k;
 
-  std::vector<double> one(d);
+  Teuchos::Array<double> one(d);
   for(int j = 0; j<d; j++)one[j] = 1;
-  std::vector< double > values(N_xi);
-  values = basis->evaluateBases(one);
-  std::vector< double > norms = basis->norm_squared();
+  Teuchos::Array< double > values(N_xi);
+  basis->evaluateBases(one, values);
+  Teuchos::Array< double > norms = basis->norm_squared();
   for(int stochIdx = 0; stochIdx <= d; stochIdx++){
     double gamma = values[stochIdx]/(1-basis->evaluateZero(stochIdx));
     Cijk->value(0, stochIdx, i, k, doubleProd);
@@ -65,7 +65,7 @@ void generateRHS(double (*rhs_function)(double, double, int), std::vector<double
 
 // for an arbitary RHS function f(x,\xi) computes the RHS vector via quadrature. VERY SLOW if there are many basis functions
 // and the dimension is high.
-void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), std::vector<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
+void generateRHS(double (*rhs_function)(double, double, Teuchos::Array<double>&), Teuchos::Array<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
   int N_xi = basis->size();
   int N_x = mesh.size();
@@ -75,14 +75,14 @@ void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), s
   Stokhos::SparseGridQuadrature<int,double> quadRule(basis,basis->order());
   
 
-  std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
-  std::vector<double> quadWeights = quadRule.getQuadWeights();
-  std::vector< double > basisVals(N_xi);
+  Teuchos::Array< Teuchos::Array<double> > quadPts = quadRule.getQuadPoints();
+  Teuchos::Array<double> quadWeights = quadRule.getQuadWeights();
+  Teuchos::Array< double > basisVals(N_xi);
   
   
-  for(int quadIdx = 0; quadIdx < quadPts.size(); quadIdx++){
+  for(std::size_t quadIdx = 0; quadIdx < quadPts.size(); quadIdx++){
     std::cout << quadIdx << "/" << quadPts.size()-1 << "\n";
-    basisVals = basis->evaluateBases(quadPts[quadIdx]);
+    basis->evaluateBases(quadPts[quadIdx], basisVals);
     for(int stochIdx = 0; stochIdx < N_xi; stochIdx++){
       for(int ymeshIdx = 1; ymeshIdx < N_x-1; ymeshIdx++){
         for(int xmeshIdx = 1; xmeshIdx < N_x-1; xmeshIdx++){
@@ -149,7 +149,7 @@ void computeVarianceSolution(const Epetra_Vector& u, const Epetra_Vector& Eofu, 
   }
   
   uBlock.Multiply(1.0, uBlock, uBlock, 0.0);
-  std::vector< double > norms = basis->norm_squared();
+  Teuchos::Array< double > norms = basis->norm_squared();
   for(int c = 0; c<N_xi; c++){
     varOfu.Update(norms[c],*uBlock(c),1.0);
   }
@@ -157,12 +157,12 @@ void computeVarianceSolution(const Epetra_Vector& u, const Epetra_Vector& Eofu, 
 }
 
 //Given a value of \xi returns the SFEM approximation of the solution at \xi.
-void generateRealization(const Epetra_Vector& u, std::vector<double>& xi, Epetra_Vector& u_xi, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
+void generateRealization(const Epetra_Vector& u, Teuchos::Array<double>& xi, Epetra_Vector& u_xi, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
   int N_xi = basis->size();
   int N_x = u.MyLength()/N_xi;
-  std::vector<double> basisValues(basis->size());
-  basisValues = basis->evaluateBases(xi);
+  Teuchos::Array<double> basisValues(basis->size());
+  basis->evaluateBases(xi, basisValues);
 
   u_xi.PutScalar(0);
 
@@ -175,14 +175,14 @@ void generateRealization(const Epetra_Vector& u, std::vector<double>& xi, Epetra
 
 
 //Generates the KL expansion of the field with covariance defined by C(x,y) = exp(-|x_1-x_2|*corrx - |y_1-y_2|*corrx)
-void generateExponentialRF(const int orderKL, const double corrx, std::vector<double>& lambda,
-                           std::vector<double>& alpha_out,std::vector<double>& omega,
-                           std::vector<int>& xind, std::vector<int>& yind){
+void generateExponentialRF(const int orderKL, const double corrx, Teuchos::Array<double>& lambda,
+                           Teuchos::Array<double>& alpha_out,Teuchos::Array<double>& omega,
+                           Teuchos::Array<int>& xind, Teuchos::Array<int>& yind){
    
    
    omega.resize(orderKL);
    lambda.resize(orderKL);
-   std::vector<double> alpha(orderKL);
+   Teuchos::Array<double> alpha(orderKL);
    double lower, upper, midpoint;
    for(int i = 0; i<=ceil(((double)orderKL)/2); i++){
       
@@ -221,9 +221,9 @@ void generateExponentialRF(const int orderKL, const double corrx, std::vector<do
       }   
    }
 
-   std::vector<std::vector<double> > productEigs(orderKL);
+   Teuchos::Array<Teuchos::Array<double> > productEigs(orderKL);
    for(int i = 0; i<orderKL; i++){
-     productEigs[i] = std::vector<double>(orderKL);
+     productEigs[i] = Teuchos::Array<double>(orderKL);
      for(int j = 0; j<orderKL; j++){
         productEigs[i][j] = lambda[i]*lambda[j];
      }

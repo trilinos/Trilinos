@@ -29,14 +29,6 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
-//
-//  usage: 
-//     hermite_example
-//
-//  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
-
 #include <iostream>
 #include <iomanip>
 
@@ -47,14 +39,7 @@
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 
-// This example compares various PCE methods for computing moments of
-//
-// u = exp(x1 + ... + xd)
-//
-// where x1, ..., xd are uniform random variables on [-1,1].  The methods
-// are compared to computing the "true" value via very high-order quadrature.
-// Because of the structure of the exponential, the moments can easily
-// be computed in one dimension.
+// This example demonstrates computing an orthogonal basis via Gram-Schmidt
 
 struct stieltjes_pce_quad_func {
   stieltjes_pce_quad_func(
@@ -65,11 +50,11 @@ struct stieltjes_pce_quad_func {
   double operator() (const double& a, double& b) const {
     vec[0] = a;
     vec[1] = b;
-    return pce.evaluate(basis, vec);
+    return pce.evaluate(vec);
   }
   const Stokhos::OrthogPolyApprox<int,double>& pce;
   const Stokhos::OrthogPolyBasis<int,double>& basis;
-  mutable std::vector<double> vec;
+  mutable Teuchos::Array<double> vec;
 };
 
 int main(int argc, char **argv)
@@ -79,7 +64,7 @@ int main(int argc, char **argv)
     const unsigned int d = 1;
     const unsigned int p = 7;
 
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
 
     // Create product basis
     for (unsigned int i=0; i<d; i++)
@@ -95,10 +80,10 @@ int main(int argc, char **argv)
     // 							     p+1));
 
     // Create approximation
-    int sz = basis->size();
-    Stokhos::OrthogPolyApprox<int,double> x(sz), u(sz), v(sz), w(sz), w2(sz);
+    Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
+      w(basis), w2(basis);
     for (unsigned int i=0; i<d; i++) {
-      x.term2(*basis, i, 1) = 1.0;
+      x.term(i, 1) = 1.0;
     }
 	  
     Teuchos::RCP< Stokhos::GramSchmidtBasis<int,double> > gs_basis = 
@@ -109,9 +94,9 @@ int main(int argc, char **argv)
     std::cout << *gs_basis << std::endl;
 	
     // User-defined quadrature
-    Teuchos::RCP< const std::vector< std::vector<double> > > points =
+    Teuchos::RCP< const Teuchos::Array< Teuchos::Array<double> > > points =
       Teuchos::rcp(&(quad->getQuadPoints()),false);
-    Teuchos::RCP< const std::vector<double> > weights =
+    Teuchos::RCP< const Teuchos::Array<double> > weights =
       Teuchos::rcp(&(quad->getQuadWeights()),false);
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > gs_quad = 
       Teuchos::rcp(new Stokhos::UserDefinedQuadrature<int,double>(gs_basis,

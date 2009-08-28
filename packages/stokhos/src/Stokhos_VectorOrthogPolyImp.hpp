@@ -140,76 +140,10 @@ operator[](ordinal_type i) const
 template <typename coeff_type> 
 coeff_type&
 Stokhos::VectorOrthogPoly<coeff_type>::
-term(int i0, int i1, int i2, int i3, int i4,
-     int i5, int i6, int i7, int i8, int i9)
-{
-  std::vector<ordinal_type> trm;
-  ordinal_type d = basis.dimension();
-  if (i0 >= 0 && d >= 1)
-    trm.push_back(i0);
-  if (i1 >= 0 && d >= 2)
-    trm.push_back(i1);
-  if (i2 >= 0 && d >= 3)
-    trm.push_back(i2);
-  if (i3 >= 0 && d >= 4)
-    trm.push_back(i3);
-  if (i4 >= 0 && d >= 5)
-    trm.push_back(i4);
-  if (i5 >= 0 && d >= 6)
-    trm.push_back(i5);
-  if (i6 >= 0 && d >= 7)
-    trm.push_back(i6);
-  if (i7 >= 0 && d >= 8)
-    trm.push_back(i7);
-  if (i8 >= 0 && d >= 9)
-    trm.push_back(i8);
-  if (i9 >= 0 && d >= 10)
-    trm.push_back(i9);
-
-  ordinal_type index = basis.getIndex(trm);
-  return *(coeff_[index]);
-}
-
-template <typename coeff_type> 
-const coeff_type&
-Stokhos::VectorOrthogPoly<coeff_type>::
-term(int i0, int i1, int i2, int i3, int i4,
-     int i5, int i6, int i7, int i8, int i9) const
-{
-  std::vector<ordinal_type> trm;
-  ordinal_type d = basis.dimension();
-  if (i0 >= 0 && d >= 1)
-    trm.push_back(i0);
-  if (i1 >= 0 && d >= 2)
-    trm.push_back(i1);
-  if (i2 >= 0 && d >= 3)
-    trm.push_back(i2);
-  if (i3 >= 0 && d >= 4)
-    trm.push_back(i3);
-  if (i4 >= 0 && d >= 5)
-    trm.push_back(i4);
-  if (i5 >= 0 && d >= 6)
-    trm.push_back(i5);
-  if (i6 >= 0 && d >= 7)
-    trm.push_back(i6);
-  if (i7 >= 0 && d >= 8)
-    trm.push_back(i7);
-  if (i8 >= 0 && d >= 9)
-    trm.push_back(i8);
-  if (i9 >= 0 && d >= 10)
-    trm.push_back(i9);
-
-  ordinal_type index = basis.getIndex(trm);
-  return *(coeff_[index]);
-}
-
-template <typename coeff_type> 
-coeff_type&
-Stokhos::VectorOrthogPoly<coeff_type>::
-term2(ordinal_type dimension, ordinal_type order)
+term(ordinal_type dimension, ordinal_type order)
 {
   ordinal_type d = basis.dimension();
-  std::vector<ordinal_type> term(d);
+  Teuchos::Array<ordinal_type> term(d);
   term[dimension] = order;
   ordinal_type index = basis.getIndex(term);
   return *(coeff_[index]);
@@ -218,10 +152,10 @@ term2(ordinal_type dimension, ordinal_type order)
 template <typename coeff_type> 
 const coeff_type&
 Stokhos::VectorOrthogPoly<coeff_type>::
-term2(ordinal_type dimension, ordinal_type order) const
+term(ordinal_type dimension, ordinal_type order) const
 {
   ordinal_type d = basis.dimension();
-  std::vector<ordinal_type> term(d);
+  Teuchos::Array<ordinal_type> term(d);
   term[dimension] = order;
   ordinal_type index = basis.getIndex(term);
   return *(coeff_[index]);
@@ -240,7 +174,7 @@ init(const value_type& val)
 template <typename coeff_type>
 void
 Stokhos::VectorOrthogPoly<coeff_type>::
-evaluate(const std::vector<value_type>& basis_values, coeff_type& result) const
+evaluate(const Teuchos::Array<value_type>& basis_values, coeff_type& result) const
 {
   traits_type::init(result, value_type(0));
   ordinal_type sz = coeff_.size();
@@ -252,8 +186,8 @@ template <typename coeff_type>
 void
 Stokhos::VectorOrthogPoly<coeff_type>::
 sumIntoAllTerms(const value_type& weight,
-		const std::vector<value_type>& basis_values,
-		const std::vector<value_type>& basis_norms,
+		const Teuchos::Array<value_type>& basis_values,
+		const Teuchos::Array<value_type>& basis_norms,
 		const coeff_type& vec)
 {
   ordinal_type sz = coeff_.size();

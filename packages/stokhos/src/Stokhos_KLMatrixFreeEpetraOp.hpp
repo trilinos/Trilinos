@@ -32,6 +32,7 @@
 #define STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
@@ -41,7 +42,6 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
-
 
 namespace Stokhos {
     
@@ -59,17 +59,17 @@ namespace Stokhos {
      const Teuchos::RCP<const Epetra_Map>& sg_map,
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-     const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& ops);
+     const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops);
     
     //! Destructor
     virtual ~KLMatrixFreeEpetraOp();
 
     //! Reset operator blocks
     virtual void 
-    reset(const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >& ops);
+    reset(const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops);
 
     //! Get operator blocks
-    virtual const std::vector<Teuchos::RCP<Epetra_CrsMatrix> >&
+    virtual const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >&
     getOperatorBlocks();
     
     //! Set to true if the transpose of the operator is requested
@@ -149,7 +149,7 @@ namespace Stokhos {
     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
     //! Stores operators
-    std::vector<Teuchos::RCP<Epetra_CrsMatrix> > block_ops;
+    Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > block_ops;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
@@ -158,10 +158,10 @@ namespace Stokhos {
     unsigned int num_blocks;
 
     //! MultiVectors for each block for Apply() input
-    mutable std::vector< Teuchos::RCP<const Epetra_MultiVector> > input_block;
+    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
 
     //! MultiVectors for each block for Apply() result
-    mutable std::vector< Teuchos::RCP<Epetra_MultiVector> > result_block;
+    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
 
     //! Temporary multivector
     mutable Teuchos::RCP<Epetra_MultiVector> tmp;

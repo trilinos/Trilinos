@@ -6,7 +6,7 @@
 #include "Stokhos.hpp"
 
 int main(int argc, char *argv[]) {
-  std::vector<double> x;
+  Teuchos::Array<double> x;
 
   // Get filenames for Dakota runs
   if (argc != 3) {
@@ -29,21 +29,20 @@ int main(int argc, char *argv[]) {
 
   typedef Stokhos::HermiteBasis<int,double> basis_type;
   int p = 4;
-  std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(nvar); 
+  Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(nvar); 
   for (int i=0; i<nvar; i++) {
     bases[i] = Teuchos::rcp(new basis_type(p));
   }
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
     Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-  int sz = basis->size();
-  Stokhos::OrthogPolyApprox<int,double> u(sz);
+  Stokhos::OrthogPolyApprox<int,double> u(basis);
 
   u[0] = 1.0;
   u[1] = 0.4;
   u[2] = 0.06;
   u[3] = 0.002;
 
-  double uu = u.evaluate(*basis,x);
+  double uu = u.evaluate(x);
   double v = std::log(uu);
   v = 1.0 / (v*v + 1.0);
 

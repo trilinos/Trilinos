@@ -62,6 +62,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
+  Stokhos_ConstantOrthogPolyExpansion.hpp
+  Stokhos_ConstantOrthogPolyExpansionImp.hpp
   Stokhos_QuadOrthogPolyExpansion.hpp
   Stokhos_QuadOrthogPolyExpansionImp.hpp
   Stokhos_DerivOrthogPolyExpansion.hpp

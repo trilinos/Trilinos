@@ -68,10 +68,13 @@ unary_op(const FuncT& func,
          const OrthogPolyApprox<ordinal_type, value_type>& a)
 {
   ordinal_type pc = a.size();
-  if (pc != c.size())
-    c.resize(pc);
 
 #ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
                      "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
                      << ":  Expansion size (" << size() 
@@ -121,10 +124,13 @@ binary_op(const FuncT& func,
   ordinal_type pc = pa;
   if (pb > pc)
     pc = pb;
-  if (pc != c.size())
-    c.resize(pc);
 
 #ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pa << ", b.size() = " << pb
+		     << ", c.size() = " << c.size() << ".");
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
                      "Stokhos::QuadOrthogPolyExpansion::binary_op()" 
                      << ":  Expansion size (" << size() 
@@ -172,10 +178,13 @@ binary_op(const FuncT& func,
           const OrthogPolyApprox<ordinal_type, value_type>& b)
 {
   ordinal_type pc = b.size();
-  if (pc != c.size())
-    c.resize(pc);
 
 #ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "b.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
                      "Stokhos::QuadOrthogPolyExpansion::binary_op()" 
                      << ":  Expansion size (" << size() 
@@ -221,10 +230,13 @@ binary_op(const FuncT& func,
           const value_type& b)
 {
   ordinal_type pc = a.size();
-  if (pc != c.size())
-    c.resize(pc);
 
 #ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
                      "Stokhos::QuadOrthogPolyExpansion::binary_op()" 
                      << ":  Expansion size (" << size() 
@@ -269,6 +281,14 @@ unaryMinus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   value_type* cc = c.coeff();
   const value_type* ca = a.coeff();
   ordinal_type pa = a.size();
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pa, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::unaryMinus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pa << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   for (ordinal_type i=0; i<pa; i++)
     cc[i] = -ca[i];
@@ -324,17 +344,17 @@ plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 {
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
-  ordinal_type pmin = xp < p ? xp : p;
-  if (xp > p)
-    c.resize(xp);
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(p < xp, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::plusEqual()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "x.size() = " << xp << ", c.size() = " << p << ".");
+#endif
 
   value_type* cc = c.coeff();
   const value_type* xc = x.coeff();
-  for (ordinal_type i=0; i<pmin; i++)
+  for (ordinal_type i=0; i<xp; i++)
     cc[i] += xc[i];
-  if (p < xp)
-    for (ordinal_type i=p; i<xp; i++)
-      cc[i] = xc[i];
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -345,17 +365,17 @@ minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 {
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
-  ordinal_type pmin = xp < p ? xp : p;
-  if (xp > p)
-    c.resize(xp);
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(p < xp, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::minusEqual()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "x.size() = " << xp << ", c.size() = " << p << ".");
+#endif
 
   value_type* cc = c.coeff();
   const value_type* xc = x.coeff();
-  for (ordinal_type i=0; i<pmin; i++)
+  for (ordinal_type i=0; i<xp; i++)
     cc[i] -= xc[i];
-  if (p < xp)
-    for (ordinal_type i=p; i<xp; i++)
-      cc[i] = -xc[i];
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -364,22 +384,27 @@ Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
 timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
            const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
-#ifdef STOKHOS_DEBUG
-  const char* func = "Stokhos::TayOrthogPolyExpansion::timesEqual()";
-  TEST_FOR_EXCEPTION((x.size() != c.size()) && (x.size() != 1) && 
-                     (c.size() != 1), std::logic_error,
-                     func << ":  Attempt to assign with incompatible orders");
-#endif
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(p < xp, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::timesEqual()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "x.size() = " << xp << ", c.size() = " << p << ".");
+#endif
 
   value_type* cc = c.coeff();
   const value_type* xc = x.coeff();
   
   if (p > 1 && xp > 1) {
 #ifdef STOKHOS_DEBUG
+    TEST_FOR_EXCEPTION(p != xp, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::timesEqual()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "x.size() = " << xp << ", c.size() = " << p << ".");
     TEST_FOR_EXCEPTION(size() < p, std::logic_error,
-                       func << ":  Expansion size (" << size() 
+                       "Stokhos::QuadOrthogPolyExpansion::timesEqual()" 
+		       << ":  Expansion size (" << size() 
                        << ") is too small for computation (" << p 
                        << " needed).");
 #endif
@@ -398,15 +423,9 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       cc[k] = tmp / basis->norm_squared(k);
     }
   }
-  else if (p > 1) {
+  else {
     for (ordinal_type i=0; i<p; i++)
       cc[i] *= xc[0];
-  }
-  else  {
-    if (xp > p)
-      c.resize(xp);
-    for (int i=xp-1; i>=0; i--)
-      cc[i] = cc[0]*xc[i];
   }
 }
 
@@ -448,8 +467,14 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
   ordinal_type pc = pa > pb ? pa : pb;
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::plus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pa << ", b.size() = " << pb
+		     << ", c.size() = " << c.size() << ".");
+#endif
 
   const value_type* ca = a.coeff();
   const value_type* cb = b.coeff();
@@ -479,8 +504,14 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
   ordinal_type pc = b.size();
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::plus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "b.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   const value_type* cb = b.coeff();
   value_type* cc = c.coeff();
@@ -498,8 +529,14 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
      const value_type& b)
 {
   ordinal_type pc = a.size();
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::plus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   const value_type* ca = a.coeff();
   value_type* cc = c.coeff();
@@ -527,8 +564,14 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
   ordinal_type pc = pa > pb ? pa : pb;
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::minus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pa << ", b.size() = " << pb
+		     << ", c.size() = " << c.size() << ".");
+#endif
 
   const value_type* ca = a.coeff();
   const value_type* cb = b.coeff();
@@ -558,8 +601,14 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
   ordinal_type pc = b.size();
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::minus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "b.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   const value_type* cb = b.coeff();
   value_type* cc = c.coeff();
@@ -577,8 +626,14 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       const value_type& b)
 {
   ordinal_type pc = a.size();
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::minus()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   const value_type* ca = a.coeff();
   value_type* cc = c.coeff();
@@ -606,8 +661,14 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
   ordinal_type pc = pa > pb ? pa : pb;
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::times()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pa << ", b.size() = " << pb
+		     << ", c.size() = " << c.size() << ".");
+#endif
 
   const value_type* ca = a.coeff();
   const value_type* cb = b.coeff();
@@ -664,8 +725,14 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
   ordinal_type pc = b.size();
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::times()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "b.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   const value_type* cb = b.coeff();
   value_type* cc = c.coeff();
@@ -682,8 +749,14 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       const value_type& b)
 {
   ordinal_type pc = a.size();
-  if (pc != c.size())
-    c.resize(pc);
+
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(c.size() != pc, std::logic_error,
+                     "Stokhos::QuadOrthogPolyExpansion::times()" 
+                     << ":  Arguments have incompatible sizes:  "
+		     << "a.size() = " << pc << ", c.size() = " << c.size()
+		     << ".");
+#endif
 
   const value_type* ca = a.coeff();
   value_type* cc = c.coeff();
@@ -720,8 +793,6 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
        const value_type& b)
 {
   ordinal_type pc = a.size();
-  if (pc != c.size())
-    c.resize(pc);
 
   const value_type* ca = a.coeff();
   value_type* cc = c.coeff();
@@ -978,8 +1049,10 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     const value_type& a, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  if (a >= b[0])
-    c = OrthogPolyApprox<ordinal_type, value_type>(b.size(), a);
+  if (a >= b[0]) {
+    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c[0] = a;
+  }
   else
     c = b;
 }
@@ -993,8 +1066,10 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 {
   if (a[0] >= b)
     c = a;
-  else
-    c = OrthogPolyApprox<ordinal_type, value_type>(a.size(), b);
+  else {
+    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c[0] = b;
+  }
 }
 
 template <typename ordinal_type, typename value_type>
@@ -1017,8 +1092,10 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     const value_type& a, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  if (a <= b[0])
-    c = OrthogPolyApprox<ordinal_type, value_type>(b.size(), a);
+  if (a <= b[0]) {
+    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c[0] = a;
+  }
   else
     c = b;
 }
@@ -1032,6 +1109,8 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 {
   if (a[0] <= b)
     c = a;
-  else
-    c = OrthogPolyApprox<ordinal_type, value_type>(a.size(), b);
+  else {
+    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c[0] = b;
+  }
 }
