@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <cmath>
+#include <cstdlib>
 
 // A simle executable that computes the exponential, reading the input
 // value from the input file on the command line, and putting the result
@@ -15,7 +16,7 @@ int main(int argc, char *argv[]) {
   if (argc != 3) {
     std::cout << "Usage:  dakota_exp.exe [input_file] [output file]" 
 	      << std::endl;
-    exit(-1);
+    std::exit(-1);
   }
 
   std::string input_filename = std::string(argv[1]);
