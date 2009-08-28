@@ -214,8 +214,8 @@ int main(int argc, char *argv[]) {
                     NOX::Utils::OuterIteration + 
                     NOX::Utils::OuterIterationStatusTest + 
                     NOX::Utils::InnerIteration +
-                    NOX::Utils::Parameters + 
-                    NOX::Utils::Details + 
+                    //NOX::Utils::Parameters + 
+                    //NOX::Utils::Details + 
                     NOX::Utils::LinearSolverDetails +
                     NOX::Utils::Warning + 
                     NOX::Utils::Error);
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
     
       // Create SG basis and expansion
       typedef Stokhos::LegendreBasis<int,double> basis_type;
-      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
       for (unsigned int i=0; i<d; i++)
         bases[i] = Teuchos::rcp(new basis_type(p));
       Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
@@ -336,18 +336,17 @@ int main(int argc, char *argv[]) {
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
       unsigned int sz = basis->size();
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
-								      quad));
-//      Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-//	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<int,double>(basis, 
-//								      Stokhos::ForUQTKOrthogPolyExpansion<int,double>::INTEGRATION, 1e-6));
-      Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
+      	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
+      								      quad));
+     // Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
+     // 	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<int,double>(basis, 
+     // 								      Stokhos::ForUQTKOrthogPolyExpansion<int,double>::INTEGRATION, 1e-6));
 
       std::cout << "sz = " << sz << std::endl;
 
       if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	appParams->set("Enable Stochastic Galerkin", true);
-	appParams->set("Stochastic Galerkin basis", basis);
+	appParams->set("Stochastic Galerkin expansion", expansion);
 	appParams->set("Stochastic Galerkin quadrature", quad);
 	if (SG_Method == SG_AD)
 	  appParams->set("SG Method", "AD");
@@ -376,7 +375,7 @@ int main(int argc, char *argv[]) {
 	ss << "Exponential Source Function Nonlinear Factor " << i;
 	sg_param_names->push_back(ss.str());
       }
-      std::vector<int> sg_p_index(1);
+      Teuchos::Array<int> sg_p_index(1);
       
       if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	sg_p_index[0] = 1;
@@ -385,9 +384,9 @@ int main(int argc, char *argv[]) {
       }
       else {
 	sg_p_index[0] = 1;
-	std::vector<int> sg_p_index_quad(1);
+	Teuchos::Array<int> sg_p_index_quad(1);
 	sg_p_index_quad[0] = 1;
-	std::vector<int> sg_g_index_quad(1);
+	Teuchos::Array<int> sg_g_index_quad(1);
 	sg_g_index_quad[0] = 0;
 	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model;
 	if (SG_Method == SG_GLOBAL)
@@ -421,7 +420,7 @@ int main(int argc, char *argv[]) {
 	sgParams->set("Preconditioner Factory", sg_prec);
 	sgParams->set("Evaluate W with F", false);
       }
-      std::vector<int> sg_g_index(1);
+      Teuchos::Array<int> sg_g_index(1);
       sg_g_index[0] = 0;
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
@@ -463,7 +462,7 @@ int main(int argc, char *argv[]) {
       sg_g->Print(std::cout);
       double mean = (*sg_g)[0];
       double std_dev = 0.0;
-      const std::vector<double> nrm2 = basis->norm_squared();
+      const Teuchos::Array<double>& nrm2 = basis->norm_squared();
       for (int i=1; i<basis->size(); i++)
         std_dev += (*sg_g)[i]*(*sg_g)[i]*nrm2[i];
       std_dev = std::sqrt(std_dev);
