@@ -89,13 +89,13 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   MOOCHO                moocho                         PS
   Aristos               aristos                        EX
   Sundance              Sundance                       PS
-  TriKota               TriKota                        EX
+  TriKota               TriKota                        SS
   CTrilinos             CTrilinos                      EX
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   WebTrilinos           WebTrilinos                    EX # Should be SS
   Didasko               didasko                        SS
   NewPackage            new_package                    EX # Should be SS
-  Optika		optika			       EX
+  Optika		optika			       SS
   Mesquite              mesquite                       EX
   )
