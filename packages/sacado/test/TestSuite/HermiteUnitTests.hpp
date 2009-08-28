@@ -251,6 +251,8 @@ protected:
   // Tolerances to which expansions should be the same
   double tol_a, tol_r;
 
+  Teuchos::RCP<exp_type> expansion;
+
 }; // class HermiteUnitTest
 
 #endif // HERMITEUNITTESTS_HPP

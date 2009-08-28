@@ -93,18 +93,17 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_SACADO_STOKHOS
     typedef Stokhos::HermiteBasis<int,double> basis_type;
-    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
     bases[0] = Teuchos::rcp(new basis_type(d));
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<int,double>(basis));
-    Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
-    Sacado::PCE::OrthogPoly<double> ue(int(d)+1);
+    Sacado::PCE::OrthogPoly<double> ue(expansion);
     Stokhos::Polynomial<double> up(d);
     for (unsigned int i=0; i<=d; i++)
       up[i] = us[i];
-    std::vector<double> coeffs(d+1);
+    Teuchos::Array<double> coeffs(d+1);
     bases[0]->projectPoly(up, coeffs);
     for (unsigned int i=0; i<=d; i++)
       ue.fastAccessCoeff(i) = coeffs[i];
@@ -113,11 +112,7 @@ int main(int argc, char **argv)
     Sacado::PCE::OrthogPoly<double> ve = std::sinh(1.0/(we*we + 1.0));
 
     std::cout << "ue (hermite e basis) = " << ue;
-    std::cout << "ue (standard basis) = " 
-	      << bases[0]->toStandardBasis(ue.coeff(),d+1);
     std::cout << "ve (hermite e basis) = " << ve;
-    std::cout << "ve (standard basis) = " 
-	      << bases[0]->toStandardBasis(ve.coeff(),d+1) << std::endl;
 #endif
 
     std::cout << "\nExample passed!" << std::endl;

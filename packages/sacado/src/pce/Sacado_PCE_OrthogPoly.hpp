@@ -80,25 +80,22 @@ namespace Sacado {
       typedef Stokhos::OrthogPolyExpansion<ordinal_type,T> expansion_type;
 
       //! Default constructor
+      /*!
+       * Sets size to 1 and first coefficient to 0 (represents a constant).
+       */
       OrthogPoly();
 
       //! Constructor with supplied value \c x
       /*!
-       * Sets the first coefficient to x
+       * Sets size to 1 and first coefficient to x (represents a constant).
        */
       OrthogPoly(const value_type& x);
 
-      //! Constructor with size \c sz and value \c x
+      //! Constructor with expansion \c expansion (General case)
       /*!
-       * Initializes first coeffienct to \c x and of a polynomial of size \c sz
+       * Creates array of correct size and initializes coeffiencts to 0.
        */
-      OrthogPoly(ordinal_type sz, const value_type& x);
-
-      //! Constructor with size \c sz
-      /*!
-       * Initializes all components to zero
-       */
-      OrthogPoly(ordinal_type sz);
+      OrthogPoly(const Teuchos::RCP<expansion_type>& expansion);
 
       //! Copy constructor
       OrthogPoly(const OrthogPoly& x);
@@ -106,17 +103,11 @@ namespace Sacado {
       //! Destructor
       ~OrthogPoly();
 
-      //! Resize polynomial to size \c sz
+      //! Reset expansion
       /*!
-       * Coefficients are preserved.
+       * May change size of array.  Coefficients are preserved.  
        */
-      void resize(ordinal_type sz);
-
-      //! Reserve space for polynomial of size \c sz
-      /*!
-       * Coefficients are preserved.
-       */
-      void reserve(ordinal_type sz);
+      void reset(const Teuchos::RCP<expansion_type>& expansion);
 
       //! Prepare polynomial for writing 
       /*!
@@ -129,15 +120,6 @@ namespace Sacado {
        * by coeff() or fastAccessCoeff() may change other polynomial objects.
        */
       void copyForWrite() { th.makeOwnCopy(); }
-
-      //! Initialize expansion
-      /*! 
-       * Intializes static expansion data.
-       */
-      static void initExpansion(const Teuchos::RCP<expansion_type>& e);
-
-      //! Write coefficients in standard basis
-      Stokhos::Polynomial<value_type> toStandardBasis() const;
 
       //! Evaluate polynomial approximation at a point
       value_type evaluate(const std::vector<value_type>& point) const;
@@ -160,6 +142,19 @@ namespace Sacado {
       //@}
 
       /*!
+       * Accessor methods
+       */
+      //@{
+
+      //! Get basis
+      Teuchos::RCP<basis_type> basis() const { return th->basis(); }
+
+      //! Get expansion
+      Teuchos::RCP<expansion_type> expansion() const { return expansion_; }
+
+      //@}
+
+      /*!
        * @name Value accessor methods
        */
       //@{
@@ -173,7 +168,7 @@ namespace Sacado {
       //@}
 
       /*!
-       * @name Hermite coefficient accessor methods
+       * @name Coefficient accessor methods
        */
       //@{
 
@@ -238,20 +233,18 @@ namespace Sacado {
 
       //@}
 
-      //! Get underlying Hermite polynomial
+      //! Get underlying Stokhos::OrthogPolyApprox
       const Stokhos::OrthogPolyApprox<int,value_type>& getOrthogPolyApprox() const 
       { return *th; }
 
-      //! Get underlying Hermite polynomial
+      //! Get underlying Stokhos::OrthogPolyApprox
       Stokhos::OrthogPolyApprox<int,value_type>& getOrthogPolyApprox() { 
 	return *th; }
 
-    public:
-
-      //! Expansion type
-      static Teuchos::RCP<expansion_type> expansion;
-
     protected:
+
+      //! Expansion class
+      Teuchos::RCP<expansion_type> expansion_;
 
       Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type> > th;
 

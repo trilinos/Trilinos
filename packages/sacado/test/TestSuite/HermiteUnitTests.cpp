@@ -39,8 +39,7 @@ HermiteUnitTest::HermiteUnitTest() :
   bases[0] = Teuchos::rcp(new basis_type(0));
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
     Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-  Teuchos::RCP<exp_type> expansion = Teuchos::rcp(new exp_type(basis));
-  pce_type::initExpansion(expansion);
+  expansion = Teuchos::rcp(new exp_type(basis));
 }
 
 HermiteUnitTest::HermiteUnitTest(double absolute_tolerance, 
@@ -53,11 +52,13 @@ void HermiteUnitTest::setUp() {
   double val;
 
   val = urand.number();
-  ac = pce_type(val);
+  ac = pce_type(expansion);
+  ac.fastAccessCoeff(0) = val;
   a = val;
   
   val = urand.number();
-  bc = pce_type(val);
+  bc = pce_type(expansion);
+  bc.fastAccessCoeff(0) = val;
   b = val;
 
   cc = pce_type(1.123);
