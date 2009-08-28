@@ -184,57 +184,69 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
     outputValues(idx_cur,i) = Scalar( 1.0 ) + z(i,0) - z(i,0) + z(i,1) - z(i,1);
   }
   
-  Teuchos::Array<Scalar> f1(np),f2(np),f3(np);
-  
-  for (int i=0;i<np;i++) {
-    f1[i] = 0.5 * (1.0+2.0*(2.0*z(i,0)-1.0)+(2.0*z(i,1)-1.0));
-    f2[i] = 0.5 * (1.0-(2.0*z(i,1)-1.0));
-    f3[i] = f2[i] * f2[i];
-  }
-  
-  // set D^{1,0} = f1
-  idx_cur =idx(1,0);
-  for (int i=0;i<np;i++) {
-    outputValues(idx_cur,i) = f1[i];
-  }
-  
-  // recurrence in p
-  for (int p=1;p<deg;p++) {
-    idx_cur = idx(p,0);
-    idx_curp1 = idx(p+1,0);
-    idx_curm1 = idx(p-1,0);
-    Scalar a = (2.0*p+1.0)/(1.0+p);
-    Scalar b = p / (p+1.0);
+
+  if (deg > 0) {
+    Teuchos::Array<Scalar> f1(np),f2(np),f3(np);
     
     for (int i=0;i<np;i++) {
-      outputValues(idx_curp1,i) = a * f1[i] * outputValues(idx_cur,i)
-	- b * f3[i] * outputValues(idx_curm1,i);
+      f1[i] = 0.5 * (1.0+2.0*(2.0*z(i,0)-1.0)+(2.0*z(i,1)-1.0));
+      f2[i] = 0.5 * (1.0-(2.0*z(i,1)-1.0));
+      f3[i] = f2[i] * f2[i];
     }
-  }
-  
-  // D^{p,1}
-  for (int p=0;p<deg;p++) {
-    int idxp0 = idx(p,0);
-    int idxp1 = idx(p,1);
+    
+    // set D^{1,0} = f1
+    idx_cur =idx(1,0);
     for (int i=0;i<np;i++) {
-      outputValues(idxp1,i) = outputValues(idxp0,i)
-	*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+      outputValues(idx_cur,i) = f1[i];
     }
-  }
-  
-  
-  // recurrence in q
-  for (int p=0;p<deg-1;p++) {
-    for (int q=1;q<deg-p;q++) {
-      int idxpqp1=idx(p,q+1);
-      int idxpq=idx(p,q);
-      int idxpqm1=idx(p,q-1);
-      Scalar a,b,c;
-      jrc<Scalar>((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
+    
+    // recurrence in p
+    for (int p=1;p<deg;p++) {
+      idx_cur = idx(p,0);
+      idx_curp1 = idx(p+1,0);
+      idx_curm1 = idx(p-1,0);
+      Scalar a = (2.0*p+1.0)/(1.0+p);
+      Scalar b = p / (p+1.0);
+      
       for (int i=0;i<np;i++) {
-	outputValues(idxpqp1,i)
-	  = (a*(2.0*z(i,1)-1.0)+b)*outputValues(idxpq,i)
-	  - c*outputValues(idxpqm1,i);
+	outputValues(idx_curp1,i) = a * f1[i] * outputValues(idx_cur,i)
+	  - b * f3[i] * outputValues(idx_curm1,i);
+      }
+    }
+    
+    // D^{p,1}
+    for (int p=0;p<deg;p++) {
+      int idxp0 = idx(p,0);
+      int idxp1 = idx(p,1);
+      for (int i=0;i<np;i++) {
+	outputValues(idxp1,i) = outputValues(idxp0,i)
+	  *0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+      }
+    }
+    
+    
+    // recurrence in q
+    for (int p=0;p<deg-1;p++) {
+      for (int q=1;q<deg-p;q++) {
+	int idxpqp1=idx(p,q+1);
+	int idxpq=idx(p,q);
+	int idxpqm1=idx(p,q-1);
+	Scalar a,b,c;
+	jrc<Scalar>((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
+	for (int i=0;i<np;i++) {
+	  outputValues(idxpqp1,i)
+	    = (a*(2.0*z(i,1)-1.0)+b)*outputValues(idxpq,i)
+	    - c*outputValues(idxpqm1,i);
+	}
+      }
+    }
+  }    
+  
+  // orthogonalize
+  for (int p=0;p<=deg;p++) {
+    for (int q=0;q<=deg-p;q++) {
+      for (int i=0;i<np;i++) {
+	outputValues(idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
       }
     }
   }
