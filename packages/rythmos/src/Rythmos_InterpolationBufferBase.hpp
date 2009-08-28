@@ -299,8 +299,8 @@ template<class Scalar>
 void get_x_and_x_dot(
   const InterpolationBufferBase<Scalar> &interpBuffer,
   const Scalar t,
-  RCP<const Thyra::VectorBase<Scalar> > *x,
-  RCP<const Thyra::VectorBase<Scalar> > *x_dot
+  const Ptr<RCP<const Thyra::VectorBase<Scalar> > > &x,
+  const Ptr<RCP<const Thyra::VectorBase<Scalar> > > &x_dot
   )
 {
   Array<Scalar> time_vec;
@@ -309,12 +309,24 @@ void get_x_and_x_dot(
   Array<RCP<const Thyra::VectorBase<Scalar> > > x_dot_vec;
   interpBuffer.getPoints(
     time_vec,
-    x ? &x_vec : 0,
-    x_dot ? &x_dot_vec : 0,
+    nonnull(x) ? &x_vec : 0,
+    nonnull(x_dot) ? &x_dot_vec : 0,
     0
     );
-  if (x) *x = x_vec[0];
-  if (x_dot) *x_dot = x_dot_vec[0];
+  if (nonnull(x)) *x = x_vec[0];
+  if (nonnull(x_dot)) *x_dot = x_dot_vec[0];
+}
+
+/** \brief Deprecated. */
+template<class Scalar> 
+void get_x_and_x_dot(
+  const InterpolationBufferBase<Scalar> &interpBuffer,
+  const Scalar t,
+  RCP<const Thyra::VectorBase<Scalar> > *x,
+  RCP<const Thyra::VectorBase<Scalar> > *x_dot
+  )
+{
+  get_x_and_x_dot(interpBuffer, t, Teuchos::ptr(x), Teuchos::ptr(x_dot));
 }
 
 /* 11/24/08 tscoffe:  Proposed new get_x_and_xdot function:

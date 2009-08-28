@@ -91,7 +91,9 @@ namespace Rythmos {
  * </ul>
  *
  * <b>WARNING!</b> When interacting with this interface you must take note
- * that reverse time is being used as defined above!  You have been warned!
+ * that reverse time is being used as defined above!  This is especially
+ * important if you are going to use lambda_dot for anything.  You have been
+ * warned!
  *
  * \section Rythmos_AdjointModelEvaluator_ImplementationNotes_sec Implementation Notes
  *
@@ -177,9 +179,10 @@ public:
   /** \brief . */
   AdjointModelEvaluator();
 
-  /** \brief Set the underlying forward model. */
+  /** \brief Set the underlying forward model and base point. */
   void setFwdStateModel(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &fwdStateModel );
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &fwdStateModel,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint );
 
   /** \brief Set the forward time range that this adjoint model will be
    * defined over.
@@ -238,6 +241,7 @@ private:
   // Private data members
 
   RCP<const Thyra::ModelEvaluator<Scalar> > fwdStateModel_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   TimeRange<Scalar> fwdTimeRange_;
   RCP<const InterpolationBufferBase<Scalar> > fwdStateSolutionBuffer_;
 
@@ -269,7 +273,7 @@ adjointModelEvaluator(
 {
   RCP<AdjointModelEvaluator<Scalar> >
     adjointModel = Teuchos::rcp(new AdjointModelEvaluator<Scalar>);
-  adjointModel->setFwdStateModel(fwdStateModel);
+  adjointModel->setFwdStateModel(fwdStateModel, fwdStateModel->getNominalValues());
   adjointModel->setFwdTimeRange(fwdTimeRange);
   return adjointModel;
 }
@@ -289,10 +293,13 @@ AdjointModelEvaluator<Scalar>::AdjointModelEvaluator()
 
 template<class Scalar>
 void AdjointModelEvaluator<Scalar>::setFwdStateModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &fwdStateModel )
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &fwdStateModel,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint
+  )
 {
   TEST_FOR_EXCEPT(is_null(fwdStateModel));
   fwdStateModel_ = fwdStateModel;
+  basePoint_ = basePoint;
 }
 
 
@@ -417,12 +424,12 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
 
   // B.1) InArgs
 
+  const Scalar t_bar = inArgs_bar.get_t();
   const RCP<const Thyra::VectorBase<Scalar> >
     lambda_rev_dot = inArgs_bar.get_x_dot().assert_not_null(), // x_bar_dot
     lambda = inArgs_bar.get_x().assert_not_null(); // x_bar
   const Scalar alpha_bar = inArgs_bar.get_alpha();
   const Scalar beta_bar = inArgs_bar.get_beta();
-  // const Scalar t_bar = inArgs_bar.get_t(); // Don't need yet!
 
   if (dumpAll) {
     *out << "\nlambda_rev_dot = " << describe(*lambda_rev_dot, Teuchos::VERB_EXTREME);
@@ -460,17 +467,28 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
 
   // C.1) Set the required input arguments
 
+  fwdInArgs = basePoint_;
+
   if (!is_null(fwdStateSolutionBuffer_)) {
-    TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement getting the x and x_dot from IB");
+    const Scalar t = fwdTimeRange_.length() - t_bar;
+    RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
+    get_x_and_x_dot<Scalar>( *fwdStateSolutionBuffer_, t,
+      outArg(x), outArg(x_dot) );
+    fwdInArgs.set_x(x);
+    fwdInArgs.set_x_dot(x);
   }
   else {
     // If we don't have an IB object to get the state from, we will assume
     // that the problem is linear and, therefore, we can pass in any old value
-    // of x, x_dot, and t and get the W_bar_adj object that we need
-    fwdInArgs = fwdStateModel_->getNominalValues();
+    // of x, x_dot, and t and get the W_bar_adj object that we need.  For this
+    // purpose, we will assume the model's base point will do.
+
     // 2008/05/14: rabartl: ToDo: Implement real variable dependancy
-    // communication support to make sure that this is okay!
+    // communication support to make sure that this is okay!  If the model is
+    // really nonlinear we need to check for this and throw if the user did
+    // not set up a fwdStateSolutionBuffer object!
   }
+
 
   // C.2) Evaluate W_bar_adj if needed
 

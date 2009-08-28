@@ -8,6 +8,8 @@ cmake \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Teuchos_ENABLE_FLOAT:BOOL=OFF \
+-D Teuchos_ENABLE_COMPLEX:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/serial/dbg \
 $EXTRA_ARGS \
 ../../../Trilinos
