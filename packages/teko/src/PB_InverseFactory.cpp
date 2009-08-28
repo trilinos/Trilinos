@@ -172,7 +172,7 @@ Teuchos::RCP<const Teuchos::ParameterList> PreconditionerInverseFactory::getPara
   *
   * \returns A parameter list with the requested parameters.
   *
-  * \node The default implementation returns Teuchos::null.
+  * \note The default implementation returns Teuchos::null.
   */
 Teuchos::RCP<Teuchos::ParameterList> PreconditionerInverseFactory::getRequestedParameters() const
 {

@@ -44,4 +44,4 @@ clean:
 	-rm failure.log
 	-make -C src/ clean
 	-rm -f libpbtests.a $(DRIVERS) $(OBJS) $(PB_DIR)/lib/libpbtests.a $(OBJS:%=$(PB_DIR)/tests/objs/%)
-	-rm -f objs/*.f
+	-rm -f objs/*.o

@@ -10,12 +10,16 @@
 #include "Thyra_VectorSpaceBase.hpp"
 
 #include "Epetra_Vector.h"
+#include "Epetra_Comm.h"
 
 #include <iostream>
 #include <list>
 
 namespace PB {
 namespace Test {
+
+// build a 2x2 matrix...only in serial
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d);
 
 // prints a vector, with string "s" as the name
 void Print(std::ostream & os,const std::string & s,const Teuchos::RCP<const Thyra::VectorBase<double> > & v);

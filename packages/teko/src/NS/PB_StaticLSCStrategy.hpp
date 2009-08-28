@@ -54,15 +54,26 @@ public:
    virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invBQBtmC_; }
 
-   /** Get the inverse for stabilizing the whole schur complement approximation.
+   /** Get the inverse of \f$B H B^T - \gamma C\f$. 
      *
      * \param[in] A The linear operator to be preconditioned by LSC.
      * \param[in] state State object for storying reusable information about
      *                  the operator A.
      *
-     * \returns The operator to stabilize the whole Schur complement.
+     * \returns An (approximate) inverse of \f$B H B^T - \gamma C\f$.
      */
-   virtual LinearOp getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getInvBHBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return invBQBtmC_; }
+
+   /** Get the inverse for stabilizing the whole Schur complement approximation.
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns The operator to stabilize the whole Schur complement (\f$\alpha D^{-1} \f$).
+     */
+   virtual LinearOp getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invD_; }
 
    /** Get the inverse mass matrix.
@@ -74,6 +85,17 @@ public:
      * \returns The inverse of the mass matrix \f$Q_u\f$.
      */
    virtual LinearOp getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return invMass_; }
+
+   /** Get the \f$H\f$ scaling matrix.
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns The \f$H\f$ scaling matrix.
+     */
+   virtual LinearOp getHScaling(const BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invMass_; }
 
    /** Should the approximation of the inverse use a full LDU decomposition, or

@@ -108,12 +108,26 @@ inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
    #define PB_DEBUG_MSG_END() PB::getOutputStream()->popTab(); \
                              *PB::getOutputStream() << "PB: End debug MSG\n"; \
                               PB::getOutputStream()->popTab(); }
+   #define PB_DEBUG_PUSHTAB() PB::getOutputStream()->pushTab(3)
+   #define PB_DEBUG_POPTAB() PB::getOutputStream()->popTab()
+
+   struct __DebugScope__ {
+      __DebugScope__(const std::string & str,int level)
+         : str_(str), level_(level)
+      { PB_DEBUG_MSG("BEGIN "+str_,level_); PB_DEBUG_PUSHTAB(); }      
+      ~__DebugScope__()
+      { PB_DEBUG_POPTAB(); PB_DEBUG_MSG("END "+str_,level_); } 
+      std::string str_; int level_; };
+   #define PB_DEBUG_SCOPE(str,level) __DebugScope__ __dbgScope__(str,level);
 #else 
    #define PB_DEBUG_EXPR(str)
    #define PB_DEBUG_MSG(str,level)
    #define PB_DEBUG_MSG_BEGIN(level) if(false) { \
       std::ostream & DEBUG_STREAM = *PB::getOutputStream();
    #define PB_DEBUG_MSG_END() }
+   #define PB_DEBUG_PUSHTAB() 
+   #define PB_DEBUG_POPTAB() 
+   #define PB_DEBUG_SCOPE(str,level)
 #endif
 
 // typedefs for increased simplicity

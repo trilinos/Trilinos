@@ -73,12 +73,14 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    PB_DEBUG_EXPR(timer.start(true));
    LinearOp invF      = invOpsStrategy_->getInvF(blockOp,state);
    LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp,state);
-   LinearOp invD      = invOpsStrategy_->getInvD(blockOp,state);
+   LinearOp invBHBtmC = invOpsStrategy_->getInvBHBt(blockOp,state);
+   LinearOp invAlphaD = invOpsStrategy_->getInvAlphaD(blockOp,state);
 
    // if necessary build an identity mass matrix
    LinearOp invMass   = invOpsStrategy_->getInvMass(blockOp,state);
-   if(invMass==Teuchos::null)
-      invMass = identity<double>(F->range());
+   LinearOp HScaling  = invOpsStrategy_->getHScaling(blockOp,state);
+   if(invMass==Teuchos::null)  invMass = identity<double>(F->range());
+   if(HScaling==Teuchos::null) HScaling = identity<double>(F->range());
    PB_DEBUG_EXPR(timer.stop());
    PB_DEBUG_MSG("LSCPrecFact::buildPO GetInvTime = " << timer.totalElapsedTime(),2);
 
@@ -87,14 +89,14 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    // first construct middle operator: M = B * inv(Mass) * F * inv(Mass) * Bt
    LinearOp M = 
       //          (B * inv(Mass) ) * F * (inv(Mass) * Bt)
-      multiply( multiply(B,invMass), F , multiply(invMass,Bt));
+      multiply( multiply(B,invMass), F , multiply(HScaling,Bt));
       
    // now construct a linear operator schur complement
    LinearOp invPschur; 
-   if(invD!=Teuchos::null)
-      invPschur = add(multiply(invBQBtmC, M , invBQBtmC), invD);
+   if(invAlphaD!=Teuchos::null)
+      invPschur = add(multiply(invBQBtmC, M , invBHBtmC), invAlphaD);
    else
-      invPschur = multiply(invBQBtmC, M , invBQBtmC);
+      invPschur = multiply(invBQBtmC, M , invBHBtmC);
 
    // build the preconditioner operator: Use LDU or upper triangular approximation
    if(invOpsStrategy_->useFullLDU()) { 
@@ -129,64 +131,35 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
-   RCP<InvLSCStrategy> strategy = rcp(new InvLSCStrategy());
-   strategy->initializeFromParameterList(pl,*invLib);
-/*
-   // get string specifying inverse
-   std::string invStr="", invVStr="", invPStr="";
-   bool rowZeroing = true;
-   bool presZeroing = false;
-   bool useLDU = false;
+   std::string name = "Basic Inverse";
+   if(pl.isParameter("Strategy Name"))
+      name = pl.get<std::string>("Strategy Name");
+   const Teuchos::ParameterEntry * pe = pl.getEntryPtr("Strategy Settings");
 
-   // "parse" the parameter list
-   if(pl.isParameter("Inverse Type"))
-      invStr = pl.get<std::string>("Inverse Type");
-   if(pl.isParameter("Inverse Velocity Type"))
-      invVStr = pl.get<std::string>("Inverse Velocity Type");
-   if(pl.isParameter("Inverse Pressure Type")) 
-      invPStr = pl.get<std::string>("Inverse Pressure Type");
-   if(pl.isParameter("Ignore Boundary Rows"))
-      rowZeroing = pl.get<bool>("Ignore Boundary Rows");
-   if(pl.isParameter("Use LDU"))
-      useLDU = pl.get<bool>("Use LDU");
-   if(pl.isParameter("Pressure Zeroing On"))
-      presZeroing = pl.get<bool>("Pressure Zeroing On");
-   if(pl.isParameter("Use Mass Scaling"))
-      useMass_ = pl.get<bool>("Use Mass Scaling");
+   // check for a mistake in input file
+   if(name!="Basic Inverse" && pe==0) {
+      RCP<Teuchos::FancyOStream> out = getOutputStream();
+      *out << "LSC Construction failed: ";
+      *out << "Strategy \"" << name << "\" requires a \"Strategy Settings\" sublist" << std::endl;
+      throw std::runtime_error("LSC Construction failed: Strategy Settings not set");
+   }
 
-   PB_DEBUG_MSG_BEGIN(5)
-      DEBUG_STREAM << "LSC Parameters: " << std::endl;
-      DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
-      DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
-      DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
-      DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
-      DEBUG_STREAM << "   pres zero  = " << presZeroing << std::endl;
-      DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
-      DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-      DEBUG_STREAM << "LSC Parameter list: " << std::endl;
-      pl.print(DEBUG_STREAM);
-   PB_DEBUG_MSG_END()
+   // get the parameter list to construct the strategy
+   Teuchos::RCP<const Teuchos::ParameterList> stratPL = Teuchos::rcpFromRef(pl);
+   if(pe!=0)
+      stratPL = Teuchos::rcpFromRef(pl.sublist("Strategy Settings"));
 
-   // set defaults as needed
-   if(invStr=="") invVStr = "Amesos";
-   if(invVStr=="") invVStr = invStr;
-   if(invPStr=="") invPStr = invStr;
+   // build the strategy object
+   RCP<LSCStrategy> strategy = buildStrategy(name,*stratPL,invLib);
+ 
+   // strategy could not be built
+   if(strategy==Teuchos::null) {
+      RCP<Teuchos::FancyOStream> out = getOutputStream();
+      *out << "LSC Construction failed: ";
+      *out << "Strategy \"" << name << "\" could not be constructed" << std::endl;
+      throw std::runtime_error("LSC Construction failed: Strategy could not be constructed");
+   }
 
-   //  two inverse factory objects
-   RCP<const InverseFactory> invVFact, invPFact;
-
-   // build velocity inverse factory
-   invVFact = invLib->getInverseFactory(invVStr);
-   invPFact = invVFact; // by default these are the same
-   if(invVStr!=invPStr) // if different, build pressure inverse factory
-      invPFact = invLib->getInverseFactory(invPStr);
-
-   // based on parameter type build a strategy
-   RCP<InvLSCStrategy> strategy = rcp(new InvLSCStrategy(invVFact,invPFact,rowZeroing));
-   strategy->setUseFullLDU(useLDU);
-   strategy->setPressureZeroing(presZeroing);
-
-*/
    invOpsStrategy_ = strategy;
 
    PB_DEBUG_MSG("End LSCPreconditionerFactory::initializeFromParameterList",10);
@@ -230,13 +203,12 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
    PB_DEBUG_MSG("Begin LSCPreconditionerFactory::buildStrategy",10);
 
    // initialize the defaults if necessary
-   if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
+   if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
 
    // request the preconditioner factory from the CloneFactory
    RCP<LSCStrategy> strategy = strategyBuilder_.build(name);
 
-   if(strategy==Teuchos::null)  
-      return Teuchos::null;
+   if(strategy==Teuchos::null) return Teuchos::null;
 
    // now that inverse library has been set,
    // pass in the parameter list

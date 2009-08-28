@@ -164,7 +164,7 @@ public:
    static RCP<LU2x2Strategy> 
    buildStrategy(const std::string & name, 
                  const Teuchos::ParameterList & settings,
-                 const RCP<const InverseLibrary> & invLib=Teuchos::null);
+                 const RCP<const InverseLibrary> & invLib);
 
    /** \brief Add a strategy to the builder. This is done using the
      *        clone pattern. 
@@ -181,7 +181,7 @@ public:
      */
    static void addStrategy(const std::string & name,const RCP<Cloneable> & clone);
 
-protected:
+private:
    //! for creating the strategy objects
    static CloneFactory<LU2x2Strategy> strategyBuilder_;
 

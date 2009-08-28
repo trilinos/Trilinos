@@ -13,6 +13,7 @@ OBJS = tLSCStablePreconditionerFactory.o \
        tBlockUpperTriInverseOp.o \
        tBlockLowerTriInverseOp.o \
        tLSCIntegrationTest.o \
+       tLSCHIntegrationTest.o \
        tGraphLaplacian.o \
        tLU2x2PreconditionerFactory.o \
        tParallelInverse.o \

@@ -69,7 +69,7 @@ public:
      *
      * \returns A parameter list with the requested parameters.
      *
-     * \node The default implementation returns Teuchos::null.
+     * \note The default implementation returns Teuchos::null.
      */
    virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const
    { return Teuchos::null; }
@@ -227,7 +227,7 @@ public:
      *
      * \returns A parameter list with the requested parameters.
      *
-     * \node The default implementation returns Teuchos::null.
+     * \note The default implementation returns Teuchos::null.
      */
    virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
    

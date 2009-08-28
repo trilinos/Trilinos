@@ -147,6 +147,12 @@ int tLSCIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std::ostre
    failcount += status ? 0 : 1;
    totalrun++;
 
+   status = test_plConstruction(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"plConstruction\" ... PASSED","   \"plConstruction\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
    status = allTests;
    if(verbosity >= 10) {
       PB_TEST_MSG(failstrm,0,"tLSCIntegrationTest...PASSED","tLSCIntegrationTest...FAILED");
@@ -285,6 +291,72 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
                       << ": error in solution = " << std::scientific << relerr << std::endl;
    }
    allPassed &= status;
+
+   return allPassed;
+}
+
+bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   using Teuchos::ParameterList;
+
+   RCP<PB::BlockPreconditionerFactory> precFact;
+   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
+
+   /////////////////////////////////////////////////////////////////////////////
+
+   ParameterList pl; 
+   pl.set("Inverse Type", "Amesos");
+   pl.set("Inverse Velocity Type", "Ifpack");
+   pl.set("Inverse Pressure Type", "Ifpack");
+   pl.set("Ignore Boundary Rows",true);
+   pl.set("Use LDU",true);
+
+   precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
+
+   TEST_ASSERT(precFact!=Teuchos::null,
+         std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
+                   << ": building \"Basic Inverse\" with out sublist");
+
+   /////////////////////////////////////////////////////////////////////////////
+
+   ParameterList parPl;
+   parPl.set("Strategy Name","Basic Inverse");
+   parPl.set("Strategy Settings",pl);
+
+   precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
+
+   TEST_ASSERT(precFact!=Teuchos::null,
+         std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
+                   << ": building \"Basic Inverse\" with sublist");
+
+   /////////////////////////////////////////////////////////////////////////////
+
+   try {
+      parPl.set("Strategy Name","The Cat");
+      precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
+
+      TEST_ASSERT(false,
+         std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
+                   << ": using failing strategy to build LSC factory...exception expected");
+   }
+   catch (const std::runtime_error & e) { }
+
+   /////////////////////////////////////////////////////////////////////////////
+
+   try {
+      pl.set("Strategy Name","The Cat");
+      precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
+
+      TEST_ASSERT(false,
+            std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
+                      << ": using failing strategy to build LSC factory...exception expected");
+   }
+   catch (const std::runtime_error & e) { }
+
+   /////////////////////////////////////////////////////////////////////////////
 
    return allPassed;
 }

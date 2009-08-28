@@ -230,7 +230,7 @@ public:
      *
      * \returns A parameter list with the requested parameters.
      *
-     * \node The default implementation returns Teuchos::null.
+     * \note The default implementation returns Teuchos::null.
      */
    virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const
    { return Teuchos::null; }
@@ -349,7 +349,7 @@ public:
      */
    static void addPreconditionerFactory(const std::string & name,const RCP<Cloneable> & clone);
 
-protected:
+private:
 
    //! for creating the preconditioner factories objects
    static CloneFactory<BlockPreconditionerFactory> precFactoryBuilder_;

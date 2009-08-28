@@ -23,14 +23,22 @@ public:
    LinearOp invMass_;
 
    /** \f$B Q_u^{-1} B^T\f$
-     * \f$D = diag(B \; diag(F)^{-1} B^T + C)\f$.
      */
    ModifiableLinearOp BQBt_;
+
+   /** \f$B H B^T\f$
+     */
+   ModifiableLinearOp BHBt_;
 
    /** \f$B Q_u^{-1} B^T-\gamma C\f$
      */
    LinearOp BQBtmC_;
    InverseLinearOp invBQBtmC_;
+
+   /** \f$B H B^T-\gamma C\f$
+     */
+   LinearOp BHBtmC_;
+   InverseLinearOp invBHBtmC_;
 
    //! \f$\alpha D^{-1}\f$ where
    LinearOp aiD_;
@@ -103,7 +111,7 @@ public:
    static RCP<LSCStrategy> 
    buildStrategy(const std::string & name, 
                  const Teuchos::ParameterList & settings,
-                 const RCP<const InverseLibrary> & invLib=Teuchos::null);
+                 const RCP<const InverseLibrary> & invLib);
 
    /** \brief Add a strategy to the builder. This is done using the
      *        clone pattern. 
@@ -120,7 +128,7 @@ public:
      */
    static void addStrategy(const std::string & name,const RCP<Cloneable> & clone);
 
-protected:
+private:
    //! for creating the strategy objects
    static CloneFactory<LSCStrategy> strategyBuilder_;
 

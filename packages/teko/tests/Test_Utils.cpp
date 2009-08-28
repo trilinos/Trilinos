@@ -32,6 +32,28 @@ using namespace Teuchos;
 namespace PB {
 namespace Test {
 
+const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d)
+{
+   RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,comm));
+
+   int indicies[2];
+   double row0[2];
+   double row1[2];
+
+   indicies[0] = 0;
+   indicies[1] = 1;
+
+   // build a CrsMatrix
+   RCP<Epetra_CrsMatrix> blk  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
+   row0[0] = a; row0[1] = b;  // do a transpose here!
+   row1[0] = c; row1[1] = d;
+   blk->InsertGlobalValues(0,2,&row0[0],&indicies[0]);
+   blk->InsertGlobalValues(1,2,&row1[0],&indicies[0]);
+   blk->FillComplete();
+
+   return Thyra::epetraLinearOp(blk);
+}
+
 const RCP<const Thyra::VectorBase<double> > BlockVector(const Epetra_Vector & eu, const Epetra_Vector & ev,
         const RCP<const Thyra::VectorSpaceBase<double> > & vs)
 {

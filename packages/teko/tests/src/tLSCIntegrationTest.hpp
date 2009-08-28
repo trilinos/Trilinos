@@ -26,6 +26,7 @@ public:
 
    bool test_withmassStable(int verbosity,std::ostream & os);
    bool test_nomassStable(int verbosity,std::ostream & os);
+   bool test_plConstruction(int verbosity,std::ostream & os);
 
 protected:
    void loadStableSystem();

@@ -26,6 +26,7 @@
 #include "src/tBlockUpperTriInverseOp.hpp"
 #include "src/tBlockLowerTriInverseOp.hpp"
 #include "src/tLSCIntegrationTest.hpp"
+#include "src/tLSCHIntegrationTest.hpp"
 #include "src/tGraphLaplacian.hpp"
 #include "src/tParallelInverse.hpp"
 #include "src/tExplicitOps.hpp"
@@ -90,6 +91,7 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tParallelInverse,tParallelInverse);
    PB_ADD_UNIT_TEST(PB::Test::tExplicitOps,tExplicitOps);
    PB_ADD_UNIT_TEST(PB::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
+   PB_ADD_UNIT_TEST(PB::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);

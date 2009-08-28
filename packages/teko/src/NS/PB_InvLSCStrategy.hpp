@@ -56,6 +56,16 @@ public:
      */
    virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
+   /** Get the inverse of \f$B H B^T - \gamma C\f$. 
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns An (approximate) inverse of \f$B H B^T - \gamma C\f$.
+     */
+   virtual LinearOp getInvBHBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
+
    /** Get the inverse of the \f$F\f$ block.
      *
      * \param[in] A The linear operator to be preconditioned by LSC.
@@ -74,7 +84,7 @@ public:
      *
      * \returns The operator to stabilize the whole Schur complement.
      */
-   virtual LinearOp getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
+   virtual LinearOp getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    /** Get the inverse mass matrix.
      *
@@ -85,6 +95,16 @@ public:
      * \returns The inverse of the mass matrix \f$Q_u\f$.
      */
    virtual LinearOp getInvMass(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
+
+   /** Get the \f$H\f$ scaling matrix.
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns The \f$H\f$ scaling matrix.
+     */
+   virtual LinearOp getHScaling(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    /** Should the approximation of the inverse use a full LDU decomposition, or
      * is a upper triangular approximation sufficient.
@@ -113,8 +133,15 @@ public:
    //! Initialize the state object using this blocked linear operator
    virtual void initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
 
-   //! Initialize the state object using this blocked linear operator
-   virtual void reinitializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
+   /** Compute the inverses required for the LSC Schur complement
+     *
+     * \note This method assumes that the BQBt and BHBt operators have
+     *       been constructed.
+     */
+   void computeInverses(const BlockedLinearOp & A,LSCPrecondState * state) const;
+
+   // //! Initialize the state object using this blocked linear operator
+   // virtual void reinitializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
 
    //! Set the number of power series iterations to use when finding the spectral radius
    virtual void setEigSolveParam(int sz) { eigSolveParam_ = sz; }
@@ -131,6 +158,17 @@ public:
    //! set the mass matrix to use in computing the scaling
    virtual void setMassMatrix(const LinearOp & mass) { massMatrix_ = mass; }
 
+   /** Set the \f$H\f$-Scaling operator used in \f$B H B^T\f$. It is expected
+     * that this will be a diagonal matrix.
+     */
+   virtual void setHScaling(const LinearOp & hScaling) { hScaling_ = hScaling; }
+
+   /** Set the \f$H\f$-Scaling operator used in \f$B H B^T\f$. This method
+     * takes a vector and constructs the diagonal matrix.
+     */
+   virtual void setHScaling(const MultiVector & hScaling) 
+   { hScaling_ = buildDiagonal(hScaling,"H"); }
+
 protected:
    // how to invert the matrices
    Teuchos::RCP<const InverseFactory> invFactoryF_;
@@ -139,6 +177,7 @@ protected:
    // operators requested, to be filled by user
    LinearOp massMatrix_;
    LinearOp userPresStabMat_;
+   LinearOp hScaling_;
 
    // number of power iterations when computing spectral radius
    int eigSolveParam_;

@@ -83,7 +83,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
    PB_DEBUG_MSG("Begin LU2x2PreconditionerFactory::buildStrategy",10);
 
    // initialize the defaults if necessary
-   if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
+   if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
 
    // request the preconditioner factory from the CloneFactory
    RCP<LU2x2Strategy> strategy = strategyBuilder_.build(name);
