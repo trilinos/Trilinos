@@ -152,6 +152,14 @@ int main(int argc, char *argv[]) {
   }
   std::cout <<"\n";
   
+  // Finally, get all shards cell topologies and print them!
+  std::cout << "Number of all Shards cell topologies = " << shardsTopologies.size() << "\n\n";
+  shards::getTopologies(shardsTopologies);
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i] << "\n"; 
+  }
+  std::cout <<"\n";
+  
   
   
 cout \

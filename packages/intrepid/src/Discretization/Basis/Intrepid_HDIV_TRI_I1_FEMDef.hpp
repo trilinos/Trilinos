@@ -158,7 +158,6 @@ void Basis_HDIV_TRI_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
                           ">>> ERROR (Basis_HDIV_TRI_I1_FEM): Invalid operator type");
       break;
       
-      
     default:
       TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
                             (operatorType != OPERATOR_GRAD)  &&

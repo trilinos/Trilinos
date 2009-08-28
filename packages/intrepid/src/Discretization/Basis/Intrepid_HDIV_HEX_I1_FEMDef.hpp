@@ -82,7 +82,6 @@ void Basis_HDIV_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
                                                            const ArrayScalar &  inputPoints,
                                                            const EOperator      operatorType) const {
   
-
 // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
   Intrepid::getValues_HDIV_Args<Scalar, ArrayScalar>(outputValues,
@@ -91,8 +90,6 @@ void Basis_HDIV_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-
-
   
  // Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
@@ -133,7 +130,6 @@ void Basis_HDIV_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
         outputValues(5, i0, 0) = 0.0;
         outputValues(5, i0, 1) = 0.0;
         outputValues(5, i0, 2) = (1.0 + z)/8.0;
-
       }
       break;
 
@@ -183,7 +179,6 @@ void Basis_HDIV_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
                           ">>> ERROR (Basis_HDIV_HEX_I1_FEM): Invalid operator type");
       break;
       
-      
     default:
       TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
                             (operatorType != OPERATOR_GRAD)  &&
@@ -208,11 +203,11 @@ void Basis_HDIV_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
   
 template<class Scalar, class ArrayScalar>
 void Basis_HDIV_HEX_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-                                                            const ArrayScalar &    inputPoints,
-                                                            const ArrayScalar &    cellVertices,
-                                                            const EOperator        operatorType) const {
+                                                           const ArrayScalar &    inputPoints,
+                                                           const ArrayScalar &    cellVertices,
+                                                           const EOperator        operatorType) const {
   TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HDIV_HEX_I1_FEM): FEM Basis calling an FVD member function");
-                                                             }
+}
 
 }// namespace Intrepid

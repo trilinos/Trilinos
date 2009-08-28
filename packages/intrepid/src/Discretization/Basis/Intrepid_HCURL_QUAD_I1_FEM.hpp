@@ -27,23 +27,23 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_TET_I1_FEM.hpp
-    \brief  Header file for the Intrepid::HCURL_TET_I1_FEM class.
+/** \file   Intrepid_HCURL_QUAD_I1_FEM.hpp
+    \brief  Header file for the Intrepid::HCURL_QUAD_I1_FEM class.
     \author Created by P. Bochev and D. Ridzal.
  */
 
-#ifndef INTREPID_HCURL_TET_I1_FEM_HPP
-#define INTREPID_HCURL_TET_I1_FEM_HPP
+#ifndef INTREPID_HCURL_QUAD_I1_FEM_HPP
+#define INTREPID_HCURL_QUAD_I1_FEM_HPP
 #include "Intrepid_Basis.hpp"
 
 namespace Intrepid {
   
-/** \class  Intrepid::Basis_HCURL_TET_I1_FEM
-    \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Tetrahedron cell 
+/** \class  Intrepid::Basis_HCURL_QUAD_I1_FEM
+    \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Quadrilateral cell 
   
-            Implements Nedelec basis of degree 1 on the reference Tetrahedron cell. The basis has
-            cardinality 6 and spans an INCOMPLETE linear polynomial space. Basis functions are dual 
-            to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
+            Implements Nedelec basis of the first kind of degree 1 on the reference Quadrilateral cell. 
+            The basis has cardinality 4 and spans an INCOMPLETE bi-linear polynomial space. Basis functions 
+             are dual to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
   \verbatim
   ===================================================================================================
@@ -51,35 +51,34 @@ namespace Intrepid {
   |   DoF   |----------------------------------------------------------|       DoF definition       |
   | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                            |
   |=========|==============|==============|==============|=============|============================|
-  |    0    |       1      |       0      |       0      |      1      |  L_0(u) = (u.t)(0.5,0,0)   |
+  |    0    |       1      |       0      |       0      |      1      |   L_0(u) = (u.t)( 0,-1)    |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    1    |       1      |       1      |       0      |      1      |  L_1(u) = (u.t)(0.5,0.5,0) |
+  |    1    |       1      |       1      |       0      |      1      |   L_1(u) = (u.t)( 1, 0)    |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    2    |       1      |       2      |       0      |      1      |  L_2(u) = (u.t)(0,0.5,0)   |
+  |    2    |       1      |       2      |       0      |      1      |   L_2(u) = (u.t)( 0, 1)    |
   |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    3    |       1      |       3      |       0      |      1      |  L_3(u) = (u.t)(0,0,0.5)   |
-  |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    4    |       1      |       4      |       0      |      1      |  L_4(u) = (u.t)(0.5,0,0.5) |
-  |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    5    |       1      |       5      |       0      |      1      |  L_5(u) = (u.t)(0,0.5,0.5) |
+  |    3    |       1      |       3      |       0      |      1      |   L_3(u) = (u.t)(-1, 0)    |
   |=========|==============|==============|==============|=============|============================|
-  |   MAX   |  maxScDim=1  |  maxScOrd=5  |  maxDfOrd=0  |      -      |                            |
+  |   MAX   |  maxScDim=1  |  maxScOrd=3  |  maxDfOrd=0  |      -      |                            |
   |=========|==============|==============|==============|=============|============================|
   \endverbatim
   
     \remarks
-    \li         The edge tangent \c t in the DoF definition is normalized by the \s edge length.
-                As a result, the DoF functional is the value of the tangent component of a vector field 
-                at the edge midpoint times the edge length. The so defined basis is equivalent to
-                a basis defined by using the edge circulation as a DoF functional. Note that edges
-                0, 2 and 3 of reference Tetrahedron<> cells have unit lengths and edges 1, 4, and 5 
-                have length Sqrt(2).
+    \li       The edge tangent \c t in the DoF definition is normalized by the \s edge length.
+              As a result, the DoF functional is the value of the tangent component of a vector field 
+              at the edge midpoint times the edge length. The so defined basis is equivalent to
+              a basis defined by using the edge circulation as a DoF functional.
+  
+    \li       Orientation of edge tangents \c t in DoF definition follows orientation of their associated
+              reference edges implied by the cell topology of the reference cell. For example, edge 2 of 
+              all Quadrilateral cells has vertices {2,3} with reference coordinates (1,1) and (-1,1). 
+              Consequently, the edge tangent for this edge is given by (-2,0).
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
   \verbatim
   |=======================|===================================|
-  |  CellTopology         |  Tetrahedron                      |
+  |  CellTopology         |  Quadrilateral                       |
   |-----------------------|-----------------------------------|
   |  EFunctionSpace       |  FUNCTION_SPACE_HCURL             |
   |-----------------------|-----------------------------------|
@@ -95,7 +94,7 @@ namespace Intrepid {
  */
   
 template<class Scalar, class ArrayScalar> 
-class Basis_HCURL_TET_I1_FEM : public Basis<Scalar, ArrayScalar> {
+class Basis_HCURL_QUAD_I1_FEM : public Basis<Scalar, ArrayScalar> {
 private:
   
   /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
@@ -106,13 +105,13 @@ public:
 
   /** \brief  Constructor.
     */
-  Basis_HCURL_TET_I1_FEM();
+  Basis_HCURL_QUAD_I1_FEM();
   
     
-  /** \brief  Evaluation of a FEM basis on a <strong>reference Tetrahedron</strong> cell. 
+  /** \brief  Evaluation of a FEM basis on a <strong>reference Quadrilateral</strong> cell. 
     
               Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Tetrahedron</strong> cell. For rank and dimensions of
+              points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of
               I/O array arguments see Section \ref basis_md_array_sec.
   
       \param  outputValues      [out] - rank-3 array with the computed basis values
@@ -133,6 +132,6 @@ public:
 };
 }// namespace Intrepid
 
-#include "Intrepid_HCURL_TET_I1_FEMDef.hpp"
+#include "Intrepid_HCURL_QUAD_I1_FEMDef.hpp"
 
 #endif

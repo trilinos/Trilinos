@@ -247,6 +247,12 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
   
   int spaceDim = cellTopo.getDimension();
   
+  // Verify that cell is 2D or 3D (this is redundant for default bases where we use correct cells,
+  //  but will force any user-defined basis for HCURL spaces to use 2D or 3D cells
+  TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
+                      ">>> ERROR: (Intrepid::getValues_HCURL_Args) cell dimension = 2 or 3 required for HCURL basis"); 
+
+  
   // Verify inputPoints array
   TEST_FOR_EXCEPTION( !(inputPoints.rank() == 2), std::invalid_argument, 
                       ">>> ERROR: (Intrepid::getValues_HCURL_Args) rank = 2 required for inputPoints array"); 
@@ -268,30 +274,40 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
                       ">>> ERROR: (Intrepid::getValues_HCURL_Args) operator = VALUE or CURL required for HCURL fields."); 
   
   
-  // Check rank of outputValues 
+  // Check rank of outputValues: for VALUE should always be rank-3 array with (F,P,D) layout 
   switch(operatorType) {
+    
     case OPERATOR_VALUE:
       TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) rank = 3 required for outputValues when operator is VALUE or CURL.");
+                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) rank = 3 required for outputValues when operator is VALUE");
       TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
                           std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
+                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension when operator is VALUE.");
       break;
       
-  case OPERATOR_CURL:
-    TEST_FOR_EXCEPTION( !(spaceDim == outputValues.rank() ) ,
-			std::invalid_argument,
-			">>> ERROR: (Intrepid::getValues_HCURL_Args) rank must be same as spatial dimension for outputValues when operator is CURL.");
-    TEST_FOR_EXCEPTION( ( (spaceDim == 3) && !(outputValues.dimension(2) == spaceDim) ),
-                          std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension for operator VALUE.");
-
+    case OPERATOR_CURL:
+      
+      // in 3D we need an (F,P,D) container because CURL gives a vector field:
+      if(spaceDim == 3) {
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 3 ) ,
+                            std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HCURL_Args) rank = 3 required for outputValues in 3D when operator is CURL");
+        TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim),
+                            std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HCURL_Args) dim 2 of outputValues must equal cell dimension in 3D when operator is CURL.");
+      }
+      // In 2D we need an (F,P) container because CURL gives a scalar field
+      else if(spaceDim == 2) {
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 2 ) ,
+                            std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HCURL_Args) rank = 2 required for outputValues in 2D when operator is CURL");
+      }
       break;
-
+      
     default:
       TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid::getValues_HCURL_Args) Invalid operator");
   }
-
+  
   
   // Verify dim 0 and dim 1 of outputValues
   TEST_FOR_EXCEPTION( !(outputValues.dimension(1) == inputPoints.dimension(0) ), 

@@ -83,7 +83,6 @@ template<class Scalar, class ArrayScalar>
 void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                             const ArrayScalar &  inputPoints,
                                                             const EOperator      operatorType) const {
-  
 
 // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
@@ -93,8 +92,6 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-
-
   
  // Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
@@ -150,7 +147,6 @@ void Basis_HCURL_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &     
 
       }
       break;
-      
       
     case OPERATOR_CURL:
       for (int i0 = 0; i0 < dim0; i0++) {

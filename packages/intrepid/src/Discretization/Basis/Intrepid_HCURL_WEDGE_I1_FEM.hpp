@@ -27,8 +27,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_C_WEDGE_I1_FEM.hpp
-    \brief  Header file for the Intrepid::C_WEDGE_I1_FEM class.
+/** \file   Intrepid_HCURL_WEDGE_I1_FEM.hpp
+    \brief  Header file for the Intrepid::HCURL_WEDGE_I1_FEM class.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
  */
 

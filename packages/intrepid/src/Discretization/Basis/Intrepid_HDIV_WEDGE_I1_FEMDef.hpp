@@ -80,7 +80,6 @@ template<class Scalar, class ArrayScalar>
 void Basis_HDIV_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
                                                             const ArrayScalar &  inputPoints,
                                                             const EOperator      operatorType) const {
-  
 
 // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
@@ -90,8 +89,6 @@ void Basis_HDIV_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-
-
   
  // Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
@@ -109,37 +106,36 @@ void Basis_HDIV_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
         z = inputPoints(i0, 2);
         
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = x;
-        outputValues(0, i0, 1) = y - 1.0;
+        outputValues(0, i0, 0) = x/2.0;
+        outputValues(0, i0, 1) = (y - 1.0)/2.0;
         outputValues(0, i0, 2) = 0.0;
 
-        outputValues(1, i0, 0) = 1.4142135623730950488*x;
-        outputValues(1, i0, 1) = 1.4142135623730950488*y;
+        outputValues(1, i0, 0) = x/2.0;
+        outputValues(1, i0, 1) = y/2.0;
         outputValues(1, i0, 2) = 0.0;
 
-        outputValues(2, i0, 0) = x - 1.0;
-        outputValues(2, i0, 1) = y;
+        outputValues(2, i0, 0) = (x - 1.0)/2.0;
+        outputValues(2, i0, 1) = y/2.0;
         outputValues(2, i0, 2) = 0.0;
 
         outputValues(3, i0, 0) = 0.0;
         outputValues(3, i0, 1) = 0.0;
-        outputValues(3, i0, 2) = (z - 1.0)/2.0;
+        outputValues(3, i0, 2) = z - 1.0;
 
         outputValues(4, i0, 0) = 0.0;
         outputValues(4, i0, 1) = 0.0;
-        outputValues(4, i0, 2) = (1.0 + z)/2.0;
-
+        outputValues(4, i0, 2) = 1.0 + z;
       }
       break;
 
     case OPERATOR_DIV:
       // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
       for (int i0 = 0; i0 < dim0; i0++) {
-         outputValues(0, i0) = 2.0;
-         outputValues(1, i0) = 2.8284271247461900976;
-         outputValues(2, i0) = 2.0;
-         outputValues(3, i0) = 0.5;
-         outputValues(4, i0) = 0.5;
+         outputValues(0, i0) = 1.0;
+         outputValues(1, i0) = 1.0;
+         outputValues(2, i0) = 1.0;
+         outputValues(3, i0) = 1.0;
+         outputValues(4, i0) = 1.0;
        }
       break;
 
@@ -163,20 +159,19 @@ void Basis_HDIV_WEDGE_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    &&
-                            (operatorType == OPERATOR_D2)    &&
-                            (operatorType == OPERATOR_D3)    &&
-                            (operatorType == OPERATOR_D4)    &&
-                            (operatorType == OPERATOR_D5)    &&
-                            (operatorType == OPERATOR_D6)    &&
-                            (operatorType == OPERATOR_D7)    &&
-                            (operatorType == OPERATOR_D8)    &&
-                            (operatorType == OPERATOR_D9)    &&
+      TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+                            (operatorType == OPERATOR_D2)    ||
+                            (operatorType == OPERATOR_D3)    ||
+                            (operatorType == OPERATOR_D4)    ||
+                            (operatorType == OPERATOR_D5)    ||
+                            (operatorType == OPERATOR_D6)    ||
+                            (operatorType == OPERATOR_D7)    ||
+                            (operatorType == OPERATOR_D8)    ||
+                            (operatorType == OPERATOR_D9)    ||
                             (operatorType == OPERATOR_D10) ),
                           std::invalid_argument,
                           ">>> ERROR (Basis_HDIV_WEDGE_I1_FEM): Invalid operator type");
       break;
-      
       
     default:
       TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&

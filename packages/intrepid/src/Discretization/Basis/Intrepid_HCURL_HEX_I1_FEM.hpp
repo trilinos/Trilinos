@@ -27,8 +27,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_C_HEX_I1_FEM.hpp
-    \brief  Header file for the Intrepid::C_HEX_I1_FEM class.
+/** \file   Intrepid_HCURL_HEX_I1_FEM.hpp
+    \brief  Header file for the Intrepid::HCURL_HEX_I1_FEM class.
     \author Created by P. Bochev and D. Ridzal.
  */
 

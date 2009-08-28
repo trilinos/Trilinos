@@ -80,7 +80,6 @@ void Basis_HDIV_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
                                                            const ArrayScalar &  inputPoints,
                                                            const EOperator      operatorType) const {
   
-
 // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
   Intrepid::getValues_HDIV_Args<Scalar, ArrayScalar>(outputValues,
@@ -90,8 +89,6 @@ void Basis_HDIV_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
                                                       this -> getCardinality() );
 #endif
 
-
-  
  // Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
 
@@ -129,10 +126,10 @@ void Basis_HDIV_TET_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        
     case OPERATOR_DIV:
       // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
       for (int i0 = 0; i0 < dim0; i0++) {
-         outputValues(0, i0) = 3.0;
-         outputValues(1, i0) = 3.0;
-         outputValues(2, i0) = 3.0;
-         outputValues(3, i0) = 3.0;
+         outputValues(0, i0) = 6.0;
+         outputValues(1, i0) = 6.0;
+         outputValues(2, i0) = 6.0;
+         outputValues(3, i0) = 6.0;
        }
       break;
 

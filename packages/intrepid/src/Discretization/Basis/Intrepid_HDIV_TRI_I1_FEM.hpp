@@ -65,7 +65,8 @@ namespace Intrepid {
     \li       The outer normal to a side in the DoF definition is normalized by the \s side length.
               As a result, the DoF functional is the value of the normal component of a vector field 
               at the side center times the side length. The so defined basis is equivalent to
-              a basis defined by using the side flux as a DoF functional.
+              a basis defined by using the side flux as a DoF functional. Note that sides 0 and 2 of 
+              reference Triangle<> cells have length 1 and side 1 has length Sqrt(2).
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   

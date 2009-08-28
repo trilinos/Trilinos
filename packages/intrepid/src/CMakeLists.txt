@@ -120,6 +120,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HCURL_TET_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HCURL_WEDGE_I1_FEM.hpp
   Discretization/Basis/Intrepid_HCURL_WEDGE_I1_FEMDef.hpp
+  Discretization/Basis/Intrepid_HCURL_QUAD_I1_FEM.hpp
+  Discretization/Basis/Intrepid_HCURL_QUAD_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HDIV_HEX_I1_FEM.hpp
   Discretization/Basis/Intrepid_HDIV_HEX_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HDIV_TET_I1_FEM.hpp
