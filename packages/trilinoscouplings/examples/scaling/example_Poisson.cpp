@@ -29,16 +29,37 @@
 // @HEADER
 
 /** \file   example_Poisson.cpp
-    \brief  Example solution of a Poisson equation (div grad u = f) using Trilinos packages.
-    \author Created by P. Bochev, D. Ridzal and K. Peterson.
+    \brief  Example solution of a Poisson equation on a hexahedral mesh using
+            nodal (Hgrad) elements.
+
+            This example uses Pamgen to generate a hexahedral mesh, Intrepid to
+            build the stiffness matrix and right-hand side, and ML to solve.
+
+    \verbatim
+
+     Poisson system:
  
-    \remark Sample command line
-    \code   ./example_Poisson.exe \endcode
-    \remark Example requires Pamgen formatted mesh input file named PoissonMesh.in
+            div grad u = f in Omega
+                     u = 0 on Gamma
+
+     Corresponding discrete linear system for nodal coefficients(x):
+
+                 Kx = b
+
+            K - HGrad stiffness matrix
+            b - right hand side vector
+
+    \endverbatim
+
+    \author Created by P. Bochev, D. Ridzal, K. Peterson, D. Hensinger, C. Siefert.
+
+    \remark Usage:
+    \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
+
+    \remark Example requires Pamgen formatted mesh input file named PoissonMesh.in.
 */
 
-#undef DEBUG_PRINTING
-// #define DEBUG_PRINTING
+#define DUMP_DATA
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -123,40 +144,23 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
 
-  //Check number of arguments
-/*
-    TEST_FOR_EXCEPTION( ( argc < 4 ),
-                      std::invalid_argument,
-                      ">>> ERROR (example_Poisson): Invalid number of arguments. See code listing for requirements.");
-*/
-  
-  // This little trick lets us print to std::cout only if
-  // a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 4)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
-  
-  // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
-  
-  *outStream \
+ if (MyPID == 0){
+  std::cout \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|          Example: Poisson Equation on Hexahedral Mesh                       |\n" \
+    << "|          Example: Solve Poisson Equation on Hexahedral Mesh                 |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
     << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
     << "|                                                                             |\n" \
     << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
+    << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
     << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
     << "|                                                                             |\n" \
     << "===============================================================================\n";
+  }
 
   long long *  node_comm_proc_ids   = NULL;
   long long *  node_cmap_node_cnts  = NULL;
@@ -205,7 +209,7 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
-       std::cout << "Cannot open mesh file" <<"\n";
+       std::cout << "Cannot open mesh file: PoissonMesh.in" <<"\n";
        return 0;
     }
     finput.close();
@@ -306,6 +310,7 @@ int main(int argc, char *argv[]) {
     delete [] nodeCoordx;
     delete [] nodeCoordy;
 
+
     /*parallel info*/
     long long num_internal_nodes;
     long long num_border_nodes;
@@ -373,6 +378,33 @@ int main(int argc, char *argv[]) {
 			 rank);    
 
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+
+#ifdef DUMP_DATA
+    // Print coords
+    std::stringstream fname;
+      fname << "coords";
+      fname << MyPID << ".dat";
+    FILE *f=fopen(fname.str().c_str(),"w");
+    for (int i=0; i<numNodes; i++) {
+      if (nodeIsOwned[i]) {
+       fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(i,0),nodeCoord(i,1),nodeCoord(i,2));
+      }
+    }
+    fclose(f);
+
+  // Output element to node connectivity
+    std::stringstream efname;
+      efname << "elem2node";
+      efname << MyPID << ".dat";
+    ofstream el2nout(efname.str().c_str());
+    for (int i=0; i<numElems; i++) {
+      for (int m=0; m<numNodesPerElem; m++) {
+        el2nout << globalNodeIds[elemToNode(i,m)] << "  ";
+      }
+      el2nout << "\n";
+    }
+    el2nout.close();
+#endif
   
    // Container indicating whether a node is on the boundary (1-yes 0-no)
     FieldContainer<int> nodeOnBoundary(numNodes);
@@ -608,7 +640,6 @@ int main(int argc, char *argv[]) {
     delete [] BCNodes;
 
 
-#define DUMP_DATA
 #ifdef DUMP_DATA   
   // Dump matrices to disk
     EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
@@ -713,7 +744,7 @@ int main(int argc, char *argv[]) {
        fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
       // loop over cubature points
-       for (int nPt = 0; nPt < numCubPoints; nPt++){
+       for (int nPt = 0; nPt < numCubPointsErr; nPt++){
 
          // get exact solution and gradients
           double x = physCubPoints(0,nPt,0);
@@ -770,7 +801,7 @@ int main(int argc, char *argv[]) {
 
    if (MyPID == 0) {
     std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
-    std::cout << "H1 Error:  " << sqrt(H1errTot+L2errTot) <<"\n";
+    std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
     std::cout << "LInf Error:  " << LinferrTot <<"\n";
    }
 
@@ -805,7 +836,7 @@ int main(int argc, char *argv[]) {
    Delete_Pamgen_Mesh();
    
    // reset format state of std::cout
-   std::cout.copyfmt(oldFormatState);
+//   std::cout.copyfmt(oldFormatState);
    
 #ifdef HAVE_MPI
    MPI_Finalize();
