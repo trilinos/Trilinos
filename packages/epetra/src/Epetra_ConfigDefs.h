@@ -119,9 +119,7 @@ using std::fprintf;
 
 #include <iostream>
 
-#ifdef HAVE_SSTREAM
 #include <sstream>
-#endif
 
 #include <cmath>
 using std::rand;

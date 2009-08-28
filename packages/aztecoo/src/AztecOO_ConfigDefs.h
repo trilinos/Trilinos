@@ -74,37 +74,17 @@
 
 #ifdef __cplusplus
 
-#ifdef HAVE_IOSTREAM
 #include <iostream>
-#else
-#error "must have <iostream>"
-#endif
 
-#ifdef HAVE_FSTREAM
 #include <fstream>
-#else
-#error "must have <fstream>"
-#endif
 
-#ifdef HAVE_SSTREAM
 #include <sstream>
-#else
-#error "must have <sstream>"
-#endif
 
-#ifdef HAVE_STRING
 #include <string>
-#endif
 
-#ifdef HAVE_CMATH
 #include <cmath>
-#endif
 
-#ifdef HAVE_IOMANIP
 #include <iomanip>
-#else
-#include <iomanip.h>
-#endif
 
 #endif /*__cplusplus */
 #endif /*ndef TRILINOS_NO_CONFIG_H*/

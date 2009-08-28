@@ -43,20 +43,8 @@
 /* define if bool is a built-in type */
 #cmakedefine HAVE_BOOL
 
-/* Define to 1 if you have the <cassert> header file. */
-#cmakedefine HAVE_CASSERT
-
 /* Define to 1 if you have the <cfloat> header file. */
 #cmakedefine HAVE_CFLOAT
-
-/* Define to 1 if you have the <cmath> header file. */
-#cmakedefine HAVE_CMATH
-
-/* Define to 1 if you have the <cstdio> header file. */
-#cmakedefine HAVE_CSTDIO
-
-/* Define to 1 if you have the <cstdlib> header file. */
-#cmakedefine HAVE_CSTDLIB
 
 /* Define to 1 if you have the <ctime> header file. */
 #cmakedefine HAVE_CTIME
@@ -76,20 +64,8 @@
 /* Define if want to build with fortran enabled */
 #cmakedefine HAVE_FORTRAN_SUPPORT
 
-/* Define to 1 if you have the <fstream> header file. */
-#cmakedefine HAVE_FSTREAM
-
 /* Define if you are using gnumake - this will shorten your link lines. */
 #cmakedefine HAVE_GNUMAKE
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
-
-/* Define to 1 if you have the <iomanip> header file. */
-#cmakedefine HAVE_IOMANIP
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_IOSTREAM
 
 /* Define if you have LAPACK library. */
 #cmakedefine HAVE_LAPACK
@@ -127,12 +103,6 @@
 
 /* Define to 1 if you have the `sqrt' function. */
 #cmakedefine HAVE_SQRT
-
-/* Define to 1 if you have the <sstream> header file. */
-#cmakedefine HAVE_SSTREAM
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#cmakedefine HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdio.h> header file. */
 #cmakedefine HAVE_STDIO_H

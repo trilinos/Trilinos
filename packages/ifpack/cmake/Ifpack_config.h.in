@@ -15,9 +15,6 @@
 /* Define if you want to build Ifpack's ParameterList interface */
 #cmakedefine HAVE_IFPACK_METIS
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
-
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
