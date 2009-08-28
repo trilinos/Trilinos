@@ -207,6 +207,18 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+#define DUMP_DATA
+#ifdef DUMP_DATA
+   // Print nodal coords
+    ofstream fcoordout("coords.dat");
+    for (int i=0; i<numNodes; i++) {
+       fcoordout << nodeCoord(i,0) <<" ";
+       fcoordout << nodeCoord(i,1) <<" ";
+       fcoordout << nodeCoord(i,2) <<"\n";
+    }
+    fcoordout.close();
+#endif
+
 
   // Element to Node map
     FieldContainer<int> elemToNode(numElems, numNodesPerElem);
@@ -226,6 +238,22 @@ int main(int argc, char *argv[]) {
         }
       }
     }
+#ifdef DUMP_DATA
+   // Output connectivity
+    ofstream fe2nout("elem2node.dat");
+    for (int k=0; k<NZ; k++) {
+      for (int j=0; j<NY; j++) {
+        for (int i=0; i<NX; i++) {
+          int ielem = i + j * NX + k * NX * NY;
+          for (int m=0; m<numNodesPerElem; m++){
+              fe2nout << elemToNode(ielem,m) <<"  ";
+           }
+          fe2nout <<"\n";
+        }
+      }
+    }
+    fe2nout.close();
+#endif
 
 
 // ************************************ CUBATURE **************************************
@@ -393,7 +421,6 @@ int main(int argc, char *argv[]) {
        }
     }
 
-#define DUMP_DATA
 #ifdef DUMP_DATA
    // Dump matrices to disk
      EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
