@@ -355,7 +355,7 @@ getEvaluationObjectAttr(PyObject * object, CONST char * name)
   PyObject * classEvaluation = NULL;
   if (!classEvaluation)
   {
-    classEvaluation = getClassFromModule("PyTrilinos.EpetraExt", "Evaluation");
+    classEvaluation = getClassFromModule(PyTrilinosEpetraExt, "Evaluation");
     if (!classEvaluation) throw PythonException();
   }
   PyObject * value = PyObject_GetAttrString(object, name);
@@ -391,7 +391,7 @@ getEvaluationItemObjectAttr(PyObject * object, CONST char * name, int i)
   PyObject * classEvaluation = NULL;
   if (!classEvaluation)
   {
-    classEvaluation = getClassFromModule("PyTrilinos.EpetraExt", "Evaluation");
+    classEvaluation = getClassFromModule(PyTrilinosEpetraExt, "Evaluation");
     if (!classEvaluation) throw PythonException();
   }
   // Get the item from the object attribute
@@ -429,7 +429,7 @@ getDerivativeSupportObjectAttr(PyObject * object, CONST char * name)
   PyObject * classDerivativeSupport = NULL;
   if (!classDerivativeSupport)
   {
-    classDerivativeSupport = getClassFromModule("PyTrilinos.EpetraExt", "DerivativeSupport");
+    classDerivativeSupport = getClassFromModule(PyTrilinosEpetraExt, "DerivativeSupport");
     if (!classDerivativeSupport) throw PythonException();
   }
   PyObject * value = PyObject_GetAttrString(object, name);
@@ -463,7 +463,7 @@ getDerivativeSupportItemObjectAttr(PyObject * object, CONST char * name, int i)
   PyObject * classDerivativeSupport = NULL;
   if (!classDerivativeSupport)
   {
-    classDerivativeSupport = getClassFromModule("PyTrilinos.EpetraExt", "DerivativeSupport");
+    classDerivativeSupport = getClassFromModule(PyTrilinosEpetraExt, "DerivativeSupport");
     if (!classDerivativeSupport) throw PythonException();
   }
   // Get the item from the object attribute
@@ -499,7 +499,7 @@ getDerivativePropertiesObjectAttr(PyObject * object, CONST char * name)
   PyObject * classDerivativeProperties = NULL;
   if (!classDerivativeProperties)
   {
-    classDerivativeProperties = getClassFromModule("PyTrilinos.EpetraExt", "DerivativeProperties");
+    classDerivativeProperties = getClassFromModule(PyTrilinosEpetraExt, "DerivativeProperties");
     if (!classDerivativeProperties) throw PythonException();
   }
   PyObject * value = PyObject_GetAttrString(object, name);
@@ -544,7 +544,7 @@ getDerivativePropertiesItemObjectAttr(PyObject * object, CONST char * name, int 
   PyObject * classDerivativeProperties = NULL;
   if (!classDerivativeProperties)
   {
-    classDerivativeProperties = getClassFromModule("PyTrilinos.EpetraExt", "DerivativeProperties");
+    classDerivativeProperties = getClassFromModule(PyTrilinosEpetraExt, "DerivativeProperties");
     if (!classDerivativeProperties) throw PythonException();
   }
   // Get the item from the object attribute
@@ -591,7 +591,7 @@ getDerivativeMultiVectorObjectAttr(PyObject * object, CONST char * name)
   PyObject * classDerivativeMultiVector = NULL;
   if (!classDerivativeMultiVector)
   {
-    classDerivativeMultiVector = getClassFromModule("PyTrilinos.EpetraExt",
+    classDerivativeMultiVector = getClassFromModule(PyTrilinosEpetraExt,
 						    "DerivativeMultiVector");
     if (!classDerivativeMultiVector) throw PythonException();
   }
@@ -644,7 +644,7 @@ getDerivativeObjectAttr(PyObject * object, CONST char * name)
   PyObject * classDerivative = NULL;
   if (!classDerivative)
   {
-    classDerivative = getClassFromModule("PyTrilinos.EpetraExt", "Derivative");
+    classDerivative = getClassFromModule(PyTrilinosEpetraExt, "Derivative");
     if (!classDerivative) throw PythonException();
   }
   PyObject * value = PyObject_GetAttrString(object, name);
@@ -685,7 +685,7 @@ getDerivativeItemObjectAttr(PyObject * object, CONST char * name, int i)
   PyObject * classDerivative = NULL;
   if (!classDerivative)
   {
-    classDerivative = getClassFromModule("PyTrilinos.EpetraExt", "Derivative");
+    classDerivative = getClassFromModule(PyTrilinosEpetraExt, "Derivative");
     if (!classDerivative) throw PythonException();
   }
   // Get the item from the object attribute
@@ -811,7 +811,7 @@ PyObject * convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
 
   if (!classTupleOfInt)
   {
-    classTupleOfInt = getClassFromModule("PyTrilinos.EpetraExt", "tuple_of_int");
+    classTupleOfInt = getClassFromModule(PyTrilinosEpetraExt, "tuple_of_int");
     if (!classTupleOfInt) goto fail;
   }
   size = tai.size();
@@ -852,12 +852,12 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   // Python class objects
   if (!classInArgs)
   {
-    classInArgs = getClassFromModule("PyTrilinos.EpetraExt", "InArgs");
+    classInArgs = getClassFromModule(PyTrilinosEpetraExt, "InArgs");
     if (!classInArgs) goto fail;
   }
   if (!classTupleOfVector)
   {
-    classTupleOfVector = getClassFromModule("PyTrilinos.EpetraExt", "tuple_of_Vector");
+    classTupleOfVector = getClassFromModule(PyTrilinosEpetraExt, "tuple_of_Vector");
     if (!classTupleOfVector) goto fail;
   }
 
@@ -967,7 +967,7 @@ PyObject * convertEvaluationToPython(
   // Python class object
   if (!classEvaluation)
   {
-    classEvaluation = getClassFromModule("PyTrilinos.EpetraExt", "Evaluation");
+    classEvaluation = getClassFromModule(PyTrilinosEpetraExt, "Evaluation");
     if (!classEvaluation) goto fail;
   }
 
@@ -1021,7 +1021,7 @@ PyObject * convertDerivativePropertiesToPython(
   // Python class object
   if (!classDerivativeProperties)
   {
-    classDerivativeProperties = getClassFromModule("PyTrilinos.EpetraExt",
+    classDerivativeProperties = getClassFromModule(PyTrilinosEpetraExt,
 						   "DerivativeProperties");
     if (!classDerivativeProperties) goto fail;
   }
@@ -1090,7 +1090,7 @@ PyObject * convertDerivativeMultiVectorToPython(
   // Python class object
   if (!classDerivativeMultiVector)
   {
-    classDerivativeMultiVector = getClassFromModule("PyTrilinos.EpetraExt",
+    classDerivativeMultiVector = getClassFromModule(PyTrilinosEpetraExt,
 						    "DerivativeMultiVector");
     if (!classDerivativeMultiVector) goto fail;
   }
@@ -1147,7 +1147,7 @@ PyObject * convertDerivativeToPython(
   // Python class object
   if (!classDerivative)
   {
-    classDerivative = getClassFromModule("PyTrilinos.EpetraExt", "Derivative");
+    classDerivative = getClassFromModule(PyTrilinosEpetraExt, "Derivative");
     if (!classDerivative) goto fail;
   }
   // Create an instance
@@ -1197,12 +1197,12 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   // Python class objects
   if (!classOutArgs)
   {
-    classOutArgs = getClassFromModule("PyTrilinos.EpetraExt", "OutArgs");
+    classOutArgs = getClassFromModule(PyTrilinosEpetraExt, "OutArgs");
     if (!classOutArgs) goto fail;
   }
   if (!classTupleOfEvaluation)
   {
-    classTupleOfEvaluation = getClassFromModule("PyTrilinos.EpetraExt",
+    classTupleOfEvaluation = getClassFromModule(PyTrilinosEpetraExt,
 						"tuple_of_Evaluation");
     if (!classTupleOfEvaluation) goto fail;
   }

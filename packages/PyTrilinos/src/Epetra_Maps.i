@@ -299,7 +299,7 @@ indicates the local element ID that the point belongs to."
     return PyArray_Return((PyArrayObject*)geArray);
 
   fail:
-    Py_XDECREF(geArray );
+    Py_XDECREF(geArray);
     return NULL;
   }
 

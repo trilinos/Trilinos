@@ -177,7 +177,7 @@ example subdirectory of the PyTrilinos package:
 // I/O Stream support //
 ////////////////////////
 // #pragma SWIG nowarn=401
-%include "std_iostream.i"
+//%include "std_iostream.i"
 
 //////////////////////////////////
 // IFPACK configuration support //

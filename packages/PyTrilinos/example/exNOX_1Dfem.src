@@ -138,12 +138,12 @@ class MyInterface(NOX.Epetra.Interface.Required):
             u1 = self.__u1
             u2 = self.__u2
         try:
-            output = "Proc " + str(self.__comm.MyPID()) + ":\n  flag = " + \
-                     flagStr[flag] + "\n  len(u) = " + str(len(u)) + \
-                     "\n    u1 = " + str(u1) + "\n    u2 = " + str(u2) + \
-                     "\n  len(F) = " + str(len(F)) + "\n    f1 = " + str(f1) + \
-                     "\n    f2 = " + str(f2)
-            print output
+            #output = "Proc " + str(self.__comm.MyPID()) + ":\n  flag = " + \
+            #         flagStr[flag] + "\n  len(u) = " + str(len(u)) + \
+            #         "\n    u1 = " + str(u1) + "\n    u2 = " + str(u2) + \
+            #         "\n  len(F) = " + str(len(F)) + "\n    f1 = " + str(f1) + \
+            #         "\n    f2 = " + str(f2)
+            #print output
             # Compute the residual on the interior
             F[f1:f2] = (u[u1-1:u2-1] - 2*u[u1:u2] + u[u1+1:u2+1]) / \
                        (self.__h*self.__h) - self.__k * u[u1:u2] * u[u1:u2]
@@ -152,7 +152,9 @@ class MyInterface(NOX.Epetra.Interface.Required):
             if self.__haveBC1: F[-1] = u[-1] - self.__bc1
             return True
         except Exception, e:
-            print "MyInterface.computeF() has thrown an exception:\n", e
+            print "MyInterface.computeF() has thrown an exception:"
+            print type(e)
+            print e
             return False
 
     def getSolution(self):

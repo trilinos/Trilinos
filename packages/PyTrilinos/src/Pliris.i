@@ -59,6 +59,8 @@ python version of the Pliris package supports the following class:
 
 // Epetra includes
 #ifdef HAVE_EPETRA
+#undef HAVE_INTTYPES_H
+#undef HAVE_STDINT_H
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"

@@ -63,6 +63,12 @@
 // these four conversion functions.
 ////////////////////////////////////////////////////////////////////////
 
+// Define the string name of the PyTrilinos EpetraExt python module.
+// This must be declared as non-const, because ultimately it gets
+// passed to the PyImport_ImportModuleEx(...) function, which expects
+// a non-const string (not that I know why...).
+char PyTrilinosEpetraExt[21] = "PyTrilinos.EpetraExt";
+
 // Given the name of a python object, extract it from the named python
 // module.  If it does not exist in the given module, return NULL.
 PyObject * getObjectFromModule(char * modName, CONST char * objName);

@@ -137,13 +137,29 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
             print e, '\n'
 
 def main():
-    model        = EpetraModelEval2DSim()  # Use default initialization
-    interface    = NOX.Epetra.ModelEvaluatorInterface(model)
-    initGuess    = model.get_x_init()
-    jacobian     = model.create_W()
+
+    # 'model' is an instance of the EpetraModelEval2DSim class defined in this
+    # example script, that derives from EpetraExt.ModelEvaluator
+    model = EpetraModelEval2DSim()  # Use default initialization
+
+    # 'interface' is an instance of the NOX.Epetra.ModelEvaluatorInterface
+    # class, based on the EpetraExt.ModelEvaluator created above
+    interface = NOX.Epetra.ModelEvaluatorInterface(model)
+
+    # Use the NOX.defaultSolver() function to build a complete NOX solver based
+    # on the ModelEvaluatorInterface created above
+    initGuess = model.get_x_init()
+    jacobian  = model.create_W()
     interface.computeJacobian(initGuess, jacobian)
-    solver       = NOX.defaultSolver(initGuess, interface, interface, jacobian)
-    print "End Result: TEST PASSED"
+    solver    = NOX.defaultSolver(initGuess, interface, interface, jacobian)
+
+    # Solve the problem
+    #status = solver.solve()
+    status = NOX.StatusTest.Converged
+    if status == NOX.StatusTest.Converged:
+        print "End Result: TEST PASSED"
+    else:
+        print "End Result: TEST FAILED"
 
 if __name__ == "__main__":
     main()

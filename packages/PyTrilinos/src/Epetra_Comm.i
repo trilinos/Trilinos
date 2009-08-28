@@ -137,6 +137,7 @@ PyObject* methodName(PyObject* partialObj)
   }
   if (is_new_object && partialArray) { Py_DECREF(partialArray); }
   return PyArray_Return((PyArrayObject*)globalObj);
+
   fail:
   if (is_new_object && partialArray) { Py_DECREF(partialArray); }
   Py_XDECREF(globalObj);
@@ -255,6 +256,7 @@ PyObject* methodName(PyObject* partialObj)
     }
     if (is_new_object && myArray) { Py_DECREF(myArray); }
     return PyArray_Return((PyArrayObject*)allObj);
+
   fail:
     if (is_new_object && myArray) { Py_DECREF(myArray); }
     Py_XDECREF(allObj);

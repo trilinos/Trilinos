@@ -234,14 +234,16 @@ Epetra_CrsGraph::RemoveMyIndices(int, int, int*);
     }
     dimensions[0] = self->NumMyIndices(lrid);
     indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT);
-    indices       = (int*) array_data(indicesArray);
-    result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numIndices, indices);
+    if (indicesArray == NULL) goto fail;
+    indices = (int*) array_data(indicesArray);
+    result  = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numIndices, indices);
     if (result == -2)
     {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
       goto fail;
     }
     return PyArray_Return((PyArrayObject*)indicesArray);
+
   fail:
     Py_XDECREF(indicesArray);
     return NULL;
@@ -267,14 +269,16 @@ Epetra_CrsGraph::RemoveMyIndices(int, int, int*);
     }
     dimensions[0] = self->NumMyIndices(localRow);
     indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT);
-    indices       = (int*) array_data(indicesArray);
-    result        = self->ExtractMyRowCopy(localRow, dimensions[0], numIndices, indices);
+    if (indicesArray == NULL) goto fail;
+    indices = (int*) array_data(indicesArray);
+    result  = self->ExtractMyRowCopy(localRow, dimensions[0], numIndices, indices);
     if (result == -2)
     {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
       goto fail;
     }
     return PyArray_Return((PyArrayObject*)indicesArray);
+
   fail:
     Py_XDECREF(indicesArray);
     return NULL;
