@@ -243,6 +243,16 @@ ENDIF()
 # F) Apply logic to enable Trilinos packages and tests
 #
 
+IF (NOT Trilinos_ENABLE_Fortran)
+  MESSAGE(
+    "\n***"
+    "\n*** Warning: Setting Trilinos_ENABLE_ForTrilinos=OFF"
+    " because Trilinos_ENABLE_Fortran=OFF!"
+    "\n***\n"
+    )
+  SET(Trilinos_ENABLE_ForTrilinos OFF)
+ENDIF()
+
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
   "\nExplicitly enabled packages on input (by user)" ON FALSE)
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
