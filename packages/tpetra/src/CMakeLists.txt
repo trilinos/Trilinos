@@ -37,7 +37,6 @@ APPEND_SET(HEADERS
   Tpetra_CombineMode.hpp
   Tpetra_ConfigDefs.hpp
   Tpetra_CrsGraph.hpp
-  Tpetra_CrsGraphData.hpp
   Tpetra_CrsMatrix.hpp
   Tpetra_DefaultPlatform.hpp
   Tpetra_DiagPrecond.hpp

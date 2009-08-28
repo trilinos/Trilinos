@@ -88,44 +88,44 @@ namespace Tpetra
       virtual const RowGraph<LocalOrdinal,GlobalOrdinal> &getGraph() const = 0;
 
       //! Returns the Map that describes the row distribution in this matrix.
-      virtual const Map<LocalOrdinal,GlobalOrdinal> & getRowMap() const = 0;
+      virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > & getRowMap() const = 0;
 
       //! \brief Returns the Map that describes the column distribution in this matrix.
       /*! Cannot be called before fillComplete(), unless the matrix was constructed with a column map. */
       virtual const Map<LocalOrdinal,GlobalOrdinal> & getColMap() const = 0;
 
       //! Returns the number of global matrix rows. 
-      virtual GlobalOrdinal getNumGlobalRows() const = 0;
+      virtual GlobalOrdinal getGlobalNumRows() const = 0;
 
       //! \brief Returns the number of global matrix columns. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual GlobalOrdinal getNumGlobalCols() const = 0;
+      virtual GlobalOrdinal getGlobalNumCols() const = 0;
 
       //! Returns the number of matrix rows owned by the calling image. 
-      virtual size_t getNumLocalRows() const = 0;
+      virtual size_t getNodeNumRows() const = 0;
 
       //! \brief Returns the number of matrix columns needed by the calling image to apply the forward operator.
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual size_t getNumLocalCols() const = 0;
+      virtual size_t getNodeNumCols() const = 0;
 
       //! Returns the index base for global indices for this matrix. 
       virtual GlobalOrdinal getIndexBase() const = 0;
 
       //! \brief Returns the number of nonzero entries in the global matrix. 
       /*! Returns the number of global entries in the associated graph. */
-      virtual global_size_t getNumGlobalEntries() const = 0;
+      virtual global_size_t getGlobalNumEntries() const = 0;
 
       //! \brief Returns the number of nonzero entries in the calling image's portion of the matrix. 
       /*! Before fillComplete() is called, this could include duplicated entries. */
-      virtual size_t getNumLocalEntries() const = 0;
+      virtual size_t getNodeNumEntries() const = 0;
 
       //! \brief Returns the current number of nonzero entries on this node in the specified global row .
       /*! Throws exception std::runtime_error if the specified global row does not belong to this node. */
-      virtual size_t getNumEntriesForGlobalRow(GlobalOrdinal globalRow) const = 0;
+      virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const = 0;
 
       //! Returns the current number of nonzero entries on this node in the specified local row.
       /*! Throws exception std::runtime_error if the specified local row is not valid for this node. */
-      virtual size_t getNumEntriesForLocalRow(LocalOrdinal localRow) const = 0;
+      virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
       //! \brief Returns the number of global nonzero diagonal entries, based on global row/column index comparisons. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */

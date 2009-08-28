@@ -101,19 +101,19 @@ namespace Tpetra
 
       //! \brief Returns the current number of graph entries on this node in the specified global row .
       /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
-      virtual size_t getNumEntriesForGlobalRow(GlobalOrdinal globalRow) const = 0;
+      virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const = 0;
 
       //! Returns the current number of graph entries on this node in the specified local row.
       /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-      virtual size_t getNumEntriesForLocalRow(LocalOrdinal localRow) const = 0;
+      virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
 
       //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
       /*! */
-      virtual global_size_t getNumGlobalDiags() const = 0;
+      virtual global_size_t getGlobalNumDiags() const = 0;
 
       //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
       /*! */
-      virtual size_t getNumLocalDiags() const = 0;
+      virtual size_t getNodeNumDiags() const = 0;
 
       //! \brief Returns the maximum number of entries across all rows/columns on all nodes. 
       /*! */
@@ -121,7 +121,7 @@ namespace Tpetra
 
       //! \brief Returns the maximum number of entries across all rows/columns on this node. 
       /*! */
-      virtual size_t getLocalMaxNumRowEntries() const = 0;
+      virtual size_t getNodeMaxNumRowEntries() const = 0;
 
       //! \brief Indicates whether the graph has a well-defined column map. 
       /*! */
