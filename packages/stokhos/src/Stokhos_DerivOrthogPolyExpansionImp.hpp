@@ -237,10 +237,10 @@ Stokhos::DerivOrthogPolyExpansion<ordinal_type, value_type>::
 divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	    const OrthogPolyApprox<ordinal_type, value_type>& x)
 {
+  const char *func = "Stokhos::DerivOrthogPolyExpansion::divideEqual()";
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
 #ifdef STOKHOS_DEBUG
-  const char *func = "Stokhos::DerivOrthogPolyExpansion::divideEqual()";
   TEST_FOR_EXCEPTION(p < xp, std::logic_error,
 		     func
                      << ":  Arguments have incompatible sizes:  "
@@ -614,8 +614,8 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-#ifdef STOKHOS_DEBUG
   const char* func = "Stokhos::DerivOrthogPolyExpansion::divide()";
+#ifdef STOKHOS_DEBUG
   TEST_FOR_EXCEPTION((a.size() != b.size()) && (a.size() != 1) && 
 		     (b.size() != 1), 
 		     std::logic_error,
@@ -695,6 +695,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
        const value_type& a, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
+  const char* func = "Stokhos::DerivOrthogPolyExpansion::divide()";
   ordinal_type pc = b.size();
 
 #ifdef STOKHOS_DEBUG
@@ -710,7 +711,6 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
   if (pc > 1) {
 #ifdef STOKHOS_DEBUG
-    const char* func = "Stokhos::DerivOrthogPolyExpansion::divide()";
     TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
 		       func << ":  Expansion size (" << size()
 		       << ") is too small for computation (" << pc
@@ -785,6 +785,7 @@ Stokhos::DerivOrthogPolyExpansion<ordinal_type, value_type>::
 exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
+  const char* func = "Stokhos::DerivOrthogPolyExpansion::exp()";
   ordinal_type pc = a.size();
 
 #ifdef STOKHOS_DEBUG
@@ -796,7 +797,6 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 #endif
 
 #ifdef STOKHOS_DEBUG
-  const char* func = "Stokhos::DerivOrthogPolyExpansion::exp()";
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
 		     func << ":  Expansion size (" << size() 
 		     << ") is too small for computation (" << pc
@@ -922,6 +922,7 @@ Stokhos::DerivOrthogPolyExpansion<ordinal_type, value_type>::
 log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
+  const char* func = "Stokhos::DerivOrthogPolyExpansion::log()";
   ordinal_type pc = a.size();
 
 #ifdef STOKHOS_DEBUG
@@ -933,7 +934,6 @@ log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 #endif
 
 #ifdef STOKHOS_DEBUG
-  const char* func = "Stokhos::DerivOrthogPolyExpansion::log()";
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
 		     func << ":  Expansion size (" << size() 
 		     << ") is too small for computation (" << pc
@@ -1042,6 +1042,7 @@ sincos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
        Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
+  const char* func = "Stokhos::DerivOrthogPolyExpansion::sincos()";
   ordinal_type pc = a.size();
 
 #ifdef STOKHOS_DEBUG
@@ -1058,7 +1059,6 @@ sincos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
 #endif
 
 #ifdef STOKHOS_DEBUG
-  const char* func = "Stokhos::DerivOrthogPolyExpansion::sincos()";
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
 		     func << ":  Expansion size (" << size() 
 		     << ") is too small for computation (" << pc 
@@ -1182,6 +1182,7 @@ sinhcosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
 	 Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	 const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
+  const char* func = "Stokhos::DerivOrthogPolyExpansion::sinhcosh()";
   ordinal_type pc = a.size();
 
 #ifdef STOKHOS_DEBUG
@@ -1198,7 +1199,6 @@ sinhcosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
 #endif
 
 #ifdef STOKHOS_DEBUG
-  const char* func = "Stokhos::DerivOrthogPolyExpansion::sinhcosh()";
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
 		     func << ":  Expansion size (" << size() 
 		     << ") is too small for computation (" << pc
@@ -1322,6 +1322,7 @@ quad(const OpT& quad_func,
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
+  const char* func = "Stokhos::DerivOrthogPolyExpansion::quad()";
   ordinal_type pc = a.size();
 
 #ifdef STOKHOS_DEBUG
@@ -1337,7 +1338,6 @@ quad(const OpT& quad_func,
   value_type* cc = c.coeff();
 
 #ifdef STOKHOS_DEBUG
-  const char* func = "Stokhos::DerivOrthogPolyExpansion::quad()";
   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
 		     func << ":  Expansion size (" << size()
 		     << ") is too small for computation (" << pc
