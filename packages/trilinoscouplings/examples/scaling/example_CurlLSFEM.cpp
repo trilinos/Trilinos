@@ -132,7 +132,6 @@
 
 #define DUMP_DATA
 #define DUMP_DATAE
-#define DUMP_DATAX
 
 using namespace std;
 using namespace Intrepid;
@@ -761,15 +760,6 @@ int main(int argc, char *argv[]) {
     
 
 #ifdef DUMP_DATA
-/*
-   // Print boundary information
-    ofstream fEdgeout("edgeOnBndy.dat");
-    for (int i=0; i<numEdges; i++){
-       fEdgeout << edgeOnBoundary(i) <<"\n";
-    }
-    fEdgeout.close();
-*/
-
    // Print coords
     std::stringstream fname;
       fname << "coords";
@@ -790,13 +780,10 @@ int main(int argc, char *argv[]) {
     std::cout << "Building incidence matrix ... \n\n";
   }
 
-    Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
- //   Epetra_FECrsMatrix DGtemp(Copy, globalMapG, globalMapC, 2);
+    Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
 
-    int nMissingNodes=0;
     double vals[2];
-        vals[0]=-0.5; vals[1]=0.5;
-     //  double val0=-0.5; double val1=0.5;
+     vals[0]=-1.0; vals[1]=1.0;
     for (int j=0; j<numEdges; j++){
       if (edgeIsOwned[j]){
         int rowNum = globalEdgeIds[j];
@@ -804,38 +791,6 @@ int main(int argc, char *argv[]) {
         colNum[0] = globalNodeIds[edgeToNode(j,0)];
         colNum[1] = globalNodeIds[edgeToNode(j,1)];
         DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, vals);
-        if (!nodeIsOwned[edgeToNode(j,0)]) {
-            nMissingNodes++;
-            std::cout << "Missing Node: " << nMissingNodes << "  local id = " << edgeToNode(j,0) ;
-            std::cout << "  global id =" << globalNodeIds[edgeToNode(j,0)]+1 << "  Edge id = " << globalEdgeIds[j]+1 << "\n";
-        }
-        if (!nodeIsOwned[edgeToNode(j,1)]) {
-            nMissingNodes++;
-            std::cout << "Missing Node: " << nMissingNodes << "  local id = " << edgeToNode(j,1) ;
-            std::cout << "  global id =" << globalNodeIds[edgeToNode(j,1)]+1 << "  Edge id = " << globalEdgeIds[j]+1 << "\n";
-        }
-
-/*
-        int rowtemp = globalNodeIds[edgeToNode(j,0)];
-        int coltemp = globalEdgeIds[j];
-        double valtemp = -0.5;
-        DGtemp.InsertGlobalValues(1, &rowtemp, 1, &coltemp, &valtemp);
-        rowtemp = globalNodeIds[edgeToNode(j,1)];
-        valtemp = 0.5;
-        DGtemp.InsertGlobalValues(1, &rowtemp, 1, &coltemp, &valtemp);
-*/
-     
-/*
-        if (nodeIsOwned[edgeToNode(j,0)]) {
-          int colNum = globalNodeIds[edgeToNode(j,0)];
-          DGrad.InsertGlobalValues(1, &rowNum, 1, &colNum, &val0);
-        }
-        if (nodeIsOwned[edgeToNode(j,1)]) {
-          colNum = globalNodeIds[edgeToNode(j,1)];
-          DGrad.InsertGlobalValues(1, &rowNum, 1, &colNum, &val1);
-        }
-*/
-
       }
     }
 
@@ -970,6 +925,7 @@ int main(int argc, char *argv[]) {
       eSignfname << MyPID << ".dat";
     ofstream fSignsout(eSignfname.str().c_str());
 #endif
+
  // *** Element loop ***
     for (int k=0; k<numElems; k++) {
 
@@ -987,12 +943,33 @@ int main(int argc, char *argv[]) {
               hexEdgeSigns(0,j) = 1.0;
           else 
               hexEdgeSigns(0,j) = -1.0;
+       }
+       
+
+      // modify signs for edges whose signs were defined on another processor
+       if (!faceIsOwned[elemToFace(k,0)]) {
+            hexEdgeSigns(0,0)=-1.0*hexEdgeSigns(0,0);
+            hexEdgeSigns(0,4)=-1.0*hexEdgeSigns(0,4);
+        }
+       if (!faceIsOwned[elemToFace(k,1)]) {
+            hexEdgeSigns(0,1)=-1.0*hexEdgeSigns(0,1);
+            hexEdgeSigns(0,5)=-1.0*hexEdgeSigns(0,5);
+        }
+       if (!faceIsOwned[elemToFace(k,2)]) {
+            hexEdgeSigns(0,2)=-1.0*hexEdgeSigns(0,2);
+            hexEdgeSigns(0,6)=-1.0*hexEdgeSigns(0,6);
+        }
+       if (!faceIsOwned[elemToFace(k,3)]) {
+            hexEdgeSigns(0,3)=-1.0*hexEdgeSigns(0,3);
+            hexEdgeSigns(0,7)=-1.0*hexEdgeSigns(0,7);
+        }
+
+
 #ifdef DUMP_DATA
-          fSignsout << hexEdgeSigns(0,j) << "  ";
-#endif
+     for (int j=0; j<numEdgesPerElem; j++) {
+        fSignsout << hexEdgeSigns(0,j) << "  ";
       } 
-#ifdef DUMP_DATA     
-       fSignsout << "\n";
+      fSignsout << "\n";
 #endif
 
        // Compute cell Jacobians, their inverses and their determinants
@@ -1224,17 +1201,9 @@ int main(int argc, char *argv[]) {
     StiffC.GlobalAssemble(); StiffC.FillComplete();
     rhsC.GlobalAssemble();
 
-    DGrad.GlobalAssemble(globalMapG,globalMapC); 
+    DGrad.GlobalAssemble(globalMapG,globalMapC); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap()); 
     //DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());     
-    //DGtemp.GlobalAssemble(); DGtemp.FillComplete(MassC.RowMap(),MassG.RowMap());    
 
-#ifdef DUMP_DATAX
-    EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
-    EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
-    //EpetraExt::RowMatrixToMatlabFile("t_clean_0.dat",DGtemp);
-    EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
-#endif
-    
    // Adjust matrix due to Dirichlet boundary conditions
     int numBCEdges=0;
     for (int i=0; i<numEdges; i++){
@@ -1259,12 +1228,6 @@ int main(int argc, char *argv[]) {
     
     delete [] BCEdges;
   
-            
-#ifdef DUMP_DATAX
-    EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
-    EpetraExt::RowMatrixToMatlabFile("m0.dat",MassG);
-#endif
-
    // Build the inverse diagonal for MassG
    Epetra_Vector DiagG(MassG.RowMap());
    DiagG.PutScalar(1.0);
@@ -1479,9 +1442,9 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (MyPID == 0) {
-    std::cout << "\n" << "L2 Error:  " << sqrt(L2err) <<"\n";
-    std::cout << "HCurl Error:  " << sqrt(HCurlerr) <<"\n";
-    std::cout << "LInf Error:  " << Linferr <<"\n\n";
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
+    std::cout << "HCurl Error:  " << sqrt(HCurlerrTot) <<"\n";
+    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
   }
 
 

@@ -29,14 +29,47 @@
 // @HEADER
 
 /** \file   example_DivLSFEM.cpp
-    \brief  Example of a div-curl system on a hexadedral mesh using div-conforming elements.
-    \author Created by P. Bochev, D. Ridzal and K. Peterson.
+    \brief  Example solution of a div-curl system on a hexahedral mesh using
+            div-conforming (face) elements.
 
-    \remark Code requires an xml input file with Pamgen mesh description and material parameters
-            named DivLSFEMin.xml.
-*/
+            This example uses Pamgen to generate a hexahedral mesh, Intrepid to
+            build mass and stiffness matrices, and ML to solve.
 
-#define DUMP_DATA
+    \verbatim
+
+            Div-Curl System:
+
+                       curl u = g  in Omega
+                        div u = h  in Omega
+                          u.n = 0  on Gamma
+
+            Corresponding discrete linear system for face element coeficients (x):
+
+                      (Kd + Md*Dc*McInv*Dc'*Md)x = b
+
+                      Kd    - Hdiv stiffness matrix
+                      Md    - Hdiv mass matrix
+                      Dc    - Edge to Face incidence matrix
+                      McInv - Hgrad mass matrix inverse
+                      b     - right hand side vector
+
+    \endverbatim
+
+    \author Created by P. Bochev, D. Ridzal, K. Peterson, D. Hensinger, C. Siefert.
+
+     \remark Usage
+     \verbatim
+
+     ./TrilinosCouplings_examples_scaling_Example_DivLSFEM.exe  inputfile.xml
+
+        inputfile.xml (optional)  -  xml input file containing Pamgen mesh description
+                                     and material parameters for each Pamgen block,
+                                     if not present code attempts to read DivLSFEMin.xml.
+
+
+     \endverbatim
+ **/
+
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -85,6 +118,8 @@
 
 // ML Includes
 #include "ml_epetra_utils.h"
+
+#define DUMP_DATA
 
 using namespace std;
 using namespace Intrepid;
@@ -144,25 +179,17 @@ int main(int argc, char *argv[]) {
   Epetra_Time Time(Comm);
 
    //Check number of arguments
-    TEST_FOR_EXCEPTION( ( argc < 1 ),
-                      std::invalid_argument,
-                      ">>> ERROR (example_01): Invalid number of arguments. See code listing for requirements.");
+  if (argc > 2) {
+      std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
+      std::cout <<"Usage:\n\n";
+      std::cout <<"  ./TrilinosCouplings_examples_scaling_Example_DivLSFEM.exe [inputfile.xml] \n\n";
+      std::cout <<"   inputfile.xml(optional) - xml file with description of Pamgen mesh \n";
+      std::cout <<"                             and material parameters for each block \nn";
+      exit(1);
+   }
   
-  // This little trick lets us print to std::cout only if
-  // a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 1)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
-  
-  // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
-  
-  *outStream \
+ if (MyPID == 0) {
+  std::cout \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
     << "|          Example: Div-Curl System on Hexahedral Mesh                        |\n" \
@@ -172,9 +199,12 @@ int main(int argc, char *argv[]) {
     << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
     << "|                                                                             |\n" \
     << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
+    << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
     << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
     << "|                                                                             |\n" \
     << "===============================================================================\n";
+  }
 
   long long *  node_comm_proc_ids   = NULL;
   long long *  node_cmap_node_cnts  = NULL;
@@ -203,10 +233,14 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList inputList;
 
    if(xmlInFileName.length()) {
+     if (MyPID == 0) {
       std::cout << "\nReading parameter list from the XML file \""<<xmlInFileName<<"\" ...\n\n";
+     }
       Teuchos::updateParametersFromXmlFile(xmlInFileName,&inputList);
+     if (MyPID == 0) {
       inputList.print(std::cout,2,true,true);
       std::cout << "\n";
+     }
     }
     else
     {
@@ -251,30 +285,18 @@ int main(int argc, char *argv[]) {
 
    // Build reference element face to edge map (Hardcoded for now)
     FieldContainer<int> refFaceToEdge(numFacesPerElem,numEdgesPerFace);
-        refFaceToEdge(0,0)=0;
-        refFaceToEdge(0,1)=9;
-        refFaceToEdge(0,2)=4;
-        refFaceToEdge(0,3)=8;
-        refFaceToEdge(1,0)=1;
-        refFaceToEdge(1,1)=10;
-        refFaceToEdge(1,2)=5;
-        refFaceToEdge(1,3)=9;
-        refFaceToEdge(2,0)=2;
-        refFaceToEdge(2,1)=11;
-        refFaceToEdge(2,2)=6;
-        refFaceToEdge(2,3)=10;
-        refFaceToEdge(3,0)=3;
-        refFaceToEdge(3,1)=8;
-        refFaceToEdge(3,2)=7;
-        refFaceToEdge(3,3)=11;
-        refFaceToEdge(4,0)=3;
-        refFaceToEdge(4,1)=2;
-        refFaceToEdge(4,2)=1;
-        refFaceToEdge(4,3)=0;
-        refFaceToEdge(5,0)=4;
-        refFaceToEdge(5,1)=5;
-        refFaceToEdge(5,2)=6;
-        refFaceToEdge(5,3)=7;
+        refFaceToEdge(0,0)=0; refFaceToEdge(0,1)=9;
+        refFaceToEdge(0,2)=4; refFaceToEdge(0,3)=8;
+        refFaceToEdge(1,0)=1; refFaceToEdge(1,1)=10;
+        refFaceToEdge(1,2)=5; refFaceToEdge(1,3)=9;
+        refFaceToEdge(2,0)=2; refFaceToEdge(2,1)=11;
+        refFaceToEdge(2,2)=6; refFaceToEdge(2,3)=10;
+        refFaceToEdge(3,0)=3; refFaceToEdge(3,1)=8;
+        refFaceToEdge(3,2)=7; refFaceToEdge(3,3)=11;
+        refFaceToEdge(4,0)=0; refFaceToEdge(4,1)=1;
+        refFaceToEdge(4,2)=2; refFaceToEdge(4,3)=3;
+        refFaceToEdge(5,0)=4; refFaceToEdge(5,1)=5;
+        refFaceToEdge(5,2)=6; refFaceToEdge(5,3)=7;
 
 // *********************************** GENERATE MESH ************************************
 
@@ -287,7 +309,7 @@ int main(int argc, char *argv[]) {
     long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
-   // Get mesh size info
+   // Get local mesh size info
     char title[100];
     long long numDim;
     long long numNodes;
@@ -300,10 +322,20 @@ int main(int argc, char *argv[]) {
     im_ex_get_init_l(id, title, &numDim, &numNodes, 
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
+  // Get global mesh size info
+    long long numNodesGlobal;
+    long long numElemsGlobal;
+    long long numElemBlkGlobal;
+    long long numNodeSetsGlobal;
+    long long numSideSetsGlobal;
+
+    im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
+                         &numElemBlkGlobal, &numNodeSetsGlobal,
+                         &numSideSetsGlobal);
+
+
     long long * block_ids = new long long [numElemBlk];
     error += im_ex_get_elem_blk_ids_l(id, block_ids);
-
-
 
 
     long long  *nodes_per_element   = new long long [numElemBlk];
@@ -352,7 +384,6 @@ int main(int argc, char *argv[]) {
       }
     }
  
-
    // Read node coordinates and place in field container
     FieldContainer<double> nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
@@ -426,6 +457,20 @@ int main(int argc, char *argv[]) {
 			 node_comm_proc_ids,
 			 comm_node_ids,
 			 rank);    
+  // Count owned nodes
+    int ownedNodes=0;
+    for(int i=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) ownedNodes++;
+
+   // Build a list of the OWNED global ids...
+    int *ownedGIDs=new int [ownedNodes];
+    int oidx=0;
+    for(int i=0;i<numNodes;i++)
+      if(nodeIsOwned[i]){
+        ownedGIDs[oidx]=(int)globalNodeIds[i];
+        oidx++;
+      }
+
 
     FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
     FieldContainer<int> elemToFace(numElems,numFacesPerElem);
@@ -506,6 +551,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
+
    // Face to Edge connectivity
     FieldContainer<int> faceToEdge(face_vector.size(), numEdgesPerFace);
     FieldContainer<bool> faceDone(face_vector.size());
@@ -524,13 +570,7 @@ int main(int argc, char *argv[]) {
     int numEdges = edge_vector.size();
     int numFaces = face_vector.size();
 
-  if (MyPID == 0) {
-    std::cout << " Number of Elements: " << numElems << " \n";
-    std::cout << "    Number of Nodes: " << numNodes << " \n";
-    std::cout << "    Number of Edges: " << numEdges << " \n";
-    std::cout << "    Number of Faces: " << numFaces << " \n\n";
-  }
-   
+   // Calculate global edge and face numbering
     std::string doing_type;
     doing_type = "EDGES";
     calc_global_ids(edge_vector,
@@ -550,18 +590,88 @@ int main(int argc, char *argv[]) {
 	       num_node_comm_maps,
 	       rank,
 	       doing_type);
+  // Build list of owned global edge ids
+    long long * globalEdgeIds = new long long[numEdges];
+    bool * edgeIsOwned = new bool[numEdges];
+    int numOwnedEdges=0;
+    for (int i=0; i<numEdges; i++) {
+        edgeIsOwned[i] = edge_vector[i]->owned;
+        globalEdgeIds[i] = edge_vector[i]->global_id;
+        if (edgeIsOwned[i]){
+           numOwnedEdges++;
+        }
+     }
+    int * ownedEdgeIds = new int[numOwnedEdges];
+    int nedge=0;
+    for (int i=0; i<numEdges; i++) {
+        if (edgeIsOwned[i]){
+           ownedEdgeIds[nedge]=(int)globalEdgeIds[i];
+           nedge++;
+        }
+     }
+
+  // Build list of owned global face ids
+    long long * globalFaceIds = new long long[numFaces];
+    bool * faceIsOwned = new bool[numFaces];
+    int numOwnedFaces=0;
+    for (int i=0; i<numFaces; i++) {
+        faceIsOwned[i] = face_vector[i]->owned;
+        globalFaceIds[i] = face_vector[i]->global_id;
+        if (faceIsOwned[i]){
+           numOwnedFaces++;
+        }
+     }
+    int * ownedFaceIds = new int[numOwnedFaces];
+    int nface=0;
+    for (int i=0; i<numFaces; i++) {
+        if (faceIsOwned[i]){
+           ownedFaceIds[nface]=(int)globalFaceIds[i];
+           nface++;
+        }
+     }
+
+  // Calculate number of global edges and faces
+    int numEdgesGlobal;
+    int numFacesGlobal;
+#ifdef HAVE_MPI
+    Comm.SumAll(&numOwnedEdges,&numEdgesGlobal,1);
+    Comm.SumAll(&numOwnedFaces,&numFacesGlobal,1);
+#else
+    numEdgesGlobal = numEdges;
+    numFacesGlobal = numFaces;
+#endif
+
+   // Define global epetra maps
+    Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
+    Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
+    Epetra_Map globalMapD(-1,numOwnedFaces,ownedFaceIds,0,Comm);
+
+ // Print mesh size information
+  if (MyPID == 0) {
+    std::cout << " Number of Elements: " << numElemsGlobal << " \n";
+    std::cout << "    Number of Nodes: " << numNodesGlobal << " \n";
+    std::cout << "    Number of Edges: " << numEdgesGlobal << " \n";
+    std::cout << "    Number of Faces: " << numFacesGlobal << " \n\n";
+  }
+
 
 #ifdef DUMP_DATA 
    // Output element to face connectivity
-    ofstream el2fout("elem2face.dat");
-    ofstream el2nout("elem2node.dat");
+   std::stringstream e2nfname;
+      e2nfname << "elem2node";
+      e2nfname << MyPID << ".dat";
+   std::stringstream e2ffname;
+      e2ffname << "elem2face";
+      e2ffname << MyPID << ".dat";
+    ofstream el2fout(e2ffname.str().c_str());
+    ofstream el2nout(e2nfname.str().c_str());
     for (int i=0; i<numElems; i++) {
       for (int l=0; l<numFacesPerElem; l++) {
-         el2fout << elemToFace(i,l) << "  ";
+         el2fout << globalFaceIds[elemToFace(i,l)] << "  ";
       } 
       el2fout << "\n";
       for (int m=0; m<numNodesPerElem; m++) {
-        el2nout << elemToNode(i,m) << "  ";
+        el2nout << globalNodeIds[elemToNode(i,m)] << "  ";
       } 
       el2nout << "\n";
     }
@@ -569,17 +679,25 @@ int main(int argc, char *argv[]) {
     el2nout.close();
 
    // Output face to edge and face to node connectivity
-    ofstream f2edout("face2edge.dat");
-    ofstream f2nout("face2node.dat");
+   std::stringstream f2nfname;
+      f2nfname << "face2node";
+      f2nfname << MyPID << ".dat";
+   std::stringstream f2efname;
+      f2efname << "face2edge";
+      f2efname << MyPID << ".dat";
+    ofstream f2edout(f2efname.str().c_str());
+    ofstream f2nout(f2nfname.str().c_str());
     for (int k=0; k<numFaces; k++) {
+     if (faceIsOwned[k]){
        for (int i=0; i<numEdgesPerFace; i++) {
-           f2edout << faceToEdge(k,i) << "  ";
+           f2edout << globalEdgeIds[faceToEdge(k,i)] << "  ";
        } 
        for (int j=0; j<numNodesPerFace; j++) {
-           f2nout << faceToNode(k,j) << "  ";
+           f2nout << globalNodeIds[faceToNode(k,j)] << "  ";
        } 
        f2edout << "\n";
        f2nout << "\n";
+      }
     }
     f2edout.close();
     f2nout.close();
@@ -616,84 +734,94 @@ int main(int argc, char *argv[]) {
     delete [] sideSetIds;
 
 #ifdef DUMP_DATA
-   // Print boundary information
-    ofstream fFaceout("faceOnBndy.dat");
-    for (int i=0; i<numFaces; i++){
-       fFaceout << faceOnBoundary(i) <<"\n";
-    }
-    fFaceout.close();
-
-    ofstream fEdgeout("edgeOnBndy.dat");
-    for (int i=0; i<numEdges; i++){
-       fEdgeout << edgeOnBoundary(i) <<"\n";
-    }
-    fEdgeout.close();
-
-    // Print coords
-    FILE *f=fopen("coords.dat","w");
-    for (int i=0; i < numNodes; i++) {
+   // Print coords
+    std::stringstream fname;
+      fname << "coords";
+      fname << MyPID << ".dat";
+    FILE *f=fopen(fname.str().c_str(),"w");
+    for (int i=0; i<numNodes; i++) {
+      if (nodeIsOwned[i]) {
        fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(i,0),nodeCoord(i,1),nodeCoord(i,2));
+      }
     }
     fclose(f);
+
 #endif
 
 
 // **************************** INCIDENCE MATRIX **************************************
 
-   // Edge to face incidence matrix
   if (MyPID == 0) {
     std::cout << "Building incidence matrix ... \n\n";
   }
 
-    Epetra_Map globalMapD(numFaces, 0, Comm);
-    Epetra_Map globalMapC(numEdges, 0, Comm);
-    Epetra_Map globalMapG(numNodes, 0, Comm);
-    Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 4);
-    Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
+    Epetra_FECrsMatrix DCurl(Copy, globalMapD, 4);
+    Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
 
+   // Edge to node incidence matrix
     double edgevals[2];
-    edgevals[0]=-0.5; edgevals[1]=0.5;
+    edgevals[0]=-1.0; edgevals[1]=1.0;
     for (int j=0; j<numEdges; j++){
-        int rowNum = j;
+      if (edgeIsOwned[j]){
+        int rowNum = globalEdgeIds[j];
         int colNum[2];
-        colNum[0] = edgeToNode(j,0);
-        colNum[1] = edgeToNode(j,1);
+        colNum[0] = globalNodeIds[edgeToNode(j,0)];
+        colNum[1] = globalNodeIds[edgeToNode(j,1)];
         DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, edgevals);
+      }
     }
 
+   // Edge to face incidence matrix
     double vals[4];
     for (int j=0; j<numFaces; j++){
-        int rowNum = j;
+      if (faceIsOwned[j]){
+        int rowNum = globalFaceIds[j];
         int colNum[4];
-        colNum[0] = faceToEdge(j,0);
-        colNum[1] = faceToEdge(j,1);
-        colNum[2] = faceToEdge(j,2);
-        colNum[3] = faceToEdge(j,3);
+        colNum[0] = globalEdgeIds[faceToEdge(j,0)];
+        colNum[1] = globalEdgeIds[faceToEdge(j,1)];
+        colNum[2] = globalEdgeIds[faceToEdge(j,2)];
+        colNum[3] = globalEdgeIds[faceToEdge(j,3)];
+
+/*
+        if (!edgeIsOwned[faceToEdge(j,0)]){
+           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,0)] << "is not owned \n";
+        }
+        if (!edgeIsOwned[faceToEdge(j,1)]){
+           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,1)] << "is not owned \n";
+        }
+        if (!edgeIsOwned[faceToEdge(j,2)]){
+           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,2)] << "is not owned \n";
+        }
+        if (!edgeIsOwned[faceToEdge(j,3)]){
+           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,3)] << "is not owned \n";
+        }
+*/
 
         if (edgeToNode(faceToEdge(j,0),1) == edgeToNode(faceToEdge(j,1),0) ||
                edgeToNode(faceToEdge(j,0),1) == edgeToNode(faceToEdge(j,1),1)){
-           vals[0]=0.5;}
-        else vals[0]=-0.5;
+           vals[0]=1.0;}
+        else vals[0]=-1.0;
 
         if (edgeToNode(faceToEdge(j,1),1) == edgeToNode(faceToEdge(j,2),0) ||
                edgeToNode(faceToEdge(j,1),1) == edgeToNode(faceToEdge(j,2),1)){
-           vals[1]=0.5;
+           vals[1]=1.0;
         }
-        else vals[1]=-0.5;
+        else vals[1]=-1.0;
 
         if (edgeToNode(faceToEdge(j,2),1) == edgeToNode(faceToEdge(j,3),0) ||
                edgeToNode(faceToEdge(j,2),1) == edgeToNode(faceToEdge(j,3),1)){
-           vals[2]=0.5;
+           vals[2]=1.0;
         }
-        else vals[2]=-0.5;
+        else vals[2]=-1.0;
 
         if (edgeToNode(faceToEdge(j,3),1) == edgeToNode(faceToEdge(j,0),0) ||
                edgeToNode(faceToEdge(j,3),1) == edgeToNode(faceToEdge(j,0),1)){
-           vals[3]=0.5;
+           vals[3]=1.0;
         }
-        else vals[3]=-0.5;
+        else vals[3]=-1.0;
 
         DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+      }
     }
 
 
@@ -828,7 +956,10 @@ int main(int argc, char *argv[]) {
     Epetra_FEVector rhsD(globalMapD);
 
 #ifdef DUMP_DATA
-    ofstream fSignsout("faceSigns.dat");
+    std::stringstream fSignfname;
+      fSignfname << "faceSigns";
+      fSignfname << MyPID << ".dat";
+    ofstream fSignsout(fSignfname.str().c_str());
 #endif
 
  // *** Element loop ***
@@ -846,13 +977,17 @@ int main(int argc, char *argv[]) {
          hexFaceSigns(0,j) = -1.0;
          for (int i=0; i<numNodesPerFace; i++) {
            int indf=i+1;
-           if (indf > numNodesPerFace) indf=0;
+           if (indf >= numNodesPerFace) indf=0;
            if (elemToNode(k,refFaceToNode(j,0))==faceToNode(elemToFace(k,j),i) &&
                elemToNode(k,refFaceToNode(j,1))==faceToNode(elemToFace(k,j),indf))
                 hexFaceSigns(0,j) = 1.0;
           }
+           if (!faceIsOwned[elemToFace(k,j)]){
+              hexFaceSigns(0,j)=-1.0*hexFaceSigns(0,j);
+           }
+
 #ifdef DUMP_DATA
-         fSignsout << hexFaceSigns(0,j) << "  ";
+        fSignsout << hexFaceSigns(0,j) << "  ";
 #endif
        }
 #ifdef DUMP_DATA
@@ -867,6 +1002,25 @@ int main(int argc, char *argv[]) {
           else 
               hexEdgeSigns(0,j) = -1.0;
        }
+
+      // modify signs for edges whose signs were defined on another processor
+       if (!faceIsOwned[elemToFace(k,0)]) {
+            hexEdgeSigns(0,0)=-1.0*hexEdgeSigns(0,0);
+            hexEdgeSigns(0,4)=-1.0*hexEdgeSigns(0,4);
+        }
+       if (!faceIsOwned[elemToFace(k,1)]) {
+            hexEdgeSigns(0,1)=-1.0*hexEdgeSigns(0,1);
+            hexEdgeSigns(0,5)=-1.0*hexEdgeSigns(0,5);
+        }
+       if (!faceIsOwned[elemToFace(k,2)]) {
+            hexEdgeSigns(0,2)=-1.0*hexEdgeSigns(0,2);
+            hexEdgeSigns(0,6)=-1.0*hexEdgeSigns(0,6);
+        }
+       if (!faceIsOwned[elemToFace(k,3)]) {
+            hexEdgeSigns(0,3)=-1.0*hexEdgeSigns(0,3);
+            hexEdgeSigns(0,7)=-1.0*hexEdgeSigns(0,7);
+        }
+
 
     // Compute cell Jacobians, their inverses and their determinants
        CellTools::setJacobian(hexJacobian, cubPoints, hexNodes, hex_8);
@@ -905,8 +1059,8 @@ int main(int argc, char *argv[]) {
      // assemble into global matrix
       for (int row = 0; row < numFieldsC; row++){
         for (int col = 0; col < numFieldsC; col++){
-            int rowIndex = elemToEdge(k,row);
-            int colIndex = elemToEdge(k,col);
+            int rowIndex = globalEdgeIds[elemToEdge(k,row)];
+            int colIndex = globalEdgeIds[elemToEdge(k,col)];
             double val = massMatrixC(0,row,col);
             MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
@@ -933,8 +1087,8 @@ int main(int argc, char *argv[]) {
      // assemble into global matrix
       for (int row = 0; row < numFieldsD; row++){
         for (int col = 0; col < numFieldsD; col++){
-            int rowIndex = elemToFace(k,row);
-            int colIndex = elemToFace(k,col);
+            int rowIndex = globalFaceIds[elemToFace(k,row)];
+            int colIndex = globalFaceIds[elemToFace(k,col)];
             double val = massMatrixD(0,row,col);
             MassD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
@@ -962,8 +1116,8 @@ int main(int argc, char *argv[]) {
      // assemble into global matrix
       for (int row = 0; row < numFieldsD; row++){
         for (int col = 0; col < numFieldsD; col++){
-            int rowIndex = elemToFace(k,row);
-            int colIndex = elemToFace(k,col);
+            int rowIndex = globalFaceIds[elemToFace(k,row)];
+            int colIndex = globalFaceIds[elemToFace(k,col)];
             double val = stiffMatrixD(0,row,col);
             StiffD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
@@ -985,8 +1139,8 @@ int main(int argc, char *argv[]) {
       // assemble into global matrix
       for (int row = 0; row < numFieldsG; row++){
         for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = elemToNode(k,row);
-            int colIndex = elemToNode(k,col);
+            int rowIndex = globalNodeIds[elemToNode(k,row)];
+            int colIndex = globalNodeIds[elemToNode(k,col)];
             double val = massMatrixG(0,row,col);
             MassG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
@@ -1101,7 +1255,7 @@ int main(int argc, char *argv[]) {
 
     // assemble into global vector
      for (int row = 0; row < numFieldsD; row++){
-           int rowIndex = elemToFace(k,row);
+           int rowIndex = globalFaceIds[elemToFace(k,row)];
            double val = hD(0,row)+gD(0,row);
            rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
      }
@@ -1110,17 +1264,14 @@ int main(int argc, char *argv[]) {
  } // *** end element loop ***
 
   // Assemble over multiple processors, if necessary
-   DCurl.GlobalAssemble();  DCurl.FillComplete(MassD.RowMap(),MassC.RowMap()); 
-   DGrad.GlobalAssemble();  DGrad.FillComplete(MassC.RowMap(),MassG.RowMap()); 
+   DGrad.GlobalAssemble(globalMapG,globalMapC); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());
+   DCurl.GlobalAssemble(globalMapC,globalMapD);  DCurl.FillComplete(MassC.RowMap(),MassD.RowMap()); 
+  // DGrad.GlobalAssemble(MassC.RowMap(),MassG.RowMap());  DGrad.FillComplete(MassC.RowMap(),MassG.RowMap()); 
    MassC.GlobalAssemble();  MassC.FillComplete();
    MassD.GlobalAssemble();  MassD.FillComplete();
    MassG.GlobalAssemble();  MassG.FillComplete();
    StiffD.GlobalAssemble(); StiffD.FillComplete();
    rhsD.GlobalAssemble();
-
-#ifdef DUMP_DATA
-   EpetraExt::RowMatrixToMatlabFile("m2_0.dat",MassD);
-#endif
 
  // Build the inverse diagonal for MassC
    Epetra_CrsMatrix MassCinv(Copy,MassC.RowMap(),MassC.RowMap(),1);
@@ -1141,28 +1292,34 @@ int main(int argc, char *argv[]) {
    for(int i=0;i<numEdges;i++) {
      if (edgeOnBoundary(i)){
       double val=0.0;
-      MassCinv.ReplaceGlobalValues(i,1,&val,&i);
+      int index = globalEdgeIds[i];
+      MassCinv.ReplaceGlobalValues(index,1,&val,&index);
      }
    }
 
   // Adjust matrices and rhs due to boundary conditions
      int numBCFaces=0;
      for (int i=0; i<numFaces; i++){
-         if (faceOnBoundary(i)){
+         if (faceOnBoundary(i) && faceIsOwned[i]){
              numBCFaces++;
          }
       }
       int * BCFaces = new int [numBCFaces];
       int indbc=0;
+      int indOwned=0;
       for (int i=0; i<numFaces; i++){
-         if (faceOnBoundary(i)){
-            BCFaces[indbc]=i;
+        if (faceIsOwned[i]){
+          if (faceOnBoundary(i)){
+            BCFaces[indbc]=indOwned;
             indbc++;
-            rhsD[0][i]=0;
-         }
+            rhsD[0][indOwned]=0;
+           }
+          indOwned++;
+        } 
       }
       ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, StiffD);
       ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, MassD);
+
       delete [] BCFaces;
 
 #ifdef DUMP_DATA
@@ -1200,6 +1357,10 @@ int main(int argc, char *argv[]) {
 
    delete [] globalNodeIds;
    delete [] nodeIsOwned;
+   delete [] globalEdgeIds;
+   delete [] edgeIsOwned;
+   delete [] globalFaceIds;
+   delete [] faceIsOwned;
    if(num_node_comm_maps > 0){
       delete [] node_comm_proc_ids;
       delete [] node_cmap_node_cnts;
@@ -1213,9 +1374,6 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_proc_ids;
    }
 
-
- // reset format state of std::cout
- std::cout.copyfmt(oldFormatState);
 
 #ifdef HAVE_MPI
    MPI_Finalize();
