@@ -39,59 +39,15 @@
 //     using the class Sacado::PCE::Hermite
 
 #include <iostream>
-#include <iomanip>
-#include <math.h>
 
 #include "Sacado.hpp"
-#include "Sacado_PCE_Hermite.hpp"
-
-#ifdef HAVE_SACADO_STOKHOS
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Stokhos.hpp"
-#endif
-
-// The function to differentiate
-template <typename ScalarT>
-ScalarT func(const ScalarT& a) {
-  ScalarT r = std::exp(a);
-
-  return r;
-}
 
 int main(int argc, char **argv)
 {
   try {
     const unsigned int d = 7;
-    Sacado::PCE::Hermite<double>::initWorkspace(d);
-    Sacado::PCE::Hermite<double> u(d);
-    u.fastAccessCoeff(0) = 1.0;
-    u.fastAccessCoeff(1) = 0.4;
-    u.fastAccessCoeff(2) = 0.06;
-    u.fastAccessCoeff(3) = 0.002;
-
-    Sacado::PCE::Hermite<double> w = std::log(u);
-    Sacado::PCE::Hermite<double> v = std::sinh(1.0/(w*w + 1.0));
-
-    std::cout.precision(12);
-    std::cout << "u (hermite basis) = " << u;
-    std::cout << "u (standard basis) = " << u.toStandardBasis();
-
-    std::cout << "v (hermite basis) = " << v;
-    std::cout << "v (standard basis) = " << v.toStandardBasis() << std::endl;
-
-    Sacado::PCE::StandardPoly<double> us = u.toStandardBasis();
-    Sacado::Tay::Taylor<double> ut(d);
-    for (unsigned int i=0; i<=d; i++)
-      ut.fastAccessCoeff(i) = us.coeff(i);
-
-    Sacado::Tay::Taylor<double> wt = std::log(ut);
-    Sacado::Tay::Taylor<double> vt = std::sinh(1.0/(wt*wt + 1.0));
-
-    std::cout.precision(12);
-    std::cout << "u (taylor basis) = " << ut << std::endl;
-    std::cout << "v (taylor basis) = " << vt << std::endl << std::endl;
-
-#ifdef HAVE_SACADO_STOKHOS
     typedef Stokhos::HermiteBasis<int,double> basis_type;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
     bases[0] = Teuchos::rcp(new basis_type(d));
@@ -99,21 +55,17 @@ int main(int argc, char **argv)
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<int,double>(basis));
-    Sacado::PCE::OrthogPoly<double> ue(expansion);
-    Stokhos::Polynomial<double> up(d);
-    for (unsigned int i=0; i<=d; i++)
-      up[i] = us[i];
-    Teuchos::Array<double> coeffs(d+1);
-    bases[0]->projectPoly(up, coeffs);
-    for (unsigned int i=0; i<=d; i++)
-      ue.fastAccessCoeff(i) = coeffs[i];
+    Sacado::PCE::OrthogPoly<double> u(expansion);
+    u.fastAccessCoeff(0) = 1.0;
+    u.fastAccessCoeff(1) = 0.4;
+    u.fastAccessCoeff(2) = 0.06;
+    u.fastAccessCoeff(3) = 0.002;
 
-    Sacado::PCE::OrthogPoly<double> we = std::log(ue);
-    Sacado::PCE::OrthogPoly<double> ve = std::sinh(1.0/(we*we + 1.0));
+    Sacado::PCE::OrthogPoly<double> w = std::log(u);
+    Sacado::PCE::OrthogPoly<double> v = std::sinh(1.0/(w*w + 1.0));
 
-    std::cout << "ue (hermite e basis) = " << ue;
-    std::cout << "ve (hermite e basis) = " << ve;
-#endif
+    std::cout << "u (hermite basis) = " << u;
+    std::cout << "v (hermite basis) = " << v;
 
     std::cout << "\nExample passed!" << std::endl;
   }

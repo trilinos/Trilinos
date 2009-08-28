@@ -111,14 +111,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 IF(Sacado_ENABLE_Teuchos)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    pce_example
-    SOURCES pce_example.cpp
-    ARGS -v
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
-
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     blas_example
     SOURCES blas_example.cpp
     ARGS -v
@@ -133,6 +125,18 @@ IF(Sacado_ENABLE_Teuchos)
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
+ENDIF()
+
+IF(Sacado_ENABLE_Stokhos)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    pce_example
+    SOURCES pce_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
 ENDIF()
 
 

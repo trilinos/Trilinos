@@ -211,21 +211,6 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
-	$(srcdir)/pce/Sacado_PCE_StandardPoly.hpp \
-	$(srcdir)/pce/Sacado_PCE_StandardPolyImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteBasis.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteBasisImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteEBasis.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteEBasisImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasis.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasisImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_TripleProduct.hpp \
-	$(srcdir)/pce/Sacado_PCE_TripleProductImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_Workspace.hpp \
-	$(srcdir)/pce/Sacado_PCE_WorkspaceImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_Hermite.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteTraits.hpp \
 	$(srcdir)/pce/Sacado_PCE_OrthogPoly.hpp \
 	$(srcdir)/pce/Sacado_PCE_OrthogPolyImp.hpp \
 	$(srcdir)/pce/Sacado_PCE_OrthogPolyTraits.hpp \
@@ -255,7 +240,7 @@ am__objects_5 = $(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
-	$(am__objects_4) $(am__objects_4)
+	$(am__objects_4)
 am_libsacado_a_OBJECTS = $(am__objects_3) $(am__objects_5)
 libsacado_a_OBJECTS = $(am_libsacado_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -377,21 +362,6 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
-	$(srcdir)/pce/Sacado_PCE_StandardPoly.hpp \
-	$(srcdir)/pce/Sacado_PCE_StandardPolyImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteBasis.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteBasisImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteEBasis.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteEBasisImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasis.hpp \
-	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasisImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_TripleProduct.hpp \
-	$(srcdir)/pce/Sacado_PCE_TripleProductImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_Workspace.hpp \
-	$(srcdir)/pce/Sacado_PCE_WorkspaceImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_Hermite.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteImp.hpp \
-	$(srcdir)/pce/Sacado_PCE_HermiteTraits.hpp \
 	$(srcdir)/pce/Sacado_PCE_OrthogPoly.hpp \
 	$(srcdir)/pce/Sacado_PCE_OrthogPolyImp.hpp \
 	$(srcdir)/pce/Sacado_PCE_OrthogPolyTraits.hpp \
@@ -648,23 +618,6 @@ SACADO_UTIL_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateIterator.hpp
 
-@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PCE_H = \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_StandardPoly.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_StandardPolyImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_HermiteBasis.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_HermiteBasisImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_HermiteEBasis.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_HermiteEBasisImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasis.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_UnitHermiteBasisImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_TripleProduct.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_TripleProductImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_Workspace.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_WorkspaceImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_Hermite.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_HermiteImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/pce/Sacado_PCE_HermiteTraits.hpp
-
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER_H = \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
@@ -737,7 +690,6 @@ SACADO_H = \
 	$(SACADO_MPL_H) \
 	$(SACADO_BLAS_H) \
 	$(SACADO_TEMPLATE_H) \
-	$(SACADO_PCE_H) \
 	$(SACADO_SG_H) \
 	$(SACADO_PARAMETER_H) \
 	$(SACADO_SFC_H) \

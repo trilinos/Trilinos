@@ -149,27 +149,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     template/Sacado_TemplateManagerImp.hpp
     template/Sacado_TemplateIterator.hpp
     )
-
-  # PCE
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/pce)
-  SET(HEADERS ${HEADERS}
-    pce/Sacado_PCE_StandardPoly.hpp
-    pce/Sacado_PCE_StandardPolyImp.hpp
-    pce/Sacado_PCE_HermiteBasis.hpp
-    pce/Sacado_PCE_HermiteBasisImp.hpp
-    pce/Sacado_PCE_HermiteEBasis.hpp
-    pce/Sacado_PCE_HermiteEBasisImp.hpp
-    pce/Sacado_PCE_UnitHermiteBasis.hpp
-    pce/Sacado_PCE_UnitHermiteBasisImp.hpp
-    pce/Sacado_PCE_TripleProduct.hpp
-    pce/Sacado_PCE_TripleProductImp.hpp
-    pce/Sacado_PCE_Workspace.hpp
-    pce/Sacado_PCE_WorkspaceImp.hpp
-    pce/Sacado_PCE_Hermite.hpp
-    pce/Sacado_PCE_HermiteImp.hpp
-    pce/Sacado_PCE_HermiteTraits.hpp
-    )
-
+  
   IF (${PACKAGE_NAME}_ENABLE_PARAMLIB)
     
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/parameter)

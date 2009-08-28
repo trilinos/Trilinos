@@ -46,13 +46,23 @@ FADFAD_EXAMPLES =
 
 endif
 
-if ENABLE_SACADO_STOKHOS
+if ENABLE_SACADO_TEUCHOS
 
 BLAS_EXAMPLES = blas_example vector_blas_example
 
 else
 
 BLAS_EXAMPLES =
+
+endif
+
+if ENABLE_SACADO_STOKHOS
+
+PCE_EXAMPLES = pce_example
+
+else
+
+PCE_EXAMPLES =
 
 endif
 
@@ -69,7 +79,7 @@ noinst_PROGRAMS = \
 	dfad_taylor_example \
 	dfad_sfc_example \
 	trad_sfc_example \
-	pce_example \
+	$(PCE_EXAMPLES) \
 	sparse_example \
 	$(BLAS_EXAMPLES)
 

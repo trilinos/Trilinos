@@ -35,7 +35,6 @@
 #include "Sacado_CacheFad_DFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #ifdef HAVE_SACADO_STOKHOS
-#include "Sacado_PCE_Hermite.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
 #endif
 
@@ -88,8 +87,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION(Rad2Test);
 CPPUNIT_TEST_SUITE_REGISTRATION(RadVecTest);
 
 #ifdef HAVE_SACADO_STOKHOS
-typedef TraitsTests< Sacado::PCE::Hermite<double> > HermiteTest;
 typedef TraitsTests< Sacado::PCE::OrthogPoly<double> > OrthogPolyTest;
-CPPUNIT_TEST_SUITE_REGISTRATION(HermiteTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(OrthogPolyTest);
 #endif

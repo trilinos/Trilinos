@@ -72,9 +72,6 @@ namespace Sacado {							\
   }									\
 									\
   namespace PCE {							\
-    template <typename T> class Hermite;				\
-    template <typename T> Hermite<T> OP (const Hermite<T>&);		\
-									\
     template <typename T> class OrthogPoly;				\
     template <typename T>						\
     OrthogPoly<T> OP (const OrthogPoly<T>&);				\
@@ -239,14 +236,6 @@ namespace Sacado {							\
   }									\
 									\
   namespace PCE {							\
-    template <typename T> class Hermite;				\
-    template <typename T> Hermite<T> OP (const Hermite<T>&,		\
-					 const Hermite<T>&);		\
-    template <typename T> Hermite<T> OP (const T&,			\
-					 const Hermite<T>&);		\
-    template <typename T> Hermite<T> OP (const Hermite<T>&,		\
-					 const T&);			\
-    									\
     template <typename T> class OrthogPoly;				\
     template <typename T>						\
     OrthogPoly<T> OP (const OrthogPoly<T>&,				\
