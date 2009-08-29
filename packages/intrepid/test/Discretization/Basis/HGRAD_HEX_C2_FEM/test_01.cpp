@@ -337,28 +337,30 @@ int main(int argc, char *argv[]) {
   
   fileName = "./testdata/HEX_C2_GradVals.dat";
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( dataFile.fail(), std::logic_error,
+  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open GRAD values data file, test aborted.");
   while (!dataFile.eof() ){
     double temp;
     string line;                            // string for one line of input file
     std::getline(dataFile, line);           // get next line from file
-    stringstream data_line(line);			// convert to stringstream
+    stringstream data_line(line);			      // convert to stringstream
     while(data_line >> temp){               // extract value from line
       basisGrads.push_back(temp);           // push into vector
     }
   }
+  // It turns out that just closing and then opening the ifstream variable does not reset it
+  // and subsequent open() command fails. One fix is to explicitely clear the ifstream, or
+  // scope the variables.
   dataFile.close();
+  dataFile.clear();
     
    
   //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
-  std::vector<double> basisD2;
-  
-  fileName = "./testdata/HEX_C2_D2Vals.dat";
+  std::vector<double> basisD2; 
+  fileName = "./testdata/HEX_C2_D2Vals.dat";  
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( dataFile.fail(), std::logic_error,
+  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D2 values data file, test aborted.");
-
   while (!dataFile.eof() ){
     double temp;
     string line;                            // string for one line of input file
@@ -369,14 +371,15 @@ int main(int argc, char *argv[]) {
     }
   }
   dataFile.close();
-  
+  dataFile.clear();
+
   
   //D3: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D3cardinality)
   std::vector<double> basisD3;
   
-  fileName = "./testdata/HEX_C2_D3Vals.dat";
+  fileName = "./testdata/HEX_C2_D3Vals.dat";  
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( dataFile.fail(), std::logic_error,
+  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D3 values data file, test aborted.");
   
   while (!dataFile.eof() ){
@@ -389,6 +392,7 @@ int main(int argc, char *argv[]) {
     }
   }
   dataFile.close();
+  dataFile.clear();
  
   
   //D4: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D4cardinality)
@@ -396,7 +400,7 @@ int main(int argc, char *argv[]) {
   
   fileName = "./testdata/HEX_C2_D4Vals.dat";
   dataFile.open(fileName.c_str());
-  TEST_FOR_EXCEPTION( dataFile.fail(), std::logic_error,
+  TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                       ">>> ERROR (HGRAD_HEX_C2/test01): could not open D4 values data file, test aborted.");
   
   while (!dataFile.eof() ){
@@ -409,6 +413,7 @@ int main(int argc, char *argv[]) {
     }
   }
   dataFile.close();
+  dataFile.clear();
   
 
   try{
@@ -510,7 +515,7 @@ int main(int argc, char *argv[]) {
          }
       }
     }
-    
+
     
     // Check D3 of basis function
     int D3cardinality = Intrepid::getDkCardinality(OPERATOR_D3, spaceDim);
