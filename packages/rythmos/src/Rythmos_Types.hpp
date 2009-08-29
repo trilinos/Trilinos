@@ -38,6 +38,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_AbstractFactory.hpp"
 
 #include "Thyra_VectorBase.hpp"
 
@@ -76,6 +77,8 @@ using Teuchos::ParameterList;
 using Teuchos::ScalarTraits;
 /** \brief . */
 using Teuchos::TypeNameTraits;
+/** \brief . */
+using Teuchos::AbstractFactory;
 
 
 

@@ -53,6 +53,12 @@
 
 namespace Rythmos {
 
+
+/** \brief Concrete integrator builder class.
+ *
+ * ToDo: Finish documentation!
+ *
+ */
 template<class Scalar>
   class IntegratorBuilder : virtual public Teuchos::ParameterListAcceptor
 {
@@ -66,13 +72,13 @@ public:
 
   /** \brief Set a new Integrator factory object. */
   void setIntegratorFactory(
-    const RCP<const Teuchos::AbstractFactory<IntegratorBase<Scalar> > > &integratorFactory,
+    const RCP<const AbstractFactory<IntegratorBase<Scalar> > > &integratorFactory,
     const std::string &integratorFactoryName
     );
 
   /** \brief Set a new Integration Control Strategy factory object. */
   void setIntegrationControlFactory(
-    const RCP<const Teuchos::AbstractFactory<IntegrationControlStrategyBase<Scalar> > > &integrationControlFactory,
+    const RCP<const AbstractFactory<IntegrationControlStrategyBase<Scalar> > > &integrationControlFactory,
     const std::string &integrationControlName
     );
 
@@ -91,45 +97,58 @@ public:
 
   /** \brief Set a new Step Control Strategy factory object. */
   void setStepControlFactory(
-    const RCP<const Teuchos::AbstractFactory<StepControlStrategyBase<Scalar> > > &stepControlStrategyFactory,
+    const RCP<const AbstractFactory<StepControlStrategyBase<Scalar> > > &stepControlStrategyFactory,
     const std::string &stepControlName
     );
 
   /** \brief Set an InterpolationBuffer factory object. */
   void setInterpolationBufferFactory(
-    const RCP<const Teuchos::AbstractFactory<InterpolationBufferBase<Scalar> > > &interpolationBufferFactory,
+    const RCP<const AbstractFactory<InterpolationBufferBase<Scalar> > > &interpolationBufferFactory,
     const std::string &interpolationBufferName
     );
 
   /** \brief Set an InterpolationBufferAppender factory object. */
   void setInterpolationBufferAppenderFactory(
-    const RCP<const Teuchos::AbstractFactory<InterpolationBufferAppenderBase<Scalar> > > &interpolationBufferAppenderFactory,
+    const RCP<const AbstractFactory<InterpolationBufferAppenderBase<Scalar> > > &interpolationBufferAppenderFactory,
     const std::string &interpolationBufferAppenderName
     );
 
   /** \brief Set an ErrWtVecCalc factory object. */
   void setErrWtVecCalcFactory(
-    const RCP<const Teuchos::AbstractFactory<ErrWtVecCalcBase<Scalar> > > &errWtVecCalcFactory,
+    const RCP<const AbstractFactory<ErrWtVecCalcBase<Scalar> > > &errWtVecCalcFactory,
     const std::string &errWtVecCalcFactoryName
     );
   
   /** \brief Set an Interpolator factory object. */
   void setInterpolatorFactory(
-    const RCP<const Teuchos::AbstractFactory<InterpolatorBase<Scalar> > > &interpolatorFactory,
+    const RCP<const AbstractFactory<InterpolatorBase<Scalar> > > &interpolatorFactory,
     const std::string &interpolatorFactoryName
     );
   
   /** \brief Set a W factory object. */
   void setWFactoryObject(
-      const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &wFactoryObject
-      );
-
-  /** \brief . */
+    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &wFactoryObject
+    );
+  
+  /** \brief Create an fully formed integrator ready to go.
+   *
+   * \param model [in] The model evaluator object.  What initialization state
+   * does this object need to be in before calling this function?
+   *
+   * \param initialCondition [in] Initial condition for the integration.  If
+   * the real initial condition is not known, then a zero IC can be passed in
+   * here and then be rest with returnVal->setInitialCondition(...) later.
+   *
+   * \param nlSolver [in] The nonlinear solver that will be set on an implicit
+   * stepper object.  If an explicit stepper will be created, then this can be
+   * left null.
+   *
+   */
   RCP<IntegratorBase<Scalar> > create(
     const RCP<const Thyra::ModelEvaluator<Scalar> > model,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition,
     const RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver
-      ) const;
+    ) const;
   
   /** \name Overridden from Teuchos::ParameterListAcceptor */
   //@{

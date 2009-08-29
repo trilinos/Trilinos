@@ -196,6 +196,10 @@ public:
    * NOTE: If the model is linear in <tt>x</tt> and <tt>x_dot</tt>, then the
    * client can avoid setting this interpolation buffer since it will never be
    * called.
+   *
+   * NOTE: This object need be fully initialized at this point.  It only needs
+   * to be fully initialized before this->evalModel(...) is called.  This just
+   * sets up the basic link to this object.
    */
   void setFwdStateSolutionBuffer(
     const RCP<const InterpolationBufferBase<Scalar> > &fwdStateSolutionBuffer );
@@ -245,6 +249,7 @@ private:
   TimeRange<Scalar> fwdTimeRange_;
   RCP<const InterpolationBufferBase<Scalar> > fwdStateSolutionBuffer_;
 
+  mutable bool isInitialized_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_bar_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_bar_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> adjointNominalValues_;
@@ -288,6 +293,7 @@ adjointModelEvaluator(
 
 template<class Scalar>
 AdjointModelEvaluator<Scalar>::AdjointModelEvaluator()
+  :isInitialized_(false)
 {}
 
 
@@ -300,6 +306,7 @@ void AdjointModelEvaluator<Scalar>::setFwdStateModel(
   TEST_FOR_EXCEPT(is_null(fwdStateModel));
   fwdStateModel_ = fwdStateModel;
   basePoint_ = basePoint;
+  isInitialized_ = false;
 }
 
 
@@ -628,6 +635,9 @@ void AdjointModelEvaluator<Scalar>::initialize() const
 
   typedef Thyra::ModelEvaluatorBase MEB;
 
+  if (isInitialized_)
+    return;
+
   //
   // A) Validate the that forward Model is of the correct form!
   //
@@ -694,6 +704,12 @@ void AdjointModelEvaluator<Scalar>::initialize() const
 
   my_W_bar_adj_op_ = Teuchos::null;
   my_d_f_d_x_dot_op_ = Teuchos::null;
+
+  //
+  // F) We are initialized!
+  //
+
+  isInitialized_ = true;
 
 }
 

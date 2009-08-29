@@ -371,6 +371,7 @@ IntegratorBuilder<Scalar>::create(
       "Error!  IntegratorBuilder::create(...)  Please set a parameter list on this class before calling create."
       );
   RCP<ParameterList> integratorSettingsPL = sublist(paramList_,integratorSettings_name);
+
   // Create the integrator first
   RCP<ParameterList> integratorSelectionPL = sublist(integratorSettingsPL,integratorSelection_name);
   integratorBuilder_->setParameterList(integratorSelectionPL);
@@ -378,6 +379,7 @@ IntegratorBuilder<Scalar>::create(
   TEST_FOR_EXCEPTION( is_null(integrator), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The integrator came back null from the ObjectBuilder!"
       );
+
   // Check for IntegrationControlStrategy and set it on the integrator
   RCP<IntegrationControlStrategyAcceptingIntegratorBase<Scalar> > icsaIntegrator = 
     Teuchos::rcp_dynamic_cast<IntegrationControlStrategyAcceptingIntegratorBase<Scalar> >(integrator,false);
@@ -390,6 +392,7 @@ IntegratorBuilder<Scalar>::create(
     }
   }
   RCP<ParameterList> interpolationBufferSettingsPL = sublist(paramList_,interpolationBufferSettings_name);
+
   // Check for a trailing interpolation buffer and set it on the integrator
   RCP<TrailingInterpolationBufferAcceptingIntegratorBase<Scalar> > tibaIntegrator = 
     Teuchos::rcp_dynamic_cast<TrailingInterpolationBufferAcceptingIntegratorBase<Scalar> >(integrator,false);
@@ -412,6 +415,7 @@ IntegratorBuilder<Scalar>::create(
       tibaIntegrator->setTrailingInterpolationBuffer(ib);
     }
   }
+
   // Check for an InterpolationBufferAppender and set it on the integrator
   RCP<InterpolationBufferAppenderAcceptingIntegratorBase<Scalar> > ibaaIntegrator = 
     Teuchos::rcp_dynamic_cast<InterpolationBufferAppenderAcceptingIntegratorBase<Scalar> >(integrator,false);
@@ -424,6 +428,7 @@ IntegratorBuilder<Scalar>::create(
     }
   }
   RCP<ParameterList> stepperSettingsPL = sublist(paramList_,stepperSettings_name);
+
   // Create the Stepper
   RCP<ParameterList> stepperSelectionPL = sublist(stepperSettingsPL,stepperSelection_name);
   stepperBuilder_->setParameterList(stepperSelectionPL);
@@ -431,6 +436,7 @@ IntegratorBuilder<Scalar>::create(
   TEST_FOR_EXCEPTION( is_null(stepper), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The stepper came back null from the StepperBuilder!"
       );
+
   // Create the Step Control
   RCP<ParameterList> stepControlSettingsPL = sublist(stepperSettingsPL,stepControlSettings_name);
   RCP<StepControlStrategyAcceptingStepperBase<Scalar> > scsaStepper = 
@@ -454,6 +460,7 @@ IntegratorBuilder<Scalar>::create(
       scsaStepper->setStepControlStrategy(stepControl);
     }
   }
+
   // Check for an Interpolator
   RCP<InterpolatorAcceptingObjectBase<Scalar> > iaobStepper = 
     Teuchos::rcp_dynamic_cast<InterpolatorAcceptingObjectBase<Scalar> >(stepper,false);
@@ -465,18 +472,22 @@ IntegratorBuilder<Scalar>::create(
       iaobStepper->setInterpolator(interpolator);
     }
   }
+
   // Check for an RKBT Selection
   RCP<RKButcherTableauAcceptingStepperBase<Scalar> > rkbtaStepper = 
     Teuchos::rcp_dynamic_cast<RKButcherTableauAcceptingStepperBase<Scalar> >(stepper,false);
   if (!is_null(rkbtaStepper)) {
-    RCP<ParameterList> rkButcherTableauSelectionPL = sublist(stepperSettingsPL,rkButcherTableauSelection_name);
+    RCP<ParameterList> rkButcherTableauSelectionPL =
+      sublist(stepperSettingsPL,rkButcherTableauSelection_name);
     rkbtBuilder_->setParameterList(rkButcherTableauSelectionPL);
     RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtBuilder_->create();
     TEST_FOR_EXCEPTION( is_null(rkbt), std::logic_error,
-        "Error!  IntegratorBuilder::create(...)  The Stepper accepts a RK Butcher Tableau, but none were specified!"
-        );
+      "Error!  IntegratorBuilder::create(...)  The Stepper accepts a RK Butcher"
+      " Tableau, but none were specified!"
+      );
     rkbtaStepper->setRKButcherTableau(rkbt);
   }
+
   // Check for a W Factory
   RCP<ImplicitRKStepper<Scalar> > irkStepper = 
     Teuchos::rcp_dynamic_cast<ImplicitRKStepper<Scalar> >(stepper,false);
@@ -485,23 +496,29 @@ IntegratorBuilder<Scalar>::create(
       irkStepper->set_W_factory(wFactoryObject_);
     }
   }
+
   // Check for Nonlinear Solver Selection (TODO)
   // Set model on stepper
   stepper->setModel(model);
   // Set initial condition on stepper
   stepper->setInitialCondition(initialCondition);
   // Set nonlinear solver on stepper
-  RCP<SolverAcceptingStepperBase<Scalar> > saStepper = Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(stepper,false);
+  RCP<SolverAcceptingStepperBase<Scalar> > saStepper =
+    Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(stepper,false);
   if(!is_null(saStepper)) {
     TEST_FOR_EXCEPTION( is_null(nlSolver), std::logic_error,
-        "Error!  IntegratorBuilder::create(...)  The nonlinear solver passed in is null and the stepper is implicit!"
-        );
+      "Error!  IntegratorBuilder::create(...)  The nonlinear solver passed in is"
+      " null and the stepper is implicit!"
+      );
     saStepper->setSolver(nlSolver);
   }
-  Scalar finalTime = integratorSettingsPL->get<Scalar>(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
-  bool landOnFinalTime = integratorSettingsPL->get<bool>(landOnFinalTime_name,landOnFinalTime_default);
+  Scalar finalTime = integratorSettingsPL->get<Scalar>(
+    finalTime_name, Teuchos::as<Scalar>(finalTime_default));
+  bool landOnFinalTime = integratorSettingsPL->get<bool>(
+    landOnFinalTime_name, landOnFinalTime_default);
   integrator->setStepper(stepper,finalTime,landOnFinalTime);
   return integrator;
+
 }
 
 
@@ -672,5 +689,5 @@ Teuchos::RCP<Rythmos::IntegratorBase<Scalar> > Rythmos::createForwardSensitivity
     const RCP<ParameterList>& integratorBuilderPL \
     );
 
-#endif //Rythmos_INTEGRATOR_BUILDER_DEF_H
 
+#endif //Rythmos_INTEGRATOR_BUILDER_DEF_H
