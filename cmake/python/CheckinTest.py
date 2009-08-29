@@ -521,7 +521,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   if inOptions.disablePackages:
     emailBody += "Disabled Packages: " + inOptions.disablePackages + "\n"
   emailBody += "Hostname: " + getHostname() + "\n"
-  emailBody += "Trilinos Source Dir: " + trilinosSrcDir + "\n"
+  emailBody += "Source Dir: " + trilinosSrcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
