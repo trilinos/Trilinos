@@ -18,10 +18,10 @@ INCLUDE(PrintVar)
 #   PACKAGE_ADD_ADVANCED_TEST(
 #     <testName>
 #     TEST_0 (EXEC <execTarget0> | CMND <cmndExec0>) ...
-#     [TEST_1 [EXEC <execTarget1> | CMND <cmndExec1>] ...]
+#     [TEST_1 (EXEC <execTarget1> | CMND <cmndExec1>) ...]
 #     ...
-#     [TEST_N [EXEC <execTargetN> | CMND <cmndExecN>] ...]
-#     [OVERALL_WORKING_DIRECTORY <overallWorkingDir>]
+#     [TEST_N (EXEC <execTargetN> | CMND <cmndExecN>) ...]
+#     [OVERALL_WORKING_DIRECTORY (<overallWorkingDir> | TEST_NAME)]
 #     [FAIL_FAST]
 #     [KEYWORDS <keyword1> <keyword2> ...]
 #     [COMM [serial] [mpi]]
@@ -346,7 +346,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
         SET(ADD_THE_TEST FALSE)
       ENDIF()
 
-      PACAKGE_ADD_TEST_GET_TEST_CMND_ARRAY( TEST_CMND_ARRAY
+      PACKAGE_ADD_TEST_GET_TEST_CMND_ARRAY( TEST_CMND_ARRAY
         "${EXECUTABLE_PATH}" "${NUM_PROCS_USED}" ${ARGS_STR} )
       #PRINT_VAR(TEST_CMND_ARRAY)
 

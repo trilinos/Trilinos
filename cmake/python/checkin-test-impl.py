@@ -300,6 +300,15 @@ clp.add_option(
   help="Skip the commit." )
 
 clp.add_option(
+  "--force-commit", dest="forceCommit", action="store_true",
+  help="Force the commit even if there are errors.  WARNING: Only do this" \
+  +" when you are 100% certain that the errors are not caused by your code" \
+  +" changes." )
+clp.add_option(
+  "--no-force-commit", dest="forceCommit", action="store_false", default=False,
+  help="Do not force a commit." )
+
+clp.add_option(
   "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
   help="Custom commit message file if commiting with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
@@ -416,6 +425,13 @@ if options.doAll:
   print "  --do-all \\"
 if options.doCommit:
   print "  --commit \\"
+else:
+  print "  --skip-commit \\"
+if options.forceCommit:
+  print " --force-commit \\"
+else:
+  print " --no-force-commit \\"
+
 
 #
 # Execute

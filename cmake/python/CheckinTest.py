@@ -1067,6 +1067,18 @@ def checkinTest(inOptions):
 
       print "\nAttempting to do a commit ..."
 
+      forcedCommit = False
+
+      if not commitOkay and inOptions.forceCommit:
+        forcedCommitMsg = \
+          "\n***" \
+          "\n*** WARNING: The acceptance criteria for doing a commit has *not*" \
+          "\n*** been met, but a commit is being forced anyway!" \
+          "\n***\n"
+        print forcedCommitMsg
+        commitOkay = True
+        forcedCommit = True
+
       if commitOkay:
 
         print "\nDoing a last update to avoid not-up-to-date status ..."
@@ -1089,13 +1101,19 @@ def checkinTest(inOptions):
         commitMsgHeaderFileStr = open(absCommitMsgHeaderFile, 'r').read()
 
         commitEmailBodyStr = commitMsgHeaderFileStr
+
         commitEmailBodyStr += "\n\n\n\n" \
           "=============================\n" \
           "Automated status information\n" \
           "=============================\n" \
           "\n\n" \
           + getCmndOutput("date", True) + "\n\n" \
-          + getSummaryEmailSectionStr(inOptions)
+
+        if forcedCommitMsg:
+          commitEmailBodyStr += (forcedCommitMsg + "\n\n")
+
+        commitEmailBodyStr += \
+          getSummaryEmailSectionStr(inOptions)
 
         commitMsgFile = getCommitEmailBodyFileName()
         open(commitMsgFile, 'w').write(commitEmailBodyStr)
@@ -1114,7 +1132,11 @@ def checkinTest(inOptions):
           subjectLine = "COMMIT FAILED"
           commitEmailBodyExtra += "\n\nCommit failed because update failed!  See 'update2.out'\n\n"
         elif commitRtn == 0:
-          subjectLine = "DID COMMIT"
+          if forcedCommitMsg:
+            subjectLine = "FORCED COMMIT"
+            commitEmailBodyExtra += forcedCommitMsg
+          else:
+            subjectLine = "DID COMMIT"
         else:
           subjectLine = "COMMIT FAILED"
           commitEmailBodyExtra += "\n\nCommit failed!  See the file 'commit.out'\n\n"
