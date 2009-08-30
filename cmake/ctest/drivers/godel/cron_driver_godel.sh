@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CTEST_EXE=/home/rabartl/install/bin/ctest
+CTEST_EXE=/home/trilinos/install/bin/ctest
 BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/godel
 
