@@ -206,7 +206,7 @@ void defaultGetPoints(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   assertTimePointsAreSorted(time_vec);
-  TimeRange<Scalar> tr(t_old,t);
+  TimeRange<Scalar> tr(t_old, t);
   TEUCHOS_ASSERT( tr.isValid() );
   if (!is_null(x_vec)) {
     x_vec->clear();
@@ -222,7 +222,7 @@ void defaultGetPoints(
   RCP<const VectorBase<Scalar> > tmpVecDot;
   for (; time_it != time_vec.end() ; time_it++) {
     Scalar time = *time_it;
-    TEUCHOS_ASSERT( tr.isInRange(time) );
+    asssertInTimeRange(tr, time);
     Scalar accuracy = ST::zero();
     if (compareTimeValues(time,t_old)==0) {
       if (!is_null(x_old)) {

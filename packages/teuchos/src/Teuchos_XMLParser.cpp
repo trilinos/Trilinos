@@ -157,7 +157,8 @@ XMLObject XMLParser::parse()
         // try to get an ETag
         getETag(tag);
         TEST_FOR_EXCEPTION( handler->endElement(tag)!=0, std::runtime_error,
-          "XMLParser::getETag(): document not well-formed: end element tag did not match start element");
+          "XMLParser::getETag(): document not well-formed: end element"
+          " tag = '"<<tag<<"' did not match start element");
         curopen--;
       }
       else if (isLetter(c2) || c2==':' || c2=='_') {

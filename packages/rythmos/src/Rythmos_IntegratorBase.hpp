@@ -75,7 +75,8 @@ public:
    *
    * \param stepper [inout,persisting] Gives the stepper that will be used to
    * advance the time solution.  Note that it is expected that the stepper
-   * will be fully initialized and ready to start taking time steps.
+   * will be fully initialized and ready to start taking time steps.  This
+   * includes having an initial condition which defines the initial time.
    *
    * \param finalTime [in] Gives the final time that the integrator will allow
    * itself to integrate too.

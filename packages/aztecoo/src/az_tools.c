@@ -52,7 +52,11 @@
 #include <math.h>
 
 #ifdef HAVE_MALLOC_H
+#ifndef __APPLE__
 #include <malloc.h>
+#else
+#include <sys/malloc.h>
+#endif
 #endif
 
 #include <float.h>

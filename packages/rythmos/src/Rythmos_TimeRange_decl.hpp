@@ -142,6 +142,14 @@ template<class TimeType>
 std::ostream& operator<<( std::ostream& out, const TimeRange<TimeType>& range );
 
 
+/** \brief Assert point is in the time range and if it is not, throw an
+ * exception with a very good error message.
+ */
+template<class TimeType>
+void asssertInTimeRange( const TimeRange<TimeType> &timeRange,
+  const TimeType &time );
+
+
 /** \brief Nonmember isInRange function [closed, closed].
  *
  * <tt>tr.lower() <= p <= tr.upper()</tt>

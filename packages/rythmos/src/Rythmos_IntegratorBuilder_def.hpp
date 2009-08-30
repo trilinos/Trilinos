@@ -58,18 +58,32 @@ namespace {
 
   // Valid ParameterList names:
   static std::string integratorSettings_name = "Integrator Settings";
-  static std::string integratorSettings_docs = "These parameters are used directly in setting up the Integrator";
+  static std::string integratorSettings_docs =
+    "These parameters are used directly in setting up the Integrator";
   static std::string integratorSelection_name = "Integrator Selection";
-  static std::string integrationControlSelection_name = "Integration Control Strategy Selection";
-  static std::string integrationControlSelection_docs = "Note that some settings conflict between step control and integration control.  In general, the integration control decides which steps will be fixed or variable, not the stepper.  When the integration control decides to take variable steps, the step control is then responsible for choosing appropriate step-sizes.";
+  static std::string integrationControlSelection_name =
+    "Integration Control Strategy Selection";
+  static std::string integrationControlSelection_docs =
+    "Note that some settings conflict between step control and integration control.\n"
+    "In general, the integration control decides which steps will be fixed or variable,\n"
+    "not the stepper.  When the integration control decides to take variable steps, the\n"
+    "step control is then responsible for choosing appropriate step-sizes.";
   static std::string stepperSettings_name = "Stepper Settings";
   static std::string stepperSelection_name = "Stepper Selection";
-  static std::string stepperSelection_docs = "Special note for Implicit RK Stepper:  If a fully implicit RK Butcher tableau is chosen, then the stepper will not be fully initialized unless a W factory object is set on the IntegratorBuilder through setWFactoryObject."; 
+  static std::string stepperSelection_docs =
+    "Special note for Implicit RK Stepper:  If a fully implicit RK Butcher tableau is\n"
+    "chosen, then the stepper will not be fully initialized unless a W factory object\n"
+    "is set on the IntegratorBuilder through setWFactoryObject."; 
   static std::string stepControlSettings_name = "Step Control Settings";
-  static std::string stepControlSettings_docs = "Not all step control strategies are compatible with each stepper.  If the strategy has the name of a stepper in its name, then it only works with that stepper.";
+  static std::string stepControlSettings_docs =
+    "Not all step control strategies are compatible with each stepper.  If the strategy\n"
+    "has the name of a stepper in its name, then it only works with that stepper.";
   static std::string stepControlSelection_name = "Step Control Strategy Selection";
   static std::string errWtVecSelection_name = "Error Weight Vector Calculator Selection";
-  static std::string errWtVecSelection_docs = "Not all ErrWtVec calculators are compatible with each step control strategy.  If the calculator has the name of a stepper or another step control strategy in its name, then it only works with that step control strategy.";
+  static std::string errWtVecSelection_docs =
+    "Not all ErrWtVec calculators are compatible with each step control strategy.\n"
+    "If the calculator has the name of a stepper or another step control strategy in\n"
+    "its name, then it only works with that step control strategy.";
   static std::string interpolationBufferSettings_name = "Interpolation Buffer Settings";
   static std::string interpolationBufferSelection_name = "Trailing Interpolation Buffer Selection";
   static std::string interpolationBufferAppenderSelection_name = "Interpolation Buffer Appender Selection";
@@ -78,9 +92,13 @@ namespace {
   static std::string landOnFinalTime_name = "Land On Final Time";
   static bool landOnFinalTime_default = true;
   static std::string interpolatorSelection_name = "Interpolator Selection";
-  static std::string stepperInterpolatorSelection_docs = "Note all Steppers accept an interpolator.  Currently, only the BackwardEuler stepper does.";
+  static std::string stepperInterpolatorSelection_docs =
+    "Note all Steppers accept an interpolator.  Currently, only the BackwardEuler\n"
+    "stepper does.";
   static std::string rkButcherTableauSelection_name = "Runge Kutta Butcher Tableau Selection";
-  static std::string rkButcherTableauSelection_docs = "Only the Explicit RK Stepper and the Implicit RK Stepper accept an RK Butcher Tableau.";
+  static std::string rkButcherTableauSelection_docs =
+    "Only the Explicit RK Stepper and the Implicit RK Stepper accept an RK Butcher\n"
+    "Tableau.";
 
   // Builder names:
   static std::string integratorBuilder_name = "Rythmos::Integrator";

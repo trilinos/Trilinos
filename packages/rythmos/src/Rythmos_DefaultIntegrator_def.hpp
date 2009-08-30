@@ -511,14 +511,30 @@ void DefaultIntegrator<Scalar>::getPoints(
   Array<ScalarMag>* accuracy_vec
   ) const
 {
-  // 2007/10/05: rabartl: ToDo: Get points from trailingInterpBuffer_ as well!
-  stepper_->getPoints(time_vec,x_vec,xdot_vec,accuracy_vec);
+//  if (nonnull(trailingInterpBuffer_)) {
+//    int nextTimePointIndex = 0;
+//    getCurrentPoints(*trailingInterpBuffer_, time_vec, x_vec, xdot_vec, &nextTimePointIndex);
+//    getCurrentPoints(*stepper_, time_vec, x_vec, xdot_vec, &nextTimePointIndex);
+//    TEST_FOR_EXCEPTION( nextTimePointIndex < Teuchos::as<int>(time_vec.size()),
+//      std::out_of_range,
+//      "Error, the time point time_vec["<<nextTimePointIndex<<"] = "
+//      << time_vec[nextTimePointIndex] << " falls outside of the time range "
+//      << getTimeRange() << "!"
+//      );
+//  }
+//  else {
+  stepper_->getPoints(time_vec, x_vec, xdot_vec, accuracy_vec);
+//  }
 }
 
 
 template<class Scalar> 
 TimeRange<Scalar> DefaultIntegrator<Scalar>::getTimeRange() const
 {
+  if (nonnull(trailingInterpBuffer_)) {
+    return timeRange(trailingInterpBuffer_->getTimeRange().lower(),
+      stepper_->getTimeRange().upper());
+  }
   return stepper_->getTimeRange();
 }
 

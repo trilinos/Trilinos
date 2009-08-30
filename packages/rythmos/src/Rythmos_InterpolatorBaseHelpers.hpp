@@ -33,6 +33,7 @@
 
 namespace Rythmos {
 
+
 /** \relates InterplatorBase . */
 template<class Scalar>
 void interpolate(
@@ -45,6 +46,7 @@ void interpolate(
   interp.setNodes(nodes);
   interp.interpolate(t_values,data_out);
 }
+
 
 /** \relates InterpolatorBase . */
 template<class Scalar>
@@ -87,6 +89,7 @@ void assertBaseInterpolatePreconditions(
     );
 }
 
+
 template<class Scalar>
 void assertNodesUnChanged(
     const typename DataStore<Scalar>::DataStoreVector_t & nodes, 
@@ -128,6 +131,5 @@ void assertNodesUnChanged(
 
 } // namespace Rythmos 
 
+
 #endif // Rythmos_INTERPOLATOR_BASE_HELPERS_H
-
-

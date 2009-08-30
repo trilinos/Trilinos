@@ -42,10 +42,6 @@ def getUpdateSuccessFileName():
   return "update.success"
 
 
-def getUpdateSuccessFileName():
-  return "update.success"
-
-
 def getUpdateOutput2FileName():
   return "update2.out"
 
@@ -968,7 +964,6 @@ def checkinTest(inOptions):
           updatePassed = True
         else:
           "\nUpdate failed!\n"
-          echoRunSysCmnd("touch "+getUpdateSuccessFileName())
           updatePassed = False
 
       except Exception, e:
@@ -1081,15 +1076,22 @@ def checkinTest(inOptions):
 
       if commitOkay:
 
-        print "\nDoing a last update to avoid not-up-to-date status ..."
+        print "\nDoing a last update to avoid not-up-to-date status ...\n"
 
-        update2Rtn = echoRunSysCmnd(inOptions.updateCommand,
-          workingDir=trilinosSrcDir,
-          outFile=os.path.join(baseTestDir, getUpdateOutput2FileName()),
-          throwExcept=False,
-          timeCmnd=True
-          )
-        if update2Rtn != 0: commitOkay = False
+        if inOptions.doFinalUpdate:
+
+          update2Rtn = echoRunSysCmnd(inOptions.updateCommand,
+            workingDir=trilinosSrcDir,
+            outFile=os.path.join(baseTestDir, getUpdateOutput2FileName()),
+            throwExcept=False,
+            timeCmnd=True
+            )
+          if update2Rtn != 0: commitOkay = False
+
+        else:
+          
+          print "\nSkipping the final update on request!\n"
+          update2Rtn = 0
 
         absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
         if not os.path.isabs(absCommitMsgHeaderFile):
@@ -1130,7 +1132,7 @@ def checkinTest(inOptions):
         if update2Rtn != 0:
           commitOkay = False
           subjectLine = "COMMIT FAILED"
-          commitEmailBodyExtra += "\n\nCommit failed because update failed!  See 'update2.out'\n\n"
+          commitEmailBodyExtra += "\n\nCommit failed because final update failed!  See 'update2.out'\n\n"
         elif commitRtn == 0:
           if forcedCommitMsg:
             subjectLine = "FORCED COMMIT"

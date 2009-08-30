@@ -309,6 +309,14 @@ clp.add_option(
   help="Do not force a commit." )
 
 clp.add_option(
+  "--final-update", dest="doFinalUpdate", action="store_true",
+  help="Do a final update just before committing to make sure there are"
+  +" no conflicits (default)" )
+clp.add_option(
+  "--skip-final-update", dest="doFinalUpdate", action="store_false", default=False,
+  help="Do not do a final update before committing." )
+
+clp.add_option(
   "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
   help="Custom commit message file if commiting with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
@@ -431,6 +439,10 @@ if options.forceCommit:
   print " --force-commit \\"
 else:
   print " --no-force-commit \\"
+if options.doFinalUpdate:
+  print " --final-update \\"
+else:
+  print " --skip-final-update \\"
 
 
 #

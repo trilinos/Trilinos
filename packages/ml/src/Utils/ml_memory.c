@@ -747,7 +747,11 @@ ML_print_it();
 #define ML_NDblStats 2
 /* OS X defines malloc in a non-standard place */
 #ifdef HAVE_MALLOC_H
-#  include "malloc.h"
+#ifndef __APPLE__
+#  include <malloc.h>
+#else
+#  include <sys/malloc.h>
+#endif
 #else
 #  include <stdlib.h>
 #endif
@@ -1054,7 +1058,11 @@ int ML_MaxAllocatableSize()
     
 #include "ml_utils.h" 
 #ifdef ML_MALLINFO
-#include "malloc.h"
+#ifndef __APPLE__
+#include <malloc.h>
+#else
+#include <sys/malloc.h>
+#endif
 #endif
 /* returns the maximum allocatable memory, in Mbytes, using mallinfo() */
 int ML_MaxMemorySize()

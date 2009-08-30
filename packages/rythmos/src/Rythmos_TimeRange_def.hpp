@@ -33,11 +33,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-namespace Rythmos {
-
 
 template<class TimeType>
-int compareTimeValues( const TimeType &t1, const TimeType &t2 )
+int Rythmos::compareTimeValues( const TimeType &t1, const TimeType &t2 )
 {
   // Here we will do the comparison based on the magnitude of t1
   const TimeType epsMore = 10.0*std::numeric_limits<TimeType>::epsilon();
@@ -53,23 +51,24 @@ int compareTimeValues( const TimeType &t1, const TimeType &t2 )
 
 
 template<class TimeType>
-inline
-TimeRange<TimeType> timeRange(const TimeType lower, const TimeType upper)
+Rythmos::TimeRange<TimeType>
+Rythmos::timeRange(const TimeType lower, const TimeType upper)
 {
   return TimeRange<TimeType>(lower,upper);
 }
 
 
 template<class TimeType>
-inline
-TimeRange<TimeType> invalidTimeRange()
+Rythmos::TimeRange<TimeType>
+Rythmos::invalidTimeRange()
 {
   return TimeRange<TimeType>();
 }
 
 
 template<class TimeType>
-std::ostream& operator<<( std::ostream& out, const TimeRange<TimeType>& range )
+std::ostream&
+Rythmos::operator<<( std::ostream& out, const TimeRange<TimeType>& range )
 {
   out << "[";
   if (range.isValid()) {
@@ -84,7 +83,18 @@ std::ostream& operator<<( std::ostream& out, const TimeRange<TimeType>& range )
 
 
 template<class TimeType>
-bool isInRange_cc(const TimeRange<TimeType> &tr, const TimeType &p)
+void Rythmos::asssertInTimeRange( const TimeRange<TimeType> &timeRange,
+  const TimeType &time )
+{
+  TEST_FOR_EXCEPTION( !timeRange.isInRange(time), std::out_of_range,
+    "Error, the time = " << time
+    << " is out of the range = " << timeRange << "!"
+    );
+}
+
+
+template<class TimeType>
+bool Rythmos::isInRange_cc(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
     compareTimeValues(p,tr.lower()) >= 0
@@ -94,7 +104,7 @@ bool isInRange_cc(const TimeRange<TimeType> &tr, const TimeType &p)
 
 
 template<class TimeType>
-bool isInRange_oc(const TimeRange<TimeType> &tr, const TimeType &p)
+bool Rythmos::isInRange_oc(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
     compareTimeValues(p,tr.lower()) > 0
@@ -104,7 +114,7 @@ bool isInRange_oc(const TimeRange<TimeType> &tr, const TimeType &p)
 
 
 template<class TimeType>
-bool isInRange_co(const TimeRange<TimeType> &tr, const TimeType &p)
+bool Rythmos::isInRange_co(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
     compareTimeValues(p,tr.lower()) >= 0
@@ -114,13 +124,14 @@ bool isInRange_co(const TimeRange<TimeType> &tr, const TimeType &p)
 
 
 template<class TimeType>
-bool isInRange_oo(const TimeRange<TimeType> &tr, const TimeType &p)
+bool Rythmos::isInRange_oo(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
     compareTimeValues(p,tr.lower()) > 0
     && compareTimeValues(p,tr.upper()) < 0
     );
 }
+
 
 #define RYTHMOS_TIME_RANGE_INSTANT(SCALAR) \
   \
@@ -130,6 +141,7 @@ bool isInRange_oo(const TimeRange<TimeType> &tr, const TimeType &p)
   template TimeRange< SCALAR > timeRange(const  SCALAR  lower, const  SCALAR  upper); \
   template TimeRange< SCALAR > invalidTimeRange(); \
   template std::ostream& operator<<( std::ostream& out, const TimeRange< SCALAR >& range ); \
+  template void asssertInTimeRange( const TimeRange<SCALAR > &timeRange, const SCALAR &time ); \
   template bool isInRange_cc(const TimeRange< SCALAR > &tr, const  SCALAR  &p); \
   template bool isInRange_oc(const TimeRange< SCALAR > &tr, const  SCALAR  &p); \
   template bool isInRange_co(const TimeRange< SCALAR > &tr, const  SCALAR  &p); \
@@ -138,9 +150,6 @@ bool isInRange_oo(const TimeRange<TimeType> &tr, const TimeType &p)
   template class TimeRange_co< SCALAR >;  \
   template class TimeRange_oo< SCALAR >;  \
   template class TimeRange_oc< SCALAR >;  
-
-
-} // namespace Rythmos
 
 
 #endif //RYTHMOS_TIME_RANGE_DEF_H
