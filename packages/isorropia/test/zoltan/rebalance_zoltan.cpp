@@ -142,15 +142,15 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "HYPERGRAPH");
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
+  Epetra_CrsMatrix *balanced_matrix;
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsMatrix)..."
+      std::cout << " calling Isorropia::createBalancedCopy(Epetra_CrsMatrix)..."
                 << std::endl;
     }
 
     balanced_matrix =
-      Isorropia::Epetra::create_balanced_copy(*input_matrix, paramlist);
+      Isorropia::Epetra::createBalancedCopy(*input_matrix, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -262,7 +262,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
     create_epetra_test_graph_1(numProcs, localProc, verbose);
 
   //We'll specify that the package Zoltan should be used to perform the
-  //repartitioning, and call the Isorropia::create_balanced_copy function.
+  //repartitioning, and call the Isorropia::createBalancedCopy function.
   //Default behavior should be to balance the graph so that the number of
   //nonzeros on each processor is roughly equal. i.e., by default, weights
   //for each row are assumed to be the number of nonzeros in that row.
@@ -273,15 +273,15 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   //sublist.set("LB_METHOD", "GRAPH");
   //sublist.set("PARMETIS_METHOD", "PARTKWAY");
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
+  Epetra_CrsGraph *balanced_graph;
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsGraph)..."
+      std::cout << " calling Isorropia::createBalancedCopy(Epetra_CrsGraph)..."
                 << std::endl;
     }
 
     balanced_graph =
-      Isorropia::Epetra::create_balanced_copy(*input_graph, paramlist);
+      Isorropia::Epetra::createBalancedCopy(*input_graph, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;

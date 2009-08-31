@@ -29,7 +29,7 @@
 // or hypergraph partitioning.  Compute the graph or hypergraph
 // balance and cut metrics both before and after partitioning.
 //
-// This tests all variants of Isorropia::Epetra::create_balanced_copy().
+// This tests all variants of Isorropia::Epetra::createBalancedCopy().
 //
 // For graph partitioning:
 //
@@ -200,6 +200,9 @@ void test_type(int numPartitions, int partitioningType, int vertexWeightType,
 
 }
 
+// 8/31/09 modified this test so there are no user supplied weights, because
+//          createBalancedCopy no longer takes weights
+
 static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 	  bool verbose,           // display the graph before & after
 	  bool contract,          // set global number of partitions to 1/2 num procs
@@ -260,7 +263,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   }
 
   // If we want Zoltan's or Isorropia's default weights, then we don't
-  // need to supply a CostDescriber object to create_balanced_copy,
+  // need to supply a CostDescriber object to createBalancedCopy,
   // so we get to test the API functions that don't take a CostDescriber.
 
   bool noCosts = ((vertexWeightType == NO_APPLICATION_SUPPLIED_WEIGHTS) &&
@@ -495,10 +498,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   // Reference counted pointer to balanced object
 
-  Teuchos::RCP<Epetra_CrsMatrix> matrixPtr;
-  Teuchos::RCP<Epetra_CrsGraph> graphPtr;
-  Teuchos::RCP<Epetra_RowMatrix> rowMatrixPtr;
-  Teuchos::RCP<Epetra_LinearProblem> problemPtr;
+  Epetra_CrsMatrix *matrixPtr;
+  Epetra_CrsGraph *graphPtr;
+  Epetra_RowMatrix *rowMatrixPtr;
+  Epetra_LinearProblem *problemPtr;
 
   // Row map for balanced object
   const Epetra_BlockMap *targetBlockRowMap=NULL;  // for input CrsGraph
@@ -510,39 +513,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   if (objectType == EPETRA_CRSMATRIX){
     if (noParams && noCosts){
-      matrixPtr = Isorropia::Epetra::create_balanced_copy(*matrix);
+      matrixPtr = Isorropia::Epetra::createBalancedCopy(*matrix);
     }
     else if (noCosts){
-      matrixPtr = Isorropia::Epetra::create_balanced_copy(*matrix, params);
-    }
-    else{
-      // if noParams==true then param list is empty
-      matrixPtr = Isorropia::Epetra::create_balanced_copy(*matrix, costs, params);
-
-      if ( noParams && (vptr.get() != 0) &&
-	   (eptr.get() == 0) && (hyperEdgeWeights.get() == 0)){
-
-	// Test the interface where vector of row weights are provided,
-	// but all else defaults.  This doesn't give the same answer
-	// because random values are different the second time we
-	// solve the same problem.
-
-	double bal1, bal2, cn1, cn2, cl1, cl2;
-
-	rc = ispatest::compute_hypergraph_metrics(*matrix, costs,
-	     myShare, bal1, cn1, cl1);
-
-	Teuchos::RCP<Epetra_CrsMatrix> comparePtr =
-	  Isorropia::Epetra::create_balanced_copy(*matrix, *vptr);
-
-	rc = ispatest::compute_hypergraph_metrics(*matrix, costs,
-	     myShare, bal2, cn2, cl2);
-
-	if (cl2 > cl1){
-	  ERROREXIT((localProc==0),
-	    "Matrix, weight vector interface failed");
-	}
-      }
+      matrixPtr = Isorropia::Epetra::createBalancedCopy(*matrix, params);
     }
     targetRowMap = &(matrixPtr->RowMap());
     targetColMap = &(matrixPtr->ColMap());
@@ -550,28 +524,20 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   else if (objectType == EPETRA_CRSGRAPH){
     const Epetra_CrsGraph graph = matrix->Graph();
     if (noParams && noCosts){
-      graphPtr = Isorropia::Epetra::create_balanced_copy(graph);
+      graphPtr = Isorropia::Epetra::createBalancedCopy(graph);
     }
     else if (noCosts){
-      graphPtr = Isorropia::Epetra::create_balanced_copy(graph, params);
-    }
-    else{
-      // if noParams==true then param list is empty
-      graphPtr = Isorropia::Epetra::create_balanced_copy(graph, costs, params);
+      graphPtr = Isorropia::Epetra::createBalancedCopy(graph, params);
     }
     targetBlockRowMap = &(graphPtr->RowMap());
     targetBlockColMap = &(graphPtr->ColMap());
   }
   else if (objectType == EPETRA_ROWMATRIX){
     if (noParams && noCosts){
-      rowMatrixPtr = Isorropia::Epetra::create_balanced_copy(*matrix);
+      rowMatrixPtr = Isorropia::Epetra::createBalancedCopy(*matrix);
     }
     else if (noCosts){
-      rowMatrixPtr = Isorropia::Epetra::create_balanced_copy(*matrix, params);
-    }
-    else{
-      // if noParams==true then param list is empty
-      rowMatrixPtr = Isorropia::Epetra::create_balanced_copy(*matrix, costs, params);
+      rowMatrixPtr = Isorropia::Epetra::createBalancedCopy(*matrix, params);
     }
     targetRowMap = &(rowMatrixPtr->RowMatrixRowMap());
     targetColMap = &(rowMatrixPtr->RowMatrixColMap());
@@ -616,14 +582,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       ERROREXIT((localProc==0), "Error creating a LinearProblem");
     }
     if (noParams && noCosts){
-      problemPtr = Isorropia::Epetra::create_balanced_copy(lp);
+      problemPtr = Isorropia::Epetra::createBalancedCopy(lp);
     }
     else if (noCosts){
-      problemPtr = Isorropia::Epetra::create_balanced_copy(lp, params);
-    }
-    else{
-      // if noParams==true then param list is empty
-      problemPtr = Isorropia::Epetra::create_balanced_copy(lp, costs, params);
+      problemPtr = Isorropia::Epetra::createBalancedCopy(lp, params);
     }
 
     targetRowMap = &(problemPtr->GetMatrix()->RowMatrixRowMap());
@@ -863,7 +825,7 @@ int main(int argc, char** argv) {
 #endif
 
    //if (getenv("DEBUGME")){
-   // std::cout << localProc << " gdb test_create_balanced_copy.exe " << getpid() << std::endl;
+   // std::cout << localProc << " gdb test_createBalancedCopy.exe " << getpid() << std::endl;
    // sleep(15);
    //}
 
@@ -952,8 +914,8 @@ int main(int argc, char** argv) {
 	       verbose,               // display matrix before and after?
 	       false,                 // do not test #partitions < #processes
 	       GRAPH_PARTITIONING,    // perform zoltan graph partitioning
-	       SUPPLY_EQUAL_WEIGHTS,  // supply equal vertex weights
-	       SUPPLY_EQUAL_WEIGHTS,  // supply equal edge weights
+	       NO_APPLICATION_SUPPLIED_WEIGHTS,
+	       NO_APPLICATION_SUPPLIED_WEIGHTS,
 	       EPETRA_LINEARPROBLEM); // use linear problem interface of isorropia
 
     CHECK_FAILED();
@@ -962,8 +924,8 @@ int main(int argc, char** argv) {
 	       verbose,            // draw graph before and after partitioning?
 	       false,                 // do not test #partitions < #processes
 	       HYPERGRAPH_PARTITIONING,      // do graph partitioning
-	       SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
-	       NO_APPLICATION_SUPPLIED_WEIGHTS,  // go for default weights
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	       EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
     CHECK_FAILED();
@@ -972,8 +934,8 @@ int main(int argc, char** argv) {
 	       verbose,
 	       true,                 // test #partitions < #processes
 	       GRAPH_PARTITIONING,
-	       SUPPLY_UNEQUAL_WEIGHTS,
-	       SUPPLY_EQUAL_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	       EPETRA_CRSMATRIX);
 
     CHECK_FAILED();
@@ -982,8 +944,8 @@ int main(int argc, char** argv) {
 	       verbose,
 	       false,                 // do not test #partitions < #processes
 	       GRAPH_PARTITIONING,
-	       SUPPLY_EQUAL_WEIGHTS,
-	       SUPPLY_EQUAL_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	       EPETRA_LINEARPROBLEM);
 
     CHECK_FAILED();
@@ -1012,8 +974,8 @@ int main(int argc, char** argv) {
 	     verbose,
 	     true,                 // test #partitions < #processes
 	     HYPERGRAPH_PARTITIONING,
-	     SUPPLY_EQUAL_WEIGHTS,
-	     SUPPLY_UNEQUAL_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	     EPETRA_CRSGRAPH);
 
    CHECK_FAILED();
@@ -1022,8 +984,8 @@ int main(int argc, char** argv) {
 	     verbose,
 	     false,                 // do not test #partitions < #processes
 	     HYPERGRAPH_PARTITIONING,
-	     SUPPLY_UNEQUAL_WEIGHTS,
-	     SUPPLY_EQUAL_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	     EPETRA_ROWMATRIX);
 
    CHECK_FAILED();

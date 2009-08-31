@@ -161,15 +161,16 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
+  Epetra_CrsMatrix *balanced_matrix;
+
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsMatrix)..."
+      std::cout << " calling Isorropia::createBalancedCopy(Epetra_CrsMatrix)..."
                 << std::endl;
     }
 
     balanced_matrix =
-      Isorropia::Epetra::create_balanced_copy(*input_matrix,paramlist);
+      Isorropia::Epetra::createBalancedCopy(*input_matrix,paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -219,6 +220,8 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
     std::cout << "test FAILED!" << std::endl;
   }
 
+  delete balanced_matrix;
+
   return(test_passed);
 }
 
@@ -241,15 +244,15 @@ bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> balanced_matrix;
+  Epetra_RowMatrix *balanced_matrix;
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_RowMatrix)..."
+      std::cout << " calling Isorropia::createBalancedCopy(Epetra_RowMatrix)..."
                 << std::endl;
     }
 
     balanced_matrix =
-      Isorropia::Epetra::create_balanced_copy(*input_rowmatrix);
+      Isorropia::Epetra::createBalancedCopy(*input_rowmatrix);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -301,6 +304,8 @@ bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
     std::cout << "test FAILED!" << std::endl;
   }
 
+  delete balanced_matrix;
+
   return(test_passed);
 }
 
@@ -325,15 +330,15 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem;
+  Epetra_LinearProblem *balanced_problem;
 
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_LinearProblem)..."
+      std::cout << " calling Isorropia::createBalancedCopy(Epetra_LinearProblem)..."
                 << std::endl;
     }
 
-    balanced_problem = Isorropia::Epetra::create_balanced_copy(problem);
+    balanced_problem = Isorropia::Epetra::createBalancedCopy(problem);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -359,9 +364,7 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
     num_nonzeros += numrowentries;
   }
 
-  delete balanced_problem->GetMatrix();
-  delete balanced_problem->GetLHS();
-  delete balanced_problem->GetRHS();
+  delete balanced_problem;
 
   const Epetra_Comm& comm = input_matrix->Comm();
 
@@ -504,15 +507,15 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   //be the number of nonzeros in that row.
 
   Teuchos::ParameterList paramlist;
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
+  Epetra_CrsGraph * balanced_graph;
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsGraph)..."
+      std::cout << " calling Isorropia::createBalancedCopy(Epetra_CrsGraph)..."
                 << std::endl;
     }
 
     balanced_graph =
-      Isorropia::Epetra::create_balanced_copy(*input_graph, paramlist);
+      Isorropia::Epetra::createBalancedCopy(*input_graph, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -561,6 +564,8 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   if (!test_passed && verbose) {
     std::cout << "test FAILED!" << std::endl;
   }
+
+  delete balanced_graph;
 
   return(test_passed);
 }
