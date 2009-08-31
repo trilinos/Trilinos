@@ -55,6 +55,54 @@ PROBLEMS EXISTING IN PARMETIS
 (Reported to the ParMETIS development team at the University of Minnesota,
  metis@cs.umn.edu)
 
+Name: Free-memory write in PartGeomKway
+Version: ParMETIS 3.1.1
+Symptom: Free-memory write reported by Purify and Valgrind for graphs with
+         no edges.
+Description:
+  For input graphs with no (or, perhaps, few) edges, Purify and Valgrind
+  report writes to already freed memory as shown below.
+FMW: Free memory write:
+  * This is occurring while in thread 22199:
+        SetUp(void)    [setup.c:80]
+        PartitionSmallGraph(void) [weird.c:39]
+        ParMETIS_V3_PartGeomKway [gkmetis.c:214]
+        Zoltan_ParMetis [parmetis_interface.c:280]
+        Zoltan_LB      [lb_balance.c:384]
+        Zoltan_LB_Partition [lb_balance.c:91]
+        run_zoltan     [dr_loadbal.c:581]
+        main           [dr_main.c:386]
+        __libc_start_main [libc.so.6]
+        _start         [crt1.o]
+  * Writing 4 bytes to 0xfcd298 in the heap.
+  * Address 0xfcd298 is at the beginning of a freed block of 4 bytes.
+  * This block was allocated from thread -1781075296:
+        malloc         [rtlib.o]
+        GKmalloc(void) [util.c:151]
+        idxmalloc(void) [util.c:100]
+        AllocateWSpace [memory.c:28]
+        ParMETIS_V3_PartGeomKway [gkmetis.c:123]
+        Zoltan_ParMetis [parmetis_interface.c:280]
+        Zoltan_LB      [lb_balance.c:384]
+        Zoltan_LB_Partition [lb_balance.c:91]
+        run_zoltan     [dr_loadbal.c:581]
+        main           [dr_main.c:386]
+        __libc_start_main [libc.so.6]
+        _start         [crt1.o]
+  * There have been 10 frees since this block was freed from thread 22199:
+        GKfree(void)   [util.c:168]
+        Mc_MoveGraph(void) [move.c:92]
+        ParMETIS_V3_PartGeomKway [gkmetis.c:149]
+        Zoltan_ParMetis [parmetis_interface.c:280]
+        Zoltan_LB      [lb_balance.c:384]
+        Zoltan_LB_Partition [lb_balance.c:91]
+        run_zoltan     [dr_loadbal.c:581]
+        main           [dr_main.c:386]
+        __libc_start_main [libc.so.6]
+        _start         [crt1.o]
+Reported: Reported 8/31/09 http://glaros.dtc.umn.edu/flyspray/task/50
+Status:   Reported 8/31/09
+
 Name: PartGeom limitation
 Version: ParMETIS 3.0, 3.1
 Symptom: inaccurate number of partitions when # partitions != # processors
