@@ -29,12 +29,12 @@
 // @HEADER
 
 /** \file test_02.cpp
-\brief  Patch test for the Intrepid::Basis_HGRAD_TRI_C1_FEM class.
+\brief  Patch test for the Intrepid::Basis_HGRAD_TRI_C2_FEM class.
 \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
 #include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
+#include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                    Unit Test (Basis_HGRAD_TRI_C1_FEM)                       |\n" \
+    << "|                    Unit Test (Basis_HGRAD_TRI_C2_FEM)                       |\n" \
     << "|                                                                             |\n" \
     << "|     1) Patch test involving mass and stiffness matrices,                    |\n" \
     << "|        for the Neumann problem on a triangular patch                        |\n" \
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int max_order = 1;                                                               // max total order of polynomial solution
+    int max_order = 2;                                                               // max total order of polynomial solution
     DefaultCubatureFactory<double>  cubFactory;                                      // create cubature factory
     shards::CellTopology cell(shards::getCellTopologyData< shards::Triangle<> >());  // create parent cell topology
     shards::CellTopology side(shards::getCellTopologyData< shards::Line<> >());      // create relevant subcell (side) topology
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
 
           //create basis
           Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
-            Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM<double,FieldContainer<double> >() );
+            Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM<double,FieldContainer<double> >() );
           int numFields = basis->getCardinality();
 
           // create cubatures
