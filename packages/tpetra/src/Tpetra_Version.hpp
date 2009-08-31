@@ -33,7 +33,7 @@
 
 namespace Tpetra {
 
-	std::string Tpetra_Version();
+	std::string version();
 
 } // namespace Tpetra
 

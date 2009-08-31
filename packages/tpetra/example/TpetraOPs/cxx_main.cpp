@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   if(verbose) {
     cout << "\n===========================================================================================\n";
     cout << "== Tpetra OPerations" << endl;
-    cout << "== " << Tpetra::Tpetra_Version() << endl;
+    cout << "== " << Tpetra::version() << endl;
     cout << "===========================================================================================\n";
   }
 

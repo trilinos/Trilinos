@@ -122,6 +122,16 @@ struct OrdinalTraits<int> {
 };
 
 template<>
+struct OrdinalTraits<unsigned int> {
+  static const bool hasMachineParameters = false;
+  static inline unsigned int zero()                   {return(0);}
+  static inline unsigned int one()                    {return(1);}
+  static inline unsigned int invalid()                {return(std::numeric_limits<unsigned int>::max());}
+  static inline unsigned int max()                    {return(std::numeric_limits<unsigned int>::max()-1);}
+  static inline std::string name()           {return("unsigned int");}
+};
+
+template<>
 struct OrdinalTraits<long int> {
   static const bool hasMachineParameters = false;
   static inline long int zero()              {return(static_cast<long int>(0));}

@@ -741,7 +741,7 @@ namespace {
     // still numerically orthogonal even in finite arithmetic. norms are numImages.
     for (size_t j=0; j < numVectors; ++j) {
       mvec1.replaceLocalValue(0,j,ScalarTraits<Scalar>::one());
-      mvec2.replaceGlobalValue(map->getGlobalIndex(1),j,ScalarTraits<Scalar>::one());
+      mvec2.replaceGlobalValue(map->getGlobalElement(1),j,ScalarTraits<Scalar>::one());
     }
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());
@@ -759,7 +759,7 @@ namespace {
     // still numerically orthogonal even in finite arithmetic. norms are 2*numImages.
     for (size_t j=0; j < numVectors; ++j) {
       mvec1.sumIntoLocalValue(1,j,ScalarTraits<Scalar>::one());
-      mvec2.sumIntoGlobalValue(map->getGlobalIndex(0),j,-ScalarTraits<Scalar>::one());
+      mvec2.sumIntoGlobalValue(map->getGlobalElement(0),j,-ScalarTraits<Scalar>::one());
     }
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());

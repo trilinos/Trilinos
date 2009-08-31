@@ -274,6 +274,38 @@ struct ScalarTraits<int>
 };
 
 template<>
+struct ScalarTraits<unsigned int>
+{
+  typedef unsigned int magnitudeType;
+  typedef unsigned int halfPrecision;
+  typedef unsigned int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(unsigned int a) { return static_cast<unsigned int>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned int zero()  { return 0; }
+  static inline unsigned int one()   { return 1; }
+  static inline unsigned int conjugate(unsigned int x) { return x; }
+  static inline unsigned int real(unsigned int x) { return x; }
+  static inline unsigned int imag(unsigned int) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline unsigned int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "unsigned int"; }
+  static inline unsigned int squareroot(unsigned int x) { return (unsigned int) std::sqrt((double) x); }
+  static inline unsigned int pow(unsigned int x, unsigned int y) { return (unsigned int) std::pow((double)x,(double)y); }
+};
+
+template<>
 struct ScalarTraits<long int>
 {
   typedef long int magnitudeType;

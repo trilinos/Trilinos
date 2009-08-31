@@ -57,7 +57,7 @@ namespace Tpetra
       virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const = 0;
 
       //! Return the underlying node.
-      virtual const Teuchos::RCP<Node> & getNode() const = 0;
+      virtual Teuchos::RCP<Node> getNode() const = 0;
 
       //! Returns the Map that describes the row distribution in this graph.
       virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const = 0;
@@ -73,10 +73,10 @@ namespace Tpetra
       virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
       //! Returns the importer associated with this graph.
-      virtual const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > & getImporter() const = 0;
+      virtual Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const = 0;
 
       //! Returns the exporter associated with this graph.
-      virtual const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > & getExporter() const = 0;
+      virtual Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const = 0;
 
       //! Returns the number of global rows in the graph.
       virtual global_size_t getGlobalNumRows() const = 0;

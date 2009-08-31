@@ -126,11 +126,11 @@ namespace Tpetra {
 
     //! \brief Return the local index for a given global index
     /*! If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
-    LocalOrdinal getLocalIndex(GlobalOrdinal globalIndex) const;
+    LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
 
     //! Return the global index for a given local index
     /*! If the local index is not valid for this node, returns Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(). */
-    GlobalOrdinal getGlobalIndex(LocalOrdinal localIndex) const;
+    GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
     /*! 

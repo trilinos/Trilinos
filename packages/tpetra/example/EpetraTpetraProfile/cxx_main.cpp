@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 		cout << "\n===========================================================================================\n";
 		cout << "== Epetra Tpetra Profile" << endl;
 		cout << "== " << Epetra_Version() << endl;
-		cout << "== " << Tpetra::Tpetra_Version() << endl;
+		cout << "== " << Tpetra::version() << endl;
 		cout << "===========================================================================================\n";
 	}
 	

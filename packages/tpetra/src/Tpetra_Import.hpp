@@ -309,13 +309,13 @@ namespace Tpetra {
       if (source.isNodeGlobalElement(*targetIter)) {
         // both source and target list this GID (*targetIter)
         // determine the LIDs for this GID on both Maps and add them to the permutation lists
-        ImportData_->permuteToLIDs_.push_back(target.getLocalIndex(*targetIter));
-        ImportData_->permuteFromLIDs_.push_back(source.getLocalIndex(*targetIter));
+        ImportData_->permuteToLIDs_.push_back(target.getLocalElement(*targetIter));
+        ImportData_->permuteFromLIDs_.push_back(source.getLocalElement(*targetIter));
       }
       else {
         // this GID is on another processor; store it, along with its destination LID on this processor
         remoteGIDs_->push_back(*targetIter);
-        ImportData_->remoteLIDs_.push_back(target.getLocalIndex(*targetIter));
+        ImportData_->remoteLIDs_.push_back(target.getLocalElement(*targetIter));
       }
     }
 
@@ -355,7 +355,7 @@ namespace Tpetra {
     typename Teuchos::ArrayRCP<GlobalOrdinal>::const_iterator src = exportGIDs.begin();
     while (src != exportGIDs.end())
     {
-      (*dst++) = source.getLocalIndex(*src++);
+      (*dst++) = source.getLocalElement(*src++);
     }
   }
 

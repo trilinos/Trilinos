@@ -1505,7 +1505,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::replaceGlobalValue(GlobalOrdinal GlobalRow, size_t VectorIndex, const Scalar &ScalarValue)
   {
-    LocalOrdinal MyRow = this->getMap()->getLocalIndex(GlobalRow);
+    LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         "Tpetra::MultiVector::replaceGlobalValue(): row index is not present on this processor.");
@@ -1519,7 +1519,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMV, class LocalMVTraits>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>::sumIntoGlobalValue(GlobalOrdinal GlobalRow, size_t VectorIndex, const Scalar &ScalarValue)
   {
-    LocalOrdinal MyRow = this->getMap()->getLocalIndex(GlobalRow);
+    LocalOrdinal MyRow = this->getMap()->getLocalElement(GlobalRow);
 #ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         "Tpetra::MultiVector::sumIntoGlobalValue(): row index is not present on this processor.");
@@ -1597,7 +1597,7 @@ namespace Tpetra {
                                           MVT::getValues(lclMV_) );
                   // VERB_EXTREME prints values
                   for (size_t i=0; i<getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalIndex(i) << ": ";
+                    out << setw(width) << this->getMap()->getGlobalElement(i) << ": ";
                     for (size_t j=0; j<getNumVectors(); ++j) {
                       out << myview[j*getStride()] << "  ";
                     }
@@ -1614,7 +1614,7 @@ namespace Tpetra {
                     node->template viewBuffer<Scalar>( rows + stride * (cols - 1), MVT::getValues(lclMV_) );
                   // VERB_EXTREME prints values
                   for (size_t i=0; i<getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalIndex(i) << ": ";
+                    out << setw(width) << this->getMap()->getGlobalElement(i) << ": ";
                     for (size_t j=0; j<getNumVectors(); ++j) {
                       out << myview[whichVectors_[j]*stride + i] << "  ";
                     }

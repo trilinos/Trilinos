@@ -18,7 +18,6 @@
 
 namespace {
 
-  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -38,12 +37,8 @@ namespace {
   using std::max;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  using Teuchos::NO_TRANS;
-  using Teuchos::TRANS;
-  using Teuchos::CONJ_TRANS;
   using Tpetra::CrsGraph;
   using Tpetra::RowGraph;
-  using Tpetra::Import;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
@@ -120,16 +115,16 @@ namespace {
     RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
     {
       // bad constructor
-      TEST_THROW( GRAPH badgraph(map,-1), std::runtime_error ); // allocation hint must be >= 0
+      TEST_THROW( GRAPH badgraph(map,INVALID), std::runtime_error ); // allocation hint must be >= 0
     }
     {
       // bad constructor
       ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
-      hints[0] = -1;    // invalid
+      hints[0] = INVALID;
       TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::runtime_error ); // too many
       TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::runtime_error ); // too few
-      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal))  , std::runtime_error ); // one is invalid
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal)),   std::runtime_error ); // too few
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -242,7 +237,7 @@ namespace {
     const GO indexBase = 0;
     const size_t numLocal = 1;
     RCP<const Map<LO,GO,Node> > rmap = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
-    GO myrowind = rmap->getGlobalIndex(0);
+    GO myrowind = rmap->getGlobalElement(0);
     // specify the column map to control ordering
     // construct tridiagonal graph
     Array<GO> ginds(0);
@@ -274,15 +269,15 @@ namespace {
       ArrayRCP<const LO> LView;
       size_t numindices;
       // at this point, there are no global or local indices, but views and copies should succeed
-      trigraph.extractLocalRowCopy(0,LCopy,numindices);
+      trigraph.getLocalRowCopy(0,LCopy,numindices);
       LView = trigraph.getLocalRowView(0);
-      trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices);
+      trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
       GView = trigraph.getGlobalRowView(myrowind);
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
       for (size_t j=0; j < ginds.size(); ++j) {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
-      TEST_EQUALITY( trigraph.getNumEntriesInGlobalRow(0), trigraph.getNumAllocatedEntriesForLocalRow(0) ); // test that we only allocated as much room as necessary
+      TEST_EQUALITY( trigraph.getNumEntriesInGlobalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
       // if static graph, insert one additional entry on my row and verify that an exception is thrown
       if (pftype == StaticProfile) {
         TEST_THROW( trigraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
@@ -294,14 +289,14 @@ namespace {
         TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
       }
       // check for throws and no-throws/values
-      TEST_THROW( trigraph.getGlobalRow(myrowind,GView    ), std::runtime_error );
-      TEST_THROW( trigraph.extractLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
-      TEST_THROW( trigraph.extractGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-      TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
+      TEST_THROW( GView = trigraph.getGlobalRowView(myrowind), std::runtime_error );
+      TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
+      TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
+      TEST_NOTHROW( LView = trigraph.getLocalRowView(0) );
       TEST_COMPARE_ARRAYS( LView, linds );
-      TEST_NOTHROW( trigraph.extractLocalRowCopy(0,LCopy,numindices) );
+      TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
       TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
-      TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices) );
+      TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
       TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
       STD_TESTS(trigraph);
     }
@@ -395,22 +390,22 @@ namespace {
     const GO indexBase = 0;
     const size_t numLocal = 3;
     RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
-    GO mymiddle = map->getGlobalIndex(1);  // get my middle row
+    GO mymiddle = map->getGlobalElement(1);  // get my middle row
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
       {
         // create a diagonal graph, where only my middle row has an entry
         // let node i contribute to row i+1, where node the last node contributes to row 0
-        Array<size_t> toalloc(3,0);
-        toalloc[1] = 1;
+        ArrayRCP<size_t> toalloc = arcp<size_t>(3);
+        toalloc[0] = 0; toalloc[1] = 1; toalloc[2] = 0;
         GRAPH ddgraph(map,toalloc,pftype);
         ddgraph.insertGlobalIndices(mymiddle, arrayView(&mymiddle,1));
         // before globalAssemble(), there should be one local entry on middle, none on the others
-        ArrayView<const GO> myrow_gbl;
-        ddgraph.getGlobalRow(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        ddgraph.getGlobalRow(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&mymiddle,1) );
-        ddgraph.getGlobalRow(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        ArrayRCP<const GO> myrow_gbl;
+        myrow_gbl = ddgraph.getGlobalRowView(mymiddle-1); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        myrow_gbl = ddgraph.getGlobalRowView(mymiddle  ); TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&mymiddle,1) );
+        myrow_gbl = ddgraph.getGlobalRowView(mymiddle+1); TEST_EQUALITY( myrow_gbl.size(), 0 );
         if (pftype == StaticProfile) { // no room for more, on any row
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,arrayView(&mymiddle,1)), std::runtime_error );
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,arrayView(&mymiddle,1)), std::runtime_error );
@@ -418,18 +413,18 @@ namespace {
         }
         ddgraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
-        ArrayView<const LO> myrow_lcl;
+        ArrayRCP<const LO> myrow_lcl;
         TEST_EQUALITY_CONST( ddgraph.getNumEntriesInGlobalRow(0), 0 );
         TEST_EQUALITY_CONST( ddgraph.getNumEntriesInGlobalRow(2), 0 );
-        ddgraph.getLocalRowView(1,myrow_lcl);
+        myrow_lcl = ddgraph.getLocalRowView(1);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( ddgraph.getColMap()->getGlobalIndex(myrow_lcl[0]), mymiddle );
+          TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
         }
         // also, the row map and column map should be equivalent
-        TEST_EQUALITY( ddgraph.getGlobalNumCols(), 3*numImages );
-        TEST_EQUALITY( ddgraph.getGlobalNumRows(), 3*numImages );
-        TEST_EQUALITY( ddgraph.getGlobalNumDiags(), numImages );
+        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumRows(), (size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumDiags(), (size_t)numImages );
         TEST_EQUALITY_CONST( ddgraph.getNodeNumDiags(), 1 );
         STD_TESTS(ddgraph);
       }
@@ -455,7 +450,7 @@ namespace {
     const GO indexBase = 0;
     const size_t numLocal = 1;
     RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
-    GO myrowind = map->getGlobalIndex(0);
+    GO myrowind = map->getGlobalElement(0);
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
@@ -482,7 +477,7 @@ namespace {
         ArrayRCP<const LO> myrow_lcl = diaggraph.getLocalRowView(0);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( diaggraph.getColMap()->getGlobalIndex(myrow_lcl[0]), myrowind );
+          TEST_EQUALITY( diaggraph.getColMap()->getGlobalElement(myrow_lcl[0]), myrowind );
         }
         // also, the row map and column map should be equivalent
         TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
@@ -509,7 +504,7 @@ namespace {
         ArrayRCP<const GO> myrow_gbl = ngraph.getGlobalRowView(myrowind);
         TEST_EQUALITY_CONST( myrow_gbl.size(), (numImages == 1 ? 3 : 1) );
         ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
-        TEST_EQUALITY( ngraph.getNumEntriesInGlobalRow(0), ngraph.getNumAllocatedEntriesForLocalRow(0) );
+        TEST_EQUALITY( ngraph.getNumEntriesInGlobalRow(0), ngraph.getNumAllocatedEntriesInLocalRow(0) );
         if (pftype == StaticProfile) {
           TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
         }
@@ -523,20 +518,20 @@ namespace {
           glast = unique(grows.begin(),grows.end());
           size_t numunique = glast - grows.begin();
           // test the test: numunique == min(numImages,3)
-          TEST_EQUALITY( numunique, min(numImages,3) );
-          TEST_EQUALITY_CONST( myrow_lcl.size(), numunique );
-          if (myrow_lcl.size() == numunique) {
+          TEST_EQUALITY( numunique, (size_t)min(numImages,3) );
+          TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
+          if ((size_t)myrow_lcl.size() == numunique) {
             size_t numinds;
             Array<GO> inds(numunique+1);
-            TEST_THROW(   ngraph.extractGlobalRowCopy(myrowind,inds(0,numunique-1),numinds), std::runtime_error );
-            TEST_NOTHROW( ngraph.extractGlobalRowCopy(myrowind,inds(0,numunique),numinds) );
-            TEST_NOTHROW( ngraph.extractGlobalRowCopy(myrowind,inds(),numinds) );
-            sort(inds.begin(),inds.begin()+numinds);
+            TEST_THROW(   ngraph.getGlobalRowCopy(myrowind,inds(0,numunique-1), numinds), std::runtime_error );
+            TEST_NOTHROW( ngraph.getGlobalRowCopy(myrowind,inds(0,numunique), numinds) );
+            TEST_NOTHROW( ngraph.getGlobalRowCopy(myrowind,inds(), numinds) );
+            sort(inds.begin(), inds.begin()+numinds);
             TEST_COMPARE_ARRAYS( inds(0,numinds), grows(0,numunique) );
           }
         }
         TEST_EQUALITY_CONST( ngraph.getRowMap()->isSameAs(*ngraph.getColMap()), (numImages==1 ? true : false) );
-        TEST_EQUALITY( ngraph.getGlobalNumDiags(), numImages );
+        TEST_EQUALITY( ngraph.getGlobalNumDiags(), (size_t)numImages );
         TEST_EQUALITY( ngraph.getNodeNumDiags(), 1 );
         STD_TESTS(ngraph);
       }
@@ -554,7 +549,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraph, LO, GO ) \

@@ -304,8 +304,8 @@ namespace Tpetra {
       if(target.isNodeGlobalElement(*sourceIter)) {
         // both source and target list this GID (*targetIter)
         // determine the LIDs for this GID on both Maps and add them to the permutation lists
-        ExportData_->permuteToLIDs_.push_back(  target.getLocalIndex(*sourceIter));
-        ExportData_->permuteFromLIDs_.push_back(source.getLocalIndex(*sourceIter));
+        ExportData_->permuteToLIDs_.push_back(  target.getLocalElement(*sourceIter));
+        ExportData_->permuteFromLIDs_.push_back(source.getLocalElement(*sourceIter));
       }
       else {
         ExportData_->exportGIDs_.push_back(*sourceIter);
@@ -323,7 +323,7 @@ namespace Tpetra {
       typename Teuchos::ArrayRCP<LocalOrdinal>::iterator liditer = ExportData_->exportLIDs_.begin();
       typename Teuchos::Array<GlobalOrdinal>::iterator    giditer = ExportData_->exportGIDs_.begin();
       for (; giditer != ExportData_->exportGIDs_.end(); ++liditer, ++giditer) {
-        *liditer = source.getLocalIndex(*giditer);
+        *liditer = source.getLocalElement(*giditer);
       }
     }
     TEST_FOR_EXCEPTION( target.getRemoteIndexList(ExportData_->exportGIDs_(), ExportData_->exportImageIDs_()) == true,
@@ -358,7 +358,7 @@ namespace Tpetra {
       typename Teuchos::Array<LocalOrdinal>::iterator       j = ExportData_->remoteLIDs_.begin();
       while (i != remoteGIDs.end()) 
       {
-        *j++ = target.getLocalIndex(*i++);
+        *j++ = target.getLocalElement(*i++);
       }
     }
   }

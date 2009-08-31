@@ -232,7 +232,7 @@ namespace Tpetra {
                                                                MVT::getValues(this->lclMV_) );
                 // VERB_EXTREME prints values
                 for (size_t i=0; i<this->getLocalLength(); ++i) {
-                  out << setw(width) << this->getMap()->getGlobalIndex(i) 
+                  out << setw(width) << this->getMap()->getGlobalElement(i) 
                       << ": "
                       << myview[i] << endl;
                 }

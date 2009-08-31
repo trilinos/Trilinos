@@ -40,6 +40,8 @@ namespace Kokkos {
   template <class Ordinal, class Node = DefaultNode::DefaultNodeType>  
   class CrsGraph {
 
+    public:
+
     //! @name Constructors/Destructor
 
     //! Default CrsGraph constuctor.
@@ -71,7 +73,23 @@ namespace Kokkos {
 
     //@}
 
+  private:
+    Teuchos::RCP<Node> node_;
   };
+
+  template <class Ordinal, class Node>
+  CrsGraph<Ordinal,Node>::CrsGraph(const Teuchos::RCP<Node> &node) 
+  : node_(node) {
+  }
+
+  template <class Ordinal, class Node>
+  CrsGraph<Ordinal,Node>::~CrsGraph() {
+  }
+
+  template <class Ordinal, class Node>
+  Teuchos::RCP<Node> CrsGraph<Ordinal,Node>::getNode() const {
+    return node_;
+  }
 
 }
 

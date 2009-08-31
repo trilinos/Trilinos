@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 {
   cout << "*** Starting verySimple example..." << endl;
 
-  cout << Tpetra::Tpetra_Version() << endl;
+  cout << Tpetra::version() << endl;
 
   // test OutputObject
   cout << "*** Creating OutputObject..." << endl;
