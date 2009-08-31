@@ -7,9 +7,9 @@
 
 EXTRA_ARGS=$@
 
-if [ "$TRILINOS_HOME" == "" ] ; then
-  TRILINOS_HOME=/home/rabartl/PROJECTS/Trilinos.base/Trilinos
-fi
+#
+# Set up basic environment options
+#
 
 echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
 
@@ -19,6 +19,13 @@ echo "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"     >  SERIAL_RELEASE.config
 echo "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"       >> SERIAL_RELEASE.config
 echo "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77" >> SERIAL_RELEASE.config
 
-$TRILINOS_HOME/cmake/python/checkin-test.py \
+
+#
+# Run the checkin-test.py script with more arguments
+#
+
+
+/home/rabartl/PROJECTS/Trilinos.base/Trilinos/cmake/python/checkin-test.py \
 --make-options="-j4" \
+--ctest-options="-j4" \
 $EXTRA_ARGS  
