@@ -693,7 +693,7 @@ namespace Tpetra {
     for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
       ++width;
     }
-    width = std::max<size_t>(width,14);
+    width = std::max<size_t>(width,12) + 2;
 
     Teuchos::OSTab tab(out);
 
@@ -721,7 +721,7 @@ namespace Tpetra {
             out << endl;
           }
           if (vl == VERB_EXTREME) {
-            out << std::setw(width) << "ImageID"
+            out << std::setw(width) << "Node ID"
                 << std::setw(width) << "Local Index"
                 << std::setw(width) << "Global Index"
                 << endl;

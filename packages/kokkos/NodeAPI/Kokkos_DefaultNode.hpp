@@ -19,11 +19,11 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_THREADPOOL
       typedef TPINode DefaultNodeType;
 #else
-#  ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOS_TBB
       typedef TBBNode DefaultNodeType;
-#  else
+#else
       typedef SerialNode DefaultNodeType;
-#  endif
+#endif
 #endif
 
       static Teuchos::RCP<DefaultNodeType> getDefaultNode();
@@ -31,6 +31,7 @@ namespace Kokkos {
     private:
       static Teuchos::RCP<DefaultNodeType> node_;
   };
+
 }
 
 #endif

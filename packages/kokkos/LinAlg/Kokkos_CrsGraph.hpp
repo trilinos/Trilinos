@@ -42,11 +42,20 @@ namespace Kokkos {
 
     //! @name Constructors/Destructor
 
-    //! Default CrsMatrix constuctor.
+    //! Default CrsGraph constuctor.
     CrsGraph(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
 
-    //! CrsMatrix Destructor
-    ~CrsMatrix();
+    //! CrsGraph Destructor
+    ~CrsGraph();
+
+    //@}
+
+    //@{
+
+    //! @name Accessor routines.
+    
+    //! Node accessor.
+    Teuchos::RCP<Node> getNode() const;
 
     //@}
 
@@ -55,11 +64,15 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    void initializeProfile(Ordinal N, size_t nnzEachRow);
+    void initializeProfile(size_t N, size_t nnzEachRow);
 
     //! Initialize structure of matrix
-    void initializeProfile(Ordinal N, const size_t *nnzPerRow);
+    void initializeProfile(size_t N, const size_t *nnzPerRow);
 
     //@}
 
   };
+
+}
+
+#endif

@@ -33,6 +33,8 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_MapDecl.hpp"
 
@@ -52,7 +54,7 @@ namespace Tpetra
       //@{ 
 
       //! Returns the communicator.
-      virtual const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
+      virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const = 0;
 
       //! Return the underlying node.
       virtual const Teuchos::RCP<Node> & getNode() const = 0;
@@ -71,10 +73,10 @@ namespace Tpetra
       virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
       //! Returns the importer associated with this graph.
-      virtual Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const = 0;
+      virtual const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > & getImporter() const = 0;
 
       //! Returns the exporter associated with this graph.
-      virtual Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const = 0;
+      virtual const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > & getExporter() const = 0;
 
       //! Returns the number of global rows in the graph.
       virtual global_size_t getGlobalNumRows() const = 0;

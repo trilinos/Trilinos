@@ -23,10 +23,11 @@ namespace {
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Tpetra::Map;
+  using Tpetra::OptimizeOption;
+  using Tpetra::DoOptimizeStorage;
+  using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
-  using std::vector;
   using std::sort;
-  using Teuchos::arrayViewFromVector;
   using Teuchos::arrayView;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
@@ -42,12 +43,12 @@ namespace {
   using Teuchos::CONJ_TRANS;
   using Tpetra::CrsGraph;
   using Tpetra::RowGraph;
-  using Tpetra::INSERT;
   using Tpetra::Import;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
   using Tpetra::global_size_t;
+  using Teuchos::arcp;
   using std::string;
   using std::unique;
   using Teuchos::tuple;
@@ -61,14 +62,14 @@ namespace {
 #define STD_TESTS(graph) \
   { \
     RCP<const Comm<int> > STCOMM = graph.getComm(); \
-    ArrayView<const GO> STMYGIDS = graph.getRowMap().getMyGlobalEntries(); \
-    Teuchos_Ordinal STMAX = 0; \
-    for (Teuchos_Ordinal STR=0; STR<graph.getNodeNumRows(); ++STR) { \
-      TEST_EQUALITY( graph.getNumEntriesForGlobalRow(STR), graph.getNumEntriesForGlobalRow( STMYGIDS[STR] ) ); \
-      STMAX = std::max( STMAX, graph.getNumEntriesForGlobalRow(STR) ); \
+    ArrayView<const GO> STMYGIDS = graph.getRowMap()->getNodeElementList(); \
+    size_t STMAX = 0; \
+    for (size_t STR=0; STR<graph.getNodeNumRows(); ++STR) { \
+      TEST_EQUALITY( graph.getNumEntriesInGlobalRow(STR), graph.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
+      STMAX = std::max( STMAX, graph.getNumEntriesInGlobalRow(STR) ); \
     } \
-    TEST_EQUALITY( graph.getLocalMaxNumRowEntries(), STMAX ); \
-    Teuchos_Ordinal STGMAX; \
+    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
+    size_t STGMAX; \
     reduceAll( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
     TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
   }
@@ -105,7 +106,6 @@ namespace {
   // UNIT TESTS
   // 
 
-
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, BadConst, LO, GO )
   {
@@ -120,16 +120,16 @@ namespace {
     RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
     {
       // bad constructor
-      TEST_THROW( GRAPH badgraph(node,node,map,-1), std::runtime_error ); // allocation hint must be >= 0
+      TEST_THROW( GRAPH badgraph(map,-1), std::runtime_error ); // allocation hint must be >= 0
     }
     {
       // bad constructor
-      Array<Teuchos_Ordinal> hints(numLocal+1);
+      ArrayRCP<size_t> hints = arcp<size_t>(numLocal+1);
       std::fill(hints.begin(),hints.end(),1);
       hints[0] = -1;    // invalid
-      TEST_THROW( GRAPH badgraph(node,map,hints(0,numLocal+1)), std::runtime_error ); // too many
-      TEST_THROW( GRAPH badgraph(node,map,hints(0,numLocal-1)), std::runtime_error ); // too few
-      TEST_THROW( GRAPH badgraph(node,map,hints(0,numLocal))  , std::runtime_error ); // one is invalid
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal+1)), std::runtime_error ); // too many
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal-1)), std::runtime_error ); // too few
+      TEST_THROW( GRAPH badgraph(map,hints.persistingView(0,numLocal))  , std::runtime_error ); // one is invalid
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -155,8 +155,8 @@ namespace {
       Array<GO> gids(1);
       gids[0] = myImageID*numLocal+numLocal;    // off this node, except on the last proc, where it is off the map
       // bad gid on the last node (not in domain map), discovered at fillComplete()
-      GRAPH goodgraph(node,map,1);
-      goodgraph.insertGlobalIndices(map.getMinGlobalIndex(),gids());
+      GRAPH goodgraph(map,1);
+      goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
       TEST_THROW( goodgraph.fillComplete(), std::runtime_error );
     }
     {
@@ -169,11 +169,11 @@ namespace {
       }
       // bad gid on the last node (not in column map)
       // this gid doesn't throw an exception; it is ignored, because the column map acts as a filter
-      GRAPH goodgraph(node,map,map,1);
-      goodgraph.insertGlobalIndices(map.getMinGlobalIndex(),gids());
+      GRAPH goodgraph(map,map,1);
+      goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
       goodgraph.fillComplete();
-      TEST_EQUALITY( goodgraph.getNumEntriesForGlobalRow(map.getMinGlobalIndex()),
-                     (myImageID == numImages-1) ? 0 : 1 );
+      TEST_EQUALITY( goodgraph.getNumEntriesInGlobalRow(map->getMinGlobalIndex()),
+                     (size_t)(myImageID == numImages-1 ? 0 : 1) );
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -206,16 +206,16 @@ namespace {
         lids[0] = 0;
       }
       {
-        GRAPH diaggraph(node,map,map,1);
+        GRAPH diaggraph(map,map,1);
         TEST_EQUALITY(diaggraph.hasColMap(), true);
         // insert on bad row
-        TEST_THROW(diaggraph.insertMyIndices(numLocal,lids()), std::runtime_error);
+        TEST_THROW(diaggraph.insertLocalIndices(numLocal,lids()), std::runtime_error);
       }
       {
-        GRAPH diaggraph(node,map,map,1);
+        GRAPH diaggraph(map,map,1);
         TEST_EQUALITY(diaggraph.hasColMap(), true);
-        diaggraph.insertMyIndices(0,lids());
-        TEST_EQUALITY( diaggraph.getNumEntriesForGlobalRow(0), (myImageID == numImages-1) ? 0 : 1 );
+        diaggraph.insertLocalIndices(0,lids());
+        TEST_EQUALITY( diaggraph.getNumEntriesInGlobalRow(0), (size_t)(myImageID == numImages-1 ? 0 : 1) );
       }
     }
     // All procs fail if any node fails
@@ -242,7 +242,7 @@ namespace {
     const GO indexBase = 0;
     const size_t numLocal = 1;
     RCP<const Map<LO,GO,Node> > rmap = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
-    GO myrowind = rmap.getGlobalIndex(0);
+    GO myrowind = rmap->getGlobalIndex(0);
     // specify the column map to control ordering
     // construct tridiagonal graph
     Array<GO> ginds(0);
@@ -268,20 +268,21 @@ namespace {
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
-      GRAPH trigraph(node,rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
+      GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4);
-      ArrayView<const GO> GView; ArrayView<const LO> LView;
-      Teuchos_Ordinal numindices;
+      ArrayRCP<const GO> GView; 
+      ArrayRCP<const LO> LView;
+      size_t numindices;
       // at this point, there are no global or local indices, but views and copies should succeed
-      trigraph.extractMyRowCopy(0,LCopy,numindices);
-      trigraph.extractMyRowConstView(0,LView);
+      trigraph.extractLocalRowCopy(0,LCopy,numindices);
+      LView = trigraph.getLocalRowView(0);
       trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices);
-      trigraph.extractGlobalRowConstView(myrowind,GView);
+      GView = trigraph.getGlobalRowView(myrowind);
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
-      for (Teuchos_Ordinal j=0; j<(Teuchos_Ordinal)ginds.size(); ++j) {
+      for (size_t j=0; j < ginds.size(); ++j) {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
-      TEST_EQUALITY( trigraph.getNumEntriesForGlobalRow(0), trigraph.getNumAllocatedEntriesForLocalRow(0) ); // test that we only allocated as much room as necessary
+      TEST_EQUALITY( trigraph.getNumEntriesInGlobalRow(0), trigraph.getNumAllocatedEntriesForLocalRow(0) ); // test that we only allocated as much room as necessary
       // if static graph, insert one additional entry on my row and verify that an exception is thrown
       if (pftype == StaticProfile) {
         TEST_THROW( trigraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
@@ -293,12 +294,12 @@ namespace {
         TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
       }
       // check for throws and no-throws/values
-      TEST_THROW( trigraph.extractGlobalRowConstView(myrowind,GView    ), std::runtime_error );
-      TEST_THROW( trigraph.extractMyRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
+      TEST_THROW( trigraph.getGlobalRow(myrowind,GView    ), std::runtime_error );
+      TEST_THROW( trigraph.extractLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
       TEST_THROW( trigraph.extractGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-      TEST_NOTHROW( trigraph.extractMyRowConstView(0,LView) );
+      TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
       TEST_COMPARE_ARRAYS( LView, linds );
-      TEST_NOTHROW( trigraph.extractMyRowCopy(0,LCopy,numindices) );
+      TEST_NOTHROW( trigraph.extractLocalRowCopy(0,LCopy,numindices) );
       TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
       TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices) );
       TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
@@ -327,7 +328,7 @@ namespace {
     {
       // add too many entries to a static graph
       // let node i contribute to row i+1, where node the last node contributes to row 0
-      GRAPH diaggraph(node,map,1,StaticProfile);
+      GRAPH diaggraph(map,1,StaticProfile);
       GO grow = myImageID;
       Array<GO> colinds(1);
       colinds[0] = grow;
@@ -356,24 +357,24 @@ namespace {
     RCP<RowGraph<LO,GO> > zero;
     {
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
-      zero_crs->fillComplete(true);
+      zero_crs->fillComplete(DoOptimizeStorage);
       zero = zero_crs;
     }
     RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
-    TEST_EQUALITY( cmap.getGlobalNumEntries(), 0 );
+    TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
     TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
     TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
     TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
     TEST_EQUALITY( zero->getNodeNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );
-    TEST_EQUALITY( zero->upperTriangular(), true );
-    TEST_EQUALITY( zero->lowerTriangular(), true );
+    TEST_EQUALITY( zero->isUpperTriangular(), true );
+    TEST_EQUALITY( zero->isLowerTriangular(), true );
     TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
     TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
     TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
     TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
     TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-    TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
+    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
     STD_TESTS((*zero));
 
     // All procs fail if any proc fails
@@ -394,22 +395,22 @@ namespace {
     const GO indexBase = 0;
     const size_t numLocal = 3;
     RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
-    GO mymiddle = map.getGlobalIndex(1);  // get my middle row
+    GO mymiddle = map->getGlobalIndex(1);  // get my middle row
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
       {
         // create a diagonal graph, where only my middle row has an entry
         // let node i contribute to row i+1, where node the last node contributes to row 0
-        Array<Teuchos_Ordinal> toalloc(3,0);
+        Array<size_t> toalloc(3,0);
         toalloc[1] = 1;
-        GRAPH ddgraph(node,map,toalloc,pftype);
+        GRAPH ddgraph(map,toalloc,pftype);
         ddgraph.insertGlobalIndices(mymiddle, arrayView(&mymiddle,1));
         // before globalAssemble(), there should be one local entry on middle, none on the others
         ArrayView<const GO> myrow_gbl;
-        ddgraph.extractGlobalRowConstView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        ddgraph.extractGlobalRowConstView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&mymiddle,1) );
-        ddgraph.extractGlobalRowConstView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        ddgraph.getGlobalRow(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        ddgraph.getGlobalRow(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&mymiddle,1) );
+        ddgraph.getGlobalRow(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
         if (pftype == StaticProfile) { // no room for more, on any row
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,arrayView(&mymiddle,1)), std::runtime_error );
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,arrayView(&mymiddle,1)), std::runtime_error );
@@ -418,12 +419,12 @@ namespace {
         ddgraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
         ArrayView<const LO> myrow_lcl;
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesForGlobalRow(0), 0 );
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesForGlobalRow(2), 0 );
-        ddgraph.extractMyRowConstView(1,myrow_lcl);
+        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInGlobalRow(0), 0 );
+        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInGlobalRow(2), 0 );
+        ddgraph.getLocalRowView(1,myrow_lcl);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( ddgraph.getColMap().getGlobalIndex(myrow_lcl[0]), mymiddle );
+          TEST_EQUALITY( ddgraph.getColMap()->getGlobalIndex(myrow_lcl[0]), mymiddle );
         }
         // also, the row map and column map should be equivalent
         TEST_EQUALITY( ddgraph.getGlobalNumCols(), 3*numImages );
@@ -454,43 +455,41 @@ namespace {
     const GO indexBase = 0;
     const size_t numLocal = 1;
     RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
-    GO myrowind = map.getGlobalIndex(0);
+    GO myrowind = map->getGlobalIndex(0);
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
       {
         // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
         // let node i contribute to row i+1, where node the last node contributes to row 0
-        GRAPH diaggraph(node,map,1,pftype);
+        GRAPH diaggraph(map,1,pftype);
         GO grow = myImageID+1;
         if (grow == numImages) {
           grow = 0;
         }
         diaggraph.insertGlobalIndices(grow, arrayView(&grow,1));
         // before globalAssemble(), there should be no local entries if numImages > 1
-        ArrayView<const GO> myrow_gbl;
-        diaggraph.extractGlobalRowConstView(myrowind,myrow_gbl);
+        ArrayRCP<const GO> myrow_gbl = diaggraph.getGlobalRowView(myrowind);
         TEST_EQUALITY( myrow_gbl.size(), (numImages == 1 ? 1 : 0) );
         diaggraph.globalAssemble();   // after globalAssemble(), there should be one local entry per row, corresponding to the diagonal
-        diaggraph.extractGlobalRowConstView(myrowind,myrow_gbl);
+        myrow_gbl = diaggraph.getGlobalRowView(myrowind);
         TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&myrowind,1) );
         if (pftype == StaticProfile) { // no room for more
           TEST_THROW( diaggraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
         }
         diaggraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
-        ArrayView<const LO> myrow_lcl;
-        diaggraph.extractMyRowConstView(0,myrow_lcl);
+        ArrayRCP<const LO> myrow_lcl = diaggraph.getLocalRowView(0);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( diaggraph.getColMap().getGlobalIndex(myrow_lcl[0]), myrowind );
+          TEST_EQUALITY( diaggraph.getColMap()->getGlobalIndex(myrow_lcl[0]), myrowind );
         }
         // also, the row map and column map should be equivalent
-        TEST_EQUALITY_CONST( diaggraph.getRowMap().isSameAs(diaggraph.getColMap()), true );
-        TEST_EQUALITY( diaggraph.getGlobalNumDiags(), numImages );
+        TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
+        TEST_EQUALITY( diaggraph.getGlobalNumDiags(), (size_t)numImages );
         TEST_EQUALITY_CONST( diaggraph.getNodeNumDiags(), 1 );
-        TEST_EQUALITY_CONST( diaggraph.upperTriangular(), true );
-        TEST_EQUALITY_CONST( diaggraph.lowerTriangular(), true );
+        TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
+        TEST_EQUALITY_CONST( diaggraph.isLowerTriangular(), true );
         STD_TESTS(diaggraph);
       }
       {
@@ -498,7 +497,7 @@ namespace {
         // let node i add the contributions for column i of the graph: (i-1,i), (i,i), (i+1,i)
         // allocate only as much space as we need
         // some hacking here to support this test when numImages == 1 or 2
-        GRAPH ngraph(node,map,3,pftype);
+        GRAPH ngraph(map,3,pftype);
         Array<GO> grows(3);
         grows[0] = (numImages+myImageID-1) % numImages;   // my left neighbor
         grows[1] = (numImages+myImageID  ) % numImages;   // myself
@@ -507,29 +506,27 @@ namespace {
         ngraph.insertGlobalIndices(grows[1],tuple<GO>(myImageID)); // add me to the graph for my neighbors
         ngraph.insertGlobalIndices(grows[2],tuple<GO>(myImageID)); // vvvvvvvvvvvvvvvvvvvvvvv
         // before globalAssemble(), there should be a single local entry on parallel runs, three on serial runs
-        ArrayView<const GO> myrow_gbl;
-        ngraph.extractGlobalRowConstView(myrowind,myrow_gbl);
+        ArrayRCP<const GO> myrow_gbl = ngraph.getGlobalRowView(myrowind);
         TEST_EQUALITY_CONST( myrow_gbl.size(), (numImages == 1 ? 3 : 1) );
         ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
-        TEST_EQUALITY( ngraph.getNumEntriesForGlobalRow(0), ngraph.getNumAllocatedEntriesForLocalRow(0) );
+        TEST_EQUALITY( ngraph.getNumEntriesInGlobalRow(0), ngraph.getNumAllocatedEntriesForLocalRow(0) );
         if (pftype == StaticProfile) {
           TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
         }
         ngraph.fillComplete(os);
         // after fillComplete(), there should be entries for me and my neighbors on my row
-        ArrayView<const LO> myrow_lcl;
-        ngraph.extractMyRowConstView(0,myrow_lcl);
+        ArrayRCP<const LO> myrow_lcl = ngraph.getLocalRowView(0);
         {
           // check indices on my row
           typename Array<GO>::iterator glast;
           sort(grows.begin(),grows.end());
           glast = unique(grows.begin(),grows.end());
-          Teuchos_Ordinal numunique = glast - grows.begin();
+          size_t numunique = glast - grows.begin();
           // test the test: numunique == min(numImages,3)
           TEST_EQUALITY( numunique, min(numImages,3) );
           TEST_EQUALITY_CONST( myrow_lcl.size(), numunique );
           if (myrow_lcl.size() == numunique) {
-            Teuchos_Ordinal numinds;
+            size_t numinds;
             Array<GO> inds(numunique+1);
             TEST_THROW(   ngraph.extractGlobalRowCopy(myrowind,inds(0,numunique-1),numinds), std::runtime_error );
             TEST_NOTHROW( ngraph.extractGlobalRowCopy(myrowind,inds(0,numunique),numinds) );
@@ -538,7 +535,7 @@ namespace {
             TEST_COMPARE_ARRAYS( inds(0,numinds), grows(0,numunique) );
           }
         }
-        TEST_EQUALITY_CONST( ngraph.getRowMap().isSameAs(ngraph.getColMap()), (numImages==1 ? true : false) );
+        TEST_EQUALITY_CONST( ngraph.getRowMap()->isSameAs(*ngraph.getColMap()), (numImages==1 ? true : false) );
         TEST_EQUALITY( ngraph.getGlobalNumDiags(), numImages );
         TEST_EQUALITY( ngraph.getNodeNumDiags(), 1 );
         STD_TESTS(ngraph);
