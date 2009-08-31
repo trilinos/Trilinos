@@ -1025,35 +1025,41 @@ def checkinTest(inOptions):
     print "*** 4) Determine overall commit readiness ..."
     print "***"
 
-    echoChDir(baseTestDir)
+    if inOptions.doCommitReadinessCheck or inOptions.doCommit:
 
-    commitOkay = True
-    subjectLine = None
-    commitEmailBodyExtra = ""
+      echoChDir(baseTestDir)
+  
+      commitOkay = True
+      subjectLine = None
+      commitEmailBodyExtra = ""
+  
+      (buildOkay, statusMsg) = \
+        checkBuildCheckinStatus(inOptions.withMpiDebug, "MPI", "DEBUG")
+      print statusMsg
+      commitEmailBodyExtra += statusMsg
+      if not buildOkay:
+        commitOkay = False
+        
+      (buildOkay, statusMsg) = \
+        checkBuildCheckinStatus(inOptions.withSerialRelease, "SERIAL", "RELEASE")
+      print statusMsg
+      commitEmailBodyExtra += statusMsg
+      if not buildOkay:
+        commitOkay = False
+  
+  
+      if commitOkay:
+        print "\nThe tests ran and all passed!\n\n" \
+          "  => A COMMIT IS OKAY TO BE PERFORMED!"
+      else:
+        print "\nAt least one of the actions (update, configure, built, test)" \
+          " failed or was not performed correctly!\n\n" \
+          "  => A COMMIT IS *NOT* READY TO BE PERFORMED!"
 
-    (buildOkay, statusMsg) = \
-      checkBuildCheckinStatus(inOptions.withMpiDebug, "MPI", "DEBUG")
-    print statusMsg
-    commitEmailBodyExtra += statusMsg
-    if not buildOkay:
-      commitOkay = False
-      
-    (buildOkay, statusMsg) = \
-      checkBuildCheckinStatus(inOptions.withSerialRelease, "SERIAL", "RELEASE")
-    print statusMsg
-    commitEmailBodyExtra += statusMsg
-    if not buildOkay:
-      commitOkay = False
-
-
-    if commitOkay:
-      print "\nThe tests ran and all passed!\n\n" \
-        "  => A COMMIT IS OKAY TO BE PERFORMED!"
     else:
-      print "\nAt least one of the actions (update, configure, built, test)" \
-        " failed or was not performed correctly!\n\n" \
-        "  => A COMMIT IS *NOT* READY TO BE PERFORMED!"
 
+      print "\nSkipping commit readiness check on request!"
+  
     print "\n***"
     print "*** 5) Do commit or send email about commit readiness status ..."
     print "***"

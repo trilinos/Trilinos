@@ -290,33 +290,6 @@ clp.add_option(
   default=False )
 
 clp.add_option(
-  "--commit", dest="doCommit", action="store_true",
-  help="Do the commit at the end if everything works out." \
-  + "  Note: You must have SSH public/private keys set up with" \
-  + " software.sandia.gov for the commit to happen without having to" \
-  + " type your password." )
-clp.add_option(
-  "--skip-commit", dest="doCommit", action="store_false", default=False,
-  help="Skip the commit." )
-
-clp.add_option(
-  "--force-commit", dest="forceCommit", action="store_true",
-  help="Force the commit even if there are errors.  WARNING: Only do this" \
-  +" when you are 100% certain that the errors are not caused by your code" \
-  +" changes." )
-clp.add_option(
-  "--no-force-commit", dest="forceCommit", action="store_false", default=False,
-  help="Do not force a commit." )
-
-clp.add_option(
-  "--final-update", dest="doFinalUpdate", action="store_true",
-  help="Do a final update just before committing to make sure there are"
-  +" no conflicits (default)" )
-clp.add_option(
-  "--skip-final-update", dest="doFinalUpdate", action="store_false", default=False,
-  help="Do not do a final update before committing." )
-
-clp.add_option(
   "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
   help="Custom commit message file if commiting with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
@@ -371,6 +344,42 @@ clp.add_option(
   "--do-all", dest="doAll", action="store_true",
   help="Do update, configure, build, and test (same as --update --configure" \
   +" --build --test)", default=False )
+
+clp.add_option(
+  "--commit", dest="doCommit", action="store_true",
+  help="Do the commit at the end if everything works out." \
+  + "  Note: You must have SSH public/private keys set up with" \
+  + " software.sandia.gov for the commit to happen without having to" \
+  + " type your password." )
+clp.add_option(
+  "--skip-commit", dest="doCommit", action="store_false", default=False,
+  help="Skip the commit." )
+
+clp.add_option(
+  "--force-commit", dest="forceCommit", action="store_true",
+  help="Force the commit even if there are errors.  WARNING: Only do this" \
+  +" when you are 100% certain that the errors are not caused by your code" \
+  +" changes." )
+clp.add_option(
+  "--no-force-commit", dest="forceCommit", action="store_false", default=False,
+  help="Do not force a commit." )
+
+clp.add_option(
+  "--final-update", dest="doFinalUpdate", action="store_true",
+  help="Do a final update just before committing to make sure there are"
+  +" no conflicits (default)" )
+clp.add_option(
+  "--skip-final-update", dest="doFinalUpdate", action="store_false", default=True,
+  help="Do not do a final update before committing." )
+
+clp.add_option(
+  "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
+  help="Check the commit status at the end and send email if not actually" \
+  +" committing (default)." )
+clp.add_option(
+  "--skip-commit-readiness-check", dest="doCommitReadinessCheck", action="store_false",
+  default=True,
+  help="Skip commit status check." )
 
 clp.add_option(
   "--show-defaults", dest="showDefaults", action="store_true",
@@ -436,13 +445,17 @@ if options.doCommit:
 else:
   print "  --skip-commit \\"
 if options.forceCommit:
-  print " --force-commit \\"
+  print "  --force-commit \\"
 else:
-  print " --no-force-commit \\"
+  print "  --no-force-commit \\"
 if options.doFinalUpdate:
-  print " --final-update \\"
+  print "  --final-update \\"
 else:
-  print " --skip-final-update \\"
+  print "  --skip-final-update \\"
+if options.doCommitReadinessCheck:
+  print "  --do-commit-readiness-check \\"
+else:
+  print "  --skip-commit-readiness-check \\"
 
 
 #
