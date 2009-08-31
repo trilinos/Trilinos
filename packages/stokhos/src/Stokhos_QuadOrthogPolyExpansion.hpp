@@ -49,8 +49,10 @@ namespace Stokhos {
   public:
 
     //! Constructor
-    QuadOrthogPolyExpansion(const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
-			    const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad);
+    QuadOrthogPolyExpansion(
+    const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
+    const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad,
+    bool use_quad_for_times = false);
 
     //! Destructor
     virtual ~QuadOrthogPolyExpansion() {}
@@ -212,6 +214,9 @@ namespace Stokhos {
 
     //! Quadrature routine
     Teuchos::RCP<const Quadrature<ordinal_type, value_type> > quad;
+
+    //! Use quadrature for times functions
+    bool use_quad_for_times;
 
     //! Expansions size
     ordinal_type sz;

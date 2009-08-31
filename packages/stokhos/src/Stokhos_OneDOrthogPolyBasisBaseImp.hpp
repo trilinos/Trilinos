@@ -91,7 +91,7 @@ getTripleProductTensor() const
   if (Cijk == Teuchos::null) {
     Teuchos::Array<value_type> points, weights;
     Teuchos::Array< Teuchos::Array<value_type> > values;
-    getQuadPoints(ceil((3*p+1)/2), points, weights, values);
+    getQuadPoints(3*p, points, weights, values);
     Cijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
     
     
@@ -99,13 +99,11 @@ getTripleProductTensor() const
       for (ordinal_type j=0; j<sz; j++) {
 	for (ordinal_type k=0; k<sz; k++) {
           value_type triple_product = 0;
-	  for (ordinal_type l=0; l<points.size();l++){
-             triple_product = triple_product + weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
-             //if(k == 0) std::cout<< "values[0]["<<l<<"] = "<<values[l][k] <<"\n";
+	  for (ordinal_type l=0; l<static_cast<ordinal_type>(points.size());
+	       l++){
+	    triple_product = triple_product + weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
           }
           (*Cijk)(i,j,k) = triple_product;
-          //if(i == 0 && j == 0 && k == 0) std::cout<< "C000 = " << (*Cijk)(i,j,k) << "\n";
-          
 	}
       }
     }
@@ -113,6 +111,7 @@ getTripleProductTensor() const
 
   return Cijk;
   */
+
   ordinal_type sz = size();
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {  
@@ -128,7 +127,6 @@ getTripleProductTensor() const
      } 
    }
    return Cijk;
- 
 }
 
 template <typename ordinal_type, typename value_type>

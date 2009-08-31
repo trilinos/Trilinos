@@ -30,6 +30,8 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_TestingHelpers.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
@@ -563,4 +565,9 @@ namespace QuadExpansionUnitTest {
   // Not testing atan2(), max(), min(), abs(), fabs() since these are
   // not smooth functions
 
+}
+
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }

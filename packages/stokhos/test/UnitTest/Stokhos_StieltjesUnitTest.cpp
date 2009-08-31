@@ -30,6 +30,8 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_TestingHelpers.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
@@ -57,6 +59,7 @@ template <typename Func>
 struct Stieltjes_PCE_Setup {
   typedef typename Func::OrdinalType OrdinalType;
   typedef typename Func::ValueType ValueType;
+  ValueType rtol, atol;
   Func func;
   bool use_pce_quad_points;
   OrdinalType sz, st_sz;
@@ -70,6 +73,8 @@ struct Stieltjes_PCE_Setup {
   Stieltjes_PCE_Setup(bool use_pce_quad_points_) : 
     func(), use_pce_quad_points(use_pce_quad_points_) 
   {
+    rtol = 1e-8;
+    atol = 1e-12;
     const OrdinalType d = 3;
     const OrdinalType p = 5;
     
@@ -151,7 +156,7 @@ namespace StieltjesCosTest {
    Stokhos::OrthogPolyApprox<int,double> u2(setup.basis);
    setup.st_1d_basis->transformCoeffsFromStieltjes(setup.u_st.coeff(), 
 						   u2.coeff());
-   success = Stokhos::comparePCEs(setup.u, "u", u2, "u2", 1e-8, 1e-12, out);
+   success = Stokhos::comparePCEs(setup.u, "u", u2, "u2", setup.rtol, setup.atol, out);
   }
 
   // Tests Stieltjes basis is orthogonal
@@ -170,7 +175,12 @@ namespace StieltjesCosTest {
       }
       mat(i,i) -= 1.0;
     }
-    success = mat.normInf() < 1.e-12;
+    success = mat.normInf() < setup.atol;
+    if (!success) {
+      out << "\n Error, mat.normInf() < atol = " << mat.normInf() 
+	  << " < " << setup.atol << ": failed!\n";
+      out << "mat = " << mat << std::endl;
+    }
   }
 
   // Tests PCE computed from Stieltjes basis is same as original
@@ -178,7 +188,27 @@ namespace StieltjesCosTest {
     Stokhos::OrthogPolyApprox<int,double> v2(setup.basis);
     stieltjes_pce_quad_func quad_func(setup.v_st, *setup.st_basis);
     setup.exp->unary_op(quad_func, v2, setup.u);
-    success = comparePCEs(setup.v, "v", v2, "v2", 1e-8, 1e-12, out);
+    success = comparePCEs(setup.v, "v", v2, "v2", setup.rtol, setup.atol, out);
+  }
+
+  // Tests mean computed from Stieltjes basis is same as original
+  TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, CosMean ) {
+    success = Teuchos::testRelErr("v.mean()", setup.v.mean(), 
+				  "v_st.mean()", setup.v_st.mean(),
+				  "rtol", setup.rtol, 
+				  "rtol", setup.rtol, 
+				  out.getOStream());
+  }
+
+  // Tests mean standard deviation from Stieltjes basis is same as original
+  TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, CosStandardDeviation ) {
+    success = Teuchos::testRelErr("v.standard_deviation()", 
+				  setup.v.standard_deviation(), 
+				  "v_st.standard_devaition()", 
+				  setup.v_st.standard_deviation(),
+				  "rtol", 1e-1, 
+				  "rtol", 1e-1, 
+				  out.getOStream());
   }
 
 }
@@ -208,7 +238,7 @@ namespace StieltjesSinTest {
    Stokhos::OrthogPolyApprox<int,double> u2(setup.basis);
    setup.st_1d_basis->transformCoeffsFromStieltjes(setup.u_st.coeff(), 
 						   u2.coeff());
-   success = Stokhos::comparePCEs(setup.u, "u", u2, "u2", 1e-8, 1e-12, out);
+   success = Stokhos::comparePCEs(setup.u, "u", u2, "u2", setup.rtol, setup.atol, out);
   }
 
   // Tests Stieltjes basis is orthogonal
@@ -227,13 +257,40 @@ namespace StieltjesSinTest {
       }
       mat(i,i) -= 1.0;
     }
-    success = mat.normInf() < 1.e-12;
+    success = mat.normInf() < setup.atol;
+    if (!success) {
+      out << "\n Error, mat.normInf() < atol = " << mat.normInf() 
+	  << " < " << setup.atol << ": failed!\n";
+      out << "mat = " << mat << std::endl;
+    }
   }
+
+  // Tests PCE computed from Stieltjes basis is same as original
   TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, SinPCE ) {
     Stokhos::OrthogPolyApprox<int,double> v2(setup.basis);
     stieltjes_pce_quad_func quad_func(setup.v_st, *setup.st_basis);
     setup.exp->unary_op(quad_func, v2, setup.u);
-    success = comparePCEs(setup.v, "v", v2, "v2", 1e-8, 1e-12, out);
+    success = comparePCEs(setup.v, "v", v2, "v2", setup.rtol, setup.atol, out);
+  }
+
+  // Tests mean computed from Stieltjes basis is same as original
+  TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, SinMean ) {
+    success = Teuchos::testRelErr("v.mean()", setup.v.mean(), 
+				  "v_st.mean()", setup.v_st.mean(),
+				  "rtol", setup.rtol, 
+				  "rtol", setup.rtol, 
+				  out.getOStream());
+  }
+
+  // Tests mean standard deviation from Stieltjes basis is same as original
+  TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, SinStandardDeviation ) {
+    success = Teuchos::testRelErr("v.standard_deviation()", 
+				  setup.v.standard_deviation(), 
+				  "v_st.standard_devaition()", 
+				  setup.v_st.standard_deviation(),
+				  "rtol", 1e-1, 
+				  "rtol", 1e-1, 
+				  out.getOStream());
   }
 
 }
@@ -264,7 +321,7 @@ namespace StieltjesExpTest {
    Stokhos::OrthogPolyApprox<int,double> u2(setup.basis);
    setup.st_1d_basis->transformCoeffsFromStieltjes(setup.u_st.coeff(), 
 						   u2.coeff());
-   success = Stokhos::comparePCEs(setup.u, "u", u2, "u2", 1e-8, 1e-12, out);
+   success = Stokhos::comparePCEs(setup.u, "u", u2, "u2", setup.rtol, setup.atol, out);
   }
 
   // Tests Stieltjes basis is orthogonal
@@ -283,7 +340,12 @@ namespace StieltjesExpTest {
       }
       mat(i,i) -= 1.0;
     }
-    success = mat.normInf() < 1.e-12;
+    success = mat.normInf() < setup.atol;
+    if (!success) {
+      out << "\n Error, mat.normInf() < atol = " << mat.normInf() 
+	  << " < " << setup.atol << ": failed!\n";
+      out << "mat = " << mat << std::endl;
+    }
   }
 
   // Tests PCE computed from Stieltjes basis is same as original
@@ -291,7 +353,32 @@ namespace StieltjesExpTest {
     Stokhos::OrthogPolyApprox<int,double> v2(setup.basis);
     stieltjes_pce_quad_func quad_func(setup.v_st, *setup.st_basis);
     setup.exp->unary_op(quad_func, v2, setup.u);
-    success = comparePCEs(setup.v, "v", v2, "v2", 1e-8, 1e-12, out);
+    success = comparePCEs(setup.v, "v", v2, "v2", setup.rtol, setup.atol, out);
   }
 
+  // Tests mean computed from Stieltjes basis is same as original
+  TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, ExpMean ) {
+    success = Teuchos::testRelErr("v.mean()", setup.v.mean(), 
+				  "v_st.mean()", setup.v_st.mean(),
+				  "rtol", setup.rtol, 
+				  "rtol", setup.rtol, 
+				  out.getOStream());
+  }
+
+  // Tests mean standard deviation from Stieltjes basis is same as original
+  TEUCHOS_UNIT_TEST( Stokhos_StieltjesPCEBasis, ExpStandardDeviation ) {
+    success = Teuchos::testRelErr("v.standard_deviation()", 
+				  setup.v.standard_deviation(), 
+				  "v_st.standard_devaition()", 
+				  setup.v_st.standard_deviation(),
+				  "rtol", 1e-1, 
+				  "rtol", 1e-1, 
+				  out.getOStream());
+  }
+
+}
+
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }

@@ -35,10 +35,12 @@
 template <typename ordinal_type, typename value_type> 
 Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
 QuadOrthogPolyExpansion(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-			const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad_) :
+			const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad_,
+			    bool use_quad_for_times_) :
   basis(basis_),
   Cijk(basis->getTripleProductTensor()),
   quad(quad_),
+  use_quad_for_times(use_quad_for_times_),
   sz(basis->size()),
   blas(),
   quad_points(quad->getQuadPoints()),
@@ -384,6 +386,11 @@ Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
 timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
            const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
+  if (use_quad_for_times) {
+    binary_op(times_quad_func(), c, c, x);
+    return;
+  }
+
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
 #ifdef STOKHOS_DEBUG
@@ -428,15 +435,6 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       cc[i] *= xc[0];
   }
 }
-
-// template <typename ordinal_type, typename value_type> 
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-//             const Stokhos::OrthogPolyApprox<ordinal_type, value_type >& x)
-// {
-//   binary_op(times_quad_func(), c, c, x);
-// }
 
 template <typename ordinal_type, typename value_type> 
 void
@@ -650,6 +648,11 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
+  if (use_quad_for_times) {
+    binary_op(times_quad_func(), c, a, b);
+    return;
+  }
+
 #ifdef STOKHOS_DEBUG
   const char* func = "Stokhos::TayOrthogPolyExpansion::times()";
   TEST_FOR_EXCEPTION((a.size() != b.size()) && (a.size() != 1) && 
@@ -706,16 +709,6 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     cc[0] = ca[0]*cb[0];
   }
 }
-
-// template <typename ordinal_type, typename value_type>
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-//        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
-//        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
-// {
-//   binary_op(times_quad_func(), c, a, b);
-// }
 
 template <typename ordinal_type, typename value_type>
 void
