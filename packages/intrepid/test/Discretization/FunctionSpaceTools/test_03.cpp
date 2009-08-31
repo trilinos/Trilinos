@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
 
         ifstream massfile(&filename[0]);
         if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-10, 0) > 0)
+          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-10, 1) > 0)
             errorFlag++;
           massfile.close();
         }
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
         ifstream stifffile(&filename[0]);
         if (stifffile.is_open())
         {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-10, 0) > 0)
+          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-10, 1) > 0)
             errorFlag++;
           stifffile.close();
         }
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
 
         ifstream massfile(&filename[0]);
         if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, 0, INTREPID_UTILS_SCALAR) > 0)
+          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, 1, INTREPID_UTILS_SCALAR) > 0)
             errorFlag++;
           massfile.close();
         }
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
         ifstream stifffile(&filename[0]);
         if (stifffile.is_open())
         {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, 0, INTREPID_UTILS_SCALAR) > 0)
+          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, 1, INTREPID_UTILS_SCALAR) > 0)
             errorFlag++;
           stifffile.close();
         }
