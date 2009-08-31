@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
         FieldContainer<double> edgePointNormals(1, numCubPoints, cellDim);        
 
         // Loop over edges:
-        for(int edgeOrd = 0; edgeOrd < (*cti).getEdgeCount(); edgeOrd++){
+        for(int edgeOrd = 0; edgeOrd < (int)(*cti).getEdgeCount(); edgeOrd++){
           /* 
            * Compute tangents on the specified physical edge using CellTools:
            *    1. Map points from edge parametrization domain to ref. edge with specified ordinal
@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
         
         
         // Loop over faces:
-        for(int faceOrd = 0; faceOrd < (*cti).getSideCount(); faceOrd++){
+        for(int faceOrd = 0; faceOrd < (int)(*cti).getSideCount(); faceOrd++){
           
           // This test presently includes only Triangle<3> and Quadrilateral<4> faces. Once we support
           // cells with extended topologies we will add their faces as well.

@@ -1257,8 +1257,8 @@ void RealSpaceTools<Scalar>::vecprod(VecArrayOut &       vecProd,
   TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, inLeft, inLeft.rank() - 1,  2,3), std::invalid_argument, errmsg);
   
 #endif HAVE_INTREPID_DEBUG
-  
-  int spaceDim = inLeft.dimension(inLeft.rank() - 1);
+
+ int spaceDim = inLeft.dimension(inLeft.rank() - 1);
 
   switch(inLeft.rank() ){
     

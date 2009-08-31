@@ -81,10 +81,20 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
-    \li       The edge tangent \c t in the DoF definition is normalized by the \s edge length.
-              As a result, the DoF functional is the value of the tangent component of a vector field 
-              at the edge midpoint times the edge length. The resulting basis is equivalent to
-              a basis defined by using the edge circulation as a DoF functional.
+    \li     In the DoF functional \f${\bf t}\f$ is an edge tangent. Direction of edge  
+            tangents follows the vertex order of the edges in the cell topology and runs from 
+            edge vertex 0 to edge vertex 1, whereas their length is set equal to edge length. For 
+            example, edge 8 of all Hexahedron reference cells has vertex order {0,4}, i.e., its tangent 
+            runs from vertex 0 of the reference Hexahedron to vertex 4 of that cell. On the reference 
+            Hexahedron the coordinates of these vertices are (-1,-1,-1) and (-1,-1,1), respectively. 
+            Therefore, the tangent to edge 8 is (-1,-1, 1) - (-1,-1,-1) = (0, 0, 2). Because its length
+            already equals edge length, no further rescaling of the edge tangent is needed. 
+  
+  \li       The length of the edge tangent equals the edge length. As a result, the DoF functional 
+            is the value of the tangent component of a vector field at the edge midpoint times the 
+            edge length. The resulting basis is equivalent to a basis defined by using the edge 
+            circulation as a DoF functional. Note that all edges of reference Hexahedron<> cells 
+            have length 2.  
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   

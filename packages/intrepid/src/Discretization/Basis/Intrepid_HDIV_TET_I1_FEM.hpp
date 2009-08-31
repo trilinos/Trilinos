@@ -65,11 +65,22 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
-    \li       The face outer normal \c n in the DoF definition is normalized by the \s face area.
-              As a result, the DoF functional is the value of the normal component of a vector field 
-              at the face center times the face area. The resulting basis is equivalent to
-              a basis defined by using the face flux as a DoF functional. Note that faces 0, 2, and 3 
-              of reference Tetrahedron<> cells have area 1/2 and face 1 has area Sqrt(3)/2.
+    \li     In the DoF functional \f${\bf n}\f$ is a face normal. Direction of face normals 
+            is determined by the right-hand rule applied to faces oriented by their vertex order
+            in the cell topology, from face vertex 0 to last face vertex, whereas their length is
+            set equal to face area. For example, face 1 of all Tetrahedron cells has vertex order {1,2,3} 
+            and its right-hand rule normal can be computed, e.g., by the vector product of edge 
+            tangents to edges {1,2} and {2,3}. On the reference Tetrahedron the coordinates of 
+            face 1 vertices are (1,0,0), (0,1,0), and (0,0,1), the edge tangents are (-1,1,0) and 
+            (0,-1,1) and the face normal direction is (-1,1,0) X (0,-1,1) = (1,1,1). Length of this 
+            raw face normal is twice the face area of face 1 and so the final face normal to face 1 is
+            obtained by scaling the raw normal by 1/2: (1/2,1/2,1/2).
+  
+    \li     The length of the face normal equals the face area. As a result, the DoF functional 
+            is the value of the normal component of a vector field at the face center times the 
+            face area. The resulting basis is equivalent to a basis defined by using the face 
+            flux as a DoF functional. Note that faces 0, 2, and 3 of reference Tetrahedron<> 
+            cells have area 1/2 and face 1 has area Sqrt(3)/2.
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   

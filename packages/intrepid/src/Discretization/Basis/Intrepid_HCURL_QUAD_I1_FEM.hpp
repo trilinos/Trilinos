@@ -65,15 +65,20 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
-    \li     The edge tangent \c t in the DoF definition is normalized by the \s edge length.
-            As a result, the DoF functional is the value of the tangent component of a vector field 
-            at the edge midpoint times the edge length. The resulting basis is equivalent to
-            a basis defined by using the edge circulation as a DoF functional.
+    \li     In the DoF functional \f${\bf t}\f$ is an edge tangent. Direction of edge  
+            tangents follows the vertex order of the edges in the cell topology and runs from 
+            edge vertex 0 to edge vertex 1, whereas their length is set equal to the edge length. For 
+            example, edge 1 of all Quadrilateral reference cells has vertex order {1,2}, i.e., its tangent 
+            runs from vertex 1 of the reference Quadrilateral to vertex 2 of that cell. On the reference 
+            Quadrilateral the coordinates of these vertices are (1,-1) and (1,1), respectively. Therefore, 
+            the tangent to edge 1 is (1,1) - (1,-1) = (0,2). Because its length already equals edge length, 
+            no further rescaling of the edge tangent is needed.
   
-    \li     Orientation of edge tangents \c t in DoF definition follows orientation of their associated
-            reference edges implied by the cell topology of the reference cell. For example, edge 2 of 
-            all Quadrilateral cells has vertices {2,3} with reference coordinates (1,1) and (-1,1). 
-            Consequently, the edge tangent for this edge is given by (-2,0).
+    \li     The length of the edge tangent equals the edge length. As a result, the DoF functional 
+            is the value of the tangent component of a vector field at the edge midpoint times the 
+            edge length. The resulting basis is equivalent to a basis defined by using the edge 
+            circulation as a DoF functional. Note that all edges of reference Quadrilateral<> cells 
+            have length 2 .  
   
     \li     DefaultBasisFactory will select this class if the following parameters are specified:
   

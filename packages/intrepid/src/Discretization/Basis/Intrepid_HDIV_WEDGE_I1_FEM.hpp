@@ -67,11 +67,21 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
-    \li       The face outer normal \c n in the DoF definition is normalized by the \s face area.
-              As a result, the DoF functional is the value of the normal component of a vector field 
-              at the face center times the face area. The resulting basis is equivalent to a basis 
-              defined by using the face flux as a DoF functional. Note that faces 0 and 2 of reference 
-              Wedge<> cells have area 2, face 1 has area 2*Sqrt(2), and faces 3 and 4 have area 1/2.
+    \li     In the DoF functional \f${\bf n}\f$ is a face normal. Direction of face normals 
+            is determined by the right-hand rule applied to faces oriented by their vertex order
+            in the cell topology, from face vertex 0 to last face vertex, whereas their length is
+            set equal to face area. For example, face 1 of all Wedge cells has vertex order {1,2,5,4} 
+            and its right-hand rule normal can be computed, e.g., by the vector product of edge 
+            tangents to edges {1,2} and {2,5}. On the reference Wedge the coordinates of face 1 
+            vertices are (1,0,-1), (0,1,-1), (0,1,1), and (1,0,1), the edge tangents are (-1,1,0) and 
+            (0,0,2) and the face normal direction is (-1,1,0) X (0,0,2) = (2,2,0). In this case the normal 
+            length already equals face area and no further normalization is needed.  
+  
+    \li     The length of the face normal equals the face area. As a result, the DoF functional 
+            is the value of the normal component of a vector field at the face center times the 
+            face area. The resulting basis is equivalent to a basis defined by using the face 
+            flux as a DoF functional. Note that faces 0 and 2 of reference Wedge<> cells have area 2, 
+            face 1 has area 2*Sqrt(2), and faces 3 and 4 have area 1/2.
   
     \li       DefaultBasisFactory will select this class if the following parameters are specified:
   
