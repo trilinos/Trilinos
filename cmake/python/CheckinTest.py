@@ -1029,7 +1029,7 @@ def checkinTest(inOptions):
 
       echoChDir(baseTestDir)
   
-      commitOkay = True
+      okToCommit = True
       subjectLine = None
       commitEmailBodyExtra = ""
   
@@ -1038,17 +1038,17 @@ def checkinTest(inOptions):
       print statusMsg
       commitEmailBodyExtra += statusMsg
       if not buildOkay:
-        commitOkay = False
+        okToCommit = False
         
       (buildOkay, statusMsg) = \
         checkBuildCheckinStatus(inOptions.withSerialRelease, "SERIAL", "RELEASE")
       print statusMsg
       commitEmailBodyExtra += statusMsg
       if not buildOkay:
-        commitOkay = False
+        okToCommit = False
   
   
-      if commitOkay:
+      if okToCommit:
         print "\nThe tests ran and all passed!\n\n" \
           "  => A COMMIT IS OKAY TO BE PERFORMED!"
       else:
@@ -1059,140 +1059,147 @@ def checkinTest(inOptions):
     else:
 
       print "\nSkipping commit readiness check on request!"
+      okToCommit = False
   
     print "\n***"
     print "*** 5) Do commit or send email about commit readiness status ..."
     print "***"
 
-    if inOptions.doCommit:
+    if inOptions.doCommitReadinessCheck:
 
-      print "\nAttempting to do a commit ..."
-
-      forcedCommit = False
-
-      if not commitOkay and inOptions.forceCommit:
-        forcedCommitMsg = \
-          "\n***" \
-          "\n*** WARNING: The acceptance criteria for doing a commit has *not*" \
-          "\n*** been met, but a commit is being forced anyway!" \
-          "\n***\n"
-        print forcedCommitMsg
-        commitOkay = True
-        forcedCommit = True
-
-      if commitOkay:
-
-        print "\nDoing a last update to avoid not-up-to-date status ...\n"
-
-        if inOptions.doFinalUpdate:
-
-          update2Rtn = echoRunSysCmnd(inOptions.updateCommand,
-            workingDir=trilinosSrcDir,
-            outFile=os.path.join(baseTestDir, getUpdateOutput2FileName()),
-            throwExcept=False,
-            timeCmnd=True
-            )
-          if update2Rtn != 0: commitOkay = False
-
-        else:
-          
-          print "\nSkipping the final update on request!\n"
-          update2Rtn = 0
-
-        absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
-        if not os.path.isabs(absCommitMsgHeaderFile):
-          absCommitMsgHeaderFile = os.path.join(trilinosSrcDir,absCommitMsgHeaderFile)
-
-        print "\nExtracting commit message subject and header from the file '" \
-          +absCommitMsgHeaderFile+"' ...\n"
-
-        commitMsgHeaderFileStr = open(absCommitMsgHeaderFile, 'r').read()
-
-        commitEmailBodyStr = commitMsgHeaderFileStr
-
-        commitEmailBodyStr += "\n\n\n\n" \
-          "=============================\n" \
-          "Automated status information\n" \
-          "=============================\n" \
-          "\n\n" \
-          + getCmndOutput("date", True) + "\n\n" \
-
-        if forcedCommitMsg:
-          commitEmailBodyStr += (forcedCommitMsg + "\n\n")
-
-        commitEmailBodyStr += \
-          getSummaryEmailSectionStr(inOptions)
-
-        commitMsgFile = getCommitEmailBodyFileName()
-        open(commitMsgFile, 'w').write(commitEmailBodyStr)
-
-        if commitOkay:
-          commitRtn = echoRunSysCmnd(
-            "cvs commit -F "+os.path.join(baseTestDir,commitMsgFile),
-            workingDir=trilinosSrcDir,
-            outFile=os.path.join(baseTestDir,getCommitOutputFileName()),
-            throwExcept=False,
-            timeCmnd=True
-            )
-
-        if update2Rtn != 0:
-          commitOkay = False
-          subjectLine = "COMMIT FAILED"
-          commitEmailBodyExtra += "\n\nCommit failed because final update failed!  See 'update2.out'\n\n"
-        elif commitRtn == 0:
-          if forcedCommitMsg:
-            subjectLine = "FORCED COMMIT"
-            commitEmailBodyExtra += forcedCommitMsg
+      if inOptions.doCommit:
+  
+        print "\nAttempting to do a commit ..."
+  
+        forcedCommit = False
+  
+        if not okToCommit and inOptions.forceCommit:
+          forcedCommitMsg = \
+            "\n***" \
+            "\n*** WARNING: The acceptance criteria for doing a commit has *not*" \
+            "\n*** been met, but a commit is being forced anyway!" \
+            "\n***\n"
+          print forcedCommitMsg
+          okToCommit = True
+          forcedCommit = True
+  
+        if okToCommit:
+  
+          print "\nDoing a last update to avoid not-up-to-date status ...\n"
+  
+          if inOptions.doFinalUpdate:
+  
+            update2Rtn = echoRunSysCmnd(inOptions.updateCommand,
+              workingDir=trilinosSrcDir,
+              outFile=os.path.join(baseTestDir, getUpdateOutput2FileName()),
+              throwExcept=False,
+              timeCmnd=True
+              )
+            if update2Rtn != 0: okToCommit = False
+  
           else:
-            subjectLine = "DID COMMIT"
+            
+            print "\nSkipping the final update on request!\n"
+            update2Rtn = 0
+  
+          absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
+          if not os.path.isabs(absCommitMsgHeaderFile):
+            absCommitMsgHeaderFile = os.path.join(trilinosSrcDir,absCommitMsgHeaderFile)
+  
+          print "\nExtracting commit message subject and header from the file '" \
+            +absCommitMsgHeaderFile+"' ...\n"
+  
+          commitMsgHeaderFileStr = open(absCommitMsgHeaderFile, 'r').read()
+  
+          commitEmailBodyStr = commitMsgHeaderFileStr
+  
+          commitEmailBodyStr += "\n\n\n\n" \
+            "=============================\n" \
+            "Automated status information\n" \
+            "=============================\n" \
+            "\n\n" \
+            + getCmndOutput("date", True) + "\n\n" \
+  
+          if forcedCommitMsg:
+            commitEmailBodyStr += (forcedCommitMsg + "\n\n")
+  
+          commitEmailBodyStr += \
+            getSummaryEmailSectionStr(inOptions)
+  
+          commitMsgFile = getCommitEmailBodyFileName()
+          open(commitMsgFile, 'w').write(commitEmailBodyStr)
+  
+          if okToCommit:
+            commitRtn = echoRunSysCmnd(
+              "cvs commit -F "+os.path.join(baseTestDir,commitMsgFile),
+              workingDir=trilinosSrcDir,
+              outFile=os.path.join(baseTestDir,getCommitOutputFileName()),
+              throwExcept=False,
+              timeCmnd=True
+              )
+  
+          if update2Rtn != 0:
+            okToCommit = False
+            subjectLine = "COMMIT FAILED"
+            commitEmailBodyExtra += "\n\nCommit failed because final update failed!  See 'update2.out'\n\n"
+          elif commitRtn == 0:
+            if forcedCommitMsg:
+              subjectLine = "FORCED COMMIT"
+              commitEmailBodyExtra += forcedCommitMsg
+            else:
+              subjectLine = "DID COMMIT"
+          else:
+            subjectLine = "COMMIT FAILED"
+            commitEmailBodyExtra += "\n\nCommit failed!  See the file 'commit.out'\n\n"
+  
         else:
-          subjectLine = "COMMIT FAILED"
-          commitEmailBodyExtra += "\n\nCommit failed!  See the file 'commit.out'\n\n"
-
+  
+          subjectLine = "ABORTED COMMIT"
+  
+          commitEmailBodyExtra += "\n\nCommit was never attempted since commit criteria failed!\n\n"
+  
       else:
-
-        subjectLine = "ABORTED COMMIT"
-
-        commitEmailBodyExtra += "\n\nCommit was never attempted since commit criteria failed!\n\n"
+  
+        print "\nNot doing the commit but sending an email about the commit readiness status ..."
+  
+        if okToCommit:
+          subjectLine = "READY TO COMMIT"
+        else:
+          subjectLine = "NOT READY TO COMMIT"
+  
+      print "\nCreate and send out commit (readiness) status notification email ..."
+  
+      subjectLine += ": Trilinos: "+getHostname()
+  
+      if not updatePassed:
+        commitEmailBodyExtra += "The update failed!  See the file 'update.out'!\n"
+  
+      emailBodyStr = subjectLine + "\n\n"
+      emailBodyStr += getCmndOutput("date", True) + "\n\n"
+      emailBodyStr += commitEmailBodyExtra
+      emailBodyStr += getSummaryEmailSectionStr(inOptions)
+  
+      print "\nCommit status email being sent:\n" \
+        "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
+  
+      summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
+      open(summaryCommitEmailBodyFileName, 'w').write(emailBodyStr)
+  
+      if inOptions.sendEmailTo:
+  
+        emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
+        echoRunSysCmnd("sleep 2s && mailx -s \""+subjectLine+"\" " \
+          +emailAddresses+" < "+summaryCommitEmailBodyFileName)
+        # Above, we use 'sleep 2s' to try to make sure this email is posted
+        # after the last pass/fail email!
+  
+      else:
+  
+        print "\nNot sending commit status email because --send-email-to is empty!"
 
     else:
 
-      print "\nNot doing the commit but sending an email about the commit readiness status ..."
-
-      if commitOkay:
-        subjectLine = "READY TO COMMIT"
-      else:
-        subjectLine = "NOT READY TO COMMIT"
-
-    print "\nCreate and send out commit (readiness) status notification email ..."
-
-    subjectLine += ": Trilinos: "+getHostname()
-
-    if not updatePassed:
-      commitEmailBodyExtra += "The update failed!  See the file 'update.out'!\n"
-
-    emailBodyStr = subjectLine + "\n\n"
-    emailBodyStr += getCmndOutput("date", True) + "\n\n"
-    emailBodyStr += commitEmailBodyExtra
-    emailBodyStr += getSummaryEmailSectionStr(inOptions)
-
-    print "\nCommit status email being sent:\n" \
-      "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
-
-    summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
-    open(summaryCommitEmailBodyFileName, 'w').write(emailBodyStr)
-
-    if inOptions.sendEmailTo:
-
-      emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
-      echoRunSysCmnd("sleep 2s && mailx -s \""+subjectLine+"\" " \
-        +emailAddresses+" < "+summaryCommitEmailBodyFileName)
-      # Above, we use 'sleep 2s' to try to make sure this email is posted
-      # after the last pass/fail email!
-
-    else:
-
-      print "\nNot sending commit status email because --send-email-to is empty!"
+      print "\nSkipping commit or sending commit readiness status on request!"
   
     if not performAnyActions(inOptions) and not inOptions.doCommit:
 
