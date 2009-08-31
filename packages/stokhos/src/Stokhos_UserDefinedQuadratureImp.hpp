@@ -40,8 +40,10 @@ const Teuchos::RCP<const Teuchos::Array< Teuchos::Array<value_type> > >& points,
   ordinal_type nqp = points->size();
   Teuchos::RCP<Teuchos::Array< Teuchos::Array<value_type> > > qv = 
     Teuchos::rcp(new Teuchos::Array< Teuchos::Array<value_type> >(nqp));
-  for (ordinal_type i=0; i<nqp; i++) 
+  for (ordinal_type i=0; i<nqp; i++) {
+    (*qv)[i].resize(basis->size());
     basis->evaluateBases((*points)[i], (*qv)[i]);
+  }
   quad_values = qv;
 }
 

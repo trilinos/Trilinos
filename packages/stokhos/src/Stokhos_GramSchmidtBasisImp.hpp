@@ -51,8 +51,10 @@ GramSchmidtBasis(
   // Get quadrature data
   ordinal_type nqp = weights.size();
   Teuchos::Array< Teuchos::Array<value_type> > values(nqp);
-  for (ordinal_type k=0; k<nqp; k++)
+  for (ordinal_type k=0; k<nqp; k++) {
+    values[k].resize(sz);
     basis->evaluateBases(points[k], values[k]);
+  }
 
   // Compute all inner products
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> inner_product(sz,sz);

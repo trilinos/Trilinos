@@ -342,9 +342,9 @@ Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
 plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
           const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
-  ordinal_type p = c.size();
   ordinal_type xp = x.size();
 #ifdef STOKHOS_DEBUG
+  ordinal_type p = c.size();
   TEST_FOR_EXCEPTION(p < xp, std::logic_error,
                      "Stokhos::QuadOrthogPolyExpansion::plusEqual()" 
                      << ":  Arguments have incompatible sizes:  "
@@ -363,9 +363,9 @@ Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
 minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
            const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
-  ordinal_type p = c.size();
   ordinal_type xp = x.size();
 #ifdef STOKHOS_DEBUG
+  ordinal_type p = c.size();
   TEST_FOR_EXCEPTION(p < xp, std::logic_error,
                      "Stokhos::QuadOrthogPolyExpansion::minusEqual()" 
                      << ":  Arguments have incompatible sizes:  "
