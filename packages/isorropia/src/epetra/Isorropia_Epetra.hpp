@@ -95,6 +95,21 @@ Epetra_CrsMatrix *
 createBalancedCopy(const Epetra_CrsMatrix& input_matrix,
                      const Teuchos::ParameterList& paramlist);
 
+/** createBalancedCopy() creates a copy with a more balanced map.
+    The caller should free the copy after use.
+*/
+
+Epetra_LinearProblem *
+createBalancedCopy(const Epetra_LinearProblem & input_problem);
+
+/** createBalancedCopy() creates a copy with a more balanced map.
+    The caller should free the copy after use.
+*/
+
+Epetra_LinearProblem *
+createBalancedCopy(const Epetra_LinearProblem & input_problem,
+                     const Teuchos::ParameterList& paramlist);
+
 /* Deprecated functions below! Remove later. */
 
 /** create_partitioner(), a function which is part of the Isorropia API, 

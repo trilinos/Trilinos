@@ -473,6 +473,48 @@ createBalancedCopy(const Epetra_CrsMatrix& input_matrix,
   return balanced_matrix.get();
 }
 
+Epetra_LinearProblem *
+createBalancedCopy(const Epetra_LinearProblem& input_problem)
+{
+  Teuchos::ParameterList paramlist;
+
+  return createBalancedCopy(input_problem, paramlist);
+}
+
+Epetra_LinearProblem *
+createBalancedCopy(const Epetra_LinearProblem& input_problem,
+		     const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RCP<const Epetra_RowMatrix> rowmat =
+    Teuchos::rcp(input_problem.GetMatrix(), false);
+
+  Teuchos::RCP<Partitioner> partitioner =
+    Teuchos::rcp(new Partitioner(rowmat, paramlist));
+
+  Redistributor rd(partitioner);
+
+  Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
+    rd.redistribute(*input_problem.GetMatrix());
+
+  Teuchos::RCP<Epetra_MultiVector> balanced_rhs =
+    rd.redistribute(*input_problem.GetRHS());
+
+  Teuchos::RCP<Epetra_MultiVector> x=
+    Teuchos::rcp(new Epetra_MultiVector(*input_problem.GetLHS()));
+
+  // prevent these from being deallocated on return from create_balanced_copy
+  balanced_matrix.release(); 
+  balanced_rhs.release();
+  x.release();
+
+  Teuchos::RCP<Epetra_LinearProblem> linprob =
+    Teuchos::rcp(new Epetra_LinearProblem(balanced_matrix.get(), x.get(), balanced_rhs.get()));
+
+  linprob.release();
+
+  return linprob.get();
+}
+
 /*
 ************* Deprecated methods below - remove later ********************
 */
