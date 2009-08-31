@@ -257,7 +257,7 @@ public:
     const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
-  /** \brief Calls <tt>this->check(op,NULL,NULL,out,leadingIndent,indentSpacer)</tt> */
+  /** \brief Calls <tt>this->check(op,null,null,out,leadingIndent,indentSpacer)</tt> */
   bool check(
     const LinearOpBase<Scalar> &op,
     const Ptr<Teuchos::FancyOStream> &out
