@@ -77,6 +77,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   FEI                   fei                            PS
   RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
+  TriKota               TriKota                        SS
   Stokhos               stokhos                        SS
   Sacado                sacado                         PS
   Intrepid              intrepid                       PS
@@ -89,7 +90,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   MOOCHO                moocho                         PS
   Aristos               aristos                        EX
   Sundance              Sundance                       PS
-  TriKota               TriKota                        SS
   CTrilinos             CTrilinos                      EX
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS

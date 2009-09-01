@@ -131,7 +131,7 @@
   </Package>
   <Package name="Isorropia" dir="isorropia">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Kokkos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -289,13 +289,23 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
-  <Package name="Stokhos" dir="stokhos">
+  <Package name="TriKota" dir="TriKota">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="ML"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="Dakota,ForUQTK"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+  </Package>
+  <Package name="Stokhos" dir="stokhos">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="ML,TriKota"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -341,7 +351,7 @@
   </Package>
   <Package name="NOX" dir="nox">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Sacado"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Sacado,Stratimikos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Isorropia"/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -408,16 +418,6 @@
     <LIB_OPTIONAL_DEP_TPLS value="ExodusII,MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="ExodusII,MPI"/>
-  </Package>
-  <Package name="TriKota" dir="TriKota">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Dakota"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="CTrilinos" dir="CTrilinos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
