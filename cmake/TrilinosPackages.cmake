@@ -77,7 +77,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   FEI                   fei                            PS
   RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
-  TriKota               TriKota                        SS
+  TriKota               TriKota                        PS
   Stokhos               stokhos                        SS
   Sacado                sacado                         PS
   Intrepid              intrepid                       PS
