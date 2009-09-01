@@ -3,11 +3,11 @@
 // @HEADER
 // ***********************************************************************
 // 
-//                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2008) Sandia Corporation
 // 
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 // 
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
@@ -23,23 +23,21 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#include <iostream>
-#include <iomanip>
-
-#include "Stokhos.hpp"
-
 // This example demonstrates computing a multi-variate polynomial chaos
 // expansion using a product basis.
+
+#include "Stokhos.hpp"
 
 int main(int argc, char **argv)
 {
   try {
+
+    // Basis of dimension 3, order 5
     const int d = 3;
     const int p = 5;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
@@ -48,37 +46,57 @@ int main(int argc, char **argv)
     }
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+
+    // Quadrature method
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+
+    // Expansion method
     Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, quad);
+
+    // Polynomial expansions
     Stokhos::OrthogPolyApprox<int,double> u(basis), v(basis), w(basis);
     u.term(0,0) = 1.0;
-
     for (int i=0; i<d; i++) {
       u.term(i,1) = 0.4 / d;
       u.term(i,2) = 0.06 / d;
       u.term(i,3) = 0.002 / d;
     }
-    u.print(std::cout);
 
+    // Compute expansion
     expn.log(v,u);
     expn.times(w,v,v);
     expn.plusEqual(w,1.0);
     expn.divide(v,1.0,w);
 
-    std::cout.precision(16);
+    // Print u and v
+    std::cout << "v = 1.0 / (log(u)^2 + 1):" << std::endl;
+    std::cout << "\tu = ";
+    u.print(std::cout);
+    std::cout << "\tv = ";
     v.print(std::cout);
 
-    double mean = v[0];
-    double std_dev = 0.0;
-    const Teuchos::Array<double> nrm2 = basis->norm_squared();
-    for (int i=1; i<basis->size(); i++)
-      std_dev += v[i]*v[i]*nrm2[i];
-    std_dev = std::sqrt(std_dev);
+    // Compute moments
+    double mean = v.mean();
+    double std_dev = v.standard_deviation();
 
-    std::cout << "Mean =      " << mean << std::endl;
-    std::cout << "Std. Dev. = " << std_dev << std::endl;
-
+    // Evaluate PCE and function at a point = 0.25 in each dimension
+    Teuchos::Array<double> pt(d); 
+    for (int i=0; i<d; i++) 
+      pt[i] = 0.25;
+    double up = u.evaluate(pt);
+    double vp = 1.0/(std::log(up)*std::log(up)+1.0);
+    double vp2 = v.evaluate(pt);
+    
+    // Print results
+    std::cout << "\tv mean         = " << mean << std::endl;
+    std::cout << "\tv std. dev.    = " << std_dev << std::endl;
+    std::cout << "\tv(0.25) (true) = " << vp << std::endl;
+    std::cout << "\tv(0.25) (pce)  = " << vp2 << std::endl;
+    
+    // Check the answer
+    if (std::abs(vp - vp2) < 1e-2)
+      std::cout << "\nExample Passed!" << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

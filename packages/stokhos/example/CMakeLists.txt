@@ -4,6 +4,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   hermite_example
   SOURCES hermite_example.cpp
   COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Example Passed"
+  NUM_MPI_PROCS 1
   )
 
 PACKAGE_ADD_EXECUTABLE(
@@ -36,42 +38,29 @@ IF(Stokhos_ENABLE_Quadrature)
     product_basis_example
     SOURCES product_basis_example.cpp
     COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Example Passed"
+    NUM_MPI_PROCS 1
     )
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     exp_example
     SOURCES exp_example.cpp
     COMM serial mpi
-    )
-
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    moment_example
-    SOURCES moment_example.cpp
-    COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stieltjes_example
     SOURCES stieltjes_example.cpp
     COMM serial mpi
-    )
-
-   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    stieltjes_dependent_example
-    SOURCES stieltjes_dependent_example.cpp
-    COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     gram_schmidt_example
     SOURCES gram_schmidt_example.cpp
     COMM serial mpi
+    NUM_MPI_PROCS 1
     )
 
 ENDIF()
-
-PACKAGE_ADD_EXECUTABLE(
-  dakota_pce
-  SOURCES dakota_pce.cpp
-  COMM serial mpi
-  )
