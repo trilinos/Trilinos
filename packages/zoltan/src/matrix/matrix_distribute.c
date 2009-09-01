@@ -81,7 +81,7 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as we can share it inside outmat */
-			    Zoltan_matrix_2d *outmat, int copy, int no_redist)
+			    Zoltan_matrix_2d *outmat, int copy)
 {
   static char *yo = "Zoltan_Matrix_Build2d";
   int ierr = ZOLTAN_OK;
@@ -141,7 +141,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
    * redistribute if the matrix is defined using hypergraph queries or if there is
    * more than one proc on x axis.
    */
-  if (inmat.redist || (nProc_x> 1) || !no_redist) {
+  if (inmat.redist || (nProc_x> 1) || !inmat.opts.keep_distribution) {
     /* Do a redistribution by "slice" on X and Y */
     frac_x = (float) inmat.globalX / (float) nProc_x;
     for (i = 1; i < nProc_x; i++)
@@ -156,33 +156,35 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   else {
     /* No redistribution, code is only here to finish "symmetrization" */
     int nY;
-    int flag;
-    int general_flag;
+/*     int flag; */
+/*     int general_flag; */
 
     nY = inmat.nY;
     /* This code only works for a linear distribution on Y */
-    MPI_Allgather (&nY, 1, MPI_INT, dist_y + 1, 1, MPI_INT, communicator);
+    MPI_Allgather (&inmat.nY_ori, 1, MPI_INT, dist_y + 1, 1, MPI_INT, communicator);
+    dist_y[0] = 0;
     for (i = 1 ; i <= nProc_y ; i++) {
       dist_y[i] += dist_y[i-1];
     }
     dist_x[0] = 0; dist_x[1] = inmat.globalX;
 
-    /* Perhaps we have to insure that the permutation is correct ? */
-    /* I will check to avoid a call to really permute things */
-    for (i = 0, flag=0 ; i < nY ; ++i)
-      flag |= ((inmat.yGNO[i] < dist_y[myProc_y]) || (inmat.yGNO[i] >= dist_y[myProc_y+1]));
-    MPI_Allreduce(&flag, &general_flag, 1, MPI_INT, MPI_MAX, communicator);
-    if (general_flag) { /* We have to compute the "permutation" */
-      int offset;
+    /* TODO: we need more to keep the same order in the permutation ! */
+/*     /\* Perhaps we have to insure that the permutation is correct ? *\/ */
+/*     /\* I will check to avoid a call to really permute things *\/ */
+/*     for (i = 0, flag=0 ; i < nY ; ++i) */
+/*       flag |= ((inmat.yGNO[i] < dist_y[myProc_y]) || (inmat.yGNO[i] >= dist_y[myProc_y+1])); */
+/*     MPI_Allreduce(&flag, &general_flag, 1, MPI_INT, MPI_MAX, communicator); */
+/*     if (general_flag) { /\* We have to compute the "permutation" *\/ */
+/*       int offset; */
 
-      tmparray = (int*)ZOLTAN_MALLOC(nY *sizeof(int));
-      if (tmparray == NULL) MEMORY_ERROR;
-      offset = dist_y[myProc_y];
-      for (i=0 ; i < nY ; ++i)
-	tmparray[i] = offset + i;
-      Zoltan_Matrix_Permute(zz, &outmat->mtx, tmparray);
-      ZOLTAN_FREE(&tmparray);
-    }
+/*       tmparray = (int*)ZOLTAN_MALLOC(nY *sizeof(int)); */
+/*       if (tmparray == NULL) MEMORY_ERROR; */
+/*       offset = dist_y[myProc_y]; */
+/*       for (i=0 ; i < nY ; ++i) */
+/* 	tmparray[i] = offset + i; */
+/*       Zoltan_Matrix_Permute(zz, &outmat->mtx, tmparray); */
+/*       ZOLTAN_FREE(&tmparray); */
+/*     } */
   }
 
   /* myProc_y and myProc_x can be -1 when we use a 2D decomposition.

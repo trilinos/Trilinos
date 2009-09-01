@@ -36,10 +36,10 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   float *pinwgt=NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-  if (bipartite || !matrix->opts.enforceSquare)
+  if (bipartite || !matrix->opts.enforceSquare) {
     bipartite = 1;
-
-  matrix->redist = 1;
+    matrix->redist = 1;
+  }
 
   if (matrix->ywgtdim != zz->Obj_Weight_Dim)
       FATAL_ERROR("Cannot form bipartite graph: vertex and edge weights are not consistant");

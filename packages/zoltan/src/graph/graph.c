@@ -56,6 +56,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
   opt.pinwgt = 1;
   opt.randomize = 0;
   opt.local = local;
+  opt.keep_distribution = 1;
 
   ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx);
   CHECK_IERR;
@@ -67,12 +68,12 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
     CHECK_IERR;
   }
 
-/*   ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite); */
-/*   CHECK_IERR; */
+  ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite);
+  CHECK_IERR;
 
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;
-  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0, 1);
+  ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
   CHECK_IERR;
 
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);

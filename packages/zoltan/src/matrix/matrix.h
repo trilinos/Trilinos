@@ -51,6 +51,7 @@ typedef struct Zoltan_matrix_options_ {
   int local;                   /* If only local edges have to be kept */
   int final_output;            /* final_output flag, not used yet */
   int symmetrize;              /* What kind of symmetry we have to apply, not used yet */
+  int keep_distribution;       /* Conserve the original distribution, cannot work with randomize */
 } Zoltan_matrix_options;
 
 /* This structure is a CS view of a part of the matrix/hypergraph */
@@ -62,6 +63,7 @@ typedef struct Zoltan_matrix_ {
   int           globalY;       /* Overall number on Y dimension */
   int           offsetY;       /* Used for bipartite graph: GNO >= offsetY are edges */
   int           nY;            /* Local number in Y dimension */
+  int           nY_ori;        /* nY in the initial (user ?) distribution */
   int           ywgtdim;       /* Wgt dimensions for Y */
   int           nPins;         /* Local number of Pins */
   int           pinwgtdim;     /* Wgt dimensions for pins */
@@ -142,12 +144,10 @@ int
 Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y);
 
 /* Distribute the matrix in the 2D layout defined by user in outmat
- * if no_redist is set, the current distribution on Y is kept. (only
- * works for 1D distribution.
  * if !copy, inmat is not usable after this call */
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat,
-			    Zoltan_matrix_2d *outmat, int copy, int no_redist);
+			    Zoltan_matrix_2d *outmat, int copy);
 
 /* Compute a 2D datalayout that fit the constraints given.
  */
