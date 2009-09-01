@@ -528,7 +528,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       for (i=0; i < zhg->nObj; i++){
         indexptr = (int *)(i+1);
-        ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, (void *)indexptr);
+        ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, indexptr);
         if (ierr != ZOLTAN_OK) goto End;
       }
 
@@ -557,7 +557,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
-        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, (void **)&indexptr);
+        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, &indexptr);
         if (ierr != ZOLTAN_OK) goto End;
         if (!indexptr) FATAL_ERROR("Unexpected vertex global number received");
 
@@ -791,7 +791,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
          gnos[0] = zhg->objGNO[i];
          gnos[1] = zhg->pinGNO[k];
          indexptr = (int *)(k+1);
-         ierr = Zoltan_Map_Add(zz, map2, gnos, (void *)indexptr);
+         ierr = Zoltan_Map_Add(zz, map2, gnos, indexptr);
          if (ierr != ZOLTAN_OK) goto End;
       }
     }
@@ -825,7 +825,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
            cnt++;
          }
          else{
-           ierr = Zoltan_Map_Find(zz, map2, gnos, (void **)&indexptr);
+           ierr = Zoltan_Map_Find(zz, map2, gnos, &indexptr);
            if (ierr != ZOLTAN_OK) goto End;
 
            if (indexptr != NULL){
@@ -897,7 +897,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       gnos[0] = recvIntBuf[i*2];
       gnos[1] = recvIntBuf[i*2 + 1];
 
-      ierr = Zoltan_Map_Find(zz, map2, gnos, (void **)&indexptr);
+      ierr = Zoltan_Map_Find(zz, map2, gnos, &indexptr);
       if (ierr != ZOLTAN_OK) goto End;
 
       index = (long int)indexptr - 1;

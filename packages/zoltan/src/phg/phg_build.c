@@ -841,12 +841,12 @@ long int index;
 
     for (i=0; i < zhg->nObj; i++){
       indexptr = (int *)(i+1);
-      ierr = Zoltan_Map_Add(zz, map_num, myObjGNO + i, (void *)indexptr);
+      ierr = Zoltan_Map_Add(zz, map_num, myObjGNO + i, indexptr);
       if (ierr != ZOLTAN_OK) goto End;
     }
     
     for (i = 0; i < nrecv; i++) {
-      ierr = Zoltan_Map_Find(zz, map_num, recvpins + i, (void **)&indexptr);
+      ierr = Zoltan_Map_Find(zz, map_num, recvpins + i, &indexptr);
       if (ierr != ZOLTAN_OK) goto End;
       if (indexptr == NULL){
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in pin map.");

@@ -499,7 +499,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
           partPair[0] = obj_part;
           partPair[1] = nbor_part;
 
-          ierr = Zoltan_Map_Add(zz, map_num, partPair, (void *)dummyValue);
+          ierr = Zoltan_Map_Add(zz, map_num, partPair, dummyValue);
           if (ierr != ZOLTAN_OK){
             goto End;
           }
@@ -557,7 +557,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
       /* Zoltan_Map "iterator */
 
-      ierr = Zoltan_Map_First(zz, map_num, &key, (void **)&keyValue);
+      ierr = Zoltan_Map_First(zz, map_num, &key, &keyValue);
 
       if ( ((ierr == ZOLTAN_OK) && !key) ||  /* must be at least one pair */
            (ierr != ZOLTAN_OK)){
@@ -569,7 +569,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
         partNbors[num_parts++] = key[0];
         partNbors[num_parts++] = key[1];
 
-        ierr = Zoltan_Map_Next(zz, map_num, &key, (void **)&keyValue);
+        ierr = Zoltan_Map_Next(zz, map_num, &key, &keyValue);
   
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_Next\n");

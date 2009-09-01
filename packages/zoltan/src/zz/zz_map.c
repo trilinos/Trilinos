@@ -23,7 +23,7 @@ extern "C" {
 
 struct Zoltan_Map_Entry{
   int *key;          /* a copy of or a pointer to callers key */
-  void *data;        /* a pointer provided by caller */
+  int *data;        /* a pointer provided by caller */
   struct Zoltan_Map_Entry *next;
 };
 
@@ -231,7 +231,7 @@ int Zoltan_Map_Destroy(ZZ *zz, int map_num)
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Add(ZZ *zz, int map_num, int *key, void *data)
+int Zoltan_Map_Add(ZZ *zz, int map_num, int *key, int *data)
 {
   char *yo = "Zoltan_Map_Add";
   int index, match, i;
@@ -307,7 +307,7 @@ int Zoltan_Map_Add(ZZ *zz, int map_num, int *key, void *data)
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Find(ZZ *zz, int map_num, int *key, void **data)
+int Zoltan_Map_Find(ZZ *zz, int map_num, int *key, int **data)
 {
   char *yo = "Zoltan_Map_Find";
   int index, match;
@@ -362,7 +362,7 @@ int Zoltan_Map_Size(ZZ *zz, int map_num)
  * (Return ZOLTAN_OK, etc)
  */
 
-int Zoltan_Map_First(ZZ *zz, int map_num, int **key, void **data)
+int Zoltan_Map_First(ZZ *zz, int map_num, int **key, int **data)
 {
   char *yo = "Zoltan_Map_First";
   ZOLTAN_MAP *map = NULL;
@@ -423,7 +423,7 @@ int Zoltan_Map_First(ZZ *zz, int map_num, int **key, void **data)
  * (Return ZOLTAN_OK, etc)
  */
 
-int Zoltan_Map_Next(ZZ *zz, int map_num, int **key, void **data)
+int Zoltan_Map_Next(ZZ *zz, int map_num, int **key, int **data)
 {
   ZOLTAN_MAP *map = NULL;
   ZOLTAN_ENTRY *next = NULL; 
