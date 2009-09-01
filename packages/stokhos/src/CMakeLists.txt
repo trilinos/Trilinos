@@ -5,6 +5,8 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
+SET(HAVE_STOKHOS_DAKOTA ${${PACKAGE_NAME}_ENABLE_TriKota})
+
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
@@ -15,6 +17,15 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+# Add path to Dakota headers: TODO: make conditional on TriKota?
+IF (${PACKAGE_NAME}_ENABLE_TriKota)
+INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../TriKota/Dakota/packages/quadrature/rules
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../TriKota/Dakota/packages/quadrature/sparse_grid
+  )
+ENDIF()
+
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h

@@ -18,7 +18,7 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   ${Trilinos_ENABLE_DEBUG} )
 
 SET(Stokhos_ENABLE_Quadrature_Default FALSE)
-IF(TPL_ENABLE_Dakota OR TPL_ENABLE_ForUQTK)
+IF(Stokhos_ENABLE_TriKota OR TPL_ENABLE_ForUQTK)
   SET(Stokhos_ENABLE_Quadrature_Default TRUE)
 ENDIF()
 SET(Stokhos_ENABLE_Quadrature ${Stokhos_ENABLE_Quadrature_Default} CACHE BOOL
