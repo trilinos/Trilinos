@@ -26,6 +26,7 @@ namespace {
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
+  using Tpetra::global_size_t;
   using std::sort;
   using Teuchos::arrayView;
   using Teuchos::broadcast;
@@ -60,12 +61,12 @@ namespace {
     ArrayView<const GO> STMYGIDS = graph.getRowMap()->getNodeElementList(); \
     size_t STMAX = 0; \
     for (size_t STR=0; STR<graph.getNodeNumRows(); ++STR) { \
-      TEST_EQUALITY( graph.getNumEntriesInGlobalRow(STR), graph.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
-      STMAX = std::max( STMAX, graph.getNumEntriesInGlobalRow(STR) ); \
+      TEST_EQUALITY( graph.getNumEntriesInLocalRow(STR), graph.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
+      STMAX = std::max( STMAX, graph.getNumEntriesInLocalRow(STR) ); \
     } \
     TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
-    size_t STGMAX; \
-    reduceAll( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
+    global_size_t STGMAX; \
+    Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
     TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
   }
 
@@ -167,7 +168,7 @@ namespace {
       GRAPH goodgraph(map,map,1);
       goodgraph.insertGlobalIndices(map->getMinGlobalIndex(),gids());
       goodgraph.fillComplete();
-      TEST_EQUALITY( goodgraph.getNumEntriesInGlobalRow(map->getMinGlobalIndex()),
+      TEST_EQUALITY( goodgraph.getNumEntriesInLocalRow(0),
                      (size_t)(myImageID == numImages-1 ? 0 : 1) );
     }
     // All procs fail if any node fails
@@ -210,7 +211,7 @@ namespace {
         GRAPH diaggraph(map,map,1);
         TEST_EQUALITY(diaggraph.hasColMap(), true);
         diaggraph.insertLocalIndices(0,lids());
-        TEST_EQUALITY( diaggraph.getNumEntriesInGlobalRow(0), (size_t)(myImageID == numImages-1 ? 0 : 1) );
+        TEST_EQUALITY( diaggraph.getNumEntriesInLocalRow(0), (size_t)(myImageID == numImages-1 ? 0 : 1) );
       }
     }
     // All procs fail if any node fails
@@ -224,8 +225,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, CopiesAndViews, LO, GO )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -277,10 +276,10 @@ namespace {
       for (size_t j=0; j < ginds.size(); ++j) {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
-      TEST_EQUALITY( trigraph.getNumEntriesInGlobalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // if static graph, insert one additional entry on my row and verify that an exception is thrown
+      TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
+      // if static graph, attempt to insert one additional entry on my row and verify that an exception is thrown
       if (pftype == StaticProfile) {
-        TEST_THROW( trigraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
+        TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
       }
       trigraph.fillComplete(os);
       // check that inserting global entries throws (inserting local entries is still allowed)
@@ -338,7 +337,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraph, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc0, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -351,7 +350,53 @@ namespace {
     // create the empty graph
     RCP<RowGraph<LO,GO> > zero;
     {
+      // allocate with no space
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), 0 ); // zero, because none are allocated yet
+      zero_crs->fillComplete(DoOptimizeStorage);
+      zero = zero_crs;
+    }
+    RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
+    TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+    TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
+    TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+    TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
+    TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+    TEST_EQUALITY( zero->getIndexBase(), 0 );
+    TEST_EQUALITY( zero->isUpperTriangular(), true );
+    TEST_EQUALITY( zero->isLowerTriangular(), true );
+    TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
+    TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+    TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+    TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+    TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+    STD_TESTS((*zero));
+
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc1, LO, GO )
+  {
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    int numImages = size(*comm);
+    // create a Map
+    const GO indexBase = 0;
+    const size_t numLocal = 10;
+    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    // create the empty graph
+    RCP<RowGraph<LO,GO> > zero;
+    {
+      // allocated with space for one entry per row
+      RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,1));
+      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), 0 ); // zero, because none are allocated yet
       zero_crs->fillComplete(DoOptimizeStorage);
       zero = zero_crs;
     }
@@ -414,17 +459,17 @@ namespace {
         ddgraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
         ArrayRCP<const LO> myrow_lcl;
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInGlobalRow(0), 0 );
-        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInGlobalRow(2), 0 );
+        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
+        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
         myrow_lcl = ddgraph.getLocalRowView(1);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
           TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
         }
         // also, the row map and column map should be equivalent
-        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (size_t)(3*numImages) );
-        TEST_EQUALITY( ddgraph.getGlobalNumRows(), (size_t)(3*numImages) );
-        TEST_EQUALITY( ddgraph.getGlobalNumDiags(), (size_t)numImages );
+        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (global_size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumRows(), (global_size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumDiags(), (global_size_t)numImages );
         TEST_EQUALITY_CONST( ddgraph.getNodeNumDiags(), 1 );
         STD_TESTS(ddgraph);
       }
@@ -462,7 +507,7 @@ namespace {
         if (grow == numImages) {
           grow = 0;
         }
-        diaggraph.insertGlobalIndices(grow, arrayView(&grow,1));
+        diaggraph.insertGlobalIndices(grow, tuple<GO>(grow));
         // before globalAssemble(), there should be no local entries if numImages > 1
         ArrayRCP<const GO> myrow_gbl = diaggraph.getGlobalRowView(myrowind);
         TEST_EQUALITY( myrow_gbl.size(), (numImages == 1 ? 1 : 0) );
@@ -481,7 +526,7 @@ namespace {
         }
         // also, the row map and column map should be equivalent
         TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
-        TEST_EQUALITY( diaggraph.getGlobalNumDiags(), (size_t)numImages );
+        TEST_EQUALITY( diaggraph.getGlobalNumDiags(), (global_size_t)numImages );
         TEST_EQUALITY_CONST( diaggraph.getNodeNumDiags(), 1 );
         TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
         TEST_EQUALITY_CONST( diaggraph.isLowerTriangular(), true );
@@ -504,7 +549,7 @@ namespace {
         ArrayRCP<const GO> myrow_gbl = ngraph.getGlobalRowView(myrowind);
         TEST_EQUALITY_CONST( myrow_gbl.size(), (numImages == 1 ? 3 : 1) );
         ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
-        TEST_EQUALITY( ngraph.getNumEntriesInGlobalRow(0), ngraph.getNumAllocatedEntriesInLocalRow(0) );
+        TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0), ngraph.getNumAllocatedEntriesInLocalRow(0) );
         if (pftype == StaticProfile) {
           TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
         }
@@ -531,7 +576,7 @@ namespace {
           }
         }
         TEST_EQUALITY_CONST( ngraph.getRowMap()->isSameAs(*ngraph.getColMap()), (numImages==1 ? true : false) );
-        TEST_EQUALITY( ngraph.getGlobalNumDiags(), (size_t)numImages );
+        TEST_EQUALITY( ngraph.getGlobalNumDiags(), (global_size_t)numImages );
         TEST_EQUALITY( ngraph.getNodeNumDiags(), 1 );
         STD_TESTS(ngraph);
       }
@@ -549,10 +594,11 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraph, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadConst  , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadGIDs   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadLIDs   , LO, GO ) \

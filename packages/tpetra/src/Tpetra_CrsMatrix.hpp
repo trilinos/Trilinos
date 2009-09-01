@@ -43,13 +43,13 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
 
+#include "Tpetra_InverseOperator.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsGraph.hpp"
 
 namespace Tpetra {
   // struct for i,j,v triplets
@@ -107,19 +107,19 @@ namespace Tpetra
       //@{ 
 
       //! Constructor specifying the number of non-zeros for all rows.
-      CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, size_t numNNZ, bool staticProfile = false);
+      CrsMatrix(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
       //! Constructor specifying the number of non-zeros for each row.
-      CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<size_t> &NNZPerRowToAlloc, bool staticProfile = false);
+      CrsMatrix(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &rowMap, const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
 
       //! Constructor specifying a column map and the number of non-zeros for all rows.
-      CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, size_t numNNZ, bool staticProfile = false);
+      CrsMatrix(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &rowMap, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
       //! Constructor specifying a column map and the number of non-zeros for each row.
-      CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, const Teuchos::ArrayView<size_t> &NNZPerRowToAlloc, bool staticProfile = false);
+      CrsMatrix(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &rowMap, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > &colMap, const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
 
       //! Constructor specifying a pre-constructed graph.
-      CrsMatrix(const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &graph);
+      CrsMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &graph);
 
       // !Destructor.
       virtual ~CrsMatrix();
@@ -131,14 +131,30 @@ namespace Tpetra
 
       //! \brief Returns the Map associated with the domain of this operator.
       //! This will be equal to the row map until fillComplete() is called.
-      const Map<LocalOrdinal,GlobalOrdinal> & getDomainMap() const;
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > & getOperatorDomainMap() const;
 
       //! Returns the Map associated with the domain of this operator.
       //! This will be equal to the row map until fillComplete() is called.
-      const Map<LocalOrdinal,GlobalOrdinal> & getRangeMap() const;
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > & getOperatorRangeMap() const;
 
       //! Computes the matrix-vector multilication y = A x.
-      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+
+      //@}
+
+      //! @name Methods implementing InverseOperator
+      //@{ 
+
+      //! \brief Returns the Map associated with the domain of this operator.
+      //! This will be equal to the row map until fillComplete() is called.
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > & getInverseOperatorDomainMap() const;
+
+      //! Returns the Map associated with the domain of this operator.
+      //! This will be equal to the row map until fillComplete() is called.
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal> > & getInverseOperatorRangeMap() const;
+
+      //! Computes the matrix-vector multilication y = A x.
+      void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
       //@}
 
@@ -664,12 +680,12 @@ namespace Tpetra
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   const Map<LocalOrdinal,GlobalOrdinal> & 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getDomainMap() const
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getOperatorDomainMap() const
   { return graph_.getDomainMap(); }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   const Map<LocalOrdinal,GlobalOrdinal> & 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getRangeMap() const
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getOperatorRangeMap() const
   { return graph_.getRangeMap(); }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
@@ -1462,8 +1478,8 @@ namespace Tpetra
       // get a list of ImageIDs for the non-local rows (NLRs)
       Array<int> NLRIds(NLRs.size());
       {
-        bool invalidGIDs = getRowMap().getRemoteIndexList(NLRs(),NLRIds());
-        char lclerror = ( invalidGIDs ? 1 : 0 );
+        LookupStatus stat = getRowMap().getRemoteIndexList(NLRs(),NLRIds());
+        char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
         Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,&gblerror);
         TEST_FOR_EXCEPTION(gblerror, std::runtime_error,

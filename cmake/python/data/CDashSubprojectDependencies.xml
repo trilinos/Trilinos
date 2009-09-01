@@ -95,6 +95,8 @@
   </SubProject>
   <SubProject name="Isorropia">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="LO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -173,6 +175,8 @@
   </SubProject>
   <SubProject name="ML">
     <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -252,6 +256,8 @@
   </SubProject>
   <SubProject name="FEI">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -307,6 +313,8 @@
   </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -324,6 +332,8 @@
   </SubProject>
   <SubProject name="Sacado">
     <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -342,6 +352,8 @@
   </SubProject>
   <SubProject name="Intrepid">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
@@ -363,8 +375,8 @@
   </SubProject>
   <SubProject name="Phalanx">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
-    <Dependency name="Kokkos" type="ITO"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
@@ -409,7 +421,7 @@
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
-    <Dependency name="Stratimikos" type="LO"/>
+    <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
@@ -420,6 +432,8 @@
   </SubProject>
   <SubProject name="Moertel">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -454,7 +468,6 @@
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
-    <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
@@ -519,6 +532,8 @@
   </SubProject>
   <SubProject name="Aristos">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -599,7 +614,6 @@
     <Dependency name="Komplex" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="ILO"/>
-    <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
@@ -611,6 +625,8 @@
   </SubProject>
   <SubProject name="WebTrilinos">
     <Dependency name="Teuchos" type="ITR"/>
+    <Dependency name="ThreadPool" type="ITO"/>
+    <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="TR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITR"/>
@@ -643,7 +659,6 @@
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>
     <Dependency name="Belos" type="TO"/>
-    <Dependency name="Stratimikos" type="ITO"/>
     <Dependency name="Anasazi" type="TO"/>
     <Dependency name="TriKota" type="ITO"/>
     <Dependency name="Stokhos" type="ITO"/>

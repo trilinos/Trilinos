@@ -9,6 +9,6 @@ ADD_SUBDIRECTORIES(
   MultiVector
   #BasicPerfTest
   Utils
-  #CrsGraph
+  CrsGraph
   #CrsMatrix
   )

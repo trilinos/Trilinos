@@ -333,7 +333,7 @@ namespace Tpetra {
     // check for GIDs that exist in target but not in source: we see this if getRemoteIndexList returns true
     Teuchos::ArrayView<GlobalOrdinal> remoteGIDs = (*remoteGIDs_)();
     Teuchos::Array<int> remoteImageIDs(remoteGIDs.size());
-    TEST_FOR_EXCEPTION( source.getRemoteIndexList(remoteGIDs, remoteImageIDs()) == true, std::runtime_error,
+    TEST_FOR_EXCEPTION( source.getRemoteIndexList(remoteGIDs, remoteImageIDs()) == IDNotPresent, std::runtime_error,
         "Tpetra::Import::setupExport(): Target has GIDs not found in Source.");
 
     // sort remoteImageIDs in ascending order

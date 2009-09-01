@@ -326,7 +326,7 @@ namespace Tpetra {
         *liditer = source.getLocalElement(*giditer);
       }
     }
-    TEST_FOR_EXCEPTION( target.getRemoteIndexList(ExportData_->exportGIDs_(), ExportData_->exportImageIDs_()) == true,
+    TEST_FOR_EXCEPTION( target.getRemoteIndexList(ExportData_->exportGIDs_(), ExportData_->exportImageIDs_()) == IDNotPresent,
         std::runtime_error, "Tpetra::Export::setupSamePermuteExport(): Source has GIDs not found in Target.");
   }
 

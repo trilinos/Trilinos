@@ -32,8 +32,10 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
 namespace Tpetra 
