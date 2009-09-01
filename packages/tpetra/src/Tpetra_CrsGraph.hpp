@@ -87,16 +87,19 @@ namespace Tpetra
       //! @name Insertion/Removal Methods
       //@{ 
 
-      //! allows insertion of global indices, either belonging to this node or intended for another.
+      //! Submit graph indices, using global IDs.
       void insertGlobalIndices(GlobalOrdinal row, const Teuchos::ArrayView<const GlobalOrdinal> &indices);
 
-      //! allows insertion of local indices intended for this node.
+      //! Submit graph indices, using local IDs.
       void insertLocalIndices(LocalOrdinal row, const Teuchos::ArrayView<const LocalOrdinal> &indices);
 
       //@}
 
       //! @name Transformational Methods
       //@{ 
+
+      //! \brief Communicate non-local contributions to other nodes.
+      void globalAssemble();
 
       /*! \brief Signal that data entry is complete, specifying domain and range maps. 
           Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
@@ -111,34 +114,24 @@ namespace Tpetra
        */
       void fillComplete(OptimizeOption os = DoOptimizeStorage);
 
-      //! \brief Communicate non-local contributions to other nodes.
-      void globalAssemble();
-
       //! \brief Re-allocate the data into contiguous storage.
       void optimizeStorage();
 
-      //! Returns \c true if fillComplete() has been called.
-      bool isFillComplete() const;
-
-      //! Returns \c true if optimizeStorage() has been called.
-      bool isStorageOptimized() const;
-
-      //! Returns \c true if the graph data was allocated in static data structures.
-      ProfileType getProfileType() const;
-
       //@}
 
-      //! @name Graph Query Methods
+      //! @name Methods implementing RowGraph.
       //@{ 
 
       //! Returns the communicator.
       const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
+      //! Returns the underlying node.
+      Teuchos::RCP<Node> getNode() const;
+
       //! Returns the Map that describes the row distribution in this graph.
       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const;
 
       //! \brief Returns the Map that describes the column distribution in this graph.
-      /*! Cannot be called before fillComplete(), unless the matrix was constructed with a column map. */
       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const;
 
       //! Returns the Map associated with the domain of this graph.
@@ -157,33 +150,29 @@ namespace Tpetra
       global_size_t getGlobalNumRows() const;
 
       //! \brief Returns the number of global columns in the graph.
-      /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
       global_size_t getGlobalNumCols() const;
 
       //! Returns the number of rows owned on the calling node.
       size_t getNodeNumRows() const;
 
       //! Returns the number of columns connected to the locally owned rows of this graph.
-      /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
       size_t getNodeNumCols() const;
 
       //! Returns the index base for global indices for this graph. 
       GlobalOrdinal getIndexBase() const;
 
-      //! \brief Returns the number of entries in the global matrix. 
-      /*! Returns the number of global entries in the associated graph. */
+      //! Returns the global number of entries in the graph.
       global_size_t getGlobalNumEntries() const;
 
-      //! \brief Returns the number of entries in the calling image's portion of the matrix. 
-      /*! Before fillComplete() is called, this could include duplicated entries. */
+      //! Returns the local number of entries in the graph.
       size_t getNodeNumEntries() const;
 
-      //! \brief Returns the current number of entries on this node in the specified global row .
-      /*! Throws exception std::runtime_error if the specified global row does not belong to this node. */
+      //! \brief Returns the current number of entries on this node in the specified global row.
+      /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
       size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
 
       //! Returns the current number of entries on this node in the specified local row.
-      /*! Throws exception std::runtime_error if the specified local row is not valid for this node. */
+      /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
       size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
       //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
@@ -201,23 +190,18 @@ namespace Tpetra
       size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const;
 
       //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
-      /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
       global_size_t getGlobalNumDiags() const;
 
       //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
-      /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
       size_t getNodeNumDiags() const;
 
       //! \brief Returns the maximum number of entries across all rows/columns on all nodes. 
-      /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
       size_t getGlobalMaxNumRowEntries() const;
 
       //! \brief Returns the maximum number of entries across all rows/columns on this node. 
-      /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
       size_t getNodeMaxNumRowEntries() const;
 
       //! \brief Indicates whether the matrix has a well-defined column map. 
-      /*! The column map does not exist until after fillComplete(), unless the matrix was constructed with one. */
       bool hasColMap() const; 
 
       //! \brief Indicates whether the graph is lower triangular.
@@ -232,11 +216,9 @@ namespace Tpetra
       //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
       bool isGloballyIndexed() const;
 
-      //@}
+      //! Returns \c true if fillComplete() has been called.
+      bool isFillComplete() const;
 
-      //! @name Extraction Methods
-      //@{ 
-          
       //! Extract a list of elements in a specified global row of the graph. Put into pre-allocated storage.
       /*!
         \param LocalRow - (In) Global row number for which indices are desired.
@@ -247,7 +229,9 @@ namespace Tpetra
          with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
          returned as Teuchos::OrdinalTraits<size_t>::invalid().
        */
-      void getGlobalRowCopy(GlobalOrdinal GlobalRow, const Teuchos::ArrayView<GlobalOrdinal> &indices, size_t &NumIndices) const;
+      void getGlobalRowCopy(GlobalOrdinal GlobalRow, 
+                            const Teuchos::ArrayView<GlobalOrdinal> &Indices, 
+                            size_t &NumIndices) const;
 
       //! Extract a list of elements in a specified local row of the graph. Put into storage allocated by calling routine.
       /*!
@@ -285,13 +269,16 @@ namespace Tpetra
 
       //@}
 
-      //! @name Overridden from Teuchos::Describable 
+      //! @name Miscellaneous Query Methods
       //@{
 
-      //! Return the underlying node.
-      Teuchos::RCP<Node> getNode() const;
+      //! Returns \c true if optimizeStorage() has been called.
+      bool isStorageOptimized() const;
 
-      //@} 
+      //! Returns \c true if the graph data was allocated in static data structures.
+      ProfileType getProfileType() const;
+
+      //@}
 
       //! @name Overridden from Teuchos::Describable 
       //@{
