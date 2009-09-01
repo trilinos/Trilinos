@@ -119,7 +119,7 @@
 // ML Includes
 #include "ml_epetra_utils.h"
 
-#define DUMP_DATA
+//#define DUMP_DATA
 
 using namespace std;
 using namespace Intrepid;
@@ -590,6 +590,7 @@ int main(int argc, char *argv[]) {
 	       num_node_comm_maps,
 	       rank,
 	       doing_type);
+
   // Build list of owned global edge ids
     long long * globalEdgeIds = new long long[numEdges];
     bool * edgeIsOwned = new bool[numEdges];
@@ -772,59 +773,50 @@ int main(int argc, char *argv[]) {
     }
 
    // Edge to face incidence matrix
-    double vals[4];
-    for (int j=0; j<numFaces; j++){
-      if (faceIsOwned[j]){
-        int rowNum = globalFaceIds[j];
-        int colNum[4];
-        colNum[0] = globalEdgeIds[faceToEdge(j,0)];
-        colNum[1] = globalEdgeIds[faceToEdge(j,1)];
-        colNum[2] = globalEdgeIds[faceToEdge(j,2)];
-        colNum[3] = globalEdgeIds[faceToEdge(j,3)];
+   FieldContainer<bool> faceDone2(numFaces);
+   for (int i=0; i<numElems; i++){
+      for (int k=0; k<numFacesPerElem; k++){
+         int iface=elemToFace(i,k);
+         if (faceIsOwned[iface] && !faceDone2(iface)){
+             double vals[4];
+             int rowNum = globalFaceIds[iface];
+             int colNum[4];
 
-/*
-        if (!edgeIsOwned[faceToEdge(j,0)]){
-           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,0)] << "is not owned \n";
-        }
-        if (!edgeIsOwned[faceToEdge(j,1)]){
-           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,1)] << "is not owned \n";
-        }
-        if (!edgeIsOwned[faceToEdge(j,2)]){
-           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,2)] << "is not owned \n";
-        }
-        if (!edgeIsOwned[faceToEdge(j,3)]){
-           std::cout << "edge: " << globalEdgeIds[faceToEdge(j,3)] << "is not owned \n";
-        }
-*/
+            for (int m=0; m<numEdgesPerFace; m++){
+              colNum[m] = globalEdgeIds[faceToEdge(iface,m)];
+              int indm = m+1;
+              if (indm >= numEdgesPerFace) indm=0;
+              if (edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),0) ||
+                 edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),1)){
+                 vals[m]=1.0;}
+              else vals[m]=-1.0;
 
-        if (edgeToNode(faceToEdge(j,0),1) == edgeToNode(faceToEdge(j,1),0) ||
-               edgeToNode(faceToEdge(j,0),1) == edgeToNode(faceToEdge(j,1),1)){
-           vals[0]=1.0;}
-        else vals[0]=-1.0;
+            // This is a convoluted way to account for edge orientations that 
+            // may be incorrect on the local processor because the edge is
+            // not owned by the local processor.
+             int edgeIndex = -1;
+             if (!edgeIsOwned[faceToEdge(iface,m)]){
+                 for (int l=0; l<numEdgesPerElem; l++){
+                    if (faceToEdge(iface,m)==elemToEdge(i,l)) 
+                       edgeIndex=l;
+                }
+             }
+               if (edgeIndex != -1 && edgeIndex < 8){
+                 if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
+                   vals[m]=-1.0*vals[m];                 
+                 }
+                 else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
+                   vals[m]=-1.0*vals[m];
+                 }
+               }
+         }
 
-        if (edgeToNode(faceToEdge(j,1),1) == edgeToNode(faceToEdge(j,2),0) ||
-               edgeToNode(faceToEdge(j,1),1) == edgeToNode(faceToEdge(j,2),1)){
-           vals[1]=1.0;
-        }
-        else vals[1]=-1.0;
-
-        if (edgeToNode(faceToEdge(j,2),1) == edgeToNode(faceToEdge(j,3),0) ||
-               edgeToNode(faceToEdge(j,2),1) == edgeToNode(faceToEdge(j,3),1)){
-           vals[2]=1.0;
-        }
-        else vals[2]=-1.0;
-
-        if (edgeToNode(faceToEdge(j,3),1) == edgeToNode(faceToEdge(j,0),0) ||
-               edgeToNode(faceToEdge(j,3),1) == edgeToNode(faceToEdge(j,0),1)){
-           vals[3]=1.0;
-        }
-        else vals[3]=-1.0;
-
-        DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+         DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+         faceDone2(iface)=1;
       }
     }
-
-
+  }
+            
 // ************************************ CUBATURE **************************************
 
    // Get numerical integration points and weights
@@ -1334,6 +1326,165 @@ int main(int argc, char *argv[]) {
    EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
 
    fSignsout.close();
+#endif
+
+  // *********** Placeholder for ML solver ***********
+
+#ifdef CALC_ERROR
+    // ********  Calculate Error in Solution ***************
+
+     double L2err = 0.0;
+     double HDiverr = 0.0;
+     double Linferr = 0.0;
+     double L2errTot = 0.0;
+     double HDiverrTot = 0.0;
+     double LinferrTot = 0.0;
+
+    FieldContainer<double> uCoeff(numFacesGlobal);
+
+  // Read in solution 
+    double tmp;
+    ifstream fin;
+    fin.open("divCoeff.dat");
+    if (fin.is_open()){
+      for (int i=0; i<numFacesGlobal; i++){
+         fin >> tmp;
+         uCoeff(i) = tmp;
+      }
+    }
+    else{
+      std::cout << "Cannot read input file: divCoeff.dat \n\n";
+      exit(1);
+    }
+    fin.close();
+
+   // Get cubature points and weights for error calc (may be different from previous)
+     DefaultCubatureFactory<double>  cubFactoryErr;
+     int cubDegErr = 3;
+     Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(hex_8, cubDegErr);
+     int cubDimErr       = hexCubErr->getDimension();
+     int numCubPointsErr = hexCubErr->getNumPoints();
+     FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
+     FieldContainer<double> cubWeightsErr(numCubPointsErr);
+     hexCubErr->getCubature(cubPointsErr, cubWeightsErr);
+     FieldContainer<double> physCubPointsE(numCells,numCubPointsErr, cubDimErr);
+
+   // Containers for Jacobian
+     FieldContainer<double> hexJacobianE(numCells, numCubPointsErr, spaceDim, spaceDim);
+     FieldContainer<double> hexJacobInvE(numCells, numCubPointsErr, spaceDim, spaceDim);
+     FieldContainer<double> hexJacobDetE(numCells, numCubPointsErr);
+     FieldContainer<double> weightedMeasureE(numCells, numCubPointsErr);
+
+ // Evaluate basis values and curls at cubature points
+     FieldContainer<double> uhDVals(numFieldsD, numCubPointsErr, spaceDim);
+     FieldContainer<double> uhDValsTrans(numCells,numFieldsD, numCubPointsErr, spaceDim);
+     FieldContainer<double> uhDivs(numFieldsD, numCubPointsErr);
+     FieldContainer<double> uhDivsTrans(numCells, numFieldsD, numCubPointsErr);
+     hexHDivBasis.getValues(uhDVals, cubPointsErr, OPERATOR_VALUE);
+     hexHDivBasis.getValues(uhDivs, cubPointsErr, OPERATOR_DIV);
+
+
+   // Loop over elements
+    for (int k=0; k<numElems; k++){
+
+      double L2errElem = 0.0;
+      double HDiverrElem = 0.0;
+      double uExact1, uExact2, uExact3;
+      double divuExact;
+
+     // physical cell coordinates
+      for (int i=0; i<numNodesPerElem; i++) {
+         hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
+         hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
+         hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
+      }
+     // Face signs
+      for (int j=0; j<numFacesPerElem; j++) {
+         hexFaceSigns(0,j) = -1.0;
+         for (int i=0; i<numNodesPerFace; i++) {
+           int indf=i+1;
+           if (indf > numNodesPerFace) indf=0;
+           if (elemToNode(k,refFaceToNode(j,0))==faceToNode(elemToFace(k,j),i) &&
+               elemToNode(k,refFaceToNode(j,1))==faceToNode(elemToFace(k,j),indf))
+                hexFaceSigns(0,j) = 1.0;
+           }
+           if (!faceIsOwned[elemToFace(k,j)]){
+              hexFaceSigns(0,j)=-1.0*hexFaceSigns(0,j);
+           }
+       }
+
+    // compute cell Jacobians, their inverses and their determinants
+       CellTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, hex_8);
+       CellTools::setJacobianInv(hexJacobInvE, hexJacobianE );
+       CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
+
+      // transform integration points to physical points
+       CellTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, hex_8);
+
+      // transform basis values to physical coordinates
+       fst::HDIVtransformVALUE<double>(uhDValsTrans, hexJacobianE, hexJacobDetE, uhDVals);
+       fst::HDIVtransformDIV<double>(uhDivsTrans, hexJacobDetE, uhDivs);
+
+      // compute weighted measure
+       fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+
+     // loop over cubature points
+       for (int nPt = 0; nPt < numCubPointsErr; nPt++){
+
+         // get exact solution and divs
+          double x = physCubPointsE(0,nPt,0);
+          double y = physCubPointsE(0,nPt,1);
+          double z = physCubPointsE(0,nPt,2);
+          evalu(uExact1, uExact2, uExact3, x, y, z);
+          divuExact = evalDivu(x, y, z);
+
+         // calculate approximate solution and divs
+          double uApprox1 = 0.0;
+          double uApprox2 = 0.0;
+          double uApprox3 = 0.0;
+          double divuApprox = 0.0;
+          for (int i = 0; i < numFieldsD; i++){
+             int rowIndex = globalFaceIds[elemToFace(k,i)];
+             double uh1 = uCoeff(rowIndex);
+             uApprox1 += uh1*uhDValsTrans(0,i,nPt,0)*hexFaceSigns(0,i);
+             uApprox2 += uh1*uhDValsTrans(0,i,nPt,1)*hexFaceSigns(0,i);
+             uApprox3 += uh1*uhDValsTrans(0,i,nPt,2)*hexFaceSigns(0,i);
+             divuApprox += uh1*uhDivsTrans(0,i,nPt)*hexFaceSigns(0,i);
+          }
+
+         // evaluate the error at cubature points
+          Linferr = max(Linferr, abs(uExact1 - uApprox1));
+          Linferr = max(Linferr, abs(uExact2 - uApprox2));
+          Linferr = max(Linferr, abs(uExact3 - uApprox3));
+          L2errElem+=(uExact1 - uApprox1)*(uExact1 - uApprox1)*weightedMeasureE(0,nPt);
+          L2errElem+=(uExact2 - uApprox2)*(uExact2 - uApprox2)*weightedMeasureE(0,nPt);
+          L2errElem+=(uExact3 - uApprox3)*(uExact3 - uApprox3)*weightedMeasureE(0,nPt);
+          HDiverrElem+=((divuExact - divuApprox)*(divuExact - divuApprox))
+                     *weightedMeasureE(0,nPt);
+        }
+
+       L2err+=L2errElem;
+       HDiverr+=HDiverrElem;
+     }
+
+#ifdef HAVE_MPI
+   // sum over all processors
+    Comm.SumAll(&L2err,&L2errTot,1);
+    Comm.SumAll(&HDiverr,&HDiverrTot,1);
+    Comm.MaxAll(&Linferr,&LinferrTot,1);
+
+#else
+    L2errTot = L2err;
+    HDiverrTot = HDiverr;
+    LinferrTot = Linferr;
+#endif
+
+
+  if (MyPID == 0) {
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2err) <<"\n";
+    std::cout << "HDiv Error:  " << sqrt(HDiverr) <<"\n";
+    std::cout << "LInf Error:  " << Linferr <<"\n\n";
+  }
 #endif
 
 
