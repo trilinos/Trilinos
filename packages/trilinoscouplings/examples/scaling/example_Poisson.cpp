@@ -59,7 +59,7 @@
     \remark Example requires Pamgen formatted mesh input file named PoissonMesh.in.
 */
 
-#define DUMP_DATA
+//#define DUMP_DATA
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -667,8 +667,9 @@ int main(int argc, char *argv[]) {
     }
     xexact.GlobalAssemble();
        
+   char probType[10] = "laplace";
    
-    TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,uh,
+    TestMultiLevelPreconditionerLaplace(probType,MLList,StiffMatrix,xexact,rhs,uh,
                                        TotalErrorResidual, TotalErrorExactSol);
 
    // ********  Calculate Error in Solution *************** 
