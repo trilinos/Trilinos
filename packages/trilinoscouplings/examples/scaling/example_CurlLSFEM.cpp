@@ -130,8 +130,8 @@
 
 #define ABS(x) ((x)>0?(x):-(x))
 
-#define DUMP_DATA
-#define DUMP_DATAE
+//#define DUMP_DATA
+//#define DUMP_DATAE
 
 using namespace std;
 using namespace Intrepid;
@@ -1288,8 +1288,9 @@ int main(int argc, char *argv[]) {
    DGrad.SetLabel("D0");
    MassGinv.SetLabel("M0^{-1}");
    
+   char probType[12] = "curl_lsfem";
 
-   TestMultiLevelPreconditioner_CurlLSFEM("curl-lsfem",MLList2,StiffC,
+   TestMultiLevelPreconditioner_CurlLSFEM(probType,MLList2,StiffC,
                                           DGrad,MassGinv,MassC,
                                           xh,rhsC,
                                           TotalErrorResidual, TotalErrorExactSol);
@@ -1303,15 +1304,14 @@ int main(int argc, char *argv[]) {
      double HCurlerrTot = 0.0;
      double LinferrTot = 0.0;
 
-
 #ifdef HAVE_MPI
    // Import solution onto current processor
      Epetra_Map  solnMap(numEdgesGlobal, numEdgesGlobal, 0, Comm);
      Epetra_Import  solnImporter(solnMap, globalMapC);
-     Epetra_Vector  uCoeff(solnMap);
+     Epetra_FEVector  uCoeff(solnMap);
      uCoeff.Import(xh, solnImporter, Insert);
 #endif
-
+     
 
    // Get cubature points and weights for error calc (may be different from previous)
      DefaultCubatureFactory<double>  cubFactoryErr;
@@ -1339,7 +1339,6 @@ int main(int argc, char *argv[]) {
      hexHCurlBasis.getValues(uhCurls, cubPointsErr, OPERATOR_CURL);
 
 
-
    // Loop over elements
     for (int k=0; k<numElems; k++){
 
@@ -1362,6 +1361,24 @@ int main(int argc, char *argv[]) {
           else 
               hexEdgeSigns(0,j) = -1.0;
       } 
+
+      // modify signs for edges whose signs were defined on another processor
+       if (!faceIsOwned[elemToFace(k,0)]) {
+            hexEdgeSigns(0,0)=-1.0*hexEdgeSigns(0,0);
+            hexEdgeSigns(0,4)=-1.0*hexEdgeSigns(0,4);
+        }
+       if (!faceIsOwned[elemToFace(k,1)]) {
+            hexEdgeSigns(0,1)=-1.0*hexEdgeSigns(0,1);
+            hexEdgeSigns(0,5)=-1.0*hexEdgeSigns(0,5);
+        }
+       if (!faceIsOwned[elemToFace(k,2)]) {
+            hexEdgeSigns(0,2)=-1.0*hexEdgeSigns(0,2);
+            hexEdgeSigns(0,6)=-1.0*hexEdgeSigns(0,6);
+        }
+       if (!faceIsOwned[elemToFace(k,3)]) {
+            hexEdgeSigns(0,3)=-1.0*hexEdgeSigns(0,3);
+            hexEdgeSigns(0,7)=-1.0*hexEdgeSigns(0,7);
+        }
 
     // compute cell Jacobians, their inverses and their determinants
        CellTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, hex_8);
@@ -1488,10 +1505,6 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_proc_ids;
    }
 
-
- // reset format state of std::cout
- //std::cout.copyfmt(oldFormatState);
-
 #ifdef HAVE_MPI
    MPI_Finalize();
 #endif
@@ -1514,13 +1527,13 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
   const Epetra_Export* Exporter_=A.Exporter();
   Epetra_Vector *xcopy=0, *ImportVector_=0, *ExportVector_=0;
 
-  if (&x==&y && Importer_==0 && Importer_==0) {
+  if (&x==&y && Importer_==0 && Exporter_==0) {
     xcopy = new Epetra_Vector(x);
     xp = (double *) xcopy->Values();
   }
   else if (Importer_)
     ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
-  else if (Importer_)
+  else if (Exporter_)
     ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
   
 
@@ -1539,8 +1552,8 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
     A.Graph().ExtractMyRowView(i,NumEntries,RowIndices);
     double sum = 0.0;
     for(int j = 0; j < NumEntries; j++) 
-      sum += x[*RowIndices++];    
-    y[i] = sum;    
+      sum += xp[*RowIndices++];    
+    yp[i] = sum;    
   }
   
   if(Exporter_ != 0) {
