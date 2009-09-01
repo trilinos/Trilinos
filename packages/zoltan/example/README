@@ -1,7 +1,7 @@
 $Id$
 
 Some simple C examples may be found in the "C" directory, and
-C++ examples in the "CPP" directory.  Edit the Makefile found
+C++ examples in the "CPP" directory.  Edit the classicMakefile found
 in those directories to build the examples.
 
 Note that C++ implementations vary widely.  If you have trouble
@@ -11,4 +11,4 @@ the MPI_CPP or NAMESPACES_OK values in the tests' source files.
 To run an example, launch it on any number of processes as you would 
 any MPI application:
 
-mpirun -np 4 zoltanSimple
+mpirun -np 4 simpleRCB
