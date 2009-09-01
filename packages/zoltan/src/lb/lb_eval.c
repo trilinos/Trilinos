@@ -232,7 +232,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   int i, j, k, e, ierr, count;
   int nparts, nonempty_nparts, req_nparts;
-  int num_weights, obj_part, nbor_part, nother_parts;
+  int num_weights=0, obj_part, nbor_part, nother_parts;
   int num_pairs, num_parts;
   int map_num = -1;
   int num_obj = 0;
@@ -1506,7 +1506,9 @@ object_metrics(ZZ *zz, int num_obj, int *parts, float *part_sizes, int req_npart
   MPI_Comm comm = zz->Communicator;
 
   int i, j, idx, ierr, part_dim;
-  int num_weights, num_parts, num_nonempty_parts;
+  int num_weights; 
+  int num_parts = zz->LB.Num_Global_Parts; 
+  int num_nonempty_parts = zz->LB.Num_Global_Parts;
 
   int *globalCount = NULL;
 

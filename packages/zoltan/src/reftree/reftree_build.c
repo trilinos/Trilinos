@@ -1686,7 +1686,7 @@ int parents_vert[6];       /* cross index between children and parent */
 int parent_in;             /* index of the parent in vertex */
 int parent_out;            /* index of the parent out vertex */
 int parent_third;          /* index of the parent triangle non in/out vert */
-int not_parent[2];         /* index of a vertex the parent does not have */
+int not_parent[2]={0,0};   /* index of a vertex the parent does not have */
 int has_in[2];             /* flag for an element having the parent in vert */
 int has_out[2];            /* flag for an element having the parent out vert */
 int has_third[2];          /* flag for a triangle having the parent non in/out*/
@@ -2075,7 +2075,8 @@ static int order_hex3d_oct(ZZ *zz, int *vert1, int *order,
 
 int i,j,found,ord[8],vert,count[27],lvertices[64],ecoord[8][3],vcoord[27][3];
 int nshare, nshare2, nshare4, nshare100, nshare010, share2[3];
-int element[2][2][2],elem100,elem010,elem001,vertex[3][3][3];
+int element[2][2][2]={{{0,0},{0,0}},{{0,0},{0,0}}};
+int elem100,elem010,elem001,vertex[3][3][3];
 ZOLTAN_ID_PTR lvertices_gid;
 char *yo = "order_hex3d_oct";
 int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */

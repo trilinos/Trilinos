@@ -61,7 +61,7 @@ int Zoltan_Build_Graph(
     float **ewgts, int **adjproc)
 {
   int success =0;
-  int ierr;
+  int ierr=ZOLTAN_OK;
 
   int unsymmetric = 0;
   int symmetrize = 0;

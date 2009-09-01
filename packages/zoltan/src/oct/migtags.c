@@ -49,7 +49,7 @@ int Zoltan_Oct_migrate_objects(ZZ *zz, pOctant *octs, int *newpids, int nocts,
 {
   int i;                   /* index counter */
   int *tag_pids;           /* array of which processors to send information */
-  int np_regs;            /* number of regions previously imported */
+  int np_regs=0;            /* number of regions previously imported */
   Region *p_reg;          /* previously imported regions */
   ZOLTAN_ID_PTR p_gids;      /* global IDs of previously imported regions */
   ZOLTAN_ID_PTR p_lids;      /* local IDs of previously imported regions */

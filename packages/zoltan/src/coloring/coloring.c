@@ -468,7 +468,7 @@ static int D1coloring(
 				    colors at the end of supersteps. Global number
 				    of the vertex - color of vertex pairs are filled
 				    in this array */
-    double times[6];             /* Used for timing measurements */
+    double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
     int get_times;               /* (1) Measure timings (0) Don't */
     int ierr;
 #ifdef RELEVANT_COLORS
@@ -824,7 +824,7 @@ static int D2coloring(
 				    colors at the end of supersteps. Global number
 				    of the vertex - color of vertex pairs are filled
 				    in this array */
-    double times[6];             /* Used for timing measurements */
+    double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
     int get_times;               /* (1) Measure timings (0) Don't */
     int ierr;
     /* conflict detection */

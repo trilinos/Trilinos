@@ -809,7 +809,7 @@ static int add_around_vertex(int vert, ZZ *zz)
  */
 
 int elementA, elementB, elementC, elementD = 0, elementE;
-int vertexc, vertexd;
+int vertexc = -1, vertexd = -1;
 int i, j, k, l, num_share, pass, success, ierr;
 
 /* find an element with vert as the out vertex */

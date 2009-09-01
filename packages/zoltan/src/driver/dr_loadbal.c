@@ -1079,7 +1079,7 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
   ELEM_INFO *elem;
   ELEM_INFO *next_elem;
   MESH_INFO_PTR mesh;
-  int i, j, idx, next;
+  int i, j, idx=-1, next;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 

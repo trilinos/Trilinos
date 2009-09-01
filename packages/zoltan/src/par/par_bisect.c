@@ -138,7 +138,7 @@ int Zoltan_RB_find_bisector(
   double  *localsum = NULL;          /* temporary sum of wts */
   double  *wtsum = NULL;             /* temporary sum of wts */
   double  *wtupto = NULL;            /* temporary sum of wts */
-  double  tmp_half;                  /* guess for new bisection */
+  double  tmp_half=0.;               /* guess for new bisection */
   double  *tmp = NULL;               /* temp array for Tflops_Special */
   double  *tmplo = NULL;             /* temp arrays for norm calculations */
   double  *tmphi = NULL;             /* temp arrays for norm calculations */

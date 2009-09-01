@@ -46,6 +46,7 @@ typedef int(*WgtFctPtr)(float*, float*, int);
 
 
 /* This function compare if the wgt are the same for both arcs*/
+#ifdef NEEDED
 static int
 wgtFctCmp(float* current, float* new, int dim)
 {
@@ -56,6 +57,7 @@ wgtFctCmp(float* current, float* new, int dim)
   }
   return (diff);
 }
+#endif
 
 /* This function adds the weights */
 static int
@@ -68,6 +70,7 @@ wgtFctAdd(float* current, float* new, int dim)
   return (0);
 }
 
+#ifdef NEEDED
 /* This function chooses the maximum weight */ 
 static int
 wgtFctMax(float* current, float* new, int dim)
@@ -78,6 +81,7 @@ wgtFctMax(float* current, float* new, int dim)
   }
   return (0);
 }
+#endif
 
 inline int
 compar_arc(const Zoltan_Arcs* arc1, const Zoltan_Arcs* arc2)

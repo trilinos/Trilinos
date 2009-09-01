@@ -690,7 +690,7 @@ static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs,
                           to initialize_regions when NUM_LID_ENTRIES == 0. */
   int num_dim;
   int i;
-  pRegion tmp, ptr;
+  pRegion tmp=NULL, ptr;
   COORD global_min, global_max;
   double PADDING = 0.0000001;
   int ierr = 0;
