@@ -162,13 +162,22 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
 		       ZOLTAN_Output_Part *part, ZOLTAN_Output_Order *ord)
 {
   if (gr) {
+    MEMFREE(gr->vwgt);
     MEMFREE(gr->vtxdist);
     MEMFREE(gr->xadj);
     MEMFREE(gr->adjncy);
-    MEMFREE(gr->vwgt);
     MEMFREE(gr->ewgts);
     MEMFREE(gr->float_ewgts);
     MEMFREE(gr->adjproc);
+#ifdef TPL_NEW_GRAPH
+    gr->graph.mtx.mtx.ywgt = NULL;
+    gr->graph.mtx.mtx.pinwgt = NULL;
+    gr->graph.mtx.mtx.ystart = NULL;
+    gr->graph.mtx.mtx.yend = NULL;
+    gr->graph.mtx.mtx.pinGNO = NULL;
+    gr->graph.mtx.dist_y = NULL;
+    Zoltan_ZG_Free(&gr->graph);
+#endif
   }
 
   if (geo) {

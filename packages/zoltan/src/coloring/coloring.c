@@ -397,7 +397,7 @@ int Zoltan_Color(
  End:
   /* First, free graph */
 #ifdef COLORING_NEW_GRAPH
-  Zoltan_ZG_Free (zz, &graph);
+  Zoltan_ZG_Free (&graph);
 #else /* COLORING_NEW_GRAPH */
   Zoltan_Multifree(__FILE__,__LINE__, 4, &vtxdist, &xadj, &adjncy, &input_parts);
   ZOLTAN_FREE(&partialD2);

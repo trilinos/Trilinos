@@ -18,6 +18,9 @@
 #include <limits.h>
 #include "zoltan_comm.h"
 #include "third_library_const.h"
+#ifdef TPL_NEW_GRAPH
+#include "graph.h"
+#endif /* TPL_NEW_GRAPH */
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -58,6 +61,9 @@ typedef struct ZOLTAN_Third_Graph_ {
   float * float_ewgts;
   int * adjproc;                        /* Array of procs ? */
   ZOLTAN_COMM_OBJ *comm_plan;           /* Communication plan used by scattering process */
+#ifdef TPL_NEW_GRAPH
+  ZG graph;
+#endif
 } ZOLTAN_Third_Graph;
 
 /* Structure that defines a geometry for third party libraries like ParMetis. */

@@ -113,11 +113,11 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix);
 
 /* Free a matrix object */
 void
-Zoltan_Matrix_Free(ZZ *zz, Zoltan_matrix *m);
+Zoltan_Matrix_Free(Zoltan_matrix *m);
 
 /* Free a matrix2d object */
 void
-Zoltan_Matrix2d_Free(ZZ *zz, Zoltan_matrix_2d *m);
+Zoltan_Matrix2d_Free(Zoltan_matrix_2d *m);
 
 /* This function compute the indices of the diagonal terms.
    This function needs that diagonal terms are declared at most

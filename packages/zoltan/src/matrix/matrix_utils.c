@@ -24,7 +24,7 @@ extern "C" {
 #include "matrix.h"
 
 void
-Zoltan_Matrix_Free(ZZ *zz, Zoltan_matrix *m)
+Zoltan_Matrix_Free(Zoltan_matrix *m)
 {
   if (m->yend != m->ystart + 1)
     ZOLTAN_FREE(&m->yend);
@@ -42,9 +42,9 @@ Zoltan_Matrix_Free(ZZ *zz, Zoltan_matrix *m)
 }
 
 void
-Zoltan_Matrix2d_Free(ZZ *zz, Zoltan_matrix_2d *m)
+Zoltan_Matrix2d_Free(Zoltan_matrix_2d *m)
 {
-  Zoltan_Matrix_Free (zz, &m->mtx);
+  Zoltan_Matrix_Free (&m->mtx);
 
   ZOLTAN_FREE(&m->dist_x);
   ZOLTAN_FREE(&m->dist_y);

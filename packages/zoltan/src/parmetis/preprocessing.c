@@ -104,7 +104,7 @@ int Zoltan_Preprocess_Graph(
   float *float_vwgt, *float_ewgts;
   char msg[256];
 #ifdef TPL_NEW_GRAPH
-  ZG graph;
+  ZG *graph = &(gr->graph);
   int local;
 #endif /* TPL_NEW_GRAPH */
 
@@ -194,11 +194,12 @@ int Zoltan_Preprocess_Graph(
 			      &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
 #else
     local = IS_LOCAL_GRAPH(gr->graph_type);
-    ierr = Zoltan_ZG_Build (zz, &graph, 0, 0, local); /* Normal graph */
-    ierr = Zoltan_ZG_Export (zz, &graph,
+    ierr = Zoltan_ZG_Build (zz, graph, 0, 0, local); /* Normal graph */
+    ierr = Zoltan_ZG_Export (zz, graph,
 			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
 			     &float_vwgt, &float_ewgts, NULL);
+    /* TODO: support graph redistribution */
 /*   if (prt) */
 /*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &prt->input_part); */
 /*   else */
@@ -281,13 +282,15 @@ int Zoltan_Preprocess_Graph(
       /* Return error code */
       ZOLTAN_PARMETIS_ERROR(ierr, "Error in scaling of weights.");
     }
-    if (!gr->final_output)
+    if (!gr->final_output) {
       ZOLTAN_FREE(&float_ewgts);
+    }
     else
       gr->float_ewgts = float_ewgts;
   }
-  else
+  else {
     ZOLTAN_FREE(&float_ewgts);
+  }
 
   if (geo){
     ierr = Zoltan_Preprocess_Extract_Geom (zz, global_ids, local_ids, gr, geo);

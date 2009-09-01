@@ -240,7 +240,7 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 }
 
 void
-Zoltan_ZG_Free(ZZ *zz, ZG *graph){
+Zoltan_ZG_Free(ZG *graph){
   /* TODO : free the communicators properly */
 
   if (graph->bipartite)
@@ -249,7 +249,7 @@ Zoltan_ZG_Free(ZZ *zz, ZG *graph){
 
 /*   Zoltan_Matrix_Free(zz, &graph->mtx.mtx); */
 
-  Zoltan_Matrix2d_Free(zz, &graph->mtx);
+  Zoltan_Matrix2d_Free(&graph->mtx);
   ZOLTAN_FREE(&graph->mtx.comm);
 }
 

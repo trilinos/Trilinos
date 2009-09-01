@@ -48,7 +48,7 @@ Zoltan_ZG_Query (ZZ* zz, const ZG *graph, const ZOLTAN_ID_PTR GID,
 	  int GID_length, int* properties);
 
 void
-Zoltan_ZG_Free(ZZ *zz, ZG *m);
+Zoltan_ZG_Free(ZG *m);
 
 
 #ifdef __cplusplus
