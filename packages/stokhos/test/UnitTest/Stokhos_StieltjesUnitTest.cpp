@@ -197,7 +197,8 @@ namespace StieltjesCosTest {
 				  "v_st.mean()", setup.v_st.mean(),
 				  "rtol", setup.rtol, 
 				  "rtol", setup.rtol, 
-				  out.getOStream());
+                                  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
+
   }
 
   // Tests mean standard deviation from Stieltjes basis is same as original
@@ -208,7 +209,7 @@ namespace StieltjesCosTest {
 				  setup.v_st.standard_deviation(),
 				  "rtol", 1e-1, 
 				  "rtol", 1e-1, 
-				  out.getOStream());
+                                  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
 }
@@ -279,7 +280,7 @@ namespace StieltjesSinTest {
 				  "v_st.mean()", setup.v_st.mean(),
 				  "rtol", setup.rtol, 
 				  "rtol", setup.rtol, 
-				  out.getOStream());
+                                  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
   // Tests mean standard deviation from Stieltjes basis is same as original
@@ -290,7 +291,7 @@ namespace StieltjesSinTest {
 				  setup.v_st.standard_deviation(),
 				  "rtol", 1e-1, 
 				  "rtol", 1e-1, 
-				  out.getOStream());
+                                  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
 }
@@ -362,7 +363,7 @@ namespace StieltjesExpTest {
 				  "v_st.mean()", setup.v_st.mean(),
 				  "rtol", setup.rtol, 
 				  "rtol", setup.rtol, 
-				  out.getOStream());
+                                  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
   // Tests mean standard deviation from Stieltjes basis is same as original
@@ -373,7 +374,7 @@ namespace StieltjesExpTest {
 				  setup.v_st.standard_deviation(),
 				  "rtol", 1e-1, 
 				  "rtol", 1e-1, 
-				  out.getOStream());
+                                  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
 }

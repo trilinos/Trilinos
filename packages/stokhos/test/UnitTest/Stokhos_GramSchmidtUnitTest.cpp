@@ -228,7 +228,7 @@ namespace GramSchmidtTest {
 				  "w_gs.mean()", setup.w_gs.mean(),
 				  "rtol", setup.rtol, 
 				  "rtol", setup.rtol, 
-				  out.getOStream());
+				  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
   // Tests mean standard deviation from Gram-Schmidt basis is same as original
@@ -239,7 +239,7 @@ namespace GramSchmidtTest {
 				  setup.w_gs.standard_deviation(),
 				  "rtol", 1e-3, 
 				  "rtol", 1e-3, 
-				  out.getOStream());
+				  Teuchos::Ptr<std::ostream>(out.getOStream().get()));
   }
 
 }

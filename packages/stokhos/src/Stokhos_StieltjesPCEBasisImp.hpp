@@ -352,7 +352,8 @@ getQuadPoints(ordinal_type quad_order,
   
   //the eigenvalues are the quadrature points, sort these and keep track of the indices.
   Teuchos::Array< ordinal_type > idx(num_points,0);
-  value_type temp1,temp2;
+  value_type temp1;
+  ordinal_type temp2;
   for(ordinal_type i = 0; i< num_points; i++) 
     idx[i] = i;
   for (ordinal_type i = 0; i< num_points; i++) {
