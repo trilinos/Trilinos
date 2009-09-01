@@ -176,6 +176,29 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
       PASS_REGULAR_EXPRESSION "Test passed!"
       )
   ENDIF()
+
+  IF(NOX_ENABLE_Stratimikos)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      1DfemStratimikos
+      SOURCES 
+      1DfemInterface.H
+      1DfemInterface.C
+      1DfemStratimikos.C
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Test passed!"
+      )
+
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      1DfemStratimikosPrec
+      SOURCES 
+      1DfemInterface.H
+      1DfemInterface.C
+      1DfemStratimikosPrec.C
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Test passed!"
+      )
+  ENDIF()
+  
   
   IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_BELOS)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
