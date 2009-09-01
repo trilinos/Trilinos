@@ -687,18 +687,24 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     // Place any converged eigenpairs in the solution container.
     if (sol.numVecs > 0) {
 
+      // Next determine if there is a conjugate pair on the boundary and resize.
+      std::vector<int> tmpIndex = bks_solver->getRitzIndex();
+      printer->stream(Debug) << "Number of converged eigenpairs (before) = " << sol.numVecs << std::endl;
+      for (int i=0; i<sol.numVecs; ++i) {
+        printer->stream(Debug) << "whichVecs[" << i << "] = " << whichVecs[i] << ", tmpIndex[" << whichVecs[i] << "] = " << tmpIndex[whichVecs[i]] << std::endl;
+      }
+      if (tmpIndex[whichVecs[sol.numVecs-1]]==1) {
+        printer->stream(Debug) << "There is a conjugate pair on the boundary, resizing sol.numVecs" << std::endl;
+	sol.numVecs++;
+      }
+
       bool keepMore = false;
       int numEvecs = sol.numVecs;
+      printer->stream(Debug) << "Number of converged eigenpairs (after) = " << sol.numVecs << std::endl;
       if (whichVecs[sol.numVecs-1] > (sol.numVecs-1)) {
 	keepMore = true;
 	numEvecs = whichVecs[sol.numVecs-1]+1;  // Add 1 to fix zero-based indexing
-      }
-
-      // Next determine if there is a conjugate pair on the boundary and resize.
-      std::vector<int> tmpIndex = bks_solver->getRitzIndex();
-      if (tmpIndex[whichVecs[sol.numVecs-1]]==1) {
-	sol.numVecs++;
-        numEvecs++;
+        printer->stream(Debug) << "keepMore = true; numEvecs = " << numEvecs << std::endl;
       }
 
       // Next set the number of Ritz vectors that the iteration must compute and compute them.
