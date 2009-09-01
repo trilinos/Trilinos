@@ -19,7 +19,7 @@ ZOLTAN_INCLUDE=-I$(SRC)/include
 
 ##
 ## Headers for zoltan utilities, not often used by applications
-## Needed for use of Zoltan_Hash in simpleGRAPH.c
+## Needed for use of Zoltan_Hash in simpleGRAPH.cpp
 ##
 
 ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
@@ -55,9 +55,7 @@ MPI_LIBS=
 CFLAGS=-g -Wall
 CXXFLAGS=-g -Wall
 
-C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG 
-
-CPP_EXAMPLES = cpp_simpleBLOCK  cpp_simpleRCB cpp_simpleGRAPH cpp_simplePHG 
+CPP_EXAMPLES = simpleBLOCK 
 
 all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 
