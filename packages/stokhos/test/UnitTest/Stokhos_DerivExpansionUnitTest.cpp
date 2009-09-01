@@ -36,7 +36,7 @@
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-namespace QuadExpansionUnitTest {
+namespace DerivExpansionUnitTest {
 
   // Common setup for unit tests
   template <typename OrdinalType, typename ValueType>
@@ -45,7 +45,7 @@ namespace QuadExpansionUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
+    Teuchos::RCP< Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2;
     ValueType a;
     
@@ -53,7 +53,7 @@ namespace QuadExpansionUnitTest {
       rtol = 1e-4;
       atol = 1e-5;
       a = 3.1;
-      const OrdinalType d = 2;
+      const OrdinalType d = 1;
       const OrdinalType p = 7;
       
       // Create product basis
@@ -70,7 +70,7 @@ namespace QuadExpansionUnitTest {
       
     // Quadrature expansion
       exp = 
-	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, quad));
+	Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType>(basis));
       
       // Create approximation
       sz = basis->size();

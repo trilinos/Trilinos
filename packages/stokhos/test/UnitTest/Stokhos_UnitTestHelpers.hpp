@@ -56,9 +56,10 @@ namespace Stokhos {
     
     // Compare elements
     for( OrdinalType i = 0; i < n; ++i ) {
-      ValueType err = std::abs(a1[i] - a2[i]);
+      ValueType nrm = std::sqrt(a1.basis()->norm_squared(i));
+      ValueType err = std::abs(a1[i] - a2[i]) / nrm;
       ValueType tol = 
-	abs_tol + rel_tol*std::max(std::abs(a1[i]),std::abs(a2[i]));
+	abs_tol + rel_tol*std::max(std::abs(a1[i]),std::abs(a2[i]))/nrm;
       if (err  > tol) {
 	out
 	  <<"\nError, relErr("<<a1_name<<"["<<i<<"],"

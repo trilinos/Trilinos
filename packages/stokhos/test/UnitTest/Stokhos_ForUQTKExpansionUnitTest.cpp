@@ -36,7 +36,7 @@
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-namespace QuadExpansionUnitTest {
+namespace ForUQTKExpansionUnitTest {
 
   // Common setup for unit tests
   template <typename OrdinalType, typename ValueType>
@@ -45,7 +45,7 @@ namespace QuadExpansionUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
+    Teuchos::RCP< Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2;
     ValueType a;
     
@@ -70,7 +70,7 @@ namespace QuadExpansionUnitTest {
       
     // Quadrature expansion
       exp = 
-	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, quad));
+	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType>(basis, Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType>::INTEGRATION));
       
       // Create approximation
       sz = basis->size();
@@ -215,15 +215,6 @@ namespace QuadExpansionUnitTest {
   struct SqrtFunc { 
     double operator() (double a) const { return std::sqrt(a); } 
   };
-  struct SinFunc { 
-    double operator() (double a) const { return std::sin(a); } 
-  };
-  struct CosFunc { 
-    double operator() (double a) const { return std::cos(a); } 
-  };
-  struct TanFunc { 
-    double operator() (double a) const { return std::tan(a); } 
-  };
   struct SinhFunc { 
     double operator() (double a) const { return std::sinh(a); } 
   };
@@ -232,30 +223,6 @@ namespace QuadExpansionUnitTest {
   };
   struct TanhFunc { 
     double operator() (double a) const { return std::tanh(a); } 
-  };
-  struct ASinFunc { 
-    double operator() (double a) const { return std::asin(a); } 
-  };
-  struct ACosFunc { 
-    double operator() (double a) const { return std::acos(a); } 
-  };
-  struct ATanFunc { 
-    double operator() (double a) const { return std::atan(a); } 
-  };
-  struct ASinhFunc { 
-    double operator() (double a) const { 
-      return std::log(a+std::sqrt(a*a+1.0)); 
-    } 
-  };
-  struct ACoshFunc { 
-    double operator() (double a) const { 
-      return std::log(a+std::sqrt(a*a-1.0)); 
-    } 
-  };
-  struct ATanhFunc { 
-    double operator() (double a) const { 
-      return 0.5*std::log((1.0+a)/(1.0-a)); 
-    } 
   };
 
   struct PlusFunc { 
@@ -276,7 +243,7 @@ namespace QuadExpansionUnitTest {
 
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, UMinus ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->unaryMinus(setup.u, v);
     setup.computePCE1<UMinusFunc>(setup.u2, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -306,24 +273,6 @@ namespace QuadExpansionUnitTest {
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Sin ) {
-    setup.exp->sin(setup.u, setup.x);
-    setup.computePCE1<SinFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Cos ) {
-    setup.exp->cos(setup.u, setup.x);
-    setup.computePCE1<CosFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Tan ) {
-    setup.exp->tan(setup.u, setup.x);
-    setup.computePCE1<TanFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Sinh ) {
     setup.exp->sinh(setup.u, setup.x);
     setup.computePCE1<SinhFunc>(setup.u2, setup.x);
@@ -342,47 +291,11 @@ namespace QuadExpansionUnitTest {
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, ASin ) {
-    setup.exp->asin(setup.u, setup.x);
-    setup.computePCE1<ASinFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, ACos ) {
-    setup.exp->acos(setup.u, setup.x);
-    setup.computePCE1<ACosFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, ATan ) {
-    setup.exp->atan(setup.u, setup.x);
-    setup.computePCE1<ATanFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, ASinh ) {
-    setup.exp->asinh(setup.u, setup.x);
-    setup.computePCE1<ASinhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, ACosh ) {
-    setup.exp->acosh(setup.u, setup.x);
-    setup.computePCE1<ACoshFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, ATanh ) {
-    setup.exp->atanh(setup.u, setup.x);
-    setup.computePCE1<ATanhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
 
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Plus ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(w, setup.y);
     setup.exp->plus(setup.u, v, w);
     setup.computePCE2<PlusFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -390,7 +303,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, PlusLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->plus(setup.u, setup.a, v);
     setup.computePCE2LC<PlusFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -398,7 +311,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, PlusRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->plus(setup.u, v, setup.a);
     setup.computePCE2RC<PlusFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -406,8 +319,8 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Minus ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(w, setup.y);
     setup.exp->minus(setup.u, v, w);
     setup.computePCE2<MinusFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -415,7 +328,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, MinusLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->minus(setup.u, setup.a, v);
     setup.computePCE2LC<MinusFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -423,7 +336,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, MinusRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->minus(setup.u, v, setup.a);
     setup.computePCE2RC<MinusFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -431,8 +344,8 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Times ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(w, setup.y);
     setup.exp->times(setup.u, v, w);
     setup.computePCE2<TimesFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -440,7 +353,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->times(setup.u, setup.a, v);
     setup.computePCE2LC<TimesFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -448,7 +361,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->times(setup.u, v, setup.a);
     setup.computePCE2RC<TimesFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -456,8 +369,8 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, Divide ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->exp(w, setup.y);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(w, setup.y);
     setup.exp->divide(setup.u, v, w);
     setup.computePCE2<DivideFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -465,7 +378,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, DivideLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->divide(setup.u, setup.a, v);
     setup.computePCE2LC<DivideFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -473,7 +386,7 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, DivideRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.exp->sinh(v, setup.x);
     setup.exp->divide(setup.u, v, setup.a);
     setup.computePCE2RC<DivideFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -499,15 +412,15 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, PlusEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2<PlusFunc>(setup.u2, setup.u, v);
     setup.exp->plusEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, PlusEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2RC<PlusFunc>(setup.u2, setup.u, setup.a);
     setup.exp->plusEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -515,15 +428,15 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, MinusEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2<MinusFunc>(setup.u2, setup.u, v);
     setup.exp->minusEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, MinusEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2RC<MinusFunc>(setup.u2, setup.u, setup.a);
     setup.exp->minusEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -531,15 +444,15 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2<TimesFunc>(setup.u2, setup.u, v);
     setup.exp->timesEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2RC<TimesFunc>(setup.u2, setup.u, setup.a);
     setup.exp->timesEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
@@ -547,15 +460,15 @@ namespace QuadExpansionUnitTest {
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, DivideEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->sinh(v, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2<DivideFunc>(setup.u2, setup.u, v);
     setup.exp->divideEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, DivideEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+    setup.exp->cosh(setup.u, setup.x);
     setup.computePCE2RC<DivideFunc>(setup.u2, setup.u, setup.a);
     setup.exp->divideEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
