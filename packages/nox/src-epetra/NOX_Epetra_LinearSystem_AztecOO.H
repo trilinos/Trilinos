@@ -688,6 +688,4 @@ protected:
 
 } // namespace Epetra
 } // namespace NOX
-
-
 #endif

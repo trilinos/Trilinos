@@ -61,6 +61,17 @@ IF (NOX_ENABLE_Amesos)
     )
 ENDIF()
 
+# Stratimikos
+IF (NOX_ENABLE_Stratimikos)
+  APPEND_SET(HEADERS
+    NOX_Epetra_LinearSystem_Stratimikos.H
+    )
+  APPEND_SET(SOURCES
+    NOX_Epetra_LinearSystem_Stratimikos.C
+    )
+ENDIF()
+
+
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
   PACKAGE_ADD_LIBRARY(
