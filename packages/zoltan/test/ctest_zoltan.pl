@@ -50,6 +50,11 @@ if ($debug) {print "DEBUG:  package $package\n";}
 $mpiexec = "mpiexec";
 if ($numArgs > 3) {$mpiexec = $ARGV[3];}
 $mpiexecargs = "--mca mpi_yield_when_idle 1";
+### Test if MPI implementation supports --mca option
+$result = system("$mpiexec $mpiexecargs -n 1 uptime");
+if ($result) {
+  $mpiexecargs = "";
+}
 if ($debug) {print "DEBUG:  mpiexec $mpiexec $mpiexecargs\n";}
 
 
