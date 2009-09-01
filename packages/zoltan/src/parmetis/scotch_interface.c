@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+/* #define CC_DEBUG */
 
 #include <ctype.h>
 #include "zz_const.h"
@@ -580,15 +581,17 @@ int Zoltan_Scotch(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
 
-/*   { */
-/*     FILE * graphfile; */
-/*     char name[80]; */
+#ifdef CC_DEBUG
+  {
+    FILE * graphfile;
+    char name[80];
 
-/*     sprintf(name, "kdd.%d.src", zz->Proc); */
-/*     graphfile = fopen(name, "w+"); */
-/*     SCOTCH_dgraphSave(&grafdat, graphfile); */
-/*     fclose(graphfile); */
-/*   } */
+    sprintf(name, "kdd.%d.src", zz->Proc);
+    graphfile = fopen(name, "w+");
+    SCOTCH_dgraphSave(&grafdat, graphfile);
+    fclose(graphfile);
+  }
+#endif /* CC_DEBUG */
 
   if (!prt.part_sizes){
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);

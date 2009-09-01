@@ -68,8 +68,8 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
     CHECK_IERR;
   }
 
-  ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite);
-  CHECK_IERR;
+/*   ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite); */
+/*   CHECK_IERR; */
 
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;

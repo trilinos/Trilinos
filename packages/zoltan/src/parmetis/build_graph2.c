@@ -53,6 +53,11 @@ int Zoltan_Build_Graph_NoComm(
     float **ewgts, int **adjproc, int *success);
 
 
+
+static int
+Zoltan_Sort_Edges(ZZ *zz, int num_obj, int edge_wgt_dim, const int * const xadj,
+		  int *adjncy, float *ewgts, int* adjproc);
+
 int Zoltan_Build_Graph(
     ZZ *zz, int *graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
@@ -119,6 +124,12 @@ int Zoltan_Build_Graph(
 				     global_ids, local_ids,
 				     obj_wgt_dim, *edge_wgt_dim,
 				     vtxdist, xadj, adjncy, ewgts, adjproc);
+
+  /* CC: in order to compare to the new implementation I need to sort edges */
+  if ((ierr != ZOLTAN_OK) || (ierr != ZOLTAN_WARN)) {
+    ierr = Zoltan_Sort_Edges(zz, num_obj, *edge_wgt_dim, *xadj, *adjncy, *ewgts, *adjproc);
+  }
+
 
   return (ierr);
 }
@@ -601,6 +612,37 @@ int Zoltan_Build_Graph_NoComm(
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
+}
+
+static int
+Zoltan_Sort_Edges(ZZ *zz, int num_obj, int edge_wgt_dim, const int * const xadj,
+		  int *adjncy, float *ewgts, int* adjproc)
+{
+  int i;
+  int *position;
+  float *tmp_ewgts;
+  int * tmp_adjproc;
+
+  tmp_ewgts = (float*) ZOLTAN_MALLOC(xadj[num_obj]*sizeof(float)*edge_wgt_dim);
+  tmp_adjproc = (int*) ZOLTAN_MALLOC(xadj[num_obj]*sizeof(int));
+  position = (int*)ZOLTAN_MALLOC(xadj[num_obj]*sizeof(int));
+
+  memcpy(tmp_ewgts, ewgts, xadj[num_obj]*sizeof(float)*edge_wgt_dim);
+  memcpy(tmp_adjproc, adjproc, xadj[num_obj]*sizeof(int));
+
+  for (i = 0 ; i<num_obj ; ++i) {
+    int degree = xadj[i+1] - xadj[i];
+    int j;
+
+    for (j = 0 ; j < degree ; ++j)
+      position[j] = xadj[i]+j;
+    Zoltan_Comm_Sort_Ints( adjncy + xadj[i], position , degree);
+    for (j = 0 ; j < degree ; ++j) {
+      adjproc[position[j]] = tmp_adjproc[xadj[i]+j];
+      memcpy (ewgts+position[j]*edge_wgt_dim, tmp_ewgts+(xadj[i]+j)*edge_wgt_dim, edge_wgt_dim*sizeof(float));
+    }
+  }
+  return ZOLTAN_OK;
 }
 
 
