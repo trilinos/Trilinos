@@ -44,6 +44,7 @@
 
 #ifdef HAVE_NEW_GRAPH
 #define COLORING_NEW_GRAPH
+#define TPL_NEW_GRAPH
 #endif
 
 /* Use to have only filename when debugging memory */

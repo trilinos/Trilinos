@@ -98,10 +98,13 @@ extern "C" {
   /* At this time, means A+At */
 #define SYMMETRIZE   5
 
+#define SET_NO_GRAPH(gtype) do { (*(gtype)) &= ~(1<<NO_GRAPH); (*(gtype)) &= ~(1<<LOCAL_GRAPH); } while (0)
 #define SET_GLOBAL_GRAPH(gtype) do { (*(gtype)) &= ~(1<<LOCAL_GRAPH); (*(gtype)) &= ~(1<<NO_GRAPH); } while (0)
 #define SET_LOCAL_GRAPH(gtype) do { (*(gtype)) |= (1<<LOCAL_GRAPH); (*(gtype)) &= ~(1<<NO_GRAPH); } while (0)
+#define IS_NO_GRAPH(gtype) ((!((gtype)&(1<<LOCAL_GRAPH))) && (((gtype)&(1<<NO_GRAPH))))
 #define IS_GLOBAL_GRAPH(gtype) ((!((gtype)&(1<<NO_GRAPH))) && (!((gtype)&(1<<LOCAL_GRAPH))))
 #define IS_LOCAL_GRAPH(gtype) ((!((gtype)&(1<<NO_GRAPH))) && (((gtype)&(1<<LOCAL_GRAPH))))
+
 
 /* Misc. defs to be used with MPI */
 #define TAG1  32001

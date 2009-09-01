@@ -256,7 +256,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ierr = Zoltan_Comm_Create(&plan, cnt, proclist, communicator, msg_tag, &outmat->mtx.nPins);
   ZOLTAN_FREE(&proclist);
 
-  nonzeros = (Zoltan_Arc *) ZOLTAN_MALLOC(outmat->mtx.nPins * sizeof(Zoltan_Arc));
+  nonzeros = (Zoltan_Arc *) ZOLTAN_MALLOC((outmat->mtx.nPins+nEdge) * sizeof(Zoltan_Arc));
   if (outmat->mtx.nPins && nonzeros == NULL) MEMORY_ERROR;
 
   msg_tag--;
@@ -281,6 +281,15 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   Zoltan_Comm_Destroy(&plan);
 
   /* Unpack the non-zeros received. */
+
+  /* First, add fake edges for empty vertices */
+  for (i = 0 ; i < nEdge ; ++i) {
+    int offset = dist_y[myProc_y];
+    j=outmat->mtx.nPins + i;
+    nonzeros[j].yGNO = offset + i;
+    nonzeros[j].pinGNO = -1;
+    nonzeros[j].offset = 0;
+  }
   outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, (nEdge + 1)*sizeof(int));
   if (outmat->mtx.ystart == NULL) MEMORY_ERROR;
   outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO, (outmat->mtx.nPins) * sizeof(int));
@@ -291,7 +300,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     MEMORY_ERROR;
 
   /* TODO: Ensure that we don't have empty vertex */
-  Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
+  Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins + nEdge, (Zoltan_Arc*)nonzeros, tmpwgtarray,
 			       &outmat->mtx);
 
  End:

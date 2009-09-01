@@ -31,10 +31,10 @@ extern "C" {
 static int
 compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2);
 
-static int
-compar_int (const int *e1, const int *e2) {
-  return (e1-e2);
-}
+/* static int */
+/* compar_int (const int *e1, const int *e2) { */
+/*   return (e1-e2); */
+/* } */
 
 /* Functions used when we merge duplicate arcs */
 
@@ -212,6 +212,8 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
     outmat->pinwgt = (float*) ZOLTAN_MALLOC(inmat.pinwgtdim*inmat.nPins*sizeof(float));
     if (inmat.pinwgtdim && inmat.nPins && outmat->pinwgt == NULL) MEMORY_ERROR;
   }
+
+  ierr = Zoltan_Matrix_Remove_DupArcs(zz, size, arcs, pinwgt,outmat);
 
   if (freeflag)
     ZOLTAN_FREE(&pinwgt);

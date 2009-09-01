@@ -151,23 +151,6 @@ int Zoltan_ParMetis(
 
   gr.graph_type = 0;
 
-  /* Some algorithms use geometry data */
-  if (strncmp(alg, "PARTGEOM", 8) == 0){               /* PARTGEOM & PARTGEOMKWAY */
-    geo = (ZOLTAN_Third_Geom*) ZOLTAN_MALLOC(sizeof(ZOLTAN_Third_Geom));
-    memset (geo, 0, sizeof(ZOLTAN_Third_Geom));
-    /* ParMETIS will crash if geometric method and some procs have no nodes. */
-    /* Avoid fatal crash by setting scatter to level 2 or higher. */
-    gr.scatter_min = 2;
-    if (geo == NULL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Out of memory.");
-      return (ZOLTAN_MEMERR);
-    }
-    if (strcmp(alg, "PARTGEOM") == 0) {
-      gr.get_data = 0;
-      gr.graph_type |= (1<<NO_GRAPH);
-    }
-  }
-
 #ifdef ZOLTAN_PARMETIS
   SET_GLOBAL_GRAPH(&gr.graph_type);
   /* Select type of graph, negative because we impose them */
@@ -183,6 +166,24 @@ int Zoltan_ParMetis(
 #else /* graph is local */
   SET_LOCAL_GRAPH(&gr.graph_type);
 #endif /* ZOLTAN_PARMETIS */
+
+
+  /* Some algorithms use geometry data */
+  if (strncmp(alg, "PARTGEOM", 8) == 0){               /* PARTGEOM & PARTGEOMKWAY */
+    geo = (ZOLTAN_Third_Geom*) ZOLTAN_MALLOC(sizeof(ZOLTAN_Third_Geom));
+    memset (geo, 0, sizeof(ZOLTAN_Third_Geom));
+    /* ParMETIS will crash if geometric method and some procs have no nodes. */
+    /* Avoid fatal crash by setting scatter to level 2 or higher. */
+    gr.scatter_min = 2;
+    if (geo == NULL) {
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Out of memory.");
+      return (ZOLTAN_MEMERR);
+    }
+    if (strcmp(alg, "PARTGEOM") == 0) {
+      gr.get_data = 0;
+    }
+  }
+
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 

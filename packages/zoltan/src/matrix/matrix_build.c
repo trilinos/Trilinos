@@ -308,7 +308,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 	zz->Get_Edge_List(zz->Get_Edge_List_Data, numGID, numLID,
                           (*xGID)+vertex*numGID, (*xLID)+vertex*numLID,
                           (*pinID)+edge*numGID, nbors_proc+edge, matrix->pinwgtdim,
-                          matrix->pinwgt, &ierr);
+                          matrix->pinwgt+edge*matrix->pinwgtdim, &ierr);
 	edge += edgeSize[vertex];
       }
     }

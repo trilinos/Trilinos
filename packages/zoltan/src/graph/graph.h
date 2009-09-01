@@ -32,7 +32,7 @@ int
 Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local);
 
 int
-Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
+Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx, int *obj_wgt_dim, int *edge_wgt_dim,
 	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
 	   float **xwgt, float **ewgt, int **partialD2);
 

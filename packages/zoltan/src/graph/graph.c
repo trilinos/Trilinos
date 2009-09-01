@@ -53,6 +53,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
   memset(&opt, 0, sizeof(Zoltan_matrix_options));
   opt.enforceSquare = 1;
   opt.pinwgtop = ADD_WEIGHT;
+  opt.pinwgt = 1;
   opt.randomize = 0;
   opt.local = local;
 
@@ -105,8 +106,9 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
 
 int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
-	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
-	   float **xwgt, float **ewgt, int **partialD2)
+		  int *obj_wgt_dim, int *edge_wgt_dim,
+		  int **vtxdist, int **xadj, int **adjncy, int **adjproc,
+		  float **xwgt, float **ewgt, int **partialD2)
 {
   int ierr;
 
@@ -117,12 +119,15 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
   AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
   AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
   /* I have to convert from float to int */
+  AFFECT_NOT_NULL(obj_wgt_dim, graph->mtx.mtx.ywgtdim);
+  AFFECT_NOT_NULL(edge_wgt_dim, graph->mtx.mtx.pinwgtdim);
   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt);
   AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
+  /* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph */
   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj,
 			     *adjncy, NULL, NULL,
-			     graph->mtx.mtx.ywgtdim, 0,
+			     0, 0,
 			     0, 2, 2);
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);

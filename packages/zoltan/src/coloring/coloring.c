@@ -304,7 +304,7 @@ int Zoltan_Color(
   else
     Zoltan_ZG_Build (zz, &graph, 0, 0, 0); /* Normal graph */
   Zoltan_ZG_Export (zz, &graph,
-		    &gvtx, &nvtx, &vtxdist, &xadj, &adjncy, &adjproc,
+		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
 		    NULL, NULL, &partialD2);
 #endif
 

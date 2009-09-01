@@ -105,7 +105,6 @@ int Zoltan_Preprocess_Graph(
   char msg[256];
 #ifdef TPL_NEW_GRAPH
   ZG graph;
-  int nvtx;
   int local;
 #endif /* TPL_NEW_GRAPH */
 
@@ -188,16 +187,18 @@ int Zoltan_Preprocess_Graph(
   }
   /* Build Graph for third party library data structures, or just get vtxdist. */
 
+  if (gr->get_data) {
 #ifndef TPL_NEW_GRAPH
-  ierr = Zoltan_Build_Graph(zz, &gr->graph_type, gr->check_graph, gr->num_obj,
-			    *global_ids, *local_ids, gr->obj_wgt_dim, &gr->edge_wgt_dim,
-			    &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
+    ierr = Zoltan_Build_Graph(zz, &gr->graph_type, gr->check_graph, gr->num_obj,
+			      *global_ids, *local_ids, gr->obj_wgt_dim, &gr->edge_wgt_dim,
+			      &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
 #else
-  local = IS_LOCAL_GRAPH(gr->graph_type);
-  ierr = Zoltan_ZG_Build (zz, &graph, 0, 0, local); /* Normal graph */
-  ierr = Zoltan_ZG_Export (zz, &graph,
-		    &gr->num_obj, &gr->num_obj, &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
-		    &float_vwgt, &float_ewgts, NULL);
+    local = IS_LOCAL_GRAPH(gr->graph_type);
+    ierr = Zoltan_ZG_Build (zz, &graph, 0, 0, local); /* Normal graph */
+    ierr = Zoltan_ZG_Export (zz, &graph,
+			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
+			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
+			     &float_vwgt, &float_ewgts, NULL);
 /*   if (prt) */
 /*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &prt->input_part); */
 /*   else */
@@ -210,8 +211,22 @@ int Zoltan_Preprocess_Graph(
 
 #endif
 
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
+    }
+  }
+  else{ /* Only geometry */
+    int i;
+    /* No graph but still needs vtxdist*/
+    gr->vtxdist = (int*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(int));
+    if (gr->vtxdist == NULL)
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+
+    gr->vtxdist[0] = 0;
+    MPI_Allgather(&gr->num_obj, 1, MPI_INT, gr->vtxdist+1, 1, MPI_INT, zz->Communicator);
+    for (i=1 ; i <= zz->Num_Proc ; ++i) {
+      gr->vtxdist[i] += gr->vtxdist[i-1];
+    }
   }
 
   if (prt) {
