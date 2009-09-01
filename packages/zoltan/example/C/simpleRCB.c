@@ -6,21 +6,52 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "zoltan.h"
-#include "simpleGraph.h"
-#include "simpleQueries.h"
+
+/* Name of file containing the mesh to be partitioned */
+
+static char *fname="mesh.txt";
+
+/* Structure to hold mesh data */
+
+typedef struct{
+  int numGlobalPoints;
+  int numMyPoints;
+  int *myGlobalIDs;
+  float *x;
+  float *y;
+} MESH_DATA;
+
+/* Application defined query functions */
+
+static int get_number_of_objects(void *data, int *ierr);
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr);
+static int get_num_geometry(void *data, int *ierr);
+static void get_geometry_list(void *data, int sizeGID, int sizeLID,
+             int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+             int num_dim, double *geom_vec, int *ierr);
+
+/* read in and display input mesh, handle errors */
+
+static int get_next_line(FILE *fp, char *buf, int bufsize);
+static void input_file_error(int numProcs, int tag, int startProc);
+void read_input_objects(int myRank, int numProcs, char *fname, MESH_DATA *myData);
+void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
 
 int main(int argc, char *argv[])
 {
-  int rc, i, ngids, nextIdx;
+  int rc, i, myRank, numProcs;
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  float *wgt_list;
-  int *gid_flags, *gid_list, *lid_list;
-  BALANCE_EVAL evalInfo;
+  int *parts;
+  FILE *fp;
+  MESH_DATA myMesh;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -39,6 +70,20 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
+  ** Read geometry from input file and distribute it unevenly
+  ******************************************************************/
+
+  fp = fopen(fname, "r");
+  if (!fp){
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    MPI_Finalize();
+    exit(1);
+  }
+  fclose(fp);
+
+  read_input_objects(myRank, numProcs, fname, &myMesh);
+
+  /******************************************************************
   ** Create a Zoltan library structure for this instance of load
   ** balancing.  Set the parameters and query functions that will
   ** govern the library's calculation.  See the Zoltan User's
@@ -53,7 +98,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
   /* RCB parameters */
@@ -62,26 +107,12 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
   /*Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); */
 
-  /* Query functions - defined in simpleQueries.h, to return
-   * information about objects defined in simpleGraph.h      */
+  /* Query functions, to provide geometry to Zoltan */
 
-  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
-  Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
-  Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, NULL);
-
-  /*
-   * Check load balance before
-   */
-
-  rc = Zoltan_LB_Eval_Balance(zz, 1, &evalInfo);
-
-  if (rc != ZOLTAN_OK){
-    printf("sorry...\n");
-    MPI_Finalize();
-    Zoltan_Destroy(&zz);
-    exit(0);
-  }
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, &myMesh);
+  Zoltan_Set_Obj_List_Fn(zz, get_object_list, &myMesh);
+  Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, &myMesh);
+  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, &myMesh);
 
   /******************************************************************
   ** Zoltan can now partition the vertices in the simple mesh.
@@ -113,50 +144,31 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
-  ** In a real application, you would rebalance the problem now by
-  ** sending the objects to their new partitions.
+  ** Visualize the mesh partitioning before and after calling Zoltan.
   ******************************************************************/
 
-  /******************************************************************
-  ** Visualize the new partitioning.
-  ** Create a list of GIDs now assigned to my partition, let
-  ** process zero display the partitioning.
-  ******************************************************************/
+  parts = (int *)malloc(sizeof(int) * myMesh.numMyPoints);
 
-  ngids = get_number_of_objects(NULL, &rc);
-  gid_flags = (int *)calloc(sizeof(int) , simpleNumVertices);
-  gid_list = (int *)malloc(sizeof(int) * ngids);
-  lid_list = (int *)malloc(sizeof(int) * ngids);
-  wgt_list = (float *)malloc(sizeof(float) * simpleNumVertices);
-  get_object_list(NULL, 1, 1,
-                  (ZOLTAN_ID_PTR)gid_list, (ZOLTAN_ID_PTR)lid_list,
-                  1, wgt_list, &rc);
+  for (i=0; i < myMesh.numMyPoints; i++){
+    parts[i] = myRank;
+  }
 
-  draw_partitions("initial distribution", ngids, gid_list, 1, wgt_list, 0);
+  if (myRank== 0){
+    printf("\nMesh partition assignments before calling Zoltan\n");
+  }
 
-  for (i=0; i<ngids; i++){
-    gid_flags[gid_list[i]-1] = 1;    /* my original vertices */
-  }
-  for (i=0; i<numImport; i++){
-    gid_flags[importGlobalGids[i] - 1] = 1;  /* my imports */
-  }
-  for (i=0; i<numExport; i++){
-    gid_flags[exportGlobalGids[i] - 1] = 0;  /* my exports */
-  }
-  nextIdx = 0;
-  for (i=0; i<simpleNumVertices; i++){
-    if (gid_flags[i]){
-      gid_flags[nextIdx] = i+1; /* my new GID list */
-      wgt_list[nextIdx] = simpleNumEdges[i];
-      nextIdx++;
-    }
-  }
-  draw_partitions("new partitioning", nextIdx, gid_flags, 1, wgt_list, 0);
+  showSimpleMeshPartitions(myRank, myMesh.numMyPoints, myMesh.myGlobalIDs, parts);
 
-  if (gid_flags) free(gid_flags);
-  if (gid_list) free(gid_list);
-  if (lid_list) free(lid_list);
-  if (wgt_list) free(wgt_list);
+  for (i=0; i < numExport; i++){
+    parts[exportLocalGids[i]] = exportToPart[i];
+  }
+
+  if (myRank == 0){
+    printf("Mesh partition assignments after calling Zoltan\n");
+  }
+
+  showSimpleMeshPartitions(myRank, myMesh.numMyPoints, myMesh.myGlobalIDs, parts);
+
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -176,5 +188,284 @@ int main(int argc, char *argv[])
 
   MPI_Finalize();
 
+  if (myMesh.numMyPoints > 0){
+    free(myMesh.myGlobalIDs);
+    free(myMesh.x);
+    free(myMesh.y);
+  }
+
   return 0;
 }
+
+/* Application defined query functions */
+
+static int get_number_of_objects(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  MESH_DATA *mesh= (MESH_DATA *)data;
+  return mesh->numMyPoints;
+}
+
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr)
+{
+int i;
+  *ierr = ZOLTAN_OK;
+  MESH_DATA *mesh= (MESH_DATA *)data;
+
+  /* In this example, return the IDs of our objects, but no weights.
+   * Zoltan will assume equally weighted objects.
+   */
+
+  for (i=0; i<mesh->numMyPoints; i++){
+    globalID[i] = mesh->myGlobalIDs[i];
+    localID[i] = i;
+  }
+}
+
+static int get_num_geometry(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  return 2;
+}
+
+static void get_geometry_list(void *data, int sizeGID, int sizeLID,
+                      int num_obj,
+             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+             int num_dim, double *geom_vec, int *ierr)
+{
+int i;
+
+  MESH_DATA *mesh= (MESH_DATA *)data;
+
+  if ( (sizeGID != 1) || (sizeLID != 1) || (num_dim != 2)){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  *ierr = ZOLTAN_OK;
+
+  for (i=0;  i < num_obj ; i++){
+    geom_vec[2*i] = (double)mesh->x[i];
+    geom_vec[2*i + 1] = (double)mesh->y[i];
+  }
+
+  return;
+}
+
+static int get_next_line(FILE *fp, char *buf, int bufsize)
+{
+int i, cval, len;
+char *c;
+
+  while (1){
+
+    c = fgets(buf, bufsize, fp);
+
+    if (c == NULL)
+      return 0;  /* end of file */
+
+    len = strlen(c);
+
+    for (i=0, c=buf; i < len; i++, c++){
+      cval = (int)*c;
+      if (isspace(cval) == 0) break;
+    }
+    if (i == len) continue;   /* blank line */
+    if (*c == '#') continue;  /* comment */
+
+    if (c != buf){
+      strcpy(buf, c);
+    }
+    break;
+  }
+
+  return strlen(buf);  /* number of characters */
+}
+
+/* Proc 0 notifies others of error and exits */
+
+static void input_file_error(int numProcs, int tag, int startProc)
+{
+int i, val;
+
+  val = -1;
+
+  fprintf(stderr,"ERROR in input file.\n");
+
+  for (i=startProc; i < numProcs; i++){
+    /* these procs have posted receive for "tag" */
+    MPI_Send(&val, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+  }
+  for (i=1; i < startProc; i++){
+    /* these procs are done */
+    MPI_Send(&val, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+  }
+
+  MPI_Finalize();
+  exit(1);
+}
+
+
+/* Proc 0 reads the points in the input file and divides them across processes */
+
+void read_input_objects(int myRank, int numProcs, char *fname, MESH_DATA *myMesh)
+{
+char *buf;
+int bufsize = 512;
+int num, nobj, remaining, ack=0;
+int i, j;
+int *gids;
+float *xcoord, *ycoord;
+FILE *fp;
+MPI_Status status;
+int ack_tag = 5, count_tag = 10, id_tag = 15;
+int x_tag = 20, y_tag = 25;
+
+  if (myRank == 0){
+
+    buf = (char *)malloc(sizeof(char) * bufsize);
+    fp = fopen(fname, "r");
+
+    num = get_next_line(fp, buf, bufsize);
+    if (num == 0) input_file_error(numProcs, count_tag, 1);
+    num = sscanf(buf, "%d", &myMesh->numGlobalPoints);
+    if (num != 1) input_file_error(numProcs, count_tag, 1);
+
+    if (numProcs > 1){
+      nobj = myMesh->numGlobalPoints / 2;
+      remaining = myMesh->numGlobalPoints - nobj;
+    }
+    else{
+      nobj = myMesh->numGlobalPoints;
+      remaining = 0;
+    }
+
+    myMesh->myGlobalIDs = (int *)malloc(sizeof(int) * nobj);
+    myMesh->x = (float *)malloc(sizeof(float) * nobj);
+    myMesh->y = (float *)malloc(sizeof(float) * nobj);
+    myMesh->numMyPoints= nobj;
+
+    for (i=0; i < nobj; i++){
+
+      num = get_next_line(fp, buf, bufsize);
+      if (num == 0) input_file_error(numProcs, count_tag, 1);
+      num = sscanf(buf, "%d %f %f", myMesh->myGlobalIDs + i, myMesh->x + i, myMesh->y + i);
+      if (num != 3) input_file_error(numProcs, count_tag, 1);
+
+    }
+
+    gids = (int *)malloc(sizeof(int) * (nobj + 1));
+    xcoord = (float *)malloc(sizeof(float) * (nobj + 1));
+    ycoord = (float *)malloc(sizeof(float) * (nobj + 1));
+
+    for (i=1; i < numProcs; i++){
+
+      if (remaining > 1){
+        nobj = remaining / 2;
+        remaining -= nobj;
+      }
+      else if (remaining == 1){
+        nobj = 1;
+        remaining = 0;
+      }
+      else{
+        nobj = 0;
+      }
+
+      if ((i == numProcs - 1) && (remaining > 0))
+        nobj += remaining;
+
+      if (nobj > 0){
+        for (j=0; j < nobj; j++){
+          num = get_next_line(fp, buf, bufsize);
+          if (num == 0) input_file_error(numProcs, count_tag, i);
+          num = sscanf(buf, "%d %f %f", gids + j, xcoord + j, ycoord + j);
+          if (num != 3) input_file_error(numProcs, count_tag, i);
+        }
+      }
+
+      MPI_Send(&nobj, 1, MPI_INT, i, count_tag, MPI_COMM_WORLD);
+      MPI_Recv(&ack, 1, MPI_INT, i, ack_tag, MPI_COMM_WORLD, &status);
+
+      if (nobj > 0){
+        MPI_Send(gids, nobj, MPI_INT, i, id_tag, MPI_COMM_WORLD);
+        MPI_Send(xcoord, nobj, MPI_FLOAT, i, x_tag, MPI_COMM_WORLD);
+        MPI_Send(ycoord, nobj, MPI_FLOAT, i, y_tag, MPI_COMM_WORLD);
+      }
+    }
+
+    free(gids);
+    free(xcoord);
+    free(ycoord);
+    fclose(fp);
+    free(buf);
+
+    /* signal all procs it is OK to go on */
+    ack = 0;
+    for (i=1; i < numProcs; i++){
+      MPI_Send(&ack, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+    }
+  }
+  else{
+
+    MPI_Recv(&myMesh->numMyPoints, 1, MPI_INT, 0, count_tag, MPI_COMM_WORLD, &status);
+    ack = 0;
+    if (myMesh->numMyPoints > 0){
+      myMesh->myGlobalIDs = (int *)malloc(sizeof(int) * myMesh->numMyPoints);
+      myMesh->x = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
+      myMesh->y = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
+      MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
+      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, MPI_INT, 0,
+               id_tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(myMesh->x, myMesh->numMyPoints, MPI_FLOAT, 0,
+               x_tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(myMesh->y, myMesh->numMyPoints, MPI_FLOAT, 0,
+               y_tag, MPI_COMM_WORLD, &status);
+    }
+    else if (myMesh->numMyPoints == 0){
+      MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
+    }
+    else{
+      MPI_Finalize();
+      exit(1);
+    }
+
+    MPI_Recv(&ack, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+    if (ack < 0){
+      MPI_Finalize();
+      exit(1);
+    }
+  }
+}
+void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+{
+int partAssign[25], allPartAssign[25];
+int i, j, part;
+
+  memset(partAssign, 0, sizeof(int) * 25);
+
+  for (i=0; i < numIDs; i++){
+    partAssign[GIDs[i]-1] = parts[i];
+  }
+
+  MPI_Reduce(partAssign, allPartAssign, 25, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  if (myProc == 0){
+
+    for (i=20; i >= 0; i-=5){
+      for (j=0; j < 5; j++){
+        part = allPartAssign[i + j];
+        if (j < 4)
+          printf("%d-----",part);
+        else
+          printf("%d\n",part);
+      }
+      if (i > 0)
+        printf("|     |     |     |     |\n");
+    }
+    printf("\n");
+  }
+}
+

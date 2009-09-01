@@ -1,54 +1,53 @@
+/* Basic example of using Zoltan to compute a quick partitioning
+** of a set of objects.
+***************************************************************/
+
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "zoltan.h"
 
-static int numObjects = 36;
-static int numProcs, myRank, myNumObj;
-static int myGlobalIDs[36];
+/* Name of file containing objects to be partitioned */
 
-static float objWeight(int globalID)
-{
-float w;
-  if (globalID % numProcs == 0)
-    w = 3;  /* simulate an initial imbalance */
-  else
-    w = (globalID % 3 + 1);
+static char *fname="objects.txt";
 
-  return w;
-}
-static int get_number_of_objects(void *data, int *ierr)
-{
-  *ierr = ZOLTAN_OK;
-  return myNumObj;
-}
+/* Structure to hold object data */
+
+typedef struct{
+  int numGlobalObjects;
+  int numMyObjects;
+  int *myGlobalIDs;
+} OBJECT_DATA;
+
+static int get_number_of_objects(void *data, int *ierr);
+
 static void get_object_list(void *data, int sizeGID, int sizeLID,
             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
-                  int wgt_dim, float *obj_wgts, int *ierr)
-{
-int i;
-  *ierr = ZOLTAN_OK;
-  for (i=0; i<myNumObj; i++){
-    globalID[i] = myGlobalIDs[i];
-    if (obj_wgts){
-      obj_wgts[i] = objWeight(myGlobalIDs[i]);
-    }
-  }
-}
+                  int wgt_dim, float *obj_wgts, int *ierr);
+ 
+static int get_next_line(FILE *fp, char *buf, int bufsize);
+
+static void input_file_error(int numProcs, int tag, int startProc);
+
+static void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
+
+static void read_input_objects(int myRank, int numProcs, char *fname, OBJECT_DATA *myData);
 
 int main(int argc, char *argv[])
 {
   int rc, i;
+  int myRank, numProcs;
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
   ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  int ngids;
-  int *gid_flags, *gid_list;
-  float wgt;
-  int j, nextIdx;
+  int *parts = NULL;
+
+  FILE *fp;
+  OBJECT_DATA myData;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -67,14 +66,18 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
-  ** Create a simple initial partitioning for this example
+  ** Read objects from input file and distribute them unevenly
   ******************************************************************/
 
-  for (i=0, myNumObj=0; i<numObjects; i++){
-    if (i % numProcs == myRank){
-      myGlobalIDs[myNumObj++] = i+1;
-    }
+  fp = fopen(fname, "r");
+  if (!fp){
+    if (myRank == 0) fprintf(stderr,"ERROR: Can not open %s\n",fname);
+    MPI_Finalize();
+    exit(1);
   }
+  fclose(fp);
+
+  read_input_objects(myRank, numProcs, fname, &myData);
 
   /******************************************************************
   ** Create a Zoltan library structure for this instance of load
@@ -87,13 +90,13 @@ int main(int argc, char *argv[])
 
   Zoltan_Set_Param(zz, "LB_METHOD", "BLOCK");  /* Zoltan method: "BLOCK" */
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); /* global ID is 1 integer */
-  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"); /* no local IDs */
-  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); /* weights are 1 float */
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1"); /* local ID is 1 integer */
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0"); /* we omit object weights */
 
   /* Query functions */
 
-  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
-  Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, &myData);
+  Zoltan_Set_Obj_List_Fn(zz, get_object_list, &myData);
 
   /******************************************************************
   ** Call Zoltan to partition the objects.
@@ -122,67 +125,32 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
-  ** Visualize the new partitioning.
-  ** Create a list of GIDs now assigned to my partition, let
-  ** process zero display the partitioning.
+  ** Visualize the object partitioning before and after calling Zoltan.
+  **
+  ** In this example, partition number equals process rank.
   ******************************************************************/
 
-  ngids = get_number_of_objects(NULL, &rc);
-  gid_flags = (int *)calloc(sizeof(int) , numObjects);
-  gid_list = (int *)malloc(sizeof(int) * ngids);
-  get_object_list(NULL, 1, 1,
-                  (ZOLTAN_ID_PTR)gid_list, NULL, 1, NULL, &rc);
+  parts = (int *)malloc(sizeof(int) * myData.numMyObjects);
 
-  for (i=0; i <numProcs; i++){
-    if (i == myRank){
-      if (!i) printf("\nInitial Partitioning:\n========================\n");
-      wgt = 0.0;
-      printf("%d: ",i);
-      for (j=0; j<ngids; j++){
-        if (j && (j % 20 == 0)) printf("\n   ");
-        printf("%d ",gid_list[j]);
-        wgt += objWeight(gid_list[j]);
-      }
-      printf("   weight: %f\n",wgt);
-      fflush(stdout);
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
+  for (i=0; i < myData.numMyObjects; i++){
+    parts[i] = myRank;
   }
-  
-  for (i=0; i<ngids; i++){
-    gid_flags[gid_list[i]-1] = 1;    /* my original vertices */
+
+  if (myRank== 0){
+    printf("\nObject partition assignments before calling Zoltan\n");
   }
-  for (i=0; i<numImport; i++){ 
-    gid_flags[importGlobalGids[i] - 1] = 1;  /* my imports */
+
+  showSimpleMeshPartitions(myRank, myData.numMyObjects, myData.myGlobalIDs, parts);
+
+  for (i=0; i < numExport; i++){
+    parts[exportLocalGids[i]] = exportToPart[i];
   }
-  for (i=0; i<numExport; i++){
-    gid_flags[exportGlobalGids[i] - 1] = 0;  /* my exports */
+
+  if (myRank == 0){
+    printf("Object partition assignments after calling Zoltan\n");
   }
-  nextIdx = 0;
-  for (i=0; i<numObjects; i++){
-    if (gid_flags[i]){   
-      gid_flags[nextIdx] = i+1; /* my new GID list */ 
-      nextIdx++;
-    }
-  }
-  for (i=0; i <numProcs; i++){
-    if (i == myRank){
-      if (!i) printf("\nNew Partitioning:\n=========================\n");
-      printf("%d: ",i);
-      wgt=0.0;
-      for (j=0; j<nextIdx; j++){
-        if (j && (j % 20 == 0)) printf("\n   ");
-        printf("%d ",gid_flags[j]);
-        wgt += objWeight(gid_flags[j]);
-      }
-      printf("   weight: %f\n",wgt);
-      fflush(stdout);
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-  
-  if (gid_flags) free(gid_flags);
-  if (gid_list) free(gid_list);
+
+  showSimpleMeshPartitions(myRank, myData.numMyObjects, myData.myGlobalIDs, parts);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -199,4 +167,233 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 
   return 0;
+}
+/* Application defined query functions */
+
+static int get_number_of_objects(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  OBJECT_DATA *objects = (OBJECT_DATA *)data;
+  return objects->numMyObjects;
+}
+
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr)
+{
+int i;
+  *ierr = ZOLTAN_OK;
+  OBJECT_DATA *objects = (OBJECT_DATA *)data;
+
+  /* In this example, return the IDs of our objects, but no weights.
+   * Zoltan will assume equally weighted objects.
+   */
+
+  for (i=0; i<objects->numMyObjects; i++){
+    globalID[i] = objects->myGlobalIDs[i];
+    localID[i] = i;
+  }
+}
+
+/* Function to find next line of information in input file */
+ 
+static int get_next_line(FILE *fp, char *buf, int bufsize)
+{
+int i, cval, len;
+char *c;
+
+  while (1){
+
+    c = fgets(buf, bufsize, fp);
+
+    if (c == NULL)
+      return 0;  /* end of file */
+
+    len = strlen(c);
+
+    for (i=0, c=buf; i < len; i++, c++){
+      cval = (int)*c; 
+      if (isspace(cval) == 0) break;
+    }
+    if (i == len) continue;   /* blank line */
+    if (*c == '#') continue;  /* comment */
+
+    if (c != buf){
+      strcpy(buf, c);
+    }
+    break;
+  }
+
+  return strlen(buf);  /* number of characters */
+}
+
+/* Proc 0 notifies others of error and exits */
+
+static void input_file_error(int numProcs, int tag, int startProc)
+{
+int i, val;
+
+  val = -1;
+
+  fprintf(stderr,"ERROR in input file.\n");
+
+  for (i=startProc; i < numProcs; i++){
+    /* these procs have posted receive for "tag" */
+    MPI_Send(&val, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+  }
+  for (i=1; i < startProc; i++){
+    /* these procs are done */
+    MPI_Send(&val, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+  }
+
+  MPI_Finalize();
+  exit(1);
+}
+
+/* Draw the partition assignments of the objects */
+
+void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+{
+int partAssign[25], allPartAssign[25];
+int i, j, part;
+
+  memset(partAssign, 0, sizeof(int) * 25);
+
+  for (i=0; i < numIDs; i++){
+    partAssign[GIDs[i]-1] = parts[i];
+  }
+
+  MPI_Reduce(partAssign, allPartAssign, 25, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  if (myProc == 0){
+
+    for (i=20; i >= 0; i-=5){
+      for (j=0; j < 5; j++){
+        part = allPartAssign[i + j];
+        if (j < 4)
+          printf("%d-----",part);
+        else
+          printf("%d\n",part);
+      }
+      if (i > 0)
+        printf("|     |     |     |     |\n");
+    }
+    printf("\n");
+  }
+}
+
+/* Proc 0 reads the objects in the input file and divides them across processes */
+
+void read_input_objects(int myRank, int numProcs, char *fname, OBJECT_DATA *myData)
+{
+char *buf;
+int bufsize = 512;
+int num, nobj, remainingObj, ack=0;
+int i, j;
+int *gids;
+FILE *fp;
+MPI_Status status;
+int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
+
+  if (myRank == 0){
+
+    buf = (char *)malloc(sizeof(char) * bufsize);
+    fp = fopen(fname, "r");
+
+    num = get_next_line(fp, buf, bufsize);
+    if (num == 0) input_file_error(numProcs, obj_count_tag, 1);
+    num = sscanf(buf, "%d", &myData->numGlobalObjects);
+    if (num != 1) input_file_error(numProcs, obj_count_tag, 1);
+
+    if (numProcs > 1){
+      nobj = myData->numGlobalObjects / 2;
+      remainingObj = myData->numGlobalObjects - nobj;
+    }
+    else{
+      nobj = myData->numGlobalObjects;
+      remainingObj = 0;
+    }
+
+    myData->myGlobalIDs = (int *)malloc(sizeof(int) * nobj);
+    myData->numMyObjects = nobj;
+
+    for (i=0; i < nobj; i++){
+
+      num = get_next_line(fp, buf, bufsize);
+      if (num == 0) input_file_error(numProcs, obj_count_tag, 1);
+      num = sscanf(buf, "%d", myData->myGlobalIDs + i);
+      if (num != 1) input_file_error(numProcs, obj_count_tag, 1);
+  
+    }
+
+    gids = (int *)malloc(sizeof(int) * (nobj + 1));
+
+    for (i=1; i < numProcs; i++){
+    
+      if (remainingObj > 1){
+        nobj = remainingObj / 2;
+        remainingObj -= nobj;
+      }
+      else if (remainingObj == 1){
+        nobj = 1;
+        remainingObj = 0;
+      }
+      else{
+        nobj = 0;
+      }
+
+      if ((i == numProcs - 1) && (remainingObj > 0))
+        nobj += remainingObj;
+
+      if (nobj > 0){
+        for (j=0; j < nobj; j++){
+          num = get_next_line(fp, buf, bufsize);
+          if (num == 0) input_file_error(numProcs, obj_count_tag, i);
+          num = sscanf(buf, "%d", gids + j);
+          if (num != 1) input_file_error(numProcs, obj_count_tag, i);
+        }
+      }
+
+      MPI_Send(&nobj, 1, MPI_INT, i, obj_count_tag, MPI_COMM_WORLD);
+      MPI_Recv(&ack, 1, MPI_INT, i, obj_ack_tag, MPI_COMM_WORLD, &status);
+
+      if (nobj > 0)
+        MPI_Send(gids, nobj, MPI_INT, i, obj_id_tag, MPI_COMM_WORLD);
+      
+    }
+
+    free(gids);
+    fclose(fp);
+    free(buf);
+
+    /* signal all procs it is OK to go on */
+    ack = 0;
+    for (i=1; i < numProcs; i++){
+      MPI_Send(&ack, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+    }
+  }
+  else{
+
+    MPI_Recv(&myData->numMyObjects, 1, MPI_INT, 0, obj_count_tag, MPI_COMM_WORLD, &status);
+    ack = 0;
+    if (myData->numMyObjects > 0){
+      myData->myGlobalIDs = (int *)malloc(sizeof(int) * myData->numMyObjects);
+      MPI_Send(&ack, 1, MPI_INT, 0, obj_ack_tag, MPI_COMM_WORLD);
+      MPI_Recv(myData->myGlobalIDs, myData->numMyObjects, MPI_INT, 0, 
+               obj_id_tag, MPI_COMM_WORLD, &status);
+    }
+    else if (myData->numMyObjects == 0){
+      MPI_Send(&ack, 1, MPI_INT, 0, obj_ack_tag, MPI_COMM_WORLD);
+    }
+    else{
+      MPI_Finalize();
+      exit(1);
+    }
+
+    MPI_Recv(&ack, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+    if (ack < 0){
+      MPI_Finalize();
+      exit(1);
+    }
+  }
 }
