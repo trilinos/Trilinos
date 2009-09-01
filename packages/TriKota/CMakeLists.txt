@@ -5,7 +5,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(TriKota)
+PACKAGE(TriKota DISABLE_STRONG_WARNINGS)
 
 #
 # B) Set up package-specific options
