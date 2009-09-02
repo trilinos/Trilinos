@@ -14,7 +14,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Tpetra           ../cmake/DependencyUnitTests/packages/tpetra                 PS
   EpetraExt        ../cmake/DependencyUnitTests/packages/epetraext              PS
   Stokhos          ../cmake/DependencyUnitTests/packages/stokhos                EX
-  Sacado           ../cmake/DependencyUnitTests/packages/sacado                 PS
+  Sacado           ../cmake/DependencyUnitTests/packages/sacado                 SS
   Thyra            ../cmake/DependencyUnitTests/packages/thyra                  PS
   Isorropia        ../cmake/DependencyUnitTests/packages/isorropia              PS
   AztecOO          ../cmake/DependencyUnitTests/packages/aztecoo                PS
@@ -23,7 +23,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Intrepid         ../cmake/DependencyUnitTests/packages/intrepid               PS
   Ifpack           ../cmake/DependencyUnitTests/packages/ifpack                 PS
   ML               ../cmake/DependencyUnitTests/packages/ml                     PS
-  Belos            ../cmake/DependencyUnitTests/packages/belos                  PS
+  Belos            ../cmake/DependencyUnitTests/packages/belos                  SS
   Stratimikos      ../cmake/DependencyUnitTests/packages/stratimikos            PS
   RBGen            ../cmake/DependencyUnitTests/packages/rbgen                  PS
   Phalanx          ../cmake/DependencyUnitTests/packages/phalanx                SS
