@@ -1120,7 +1120,7 @@ def checkinTest(inOptions):
             "\n\n" \
             + getCmndOutput("date", True) + "\n\n" \
   
-          if forcedCommitMsg:
+          if forcedCommit:
             commitEmailBodyStr += (forcedCommitMsg + "\n\n")
   
           commitEmailBodyStr += \
