@@ -72,7 +72,8 @@ namespace Intrepid {
     \li     In the DoF functional \f${\bf n}\f$ is a face normal. Direction of face normals 
             is determined by the right-hand rule applied to faces oriented by their vertex order
             in the cell topology, from face vertex 0 to last face vertex, whereas their length is
-            set equal to face area. For example, face 1 of all Hexahedron cells has vertex order  
+            set equal to face area (see http://mathworld.wolfram.com/Right-HandRule.html for definition 
+            of right-hand rule). For example, face 1 of all Hexahedron cells has vertex order  
             {1,2,6,5} and its right-hand rule normal can be computed, e.g., by the vector product of 
             edge tangents to edges {1,2} and {2,6}. On the reference Hexahedron the coordinates of 
             face 1 vertices are (1,-1,-1), (1,1,-1), (1,1,1) and (1,-1,1), the edge tangents are 

@@ -65,7 +65,7 @@ namespace Intrepid {
   \endverbatim
   
     \remarks
-    \li     In the DOF functional \f${\bf n}=(t_2,-t_1)\f$ where \f$\{\bf t}=(t_1,t_2)\f$ 
+    \li     In the DOF functional \f${\bf n}=(t_2,-t_1)\f$ where \f${\bf t}=(t_1,t_2)\f$ 
             is the side (edge) tangent, i.e., the choice of normal direction is such that 
             the pair \f$({\bf n},{\bf t})\f$ is positively oriented. 
   
