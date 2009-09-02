@@ -51,13 +51,14 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
         "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_godel_openmpi_1.2.7.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
   
   ELSE()
-  
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77"
-      )
+
+    # 2009/09/02: rabartl: Let CMake pick its own compilers (fixes Intrepid problem) ...  
+    #SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    #  ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+    #  "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
+    #  "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
+    #  "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77"
+    #  )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
         "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_godel_gcc-4.1.2.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
