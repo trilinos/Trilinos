@@ -19,10 +19,11 @@ using namespace Dakota;
 
 namespace TriKota {
 
+  //! Class which wraps library-mode Dakota calls into a few simple steps
 class Driver {
 public:
 
-  // Constructor and destructor
+  //! Constructor, with all dakota filenames having default values
 
   Driver(const char* dakota_in="dakota.in",  
     const char* dakota_out="dakota.out",
@@ -31,12 +32,27 @@ public:
 
   ~Driver() {};
 
+  /*! \brief Accessor to get an MPI_Comm from Dakota. This allows Dakota to
+     choose the parallelism, and the application to be constructed as a 
+     second step using this communicator. If the application is built 
+     on MPI_COMM_WORLD, then this call can be used to verify that Dakota
+     is running in that mode as well.*/
   MPI_Comm getAnalysisComm(); 
 
+  /*! \brief Accessor to get problem description from Dakota. 
+    This hook is used within TriKota::DirectApplicInterface to
+    (re)set the initial parameters in Dakota using those selected
+    in the model evaluator.
+  */
   ProblemDescDB& getProblemDescDB();
 
+  /*! \brief Main call to execute the dakota analysis. 
+     The argument may be of type TriKota::DirectApplicInterface, 
+     whoch wraps an EpetraExt::ModelEvaluator.
+  */
   void run(Dakota::DirectApplicInterface* appInterface);
 
+  //! Accessor for final parameters after an optimization run.
   const Dakota::Variables getFinalSolution() const;
 
 private:
