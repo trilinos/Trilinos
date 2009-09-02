@@ -1,0 +1,28 @@
+#!/bin/bash
+
+TRILINOS_PATH=/home/users/rouson/Trilinos
+EXTRA_ARGS=$@
+
+/home/users/rouson/CMake/bin/cmake \
+          -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+          -D CMAKE_CXX_COMPILER:FILEPATH=/usr/vacpp/bin/xlc++ \
+          -D CMAKE_C_COMPILER:FILEPATH=/usr/vac/bin/xlc \
+          -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/xlf \
+          -D Trilinos_ENABLE_DEFAULT_PACKAGES:BOOL=OFF \
+          -D Trilinos_ENABLE_Epetra:BOOL=ON \
+          -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+          -D Trilinos_ENABLE_CTrilinos:BOOL=ON \
+          -D Trilinos_ENABLE_ForTrilinos:BOOL=ON \
+          -D Trilinos_ENABLE_TESTS:BOOL=ON \
+          -D DART_TESTING_TIMEOUT:STRING=600 \
+          -D TPL_ENABLE_MPI:BOOL=OFF \
+          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE       \
+          -D Trilinos_VERBOSE_CONFIGURE:BOOL=TRUE   \
+          -D BLAS_LIBRARY_DIRS:FILEPATH="/home/users/rouson/lapack-3.2.1" \
+          -D BLAS_LIBRARY_NAMES:STRING="blas_LINUX.a" \
+          -D TPL_ENABLE_LAPACK:STRING=ON \
+          -D LAPACK_LIBRARY_DIRS:FILEPATH="/home/users/rouson/lapack-3.2.1" \
+          -D LAPACK_LIBRARY_NAMES:STRING="lapack_LINUX.a" \
+          -D CMAKE_CXX_FLAGS:STRING="-qrtti=all -lxlf90" \
+          ${EXTRA_ARGS} \
+          ${TRILINOS_PATH}
