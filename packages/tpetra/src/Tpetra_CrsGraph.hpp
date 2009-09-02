@@ -1047,9 +1047,10 @@ namespace Tpetra
   }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::insertLocalIndices(LocalOrdinal lrow, const Teuchos::ArrayView<const LocalOrdinal> &indices) {
-    using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(isStorageOptimized() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::insertLocalIndices(): cannot insert new indices after optimizeStorage() has been called.");
@@ -1090,7 +1091,7 @@ namespace Tpetra
     rowview = getFullLocalRowView(lrow);
     rowptr = rowview + rowNE;
     // check the local indices against the column map; only add ones that are defined
-    typename ArrayView<const LocalOrdinal>::iterator srcind = indices.begin();
+    typename Teuchos::ArrayView<const LocalOrdinal>::iterator srcind = indices.begin();
     while (srcind != indices.end()) {
       if (colMap_->isNodeLocalElement(*srcind)) {
         (*rowptr++) = (*srcind);

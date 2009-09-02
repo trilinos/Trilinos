@@ -737,7 +737,8 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::insertLocalValues(LocalOrdinal localRow, 
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::insertLocalValues(
+                                                         LocalOrdinal localRow, 
                          const Teuchos::ArrayView<const LocalOrdinal> &indices,
                          const Teuchos::ArrayView<const Scalar>       &values) {
     using Teuchos::ArrayRCP;
@@ -751,13 +752,15 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::insertLocalValues(): matrix was constructed with static graph; cannot insert new entries.");
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         Teuchos::typeName(*this) << "::insertLocalValues(): values.size() must equal indices.size().");
-    TEST_FOR_EXCEPTION(getRowMap().isNodeLocalElement(localRow) == false, std::runtime_error,
+    TEST_FOR_EXCEPTION(getRowMap()->isNodeLocalElement(localRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::insertLocalValues(): row does not belong to this node.");
     Teuchos::Array<LocalOrdinal> finds;
     Teuchos::Array<Scalar>       fvals;
+    finds.reserve(indices.size());
+    fvals.reserve(values.size());
     // use column map to filter the entries:
-    const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = getColMap();
-    for (size_t i=0; i<indices.size(); ++i) {
+    const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *getColMap();
+    for (size_t i=0; i < indices.size(); ++i) {
       if (cmap.isNodeLocalElement(indices[i])) {
         finds.push_back(indices[i]);
         fvals.push_back(values[i]);
