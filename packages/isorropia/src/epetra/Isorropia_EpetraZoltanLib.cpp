@@ -583,15 +583,13 @@ color(Teuchos::ParameterList& zoltanParamList,
 
 
   //Generate Load Balance
-  int  num_gid_entries, num_lid_entries;
+  int  num_gid_entries = 1;
 
-  /* Note : this works because epetra ordinal type is int */
-  ZOLTAN_ID_PTR import_global_ids = new ZOLTAN_ID_TYPE[num_obj_];
-  ZOLTAN_ID_PTR import_local_ids = new ZOLTAN_ID_TYPE[num_obj_];
 
+  // Use ColMap to have directly answers for columns !
   properties.resize(num_obj_);
-  int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_,
- 		       import_global_ids, import_local_ids, &properties[0]);
+  int err = zz_->Color(num_gid_entries, num_obj_,
+ 		      (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(), &properties[0]);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing coloring with Zoltan");
