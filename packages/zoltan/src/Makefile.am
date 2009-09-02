@@ -454,11 +454,7 @@ EXTRA_libzoltan_a_SOURCES = \
 
 include $(top_builddir)/Makefile.export.zoltan
 
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ZOLTAN_LIBRARY_INCLUDES))
-else
 EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
-endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
 
