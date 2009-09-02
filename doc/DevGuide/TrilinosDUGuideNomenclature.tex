@@ -1,0 +1,103 @@
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+\begin{itemize}
+
+\item[Package]
+A collection of software focused on one primary class of numerical
+methods.  Also a fundamental, integral unit in the Trilinos framework.
+
+\item[Trilinos]
+The name of the project.  Also a Greek term which,
+loosely translated means ``a string of pearls,'' 
+meant to evoke an image that each Trilinos package is a pearl in its 
+own right, but is even more valuable when combined with other 
+packages.
+
+\item[Didasko]
+The tutorial of Trilinos.  Offers a quick introduction to several
+Trilinos packages. It contains a printable PDF document and a
+variety of well-commented browsable examples that illustrate how
+to use Trilinos.
+
+Didasko contains examples for the following Trilinos packages: 
+Teuchos, Epetra, EpetraExt, TriUtils, Galeri, AztecOO, IFPACK,ML,
+NOX, Anasazi, TPetra.
+
+\item[new\_package] A sample Trilinos package containing all of the
+infrastructure to install a new package into the Trilinos framework.
+Contains the basic directory structure, a collection of sample
+configuration and build files and a sample ``Hello World'' package.
+
+\item[Amesos]
+The Direct Sparse Solver Package in Trilinos. The goal of
+Amesos is to make AX=B as easy as it sounds, at least for direct
+methods. Amesos provides clean and consistent interfaces to 
+several popular third party libraries.
+
+\item[Anasazi]
+An extensible and interoperable framework for large-scale eigenvalue
+algorithms.The motivation for this framework is to provide a generic
+interface to a collection of algorithms for solving large-scale 
+eigenvalue problems.
+
+\item[AztecOO] 
+Linear solver package based on preconditioned Krylov methods.  A 
+follow-on to the Aztec solver package~\cite{Aztec2.1}.  
+Supports all Aztec 
+interfaces and functionality, but also provides significant new 
+functionality.
+
+\item[Belos] A Greek term meaning ``arrow.'' Belos is the next
+generation of iterative solvers.  Belos solvers are written using
+``generic'' programming techniques.  In other words, Belos is written
+using TSF abstract interfaces and therefore has no explicit dependence
+on any concrete linear algebra library.  Instead, Belos solvers can be
+used with any concrete linear algebra library that implements the TSF
+abstract interfaces. 
+
+\item[Claps]
+Claps is a collection of domain decomposition preconditioners and
+solvers.
+
+\item[Ifpack] 
+Object-oriented algebraic preconditioner, compatible with 
+Epetra and AztecOO.  Supports construction and use of parallel
+distributed memory preconditioners such as overlapping Schwarz domain
+decomposition, Jacobi scaling and local Gauss-Seidel relaxations.
+
+\item[Komplex] 
+Complex linear equation solver using equivalent real 
+formulations~\cite{DayHero2000}, built on top of Epetra and AztecOO.
+
+\item[Meros]
+Segregated preconditioning package.  Provides scalable block
+preconditioning for problems that couple simultaneous solution
+variables such as Navier-Stokes problems.
+
+\item[ML]
+Algebraic multi-level preconditioner package.  Provides scalable
+preconditioning capabilities for a variety of problem classes.
+
+\item[NOX]
+A collection of nonlinear solvers, designed to be easily integrated
+into an application and used with many different linear solvers.
+
+\item[Petra]
+A Greek term meaning ``foundation.''  Trilinos has three Petra 
+libraries: Epetra, Tpetra and Jpetra that provide basic classes 
+for constructing and manipulating matrix, graph and vector
+objects.  Epetra is the current production version that is
+split into two packages, one core and one extensions.
+
+\item[TSF]
+Composed of several packages.  Thyra provides 
+a basic collection of abstract interfaces to vectors, linear
+operators, solvers, etc.  These interfaces provide a common
+interface for applications to access one or more packages that
+implement the abstract interface.  These interfaces can also be used
+by other packages in Trilinos to accomplish the same purpose.
+TSF Extended builds on top of Thyra, providing implicit
+aggregation capabilities and overloaded operators.
+
+\end{itemize}
+

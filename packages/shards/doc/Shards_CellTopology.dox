@@ -1,0 +1,59 @@
+
+/** \ingroup shards_package
+ *
+ *  \defgroup shards_package_cell_topology  Polytope Cell Topology Descriptions
+ *
+ *  \brief  Topological description of polytope <em> cells </em>
+ *          (polygons and polyhedrons) in terms of their subcells.
+ *
+ *  \section polytope  Polytope (2D polygon or 3D polyhedron)
+ *
+ *  A cell topology defines a polytope in terms of its vertex,
+ *  edge, and side connectivity.  However, a cell topology
+ *  does not define a geometric realization of that polytope -
+ *  it does not associate spatial coordinates with any of the
+ *  vertices.
+ *
+ *  \section dimension  Dimension (of the polytope)
+ *
+ *  The dimension of cell topology is the smallest spatial dimension
+ *  in which that cell can be realized.  For example, a tetrahedron
+ *  or quadrilateral shell can only be realized in a 3D space.
+ *
+ *  \section base_and_extended  Base and Extended Cell Topologies
+ *
+ *  The base cell topology of a polytope associates exactly one
+ *  \f$ {Cell}^{0} \f$ subcell with each vertex of the polytope.
+ *  These vertices are given a canonical ordering from which
+ *  vertex-ordinals are defined.  For example, the vertex-ordinals
+ *  for quadrilateral are defined counter-clockwise around the
+ *  quadrilateral as (0,1,2,3).
+ *  An extended cell topology is defined associating additional
+ *  \f$ {Cell}^{0} \f$ subcells with the polytope's edges, sides,
+ *  or interior.
+ *  These additional \f$ {Cell}^{0} \f$ subcells are always ordered after
+ *  the vertex subcells.
+ *
+ *  \section fem_cells Node, Edge, Side, and Element Cells
+ *
+ *  - A <b> \ref shards::Node "Node" </b> is a \f$ {Cell}^{0} \f$ subcell
+ *  - An <b> \ref shards::Line "Edge" </b> is a
+ *    \f$ {Cell}^{1} \f$ subcell of a parent
+ *    \f$ {Cell}^{D} \f$, where \f$ 1 < D \f$
+ *  - A <b> Side </b> is a \f$ {Cell}^{D-1} \f$ subcell of a parent
+ *    \f$ {Cell}^{D} \f$, where \f$ 1 < D \f$
+ *  - An <b> Element </b> is a \f$ {Cell}^{D} \f$
+ *    in an D-dimensional space
+ *
+ *  \section subcell_orientation Subcell Orientation
+ *
+ *  A subcell \f$ {Cell}^{d} \f$ of a parent
+ *  \f$ {Cell}^{D} \f$, where \f$ 0 < d < D \f$,
+ *  has vertices that are associated with the parent cell's vertices.
+ *  This association defines a map from the subcell's
+ *  vertex-ordinals to the parent's vertex-ordinals.
+ *  For example, the four edge subcells of a quadrilateral
+ *  have a vertex-ordinal map of ( (0,1), (1,2), (2,3), (3,0) ).
+ *
+ */
+

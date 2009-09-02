@@ -1,0 +1,147 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+//            LOCA: Library of Continuation Algorithms Package
+//                 Copyright (2005) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
+// ************************************************************************
+//  CVS Information
+//  $Source$
+//  $Author$
+//  $Date$
+//  $Revision$
+// ************************************************************************
+//@HEADER
+
+#ifndef LOCA_MULTIPREDICTOR_CONSTANT_H
+#define LOCA_MULTIPREDICTOR_CONSTANT_H
+
+#include "LOCA_MultiPredictor_AbstractStrategy.H"  // base class
+
+// forward declarations
+namespace LOCA{
+  class GlobalData;
+}
+
+namespace LOCA {
+
+  namespace MultiPredictor {
+
+    //! %Constant predictor strategy
+    /*! 
+     * This class computes the predictor direction given by a 
+     * vector of zeros for the solution vector component and 1 for the 
+     * parameter component.  When used with natural continuation, this
+     * corresponds to what is commonly referred to as zero'th order
+     * continuation.
+     */
+    class Constant : public LOCA::MultiPredictor::AbstractStrategy {
+
+    public:
+
+      //! Constructor. 
+      /*!
+       * \param global_data [in] Global data object 
+       * \param predParams [in] Predictor parameters.  None are currently
+       * referenced.
+       */
+      Constant(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	       const Teuchos::RCP<Teuchos::ParameterList>& predParams);
+
+      //! Destructor
+      virtual ~Constant();
+
+      //! Copy constructor
+      Constant(const Constant& source, NOX::CopyType type = NOX::DeepCopy);
+  
+      //! Assignment operator
+      virtual LOCA::MultiPredictor::AbstractStrategy& 
+      operator=(const LOCA::MultiPredictor::AbstractStrategy& source);
+
+      //! Clone function
+      virtual Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
+
+      
+      /*! 
+       * \brief Compute the predictor given the current and
+       * previous solution vectors.  Set \em baseOnSecant to \em false
+       * if the predictor orientation should not be based on the
+       * secant vector (first or last steps of a continuation run).
+       */
+      /*!
+       * This method actually implements the predictor computation described 
+       * above
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      compute(bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+	      const LOCA::MultiContinuation::ExtendedVector& xVec);
+
+      //! Evaluate predictor with step size \c stepSize.
+      /*!
+       * This method computes
+       * \c result[i] = \c xVec[i] + \c stepSize[i] * v[i]
+       * for each i, where \c v[i] is the ith predictor direction.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      evaluate(const vector<double>& stepSize,
+	       const LOCA::MultiContinuation::ExtendedVector& xVec,
+	       LOCA::MultiContinuation::ExtendedMultiVector& result) const;
+
+      //! Compute tangent to predictor and store in \c tangent.
+      virtual NOX::Abstract::Group::ReturnType 
+      computeTangent(LOCA::MultiContinuation::ExtendedMultiVector& tangent);
+
+      //! Is the tangent vector for this predictor scalable
+      /*!
+       * For the constant predictor, this always returns false.
+       */
+      virtual bool isTangentScalable() const;
+
+    protected:
+
+      //! LOCA global data object
+      Teuchos::RCP<LOCA::GlobalData> globalData;
+
+      //! Stores predictor vector
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> predictor;
+
+      //! Stores secant vector for setting orientation
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> secant;
+
+      //! Flag indicating whether vectors have been initialized
+      bool initialized;
+
+    };
+  } // namespace Predictor
+} // namespace LOCA
+
+#endif

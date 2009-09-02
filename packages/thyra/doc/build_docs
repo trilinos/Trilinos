@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Remove the directories to make sure that we don't have rebuild problems
+# that can sometimes happen with doxygen
+
+rm -r ../src/interfaces/operator_vector/ana/fundamental/doc/html
+
+rm -r ../src/interfaces/operator_vector/ana/extended/doc/html
+
+rm -r ../src/interfaces/operator_solve/ana/fundamental/doc/html
+
+rm -r ../src/interfaces/operator_solve/ana/extended/doc/html
+
+rm -r ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
+
+rm -r ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
+
+rm -r ../src/support/operator_vector/doc/html
+
+rm -r ../src/support/nonlinear/model_evaluator/doc/html
+
+rm -r ../src/support/nonlinear/solvers/doc/html
+
+rm -r ../browser/doc/html
+
+rm -r html
+
+# Create new directories manually since the doxygen exe under windows
+# seems to be messing this up.
+
+mkdir ../src/interfaces/operator_vector/ana/fundamental/doc/html
+
+mkdir ../src/interfaces/operator_vector/ana/extended/doc/html
+
+mkdir ../src/interfaces/operator_solve/ana/fundamental/doc/html
+
+mkdir ../src/interfaces/operator_solve/ana/extended/doc/html
+
+mkdir ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
+
+mkdir ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
+
+mkdir ../src/support/operator_vector/doc/html
+
+mkdir ../src/support/nonlinear/model_evaluator/doc/html
+
+mkdir ../src/support/nonlinear/solvers/doc/html
+
+mkdir ../browser/doc/html
+
+mkdir html
+
+# Build the documentation
+
+./build_docs_guts

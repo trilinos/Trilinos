@@ -1,0 +1,142 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Load-Balancing Examples</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_examples_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_init.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Load-Balancing Example"></a>Load-Balancing Example</h2>
+An example of the typical calling sequence for load balancing using Zoltan
+in a finite element application is shown in the <a href="#LB Example Fig">figure</a>
+below. An application first selects a load-balancing algorithm 
+by setting the <a href="ug_alg.html#LB_METHOD"><i>LB_METHOD</i></a> parameter
+with 
+<b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+Next, other parameter values are set by calls to 
+<b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+After some computation, load balancing is invoked by calling <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
+The results of the load balancing include the number of nodes to be imported
+and exported to the processor, lists of global and local IDs of the imported
+and exported nodes, and source and destination processors of the imported
+and exported nodes. A returned argument of <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+is tested to see whether the new decomposition differs from the old one.
+If the decompositions differ, some sort of data migration is needed to
+establish the new decomposition; the details of migration are not shown
+in this <a href="#LB Example Fig">figure</a> but will be addressed in the
+<a href="ug_examples_mig.html">migration
+examples</a>. After the data migration is completed, the arrays of information
+about imported and exported nodes returned by <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+are freed by a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
+<br>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="LB Example Fig"></a><tt>char *lb_method;</tt>
+<br><tt>int new, num_imp, num_exp, *imp_procs, *exp_procs;</tt>
+<br><tt>int *imp_to_part, *exp_to_part;</tt>
+<br><tt>int num_gid_entries, num_lid_entries;</tt>
+<br><tt><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>&nbsp;imp_global_ids,
+exp_global_ids;</tt>
+<br><tt><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>
+imp_local_ids, exp_local_ids;</tt>
+<p><tt>/* <i>Set load-balancing method.</i> */</tt>
+<br><tt>read_load_balancing_info_from_input_file(&amp;lb_method);</tt>
+<br><tt><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"LB_METHOD", lb_method);</tt>
+<p><tt>/* <i>Reset some load-balancing parameters.</i> */</tt>
+<br><tt><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"RCB_Reuse", "TRUE");</tt>
+<p><tt>/* <i>Perform computations</i> */</tt>
+<br><tt>...</tt>
+<br><tt>/* <i>Perform load balancing</i> */</tt>
+<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&amp;imp_to_part,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs,&amp;exp_to_part);&nbsp;</tt>
+<br><tt>if (new)</tt>
+<br><tt>&nbsp; perform_data_migration(...);</tt>
+<p><tt>/* <i>Free memory allocated for load-balancing results by Zoltan library</i>
+*/</tt>
+<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(&amp;imp_global_ids,
+&amp;imp_local_ids, &amp;imp_procs, &amp;imp_to_part);</tt>
+<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(&amp;exp_global_ids,
+&amp;exp_local_ids, &amp;exp_procs, &amp;exp_to_part);</tt>
+<br><tt>...</tt>
+</td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>Typical calling sequence for performing load balancing
+with the Zoltan library.</i></caption>
+</table></center>
+
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><tt>character(len=3) lb_method</tt>
+<br><tt>logical new</tt>
+<br><tt>integer(Zoltan_INT) num_imp, num_exp</tt>
+<br><tt>integer(Zoltan_INT)&nbsp;num_gid_entries, num_lid_entries&nbsp;</tt>
+<br><tt>integer(Zoltan_INT), pointer :: imp_procs(:), exp_procs(:)</tt>
+<br><tt>integer(Zoltan_INT), pointer :: imp_global_ids(:), exp_global_ids(:)
+! global IDs</tt>
+<br><tt>integer(Zoltan_INT), pointer :: imp_local_ids(:), exp_local_ids(:)
+! local IDs</tt>
+<br><tt>integer(Zoltan_INT) ierr</tt>
+<p><tt>! <i>Set load-balancing method.</i></tt>
+<br><tt>lb_method = "RCB"</tt>
+<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "LB_METHOD",
+lb_method)</tt>
+<p><tt>! <i>Reset some load-balancing parameters</i></tt>
+<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"RCB_Reuse", "TRUE")</tt>
+<p><tt>! <i>Perform computations</i></tt>
+<br><tt>...</tt>
+<br><tt>! <i>Perform load balancing</i></tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a>(zz,new,num_gid_entries,num_lid_entries,&nbsp;&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_imp,imp_global_ids,imp_local_ids,
+&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; imp_procs,imp_to_part, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_exp,exp_global_ids,exp_local_ids, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_procs,exp_to_part)&nbsp;</tt>
+<br><tt>if (new) then</tt>
+<br><tt>&nbsp; perform_data_migration(...)</tt>
+<br><tt>endif</tt>
+<p><tt>! <i>Free memory allocated for load-balancing results by Zoltan library</i></tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(imp_global_ids, imp_local_ids, imp_procs, imp_to_part);</tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(exp_global_ids, exp_local_ids, exp_procs, exp_to_part);</tt>
+<br><tt>...</tt></td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>Fortran version of the load-balancing example.</i></caption>
+</table></center>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_examples_mig.html">Next:&nbsp;
+Migration Examples</a>&nbsp; |&nbsp; <a href="ug_examples_init.html">Previous:&nbsp;
+General Usage Example</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

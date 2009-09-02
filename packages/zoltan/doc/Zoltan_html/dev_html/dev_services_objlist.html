@@ -1,0 +1,293 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Object List function</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_services_hash.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
+<h2>
+Common Functions for Querying Applications</h2>
+
+Many Zoltan algorithms need to query applications for similar data.
+The following functions provide simple, uniform query functionality for 
+algorithm developers:
+<blockquote>
+<b><a href="#Zoltan_Get_Obj_List">Zoltan_Get_Obj_List</a></b><br>
+<b><a href="#Zoltan_Get_Coordinates">Zoltan_Get_Coordinates</a></b><br>
+</blockquote>
+These functions provide a uniform method of calling the query functions
+registered by an application.
+Their use simplifies new algorithm development and code
+maintenance.  Usage examples are in <i>rcb/shared.c</i>.
+
+<p><b><a href="#Zoltan_Get_Obj_List">Zoltan_Get_Obj_List</a></b> can be called
+from any Zoltan algorithm to obtain a list of object IDs, weights, and 
+part assignments.  
+
+<p>Given a list of object IDs,
+<b><a href="#Zoltan_Get_Coordinates">Zoltan_Get_Coordinates</a></b>
+can be called from any Zoltan algorithm to obtain a list of coordinates for
+those IDs.
+
+<p><b><i>Note that, contrary to most Zoltan functions, these functions allocate 
+memory for their return lists.</i></b>
+
+<p><!------------------------------------------------------------------------->
+<hr><a NAME="Zoltan_Get_Obj_List"></a>
+<hr>int<b> Zoltan_Get_Obj_List</b>( 
+<br>&nbsp;&nbsp;&nbsp; struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b> *<i>zz</i>, 
+<br>&nbsp;&nbsp;&nbsp; int *<i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp; <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> *<i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp; <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> *<i>local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp; int <i>wdim</i>,
+<br>&nbsp;&nbsp;&nbsp; float **<i>objwgts</i>,
+<br>&nbsp;&nbsp;&nbsp; int **<i>parts</i>);
+<hr><b>Zoltan_Get_Obj_List</b> returns arrays of global and local IDs,
+part assignments, and
+object weights (if 
+<b><a href="../ug_html/ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></b>
+is not zero) for all objects on a processor. It is a convenient function
+that frees algorithm developers from calling 
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>,
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>,
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>,
+and 
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
+query functions directly.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%" NOSAVE><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
+
+<td>A pointer to the Zoltan structure created by <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>Upon return,&nbsp; the number of objects.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>Upon return, an array of global IDs of objects on the current processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>Upon return, an array of local IDs of objects on the current processor.
+NULL is returned when
+<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+is zero.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wdim</i></td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>objwgts</i></td>
+
+<td>Upon return, an array of object weights. Weights for object <i>i</i>
+are stored in
+<i>objwgts</i>[<i>i</i>*<i>wdim</i>:(<i>i</i>+1)*<i>wdim</i>-1], for
+<i>i</i>=0,1,...,<i>num_obj</i>-1.
+If <i>wdim</i> is zero, the return value of objwgts is undefined and may
+be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>parts</i></td>
+
+<td>Upon return, an array of part assignments. Object <i>i</i>
+is currently in part <i>parts[i]</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned value:</b></td>
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><a href="../ug_html/ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+or <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+pair</td>
+</tr>
+<tr>
+<td VALIGN=TOP><b>Optional Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b></td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr><a NAME="Zoltan_Get_Coordinates"></a>
+<hr>int<b> Zoltan_Get_Coordinates</b>( 
+<br>&nbsp;&nbsp;&nbsp; struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b> *<i>zz</i>, 
+<br>&nbsp;&nbsp;&nbsp; int <i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp; <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp; <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp; int *<i>num_dim</i>,
+<br>&nbsp;&nbsp;&nbsp; double **<i>coords</i>);
+<hr>
+Given lists of object IDs,
+<b>Zoltan_Get_Coordinates</b> returns the dimensionality of the problem and 
+an array of coordinates of the objects.  It is a convenient function
+that frees algorithm developers from calling 
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>,
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>,
+and 
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+query functions directly.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%" NOSAVE><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
+
+<td>A pointer to the Zoltan structure created by <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of objects.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>An array of global IDs of objects on the current processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>An array of local IDs of objects on the current processor.
+<i>local_ids</i> is NULL when
+<a href="../ug_html/ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+is zero.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>num_dim</i></td>
+
+<td>Upon return, the number of coordinates for each object (typically 1, 2 or
+3).
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>coords</i></td>
+
+<td>Upon return, an array of coordinates for the objects. Coordinates for
+object <i>i</i>
+are stored in
+<i>coords</i>[<i>i</i>*<i>num_dim</i>:(<i>i</i>+1)*<i>num_dim</i>-1], for
+<i>i</i>=0,1,...,<i>num_obj</i>-1.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned value:</b></td>
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><a href="../ug_html/ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or 
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+</td>
+</tr>
+</table>
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Next:&nbsp;
+Hash Function</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Previous:&nbsp;
+Parallel Routines</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

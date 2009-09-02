@@ -1,0 +1,40 @@
+#spirit1
+#NWCC: INTEL_LICENSE_FILE = /apps/intel/cce_80/licenses
+#      LD_LIBRARY_PATH = /apps/intel/cce_80/lib:/opt/gm/lib
+#      PATH = /apps/intel/cce_80/bin /apps/intel/fce_80/bin /apps/mpich-intel-8.1/bin
+#  cd /projects/alegra/rich_work/TPL/trilinos/5.0/build/nwcc && /projects/alegra/rich_work/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
+../configure \
+        --prefix=/home/jmwille/TrilinosTestHarness/install \
+        --enable-nox-epetra \
+        --disable-aztecoo-azlu \
+        --enable-amesos \
+        --without-ml_superlu \
+        --without-ml_zoltan \
+        --enable-teuchos \
+        --enable-triutils \
+        --enable-anasazi \
+        --enable-epetraext-transform \
+        --disable-examples \
+        --disable-tests \
+        --disable-libcheck \
+        --disable-ml_enrich \
+        --disable-dependency-tracking \
+        --with-blas="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -lblas" \
+        --with-lapack="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -lblas" \
+        --with-incdirs="-I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
+        --with-ldflags="-L/projects/alegra/rich_work/TPL/trilinos/5.0/y12m -L/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU" \
+        --with-libs="-L/dev/null" \
+        --enable-mpi \
+        --with-mpi-incdir="" \
+        --with-mpi-libdir="" \
+        --with-mpi-libs="" \
+        CC="mpicc " \
+        CXX="mpiCC " \
+        F77="mpif77 " \
+        CPPFLAGS="-DCODE_MP -DMPICH_SKIP_MPICXX -DLC_FLINK -I/projects/alegra/rich_work/TPL/zoltan/1.54/include -I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
+        CFLAGS="" \
+        CXXFLAGS="" \
+        FFLAGS="" \
+        LDFLAGS=" " \
+        --with-ar="ar -rcv"
+

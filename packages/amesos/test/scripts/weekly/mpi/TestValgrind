@@ -1,0 +1,139 @@
+#!/bin/csh
+# ************************************************************************
+# 
+#                 Amesos: Direct Sparse Solver Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+#
+
+# $1 - Used only for automated testing.  No action required by script owner.
+#      This parameter names the subdirectory from which the script is being
+#      run.  This assists a developer in figuring out which tests failed.
+# $2 - Indicates if the test is an automated nightly test.  No action required
+#      by script owner.
+
+set error = None
+set AnError = False
+set printexitvalue
+if( "$2" == "True" ) then # $2 is an optional parameter indicating if 
+			  # this is an automated test or not
+    # file2 is the log that is created and put into a results email if 
+    # errors occur.
+    set file2 = ../../../../logMpiErrors.txt
+    rm -f $file2
+    # Echo some important information into the log file to help developers
+    # figure out which tests failed.
+    #'file' is a shorter log that is retained even if all tests pass.
+    set file = ../../../../log`eval uname`.txt
+    rm -f $file
+## IMPORTANT: Specify the script owner(s) on the following line
+## For one owner type "owner@abc.com", for multiple owners
+## "owner1@abc.com, owner2@def.com"
+    echo "kstanley@cs.utk.edu" >>& $file
+    echo "Script owner(s) is listed on the previous line." >>& $file
+## List the Trilinos package being tested on the following line
+    echo "Package being tested: Amesos  " >>& $file
+    echo "Name of subdirectory: " $1 >>& $file
+    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
+    #of the longer log file (file2).
+    set file3 = tempfile
+    rm -f $file3
+    set file4 = tempfile2
+    rm -f $file4
+else
+    cd ../../../
+    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
+    rm -f $file
+endif
+echo "Date: " `eval date` >>& $file
+echo `uname -a` >>& $file
+#
+#  I thought that I had Test_Epetra_CrsMatrix working, but now it has a memory error in it.
+#
+#foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix ) 
+foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix ) 
+   cd $f
+## Different directory structures will require different setups.
+## This file assumes a structure like that of epetra - exe's live in 
+## a direct subdirectory of 'epetra/test' 
+
+## Keep in mind that file and file2-4 live in 'package_name/test'
+## Also, 'package_name/test' is the current directory
+## It is recommended that all directory changing be done relative to
+## the current directory because scripts live in the source directory,
+## but are invoked from various build directories
+
+## List the subdirectories of 'test' containing test exe's in the foreach loop
+## if directory structure is like that of epetra.
+
+   set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+    foreach g(*.exe)
+      echo "" >>& ../$file
+      echo "############" $g "##############" >>& ../$file
+      rm valg.out.pid*
+      rm TestFailed
+      echo `pwd`
+      $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions $g -s
+      grep ERROR valg.out.pid* | grep -v "SUMMARY: 0 " && touch TestFailed
+      grep lost valg.out.pid* | grep -v " 0 bytes" && touch TestFailed
+      if( -f TestFailed ) then
+      # A test failed.
+   	set AnError = True
+	echo "  ******** Test failed ********" >>& ../$file
+#
+#        This does not seem useful.  Just noisy.  So it is comment3ed out.  
+#        $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions ./TestOptions.exe  -v >> ../$file2
+        foreach  i ( valg.out.pid* )
+           echo "" >> ../$file
+           echo " $i " >> ../$file
+           echo " ../$file " >> ../$file
+           echo "" >> ../$file
+           cat $i >> ../$file
+        end
+      else
+      # Tests passed
+	echo "******** Test passed ********" >>& ../$file
+      endif
+   end
+   cd ..
+end
+#
+#  I am not convinced that these do anything.  Perhaps they should be ../$file2 and ../$file3
+#
+## At this point, it is assumed that the current directory is
+## 'package_name/test'
+if ( "$2" == "True" ) then
+   rm -f $file3
+   if( "$AnError" != "True" ) then
+      rm -f $file2
+   endif
+endif
+
+
+if ( "$AnError" == "True" ) then
+   exit 1
+else
+   exit 0
+endif
+

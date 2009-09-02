@@ -1,0 +1,143 @@
+# ------------------------------------------------------------------------
+#
+# Makefile.client.@PACKAGE@ is an example of a simple makefile that will let
+# a user build a @PACKAGE@-based application in an arbitrary directory.
+# It will be configured by cmake to refer to the Trilinos installation
+# directory. If you want to use the same client makefile with several
+# Trilinos installations (debug and optimized, for instance) you can do 
+# so: you'll merely need to hand-edit the TRILINOS_INSTALL_DIR that has been
+# set automatically during installation.
+#
+# Author: Kevin Long, Texas Tech University
+#         kevin.long@ttu.edu
+# 
+# To use this makefile, you can to do three steps:
+#
+# (1) Create a new Makefile that includes the installed Makefile.client.
+#
+# (2) In your Makefile, add the definition of EXTRA_OBJS to list names of
+#     any object files required by your application other than that corresponding
+#     to the application name.
+#
+# (3) (optional) Define CLIENT_EXTRA_LIBS and CLIENT_EXTRA_INCLUDES to
+#     if you need to augment the header and/or library search path and the
+#     list of libraries. 
+#
+# Example: Suppose you are building an application "RANS.exe" whose code is in 
+# three source files: RANS.cpp, TurbulenceModel.cpp, and BC.cpp. You have
+# installed Trilinos in /home/bob/Soft/Trilinos/INSTALL. You are building your 
+# application in /home/bob/FlowModels/RANS. You would do the following:
+#
+# (1) Create a new makefile /home/bob/FlowModels/RANS/Makefile and include
+#     /home/bob/Soft/Trilinos/INSTALL/Makefile.client.<PACKAGE> 
+#
+# (2) Fill in /home/bob/FlowModels/RANS/Makefile to set 
+#     EXTRA_OBJS = TurbulenceModel.o BC.o
+#
+# (3) Do "make RANS.exe" to build the executable.
+#
+# If your usage is more complex (see comments below), then you may want to
+# just copy this installed makefile to your own directory and then make the
+# needed modifications.  However, if you do this you might have to make
+# adjustments with new versions of Trilinos in case there are changes that
+# need to be made to the export makefile system.  However, such changes are
+# unlikely.
+# 
+# ------------------------------------------------------------------------
+
+
+# ***
+# *** Copy this below section into your own Makefile that includes this
+# *** installed makefile Makefile.client.@PACKAGE@
+# ***
+
+
+#--------------------------------------------------------------------------
+# If your application contains more than one source file, list any additional
+# object files in the variable EXTRA_OBJS, e.g.,
+# 
+# EXTRA_OBJS = SomeFile.o SomeOtherFile.o
+#
+# In this section you can also add any dependency specifications for these
+# extra files, e.g.,
+# 
+# SomeFile.o: SomeFile.hpp
+# SomeOtherFile.o: SomeOtherFile.hpp SomeFile.hpp
+# 
+#--------------------------------------------------------------------------
+#
+# EXTRA_OBJS =
+
+
+# ***
+# *** End copy section
+# ***
+
+
+
+#--------------------------------------------------------------------------
+# Set the value of TRILINOS_INSTALL_DIR to point to the directory
+# into which you have installed Trilinos. For example, if you have
+# installed into /usr/local/trilinos-3.14.59, this variable will be set to
+#
+# TRILINOS_INSTALL_DIR = /usr/local/trilinos-3.14.59 
+#
+# automatically by CMake. If you're using a single application makefile to
+# build against several versions of Trilinos you may need to edit
+# TRILINOS_INSTALL_DIR manually.
+#
+#--------------------------------------------------------------------------
+
+TRILINOS_INSTALL_DIR = @CMAKE_INSTALL_PREFIX@
+
+#--------------------------------------------------------------------------
+# If needed, set extra include and lib macros
+#--------------------------------------------------------------------------
+CLIENT_EXTRA_INCLUDES = 
+
+CLIENT_EXTRA_LIBS = 
+
+
+
+
+#--------------------------------------------------------------------------
+# The remaining lines will not normally need to be changed. 
+#
+# Cases where you'll need to edit them include 
+# (1) Your application needs some compiler flags not used in the Trilinos
+#     build. Be careful to avoid inconsistency: for instance, mixing C++ 
+#     libraries built with and without STL checking can cause segfaults.
+# (2) Your application must link to some 3rd party libraries not among those 
+#     specified when building Trilinos. You'll need to add them to the
+#     linker command line. You may need to add their locations
+#     to the library search path, and to the rpath if you're using shared
+#     libraries.  
+#--------------------------------------------------------------------------
+
+# Include the Trilinos export makefile from package=@PACKAGE@.
+include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.@PACKAGE@
+
+# Add the Trilinos installation directory to the search paths
+# for libraries and headers
+LIB_PATH = $(TRILINOS_INSTALL_DIR)/lib
+
+INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include $(CLIENT_EXTRA_INCLUDES)
+
+# Set the C++ compiler and flags to those specified in the export makefile
+CXX = $(@CAPS_PACKAGE_NAME@_CXX_COMPILER)
+
+CXXFLAGS = $(@CAPS_PACKAGE_NAME@_CXX_FLAGS)
+
+# Add the Trilinos libraries, search path, and rpath to the 
+# linker command line arguments 
+LIBS = $(CLIENT_EXTRA_LIBS) $(SHARED_LIB_RPATH_COMMAND) \
+  $(@CAPS_PACKAGE_NAME@_LIBRARIES) \
+  $(@CAPS_PACKAGE_NAME@_TPL_LIBRARIES) $(@CAPS_PACKAGE_NAME@_EXTRA_LD_FLAGS) 
+
+# Rules for building executables and objects. 
+%.exe : %.o $(EXTRA_OBJS)
+	$(CXX) -o $@ $(LDFLAGS) $(CXXFLAGS) $< $(EXTRA_OBJS) -L$(LIB_PATH) $(LIBS)
+
+%.o : %.cpp
+	$(CXX) -c -o $@ $(CXXFLAGS) -I$(INCLUDE_PATH) $(@CAPS_PACKAGE_NAME@_TPL_INCLUDES) $<
+

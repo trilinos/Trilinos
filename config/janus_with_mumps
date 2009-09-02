@@ -1,0 +1,30 @@
+#
+#  This configure invocation script allows Amesos to be built with mumps,
+#  dscpack, superludist and umfpack
+# 
+#  Amesos_Mumps does not work, and there are other issues with Amesos on
+#  Janus but this is a good starting point
+#
+
+../configure --host=i686-intel-linux \
+--disable-default-packages \
+--disable-tests \
+--disable-examples \
+--enable-amesos \
+--enable-amesos-tests \
+--enable-amesos-examples \
+--enable-amesos-dscpack \
+--enable-amesos-umfpack \
+--enable-amesos-mumps \
+--with-ldflags="-L/home/ksstanl/Trilinos3PL/lib -L/usr/local/intel/tflop/current/tflops/lib/scalapack/ -L/usr/local/intel/tflop/current//tflops/cougar/lib/puma " \
+--with-libs="-lumfpack -lamd -lsuperludist -ldscdbl -ldmumps -lpord -lscalapack -llapack -lpblas -ltools -lredist -lblacs -lblacs_MPI -lblacsCinit_MPI  -lpuma -lpgf90_cgr -lpgf90_rpm1 -lpgf902_cgr -lpgf90rtl_cgr -lpgftnrtl_cgr -lm -lpuma -lc -lpgf90rtl_cgr -lpgftnrtl_cgr -lpuma -lc -lpgc_cgr -lc -lpuma" \
+--with-incdirs=-I/home/ksstanl/Trilinos3PL/include \
+--enable-amesos-superludist \
+	CXX=ciCC CC=cicc F77=cif77 \
+	--with-cxxflags="-g -rwstl -Wc,-tlocal" \
+	--enable-mpi \
+     --with-mpi-incdir=. --with-mpi-libdir=. --with-mpi-libs=-lmpi \
+     CPPFLAGS="-DTFLOP -D__USE_STD_IOSTREAM" \
+--with-blas=/usr/local/intel/tflop/current/tflops/lib/libcsmath.a \
+--with-lapack=/usr/local/intel/tflop/current/tflops/lib/scalapack/liblapack.a 
+

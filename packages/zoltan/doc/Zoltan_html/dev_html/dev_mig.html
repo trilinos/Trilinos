@@ -1,0 +1,47 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Migration Tools</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_fortran.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_remap.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="migration_help"></a>Migration Tools</h2>
+The migration tools in the Zoltan library perform communication necessary
+for data migration in the application. The routine <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+calls application-registered <a href="../ug_html/ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">packing</a> routines to gather data to be sent
+to other processors. It sends the data using the <a href="../ug_html/ug_util_comm.html">unstructured
+communication package</a>. It then calls application-registered <a href="../ug_html/ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">unpacking</a>
+routines for each imported object to add received data to the processor's
+data structures. See the <a href="../ug_html/ug.html">Zoltan User's Guide</a>
+for more details on the use of and interface to the migration tools.
+<p>In future releases, the migration tools will be updated to use
+MPI&nbsp;data types to support heterogeneous computing architectures. 
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_fortran.html">Next:&nbsp;
+FORTRAN Interface</a>&nbsp; |&nbsp; <a href="dev_add_remap.html">Previous:&nbsp;
+Part Remapping</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

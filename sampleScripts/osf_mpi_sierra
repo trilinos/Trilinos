@@ -1,0 +1,13 @@
+../configure \
+	--with-blas="-lblas" \
+	--with-lapack=-ldxml \
+	--enable-referencey12m \
+	CXX=cxx CC=cc F77=f77 \
+	--enable-mpi \
+	CXXFLAGS="-g -tlocal -D__USE_STD_IOSTREAM -D_RWSTD_COMPILE_INSTANTIATE" \
+	CPPFLAGS="-g -tlocal -D__USE_STD_IOSTREAM -D_RWSTD_COMPILE_INSTANTIATE" \
+        --enable-nox --enable-nox-epetra \
+        --with-mpi-incdir=. \
+     --with-mpi-libdir=/usr/lib \
+     --with-mpi-libs="-lmpi -lpthread -lmach -lfor -lFutil"
+ 

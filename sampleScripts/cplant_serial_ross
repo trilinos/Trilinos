@@ -1,0 +1,9 @@
+.././configure CXXFLAGS=-O0 CPPFLAGS=-D__USE_STD_IOSTREAM \
+TRILINOS_TEMPLATE_OBJS="./cxx_repository/*.o" \
+--with-cflags=-O0 --with-fflags=-O0 --host=alpha-unknown-linux \
+--enable-referencey12m --enable-nox --enable-nox-epetra \
+--prefix=/enfs/tmp/jmwille/ROSS \
+CC=/usr/local/cplant/ross/current/bin/cc \
+CXX=/usr/local/cplant/ross/current/bin/c++ \
+F77=/usr/local/cplant/ross/current/bin/f77
+

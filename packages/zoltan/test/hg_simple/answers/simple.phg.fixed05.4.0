@@ -1,0 +1,14 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = lb_approach=partition
+Zoltan Parameters       = hypergraph_package=phg
+Zoltan Parameters       = phg_output_level=1
+File Type		= matrixmarket
+File Name		= simple
+Parallel Disk Info	= number=0
+Zoltan Parameters       = phg_coarsening_limit = 1
+Zoltan Parameters       = num_global_parts=7
+Zoltan Parameters       = phg_coarsepartition_method=linear
+Zoltan Parameters       = remap=0
+test fixed objects      = 5
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm

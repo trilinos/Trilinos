@@ -1,0 +1,16 @@
+#! /bin/sh -f
+##
+## cvs.a [...]
+##
+## cvs.a sends a cvs command to the remote cvs repository that contains the
+## Acro software package.
+##
+
+# cvs.a adapted for Zoltan -schake
+
+CVSROOT=kddevin@software.sandia.gov:/space/CVS
+CVS_RSH=ssh.cvs
+export CVS_RSH
+user=`whoami`
+
+cvs -d :ext:${user}@software.sandia.gov:/space/CVS $*

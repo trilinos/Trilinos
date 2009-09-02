@@ -1,0 +1,9 @@
+module load PrgEnv-pgi 
+../configure --prefix=/localhome/jmwille/install \
+CXX=pgCC CC=pgcc F77=pgf77 \
+CPPFLAGS="-tp k8-64 -lacml -lpgmp -lpgthread" \
+--with-blas="-L/usr/pgi-6.0/linux86-64/6.0/lib -lacml -lpgmp -lpgthread" \
+--with-lapack="-L/usr/pgi-6.0/linux86-64/6.0/lib -lacml" \
+--enable-epetraext --enable-teuchos --enable-triutils \
+--disable-default-packages
+#The first line loads the proper environment

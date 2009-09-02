@@ -1,0 +1,56 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers using
+#  solaris compilers on Sandia's 980 LAN. 
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+DEFS 			= 
+DEPS			= -xM
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= /Net/local/bin/cc
+INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
+			  -I/Net/local/lang/SC3.0.1/ansi_include \
+			  -I/Net/proj/zoltan/arch/solaris/include \
+			  -I/export/home/mpich/mpich-1.2.4/include 
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS 			= $(OPT_FLAGS)
+
+F90                     = f90
+LOCAL_F90               = f90
+F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS                  =
+SPPR_HEAD               = spprinc.most
+F90_MODULE_PREFIX       = -M
+FARG                    = farg_typical
+
+MPI_LIB			= -lmpich -lsocket -lnsl -laio -lgcc -lrt
+MPI_LIBPATH		= -L/export/home/mpich/mpich-1.2.4/lib \
+                  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.7/3.0.3 \
+                  -L/Net/local/lang/SUNWspro/lib
+
+#PARMETIS_LIBPATH 	= -L/home/u/kddevin/code/ParMETIS/ParMETIS2
+#PARMETIS_INCPATH 	= -I/home/u/kddevin/code/ParMETIS/ParMETIS2/include
+
+#JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+
+NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
+NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include

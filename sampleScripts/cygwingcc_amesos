@@ -1,0 +1,17 @@
+#
+#  This script builds amesos on Ken Stanley's system (cygwin + gcc) with only those packages 
+#  amesos needs
+#
+../configure --with-mpi-incdir=/usr/MPICH/SDK.gcc/include --enable-mpi \
+--with-mpi-cxx=g++ --with-mpi-cc=gcc --with-mpi-f77=g77 \
+--with-mpi-libdir=/usr/MPICH/SDK.gcc/lib --with-mpi-libs=-lmpich \
+--disable-komplex  --disable-aztecoo --disable-ifpack \
+--with-ldflags="-L/home/kstanley/lapack/LAPACK " \
+--disable-dependency-tracking --enable-epetra --disable-nox --disable-tsf \
+--disable-komplex --enable-aztecoo --disable-ifpack --disable-oldifpack --enable-triutils \
+--disable-epetraext --enable-amesos --enable-amesos-slud \
+--disable-new_package \
+--with-trilinos3pldir=/home/kstanley/trilinos3pl \
+--disable-amesos-slus
+
+#  We need the --with-ldflags to allow ./configure to find the BLAS

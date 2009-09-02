@@ -1,0 +1,201 @@
+In the design and implementation of the Epetra OSKI interface
+the Epetra coding guidelines \cite{IK:Epetra-coding}
+were followed as closely as possible.  In doing so, we ensured the consistency of 
+our code with the existing Epetra code base, as well as its readability and maintainability.
+%.  Also, by following the guidelines our 
+%code is readable and easy for a future developer to update.  
+Finally, the Epetra interface to OSKI
+will likely be ported to Kokkos \cite{IK:Kokkos-site}, and the interface's design will make
+this process easier.
+
+In the design phase we focused on allowing the greatest amount of flexibility to the user,
+and exposing as much of the functionality of OSKI as possible.  In some places, however, OSKI
+functionality is not exposed because there is not a corresponding Epetra function.
+For example, OSKI has a function that allows changing a 
+single value in a matrix, but Epetra does not.  When two copies of a matrix exist, as when the
+OSKI constructor makes a deep copy of the underlying data, the corresponding Epetra copy is 
+guaranteed to contain the same data.  Since Epetra can only change data values one row at a time,
+a point set function is not included in the OSKI interface.  Instead, we include a function
+to change a row of data within OSKI by overloading the Epetra function to change row data.  When a
+single copy of the data exists, the Epetra function is called on the matrix.
+When both an OSKI and Epetra matrix exist, both the matrix copies are modified to keep the data
+consistent.  The Epetra function is called once for the Epetra version of the matrix,
+and the OSKI matrix has its point function called once for each entry in the row.
+
+When there are clear equivalent functions in OSKI and Epetra, the OSKI function is designed to
+overload the Epetra function.  In the cases where OSKI provides more functionality than Epetra, the interface is designed with 
+two functions to perform the operation.  The first function mimics Epetra's functionality and passes
+values that eliminate the extra functionality from OSKI.  The second function exposes the
+full functionality OSKI provides.  Also, as appropriate new functions are added that are
+specific to OSKI, such as the tuning functions.  Conversely, Epetra functions without any analogue in the OSKI
+context are not overloaded in the \IKcompfont{Epetra\_Oski} namespace.  
+
+The interface is also designed to maintain robustness and ease of use.  All \newline \IKcompfont{Epetra\_OskiMatrix}
+functions that take in vectors or multi-vectors allow for the input of both \IKcompfont{Epetra\_Vector} or 
+\IKcompfont{Epetra\_MultiVector} objects, and \IKcompfont{Epetra\_OskiVector} or \IKcompfont{Epetra\_OskiMultiVector}
+objects.  The objects are converted to the proper types as necessary through the
+use of the lightest weight wrapper or converter possible.
+
+The implementation follows the idea of wrapping and converting data structures in as lightweight
+a fashion as possible, to maximize speed and minimize space used.  In addition, the implementation
+provides the user with as much flexibility as possible.  For example,
+the user can specify as many tuning hints as they like.  Alternatively, the user can ask Epetra
+to figure out as much as it can about the matrix and pass along those hints to OSKI.  Both options can be combined,
+with user-specified hints taking precedence over automatically generated hints.
+Options are passed by the user via Teuchos parameter lists \cite{IK:Teuchos-site}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|l|l|}
+        \hline
+Class & Function  \\
+        \hline
+\IKcompfont{Epetra\_OskiMatrix} & Derived from \IKcompfont{Epetra\_CrsMatrix}. \\
+% & \IKcompfont{Epetra\_OskiMatrix} provides all OSKI matrix \\
+ &Provides all OSKI matrix operations. \\ \hline
+% &  operations. \\ \hline
+\IKcompfont{Epetra\_OskiMultiVector} & Derived from \IKcompfont{Epetra\_MultiVector}. \\
+% & \IKcompfont{Epetra\_OskiMultiVector} provides all OSKI \\
+ & Provides all OSKI multi-vector operations.\\ \hline
+\IKcompfont{Epetra\_OskiVector} & Derived from \IKcompfont{Epetra\_OskiMultiVector}. \\
+% & \IKcompfont{Epetra\_OskiVector} provides all OSKI vector \\
+ & Provides all OSKI vector operations. \\ \hline
+\IKcompfont{Epetra\_OskiPermutation} & Stores permutations and provides Permutation \\
+ & functions not performed on a \IKcompfont{Epetra\_OskiMatrix}. \\ \hline
+\IKcompfont{Epetra\_OskiError} & Provides access to OSKI error handling functions \\
+ & and the ability to change the default OSKI error \\
+ & handler.\\ \hline
+\IKcompfont{Epetra\_OskiUtils} & Provides the initialize and finalize routines for \\
+ & OSKI.\\ \hline
+\end{tabular}
+\caption{OSKI classes within Epetra.}
+\label{IK:fig:oskiclasses}
+\end{center}
+\end{table}
+
+Finally, the design is broken into six separate classes.
+Table \ref{IK:fig:oskiclasses} shows the classes and provides information about which classes each
+derives from, and what functions each contains.  The design is as modular as possible to allow
+for the easy addition of new functions, and to logically group related functions together.
+
+%An example of how to use \IKcompfont{Epetra\_Oski} functions is shown below within a conjugate gradient algorithm.
+
+%\begin{verbatim}
+
+%Epetra_OskiVector Jacobi_UsingOski(Epetra_Matrix& A, Epetra_Vector& x, Epetra_Vector& b) {
+
+%  double alpha;
+%  int i, j, k;
+%  Epetra_Vector x0(A.RowMap); 
+%  x0.PutScalar(0.0);
+
+%  Epetra_OskiUtils object;
+%  object.Init();
+%  Epetra_OskiMatrix AMat(A);
+%  Epetra_OskiVector xVec(x);
+%  Epetra_OskiVector bVec(b);
+  
+  
+
+
+%\end{verbatim}
+
+%In figure \ref{something} the matrix-vector multiply from OSKI is used along with OSKI's tuning functionality.
+
+
+%The functions implimented were 
+
+%\subsection{Classes}
+
+%Classes needed are:
+
+%\begin{itemize}
+
+%\item Matrix: For all matrix data and calculations involving the matrix.  Functionality
+%      includes tuning, multiplies and get/set methods.
+
+%\item Vector: For storing vector objects.  This is a light-weight wrapper.
+
+%\item MultiVector: For storing multi-vector objects.  This is a light-weight wrapper.
+
+%\item Permutation: For storing the permutations performed on a matrix.  The class allows 
+%      the permutations to be applied to vectors and multi-vectors.
+
+%\item Utils: For error handling and init/close functions.
+
+%\end{itemize}
+
+%Right now when a class inherets from another class the copy constructor of the inheretected class is
+%called.  We may want to change this at a later point for efficency but to get the code working this
+%decision is fine as it makes things easier to deal with.
+
+%\subsection{Kernels}
+
+%Operations should default to the matrix type of Epetra or OSKI when both are valid
+%and all other data types are of the same design.  Usage could occur in many mixed forms
+%and possible ways to handle them are listed below.
+
+%\begin{itemize}
+
+%\item The simplest but least robust is to not allow mixed types of OSKI and Epetra matrices 
+%in the same function call.
+
+%\item When mixed types occur use the matrix type as the calculation type and convert vectors
+%appropriately for both input and output.
+
+%\item Use the above idea but also allow a way to override through an optional parameter.
+
+%\item Default to the lowest denominator of Epetra unless overridden.
+
+%\end{itemize}
+
+%As of 5/27/2008 the way this is being handled is there are two multiply functions one for
+%vectors and one for multi-vectors.  Each function must take in a transpose argument and
+%two vector arguments.  It has default alpha and beta values that can be overridden if 
+%desired.  The vectors passed in can be either \IKcompfont{Epetra\_Vector} or \IKcompfont{Epetra\_OskiVector} in 
+%type, however, the only type in the function header will be Epetra\_Vector.  The 
+%previous design decision necessitates the following treatment of passed in parameters.
+%Under the hood \IKcompfont{Epetra\_Vector} objects will be converted to \IKcompfont{Epetra\_OskiVector}
+%objects and back to \IKcompfont{Epetra\_Vector} objects as needed.  \IKcompfont{Epetra\_OskiVector} objects will 
+%either by dynamically cast back to an \IKcompfont{Epetra\_OskiVector} or converted to an \IKcompfont{Epetra\_OskiVector}
+%whichever method of conversion is deemed more efficient.
+
+%\subsection{Tuning}
+
+%The entire OSKI tuning interface should be available to the user.  In order to make
+%the entire tuning interface avalible parameter lists are needed.  Parameter lists are
+%needed for the generic set hint function and hints for a specific operation.  The lists
+%are nessacitated as OSKI uses predefined functions and it is easier to use parameter
+%lists to account for these constants than having the user and programmer redefine 
+%constants in the \IKcompfont{Epetra\_OskiMatrix} class.
+
+%Extra capabilities could be added to the interface through the use of 
+%data stored in the Epetra matrix and through tuning every x multiplies.
+
+%\subsection{Replace/Extract methods}
+
+%OSKI only has a get/set value and get/set diagonal function.  Epetra has only a get/set
+%row and get/set diagonal function.  In addition, the Epetra get and set diagonal functions
+%are less robust than the OSKI ones.  To be consistent and to keep the data consistent in
+%two copies of the matrix that could be present after \IKcompfont{Oski\_Tune()} has been 
+%called the following decisions have been made.
+
+%\begin{itemize}
+
+%\item The Oski get/set diagonal functions are decreased in functionality to the same
+%level as the Epetra ones.
+
+%\item There is no ability to get/set a single element from Oski.
+
+%\item When a row is wanted to be retrieved of set and there are two copies of the matrix 
+%the Oski point get/set are looped over.  The user is warned that this operation could
+%be slow.
+
+%\end{itemize}
+
+%\subsection{Error Handling}
+
+%We may need to have a light-weight wrapper to interpret OSKI error codes.  Error
+%handling should also be done in a way such that if multiple processors are throwing 
+%the same code then the message is displayed as few times as possible and preferably just
+%once.

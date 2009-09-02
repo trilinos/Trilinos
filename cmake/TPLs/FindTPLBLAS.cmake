@@ -1,0 +1,4 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( BLAS
+  REQUIRED_LIBS_NAMES "blas blas_win32")

@@ -1,0 +1,102 @@
+# @HEADER
+# ************************************************************************
+#
+#            Trilinos: An Object-Oriented Solver Framework
+#                 Copyright (2001) Sandia Corporation
+#
+
+# Copyright (2001) Sandia Corportation. Under the terms of Contract
+# DE-AC04-94AL85000, there is a non-exclusive license for use of this
+# work by or on behalf of the U.S. Government.  Export of this program
+# may require a license from the United States Government.
+#
+# NOTICE:  The United States Government is granted for itself and others
+# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+# license in ths data to reproduce, prepare derivative works, and
+# perform publicly and display publicly.  Beginning five (5) years from
+# July 25, 2001, the United States Government is granted for itself and
+# others acting on its behalf a paid-up, nonexclusive, irrevocable
+# worldwide license in this data to reproduce, prepare derivative works,
+# distribute copies to the public, perform publicly and display
+# publicly, and to permit others to do so.
+#
+# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+#
+# ************************************************************************
+# @HEADER
+
+
+
+#------------------------------------------------------------------------
+#
+# Export to all packages information on which other packages are being built.
+# This lets us avoid replications within each package's configure.ac of 
+# the logic for testing for whether related packages have been enabled.
+# 
+# KL 18 Sept 2005
+#
+#------------------------------------------------------------------------
+
+
+@BUILD_AMESOS_TRUE@ENABLE_AMESOS = true
+
+@BUILD_ANASAZI_TRUE@ENABLE_ANASAZI = true
+
+@BUILD_AZTECOO_TRUE@ENABLE_AZTECOO = true
+
+@BUILD_BELOS_TRUE@ENABLE_BELOS = true
+
+@BUILD_CLAPS_TRUE@ENABLE_CLAPS = true
+
+@BUILD_DIDASKO_TRUE@ENABLE_DIDASKO = true
+
+@BUILD_EPETRA_TRUE@ENABLE_EPETRA = true
+
+@BUILD_EPETRAEXT_TRUE@ENABLE_EPETRAEXT = true
+
+@BUILD_GALERI_TRUE@ENABLE_GALERI = true
+
+@BUILD_IFPACK_TRUE@ENABLE_IFPACK = true
+
+@BUILD_INTREPID_TRUE@ENABLE_INTREPID = true
+
+@BUILD_KOKKOS_TRUE@ENABLE_KOKKOS = true
+
+@BUILD_KOMPLEX_TRUE@ENABLE_KOMPLEX = true
+
+@BUILD_MEROS_TRUE@ENABLE_MEROS = true
+
+@BUILD_ML_TRUE@ENABLE_ML = true
+
+@BUILD_NEW_PACKAGE_TRUE@ENABLE_NEW_PACKAGE = true
+
+@BUILD_NOX_TRUE@ENABLE_NOX = true
+
+@BUILD_PLIRIS_TRUE@ENABLE_PLIRIS = true
+
+@BUILD_PYTRILINOS_TRUE@ENABLE_PYTRILINOS = true
+
+@BUILD_RYTHMOS_TRUE@ENABLE_RYTHMOS = true
+
+@BUILD_SHARDS_TRUE@ENABLE_SHARDS = true
+
+@BUILD_TEUCHOS_TRUE@ENABLE_TEUCHOS = true
+
+@BUILD_THYRA_TRUE@ENABLE_THYRA = true
+
+@BUILD_TPETRA_TRUE@ENABLE_TPETRA = true
+
+@BUILD_TRIUTILS_TRUE@ENABLE_TRIUTILS = true
+
+#@BUILD_TSF_TRUE@ENABLE_TSF = true
+
+#@BUILD_TSFCORE_TRUE@ENABLE_TSFCORE = true
+
+#@BUILD_TSFCOREUTILS_TRUE@ENABLE_TSFCOREUTILS = true
+
+#@BUILD_TSFEXTENDED_TRUE@ENABLE_TSFEXTENDED = true

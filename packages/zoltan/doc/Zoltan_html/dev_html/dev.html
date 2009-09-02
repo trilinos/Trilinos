@@ -1,0 +1,477 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="filename" content="Zoltan.html">
+   <meta name="review" content="28 May, 1999">
+   <meta name="subject" content="Zoltan Developer's Guide">
+   <meta name="sandia.approval_type" content="formal">
+   <meta name="sandia.approved" content="SAND2006-2955">
+   <meta name="sandia.create_date" content="05/28/99">
+   <meta name="keywords" content="Zoltan, Zoltan Developer's Guide, Zoltan dynamic load balancing library, Zoltan parallel computing">
+   <meta name="description" content="Zoltan:  Developer's Guide for the Zoltan Library project at Sandia National Laboratories">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Zoltan Developer's Guide</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000-2007, Sandia National Laboratories.                !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
+<!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
+<!--------CHANGE THE NAME AFTER THE DASH-------->
+<!--------CHANGE THE FILENAME-------->
+<!--------CHANGE THE REVIEW DATE-------->
+<!--------CHANGE THE SUBJECT-------->
+<link rel="schema.sandia" href="http://www.sandia.gov/html_schema.htm">
+<!--------CHANGE THE SAND NUMBER INFO-------->
+<!--------INSERT THE DATE DOCUMENT CREATED-------->
+<!--------CHANGE THE PAGE OWNER AND EMAIL ADDRESS-------->
+<link rev="made" title="name of contact" >
+<!--------CHANGE THE PAGE MAKER AND EMAIL ADDRESS-------->
+<!--------PLACE FIVE KEY WORDS WITHIN THE QUOTES-------->
+<!---------------END OF THIS CHANGE AREA--------------->
+</head>
+<body text="#000000">
+<!-- KDD Turned off alternative link colors in template; the >
+<!-- following line was part of the above body command. >
+<!-- link="#003366" vlink="#cc0033" alink="#000000">
+<a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
+<table BORDER=0 valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="160" BGCOLOR="#003366">
+<table BORDER=0 WIDTH="160" valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="160"><!--SANDIA LOGO AT TOP LEFT-->
+<a href="http://www.sandia.gov/Main.html"><img SRC="http://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" height=49 width=126></a>
+<p><img ISMAP SRC="http://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" height=119 width=111></td>
+
+<td><img SRC="http://www.sandia.gov/images/1pixel.gif" BORDER=0 height=1 width=10></td>
+</tr>
+</table>
+
+<table BORDER=0 WIDTH="160" valign="top" >
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 0th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan.html">Zoltan
+Home Page</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 1st little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="../ug_html/ug.html">Zoltan
+User's Guide</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 2nd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td><b><font face="Verdana, Arial, Helvetica"><a href="dev.html">Zoltan
+Developer's Guide</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 2A-nd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER> 
+<td><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan_FAQ.html">
+Frequently Asked Questions</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 3rd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan_phil.html">Zoltan
+Project Description</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 4th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan_pubs.html">Papers
+and Presentations</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 4Ath little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan_cite.html">How to Cite Zoltan</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 5th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="http://www.cs.sandia.gov/~web1400/1400_download.html">Download
+Zoltan</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 6th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan_bugreport.html">Report a Zoltan Bug</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 7th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica">
+<a href="mailto: zoltan-dev@software.sandia.gov">Contact Zoltan Developers</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+<!-------------------------------------------------------------------------->
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="150"><!----------- 8th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="150" BGCOLOR="#00CCFF" >
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica">
+<a href="http://www.sandia.gov/general/privacy-security/index.html">Sandia Privacy and Security Notice</a></font></b></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<!-------------------------------------------------------------------------->
+</table>
+</td>
+
+<td VALIGN=TOP>
+<!--MAIN CONTENT AREA STARTS HERE-->
+<!----------------THIS IS A CHANGE AREA---------------->
+<!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------>
+<b><font face="Verdana, Arial, Helvetica"><font size=+2>
+Zoltan:
+</font></font></b>
+<br>
+<b><font face="Verdana, Arial, Helvetica"><font size=+2>
+Parallel Partitioning, Load Balancing and 
+Data-Management Services
+</font></font></b>
+<p>
+<!---------------END OF THIS CHANGE AREA--------------->
+<!----------------THIS IS A CHANGE AREA---------------->
+<!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+<!------------------------------------------------------------------------->
+
+<p><b><font face="Verdana, Arial, Helvetica"><font size=+2>Developer's
+Guide&nbsp;</font></font></b>
+<p>
+<hr WIDTH="100%">
+<p>
+<hr WIDTH="100%">
+<p>
+<h3><b> The Zoltan Team </b></h3>
+<table width="100%">
+<tr>
+<td width="50%" valign=top>
+<b> Sandia National Laboratories</b><br>
+<a href="http://www.sandia.gov/~egboman">Erik Boman</a> <br>
+Cedric Chevalier<br>
+<a href="http://www.cs.sandia.gov/~kddevin">Karen Devine</a><br>
+Vitus Leung<br>
+Lee Ann Riesen<br>
+</td>
+<td width="50%" valign=top>
+<b> Ohio State University</b><br>
+<a href="http://bmi.osu.edu/~umit/">Umit Catalyurek</a><br>
+<a href="http://www.ece.osu.edu/~bozdagd">Doruk Bozdag</a><br>
+</td>
+</tr>
+</table>
+<br>
+<h3><b> Past Zoltan Contributors</b></h3>
+<table width="100%"
+<tr>
+<td width="50%" valign=top>
+<b> Sandia National Laboratories: </b><br>
+Robert Heaphy<br>
+<a href="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</a></b><br>
+Matthew St. John<br>
+Courtenay Vaughan<br>
+<br>
+</td>
+<td width="50%" valign=top>
+<b> Williams College</b><br>
+<a href="http://www.teresco.org/~terescoj/">James Teresco</a><br>
+</td>
+</tr>
+<tr>
+<td width="50%" valign=top>
+<b> National Institute of Standards and Technology</b><br>
+<a href="http://math.nist.gov/~mitchell">William F. Mitchell</a><br>
+</td>
+<td width="50%" valign=top>
+<b> Rensselaer Polytechnic Institute</b><br>
+Jamal Faik<br>
+Luis Gervasio<br>
+</td>
+</tr>
+</table>
+
+<p>
+<p>
+<hr WIDTH="100%">
+<div ALIGN=right>
+<b><i>Zoltan Developer's Guide, Version 3.1</b></i></div>
+
+<p>
+<h4>
+<table border="1"> <tr> <td>
+<a href="http://www.cs.sandia.gov/~kddevin/Zoltan_pdf/dev.pdf">DOWNLOAD PDF VERSION HERE.</a>
+</td> </tr> </table>
+<p>
+
+
+<h4>
+<a href="dev_intro.html">Introduction and General Principles</a></h4>
+
+<blockquote><a href="dev_intro_philosophy.html">Philosophy of Zoltan</a>
+<br><a href="dev_intro_coding.html">Coding Principles in Zoltan</a>
+<ol TYPE=A><a href="dev_intro_coding.html#include">Include files</a>
+<br><a href="dev_intro_coding.html#global">Global Variables</a>
+<br><a href="dev_intro_coding.html#functions">Function Names</a>
+<br><a href="dev_intro_coding.html#par_comm">Parallel Communication</a>
+<br><a href="dev_intro_coding.html#memory1">Memory Management</a>
+<br><a href="dev_intro_coding.html#return">Errors, Warnings and Return Codes</a>
+</ol>
+<a href="dev_intro_sqe.html">Zoltan Quality Assurance</a>
+</blockquote>
+
+<h4>
+<a href="dev_dist.html">Zoltan Distribution</a></h4>
+
+<ol TYPE=1><a href="dev_dist_cvs.html">CVS</a>
+<br><a href="dev_dist_dir.html">Layout of Directories</a>
+<br><a href="dev_dist_compile.html">Compilation and Makefiles</a></ol>
+
+<h4>
+<a href="dev_lb.html">Zoltan Interface and Data Structures</a></h4>
+
+<ol TYPE=1><a href="dev_lb_interface.html">Interface Functions</a>
+<br><a href="dev_lb_types.html">ID Data Types</a>
+<br><a href="dev_lb_structs.html">Data Structures</a></ol>
+
+<h4>
+<a href="dev_services.html">Services (to simplify new algorithm development)</a></h4>
+
+<ol TYPE=1><a href="dev_services_params.html">Parameter Setting Routines</a>
+<br><a href="dev_services_parallel.html">Parallel Computing Routines</a>
+<br><a href="dev_services_objlist.html">Common Functions for Querying Applications</a>
+<br><a href="dev_services_hash.html">Hash Function</a>
+<br><a href="dev_services_time.html">Timing Routines</a>
+<br><a href="dev_services_zoltantimer.html">High-Level Timing Services:  ZOLTAN_TIMER</a>
+<br><a href="dev_services_debug.html">Debugging Services</a></ol>
+
+<h4>
+<a href="dev_add.html">Adding New Load-Balancing Algorithms to Zoltan</a></h4>
+
+<ol TYPE=1><a href="dev_add_interface.html">Load-Balancing Interface Routines</a>
+<br><a href="dev_add_lb.html">Load-Balancing Function Implementation</a>
+<br><a href="dev_add_struct.html">Data Structures</a>
+<br><a href="dev_add_memory.html">Memory Management</a>
+<br><a href="dev_add_params.html">Parameters</a>
+<br><a href="dev_add_remap.html">Part Remapping</a>
+</ol>
+
+<h4>
+<a href="dev_mig.html">Migration Tools</a></h4>
+
+<h4>
+<a href="dev_fortran.html">FORTRAN Interface</a></h4>
+
+<h4>
+<a href="dev_cpp.html">C++ Interface</a></h4>
+
+<h4>
+<a href="dev_refs.html">References</a></h4>
+
+<h4>
+<a href="dev_driver.html">Appendix: Using the Test Drivers <i>zdrive</i>, <i>zCPPdrive</i> and <i>zfdrive</i></a></h4>
+
+<ul><a href="dev_driver.html#Introduction">Introduction</a>
+<br><a href="dev_driver.html#running zdrive">Running the Test Drivers</a>
+<br><a href="dev_driver.html#adding algorithms">Adding New Algorithms</a></ul>
+
+<h4>
+<a href="dev_view.html">Appendix: Visualization of Geometric Partitions</a></h4>
+
+<ul><a href="dev_view.html#Vis_2D">2D problems with <I>gnuplot</I></a>
+<br><a href="dev_view.html#Vis_3D">3D problems with <I>vtk_view</I></a>
+<br><a href="dev_view.html#Vis_offscreen">Off-screen rendering with <I>vtk_write</I></a>
+<br><a href="dev_view.html#Vis_other">Other file formats</a>
+</ul>
+
+<h4>
+<a href="dev_test_script.html">Appendix: Using the Test Script <i>test_zoltan</i></a></h4>
+
+<h4>
+<a href="dev_rcb.html">Appendix: Recursive Coordinate Bisection (RCB)</a></h4>
+
+<h4>
+<a href="dev_rib.html">Appendix: Recursive Inertial Bisection (RIB)</a></h4>
+
+<h4>
+<a href="dev_parmetis.html">Appendix: Graph Partitioning (ParMETIS and Jostle) </a></h4>
+
+<h4>
+<a href="dev_phg.html">Appendix: Hypergraph Partitioning (PHG)  </a></h4>
+
+<h4>
+<a href="dev_reftree.html">Appendix: Refinement Tree </a></h4>
+
+<h4>
+<a href="dev_hsfc.html">Appendix: Hilbert Space_Filling Curve (HSFC)</a></h4>
+
+<h4>
+<a href="dev_degenerate.html">Appendix: Handling Degenerate Geometries</a></h4>
+
+<hr WIDTH="100%">
+Copyright (c) 2000-2007, Sandia National Laboratories. <br>
+The Zoltan Library and its documentation are released
+under the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License (LGPL)</a>.  
+See the README file in the main Zoltan directory for more information.
+<hr WIDTH="100%">
+<br>[<a href="../Zoltan.html">Zoltan Home Page</a>&nbsp; |&nbsp; <a href="dev_intro.html">Next:&nbsp;
+Introduction and General Principles</a>]&nbsp;<!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
+</tr>
+</table>
+
+<!<hr width="100%">
+<!--Image maps below-->
+<map name="shortMap">
+<area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/about/index.html"></area>
+<area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/mission/ste/index.html"></area>
+<area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/mission/index.html"></area>
+<area shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/contact-us/index.html"></area>
+<area shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/news/index.html"></area>
+<area shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search/index.html"></area>
+<area shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></area>
+</map>
+<!----------------THIS IS A CHANGE AREA---------------->
+<!----NAME AND DATE OF LAST REVISION SHOULD BE HERE---->
+<!---------------END OF THIS CHANGE AREA--------------->
+
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  RIB</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_hsfc.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_rcb.html">Previous</a></i></b></div>
+
+
+<h2>
+<a NAME="RIB"></a>Recursive Inertial Bisection (RIB)</h2>
+An implementation of Recursive Inertial Bisection (RIB) is included in
+Zoltan. RIB was proposed as a load-balancing algorithm by 
+<a href="ug_refs.html#williams">Williams</a> and later studied 
+by <a href="ug_refs.html#taylor">Taylor and Nour-Omid</a>, but its 
+origin is unclear.  RIB is similar to RCB in that it divides the domain based on
+the location of the objects being partitioned by use of cutting planes.
+In RIB, the computational domain is first divided into two regions by a
+cutting plane orthogonal to the longest direction of the domain so that half
+the work load is in each of the sub-regions.  The sub-regions are then further
+divided by recursive application of the same splitting algorithm until
+the number of sub-regions equals the number of processors.  Although this
+algorithm was first devised to cut into a number of sets which is a power
+of two, the set sizes in a particular cut needn't be equal.  By adjusting
+the part sizes appropriately, any number of equally-sized sets can
+be created.  If the parallel machine has processors with different speeds,
+sets with nonuniform sizes can also be easily generated.  The Zoltan implementation
+of RIB has several parameters which can be modified by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+function.
+<br>&nbsp;
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
+
+<td><b>RIB</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>RIB_OVERALLOC</i></td>
+
+<td>The amount by which to over-allocate temporary storage arrays for objects
+within the RIB algorithm when additional storage is due to changes in processor
+assignments.&nbsp;
+<br>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RIB_OUTPUT_LEVEL</i></td>
+
+<td>Flag controlling the amount of timing and diagnostic output the routine
+produces.&nbsp;
+<br>0 = no output; 1 = print summary; 2 = print data for each processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> CHECK_GEOM</i></td>
+
+<td>Flag controlling the invocation of input and output error checking.&nbsp;
+<br>0 = don't do checking; 1 = do checking.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
+
+<td>Should information about the cuts determining the RIB decomposition
+be retained? It costs a bit of time to do so, but this information is necessary
+if application wants to add more objects to the decomposition via calls
+to <b><a href="ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>
+or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b>.&nbsp;
+<br>0 = don't keep cuts; 1 = keep cuts.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> AVERAGE_CUTS</i></td>
+
+<td>When set to one, coordinates of RIB cutting planes are computed to be the
+average of the coordinates of the closest object on each side of the cut.
+Otherwise, coordinates of cutting planes may equal those of one of the
+closest objects.
+<br>0 = don't average cuts; 1 = average cuts.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> REDUCE_DIMENSIONS</i></td>
+<td>
+When a 3 dimensional geometry is almost flat, it may make more
+sense to treat it as a 2 dimensional geometry when applying the RIB
+algorithm.  (Coordinate values in the omitted direction are ignored
+for the purposes of partitioning.)
+If this parameter is set to <B>1</B>, a 3 dimensional
+geometry will be treated as 2 dimensional if it is very flat,
+or 1 dimensional if it is very thin.  A 2 dimensional geometry will
+be treated as 1 dimensional if it is very thin.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> DEGENERATE_RATIO</i></td>
+<td>
+If the <B>REDUCE_DIMENSIONS</B> parameter is set, then this parameter
+determines when a geometry is considered to be degenerate.
+A bounding box which is oriented to the geometry is constructed, and
+the lengths of its sides are tested against a ratio of 1 : <B>DEGENERATE_RATIO</B>.
+</td>
+</tr>
+
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>RIB_OVERALLOC</i> = 1.2</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>RIB_OUTPUT_LEVEL</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>CHECK_GEOM</i> = 1</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>KEEP_CUTS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>AVERAGE_CUTS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>REDUCE_DIMENSIONS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>DEGENERATE_RATIO</i> = 10</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td>
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+</td>
+
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_alg_hsfc.html">Next:&nbsp;
+Hilbert Space-Filling Curve Partitioning</a> |&nbsp; <a href="ug_alg_rcb.html">Previous:&nbsp;
+Recursive Coordinate Bisection (RCB)</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

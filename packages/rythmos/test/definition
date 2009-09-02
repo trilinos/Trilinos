@@ -1,0 +1,750 @@
+PACKAGE_NAME=Rythmos
+
+#
+# FRAMEWORK group
+#
+
+# Unit Tests
+# CTEST Rythmos_UnitTest
+(FRAMEWORK, INSTALL) {
+  TESTS = UnitTest/Rythmos_UnitTest.exe;
+  COMM = SERIAL;
+}
+
+# Convergence Tests
+# CTEST Rythmos_BackwardEuler_ConvergenceTest
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_BackwardEuler_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+# CTEST Rythmos_ForwardEuler_ConvergenceTest
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ForwardEuler_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+# CTEST Rythmos_ImplicitBDF_ConvergenceTest
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ImplicitBDF_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+# CTEST Rythmos_ExplicitRK_ConvergenceTest
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ExplicitRK_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+# CTEST Rythmos_ImplicitRK_ConvergenceTest
+(FRAMEWORK, INSTALL) {
+TESTS = ConvergenceTest/Rythmos_ImplicitRK_ConvergenceTest.exe;
+  COMM = SERIAL;
+}
+
+
+# GAASP Interface Unit Tests
+(FRAMEWORK, INSTALL) {
+  TESTS = ../adapters/gaasp/test/test_gaasp_adapters.exe;
+  COMM = SERIAL;
+}
+
+# Default run, Explicit Runge-Kutta 4 stage
+# CTEST complicatedExample_explicit0
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample.exe;
+    ARGS = --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Scalar Forward Euler
+# CTEST complicatedExample_explicit1
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample.exe;
+    ARGS = --method=FE --maxerror=1e-1 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Scalar Backward Euler
+# CTEST complicatedExample_amesos_0
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos0) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BE --maxerror=1e-1 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Scalar ImplicitBDF with forcing term
+# note:  beofulf = cs.csbsju.edu 
+#(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1Strict) {
+#    TESTS = complicatedExample/complicatedExample_amesos.exe;
+#    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --max-restep-error=0 --echo-command-line;
+#    COMM = SERIAL, MPI(1);
+#    X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov rancilio.sandia.gov cs.csbsju.edu; 
+#}
+
+#(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1Tight) {
+#    TESTS = complicatedExample/complicatedExample_amesos.exe;
+#    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --max-restep-error=1e-12 --echo-command-line;
+#    COMM = SERIAL, MPI(1);
+#    X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov rancilio.sandia.gov; 
+#}
+
+# CTEST complicatedExample_amesos_1
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,RythmosAmesos1Loose) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-3 --abstol=1e-3 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+    HOST = gabriel.sandia.gov s858352.srn.sandia.gov;
+}
+
+# Vector Explicit Runge-Kutta 4 stage
+# CTEST complicatedExample_explicit2
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample.exe;
+    ARGS = --numelements=10 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Forward Euler
+# CTEST complicatedExample_explicit3
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample.exe;
+    ARGS = --method=FE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Backward Euler
+# CTEST complicatedExample_amesos_2
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos3) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Scalar Backward Euler using Amesos
+# CTEST complicatedExample_amesos_3
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos4) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Scalar Backward Euler using AztecOO
+# CTEST complicatedExample_aztecoo_0
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample_aztecoo.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Backward Euler using Amesos
+# CTEST complicatedExample_amesos_4
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos5) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line --verb-level=VERB_MEDIUM;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Backward Euler using AztecOO
+# CTEST complicatedExample_aztecoo_1
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample_aztecoo.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI(1);
+}
+
+# Vector Backward Euler using Belos
+# CTEST complicatedExample_belos_0
+(FRAMEWORK,INSTALL,RythmosBelos) {
+    TESTS = complicatedExample/complicatedExample_belos.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose \
+      --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+       --linear-solver-params-used-file=lowsf.belos.used.xml
+      ;
+    COMM = SERIAL,MPI(1);
+}
+
+# Vector Forward Euler with same accuracy as ERK
+# CTEST complicatedExample_explicit4
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample.exe;
+    ARGS = --numelements=100 --method=FE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
+    COMM = SERIAL,MPI(1);
+}
+
+# Vector Backward Euler with lower accuracy than ERK
+# CTEST complicatedExample_amesos_5
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos6) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=500 --maxerror=1e-5 --verbose --echo-command-line --verb-level=VERB_MEDIUM;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Implicit BDF
+# CTEST complicatedExample_amesos_6
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos7) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Backward Euler
+# CTEST complicatedExample_amesos_7
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos8) {
+    TESTS = complicatedExample/complicatedExample_amesos.exe;
+    ARGS = --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector Implicit BDF with AztecOO
+# CTEST complicatedExample_aztecoo_2
+(FRAMEWORK,INSTALL) {
+    TESTS = complicatedExample/complicatedExample_aztecoo.exe;
+    ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI(1);
+}
+
+# Vector Implicit BDF with Belos
+# CTEST complicatedExample_belos_1
+(FRAMEWORK,INSTALL,RythmosBelos) {
+    TESTS = complicatedExample/complicatedExample_belos.exe;
+    ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose \
+      --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --linear-solver-params-used-file=lowsf.belos.used.xml
+      ;
+    COMM = SERIAL,MPI(1);
+}
+
+# Vector 1DfemTransient with Backward Euler 
+# CTEST 1DfemTransient_amesos_BE
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos9) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
+    ARGS = --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+# Vector 1DfemTransient with Backward Euler using AztecOO
+# CTEST 1DfemTransient_aztecoo_BE
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient_aztecoo.exe;
+    ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI(1);
+}
+
+# Vector 1DfemTransient with Backward Euler using Belos
+# CTEST 1DfemTransient_belos_BE
+(FRAMEWORK,INSTALL,RythmosBelos) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
+    ARGS = --verbose --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --linear-solver-params-used-file=lowsf.belos.used.xml
+      ;
+    COMM = SERIAL,MPI(1);
+}
+
+
+# Vector 1DfemTransient with ImplicitBDF
+# CTEST 1DfemTransient_amesos_IBDF
+(FRAMEWORK,INSTALL,RythmosAmesos) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
+    ARGS = --verbose --method=BDF --echo-command-line;
+    COMM = SERIAL, MPI(1);
+}
+
+
+# Vector 1DfemTransient with ImplicitBDF with AztecOO
+# CTEST 1DfemTransient_aztecoo_IBDF
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient_aztecoo.exe;
+    ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI(1);
+}
+
+
+# Vector 1DfemTransient with ImplicitBDF with Belos
+# CTEST 1DfemTransient_belos_IBDF
+(FRAMEWORK,INSTALL,RythmosBelos) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
+    ARGS = --verbose --method=BDF --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+        --linear-solver-params-used-file=lowsf.belos.used.xml;
+    COMM = SERIAL,MPI(1);
+}
+
+
+# CTEST diagonalTransient_default
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL00,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# CTEST diagonalTransient_amesos_base
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# CTEST diagonalTransient_amesos_coeff_s_pi
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# CTEST diagonalTransient_aztecoo
+# old args:
+#    ARGS = --params-file=../example/diagonalTransient/diagonalTransient_aztecoo.xml  \
+#           --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME;
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2,RYTHMOSAZTECOO) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_aztecoo.exe;
+    ARGS = --params-file=../example/diagonalTransient/diagonalTransient_aztecoo.xml  \
+      --final-time=1e-4 --num-time-steps=-1 --verb-level=VERB_EXTREME \
+      --echo-command-line \
+      --max-state-error=5e-6 \
+      --dump-final-solutions \
+      --use-BDF;
+    COMM = SERIAL, MPI;
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# CTEST diagonalTransient_belos_BE
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2b,RythmosBelos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+            <ParameterList name=\"Linear Solver Types\">
+           </ParameterList>
+         </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{0.0\, 0.0\}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"extreme\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME;
+    COMM = SERIAL, MPI;
+}
+
+
+# CTEST diagonalTransient_amesos_fwd-sens_n16_p4
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL3,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"16\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159\,  30.0\, 15.0\, 5.0 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# CTEST diagonalTransient_amesos_fwd-sens_n1_p1
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL4,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"1\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# CTEST diagonalTransient_amesos_fwd-sens_n5_p1
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL5,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"5\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# Solve state problem with fixed time steps using BDF stepper
+# CTEST diagonalTransient_amesos_fwd-BDF-fixed
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL6,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"1\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"low\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME \
+      --echo-command-line \
+      --max-state-error=1e-6 \
+      --dump-final-solutions \
+      --use-BDF;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# Solve state problem with variable time steps using BDF stepper
+# CTEST diagonalTransient_amesos_fwd-BDF-variable
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL7,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"1\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"low\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=-1 --verb-level=VERB_EXTREME \
+      --echo-command-line \
+      --max-state-error=5e-6 \
+      --dump-final-solutions \
+      --use-BDF;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# Sensitivity solve using BDF stepper using fixed time steps
+# CTEST diagonalTransient_amesos_fwd-sens-BDF
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"1\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-restate-error=1e-8 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions \
+      --use-BDF;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+# Use order-1 IRK which is basically the same as backward Euler
+# CTEST diagonalTransient_belos_IRK
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL10,RythmosBelos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
+    ARGS =
+      --extra-params="
+        <ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 0.0\, 0.0 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"medium\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --use-IRK;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+#
+# simpleAdjoint.exe
+#
+
+# CTEST simpleAdjoint_amesos_0
+# CTEST simpleAdjoint_amesos_1
+(FRAMEWORK,INSTALL,SIMPLEADJOINT,RythmosAmesos) {
+    TESTS = ./simpleAdjoint/simpleAdjoint_amesos.exe;
+    ARGS = --num-time-steps=10 --soln-verb-level=VERB_EXTREME,
+      --params-file=./simpleAdjoint/simpleAdjoint_n4.xml --num-time-steps=10 --soln-verb-level=VERB_EXTREME;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+#
+# timeDiscretizationBackwardEuler.exe
+#
+
+
+# CTEST timeDiscretizedBackwardEuler_amesos
+(FRAMEWORK,INSTALL,TIMEDISCR,TIMEDISCR0,RythmosBelos) {
+    TESTS = ../example/timeDiscretizedBackwardEuler/timeDiscretizedBackwardEuler.exe;
+    ARGS = \
+      --params-file=../example/timeDiscretizedBackwardEuler/timeDiscretizedBackwardEuler1.xml \
+      --verb-level=VERB_EXTREME \
+      --num-time-steps=10 \
+      --final-time=1e-3;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
+# Explicit Taylor polynomial integration on Van der Pol oscillator
+# CTEST VanDerPolOscillator_ETP
+(FRAMEWORK,INSTALL) {
+    TESTS = ExplicitTaylorPolynomialStepper/VanDerPolOscillator/vdp.exe;
+    ARGS = --verbose;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+# Theta Stepper test
+# CTEST Rythmos_ThetaStepper_UnitTest
+(FRAMEWORK,INSTALL) {
+    TESTS = ThetaStepper/Rythmos_ThetaStepper_UnitTest.exe;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}

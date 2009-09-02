@@ -1,0 +1,47 @@
+/*! \mainpage Sacado:  Automatic Differentation Tools for C++ Applications
+\htmlonly
+\endhtmlonly
+
+\section sacado_outline Outline
+
+<ul>
+<li>\ref sacado_intro
+<li>\ref sacado_startup
+<li>\ref sacado_browser
+</ul>
+
+\section sacado_intro Introduction 
+Sacado is a set of automatic differentiation tools for C++ applications.  It
+provides templated classes for forward, reverse and Taylor mode automatic 
+differentiation.
+
+\section sacado_startup Overview of sacado
+
+Sacado contains several basic AD classes:
+
+<ul> 
+<li> Forward mode AD with the number of derivative components chosen at run-time:  Sacado::Fad::DFad (most flexible)
+<li>  Forward mode AD with the number of derivative components chosen at compile-time:  Sacado::Fad::SFad (most efficient)
+<li>  Forward mode AD with the maximum number of derivative components chosen at compile-time but actual number used chosen at run-time:  Sacado::Fad::SLFad (sits between Sacado::Fad::DFad and Sacado::Fad::SFad in flexibility and efficiency)
+<li> Reverse mode:  Sacado::Rad::ADvar
+<li> High-order univariate Taylor polynomials:  Sacado::Tay::Taylor
+</ul>
+
+Experimental AD classes:
+
+<ul>
+<li> Forward mode AD using caching expression templates:  Sacado::CacheFad::DFad.  Preliminary testing indicates this approach is more efficient for deep expressions with large number of derivative components, but is less efficient and Sacado::Fad::DFad otherwise.
+<li> Forward mode AD with custom memory manager:  Sacado::Fad::DMFad.  This implementation has not been extensively tested.
+<li> Taylor polynomial AD using caching expression templates:  Sacado::Tay::CacheTaylor.  Preliminary testing indicates this approach is less efficient than Sacado::Tay::Taylor.
+</ul>
+
+\section sacado_browser Browse all of sacado as a single doxygen collection
+
+You can browse all of Sacado as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Sacado software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of sacado</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
+
+*/

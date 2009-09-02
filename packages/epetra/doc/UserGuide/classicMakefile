@@ -1,0 +1,29 @@
+TARGET=EpetraUserGuide
+
+$(TARGET).dvi: $(TARGET).tex Ex1.tex Ex1a.tex HungCode.tex ExMaps.tex
+	latex $(TARGET)
+	bibtex $(TARGET)
+	latex $(TARGET)
+	latex $(TARGET)
+
+view: $(TARGET).pdf
+	acroread $(TARGET).pdf &
+
+ps: $(TARGET).dvi
+	dvips -o $(TARGET).ps $(TARGET)
+clean:
+	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
+           *.bbl *.blg *.lof *.lot *.tex~
+
+
+Ex1.tex: ../../example/UG_Ex1/cxx_main.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt ../../example/UG_Ex1/cxx_main.cpp ex_footer.txt > Ex1.tex
+
+Ex1a.tex: ../../example/UG_Ex1/power_method.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt ../../example/UG_Ex1/power_method.cpp ex_footer.txt > Ex1a.tex
+
+HungCode.tex: HungCode.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt HungCode.cpp ex_footer.txt > HungCode.tex
+
+ExMaps.tex: ../../example/UG_ExMaps/cxx_main.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt ../../example/UG_ExMaps/cxx_main.cpp ex_footer.txt > ExMaps.tex

@@ -1,0 +1,37 @@
+#!/bin/csh -f
+
+# setenv PATH '/usr/bin:/bin:/home/schake/mpich2/bin:/opt/maui/bin:/opt/torque/bin:/opt/torque/sbin:/cluster/bin:/usr/kerberos/bin:/usr/local/bin'
+
+setenv PATH '/opt/maui/bin:/opt/torque/bin:/opt/torque/sbin:/cluster/bin:/usr/X11R6/bin:/usr/kerberos/bin:/usr/local/mpich-1.2.6-eth/bin:/opt/mpiexec/bin:/usr/local/bin:/bin:/usr/bin:/home/schake/bin:/home/schake/Zoltan/test/bin'
+
+umask 077
+
+# set subfile="sub.$$"
+
+if ("$#" < 2) then
+  echo "usage: ${0} #nodes time cmdline"
+  exit 1
+endif
+
+set n="$1"
+set t="$2"
+set z="$argv[3-]"
+
+qsub << __END
+#!/bin/tcsh
+#PBS -A 12345/01.01
+#PBS -N zdrive
+#PBS -l walltime=${t}
+#PBS -l nodes=${n}:ppn=2
+
+# mpich2 startup commands:
+# echo "===== \`hostname\` starting mpd -n $n -f \$PBS_NODEFILE"
+# mpdboot -n ${n} --file=\$PBS_NODEFILE --rsh=rsh --shell
+# sleep 5
+# mpdtrace -l
+echo "===== starting job"
+date
+$z
+date
+__END
+

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+COMPILE=$1
+COMP_FLAGS=$2
+LINKER=$3
+THELIBRARIES=$4
+THEARCHS=$5
+
+for ii in `cat upper_list`
+do
+#   ${echo} -n . | sed "s/-n//"
+   cat thedot
+   i=`grep -i \^${ii}\$ lower_list`
+   \rm -f temprog.c
+   ${echo} "#include \"ml_defs.h\"" >> temprog.c
+   ${echo}  >> temprog.c
+   ${echo} "void MLFORTRAN(${i})(void);" >> temprog.c
+   ${echo} "int main(int argc, char *argv[]){" >> temprog.c
+   ${echo} "MLFORTRAN(${i})(); return 0; }" >> temprog.c
+
+   \rm -f .errors
+#   cc  -c -I../Obj temprog.c 
+#   cc  -I../Obj temprog.o  $6 -lblas -lm 2> .errors
+
+   ${COMPILE} ${COMP_FLAGS} -I../Obj -c temprog.c 
+   ${LINKER}  ${COMP_FLAGS} temprog.o $6 ${THELIBRARIES} ${THEARCHS} 1>/dev/null 2> .errors
+   nerrors=`wc .errors | sed "s/^ *//" | sed "s/ .*//"`
+   if test ${nerrors} -gt 0
+      then
+#      t2=`${echo} ${ii} | sed "s/^/_/" | sed "s/$/_/"`
+       t2="^.DML_${ii}"
+      \rm -f t_defs; grep -v ${t2} la_defs > t_defs; \rm -f la_defs; mv t_defs la_defs
+   fi
+done
+
+

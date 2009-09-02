@@ -1,0 +1,11 @@
+
+#ifndef OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_HPP
+#define OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_HPP
+
+#include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
+
+#ifndef HAVE_OPTIPACK_EXPLICIT_INSTANTIATION
+#  include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_def.hpp"
+#endif
+
+#endif // OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_HPP

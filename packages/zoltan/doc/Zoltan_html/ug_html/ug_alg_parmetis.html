@@ -1,0 +1,365 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+  <title>Zoltan User's Guide: ParMETIS Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+--><!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#ffffff">
+<div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_ptscotch.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_graph_vs_hg.html">Previous</a></i></b></div>
+<h2>
+<a name="ParMETIS"></a>ParMETIS - Parallel Graph Partitioning</h2>
+<a href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS</a>
+is a parallel library for graph partitioning (for static load
+balancing)
+and repartitioning (for dynamic load balancing) developed at the
+University
+of Minnesota by Karypis, Schloegel and Kumar [<a
+ href="ug_refs.html#parmetis">Karypis
+and Kumar</a>]. ParMETIS is therefore strictly speaking not a method
+but
+rather a collection of methods. In the Zoltan context, ParMETIS is a
+method
+with many sub-methods. Zoltan provides an interface to all the ParMETIS
+(sub-)methods.&nbsp; The user selects which ParMETIS method to use
+through
+the parameter PARMETIS_METHOD. Most of the ParMETIS methods are based
+on
+either multilevel Kernighan-Lin partitioning or a diffusion algorithm.
+The names of the ParMETIS methods used by Zoltan are identical to those
+in the ParMETIS library. For further information about the various <a
+ href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS</a>
+methods and parameters, please consult the <a
+ href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS</a>
+User's Guide.
+<p>Graph partitioning is a useful abstraction for load balancing. The
+main
+idea is to represent the computational application as a weighted graph.
+The nodes or vertices in the graph correspond to objects in
+Zoltan.&nbsp;
+Each object may have a weight that normally represents the amount of
+computation.
+The edges or arcs in the graph usually correspond to communication
+costs.
+In graph partitioning, the problem is to find a partition of the
+graph
+(that is,&nbsp; each vertex is assigned to one out of <i>k</i>
+possible
+sets called parts) that minimizes the cut size (weight) subject to
+the parts having approximately equal size (weight). In
+repartitioning,
+it is assumed that a partition already exists. The problem is to
+find
+a good partition that is also "similar" in some sense to the
+existing
+partition. This keeps the migration cost low. All the problems
+described
+above are NP-hard so no efficient exact algorithm is known, but
+heuristics work well in practice.<br>
+</p>
+<p>We give only a brief summary of the various ParMETIS methods here;
+for
+more details see the <a
+ href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS</a>
+documentation. The methods fall into three categories:
+</p>
+<ol>
+  <li>
+Part* - Perform graph partitioning without consideration of the initial
+distribution. (LB_APPROACH=partition)<br>
+  </li>
+  <li>
+AdaptiveRepart - Incremental
+algorithms with small migration cost. (LB_APPROACH=repartition)</li>
+  <li>
+Refine* - Refines a given partition (balance).&nbsp; Can be applied
+multiple times to reduce the communication cost (cut weight) if
+desired. (LB_APPROACH=refine)</li>
+</ol>
+As a rule of thumb, use one of the Part* methods if you have a poor
+initial
+balance and you are willing to spend some time doing migration. One
+such
+case is static load balancing; that is, you need to balance only once.
+Use AdaptiveRepart or the Repart* methods when you have a reasonably
+good
+load balance that you wish to update incrementally. These methods are
+well
+suited&nbsp; for dynamic load balancing (for example,&nbsp; adaptive
+mesh
+refinement). A reasonable strategy is to call PartKway once to obtain a
+good initial balance and&nbsp; later update this balance using
+AdaptiveRepart.
+
+<p>Zoltan is currently compatible with ParMETIS version 3.1.
+(Version 2.0 is obsolete and is no longer supported by Zoltan.)
+The ParMETIS source code can be obtained from
+the <a href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS
+home page</a>. As a courtesy service,&nbsp; a recent, compatible
+version of the
+ParMETIS source code is distributed with Zoltan. However, ParMETIS is a
+completely separate library. If you do not wish to install ParMETIS, it
+is possible to compile Zoltan without any references to ParMETIS&nbsp;
+(when you 'make' Zoltan, comment out the PARMETIS_LIBPATH variable in
+the
+configuration file <i><a href="ug_usage.html#Building%20the%20Library">Utilities/Config/Config.&lt;platform&gt;</a></i>).
+</p>
+<p>
+Zoltan supports the multiconstraint partitioning 
+feature of ParMETIS through multiple object weights (see <i><a
+ href="ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></i>).
+</p>
+<p>The graph given to Zoltan/ParMETIS must be symmetric. Any self edges
+(loops) will be ignored. Multiple edges between a pair of vertices is
+not
+allowed. All weights must be non-negative. The graph does not have to
+be
+connected.
+<br>
+&nbsp;
+<table nosave="" width="100%">
+  <tbody>
+    <tr>
+      <td valign="top"><b>Value of LB_METHOD:</b></td>
+      <td><b>GRAPH</b></td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Value of GRAPH_PACKAGE:</b></td>
+      <td><b>Parmetis</b></td>
+    </tr>
+    <tr>
+      <td><b>Parameters:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp;&nbsp; LB_APPROACH<br>
+      </i></td>
+      <td>The load balancing approach:. <br>
+      <i>PARTITION</i>&nbsp; - partition from scratch, not taking
+the current data distribution into account<br>
+      <i>REPARTITION</i>&nbsp; - partition but try to stay close to the
+current partition/distribution
+      <br>
+      <i>REFINE</i>&nbsp; - refine the current partition/distribution;
+assumes only small changes
+      </td>
+    </tr>
+
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PARMETIS_METHOD</i></td>
+      <td>The specific ParMETIS method to be used (see below).
+Note: See also <a href="ug_param.html#LB_APPROACH">LB_APPROACH</a>,
+which is a simpler way to specify the overall load balance approach.
+Only use <i>PARMETIS_METHOD</i> if you really need a specific
+implementation.<br>
+      <i>PartKway</i> - multilevel Kernighan-Lin partitioning&nbsp;
+      <br>
+      <i>PartGeom</i> - space filling curves (coordinate based)&nbsp;
+      <br>
+      <i>PartGeomKway</i> - hybrid method based on PartKway and
+PartGeom
+(needs both&nbsp; graph data and coordinates)&nbsp;
+      <br>
+      <i>AdaptiveRepart - </i>adaptive repartitioning (only in
+ParMETIS 3.0
+and higher)
+      <br>
+      <i>RefineKway</i> - refine the current partition (balance)</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>The method names are case insensitive.</td>
+    </tr>
+    <tr>
+      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PARMETIS_OUTPUT_LEVEL</i></td>
+      <td>Amount of output the load-balancing algorithm should
+produce.&nbsp;
+      <br>
+0 = no output, 1 = print timing info. Turning on more bits displays
+more information (for example, 3=1+2, 5=1+4, 7=1+2+4).</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_COARSE_ALG</i></td>
+      <td>Coarse algorithm for PartKway. 1 = serial, 2 = parallel.
+(ParMETIS
+2 only)</td>
+    </tr>
+    <tr>
+      <td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_SEED</i></td>
+      <td>Random seed for ParMETIS.</td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_ITR</i></td>
+      <td nosave="">Ratio of interprocessor communication time to
+redistribution
+time. A high value will emphasize reducing the edge cut, while a small
+value will try to keep the change in the new partition (distribution)
+small.
+This parameter is used only by AdaptiveRepart. A value of between 100
+and
+1000 is good for most problems.</td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
+      <td nosave="">Level of error checking for graph input: 0 = no
+checking, 1
+= on-processor checking, 2 = full checking. (CHECK_GRAPH==2 is very
+slow
+and should be used only during debugging).</td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
+      <td nosave="">Scatter graph data by distributing contiguous
+chunks of objects
+(vertices) of roughly equal size to each processor before calling the
+partitioner.
+0 = don't scatter; 
+1 = scatter only if all objects are on a single processor;
+2 = scatter if at least one processor owns no objects; 
+3 = always scatter.&nbsp;</td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Default values:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>LB_APPROACH</i> = Repartition</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_METHOD</i> = AdaptiveRepart</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_OUTPUT_LEVEL</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_COARSE_ALG </i>= 2</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_SEED </i>= 15</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PARMETIS_ITR </i>= 100</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>USE_OBJ_SIZE </i>= 1</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>CHECK_GRAPH</i> = 1</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SCATTER_GRAPH </i>= 1</td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Required Query Functions:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td>For all submethods:</td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+    </tr>
+    <tr>
+      <td>Only PartGeom &amp; PartGeomKway:</td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+      <b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+      </td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>All but PartGeom:</td>
+      <td nosave="">
+      <b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b>
+or
+      <b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+      <br>
+      <b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b>
+or
+      <b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Optional Query Functions:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+or
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> for <i>PARMETIS_METHOD</i>=<i>AdaptiveRepart</i>
+</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+or
+<b><a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> for part remapping in ParMETIS.
+</td>
+    </tr>
+
+  </tbody>
+</table>
+</p>
+<p></p>
+<hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
+ href="ug_alg_ptscotch.html">Next:&nbsp;
+PT-Scotch</a>&nbsp; |&nbsp; <a href="ug_graph_vs_hg.html">Previous:&nbsp;
+Graph vs. Hypergraph Partitioning</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

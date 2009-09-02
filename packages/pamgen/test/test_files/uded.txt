@@ -1,0 +1,35 @@
+
+mesh
+   rectilinear
+    ny = 126
+    nz = 225
+    nx = 1
+    bx = 1
+    by = 1
+    bz = 1
+    gmin = -18 -12.7 -22.5
+    gmax = 52 12.7 22.5
+   end
+
+   user defined element density, i
+    "
+    field = 3;
+    "
+   end
+
+   user defined element density, j
+    "
+    field = 3;
+    if (coord > 0.5)    { field = 3*exp( -0.1*(coord-0.5)); }
+    if (coord <-0.5)    { field = 3*exp(0.1*( coord+0.5)); }
+    "
+   end
+
+   user defined element density, k
+    "
+    field = 3;
+    if (coord > 0.5)    { field = 3*exp( -0.1*(coord-0.5)); }
+    if (coord <-0.5)    { field = 3*exp(0.1*( coord+0.5)); }
+    "
+   end
+end

@@ -1,0 +1,114 @@
+
+
+SHELL = /bin/sh
+ECHO    = /bin/echo
+
+TRILINOS_HOME=/home/jdkotul/Trilinos_a/Trilinos
+
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+DEFINES= -D$(TRILINOS_ARCH) $(AZTECOO_DEFAULT_DEFINES) \
+         $(AZTECOO_ARCH_DEFINES) $(EPETRA_ARCH_DEFINES) \
+         -D$(AZTECOO_COMM) $(EPETRA_DEFAULT_DEFINES)
+
+MPI_INCLUDES=-I/usr/local/mpich-1.2.5/include
+
+MPI_LIB_PATH=-L/usr/local/mpich-1.2.5/lib
+
+BLAS_LIB= /home/jdkotul/Math_lib/libgoto_p4_512p-r0.6.so  /home/jdkotul/Math_lib/xerbla.o
+
+LIBEPETRA=$(TRILINOS_HOME)/LINUX_MPI/packages/epetra/src/libepetra.a
+
+INCLUDES = $(EPETRA_INCLUDES) $(MPI_INCLUDES)
+         
+# Double precision solver
+   
+typ=DREAL
+
+CCFLAGS= -g
+
+#
+#       Basic Makefile for Pliris library
+#     
+
+LU_BASE_FILES = solve.o \
+	 	time.o \
+		pcomm.o\
+		factor_new.o \
+		permute_rhs.o \
+		forward.o \
+		forwardall.o \
+		permute_mat.o \
+                permute.o \
+		exchange_pivots.o \
+		x_factor.o\
+		x_solve.o \
+  		xlu_solve_new.o \
+		distribute.o\
+                clean_code.o
+
+LU_TEST_FILES = my_srand48.o init.o
+
+LU_LIB_FILES = xlu_solve_new.o distribute.o x_factor.o x_solve.o
+
+PLIRIS_OBJ= Pliris.o
+
+
+
+libpliris.a: $(LU_BASE_FILES) $(LU_LIB_FILES) $(PLIRIS_OBJ)
+	$(AR) vr libpliris.a $(LU_BASE_FILES) $(LU_LIB_FILES) $(PLIRIS_OBJ)
+	$(RANLIB) libpliris.a 
+
+test_pliris.exe: cxx_main.o
+	g++ -o test_pliris.exe cxx_main.o $(LIBEPETRA)  libpliris.a $(MPI_LIB_PATH) -lmpich $(BLAS_LIB) -lpthread
+#
+# Base files and dependencies
+#
+
+
+.SUFFIXES  : .c  .f .cpp
+
+force_build:
+
+.c.o :
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File -- " $<
+	gcc -c  $(MPI_INCLUDES) $(CCFLAGS) -D$(typ) $<
+
+.cpp.o:
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File -- " $<
+	g++ -c  $(INCLUDES) $(MPI_INCLUDES) -D$(typ) $<
+
+.f.o :
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File -- " $<
+	$(F77) -c  $(FFFLAGS)  $<
+
+
+clean_all:
+	rm *.o
+	rm *.a
+
+#dependencies
+mat.o:  defines.h factor.h solve.h pcomm.h forward.h forwardall.h permute_rhs.h permute_mat.h exchange_pivots.h force_build
+factor.o:  defines.h pcomm.h factor.h force_build
+factor_new.o: defines.h pcomm.h factor.h force_build
+init.o: init.h defines.h  force_build
+solve.o: defines.h solve.h force_build
+forwardall.o:  forwardall.h defines.h pcomm.h forward.h permute_mat.h permute_rhs.h exchange_pivots.h force_build
+forward.o:  defines.h pcomm.h forward.h force_build
+pcomm.o: defines.h pcomm.h force_build
+permute.o:defines.h force_build
+permute_rhs.o: defines.h pcomm.h permute_rhs.h force_build
+permute_mat.o:  defines.h pcomm.h  permute_mat.h force_build
+xlu_solve.o: xlu_solve.h force_build
+xlu_solve_new.o: xlu_solve.h force_build
+x_factor.o: force_build
+x_solve.o: force_build
+time.o: force_build
+exchange_pivots.o:exchange_pivots.h force_build
+distribute.o : force_build
+Pliris.o:Pliris.cpp  distribute.h

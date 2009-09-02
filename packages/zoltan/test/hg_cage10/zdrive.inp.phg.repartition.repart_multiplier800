@@ -1,0 +1,7 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = lb_approach=repartition
+Zoltan Parameters       = phg_repart_multiplier=800
+Zoltan Parameters       = final_output=1
+File Type		= matrixmarket
+File Name		= cage10
+Parallel Disk Info	= number=0

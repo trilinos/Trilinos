@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#
+# Before running this do:
+#
+# module switch mpi mpi/mvapich-1.0.1_ofed_intel-10.1-f015-c015
+# export PATH=/home/rabartl/install/bin:$PATH
+#
+
+EXTRA_ARGS=$@
+
+TRILINOS_HOME=/projects/charon/people/eccyr/Packages/Trilinos/trilinos-dev
+INSTALL_DIR=/gscratch1/eccyr/Packages/install/trilinos/
+
+# The cache is not working correctly so clean cache
+rm CMakeCache.txt
+
+cmake \
+-D CMAKE_INSTALL_PREFIX:PATH=$INSTALL_DIR \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_CXX_COMPILER:FILEPATH="mpicxx" \
+-D CMAKE_C_COMPILER:FILEPATH="mpicc" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="mpif77" \
+-D CMAKE_CXX_FLAGS:FILEPATH="-O2 -DHAVE_CONFIG_H" \
+-D CMAKE_C_FLAGS:FILEPATH="-O2 -DHAVE_CONFIG_H" \
+-D CMAKE_Fortran_FLAGS:FILEPATH="-O2 -fPIC" \
+-D CMAKE_EXE_LINKER_FLAGS:STRING=" -L/projects/global/x86_64/compilers/intel/intel-10.1-fce-015/lib" \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-lifcore -lifport -limf -lcxaguard -lrt -lpthread -lirc -lsvml -lm" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=4 \
+-D Trilinos_ENABLE_TESTS=ON \
+-D Trilinos_ENABLE_Thyra:BOOL=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D TPL_ENABLE_BLAS:STRING=ON \
+-D BLAS_LIBRARY_DIRS:FILEPATH="/projects/charon/Alegra/TPL/lapackblas/3.0-n1/lib/mvapich_opt_tlcc_intel" \
+-D TPL_ENABLE_LAPACK:STRING=ON \
+-D LAPACK_LIBRARY_DIRS:FILEPATH="/projects/charon/Alegra/TPL/lapackblas/3.0-n1/lib/mvapich_opt_tlcc_intel" \
+$EXTRA-ARGS \
+$TRILINOS_HOME

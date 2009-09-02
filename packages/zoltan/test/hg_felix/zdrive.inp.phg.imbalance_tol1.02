@@ -1,0 +1,8 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = IMBALANCE_TOL = 1.02
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+Zoltan Parameters       = lb_approach=partition
+File Type		= matrixmarket+
+File Name		= felix
+Parallel Disk Info	= number=0

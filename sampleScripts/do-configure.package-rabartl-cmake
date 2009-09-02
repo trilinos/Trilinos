@@ -1,0 +1,9 @@
+#!/bin/bash
+
+EXTRA_ARGS=$@
+
+./do-configure \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+$EXTRA_ARGS
+

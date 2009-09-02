@@ -1,0 +1,489 @@
+###############################################################################
+#
+# beowulf nightly serial
+#
+###############################################################################
+ 
+RUN (beowulf-nightly-serial) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# beowulf nightly mpi
+#
+###############################################################################
+
+RUN (beowulf-nightly-mpi) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 12;
+    MPI-START           = lamboot;
+    MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
+    MPI-PING            = mpitask;
+    MPI-STOP            = lamhalt;    
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# beowulf mpi - strict
+#
+###############################################################################
+
+RUN (beowulf-strict-mpi) {
+
+    BUILD-LABEL         = strict;
+    BUILD-DIR           = MPIstrict;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi-strict;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 12;
+    MPI-START           = lamboot;
+    MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
+    MPI-PING            = mpitask;
+    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+
+###############################################################################
+#
+# beowulf nightly tarball-creation
+#
+###############################################################################
+
+RUN (beowulf-nightly-tarball-create) {
+    
+    BUILD-LABEL         = tarball-create;
+    BUILD-DIR           = TARBALL;
+    MAKE-COMMAND        = make dist;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-tarball-create;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# beowulf nightly tarball-test
+#
+###############################################################################
+
+RUN (beowulf-nightly-tarball-test) {
+    
+    BUILD-LABEL         = tarball-test;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 12;
+    MPI-START           = lamboot;
+    MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
+    MPI-PING            = mpitask;
+    MPI-STOP            = lamhalt;    
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+##
+## beowulf no fortran serial
+##
+################################################################################
+
+RUN (beowulf-nofortran-serial) {
+
+    BUILD-LABEL         = no fortran;
+    BUILD-DIR           = NO_FORTRAN_SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-nofortran;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+################################################################################
+#
+# beowulf coverage
+#
+###############################################################################
+
+RUN (beowulf-coverage) {
+    
+    BUILD-LABEL         = coverage;
+    BUILD-DIR           = COVERAGE;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-coverage;
+   #TEST-CATEGORY       = COVERAGE; # set up later
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# exetazo nightly serial
+#
+###############################################################################
+
+RUN (exetazo-serial) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-exetazo-serial;
+    MAKE-COMMAND        = make -j4;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /space/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# exetazo nightly mpi
+#
+###############################################################################
+
+RUN (exetazo-mpi) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-exetazo-mpi;
+    MAKE-COMMAND        = make -j4;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 8;
+    MPI-GO              = /usr/alt/bin/mpiexec -np ;
+    TTR-DIR             = /space/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# exetazo continuous integration mpi
+#
+###############################################################################
+
+RUN (exetazo-mpi-cont) {
+
+    BUILD-LABEL         = integration;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-exetazo-mpi-cont;
+    MAKE-COMMAND        = make -j4;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 8;
+    MPI-GO              = /usr/alt/bin/mpiexec -np ;
+    TTR-DIR             = /space/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# redstorm X compile nightly mpi
+#
+###############################################################################
+                                                                                
+RUN (redstormXcompile-nightly-mpi) {
+                              
+    BUILD-LABEL         = default;                                                  
+    BUILD-DIR           = redstormXcompileTH;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = redstormXcompile-reddish1-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+#    MAX-PROC            = 16;
+    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /projects/trilinos/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+                                                                                                     
+}
+
+###############################################################################
+#
+# redstorm mpi
+#
+###############################################################################
+
+RUN (redstorm-nightly-mpi) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = redstormMPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = redstorm-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+    BUILD-ONLY		= YES;
+    MPI-GO              = yod -sz;
+#    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /ufs/home/users/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# s858352 nightly serial
+#
+###############################################################################
+
+RUN (s858352-nightly-serial) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = darwin-s858352;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /Users/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# s858352 nightly mpi
+#
+###############################################################################
+
+RUN (s858352-nightly-mpi) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = darwin-s858352-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 4;
+    MPI-GO              = mpirun -x DYLD_LIBRARY_PATH -np ;
+    TTR-DIR             = /Users/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# sass8000 nightly mpi
+#
+###############################################################################
+                                                                                
+RUN (sass8000-nightly-mpi) {
+                             
+    BUILD-LABEL         = default;                                                   
+    BUILD-DIR           = sass8000mpiTH;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = sunos-sass8000-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+                                                                                
+}
+
+###############################################################################
+#
+# sasg1099 nightly mpi
+#
+###############################################################################
+                                                                                
+RUN (sasg1099-nightly-mpi) {
+                             
+    BUILD-LABEL         = default;                                                   
+    BUILD-DIR           = sasg1099MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = sgi-sasg1099-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+#    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+                                                                                
+}
+
+###############################################################################
+#
+# nwcc nightly mpi
+#
+###############################################################################
+                                                                                
+RUN (nwcc-nightly-mpi) {
+                               
+    BUILD-LABEL         = default;                                                 
+    BUILD-DIR           = nwccMPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = nwcc-spirit-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 16;
+#    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+                                                                                
+}
+                                                                                
+###############################################################################
+#
+# qt alegra mpi
+#
+###############################################################################
+
+RUN (qt-alegra-mpi) {
+
+    BUILD-LABEL         = alegra;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = qt-mpi-alegra;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+#    BUILD-ONLY          = YES;
+#    MPI-START           = lamboot;
+#g    MPI-PING            = mpitask;
+#    MPI-STOP            = lamhalt;
+    TTR-DIR             = /scratch_qt/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# qt mpi
+#
+###############################################################################
+
+RUN (qt-mpi) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = qt-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+    TTR-DIR             = /scratch_qt/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# sais028 mpi
+#
+###############################################################################
+                                                                                
+RUN (sais028-mpi) {              
+
+    BUILD-LABEL         = default;                                                                  
+    BUILD-DIR           = sais028mpiTH;
+    COMM                = mpi;
+    BUILD-ONLY          = YES;
+    INVOKE-CONFIGURE    = ibm-sais028-mpi;
+    MAKE-COMMAND        = gmake;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
+###############################################################################
+#
+# bandito nightly serial
+#
+###############################################################################
+
+RUN (bandito-nightly-serial) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = TH-SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-intel-bandito;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /home/hkthorn/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = hkthorn;
+
+}
+
+###############################################################################
+#
+# gabriel nightly tests
+#
+###############################################################################
+
+RUN (gabriel-nighly-serial-debug) {
+    BUILD-LABEL = gabriel-serial-debug;
+    BUILD-DIR = SERIAL_DEBUG;
+    COMM = serial;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6-debug;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
+
+
+
+RUN (gabriel-nighly-serial) {
+    BUILD-LABEL = gabriel-serial;
+    BUILD-DIR = SERIAL_OPT;
+    COMM = serial;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
+
+RUN (gabriel-nighly-mpi-debug) {
+    BUILD-LABEL = gabriel-mpi-debug;
+    BUILD-DIR = MPI_DEBUG;
+    COMM = mpi;
+    MAX-PROC = 4;
+    MPI-GO = /usr/local/mpi/bin/mpiexec -np ;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6-debug-mpi;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}
+
+RUN (gabriel-nighly-mpi) {
+    BUILD-LABEL = gabriel-mpi;
+    BUILD-DIR = MPI_OPT;
+    COMM = mpi;
+    MAX-PROC = 4;
+    MPI-GO = /usr/local/mpi/bin/mpiexec -np ;
+    INVOKE-CONFIGURE = linux-gabriel-gcc_3.4.6-mpi;
+    MAKE-COMMAND = make -j4;
+    TEST-CATEGORY = FRAMEWORK;
+    TTR-DIR = /mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosTestResults;
+    SSG-USERNAME = rabartl;
+}

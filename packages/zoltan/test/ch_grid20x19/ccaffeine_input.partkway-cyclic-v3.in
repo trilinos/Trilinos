@@ -1,0 +1,31 @@
+#!ccaffeine bootstrap file. 
+# ------- don't change anything ABOVE this line.-------------
+
+path set @ZOLTAN_COMPONENT_HOME@/
+path append @ZOLTAN_COMPONENT_TESTS@/
+
+repository get-global Mesh
+create Mesh AMesh
+
+repository get-global Driver
+create Driver Driv
+configure Driv CONFIG CmdFilename zdrive.inp.partkway-cyclic-v3
+
+repository get-global PartitionerFactory_JR
+create  PartitionerFactory_JR Partitioner
+configure Partitioner CONFIG IteratorAccess true
+
+
+
+connect Driv LBF   Partitioner LoadBalancerFactory
+connect Driv IO    Mesh  IO
+connect Driv DataLoc Partitioner DataLoc
+
+connect Partitioner   EntityInfo    Mesh EntityInfo
+connect Partitioner   GeomInfo      Mesh GeomInfo
+connect Partitioner   EdgeInfo      Mesh EdgeInfo
+connect Partitioner   DataMigrate   Mesh DataMig
+
+go Driv go
+
+exit

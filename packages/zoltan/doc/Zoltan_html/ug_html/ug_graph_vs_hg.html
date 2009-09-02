@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+  <title>Zoltan User's Guide: Graph vs. Hypergraph Partitioning</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+--><!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#ffffff">
+<div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |
+<a href="ug_alg_parmetis.html"> Next</a>&nbsp; |
+&nbsp;<a href="ug_alg_graph.html">Previous</a>&nbsp;
+</i>
+</b></div>
+
+<h2>
+<a name="Graph vs Hypergraph Partitioning">
+</a>Graph vs Hypergraph Partitioning</h2>
+
+Graph partitioning has proven quite useful in scientific computing. 
+<a href="ug_alg_hypergraph.html">Hypergraph partitioning</a>
+is a more recent improvement
+that uses a hypergraph model, which is
+often a more accurate model than the graph model for scientific computing. 
+(Hypergraphs contain hyperedges which connect two <i>or more</i>
+vertices.)
+See <a href="ug_refs.html#catalyurek99">[Catalyurek & Aykanat]</a> and
+<a href="ug_refs.html#hendrickson-kolda">[Hendrickson & Kolda]</a> 
+for further details. 
+
+You do not need to understand the underlying models
+to use graph or hypergraph partitioning for load-balancing
+in Zoltan. The basic trade-offs are:
+<ul>
+<li> Hypergraph partitioning usually produces partitions (assignments)
+of higher quality than graph partitioning, which may reduce
+communication time in parallel applications (up to 30-40%
+reduction has been reported). However, hypergraph
+partitioning takes longer time to compute. </li>
+<li> The graph model is restricted to symmetric data dependencies. 
+If you have a non-symmetric problem, we recommend hypergraph 
+partitioning. </li>
+</ul>
+
+<h3>Migrating from ParMetis to PHG in Zoltan</h3>
+If you already use Zoltan for graph partitioning (via ParMetis),
+there are three ways to switch to the Zoltan-PHG hypergraph partitioner: 
+
+<ol>
+<li>The quick and easy way: Just change the <a href="ug_alg.html#LB_METHOD">
+LB_METHOD</a> to "Hypergraph".
+Zoltan will then use the graph query functions (presumably
+already implemented) to construct a hypergraph model, which
+is similar to but not equivalent to the graph.
+<li>The proper way: Change the LB_METHOD, but also implement and
+register the <a href="ug_query_lb.html#ZOLTAN_HG_SIZE_CS_FN">
+hypergraph query functions</a>
+required by Zoltan. These may give a more accurate representation
+of data dependencies (and communication requirements) for your
+application.
+<li>If you really want graph (not hypergraph) partitioning: 
+Just change the <a href="ug_alg.html#LB_METHOD">
+LB_METHOD</a> to "Graph".
+Zoltan will then use PHG as a graph partitioner, which is slower than
+ParMetis but often produces better partitions (lower cuts).
+</ol>
+
+Technical note: A hypergraph is constructed from the graph as follows:
+The vertices are the same in the hypergraph as in the graph. For each vertex
+<i>v</i>, create a hyperedge that consists of all neighbors in the graph 
+and <i>v </i> itself.
+
+<hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_alg_parmetis.html"> Next:&nbsp; ParMETIS</a>&nbsp; |
+&nbsp; <a href="ug_alg_graph.html">Previous:&nbsp;
+Graph Partitioning</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+
+   <TITLE> Zoltan Developer's Guide:  FORTRAN Interface</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_cpp.html">Next</a>&nbsp; |&nbsp; <a href="dev_mig.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="fortran dev"></A>FORTRAN Interface</H2>
+With any change to the user API of Zoltan, the Fortran interface should
+be modified to reflect the change. This section contains information about
+the implementation of the Fortran interface which should cover most situations.
+<UL><A HREF="#fortran dev structures">Structures</A>
+<BR><A HREF="#fortran dev modifications">Modifications to an existing Zoltan
+interface function</A>
+<BR><A HREF="#fortran dev remove">Removing a Zoltan interface function</A>
+<BR><A HREF="#fortran dev add">Adding a new Zoltan interface function</A>
+<BR><A HREF="#fortran dev query">Query functions</A>
+<BR><A HREF="#fortran dev enum">Enumerated types and defined constants</A></UL>
+If you have questions or need assistance, contact <A HREF="mailto:william.mitchell@nist.gov">william.mitchell@nist.gov</A>.
+
+<P>If changes are made to functions that are called by <I><A HREF="dev_driver.html#Zdrive">zdrive</A></I>,
+then the changes should also be made to 
+<a href="dev_driver.html"><I>zfdrive</I></a>. Changes to the
+Fortran interface can be tested by building and running <a href="dev_driver.html"><I>zfdrive</I></a>,
+if the changes are in functions called by <a href="dev_driver.html"><I>zfdrive</I></a>. 
+The <a href="dev_driver.html"><I>zfdrive</I></a> program
+works the same way as <I><A HREF="dev_driver.html">zdrive</A></I>
+except that it is restricted to the 
+<a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> 
+examples and simpler input files.
+
+<P>Any changes in the interface should also be reflected in the Fortran
+API definitions in the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>.
+<H3>
+<A NAME="fortran dev structures"></A>Structures</H3>
+All structures in the API have a corresponding user-defined type in the
+Fortran interface. If a new structure is added, then modifications will
+be required to <I>fort/fwrap.fpp</I> and <I>fort/cwrap.c</I>. In these
+files, search for <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
+and "do like it does."
+
+<P>An explanation of how structures are handled may help. The Fortran user-defined
+type for the structure simply contains the address of the structure, i.e.,
+the C pointer returned by a call to create the structure. Note that the
+user does not have access to the components of the structure, and can only
+pass the structure to functions. Within the Fortran structure, the
+address is stored in a variable of type(<B>Zoltan_PTR</B>), which is a character
+string containing one character for each byte of the address. This gives
+the best guarantee of portability under the Fortran and C standards. Also,
+to insure portability of passing character strings, the character string
+is converted to an array of integers before passing it between Fortran
+and C. The process of doing this is most easily seen by looking at <B><A HREF="../ug_html/ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</A></B>,
+which has little else to clutter the code.
+<H3>
+<A NAME="fortran dev modifications"></A>Modifications to an existing Zoltan
+interface function</H3>
+If the argument list or return type of a user-callable function in Zoltan
+changes, the same changes must be made in the Fortran interface routines.
+This involves changes in two files: <I>fort/fwrap.fpp</I> and <I>fort/cwrap.c</I>.
+In these files, search for the function name with the prefix <B>Zoltan_ </B>omitted,
+and modify the argument list, argument declarations, return type, and call
+to the C library function as appropriate. When adding a new argument, if
+there is not already an argument of the same type,&nbsp; look at another
+function that does have an argument of that type for guidance.
+<H3>
+<A NAME="fortran dev remove"></A>Removing a Zoltan interface function</H3>
+If a user callable function is removed from the Zoltan library, edit <I>fort/fwrap.fpp</I>
+and <I>fort/cwrap.c</I> to remove all references to that function.
+<H3>
+<A NAME="fortran dev add"></A>Adding a new Zoltan interface function</H3>
+Adding a new function involves changes to the two files <I>fort/fwrap.fpp</I>
+and <I>fort/cwrap.c</I>. Perhaps the easiest way to add a new function
+to these files is to pick some existing function, search for all occurrences
+of it, and use that code as a guide for the implementation of the interface
+for the new function. <B><A HREF="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
+is a nice minimal function to use as an example. Use a case insensitive
+search on the name of the function without the <B>Zoltan_LB_</B> prefix, for example
+<B>point_assign</B>.
+
+<P>Here are the items in <I>fwrap.fpp</I>:
+<UL>
+<LI>
+public statement: The name of the function should be included in the list
+of public entities.</LI>
+
+<LI>
+interface for the C wrapper: Copy one of these and modify the function
+name, argument list and declarations for the new function. The name is
+of the form <B>Zfw_LB_Point_Assign</B> (fw stands for Fortran wrapper).</LI>
+
+<LI>
+generic interface: This assigns the function name to be a generic name
+for one or more module procedures.</LI>
+
+<LI>
+module procedure(s): These are the Fortran-side wrapper functions. Usually
+there is one module procedure of the form <B>Zf90_LB_Point_Assign</B>. If
+one argument can have more than one type passed to it (for example, it
+is type void in the C interface), then there must be one module procedure
+for each type that can be passed. These are distinguished by appending
+a digit to the end of the module procedure name. If n arguments can have
+more than one type, then n digits are appended. See <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A></B>
+for example. Generally the module procedure just calls the C-side wrapper
+function,<B> </B>but in some cases it may need to coerce data to a different
+type (e.g., <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>),
+or may actually do real work (e.g., <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A></B>).</LI>
+
+<BR>&nbsp;</UL>
+Here are the items in <I>cwrap.c</I>:
+<UL>
+<LI>
+name mangling: These are macros to convert the function name from the case
+sensitive C name (for example, <B>Zfw_LB_Point_Assign</B>) to the mangled
+name produced by the Fortran compiler. There are four of these for each
+function:</LI>
+
+<UL>
+<LI>
+lowercase (<B>zfw_lb_point_assign</B>),</LI>
+
+<LI>
+uppercase (<B>ZFW_LB_POINT_ASSIGN</B>),</LI>
+
+<LI>
+lowercase with underscore (<B>zfw_lb_point_assign_</B>), and</LI>
+
+<LI>
+lower case with double underscore (<B>zfw_point_assign__</B> but the
+second underscore is appended only if the name already contains an underscore,
+which will always be the case for names starting with <B>Zfw_</B>).</LI>
+</UL>
+
+<LI>
+C-side wrapper function: Usually this just calls the Zoltan library function
+after coercing the form of the data (for example, constructing the pointer
+to <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A> </B>and call-by-reference
+to call-by-value conversions).</LI>
+</UL>
+
+<H3>
+<A NAME="fortran dev query"></A>Query functions</H3>
+If a query function is added, deleted or changed, modifications must be
+made to <I>fort/fwrap.fpp</I> and <I>fort/cwrap.c</I>, similar to the modifications
+for interface functions, and possibly also<I> include/zoltan.h</I> and <I>zz/zz_const.h</I>.
+
+<P>Here are the places query functions appear in <I>fwrap.fpp</I>:
+<UL>
+<LI>
+public statement for the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
+argument: These are identical to the C enumerated type.</LI>
+
+<LI>
+definition of the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
+arguments: There are two groups of these, one containing subroutines (void
+functions) and one containing functions (int functions). Put the new symbol
+in the right category. The value assigned to the new symbol must agree
+exactly with where the symbol appears in the order of the enumerated type.</LI>
+</UL>
+Here are the places query functions appear in <I>cwrap.c</I>:
+<UL>
+<LI>
+reverse wrappers: These are the query functions that are actually called
+by the Zoltan library routines when the query function was registered from
+Fortran. They are just wrappers to call the registered Fortran routine,
+coercing argument types as necessary. Look at <B>Zoltan_Num_Edges_Fort_Wrapper</B>
+for an example.</LI>
+
+<LI>
+<B>Zfw_Set_Fn</B>: This has a switch based on the value of the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
+argument to set the Fortran query function and wrapper in the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>.</LI>
+</UL>
+In <I>zz/zz_const.h</I>, if a new field is added to the structures for
+a new query function, it should be added in both C and Fortran forms. In
+<I>include/zoltan.h</I>, if a new typedef for a query function is added,
+it should be added in both C and Fortran forms. See these files for examples.
+<H3>
+<A NAME="fortran dev enum"></A>Enumerated types and defined constants</H3>
+Enumerated types and defined constants that the application uses as the
+value for an arguments must be placed in<I> fwrap.fpp</I> with the same
+value. See <B><A HREF="../ug_html/ug_interface.html#Error Codes">ZOLTAN_OK</A></B>
+for an example.&nbsp;
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_cpp.html">Next:&nbsp;
+C++ Interface</A>&nbsp; |&nbsp; <A HREF="dev_mig.html">Previous:&nbsp;
+Migration Tools</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

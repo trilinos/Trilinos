@@ -1,0 +1,9 @@
+#!/bin/sh -f
+##
+## cvs.ssh [...]
+##
+## Specifies the encryption protcol that can be used to access a remote cvs
+## repository with ssh.
+##
+
+ssh -c 3des $*

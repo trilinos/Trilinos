@@ -1,0 +1,54 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers for
+#  Sandia's Institutional Computing Cluster, which are Intel 7.1 compilers.
+#  Submitted by Rich Drake, 9/23/03.
+#  For explanations of these variables, please see Makefile.generic.
+##############################################################################
+
+DEFS 			= 
+
+RANLIB			= echo
+AR			= /usr/bin/ar rcv
+
+CC          		= mpicc
+INCLUDE_PATH		= 
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O2
+CFLAGS = $(OPT_FLAGS)
+
+F90			= mpif77
+LOCAL_F90		= mpif77
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS    		= 
+SPPR_HEAD 		= 
+F90_MODULE_PREFIX 	= -M
+FARG      		= 
+
+MPI_LIB			= 
+MPI_LIBPATH		= 
+
+PARMETIS_LIBPATH 	= -L../../ParMETIS
+PARMETIS_INCPATH 	= -I../../ParMETIS
+
+PATOH_LIBPATH 		= -L../../PaToH/lib
+PATOH_INCPATH 		= -I../../PaToH/src/api
+
+#JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
+#JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
+
+#NEMESIS_LIBPATH		= -L/projects/seacas/ross/current/lib
+#NEMESIS_INCPATH		= -I/projects/seacas/ross/current/inc

@@ -1,0 +1,20 @@
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AztecOO)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
+
+
+IF (${PACKAGE_NAME}_ENABLE_AztecOO)
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  hypre_test
+  SOURCES IFPACK_Hypre_UnitTest.cpp hypre_UnitTest.cpp
+  COMM serial mpi
+  )
+
+ENDIF (${PACKAGE_NAME}_ENABLE_Galeri)
+ENDIF (${PACKAGE_NAME}_ENABLE_AztecOO)
+
+INCLUDE(PackageAddExecutableAndTest)
+
+

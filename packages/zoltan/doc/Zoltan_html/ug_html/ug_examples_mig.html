@@ -1,0 +1,215 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+
+   <TITLE>Zoltan User's Guide:  Migration Examples</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_examples_query.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_lb.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="Migration Example"></A>Migration Examples</H2>
+Data migration using Zoltan's migration tools can be accomplished
+in two different ways:
+<BLOCKQUOTE><A HREF="#Auto-migration example">auto-migration</A>, or
+<BR><A HREF="#User-guided Migration Example">user-guided migration</A>.</BLOCKQUOTE>
+The choice of migration method depends upon the complexity of the application's
+data. For some applications, only the objects used in balancing must be
+migrated; no auxiliary data structures must be moved. Particle simulations
+are examples of such applications; load balancing is based on the number
+of particles per processor, and only the particles and their data must
+be moved to establish the new decomposition. For such applications, Zoltan's
+auto-migration tools can be used. Other applications, such as finite element
+methods, perform load balancing on, say, the nodes of the finite element
+mesh, but nodes that are moved to new processors also need to have their
+connected elements moved to the new processors, and migrated elements may
+also need "ghost" nodes (i.e., copies of nodes assigned to other processors)
+to satisfy their connectivity requirements on the new processor. This complex
+data migration requires a more user-controlled approach to data migration
+than the auto-migration capabilities Zoltan can provide.
+<BR>&nbsp;
+<H2>
+<A NAME="Auto-migration example"></A>Auto-Migration Example</H2>
+In the <A HREF="#Auto-Migration Example Fig">figure</A> below, an example
+of the load-balancing calling sequence for a particle simulation using
+Zoltan's auto-migration tools is shown. 
+The application 
+requests auto-migration by turning on the <B>AUTO_MIGRATE</B> option
+through a call to <B><A HREF="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</A></B>
+and registers functions to pack and unpack a particle's data. During the
+call to <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>,
+Zoltan computes the new decomposition and, using calls
+to the packing and unpacking query functions, automatically migrates particles
+to their new processors. The application then frees the arrays returned
+by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B> and
+can continue computation without having to perform any additional operations
+for data migration.
+<BR>&nbsp;
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="Auto-Migration Example Fig"></A>
+<TT>/* <I>Tell Zoltan to automatically migrate data for the application.</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</A>(zz, "AUTO_MIGRATE",
+"TRUE");</TT>&nbsp;
+
+<P><TT>/* <I>Register additional functions for packing and unpacking data</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>by migration tools. </I>*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_particle_data_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_pack_particle_data, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_unpack_particle_data, NULL);</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>/* <I>Perform computations</I> */</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>/* <I>Perform load balancing AND automatic data migration!</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&amp;imp_to_part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs,&amp;exp_to_part);</TT>&nbsp;
+
+<P><TT>/* <I>Free memory allocated for load-balancing results by Zoltan </I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A>(&amp;imp_global_ids, &amp;imp_local_ids, &amp;imp_procs, &amp;imp_to_part);</TT>
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A>(&amp;exp_global_ids, &amp;exp_local_ids, &amp;exp_procs, &amp;exp_to_part);</TT>
+<BR><TT>...</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for using the migration
+tools' auto-migration capability with the dynamic load-balancing tools.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+<H2>
+<A NAME="User-guided Migration Example"></A>User-Guided Migration Example</H2>
+In the following <A HREF="#User-guided Migration Example Fig">figure</A>,
+an example of user-guided migration using Zoltan's migration tools
+for a finite element application is shown. Several migration steps are
+needed to completely rebuild the application's data structures for the
+new decomposition. On each processor, newly imported nodes need copies
+of elements containing those nodes. Newly imported elements, then, need
+copies of "ghost" nodes, nodes that are in the element but are assigned
+to other processors. Each of these entities (nodes, elements, and ghost
+nodes) can be migrated in separate migration steps using the functions
+provided in the migration tools.  First, the assignment of nodes to
+processors returned by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>
+is established. Query functions that pack and unpack nodes are registered
+and <B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>
+is called using the nodal decomposition returned from <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>.
+<B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>
+packs the nodes to be exported, sends them to other processors, and unpacks
+nodes received by a processor. The packing routine <I>migrate_node_pack</I>
+includes with each node a list of the element IDs for elements containing
+that node. The unpacking routine <I>migrate_node_unpack</I> examines the
+list of element IDs and builds a list of requests for elements the processor
+needs but does not already store. At the end of the nodal migration, each
+processor has a list of element IDs for elements that it needs to support
+imported nodes but does not already store. Through a call to <B><A HREF="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</A></B>,
+each processor computes the list of elements it has to send to other processors
+to satisfy their element requests. Packing and unpacking routines for elements
+are registered, and <B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>
+is again used to move element data to new processors. Requests for ghost
+nodes can be built within the element packing and unpacking routines, and
+calls to <B><A HREF="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</A></B>
+and <B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>,
+with node packing and unpacking, satisfy requests for ghost nodes. In all
+three phases of migration, the migration tools handle communication;
+the application is responsible only for packing and unpacking data and
+for building the appropriate request lists.
+<BR>&nbsp;
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR NOSAVE>
+<TD NOSAVE><A NAME="User-guided Migration Example Fig"></A><TT>/* <I>Assume
+Zoltan returns a decomposition of the</I> */</TT>&nbsp;
+<BR><TT>/* <I>nodes of a finite element mesh.</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&amp;imp_to_part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs,&amp;exp_to_part);</TT>
+
+<P><TT>/* <I>Migrate the nodes as directed by the results of Zoltan_LB_Partition.</I>
+*/</TT>
+<BR><TT>/* <I>While unpacking nodes, build list of requests for elements
+needed</I> */</TT>
+<BR><TT>/* <I>to support the imported nodes.</I>*/</TT>
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_node_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_pack_node, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_unpack_node, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A>(zz,num_import,imp_global_ids,imp_local_ids,imp_procs,imp_to_part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_export,exp_global_ids,exp_local_ids,exp_procs,exp_to_part);</TT>
+
+<P><TT>/* <I>Prepare for migration of requested elements.</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_pack_element, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_unpack_element, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_element_size, NULL);</TT>&nbsp;
+
+<P><TT>/* <I>From the request lists, a processor knows which elements it
+needs</I> */</TT>&nbsp;
+<BR><TT>/* <I>to support the imported nodes; it must compute which elements
+to</I> */</TT>&nbsp;
+<BR><TT>/* <I>send to other processors. </I>*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</A>(zz,
+Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs,
+Elt_Requests_Procs, Elt_Requests_to_Part,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_tmp_exp,
+&amp;tmp_exp_global_ids,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;tmp_exp_local_ids,
+&amp;tmp_exp_procs, &amp;tmp_exp_to_part);&nbsp;</TT>&nbsp;
+
+<P><TT>/* <I>Processor now knows which elements to send to other processors.</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Send the requested elements. While unpacking elements, build
+</I>*/</TT>&nbsp;
+<BR><TT>/* <I>request lists for "ghost" nodes needed by the imported elements.</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A>(zz,
+Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs, Elt_Requests_Procs, Elt_Request_to_Part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_tmp_exp_objs, tmp_exp_global_ids,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp_exp_local_ids, tmp_exp_procs, tmp_exp_to_part);</TT>
+
+<P><TT>/* <I>Repeat process for "ghost" nodes.</I> */</TT>&nbsp;
+<BR><TT>...</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for user-guided use of
+the migration tools in Zoltan</I>.</CAPTION>
+</TABLE></CENTER>
+&nbsp;
+<BR>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_examples_query.html">Next:&nbsp; Query-Function Examples</A>&nbsp;
+|&nbsp; <A HREF="ug_examples_lb.html">Previous:&nbsp; Load-Balancing Example</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

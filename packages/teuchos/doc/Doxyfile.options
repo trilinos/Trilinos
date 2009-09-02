@@ -1,0 +1,85 @@
+#
+# Include the global look and feel options
+#
+@INCLUDE_PATH          = $(TRILINOS_HOME)/packages
+@INCLUDE               = common/Doxyfile
+#
+# Package options
+#
+OUTPUT_LANGUAGE        = English
+PROJECT_NUMBER         = "Version of the Day"
+#
+# What and how documentation is extracted
+#
+SUBGROUPING            = NO
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = NO
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ALWAYS_DETAILED_SEC    = YES
+#DETAILS_AT_TOP         = YES
+DETAILS_AT_TOP         = NO
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = 
+SHOW_DIRECTORIES       = YES
+INTERNAL_DOCS          = NO
+CLASS_DIAGRAMS         = YES
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = NO
+VERBATIM_HEADERS       = YES
+SHOW_INCLUDE_FILES     = YES
+JAVADOC_AUTOBRIEF      = NO
+INHERIT_DOCS           = YES
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = NO
+TAB_SIZE               = 2
+ENABLED_SECTIONS       = 
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = YES
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_FORMAT            = "$file:$line: $text"
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 4
+#
+# What diagrams are created
+#
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+GRAPHICAL_HIERARCHY    = YES
+#UML_LOOK               = YES
+TEMPLATE_RELATIONS     = YES
+#TEMPLATE_RELATIONS     = NO
+#MAX_DOT_GRAPH_WIDTH    = 500
+HIDE_UNDOC_RELATIONS   = YES
+#
+# Preprocessing
+#
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+SEARCH_INCLUDES        = YES
+INCLUDE_FILE_PATTERNS  = 
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI \
+"TEUCHOS_GET_RCP(Base)=/** Teuchos::ConstHandleable<##Base> interface */ virtual Teuchos::RCP<const Base> getConstRcp() const {return rcp(this);} /** Teuchos::Handleable<##Base> interface */ virtual Teuchos::RCP<Base > getRcp() {return rcp(this);}"
+#
+# What kind of documentation is generated
+#
+GENERATE_HTMLHELP      = NO
+DISABLE_INDEX          = NO
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO

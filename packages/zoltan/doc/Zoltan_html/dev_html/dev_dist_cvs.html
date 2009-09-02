@@ -1,0 +1,64 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+
+   <TITLE> Zoltan Developer's Guide:  CVS</TITLE>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_dist_dir.html">Next</a>&nbsp; |&nbsp; <a href="dev_dist.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="CVS"></A>CVS</H2>
+The source code and documentation for the Zoltan library is maintained
+under the Concurrent Versions System (CVS) software. CVS allows multiple
+developers to edit their own copies of the software and merges updated
+versions with the developers' own versions.  Zoltan's repository
+is part of the <a href="http://trilinos.sandia.gov">Trilinos</a> repository.
+
+Developers must set the CVSROOT environment variable to the repository
+directory:
+<BLOCKQUOTE>setenv CVSROOT <i>username</i>@software.sandia.gov:/space/CVS
+</BLOCKQUOTE>
+where <i>username</i> is the developer's username on the CVS server 
+software.sandia.gov.
+Since Zoltan is part of Trilinos, it is best to check out Trilinos from
+the repository:
+<BLOCKQUOTE>cvs checkout -P Trilinos</BLOCKQUOTE>
+Zoltan is then in directory Trilinos/packages/zoltan.
+
+<p>
+Alternatively, one can get a working copy of only the Zoltan software:
+<BLOCKQUOTE>cvs checkout -P zoltan</BLOCKQUOTE>
+However, changes to the 
+<a href="../ug_html/ug_usage.html#TrilinosAutotools">Autotools build 
+environment</a> require directories above the Zoltan directory in
+the Trilinos repository, so it is best to check out the entire Trilinos
+repository.
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_dist_dir.html">Next:&nbsp;
+Layout of Directories</A>&nbsp; |&nbsp; <A HREF="dev_dist.html">Previous:&nbsp;
+Zoltan Distribution</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

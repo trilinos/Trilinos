@@ -1,0 +1,217 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+
+   <TITLE> Zoltan Developer's Guide:  Part Remapping</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_mig.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="new_implementation"></A>Part Remapping</H2>
+Part remapping can be incorporated into load-balancing algorithms.
+The part remapping algorithm works as follows:
+<ul>
+<li>
+After partitioning within an <a href="dev_add_lb.html"><b>ZOLTAN_LB_FN</b></a>
+but before import or export lists are built, the partitioning algorithm calls
+<a href="#Zoltan_LB_Remap"><b>Zoltan_LB_Remap</b></a>.
+</li>
+<li>
+<a href="#Zoltan_LB_Remap"><b>Zoltan_LB_Remap</b></a> builds a bipartite
+graph based on local import or export information (depending on which is
+available in the partitioning algorithm).  Vertices of the graph are 
+processor or part numbers used in the old (input to the partitioner)
+and new (computed by the partitioner) decompositions.  Edges connect
+old and new vertices; edge weight for edge <i>e<sub>ij</sub></i> is the 
+number of objects in old part <i>i</i> that are also in new part
+<i>j</i>.  The bipartite graph is stored as a hypergraph, so that Zoltan's
+hypergraph matching routines may be applied.
+</li>
+<li>
+<a href="#Zoltan_LB_Remap"><b>Zoltan_LB_Remap</b></a> gathers the local
+hypergraph edges onto each processor and performs a serial matching of
+the vertices.  This matching defines the remapping.
+</li>
+<li>
+<a href="#Zoltan_LB_Remap"><b>Zoltan_LB_Remap</b></a> remaps the input 
+processor and part information to reflect the remapping and returns
+the result to the application.  It also builds array <i>zz->LB.Remap</i>
+that is used in other functions (e.g., 
+<b><a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b> and
+<b><a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>).
+</li>
+<li>
+Using the remapping information returned from 
+<a href="#Zoltan_LB_Remap"><b>Zoltan_LB_Remap</b></a>, the partitioning
+algorithm builds the import or export lists to return to the application.
+Note:  if the partitioning algorithm builds import lists, data may have to be
+moved to appropriate processors before building import lists to reflect
+the remapping; see <i>rcb/shared.c</i> for an example.
+</li>
+</ul>
+
+
+<P>
+<hr><a NAME="Zoltan_LB_Remap"></a>
+<HR>int <B>Zoltan_LB_Remap</B>
+(struct&nbsp;<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>&nbsp;*<I>zz</I>,
+int&nbsp;*<I>new_map</I>,
+int&nbsp;<I>num_obj</I>,
+int&nbsp;*<I>procs</I>,
+int&nbsp;*<I>old_parts</I>,
+int&nbsp;*<I>new_parts</I>,
+int&nbsp;<I>export_list_flag</I>);
+<HR>
+<BR>
+<b>Zoltan_LB_Remap</b> remaps computed part (or processor) numbers in
+an attempt to maximize the amount of data that does not have to be migrated
+to the new decomposition.  It is incorporated directly into partitioning
+algorithms, and should be called after the new decomposition is computed 
+but before return lists (import or export lists) are created.
+<b>Zoltan_LB_Remap</b> should be invoked when Zoltan parameter
+<i><a href="../ug_html/ug_alg.html#REMAP">REMAP</a></i> is one.
+Even when 
+<i><a href="../ug_html/ug_alg.html#REMAP">REMAP</a></i> is one,
+remapping is not done under a number of conditions; these conditions are
+listed with the description of 
+<i><a href="../ug_html/ug_alg.html#REMAP">REMAP</a></i>.
+
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Arguments:</B></TD>
+
+<TD WIDTH="80%"></TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; zz</I></TD>
+
+<TD>A pointer to the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
+used in the partitioning algorithm.</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; new_map</I></TD>
+
+<TD>Upon return, a flag indicating whether remapping was actually done.
+Remapping is not done under a number of conditions (described with 
+parameter 
+<i><a href="../ug_html/ug_alg.html#REMAP">REMAP</a></i>) or when the 
+computed remap gives a worse or equivalent result than the decomposition
+computed by the partitioning algorithm.
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_obj</I></TD>
+
+<TD>Input:  the number of objects the processor knows about after 
+computing the decomposition.  If the partitioning algorithm computes
+export lists, <i>num_obj</i> is the number of objects stored on the 
+processor; if it computes import lists, <i>num_obj</i> is the number of
+objects that will be stored on the processor in the new decomposition.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; procs</I></TD>
+
+<TD>
+Upon input:  
+an array of size <i>num_obj</i> containing processor 
+assignments for the objects;
+                          if <i>export_list_flag</i> == 1,
+                             <i>procs</i> contains processor assignments
+in the NEW decomposition (computed by the partitioner); otherwise,
+                             <i>procs</i> contains processor assignments
+in the OLD decomposition (input by the application).
+                          Upon return, <i>procs</i> contains remapped 
+processor assignments for the NEW decomposition, regardless of the value of
+<i>export_list_flag</i>.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>old_parts</I></TD>
+
+<TD>
+Upon input:  
+an array of size <i>num_obj</i> containing part
+assignments for the objects in the OLD decomposition (input by the
+application).
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>new_parts</I></TD>
+
+<TD>
+Upon input:  
+an array of size <i>num_obj</i> containing part
+assignments for the objects in the NEW decomposition (computed by the 
+partitioning algorithm).
+Upon return:
+<i>new_parts</i> contains remapped part assignments in the NEW decomposition.
+
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>export_list_flag</I></TD>
+
+<TD>
+Flag indicating whether the partitioning algorithm computes
+                          export lists or import lists. The procedure
+for building the bipartite
+graph depends on whether
+the partitioning algorithm knows export or import information. 
+</td>
+</TR>
+
+
+<TR VALIGN=TOP>
+<TD></TD>
+
+<TD></TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="../ug_html/ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_mig.html">Next:&nbsp;
+Migration Tools</A>&nbsp; |&nbsp; <A HREF="dev_add_params.html">Previous:&nbsp;
+Adding new parameters</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

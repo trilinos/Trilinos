@@ -1,0 +1,155 @@
+##################################################################
+# Makefile for linking against NOX and LOCA.
+##################################################################
+
+#@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+#            LOCA: Library of Continuation Algorithms Package
+#                 Copyright (2005) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# 
+# Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+# Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
+# ************************************************************************
+#@HEADER
+
+##########################################
+### Required Trilinos Package Dependencies
+##########################################
+@INSIDE_TRILINOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+@INSIDE_TRILINOS_FALSE@include @TEUCHOS_HEADER_DIR@/Makefile.export.teuchos
+
+###################################################
+### Optional Trilinos Package Dependencies
+###################################################
+
+@BUILD_LIBNOXEPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
+@BUILD_LIBNOXEPETRA_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
+@BUILD_LIBNOXEPETRA_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@BUILD_NOX_AMESOS_SUPPORT_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
+@BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@include @abs_top_builddir@/../ml/Makefile.export.ml
+@BUILD_LIBNOXBELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
+@BUILD_LOCAANASAZI_TRUE@include @abs_top_builddir@/../anasazi/Makefile.export.anasazi
+@BUILD_LIBNOXTHYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
+@BUILD_LIBNOXTHYRA_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
+
+###################################################
+### NOX/LOCA Optional Libraries
+###################################################
+
+@BUILD_LIBNOXLAPACK_TRUE@NOX_LAPACK_LIB = -L@abs_top_builddir@/src-lapack  -lnoxlapack
+@BUILD_LIBNOXEPETRA_TRUE@NOX_EPETRA_LIB = -L@abs_top_builddir@/src-epetra  -lnoxepetra
+@BUILD_LIBNOXPETSC_TRUE@NOX_PETSC_LIB = -L@abs_top_builddir@/src-petsc  -lnoxpetsc
+@BUILD_LIBNOXBELOS_TRUE@NOX_BELOS_LIB = -L@abs_top_builddir@/src-belos  -lnoxbelos
+@BUILD_LIBNOXTHYRA_TRUE@NOX_THYRA_LIB = -L@abs_top_builddir@/src-thyra  -lnoxthyra
+
+@BUILD_LIBLOCALAPACK_TRUE@LOCA_LAPACK_LIB = -L@abs_top_builddir@/src-loca/src-lapack  -llocalapack
+@BUILD_LIBLOCAEPETRA_TRUE@LOCA_EPETRA_LIB = -L@abs_top_builddir@/src-loca/src-epetra  -llocaepetra
+@BUILD_LIBLOCATHYRA_TRUE@LOCA_THYRA_LIB = -L@abs_top_builddir@/src-loca/src-thyra  -llocathyra
+@BUILD_LIBLOCAMF_TRUE@LOCA_MF_LIB = -L@abs_top_builddir@/src-loca/src-mf  -llocamf
+@BUILD_LIBLOCAMF_TRUE@MF_INCLUDES = -I@MF_INCDIR@
+@BUILD_LIBLOCAMF_TRUE@MF_LIB = -L@MF_LIBDIR@ @MF_LIBS@
+
+##########################
+# NOX defines
+##########################
+
+NOX_INCLUDES_BASE = \
+               -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
+               -I@abs_top_srcdir@/src-lapack \
+               -I@abs_top_srcdir@/src-epetra \
+               -I@abs_top_srcdir@/src-petsc \
+               -I@abs_top_srcdir@/src-belos \
+               -I@abs_top_srcdir@/src-thyra \
+               $(TEUCHOS_INCLUDES) \
+               $(EPETRA_INCLUDES) \
+               $(AZTECOO_INCLUDES) \
+               $(IFPACK_INCLUDES) \
+               $(EPETRAEXT_INCLUDES) \
+               $(AMESOS_INCLUDES) \
+               $(ML_INCLUDES) \
+               $(BELOS_INCLUDES) \
+	       $(THYRA_INCLUDES) \
+               $(STRATIMIKOS_INCLUDES)
+@USING_GNUMAKE_TRUE@NOX_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(NOX_INCLUDES_BASE))
+@USING_GNUMAKE_FALSE@NOX_INCLUDES = $(NOX_INCLUDES_BASE)
+
+NOX_LIBS_BASE = @LDFLAGS@ $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_THYRA_LIB) -L@abs_top_builddir@/src -lnox $(STRATIMIKOS_LIBS) $(THYRA_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(AMESOS_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
+@USING_GNUMAKE_TRUE@NOX_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(NOX_LIBS_BASE))
+@USING_GNUMAKE_FALSE@NOX_LIBS = $(NOX_LIBS_BASE)
+
+##########################
+# LOCA defines
+##########################
+
+LOCA_INCLUDES_BASE = \
+               -I@abs_top_srcdir@/src-loca/src \
+               -I@abs_top_srcdir@/src-loca/src-lapack \
+               -I@abs_top_srcdir@/src-loca/src-epetra \
+               -I@abs_top_srcdir@/src-loca/src-epetra/continuation-manager \
+	       -I@abs_top_srcdir@/src-loca/src-thyra \
+               -I@abs_top_srcdir@/src-loca/src-mf \
+               $(NOX_INCLUDES) \
+               $(ANASAZI_INCLUDES) \
+               $(MF_INCLUDES)
+@USING_GNUMAKE_TRUE@LOCA_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES_BASE))
+@USING_GNUMAKE_FALSE@LOCA_INCLUDES = $(LOCA_INCLUDES_BASE)
+
+LOCA_LIBS_BASE = @LDFLAGS@ $(LOCA_LAPACK_LIB) $(LOCA_EPETRA_LIB) $(LOCA_THYRA_LIB) $(LOCA_MF_LIB) -L@abs_top_builddir@/src-loca/src -lloca $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_THYRA_LIB) -L@abs_top_builddir@/src -lnox $(STRATIMIKOS_LIBS) $(THYRA_LIBS) $(ANASAZI_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(MF_LIB) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
+@USING_GNUMAKE_TRUE@LOCA_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(LOCA_LIBS_BASE))
+@USING_GNUMAKE_FALSE@LOCA_LIBS     = $(LOCA_LIBS_BASE)
+
+##################################################################
+# NOX/LOCA TEST defines - TO BE USED ONLY BY DEVELOPERS FOR 
+# INTERNAL TESTS!
+# NOX/LOCA users should not use the follwing targets!!!
+##################################################################
+NOX_TEST_INCLUDES_BASE = -I@abs_top_srcdir@/test/utils $(NOX_INCLUDES) 
+@USING_GNUMAKE_TRUE@NOX_TEST_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES_BASE))
+@USING_GNUMAKE_FALSE@NOX_TEST_INCLUDES = $(NOX_TEST_INCLUDES_BASE)
+
+NOX_TEST_LIBS_BASE = -L@abs_top_builddir@/test/utils -lnoxtestutils $(NOX_LIBS)
+@USING_GNUMAKE_TRUE@NOX_TEST_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(NOX_TEST_LIBS_BASE))
+@USING_GNUMAKE_FALSE@NOX_TEST_LIBS = $(NOX_TEST_LIBS_BASE)
+
+LOCA_LAPACK_TEST_INCLUDES_BASE = -I@abs_top_srcdir@/test/utils -I@abs_top_srcdir@/test/lapack/LOCA_TestProblems $(LOCA_INCLUDES) -I@abs_top_srcdir@/test/utils
+@USING_GNUMAKE_TRUE@LOCA_LAPACK_TEST_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(LOCA_LAPACK_TEST_INCLUDES_BASE))
+@USING_GNUMAKE_FALSE@LOCA_LAPACK_TEST_INCLUDES = $(LOCA_LAPACK_TEST_INCLUDES_BASE)
+
+LOCA_LAPACK_TEST_LIBS_BASE = -L@abs_top_builddir@/test/lapack/LOCA_TestProblems/ -llocatestproblems -L@abs_top_builddir@/test/utils -lnoxtestutils $(LOCA_LIBS)
+@USING_GNUMAKE_TRUE@LOCA_LAPACK_TEST_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(LOCA_LAPACK_TEST_LIBS_BASE))
+@USING_GNUMAKE_FALSE@LOCA_LAPACK_TEST_LIBS = $(LOCA_LAPACK_TEST_LIBS_BASE)
+
+LOCA_EPETRA_TEST_INCLUDES_BASE = -I@abs_top_srcdir@/test/utils -I@abs_top_srcdir@/test/epetra/LOCA_TestProblems $(LOCA_INCLUDES) -I@abs_top_srcdir@/test/utils
+@USING_GNUMAKE_TRUE@LOCA_EPETRA_TEST_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES_BASE))
+@USING_GNUMAKE_FALSE@LOCA_EPETRA_TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES_BASE)
+
+LOCA_EPETRA_TEST_LIBS_BASE = -L@abs_top_builddir@/test/epetra/LOCA_TestProblems/ -llocatestproblems -L@abs_top_builddir@/test/utils -lnoxtestutils $(LOCA_LIBS)
+@USING_GNUMAKE_TRUE@LOCA_EPETRA_TEST_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_LIBS_BASE))
+@USING_GNUMAKE_FALSE@LOCA_EPETRA_TEST_LIBS = $(LOCA_EPETRA_TEST_LIBS_BASE)
+
+##################################################################
+##################################################################
+##################################################################

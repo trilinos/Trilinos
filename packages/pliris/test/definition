@@ -1,0 +1,18 @@
+PACKAGE_NAME=Pliris
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL) {
+    DIRS = vector_random;
+    ARGS = 1000 1;
+    COMM = MPI(2 3-*);
+}
+
+(FRAMEWORK, INSTALL) {
+    DIRS = vector_random;
+    ARGS = 1000 2;
+    COMM = MPI(2 4);
+}
+

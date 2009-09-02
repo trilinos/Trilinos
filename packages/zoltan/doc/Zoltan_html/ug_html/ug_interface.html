@@ -1,0 +1,167 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Next</a>&nbsp; |&nbsp; <a href="ug_fortran.html">Previous</a></i></b></div>
+
+
+<h2>
+<a NAME="Zoltan Interface Functions"></a>Zoltan Interface Functions</h2>
+An application calls a series of dynamic load-balancing library functions
+to initialize the load balancer, perform load balancing and migrate data.
+This section describes the syntax of each type of interface function:
+<blockquote><a href="ug_interface_init.html">General Zoltan Interface Functions</a>
+<br><a href="ug_interface_lb.html">Load-Balancing Interface Functions</a>
+<br><a href="ug_interface_augment.html">Functions for Augmenting a Decomposition</a>
+<br><a href="ug_interface_mig.html">Migration Interface Functions</a>
+<br><a href="ug_interface_color.html">Graph Coloring Functions</a>
+<br><a href="ug_interface_order.html">Graph Ordering Functions</a>
+</blockquote>
+Examples of the calling sequences for initialization, load-balancing, and
+data migration are included in the <a href="ug_examples_init.html#Initialization Example">Initialization</a>,
+<a href="ug_examples_lb.html#Load-Balancing Example">Load-Balancing</a>,
+and <a href="ug_examples_mig.html#Migration Example">Migration</a> sections,
+respectively, of the <a href="ug_examples.html#Examples of Library Usage">Examples
+of Library Usage</a>.
+<h2>
+<a NAME="Error Codes"></a><hr>Error Codes</h2>
+All interface functions, with the exception of <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+return an error code to the application. The possible return codes are
+defined in <i>include/zoltan_types.h</i> and Fortran 
+<a href="ug_fortran_api.html#fortran ug api zoltan module">module zoltan</a>, 
+and are listed in the
+<a href="#error codes table">table</a>
+below.
+<p>Note:&nbsp; Robust error handling in parallel has not yet been achieved
+in Zoltan.&nbsp; When a processor returns from Zoltan due to an error condition,
+other processors do not necessarily return the same condition.&nbsp; In
+fact, other processors may not know that the original processor has returned
+from Zoltan, and may wait indefinitely in a communication routine (e.g.,
+waiting for a message from the original processor that is not sent due
+to the error condition).&nbsp; The parallel error-handling capabilities
+of Zoltan will be improved in future releases.
+<br>&nbsp;
+<center><table BORDER WIDTH="90%" >
+<tr>
+<td VALIGN=TOP><i>ZOLTAN_OK</i></td>
+
+<td ALIGN=LEFT>Function returned without warnings or errors.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>ZOLTAN_WARN&nbsp;</i></td>
+
+<td>Function returned with warnings. The application will probably be able
+to continue to run.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>ZOLTAN_FATAL&nbsp;</i></td>
+
+<td>A fatal error occured within the Zoltan library.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>ZOLTAN_MEMERR</i></td>
+
+<td>An error occurred while allocating memory. When this error occurs,
+the library frees any allocated memory and returns control to the application.
+If the application then wants to try to use another, less memory-intensive
+algorithm, it can do so.</td>
+</tr>
+
+<caption ALIGN=BOTTOM><a NAME="error codes table"></a><i>Return codes defined
+in include/zoltan_types.h.</i></caption>
+</table></center>
+
+<h2>
+<a NAME="Naming conventions"></a><hr>Naming conventions</h2>
+The C, Fortran and C++ interfaces follow consistent naming conventions, as
+illustrated in the following table.
+<br> &nbsp;
+<p>
+<center><table BORDER WIDTH="90%" >
+<tr>
+<th align=center></th>
+<th align=center>C and Fortran</th>
+<th align=center>C++</th>
+</tr>
+<tr>
+<td align=left>Partitioning and migration functions<br>
+                 example: perform partitioning<br>
+                 example: assign a point to a part</td>
+<td align=left><B>Zoltan_LB_</b><i>function</i>()<br>
+    <b>Zoltan_LB_Partition()</b><br>
+    <b>Zoltan_LB_Point_Assign()</b><br> </td>
+<td align=left><B>Zoltan::</b><i>function()</i><br>
+    <b>Zoltan::LB_Partition()</b><br>
+    <b>Zoltan::LB_Point_Assign()</b><br> </td>
+</tr>
+
+<tr>
+<td align=left>Unstructured communication<br>
+                 example: perform communication</td>
+<td align=left><B>Zoltan_Comm_</b><i>function</i><br>
+    <b>Zoltan_Comm_Do()</b></td>
+<td align=left><B>Zoltan_Comm::</b><i>function</i><br>
+    <b>Zoltan_Comm::Do()</b></td>
+</tr>
+
+<tr>
+<td align=left>Distributed data<br>
+                 example: find objects in a remote process</td>
+<td align=left><B>Zoltan_DD_</b><i>function</i><br>
+    <b>Zoltan_DD_Find()</b></td>
+<td align=left><B>Zoltan_DD::</b><i>function</i><br>
+    <b>Zoltan_DD::Find()</b></td> 
+</tr>
+
+<tr>
+<td align=left>Timers<br>
+               example: print timing results</td>
+<td align=left><B>Zoltan_Timer_</b><i>function</i><br>
+    <b>Zoltan_Timer_Print()</b></td>
+<td align=left><B>Zoltan_Timer::</b><i>function</i><br>
+    <b>Zoltan_Timer::Print()</b></td>
+</table></center>
+<p>
+
+In particular, the C++ <B>Zoltan</b> class represents a load
+balancing instance and the methods that operate on it.  The method
+name is identical to the part of the C and Fortran function name that
+indicates the function performed.  A C++ <B>Zoltan_Comm</b> object
+represents an instance of unstructured communication, a C++
+<b>Zoltan_DD</b> object represents a distributed directory, and a
+C++ <b>Zoltan_Timer</b> object is a timer.  Their
+method names are derived similarly.
+
+<p>
+
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a> |&nbsp; <a href="ug_interface_init.html">Next:&nbsp;
+Initialization Functions</a>&nbsp; |&nbsp; <a href="ug_fortran.html">Previous:&nbsp;
+FORTRAN Interface</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

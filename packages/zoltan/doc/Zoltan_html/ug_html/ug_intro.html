@@ -1,0 +1,336 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Introduction</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_usage.html">Next</a>&nbsp; |&nbsp; <a href="ug.html">Previous</a></i></b></div>
+<!---------------------------------------------------------------------------->
+
+<h2>
+<a NAME="Introduction"></a>Introduction</h2>
+
+<blockquote>
+<a href="#Motivation">Project Motivation</a>
+<br><a href="#Tools">The Zoltan Toolkit</a>
+<br><a href="#Terms">Terminology</a>
+<br><a href="#Design">Zoltan Design</a>
+</blockquote>
+<!---------------------------------------------------------------------------->
+<a NAME="Motivation"></a><hr><h2>Project Motivation</h2>
+
+Over the past decade, parallel computers have been used with great success in
+many scientific simulations. While differing in their numerical methods and
+details of implementation, most applications successfully parallelized to date
+are "static" applications.  Their data structures and memory usage do not
+change during the course of the computation.  Their inter-processor
+communication patterns are predictable and non-varying.  And their processor
+workloads are predictable and roughly constant throughout the simulation.
+Traditional finite difference and finite element methods are examples of
+widely used static applications.
+<p>
+However, increasing use of "dynamic" simulation techniques is creating new
+challenges for developers of parallel software. For example, adaptive finite
+element methods refine localized regions the mesh and/or adjust the order of
+the approximation on individual elements to obtain a desired accuracy in the
+numerical solution.   As a result, memory must be allocated dynamically to
+allow creation of new elements or degrees of freedom.  Communication patterns
+can vary as refinement creates new element neighbors.  And localized
+refinement can cause severe processor load imbalance as elemental and
+processor work loads change throughout a simulation.
+<p>
+Particle simulations and crash simulations are other examples of dynamic
+applications.  In particle simulations, scalable parallel performance depends
+upon a good assignment of particles to processors; grouping physically close
+particles within a single processor reduces inter-processor communication.
+Similarly, in crash simulations, assignment of physically close surfaces to a
+single processor enables efficient parallel contact search.  In both cases,
+data structures and communication patterns change as particles and surfaces
+move.  Re-partitioning of the particles or surfaces is needed to maintain
+geometric locality of objects within processors.
+<p>
+We developed the Zoltan library to simplilfy many of the difficulties
+arising in dynamic applications.  Zoltan is a collection of data management
+services for unstructured, adaptive and dynamic applications.
+It includes a
+suite of parallel partitioning algorithms, data migration tools, parallel
+graph coloring tools, distributed
+data directories, unstructured communication services, and dynamic memory
+management tools.  Zoltan's data-structure neutral design allows it to be used
+by a variety of applications without imposing restrictions on application data
+structures.  Its object-based interface provides a simple and inexpensive way
+for application developers to use the library and researchers to make new
+capabilities available under a common interface.  
+<p>
+<!---------------------------------------------------------------------------->
+<a NAME="Tools"></a><hr><h2>The Zoltan Toolkit</h2>
+The Zoltan Library contains a number of tools that simplify the development
+and improve the performance of parallel, unstructured and adaptive
+applications.  The library is organized as a toolkit, so that application
+developers can use as little or as much of the library as desired.  The major
+packages in Zoltan are listed below.
+<ul>
+<li>
+A suite of <a href="ug_alg.html">dynamic load balancing and parallel
+repartitioning</a> algorithms, including geometric, hypergraph and graph
+methods;
+switching between algorithms is easy, allowing straightforward comparisons of
+algorithms in applications.
+</li>
+<li>
+<a href="ug_interface_mig.html">Data migration tools</a> for moving data from
+old partitions to new one.
+</li>
+<li>
+<a href="ug_color.html">Parallel graph coloring tools</a> with both distance-1
+and distance-2 coloring.
+</li>
+<li>
+<a href="../ug_html/ug_util_dd.html">Distributed data directories</a>:
+scalable (in memory and computation) algorithms for locating needed
+off-processor data.
+</li>
+<li>
+An <a href="../ug_html/ug_util_comm.html">unstructured communication 
+package</a> that insulates users from the details of message sends and
+receives.
+</li>
+<li>
+<a href="../ug_html/ug_util_mem.html">Dynamic memory management tools</a>
+that simplify dynamic memory debugging on state-of-the-art parallel
+computers.
+</li>
+
+<li>
+A sample application <a href="../dev_html/dev_driver.html"><i>zdrive</i></a>.
+It allows algorithm developers 
+to test changes to Zoltan without having to run Zoltan in 
+a large application code.  Application developers can use the <i>zdrive</i>
+code to see examples of function calls to Zoltan and the implementation of 
+query functions.
+</li>
+</ul>
+
+<!---------------------------------------------------------------------------->
+<a NAME="Terms"></a><hr><h2>Terminology</h2>
+
+Our design of Zoltan does not restrict it to any particular type of
+application.  Rather, Zoltan operates on uniquely identifiable data items that
+we call <i>objects</i>.  For example, in finite element applications, objects
+might be elements or nodes of the mesh.  In particle applications, objects
+might be particles.  In linear solvers, objects might be matrix rows or 
+non-zeros.
+<p>
+Each object must have a unique <i>global identifier (ID)</i> 
+represented as an array
+of unsigned integers.  Common choices include global numbers of elements
+(nodes, particles, rows, and so on) that already exist in many applications,
+or a structure consisting of an owning processor number and the object's
+local-memory index.  Objects might also have local (to a processor) IDs that
+do not have to be unique globally.  Local IDs such as addresses or local-array
+indices of objects can improve the performance (and convenience) of Zoltan's
+interface to applications.
+<p>
+We use a simple example to illustrate the above terminology.
+On the left side of the figure 
+<a href="#Terms Figure">below</a>, a simple finite element mesh is presented.
+<p>
+<center><a NAME="Terms Figure"></a><img SRC="figures/HGFigure.gif"></center>
+<p>
+The blue and red shading indicates the mesh is partitioned for two
+processors.  An application must
+provide information about the current mesh and partition to Zoltan.  
+If, for example,
+the application wants Zoltan to perform operations on the elements of the
+mesh,
+it must provide information about the elements when Zoltan asks for object 
+information.
+<p>
+In this example, the elements have unique IDs
+assigned to them, as shown by the letters in the elements.  These unique
+letters can be used as global IDs in Zoltan.  In addition, on each
+processor, local numbering information may be available.
+For instance, the elements owned by a processor may be stored in arrays
+in the processor's memory.  An element's local array index may be provided to 
+Zoltan as a local ID.
+<p>
+For geometric algorithms, the application must provide coordinate
+information to Zoltan.  In this example, the coordinates of the mid-point of 
+an element are used.
+<p>
+For hypergraph- and graph-based algorithms, 
+information about the connectivity of
+the objects must be provided to Zoltan.  In this example, the application may
+consider elements connected if they share a face.  A hypergraph representing
+this problem is then shown to the right of the mesh.  A <i>hyperedge</i> exists
+for each object (squares labeled with lower-case letters corresponding
+to the related object).  Each hyperedge connects
+the object and all of its face neighbors.  The hyperedges are passed to
+Zoltan with a label (in this example, a lower-case letter) and a list of
+the object IDs in that hyperedge.
+<p>
+Graph connections, or <i>edges</i>, across element faces may also specified.
+Connectivity information is passed to Zoltan by specifying a neighbor list for
+an object.  The neighbor list consists of the global IDs of neighboring objects
+and the processor(s) currently owning those objects.  Because relationships
+across faces are bidirectional, the graph edge lists and hypergraph hyperedge
+lists are nearly identical.  If, however, information flowed to, say, only
+the north and east edge neighbors of an element, the hypergraph model would
+be needed, as the graph model can represent only bidirectional relationships.
+In this case, the hyperedge contents would include only the north and east
+neighbors; they would exclude south and west neighbors.
+<p>
+The table below summarizes the information provided to Zoltan by an
+application for this finite element mesh.  Information about the objects
+includes their global and local IDs, geometry data, hypergraph data,
+and graph data.
+<p>
+<table Border="2" Width="100%">
+<tr>
+<td></td> 
+<td COLSPAN="2"><center>Object IDs</center></td>
+<td><center>Geometry Data</center></td> 
+<td COLSPAN="2"><center>Graph Data</center></td>
+</tr>
+<tr>
+<td><center>Processor</center></td> 
+<td><center>Global</center></td> 
+<td><center>Local</center></td> 
+<td><center>(coordinates)</center></td>
+<td><center>Neighbor Global ID List</center></td> 
+<td><center>Neighbor Processor List</center></td>
+</tr>
+<tr>
+<td><center>Red</center></td> 
+<td><center>A</center></td>
+<td><center>0</center></td>
+<td><center>(2,10)</center></td>
+<td><center>B,D</center></td>
+<td><center>Blue</center></td>
+</tr>
+<tr>
+<td><center>Blue</center></td> 
+<td><center>B</center></td>
+<td><center>0</center></td>
+<td><center>(1,7)</center></td>
+<td><center>A,C,D</center></td>
+<td><center>Red,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>C</center></td>
+<td><center>1</center></td>
+<td><center>(1,5)</center></td>
+<td><center>B,E,F</center></td>
+<td><center>Blue,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>D</center></td>
+<td><center>2</center></td>
+<td><center>(3,7)</center></td>
+<td><center>A,B,E</center></td>
+<td><center>Red,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>E</center></td>
+<td><center>3</center></td>
+<td><center>(3,5)</center></td>
+<td><center>C,D,F</center></td>
+<td><center>Blue,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>F</center></td>
+<td><center>4</center></td>
+<td><center>(2,2)</center></td>
+<td><center>C,E</center></td>
+<td><center>Blue,Blue</center></td>
+</tr>
+</table>
+<table border="2" width="50%">
+<tr>
+<td COLSPAN="2"><center>Hyperedge Data</center></td>
+</tr>
+<tr>
+<td><center>Hyperedge ID</center></td>
+<td><center>Hyperedge contents</center></td>
+</tr>
+<tr>
+<td><center>a</center></td>
+<td><center>A,B,D</center></td>
+</tr>
+<tr>
+<td><center>b</center></td>
+<td><center>A,B,C,D</center></td>
+</tr>
+<tr>
+<td><center>c</center></td>
+<td><center>B,C,E,F</center></td>
+</tr>
+<tr>
+<td><center>d</center></td>
+<td><center>A,B,D,E</center></td>
+</tr>
+<tr>
+<td><center>e</center></td>
+<td><center>C,D,E,F</center></td>
+</tr>
+<tr>
+<td><center>f</center></td>
+<td><center>C,E,F</center></td>
+</tr>
+</table>
+
+
+<!---------------------------------------------------------------------------->
+<a NAME="Design"></a><hr><h2>Zoltan Design</h2>
+To make Zoltan easy to use, we do not impose any particular data structure on
+an application, nor do we require an application to build a particular data
+structure for Zoltan.  Instead, Zoltan uses a 
+<a href="ug_query.html">callback function interface</a>, in
+which Zoltan queries the application for needed data.  The application must
+provide simple functions that answer these queries.
+<p>
+To keep the application interface simple, we use a small set of 
+<a href="ug_query.html">callback functions</a>
+and make them easy to write by requesting only information that is
+easily accessible to applications.  For example, the most basic partitioning 
+algorithms
+require only four callback functions.  These functions return the number of
+objects owned by a processor, a list of weights and IDs for owned objects, the
+problem's dimensionality, and a given object's coordinates.  More
+sophisticated graph-based partitioning algorithms require only two additional
+callback functions, which return the number of edges per object and edge lists
+for objects.
+
+<!---------------------------------------------------------------------------->
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_usage.html">Next:&nbsp;
+Zoltan Usage</a>&nbsp; | <a href="ug.html">Previous:&nbsp; Table of
+Contents</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

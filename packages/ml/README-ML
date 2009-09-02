@@ -1,0 +1,193 @@
+Welcome to ML, the multilevel preconditioning package of Trilinos.
+
+Contents of this README file are:
+
+0) where you should look for ML documentation
+1) configuring and compiling ML
+2) testing ML
+3) directory organization
+4) organization of the examples
+5) organization and scope of the tests
+6) how to submit bugs
+7) mailing lists
+8) how to cite ML
+9) copyright notice
+10) last update
+
+------------------------------------------------------------------------------
+section 0: where you should look for ML documentation
+------------------------------------------------------------------------------
+
+You can find the latest ML User's Guide in the subdirectory
+
+   ml/docs/mlguide.pdf.
+
+Alternatively, you can download the ML User's Guide at the web address
+
+   http://software.sandia.gov/trilinos/packages/ml/
+
+This address also contains up-to-date doxygen documentation. 
+You can create a local Doxygen documentation as follows:
+
+   $ cd Trilinos/ml/doc
+   $ doxygen
+
+Doxygen files mainly refer to the C++ interface of ML, and discuss several
+examples in detail.
+
+An history of ML changes is contained in the file ChangeLog.
+
+
+------------------------------------------------------------------------------
+section 1: configuring and compiling ML
+------------------------------------------------------------------------------
+
+We suggest configuring and compiling ML as part of an overall Trilinos
+configure/compile process. For example, to create the default Trilinos build
+that includes ML, you could do the following:
+ 
+   $ cd Trilinos
+   $ mkdir LINUX_SERIAL
+   $ cd LINUX_SERIAL
+   $ ../configure
+   $ make
+   
+On most machines, an MPI-enabled Trilinos build can be created by simply
+typing
+
+   $ cd Trilinos
+   $ mkdir LINUX_MPI
+   $ cd LINUX_MPI
+   $ ../configure --with-mpi-compilers
+   $ make
+
+
+------------------------------------------------------------------------------
+section 2: testing ML
+------------------------------------------------------------------------------
+
+Once ML is compiled, a simple sanity check can be performed as follows:
+
+   $ cd <your-ml-build-directory>
+   $ cd examples
+   $ ../test/scripts/daily/mpi/TestExamples.exe
+
+The test will execute a subset of the examples and save the results to a log
+file in ml/examples.
+
+------------------------------------------------------------------------------
+section 3: directory organization
+------------------------------------------------------------------------------
+
+aclocal.m4                  autoconf file
+autom4te.cache/             autoconf directory
+bootstrap                   autoconf/automake file
+config/                     autoconf m4 macros
+configure                   autoconf file
+configure.ac                autoconf file
+COPYRIGHT                   copyright information
+CVS/
+doc/                        ML documentation
+etc/                        various scripts and utilities for developers
+examples/                   ML examples
+Makefile.am                 automake file
+Makefile.in                 automake file
+Changelog                   an (incomplete) history of ML changes
+README                      this file
+src/                        ML source files
+util/                       various utility programs, such as file converters
+
+
+------------------------------------------------------------------------------
+section 4: organization of the examples
+------------------------------------------------------------------------------
+
+Please refer to the README files in the examples subdirectories.
+
+
+------------------------------------------------------------------------------
+section 5: organization and scope of the tests
+------------------------------------------------------------------------------
+
+The subdirectory ml/test contains several test harness source files.
+These files are meant primarily for ML developers.
+
+
+------------------------------------------------------------------------------
+section 6: how to submit bugs
+------------------------------------------------------------------------------
+
+Bugs and enhancements should be submitted through bugzilla at the web page
+
+   http://software.sandia.gov/bugzilla
+
+(select ML in the list of packages).
+You will need to create a bugzilla account. Otherwise, simply e-mail
+one of the developers.
+
+
+------------------------------------------------------------------------------
+section 7: mailing lists
+------------------------------------------------------------------------------
+
+Users are encouraged to subscribe to the following mailing lists:
+
+*) ml-announce@software.sandia.gov
+*) ml-users@software.sandia.gov
+
+Please refer to the ML web page for more details.
+
+
+------------------------------------------------------------------------------
+section 8: how to cite ML
+------------------------------------------------------------------------------
+
+ML can be cited using the following BiBTeX entry:
+
+@TechReport{ml_users_guide,
+  AUTHOR = {M. Sala and J.J. Hu and R.S. Tuminaro},
+  TITLE = "{ML}3.1 {S}moothed {A}ggregation {U}ser's {G}uide",
+  INSTITUTION =  "Sandia National Laboratories",
+  NUMBER = "SAND2004-4821",
+  ADDRESS = "Albuquerque, NM (USA)",
+  YEAR = "2004"
+}
+
+
+------------------------------------------------------------------------------
+section 9: copyright
+------------------------------------------------------------------------------
+
+               ML: A Multilevel Preconditioner Package
+                 Copyright (2001) Sandia Corporation
+
+Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+license for use of this work by or on behalf of the U.S. Government.
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version.
+ 
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+ 
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+Questions? Contact Jonathan Hu or Ray Tuminaro ({jhu|rstumin}@sandia.gov).
+
+Please submit ML bugs with at software.sandia.gov/buzgilla, or
+report bugs to {jhu|rstumin}@sandia.gov.
+	
+------------------------------------------------------------------------------
+section 10: last update
+------------------------------------------------------------------------------
+
+Current revision: $Revision$
+Branch:           $Branch$
+Last modified:    $Date$
+Modified by:      $Author$

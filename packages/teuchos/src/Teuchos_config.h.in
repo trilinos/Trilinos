@@ -1,0 +1,280 @@
+/* src/Teuchos_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define the Fortran name mangling to be used for the BLAS */
+#undef F77_BLAS_MANGLE
+
+/* Define to dummy `main' function (if any) required to link to the Fortran
+   libraries. */
+#undef F77_DUMMY_MAIN
+
+/* Define to a macro mangling the given C identifier (in lower and upper
+   case), which must not contain underscores, for linking with Fortran. */
+#undef F77_FUNC
+
+/* As F77_FUNC, but for C identifiers containing underscores. */
+#undef F77_FUNC_
+
+/* Define if F77 and FC dummy `main' functions are identical. */
+#undef FC_DUMMY_MAIN_EQ_F77
+
+/* Define to 1 if you have the <algorithm> header file. */
+#undef HAVE_ALGORITHM
+
+/* Define if you have a BLAS library. */
+#undef HAVE_BLAS
+
+/* define if bool is a built-in type */
+#undef HAVE_BOOL
+
+/* Define to 1 if you have the <cassert> header file. */
+#undef HAVE_CASSERT
+
+/* Define to 1 if you have the <cerrno> header file. */
+#undef HAVE_CERRNO
+
+/* Define to 1 if you have the <climits> header file. */
+#undef HAVE_CLIMITS
+
+/* Define to 1 if you have the <cmath> header file. */
+#undef HAVE_CMATH
+
+/* Define to 1 if you have the <complex> header file. */
+#undef HAVE_COMPLEX
+
+/* define if there is a problem calling BLAS routines CDOTC and ZDOTC from C
+   */
+#undef HAVE_COMPLEX_BLAS_PROBLEM
+
+/* Define to 1 if you have the <cstdarg> header file. */
+#undef HAVE_CSTDARG
+
+/* Define to 1 if you have the <cstdlib> header file. */
+#undef HAVE_CSTDLIB
+
+/* Define to 1 if you have the <cstring> header file. */
+#undef HAVE_CSTRING
+
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* define if the problem calling BLAS routines CDOTC and ZDOTC from C can be
+   fixed */
+#undef HAVE_FIXABLE_COMPLEX_BLAS_PROBLEM
+
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
+
+/* Define to 1 if you have the <fpu_control.h> header file. */
+#undef HAVE_FPU_CONTROL_H
+
+/* define if the compiler supports abi::__cxa_demangle(...) */
+#undef HAVE_GCC_ABI_DEMANGLE
+
+/* Define if want to build gcc-checkedstl */
+#undef HAVE_GCC_CHECKEDSTL
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <iomanip> header file. */
+#undef HAVE_IOMANIP
+
+/* Define to 1 if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* Define if you have LAPACK library. */
+#undef HAVE_LAPACK
+
+/* Define if you have LAPACK _GEGV. */
+#undef HAVE_LAPACK_GEGV
+
+/* Define if you have LAPACK _GGEV. */
+#undef HAVE_LAPACK_GGEV
+
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
+/* Define to 1 if you have the <list> header file. */
+#undef HAVE_LIST
+
+/* Define to 1 if you have the <map> header file. */
+#undef HAVE_MAP
+
+/* Define to 1 if you have the <memory> header file. */
+#undef HAVE_MEMORY
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* define if the compiler supports the mutable keyword */
+#undef HAVE_MUTABLE
+
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
+/* define if the compiler accepts the new for scoping rules */
+#undef HAVE_NEW_FOR_SCOPING
+
+/* Define to 1 if you have the <numeric> header file. */
+#undef HAVE_NUMERIC
+
+/* Define to 1 if you have the `pow' function. */
+#undef HAVE_POW
+
+/* define if the compiler supports access of protected templated nested
+   classes in derived classes */
+#undef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
+
+/* Define to 1 if you have the <set> header file. */
+#undef HAVE_SET
+
+/* Define to 1 if you have the `sqrt' function. */
+#undef HAVE_SQRT
+
+/* Define to 1 if you have the <sstream> header file. */
+#undef HAVE_SSTREAM
+
+/* Define to 1 if you have the <stdexcept> header file. */
+#undef HAVE_STDEXCEPT
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* define if std::ios_base::fmtflags is supported type */
+#undef HAVE_STD_IOS_BASE_FMTFLAGS
+
+/* define if std::sprintf is supported */
+#undef HAVE_STD_SPRINTF
+
+/* define if the compiler supports Standard Template Library */
+#undef HAVE_STL
+
+/* Define to 1 if you have the <string> header file. */
+#undef HAVE_STRING
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define if want to build tests */
+#undef HAVE_TESTS
+
+/* Define if want to build teuchos-arprec */
+#undef HAVE_TEUCHOS_ARPREC
+
+/* Define if want to build teuchos-abc */
+#undef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
+/* Define if want to build teuchos-blasfloat */
+#undef HAVE_TEUCHOS_BLASFLOAT
+
+/* Define if want to build teuchos-boost */
+#undef HAVE_TEUCHOS_BOOST
+
+/* Define if want to build teuchos-comm_timers */
+#undef HAVE_TEUCHOS_COMM_TIMERS
+
+/* Define if want to build teuchos-complex */
+#undef HAVE_TEUCHOS_COMPLEX
+
+/* Define if want to build teuchos-debug */
+#undef HAVE_TEUCHOS_DEBUG
+
+/* Define if want to build teuchos-demangle */
+#undef HAVE_TEUCHOS_DEMANGLE
+
+/* Define if want to build teuchos-dotcheck */
+#undef HAVE_TEUCHOS_DOTCHECK
+
+/* Define if want to build teuchos-doubletodd */
+#undef HAVE_TEUCHOS_DOUBLE_TO_DD
+
+/* Define if want to build teuchos-examples */
+#undef HAVE_TEUCHOS_EXAMPLES
+
+/* Define if want to build teuchos-expat */
+#undef HAVE_TEUCHOS_EXPAT
+
+/* Define if want to build teuchos-explicit_instantiation */
+#undef HAVE_TEUCHOS_EXPLICIT_INSTANTIATION
+
+/* Define if want to build teuchos-extended */
+#undef HAVE_TEUCHOS_EXTENDED
+
+/* Define if want to build teuchos-float */
+#undef HAVE_TEUCHOS_FLOAT
+
+/* Define if want to build teuchos-gmp */
+#undef HAVE_TEUCHOS_GNU_MP
+
+/* Define if want to build teuchos-libxml2 */
+#undef HAVE_TEUCHOS_LIBXML2
+
+/* Define if want to build teuchos-long_long */
+#undef HAVE_TEUCHOS_LONG_LONG_INT
+
+/* Define if want to build teuchos-qd */
+#undef HAVE_TEUCHOS_QD
+
+/* Define if want to build teuchos-tests */
+#undef HAVE_TEUCHOS_TESTS
+
+/* Define to 1 if you have the <typeinfo> header file. */
+#undef HAVE_TYPEINFO
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <utility> header file. */
+#undef HAVE_UTILITY
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
+
+/* template qualifier required for calling template methods from non-template
+   code */
+#undef INVALID_TEMPLATE_QUALIFIER
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif

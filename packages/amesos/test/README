@@ -1,0 +1,90 @@
+Organization of Amesos tests:
+(M. Sala, SNL 9214, Apr-05)
+
+- Test_Basic
+  ==========
+
+  Basic tests, based on MatrixMarket matrices.
+  I have tested LAPACK, KLU, UMFPACK, DSCPACK.
+
+
+- Test_Epetra_RowMatrix
+  =====================
+
+  The linear system matrix is an Epetra_RowMatrix object, 
+  that is not derived from the Epetra_CrsMatrix class. The linear
+  system matrix is non-symmetric (recirc_2d) and small (64).
+  Multiple RHS are tested.
+
+  Tests for default options only, with matrix and its transpose.
+
+  Amesos_Dscpack is NOT tested since the solver currently does not
+  support Epetra_RowMatrix's.
+
+
+- Test_Epetra_CrsMatrix
+  =====================
+
+  The linear system matrix is an Epetra_CrsMatrix.
+  Multiple RHS are tested. The linear system matrix is symmetric 
+  (laplace_2d) and small (64).
+
+  Tests for default options only, with matrix and its transpose.
+
+
+- Test_Detailed
+  =============
+
+  The linear system matrix is an Epetra_RowMatrix object, 
+  that is not derived from the Epetra_CrsMatrix class.
+  Transpose it NOT tested.
+  Multiple RHS are tested.
+
+  Test the behavior of SymbolicFactorization(), NumericFactorization(),
+  and Solve(). For a given problem, the matrix, RHS and solution are
+  changed in several ways (values and underlying maps).
+
+  Amesos_Dscpack is NOT tested.
+
+
+- Test_MultipleSolves
+  ===================
+  
+  The linear system matrix is an Epetra_CrsMatrix.
+  Transpose it NOT tested.
+  Multiple RHS are tested.
+
+  Test multiple successive solutions with different rhs, to
+  solve A^3 x = b.
+
+
+- Test_KLU, Test_UMFPACK, Test_SuperLU, Test_SuperLU_DIST, Test_MUMPS, Test_PARAKLETE
+  ===================================================================================
+
+  The linear system matrix in an Epetra_RowMatrix object, that is not
+  derived from the Epetra_CrsMatrix class. The linear system matrix
+  has moderate size (10000), and 7 vectors are used. The map is
+  built randomly.
+
+
+- Test_DSCPACK
+  ============
+
+  The linear system matrix is an Epetra_CrsMatrix.
+
+
+------------------+-------+-------+-----+-----+-----+-----+-----+-----+-----+
+                  | Linux | Linux | SUN | SGI | SGI | DEC | DEC | Mac | Mac |
+                  |       | MPI   |     |     | MPI |     | MPI |     | MPI |
+------------------+-------+-------+-----+-----+-----+-----+-----+-----+-----+
+LAPACK            |   X   |   X   |  X  |  X  |  X  |  X  |  X  |  X  |  X  |
+KLU               |       |       |  X  |     |     |  X  |  X  |     |     |
+UMFPACK v 4.4     |       |       |  X  |     |     |  X  |  X  |     |  X  |
+PARDISO v 1.0     |   X   |   X   |     |     |     |     |     |  X  |  X  |
+TAUCS v 2.2       |   X   |   X   |     |     |     |     |     |  X  |  X  |
+SUPERLU           |   X   |       |     |     |     |  X  |     |  X  |     |
+SUPERLU_DIST      |       |   X   |     |     |  X  |     |     |     |  X  |
+MUMPS             |       |       |     |     |  X  |     |     |     |     |
+DSCPACK           |   -   |   X   |  -  |  -  |  X  |  -  |  X  |  X  |  X  |
+SCALAPACK         |   -   |       |  -  |  -  |  X  |  -  |  -  |     |     |
+------------------+-------+-------+-----+-----+-----+-----+-----+-----+-----+

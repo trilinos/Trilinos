@@ -1,0 +1,29 @@
+## Required dependency on epetra
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+## Optional dependencies
+@HAVE_IFPACK_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
+@HAVE_IFPACK_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
+@HAVE_IFPACK_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+_IFPACK_INCLUDES= \
+  -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
+  $(EPETRA_INCLUDES) \
+  $(EPETRAEXT_INCLUDES) \
+  $(AZTECOO_INCLUDES) \
+  $(TEUCHOS_INCLUDES) \
+  $(AMESOS_INCLUDES)
+
+_IFPACK_LIBS= \
+  -L@abs_top_builddir@/src/ -lifpack \
+  $(AMESOS_LIBS) \
+  $(AZTECOO_LIBS) \
+  $(EPETRAEXT_LIBS) \
+  $(EPETRA_LIBS) \
+  $(TEUCHOS_LIBS)
+
+@USING_GNUMAKE_TRUE@IFPACK_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_IFPACK_INCLUDES))
+@USING_GNUMAKE_TRUE@IFPACK_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_IFPACK_LIBS))
+@USING_GNUMAKE_FALSE@IFPACK_INCLUDES = $(_IFPACK_INCLUDES)
+@USING_GNUMAKE_FALSE@IFPACK_LIBS     = $(_IFPACK_LIBS)

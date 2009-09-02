@@ -1,0 +1,24 @@
+EXTRA_ARGS=$@
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=NONE \
+-D CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++ \
+-D CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc \
+-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran \
+-D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
+-D CMAKE_CXX_FLAGS:STRING="-O3 -fprofile-arcs -ftest-coverage -fexceptions" \
+-D CMAKE_C_FLAGS:STRING="-fprofile-arcs -ftest-coverage -fexceptions" \
+-D CMAKE_Fortran_FLAGS:STRING="-O5" \
+-D CMAKE_EXE_LINKER_FLAGS:STRING="-fprofile-arcs -ftest-coverage" \
+-D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_PERFORMANCE_TESTS:BOOL=ON \
+-D Teuchos_ENABLE_BOOST:BOOL=ON \
+-D Teuchos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
+-D EpetraExt_BUILD_BDF:BOOL=ON \
+$EXTRA_ARGS \
+../../../../Trilinos

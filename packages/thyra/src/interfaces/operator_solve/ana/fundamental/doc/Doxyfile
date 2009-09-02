@@ -1,0 +1,32 @@
+#
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+@INCLUDE = thyra/src/interfaces/operator_vector/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+#
+# Package options
+#
+PROJECT_NAME           = "Thyra ANA Operator Solve Interfaces"
+OUTPUT_DIRECTORY       = ../src/interfaces/operator_solve/ana/fundamental/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/interfaces/operator_solve/ana/fundamental/doc/index.doc \
+                         ../src/interfaces/operator_solve/ana/fundamental \
+                         ./dirs.doc
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           = ../example/operator_solve
+EXAMPLE_PATTERNS       =
+IMAGE_PATH             =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+GENERATE_TAGFILE       = ../../common/tag_files/ThyraInterfacesOperatorSolveANAFundamental.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO

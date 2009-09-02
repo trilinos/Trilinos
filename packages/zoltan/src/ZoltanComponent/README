@@ -1,0 +1,151 @@
+
+README for ZoltanComponent
+--------------------------
+
+Jaideep Ray, 08/28/03. jairay@ca.sandia.gov
+
+QUICK INSTALL
+-------------
+
+ You need the GNU compilers set. Anything between 2.95 and 3.2 will work.
+ You need the CCA specification (classic) somewhere on your machine
+ You need the CCAFFEINE framework somewhere on your machine. If not,
+ get these from http://www.cca-forum.org/ccafe
+
+ Edit ZOLTAN_HOME/Utilities/Config/Config.linux_cca and fill in the 
+ CCA_SPEC_DIR and DCCAFE_DIR spaces.
+
+ NOTE : If you are not on a Sandia machine, you cannot run the NEMESIS tests;
+ you probably will not have the exodus library. Ensure that the NEMESIS_*
+ keys in Config.<arch> are commented out. <arch> is linux_cca.
+
+ In ZOLTAN_HOME/ do gmake ZOLTAN_ARCH=<arch> zoltan_component. Done.
+ As of 09/08/03, only arch=linux is supported. 
+
+DETAILS
+-------
+
+ The ZoltanComponent is a C++ wrapper around the Zoltan library of load-balancers.
+This C++ wrapper converts it into a CCA component (http://www.cca-forum.org/) of
+the "classic" kind. This component comes with two components to test the partitioner - 
+a mesh and a driver, both stored in TestComponents. Documentation regarding the Ports,
+and how this component can be used (i.e. the users-guide equivalent for the CCA component)
+is in UsersGuide_ZC.txt
+
+THE COMPILATION PROCESS
+-----------------------
+
+ In order that the components here may be compiled and linked, one needs :
+
+a) the CCA specification, the classic kind.
+
+b) the CCA framework, compiled at least to support classic interfaces. Both
+   (a) and (b) can be downloaded from http://www.cca-forum.org/ccafe. The 
+   component was tested with the version of ccafe as it stood on December 11th, 2002.
+
+Once (a) and (b) have been compiled and installed, one specifies the directories
+in which they have been installed in $(ZOLTAN_HOME)/Utilities/Config/Config.linux_cca.
+The particular fields that have to be filled in are :
+
+  (i) CCA_SPEC_DIR 
+ (ii) DCCAFE_DIR
+	
+One compiles the component by invoking "gmake ZOLTAN_ARCH=<arch> zoltan_component
+in $(ZOLTAN_HOME). This gmake invokes the configure script in $(ZOLTAN_HOME)/ZoltanComponent/
+which looks for (i)-(ii) in the Config.<arch> file. If these do not exist, it tries to
+search for them in certain canonical places. The net results of configure is the 
+formation of the file MakeIncl.ZoltanComponent.
+
+MakeIncl.ZoltanComponent contains certain user-configurable parameters that
+ZoltanComponent needs - e.g. where MPI is kept. Once this is formed, the process
+goes as follows :
+
+ a) gmake (in $ZOLTAN_HOME) invokes gmake in ZoltanComponent/.
+
+ b) gmake in ZoltanComponent/ invokes
+    
+      b.1) gmake in CCA_Wrapper. The real Makefile for the partitioner is here.
+      b.2) gmake in TestComponents. The real Makefile for the test components is here
+
+    Thus gmake in $ZOLTAN_HOME makes the entire set of components.
+
+ c) in case you wish to use the CCA components as plain libraries, they can be compiled
+    into static libraries. Once you have done a gmake ZOLTAN_ARCH=<arch> zoltan_component
+    in $ZOLTAN_HOME, step into ZoltanComponent/ and do "gmake static_lib" and 
+    "gmake test_static_lib". The static  libs will be made in CCA_Wrappers/ 
+    and TestComponents [libZoltanComponent.a, libDriver.a libMesh.a].
+
+NOTE : If you are not on a Sandia machine, you cannot run the NEMESIS tests;
+you probably will not have the exodus library. Ensure that the NEMESIS_*
+keys in Config.<arch> are commented out.
+
+
+THE TESTING PROCESS
+-------------------
+
+The components so formed (CCA_Wrapper/ZoltanLB.so, TestComponents/[Mesh.so,Driver.so]) are 
+tested automatically using a regresssion test script called 
+$(ZOLTAN_HOME)/test/test_zoltan_component. The tests are in $(ZOLTAN_HOME)/test/[ch_simple,
+ch_nograph,ch_vwgt,ch_ewgt,ch_grid20x19,ch_film,ch_hammond,ch_drake]. A given test consists
+of (a) a ccaffeine intput file, called ccaffeine_input.<partitioner_name> and (b)
+zdrive.inp.<partitioner_name>. ccaffeine_input tells the CCA framework which components to
+load and how to configure them into a functioning assembly of components and 
+zdrive.inp.<partitioner_name> consists of problem and load-balancing algorithmic inputs.
+Each test (ch_<test>) directory has answers/ which has the "correct" answers. 
+
+test_zoltan_component steps into each of these test directories, performs the tests and
+compares the answers with the correct ones. The results are reported in 
+test_zoltan_component.log. The tests and the partitioners used are :
+
+Algo \Test  simple  nograph	vwgt	ewgt	grid20x19	film	hammond	drake
+
+rcb		x	x	x	x	x	x	x	x	x	
+rib		x	x	x	x	x	x	x	x	x	
+hsfc		x	x	x	x	x	x	x	x	x	
+diffusion	x		x	x	x	x	x	x	
+partgeom	x	x	x	x	x	x	x	x	
+partkway-cyclic x		x	x	x	x	x	x	
+oct0		x	x	x	x	x	x	x	x		
+oct1		x	x	x		x	x	x	x		
+oct2		x	x	x		x	x	x	x		
+
+The arguments with which test_zoltan_component is invoked is in the header for the 
+test script.
+
+
+DIRECTORY LAYOUT
+----------------
+
+ZoltanComponent/ consists of 
+
+ a) The "partitioner" kept in CCA_Wrapper. This component also helps one to move
+    mesh points from one CPU to another as per the decomposition indicated by the
+    partitioner. 
+
+ b) ZoltanPorts/, a directory containing the Ports (interfaces) to be used by other 
+    people. People are NOT expected to pore through the guts in CCA_Wrapper/
+
+ c) TestComponents/ which contain a Driver and a Mesh component. They draw heavily from
+    $(ZOLTAN_HOME)/driver and indeed link in all the files there. Driver and Mesh can also
+    be used as examples of how the CCA component can be used. The Driver provides the 
+    "GoPort".
+
+ d) config, configure.in, configure and MakeIncl.ZoltanComponent.in : various tools to 
+    configure and compile the CCA component. The net output of the configuring process
+    is MakeIncl.ZoltanComponent, which contains parameters/setting which may be reasonably
+    expected to vary from machine to machine. The parameters are extracted out of
+    $(ZOLTAN_HOME)/Utilities/Config/Config.<arch>, as well as the CCA specification's
+    configuration and the CCA framework's configuration.
+
+  The additions to the Zoltan package are :
+
+  1. The software connected to the ZoltanComponent is contained entirely in the 
+     directory called ZoltanComponent/. It can be detached from the Zoltan distribution 
+     and configured and compiled entirely separately - however, you will have to specify 
+     a few thing in the configuring process [configure --help gives you the switches]. 
+
+  2. The testing part of ZoltanComponent is in $(ZOLTAN_HOME)/test. This consists of
+     test_zoltan_component regression test script and ccaffeine_input.<method>.in files
+     in ch_<test> directories. 
+
+  3.  A zoltan_component target has been added to $(ZOLTAN_HOME)/Makefile

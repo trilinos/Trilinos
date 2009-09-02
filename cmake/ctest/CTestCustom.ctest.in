@@ -1,0 +1,12 @@
+
+#
+# Store much larger test results and then trim down test results after
+# some time has passed.
+#
+
+SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 50000)
+
+SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 5000000)
+
+# Above: There is no real clear documentation but it would appear that
+# the units for these varaibles are in bytes, not kilobytes

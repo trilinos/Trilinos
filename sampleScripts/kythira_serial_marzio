@@ -1,0 +1,25 @@
+/home/msala/Trilinos/$1/configure \
+  F77=fort77 \
+  FFLAGS="-O2" \
+  --with-incdirs="-I/home/msala/include" \
+  --with-ldflags="-L/home/msala/lib" \
+  --with-libs="-lexpat -lmetis -llapack -lblas -lf2c -lm -lMAIN__" \
+  --prefix=/home/msala/Trilinos/LINUX_SERIAL \
+  --with-install="/usr/bin/install -p" \
+  --with-gnumake \
+  --disable-default-packages \
+  --disable-examples \
+  --disable-tests \
+  --enable-teuchos \
+  --enable-teuchos-expat \
+  --enable-epetra \
+  --enable-epetraext \
+  --enable-triutils \
+  --enable-galeri \
+  --enable-ifpack \
+  --enable-aztecoo \
+  --enable-amesos \
+  --enable-amesos-klu \
+  --enable-ml \
+  --enable-webtrilinos \
+  --with-ml_metis

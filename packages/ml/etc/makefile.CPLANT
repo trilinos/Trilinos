@@ -1,0 +1,9 @@
+OPT_FLAGS=-O4
+ARCH_FLAGS= $(OPT_FLAGS)
+CC=cc
+CXX=c++
+FC=f77
+RANLIB=touch
+LINKER=$(CC)
+ARCH_LIBS= -lUfor -lfor -lFutil -lm
+AR=ar

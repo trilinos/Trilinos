@@ -1,0 +1,19 @@
+/* src/Intrepid_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build with intrepid enabled */
+#cmakedefine HAVE_INTREPID_AMESOS
+
+/* Define if want to build with amesos enabled */
+#cmakedefine HAVE_INTREPID_AMESOS_UMFPACK
+
+/* Define if want to build intrepid-debug */
+#cmakedefine HAVE_INTREPID_DEBUG
+
+/* Define if want to build with intrepid enabled */
+#cmakedefine HAVE_INTREPID_EPETRA
+
+/* Define if want to build with intrepid enabled */
+#cmakedefine HAVE_INTREPID_EPETRAEXT
+
+/* Define if want to build with intrepid enabled */
+#cmakedefine HAVE_INTREPID_SACADO

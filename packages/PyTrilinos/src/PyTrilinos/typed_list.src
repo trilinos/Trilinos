@@ -1,0 +1,66 @@
+# -*- python -*-
+#
+# Define the class factory function
+def typed_list(elementType):
+    # These functions will be returned as class methods
+    def new(cls, *args):
+        return list.__new__(cls, args)
+    def check(self, *args):
+        for it in args:
+            if not isinstance(it, self.elementType):
+                raise TypeError, 'elements must be of type "%s", but received %s' \
+                      % (self.elementType.__name__, str(type(it)))
+    def init(self, *args):
+        self.check(*args)
+    def add(self, y):
+        self.check(*y)
+        list.__add__(self, y)
+    def iadd(self, y):
+        self.check(*y)
+        list.__iadd__(self, y)
+    def setitem(self, index, value):
+        self.check(value)
+        list.__setitem__(self, index, value)
+    def setslice(self, i, j, values):
+        self.check(*values)
+        list.__setslice__(self, i, j, values)
+    def append(self, value):
+        self.check(value)
+        list.append(self, value)
+    def extend(self, values):
+        self.check(*value)
+        list.extend(self, value)
+    def insert(self, value):
+        self.check(value)
+        list.insert(self, index, value)
+    # Class name
+    name = 'list_of_' + elementType.__name__
+    # Class docstring
+    doc = '%s([arg1 [, arg2 ...]])\n\n' \
+          'a list whose elements are type-checked to ensure that they\n' \
+          'are of type "%s"' 
+    doc = doc % (name, elementType.__name__)
+    # Class members
+    members = dict(__doc__      = doc,
+                   elementType  = elementType,
+                   __new__      = new,
+                   __init__     = init,
+                   __add__      = add,
+                   __iadd__     = iadd,
+                   __setitem__  = setitem,
+                   __setslice__ = setslice,
+                   append       = append,
+                   extend       = extend,
+                   insert       = insert)
+    # Return the manufactured class
+    return type(name, (list,), members)
+
+#
+# Create a series of typed list classes for each of the standard python types
+list_of_bool  = typed_list(bool )
+list_of_int   = typed_list(int  )
+list_of_float = typed_list(float)
+list_of_str   = typed_list(str  )
+list_of_tuple = typed_list(tuple)
+list_of_list  = typed_list(list )
+list_of_dict  = typed_list(dict )

@@ -1,0 +1,871 @@
+ \documentclass[12pt,relax]{EpetraUserGuide}
+ \usepackage{fancyvrb}
+\SANDsubtitle{}
+\title{\EpetraTM{} User Guide}
+
+\author{Michael A. Heroux, Robert J. Hoekstra and Alan Williams \\
+    \\
+        Sandia National Laboratories\\
+        P.O. Box 5800\\
+        Albuquerque, NM 87185-1110
+     }
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{\today} % Remove ``\today'' in final version
+
+
+\SANDnum{SAND2004-xxxx}
+\SANDprintDate{Printed July 2004}
+\SANDauthor{Michael A. Heroux \\
+    Computational Mathematics and Algorithms Department \\
+    \\
+    Robert J. Hoekstra \\
+    Computational Sciences Department \\
+    \\
+    Alan Williams \\
+    Alan's Group Name \\
+    \\
+     Sandia National Laboratories \\
+    P.~O.~Box 5800 \\
+    Albuquerque, NM 87185-1110}
+
+
+\SANDreleaseType{Unlimited Release}
+
+
+\SANDdistcategory{UC-999}
+% New commands
+
+\newcommand{\comm}{Epetra\_Comm}
+\newcommand{\serialcomm}{Epetra\_SerialComm}
+\newcommand{\mpicomm}{Epetra\_MpiComm}
+\newcommand{\mpismpcomm}{Epetra\_MpiSmpComm}
+\newcommand{\lbcomm}{Epetra\_LbComm}
+\newcommand{\map}{Epetra\_Map}
+\newcommand{\blockmap}{Epetra\_BlockMap}
+\newcommand{\serialdensevector}{Epetra\_SerialDenseVector}
+\newcommand{\intserialdensevector}{Epetra\_IntSerialDenseVector}
+\renewcommand{\vector}{Epetra\_Vector}
+\newcommand{\multivector}{Epetra\_MultiVector}
+\newcommand{\crsgraph}{Epetra\_CrsGraph}
+\newcommand{\crsmatrix}{Epetra\_CrsMatrix}
+\newcommand{\vbrmatrix}{Epetra\_VbrMatrix}
+\newcommand{\rowmatrix}{Epetra\_RowMatrix}
+\newcommand{\distributor}{Epetra\_Distributor}
+\newcommand{\directory}{Epetra\_Directory}
+\newcommand{\distobject}{Epetra\_DistObject}
+\newcommand{\linearproblem}{Epetra\_LinearProblem}
+\newcommand{\operator}{Epetra\_Operator}
+\newcommand{\fecrsmatrix}{Epetra\_FECrsMatrix}
+\newcommand{\fevbrmatrix}{Epetra\_FEVbrMatrix}
+\newcommand{\import}{Epetra\_Import}
+\newcommand{\export}{Epetra\_Export}
+
+\newtheorem{remark}{Remark}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+
+The \TrilinosTM{} Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+One special Trilinos package is \EpetraTM{}.  Epetra provides a collection of
+vector, graph and matrix objects that can be used on serial
+and parallel computers.  It is designed to make construction, use and redistribution
+of these objects as efficient and easy as possible.  Epetra objects are compatible with all
+other Trilinos packages, including all linear, nonlinear and eigen solvers and all
+preconditioners packages.  It also implements all Trilinos abstract
+interfaces.  Finally, Epetra
+provides C++ programmers easy access to the Zoltan~\cite{zoltan-ug}
+load balancing package, the BLAS~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}.
+
+This user guide is designed to address two types of users:
+(i) those who, in addition to using Epetra
+objects, are also constructing Epetra vector, graphs and matrices.  This group
+includes application developers who are constructing these objects for the purpose
+of solving linear, nonlinear and eigensystems.
+(ii) those who
+are primarily interested in using already-constructed Epetra objects, such as
+numerical algorithm developers who want to implement algorithms via
+operations on Epetra vector, graph and matrix objects.
+\end{abstract}
+
+
+\section*{Acknowledgement}
+The authors would like to acknowledge the support of the ASCI and LDRD
+programs that funded development of Epetra.
+
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+\begin{itemize}
+\item[Trilinos]
+The name of the project of which Epetra is one of the packages.  Also a Greek term which,
+loosely translated means ``a string of pearls,''
+meant to evoke an image that each Trilinos package is a pearl in its
+own right, but is even more valuable when combined with other
+packages.
+\item[Petra]
+A Greek term meaning ``foundation.''  Trilinos has three Petra
+libraries: Epetra, Tpetra and Jpetra that provide basic classes
+for constructing and manipulating matrix, graph and vector
+objects.  Epetra is the current production version that is
+split into two packages, one core and one extensions.
+\item[Comm Object]
+An instance of one of the Epetra Comm classes.  Presently we support
+an MPI, Serial and SMP/MPI implementation of the base \comm{} interface.
+\item[Map Object]
+Object-oriented algebraic preconditioner, compatible with
+Epetra and AztecOO.
+\end{itemize}
+
+NOTE: Add section on repeated use of Epetra objects.
+
+
+\section{Introduction}
+\label{Section:Introduction}
+
+Epetra is a collection of C++ classes that support the construction
+and use of common numerical linear algebra objects such as vectors,
+graphs and matrices.  It is primarily designed for irregular, parallel
+distributed memory computations, but can also be used on serial
+systems, and
+with structured data.  This user guide is intended to (i) introduce a new
+user to the basic features of Epetra, (ii) discuss the details of Epetra
+constructors, and (iii) illustrate the use of
+Epetra's advanced parallel data repartitioning capabilities to
+experienced users.  This document is not intended as a reference
+manual.  Detailed descriptions of Epetra classes and methods can be
+found online at the Trilinos Project home page~\cite{Trilinos-home-page}.
+
+
+\subsection{Overview of Major Epetra Classes and Features}
+\label{Section:Introduction:Overview}
+
+Epetra contains many classes and provides a wide spectrum of
+functionality within these classes.  However, there is a relatively
+short list of classes and features that are commonly used.  We discuss
+these here.
+
+\subsubsection{Communication Support}
+Epetra is written to run on parallel, distributed memory computers.  It accomplishes
+this via its abstract \comm{} class.  \comm{} is a pure virtual class,
+specifying the methods that Epetra needs in order to execute on a
+distributed memory computer.  However, \comm{} provides no
+implementation of these methods.  Instead, Epetra contains
+several derived classes that implement the \comm{} interface,
+providing the needed functionality.  In this way, Epetra is not
+explicitly dependent on any one communication library or interface.
+Presently we have four implementations of \comm{}:
+\begin{enumerate}
+\item {\bf \serialcomm{}: } Implements the \comm{}
+methods to run on a serial computer.  In this case, the majority of
+the methods have trivial implementations.  However, having the
+\serialcomm{} class allows the rest of Epetra classes to be used
+independently from the type of parallel computer being used and allows
+serial use of Epetra within a parallel application.
+\item {\bf \mpicomm{}: } Uses a user-provided MPI
+communicator to implement the \comm{} methods.  In fact, many of the
+\comm{} methods have a name similar to an existing MPI function.
+Since MPI is by far the most common communication interface and
+library used with Epetra, this bias to MPI function names is
+intentional.
+\item {\bf \mpismpcomm{}:} An experimental implementation that
+incorporates information about shared memory threads.  This
+implementation of \comm{} is intended for situations where threads,
+e.g.~pthreads, are created and retained as part of the call to the
+\mpismpcomm{} constructor.  These threads can then be used by any
+kernels in Epetra that have been instrumented to run with threads.  At
+this point, \mpismpcomm{} is purely for research purposes.
+\item {\bf \lbcomm{}: } A new version of \comm{} built using an MPI
+communicator and special tuned implementations of basic communication
+operations coming from the LB\_Comm library that is part of the Zoltan
+load balancing library~\cite{zoltan-ug}.
+\end{enumerate}
+
+By using an abstract interface to provide distributed memory support,
+Epetra allows for future development of novel parallel communication.
+Also, although MPI is by far the most commonly used implementation of
+\comm{}, Epetra has no explicit dependence on MPI and therefore MPI is
+not required to build Epetra.
+
+\subsubsection{Distributed Data Support}
+
+Coupled with distributed memory communications, Epetra also provides
+support for distributed data objects.  Users can constructed,
+manipulate and redistribute Epetra objects in a flexible and powerful
+way.  The primary classes that are used to describe the layout of
+distributed objects are the {\bf \blockmap{}} and {\bf \map{}} classes.  Both of
+these classes encode information about the distribution of {\it global
+IDs (GIDs)}. GIDs are integer labels that can be associated
+with elements of  Epetra distributed objects.  For example, the
+elements of an \vector{} are the vector values and each
+value of an \vector{} object is associated with a GID.
+Similarly, each row of an \crsgraph{}, an \crsmatrix{} and an
+\multivector{} is an element and is associated with a GID.  Multiple
+elements can be associated with the same GID, but each element has a
+unique GID.
+
+\subsection{Primary Linear Algebra Classes}
+Although there are many classes in Epetra, the core linear algebra classes are the
+vector, graph and matrix classes.  All of these classes implement the
+\distobject{} interface, and can therefore be redistributed across the
+parallel machine in a variety of ways.  However, a simple use of Epetra usually
+involves the construction of a single \comm{} object, which is passed
+in to the constructor of a single \map{} object and the resulting \map{}
+is then used to construct any number of vector and matrix objects,
+something we illustrate in Section~\ref{Section:FirstExample}.
+The primary Epetra linear algebra classes are as follows:
+\begin{enumerate}
+\item {\bf \vector{}: } Supports construction and use of distributed
+vectors of double-precision numbers.  Once constructed, \vector{}
+objects can be used in multiple ways.  Common operations such as
+norms, dot products and vector updates are supported by methods in
+this class.  Additional functionality is available via several
+extension techniques discussed later.
+\item{\bf \multivector{}: } An \multivector{} object is a collection
+of \vector{} objects (although \vector{} is actually implemented as a
+specialization of \multivector{}).  Specifically, an \multivector{}
+object is a collection of vectors with the same size and
+distribution.  This kind of object is useful for block algorithms and
+applications that manage multiple vectors simultaneously.  \vector{}
+and \multivector{} objects are understood by all Trilinos packages.
+\item{\bf \crsgraph{}:} Supports the construction and use of adjacency
+graphs.  These graphs are used to describe the pattern of Epetra
+sparse matrix classes and provide pattern-based information to
+load-balancing interfaces.  The graphs are also used to implement
+overlapping subdomain algorithms and a variety of other parallel
+algorithms.
+\item{\bf \crsmatrix{}:} Supports construction and use of distributed
+sparse matrix objects.  Once constructed, an \crsmatrix{} object can
+be used with any Trilinos solvers or preconditioners.  This class also
+supports common matrix and matrix-vector operations such as matrix
+scaling, matrix norms and matrix-vector multiplication.
+\item{\bf \vbrmatrix{}:} Although less frequently used than the
+\crsmatrix{} class, this class supports the construction of sparse
+matrices whose entries are dense matrices.  This type of matrix is
+frequently found in applications where multiple degrees of freedom are
+tracked at each mesh point.  When properly used, the \vbrmatrix{}
+class can offer substantial machine performance and algorithmic
+robustness improvements.
+
+\end{enumerate}
+
+\section{A First Example}
+\label{Section:FirstExample}
+Before proceeding with additional descriptive information, we
+introduce a simple example in this section in order to explicitly
+illustrate a straight-forward use of Epetra.  Although this example only
+starts to tap the capabilities of Epetra, we hope the reader finds it
+useful.
+
+The example code, listed in Figures~\ref{Figure:FirstExample}
+and~\ref{Figure:PowerMethod}, is the main program driver and
+a simple implementation of the Power Method~\cite{GoluVanL96} for computing the dominant
+eigenvalue and associated eigenvector of a given matrix,
+respectively.  In the remainder of this section we proceed with a
+description of the code in these figures.
+\begin{figure}
+\begin{center}
+\input{Ex1}
+\end{center}
+\caption{\label{Figure:FirstExample} Simple Driver for Power Method Example}
+\end{figure}
+
+\subsection{Explanation of Figure~\ref{Figure:FirstExample}}
+
+\paragraph{Lines 1--2}
+Include system header files needed for screen output and system
+functions.
+\paragraph{Line 3}
+Include the Epetra\_config.h file.  This file contains macros
+definitions that were defined during the configuration process.  In
+particular, the macro HAVE\_MPI will be defined or undefined in this
+file, depending on whether Epetra was built in MPI mode or not.  We
+will use HAVE\_MPI below to determine if our example code should be
+compiled with MPI support or not.
+\paragraph{Lines 4--9}
+Include the appropriate implementation of the \comm{} class.  If
+Epetra was built in MPI mode, the macro ``HAVE\_MPI'' will be defined
+and this example will be built with MPI support.  If not, then the
+example will be built in serial mode.  Note that these lines of code
+ and lines 18--23 are the only difference between a serial and distributed memory
+version of the example.
+\paragraph{Lines 10--14}
+Include the other Epetra header files needed to use Epetra classes.
+It is a good practice to explicitly include header files for all
+Epetra classes you explicitly use and only those header files.
+\paragraph{Line 16}
+Declare prototype for power\_method function.
+\paragraph{Line 17}
+Start of main program.  Note that argv[1] will be used to pass in the
+problem size.
+\paragraph{Lines 18--24}
+Depending on whether or not Epetra was built in MPI
+mode\footnote{Whether or not Trilinos, and Epetra as a Trilinos package, is built
+in MPI mode is determined by how the Trilinos (or Epetra) {\tt
+configure} script in invoked.  If no MPI-related arguments are passed
+to the configure script, then packages are built in serial mode only.
+If one or more MPI options are invoked, then packages are built with
+MPI support (in addition to serial support).}, MPI will be initialized
+and an \mpicomm{} object will be constructed, or an \serialcomm{}
+object will be constructed.  Please note that, in principle, the serial
+version of this example would work, even if Epetra were built in MPI
+mode.  Serial mode is always available.
+
+Line 24 prints the Comm object to cout.  Most Epetra classes have
+implemented the ostream << operator so that an instance of an Epetra
+object can be viewed.  Sometime the volume of output can be very
+large, so some care is needed when using this feature.
+\paragraph{Lines 25--30}
+This example accepts a single integer argument
+specifying the number of equations that should be used.  These lines
+of code capture that number and put it into NumGlobalElements.
+\paragraph{Lines 31--33}
+Constructs an \map{} object that has NumGlobalElements elements spread
+across the parallel (or serial) machine.  The second argument (a
+``0'') indicates that our global indices are zero-based.  Fortran
+users would typically pass in a ``1'' here.  The third argument is the
+Comm object we just built.
+\paragraph{Line 35}
+Once an \map{} object is constructed, we can query it for how many
+elements of the map are on the calling process\footnote{For readers
+who are not familiar with a single-program, multiple data (SPMD)
+programming model, it may be useful to read a bit about it.  Typing
+``SPMD tutorial'' into a web search engine should be a sufficient
+starting point.}.  In this way, the remainder of our code can operate
+independent of how data is distributed.
+\paragraph{Lines 37--57: Preview}
+The majority of executable code in this sample driver is devoted to
+constructing our sparse matrix.  At the end of this code segment we
+will have constructed a diagonal with each processor owning roughly
+the same number of rows and columns.  All diagonal values will be set
+to 2.0, except for the very first diagonal value, which will be set to
+4.0.  Since our matrix is diagonal, its eigenvalues are the diagonal
+values and the dominant eigenvalue is 4.0.
+\paragraph{Line 37}
+Instantiates (creates) an \crsmatrix{}.  The first argument tells the
+constructor whether or not data passed in to this object should be
+copied (user values and indices will be copied to internal storage) or
+viewed (user values and indices will be pointed to by this object and
+the user {\it must} guarantee the integrity of that data).  View mode
+is available across many Epetra classes.  In general, this is a very
+dangerous practice.  However, in certain very important situations, it
+is essential to have this mode.  This is especially true when using
+Epetra with Fortran, or when accepting matrix data from other parts of
+application where it is too expensive to replicate the data storage.
+
+The second argument is the \map{} object we just constructed.  The
+third argument is an advisory value telling the constructor
+approximately how many nonzero values will be defined for each row of
+the matrix\footnote{getting this value wrong does not
+affect the correctness of results, but may affect performance and
+efficient use of memory}.  We are constructing a diagonal matrix, so the value ``1''
+is appropriate.
+
+At this point the matrix is an empty ``bucket'' ready to receive
+matrix values and indices.  Also, at this point, most of the methods
+in the \crsmatrix{} cannot be called successfully for this object.
+\paragraph{Lines 39--41}
+Here we create two helper objects that not really necessary for such a
+simple example, but which illustrate how examples that are more
+complex might
+use the \serialdensevector{} and \intserialdensevector{} classes
+effectively.
+Line 39 allocates a vector of length one to hold the diagonal value
+we will insert into each row.  Line 40 sets the value to 2.0, which is
+the value we will assign to all the diagonals of our matrix.  We will
+later replace the first diagonal value with a value of 4.0.
+\paragraph{Lines 42--48}
+These lines insert values and indices into the matrix we just
+instantiated.  Our matrix is very simple--a single diagonal entry per
+row--so these lines may seem too complicated, but we are illustrating
+a process that is effective for more realistic settings.
+The \crsmatrix{} class is
+designed to accept matrix entries in a variety of ways.  However,
+there is a strong bias in the interface to accept multiple entries in
+a specified row.  Values for any matrix entry can be submitted one or more times,
+with subsequent values being added to any existing value.
+Section~\ref{Section:ConstructingCrsMatrices} discusses these issues
+in detail.
+
+Line 42 loops over all elements
+owned by the calling processor.  Line 43 get the global ID associated
+with the current loop index.  This value will be passed in as the
+first argument to the
+InsertGlobalValues() method to indicate the global row into which the calling
+processor is inserting values.  Line 44 sets the column index to the
+same as the row index because we have only a diagonal value.
+
+Lines 46--47 is a call the the InsertGlobalValues() method on our matrix
+object A.  The first argument is the ID of the global row that the
+calling processor will add values to.  The second argument indicates
+how many values we are passing in on this call.  We are using the
+Length() method of the \serialdensevector{} class to provide this
+information.  The third argument is a pointer to an array of doubles
+that are the values we are passing in,
+provided by the Values() method from \serialdensevector{}.  Finally
+the last argument is a pointer to an array of ints that are the column
+indices we are passing in.  Because we are only passing in a single
+value per row, both of the last arguments to InsertGlobalValues() are trivial
+uses of arrays, but illustrate a general process.
+\paragraph{Lines 49--55}
+The last modification we want to make to our matrix is to put a value
+of 4.0 in the first diagonal entry.  We accomplish this by having each
+processor query the map to see the processor owns GID 0.  Only the
+processor that does own that GID will execute the remaining lines of
+code in this segment.  Lines 50--52 set up the value and index
+information.  Lines 53--54 are a call to ReplaceGlobalValues(), which
+will replace existing values in our matrix with the new values we submit.
+\paragraph{Line 57}
+After all values are submitted to our matrix, we finally call the
+method FillComplete().  This method performs all of the analysis
+on our matrix required for efficient execution on a parallel
+computer.  Part of the procces involves changing the index values of
+the matrix to a local index system on each processor.  This will be
+described in greater detail in
+Section~\ref{Section:ConstructingCrsMatrices}.
+\paragraph{Lines 59--60}
+After constructing our matrix, we call the power method function,
+passing in our matrix.  Then we print out the eigenvalue estimate that
+was returned.
+\paragraph{Lines 61--63}
+If our code was compile in MPI mode, we need to call MPI\_Finalize()
+for proper clean up.
+\paragraph{Line 64} Program exit.
+
+\subsection{Explanation of Figure~\ref{Figure:PowerMethod}}
+
+\begin{figure}
+\begin{center}
+\input{Ex1a}
+\end{center}
+\caption{\label{Figure:PowerMethod} Simple Power Method Routine}
+\end{figure}
+
+\paragraph{Lines 1--2}
+Include system header files needed for screen output and system
+functions.
+\paragraph{Lines 3--6}
+Include Epetra header files needed to use Epetra classes.
+It is a good practice to explicitly include header files for all
+Epetra classes you explicitly use and only those header files.
+\paragraph{Line 8} Function declaration.  All information required for
+efficient parallel execution is associated with the matrix A that we
+pass in.
+\paragraph{Lines 10--12}
+Define parameter values needed for the power method iterations.  On
+exit, lambda will be returned as the approximate eigenvalue.  We
+arbitrarily define the maximum number of iterations to be ten times
+the dimension of our problem.  We arbitrarily define the tolerance to
+be 1.0E-10.
+\paragraph{Lines 14--16}
+Here we define vectors needed to execute the power method.  The
+\vector{} constructor requires an \map{}.  We use the same map that
+was used to construct the matrix.  Note that it is not necessary that
+the distribution of vectors matches the distribution of matrices.  In
+other words, we could use a different map to construct these vectors
+as long as all of the GIDs required for matrix operations were present
+in the vector map.  This topic is discussed in greater detail in
+Section~\ref{Section:MapsAndMatrices}.  By constructing the vectors using
+the row map of our matrix, we are forcing these vectors to be
+distributed on the parallel machine conformally with the rows of the
+matrix.  In many common situations, this is often the best
+distribution.
+\paragraph{Line 18}
+The Random() method fills the associated object with pseudo-random
+numbers.  This method is actually part of the \multivector{} class,
+but since \vector{} is a specialization of \multivector{}, this method
+is also available for \vector{} objects.
+\paragraph{Lines 20--22}
+Define variables needed for the iteration.
+\paragraph{Line 23} While loop requiring at least one iteration and
+iterating until niters is reach or the residual is less than the
+tolerance.
+\paragraph{Lines 24--27}
+These four lines use some of the methods available in the \vector{}
+and \crsmatrix{} classes to implement the power method.  Line 24
+computes the 2-norm of the vector z and returns it in the variable
+normz.  Note that the Norm2() method is actually defined in the
+\multivector{} class.  Norm2() returns an array of doubles containing
+the 2-norm of each vector in the \multivector{} object.  An \vector{} is
+an \multivector{} with one vector.  Therefore we can use the Norm2()
+interface by passing the address of a double (in this case
+``\&normz'') as an array of doubles of length one.
+
+Line 25 computes q, which is z normalized in the 2-norm.  Line 26
+computes z = A*q.  The first argument is a bool set to false, asserting
+that we are not multiplying by the transpose of A.  Line 27 computes
+the dot-product of q and z and puts the result in the variable
+lambda.  Like the Norm2() and Scale() methods, Dot() is a method in
+the \multivector{} class
+\paragraph{Lines 28--36}
+This segment of code is not essential to the power method.  It
+periodically (every 10 iterations, and on the final iteration) checks
+the 2-norm of the difference between A*q and lambda*q.  If lambda and
+q are an eigenpair, the difference will be zero, so the norm of the
+residual is a reasonable measure of how close we are to convergence.
+The only new issue worth mentioning here is to note that the if statement in
+line 32 is only around the output stream.  It makes sure that only one
+processor generatest the output message.  A user might be tempted to
+put the if statement on line 28 since the computations in this segment
+do affect the overal iteration.  However, the calls to Update() and
+Norm2() on lines 30 and 31 require all processors to participate.  If
+processor 0 were the only processor to execute these methods, Update()
+would produce incorrect results and Norm2() would cause the user
+program to stall.  More details on these topics can be found in
+Section~\ref{Section:Troubleshooting} on troubleshooting.
+\paragraph{Lines 37--39}
+Line 37 increments the iteration count.  Line 39 our approximation to
+the dominant eigenvalue.  Note that the vector q is our associated
+approximate eigenvector, but for this example we do not return it.
+
+\section{Epetra Communication Classes}
+
+In Section~\ref{Section:Introduction:Overview} we briefly discusses
+the Epetra communication classes.  In this section we present more
+details.  The class \comm{} is a {\it pure virtual class} sometimes
+called an {\it interface} that
+specifies how most of Epetra's classes interact with a parallel
+machine.  The advantages of using an interface are:
+\begin{enumerate}
+\item We can have mulitple implementations of the interface, including future
+implementations that we did not anticipate.
+\item Explicit dependencies on outside libraries, e.g., MPI, are
+restricted to \comm{} implementation classes.
+\item A trivial serial implementation of \comm{} allows Epetra to be
+built without any third-party communication library, which is
+sometimes very important.
+\end{enumerate}
+
+\subsection{\comm{} Overview}
+
+The \comm{} interface specifies the complete set of functions that Epetra need
+for parallel {\it single program multiple data} (SPMD) execution.
+Table~\ref{Table:CommMethods} lists the methods we need.
+\begin{table}
+\scriptsize
+\begin{center}
+\begin{tabular}{ | p{15cm} | }
+\hline {\bf Barrier Methods}
+\verb!void  Barrier()!\\
+  \comm{} Barrier function.\\
+\\
+{\bf Broadcast Methods }
+\verb!int  Broadcast (double *MyVals, int Count, int Root)!\\
+  \comm{} Broadcast function. \\
+\\
+\verb!int  Broadcast (int *MyVals, int Count, int Root)!\\
+  \comm{} Broadcast function. \\
+\\
+{\bf Gather Methods }
+\verb!int  GatherAll (double *MyVals, double *AllVals, int Count)!\\
+  \comm{} All Gather function. \\
+\\
+\verb!int  GatherAll (int *MyVals, int *AllVals, int Count)!\\
+  \comm{} All Gather function. \\
+\\
+{\bf Sum Methods }
+\verb!int  SumAll (double *PartialSums, double *GlobalSums, int Count)!\\
+  \comm{} Global Sum function. \\
+ \\
+\verb!int  SumAll (int *PartialSums, int *GlobalSums, int Count)!\\
+  \comm{} Global Sum function. \\
+ \\
+{\bf Max/Min Methods }
+\verb!int  MaxAll (double *PartialMaxs, double *GlobalMaxs, int Count)!\\
+  \comm{} Global Max function. \\
+ \\
+\verb!int  MaxAll (int *PartialMaxs, int *GlobalMaxs, int Count)!\\
+  \comm{} Global Max function. \\
+ \\
+\verb!int  MinAll (double *PartialMins, double *GlobalMins, int Count)!\\
+  \comm{} Global Min function. \\
+ \\
+\verb!int  MinAll (int *PartialMins, int *GlobalMins, int Count)!\\
+  \comm{} Global Min function. \\
+ \\
+{\bf Parallel Prefix Methods }
+\verb!int  ScanSum (double *MyVals, double *ScanSums, int Count)!\\
+  \comm{} Scan Sum function. \\
+ \\
+\verb!int  ScanSum (int *MyVals, int *ScanSums, int Count)!\\
+  \comm{} Scan Sum function. \\
+ \\
+{\bf Attribute Accessor Methods}
+\verb!int  MyPID ()!\\
+  Return my process ID. \\
+ \\
+\verb!int  NumProc ()!\\
+  Returns total number of processes. \\
+ \\
+{\bf Gather/Scatter and Directory Constructors }
+\verb!Epetra_Distributor *  CreateDistributor ()!\\
+  Create a distributor object. \\
+ \\
+\verb!Epetra_Directory *  CreateDirectory (const Epetra_BlockMap &Map)!\\
+  Create a directory object for the given \blockmap{}. \\
+ \\
+\hline
+\end{tabular}
+\caption{\comm{} Methods}
+\label{Table:CommMethods}
+\end{center}
+\end{table}
+Most of the methods are essentially equivalent to standard MPI functions.
+This is no accident, since MPI is the most commonly used implementation of
+\comm{}.  The most notable additions to common MPI functions are the two
+''create'' methods which, when called must return a distributor or directory
+object that is compatible with the implementation of \comm{}.  We discuss this
+in more detail now.
+
+Although \comm{} is the primary abstract parallel machine class, there are two
+other very important classes that Epetra uses for SPMD computations:
+\distributor{} and \directory{}.
+
+\distributor{} is used to support sparse all-to-all
+communications that are required for unstructured parallel sparse matrix calculations.
+For example, with a row-based distribution of a sparse matrix $A$,
+a standard sparse matrix vector multiplication kernel to compute $y=Ax$
+will typically require elements of $x$ from other processors be sent to a processor
+that has nonzeros in a corresponding column of $A$.  However, for most applications
+only a handful of $x$ values needs to be sent to any one processor, so each processor
+only communicates with a subset of all processors.  For many applications, the
+communication pattern for these operations is used many times.  Therefore,
+the \distributor{} object pre-computes the communication pattern required for
+processor to communicate with its required neighbors, and then, as often as needed,
+the transfer operation is done later, using the pre-computed pattern.  Epetra provides
+user-level support for these operations via the \import{} and \export{} classes, discussed
+in Section~\ref{Section:ImportExport}.
+
+\directory{} is used to support the arbitrary index labeling features of Epetra.  Epetra
+distributed objects are partitioned across the parallel machine using arbitrary integer
+indices.  For example, a 100-element vector could be distributed across a 4-processor machine
+putting element 0 through 24 on PE 0, 25 through 49 on PE 1, 50 through 74 on PE 2 and
+75 through 99 on PE 3.  However, if the vector is associated with a grid that was automatically
+generated by a meshing tool, then the mesh node IDs might not be labeled contiguously or
+may not be assigned contiguously to a processor.  In this case, it is very convenient to use
+the mesh node IDs for the vector IDs.  Furthermore, arbitrary index labeling plays an important
+role in parallel data repartitioning capabilities provided by the \import{} and \export{} classes.
+The \directory{} class provides the support needed for arbitrary index labeling as follows:
+\begin{enumerate}
+\item \directory{} Setup: At construction time, each processor registers each of the
+index labels (referred to as global IDs or GIDs in Section~\ref{Section:maps})
+that it owns with the directory.  The directory
+itself is a distributed object with a known distribution.
+\item \directory{} Query: After construction, if a processor wants to know which other processor
+owns a particular GID, it queries the \directory{} object for the owner's processor ID.
+\end{enumerate}
+In Section~\ref{Section:maps} we discuss directories in relationship to \map{} objects, since
+\directory{} objects are generated by \map{} objects.
+
+\begin{remark}
+To provide an alternative implementation of Epetra's parallel machine interface,
+three abstract interfaces must be addressed: \comm{}, \distributor{} and \directory.
+\end{remark}
+
+\begin{remark}
+To provide an improved implementation of one or a handful of \comm{} methods,
+it is possible to create a new class, say \verb!MyFastMpiComm!, that derives
+from \mpicomm{} and implements only the methods that you want to replace.
+\end{remark}
+
+\subsection{\comm{} Implementations}
+
+Presently the two most commonly used \comm{} implementations are
+\serialcomm{} and \mpicomm{}.  \serialcomm{} is used on serial
+machines, for debugging and for creating and using serial object
+within a parallel task.  \mpicomm{} is the most commonly used
+implementation for production applications.  Experimental versions
+of \comm{} have been developed for using threads with MPI
+(\mpismpcomm) and using an optimized library LBCOMM from Zoltan.
+Future work may include a UPC~\cite{UPC} version and a version to
+support fault-tolerant computations.
+\begin{figure}
+  % Requires \usepackage{graphicx}
+  \includegraphics{class_Epetra_Comm_inherit_graph.pdf}\\
+  \caption{Epetra Comm Class Inheritance Graph}\label{class_Epetra_Comm_inherit_graph}
+\end{figure}
+
+\section{Epetra Maps and BlockMaps}
+\label{Section:maps}
+
+\map{} objects are used to describe the layout of distributed
+objects.  The \map{} class is actually a specialization of an
+\blockmap{}.  Specifically, an \map{} object {\it isa} \blockmap{}
+with a constant block size of one.  However, to simplify discussion,
+we first introduce the \map{} class.
+
+\subsection{\map{} Overview}
+An \map{} object contains all information needed to work with
+distributed objects.  Its primary data are a collection of {\it
+elements}.  Each element of a map has a global ID (GID) and a local ID
+(LID).  Elements are ordered on each processor by their LIDs.  On each
+processor, LID values range from 0 to the number of elements on the
+processor.  The GIDs
+of an \map{} are a set of signed integer values.  GIDs are used as
+labels and need not be contiguous, ordered or uniquely associated with
+a processor.  There are several map constructors that support varying
+complexity in assigning GIDs to elements on a processor.  The example
+code in Figure~\ref{Figure:MapExamples} illustrate use of the three
+\map{} constructors (there is also a copy constructor).  We also
+summarize them as follows:
+\begin{enumerate}
+\item {\bf Uniform linear map:}  The simplest form of map is
+constructed by specifying the total number of elements that will be in
+the map.  Given this value the \map{} constructor will assign
+approximately the same number of elements to each processor and assign
+GIDs to each element in a contiguous, increasing order starting with
+processor 0.  Figure~\ref{Figure:MapExamples} shows the details for a
+map with 100 elements on 3 processors.
+\item {\bf Non-uniform linear map:}  This form of map is a small
+generalization of the previous case,
+where the calling processor specifies the number of
+elements it want assigned to itself.  The constructor will determine
+the total number of elements in the map and will assign GIDs in a
+contiguous, increasing order.
+\item {\bf General map:} The most general map is constructed by each
+processor passing in a list of GIDs to the \map{} constructor.  The
+map will be constructed with the number of specified elements and the
+exact set of GIDs passed in.  In this case, the calling processor may
+define the GIDs to be any integer values.  No order is assumed, and
+repeated values are allowed.  Also, no range of integer values is
+assumed.  This most general form of map allows us to support very
+flexible data communication and redistribution capabilities.
+\end{enumerate}
+\begin{figure}
+\begin{center}
+\input{ExMaps}
+\end{center}
+\caption{\label{Figure:MapExamples} Three \map{} constructor examples.}
+\end{figure}
+
+\map{} (or more precisely \blockmap{}) provides the foundation for Epetra
+distributed objects.  In particular, \map{} (or \blockmap{}) is a required
+input argument to the \distobject{} class, which is a base class for all Epetra
+distributed objects.  When an Epetra distributed object is constructed, each \map{}
+element is associated with a packet of data for the distributed object.
+Table~\ref{Table:PacketDefinitions} lists the packet definitions for the most
+common Epetra distributed objects.
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{7.5cm} | p{7.5cm} | }
+\hline\hline
+Type of Distributed Object & Packet Definition \\\hline
+\vector{} & Single vector value \\\hline
+\multivector{} & Row of vector values \\\hline
+\crsgraph{} & List of row indices for one graph row. \\\hline
+\crsmatrix{} & List of row indices and values for one matrix row. \\\hline
+\hline
+\end{tabular}
+\caption{Packet Definitions for Various Epetra Distributed Objects}
+\label{Table:PacketDefinitions}
+\end{center}
+\end{table}
+
+
+\subsection{Global and Local IDs}
+
+On each processor a \blockmap{} object contains a list of elements.  Each
+processor can have zero or more elements in the \blockmap.  Each \blockmap{}
+element has three attributes:
+\begin{enumerate}
+\item Local identifier (LID): An integer value in the range 0 to number of elements
+on the processor. Elements are order on the processor by LID in increasing order.
+\item Global identifier (GID): A signed integer value that is assigned by the user via
+one of several constructors.  GIDs need not be unique, ordered or contiguous.
+\item Size: A positive integer value that reflects the relative size of an element.  \map{}
+objects are \blockmap{} objects where all elements have size 1.
+\end{enumerate}
+
+%\subsection{Constructing Maps}
+%\subsubsection{Uniform Maps}
+%\subsubsection{Linear Maps}
+%\subsubsection{General Maps}
+
+\subsection{\blockmap{} Objects}
+
+Most of our discussion so far has focused on \map{} objects for simplicity.  \blockmap{}
+provide another level of structure by allowing the association of a {\it size} with each
+element.  The interpretation of the size depends on the type of \distobject{} that is
+being considered.  Table~\ref{Table:SizeDefinitions} shows the interpretation for several
+common \distobject{} classes.
+\begin{table}
+\begin{center}
+\begin{tabular}{ | p{7.5cm} | p{7.5cm} | }
+\hline\hline
+Type of Distributed Object & Size Definition \\\hline
+\vector{} & Number of vector values associated with the element \\\hline
+\multivector{} & Number of multivector rows associated with the element \\\hline
+\crsgraph{} & Row (column) map: Number of rows (columns associated with the element. \\\hline
+\crsmatrix{} & Row (column) map: Number of rows (columns associated with the element. \\\hline
+\hline
+\end{tabular}
+\caption{Size Definitions for Various Epetra Distributed Objects}
+\label{Table:SizeDefinitions}
+\end{center}
+\end{table}
+
+As mentioned above, \map{} is a specialization of \blockmap{}, a \blockmap{} where the
+element sizes are all 1.  \blockmap{} becomes important in situations where multiple data values
+are closely associated with each other.  The classic example involves tracking multiple degrees of
+freedom (DOFs) at a single mesh point in a problem domain.  In this situation, the size attribute of an
+\blockmap{} can be used to record how many DOFs are associated with each mesh point.  In some situations
+the number of DOFs associated with each mesh point is constant across the whole mesh.  \blockmap{} has
+a constructor for this situation.  In the most general situation, the DOFs vary across the mesh, so that
+a variable element size is required.  This is the most general case.
+\section{Epetra Vectors}
+\subsection{Constructing \vector{} Objects}
+\subsection{Using \vector{} Objects}
+\section{Epetra MultiVectors}
+\subsection{Constructing \multivector{} Objects}
+\subsubsection{Using \multivector{} Objects}
+\section{All About Epetra Maps, Matrices and Graphs}
+\label{Section:MapsAndMatrices}
+
+\section{Constructing \crsmatrix{} Objects}
+\label{Section:ConstructingCrsMatrices}
+
+
+\section{ Advanced topics}
+\subsection {Using \crsmatrix{} Objects as Column Matrices}
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{EpetraUserGuide}
+\addcontentsline{toc}{section}{References}
+
+\appendix
+\section{Troubleshooting}
+\label{Section:Troubleshooting}
+\subsection{Conditional Code, Incorrect Results and Stalled Programs}
+Many methods in Epetra distributed classes (those derive from the
+\distobject{} class) require all processors to
+participate in the method call.  For example, to compute the update of
+an \vector{}, all processors that own a portion of the vector must
+call the Update() method.  When calling a Norm2() method or something
+similar, all processors, regardless of whether they own any portion of
+a vector, must participate in the Norm2() call.
+Figure~\ref{Figure:HungCode} illustrates
+several versions of a code segment that computes the 2-norm of a residual
+and prints it from processor 0.  Only the final version is correct.
+\begin{figure}
+\begin{center}
+\input{HungCode}
+\end{center}
+\caption{\label{Figure:HungCode} Common errors with conditional code}
+\end{figure}
+
+\section{Common Bugzilla Tasks}
+\label{Section:Bugzilla}
+
+
+\end{document}

@@ -1,0 +1,15 @@
+#Script for building the Zoltan tarball on a 64-bit Linux workstation
+#with OpenMPI.
+#This script builds the Zoltan tarball from the Zoltan package directory.
+#Assuming running script from 
+#/Net/local/homes/kddevin/code/zoltan_v3.1/Obj_DIST.
+set path=(/usr/local/bin $path)
+setenv CFLAGS -m64
+setenv CXXFLAGS -m64
+setenv CPPFLAGS -m64
+setenv FFLAGS -m64
+
+../configure -C \
+  --prefix=/Net/local/homes/kddevin/code/zoltan_v3.1/OBJ_DIST \
+  --with-gnumake |& tee OUTPUT.C
+make dist |& tee OUTPUT.D

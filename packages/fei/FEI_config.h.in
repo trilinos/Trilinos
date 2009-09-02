@@ -1,0 +1,130 @@
+/* FEI_config.h.in.  Generated from configure.ac by autoheader.  */
+
+
+#ifndef _FEI_config_h_
+#define _FEI_config_h_
+
+
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
+/* Define to build with fei-amesos support enabled */
+#undef HAVE_FEI_AMESOS
+
+/* Define to build with fei-aztecoo support enabled */
+#undef HAVE_FEI_AZTECOO
+
+/* Define to build with fei-epetra support enabled */
+#undef HAVE_FEI_EPETRA
+
+/* Enable use of FETI library */
+#undef HAVE_FEI_FETI
+
+/* Define to build with fei-ifpack support enabled */
+#undef HAVE_FEI_IFPACK
+
+/* Define to build with fei-ml support enabled */
+#undef HAVE_FEI_ML
+
+/* Define to build with fei-teuchos support enabled */
+#undef HAVE_FEI_TEUCHOS
+
+/* Define to 1 if you have the <fstream> header file. */
+#undef HAVE_FSTREAM
+
+/* Define to 1 if you have the <iomanip> header file. */
+#undef HAVE_IOMANIP
+
+/* Define to 1 if you have the <iosfwd> header file. */
+#undef HAVE_IOSFWD
+
+/* Define to 1 if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* Define to not build with fei-amesos support enabled */
+#undef HAVE_NO_FEI_AMESOS
+
+/* Define to not build with fei-aztecoo support enabled */
+#undef HAVE_NO_FEI_AZTECOO
+
+/* Define to not build with fei-epetra support enabled */
+#undef HAVE_NO_FEI_EPETRA
+
+/* Define to not build with fei-ifpack support enabled */
+#undef HAVE_NO_FEI_IFPACK
+
+/* Define to not build with fei-ml support enabled */
+#undef HAVE_NO_FEI_ML
+
+/* Define to not build with fei-teuchos support enabled */
+#undef HAVE_NO_FEI_TEUCHOS
+
+/* <fstream> not available */
+#undef HAVE_NO_FSTREAM
+
+/* <iomanip> not available */
+#undef HAVE_NO_IOMANIP
+
+/* <iosfwd> not available */
+#undef HAVE_NO_IOSFWD
+
+/* <iostream> not available */
+#undef HAVE_NO_IOSTREAM
+
+/* <sstream> not available */
+#undef HAVE_NO_SSTREAM
+
+/* <time.h> not available */
+#undef HAVE_NO_TIME_H
+
+/* Define to 1 if you have the <sstream> header file. */
+#undef HAVE_SSTREAM
+
+/* define if std::ios_base::fmtflags is supported type */
+#undef HAVE_STD_IOS_BASE_FMTFLAGS
+
+/* Define if want to build tests */
+#undef HAVE_TESTS
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* define if the compiler provides unordered associative containers */
+#undef HAVE_UNORDERED
+
+
+/* we use '#if 0' to avoid defining PACKAGE_BUGREPORT */
+#if 0
+#undef PACKAGE_BUGREPORT
+#endif
+
+
+/* we use '#if 0' to avoid defining PACKAGE_NAME */
+#if 0
+#undef PACKAGE_NAME
+#endif
+
+
+/* we use '#if 0' to avoid defining PACKAGE_STRING */
+#if 0
+#undef PACKAGE_STRING
+#endif
+
+
+/* we use '#if 0' to avoid defining PACKAGE_TARNAME */
+#if 0
+#undef PACKAGE_TARNAME
+#endif
+
+
+/* we use '#if 0' to avoid defining PACKAGE_VERSION */
+#if 0
+#undef PACKAGE_VERSION
+#endif
+
+
+#endif
+

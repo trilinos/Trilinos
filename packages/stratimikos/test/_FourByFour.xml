@@ -1,0 +1,7 @@
+<ParameterList>
+  <Parameter name="Matrix File" type="string" value="FourByFour.mtx"/>
+  <ParameterList name="Linear Solver Builder">
+  </ParameterList>
+  <ParameterList name="LinearOpWithSolveTester"/>
+</ParameterList>
+

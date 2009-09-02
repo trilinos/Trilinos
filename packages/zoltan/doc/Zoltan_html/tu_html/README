@@ -1,0 +1,5 @@
+The Zoltan tutorial was written in LaTeX, but can be converted to html.
+The Makefile assumes latex2html is available.
+Just type 'make' and you should get
+  contents.pdf - the pdf version for printing
+  tutorial.html - html version for web browsing

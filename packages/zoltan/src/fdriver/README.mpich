@@ -1,0 +1,15 @@
+I had the darndest time getting MPICH to work on Linux because they use command
+line arguments, which is not standard in Fortran.  I do not yet know how much
+this effects other operating systems with one f90.  Under the default build of
+MPICH 1.1.2, using g77 as the Fortran compiler, it generates routines for
+iargc and getarg which work when g77 compiles the application, but not with
+any of the Fortran 90 compilers.  Finally I did a build with -f95nag (as well
+as --disable-c++ -opt=-g -noromio -rsh=ssh), with /usr/local/bin/f95 being
+the NAG compiler.  This does not create the routines, which gives unresolved
+references, but lets us add them in with the application.  (Also it creates
+some bad PARAMETER statements in mpif.h, which can be commented out.)  The
+farg*.f files contain the iargc and getarg routines for various compilers.
+I should also note that using mpif77 or mpif90 for the compile or link doesn't
+work, either.
+
+William F. Mitchell, October 5, 1999

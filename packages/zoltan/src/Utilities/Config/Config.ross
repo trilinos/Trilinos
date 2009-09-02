@@ -1,0 +1,51 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    Revision: 1.3.8.2 $
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers for
+#  cplant on Sandia's 980 LAN.   (This file may be revised for compilation on
+#  juneau to allow testing of F90 implementation).
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC          		= /usr/local/cplant/ross/current/bin/cc
+INCLUDE_PATH		= -I/usr/local/cplant/ross/current/include
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS = $(DBG_FLAGS)
+
+F90			= /usr/local/cplant/ross/current/bin/f90
+LOCAL_F90		= /usr/bin/f90
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE2 -DNO_MPI2
+FFLAGS    		= 
+SPPR_HEAD 		= spprinc.64bit
+F90_MODULE_PREFIX 	= -I
+FARG      		= farg_typical
+
+MPI_LIB			= -lmpi
+MPI_LIBPATH		= -L/usr/local/cplant/ross/current/lib
+
+PARMETIS_LIBPATH 	= -L../../../ParMETIS3_1
+PARMETIS_INCPATH 	= -I../../../ParMETIS3_1
+
+#JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
+#JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
+
+NEMESIS_LIBPATH		= -L/projects/seacas/ross/current/lib
+NEMESIS_INCPATH		= -I/projects/seacas/ross/current/inc

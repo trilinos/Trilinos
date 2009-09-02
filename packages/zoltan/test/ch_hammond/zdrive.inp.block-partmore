@@ -1,0 +1,5 @@
+Decomposition Method 	= block
+Zoltan Parameters	= num_global_parts=17
+File Type		= Chaco
+File Name		= hammond
+Parallel Disk Info	= number=0

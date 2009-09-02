@@ -1,0 +1,15 @@
+../configure --enable-mpi --with-mpi-compilers \
+CXXFLAGS="-O2 -DLAM_BUILDING" CFLAGS=-O2 FFLAGS=-O2 \
+--enable-tsf \
+--enable-belos --enable-anasazi \
+--enable-amesos --enable-amesos-slud \
+--enable-amesos-dscpack \
+--with-amesos-dscpacklib=/home/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a \
+--with-amesos-dscpackdir=/home/jmwille/Trilinos3PL/DSCPACK1.0 \
+--with-amesos-sluddir=/home/jmwille/Trilinos3PL/SuperLU_DIST_2.0 \
+--with-amesos-sludlib=/home/jmwille/Trilinos3PL/SuperLU_DIST_2.0/libsuperlu.a \
+--with-cxxflags=-DLAM_BUILDING \
+--enable-nox-epetra \
+--enable-nox-epetra-examples --enable-nox-lapack --enable-loca \
+--enable-nox-lapack-examples \
+--enable-komplex

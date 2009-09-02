@@ -1,0 +1,228 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+
+   <TITLE> Zoltan Developer's Guide:  Adding Load-Balancing Functions</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_interface.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="new_implementation"></A>Load-Balancing Function Implementation</H2>
+The new load-balancing algorithm should be implemented as an <B>ZOLTAN_LB_FN</B>.
+The type definition for an <B>ZOLTAN_LB_FN</B> is in <I>lb/lb_const.h</I> and
+is described below. When the new algorithm is selected,
+the <I>LB_Fn</I> field of the <B>Zoltan_Struct</B> is set to point to the <B>ZOLTAN_LB_FN</B>
+function for the new algorithm. This pointer is then used in invoking load
+balancing in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>.
+<BR>&nbsp;
+
+<P>
+<hr>
+<HR>typedef int <B>ZOLTAN_LB_FN</B>
+(struct&nbsp;<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>&nbsp;*<I>zz</I>,
+float&nbsp;*<I>part_sizes</I>,
+int&nbsp;*<I>num_import</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>import_global_ids</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>import_local_ids</I>,
+int&nbsp;**<I>import_procs</I>,
+int&nbsp;**<I>import_to_parts</I>,
+int&nbsp;*<I>num_export</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>export_global_ids</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>export_local_ids</I>,
+int&nbsp;**<I>export_procs</I>,&nbsp;
+int&nbsp;**<I>export_to_parts</I>);&nbsp;
+<HR>
+<BR>The <B>ZOLTAN_LB_FN</B> function type describes the arguments passed to a
+load-balancing function. The input to the function is a <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
+containing pointers to application-registered functions to be used in the
+load-balancing algorithm. The remaining arguments are output parameters
+listing the objects to be imported or exported to the processor in the
+new decomposition. The arrays for global and local IDs and source processors
+must be allocated by the load-balancing function. The load-balancing function
+may return either the import arrays, the export arrays, or both. If no
+import data is returned, *<I>num_import </I>must be set to a negative number,
+and similarly with *<I>num_export.</I>
+Full support of the <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>
+parameter is not required. 
+If <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>
+is not set to NONE,
+the new algorithm may return either import or export lists; the Zoltan
+interface will then build the lists requested by
+<a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.
+
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Arguments:</B></TD>
+
+<TD WIDTH="80%"></TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; zz</I></TD>
+
+<TD>A pointer to the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
+to be used in the load-balancing algorithm.</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; part_sizes</I></TD>
+
+<TD>Input:  an array of part sizes for each weight component.
+Entry 
+<i>part_sizes[i*obj_weight_dim+j]</i>
+contains the user-requested 
+part size for part <i>i</i> with respect to object weight <i>j</i> for
+<i>i</i>=0,1,...,number of parts-1, and 
+<i>j</i>=0,1,...,<i>obj_weight_dim</i>-1.
+If the application sets parameter 
+<i><a href="../ug_html/ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a></i>,
+<i>obj_weight_dim</i> is the set value of 
+<i><a href="../ug_html/ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a></i>;
+otherwise, <i>obj_weight_dim</i> is one.
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+
+<TD>Upon return, the number of objects to be imported to the processor
+for the new decomposition. A negative number indicates that no import data
+has been computed and the import arrays should be ignored.</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>Upon return, an array of <I>num_import</I> global IDs
+of objects to be imported to the processor for the new decomposition.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_local_ids</I></TD>
+
+<TD>Upon return, an array of <I>num_import</I> local IDs
+of objects to be imported to the processor for the new decomposition.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> containing the processor
+IDs of processors owning (in the old decomposition) the objects to be imported
+for the new decomposition.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_to_parts</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> containing the part
+IDs of parts to which objects will be imported
+ <i>in the NEW decomposition</i>.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+<TR VALIGN=TOP>
+<TD>&nbsp;&nbsp;&nbsp; <I>num_export</I></TD>
+
+<TD>Upon return, the number of objects to be exported from the processor
+for the new decomposition. A negative number indicates that no export data
+has been computed and the export arrays should be ignored.</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_global_ids</I></TD>
+
+<TD>Upon return, an array of <I>num_export</I> global IDs
+of objects to be exported from the processor for the new decomposition.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_local_ids</I></TD>
+
+<TD>Upon return, an array of <I>num_export</I> local IDs
+of objects to be exported from the processor for the new decomposition.
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> containing the
+processor IDs of processors owning (in the old decomposition) the objects
+to be exported for the new decomposition.&nbsp;
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+<TR VALIGN=TOP>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_to_parts</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> containing the
+part IDs of parts to which the objects will be 
+exported for the new decomposition.&nbsp;
+If this array is non-null, it must be allocated by 
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
+</td>
+</TR>
+
+<TR VALIGN=TOP>
+<TD></TD>
+
+<TD></TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="../ug_html/ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add_struct.html">Next:&nbsp;
+Data Structures</A>&nbsp; |&nbsp; <A HREF="dev_add_interface.html">Previous:&nbsp;
+Load-Balancing Interface Routines</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

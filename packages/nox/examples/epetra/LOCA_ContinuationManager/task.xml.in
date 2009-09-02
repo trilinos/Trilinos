@@ -1,0 +1,104 @@
+<ParameterList>
+  <ParameterList name="Continuation Manager">
+    <ParameterList name="Continuation">
+      <Parameter name="Label From Step" 
+	type="int" value="0"/>
+      <Parameter name="Nonlinear Step Tolerance" 
+	type="double" value="1.0e-9"/>
+      <Parameter name="Steps Per Print" 
+	type="int" value="1"/>
+      <Parameter name="Solution Files Prefix" 
+	type="string" value="step_"/>
+      <Parameter name="Solution Files Extension" 
+	type="string" value="dat"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="NOX and LOCA"> 
+    <ParameterList name="LOCA">
+      <ParameterList name="Predictor">
+	<Parameter name="Method" 
+	  type="string" value="Constant"/>
+      </ParameterList>
+      <ParameterList name="Step Size">
+	<Parameter name="Failed Step Reduction Factor" 
+	  type="double" value="0.1"/>
+	<Parameter name="Initial Step Size" 
+	  type="double" value="0.1"/>
+	<Parameter name="Max Step Size" 
+	  type="double" value="0.1"/>
+      </ParameterList>
+      <ParameterList name="Stepper">
+	<Parameter name="Bordered Solver Method" 
+	  type="string" value="Bordering"/>
+	<Parameter name="Continuation Parameter" 
+	  type="string" value="p"/>
+	<Parameter name="Initial Value" 
+	  type="double" value="0.0"/>
+	<Parameter name="Max Nonlinear Iterations" 
+	  type="int" value="8"/>
+	<Parameter name="Max Steps" 
+	  type="int" value="100"/>
+	<Parameter name="Max Value" 
+	  type="double" value="3.0"/>
+	<Parameter name="Min Value" 
+	  type="double" value="0"/>
+	<ParameterList name="Nested Bordered Solver">
+	  <Parameter name="Bordered Solver Method" 
+	    type="string" value="Householder"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="NOX">
+      <ParameterList name="Direction">
+	<Parameter name="Method" 
+	  type="string" value="Newton"/>
+	<ParameterList name="Newton">
+	  <Parameter name="Forcing Term Method" 
+	    type="string" value="Constant"/>
+	  <ParameterList name="Linear Solver">
+	    <Parameter name="Solver" 
+	      type="string" value="Amesos"/>
+	    <Parameter name="Amesos Solver" 
+              type="string" value="Amesos_Klu"/>
+	    <Parameter name="PrintTiming" 
+	      type="bool" value="true"/>
+	    <Parameter name="PrintStatus" 
+	      type="bool" value="false"/>
+	    <Parameter name="Aztec Solver" 
+	      type="string" value="GMRES"/>
+	    <Parameter name="Convergence Test" 
+	      type="string" value="r0"/>
+	    <Parameter name="Fill Factor" 
+	      type="int" value="3"/>
+	    <Parameter name="Max Iterations" 
+	      type="int" value="800"/>
+	    <Parameter name="Output Frequency" 
+	      type="int" value="50"/>
+	    <Parameter name="Preconditioning" 
+	      type="string" value="none"/>
+	    <Parameter name="Scaling" 
+	      type="string" value="None"/>
+	    <Parameter name="Size of Krylov Subspace" 
+	      type="int" value="800"/>
+	    <Parameter name="Tolerance" 
+	      type="double" value="1e-07"/>
+	  </ParameterList>
+	  <Parameter name="Rescue Bad Newton Solve" 
+	    type="bool" value="false"/>
+	</ParameterList>
+      </ParameterList>
+      <Parameter name="Nonlinear Solver" 
+	type="string" value="Line Search Based"/>
+      <ParameterList name="Printing">
+	<Parameter name="MyPID" 
+	  type="int" value="0"/>
+	<Parameter name="Output Information" 
+	  type="int" value="6143"/>
+	<Parameter name="Output Precision" 
+	  type="int" value="6"/>
+	<Parameter name="Output Processor" 
+	  type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

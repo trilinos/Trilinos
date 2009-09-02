@@ -1,0 +1,12 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters       = num_global_parts=2
+Zoltan Parameters       = parmetis_method=adaptiverepart
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+18	0	-1	-1
+20	0	-1	-1
+22	0	-1	-1
+24	0	-1	-1

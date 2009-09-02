@@ -1,0 +1,143 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Coloring Algorithms</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_color_parallel.html">Next</a>&nbsp; |&nbsp; <a href="ug_order_ptscotch.html">Previous</a></i></b></div>
+<!---------------------------------------------------------------------------->
+<h2>
+<a NAME="Coloring Algorithms"></a>Coloring Algorithms</h2>
+<p>The following coloring algorithms are currently included in the Zoltan
+library:
+<blockquote><a href="ug_color_parallel.html">Parallel Coloring
+</a></blockquote>
+They are accessed through calls to <b><a href="ug_interface_color.html#Zoltan_Color">Zoltan_Color</a></b>.
+<p><!---------------------------------------------------------------------------->
+<h3>
+<a NAME="Color Parameters"></a>
+<hr><b>Coloring Parameters</b></h3>
+While the overall behavior of Zoltan is controlled by <a href="ug_param.html">general
+Zoltan parameters</a>, the behavior of each coloring method is controlled
+by parameters specific to coloring which are also set by calls to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+These parameters are described below.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP>
+<td VALIGN=TOP><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="DISTANCE"></a>&nbsp;&nbsp;<i>DISTANCE</i></td>
+
+<td>The maximum distance between two objects that should not get the same
+color is specified by this parameter. Valid values are "1" (for
+distance-1 coloring) and "2" (for distance-2 coloring). </td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="SUPERSTEP_SIZE"></a>&nbsp;&nbsp;<i>SUPERSTEP_SIZE</i></td>
+
+<td>Number of local objects to be colored on each processor before
+exchanging color information. SUPERSTEP_SIZE should be greater than 0.
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="COMM_PATTERN"></a><i>&nbsp;&nbsp;COMM_PATTERN</i></td>
+
+<td>Valid values are "S" (synchronous) and "A" (asynchronous). If
+synchronous communication is selected, processors are forced to wait
+for the color information from all other processors to be received
+before proceeding with coloring of the next SUPERSTEP_SIZE number of
+local objects. If asynchronous communication is selected, there is no
+such restriction.
+</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="COLOR_ORDER"></a><i>&nbsp;&nbsp;COLOR_ORDER</i></td>
+
+<td>Valid values are "I" (internal first), "B" (boundary first) and "U" (unordered). If
+"I" is selected, each processor colors its internal objects
+before boundary objects. If "B" is selected, each processor colors its
+boundary objects first. If "U" is selected, there is no such
+distinction between internal and boundary objects. "U" is not
+implemented for distance-2 coloring. </td> 
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="COLORING_METHOD"></a><i>&nbsp;&nbsp;COLORING_METHOD</i></td>
+
+<td>Currently only "F" (first-fit) is implemented. By using "F", the
+smallest available color that will not cause a conflict is assigned to
+the object that is being colored. </td>
+</tr>
+
+<tr VALIGN=TOP>
+<td VALIGN=TOP><a NAME="Default_Parameter_Values"></a><b>Default Values:</b></td>
+
+<td></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>DISTANCE</i> = 1</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>SUPERSTEP_SIZE </i>= 100</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>COMM_PATTERN </i>= S</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>COLOR_ORDER</i> = I</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>COLORING_METHOD</i> = F</td>
+</tr>
+</table>
+
+<p><!---------------------------------------------------------------------------->
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_color_parallel.html">Next:&nbsp;
+Parallel Coloring</a>&nbsp; |&nbsp; <a href="ug_order_parmetis.html">Previous:&nbsp;
+Nested Dissection by ParMETIS</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>
+
+

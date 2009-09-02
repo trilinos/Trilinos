@@ -1,0 +1,141 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Ordering Algorithms</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_order_parmetis.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_hier.html">Previous</a></i></b></div>
+<!---------------------------------------------------------------------------->
+<h2>
+<a NAME="Ordering Algorithms"></a>Ordering Algorithms</h2>
+The following graph (sparse matrix) ordering algorithms are currently included in the Zoltan toolkit:
+<blockquote>
+<a href="ug_order_parmetis.html">Nested dissection by METIS/ParMETIS </a><br>
+<a href="ug_order_ptscotch.html">Nested dissection by Scotch/PT-Scotch</a>
+</blockquote>
+These methods produce orderings that reduce fill in sparse matrix factorizations (Cholesky).
+Ordering is accessed through calls to 
+<b><a href="ug_interface_order.html#Zoltan_Order">Zoltan_Order</a></b>.
+<p><!---------------------------------------------------------------------------->
+
+<h3>
+<b>Third-party libraries</b>
+</h3>
+Currently, all ordering in Zoltan is provided through the third-party libraries METIS/ParMETIS and PT-Scotch. At least one of these must be present to use Zoltan ordering.
+
+<h3>
+<a NAME="Order Parameters"></a>
+<hr><b>Ordering Parameters</b></h3>
+While the overall behavior of Zoltan is controlled by <a href="ug_param.html">general
+Zoltan parameters</a>, the behavior of each ordering method is controlled
+by parameters specific to ordering which are also set by calls to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+Many of these parameters are specific to individual ordering algorithms,
+and are listed in the descriptions of the individual algorithms.&nbsp;
+However, several have meaning across multiple ordering algorithms. These
+parameters are described below.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP>
+<td VALIGN=TOP><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="ORDER_METHOD"></a>&nbsp;&nbsp; <i>ORDER_METHOD</i></td>
+
+<td>The order algorithm used by Zoltan is specified by this parameter.
+Valid values are&nbsp;
+<blockquote>"NODEND" (for <a href="ug_order_parmetis.html">nodal nested
+dissection by ParMETIS or METIS</a>),
+<br>"METIS" (same as NODEND with ORDER_TYPE = local),
+<br>"PARMETIS" (same as NODEND with ORDER_TYPE = global), 
+<br>"SCOTCH", (parallel or sequential depending of the value of ORDER_TYPE) and
+<br>"NONE" (for no ordering).
+</blockquote>
+</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="ORDER_TYPE"></a>&nbsp;&nbsp; <i>ORDER_TYPE</i></td>
+
+<td>"SERIAL" or "DIST". If SERIAL is selected, the serial version of
+the ordering routine is used, i.e. Metis for ParMetis or Scotch for
+PT-Scotch. SERIAL can be selected only on non distributed graph.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a
+NAME="ORDER_START_INDEX"></a><i>ORDER_START_INDEX</i></td>
+
+<td>The start index for the permutation vectors <i>rank</i> and <i>iperm</i>.
+Valid values are 0 and 1.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="REORDER"></a><i>&nbsp;&nbsp;&nbsp; REORDER</i></td>
+
+<td>If this value is set to TRUE (non-zero), Zoltan assumes that the lists
+of local and global ids are given as input to <b>Zoltan_Order.</b> Otherwise,
+the id lists will be populated by <b>Zoltan_Order</b>.&nbsp; The permutation
+of the ids will be the one produced by calling the query functions.</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td VALIGN=TOP><a NAME="Default_Parameter_Values"></a><b>Default Values:</b></td>
+
+<td></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>ORDER_METHOD</i> = NODEND</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>ORDER_TYPE </i>= GLOBAL</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>ORDER_START_INDEX </i>= 0</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>REORDER</i> = FALSE</td>
+</tr>
+</table>
+
+<p><!---------------------------------------------------------------------------->
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_order_parmetis.html">Next:&nbsp;
+Nested dissection by ParMETIS</a>&nbsp; |&nbsp; <a href="ug_alg_hier.html">Previous:&nbsp;
+Hybrid Hierarchical Partitioning</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

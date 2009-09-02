@@ -1,0 +1,77 @@
+#np# @HEADER
+# ************************************************************************
+# 
+#        Phalanx: A Partial Differential Equation Field Evaluation 
+#       Kernel for Flexible Management of Complex Dependency Chains
+#                  Copyright (2008) Sandia Corporation
+# 
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# 
+# Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
+# National Laboratories.
+# 
+# ************************************************************************
+#np# @HEADER
+
+##########################################
+### Required Trilinos Package Dependencies
+##########################################
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+include @abs_top_builddir@/../sacado/Makefile.export.sacado
+include @abs_top_builddir@/../shards/Makefile.export.shards
+
+###################################################
+### Optional Trilinos Package Dependencies
+###################################################
+@BUILD_PHALANX_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
+@BUILD_PHALANX_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+@BUILD_PHALANX_BELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
+
+###################################################
+###################################################
+
+#np# List all -I's required for this package.  -I's for other packages (both
+#np# dependencies and optional dependencies) should be listed via the 
+#np# corresponding _INCLUDES macros
+_PHALANX_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src \
+		   $(EPETRA_INCLUDES) \
+		   $(IFPACK_INCLUDES) \
+		   $(BELOS_INCLUDES) \
+		   $(SHARDS_INCLUDES) \
+		   $(SACADO_INCLUDES) \
+		   $(TEUCHOS_INCLUDES)
+
+#np# List all -L's required for this package.  -L's for other packages (both 
+#np# dependencies and optional dependencies) should be listed via the 
+#np# corresponding _LIBS macros
+_PHALANX_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -lphalanx \
+	 	   $(EPETRA_LIBS) $(IFPACK_LIBS) $(BELOS_LIBS) $(SHARDS_LIBS) \
+	 	   $(SACADO_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+#np# Nothing needs to be changed below, other than using the name of the
+#np# package instead of PHALANX, but be sure to include the
+#np# strip_dup_incl_paths.pl and strip_dup_libs.pl scripts in config/
+@USING_GNUMAKE_TRUE@PHALANX_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_PHALANX_INCLUDES))
+@USING_GNUMAKE_TRUE@PHALANX_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_PHALANX_LIBS))
+
+@USING_GNUMAKE_FALSE@PHALANX_INCLUDES = $(_PHALANX_INCLUDES)
+@USING_GNUMAKE_FALSE@PHALANX_LIBS     = $(_PHALANX_LIBS)
+
+PHALANX_TEST_INCLUDES = -I@abs_top_srcdir@/test/Utilities $(PHALANX_INCLUDES)
+PHALANX_TEST_LIBS = -L@abs_top_builddir@/test/Utilities -lphalanx_utilities $(PHALANX_LIBS)

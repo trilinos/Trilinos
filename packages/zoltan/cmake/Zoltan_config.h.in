@@ -1,0 +1,36 @@
+/* src/include/Zoltan_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build with drum enabled */
+#cmakedefine HAVE_DRUM
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build with nemesis_exodus enabled */
+#cmakedefine HAVE_NEMESIS_EXODUS
+
+/* Define if want to build with parmetis enabled */
+#cmakedefine HAVE_METIS
+
+/* Define if want to build with parmetis enabled */
+#cmakedefine HAVE_PARMETIS
+
+/* Define if want to build with patoh enabled */
+#cmakedefine HAVE_PATOH
+
+/* Define if want to build with scotch enabled */
+#cmakedefine HAVE_SCOTCH
+
+/* Define if DON'T want support for MPI TPL */
+#ifndef HAVE_MPI
+#define NO_MPI_TPL
+#endif
+
+/* Define if want to build with octreepartitioning enabled */
+#cmakedefine HAVE_ZOLTAN_OCT
+
+/* Define if want to build with zlib enabled */
+#cmakedefine HAVE_GZIP
+
+/* Use to have only filename when debugging memory */
+#define SHORT_FILE

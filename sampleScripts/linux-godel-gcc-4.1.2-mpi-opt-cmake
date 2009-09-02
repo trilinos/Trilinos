@@ -1,0 +1,22 @@
+EXTRA_ARGS=$@
+
+cmake \
+-D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc \
+-D CMAKE_Fortran_FLAGS:STRING="-O5" \
+-D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
+-D EpetraExt_BUILD_BDF:BOOL=ON \
+-D TPL_ENABLE_Boost:BOOL=ON \
+-D TPL_ENABLE_ParMETIS:BOOL=ON \
+  -D ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1 \
+-D TPL_ENABLE_Scotch:BOOL=ON \
+  -D Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include \
+  -D Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib \
+$EXTRA_ARGS \
+../../../../Trilinos

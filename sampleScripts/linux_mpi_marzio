@@ -1,0 +1,42 @@
+# -------------------------------------------------------------------------- #
+# Example of script for LINUX with GCC and LAM/MPI
+#
+# To avoid inlining, add to CXXFLAGS: -fno-inline -O0
+# For additional checks in MLAPI, add to CXXFLAGS: -DMLAPI_CHECK
+# To profile, add to C/CXXFLAGS: -pg
+# For additional ML information: --enable-ml_timing --enable-ml_flops \
+# -------------------------------------------------------------------------- #
+
+${HOME}/Trilinos/$1/configure \
+  --prefix=${HOME}/Trilinos/LINUX_MPI \
+  --with-install="/usr/bin/install -p" \
+  --with-gnumake \
+  --with-cflags="-ansi -Wall" \
+  --with-cxxflags="-ansi -Wall -ftrapv -pedantic -Wconversion" \
+  --enable-mpi --with-mpi-compilers \
+  --with-incdirs="-I${HOME}/include" \
+  --with-ldflags="-L${HOME}/lib/LINUX_MPI" \
+  --with-libs="-ldscpack -lumfpack -lamd -lparmetis-3.1 -lmetis-4.0 -lskit" \
+  --with-blas=-lblas \
+  --with-lapack=-lapack \
+  --with-flibs="-lg2c" \
+  --disable-default-packages \
+  --disable-examples \
+  --disable-tests \
+  --enable-pytrilinos \
+  --enable-teuchos \
+  --enable-epetra \
+  --enable-triutils \
+  --enable-aztecoo \
+  --enable-ifpack \
+  --enable-ifpack-metis \
+  --enable-ifpack-sparskit \
+  --enable-epetraext \
+  --enable-amesos \
+  --enable-amesos-lapack \
+  --enable-amesos-klu \
+  --enable-amesos-umfpack \
+  --enable-amesos-dscpack \
+  --enable-ml \
+  --with-ml_metis \
+  --with-ml_parmetis3x \

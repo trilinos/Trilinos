@@ -1,0 +1,2 @@
+@INCLUDE = thyra/src/interfaces/operator_solve/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+TAGFILES += $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesNonlinearModelEvaluatorANAFundamental.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html

@@ -1,0 +1,270 @@
+/*! \mainpage Teuchos:  The Trilinos Tools Library
+
+\section Teuchos_outline Outline
+
+<ul>
+<li>\ref Teuchos_intro
+<li>\ref Teuchos_contributors
+<li>\ref Teuchos_startup
+  <ul>
+  <li>\ref Teuchos_sclasses
+  <li>\ref Teuchos_eclasses
+  </ul>
+<li>\ref Teuchos_browser
+</ul>
+
+\section Teuchos_intro Introduction
+
+Teuchos provides a suite of common tools for Trilinos for developers to use.  These tools 
+include BLAS/LAPACK wrappers, smart pointers, parameter lists, XML parsers, etc. 
+
+\section Teuchos_contributors Teuchos Contributors
+
+The following people have contributed to the development of Teuchos:
+
+<ul>
+	<li> Chris Baker, Florida State University, cbaker@csit.fsu.edu
+	<li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
+	<li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
+	<li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
+	<li> Kevin Long, Sandia National Labs, krlong@sandia.gov
+	<li> Paul Sexton, University of Illinois-Chicago, pmsext@software.sandia.gov
+	<li> Heidi Thornquist (Package Lead), Sandia National Labs, hkthorn@sandia.gov
+</ul>
+
+\section Teuchos_startup Overview of Teuchos
+
+Teuchos contains a number of classes.  These classes have been divided 
+between a "standard" build and an "extended" build.  The "standard" build has shown to be 
+a portable subset of the Teuchos tools and is built by default when Teuchos is enabled (<i>--enable-teuchos</i>).  
+The "extended" build is also portable, but contains more special purpose tools like XML parsing and
+communicators (<i>--enable-teuchos-extended</i>).
+
+Additionally, boundschecking for some of the container classes can be enabled through configuring 
+Trilinos with <i>--enable-teuchos-abc</i>.  <b>Boundschecking incurs a significant performance penalty and so is 
+not recommended for production builds.</b>  To enable complex arithmetic in the computational classes, 
+Teuchos must be configured with <i>--enable-teuchos-complex</i>.
+
+\subsection Teuchos_sclasses Teuchos "Standard" Classes
+
+<ul>
+
+<li> <b>Low-level math</b>
+
+  <ul>
+
+  <li> Numerical scalar traits : Teuchos::ScalarTraits - a traits class defining basic propertys and elementary
+  functions for various scalar data types to be used in numerical computations.
+
+  <li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+       This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
+       switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
+       computer systems.  This class also provides a very convenient
+       way to templatize the BLAS.
+
+  <li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
+       it provides nice C++ access to LAPACK.
+
+  <li> Serial Dense Matrix class:  Teuchos::SerialDenseMatrix - A templated, dense rectangular matrix class that provides basic
+       operations like addition, multiplication, scaling, logical comparison, norms, etc.  This class also provides support for a dense
+       matrix that needs to be replicated across processors in a parallel application.  Teuchos::SerialDenseVector inherits from
+       Teuchos::SerialDenseMatrix, providing some additional methods that are useful to dense vectors.  Boundschecking
+       can be turned on at compile time with the
+       <tt>--enable-teuchos-abc </tt> configure flag.
+
+  </ul>
+
+<li> <b> Parameter Options: </b>
+
+  <ul>
+
+  <li> Parameter Entry:  Teuchos::ParameterEntry - A structure that holds a Teuchos::any object as the value
+       and information on the status of the parameter.  The type of parameter is chosen through the templated Set/Get methods.
+       Teuchos::ParameterEntry object is held as the "value" in the Teuchos::ParameterList map.
+
+  <li> Parameter List:  Teuchos::ParameterList - A templated parameter list which holds a map of <key,value> pairs, where the
+       "value" is a Teuchos::ParameterEntry object and the "key" is a string object.  The type of parameter is chosen through
+       the templated Set/Get methods, which allows it to be any standard type (float, double, int, ...) or another parameter list.
+
+  <li> Commandline arguments: Teuchos::CommandLineProcessor - processes commandline arguments from (argc,argv[])
+       in a validated manner and automatically generates a documented --help option. 
+
+  </ul>
+
+<li> <b> Memory Management: </b>
+
+  <ul>
+
+  <li> Teuchos::Ptr:  Light-weight smart pointer class for replacing the use
+  if raw C++ pointers for pointing to a single object in funtion argument
+  lists.  This is only for non-persisting relationships.
+
+  <li> Teuchos::RCP: Reference-counted smart pointer class for managing
+  dynamically allocated memory to single object that is safe under multiple
+  inheritance.  This is only for persisting relationships.  See <a
+  href="RefCountPtrBeginnersGuideSAND.pdf">this
+  report</a>
+
+  <li> Teuchos::ArrayRCP:  Reference-counted pointer for managing dynamically
+  allocated array memory.  This is a general replacement for a raw C++ pointer
+  to handle an array.  This is only for persisting relationships.
+
+  <li> Teuchos::Array: is a templated array class similar to the STL vector,
+  but with optional boundschecking. Boundschecking is useful for debugging,
+  and can be turned on at compile time with the
+  <tt>--enable-teuchos-debug</tt> or <tt>--enable-teuchos-abc</tt>
+  configure flags.
+
+  <li> Teuchos::ArrayView: A light-weight replacement for raw pointers for passing
+  arrays into functions.  This is only for non-persisting relationships.
+
+  </ul>
+
+<li> <b> Low-Level Language Support: </b>
+
+  <ul>
+
+  <li> Abstract factories:
+    <ul>
+    <li> Teuchos::AbstractFactory - defines a basic "Abstract Factory" interface
+         that allocates objects and returns them wrapped in <tt>Teuchos::RCP</tt>
+         objects.
+    <li> Teuchos::AbstractFactoryStd - defines a general concrete implementation of 
+         Teuchos::AbstractFactory that allows creating quick concrete subclass
+         implementations for concrete types.
+    </ul>
+
+  <li> Dynamic casting: Teuchos::dyn_cast - a wrapper for
+  <tt>dynamic_cast<></tt> that throws <tt>std::bad_cast</tt>
+  exceptions with very detailed error messages on what types are involved.
+
+  <li> Array argument call generation : \ref Teuchos_Array_Arguments "arrayArg()" - a set of overloaded
+  templated functions for generating inline array arguments for
+  function calls.
+
+	<li><tt>Teuchos::getConst()</tt> is a silly little templated function that returns a
+	constant reference given any constant object.  This function allows a piece of code
+	to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
+	to an object.
+
+  </ul>
+
+<li> <b> Outputting support </b>
+
+  <ul>
+
+  <li><tt>Teuchos::FancyOStream</tt> wraps any <tt>std::ostream</tt> object and
+  produces nicely indented outputting.  It can also add prefixes to each line
+  of output such as the processor rank.
+
+  <li><tt>Teuchos::OSTab</tt> is used in conjunction with a
+  <tt>Teuchos::FancyOStream</tt> object to generate exception safe indentation
+  control as well as set other information related to the line prefix.
+
+  <li><tt>Teuchos::VerboseObject</tt> is a base class that objects can inherit
+  from that makes producing coordinated informative outputting easier.  This
+  class can be inherited by any C++ subclass without requiring any function
+  overrides but to be useful the class object must use the embedded ostream
+  and verbosity level to print its activities.
+
+	<li><tt>Teuchos::oblackholestream</tt> is a concrete subclass of <tt>std::ostream</tt>
+	that ignores all output.  This class is very useful in writing SPMD parallel programs
+	and controlling which processor(s) produce output.  Generally only the the root process
+	uses a real <tt>std::ostream</tt> object while all of the slave processors use
+	a <tt>Teuchos::oblackholestream</tt> for console output.
+
+  <li> <tt>Teuchos::Describable</tt> defines an interface that
+	subclasses can override that allows the creation of formated
+	output of an object's state complete with indentation control.
+	This class has default definitions for all of its virtual member
+	functions and therefore can be inherited by existing C++ classes
+	without requiring any additional implementation support to get
+	started.
+
+  </ul>
+
+<li> <b> Performance Monitoring </b>
+
+  <ul>
+
+  <li> Timing class: Teuchos::TimeMonitor - Provides timing functions for the
+       purposes of performance analysis. 
+
+  <li> Floating point operation class: Teuchos::Flops - Provides floating point operations (FLOPS)
+       counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
+       classes accumulate FLOP counts associated with the \e this object of the computations.
+
+  </ul>
+
+<li> <b> Exception Handling </b>
+
+  <ul>
+
+  <li> Testing for Exceptions: The TEST_FOR_EXCEPTION() macro accepts a
+  logical test, an exception handler, and a
+  message.  It then throws an "intelligent" exception informing the
+  user of the file, line, and message where
+  the exception was thrown.  The macro TEST_FOR_EXCEPT() is a shorter
+  macro that just accepts a logic test and is therefore easier to write.
+  Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).
+
+  </ul>
+
+<li> <b> Testing Support </b>
+
+  Teuchos contains some utilities that make it easier to write tests
+
+  See \ref teuchos_testing_grp
+
+</ul>
+
+\subsection Teuchos_eclasses Teuchos "Extended" Classes
+
+<ul>
+
+<li> <b> Containers </b>
+
+<ul>
+
+<li> Teuchos::Hashtable is a templated map with constant-time lookup.
+
+<li> Teuchos::HashSet is a templated set with constant-time lookup.
+
+</ul>
+
+<br>
+<li> <b> XML </b>
+<ul>
+
+<li> Teuchos::XMLObject is an object representation of a subset of XML data. Supported XML features
+are tags, attributes, and character content. 
+
+<li> Teuchos::FileInputSource can read XML from a file and produce a Teuchos::XMLObject
+
+<li> Teuchos::StringInputSource can read XML from a character string and produce a Teuchos::XMLObject
+
+</ul>
+
+<br>
+<li> <b> MPI </b>
+<ul>
+
+<li> Teuchos::MPISession has methods to initialize, finalize, and query the global MPI environment.
+
+<li> Teuchos::MPIComm represents an MPI communicator
+
+<li> Teuchos::MPIContainerComm has methods to communicate Teuchos::Array objects
+
+</ul>
+
+</ul>
+
+\section Teuchos_browser Browse all of Teuchos
+
+You can browse all of Teuchos as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Teuchos software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of teuchos</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
+*/

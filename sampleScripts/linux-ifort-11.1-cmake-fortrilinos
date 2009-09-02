@@ -1,0 +1,26 @@
+#!/bin/bash
+
+TRILINOS_PATH=/home/rouson/Trilinos
+EXTRA_ARGS=$@
+FORTRAN_LIBRARIES=""
+
+cmake \
+          -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+          -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/intel/Compiler/11.1/038/bin/intel64/ifort \
+          -D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/intel/Compiler/11.1/038/bin/intel64/icpc \
+          -D CMAKE_C_COMPILER:FILEPATH=/usr/local/intel/Compiler/11.1/038/bin/intel64/icc \
+          -D Trilinos_ENABLE_DEFAULT_PACKAGES:BOOL=OFF \
+          -D Trilinos_ENABLE_Epetra:BOOL=ON \
+          -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+          -D Trilinos_ENABLE_CTrilinos:BOOL=ON \
+          -D Trilinos_ENABLE_ForTrilinos:BOOL=ON \
+          -D Trilinos_ENABLE_TESTS:BOOL=ON \
+          -D TPL_BLAS_LIBRARIES:STRING="-lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread -lmkl_core -Wl,--end-group -lguide -lpthread" \
+          -D TPL_LAPACK_LIBRARIES:STRING="-lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread -lmkl_core -Wl,--end-group -lguide -lpthread" \
+          -D DART_TESTING_TIMEOUT:STRING=600 \
+          -D TPL_ENABLE_MPI:BOOL=OFF \
+          -D Trilinos_EXTRA_LINK_FLAGS:STRING="$FORTRAN_LIBRARIES" \
+          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE       \
+          -D Trilinos_VERBOSE_CONFIGURE:BOOL=TRUE   \
+          ${EXTRA_ARGS} \
+          ${TRILINOS_PATH}

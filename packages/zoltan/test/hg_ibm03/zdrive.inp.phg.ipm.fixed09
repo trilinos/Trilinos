@@ -1,0 +1,13 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = num_global_parts=11
+Zoltan Parameters       = phg_output_level=1
+Zoltan Parameters       = phg_coarsepartition_method=linear
+Zoltan Parameters       = remap=0
+Zoltan Parameters       = phg_coarsening_method=ipm
+Zoltan Parameters       = lb_approach = partition
+File Type		= hypergraph
+File Name		= ibm03
+Parallel Disk Info	= number=0
+test fixed objects      = 9

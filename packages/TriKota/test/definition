@@ -1,0 +1,8 @@
+PACKAGE_NAME=TriKota
+
+
+(FRAMEWORK, INSTALL) {
+    TESTS = Simple.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI,SERIAL;
+}

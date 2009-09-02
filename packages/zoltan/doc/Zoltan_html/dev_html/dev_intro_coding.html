@@ -1,0 +1,224 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+
+   <TITLE> Zoltan Developer's Guide:  Coding Principles</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_intro_sqe.html">Next</a>&nbsp; |&nbsp; <a href="dev_intro_philosophy.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="coding"></A>Coding Principles in Zoltan</H2>
+<blockquote>
+<ol TYPE=A><a href="#include">Include files</a>
+<br><a href="#global">Global Variables</a>
+<br><a href="#functions">Function Names</a>
+<br><a href="#par_comm">Parallel Communication</a>
+<br><a href="#memory1">Memory Management</a>
+<br><a href="#return">Errors, Warnings and Return Codes</a>
+</ol>
+</blockquote>
+
+<H3>
+<A NAME="include"></A>Include files</H3>
+Include files should be used for function prototypes, macro definitions,
+and data structure definitions. The convention used is that external function
+prototypes and data structure definitions
+required by more than one module are stored in include files named
+<I>*_const.h</I> (e.g., <I>zz/zz_const.h</I>). Include files with static
+function prototypes or static data structure
+definitions (i.e., files that are included in only one module) are
+named <I>*.h</I> (e.g.,<I> rcb/rcb.h</I>).
+
+<P>The include file <I>include/zoltan.h</I> contains the Zoltan
+interface; it should be included by C application source files that call
+Zoltan. C++ applications that use the C++ interface should include
+<I>include/zoltan_cpp.h</I> instead.
+<p>
+The include file <I>zz/zz_const.h</I> describes
+the principle Zoltan data structures. As these data structures
+are used heavily by the algorithms in Zoltan, <I>zz/zz_const.h</I>
+should be included in most source files of Zoltan.
+<p>
+Every Zoltan C language header file should be surrounded with an
+<B>extern "C" {}</B> declaration.  The declaration must occur after
+every other <B>#include</B> statement, and before all function
+declarations.
+This declaration tells a C++ compiler not to 
+mangle the names of functions declared in that header file.  
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="extern C"></A>
+<TT>
+#ifndef __EXAMPLE_H<br>
+#define __EXAMPLE_H<br><br>
+
+#include "mpi.h"<br>
+#include "zoltan_types.h"<br>
+#include "zoltan_align.h"<br><br>
+
+#ifdef __cplusplus<br>
+extern "C" {<br>
+#endif<br><br>
+
+int func1(int a, int b);<br>
+double dfunc(int a, int b, int c);<br><br>
+
+#ifdef __cplusplus<br>
+} /* closing bracket for extern "C" */<br>
+#endif<br><br>
+
+#endif /* __EXAMPLE_H */<br>
+</TT>
+</TR>
+<CAPTION ALIGN=BOTTOM><I>Example of C language header file with <b>extern "C"</b>
+</I></CAPTION>
+</TABLE></CENTER>
+<br>
+<p>
+If an <B>#include</B> statement appears after the opening of the 
+<B>extern "C" {}</B> declaration, the included file may cause
+<B>mpi.h</B> or some other system header file to be processed.  When
+compiling with a C++ compiler, this usually leads to compile errors
+because the function names in some of those headers are supposed to be
+mangled.
+<p>
+It should
+not be necessary to use the declaration in all header files, but
+rather only in header files that are used in C++ applications.  But
+experience has taught us that you never know what header files will
+end up being included, and that one that is not included now, may be
+included in the future when someone adds an <B>#include</b> statement
+to a file.  To save someone the effort later on of figuring out
+why their C++ compilation is failing, please include the
+<B>extern "C" {}</B> declaration in every header file, even if at
+this point in time you do not believe it will ever be included in
+the compilation of a C++ application.
+<BR>&nbsp;
+<H3>
+<A NAME="global"></A>Global variables</H3>
+The use of global variables is highly discouraged in Zoltan.
+In limited cases, static global variables can be tolerated within
+a source file of an algorithm. However, developers should keep in mind
+that several Zoltan structures may be used by an application, with
+each structure using the same algorithm. Thus, global variables set by one
+invocation of a routine may be reset by other invocations, causing errors
+in the algorithms. Global variable names may also conflict with variables
+used elsewhere in the library or application, causing unintended side-effects
+and complicating debugging. For greatest robustness, developers are asked
+NOT to use global variables in their algorithms. See <A HREF="dev_add_struct.html">Data
+Structures</A> for ideas on avoiding the use of global variables.
+<BR>&nbsp;
+<H3>
+<A NAME="functions"></A>Function Names</H3>
+In order to avoid name conflicts with applications and other libraries,
+all non-static functions should be prepended with <B>Zoltan_</B><I>.</I>&nbsp; 
+Moreover, function names should, in general, include their module names; e.g., 
+<b>Zoltan_HSFC_Box_Assign</b> is part of the HSFC module of Zoltan.
+As a general
+rule, each new word in a function name should be capitalized (for example,
+<b>Zoltan_Invert_Lists</b>). 
+Static Zoltan functions do not have to follow these rules.
+
+<H3>
+<A NAME="par_comm"></A>Parallel Communication</H3>
+All communication in the Zoltan library should be performed through MPI
+communication routines. The MPI interface was chosen to enable portability
+to many different platforms. It will be especially important as the code
+is extended to heterogeneous computing systems.
+
+<P>Some useful communication utilities are provided within the library
+to perform unstructured communication and synchronization. See <A HREF="../ug_html/ug_util_comm.html">Unstructured
+Communication Utilities</A> and <A HREF="dev_services_parallel.html">Parallel
+Computing</A>.
+<BR>&nbsp;
+<H3>
+<A NAME="memory1"></A>Memory Management</H3>
+It is strongly suggested that all memory allocation in the library is handled
+using the functions supplied in <I>Utilities/Memory</I>. Use of these functions
+will make debugging and maintenance of the library much easier as the library
+gets larger. See <A HREF="../ug_html/ug_util_mem.html">Memory Management Utilities</A> for
+more information on these utilities.<p>
+
+For memory that is returned by Zoltan to an application, however, special
+memory allocation functions must be used to maintain compatibility with
+both C and Fortran90 applications.  See <a href="dev_add_memory.html">
+Memory Management in Zoltan Algorithms</a> for more 
+information. <p>
+
+One of the few data types specified for use in the Zoltan interface is the
+<a href="../ug_html/ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>
+type used for global and local object identifiers (IDs).  Macros simplifying
+and providing error checking for 
+<a href="dev_lb_types.html">ID allocation and manipulation</a>
+are provided.
+
+<BR>&nbsp;
+<H3>
+<A NAME="return"></A>Errors, Warnings, and Return Codes</H3>
+If an error or warning occurs in the Zoltan library, 
+a message should be printed to
+<i>stderr</i> (using one of the <a href="#ZOLTAN_PRINT">printing macros</a> below),
+all memory allocated in the current function should be freed, and
+an <a href="../ug_html/ug_interface.html#Error Codes">error code</a> should be returned. 
+The Zoltan library should never "exit";
+control should always be returned to the application with an error code.
+The <a href="../ug_html/ug_interface.html#Error Codes">error codes</a> are defined in <i>include/zoltan_types.h</i>.
+<p>
+Currently, this philosophy is not strictly followed in all portions
+of Zoltan.
+Efforts are underway to bring existing code up-to-date, and to follow this
+rule in all future development.
+<BR>&nbsp;
+<hr><a NAME="ZOLTAN_PRINT"></a>
+<b>ZOLTAN_PRINT_ERROR</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
+<b>ZOLTAN_PRINT_WARN</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
+<hr>
+Macros for printing error and warning messages in Zoltan.  The macros are
+defined in <i>Utilities/shared/zoltan_util.h</i>.
+<TABLE WIDTH="100%" NOSAVE>
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><b>Arguments:</b></TD>
+<TD WIDTH="80%" ALIGN=LEFT></TD>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>processor_number</i></TD>
+<TD ALIGN=LEFT> The processor's rank in the Zoltan communicator. The value -1 can be used if the rank is not available.</td>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>function_name</i></TD>
+<TD ALIGN=LEFT> A string containing the name of the function in which the error or warning occurred. </td>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;&nbsp;<i>message</i></TD>
+<TD ALIGN=LEFT> A string containing the error or warning message.</td>
+</TR>
+</table>
+<hr>
+<p>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_intro_sqe.html">Next:&nbsp;
+Zoltan Quality Assurance</A>&nbsp; |&nbsp; <A HREF="dev_intro_philosophy.html">Previous:&nbsp;
+Philosophy</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

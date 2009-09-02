@@ -1,0 +1,271 @@
+PACKAGE_NAME=Teuchos
+
+#
+# FRAMEWORK group
+#
+
+# Below I suppress the startup banner since
+# this was getting in the way of the generation
+# of the output string for the commparison
+(FRAMEWORK,INSTALL) {
+    TESTS = MemoryManagement/Array_test.exe,
+            MemoryManagement/ArrayRCP_test.exe,
+            MemoryManagement/ArrayView_test.exe,
+            MemoryManagement/RCP_test.exe,
+            MemoryManagement/Ptr_test.exe,
+            MemoryManagement/Tuple_test.exe,
+            MemoryManagement/MemoryManagement_UnitTests.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
+# Here I test that the checked STL is in place
+(FRAMEWORK,INSTALL,CHECKEDSTL) {
+    TESTS = MemoryManagement/GCC_CheckedSTL_UnitTests.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON(error: attempt to dereference a past-the-end iterator);
+    COMM = MPI(1),SERIAL;
+}
+
+
+# This does not work unless the C code is compiled
+# to work correctly when exceptions are thrown
+#(FRAMEWORK,INSTALL) {
+#    TESTS = exit/Teuchos_exit_test.exe;
+#    EXIT-STATUS = STRING-COMPARISON;
+#    COMM = SERIAL;
+#}
+
+(FRAMEWORK) {
+    TESTS = Time/Time_test.exe;
+    ARGS = -v;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK,INSTALL,XML) {
+    TESTS = ../example/XML/XmlToParameterList.exe;
+    ARGS = --xml-in-file=../example/XML/Example1.xml,
+           --xml-in-file=../example/XML/Example1.xml --extra-xml="<ParameterList><ParameterList name=\"Direction\"><ParameterList name=\"Newton\"><ParameterList name=\"Linear Solver\"><Parameter name=\"Tol\" type=\"double\" value=\"1e-2\"/></ParameterList></ParameterList></ParameterList></ParameterList>",
+           --extra-xml="<ParameterList/>";
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL,XML) {
+    TESTS = ../example/XML/XmlToParameterList.exe;
+    ARGS = --xml-in-file=../example/XML/Example2.xml,
+           --extra-xml=" ";
+    EXIT-STATUS = STRING-COMPARISON(EmptyXMLError);
+    COMM = MPI(1),SERIAL;
+}
+
+# Note that above the last two test cases fail due to empty lists!
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Workspace/workspace_test.exe,
+            dyn_cast/dyn_cast_test.exe;
+    ARGS = --verbose;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
+    TESTS = BLAS/BLAS_test.exe,
+    ARGS = -v;
+    X-HOST = paunchy;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL;
+}
+
+#(FRAMEWORK, INSTALL) {
+#    TESTS = BLAS/BLAS_tmpl_test.exe,
+#    ARGS = -v;
+#    X-HOST = paunchy;
+#    EXIT-STATUS = STRING-COMPARISON;
+#    COMM = SERIAL;
+#}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = LAPACK/LAPACK_test.exe,
+            DenseMatrix/DenseMatrix_test.exe,
+            DenseMatrix/SymDenseMatrix_test.exe;
+    ARGS = -v;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = ParameterList/ParameterList_test.exe;
+    ARGS = --verbose;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Polynomial/Polynomial_test.exe;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = ScalarTraits/ScalarTraits_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = FancyOutputting/FancyOutputting_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Comm/Comm_test.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1-10),SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Comm/DefaultMpiComm_UnitTests.exe;
+    ARGS = --teuchos-suppress-startup-banner --show-test-details=ALL --test-serial;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1);
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Comm/DefaultMpiComm_UnitTests.exe;
+    ARGS = --teuchos-suppress-startup-banner --show-test-details=ALL;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1);
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = Comm/DefaultMpiComm_UnitTests.exe;
+    ARGS = --teuchos-suppress-startup-banner --show-test-details=ALL;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1-4);
+    # 2008/07/16: rabartl: Note: We can't run on more than 4 procs or the char
+    # ordinals will overflow for std::complex<double> packet type.
+}
+
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_UnitTests.exe;
+    ARGS = --show-test-details=ALL,
+      --show-test-details=TEST_NAMES,
+      --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 29, passed = 29, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="someFunc*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 4, passed = 4, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*double";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*ouble";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 6, passed = 6, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*Complex*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="Int";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --test-name="Assignment";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 1, passed = 1, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --test-name="*si*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
+
+# Make sure bad unit test name is shown
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON(Int_BadAssignment_UnitTest);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad unit test name is shown
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS;
+    EXIT-STATUS = STRING-COMPARISON(VectorInt_OutOfRangeAt_UnitTest);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test fails main()
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON(End Result: TEST FAILED);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test shows the right summary
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --teuchos-suppress-startup-banner;
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 8, run = 8, passed = 6, failed = 2);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test is marked as FAILED
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=FINAL_RESULTS --group-name=Int --test-name=BadAssignment;
+    EXIT-STATUS = STRING-COMPARISON([FAILED]);
+    COMM = MPI(1),SERIAL;
+}
+
+# Make sure bad test is marked as FAILED
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = UnitTest/UnitTest_BadUnitTest.exe;
+    ARGS = --show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment;
+    EXIT-STATUS = STRING-COMPARISON([FAILED]);
+    COMM = MPI(1),SERIAL;
+}
+
+# ObjectBuilder unit tests
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = ObjectBuilder/ObjectBuilder_UnitTests.exe;
+    ARGS = --show-test-details=ALL;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}

@@ -1,0 +1,115 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+   <TITLE> Zoltan Developer's Guide:  RIB</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_parmetis.html">Next</a>&nbsp; |&nbsp; <a href="dev_rcb.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="RIB"></A>Appendix: Recursive Inertial Bisection (RIB)</H2>
+
+<H3>
+Outline of Algorithm</H3>
+
+<P>The implementation of Recursive Inertial Bisection (RIB) in Zoltan is due
+due to Bruce Hendrickson and Robert Leland of Sandia National Laboratories for
+use in <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> 
+and was modified by Courtenay Vaughan.  RIB is an algorithm
+similar to RCB (see the <B><A HREF="dev_rcb.html">appendix on RCB</A></B> for
+a description of RCB) in that it uses the coordinates of the objects to be
+balanced to do the load balancing.  Similarly to RCB, the domain is
+recursively divided into two pieces until the number of subdomains needed is
+reached.  In each stage of the division, the direction of the principle axis
+of the domain to be divided is calculated by determining an eigenvector of
+the inertial matrix.  This direction vector is used to define a normal to a
+plane which is used to divide the domain into two pieces.  This process is
+repeated until the desired number of subdomains is reached.
+
+<P>The communication of objects being divided is handled by the same routine
+as is used by <B><A HREF="dev_rcb.html">RCB</A></B>.  For applications which
+wish to add more objects to the decomposition at a later time
+(e.g., through <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> or
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>), 
+information to
+do this can be retained during the decomposition phase.  This information is
+kept if the parameter <a href="../ug_html/ug_alg_rib.html">KEEP_CUTS</a> is set during the decomposition.
+The process is similar to that used for RCB, but the
+information kept is different.  For each RIB cut, the center of mass
+of the subdomain which is cut, the direction vector, and a distance from
+the center of mass to the cutting plane have to be saved.
+
+<BR>&nbsp;
+
+<H3>
+Data Structure Definitions</H3>
+
+<P>There are three major data structures in RIB and they are defined in
+<i>rcb/rib.h</i> and <i>rcb/shared.h</i>.  The points which are being load balanced are represented as a
+structure <i>Dot_Struct</i> which contains the location of the point, its weight, and
+the originating processor's number.  The nodes on the decomposition tree are
+represented by the structure <i>rib_tree</i> which contains the position of the cut,
+the center of mass of the subdomain which is being cut, the direction vector
+of the principle axis of the subdomain, and the node's parent and two
+children (if they exist) in the tree.  The structure RIB_Struct is the RIB data
+structure which holds pointers to all of the other data structures needed for
+RIB.  It contains an array of <i>Dot_Struct</i> to represent the points being load
+balanced, global and local IDs of the points, an array of <i>rib_tree</i> (whose length is the number of processors) which
+contains the decomposition tree, and the dimension of the problem.
+
+<BR>&nbsp;
+
+<H3>
+Parameters</H3>
+
+<P>The parameters used by RIB and their default values are described in the
+<a href="../ug_html/ug_alg_rib.html">RIB</a> section of the <B><A HREF="../ug_html/ug.html">Zoltan User's
+Guide</A></B>.  These can be set by use of the <b>Zoltan_RIB_Set_Param</b> subroutine
+in the file <i>rcb/rib.c</i>.
+<p>
+When the parameter <a href="../ug_html/ug_alg_rib.html">REDUCE_DIMENSIONS</a> 
+is specified, the RIB algorithm will perform  lower dimensional
+partitioning if the geometry is found to be degenerate.  More information
+on detecting degenerate
+geometries may be found in another <a href="dev_degenerate.html">
+section</a>.
+
+ 
+<BR>&nbsp;
+
+<H3>
+Main Routine</H3>
+
+<P>The main routine for RIB is <b>Zoltan_RIB</b> in the file <i>rcb/rib.c</i>.
+
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of 
+Contents</A>&nbsp; |&nbsp; <a href="dev_parmetis.html">Next:&nbsp; ParMETIS and 
+Jostle</a>&nbsp; |&nbsp; <A HREF="dev_rcb.html">Previous:&nbsp; Recursive
+Coordinate Bisection (RCB)</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

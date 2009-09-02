@@ -1,0 +1,49 @@
+/* src/Moertel_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define if bool is a built-in type */
+#undef HAVE_BOOL
+
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if want to build galeri */
+#undef HAVE_GALERI
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* Define if want to build moertel-examples */
+#undef HAVE_MOERTEL_EXAMPLES
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* define if the compiler supports the mutable keyword */
+#undef HAVE_MUTABLE
+
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
+/* define if std::sprintf is supported */
+#undef HAVE_STD_SPRINTF
+
+/* define if the compiler supports Standard Template Library */
+#undef HAVE_STL
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION

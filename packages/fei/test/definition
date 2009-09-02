@@ -1,0 +1,85 @@
+PACKAGE_NAME=FEI
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d . -test unit_tests;
+  COMM = SERIAL, MPI(1);
+}
+(FRAMEWORK, FeiTests) {
+  DESCEND_DIRS = "yes";
+  DIRS = ../utest;
+  TESTS = ./fei_unit_tests.exe;
+  ARGS = ;
+  COMM = SERIAL, MPI(1);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./remEssBCs -i pll_RemEssBCs.i;
+  COMM = SERIAL, MPI(1);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./remEssBCs_Trilinos -i pll_RemEssBCs.i;
+  COMM = SERIAL, MPI(1);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./elemDOF_Aztec -i elemDOF.i;
+  COMM = SERIAL, MPI(1-2);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_lagrange_20quad -i lagrange.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_slave_20quad -i slave.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_slave_20quad_old -i slave.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_lagrange_20quad_AZLSC -i lagrange.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_lagrange_20quad_old -i lagrange.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_multifield_slave -i mf.i;
+  COMM = SERIAL, MPI(1-3);
+}
+
+(FRAMEWORK, FeiExamples) {
+  DESCEND_DIRS = "yes";
+  DIRS = ../example/beam;
+  TESTS = ./beam.exe;
+  ARGS = -i beam_crs_aztecoo.i;
+  COMM = SERIAL, MPI(1-4);
+}
+
+(FRAMEWORK, FeiExamples) {
+  DESCEND_DIRS = "yes";
+  DIRS = ../example/poisson;
+  TESTS = ./poisson.exe;
+  ARGS = -i poisson_crs.i;
+  COMM = SERIAL, MPI(1);
+}
+

@@ -1,0 +1,73 @@
+PACKAGE_NAME=Amesos
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL, AmesosExamples ) {
+    DESCEND_DIRS = YES;
+    DIRS = ../example;
+    COMM = SERIAL, MPI(1-4);
+}
+
+#
+#  Some of the following tests take too long (up to 30 minutes) to run as an installation test
+#
+(FRAMEWORK) {   
+    DIRS = scripts/daily/mpi;
+    COMM = CUSTOM-MPI; 
+    ARGS = NightlyTest True True;      
+    X-HOST = regression.sandia.gov, beowulf;
+    EXIT-STATUS = STRING-COMPARISON ; 
+}
+(FRAMEWORK) {   
+    DIRS = scripts/daily/serial;
+    COMM = SERIAL; 
+    ARGS = NightlyTest True True;
+    X-HOST = regression.sandia.gov;     
+    EXIT-STATUS = STRING-COMPARISON ; 
+}
+
+(FRAMEWORK, INSTALL) {
+    DIRS = Test_Singular;
+    COMM = SERIAL, MPI(1-4);
+    DESCEND_DIRS = YES;
+    EXIT-STATUS = STRING-COMPARISON ;
+}
+
+(FRAMEWORK, INSTALL ) {   
+    DIRS = Test_Epetra_RowMatrix,
+           Test_Epetra_CrsMatrix,
+           Test_Detailed,
+           Test_KLU,
+           Test_SuperLU,
+           Test_SuperLU_DIST,
+           Test_LAPACK,
+           Test_UMFPACK,
+           Test_DSCPACK,
+           Test_MUMPS,
+           Test_PARAKLETE;
+    COMM = SERIAL, MPI(1-4); 
+}
+
+#
+#  TestOptions can't find ../Test_Basic/Diagonal.mtx even though TestOptions works fine 
+#  when run from within TestAmesos and TestQuietAmesos  Bug #1960  
+#
+#
+# 
+(FRAMEWORK ) {   
+   DIRS = TestOptions;
+   X-HOST = regression.sandia.gov, beowulf;
+   COMM = SERIAL, MPI(1-4); 
+}
+
+#
+#  Bug 1988 - Test_MultipleSolves fails on s858352
+#  Bug 2320 - X-HOST=s858352 fails to disable tests on s858352
+#
+# (FRAMEWORK, INSTALL ) {   
+#     DIRS = Test_MultipleSolves;
+#     X-HOST = s858352;
+#     COMM = SERIAL, MPI(1-4); 
+# }

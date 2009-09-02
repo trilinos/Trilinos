@@ -1,0 +1,267 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+   <TITLE> Zoltan Developer's Guide:  HSFC</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_degenerate.html">Next</a> &nbsp;
+|&nbsp; <a href="dev_reftree.html">Previous</a></i></b></div>
+
+<H2>
+<A NAME="HSFC"></A>Appendix: Hilbert Space Filling Curve (HSFC)</H2>
+&nbsp;
+
+<H3>
+Outline of Algorithm</H3>
+
+This partitioning algorithm is loosely based on the 2D & 3D Hilbert tables used in Octree
+and on the BSFC partitioning implementation by Andrew C. Bauer, Department of
+Engineering, State University of New York at Buffalo, as his summer project at 
+SNL in 2001.  Please refer to the corresponding section in the Zoltan User's guide,
+<a href="../ug_html/ug_alg_hsfc.html"><b>Hilbert Space Filling Curve (HSFC),</b></a>
+for information about how to use this module and its parameters. Note: the partitioning,
+point assign and box assign functions in this code module can be trivially extended
+to any space filling curve for which we have a state table definition of the curve.
+<p>
+First, the weights and inverse Hilbert coordinates for each object
+are determined. If the objects do not have weights, unit weights are assigned.
+If the objects have multiple weights, only the first weight is currently used.  The smallest
+axis-aligned box is found that contains
+all of the objects using their two or three dimensional spatial coordinates.
+This bounding box is slightly expanded to ensure that all objects are strictly
+interior to the boundary surface. The bounding box is necessary in order to calculate
+the inverse Hilbert Space Filling curve coordinate. The bounding box is used to
+scale the problem coordinates into the [0,1]^d unit volume (d represents the number of dimensions
+in the problem space.) The inverse Hilbert
+coordinate is calculated and stored as a double precision floating point value for
+each object. This code works on problems with one, two or three dimensions (the
+1-D Inverse Hilbert coordinate is simply the problem coordinate itself, after the
+bounding box scaling.)
+<p>
+The algorithm seeks to cut the unit interval into P segments containing equal
+weights of objects associated to the segments by their inverse Hilbert coordinates.
+The code allows a user vector to specify the desired fraction
+of the total weight to be assigned to each interval. Note, a zero weight fraction prevents any object
+being assigned to the corresponding interval. The unit interval is divided into N bins, 
+N=k(P-1)+1, where k is a
+small positive constant.)  Each bin has an left and right endpoint
+specifying the half-open interval [l,r) associated with the bin. The bins form a
+non-overlapping cover of [0,1] with the right endpoint of the last bin forced to include 1.
+The bins are of equal size on the first loop.  (Hence each interval or part of the
+partition is a collection of bins.)
+<p>
+For each loop, an MPI_Allreduce call is made to
+globally sum the weights in each bin.  This call also determines the maximum and
+minimum (inverse Hilbert) coordinate found in each bin.  A greedy algorithm sums the
+weights of the bins from left to right until the next bin would cause an overflow for
+the current part. This results in new partition of P intervals. The location of
+each cut (just before an "overflowing" bin) and the size of its "overflowing" bin are
+saved. The "overflowing" bin's maximum and minimum are compared to determine if the bin
+can be practically subdivided. (If the bin's maximum and minimum coordinates are too
+close relative to double precision resolution, the bin can not be practically
+subdivided.)  If at least one bin can be further refined, then looping will continue.
+In order to prevent a systematic bias, the greedy algorithm is assumed to exactly
+satisfy the weight required by each part.
+<p>
+Before starting the next loop, the P intervals are again divided into N bins. The
+P-1 "overflow" bins are each subdivided into k-1 equal bins.  The
+intervals before and after these new bins determine the remaining bins.  This process
+maintains a fixed number of bins. No bin is "privileged."  Specifically, any bin is
+subject to later refinement, as necessary, on future loops.
+<p>
+The loop terminates when there is no need to further divide any "overflow" bin. A slightly
+different greedy algorithm is used to determine the final partition of P intervals from the
+N bins. In this case, when the next bin would cause an overflow, the tolerance
+is computed for both underfilling (excluding this last bin) and overfilling
+(including the last bin).  The tolerance closest to the target tolerance is
+used to select the dividing point.  The tolerance obtained at each dividing
+point is compared to the user's specified tolerance. An error is returned if
+the user's tolerance is not satisfied at any cut. After each cut is made, a
+correction is calculated as the ratio of the actual weight to the target
+weight used up to this point.  This correction is made to the target weight
+for the next part.  This correction fixes the subsequent parts when
+a "massive" weight object is on the border of a cut and its assignment creates an
+excessive imbalance.
+<p>
+Generally, the number of loops is small (proportional to log(number of objects)).
+A maximum of MAX_LOOPS is
+used to prevent an infinite looping condition.  A user-defined
+function is used in the MPI_Allreduce call in order to simultaneously determine the
+sum, maximum, and minimum of each bin.  The message length in the MPI_Allreduce is
+proportional to the P, the number of parts. 
+<p>
+Note, when a bin is encountered that satisfies more than two parts, that bin is refined
+into a multiple of k-1 intervals which maintains a total of N bins.
+<BR>&nbsp;
+<h3>Hilbert Transformations</h3>
+The HSFC now uses table driven logic to convert from spatial coordinates (2 or 3 dimensions)
+(the Inverse Hilbert functions) and from the unit interval into spatial coordinates
+(Hilbert functions).  In each case there are two associated tables: the data table and the
+state table. In all cases, the table logic can be extended to any required precision.  Currently,
+the precision is determined for compatibility with the the double precision used in
+the partitioning algorithm.
+<p>The inverse transformation is computed by taking the highest order bit from each spatial
+coordinate and packing them together as 2 or 3 bits (as appropriate to the dimensionality)
+in the order xyz (or xy) where x is the highest bit in the word.
+The initial state is 0.  The data table lookup finds the value
+at the column indexed by the xyz word and the row 0 (corresponding to the initial state value.)
+This data are the 3 (or 2) starting bits of the Hilbert coordinate.  The next state value
+is found by looking up the corresponding element of the state table (xyz column and row 0.)
+<p>
+The table procedure continues to loop (using loop counter i, for example) until the required
+precision is reached. At loop i, the ith bits from each spatial dimension are packed together
+as the xyz column index.  The data table lookup finds the element at column xyz and the row
+determined by the last state table value.  This is appended to the Hilbert coordinate. The
+state table is used to find the next state value at the element corresponding to the xyz
+column and row equal to the last state value.
+<p>
+The inverse transformation is analogous.  Here the 3 (or 2 in the 2-d case) bits of the
+Hilbert coordinate are extracted into a word.  This word is the column index into the
+data table and the state value is the row.  This word found in the data table is
+interpreted as the packed xyz bits for the spatial coordinates.  These bits are
+extracted for each dimension and appended to that dimension's coordinate. The corresponding
+state table is used to find the next row (state) used in the next loop.
+
+
+<BR>&nbsp;
+<h3>Point Assign</h3>
+The user can use
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
+to add a new point to the
+appropriate part.  The bounding box coordinates,
+the final partition, and other related information are maintained after partitioning if the KEEP_CUTS
+parameter is set by the user. The KEEP_CUTS parameter must be set by the user for Point Assign!
+The extended bounded box is
+used to compute the new point's inverse Hilbert coordinate.  Then the
+routine performs a binary search on the final partition to determine the part (interval) which
+includes the point. The routine returns the part number assigned to that
+interval.
+<p>
+The Point Assign function now works for any point in space, even if the point is
+outside the original bounding box. If the point is outside the bounding box, it is first
+scaled using the same equations that scale the interior points into the unit volume.
+The point is projected onto the unit volume. For each spatial dimension, if the scaled
+coordinate is less than zero, it is replace by zero. If it is greater than one, it is
+replaced by one.  Otherwise the scaled coordinate is directly used.
+
+
+<BR>&nbsp;
+<h3>Box Assign</h3>
+The user can use
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a>
+to determine the parts whose
+corresponding subdomains intersect the user's query box.
+Although very different in implementation, the papers by Lawder and King ("Querying Multi-
+dimensional Data Index Using the Hilbert Space-Filling Curve", 2000, etc.) were the original
+inspiration for this algorithm. The Zoltan_HSFC_Box_Assign routine primarily scales the
+user query region and determines its intersection with the Hilbert's bounding box.  Points
+exterior to the bounding box get projected along the coordinate axis onto the bounding box.
+A fuzzy region is built around query points and lines to create the boxes required for the search.
+It also handles the trivial one-dimensional case.  Otherwise it repeatedly calls the 2d and 3d
+query functions using the next highest part's left end point to start the search.  These query
+routines return the next point on the Hilbert curve to enter the query region. A binary
+search finds the part associated with this point.  The query functions are called one more
+time than the number of parts that have points interior to the query region.
+<p>
+The query functions decompose the unit square (or cube) level by level like the Octree method.
+Each level divides the remaining region into quadrants (or octets in 3d).  At each level, the
+quadrant with the smallest inverse Hilbert coordinate (that is, occurring first along the Hilbert curve)
+whose inverse Hilbert coordinate is equal or larger than the starting inverse Hilbert coordinate and which
+intersects with query region is selected. Thus, each level calculates the next 2 bits
+(3 bits in 3d) of the inverse Hilbert coordinate of the next point to enter the query region.  No more
+than once per call to the query function, the function may backtrack to a nearest previous
+level that has another quadrant that intersects the query region and has a higher Hilbert coordinate.
+<p>
+In order to determine the intersection with the query region, the next 2 bits (3 in 3 dimensions) of 
+the  Hilbert transformation
+are also computed (by table lookup) at each level for the quadrant being tested. These bits are
+compared to the the bits resulting from the intersection of the query region with the region
+determined by the spatial coordinates computed to the precision of the previous levels.
+<p>
+If the user query box has any side (edge) that is "too small" (effectively degenerate in
+some dimension), it is replaced by a minimum value and the corresponding vertex coordinates
+are symmetrically expanded.  This is refered to as a "fuzzy" region.
+<p>
+This function requires the KEEP_CUTS parameter to be set by the user.
+The Box Assign function now works for any box in space, even if it has regions outside the
+original bounding box.  The box vertices are scaled and projected exactly like the points
+in the Point Assign function described above.  However, to allow the search to use a proper
+volumn, projected points, lines, and planes are converted to a usable volume by the
+fuzzy region process described above.
+<p>
+This algorithm will work for any space filling curve.  All that is necessary is to
+provide the tables (derieved from the curve's state transition diagram) in place of
+the Hilbert Space Filling Curve tables.
+
+
+<BR>&nbsp;
+
+<H3>Data Structure Definitions</H3>
+The data structures are defined in <i>hsfc/hsfc.h</i>.  The objects being load balanced
+are represented by the <i>Dots</i> Structure which holds the objects spacial coordinates,
+the corresponding inverse Hilbert coordinate, the processor owning the object,
+and the object's weight(s).  The <i>Partition</i> structure holds the left and right
+endpoints of the interval represented by this element of the partition and the index
+to the processor owning this element of the partition.  The structure <i>HSFC_Data</i> 
+holds the "persistant" data
+needed by the point assign and box assign routines.  This includes the bounding box,
+the number of loops necessary for load balancing, the number of dimensions for the problem,
+a pointer to the function that returns the inverse Hilbert Space-Filling Curve
+coordinate, and the final Partition structure contents.
+
+<P>
+
+<H3>
+Parameters</H3>
+
+<P>The parameters used by HSFC and their default values are described in the
+<a href="../ug_html/ug_alg_hsfc.html">HSFC section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
+Guide</A></B>.  These can be set by use of the <b>Zoltan_HSFC_Set_Param</b> subroutine
+in the file <i>hsfc/hsfc.c</i>.
+<p>
+When the parameter <a href="../ug_html/ug_alg_hsfc.html">REDUCE_DIMENSIONS</a> 
+is specified, the HSFC algorithm will perform  lower dimensional
+partitioning if the geometry is found to be degenerate.  More information
+on detecting degenerate
+geometries may be found in another <a href="dev_degenerate.html">
+section</a>.
+
+
+<BR>&nbsp;
+
+<H3>
+Main Routine</H3>
+
+<P>The main routine for HSFC is <b>Zoltan_HSFC</b> in the file <i>hsfc/hsfc.c</i>.
+
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp;
+|&nbsp; <a href="dev_degenerate.html">Next: &nbsp; Handling Degenerate Geometries</a>
+
+|&nbsp; <A HREF="dev_reftree.html"> Previous:&nbsp; Refinement Tree</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

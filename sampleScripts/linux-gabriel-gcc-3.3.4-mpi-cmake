@@ -1,0 +1,20 @@
+EXTRA_ARGS=$@
+
+cmake \
+-D DART_TESTING_TIMEOUT:STRING=100 \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D TPL_MA28_LIBRARIES=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/HSL/libHSL.a \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_FORTRAN:BOOL=OFF \
+-D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt \
+$EXTRA_ARGS \
+../../../Trilinos
+
+
+#-D TPL_ENABLE_Boost:BOOL=ON \
+
+#-D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
+#-D EpetraExt_BUILD_BDF:BOOL=ON \
+
+#-D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/mpi/bin/mpiCC \
+#-D CMAKE_C_COMPILER:FILEPATH=/usr/local/mpi/bin/mpicc \

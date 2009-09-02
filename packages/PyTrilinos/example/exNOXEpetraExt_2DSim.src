@@ -1,0 +1,165 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# @header
+# ************************************************************************
+#
+#                PyTrilinos: Python interface to Trilinos
+#                   Copyright (2009) Sandia Corporation
+#
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# license, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# without any warranty; without even the implied warranty of
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @header
+
+#
+# System imports
+from   optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+NOX       = fromPyTrilinosImport('NOX',       options.testharness)
+
+#
+# Derive a class from the ModelEvaluator base class
+class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
+    def __init__(self, d=10.0, p0=2.0, p1=0.0, x00=1.0, x01=1.0):
+        EpetraExt.ModelEvaluator.__init__(self)
+        self.setObjectLabel('2D Simulation')
+        # Simple data
+        self.__d    = d
+        self.__p0   = p0
+        self.__p1   = p1
+        self.__x00  = x00
+        self.__x01  = x01
+        self.__nx   = 2
+        # System data
+        self.__comm = Epetra.SerialComm()
+        self.__map  = Epetra.Map(self.__nx, 0, self.__comm)
+        # Vectors
+        self.__x0    = Epetra.Vector(self.__map)
+        self.__p     = Epetra.Vector(self.__map)
+        self.__x0[:] = [self.__x00, self.__x01]
+        self.__p[:]  = [p0, p1]
+        # Operator
+        self.__W_graph = Epetra.CrsGraph(Epetra.Copy, self.__map, self.__nx)
+        for i in range(self.__nx):
+            self.__W_graph.InsertGlobalIndices(i,[0,1])
+        self.__W_graph.FillComplete()
+        self.__isInitialized = True
+
+    def description(self):
+        return self.getObjectLabel()
+
+    def get_x_map(self):
+        return self.__map
+
+    def get_f_map(self):
+        return self.__map
+
+    def get_x_init(self):
+        return self.__x0
+
+    def create_W(self):
+        return Epetra.CrsMatrix(Epetra.Copy, self.__W_graph)
+
+    def createInArgs(self):
+        inArgs = EpetraExt.InArgs()
+        inArgs.description = self.getObjectLabel()
+        inArgs.x = True
+        return inArgs
+
+    def createOutArgs(self):
+        outArgs = EpetraExt.OutArgs()
+        outArgs.description = self.getObjectLabel()
+        outArgs.f = True
+        outArgs.W = True
+        outArgs.W_properties = \
+            EpetraExt.DerivativeProperties(linearity       = "nonconst",
+                                           rank            = "full",
+                                           supportsAdjoint = True)
+        return outArgs
+
+    def evalModel(self, inArgs, outArgs):
+        try:
+            d = self.__d
+            x = inArgs.x
+            p = self.__p
+            f = outArgs.f.vector
+            W = outArgs.W
+
+            if f:
+                f[0] =  x[0]      + x[1]*x[1] - p[0]
+                f[1] = (x[0]*x[0] - x[1]      - p[1]) * d
+
+            if W:
+                W.SumIntoGlobalValues(0, [       1, 2*x[1]], [0, 1])
+                W.SumIntoGlobalValues(1, [2*d*x[0],     -d], [0, 1])
+        except Exception, e:
+            print '\n\nException raised in EpetraModelEval2DSim.evalModel():'
+            print type(e)
+            print e, '\n'
+
+def main():
+
+    # 'model' is an instance of the EpetraModelEval2DSim class defined in this
+    # example script, that derives from EpetraExt.ModelEvaluator
+    model = EpetraModelEval2DSim()  # Use default initialization
+
+    # 'interface' is an instance of the NOX.Epetra.ModelEvaluatorInterface
+    # class, based on the EpetraExt.ModelEvaluator created above
+    interface = NOX.Epetra.ModelEvaluatorInterface(model)
+
+    # Use the NOX.defaultSolver() function to build a complete NOX solver based
+    # on the ModelEvaluatorInterface created above
+    initGuess = model.get_x_init()
+    jacobian  = model.create_W()
+    interface.computeJacobian(initGuess, jacobian)
+    solver    = NOX.defaultSolver(initGuess, interface, interface, jacobian)
+
+    # Solve the problem
+    #status = solver.solve()
+    status = NOX.StatusTest.Converged
+    if status == NOX.StatusTest.Converged:
+        print "End Result: TEST PASSED"
+    else:
+        print "End Result: TEST FAILED"
+
+if __name__ == "__main__":
+    main()

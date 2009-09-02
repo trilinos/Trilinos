@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
+
+echo
+echo "Generating doxygen browser documentation for all of teuchos as a single doxygen collection ..."
+echo
+
+doxygen ../browser/doc/Doxyfile
+
+echo
+echo "Generating main teuchos doxygen documentation pages ..."
+echo
+
+doxygen Doxyfile
+
+echo
+echo "Generating RefCountPtrBeginnersGuildeSAND.pdf file ..."
+echo
+
+pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
+cp ../../../doc/RefCountPtr/beginners/RefCountPtrBeginnersGuideSAND.pdf html/.

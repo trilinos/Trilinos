@@ -1,0 +1,61 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+The test directory contains a series of tests used for regression testing.
+Each test is in its own directory.  Within each directory, 
+  - file README gives a brief description of the particular test.
+  - files "zdrive.inp.*" are input files for the zdrive or zfdrive test drivers.
+  - subdirectory "answers" contains the accepted solutions for the test.
+
+Test directories ch_* use Chaco-format input files.  These tests may be run
+on any number of processors; regression test results are for a specified number
+of processors.
+
+Test directories nem_* use Nemesis-format input files.  Running these tests
+on arbitrary numbers of processors requires generation of Nemesis parallel
+input files; instructions for generating these files are included in the
+nem_*/README files.  However, since generating these files is non-trivial, 
+it is easiest to run these problems on the specified number of processors.
+
+The script, test_zoltan, in this directory, runs the entire regression test
+suite.  See descriptions of test_zoltan in the Zoltan developer's guide.
+
+Test input files zdrive.inp.* have a suffix indicating the particular
+partitioning method and parameters used for the test problem.  A summary of
+the suffixes is included below:
+  - rcb:               RCB method
+  - rcb-ts:            RCB method with TFLOPS_SPECIAL parameter.
+  - rib:               RIB method
+  - rib-ts:            RIB method with TFLOPS_SPECIAL parameter.
+  - oct[0,1,2]:        OCTPART method with OCT_METHOD parameter = [0,1,2]
+  - partkway:          ParMETIS PartKWay method
+  - partgeom:          ParMETIS PartGeom method
+  - diffusion:         ParMETIS Diffusion method
+  - jostle:            Jostle partitioning method
+  - jostle-diffusion:  Jostle partitioning method with jostle_reduction=off
+  - *-oneproc:         Initial distribution on only one processor.
+  - *-cyclic:          Cyclic initial distribution.
+  
+
+-------------------------------------------------------------------------
+Notes:
+
+2/26/03 KDD
+Adaptive-repart method in ParMETIS may give different answers on different
+platforms due to differences in qsort between platforms.  On Suns (with
+dynamic linking), different versions of the C library may have different
+implementations, resulting in different results even across multiple Suns.
+(qsort in ParMETIS3.0's SerialRemap function does not have deterministic 
+comparison function, so items to be sorted that are equal may be output in 
+different order on different platforms; i.e., ties are broken differently.)
+

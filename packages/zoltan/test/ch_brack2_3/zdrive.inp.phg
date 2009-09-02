@@ -1,0 +1,8 @@
+Decomposition Method	= hypergraph
+Zoltan Parameters	= lb_approach=partition
+Zoltan Parameters	= obj_weight_dim=1
+Zoltan Parameters	= edge_weight_dim=1
+Zoltan Parameters	= final_output=1
+File Type		= Chaco
+File Name		= brack2_3
+Parallel Disk Info	= number=0

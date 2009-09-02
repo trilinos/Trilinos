@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+import os
+import sre
+import os.path
+import sys
+
+args = sys.argv[1:]
+##
+## Take output from a series of files of the form 'outfile.number' 
+## and put them in a plotable form via the matlab file PlotMlData.m.
+## After running this file, try issuing PlotMlData from matlab and 
+## hope for the best.
+##
+## Note: 'number' indicates the number of processors used in the simulation.
+##
+prefix="outfile"
+if len(args) > 1:
+   print '\n'
+   print 'Usage: Out2Mat [FilenamePrefix]'
+   print '\n'
+   sys.exit()
+
+if len(args) == 1:
+   prefix=args[0]
+
+if ( os.path.isfile('PlotMlData.m')):
+   os.remove('PlotMlData.m')
+
+def ListSearch(pattern,list):
+   """
+   Return all elements in list that contain the pattern.
+   """
+   newone=[]
+   for i in list:
+      if sre.search(pattern,i):
+         newone.append(i)
+   return newone
+
+def NumericCompare(a,b):
+   """
+   Compare two strings to see which one is greater.
+   This function differs from the standard cmp() used
+   for sorting in that it will numerically compare 
+   any integers encountered along the way.
+   """
+
+   # only works when the string ends with a number
+   # so we'll stick a sentinal on these guys
+   arest = a + 'sentinal6'
+   brest = b + 'sentinal6'
+   # strip off the nonnumeric part of each string
+   # starting from the beginning. Compare these first.
+   # If these are equal, compare the first set of 
+   # numeric sequences. If these are equal, keep
+   # stripping off the nonnumeric part followed by
+   # the numeric part.
+   while ( len(arest) != 0  and len(brest) != 0 ):
+      aone = sre.findall('^[^0123456789]*',arest)
+      bone = sre.findall('^[^0123456789]*',brest)
+      arest = arest[len(aone[0]):]
+      brest = brest[len(bone[0]):]
+      if (cmp(aone[0],bone[0]) != 0):
+         return cmp(aone[0],bone[0])
+      aone = sre.findall('^[0123456789]*',arest)
+      bone = sre.findall('^[0123456789]*',brest)
+      arest = arest[len(aone[0]):]
+      brest = brest[len(bone[0]):]
+      if (int(aone[0]) != int(bone[0])):
+         if (int(aone[0]) > int(bone[0])):
+            return 1
+         else:
+            return -1
+   if len(arest) < len(brest):
+      return 1
+   if len(arest) == len(brest):
+      return 0
+   else:
+      return -1
+   
+datafiles= ListSearch(prefix+'\.[0123456789]*',os.listdir('.'))
+datafiles.sort(NumericCompare)
+count = 1
+for i in datafiles:
+   nprocs = sre.sub('^.*\.','',i)
+   os.system('GrepTimings '+str(count)+' '+nprocs+' '+i+' >> PlotMlData.m')
+   count += 1
+outstream = open('PlotMlData.m','a')
+outstream.write('PlotTimings\n')
+outstream.close()
+

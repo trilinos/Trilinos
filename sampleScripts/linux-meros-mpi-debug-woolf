@@ -1,0 +1,42 @@
+#!/bin/sh
+
+##################################################################
+#
+# Configuration of Trilinos with Meros
+#
+# The script shows an example of specifying an mpi compiler in a
+# nonstandard location. On my machine woolf, I have several versions
+# of gcc and mpich. This points Trilinos to a specific one.
+##################################################################
+
+
+BUILD_DIR=`pwd`
+
+../configure \
+--enable-mpi \
+--with-mpi-compilers="/usr/local/mpich-1.2.7_gcc3.4.3/bin" \
+CXXFLAGS="-g -O0 -Wreturn-type" \
+--with-libs="-lexpat" \
+--disable-default-packages \
+--enable-teuchos --enable-teuchos-extended \
+--enable-teuchos-complex --enable-teuchos-abc --enable-teuchos-expat \
+--enable-thyra \
+--enable-thyra-examples \
+--enable-epetra \
+--enable-epetra-thyra \
+--enable-epetraext \
+--enable-epetraext-thyra \
+--enable-ml \
+--enable-ml-thyra \
+--enable-aztecoo \
+--enable-aztecoo-thyra \
+--enable-ifpack \
+--enable-ifpack-thyra \
+--enable-nox \
+--enable-stratimikos \
+--enable-meros \
+--enable-meros-examples \
+--with-gnumake \
+--with-install="/usr/bin/install -c -p" \
+--prefix=$BUILD_DIR
+

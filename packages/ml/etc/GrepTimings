@@ -1,0 +1,276 @@
+#!/usr/bin/env python
+import os
+import sre
+import os.path
+import sys
+
+#
+#   Syntax:  GrepTimings Counter NumProcs Filename
+#
+#   where Filename is an ML output file containing performance numbers
+#         NumProcs is the number of processors used to generate the output
+#         Counter  indicates which one in the sequence of scaling this 
+#         file corresponds to. That is, GrepTimings is normally used
+#         repeatedly on a series of files. For the first file, Counter is
+#         1, and the second file it is 2, etc.
+#
+# Note: GrepTimings is used by Ou/tmp/t2Matlab
+#
+
+args = sys.argv[1:]
+if len(args) < 3:
+   print '\n'
+   print 'Usage: GrepTimings Counter NumProcs Filename'
+   print '\n'
+   sys.exit()
+
+def myopen(filename,mode):
+   """
+      Open filename with mode (e.g. 'r', 'w'). If the file
+      cannot be openned, print a message and exit. Return
+      stream pointer.
+   """
+   try:
+      fileptr = open( filename, mode )
+   except IOError:
+      print "Could not open ", filename
+      sys.exit(2)
+   return fileptr
+
+class StreamEdit(list):
+   """
+      Populate a list with a series of commands of the form:
+         self.add(['remove','xxx'])
+         self.add(['grep'  ,'xxx'])
+         self.add(['sed'  , ['aaa','bbb',i]])
+      Then apply these commands to a file via
+         self.execute('filename')
+      where the above commands are interpreted as
+         ['remove','xxx'] : remove all lines in the file which contain 'xxx'.
+         ['grep'  ,'xxx'] : keep all lines in the file which contain 'xxx'.
+         ['sed'  , ['aaa','bbb',i]]: in each line replace the first i 
+                                     instances of 'aaa' with 'bbb'.
+
+       Note: 'aaa' corresponds to a regular expression which means
+       that ['sed',['(?P<day>.ain)','o\g<day>',2]] when applied to 
+       the string 'the rain in spain' would produce 'the orain in sopain'
+
+   """
+   def add(self, object):
+      if (type(object) is list) and (len(object) == 2):
+         if ( (object[0] =='grep') or (object[0] == 'remove')):
+            if (type(object[1]) is str):
+               self.append(object)
+            else:
+               print "add(['",object[0],"',xxx]): xxx must be a string" 
+               print "            : xxx = ", object[1]
+         elif (object[0] == 'sed'):
+            t= object[1]
+            if (type(t) is list) and (len(t) == 3) and (type(t[2]) is int) and \
+               (type(t[0]) is str) and (type(t[1]) is str):
+                     self.append(object)
+            else: 
+               print "add(['sed',xxx]): xxx must be a list of length 3 with"
+               print "                : the first two elements as strings and"
+               print "                : the last element as an integer"
+               print "                : xxx = ",t
+         else:
+            print "add(): keyword",object[0],"not recognized"
+      else:
+         print "add(xxx): Only lists of length two allowed for xxx."
+         print "        :    xxx = ",object
+   def execute(self, filein, fileout = sys.stdout):
+      outstream = fileout
+      if (fileout != sys.stdout):
+         outstream = myopen( fileout, 'w' )
+      fileToSearch = myopen(filein, 'r')
+      for line in fileToSearch.read().splitlines():
+         printme = 1
+         current = line
+         for i in xrange(len(self)):
+            t = self[i]
+            if ( t[0] == 'grep'):
+               if ( sre.search(t[1],current) == None):
+                  printme = 0
+            elif ( t[0] == 'remove'):
+               if ( sre.search(t[1],current) != None):
+                  printme = 0
+            elif ( t[0] == 'sed'):
+               temp = t[1]
+               current = sre.sub(temp[0],temp[1],current,temp[2])
+            else:
+               print "execute():",t[0],'is not recognized\n'
+         if (printme == 1):
+            outstream.write(current+'\n')
+      fileToSearch.close()
+      if (fileout != sys.stdout): outstream.close()
+
+
+def mysed(pattern,replacement,filein,fileout=sys.stdout):
+   """
+      Simple version of sed. Go through each line in the file
+      'filein'. Find the first occurance in each line of the 
+      regular expression given by 'pattern' and replace it with
+      'replacement'. If 4th argument not given, put the output
+      on stdout. Otherwise, open the file given by the 4th
+      argument and put the output there.
+   """
+   fileToSearch = myopen(filein, 'r')
+   #
+   outstream = fileout
+   if (fileout != sys.stdout):
+      outstream = myopen( fileout, 'w' )
+   #
+   for line in fileToSearch.read().splitlines():
+      outstream.write(sre.sub(pattern,replacement,line,1)+'\n')
+   fileToSearch.close()
+   if (fileout != sys.stdout): outstream.close()
+
+def mygrep(pattern,filein,fileout=sys.stdout):
+   """
+      Simple version of grep. Go through each line in the file
+      'filein'. Print each line which contains the regular expression 
+      given by 'pattern'.  If 4th argument not given, put the output
+      on stdout. Otherwise, open the file given by the 4th
+      argument and put the output there.
+   """
+   fileToSearch = myopen(filein, 'r')
+   #
+   outstream = fileout
+   if (fileout != sys.stdout):
+      outstream = myopen( fileout, 'w' )
+   #
+   for line in fileToSearch.read().splitlines():
+      if ( sre.search(pattern,line)):
+        outstream.write(line+'\n')
+   fileToSearch.close()
+   if (fileout != sys.stdout): outstream.close()
+
+def invgrep(pattern,filein,fileout=sys.stdout):
+   """
+      Simple version of grep -v. Go through each line in the file
+      'filein'. Print each line which DOES NOT contains the regular expression 
+      given by 'pattern'.  If 4th argument not given, put the output
+      on stdout. Otherwise, open the file given by the 4th
+      argument and put the output there.
+   """
+   fileToSearch = myopen(filein, 'r')
+   outstream = fileout
+   if (fileout != sys.stdout):
+      outstream = myopen( fileout, 'w' )
+   #
+   for line in fileToSearch.read().splitlines():
+      if ( sre.search(pattern,line) == None):
+        outstream.write(line+'\n')
+   fileToSearch.close()
+   if (fileout != sys.stdout): outstream.close()
+
+
+print 'Proc('+args[0]+') = '+args[1]+';'
+q=StreamEdit(); 
+q.add(['grep'  ,'Amat_.*apply\+comm'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'min'])
+q.add(['sed'   ,['Amat_' , 'AvMin'         ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+q=StreamEdit(); 
+q.add(['grep'  ,'Amat_.*apply\+comm'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'max'])
+q.add(['sed'   ,['Amat_' , 'AvMax'         ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Rmat_.*apply\+comm'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'min'])
+q.add(['sed'   ,['Rmat_' , 'RMin'          ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Rmat_.*apply\+comm'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'max'])
+q.add(['sed'   ,['Rmat_' , 'RMax'          ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Pmat_.*apply\+comm'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'min'])
+q.add(['sed'   ,['Pmat_' , 'PMin'          ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Pmat_.*apply\+comm'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'max'])
+q.add(['sed'   ,['Pmat_' , 'PMax'          ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Amat_.*exch bdry time'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'min'])
+q.add(['sed'   ,['Amat_' , 'AvMinComm'     ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Amat_.*exch bdry time'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'max'])
+q.add(['sed'   ,['Amat_' , 'AvMaxComm'     ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Rmat_.*exch bdry time'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'min'])
+q.add(['sed'   ,['Rmat_' , 'RMinComm'      ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Rmat_.*exch bdry time'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'max'])
+q.add(['sed'   ,['Rmat_' , 'RMaxComm'      ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Pmat_.*exch bdry time'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'min'])
+q.add(['sed'   ,['Pmat_' , 'PMinComm'      ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#
+q=StreamEdit(); 
+q.add(['grep'  ,'Pmat_.*exch bdry time'])
+q.add(['remove','artition'])
+q.add(['grep'  ,'max'])
+q.add(['sed'   ,['Pmat_' , 'PMaxComm'      ,1]])
+q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
+q.add(['sed'   ,['$'     , ';'             ,1]])
+q.execute(args[2])
+#

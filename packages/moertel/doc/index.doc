@@ -1,0 +1,196 @@
+/*! \mainpage Moertel: Mortar Methods Package.
+\htmlonly
+\endhtmlonly
+
+\section Moertel_intro Introduction
+Moertel provides fundamental construction
+routines and services that are required for serial and
+parallel mesh-tying and contact formulations using Mortar methods.  
+
+\section Moertel_overview Overview of Moertel.
+
+\subsection Capabilities Capabilities
+
+This package supplies capabilities for nonconforming mesh tying and contact
+formulations in  2 and 3 dimensions using Mortar methods. 
+Mortar methods are a type of Lagrange Multiplier constraints that can be used
+in contact formulations and in non-conforming or conforming mesh tying as
+well as in domain decomposition techniques.
+Originally introduced as a domain decomposition method for spectral elements,
+Mortar methods are used in a large class of nonconforming situations such as
+the surface coupling of different physical models, discretization schemes or
+non-matching triangulations along interior interfaces of a domain.<br>
+<br>
+Suitable conditions at interfaces are formulated as weak continuity conditions
+in dual variables introducing Lagrange multipliers on the interface.
+By an approbiate choice of the function space of the Lagrange multipliers on
+an interface it is possible to locally condense Lagrange multipliers such that a
+sparse and definite system of equations can be formed which is equivalent to 
+the saddle point system resulting from the Lagrange multiplier formulation.<br>
+Moreover if the problems on subdomains are symmetric positive definite (spd) or 
+symmetric positive indefinite and the complete problem is known to be spd, then
+a spd system of equations can be recovered that leads to the same solution as the
+saddle point system of equations. This way, unmodfied standard solution techniques
+such as multigrid can be applied and the reduction in the solution costs can be
+expected to over-compensate costs for the Mortar formulation of the problem.<br>
+<br>
+This package currently has the following capabilities and features:
+<ul> 
+
+<li> Construction of one or several non-conforming interfaces in a 2D/3D problem, where each side
+     of an interface is discretized independently with low order finite elements.
+
+<li> Handling of 'corner nodes' and 'edge nodes' in the case of several 
+     interfaces sharing common nodes.
+
+<li> Construction of a discrete Lagrange multiplier space on interfaces, were
+     the space is determined by the choice of the user and the trace spaces of
+     the underlying finite element functions on the interfaces.
+
+<li> Construction of corresponding coupling matrices and construction of a
+     saddle point system of equations if the user provides the stiffness matrices
+     of the subdomains. 
+
+<li> Construction of an equivalent sparse symmetric or unsymmetric definite
+     system of equations if the user provides the stiffness matrices of the
+     subdomains and depending on the user's choice of the Lagrange multiplier space. 
+
+<li> Full support interfaces to Trilinos packages Amesos (direct solvers), 
+     AztecOO (preconditioned iterative methods) and ML (algebraic multigrid preconditioners)
+     for the solution of resulting systems of equations.<br>
+     The user for example might supply subdomain stiffness matrices, left and right hand
+     side vectors, choose solver options, define interfaces among subdomains 
+     and then use the Moertel package and its solver interfaces to obtain the solution of the tied problem.
+     
+<li> Access to internal data to let the user build his/her own contact formulation or
+     domain decomposition method based on Mortar formulations without the neccessity 
+     to actually implement core Mortar functionality. 
+
+<li> Easy extensibility due to a modular and object orientated implementation. 
+
+<li> Support for parallel and serial applications, where in the parallel case
+     the interfaces are not expected to meet any partitioning requirements among
+     processors, as most application will focuse on the partitioning of subdomains
+     and not on interfaces. Partitioning of one or more interfaces is completely
+     arbitrary.
+
+<li> 'Grey box' mesh tying for low order finite element discretizations
+</ul>
+This package does not feature:
+<ul> 
+<li> Black box contact formulations though it provides substantial building blocks
+     for the construction of such methods.
+
+<li> Black box domain decomposition techniques such as Dirichlet-Neumann or
+     Dirichlet-Dirichlet (and derived) coupling algorithms.<br>
+     It though provides substantial building blocks for the construction of such algorithms.
+</ul>
+     
+\subsection Configuration Configuration
+
+Moertel severely depends on the other Trilinos packages Epetra,
+EpetraExt, Teuchos, Amesos, AztecOO and ML.<br>
+<br>
+To use Moertel one has to use at least the following enabled when 
+configuring Trilinos:
+\code
+--enable-moertel 
+--enable-epetra 
+--enable-epetraext
+--enable-teuchos 
+--enable-ml
+--enable-ifpack
+--enable-ifpack-teuchos
+--enable-aztecoo --enable-aztecoo-teuchos 
+--enable-amesos
+\endcode 
+
+\subsection User_interface User interface
+
+Described here briefly is what would be the typical usage of Moertel for a mesh tying problem.<br>
+<br>
+One would first construct an empty MOERTEL::Interface instance. This
+is a collective operation as all processors have to at least know about
+all existing interfaces.<br>
+Any MOERTEL::Interface instance has 2 sides which can be constructed 
+independently and nonconforming. For more detailed information about
+restrictions and capabilities for Interfaces, see MOERTEL::Interface<br> 
+Then it is neccessary to supply information about
+the geometry and connectivity of that Interface. This is done by defining
+an arbitrary number of MOERTEL::Node and MOERTEL::Segment instances 
+and adding them to either side of the Interface.
+\note
+To be more precise: The user has to define instances of one of the supplied
+MOERTEL::Segment derived types, as MOERTEL::Segment itself is virtual. Currently, 
+the package supports linear 1D segments in 2D problems, bilinear quadrilateral
+segments in 3D problems and linear triangle segments in 3D problems. 
+<br>
+\note
+Adding a MOERTEL::Node or MOERTEL::Segment to a MOERTEL::Interface is NOT
+a collective operation. Nodes and Segments are added by individual processes which
+then become owner of that Node or Segment on that specific interface.<br>
+Every process that does NOT add any Node or Segment instances to an interface 
+will not take part in any computations performed on that Interface instance 
+though some of the methods are collective for all procs.
+Most Interface methods will be non-blocking for such processes.
+
+After adding all segments and nodes to the Interface that are neccessary to define
+both sides of it the user has to indicate the completeness of the
+interface instance by calling MOERTEL::Interface::Complete() on it.
+Upon MOERTEL::Interface::Complete(), the parallel computation of that interface
+is organized and reasonability test upon the connectivity of the interface are performed.<br>
+<br>
+The base class for the user interface is the \ref MOERTEL::Manager.<br>
+It supplies all methods neccessary to perform the Mortar integration and to 
+solve resulting systems of equations.<br>
+Once a MOERTEL::Interface is complete it can be added to a MOERTEL::Manager instance.
+A MOERTEL::Manager can hold an arbitrary number of interfaces.<br>
+Note that a Manager instance can not hold 2D (3D problem) and 1D (2D problem) interfaces
+at the same time.
+The integration of all interfaces and the assembly of constraint matrices is performed
+by MOERTEL::Manager::Mortar_Integrate().<br>
+After integration, the Manager instance supplies a variety of access and solution methods
+to the user, as e.g. full support interfaces to the solution packages Amesos, AztecOO and ML.<br>
+
+\subsection Examples Examples
+
+A simple serial example demonstrating usage of Moertel and its interfaces to
+other Trilinos packages is given in \ref TwoSquares.cpp .
+
+\subsection Documentation Documentation
+
+For more detailed documentation please browse the Moertel website and the
+- soon to appear - 'Moertel Users Guide'.
+
+\subsection Literature Literature
+
+<ul>
+<li> Flemish, B., Puso, M.A., Wohlmuth, B.I. (2005): "A new dual mortar method
+for curved interfaces: linear elasticity. IJNME, Vol 63, pp. 813-832.
+
+<li> Lamichhane, B.P., Wohlmuth, B.I. (2005): "Mortar finite Elements for
+Interface Problems", technical report, IANS, University of Stuttgart.
+
+<li> Puso, M.A., Laursen T.A. (2004): "A mortar segment-to-segment contact method 
+for large deformation solid mechanics", CMAME, Vol. 193, pp. 601-629.
+
+<li> Puso, M.A., Laursen T.A. (2004): "A mortar segment-to-segment contact method 
+for large deformations", CMAME, Vol 193, pp. 4891-4913.
+
+<li> Wohlmuth, B.I. (2001): "Discretization Methods and Iterative Solvers Based on 
+Domain Decomposition", Springer Press.
+
+<li> Yang, B., Laursen, T.A., Meng, X. (2005): "Two dimensional mortar contact
+methods for large deformation frictional sliding", IJNME, Vol. 62, pp. 1183-1225.
+</ul> 
+
+\subsection author Author and Acknowledgements
+
+\author Michael W. Gee (mwgee@sandia.gov), Sandia National Laboratories, Org. 1414.
+
+I would like to thank Barbara Wohlmuth, Stefan Huuber, Raymond Tuminaro and
+Pavel Bochev for discussions and support in creating this work.  
+
+<br>
+<br>
+*/

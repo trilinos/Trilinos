@@ -1,0 +1,8 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = phg_edge_size_threshold = 1.0
+Zoltan Parameters       = lb_approach = partition
+File Type		= matrixmarket+
+File Name		= ibm03
+Parallel Disk Info	= number=0

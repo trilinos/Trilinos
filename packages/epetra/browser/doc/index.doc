@@ -1,0 +1,15 @@
+/*! \mainpage Epetra Package Browser (Single Doxygen Collection)
+
+The purpose of this doxygen documentation collection is to allow experienced
+developers a quick and easy way to browse all of the Epetra package in a single
+doxygen documentation collection.  Most people are better off starting at the
+<a href="../../../doc/html/index.html">main Epetra documentation page</a> since
+this is where one will find examples and tutorials.
+
+<b>Warning!</b> If you become overwhelmed by clicking on the above links
+(i.e. "Class Hierarchy", "Class List", "File List" etc.) then you would be
+wise to go back to the <a href="../../../doc/html/index.html">main Epetra
+documentation page</a> and then browse Epetra in smaller chunks as separate
+doxygen documentation collections.
+
+*/

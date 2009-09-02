@@ -1,0 +1,17 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
+to be added:
+
+- Duplicate(MultiVector x)
+
+- Duplicate(Multivector x, int component)
+
+- Duplicate(Operator x)
+
+- Duplicate(InverseOperator x)
+
+- Lower(Operator A)
+
+- Upper(Operator A)

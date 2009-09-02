@@ -1,0 +1,33 @@
+Notes from talk with Ross Bartlett on June 6, 2008.
+
+
+template<typename ScalarT, typename Traits>
+class DensityExpression {
+public:
+  ScalarT operator()(const ScalarT &temp)
+  {
+    return temp * temp;
+  }
+};
+
+template<typename ScalarT, typename Traits, typename Expression_1>
+void PointFieldEvaluator_1<ScalarT, Traits>::evaluateFields(typename Traits::EvalData ud)
+{
+  const Teuchos::Array<ScalarT> &input_1 = *input_;
+  Teuchos::Array<ScalarT> &output = *output_;
+  for (std::size_t qp = 0; qp < output.size(); ++qp)
+    output[qp] = expression_1_(input_1[qp]);
+}
+
+template<typename ScalarT, typename Traits, typename Expression_1>
+void PointFieldEvaluator_1<ScalarT, Traits>::evaluateFields(typename Traits::EvalData ud)
+{
+  typedef typename Teuchos::Array<ScalarT>::iterator iter_t;
+  typedef typename Teuchos::Array<ScalarT>::const_iterator const_iter_t;
+  const Teuchos::Array<ScalarT> &input_1 = *input_;
+  Teuchos::Array<ScalarT> &output = *output_;
+  const_iter_t input_1_iter = input_1_.begin();
+  iter_t output_iter = output.begin();
+  for ( ; output_iter != output.end();  )
+    *output_iter++ = expression_1_(*input_1_iter++);
+}

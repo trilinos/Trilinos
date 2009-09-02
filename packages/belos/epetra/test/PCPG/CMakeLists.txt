@@ -1,0 +1,15 @@
+
+INCLUDE(PackageAddExecutable)
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ML)
+IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_ML)
+    
+  PACKAGE_ADD_EXECUTABLE(
+    pcpg_epetraex   
+    SOURCES test_pcpg_epetraex.cpp
+    COMM serial mpi
+    )
+
+ENDIF()

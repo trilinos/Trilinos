@@ -1,0 +1,23 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+TIMER UTILITY -- Routines to implement Zoltan_Time and Zoltan_Timer objects.
+----------------------------------------------------------------------------
+
+Files compiled into libzoltan_timer.a and libzoltan.a:
+
+timer.c                -- Routines implementing Zoltan_Time.
+timer.h                -- Prototypes and constants.
+zoltan_timer.c         -- Implementation of timer object.
+zoltan_timer.h         -- Interface to timer object.

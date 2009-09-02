@@ -1,0 +1,303 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#############################################################################
+#
+# This example script is intended to emulate the 1D FEM test problem from NOX
+# found in nox/test/epetra/1Dfem/1Dfem.C.  It solves the 1D finite element
+# approximation to
+#
+#     d2u
+#     --- - k * u**2 = 0
+#     dx2
+#
+# Subject to Dirichlet boundary conditions at x=0, x=1.
+#
+#############################################################################
+
+# System imports
+from   numpy    import *
+from   optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+parser.add_option("-n", "--numelem", type="int", dest="numelem", default=100,
+                  help="set the number of elements [default 100]")
+parser.add_option("-k", "--force_const", type="float", dest="k", default=1000.0,
+                  help="set the nonlinear forcing constant [default 1000]")
+parser.add_option("--bc0", type="float", dest="bc0", default=1.0,
+                  help="set the Dirichlet boundary condition value at x=0 [default 1]")
+parser.add_option("--bc1", type="float", dest="bc1", default=2.0,
+                  help="set the Dirichlet boundary condition value at x=1 [default 2]")
+parser.add_option("-p", "--plot", action="store_true", dest="plot",
+                  default=False, help="Plot the resulting solution")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
+
+# Plotting import
+if options.plot:
+    import pylab as mp
+
+# ######################################################################
+
+class MyInterface(NOX.Epetra.Interface.Required):
+
+    def __init__(self, numGlobalElements, comm, bc0=1.0, bc1=2, xmin=0.0, xmax=1.0):
+        # Initialize the base class
+        NOX.Epetra.Interface.Required.__init__(self)
+        # MyInterface initialization
+        self.__numGlobalElements = numGlobalElements
+        self.__comm              = comm
+        self.__bc0               = bc0
+        self.__bc1               = bc1
+        self.__xmin              = xmin
+        self.__xmax              = xmax
+        self.__myPID             = comm.MyPID()
+        self.__numProc           = comm.NumProc()
+        self.__haveBC0           = (self.__myPID == 0)
+        self.__haveBC1           = (self.__myPID == self.__numProc-1)
+        self.__k                 = 1.0
+        self.__stdMap            = Epetra.Map(numGlobalElements,0,comm)
+        self.__numMyElements     = self.__stdMap.NumMyElements()
+        newElements              = list(self.__stdMap.MyGlobalElements())
+        if self.__myPID > 0:                newElements.insert(0,newElements[0]-1)
+        if self.__myPID < self.__numProc-1: newElements.append(newElements[-1]+1)
+        self.__overlapMap        = Epetra.Map(-1,newElements,0,comm)
+        self.__soln              = Epetra.Vector(self.__overlapMap)
+        self.__rhs               = Epetra.Vector(self.__stdMap)
+        self.computeSlices()
+        self.createGraph()
+        x = array(self.__overlapMap.MyGlobalElements()) / (numGlobalElements-1.0)
+        self.__x                 = Epetra.Vector(self.__overlapMap,x)
+        self.__h                 = (self.__xmax - self.__xmin) / (len(self.__x)-1)
+        self.initializeSoln()
+
+    def computeF(self, u, F, flag):
+        """
+        This is the function that NOX calls back to in order to compute F(u).
+        Arguments u and F are provided as Epetra.Vector objects, complete with
+        numpy interface.
+        """
+        flagStr = ["Residual", "Jac"   , "Prec", "FD_Res",
+                   "MF_Res"  , "MF_Jac", "User"          ]
+        if len(u) == len(F):
+            f1 = 1
+            f2 = len(F) - 1
+            u1 = f1
+            u2 = f2
+        else:
+            f1 = self.__f1
+            f2 = self.__f2
+            u1 = self.__u1
+            u2 = self.__u2
+        try:
+            #output = "Proc " + str(self.__comm.MyPID()) + ":\n  flag = " + \
+            #         flagStr[flag] + "\n  len(u) = " + str(len(u)) + \
+            #         "\n    u1 = " + str(u1) + "\n    u2 = " + str(u2) + \
+            #         "\n  len(F) = " + str(len(F)) + "\n    f1 = " + str(f1) + \
+            #         "\n    f2 = " + str(f2)
+            #print output
+            # Compute the residual on the interior
+            F[f1:f2] = (u[u1-1:u2-1] - 2*u[u1:u2] + u[u1+1:u2+1]) / \
+                       (self.__h*self.__h) - self.__k * u[u1:u2] * u[u1:u2]
+            # Compute the residual on the boundaries
+            if self.__haveBC0: F[ 0] = u[ 0] - self.__bc0
+            if self.__haveBC1: F[-1] = u[-1] - self.__bc1
+            return True
+        except Exception, e:
+            print "MyInterface.computeF() has thrown an exception:"
+            print type(e)
+            print e
+            return False
+
+    def getSolution(self):
+        return self.__soln
+
+    def getMesh(self):
+        return self.__x
+
+    def setPDEfactor(self, k):
+        self.__k = k
+        return True
+
+    def createGraph(self):
+        self.__graph = Epetra.CrsGraph(Epetra.Copy, self.__stdMap,
+                                       self.__overlapMap, 3)
+        for gid in self.__stdMap.MyGlobalElements():
+            lid = self.__stdMap.LID(gid)
+            if gid in (0,self.__numGlobalElements-1):  # Boundaries
+                self.__graph.InsertGlobalIndices(lid,[gid])
+            else:                                      # Interior
+                self.__graph.InsertGlobalIndices(lid,[gid-1,gid,gid+1])
+        self.__graph.FillComplete()
+        return True
+
+    def computeSlices(self):
+        n = self.__numMyElements
+        # Determine slice range for F
+        if self.__haveBC0: self.__f1 = 1
+        else:              self.__f1 = 0
+        if self.__haveBC1: self.__f2 = n-1
+        else:              self.__f2 = n
+        # Determine slice range for u
+        self.__u1 = 1
+        if self.__haveBC0: self.__u2 = self.__f2
+        else:              self.__u2 = self.__f2 + 1
+
+    def initializeSoln(self):
+        self.__soln.PutScalar((self.__bc0 + self.__bc1)/2)
+        if self.__haveBC0: self.__soln[ 0] = self.__bc0
+        if self.__haveBC1: self.__soln[-1] = self.__bc1
+        return True
+
+    def getGraph(self):
+        return self.__graph
+
+######################################################################
+
+# Main routine
+def main():
+
+    # Communicator
+    comm    = Epetra.PyComm()
+    myPID   = comm.MyPID()
+    numProc = comm.NumProc()
+
+    # Suppress 'Aztec status AZ_loss: loss of precision' messages
+    comm.SetTracebackMode(0)
+
+    # Get the number of elements from the command line
+    numGlobalElements = options.numelem + 1
+    if numGlobalElements < numProc:
+        msg = "numGlobalBlocks = %d cannot be < number of processors = %d" % \
+              (numGlobalElements,numProc)
+        msg += "\nTest failed!"
+        raise RuntimeError, msg
+
+    # Get the boundary conditions
+    bc0 = options.bc0
+    bc1 = options.bc1
+
+    # Create the interface between NOX and the application.  This object is
+    # derived from NOX.Epetra.Interface.
+    interface = MyInterface(numGlobalElements, comm, bc0, bc1)
+    interface.setPDEfactor(options.k)
+
+    # Get the initial solution vector from the problem
+    initGuess    = interface.getSolution()
+    noxInitGuess = NOX.Epetra.Vector(initGuess,NOX.Epetra.Vector.CreateView)
+
+    # Define the ParameterLists
+    nlParams    = NOX.defaultNonlinearParameters(comm,2)
+    printParams = nlParams["Printing"]
+    lsParams    = nlParams["Linear Solver"]
+
+    # Define the Jacobian interface/operator
+    mf     = NOX.Epetra.MatrixFree(printParams,interface,noxInitGuess)
+    # Define the Preconditioner interface/operator
+    fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
+                                                 initGuess, interface.getGraph(),
+                                                 True)
+
+    # Create and execute the solver
+    solver = NOX.defaultSolver(initGuess, interface, mf, mf, fdc, fdc, nlParams)
+
+    ### Begin Nonlinear Solve ###
+
+    solveStatus = solver.solve()
+
+    ### End Nonlinear Solve ###
+
+    # Obtain the final solution
+    finalGroup = solver.getSolutionGroup()
+    finalSoln  = finalGroup.getX()
+
+    # Output the parameter list
+    if options.verbosity:
+        if myPID == 0:
+            print "Final Parameters\n****************"
+            solver.getList()._print()
+            print
+
+    # Tests
+    status = 0
+    if solveStatus != NOX.StatusTest.Converged:
+        status += 1
+        if myPID == 0: print "Nonlinear solver failed to converge"
+
+    # Summarize the test results
+    if myPID == 0:
+        if status == 0:
+            print "End Result: TEST PASSED"
+        else:
+            print "End Result: TEST FAILED"
+
+    # Plot the results
+    if options.plot:
+        if myPID == 0: print "Plotting results..."
+        noxInitGuess.update(1.0,finalSoln,0.0)    # Copy the final solution into a NOX.Epetra.Vector
+        f1 = noxSoln.getEpetraVector()       # Obtain the underlying Epetra.Epetra_Vector
+        f2 = Epetra.Vector(Epetra.View,f1,0) # Convert to Epetra.Vector
+        x  = interface.getMesh()
+        mp.plot(x,f2)
+        mp.title("exNOX_1Dfem Problem Solution, k = %d" % options.k)
+        mp.xlabel("x")
+        mp.ylabel("u(x)")
+        mp.show()
+
+    return status
+
+# ######################################################################
+
+if __name__ == "__main__":
+
+    status = main()
+
+    sys.exit(status)

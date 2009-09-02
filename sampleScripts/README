@@ -1,0 +1,8 @@
+This directory (Trilinos/sampleScripts) contains scripts that have been 
+used to invoke the Trilinos configure script on various platforms.
+Users are encouraged to contribute to this directory.  The scripts
+are meant to be examples only; the exact scripts will probably not
+meet a user's needs.  Please note that not all of the scripts in this
+directory are kept up to date when Trilinos configuration options are
+added or changed, or when the operating system or compilers on machines
+are upgraded.

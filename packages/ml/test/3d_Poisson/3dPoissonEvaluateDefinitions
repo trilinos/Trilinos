@@ -1,0 +1,38 @@
+#This line defines the failure found in test 1
+#For this example we assume that the phrase "interrupt SIG"
+#cannot exist in the output by the keyword prohibited in
+#the second column
+
+"interrupt SIG"		prohibited
+
+#For good measure test that the phrase "# solves"
+#must exist because it shows program completion.
+
+#"# solves" 		required
+
+
+#This line defines the element to be evaluated for test 3
+#It uses double quotes so that it can reconize the keyword
+#phrase anywhere in the line
+#For this example assume that +-5% is in range
+
+"operator complexity" 	5%
+
+#This line defines the element to be evaluated for test 6
+#It uses the single qoutes to indicate that the line must
+#start exactly with this phrase (initial whitespace is ignored)
+#We do this because there is another line that contains
+#the word "solution" with some other text preceeding it
+'solution'		.5%
+
+#This line defines the first element to be evaluated in test 7.
+#For this example assume that the residual can be +/- 90% of the baseline.
+
+"residual" 		    90%
+
+#This line defines the second element to be evaluted in test 7.
+#For this example assume that only one less iteration than the
+#golden is allowed
+
+"total iterations"	-1
+

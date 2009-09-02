@@ -1,0 +1,784 @@
+// @HEADER
+// ************************************************************************
+// 
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//                  Copyright (2008) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
+// National Laboratories.
+// 
+// ************************************************************************
+// @HEADER
+
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx.hpp"
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_TestForException.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
+// User defined objects
+#include "Element_Linear2D.hpp"
+#include "Workset.hpp"
+#include "LinearObjectFactoryVBR.hpp"
+#include "Traits.hpp"
+#include "FactoryTraits.hpp"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_VbrRowMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "MeshBuilder.hpp"
+
+// Linear solver
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosEpetraAdapter.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+
+// Preconditioner
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+#include "Ifpack.h"
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void printVector(std::string filename_prefix, const Epetra_Vector& vector, 
+		 int newton_step)
+{
+  std::stringstream ss;
+  ss << filename_prefix << "_" << newton_step << ".dat";
+  ofstream file( ss.str().c_str(), ios::out | ios::app );
+  vector.Print(file);
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void printMatrix(std::string filename_prefix, const Epetra_VbrMatrix& matrix,
+		 int newton_step)
+{
+  std::stringstream ss;
+  ss << filename_prefix << "_" << newton_step << ".dat";
+  ofstream file( ss.str().c_str(), ios::out | ios::app );
+  matrix.Print(file);
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void checkConvergence(int my_pid,
+		      const int num_newton_steps, const Epetra_Vector& f, 
+		      const Epetra_Vector& delta_x, bool& converged)
+{
+  double norm_f = 0.0;
+  f.Norm2(&norm_f);
+  double norm_delta_x = 0.0;
+  delta_x.Norm2(&norm_delta_x);
+
+  if ( (norm_f < 1.0e-8) && (norm_delta_x < 1.0e-5) )
+    converged = true;
+  else
+    converged = false;
+
+  if (my_pid == 0)
+    cout << "Step: " << num_newton_steps << ", ||f|| = "  << norm_f
+	 << ", ||delta x|| = " << norm_delta_x << endl;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+void applyBoundaryConditions(const double& value,
+			     const Epetra_Vector& x, Epetra_VbrMatrix& Jac, 
+			     Epetra_Vector& f, const MeshBuilder mb)
+{
+  int num_eqns = 0;
+  int num_block_col = 0;
+  int* block_col_indices = 0;
+  Epetra_SerialDenseMatrix* values = 0;
+
+  const std::vector<int>& left_nodes = mb.leftNodeSetGlobalIds();
+  for (std::size_t node = 0; node < left_nodes.size();  ++node) {
+    
+    int local_row = Jac.RowMap().LID(left_nodes[node]);
+
+    Jac.BeginExtractMyBlockRowView(local_row, num_eqns, num_block_col, 
+				   block_col_indices);
+
+    for (int i=0; i < num_block_col; ++i) {
+      Jac.ExtractEntryView(values);
+      Epetra_SerialDenseMatrix& val = *values;
+      if (block_col_indices[i] == local_row) {
+	val(0,0) = 1.0;
+	val(0,1) = 0.0;
+	val(1,0) = 0.0;
+	val(1,1) = 1.0;
+	
+      } else {
+	val(0,0) = 0.0;
+	val(0,1) = 0.0;
+	val(1,0) = 0.0;
+	val(1,1) = 0.0;
+      }
+    }
+
+    int index = local_row * num_eqns;
+    for (int eq=0; eq < num_eqns; ++eq)
+      f[index + eq] = value - x[index + eq];
+    
+  }
+
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+int main(int argc, char *argv[]) 
+{
+#ifdef HAVE_MPI  
+  MPI_Init(&argc, &argv);
+#endif
+
+  using namespace std;
+  using namespace Teuchos;
+  using namespace PHX;
+  
+  try {
+    
+    RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
+    TimeMonitor tm(*total_time);
+
+    bool print_debug_info = false;
+
+#ifdef HAVE_MPI
+    RCP<Epetra_Comm> comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+    RCP<Epetra_Comm> comm = rcp(new Epetra_SerialComm);
+#endif
+    
+    Teuchos::basic_FancyOStream<char> os(rcp(&std::cout,false));
+    os.setShowProcRank(true);
+    os.setProcRankAndSize(comm->MyPID(), comm->NumProc());
+    
+    if (comm->MyPID() == 0)
+      cout << "\nStarting FEM_Nonlinear Example!\n" << endl;
+
+    // *********************************************************
+    // * Build the Finite Element data structures
+    // *********************************************************
+
+    // Problem dimension - a 2D problem
+    const static int dim = 2;
+
+    // Create the mesh
+    MeshBuilder mb(comm, 100, 3, 1.0, 1.0, 8);
+
+    if (print_debug_info) 
+      os << mb;
+
+    std::vector<Element_Linear2D>& cells = *(mb.myElements());
+
+    // Divide mesh into workset blocks
+    const std::size_t workset_size = 50;
+    std::vector<MyWorkset> worksets;
+    {
+      std::vector<Element_Linear2D>::iterator cell_it = cells.begin();
+      std::size_t count = 0;
+      MyWorkset w;
+      w.local_offset = cell_it->localElementIndex();
+      w.begin = cell_it;
+      for (; cell_it != cells.end(); ++cell_it) {
+	++count;
+	std::vector<Element_Linear2D>::iterator next = cell_it;
+	++next;
+	
+	if ( count == workset_size || next == cells.end()) {
+	  w.end = next;
+	  w.num_cells = count;
+	  worksets.push_back(w);
+	  count = 0;
+	  
+	  if (next != cells.end()) {
+	    w.local_offset = next->localElementIndex();
+	    w.begin = next;
+	  }
+	}
+      }
+    }
+    
+    if (print_debug_info) {
+      cout << "Printing Element Information" << endl;
+      for (std::size_t i = 0; i < worksets.size(); ++i) {
+	std::vector<Element_Linear2D>::iterator it = worksets[i].begin;
+	for (; it != worksets[i].end; ++it)
+	  cout << *it << endl;
+      }
+    }
+    
+    if (print_debug_info) {
+      for (std::size_t i = 0; i < worksets.size(); ++i) {
+	cout << "Printing Workset Information" << endl;
+	cout << "worksets[" << i << "]" << endl;
+	cout << "  num_cells =" << worksets[i].num_cells << endl;
+	cout << "  local_offset =" << worksets[i].local_offset << endl;
+	std::vector<Element_Linear2D>::iterator it = worksets[i].begin;
+	for (; it != worksets[i].end; ++it)
+	  cout << "  cell_local_index =" << it->localElementIndex() << endl;
+      }
+      cout << endl;
+    }
+
+    // *********************************************************
+    // * Build the Newton solver data structures
+    // *********************************************************
+
+    // Setup Nonlinear Problem (build Epetra_Vector and Epetra_CrsMatrix)
+    // Newton's method: J delta_x = -f
+    const std::size_t num_eq = 2;
+
+    LinearObjectFactoryVBR lof(mb, comm, num_eq);
+
+    if (print_debug_info) {
+      ofstream file("OwnedGraph.dat", ios::out | ios::app);
+      Teuchos::basic_FancyOStream<char> p(rcp(&file,false)); 
+      p.setShowProcRank(true); 
+      p.setProcRankAndSize(comm->MyPID(), comm->NumProc()); 	
+      lof.ownedGraph()->Print(p);
+    }
+
+    Epetra_BlockMap owned_map = *(lof.ownedMap());
+    Epetra_BlockMap overlapped_map = *(lof.overlappedMap());
+    Epetra_CrsGraph owned_graph = *(lof.ownedGraph());
+    Epetra_CrsGraph overlapped_graph = *(lof.overlappedGraph());
+    
+    // Solution vector x
+    RCP<Epetra_Vector> owned_x = rcp(new Epetra_Vector(owned_map,true));
+    RCP<Epetra_Vector> overlapped_x =  
+      rcp(new Epetra_Vector(overlapped_map,true));
+    
+    // Update vector x
+    RCP<Epetra_Vector> owned_delta_x = rcp(new Epetra_Vector(owned_map,true));
+    
+    // Residual vector f
+    RCP<Epetra_Vector> owned_f = rcp(new Epetra_Vector(owned_map,true));
+    RCP<Epetra_Vector> overlapped_f =  
+      rcp(new Epetra_Vector(overlapped_map,true));
+    
+    // Import/export
+    RCP<Epetra_Import> importer = 
+      rcp(new Epetra_Import(overlapped_map, owned_map));
+    RCP<Epetra_Export> exporter = 
+      rcp(new Epetra_Export(overlapped_map, owned_map));
+
+    // Jacobian Matrix
+    Epetra_DataAccess copy = ::Copy;
+    RCP<Epetra_VbrMatrix> owned_jac = 
+      rcp(new Epetra_VbrMatrix(copy, owned_graph));
+    RCP<Epetra_VbrMatrix> overlapped_jac = 
+      rcp(new Epetra_VbrMatrix(copy, overlapped_graph));
+
+    // Create entries (dumb design of vbr forces us to assign values
+    // to each block to force the data containers to be allocated)
+    Epetra_SerialDenseMatrix block_matrix(num_eq, num_eq);
+    block_matrix(0,0) = 0.0;
+    block_matrix(0,1) = 1.0;
+    block_matrix(1,0) = 2.0;
+    block_matrix(1,1) = 3.0;
+	
+    for (std::vector<Element_Linear2D>::iterator cell = cells.begin(); 
+	 cell != cells.end(); ++cell) {
+      for (int row = 0; row < cell->numNodes(); ++row) {
+	
+	int local_row = overlapped_jac->Map().LID(cell->globalNodeId(row));
+	
+	for (int col = 0; col < cell->numNodes(); ++col) {
+	  int local_col = overlapped_jac->Map().LID(cell->globalNodeId(col));
+	  overlapped_jac->BeginReplaceMyValues(local_row, 1, &local_col);
+	  overlapped_jac->SubmitBlockEntry(block_matrix);
+	  overlapped_jac->EndSubmitEntries();
+	}
+      }
+    }
+    overlapped_jac->FillComplete();
+    
+    owned_jac->Export(*overlapped_jac, *exporter, Add);
+    
+    // Sets bc for initial guess
+    applyBoundaryConditions(1.0, *owned_x, *owned_jac, *owned_f, mb);
+    
+    // *********************************************************
+    // * Build the FieldManager
+    // *********************************************************
+
+    RCP< vector<string> > dof_names = rcp(new vector<string>(num_eq));
+    (*dof_names)[0] = "Temperature";
+    (*dof_names)[1] = "Velocity X";
+
+    RCP<DataLayout> qp_scalar = 
+      rcp(new MDALayout<Cell,QuadPoint>(workset_size,4));
+    RCP<DataLayout> node_scalar = 
+      rcp(new MDALayout<Cell,Node>(workset_size,4));
+    
+    RCP<DataLayout> qp_vec = 
+      rcp(new MDALayout<Cell,QuadPoint,Dim>(workset_size,4,dim));
+    RCP<DataLayout> node_vec = 
+      rcp(new MDALayout<Cell,Node,Dim>(workset_size,4,dim));
+
+    RCP<DataLayout> dummy = rcp(new MDALayout<Cell>(0));
+    
+    map<string, RCP<ParameterList> > evaluators_to_build;
+    
+    { // Gather Solution
+      RCP<ParameterList> p = rcp(new ParameterList);
+      int type = MyFactoryTraits<MyTraits>::id_gather_solution;
+      p->set<int>("Type", type);
+      p->set< RCP< vector<string> > >("Solution Names", dof_names);
+      p->set< RCP<Epetra_Vector> >("Solution Vector", overlapped_x);
+      p->set< RCP<DataLayout> >("Data Layout", node_scalar);
+      evaluators_to_build["Gather Solution"] = p;
+    }
+    
+    { // FE Interpolation - Temperature
+      RCP<ParameterList> p = rcp(new ParameterList);
+      
+      int type = MyFactoryTraits<MyTraits>::id_feinterpolation;
+      p->set<int>("Type", type);
+      
+      p->set<string>("Node Variable Name", "Temperature");
+      p->set<string>("QP Variable Name", "Temperature");
+      p->set<string>("Gradient QP Variable Name", "Temperature Gradient");
+      
+      p->set< RCP<DataLayout> >("Node Data Layout", node_scalar);
+      p->set< RCP<DataLayout> >("QP Scalar Data Layout", qp_scalar);
+      p->set< RCP<DataLayout> >("QP Vector Data Layout", qp_vec);
+      
+      evaluators_to_build["FE Interpolation Temperature"] = p;
+    }
+     
+    { // FE Interpolation - Velocity X
+      RCP<ParameterList> p = rcp(new ParameterList);
+      
+      int type = MyFactoryTraits<MyTraits>::id_feinterpolation;
+      p->set<int>("Type", type);
+      
+      p->set<string>("Node Variable Name", "Velocity X");
+      p->set<string>("QP Variable Name", "Velocity X");
+      p->set<string>("Gradient QP Variable Name", "Velocity X Gradient");
+      
+      p->set< RCP<DataLayout> >("Node Data Layout", node_scalar);
+      p->set< RCP<DataLayout> >("QP Scalar Data Layout", qp_scalar);
+      p->set< RCP<DataLayout> >("QP Vector Data Layout", qp_vec);
+      
+      evaluators_to_build["FE Interpolation Velocity X"] = p;
+    }
+
+    { // Evaluate residual
+      RCP<ParameterList> p = rcp(new ParameterList);
+      int type = MyFactoryTraits<MyTraits>::id_equations;
+      p->set<int>("Type", type);
+      p->set< RCP< vector<string> > >("Solution Names", dof_names);
+      p->set< RCP<DataLayout> >("Node Data Layout", node_scalar);
+      p->set< RCP<DataLayout> >("QP Data Layout", qp_scalar);
+      p->set< RCP<DataLayout> >("Gradient QP Data Layout", qp_vec);
+      evaluators_to_build["Equations"] = p;
+    }
+ 
+    { // Scatter Solution
+      RCP<ParameterList> p = rcp(new ParameterList);
+      int type = MyFactoryTraits<MyTraits>::id_scatter_residual;
+      p->set<int>("Type", type);
+
+      RCP< vector<string> > res_names = rcp(new vector<string>(num_eq));
+      (*res_names)[0] = "Residual Temperature";
+      (*res_names)[1] = "Residual Velocity X";
+
+      p->set< RCP< vector<string> > >("Residual Names", res_names);
+      p->set< RCP<Epetra_Vector> >("Residual Vector", overlapped_f);
+      p->set< RCP<Epetra_VbrMatrix> >("Jacobian Matrix", overlapped_jac);
+      p->set< RCP<DataLayout> >("Dummy Data Layout", dummy);
+      p->set< RCP<DataLayout> >("Data Layout", node_scalar);
+      evaluators_to_build["Scatter Residual"] = p;
+    }
+    
+    // Build Field Evaluators for each evaluation type
+    EvaluatorFactory<MyTraits,MyFactoryTraits<MyTraits> > factory;
+    RCP< vector< RCP<Evaluator_TemplateManager<MyTraits> > > > 
+      evaluators;
+    evaluators = factory.buildEvaluators(evaluators_to_build);
+    
+    // Create a FieldManager
+    FieldManager<MyTraits> fm;
+      
+    // Register all Evaluators 
+    registerEvaluators(evaluators, fm);
+
+    // Request quantities to assemble RESIDUAL PDE operators
+    {
+      typedef MyTraits::Residual::ScalarT ResScalarT;
+      Tag<ResScalarT> res_tag("Scatter", dummy);
+      fm.requireField<MyTraits::Residual>(res_tag);
+      
+      // Request quantities to assemble JACOBIAN PDE operators
+      typedef MyTraits::Jacobian::ScalarT JacScalarT;
+      Tag<JacScalarT> jac_tag("Scatter", dummy);
+      fm.requireField<MyTraits::Jacobian>(jac_tag);
+    }
+
+    {
+      RCP<Time> registration_time = 
+	TimeMonitor::getNewTimer("Post Registration Setup Time");
+      {
+	TimeMonitor t(*registration_time);
+	fm.postRegistrationSetupForType<MyTraits::Residual>(NULL);
+	fm.postRegistrationSetupForType<MyTraits::Jacobian>(NULL);
+      }
+    }
+
+    if (print_debug_info)
+      cout << fm << endl;
+
+    // *********************************************************
+    // * Wrapper to allow VBR matrix to be used as a row matrix
+    // *********************************************************
+    RCP<Epetra_VbrRowMatrix> JacRowMatrix =
+      rcpWithEmbeddedObjPostDestroy(new Epetra_VbrRowMatrix(owned_jac.get()),
+				    owned_jac);
+
+    // *********************************************************
+    // * Build Preconditioner (Ifpack)
+    // *********************************************************
+    
+    Ifpack Factory;
+    std::string PrecType = "ILU";
+    int OverlapLevel = 0;
+    RCP<Ifpack_Preconditioner> Prec = 
+      Teuchos::rcp( Factory.Create(PrecType, &*JacRowMatrix, OverlapLevel) );
+    ParameterList ifpackList;
+    ifpackList.set("fact: drop tolerance", 1e-9);
+    ifpackList.set("fact: level-of-fill", 1);
+    ifpackList.set("schwarz: combine mode", "Add");
+    IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
+    IFPACK_CHK_ERR(Prec->Initialize());
+    RCP<Belos::EpetraPrecOp> belosPrec = 
+      rcp( new Belos::EpetraPrecOp( Prec ) );
+
+    // *********************************************************
+    // * Build linear solver (Belos)
+    // *********************************************************
+    
+    // Linear solver parameters
+    typedef double                            ST;
+    typedef Teuchos::ScalarTraits<ST>        SCT;
+    typedef SCT::magnitudeType                MT;
+    typedef Epetra_MultiVector                MV;
+    typedef Epetra_Operator                   OP;
+    typedef Belos::MultiVecTraits<ST,MV>     MVT;
+    typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
+    
+    RCP<ParameterList> belosList = rcp(new ParameterList);
+    belosList->set<int>("Num Blocks", 400);
+    belosList->set<int>("Block Size", 1);
+    belosList->set<int>("Maximum Iterations", 400);
+    belosList->set<int>("Maximum Restarts", 0);
+    belosList->set<MT>( "Convergence Tolerance", 1.0e-4);
+    int verbosity = Belos::Errors + Belos::Warnings;
+    if (false) {
+      verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
+      belosList->set<int>( "Output Frequency", -1);
+    }
+    if (print_debug_info) {
+      verbosity += Belos::Debug;
+      belosList->set<int>( "Output Frequency", -1);
+    }
+    belosList->set( "Verbosity", verbosity );
+    
+    RCP<Epetra_MultiVector> F = 
+      Teuchos::rcp_implicit_cast<Epetra_MultiVector>(owned_f);
+    
+    RCP<Epetra_MultiVector> DX = 
+      Teuchos::rcp_implicit_cast<Epetra_MultiVector>(owned_delta_x);
+    
+    RCP<Belos::LinearProblem<double,MV,OP> > problem =
+      rcp(new Belos::LinearProblem<double,MV,OP>(JacRowMatrix, DX, F) );
+    
+    problem->setRightPrec( belosPrec );
+
+    RCP< Belos::SolverManager<double,MV,OP> > gmres_solver = 
+      rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosList) );
+    
+    // *********************************************************
+    // * Solve the system
+    // *********************************************************
+
+    RCP<Time> residual_eval_time = 
+      TimeMonitor::getNewTimer("Residual Evaluation Time");
+    RCP<Time> jacobian_eval_time = 
+      TimeMonitor::getNewTimer("Jacobian Evaluation Time");
+    RCP<Time> linear_solve_time = 
+      TimeMonitor::getNewTimer("Linear Solve Time");
+    RCP<Time> nonlinear_solve_time = 
+      TimeMonitor::getNewTimer("Nonlinear Solve Time");
+
+    // Set initial guess
+    owned_x->PutScalar(1.0);
+
+    // Evaluate Residual
+    {
+      TimeMonitor t(*residual_eval_time);
+
+      overlapped_x->Import(*owned_x, *importer, Insert);
+
+      owned_f->PutScalar(0.0);
+      overlapped_f->PutScalar(0.0);
+
+      for (std::size_t i = 0; i < worksets.size(); ++i)
+	fm.evaluateFields<MyTraits::Residual>(worksets[i]);
+      
+      owned_f->Export(*overlapped_f, *exporter, Add);
+
+      applyBoundaryConditions(1.0, *owned_x, *owned_jac, *owned_f, mb);
+    }
+    
+    if (print_debug_info) {
+      printVector("x_owned", *owned_x, -1);
+      printVector("f_owned", *owned_f, -1);
+    }
+
+    // Newton Loop
+    bool converged = false;
+    std::size_t num_newton_steps = 0;
+    std::size_t num_gmres_iterations = 0;
+    checkConvergence(comm->MyPID(), num_newton_steps, *owned_f, 
+		     *owned_delta_x, converged);
+    
+    while (!converged && num_newton_steps < 20) {
+      
+      TimeMonitor t(*nonlinear_solve_time);
+      
+      // Evaluate Residual and Jacobian
+      {
+	TimeMonitor t(*jacobian_eval_time);
+
+	overlapped_x->Import(*owned_x, *importer, Insert);
+
+	owned_f->PutScalar(0.0);
+	overlapped_f->PutScalar(0.0);
+	owned_jac->PutScalar(0.0);
+	overlapped_jac->PutScalar(0.0);
+	
+	for (std::size_t i = 0; i < worksets.size(); ++i)
+	  fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
+
+	owned_f->Export(*overlapped_f, *exporter, Add);
+	owned_jac->Export(*overlapped_jac, *exporter, Add);
+
+	applyBoundaryConditions(1.0, *owned_x, *owned_jac, *owned_f, mb);
+      }
+
+      if (print_debug_info) {
+	printVector("x_owned", *owned_x, num_newton_steps);
+	printVector("x_overlapped", *overlapped_x, num_newton_steps);
+	printVector("f_owned", *owned_f, num_newton_steps);
+	printMatrix("jacobian_owned", *owned_jac, num_newton_steps);
+      }
+      
+      owned_f->Scale(-1.0);
+
+      // Solve linear problem
+      {
+	TimeMonitor t(*linear_solve_time);
+	
+	owned_delta_x->PutScalar(0.0);
+
+	IFPACK_CHK_ERR(Prec->Compute());
+
+	problem->setProblem();
+
+	Belos::ReturnType ret = gmres_solver->solve();
+
+	int num_iters = gmres_solver->getNumIters();
+	num_gmres_iterations += num_iters; 
+	//if (print_debug_info) 
+	if (comm->MyPID() == 0)
+	  std::cout << "Number of gmres iterations performed for this solve: " 
+		    << num_iters << std::endl;
+	
+	if (ret!=Belos::Converged && comm->MyPID() == 0) {
+	  std::cout << std::endl << "WARNING:  Belos did not converge!" 
+		    << std::endl;
+	}
+	
+      }
+      
+      owned_x->Update(1.0, *owned_delta_x, 1.0);
+
+      { // Evaluate Residual Only
+	TimeMonitor t(*residual_eval_time);
+	
+	overlapped_x->Import(*owned_x, *importer, Insert);
+
+	owned_f->PutScalar(0.0);
+	overlapped_f->PutScalar(0.0);
+
+	for (std::size_t i = 0; i < worksets.size(); ++i)
+	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
+	
+	owned_f->Export(*overlapped_f, *exporter, Add);
+
+	applyBoundaryConditions(1.0, *owned_x, *owned_jac, *owned_f, mb);
+      }
+
+      num_newton_steps += 1;
+
+      checkConvergence(comm->MyPID(), num_newton_steps, *owned_f, 
+		       *owned_delta_x, converged);
+    }
+     
+    if (print_debug_info)
+      printVector("f_owned", *owned_f, num_newton_steps);
+
+    if (comm->MyPID() == 0) {
+      if (converged)
+	cout << "\n\nNewton Iteration Converged!\n" << endl;
+      else
+	cout << "\n\nNewton Iteration Failed to Converge!\n" << endl;
+    }
+
+    RCP<Time> file_io = 
+      TimeMonitor::getNewTimer("File IO");
+    {
+      TimeMonitor t(*file_io);
+      
+      // Create a list of node coordinates
+      std::map<int, std::vector<double> > coordinates;
+      Teuchos::RCP< std::vector<Element_Linear2D> > cells = mb.myElements();
+      for (std::vector<Element_Linear2D>::iterator cell = cells->begin();
+	   cell != cells->end(); ++cell) {
+	
+	const shards::Array<double,shards::NaturalOrder,Node,Dim>& coords = 
+	  cell->nodeCoordinates();
+
+	for (int node=0; node < cell->numNodes(); ++node) {
+	  coordinates[cell->globalNodeId(node)].resize(dim);
+	  coordinates[cell->globalNodeId(node)][0] = coords(node,0);
+	  coordinates[cell->globalNodeId(node)][1] = coords(node,1);
+	}	
+      }
+
+
+      {
+	std::vector< RCP<ofstream> > files; 
+	for (std::size_t eq = 0; eq < num_eq; ++eq) {
+	  std::stringstream ost;
+	  ost << "upper_DOF" << eq << "_PID" << comm->MyPID() << ".dat";
+	  files.push_back( rcp(new std::ofstream(ost.str().c_str()), 
+			       ios::out | ios::trunc) );
+	  files[eq]->precision(10);
+	}
+	
+	const std::vector<int>& node_list = mb.topNodeSetGlobalIds();
+	for (std::size_t node = 0; node < node_list.size(); ++node) {
+	  int lid = owned_x->Map().LID(node_list[node]) * num_eq;
+	  for (std::size_t eq = 0; eq < num_eq; ++eq) {
+	    int dof_index = lid + eq;
+	    *(files[eq]) << coordinates[node_list[node]][0] << "   " 
+			 << (*owned_x)[dof_index] << endl;
+	  }
+	}
+      }
+
+      {
+	std::vector< RCP<ofstream> > files; 
+	for (std::size_t eq = 0; eq < num_eq; ++eq) {
+	  std::stringstream ost;
+	  ost << "lower_DOF" << eq << "_PID" << comm->MyPID() << ".dat";
+	  files.push_back( rcp(new std::ofstream(ost.str().c_str()), 
+			       ios::out | ios::trunc) );
+	  files[eq]->precision(10);
+	}
+	
+	const std::vector<int>& node_list = mb.bottomNodeSetGlobalIds();
+	for (std::size_t node = 0; node < node_list.size(); ++node) {
+	  int lid = owned_x->Map().LID(node_list[node]) * num_eq;
+	  for (std::size_t eq = 0; eq < num_eq; ++eq) {
+	    int dof_index = lid + eq;
+	    *(files[eq]) << coordinates[node_list[node]][0] << "   " 
+			 << (*owned_x)[dof_index] << endl;
+	  }
+	}
+      }
+
+    }
+
+    TEST_FOR_EXCEPTION(!converged, std::runtime_error,
+		       "Problem failed to converge!");
+
+    TEST_FOR_EXCEPTION(num_newton_steps != 10, std::runtime_error,
+		       "Incorrect number of Newton steps!");
+
+    // Only check num gmres steps in serial
+#ifndef HAVE_MPI
+    TEST_FOR_EXCEPTION(num_gmres_iterations != 20, std::runtime_error,
+		       "Incorrect number of GMRES iterations!");
+#endif
+
+    // *********************************************************************
+    // Finished all testing
+    // *********************************************************************
+    if (comm->MyPID() == 0)
+      std::cout << "\nRun has completed successfully!\n" << std::endl; 
+    // *********************************************************************
+    // *********************************************************************
+
+  }
+  catch (const std::exception& e) {
+    std::cout << "************************************************" << endl;
+    std::cout << "************************************************" << endl;
+    std::cout << "Exception Caught!" << endl;
+    std::cout << "Error message is below\n " << e.what() << endl;
+    std::cout << "************************************************" << endl;
+  }
+  catch (...) {
+    std::cout << "************************************************" << endl;
+    std::cout << "************************************************" << endl;
+    std::cout << "Unknown Exception Caught!" << endl;
+    std::cout << "************************************************" << endl;
+  }
+
+  TimeMonitor::summarize();
+    
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
+  return 0;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

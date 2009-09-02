@@ -1,0 +1,11 @@
+  mesh
+   radial
+    zmin -0.00075
+    numz 1
+      zblock 1 0.0015 interval 10
+    numr 1 initial radius 5e-05
+      rblock 1 0.00305 interval 80
+    numa 1
+      ablock 1 360. interval 40
+    end
+  end

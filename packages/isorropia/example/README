@@ -1,0 +1,34 @@
+This directory (isorropia/example) contains a number of example programs
+that demonstrate using Isorropia to rebalance Epetra objects.
+
+The programs can be run like this (for example):
+% mpirun -np 2 part_redist.exe
+
+(You may need a different mpirun command depending on your particular
+system.)
+
+There are two interfaces to Isorropia's partitioning function:
+
+I. Use an Epetra object to create a Partitioner object, which encapsulates
+what a balanced partititioning of the Epetra object would look like.
+Use the Partitioner to instantiate a Redistributor object.  You may
+use the Redistributor repeatedly on Epetra objects that have the same
+distribution as the input Epetra Object, to rebalance them.
+
+The Isorropia function create_partitioner() creates the Partitioner
+object.  The redistribute() method of the Redistributor object rebalances
+the Epetra objects.
+
+II. Simply use the create_balanced_copy() function of Isorropia to get
+a balanced() copy of the input Epetra object.
+
+
+matrix_1.cpp: Tests create_balanced_copy with hypergraph (default) 
+and then graph partitioning.
+
+graphedge_weights.cpp:  This test must be run on 3 processes.  It uses
+interface I to Isorropia.  It creates a 9 x 9 matrix, and an 
+initial distribution of the matrix rows across the 3 processes.  
+The matrix non-zeroes represent graph edges, and the matrix rows 
+represent nodes or vertices of the graph.
+

@@ -1,0 +1,77 @@
+## Makefile for ZoltanComponent, compiled into a static library. The user
+## need not hack this. All the system specific stuff, needed by this component
+## are in ../MakeIncl.ZoltanComponent
+
+# Suck in the user-configuarble stuff
+include ../MakeIncl.ZoltanComponent
+
+## suck in some CCA specific compile flags
+include $(CCA_MAKEINCL_DIR)/MakeIncl.CCA_Component
+
+.SUFFIXES: .c .cpp .o .so.o
+
+APPOBJ =  BaseLB.o PartitonerFactory.o RCB_prop.o BaseLB_prop.o RCB.o \
+	  ZoltanApplQueryFunc.o ZoltanLB_wrapper.o RIB.o RIB_prop.o \
+          HSFC.o HSFC_prop.o OctTree.o OctTree_prop.o ParMetis.o \
+	  ParMetis_prop.o PartitionerFactory_DataMig.o
+
+libstatic = libZoltanLB.a
+
+# Application specific Flags
+C++APPFLAGS = -Wno-unused  -DNDEBUG 
+
+# Do we need to link in ParMetis and Jostle ?
+ifdef PARMETIS_LIBPATH
+PARMETIS_LIBS = -lparmetis -lmetis
+endif
+
+ifdef JOSTLE_LIBPATH
+JOSTLE_LIBS = -ljostle
+endif
+
+# Application specific libraries like blas, lapack etc.
+APPLIB = -L$(DCCAFE_LIB)/  -l$(DCCAFE_LIBNAME) \
+	 -L$(ZOLTAN_HOME)/Obj_$(ZOLTAN_ARCH) -lzoltan \
+	 $(PARMETIS_LIBPATH) $(PARMETIS_LIBS) \
+	 $(JOSTLE_LIBPATH) $(JOSTLE_LIBS)
+
+
+LDLIBS = 
+#-lstd++
+ 
+# CCA specific includes
+INCLUDE1 =  -I$(MPI_HOME)/include
+INCLUDE2 = $(CCA_INC)
+INCLUDE3 = -I$(ZOLTAN_HOME) -I$(ZOLTAN_HOME)/include \
+           -I$(ZOLTAN_HOME)/Utilities/Communication -I$(ZOLTAN_HOME)/Utilities/Memory \
+	   -I$(ZOLTAN_HOME)/Utilities/DDirectory
+INCLUDE4 = -I $(DCCAFE_INCLUDE)
+INCLUDE5 = -I $(ZOLTAN_PORTS_DIR)/
+INCLUDE = $(INCLUDE1) $(INCLUDE2) $(INCLUDE3) $(INCLUDE4) $(INCLUDE5) 
+
+# Misc. definitions
+ECHO = echo
+RM = /bin/rm -f
+
+default : static_library
+
+static_library : $(APPOBJ)
+	$(RM) $(libstatic)
+	ar ruv  $(libstatic) $(APPOBJ) 
+	ranlib $(libstatic)
+
+.cpp.o : 
+	@$(ECHO)
+	@$(ECHO) "Compiling Source File --" $<
+	@$(ECHO) "---------------------"
+	$(CCA_CXX) $(CCA_CXX_FLAGS) $(C++APPFLAGS)  -c $(INCLUDE) -o $@ $< 
+	@$(ECHO)
+
+clean:
+	$(RM) *.o core* *.cp *.log *~  *.a
+
+
+
+
+
+

@@ -1,0 +1,12 @@
+PACKAGE_NAME=Triutils
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL) {
+    DIRS = Read;
+    DESCEND_DIRS = YES;
+    COMM = SERIAL, MPI;
+#    COMM = SERIAL;
+}

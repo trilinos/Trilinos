@@ -1,0 +1,408 @@
+/*! \mainpage Trilinos/EpetraExt: Extensions to Epetra
+\htmlonly
+\endhtmlonly
+
+\section EpetraExt_intro Introduction
+EpetraExt is a set of extensions to Epetra.  To allow Epetra to remain
+focused on its primary functionality as a Linear Algebra object support,
+EpetraExt was created to maintain additional support for such capabilities
+as transformations (permutations, sub-block views, etc.), coloring support,
+partitioning (Zoltan), and I/O.
+
+\section EpetraExt_startup Overview of EpetraExt
+
+\subsection EpetraExt_formulations EpetraExt Classes
+
+EpetraExt contains a number of classes.  They can be categorized as follows:
+
+<ul> 
+
+<li> EpetraExt::Transform classes: These classes derive from EpetraExt::Transform allowing a common
+     interface for transformation of epetra objects and migration of associated 
+     data.
+
+<ol>
+
+<li> EpetraExt::Transform: Abstract base for transformation of object of type T
+     to object of type U.
+
+
+<li> EpetraExt::Transform_Composite: Allows the additive composition of 
+     EpetraExt::SameTypeTransform's.
+
+<li> Convertors: EpetraExt::LinearProblem_GraphTrans and EpetraExt::LinearProblem_MatrixTrans
+     converts a EpetraExt::SameTypeTransform<Epetra_CrsGraph> and
+     EpetraExt::SameTypeTransform<Epetra_CrsMatrix> to a EpetraExt::SameTypeTransform<Epetra_LinearProblem>
+
+<li> EpetraExt::CrsGraph_Overlap: Forms the overlapped version of a distributed graph
+     up to the user specified level.
+
+<li> Reindexer's: Used to remap the global indexing of an existing Epetra object include
+     EpetraExt::CrsMatrix_Reindex, EpetraExt::MultiVector_Reindex, and EpetraExt::LinearProblem_Reindex.
+
+<li> EpetraExt::LinearProblem_Scale: Linear left and right scaling of a Epetra_LinearProblem
+
+<li> Solver Mapping Tools: Remaps the columns of a CrsGraph or LinearProblem to meet the
+     requirements of a square local block indexing for some linear solvers. Tools are
+     EpetraExt::CrsGraph_SolverMap and EpetraExt::LinearProblem_SolverMap.
+
+<li> EpetraExt::CrsGraph_SymmRCM: Perform a symmetric RCM for the local blocks of a
+     Epetra_CrsGraph.
+
+<li> Transpose: Form the explicit transpose of a Epetra_CrsGraph or Epetra_CrsMatrix.
+     Tools are EpetraExt::CrsGraph_Transpose and EpetraExt::RowMatrix_Transpose.
+
+<li> View: For sub-block views of existing Epetra objects including EpetraExt::CrsGraph_View,
+     EpetraExt::CrsMatrix_View and EpetraExt::MultiVector_View
+
+<li> Permutation: EpetraExt::Permutation is used for simple permutations of Epetra_CrsGraph,
+     Epetra_CrsMatrix, and Epetra_MultiVector given a new Epetra_Map object.
+
+</ol>
+
+</ul>
+
+\subsection EpetraExt_functions EpetraExt Functions
+
+<ul>
+
+<li> EpetraExt::MatrixMatrix: Static Matrix Matrix Operations including Multiply and Add.
+
+<li> \ref epetraext_inout.  Epetra supports I/O operations for Epetra objects based on 
+<ol>
+<li> Matlab triplet (i,j,value) format for writing and reading of Epetra RowMatrix and Operator objects.
+<li> Matrix Market format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
+Operator objects.
+<li> HDF5 format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
+Operator objects.  Available when EpetraExt is configured with \c --enable-epetraext-hdf5. 
+<li> An XML-compatible reader and writer is available when Teuchos is configures with --enable-teuchos-expat.
+</ol>
+
+<li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
+
+<li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
+     the Zoltan library.
+     
+<li> Matlab: Communication interface between Epetra and Matlab.  Exports Epetra objects to Matlab and imports objects from Matlab.
+     Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
+
+<li> \ref epetraext_petsc_interface : Wrapper class intended for users who would like to use Trilinos preconditioners within their
+PETSc-based application.
+
+<li> Nonlinear Model Evaluator: <tt>EpetraExt::ModelEvaluator</tt> provides an
+Epetra-specific interface to nonlinear models for use by equation solvers all the
+way up to optimization.
+
+</ul>
+
+\section EpetraExt_adapters EpetraExt adapters
+
+The EpetraExt package can also optionally support adapters to various
+interfaces.  Support for these adapters can be turned on at configure time.
+
+<ul>
+
+<li> <a href="../../thyra/doc/html/index.html">EpetraExt/Thyra
+Adapters</a>: These adapters implement various advanced %Thyra interfaces in
+terms of %EpetraExt code.
+
+</ul>
+
+\section EpetraExt_browser Browse all of Epetraext as a single doxygen collection
+
+You can browse all of EpetraExt as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about EpetraExt software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of epetraext</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
+*/
+
+/*! \page epetraext_petsc_interface Trilinos/PETSc Interface
+
+\section epetraext_petsc_overview Introduction
+
+The Epetra_PETScAIJMatrix class is a lightweight wrapper class for
+encapsulating PETSc serial and parallel AIJ matrices. 
+Its intended audience is PETSc users who would like to build and apply
+Trilinos preconditioners.  This class derives from the Epetra_RowMatrix class.
+
+Epetra_PETScAIJMatrix utilizes callbacks for as many access and apply functions
+as possible.  In particular, fetching individual rows and matrix-vector multiplies
+are callbacks.
+
+\section epetraext_petsc_requirements Requirements
+
+This class was first released with Trilinos 9.0 and PETSc 2.3.3.  Instructions for building this can be found
+in the Trilinos 9.0 doxygen comments.  The most current version is available in the
+Trilinos development version as of 4/30/2009, and will be released with Trilinos 10.0.
+It has been tested in serial and parallel with PETSc versions 3.0.0-p4 and 3.0.0-p7, built in static library mode.  <b>Note</b>: This will
+not work with an installed version of PETSc (i.e., you have run "make install"). The reason is that the interface requires
+access to certain low level functions for good performance, but these functions are not exposed in an installed version of PETSc.
+
+\section epetraext_petsc_building Configuring and building the Trilinos libraries
+
+You must specify PETSC_DIR, PETSC_ARCH, and PETSC_LIB
+when configuring Trilinos.  PETSC_LIB can be determined by simply typing "make getlinklibs"
+in the root directory where you built PETSc.
+
+In the following, we assume that the PETSc build directory is ~/petsc-3.0.0-p4, the Trilinos source directory is ~/Trilinos,
+the Trilinos build directory is ~/TrilinosBuild, and that your mpi compilers are in
+/usr/local/mpich-1.2.7p1.
+
+First set the following environmental variables.
+
+\verbatim
+setenv TRILINOS_HOME /home/joeblow/Trilinos
+setenv PETSC_DIR /home/joeblow/petsc-3.0.0-p4
+setenv PETSC_ARCH linux-gnu-c-debug
+setenv PETSC_LIB "-Wl,-rpath,/home/joeblow/petsc-3.0.0-p4/linux-gnu-c-debug/lib
+  -L/home/joeblow/petsc-3.0.0-p4/linux-gnu-c-debug/lib -lpetscts -lpetscsnes
+  -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -lX11
+  -lmkl_intel_lp64 -Wl,--start-group -lmkl_intel_thread -lmkl_core -Wl,--end-group -lguide -lpthread
+  -lm -L/usr/local/mpich-1.2.7p1/lib -L/usr/local/intel/mkl/10.0.3.020/lib/em64t
+  -L/usr/lib/gcc/x86_64-redhat-linux/4.1.2 -L/usr/lib64 -L/lib64 -ldl
+  -lmpich -lpthread -lrt -lgcc_s -lg2c -lm -L/usr/lib/gcc/x86_64-redhat-linux/3.4.6
+  -lm -ldl -lmpich -lpthread -lrt -lgcc_s -ldl"
+
+setenv PETSC_INCLUDE_PATH "${PETSC_DIR}/${PETSC_ARCH}/include;${PETSC_DIR}/include;${PETSC_DIR}"
+\endverbatim
+
+Then change directories to TrilinosBuild and issue the configure line below.
+
+\verbatim
+cmake \
+  -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
+  -D CMAKE_INSTALL_PREFIX:PATH="${PWD}" \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+\
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+  -D Trilinos_ENABLE_Amesos:BOOL=ON \
+  -D Trilinos_ENABLE_AztecOO:BOOL=ON \
+  -D Trilinos_ENABLE_Belos:BOOL=ON \
+  -D Trilinos_ENABLE_Epetra:BOOL=ON \
+  -D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+  -D Trilinos_ENABLE_Galeri:BOOL=ON \
+  -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+  -D Trilinos_ENABLE_Isorropia:BOOL=ON \
+  -D Trilinos_ENABLE_ML:BOOL=ON \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+  -D Trilinos_ENABLE_TrilinosCouplings:BOOL=ON \
+  -D Trilinos_ENABLE_Triutils:BOOL=ON \
+  -D Trilinos_ENABLE_Zoltan:BOOL=ON \
+\
+  -D EpetraExt_USING_PETSC:BOOL=ON \
+  -D TPL_ENABLE_PETSC:BOOL=ON \
+  -D PETSC_LIBRARY_DIRS:FILEPATH=${PETSC_LIB_PATH} \
+  -D PETSC_INCLUDE_DIRS:FILEPATH=${PETSC_INCLUDE_PATH} \
+  -D TPL_PETSC_LIBRARIES:STRING="${PETSC_LIB}" \
+  -D TPL_PETSC_INCLUDE_DIRS:STRING="${PETSC_INCLUDE_PATH}" \
+\
+  -D TrilinosCouplings_ENABLE_TESTS:BOOL=ON \
+  -D TrilinosCouplings_ENABLE_EXAMPLES:BOOL=ON \
+  -D ML_ENABLE_TESTS:BOOL=ON \
+  -D ML_ENABLE_EXAMPLES:BOOL=ON \
+  -D DART_TESTING_TIMEOUT:STRING=600 \
+  ${TRILINOS_HOME}
+\endverbatim
+
+You may need to specify the location of your MPI compilers with these cmake options:
+
+\verbatim
+CMAKE_CXX_COMPILER:FILEPATH=/full/path/to/c++/compiler
+CMAKE_C_COMPILER:FILEPATH=/full/path/to/c/compiler
+CMAKE_Fortran_COMPILER:FILEPATH=/full/path/to/fortran/compiler
+\endverbatim
+
+or, if your mpi is installed in a base directory with subdirectories "bin", "lib", and "include":
+
+\verbatim
+MPI_BASE_DIR:PATH=/full/path/to/mpi/base/directory
+\endverbatim
+
+
+You may also need to specify the location and name of the blas and lapack libraries with these cmake options:
+
+\verbatim
+BLAS_LIBRARY_DIRS:FILEPATH="/full/path/to/blas"
+LAPACK_LIBRARY_DIRS:FILEPATH="/full/path/to/blas"
+BLAS_LIBRARY_NAMES:STRING="blasLibraryName"
+LAPACK_LIBRARY_NAMES:STRING="lapackLibraryName"
+\endverbatim
+
+Once Trilinos is configured successfully, in the directory "TrilinosBuild" type
+\verbatim
+make
+make install
+\endverbatim
+
+The following Trilinos packages must be enabled: Epetra (basic linear algebra), EpetraExt (contains the PETSc interface), and Teuchos (parameter lists, smart pointers, and other useful utility classes).  We also strongly
+suggest enabling ML (algebraic multigrid), Ifpack (SOR, incomplete factorizations, and domain decomposition methods), and Amesos (sparse direct solvers) for a richer preconditioner set.  If you want to build and run the example
+from within Trilinos, you must also enable TrilinosCouplings.
+
+\section EpetraExt_Linking Linking a PETSc application to the Trilinos libraries
+
+We would expect most applications to be linking to Trilinos as a set of third party libraries.  Towards this end,
+in the Trilinos directory where you have installed the headers (~/TrilinosBuild/include in the above example),
+there is a stub file called "Makefile.export.XX", where
+XX is the package name.  The stub defines variables that contain all of the include and link dependencies
+for that particular package.
+For example, "Makefile.export.EpetraExt" defines EPETRAEXT_TPL_INCLUDES and EPETRAEXT_TPL_LIBRARIES,
+which contain EpetraExt's include and link dependencies, respectively.
+An application developer simply includes this stub in her Makefile, and uses the variables in the appropriate compile and link lines.
+
+The example in the following section can be built as an "external" application with the following simple Makefile, assuming that Trilinos
+was built with ML enabled:
+
+\verbatim
+TRILINOS_BUILD_DIR=/home/joeblow/TrilinosBuild
+include $(TRILINOS_BUILD_DIR)/include/Makefile.export.ML
+
+all:
+    $(ML_CXX_COMPILER) -c -o EpetraExt_petsc.o $(CXXFLAGS) -I$(TRILINOS_BUILD_DIR)/include $(ML_TPL_INCLUDES) EpetraExt_petsc.cpp
+    $(ML_CXX_COMPILER) -o petsc.exe EpetraExt_petsc.o $(ML_CXX_FLAGS) -L$(TRILINOS_BUILD_DIR)/lib $(ML_LIBRARIES) \
+                 $(ML_TPL_LIBRARIES) $(ML_EXTRA_LD_FLAGS)
+\endverbatim
+
+\section epetraext_petsc_example Example: Solving a PETSc linear system with PETSc's CG preconditioned by Trilinos' algebraic multigrid
+
+We now dissect the example Trilinos/packages/trilinoscouplings/examples/epetraext/\ref epetraext_petsc_cpp.
+In this example, a PETSc aij matrix corresponding to the 2D Laplacian and right-hand side corresponding to the solution
+of all ones are constructed.
+The resulting linear system is solved twice, the first time with CG from AztecOO, the second time with
+CG from PETSc.  In both cases, the preconditioner is algebraic multigrid (AMG) from the Trilinos package ML.
+
+\dontinclude EpetraExt_petsc.cpp
+
+The include file "ml_config.h"  contains definitions for all the appropriate Trilinos preprocessor macros.
+Of the following include files, "EpetraExt_PETScAIJMatrix.h" and "ml_MultiLevelPreconditioner.h" are required to
+wrap the PETSc matrix and create the ML preconditioner.
+
+\skipline ml_config.h
+\until Epetra_LinearProblem.h
+
+Here, we have omitted the details of the aij matrix construction.  After the PETSc matrix is constructed, it is wrapped as an Epetra_PETScAIJMatrix:
+
+\skipline Epetra_PETScAIJMatrix epA
+
+Note that this is a lightweight wrap -- no matrix data is copied!
+
+The parameter list for the multigrid preconditioner is created and populated.  (For more information on multigrid
+options, please see the ML user's guide.)
+
+\skip Teuchos::ParameterList
+\until 10);
+
+In this case, we are going to use symmetric Gauss-Seidel as the fine-grid smoother.  Since this requires access to individual
+matrix rows, it is much more efficient to use the PETSc implementation, which will be optimized for the underlying aij data
+structure.  (There is no performance penalty associated with Trilinos smoothers whose kernel is a matrix-vector multiply, as the multiply is simply a callback to PETSc's native implementation.) To do this, the KSP object <tt>kspSmoother</tt> is created and populated:
+
+\skip ierr = KSPCreate
+\until KSPSetUp
+
+The fine grid smoother (level 0) is set to be of PETSc type
+
+\skipline smoother: type
+
+and <tt>kspSmoother</tt> is placed in the parameter list.
+
+Note that trying to set a PETSc smoother on any other level will generate an error.
+Also note that ML has many other smoothers available, e.g., polynomial and incomplete factorizations.
+Please see the ML User's guide, available from the ML homepage or in Trilinos/packages/ml/doc/mlguide.pdf,
+for more information.
+
+\skipline smoother: petsc
+
+Finally, the ML AMG preconditioner is constructed.
+
+\skipline new ML_Epetra
+
+The linear system is solved first using CG from the Trilinos package AztecOO.
+
+\skip epu.Put
+\until solver.Iterate
+
+The system is solved a second time using CG from PETSc.  The AMG preconditioner <tt>Prec</tt> must be wrapped as a PETSc
+shell preconditioner
+
+\skip KSPGetPC
+\until PCShellSetName
+
+where the apply method is given by
+
+\skip ShellApplyML(
+\until *ShellApplyML*
+
+Other preconditioners, such as those provided by Ifpack or AztecOO, can be wrapped in a similar fashion.
+
+*/
+
+/*! \page epetraext_petsc_cpp EpetraExt_petsc.cpp
+\include EpetraExt_petsc.cpp
+*/
+
+/*! \page epetraext_inout I/O Operations for Epetra Objects
+
+Epetra supports I/O operations for Epetra objects based on 
+<ol>
+<li> Matlab triplet (i,j,value) format for writing and reading of Epetra RowMatrix and Operator objects.
+<li> Matrix Market format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
+Operator objects.
+<li> HDF5 format: Support writing and reading of Epetra BlockMap, Map, MultiVector, Vector, RowMatrix and
+Operator objects.  Available when EpetraExt is configured with \c --enable-epetraext-hdf5. 
+<li> An XML-compatible reader and writer is available when Teuchos is configures with --enable-teuchos-expat.
+</ol>
+
+The simplest of the input function is EpetraExt::MatlabFileToCrsMatrix.  This function requires only a valid ASCII
+file containing 1 or more lines where each row is of the form: (row_index, col_index, value) and a valid Epetra_Comm
+object.  The matrix domain and range maps are assumed to have a size of the maximum row and column index present
+in the file, respectively, and will be constructed as uniform distributed maps.  The row map will be identical to the
+range map and the column map will be determined by which columns are present for the rows on a given processor.
+
+The simplest output functions are EpetraExt::RowMatrixToMatlabFile and EpetraExt:OperatorToMatlabFile, which write out
+any Epetra_RowMatrix or Epetra_Operator object, respectively.  Epetra_Operator coefficients are generated by multiplying
+the operator with the canonical vectors, several at a time for performance reasons.
+
+The I/O function are summarized below:
+
+<ol>
+<li> BlockMap and Map I/O:
+<ol>
+<li> EpetraExt::MatrixMarketFileToBlockMap
+<li> EpetraExt::BlockMapToMatrixMarketFile
+<li> EpetraExt::MatrixMarketFileToMap
+</ol>
+<li> CrsMatrix Input:
+<ol>
+<li> EpetraExt::MatlabFileToCrsMatrix
+<li> EpetraExt::MatrixMarketFileToCrsMatrix
+</ol>
+<li> RowMatrix output (includes all Epetra matrix classes):
+<ol>
+<li> EpetraExt::RowMatrixToMatrixMarketFile
+<li> EpetraExt::RowMatrixToMatlabFile
+</ol>
+<li> Operator output (includes all Epetra matrix and operator classes):
+<ol>
+<li> EpetraExt::RowMatrixToMatrixMarketFile
+<li> EpetraExt::RowMatrixToMatlabFile
+</ol>
+<li> MultiVector and Vector I/O:
+<li> MultiVector and Vector I/O:
+<ol>
+<li> EpetraExt::MatrixMarketFileToMultiVector
+<li> EpetraExt::MatrixMarketFileToVector
+<li> EpetraExt::MultiVectorToMatrixMarketFile
+<li> EpetraExt::VectorToMatrixMarketFile
+</ol>
+<li> HDF5 class: EpetraExt::HDF5
+<li> XML classes: EpetraExt::XMLReader and EpetraExt::XMLWriter.
+</ol>
+
+The following example (from Trilinos/packages/aztecoo/example/AztecOO_Matlab_Input) shows an interesting 
+use of these classes, illustrating how to use these classes in conjunction with
+AztecOO to write out the coefficients of the inverse of a matrix:
+
+\verbinclude cxx_main.cpp
+
+*/

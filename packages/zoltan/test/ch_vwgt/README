@@ -1,0 +1,46 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+-------------------------------------------------------------------------------
+ch_vwgt
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  Graph and coordinates included.
+  Vertex weights specified.
+-------------------------------------------------------------------------------
+Differences between output on Sun and TFlops for test rib-oneproc:
+  Node 17 assigned to proc 0 on Sun, proc 1 on Tflops.
+  Verified that this difference is most likely due to differences in
+  arithmetic on machines.  In LB_find_median's calculation of the
+  second cut, node 11 lies almost exactly on the median line.  On Suns, it
+  is <= the median; on Tflops, it is > the median; thus, it is assigned to
+  the lo set on the Suns, and the hi set on Tflops.  This difference causes
+  the re-calculation of the median to differ on the two platforms.  Given 
+  the tolerance used in LB_find_median to stop iterations, the different
+  medians persist after leaving LB_find_median.
+  Result verified by Karen Devine, February 2002.
+-------------------------------------------------------------------------------
+Answers differ for ParMETIS tests on linux platforms 
+Suspect difference in rand() is the cause.
+On linux, rand() returns values in the range 0 to 2147483647; on
+Solaris, it returns values in the range 0 to 32767.  (See definition of
+RAND_MAX in <stdlib.h>.)
+
+zdrive.inp.rib-partmore
+-  Differences in answers between linux and sun arise due to round off
+in computation of xx and xy in Zoltan_RIB_inertial2d on processor two for last
+cut (between partitions 2 and 3).  Input values of xcm and ycm are identical.
+The resulting cuts are different enough on the two platforms that
+node 12 falls on different sides.
+

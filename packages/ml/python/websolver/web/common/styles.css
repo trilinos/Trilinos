@@ -1,0 +1,255 @@
+/* styles.css */
+
+/* Link styles ************************************************************** */
+
+a:link, a:visited, a:active {
+  text-decoration: none;
+  font-weight: bold;
+  color: #036;
+  background-color: transparent;
+}
+
+a:hover {
+  text-decoration: underline;
+  font-weight: bold;
+  color: #036;
+  background-color: transparent;
+}
+
+/* Font styles ************************************************************** */
+
+.heading {
+  font-size: 12pt;
+  font-weight: bold;
+  line-height: 150%;
+  display: block;
+}
+
+.subheading {
+  font-size: 10pt;
+  font-weight: bold;
+  line-height: 150%;
+  display: block;
+}
+
+.subheading2 {
+  font-size: 10pt;
+  line-height: 150%;
+  display: block;
+}
+
+.inlineHeading {
+  font-size: 12pt;
+  font-weight: bold;
+  line-height: 100%;
+  display: inline;
+}
+
+.inlineHeading2 {
+  font-size: 10pt;
+  font-weight: bold;
+  line-height: 100%;
+  display: inline;
+}
+
+.centeredHeading {
+  font-size: 10pt;
+  font-weight: bold;
+  display: block;
+  text-align: center;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.center {
+  display: block;
+  text-align: center;
+}
+
+.small {
+	font-size: 8pt;
+}
+
+.code {
+  font-family: Courier, Monospaced, Sans-serif;
+}
+
+.strong {
+  font-size: 11pt;
+  font-weight: bold;
+  color: #000099;
+}
+
+.caption {
+  font-size: 9pt;
+  text-align: center;
+  display: block;
+}
+
+.keyPoints {
+  font-size: 9pt;
+}
+
+.release {
+  font-weight: bold;
+  color: #000099;
+}
+
+.footer {
+  font-size: 8pt;
+}
+
+.warning {
+  font-size: 8pt;
+  color: #000099;
+  background-color: transparent;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+/* Table styles ************************************************************* */
+.mainTable {
+  width: 100%;
+  height: 100%;
+  font-size: 9pt;
+}
+
+.titleContainerCell {
+  width: auto;
+  border-bottom: 6px solid #efe6d4;
+}
+
+.titleContainerInside {
+  width: auto;
+  border-bottom: 4px solid #ccb792;
+}
+
+.titleTable {
+  width: auto;
+  display: block;
+}
+
+.topCornerCell {
+  width: auto;
+  height: auto;
+  margin: 0px;
+  padding: 10px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.titleCell {
+  width: 100%;
+  height: auto;
+  margin: 0px;
+  padding: 10px 10px 0px 10px ;
+  vertical-align: top;
+  text-align: left;
+}
+
+.contentCell {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 10px;
+  vertical-align: top;
+}
+
+.footerContainerCell {
+  border-top: 2px solid #ccb792;
+}
+
+.footerTable {
+  width: auto;
+  display: block;
+}
+
+.bottomCornerCell {
+  padding: 5px;
+}
+
+.footerCell {
+  width: 100%;
+  padding: 10px 10px 15px 5px;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.footer a:link, .footer a:hover, .footer a:visited, .footer a:active {
+  font-weight: normal;
+}
+
+/* Lists ******************************************************************** */
+
+/* Image styles ************************************************************* */
+
+.trilinosTitle {
+  width: 293px;
+  height: 47px;
+  margin: 0px;
+  padding: 0px;
+  border-style: none;
+  text-align: center;
+}
+
+.sandia {
+  width: 180px;
+  height: 29px;
+  margin: 0px;
+  padding: 0px;
+  border-style: none;
+  text-align: center;
+}
+
+.trilinos {
+  width: 183px;
+  height: 100px;
+  margin: 0px;
+  padding: 0px;
+  text-align: center;
+  border-style: none;
+}
+
+.rd100 {
+  width: 90px;
+  height: 93px;
+  margin: 0px 5px 0px 0px;
+  padding: 0px;
+  text-align: center;
+  border-style: none;
+}
+
+/* Body style *************************************************************** */
+
+body, .body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+
+  font-family: Arial, Sans-serif;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  font-size: 9pt;
+  color: #000;
+  background-color: #fff;
+  line-height: 120%;
+  word-spacing: normal;
+  letter-spacing: normal;
+  text-decoration: none;
+  vertical-align: baseline;
+  text-transform: none;
+  text-align: left;
+  text-indent: 0%;
+  white-space: normal;
+  border-style: none;
+}

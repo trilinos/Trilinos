@@ -1,0 +1,41 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+CH DIRECTORY -- code for reading Chaco input files.
+---------------------------------------------------
+
+Note:  This code is not compiled into the Zoltan library,
+but is used by the test driver (zdrive).
+Most of this code was written by Hendrickson and Leland for reading
+Chaco input files. 
+
+ch_input_const.h  -- Prototypes for chaco_input_graph and chaco_input_geom.
+                     External declarations of global variables.
+
+
+ch_input_graph.c  -- Contains routine chaco_input_graph, which processes
+                     Chaco graph input.
+
+ch_input_geom.c   -- Contains routine chaco_input_geom, which processes
+                     Chaco geometry input.
+
+ch_input_assign.c -- Contains routines to read an initial assignment in
+                     Chaco input format.
+
+ch_input_read.c   -- Contains routines read_val, read_int, and flush_line,
+                     for reading input files.
+
+ch_dist_graph.c,  -- Code for distributing the initial Chaco graph.
+ch_init_dist.c,      Several different initial distributions are available.
+ch_init_dist_const.h

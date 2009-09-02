@@ -1,0 +1,28 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  PrintUtils
+  SOURCES NOXPrintUtils.C
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "Test passed!"
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  SharedObjectTemplate
+  SOURCES NOXSharedObjectTemplate.C
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "Test passed!"
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  FiniteValue
+  SOURCES NOXFiniteValue.C
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "Test passed!"
+  )

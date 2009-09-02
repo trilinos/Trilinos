@@ -1,0 +1,15 @@
+TARGET=EpetraExtUserGuide
+
+$(TARGET).pdf: $(TARGET).tex SingletonFilters.tex
+	pdflatex $(TARGET)
+	bibtex $(TARGET)
+	pdflatex $(TARGET)
+	pdflatex $(TARGET)
+
+view: $(TARGET).pdf
+	acroread $(TARGET).pdf &
+
+clean:
+	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
+           *.bbl *.blg *.lof *.lot *.tex~
+

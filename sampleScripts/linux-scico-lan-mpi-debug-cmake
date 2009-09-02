@@ -1,0 +1,40 @@
+EXTRA_ARGS=$@
+
+#use this base dir if you want the default 3.4.3 gnu compilers
+#export MPI_BASE_DIR=/usr/local/mpi/sierra/32Bit/1.2.7/gcc-3.4.3
+#FORTRAN_COMPILER=/usr/local/gcc/64Bit/3.4.3/bin/g77
+
+#use this base dir if you want the newer soon to be default 4.2.4 gnu compilers
+export MPI_BASE_DIR=/home/sntools/extras/mpi/mpich-1.2.7p1-gcc-4.2.4-64Bit
+FORTRAN_COMPILER=/home/sntools/extras/compilers/gcc-4.2.4/bin/gfortran
+
+# Have to set this to get TRY_RUN(...) commands to work
+export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_CXX_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
+-D CMAKE_C_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicc \
+-D CMAKE_Fortran_COMPILER:FILEPATH=$FORTRAN_COMPILER \
+-D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D TPL_ENABLE_Boost:BOOL=ON \
+-D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
+  -D MPI_EXECUTABLE:FILEPATH=$MPI_BASE_DIR/bin/mpirun \
+  -D MPI_BASE_DIR:PATH=$MPI_BASE_DIR \
+  -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
+-D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
+-D EpetraExt_BUILD_BDF:BOOL=ON \
+$EXTRA_ARGS \
+../
+
+# 2008/12/17: bmpersc: This is a modification of the godel file to
+# work on the scico lan. The mpi executable and compiler path have
+# to be set for the MPI library to be found properly. 
+# there are 2 options. one for the default 3.4.3 gnu compilers and one
+# for the soon to be default 4.2.4 gnu compilers

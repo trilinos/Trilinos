@@ -1,0 +1,130 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Query Functions</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_query_lb.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_color.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Application-Registered Query Functions"></a>Application-Registered
+Query Functions</h2>
+Zoltan gets information about a processor's objects
+through calls to query functions. These functions
+must be provided by the application. They are "registered" with Zoltan; 
+that is, a pointer to the function is passed to Zoltan, 
+which can then call that function when its information is needed.&nbsp;
+<p>
+Query functions return information about only on-processor data.
+They can be called by Zoltan with individual objects
+or lists of objects.  Each processor may call a given query function
+zero, one or
+more than one time.  Thus, most query functions should NOT contain 
+interprocessor communication, as such communication can cause 
+processors to hang while
+waiting for messages that were never sent. (The only exceptions to this rule 
+are certain <a href="ug_query_mig.html">migration query functions</a>.)
+<p>
+Two categories of query functions are used by the library:
+<blockquote><a href="ug_query_lb.html">General Zoltan Query Functions</a>
+<br><a href="ug_query_mig.html">Migration Query Functions</a></blockquote>
+In each category, a variety of query functions can be registered by the
+user. The query functions have a function type, describing their 
+purpose.&nbsp; Functions can be registered with a
+Zoltan structure in two ways:&nbsp; through calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or through calls to query-function-specific functions <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.&nbsp;
+When a function is registered through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,
+its function type is passed in the <i>fn_type</i> argument. When <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>
+is used to register functions, the type of the function is implicit in
+the <i>fn_ptr</i> argument.&nbsp; Each function description below includes
+both its function type and function prototype.
+<p>
+Query functions that return information about data objects owned by a processor
+come in two forms:  list-based functions that return information about a 
+list of objects, and iterator functions that return information about a single 
+object.
+Users can provide either version of the query function; they need not provide
+both.
+Zoltan calls the list-based functions with the IDs of all objects needed;
+this approach often provides faster performance as it eliminates the overhead
+of multiple function calls.  List-based functions have the word "MULTI" in 
+their function-type name.  If, instead, the application provides iterator
+functions, Zoltan calls the iterator function once for each object whose 
+data is needed.  This approach, while slower, allows Zoltan to use less memory
+for some data.
+<p>
+Some algorithms in Zoltan require that certain query
+functions be registered by the application; for example, geometric partitioning
+algorithms such as Recursive Coordinate Bisection (RCB) require that either a
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b> or a 
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b> 
+be registered. When a default value is specified below, the query function
+type is optional; if a function of that type is not registered, the default
+values are used. Details of which query functions are required by particular
+algorithms are included in the <a href="ug_alg.html">Algorithms</a> section.
+<p>
+Many of the functions have both global and local object identifiers
+(IDs) in their argument lists. The global IDs provided by the application
+must be unique across all processors; they are used for identification
+within Zoltan. The local IDs are not used by Zoltan; 
+they are provided for the convenience of the application and can
+be anything the application desires. The local IDs can be used by application
+query routines to enable direct access to application data. For example,
+the object with global ID "3295" may be stored by the application in location
+"15" of an array in the processor's local memory. Both global ID "3295"
+and local ID "15" can be used by the application to describe the object.
+Then, rather than searching the array for global ID "3295," the application
+query routines can subsequently use the local ID to index directly into
+the local storage array. See <a href="ug_usage.html#Data Types for Object IDs">Data
+Types for Object IDs</a> for a description of global and local IDs. All
+of the functions have, as their first argument, a pointer to data that
+is passed to Zoltan through <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.&nbsp;
+This data is not used by Zoltan. A different set of
+data can be supplied for each registered function. For example, if the
+local ID is an index into an array of data structures, then the data pointer
+might point to the head of the data structure array.
+<p>As their last argument, all functions have 
+an <a href="ug_interface.html#Error Codes">error code</a> that should
+be set and returned by the registered function. 
+<p>
+If you are calling the Zoltan library from a C++ application, you may
+set the query function to be any class static function
+or any function
+defined outside of a class definition.  However, it is possible you
+will wish to set the query function to be an object method.
+In that case, you should
+write a query function that takes a pointer to the object as its
+<I>data</I> field.  The query function can then call the object
+method.
+
+<br>&nbsp;
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_query_lb.html">Next:&nbsp;
+Load-Balancing Query Functions</a>&nbsp; |&nbsp; <a href="ug_interface_color.html">Previous:&nbsp;
+Coloring Functions</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

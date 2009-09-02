@@ -1,0 +1,38 @@
+%%MatrixMarket matrix array integer general
+%Format Version:
+% 1 
+%NumProc: Number of processors:
+% 1 
+%MaxElementSize: Maximum element size:
+% 1 
+%MinElementSize: Minimum element size:
+% 1 
+%IndexBase: Index base of map:
+% 0 
+%NumGlobalElements: Total number of GIDs in map:
+% 22 
+%NumMyElements: BlockMap lengths per processor:
+% 22
+22 1
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21

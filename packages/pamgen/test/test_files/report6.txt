@@ -1,0 +1,12 @@
+mesh
+  radial
+  numz 2
+   zblock 1 10.0 first size 1 last size 2
+   zblock 2 10.0 first size 2 last size 1
+  numr 2 initial radius 1.
+   rblock 1 10. first size 1. last size 2.
+   rblock 2 10. first size 2. last size 1.
+  numa 1
+   ablock 1 120. interval 10
+ end
+end

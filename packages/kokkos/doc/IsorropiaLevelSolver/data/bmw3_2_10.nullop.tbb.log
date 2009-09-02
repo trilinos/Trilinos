@@ -1,0 +1,196 @@
+Reading MatrixMarket file /home/cgbaker/Matrices/bmw3_2.mtx
+1M 2M 3M 4M 5M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  3.76274
+
+*** Matrix statistics: /home/cgbaker/Matrices/bmw3_2.mtx
+Number of rows: 227362
+Number of non-zeros: 5757996
+Mean number of non-zeros per row: 25.3
+Std dev number of non-zeros per row: 13.39
+
+LevelSolver::Analyze() time: 0.26
+LevelSolver::Setup() time: 0.30
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1162
+Mean level size: 195.66
+Std dev level size: 310.20
+Mean level nnz: 4763.68
+Std dev level nnz: 6293.31
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.02e-14
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 2.46e+10
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 9.86e+01
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 0.00e+00
+
+*** Timings over 10 trials
+LevelSolver  solve,  1 threads,    1.25e-02 total,    1.25e-03 average
+LevelSolver  apply,  1 threads,    1.23e-02 total,    1.23e-03 average
+K::CrsMatrix apply,  1 threads,    8.00e-06 total,    8.00e-07 average
+Epetra_CrsMatrix solve,            2.50e-01 total,    2.50e-02 average
+Epetra_CrsMatrix apply,            2.55e-01 total,    2.55e-02 average
+Reading MatrixMarket file /home/cgbaker/Matrices/bmw3_2.mtx
+1M 2M 3M 4M 5M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  3.74622
+
+*** Matrix statistics: /home/cgbaker/Matrices/bmw3_2.mtx
+Number of rows: 227362
+Number of non-zeros: 5757996
+Mean number of non-zeros per row: 25.3
+Std dev number of non-zeros per row: 13.39
+
+LevelSolver::Analyze() time: 0.26
+LevelSolver::Setup() time: 0.30
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1162
+Mean level size: 195.66
+Std dev level size: 310.20
+Mean level nnz: 4763.68
+Std dev level nnz: 6293.31
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 9.14e-15
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 2.76e+10
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 2.34e+02
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 0.00e+00
+
+*** Timings over 10 trials
+LevelSolver  solve,  2 threads,    7.71e-02 total,    7.71e-03 average
+LevelSolver  apply,  2 threads,    7.68e-02 total,    7.68e-03 average
+K::CrsMatrix apply,  2 threads,    4.20e-05 total,    4.20e-06 average
+Epetra_CrsMatrix solve,            2.50e-01 total,    2.50e-02 average
+Epetra_CrsMatrix apply,            2.55e-01 total,    2.55e-02 average
+Reading MatrixMarket file /home/cgbaker/Matrices/bmw3_2.mtx
+1M 2M 3M 4M 5M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  3.74645
+
+*** Matrix statistics: /home/cgbaker/Matrices/bmw3_2.mtx
+Number of rows: 227362
+Number of non-zeros: 5757996
+Mean number of non-zeros per row: 25.3
+Std dev number of non-zeros per row: 13.39
+
+LevelSolver::Analyze() time: 0.26
+LevelSolver::Setup() time: 0.31
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1162
+Mean level size: 195.66
+Std dev level size: 310.20
+Mean level nnz: 4763.68
+Std dev level nnz: 6293.31
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 8.87e-15
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 2.19e+10
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 2.37e+02
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 0.00e+00
+
+*** Timings over 10 trials
+LevelSolver  solve,  4 threads,    1.52e-01 total,    1.52e-02 average
+LevelSolver  apply,  4 threads,    1.51e-01 total,    1.51e-02 average
+K::CrsMatrix apply,  4 threads,    1.37e-04 total,    1.37e-05 average
+Epetra_CrsMatrix solve,            2.53e-01 total,    2.53e-02 average
+Epetra_CrsMatrix apply,            2.57e-01 total,    2.57e-02 average
+Reading MatrixMarket file /home/cgbaker/Matrices/bmw3_2.mtx
+1M 2M 3M 4M 5M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  3.73858
+
+*** Matrix statistics: /home/cgbaker/Matrices/bmw3_2.mtx
+Number of rows: 227362
+Number of non-zeros: 5757996
+Mean number of non-zeros per row: 25.3
+Std dev number of non-zeros per row: 13.39
+
+LevelSolver::Analyze() time: 0.26
+LevelSolver::Setup() time: 0.30
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1162
+Mean level size: 195.66
+Std dev level size: 310.20
+Mean level nnz: 4763.68
+Std dev level nnz: 6293.31
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 9.38e-15
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 2.40e+10
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 6.84e+01
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 0.00e+00
+
+*** Timings over 10 trials
+LevelSolver  solve,  8 threads,    1.99e-01 total,    1.99e-02 average
+LevelSolver  apply,  8 threads,    1.98e-01 total,    1.98e-02 average
+K::CrsMatrix apply,  8 threads,    1.55e-04 total,    1.55e-05 average
+Epetra_CrsMatrix solve,            2.54e-01 total,    2.54e-02 average
+Epetra_CrsMatrix apply,            2.58e-01 total,    2.58e-02 average

@@ -1,0 +1,7 @@
+#! /bin/sh
+# This should be run to generate configure and Makefile.in
+# This is only needed by developers to set the autoconf context.
+aclocal
+autoheader
+automake -i --add-missing --foreign
+autoconf

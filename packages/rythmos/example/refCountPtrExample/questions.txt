@@ -1,0 +1,40 @@
+06/09/05
+
+My (tscoffe) questions about the RCP.
+
+Q When does a RCP act like a pointer and when like an object?
+Q What does const RCP really mean?
+Q What does RCP<const foo> really mean?
+Q When should I use a RCP vs. a reference?
+Q Can I use a typedef with RCP to avoid the verbose notation?
+Q What's up with this &* notation?
+Q What are some anecdotal examples of why you don't want to use raw pointers?
+Q What are some simple examples of why you don't want to use raw pointers?
+A
+	class Bar 
+	{
+	  public:
+	    Bar() {};
+	    ~Bar() {};
+	};
+	class Foo
+	{
+	  public:
+	    Foo() { Bar *Bptr_ = new Bar; };
+	    ~Foo() { delete Bptr_; };
+	    void setPtr(Bar *Bptr) { Bptr_ = Bptr; };
+	    Bar *getPtr() { return(Bptr_); };
+	  protected:
+	    Bar *Bptr_;
+	};
+	int main(int argc, char *argv[])
+	{
+	  Bar *Bptr = new Bar;
+	  Foo F;
+	  F.setPtr(Bptr);
+	  delete Bptr;
+	  return(0);
+	}
+Q  What are some anecdotal examples of why you don't want to use references everywhere?
+Q  What are some simple examples of why you don't want to use references everywhere?
+Q  What is the overhead in terms of syntax that is necessary to start using RCP?

@@ -1,0 +1,14 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+
+ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
+
+FILE(GLOB SOURCES *.cpp)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  test_gaasp_adapters
+  SOURCES ${SOURCES}
+  DEPLIBS rythmos_test_models 
+  COMM serial
+  STANDARD_PASS_OUTPUT
+  )

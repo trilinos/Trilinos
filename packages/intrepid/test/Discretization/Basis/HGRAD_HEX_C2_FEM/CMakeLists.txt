@@ -1,0 +1,21 @@
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  Test_01
+  SOURCES test_01.cpp
+  ARGS PrintItAll
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(HGRAD_HEX_C2TestDataCopy
+  SOURCE_FILES
+    HEX_C2_D2Vals.dat
+    HEX_C2_D3Vals.dat
+    HEX_C2_D4Vals.dat
+    HEX_C2_GradVals.dat
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/testdata"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/testdata"
+)

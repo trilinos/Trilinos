@@ -1,0 +1,66 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers for
+#  solaris on NIST's LAN.  
+#  The variable MPI_VERSION should be set to "lam" or "mpich"; this variable
+#  is an additional variable used only in this architecture's makefile.
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+MPI_VERSION 		= lam
+#MPI_VERSION 		= mpich
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= gcc
+ifeq "$(MPI_LIB)" "lam"
+INCLUDE_PATH		= -I$(LAMHOME)/include
+else
+INCLUDE_PATH            = -I$(MPIR_HOME)/include
+endif
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS = $(DBG_FLAGS)
+
+F90			= f90
+LOCAL_F90		= f90
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
+FFLAGS    		= 
+SPPR_HEAD 		= spprinc.sun
+F90_MODULE_PREFIX 	= -M
+FARG      		= farg_typical
+
+ifeq "$(MPI_LIB)" "lam"
+MPI_LIB			=  -lmpi -largs -ltrillium -ltstdio -lt -lsocket -lgcc
+MPI_LIBPATH		= -L$(LAMHOME)/lib \
+                        -L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.95.1
+else
+MPI_LIB                 =  -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
+MPI_LIBPATH             = -L$(MPIR_HOME)/build/solaris/ch_p4/lib \
+                        -L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.95.1
+endif
+
+#PARMETIS_LIBPATH 	= -L.
+#PARMETIS_INCPATH  	= -I/Net/proj/zoltan/arch/all/src
+
+#JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
+
+#NEMESIS_LIBPATH		= -L/Net/proj/zoltan/arch/solaris/lib
+#NEMESIS_INCPATH		= -I/Net/proj/zoltan/arch/solaris/include

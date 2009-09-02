@@ -1,0 +1,58 @@
+Reading MatrixMarket file /home/cgbaker/Matrices/bmwcra_1.mtx
+1M 2M 3M 4M 5M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  3.95668
+
+*** Matrix statistics: /home/cgbaker/Matrices/bmwcra_1.mtx
+Number of rows: 148770
+Number of non-zeros: 5396386
+Mean number of non-zeros per row: 36.3
+Std dev number of non-zeros per row: 17.84
+
+LevelSolver::Analyze() time: 0.12
+LevelSolver::Setup() time: 0.24
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 729
+Mean level size: 204.07
+Std dev level size: 77.43
+Mean level nnz: 7208.26
+Std dev level nnz: 3017.65
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.43e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.80e-16
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.75e-16
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.40e-16
+
+*** Timings over 10 trials
+LevelSolver  solve,  1 threads,    2.45e-01 total,    2.45e-02 average
+LevelSolver  apply,  1 threads,    2.47e-01 total,    2.47e-02 average
+K::CrsMatrix apply,  1 threads,    2.27e-01 total,    2.27e-02 average
+LevelSolver  solve,  2 threads,    3.52e-01 total,    3.52e-02 average
+LevelSolver  apply,  2 threads,    3.59e-01 total,    3.59e-02 average
+K::CrsMatrix apply,  2 threads,    1.21e-01 total,    1.21e-02 average
+LevelSolver  solve,  4 threads,    5.02e-01 total,    5.02e-02 average
+LevelSolver  apply,  4 threads,    5.01e-01 total,    5.01e-02 average
+K::CrsMatrix apply,  4 threads,    1.11e-01 total,    1.11e-02 average
+LevelSolver  solve,  8 threads,    6.64e-01 total,    6.64e-02 average
+LevelSolver  apply,  8 threads,    6.65e-01 total,    6.65e-02 average
+K::CrsMatrix apply,  8 threads,    1.11e-01 total,    1.11e-02 average
+Epetra_CrsMatrix solve,            2.30e-01 total,    2.30e-02 average
+Epetra_CrsMatrix apply,            2.34e-01 total,    2.34e-02 average

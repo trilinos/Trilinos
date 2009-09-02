@@ -1,0 +1,71 @@
+#!/bin/sh
+# Used on gabriel.sandia.gov with gcc 3.4.6
+rm config.cache
+../../../Trilinos/configure \
+--cache-file=config.cache \
+--with-install="/usr/bin/install -p" \
+CXXFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions" \
+CFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions" \
+FFLAGS="-g -O0 " \
+FLIBS="-lg2c" \
+--with-libs="-L$HOME/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/HSL -lHSL" \
+--with-gnumake \
+--disable-default-packages \
+--enable-teuchos \
+ --enable-teuchos-extended \
+ --enable-teuchos-boost \
+ --enable-teuchos-explicit_instantiation \
+ --enable-teuchos-debug \
+ --disable-teuchos-blasfloat \
+ --enable-teuchos-dotcheck \
+--enable-thyra \
+--enable-epetra --enable-epetra-abc \
+--enable-triutils --disable-triutils-tests --disable-triutils-examples \
+--enable-tpetra \
+--enable-epetraext \
+--enable-amesos \
+--enable-aztecoo \
+--enable-belos \
+--enable-ifpack \
+--enable-ml \
+--enable-nox --enable-nox-epetra --enable-nox-epetraext --enable-nox-thyra \
+  --enable-nox-thyra-tests --enable-nox-tests \
+--enable-loca \
+--enable-stratimikos \
+--enable-rythmos \
+--enable-moocho --enable-moocho-ma28 \
+--enable-sacado \
+--enable-meros \
+--enable-new_package \
+--enable-galeri \
+--enable-moertel \
+--enable-anasazi \
+--enable-ctrilinos \
+--enable-didasko \
+--with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
+--prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/trilinos/dev/serial/dbg
+
+# 2008/11/25: Disabling Sundance because it takes too long to run the tests
+#--enable-sundance \
+
+# 2008/11/24: These don't work for BLAS float either!
+#--with-blas=$HOME/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/BLAS/libBLAS.a \
+#--with-lapack=$HOME/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/LAPACK/libLAPACK.a \
+
+# 2008/11/25:
+# --disable-teuchos-blasfloat \
+
+# 2008/11/19: Intrepid is not even configuring!
+#--enable-intrepid \
+
+# 2008/08/07: Tpetra is not building today
+#--enable-tpetra \
+
+# 2008/07/31: rbgen fails to link RBGenDriver_EpetraMV
+#--enable-rbgen \
+
+# 2008/07/29: Issoropia fails to build
+#--enable-isorropia \
+
+# These are the compiler options that I should be using!
+# CXXFLAGS="-g -O0 -ansi -pedantic -Wall -fexceptions -Wshadow -Woverloaded-virtual" \

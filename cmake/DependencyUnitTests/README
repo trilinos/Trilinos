@@ -1,0 +1,5 @@
+This directory contains a mock set of dependency files for Trilinos and unit
+tests for checking the behavior of the dependency tracking logic in the CMake
+code.  The reason to create this mock structure is to avoid having these tests
+break when the real dependencies in Trilinos change which was happening too
+often.

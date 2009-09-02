@@ -1,0 +1,48 @@
+EXTRA_ARGS=$@
+
+#use this base dir if you want the default 3.4.3 gnu compilers
+#export MPI_BASE_DIR=/usr/local/mpi/sierra/32Bit/1.2.7/gcc-3.4.3
+#FORTRAN_COMPILER=/usr/local/gcc/64Bit/3.4.3/bin/g77
+
+#use this base dir if you want the newer soon to be default 4.2.4 gnu compilers
+export MPI_BASE_DIR=/opt/SUNWhpc/HPC8.1/sun/
+FORTRAN_COMPILER=$MPI_BASE_DIR/bin/mpif77
+
+# Have to set this to get TRY_RUN(...) commands to work
+export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
+
+cmake \
+-D CMAKE_INSTALL_PREFIX:PATH=../install_sun-engsci \
+-D CMAKE_BUILD_TYPE:STRING=NONE \
+-D Trilinos_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR:PATH=$MPI_BASE_DIR \
+  -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="" \
+  -D MPI_EXEC:FILEPATH=$MPI_BASE_DIR/bin/mprun \
+  -D MPI_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
+  -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
+-D CMAKE_CXX_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicxx \
+-D CMAKE_C_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicc \
+-D CMAKE_Fortran_COMPILER:FILEPATH=$FORTRAN_COMPILER \
+-D CMAKE_CXX_FLAGS:STRING="-g -library=stlport4" \
+-D TPL_BLAS_LIBRARIES:STRING="-lsunperf -lsunmath -lfai -lfui -lfsu" \
+-D TPL_LAPACK_LIBRARIES:STRING="-lsunperf -lsunmath" \
+-D CMAKE_C_FLAGS:STRING="-g" \
+-D CMAKE_LD_FLAGS:STRING="-lsunperf -lsunmath -lnsl -lsocket -lrt" \
+-D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_Teuchos:BOOL=ON \
+-D Trilinos_ENABLE_Epetra:BOOL=ON \
+-D Trilinos_ENABLE_AztecOO:BOOL=ON \
+-D Trilinos_ENABLE_FEI:BOOL=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Teuchos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Teuchos_ENABLE_TESTS:BOOL=OFF \
+-D AztecOO_ENABLE_EXAMPLES:BOOL=OFF \
+-D AztecOO_ENABLE_TESTS:BOOL=OFF \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D TPL_ENABLE_MPI:BOOL=ON \
+$EXTRA_ARGS \
+../
+

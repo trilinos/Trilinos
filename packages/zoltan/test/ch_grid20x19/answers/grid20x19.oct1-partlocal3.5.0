@@ -1,0 +1,11 @@
+Decomposition Method	= octpart
+Zoltan Parameters	= oct_method=1
+Zoltan Parameters	= oct_maxobjects=1
+Zoltan Parameters	= oct_minobjects=1
+Zoltan Parameters       = debug_level=3, timer=cpu
+File Type		= Chaco
+File Name		= grid20x19
+Parallel Disk Info	= number=0
+test local partitions   = 3
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm

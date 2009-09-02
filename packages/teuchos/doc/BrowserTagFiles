@@ -1,0 +1,2 @@
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchosBrowser.tag=$(TRILINOS_HOME)/packages/teuchos/browser/doc/html

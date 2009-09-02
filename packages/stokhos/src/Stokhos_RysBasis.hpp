@@ -1,0 +1,133 @@
+// ***********************************************************************
+// 
+//                           Stokhos Package
+//                 Copyright (2008) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Christopher W. Miller (cmiller@math.umd.edu).
+// 
+// ***********************************************************************
+// @HEADER
+
+#ifndef STOKHOS_RYSBASIS_HPP
+#define STOKHOS_RYSBASIS_HPP
+
+#include "Stokhos_OneDOrthogPolyBasisBase.hpp"
+
+namespace Stokhos {
+
+  template <typename ordinal_type, typename value_type>
+  class RysBasis : 
+    public OneDOrthogPolyBasisBase<ordinal_type, value_type> {
+  public:
+    
+    //! Constructor
+    RysBasis(ordinal_type p, value_type c, bool normalize);
+
+    RysBasis(ordinal_type p , value_type c, const Teuchos::Array< value_type >& alpha,
+             const Teuchos::Array< value_type >& beta, bool normalize);
+    
+    //! Destructor
+    ~RysBasis();
+    
+    //! Project a polynomial into this basis (NOT IMPLIMENTED)
+    void projectPoly(const Polynomial<value_type>& poly, 
+		     Teuchos::Array<value_type>& coeffs) const;
+
+    //! Project derivative of basis polynomial into this basis (NOT IMPLIMENTED)
+    void projectDerivative(ordinal_type i, 
+			   Teuchos::Array<value_type>& coeffs) const;
+
+    ////! Evaluate weight function at a given point.
+    virtual value_type evaluateWeight(value_type x) const;    
+
+    ////! return vectors containing recurrance coefficients.
+    virtual void getAlpha(Teuchos::Array<value_type>& alphaOut) const {alphaOut = this->alpha;}
+    virtual void getBeta(Teuchos::Array<value_type>& betaOut) const {betaOut = this->beta;}
+    virtual void getGamma(Teuchos::Array<value_type>& gammaOut) const {gammaOut = this->gamma;}
+
+    //! Quadrature functions for generating recurrance coefficients.
+    virtual value_type expectedValue_tJ_nsquared(const ordinal_type& order) const;
+    virtual value_type expectedValue_J_nsquared(const ordinal_type& order) const;
+    
+    //!Evaluate inner product of two basis functions to test orthogonality.
+    virtual value_type eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const;
+    
+    //!Evaluate p_th basis function at a given point.
+    virtual value_type evaluateBasesOrder_p(const value_type& x, 
+					const ordinal_type& order) const;
+
+    //! Evaluate basis polynomials at given point
+    virtual void evaluateBases(const value_type& point,
+                               Teuchos::Array<value_type>& basis_pts) const;
+
+
+    //! Get Gauss quadrature points, weights, and values of basis at points
+    virtual void 
+    getQuadPoints(ordinal_type quad_order,
+		  Teuchos::Array<value_type>& points,
+		  Teuchos::Array<value_type>& weights,
+		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
+
+    //! Get sparse grid rule number
+    virtual ordinal_type getRule() const { return 5; }
+
+    //! Get quadrature weight factor
+    virtual value_type getQuadWeightFactor() const { 
+      return 1;
+    }
+
+    //! Get quadrature point factor
+    virtual value_type getQuadPointFactor() const { return 1; }
+
+
+    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
+    
+
+  private:
+
+    // Prohibit copying
+    RysBasis(const RysBasis&);
+
+    // Prohibit Assignment
+    RysBasis& operator=(const RysBasis& b);
+
+    //! Support [-cutoff,cutoff]
+    value_type cutoff;
+    
+    //! Scale for the weight
+    value_type scaleFactor;
+    
+    //! Normalized?
+    bool normalize;
+
+    //! Recurrance coeffs
+    Teuchos::Array<value_type> alpha;
+    Teuchos::Array<value_type> beta;
+    Teuchos::Array<value_type> gamma;
+ 
+    
+  }; // class RysBasis
+
+} // Namespace Stokhos
+
+// Include template definitions
+
+#include "Stokhos_RysBasisImp.hpp"
+#endif

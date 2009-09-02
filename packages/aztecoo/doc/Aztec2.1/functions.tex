@@ -1,0 +1,1796 @@
+\section{\Az{} Functions \label{subroutines}}
+
+In this section we describe the \Az{} functions available to the user. Certain
+variables appear many times in the parameter lists of these frequently used
+functions.  In the interest of brevity we describe these \underline{integer} 
+variables at the
+beginning of this section and then proceed with the individual function
+descriptions.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\vspace{2em}
+{\flushleft{\bf Frequently Used \Az{} Parameters} \hrulefill}
+\\[0.5em]
+%
+\optionbox{data\_org}{Array describing the matrix format
+(Section~\ref{comm_vars}). Allocated and set {\sf AZ\_set\_message\_info}
+and {\sf AZ\_transform}. If allocated manually (e.g. fortran programs),
+must be of size {AZ\_COMM\_SIZE} $ + k $ where $k$ is the total number
+of values sent to neighboring processors (to update their ghost nodes) when 
+doing a matrix-vector product.}
+%
+\optionbox{extern\_index}{{\it extern\_index[i]\/} gives the 
+local
+numbering of global element {\it external[i]\/}. Allocated and set by
+{\sf AZ\_order\_ele} and {\sf AZ\_transform}.}
+%
+\optionbox{extern\_proc}{{\it extern\_proc[i]\/} is updating processor
+of {\it external[i]\/}. Allocated and set by {\sf
+AZ\_find\_procs\_for\_externs}.}
+%
+\optionbox{external}{Sorted list (global indices) of external elements on
+this node. Allocated and set by {\sf AZ\_find\_local\_indices}
+and {\sf AZ\_transform} .}
+%
+\optionbox{N\_external}{Number of $external$ components. Set by \\{\sf
+AZ\_find\_procs\_for\_externs} and {\sf AZ\_transform}.}
+%
+\optionbox{N\_update}{Number of $update$ components assigned to this
+processor. Set by {\sf AZ\_read\_update}.}
+%
+\optionbox{options, params} {Arrays describing {\sf AZ\_solve} options
+(Section~\ref{highlevel}).}
+%
+\optionbox{proc\_config[]}{Integer array of length {AZ\_PROC\_SIZE} consisting of primarily:
+the node id ({\it proc\_config[AZ\_node]}), the total number of processors
+({\it proc\_config[AZ\_N\_procs]}), and the  
+MPI\cite{mpi} communicator
+({\sf AZ\_get\_comm({\it proc\_config})}).
+This array must be set by calling {\sf AZ\_set\_proc\_config}.}
+%
+\optionbox{update\_index}{{\it update\_index[i]\/} gives the local
+numbering of global element {\it update[i]\/}. Allocated and set by
+{\sf AZ\_order\_ele} and {\sf AZ\_transform}.}
+%
+\optionbox{update}{Sorted list of elements (global indices)
+           to be updated on this processor. Allocated and set
+           by {\sf AZ\_read\_update}.}
+%
+\optionbox{val, bindx, bpntr, cpntr, \\ indx, rpntr}{Arrays used to store
+           matrix. For MSR matrices {\it bpntr, cpntr, indx, rpntr} are
+           ignored (Section~\ref{data_formats}).}
+$\hphantom{h}$
+%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_broadcast}
+\protobox{void AZ\_broadcast(char *{\it ptr\/}, int {\it
+length\/}, int *{\it proc\_config\/}, int {\it action})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Used to concatenate a buffer of information and to broadcast this information
+from processor 0 to the other processors.  The four possible actions are
+\begin{itemize}
+\item $ action == $ {\sf AZ\_PACK}
+   \begin{itemize}
+   \item {\sf proc\_config[AZ\_node]} $==$ 0: store {\it ptr} in the internal
+                                      buffer.
+   \item {\sf proc\_config[AZ\_node]} $\neq\hphantom{p}$ 0: read from the
+                                     internal buffer to {\it ptr\/}. If \\
+                                     $\hphantom{abcdefghxxxxxtijklmnopll}$
+                                     the internal buffer is empty, first
+                                     receive \\
+                                     $\hphantom{abcdefghxxxxxtijklmnopll}$
+                                     the broadcast information.
+   \end{itemize}
+\item $ action == $ {\sf AZ\_SEND}
+   \begin{itemize}
+   \item {\sf proc\_config[AZ\_node]} $==$ 0: broadcast the internal buffer
+                                     (filled by \\
+                                     $\hphantom{abcdefghxxxxxtijklmnopll}$
+                                     {\sf AZ\_broadcast}) and then clear it.
+   \item {\sf proc\_config[AZ\_node]} $\neq\hphantom{p}$ 0: clear internal
+                                      buffer.
+   \end{itemize}
+\end{itemize}
+\vskip .1in
+Sample Usage:
+
+$\hphantom{Samp}$
+The following code fragment broadcasts the information in `a' and `b'.
+\begin{verbatim}
+
+         if (proc_config[AZ_node] == 0) {
+            a = 1;
+            b = 2;
+         }
+         AZ_broadcast(&a, sizeof(int), proc_config, AZ_PACK);
+         AZ_broadcast(&b, sizeof(int), proc_config, AZ_PACK);
+         AZ_broadcast(NULL ,       0 , proc_config, AZ_SEND);
+
+\end{verbatim}
+
+NOTE:  There can be no other communication calls between the {\sf AZ\_PACK}
+and {\sf AZ\_SEND} calls to {\sf AZ\_broadcast}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ptr}{On input, data string of size {\it length}. Information
+                is either stored to or retrieved from {\it ptr} as described
+                above.}
+
+\optionbox{length}{On input, length of {\it ptr} to be broadcast/received.}
+
+\optionbox{action}{On input, determines {\sf AZ\_broadcast} behavior.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_check\_input}
+\protobox{int AZ\_check\_input(int *{\it data\_org\/}, int {\it
+*options\/}, double *{\it params\/}, int *{\it proc\_config\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Perform checks for iterative solver library. This is to be called by the user
+of the solver library to check the values in $ data\_org, options, params,
+\mbox{ and } proc\_config$.  If all the values are valid {\sf AZ\_check\_input}
+returns 0, otherwise it returns an error code which can be deciphered using
+{\sf AZ\_print\_error}.
+
+
+%\optionbox{options}{Determines specific methods
+%(Section~\ref{highlevel}).}
+%
+%\optionbox{params}{Drop tolerance and convergence tolerance info
+%(Section~\ref{highlevel}).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\protobox{int AZ\_check\_options(int *{\it options\/}, int {\it
+%az\_proc\/}, int *{\it data\_org\/}, int {\it az\_nprocs\/}, double
+%*{\it params\/} )}
+%
+%\vspace{2em}
+%{\flushleft{\bf Description} \hrulefill}
+%\vspace{1em}
+%
+%Ensure that {\it options\/} and {\it params\/} have valid entries.
+%
+%\optionbox{options}{Determines specific methods
+%(Section~\ref{highlevel}).}
+%
+%\optionbox{az\_proc}{Current processor.}
+%
+%\optionbox{az\_nprocs}{Number of processor in the current machine
+%configuration.}
+%
+%\optionbox{params}{Drop tolerance and convergence tolerance info
+%(Section~\ref{highlevel}).}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_check\_msr}
+\protobox{void AZ\_check\_msr(int *{\it bindx\/}, int {\it
+N\_update\/}, int {\it N\_external\/}, int {\it option\/}, \\
+$\hphantom{void AZ_check_msr(l}$
+int *{\it proc\_config\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Check that the number of nonzero off-diagonals in each row and that the column
+indices are nonnegative and not too large (see {\it option}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{option}{}
+
+\choicebox{AZ\_LOCAL}{On input, indicates matrix uses local indices. The number
+  of nonzeros in a row and the largest column index must not exceed the total
+  number of elements on this processor.}
+
+\choicebox{AZ\_GLOBAL}{On input, indicates matrix uses global indices.  The
+  number of nonzeros in a row and the largest column index must not exceed the
+  total number of elements in the simulation.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_check\_vbr}
+\protobox{void AZ\_check\_vbr(int {\it N\_update\/}, int {\it
+N\_external\/}, int {\it option\/}, int *{\it bindx\/}, \\
+$\hphantom{void AZ_check_vbr(l}$
+int *{\it bpntr\/}, int *{\it cpntr\/}, int *{\it rpntr\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Check VBR matrix for the following:
+\begin{itemize}
+\item number of columns within each block column is nonnegative.
+
+\item {\it rpntr[i] == cpntr[i]\/} for {\it i $\le$ N\_update\/}.
+
+\item number of nonzero blocks in each block row is
+nonnegative and not too large.
+
+\item block column indices are nonnegative and not too large.
+\end{itemize}
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{option}{}
+
+\choicebox{AZ\_LOCAL}{On input, indicates matrix uses local indices. The number
+  of block nonzeros in a row and the largest block column index must not exceed
+  the total number of blocks columns on this processor.}
+
+\choicebox{AZ\_GLOBAL}{On input, indicates matrix uses global indices.  The
+  number of block nonzeros in a row and the largest block column index must not
+  exceed the total number of blocks rows in the simulation.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_defaults}
+\protobox{int AZ\_defaults(int *{\it options\/}, double *{\it params \/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set $options$ and $params$ so that the default options are chosen.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{options}{On output, set to the default options.}
+%
+\optionbox{params}{On output, set to the default parameters.}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_exchange\_bdry}
+\protobox{void AZ\_exchange\_bdry(double *{\it x\/}, int *{\it
+data\_org\/}, {\it proc\_config})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Locally exchange the components of the vector {\it x\/} so that the
+{\it external} components  of {\it x\/} are updated.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{x}{On input, vector defined on this
+processor.  On output, {\it external} components of {\it x\/} are
+updated via communication.}
+%
+%\optionbox{data\_org}{Describes the format of {\it x\/}
+%(Section~\ref{comm_vars}).}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_find\_index}
+\protobox{int AZ\_find\_index(int {\it key\/}, int *{\it list\/}, int
+{\it length\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns the index, $i$, in {\it list\/} (assumed to be sorted) which matches
+the key (i.e. {\it list[i] $==$ key\/}). If {\it key\/} is not found {\sf
+  AZ\_find\_index} returns -1. See also {\sf AZ\_quick\_find}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{key}{On input, element to be search for in list.}
+
+\optionbox{list}{On input, sorted list to be searched.}
+
+\optionbox{length}{On input, length of list.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_find\_local\_indices}
+\protobox{void AZ\_find\_local\_indices(int {\it N\_update\/},
+int *{\it bindx\/}, int *{\it update\/}, \\
+$\hphantom{void AZ_find_local_indices(}$
+int **{\it external\/}, int *{\it N\_external\/},
+int {\it mat\_type\/}, \\
+$\hphantom{void AZ_find_local_indices(}$
+int *{\it bpntr\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Given the global column indices for a matrix and a list of elements updated on
+this processor, compute the {\it external} set and change the global column
+indices to local column indices. Specifically,
+\begin{itemize}
+\item allocate {\it external\/}, compute and store the external components in
+  {\it external\/}.
+\item renumber column indices so that column entry {\it k\/} is renumbered as
+  {\it j\/} where either {\it update[j]} == k or {\it external[j-N\_update]} ==
+  k.
+\end{itemize}
+Called by {\sf AZ\_transform}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{mat\_type}{On input, indicates whether matrix format is MSR (= {\sf
+    AZ\_MSR\_MATRIX}) or VBR (= {\sf AZ\_VBR\_MATRIX}).}
+\optionbox{external}{On output, allocated and set to sorted list of the
+  external elements.}  \optionbox{bindx}{On input, contains global column
+  numbers of MSR or VBR matrix (Section \ref{data_formats}).  On output,
+  contains local column numbers as described above.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_find\_procs\_for\_externs}
+\protobox{void AZ\_find\_procs\_for\_externs(int {\it
+N\_update\/}, int *{\it update\/}, int *{\it
+external\/}, \\
+$\hphantom{void AZ_find_procs_for_externsq}$
+int {\it N\_external\/}, int *{\it
+proc\_config\/}, int **{\it extern\_proc\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Determine which processors are responsible for updating each external element.
+Called by {\sf AZ\_transform}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{extern\_proc}{On output, {\it extern\_proc[i]} contains the node
+  number of the processor which updates {\it external[i]}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_free\_memory}
+\protobox{void AZ\_free\_memory(int $name$)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Free \Az{} memory associated with matrices with {\it data\_org[{\sf AZ\_name}]
+  = name}. This is primarily scaling and preconditioning information that has
+been computed on earlier calls to {\sf AZ\_solve}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{name}{On output, all preconditioning and scaling information is
+  freed for matrices which have {\it data\_org[{\sf AZ\_name}] = name}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gavg\_double}
+\protobox{double AZ\_gavg\_double(double {\it value\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the average of the numbers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains a double precision number.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gdot}
+\protobox{double AZ\_gdot(int {\it N\/}, double *{\it r\/},
+double *{\it z\/}, int *{\it proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the dot product of {\it r\/} and {\it z\/} with unit stride. This
+routine calls the BLAS routine {\sf ddot} to do the local vector dot product
+and then uses the global summation routine {\sf AZ\_gsum\_double} to obtain the
+required global result.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{N}{On input, length of {\it r\/} and {\it z\/} on this processor.}
+
+\optionbox{r, z}{On input, vectors distributed over all the
+processors.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_get\_matvec\_data}
+\protobox{MPI\_Comm* AZ\_get\_comm( int *{\it proc\_config} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns a pointer to the MPI communicator associated with {\it proc\_config} (see 
+{\sf AZ\_set\_proc\_config}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{proc\_config}{On input, an integer array of size {\sf AZ\_PROC\_SIZE} that has
+                         been initialized with {\sf AZ\_set\_proc\_config}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_get\_matvec\_data}
+\protobox{void* AZ\_get\_matvec\_data( AZ\_MATRIX *{\it Amat} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns data pointer associated with matrix (that was set via {\sf AZ\_set\_MATFREE()}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, matrix created via {\sf AZ\_matrix\_create()}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_get\_precond\_data}
+\protobox{void* AZ\_get\_precond\_data( AZ\_PRECOND *{\it prec} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns data pointer associated with preconditioner (that was set via {\sf AZ\_precond\_create()}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{prec}{On input, preconditioner created using the function {\sf AZ\_precond\_create()}.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gmax\_double}
+\protobox{double AZ\_gmax\_double(double {\it value\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the maximum of the numbers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains a double precision number.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gmax\_int}
+\protobox{int AZ\_gmax\_int(int {\it value\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the maximum of the numbers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains an integer.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gmax\_matrix\_norm}
+\protobox{double AZ\_gmax\_matrix\_norm(double *{\it val\/}, int *{\it
+indx\/}, int *{\it bindx\/}, int *{\it rpntr\/}, int *{\it cpntr\/},\\
+$\hphantom{double AZ_gmax_matrix_norm(l}$
+int *{\it bpntr\/}, int *{\it proc\_config\/}, int *{\it
+data\_org\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns the maximum matrix norm $\|A\|_{\infty}$ for the distributed matrix
+encoded in {\it val, indx, bindx, rpntr, cpntr, bpntr\/}
+(Section~\ref{data_formats}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gmax\_vec}
+\protobox{double AZ\_gmax\_vec(int {\it N\/}, double *{\it vec\/}, int
+*{\it proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the maximum of all the numbers located in {\it vec[i]\/} ($i < N$) on
+all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{vec}{On input, {\it vec\/} contains a list of numbers.}
+
+\optionbox{N}{On input, length of {\it vec\/}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gmin\_double}
+\protobox{double AZ\_gmin\_double(double {\it value\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the minimum of the numbers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains a double precision number.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gmin\_int}
+\protobox{int AZ\_gmin\_int(int {\it value\/}, int *{\it proc\_config\/}
+)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the minimum of the numbers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains an integer.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gsum\_double}
+\protobox{double AZ\_gsum\_double(double {\it value\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the sum of the numbers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains a double precision number.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gsum\_int}
+\protobox{int AZ\_gsum\_int(int {\it value\/}, int *{\it
+proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the sum of the integers in {\it value\/} on all processors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{value}{On input, {\it value\/} contains an integer.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gsum\_vec\_int}
+\protobox{void AZ\_gsum\_vec\_int(int *{\it values\/}, int *{\it
+wkspace\/}, int {\it length\/}, int *{\it proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+{\it values[i]\/} is set to the sum of the input numbers in
+{\it values[i]\/} on all processors ({\it i $<$ length\/}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{values}{On input, {\it values\/} contains a list of integers. On
+  output, {\it values[i]\/} contains the sum of the input {\it values[i]\/} on
+  all the processors.}
+
+\optionbox{wkspace}{On input, workspace array of size {\it length\/}.}
+
+\optionbox{length}{On input, length of {\it values\/} and {\it wkspace\/}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_gvector\_norm}
+\protobox{double AZ\_gvector\_norm(int {\it n\/}, int {\it p\/}, double
+*{\it x\/}, int *{\it proc\_config})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns the p norm of the vector {\it x\/} distributed over the processors:
+\[
+        \|x\|_p = (x[0]^p + x[1]^p + \cdots + x[N-1]^p)^{1/p}
+\]
+where $N$ is the total number of elements in $x$ over all processors.\\
+NOTE: For the $\| \cdot \|_{\infty}$ norm, set $p = -1$.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{n}{On input, number of {\it update} components of {\it x\/} on this
+  processor.}
+
+\optionbox{p}{On input, order of the norm to perform, i.e., $\| x \|_p$.}
+
+\optionbox{x}{On input, vector whose norm will be computed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\addcontentsline{toc}{subsection}{AZ\_init\_quick\_find}
+\protobox{void AZ\_init\_quick\_find(int *{\it list\/}, int {\it
+length\/}, int *{\it shift\/}, int *{\it bins\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+{\it shift\/} and {\it bins\/} are set so that they can be used with
+{\sf AZ\_quick\_find}. On output, shift satisfies
+\[
+    \frac{range}{2^{shift-1}} > \left \lfloor \frac{length}{4} \right \rfloor
+\lil \mbox{ and } \lil
+    \frac{range}{2^{shift}} \le \left \lfloor \frac{length}{4} \right \rfloor
+\]
+where {\it range = list[length - 1] - list[0]\/}. The array {\it bins\/} must
+be of size $2 + length/4 $ and is set so that
+\[
+bins[k] \leq list[j] < bins[k+1]
+\]
+where $k = (list[j] - list[0])/2^{shift}$.
+
+This routine is used in conjunction with {\sf AZ\_quick\_find}. The idea is to
+use {\it bins\/} to get a good initial guess as to the location of {\it
+  value\/} in {\it list\/}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{list}{On input, sorted {\it list\/}.}
+
+\optionbox{length}{On input, length of {\it list\/}.}
+
+\optionbox{shift}{On output, {\it shift\/} is set as described in above.}
+
+\optionbox{bins}{On input, array of size $2 + length/4$. On output, {\it
+    bins\/} is set as described above.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_invorder\_vec}
+\protobox{void AZ\_invorder\_vec(double *{\it x \/}, int *{\it
+data\_org\/}, int *{\it update\_index\/}, int *{\it rpntr\/},
+double *{\it untrans\_x\/} ) }
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Untransform the vector $x$ whose data layout corresponds to a transformed
+matrix (see {\sf AZ\_transform } or {\sf AZ.\_reorder\_matrix}) so that the new
+vector ($untrans\_x$) corresponds to data in the original user-given ordering.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{x}{On input, distributed vector whose data layout corresponds to a
+  transformed matrix.}
+
+\optionbox{untrans\_x}{On output, the result of untransforming $x$ so that the
+  data-layout now corresponds to the original ordering given by the user.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_iterate}
+\protobox{void AZ\_iterate(double *{\it x\/}, double *{\it b\/}, int
+*{\it options\/}, double *{\it params\/}, double *{\it status\/}, \\
+$\hphantom{void AZ_iterate(}$ int *{\it proc\_config\/}, AZ\_MATRIX
+*{\it Amat\/},
+AZ\_PRECOND *{\it prec\/}, \\
+$\hphantom{void AZ_iterate(}$ struct AZ\_SCALING *{\it scaling\/})}
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{x}{{\it x\/} is the initial guess on input and the linear
+           system solution on output. NOTE: when using \Az{}'s
+           DMSR or DVBR formats, {\it x\/} should contain
+           space for ghost elements or external variables
+           (see {\it AZ\_solve} description). Matrix-free users
+           need not supply this additional space.
+       }
+
+\optionbox{b}{{\it b\/} is the right hand side vector. Note: {\it b\/}
+           does not need to contain space for ghost variables.}
+
+\optionbox{options, params}{Options and parameters used during the
+          solution process (Section~\ref{highlevel}).}
+
+\optionbox{status}{On output, status of iterative solver
+           (Section~\ref{highlevel}).}
+
+\optionbox{proc\_config}{On input, {\it proc\_config}[{\sf AZ\_node}] is the
+           node id of this processor and {\it proc\_config}[{\sf AZ\_N\_procs}]
+           is the total number of processors.}
+
+\optionbox{Amat}{On input, a structure representing the matrix to be
+           solved (described below).}
+
+\optionbox{prec}{On input, either NULL (implying that \Az{}'s preconditioners
+           are to be applied to {\it Amat}) or a structure indicating 
+           the preconditioning routine and matrix to which preconditioning
+           is applied (described below).}
+
+\optionbox{scaling}{Currently not used.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_matrix\_create}
+\protobox{AZ\_MATRIX* AZ\_matrix\_create( int {\it N\_rows} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Creates a matrix with {\it N\_rows} matrix rows (on this processor).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{N\_rows}{On input, number of matrix rows on this processor for the matrix to be created.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_matrix\_destroy}
+\protobox{void AZ\_matrix\_destroy( AZ\_MATRIX **{\it Amat} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Destroy matrix {\it Amat}. Note: this routine does not destroy arrays 
+or data structures associated with this matrix by the set functions:
+{\sf AZ\_set\_MSR, AZ\_set\_VBR, } or {\sf AZ\_set\_MATFREE}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, matrix to be freed. On output, memory used for creating
+                 the matrix object is freed (see description above).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_matvec\_mult}
+\protobox{void AZ\_matvec\_mult(double *{\it val\/}, int *{\it
+indx\/}, int *{\it bindx\/}, int *{\it rpntr\/}, int *{\it cpntr\/}, \\
+$\hphantom{void AZ_matvec_mult(l}$
+int *{\it bpntr\/}, double *{\it b\/}, double *{\it c\/}, int {\it
+exchange\_flag\/}, \\
+$\hphantom{void AZ_matvec_mult(l}$
+int *{\it data\_org\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Perform the matrix-vector multiply
+\[
+        c \leftarrow A b
+\]
+where the matrix $A$ is encoded in {\it val, indx, bindx, rpntr, cpntr,
+  bpntr\/} (Section~\ref{data_formats}). Note this routine will eventually
+be replaced by {\it AZ\_MSR\_matvec\_mult()} and {\it AZ\_VBR\_matvec\_mult()}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{b}{On input, distributed vector to use in multiplication. NOTE: $b$
+  should contain $ data\_org[AZ\_N\_internal] + {\it
+    data\_org\/}[AZ\_N\_border] + {\it data\_org\/}[AZ\_N\_external] $ elements
+  (though external variables stored at the end of the vector do not need to be
+  initialized).}
+
+\optionbox{c}{On output, the result of matrix-vector multiplication. NOTE: $c$
+  should contain $ data\_org[AZ\_N\_internal] + {\it
+    data\_org\/}[AZ\_N\_border]$ elements.}
+
+\optionbox{exchange\_flag}{On input, dictates whether communication needs to
+  occur. If {\it exchange\_flag} == 1, communication occurs. If {\it
+    exchange\_flag} == 0, no communication occurs.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_MSR\_matvec\_mult}
+\protobox{void AZ\_MSR\_matvec\_mult( double *{\it b\/}, double *{\it c\/}, 
+AZ\_MATRIX *{\it A}, int *{\it proc\_config})}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Perform the matrix-vector multiply
+\[
+        c \leftarrow A b
+\]
+where the matrix $A$ is a DMSR matrix (see Section \ref{matrix.free}). 
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{b}{On input, distributed vector to use in multiplication. NOTE: $b$
+  should contain 
+  {\it A-\hskip -.00in $>$ \hskip -.08in data\_org}[AZ\_N\_internal] + 
+  {\it A-\hskip -.00in $>$ \hskip -.08in data\_org\/}[AZ\_N\_border] + 
+  {\it A-\hskip -.00in $>$ \hskip -.08in data\_org\/}[AZ\_N\_external]  elements
+  (though external variables stored at the end of the vector do not need to be
+  initialized).}
+
+\optionbox{c}{On output, the result of matrix-vector multiplication. NOTE: $c$
+  should contain 
+  {\it A-\hskip -.0in $>$ \hskip -.08in data\_org}[AZ\_N\_internal] + 
+  {\it A-\hskip -.0in $>$ \hskip -.08in data\_org\/}[AZ\_N\_border]  
+  elements.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_msr2vbr}
+\protobox{void AZ\_msr2vbr(double {\it *val\/}, int {\it *indx\/}, int
+{\it *rpntr\/}, int {\it *cpntr\/}, int {\it *bpntr\/}, int {\it
+*bindx\/}, \\
+$\hphantom{void AZ_msr2vbrl}$
+int {\it *bindx2\/}, double {\it *val2\/}, int {\it
+total\_blk\_rows\/}, int {\it total\_blk\_cols\/}, \\
+$\hphantom{void AZ_msr2vbrl}$
+int {\it blk\_space\/}, int {\it nz\_space}, int {\it blk\_type\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Convert the DMSR matrix defined in $(val2, bindx2)$ to a DVBR matrix defined in
+$(val, indx, rpntr, cpntr, bpntr, bindx)$.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{val2, bindx2}{On input, DMSR arrays holding the matrix to be
+  converted.}
+
+\optionbox{cpntr}{On input, $cpntr[i]$ is the block size of the $i^{th}$ block
+  in the resulting DVBR matrix. Columns 0 to $cpntr[0]-1$ form the first block
+  column, columns $cpntr[0]$ to $cpntr[0]+cpntr[1]-1$ form the second block
+  column, etc. On output, $cpntr$ corresponds to the resulting DVBR matrix.}
+
+\optionbox{val, indx, rpntr,\\ bpntr, bindx}{On output, DVBR arrays of
+  converted DMSR matrix.}
+
+\optionbox{total\_blk\_rows}{On input, number of block rows in resulting local
+  VBR matrix.}
+
+\optionbox{total\_blk\_cols}{On input, number of block columns in resulting
+  local VBR matrix.}
+
+\optionbox{blk\_space}{On input, length allocated for $bindx$ and $indx$.}
+
+\optionbox{nz\_space}{On input, length allocated for $val$.}
+
+\optionbox{blk\_type}{On input, if {\it blk\_type $> 0$\/}, indicates that all
+  block rows (and columns) have the same size given by {\it blk\_type\/}. If
+  {\it blk\_type $< 0$\/}, the block rows have different sizes.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_order\_ele}
+\protobox{void AZ\_order\_ele(int *{\it update\_index\/}, int *{\it
+extern\_index\/}, int *{\it N\_internal\/}, \\
+$\hphantom{void AZ_order_elex}$
+int *{\it N\_border\/}, int {\it N\_update\/}, int *{\it bpntr\/}, int
+*{\it bindx\/}, \\
+$\hphantom{void AZ_order_elex}$
+int *{\it extern\_proc\/}, int {\it N\_external\/}, int {\it option\/},
+int {\it mat\_type})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Find orderings for {\it update\/} and {\it external\/}.  {\it external\/} are
+ordered so that elements updated by the same processor are contiguous. If
+$option == $ {\sf AZ\_ALL}, {\it update\/} are ordered so that the {\it
+  internal} components have the lowest numbers followed by the {\it border}
+components. Otherwise, the order of $update$ is unchanged.  The ordering
+information is placed in {\it update\_index\/} and {\it extern\_index\/}
+(Section~\ref{highlevel_data_inter}).  Called by {\sf AZ\_transform}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{N\_internal}{On output, number of {\it internal} components on
+  processor.}
+
+\optionbox{N\_border}{On output, number of {\it border} components on
+  processor.}
+
+\optionbox{update\_index}{On output, {\it update\_index[i]} indicates the local
+  index (or order) of {\it update[i]}.}
+
+\optionbox{extern\_index}{On output, {\it extern\_index[i]} indicates the new
+  local index (or order) of {\it external[i]}.}
+
+\optionbox{option}{On input, indicates whether to reorder {\it update}.}
+
+\choicebox{AZ\_ALL}{Order $update$ and $external$.}
+
+\choicebox{AZ\_EXTERNS}{Order only external elements.}
+
+\optionbox{mat\_type}{On input, indicates whether matrix format is MSR (= {\sf
+    AZ\_MSR\_MATRIX}) or VBR (= {\sf AZ\_VBR\_MATRIX}).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_precond\_create}
+\protobox{AZ\_PRECOND * AZ\_precond\_create( AZ\_MATRIX *{\it Pmat},
+             void (*)() {\it prec\_function}, \\
+$\hphantom{AZ_PRECOND *AZ_precond_create(}$ 
+void *{\it data} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Creates a preconditioner and associates the preconditioning function {\it prec\_function},
+the matrix {\it Pmat}, and the data pointer {\it data} with it.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Pmat}{On input, matrix to which the preconditioner is to be applied.}
+
+\optionbox{prec\_function}{On input, function to be invoked when preconditioning is needed.}
+
+\optionbox{data}{On input, data pointer to be associated with preconditioner.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_precond\_destroy}
+\protobox{void AZ\_precond\_destroy( AZ\_PRECOND **{\it prec} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Destroy preconditioner {\it prec}. Note: this routine does not destroy arrays 
+or data structures associated with this preconditioner via 
+{\sf AZ\_precond\_create}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{prec}{On input, preconditioner to be freed. On output, memory used for creating
+                 the preconditioner object is freed (see description above).}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_print\_error}
+\protobox{void AZ\_print\_error(int {\it error\_code})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Prints out an error message corresponding to {\it error\_code}. Typically, {\it
+  error\_code} is generated by {\sf AZ\_check\_input}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{error\_code}{On input, error code generated by {\sf
+    AZ\_check\_input}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_print\_out}
+\protobox{void AZ\_print\_out(int *$update\_index$, int *$extern\_index$,
+    int *$update$, int *$external$, double *$val$, int *$indx$, int *$bindx$,
+    int *$rpntr$, int *$cpntr$, int *$bpntr$, int *$proc\_config$, int $choice$,
+    int $matrix\_type$, int $N\_update$, int $N\_external$, int $offset$ ) }
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Print \Az{} matrices in one of several formats (see also the file 
+\verb'doc/AZ_capture_matrix_howto.txt' in the \Az{} distribution):
+\begin{itemize}
+\item $choice = AZ\_input\_form$ \\
+  Output corresponding to Figure \ref{init_input} (similar information for VBR
+  matrices). The matrix can be printed either before or after being
+  $AZ\_transformed$.
+\item $choice = AZ\_global\_mat$ \\
+  Can only be used on $AZ\_transformed$ matrices. Nonzeros are printed as:
+  \begin{itemize}
+  \item MSR: $a(I + offset ,J + offset) = value;$
+  \item VBR: $a(I + offset (i) , J + offset (j) ) = value;$
+  \end{itemize}
+  where $I,J$ are global (block) row and column indices and $i,j$ are row and
+  column positions within the block.
+\item $choice = AZ\_explicit$ \\
+  Similar to $AZ\_global\_mat$ except ($I,J$) are interpreted differently. If
+  used on an $AZ\_transformed$ matrix and $NULL$ is passed instead of $update$,
+  ($I,J$) are the local rows and columns on this processor. If used before
+  $AZ\_transform$ and $update$ is passed, ($I,J$) correspond to the global
+  matrix numbering.
+\end{itemize}
+NOTE: $update\_index$, $extern\_index$, $update$, $external$, and $N\_external$
+are only used for the $AZ\_global\_mat$ option.  Also, if set to $NULL$,
+$cpntr$ is not printed or used.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{choice}{On input, selects output format as described above.}
+
+\optionbox{matrix\_type}{On input, matrix format: either AZ\_VBR\_MATRIX or
+  AZ\_MSR\_MATRIX.}
+
+\optionbox{N\_update}{On input, number of (block) rows assigned to processor.}
+
+\optionbox{N\_external}{On input, $data\_org[AZ\_N\_ext\_blk]$. }
+
+\optionbox{offset}{On input, row and column offset. See above description.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_quick\_find}
+\protobox{int AZ\_quick\_find(int {\it key\/}, int *{\it list\/}, int
+{\it length\/}, int {\it shift\/}, int *{\it bins\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Return the index, $i$, in {\it list\/} (assumed to be sorted) which matches the
+key (i.e. {\it list[i] $=$ key\/}). If {\it key\/} is not found {\sf
+  AZ\_quick\_find} returns -1.\\NOTE: This version is faster than {\sf
+  AZ\_find\_index} but requires {\it bins\/} to be set and stored using {\sf
+  AZ\_init\_quick\_find}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{key}{On input, element to search for in {\it list\/}.}
+
+\optionbox{list}{On input, sorted list to be searched.}
+
+\optionbox{length}{On input, length of list.}
+
+\optionbox{shift}{On input, used for initial guess (computed by previous {\sf
+    AZ\_init\_quick\_find} call).}
+
+\optionbox{bins}{On input, computed by {\sf AZ\_init\_quick\_find} for initial
+  guess. {\it bins} is set so that $ list[bins[k]] \le key < list[bins[k+1]]$
+  where $k = (key - list[0])/2^{shift}$ .}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_read\_msr\_matrix}
+\protobox{void AZ\_read\_msr\_matrix(int *{\it update\/}, double
+**{\it val\/}, int **{\it bindx\/}, int {\it N\_update\/}, \\
+$\hphantom{void AZ_read_msr_matrix(|}$
+int *{\it proc\_config\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Read the file \verb'.data' and create a matrix in the MSR format.  Processor 0
+reads the input file.  If the new row to be added resides in processor 0's {\it
+  update\/}, it is added to processor 0's matrix. Otherwise, processor 0
+determines which processor has requested this row and sends it to this
+processor for its local matrix.
+
+The form of the input file is as follows:
+\begin{verbatim}
+
+                 num_rows
+                 col_num1  entry1  col_num2  entry2
+                 col_num3  entry3 -1
+                 col_num4  entry4  col_num5  entry5
+                 col_num6  entry6 -1
+
+\end{verbatim}
+
+This input corresponds to two rows: 0 and 1.  Row 0 contains \verb'entry1' in
+column \verb'col_num1', \verb'entry2' in column \verb'col_num2' and
+\verb'entry3' in column \verb'col_num3'. Row 1 contains \verb'entry4' in column
+\verb'col_num4', \verb'entry5' in column \verb'col_num5' and \verb'entry6' in
+column \verb'col_num6'.  When using exponential notation, `E' or `e' should be
+used instead of `D' or `d'. Additionally, it is important that row and column
+numbers be labeled from 0 to n-1 and not 1 to n where n is the number of rows.\\[12pt]
+NOTE: Spacing and carriage returns are not important.\\[10pt]
+NOTE: AZ\_read\_msr\_matrix() is inefficient for large matrices.  It is,
+however, possible to read binary files. In particular, if \Az{} is compiled
+with a -Dbinary option, `.data' must contain binary integers and binary double
+precision numbers in the same form as above except without spaces or carriage
+returns between numbers.  Since binary formats are not standard, `.data' should
+be created using a `C' program via fread() and fwrite() executed on the same
+machine as \Az{}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{val, bindx}{On output, these two arrays are allocated and filled
+  with the MSR representation corresponding to the file \tt .data.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_read\_update}
+\protobox{void AZ\_read\_update(int *{\it N\_update\/},
+int **{\it update\/}, int *{\it proc\_config\/}, \\
+$\hphantom{void AZ_read_update_ele(l}$
+int {\it N\/}, int {\it chunk\/}, int {\it input\_option\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+This routine initializes {\it update\/} to the global indices updated by this
+processor and initializes {\it N\_update\/} to the total number of elements to
+be updated.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{N\_update}{On output, number of elements updated by processor.}
+
+\optionbox{update}{On output, {\it update\/} is allocated and contains a list
+  of elements updated by this processor in ascending order.}
+
+\optionbox{chunk}{Number of indices within a group.  For example, $ chunk == 2
+  \Rightarrow $ $chunk_0 = \{ 0 , 1\}$, and $chunk_1 = \{ 2 , 3\}$.}
+
+\optionbox{N}{Total number of chunks in the vector.}
+
+\optionbox{input\_option}{}
+
+        \choicebox{AZ\_linear}{Processor 0 is assigned the first
+                      $\left \lfloor \frac{N+P-1}{P} \right \rfloor $
+                      chunks, processor 1 is assigned the next
+                      $\left \lfloor \frac{N+P-2}{P} \right \rfloor $ chunks,
+                      etc. where $P$ = {\sf proc\_config[AZ\_N\_procs]\/}).}
+
+        \choicebox{AZ\_box}{The processor system is viewed as a $p_2
+                      \times p_1 \times p_0$ array while the matrix
+                      problem corresponds to a $n_2 \times n_1 \times
+                      n_0$ grid with `chunks' unknowns at each grid
+                      point.  The user is prompted for the $p_i$'s and
+                      the $x_i$'s. Assuming that the grid is ordered
+                      `naturally' or lexicographically, the grid is
+                      subdivided into uniform boxes whose corresponding
+                      rows are to be assigned to each processor.}
+
+        \choicebox{AZ\_file}{Read the {\sf proc\_config[AZ\_N\_procs]\/}
+                      lists contained in the file {\tt .update}. Each
+                      list contains a set of global indices preceded by
+                      the of number of indices in this set.  List 0 is
+                      sent to processor {\sf proc\_config[AZ\_N\_procs] -
+                      1\/}, list 1 is sent to processor {\sf
+                      proc\_config[AZ\_N\_procs] - 2\/}, etc.  Note: A
+                      graph partitioning package named {\bf Chaco}
+                      \cite{chaco} produces files in this format.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_reorder\_matrix}
+\protobox{void AZ\_reorder\_matrix(int {\it N\_update\/}, int
+*{\it bindx\/}, double *{\it val\/}, int *{\it update\_index\/}, \\
+$\hphantom{void AZ_reorder_matrix}$
+int *{\it extern\_index\/}, int *{\it indx\/}, int *{\it rpntr\/}, int
+*{\it bpntr\/}, \\
+$\hphantom{void AZ_reorder_matrix}$
+int {\it N\_external\/}, int *{\it cpntr\/},
+int {\it option\/}, int {\it mat\_type\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Reorder the matrix so that it corresponds to the new ordering given by {\it
+  update\_index\/} and {\it extern\_index\/}.  Specifically, global matrix
+entry $(update[i], update[j])$ which was stored as local matrix entry $(i,j)$
+is stored as $(update\_index[i], update\_index[j])$ on output.  Likewise,
+global matrix entry $ (update[i], external[k])$ which was stored as local
+matrix entry $(i, k + N\_update)$ is stored locally as (update\_index[i],
+extern\_index[k]) on output.
+Called by {\sf AZ\_transform}.\\
+IMPORTANT: This routine assumes that {\it update\_index\/} contains two
+sequences of numbers that are ordered but intertwined. For example, \vskip 1em
+\begin{center}
+\begin{tabular}{rrrrrrrrr}
+{\it update\_index\/}: & \lil 4 & \lil 5 & \lil 0 & \lil 6 & \lil 1 & \lil 2 &
+                         \lil 3 & \lil 7 \\[.1in]
+sequence 1:            &   &   & 0 &   & 1 & 2 & 3 &   \\
+sequence 2:            & 4 & 5 &   & 6 &   &   &   & 7
+\end{tabular}
+\end{center}
+See also {\sf AZ\_reorder\_vec} and {\sf AZ\_invorder\_vec} to transform the
+right hand side and solution vectors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}\\
+
+\optionbox{option}{On input, indicates whether to reorder update elements.}
+\choicebox{AZ\_ALL}{All the rows and columns are renumbered.}
+
+\choicebox{AZ\_EXTERNS}{Only columns corresponding to external elements are
+  renumbered.}
+
+\optionbox{mat\_type}{On input, indicates matrix format.}
+
+\choicebox{AZ\_MSR\_MATRIX}{DMSR matrix format.}
+\choicebox{AZ\_VBR\_MATRIX}{DVBR matrix format.}
+
+\optionbox{bindx, val, indx, \\ rpntr, bpntr, cpntr}{On input, matrix ordered
+  as described above. On output, matrix reordered using {\it update\_index} and
+  {\it extern\_index} as described above.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_reorder\_vec}
+\protobox{void AZ\_reorder\_vec(double *{\it x \/}, int *{\it
+data\_org\/}, int *{\it update\_index\/}, int *{\it rpntr\/} ) }
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Transform the vector $x$ whose data layout corresponds to the user-given
+ordering (i.e. $x[i] $ corresponds to global vector element $x[update[i]]$) so
+that now the data corresponds to a transformed matrix (see {\sf AZ\_transform }
+or {\sf AZ.\_reorder\_matrix}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{x}{On input, distributed vector whose data layout corresponds to the
+  original ordering given by the user. On output, the data layout now
+  corresponds to a transformed matrix whose ordering is given by {\it
+    update\_index\/}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_set\_message\_info}
+\protobox{void AZ\_set\_message\_info(int {\it N\_external\/},
+int *{\it extern\_index\/}, int {\it N\_update\/}, \\
+$\hphantom{void AZ_set_message_info(}$
+int *{\it external\/}, int *{\it extern\_proc\/}, int *{\it update\/},\\
+$\hphantom{void AZ_set_message_info(}$
+int *{\it update\_index\/}, int *{\it proc\_config\/}, int *{\it cpntr\/}, \\
+$\hphantom{void AZ_set_message_info(}$
+int **{\it data\_org\/}, int {\it mat\_type\/})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Initialize {\it data\_org\/} so that local communications can occur to support
+matrix vector products. This includes:
+\begin{itemize}
+\item determine neighbors with which we send or receive.
+\item determine the total number of elements that we send and allocate {\it
+    data\_org\/}.
+\item initialize {\it data\_org\/} as described in
+  Section~\ref{comm_vars}.\\Note: $data\_org$[{\sf AZ\_name}] is set to a
+  number (starting from 1) that is incremented each time {\sf
+    AZ\_set\_message\_info} is called.
+\end{itemize}
+Called by {\sf AZ\_transform}.\\
+NOTE: Implicitly the neighbors are numbered using the ordering of the external
+elements (which have been previously ordered such that elements updated by the
+same processor are contiguous).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{data\_org}{On output, {\it data\_org\/} is allocated and completely
+  initialized as described in Section~\ref{comm_vars}.}
+
+\optionbox{mat\_type}{On input, indicates matrix format.}
+\choicebox{AZ\_MSR\_MATRIX}{DMSR matrix.}
+\choicebox{AZ\_VBR\_MATRIX}{DVBR matrix.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_set\_MATFREE}
+\protobox{void AZ\_set\_MATFREE(AZ\_MATRIX *{\it Amat}, void *{\it data}, 
+          void {\it (*matvec)()} )
+}
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, matrix created via {\sf AZ\_matrix\_create()}.
+                 On output, {\it Amat} is labeled as a user-supplied matrix
+                 and the matrix-vector product function {\it matvec}
+                 is associated with it as well as the data pointer {\it data}.}
+
+\optionbox{data}{On input, user-defined data pointer. On output, this pointer
+                 is associated with {\it Amat} and is accessible inside
+                 the user's matrix-vector product routine 
+                 (see {\sf AZ\_get\_matvec\_data()).}}
+
+\optionbox{matvec}{On input, user-defined function pointer corresponding to a matrix-vector
+                   product. On output, this function pointer is associated with 
+                   {\it Amat}. The exact proto-type description of this routine
+                   is given in Section \ref{matrix.free}.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_set\_MSR}
+\protobox{void AZ\_set\_MSR(AZ\_MATRIX *{\it Amat}, int *{\it bindx}, double 
+          *{\it val}, int *{\it data\_org}, \\
+$\hphantom{void AZ_set_MSR(}$ int {\it N\_update}, int *{\it update}, 
+          int {\it option})
+}
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, matrix created via {\sf AZ\_matrix\_create()}.
+                 On output, {\it Amat} is labeled as a DMSR matrix
+                 and the the DMSR arrays {\it bindx}, {\it val},
+                 {\it data\_org} are associated with it.}
+
+\optionbox{bindx,val,\\data\_org}{On input, DMSR matrix arrays. On output,
+           these arrays are associated with {\it Amat}. }
+
+\optionbox{N\_update, update, \\options}{On input, should be 
+           set to {\it 0, NULL, AZ\_LOCAL} respectively. In the future, these 
+           parameters will allow for matrices with global indices.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_set\_precond\_print\_string}
+\protobox{void AZ\_set\_precond\_print\_string(AZ\_PRECOND *{\it prec},
+                                char *{\it str})
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Associate string with preconditioner. This string will be printed out by
+\Az{} when {\sf AZ\_iterate} is invoked and output is turn on.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{prec}{On input, preconditioner created using the function {\sf AZ\_precond\_create()}. On output, 
+                 a copy of {\it str} is made and associated with {\it prec}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_set\_proc\_config}
+\protobox{void AZ\_set\_proc\_config(int *{\it proc\_config\/}, 
+                                     {\sf MPI\_AZComm} {\it comm})}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Sets {\it proc\_config[]\/} for use by \Az{}. {\it proc\_config[]\/}
+contains the number of processors (in {\it proc\_config[{\sf AZ\_N\_procs}]}), 
+the processor id (in {\it proc\_config[{\sf AZ\_node}]}), and the 
+communicator (via {\it AZ\_get\_comm(proc\_config)} ) if MPI \cite{mpi} is used. 
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{proc\_config}{On input, an integer array of size 
+                         {\sf AZ\_PROC\_SIZE}. On output,
+                         {\it proc\_config[]\/} is filled as described above.}
+
+\optionbox{comm}{On input, should be set to {\sf AZ\_NOT\_MPI} if MPI is not 
+                 used. Otherwise, {\it comm} should be the MPI 
+                 communicator (if communicators are not used set this
+                 to {\sf MPI\_COMM\_WORLD}).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_set\_VB}
+\protobox{void AZ\_set\_VBR(
+AZ\_MATRIX *{\it Amat}, int *{\it rpntr}, int *{\it cpntr}, int *{\it bpntr},
+                int *{\it indx}, \\
+$\hphantom{void AZ_set_VBR(}$ 
+int *{\it bindx}, double *{\it val}, int *{\it data\_org},
+                int {\it N\_update}, int *{\it update}, \\
+$\hphantom{void AZ_set_VBR(}$ 
+int {\it option})
+%
+}
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, matrix created via {\sf AZ\_matrix\_create()}.
+                 On output, {\it Amat} is labeled as a DVBR matrix
+                 and the the DVBR arrays {\it rpntr}, {\it cpntr}, 
+                 {\it bpntr}, {\it indx}, {\it bindx}, {\it val},
+                 and {\it data\_org} are associated with it.}
+
+\optionbox{rpntr, cpntr, bpntr, \\
+           indx, bindx, val,\\
+           data\_org}{On input, DVBR matrix arrays. On output,
+           these arrays are associated with {\it Amat}. }
+
+\optionbox{N\_update, update, \\options}{On input, should be 
+           set to {\it 0, NULL, AZ\_LOCAL} respectively. In the future, these 
+           parameters will allow for matrices with global indices.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_solve}
+\protobox{void AZ\_solve(double *{\it x\/}, double *{\it b\/}, int
+*{\it options\/}, double *{\it params\/}, int *{\it indx\/}, \\
+$\hphantom{void AZ_solve(}$
+int *{\it bindx\/}, int *{\it rpntr\/}, int *{\it cpntr\/}, int *{\it
+bpntr\/}, double *{\it val\/}, \\
+$\hphantom{void AZ_solve(}$
+int *{\it data\_org\/}, double *{\it status\/}, int *{\it proc\_config\/})}
+
+\vspace{1em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Solve the system of equations $Ax = b$ via an iterative method where the matrix
+$A$ is encoded in {\it indx, bindx, rpntr, cpntr, bpntr\/} and {\it val\/} (see
+Section~\ref{data_formats} and Section~\ref{highlevel}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{x}{On input, {\it x\/} is the initial guess. On output,
+  {\it x} is the linear system solution. 
+  NOTE: The size of {\it x\/} is NOT equal to the number of
+  matrix rows stored on the processor. Instead, it should contain $
+  data\_org[AZ\_N\_internal] + {\it data\_org\/}[AZ\_N\_border] + {\it
+    data\_org\/}[AZ\_N\_external] $ elements (though external variables stored
+  at the end of the vector do not need to be initialized). NOTE2: if 
+  {\sf AZ\_transform} was used to reorder the matrix $A$, 
+  {\sf AZ\_reorder\_vec} can be used to transform the initial guess so that 
+  it is consistent with the reordered $A$ and {\sf AZ\_invorder\_vec}
+  can be used to transform the computed solution back to `unreordered' form.}
+
+\optionbox{b}{A $ data\_org[AZ\_N\_internal] + {\it data\_org\/}[AZ\_N\_border]
+  $ length vector containing the right hand side. NOTE: if 
+{\sf AZ\_transform} was used to reorder the matrix $A$,
+  {\sf AZ\_reorder\_vec} can be used to transform the right hand side so that
+  it is consistent with the reordered $A$.}
+
+\optionbox{options, params}{Options and parameters used during the solution
+  process (Section~\ref{highlevel}).}
+
+%\optionbox{params}{Drop tolerance and convergence tolerance info
+%(Section~\ref{highlevel}).}
+
+\optionbox{status}{On output, status of iterative solver
+  (Section~\ref{highlevel}).}
+%number of iterations taken.}
+%
+%\optionbox{status[1]}{On output, {\it status[1]\/} indicates
+%termination status.}
+%
+%       \choicebox{0}{{\sf AZ\_solve} terminated normally.}
+%
+%       \choicebox{-1}{Maximum number of iterations taken without
+%achieving convergence.}
+%
+%       \choicebox{-2}{Breakdown. The algorithm can not proceed due to
+%numerical difficulties (usually a divide by zero).}
+%
+%       \choicebox{-3}{Internal residual differs from the computed residual
+%due to a significant loss of precision.}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_sort}
+\protobox{void AZ\_sort(int *{\it list1\/}, int {\it N\/}, int *{\it
+list2\/}, double *{\it list3\/} )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Sort the elements in {\it list1\/}. Additionally, move the elements in {\it
+  list2\/} and {\it list3\/} so that they correspond with the moves done to
+{\it list\/}. NOTE: If {\it list2\/} $==$ {\sf NULL}, {\it list2\/} is not
+manipulated. If {\it list3\/} $==$ {\sf NULL}, {\it list3\/} is not
+manipulated.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{list1}{On input, values to be sorted. On output, sorted values (i.e.
+  {\it list1[i] $\leq$ list1[i+1]\/})}
+
+\optionbox{N}{On input, length of lists to be sorted.}
+
+\optionbox{list2}{On input, a list associated with {\it list1\/}.  On output,
+  if {\it list1[k]\/} on input is now stored in {\it list1[j]} on output, {\it
+    list2[k]\/} on input is also stored as {\it list2[j]\/} on output.}
+
+\optionbox{list3}{On input, a list associated with {\it list1\/}.  On output,
+  if {\it list1[k]\/} on input is now stored in {\it list1[j]} on output, {\it
+    list3[k]\/} on input is also stored as {\it list3[j]\/} on output. Note: if
+  {\it list3\/} $==$ {\sf NULL} on input, it is unchanged on output.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\addcontentsline{toc}{subsection}{AZ\_transform}
+\protobox{void AZ\_transform(int *{\it proc\_config\/}, int **{\it external},
+   int *{\it bindx},
+%\\$\hphantom{void AZ\_transforll}$
+\\$\hphantom{\mbox{void AZ\_transform(}}$
+   double *{\it val}, int *{\it update}, int **{\it update\_index},
+\\$\hphantom{\mbox{void AZ\_transform(}}$
+   int **{\it extern\_index}, int **{\it data\_org}, int {\it N\_update},
+\\$\hphantom{\mbox{void AZ\_transform(}}$
+   int *{\it indx}, int *{\it bpntr},
+   int *{\it rpntr}, int **{\it cpntr}, int {\it mat\_type})}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Convert the global matrix description to a distributed local matrix format (see
+Section~\ref{highlevel} and Section~\ref{subtasks}).  See also {\sf
+  AZ\_reorder\_vec} and {\sf AZ\_invorder\_vec} to transform the right hand side
+and solution vectors.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{external}{On output, allocated and set to components that must be
+  communicated during the matrix vector multiply.}
+
+\optionbox{bindx, val, index, \\ bpntr, rpntr}{On input, matrix arrays (MSR or
+  VBR) corresponding to global format. On output, matrix arrays (DMSR or DVBR)
+  corresponding to local format.  See Section~\ref{highlevel}.}
+
+\optionbox{update\_index}{On output, allocated and set such that
+  $update\_index[i]$ is the local numbering corresponding to $update[i]$.}
+
+\optionbox{extern\_index}{On output, allocated and set such that
+  $extern\_index[i]$ is the local numbering corresponding to $external[i]$.}
+
+\optionbox{data\_org}{On output, allocated and set to data layout information,
+  see Section~\ref{comm_vars}.}
+
+\optionbox{cpntr}{On output, allocated and set for VBR matrices to the column
+  pointer array.}
+
+\optionbox{mat\_type}{On input, matrix format: either AZ\_VBR\_MATRIX or
+  AZ\_MSR\_MATRIX.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_VBR\_matvec\_mult}
+\protobox{void AZ\_VBR\_matvec\_mult( double *{\it b\/}, double *{\it c\/}, 
+AZ\_MATRIX *{\it A}, int *{\it proc\_config})}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Perform the matrix-vector multiply
+\[
+        c \leftarrow A b
+\]
+where the matrix $A$ is a DVBR matrix (see Section \ref{matrix.free}). 
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{b}{On input, distributed vector to use in multiplication. NOTE: $b$
+  should contain 
+  {\it A-\hskip -.00in $>$ \hskip -.08in data\_org}[AZ\_N\_internal] + 
+  {\it A-\hskip -.00in $>$ \hskip -.08in data\_org\/}[AZ\_N\_border] + 
+  {\it A-\hskip -.00in $>$ \hskip -.08in data\_org\/}[AZ\_N\_external]  elements
+  (though external variables stored at the end of the vector do not need to be
+  initialized).}
+
+\optionbox{c}{On output, the result of matrix-vector multiplication. NOTE: $c$
+  should contain 
+  {\it A-\hskip -.0in $>$ \hskip -.08in data\_org}[AZ\_N\_internal] + 
+  {\it A-\hskip -.0in $>$ \hskip -.08in data\_org\/}[AZ\_N\_border]  
+  elements.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\addcontentsline{toc}{subsection}{AZ\_version}
+\protobox{void AZ\_version(char *{\it str} ) 
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Record the current version of \Az{} that is being used in {\it str}.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{str}{On input, space for at least 15 characters must be allocated. On output,
+                {\it str} is filled with a string representing the current version of
+                \Az{} that is being used.}
+
+
+
+
+%\vspace{2em}
+%
+%\section{Compiling and Linking\label{comp_link}}
+%
+%The krylov solver library {\bf Aztec} uses code from a few publicly
+%available linear algebra packages.  These packages are 1) the basic
+%linear algebra subroutine library - BLAS  2) the linear algebra
+%package - LAPACK and 3) a sparse direct lu solver Y12M. These packages
+%can be obtained form netlib as described below.
+%
+%The following packages are needed by {\bf Aztec}:
+%\begin{itemize}
+%\item Y12M (used for LU factorizations)
+%\item LAPACK routines
+%\item BLAS   routines
+%\end{itemize}
+%These routines can be obtained via netlib.
+%Send email to netlib@ornl.gov with the following information
+%in the message:
+%\vskip .5in
+%\begin{verbatim}
+%send help
+%send index for y12m
+%send index for lapack
+%send index for blas
+%\end{verbatim}
+%\vskip .5in
+%
+%Current information on compiling and linking {\bf Aztec}
+%for supported machines can be found in the file \verb'README'
+%in the source code distribution directory.
+%
+%To obtain the {\bf Aztec} distribution send an email request to
+%Ray S. Tuminaro (tuminaro@cs.sandia.gov).
+
+
+%\newpage
+%\bibliographystyle{plain}
+%\bibliography{aztec_guide}
+%
+%
+%\end{document}

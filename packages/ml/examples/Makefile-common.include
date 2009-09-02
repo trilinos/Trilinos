@@ -1,0 +1,18 @@
+####################
+# include locations
+####################
+ml_common_include_locations = $(ML_EXPORT_INCLUDES)
+                                                                                
+####################
+# libraries
+####################
+ml_libs =       $(ML_EXPORT_LIBS)     \
+                $(LIBS)               \
+                $(LAPACK_LIBS)        \
+                $(BLAS_LIBS)          \
+                $(FLIBS)
+
+##################
+# common link line
+##################
+mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@

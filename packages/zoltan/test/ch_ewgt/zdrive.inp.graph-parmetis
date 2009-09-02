@@ -1,0 +1,6 @@
+Decomposition Method 	= graph
+Zoltan parameters	= edge_weight_dim=1
+zoltan parameters	= graph_package=parmetis
+File Type		= Chaco
+File Name		= ewgt
+Parallel Disk Info	= number=0

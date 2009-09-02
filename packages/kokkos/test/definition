@@ -1,0 +1,15 @@
+PACKAGE_NAME=Kokkos
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL, KokkosTests) {
+    DIRS = BaseSparseMultiply,
+           BaseSparseSolve,
+           DenseMultiVector,
+           HbMatrix,
+           Permutation;
+    ARGS = -v;
+    COMM = SERIAL;
+}

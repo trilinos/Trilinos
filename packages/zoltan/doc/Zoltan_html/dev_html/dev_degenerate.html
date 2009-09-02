@@ -1,0 +1,141 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="lee ann fisk, lafisk@sandia.gov">
+   <TITLE> Zoltan Developer's Guide:  Degenerate Geometries</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_hsfc.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="HSFC"></A>Appendix: Handling Degenerate Geometries</H2>
+
+The geometry processed by one of the geometric methods
+<a href="dev_rcb.html">RCB</a>, <a href="dev_rib.html">RIB</a>, or
+<a href="dev_hsfc.html">HSFC</a> 
+may be degenerate.  By this we mean
+it may have 3-dimensional coordinates but be essentially flat, or 
+it may have 3 or 2-dimensional coordinates but be essentially a line
+in space.  If we treat the geometry as a lower dimensional object
+for the purpose of partitioning, the result may be a more natural
+partition (one the user would have expected) and a faster
+run time.
+<p>
+The caller may set the <B>REDUCE_DIMENSIONS</B> parameter to TRUE
+in any of the three geometric methods if they want Zoltan to check
+for a degenerate condition and do lower dimensional partitioning
+if such a condition if found.  They may set the <B>DEGENERATE_RATIO</B>
+to specify how flat or thin a geometry must be to be considered
+degenerate.
+<p>
+
+<H3>
+Outline of Algorithm</H3>
+
+All three geometric methods call 
+<a href="dev_services_objlist.html#Zoltan_Get_Coordinates"><b>Zoltan_Get_Coordinates</b></a>
+to obtain the
+problem coordinates.  If <B>REDUCE_DIMENSIONS</B> is TRUE, we check
+in this function to see if the geometry is degenerate.  If it is,
+we transform the coordinates to the lower dimensional space, flag
+that the problem is now lower dimensional, and return the transformed
+coordinates.  The 
+<a href="dev_rcb.html">RCB</a>, <a href="dev_rib.html">RIB</a>, or
+<a href="dev_hsfc.html">HSFC</a> 
+calculation is performed on the new coordinates in the lower dimensional
+space.  
+<p>
+If <B>KEEP_CUTS</B> is TRUE, the transformation is saved so that in
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> or <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
+the coordinates can be transformed before the assignment is calculated.
+If <B>RCB_REUSE</B> is TRUE in the <a href="dev_rcb.html">RCB</a> method,
+the transformation is also saved.  On re-partitioning, we can do some
+simple tests to see if the degeneracy condition has changed before
+completely re-calculating the coordinate transformation.
+<p>
+To determine if the geometry is degenerate, we calculate
+the same inertial matrix that is calculated for <a href="dev_rib.html">RIB</a>,
+except that we ignore vertex weights.  The 3 orthogonal eigenvectors
+of the inertial matrix describe the three primary directions of the
+geometry.  The bounding box oriented in these directions is tested
+for degeneracy.  In particular (for a 3 dimensional geometry) if the
+length of the longest side divided by the length of the shortest side
+exceeds the DEGENERATE_RATIO, we consider the geometry to be flat.  If
+in addition, the length longest side divided by the length of the
+middle side exceeds the
+DEGENERATE_RATIO, we consider the geometry to be essentially a line.
+<p>
+If a 3 dimensional geometry is determined to be flat, we transform
+coordinates to a coordinate system where the XY plane corresponds 
+to the oriented bounding box,
+and project all coordinates to that plane.  These
+X,Y coordinates are returned to the partitioning algorithm, which
+performs two dimensional partitioning.  Similarly if the geometry
+is very thin, we transform coordinates to a coordinate system
+with the X axis going through the
+bounding box in it's principal direction, and project all points to
+that axis.  Then one dimensional partitioning is performed.
+<p>
+There is a small problem in calculating
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a>
+when the partitioning was performed
+on transformed geometry.  The caller provides the box vertices in
+problem coordinates, but the partition was calculated in
+transformed coordinates.  When the vertices are transformed, they
+are in general no longer the vertices of an axis-aligned box in
+the new coordinate system.  The
+<B>Box_Assign</B> calculation requires an axis-aligned box, and
+so we use the bounding box of the transformed vertices.  The resulting
+list of processes or parts intersecting the box may therefore
+contain some processes or parts which actually do not intersect
+the box in problem coordinates, however it will not omit any.
+
+
+<H3>Data Structure Definitions</H3>
+The transformation is stored in a <B>Zoltan_Transform_Struct</B>
+structure which is
+defined in <i>zz/zz_const.h</i>.  It is saved as part of the algorithm
+specific information stored in the
+<b><a href="dev_add_struct.html">LB.Data_Structure</a></b> field of the
+<b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>.
+The flag that indicates whether the geometry was found to be 
+degenerate is the <B>Target_Dim</B> field of this structure.
+<p>
+To use the degenerate geometry detection capability from a new
+geometric method, you would add a <B>Zoltan_Transform_Struct</b>
+structure to the algorithm specific data structure, add code to
+<B>Zoltan_Get_Coordinates</B> to look for it, and check the
+<B>Target_Dim</B> field on return to see if the problem dimension
+was reduced.  You would also need to include the 
+coordinate transformation in your Box_Assign and Point_Assign
+functionality.
+
+
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp;
+|&nbsp; <A HREF="dev_hsfc.html"> Previous:&nbsp; Hibert Space Filling Curve (HSFC)</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

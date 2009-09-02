@@ -1,0 +1,19 @@
+#!/bin/csh -f
+../configure \
+# install location \
+--prefix="${TRILINOS_HOME}/${TRILINOS_ARCH}" \
+--enable-export-makefiles \
+# mpi options \
+--enable-mpi \
+--with-mpi-compilers \
+# lapack \
+--with-blas="-lsunperf -lsunmath" \
+# packages \
+--disable-default-packages \
+--enable-anasazi \
+--enable-didasko \
+--enable-triutils \
+--enable-teuchos-extended \
+--enable-tests \
+--enable-examples \
+--enable-latex 

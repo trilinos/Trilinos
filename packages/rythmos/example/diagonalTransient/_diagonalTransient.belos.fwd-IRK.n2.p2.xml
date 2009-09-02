@@ -1,0 +1,14 @@
+<ParameterList>
+  <ParameterList name="Stratimikos">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+  </ParameterList>
+  <ParameterList name="DiagonalTransientModel">
+    <Parameter name="NumElements" type="int" value="2"/>
+    <Parameter name="Coeff_s" type="string" value="{ 0.0, 0.0 }"/>
+  </ParameterList>
+  <ParameterList name="Rythmos Stepper">
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

@@ -1,0 +1,29 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Trilinos - WebSolver');
+  setDir('./');
+  include 'common/header.html';
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos WebSover</p>
+  
+  Welcome to the Trilinos WebSolver.  Here you can submit a problem to be
+  solved in order to compare the effectiveness of a particular package or
+  method of solution.  Currently only the ML package is being supported.
+  <br/><br/>
+  
+  To submit your problem, click the "Input Page" button:<br/><br/>
+  
+  <div class="button">
+    <a href="input.html">Input Page</a>
+  </div>  
+
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>

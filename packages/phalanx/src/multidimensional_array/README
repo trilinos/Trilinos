@@ -1,0 +1,16 @@
+The multidimensional array support is temporarily housed here until it
+is moved into either Teuchos or its own package.  This should happen
+before Trilinos release 10.0
+
+- version_1 is the original MDArray where the Array was templated on a
+DimNatural/DimFortran object that had all dimensioning.
+
+- version_2 is the current incarnation in phdmesh.  It removed the
+nested template by merging the DimNatural and DimFortran objects into
+the Array itself.
+
+- version_3 refactor still in phdmesh.  Change to single array and now
+templated on an enumerated type for the Natrual/Reverse ordering.
+Also seems to have changed the dimension tags.  Will have to update
+all tests.  Need to add new template argument to both MDALayout and
+MDField that is the ordering argument.

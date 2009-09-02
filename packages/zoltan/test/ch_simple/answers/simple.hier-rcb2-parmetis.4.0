@@ -1,0 +1,15 @@
+Decomposition Method 	= hier
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Test Drops		= 0
+Test null export lists  = 1
+zoltanParams file       = hier-rcb2-parmetis.inp
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+11	0	-1	-1
+16	0	-1	-1
+17	0	-1	-1
+21	0	-1	-1
+22	0	-1	-1
+23	0	-1	-1

@@ -1,0 +1,30 @@
+   mesh
+    rectilinear
+      nx = 4
+      ny = 4
+      nz = 4
+      bx =  3
+      by =  3
+      bz =  3
+      gmin = -1.0 -1.0 -1.0
+      gmax =  1.0  1.0  1.0
+    end
+    user defined element density, J
+     "
+     field = 1.0+3.*exp(-1.*(coord));
+     field = 1.0+sin(coord*6.0);
+     "
+    end
+   set assign
+        nodeset,all,100
+        nodeset,ihi,1
+        nodeset,jhi,2
+        nodeset,ilo,3
+        nodeset,jlo,4
+        sideset,ihi,10
+        sideset,jhi,20
+        sideset,ilo,30
+        sideset,jlo,40
+    end
+  end
+

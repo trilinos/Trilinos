@@ -1,0 +1,196 @@
+Reading MatrixMarket file /home/cgbaker/Matrices/inline_1.mtx
+1M 2M 3M 4M 5M 6M 7M 8M 9M 10M 11M 12M 13M 14M 15M 16M 17M 18M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  14.5679
+
+*** Matrix statistics: /home/cgbaker/Matrices/inline_1.mtx
+Number of rows: 503712
+Number of non-zeros: 18660027
+Mean number of non-zeros per row: 37.0
+Std dev number of non-zeros per row: 17.67
+
+LevelSolver::Analyze() time: 0.82
+LevelSolver::Setup() time: 0.97
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1752
+Mean level size: 287.51
+Std dev level size: 234.28
+Mean level nnz: 10369.11
+Std dev level nnz: 7929.65
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.29e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.62e-16
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.56e-16
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.22e-16
+
+*** Timings over 10 trials
+LevelSolver  solve,  1 threads,    1.04e+00 total,    1.04e-01 average
+LevelSolver  apply,  1 threads,    1.02e+00 total,    1.02e-01 average
+K::CrsMatrix apply,  1 threads,    7.98e-01 total,    7.98e-02 average
+Epetra_CrsMatrix solve,            8.13e-01 total,    8.13e-02 average
+Epetra_CrsMatrix apply,            8.25e-01 total,    8.25e-02 average
+Reading MatrixMarket file /home/cgbaker/Matrices/inline_1.mtx
+1M 2M 3M 4M 5M 6M 7M 8M 9M 10M 11M 12M 13M 14M 15M 16M 17M 18M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  14.595
+
+*** Matrix statistics: /home/cgbaker/Matrices/inline_1.mtx
+Number of rows: 503712
+Number of non-zeros: 18660027
+Mean number of non-zeros per row: 37.0
+Std dev number of non-zeros per row: 17.67
+
+LevelSolver::Analyze() time: 0.82
+LevelSolver::Setup() time: 0.98
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1752
+Mean level size: 287.51
+Std dev level size: 234.28
+Mean level nnz: 10369.11
+Std dev level nnz: 7929.65
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.29e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.62e-16
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.56e-16
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.22e-16
+
+*** Timings over 10 trials
+LevelSolver  solve,  2 threads,    7.94e-01 total,    7.94e-02 average
+LevelSolver  apply,  2 threads,    7.62e-01 total,    7.62e-02 average
+K::CrsMatrix apply,  2 threads,    4.11e-01 total,    4.11e-02 average
+Epetra_CrsMatrix solve,            8.12e-01 total,    8.12e-02 average
+Epetra_CrsMatrix apply,            8.23e-01 total,    8.23e-02 average
+Reading MatrixMarket file /home/cgbaker/Matrices/inline_1.mtx
+1M 2M 3M 4M 5M 6M 7M 8M 9M 10M 11M 12M 13M 14M 15M 16M 17M 18M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  14.6538
+
+*** Matrix statistics: /home/cgbaker/Matrices/inline_1.mtx
+Number of rows: 503712
+Number of non-zeros: 18660027
+Mean number of non-zeros per row: 37.0
+Std dev number of non-zeros per row: 17.67
+
+LevelSolver::Analyze() time: 0.82
+LevelSolver::Setup() time: 0.98
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1752
+Mean level size: 287.51
+Std dev level size: 234.28
+Mean level nnz: 10369.11
+Std dev level nnz: 7929.65
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.29e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.62e-16
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.57e-16
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.22e-16
+
+*** Timings over 10 trials
+LevelSolver  solve,  4 threads,    9.35e-01 total,    9.35e-02 average
+LevelSolver  apply,  4 threads,    9.15e-01 total,    9.15e-02 average
+K::CrsMatrix apply,  4 threads,    3.77e-01 total,    3.77e-02 average
+Epetra_CrsMatrix solve,            8.12e-01 total,    8.12e-02 average
+Epetra_CrsMatrix apply,            8.23e-01 total,    8.23e-02 average
+Reading MatrixMarket file /home/cgbaker/Matrices/inline_1.mtx
+1M 2M 3M 4M 5M 6M 7M 8M 9M 10M 11M 12M 13M 14M 15M 16M 17M 18M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  14.6865
+
+*** Matrix statistics: /home/cgbaker/Matrices/inline_1.mtx
+Number of rows: 503712
+Number of non-zeros: 18660027
+Mean number of non-zeros per row: 37.0
+Std dev number of non-zeros per row: 17.67
+
+LevelSolver::Analyze() time: 0.82
+LevelSolver::Setup() time: 0.97
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 1752
+Mean level size: 287.51
+Std dev level size: 234.28
+Mean level nnz: 10369.11
+Std dev level nnz: 7929.65
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.29e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.62e-16
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.56e-16
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.22e-16
+
+*** Timings over 10 trials
+LevelSolver  solve,  8 threads,    1.00e+00 total,    1.00e-01 average
+LevelSolver  apply,  8 threads,    9.85e-01 total,    9.85e-02 average
+K::CrsMatrix apply,  8 threads,    3.68e-01 total,    3.68e-02 average
+Epetra_CrsMatrix solve,            8.11e-01 total,    8.11e-02 average
+Epetra_CrsMatrix apply,            8.24e-01 total,    8.24e-02 average

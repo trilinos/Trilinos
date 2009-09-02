@@ -1,0 +1,210 @@
+
+Distribution list for "Trilinos 3.1 Tutorial"
+
+
+John Shadid
+Scott Hutchinson
+Eric Keiter
+Jonathan Hu
+James Willenbring
+Kevin Long
+Marzio Sala (10)
+Michael Heroux
+Ross Bartlett
+Richard Lehoucq
+Robert Heaphy
+Russell Hooper
+Robert Hoekstra
+Roger Pawlowski
+Ray Tuminaro
+Tamara Kolda
+Vicki Howle
+Kendall Pierson
+Alan Williams
+Noel Nachtigal
+Andrew Rothfuss
+Heidi Thornquist
+Joseph Kotulski
+Clifford Drumm
+Allen Robinson
+Carter Edwards
+Steve Plimpton
+Cindy Phillips
+Mike Eldred
+Karen Devine
+Mark Christon
+Andy Salinger
+Eric Phipps
+Gary Hennigan
+Curt Ober
+Bill Spotz
+Alfred Lorber
+Paul Boggs
+Sam Subia
+Jim Stewart
+Steve Bova
+Randy Schunk
+Rekha Rao
+Phil Sackinger
+Matt Hopkins
+Harry Moffat
+Garth Reese
+David Day
+Bart van Bloemen Waanders
+Patty Hough
+
+External distribution people:
+
+Ken Stanley (10)
+322 W. College St.
+Oberlin OH 44074 
+
+Matthias Heinkenschloss
+Department of Computational and Applied Mathematics - MS 134
+Rice University
+6100 S. Main Street
+Houston, TX  77005 - 1892
+
+Dan Sorenson
+Department of Computational and Applied Mathematics - MS 134
+Rice University
+6100 S. Main Street
+Houston, TX  77005 - 1892
+
+Yousef Saad 
+Department of Computer Science and Engineering 
+University of Minnesota, 
+4-192 EE/CSci Building, 200 Union Street S.E. 
+Minneapolis, MN 55455 
+
+Kris Kampshoff
+Department of Computer Science and Engineering 
+University of Minnesota, 
+EE/CSci Building, 200 Union Street S.E. 
+Minneapolis, MN 55455 
+
+Eric de Sturler
+2312 Digital Computer Laboratory, MC-258 
+University of Illinois at Urbana-Champaign 
+1304 West Springfield Avenue
+Urbana, IL  61801-2987
+
+
+Jason Cross
+Box 429
+St. John's University
+Collegeville, MN 56321
+
+Paul Sexton
+Box 1560
+St. John's University
+Collegeville, MN 56321
+
+Mike Phenow
+PO Box 1392
+St. John's University
+Collegeville, MN 56321
+
+Tim Davis, Assoc. Prof.
+Room E338 CSE Building
+P.O. Box 116120
+University of Florida
+Gainesville, FL 32611-6120
+
+Padma Raghavan
+Department of Computer Science and Engineering  
+308 Pond Laboratory 
+The Pennsylvania State University
+University Park, PA 16802-6106
+
+Xiaoye Li
+Lawrence Berkeley Lab
+50F-1650 
+1 Cyclotron Rd
+Berkeley, CA 94720
+
+Richard Barrett
+Los Alamos National Laboratory 
+Mail Stop B272 
+Los Alamos, NM 87545
+
+Victor Eijkhout
+Department of Computer Science, 
+203 Claxton Complex, 1122 Volunteer Boulevard, 
+University of Tennessee at Knoxville, 
+Knoxville TN 37996, USA
+
+Jack Dongarra
+Computer Science Department 
+1122 Volunteer Blvd 
+Knoxville, TN 37996-3450
+
+David Keyes 
+Appl Phys & Appl Math 
+Columbia University
+200 S. W. Mudd Building 
+500 W. 120th Street 
+New York, NY, 10027
+
+Lois Curfman McInnes
+Mathematics and Computer Science Division
+Argonne National Laboratory
+9700 South Cass Avenue
+Argonne, IL 60439
+
+Barry Smith
+Mathematics and Computer Science Division
+Argonne National Laboratory
+9700 South Cass Avenue
+Argonne, IL 60439
+
+Paul Hovland
+Mathematics and Computer Science Division
+Argonne National Laboratory
+9700 South Cass Avenue
+Argonne, IL 60439
+
+Jeffrey J. Derby
+CEMS Department, U. of MN
+421 Washington Ave SE
+Minneaplolis, MN 55455-0132
+
+
+Carol Woodward
+Center for Applied Scientific Computing 
+Lawrence Livermore National Laboratory 
+Box 808, L-561 
+Livermore, CA 94551 
+
+Craig Douglas
+325 McVey Hall - CCS
+Lexington, KY 40506-0045 
+
+Juan Meza
+Department Head, High Performance Computing Research
+Lawrence Berkeley National Laboratory
+Mail Stop 50B-2239
+Berkeley, CA 9472 
+
+C.T. Kelley
+Department of Mathematics , Box 8205 
+Center for Research in Scientific Computation 
+North Carolina State University 
+Raleigh, NC 27695-8205 
+
+Chuck Romine
+Program Manager, Applied Mathematics
+U.S. Department of Energy
+1000 Independence Ave., SW
+Washington, DC 20585-1290
+
+Prof. Luca Formaggia
+Mathematics Department
+"F. Brioschi" Politecnico di Milano 
+Piazza L. da Vinci 32, 20133 MILANO, Italy
+
+Prof. Alfio Quarteroni
+IACS-CMCS
+EPFL
+CH-1015 Lausanne (VD) Switzerland
+

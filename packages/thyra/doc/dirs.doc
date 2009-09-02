@@ -1,0 +1,92 @@
+/** \dir src Base directory for all library code that lives in the Thyra package */
+
+/** \dir src/interfaces Base directory for critical interoperability interfaces
+
+The interface code in this directory are critical for achieving
+interoperability of numerical software both within Trilinos and outside of
+Trilinos.  It is critical that we all adopt this basic interface software if
+we are going to get anywhere.
+
+*/
+
+/** \dir src/interfaces/operator_vector Base directory for interoperability interfaces for operators (i.e. matrices) and vectors */
+
+/** \dir src/interfaces/operator_vector/ana Base directory for interoperability interfaces for operators (i.e. matrices) and vectors and abstract numerical algorithms */
+
+/** \dir src/interfaces/operator_vector/ana/fundamental Fundamental interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms */
+
+/** \dir src/interfaces/operator_vector/ana/extended Extended interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms
+These interfaces are based on the Fundamental Thyra ANA Operator/Vector Interfaces.
+*/
+
+/** \dir src/interfaces/operator_vector/app Base directory for interoperability interfaces for operators (i.e. matrices) and vectors and applications and linear algebra libraries
+The interfaces in this directory are completely independent from the ANA interoperability interfaces.
+*/
+
+/** \dir src/interfaces/operator_solve Base directory for interoperability interfaces for linear (operator) solvers */
+
+/** \dir src/interfaces/operator_solve/ana Base directory for interoperability interfaces for linear (operator) solvers and abstract numerical algorithms */
+
+/** \dir src/interfaces/operator_solve/ana/fundamental Fundamental interoperability interfaces for linear (operator) solvers for abstract numerical algorithms */
+
+/** \dir src/interfaces/nonlinear Base directory for interoperability interfaces related to nonlinear problems */
+
+/** \dir src/interfaces/nonlinear/model_evaluator Base directory for interoperability interfaces related to nonlinear models */
+
+/** \dir src/interfaces/nonlinear/model_evaluator/ana Base directory for interoperability interfaces related to nonlinear models and abstract numerical algorithms */
+
+/** \dir src/interfaces/nonlinear/model_evaluator/ana/fundamental Fundamental interoperability interfaces for nonlinear models for abstract numerical algorithms */
+
+/** \dir src/interfaces/nonlinear/solvers Base directory for interoperability interfaces related to nonlinear solvers */
+
+/** \dir src/interfaces/nonlinear/solvers/ana Base directory for interoperability interfaces related to nonlinear solvers and abstract numerical algorithms */
+
+/** \dir src/interfaces/nonlinear/solvers/ana/fundamental Fundamental interoperability interfaces for nonlinear solves for abstract numerical algorithms */
+
+/** \dir src/support Base directory for default implemenations and support software related to the basic interoperability interfaces
+
+The code in these directory provides high-quality and convienent
+implementations and wrappers for the basic interoperability interfaces.  While
+this type of software must exist to avoid duplication of effort and for %Thyra
+to be usable, it, in no way, determines interoperability.  Therefore,
+developers can use or reject any or all of the software that exists in this
+directory with no impact on interoperability.
+
+*/
+
+/** \dir src/support/operator_vector Base directory for support code for operators (i.e. matrices) and vectors */
+
+/** \dir src/support/operator_vector/client_support Client support code for operators (i.e. matrices) and vectors
+
+This directory combines any and all support code related to operator
+(i.e. matrices), vector spaces, vectors etc. that is geared toward making
+operator/vector objects easier to use but is totally indepenent of any
+specific type of vector space, vector, multi-vector, or linear operator
+implementation.  For example, none of the code in this directory depends on
+the operator_vector/adapter_support code and therefore does not assume a
+serial or an SPMD environment.
+
+*/
+
+/** \dir src/support/operator_vector/adapter_support Support code for creating concrete implementations of operators (i.e. matrices) and vectors
+
+This directory and its subdirectories contains hierarchies of subclasses and
+related code for creating concrete implementations of operators, vectors, and
+vector spaces.  High-quality default implementations for common use cases is
+also provided.
+
+*/
+
+/** \dir src/support/operator_vector/adapter_support/serial Support code for creating concrete serial implementations of operators (i.e. matrices) and vectors */
+
+/** \dir src/support/nonlinear Base directory for support code related to nonlinear problems */
+
+/** \dir src/support/nonlinear/model_evaluator Base directory for support code related to nonlinear models */
+
+/** \dir src/support/nonlinear/solvers Base directory for support code related to nonlinear solvers */
+
+/** \dir example Base directory for examples that lives in the Thyra package */
+
+/** \dir example/operator_vector Base directory for operator/vector examples */
+
+/** \dir example/operator_solve Base directory for operator solve examples */

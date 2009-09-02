@@ -1,0 +1,27 @@
+ mesh
+   brick
+    numz 1
+      zblock 1 10.0 interval 6
+    numx 3 initial radius 10.
+      xblock 1 2. interval 12
+      xblock 2 5. interval 6
+      xblock 3 5. interval 12
+    numy 2
+      yblock 1 18. interval 18
+      yblock 2 18. interval 18
+    end
+   set assign
+      block sideset, klo, 11 4
+      block sideset, khi, 12 4
+      block sideset, klo, 21 5
+      block sideset, khi, 22 5
+      block sideset, klo, 31 6
+      block sideset, khi, 32 6
+
+
+        sideset,ilo,30
+        sideset,ilo,30
+        sideset,ihi,20
+    end
+end
+

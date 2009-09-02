@@ -1,0 +1,103 @@
+Hi, Pat.
+
+Below are compiler warnings received when I compile siMPI using a Dec compiler.
+Most look picky, but the one from PMPI_Waitany.c is definitely a bug that
+could cause problems.  Sorry I didn't catch this one for the tar file I sent
+you.
+
+Karen
+
+
+
+cc: Warning: PMPI_Send.c, line 62: In this statement, performing pointer arithmetic on a pointer to void or a pointer to function is not allowed.  The compiler will treat the type as if it were pointer to char. (badptrarith)
+           p = memcpy(p+copiedPointer, message+position, info->blocklen[index]*sizeof(info->types[0]));
+---------------------------------------^
+cc: Warning: _MPI_OP_UTIL.c, line 113: In this statement, performing pointer arithmetic on a pointer to void or a pointer to function is not allowed.  The compiler will treat the type as if it were pointer to char. (badptrarith)
+  if( ((sendbuf+size)>recvbuf)&&((sendbuf)<recvbuf) )
+--------^
+cc: Warning: _MPI_OP_UTIL.c, line 117: In this statement, performing pointer arithmetic on a pointer to void or a pointer to function is not allowed.  The compiler will treat the type as if it were pointer to char. (badptrarith)
+  if( ((recvbuf+size)>sendbuf)&&((recvbuf)<sendbuf) )
+--------^
+cc: Warning: PMPI_Waitany.c, line 48: In this statement, the referenced type of the pointer value "&request" is "pointer to struct _MPI_REQUEST_OBJECT", which is not compatible with "struct MPI_Status". (ptrmismatch)
+          retval = PMPI_Recv(request->buffer, request->size, request->type, _MPI_RANK, request->tag, request->comm, &request);  /* KDDKDD Changed Irecv to Recv */
+--------------------------------------------------------------------------------------------------------------------^
+cc: Warning: PMPI_Type_indexed.c, line 51: In this statement, "memcpy(...)" of type "int", is being converted to "pointer to int". (cvtdiftypes)
+  info->blocklen = memcpy(info->blocklen, blocklens, sizeof(int)*count);
+--^
+cc: Warning: PMPI_Type_indexed.c, line 53: In this statement, "memcpy(...)" of type "int", is being converted to "pointer to int". (cvtdiftypes)
+  info->stride = memcpy(info->stride, indices, sizeof(int)*count);
+--^
+cc: Warning: PMPI_Type_struct.c, line 52: In this statement, "memcpy(...)" of type "int", is being converted to "pointer to int". (cvtdiftypes)
+  info->blocklen = memcpy(info->blocklen, blocklens, sizeof(int)*count);
+--^
+cc: Warning: PMPI_Type_struct.c, line 54: In this statement, "memcpy(...)" of type "int", is being converted to "pointer to int". (cvtdiftypes)
+  info->stride = memcpy(info->stride, indices, sizeof(int)*count);
+--^
+cc: Warning: PMPI_Type_struct.c, line 56: In this statement, "memcpy(...)" of type "int", is being converted to "pointer to int". (cvtdiftypes)
+  info->types = memcpy(info->types, old_types, sizeof(int)*count);
+--^
+In trying to isolate problems in either Zoltan or siMPI, I hacked siMPI
+a bit.  I have attached my hacked-up version.  I tried to mark all my
+hacks with "KDDKDD" for easy grepping.  Explanations for most edits
+are included below; there are a few more comments in the code that
+you'll find when you grep.  Please forgive me if I made mistakes; I admit
+I do not know the MPI standard well.
+
+-  I fixed a memory leake in _MPI_Data_Invalid.  _MPI_Data_Invalid set
+   the buffer pointer to NULL before a free was called for it.
+   Files affected: _MPI_SENDREC_UTIL.c
+
+-  All MPI_Waits leaked memory for SEND requests, as they did not free
+   the requests after "sending" messages.  I added calls to _MPI_Unset_Request.
+   Files affected:  PMPI_Wait.c, PMPI_Waitall.c, PMPI_Waitany.c
+
+-  In MPI_Waitany, I changed the function call PMPI_Irecv() to PMPI_Recv().
+   Files affected:  PMPI_Waitany.c
+
+-  I think the call to _MPI_Set_Request in PMPI_Irecv() is an error, so I
+   commented it out.  I think _MPI_Set_Request should be called only for
+   SEND requests.
+   Files affected:  PMPI_Irecv.c
+
+-  I didn't understand why PMPI_Irecv() tried to actually receive a message.
+   I thought PMPI_Irecv() just posted a receive request; the actual message
+   could then be received in, say, PMPI_Wait().  I struggled
+   with some code using MPI_Isend(), MPI_Irecv, and two PMPI_Wait() calls,
+   and only got the code to work by commented out the actual receive in
+   PMPI_Irecv() and letting PMPI_Wait() do the actual receive.
+   Files affected:  PMPI_Irecv.c
+
+-  In PMPI_Isend and PMPI_Irecv, I didn't understand why the output argument
+   "request" was checked for NULL before a request was generated.  If the
+   application did not initialize requests to NULL, these tests would be
+   false and requests would not be generated.  I commented out both tests.
+   Files affected:  PMPI_Isend.c, PMPI_Irecv.c
+
+-  I added return values to PMPI_Type_free and _MPI_Free_datatype to prevent
+   "uninitialized memory reads".
+   Files affected:  PMPI_Type_Free.c, _MPI_TYPE_UTIL.c
+
+-  _MPI_Set_Request allocated memory that was not returned to the calling
+   routine.  Passing a pointer to a request (rather than the request itself)
+   resolved the problem.
+   Files affected:  mpi_implementation.h, PMPI_Ibsend.c, PMPI_Irecv.c,
+   PMPI_Isend.c, PMPI_Issend.c
+
+-  I made a few changes to mpirun.c, uncommenting some code and commenting
+   out others.
+   Files affected:  mpirun.c
+
+-  MPI_Send (and, I presume, MPI_Recv) does not allow a NULL buffer, even
+   for zero-length messages.  Such a send is allowed in mpich and lam,
+   although I admit I do not know what the MPI standard requires; naturally,
+   siMPI should reflect the standard.  I didn't change siMPI; I got rid of
+   NULL buffers in Zoltan.
+
+Sorry if I just overwhelmed you!  Let me know if my comments are unclear or
+my interpretations are wrong.
+
+I'm psyched that siMPI is now working with Zoltan.  If you think your next
+release is stable enough, I'd like to ask our ALEGRA/Nevada customers to
+give it a try.  It does not have to be a final version, by any means;
+their experiments may turn up additional issues.  Let me know what you think.
+I'll also give siMPI a try on some additional platforms.

@@ -1,0 +1,1757 @@
+ \documentclass[12pt,relax]{TrilinosDevGuide}
+\usepackage{array}
+    \title{Trilinos Developers Guide\footnote{For Trilinos Release 8.0}}
+\SANDsubtitle{}
+
+\author{
+Michael A. Heroux, James M. Willenbring and Robert Heaphy \\
+ \\
+Sandia National Laboratories\\
+P.O. Box 5800\\
+Albuquerque, NM 87185-1110
+}
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{} % Remove ``\today'' in final version
+
+
+\SANDnum{SAND2003-1898}
+\SANDprintDate{August 2003, last updated September 2007}
+\SANDauthor{
+Michael A. Heroux James M. Willenbring Robert Heaphy \\
+Scalable Algorithms Department \\
+ \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110}
+
+
+\SANDreleaseType{Unlimited Release}
+
+
+\begin{document}
+\maketitle
+%\setcounter{page}{3} % Accounts for blank page at beginning
+\begin{abstract}
+
+The Trilinos Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+A new software capability is introduced into Trilinos as a {\it
+package}.  A Trilinos package is an integral unit usually developed by
+a small team of experts in a particular algorithms area such as
+algebraic preconditioners, nonlinear solvers, etc.
+
+The Trilinos Developers Guide is a resource for new and existing
+Trilinos package developers.  Topics covered include how to configure and
+build Trilinos, what is required to integrate an existing package into Trilinos
+and examples of how those requirements can be met, as well as what
+tools and services are
+available to Trilinos packages.  Also discussed are some common practices that
+are followed by many Trilinos package developers.
+%, along with a list of supported computer platforms.
+
+\end{abstract}
+
+\clearpage
+
+\section*{Acknowledgments}
+The authors would like to acknowledge the support of the ASCI and LDRD
+programs that funded development of Trilinos and recognize all of our fellow
+Trilinos contributors: Chris Baker, Teri Barth, Ross Bartlett, Paul Boggs, Erik
+Boman, Todd Coffey, Jason Cross, David Day, Clark Dohrmann, David Gay,
+Michael Gee, Ulrich Hetmaniuk, Robert Hoekstra, Russell Hooper,
+Vicki Howle, Jonathan Hu, Tammy Kolda, Kris Kampshoff, Sarah Knepper, Joe
+Kotulski, Richard Lehoucq, Kevin Long, Joe Outzen, Roger Pawlowski, Mike Phenow,
+Eric Phipps, Marzio Sala, Andrew Rothfuss, Andrew Salinger, Paul Sery, Paul
+Sexton, Chris Siefert, Ken Stanley, Heidi Thornquist, Ray Tuminaro and Alan Williams.
+
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+%The following file is also used in the User Guide
+\input{../CommonFiles/TrilinosNomenclature.tex}
+
+\section{Introduction}
+\label{Section:Introduction}
+The Trilinos Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.  Trilinos
+provides a framework and set of tools for document and source code control,
+software issue tracking, developer and user communication, automatic
+testing, portable configuration and building, and software
+distribution.  Trilinos also provides a set of core utility libraries
+that provide common vector, graph and matrix capabilities, as well as
+a common abstract interface for applications to access any appropriate
+Trilinos package.
+
+A new software capability is introduced into Trilinos as a {\it
+package}.  A Trilinos package is an integral unit usually developed by
+a small team of experts in a particular algorithms area such as
+algebraic preconditioners, nonlinear solvers, etc.
+
+The overall objective of Trilinos is to promote rapid development and
+deployment of high-quality, state-of-the-art mathematical software in
+an environment that supports interoperability of packages while
+preserving package independence.  The Trilinos design allows
+individual packages to grow and mature autonomously to the extent the
+algorithms and package developers dictate.
+
+The Trilinos Developers Guide is meant to assist new and existing
+Trilinos package developers.  Topics covered include how to configure and
+build Trilinos, what is required to integrate an existing package into Trilinos
+and examples of how those requirements can be met, as well as what
+tools and services are
+available to Trilinos packages.  Also discussed are some common practices that
+are followed by many Trilinos package developers.  Finally, a snapshot
+of current Trilinos packages and their interoperability status
+is provided, along with a list of supported computer platforms.
+
+For a higher-level view of the Trilinos project, please see An Overview
+of Trilinos~\cite{Trilinos-Overview}.  The Trilinos Tutorial is a useful
+resource for new and existing Trilinos users and
+developers~\cite{Trilinos-Tutorial}.
+
+An overview of current Trilinos package capabilities can be found on the
+Trilinos website at
+\InlineDirectory{http://trilinos.sandia.gov/capabilities.html}.
+A summary of the packages included in every Trilinos release is also on
+the website at
+\InlineDirectory{http://trilinos.sandia.gov/packages/release\_status.html}.
+
+\subsection{How To Use This Guide}
+
+Although all sections of this guide will be useful to most developers,
+it is worth mentioning that
+this guide supports three types of development activities:
+\begin{enumerate}
+\item New Project: Development of a new package using little or no
+existing software as a base.  All sections of this guide are
+appropriate reading.
+\item Integration of existing third-party software: In this case,
+existing software is being imported into the Trilinos framework.
+Section~\ref{Section:IntegratingPackages} is particularly
+important, as are Sections~\ref{Section:AvailableServices},
+~\ref{Section:PackageRequirements} and~\ref{Section:EpetraAndTSF}.
+\item Ongoing development:  For existing Trilinos package developers,
+Sections~\ref{Section:AvailableServices}
+and~\ref{Section:PackageRequirements} are designed as a reference for
+software engineering practices and policies for Trilinos development.
+\end{enumerate}
+
+\subsection{Typographical Conventions}
+
+Our typographical conventions are found in
+Table~\ref{Table:TypoConventions}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|l|l|p{2.0in}|} \hline
+Notation & Example & Description \\ \hline
+\InlineCommand{Verbatim text} & \InlineCommand{../configure --enable-mpi} &
+Commands, directory and file name examples, and other text associated
+with text displayed in a computer terminal window. \\ \hline
+\InlineCommand{CAPITALIZED\_TEXT} & \InlineCommand{CXXFLAGS} &
+Environment variables used to configure how tools such as compilers behave. \\ \hline
+\InlineCommand{<text in angle brackets>} & \InlineCommand{../configure
+<user parameters>} &
+Optional parameters. \\ \hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:TypoConventions} Typographical Conventions for This Document.}
+
+\end{table}
+
+
+\section{Getting Started}
+\label{Section:GettingStarted}
+
+This chapter covers some of the basics that a developer will need to know when
+beginning to work on the Trilinos project.  We address how to obtain,
+configure and build Trilinos, as well as how to add files to an
+existing package.
+
+\framebox{\begin{minipage}[r]{.75\textwidth}{
+{\bf Tip:}
+Check out the Trilinos Developer Home Page at \newline
+\InlineDirectory{http://software.sandia.gov/Trilinos/developer}.
+
+}\end{minipage}}
+
+\subsection{Obtaining a Copy of Trilinos}
+
+Trilinos can be obtained in two different ways.  Developers should obtain a
+copy of Trilinos via the Trilinos CVS repository.
+To access the repository, an account on software.sandia.gov is required.
+In addition, the user account must be a in the ``cvs'' group
+on software.sandia.gov.  Those who are granted write access must also be in
+the ``trilinos'' group or, in some cases, some other package-specific group.
+To request an account, send a note
+to \InlineDirectory{trilinos-help@software.sandia.gov}.  The following two
+environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+(Replace ``your\_user\_name'' with your user name on software.sandia.gov.)
+
+To checkout a working copy of the development branch of Trilinos in the
+current directory, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of only one package of Trilinos in the
+current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+(Replace ``package\_name'' with the name of the package.)
+
+If the machine that is downloading Trilinos from software.sandia.gov has gzip
+available, it is possible to speed up the checkout process using the -z
+option.  For example, to checkout all of Trilinos using the most aggressive
+compression, type
+
+\DisplayCommand{cvs -z 9 checkout Trilinos}
+
+For those not familiar with CVS, a brief discussion covering some of the most
+common CVS commands is available in Section~\ref{Section:CVS}.  For a more
+complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+Trilinos can also be obtained in the form of a tarball from the Trilinos 
+website at 
+\InlineDirectory{http://trilinos.sandia.gov/download/}.  
+
+%Four subsections common to the Dev Guide and User Guide: Recommended
+%Build Directory Structure, Configuring Trilinos, Building Trilinos,
+%and Trilinos Configuration Options
+\input{TrilinosDUGuideConfigBuild.tex}
+
+\subsection{Adding and Removing Source Files}
+\label{Subsection:AddSource}
+
+Commonly a developer needs to add files to or remove files from a Trilinos
+package.
+
+This process can be divided into the following steps:
+
+\begin{enumerate}
+\item Obtain the supported versions of Autoconf and Automake
+\item Update source code from Trilinos repository
+\item Add new files to or remove obsolete files from the Trilinos repository
+\item List new files in or remove obsolete files from Makefile.am
+\item If adding a new Makefile.am, update configure.ac and the parent
+Makefile.am
+\item Bootstrap
+\item Test the new code
+\item Update source code from Trilinos repository
+\item Commit the changes to the Trilinos repository
+\end{enumerate}
+
+We describe these steps below in greater detail.  The steps assume a simple
+addition or removal of source files from a Trilinos package that uses
+Autotools.  Special situations such as adding header file or library
+dependencies or conditionally compiling new files require a more complicated
+process.  In addition, many of the restrictions listed below apply only to
+development and release branches.  If a branch is
+established for a separate purpose (for example, to attempt an experimental
+restructuring of existing code), the restrictions do not apply.  However, in
+this case, the restrictions do apply when any changes from the branch are to
+be merged back into the development branch.
+
+The section frequently mentions various CVS commands.  For more information on
+these CVS commands, see Section~\ref{Section:CVS}.   For a
+more complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+\begin{enumerate}
+\item Obtain the supported versions of Autoconf and Automake.
+
+The current supported versions of Autoconf and Automake are documented in
+\InlineDirectory{Trilinos/config/AutotoolsVersionInfo}, which can be found in
+the Trilinos repository.  Do not assume that the most recent versions Autoconf
+and Automake are supported.  The supported versions of Autoconf and
+Automake can always be found on software.sandia.gov.  This makes software a
+good machine to bootstrap on.
+
+\item Update source code from Trilinos repository
+
+Obtain the most current version of Trilinos (for the branch being worked on).
+From the top Trilinos directory type
+
+\DisplayCommand{cvs -q update -dP}
+
+\item Add new files to or remove obsolete files from the Trilinos repository
+
+If a whole new directory, abcdir, is to be added, type
+
+\DisplayCommand{cvs add abcdir}
+
+to add abcdir to the repository.  This must be done before adding any of the
+contents of abcdir.
+
+To add new files abc.cpp and abc.h to the Trilinos repository, type
+
+\DisplayCommand{cvs add abc.cpp abc.h}
+
+in the directory where the files are located (in a checked out version of the
+Trilinos repository).  To remove the same files, type
+
+\DisplayCommand{cvs remove abc.cpp abc.h}
+
+Note that directories cannot be removed from the repository using
+\InlineCommand{cvs remove}.
+
+ \item List new files in or remove obsolete files from Makefile.am
+
+New source files should be placed into a category in the appropriate
+Makefile.am.  Typically, the directory in which the new files are located will
+contain a Makefile.am, but sometimes source files are listed in the
+Makefile.am one directory above the files.  When adding a new directory that
+will require a Makefile (for example, when adding a new test directory),
+create a new Makefile.am.  Usually a developer can find a Makefile.am to use
+as a template in the new\_package package.  To remove files from the build
+process, delete the file names from the appropriate Makefile.am.
+
+\item If adding a new Makefile.am, update configure.ac and the parent
+Makefile.am
+
+When adding a new Makefile.am, the corresponding Makefile must be listed in
+the configure.ac file that is located in the same package as the
+Makefile.am (if the Makefile.am is not a part of any package, ie part of the
+general Trilinos framework, list the corresponding Makefile in the
+Trilinos level configure.ac).  The list of Makefile's is near the very bottom
+of the configure.ac file.
+
+Any new directories that contain a Makefile.am must be listed in the
+Makefile.am in the directory immediately above the new directory.  List the
+new directory on the SUBDIRS line.  If the parent directory does not contain
+a Makefile.am, create it and add the name of the parent directory to the
+SUBDIRS line in the Makefile.am in the directory above the parent directory
+(repeat as necessary to reach an existing Makefile.am).
+
+Use \InlineCommand{cvs add} to add all new Makefile.am's.
+\item Bootstrap
+
+First, from the top-level directory of the appropriate Trilinos package (for
+example Trilinos/packages/epetra), type
+
+\DisplayCommand{./bootstrap}
+
+The bootstrap should complete without any errors.  Add any Autotools
+files that are generated during the bootstrap using \InlineCommand{cvs add}.
+
+\item Test the new code
+
+Reconfigure and rebuild the Trilinos package.  Perform tests associated with
+the new code, as well as the rest of the tests for the package to insure that
+both the new code works and existing code has not been broken.  When changes
+could possibly affect other packages, tests for affected packages should also
+be run.  The simple way to run all of the required tests is to use the
+runtests utility, which is a component of the Trilinos test
+harness and can be accessed via the runtests-serial and runtests-mpi make
+targets.
+To run the test suite (the tool will only attempt to run tests that were
+built), simply build the libraries and tests and then type:
+
+\DisplayCommand{make runtests-serial}
+
+The runtests-mpi target is very similar, but expects to you supply the
+variable \InlineCommand{TRILINOS\_MPI\_GO}, either in the environment or as an> argument to make.  Here is an example of how to call the runtests-mpi make
+target:
+
+\DisplayCommand{make runtests-mpi TRILINOS\_MPI\_GO="'mpiexec -np '"}
+
+Alternatively, the following set of arguments can be used: \newline
+\InlineCommand{TRILINOS\_MPI\_MAX\_PROC=2 TRILINOS\_MPI\_GO="'~/bin/linux/mpirun -np '"}.
+Note that in either case, the \InlineCommand{TRILINOS\_MPI\_GO} argument
+must be double quoted.
+
+\item Update source code from Trilinos repository
+
+There are two good reasons to update the source code again. First, other
+developers could have committed changes during the past several
+steps of this process.  Though this is unlikely, it is worth checking.  If
+changes were committed, minimally the testing step will need to be redone.
+If files related to configuring or building were modified, more will have to
+be done if collisions occur.  Some of the possibilities are beyond the scope
+of this introductory document; however, we will briefly discuss the most
+common collision scenario.  Typically the generated files will contain
+collisions (for example configure, Makefile.in, or aclocal.m4), while the
+changes in the files created by developers (for example configure.ac or
+Makefile.am) will be successfully merged by CVS.  In this case, the best
+course of action is to remove the files with collisions, cd to the top level
+of the Trilinos package, perform a \InlineCommand{cvs update}, and then begin
+the above process again from ``Bootstrap'' step.  As long as the changes are
+merged in the non-generated files, bootstrapping should resolve the problem.
+
+A second reason to update again before committing changes is to avoid
+confusion.  After a bootstrap, all of the generated files will get an updated
+timestamp, but in most cases only some of the files will actually be
+modified.  If a developer commits changes before updating, all of the
+generated files will be considered to have been modified.  This is bad for
+several reasons.  One of the most important is that when committing changes, a
+developer should always verify that the list of files that are about to be
+committed makes sense. A \InlineCommand{cvs update} will check to
+see if the file has really been changed or if it simply has a new timestamp.
+
+\item Commit the changes to the Trilinos repository
+
+Once all of the above steps are completed, the final step is to commit the
+changes to the repository.  Start by typing
+
+\DisplayCommand{cvs commit}
+
+Next verify the list of files that appears and enter an appropriate log
+message.  Developers who are unfamiliar with the process of committing changes
+should see Section~\ref{Section:CVS} for a more detailed description of this
+process.
+
+Finally, save the file and exit the CVS editor to commit the changes.
+
+When using the above process to commit new source code, the new source must
+be functioning properly, otherwise the repository will not be stable.
+At the same time, developers are encouraged put new code into the repository
+during initial development.  This will ensure that work is backed up and
+provide version control.  When adding unstable code to the repository, only
+two steps are necessary.  First, use the \InlineCommand{cvs add} command as
+mentioned above, and then modify the commit command slightly to commit only
+the new source by typing
+
+\DisplayCommand{cvs commit newfile1.cpp newfile2.cpp}
+
+Provided that the new files are not added to the make structure, the addition
+of the new files should not negatively affect the repository.  Distribution
+tarballs will even skip over the new source.  A common log message for this
+type of commit is simply ``Checking in for safe keeping; code is not yet
+functioning''.  Developers are encouraged to include a short description of
+what the code will do when it is complete.
+\end{enumerate}
+
+\section{Services Available to Trilinos Packages}
+\label{Section:AvailableServices}
+A number of services exist for Trilinos packages.  Many of these services
+relate directly to the requirements and suggested practices for Trilinos
+packages.  For example, the CVS repository is discussed below, and
+Trilinos packages must make use of this repository.  Also, Bonsai, Bugzilla
+and Mailman are all tools that relate to suggested practices.  (It should be
+noted that these services are not simply meant to satisfy SQE requirements.
+Rather, Bonsai, Bugzilla and Mailman have proved to be very useful tools.
+Using these tools together, along with the CVS repository, has led to a more
+time and cost effective code development process.)  For more information about
+any of the below services, please contact the Trilinos Project Leader.
+
+\subsection{Configuration Management}
+Autoconf~\cite{Autoconf},  Automake~\cite{Automake} and Libtool~\cite{Libtool}
+provide a robust, full-featured set of tools for building software across a
+broad set of platforms (see also the ``Goat Book''~\cite{GoatBook}).  Although
+these tools are not official standards, they are commonly used in many
+packages.  Nearly all existing Trilinos packages use Autoconf and Automake.
+However, use of these tools is not required.
+
+Package developers who are not currently using autotools, but would like
+to, can get a jump start by using a Trilinos package called
+``new\_package''.  This trivial package exists for one primary purpose.
+It walks a developer through the process of setting up a package to
+configure and build using autotools.  General instructions for how to get
+started can be found in Section~\ref{Section:IntegratingPackages}.
+
+Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
+package when its Autoconf and Automake configure and build system is being
+setup.  These macros perform common configuration tasks such as
+locating a valid LAPACK~\cite{lapack} library, or checking for a user-
+defined MPI C compiler.  The macros can be found in the Trilinos CVS
+repository in Trilinos/config.  These macros minimize the amount of redundant
+ effort in using Autotools, and make it easier to apply a general change to
+the configure process for all packages.
+
+\subsection{Regression Testing}
+
+\label{subsect:RegressionTesting}
+Trilinos provides a variety of regression
+testing capabilities.  Within a number of Trilinos packages, we employ
+``white box'' testing where detailed information about the software is
+used and probed.  For some packages, ``black box'' testing is performed
+via the Thyra virtual class
+interfaces.  Any package that implements the Thyra interfaces (see
+Section~\ref{subsect:InteropTSF}) can be tested via this black box
+test environment.
+
+%Put something in here about gcov, perf testing, and mem leak testing
+%once those are implemented in the TH
+
+\subsection{Test Harness}
+\label{subsect:TestHarness}
+
+Trilinos packages that configure and build using Autotools can easily
+utilize the Trilinos test harness.  The test harness builds Trilinos and
+runs tests on multiple platforms; most often the test harness is run nightly.
+Packages that have not ported to a particular platform can be
+excluded from the testing process on that platform.  Packages that do not have
+any tests integrated into the test harness can still benefit by testing that
+libraries build without any errors.
+
+The process for integrating existing tests into the testharness is discussed here:
+\InlineDirectory{http://software.sandia.gov/trilinos/developer/test\_harness/test\_definitions.html}.
+
+\subsection{CVS Repository}
+
+Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is
+very easy to add new packages to the repository.  Packages that already use
+CVS can even retain their CVS history!  Instructions for obtaining a copy of
+Trilinos via the CVS repository can be found in
+Section~\ref{Section:GettingStarted}
+
+For those not familiar with CVS, a brief discussion covering some of the most
+common CVS commands is available in Section~\ref{Section:CVS}.
+For a more complete listing of CVS commands, see the GNU
+CVS Home Page~\cite{CVS}.
+
+\subsection{Bonsai}
+
+The CVS history of the Trilinos project is accessible via a
+web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be
+found on the web at
+\newline
+\InlineDirectory{http://software.sandia.gov/bonsai}.
+
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+
+Bonsai gives developers the ability to view the changes made to the files in
+the repository. Developers can search
+based on filename, directory, branch, date, user who made the
+change, or any combination of these criteria.  The differences between any two
+versions of a file may also be viewed, which can be very helpful when
+debugging.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+The differences between any two versions of a file may also be viewed,
+which can be very helpful when debugging.
+}\end{minipage}}
+\end{minipage}
+
+\subsection{Bugzilla}
+\label{subsect:Bugzilla}
+Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.
+Bugzilla can be found on the web at
+\InlineDirectory{http://software.sandia.gov/bugzilla}.
+A Bugzilla account is necessary for submitting bugs.  Those interested can
+sign up at the website.  All issues related to any Trilinos package that uses
+Bugzilla should be submitted to Bugzilla.  This even applies to cases in which
+one developer diagnoses and fixes a bug within a short period of time.  A bug
+report is still very valuable in this case because it provides an artifact
+that outlines the problem and explains how the problem was fixed.  A bug
+report should be filled out with as much detail as possible.  Likewise, after
+a bug has been resolved, the developer should also provide a detailed
+description of the solution that was used.  Below we will discuss two
+underutilized features of Bugzilla as well as the concept of a meta bug, which
+has proven to be very useful to the Trilinos development team.
+
+Two commonly underutilized features of Bugzilla are the ability to assign a
+priority and a severity to a bug.  Taking advantage of these features helps
+users more clearly express their concerns and helps developers organize tasks.
+Below are recommended usage guidelines for the priority and severity settings
+for Bugzilla bugs that are filed against Trilinos.
+
+Severity: Severity should be determined by the person who files the bug
+(reporter) and should be based solely on how ‚Äúsevere‚Äù the reporter perceives
+the bug to be at the time the bug is filed.  Considerations for selecting a
+proper severity include whether or not the bug is currently directly impeding
+progress, and if it has the potential to impede progress in the future.  There
+is also an important distinction between enhancements and faults in existing
+functionality.  Severity can be updated if conditions warrant a change.
+Possible severity settings include blocker, critical, major, normal, minor,
+trivial, and enhancement.  The severity of a bug is not necessarily related to
+its priority.
+
+Priority: Priority should be determined by the owner of the bug.  Priority can
+be chosen based on the relative importance of other existing bugs, as well as
+on how important the bug is to Trilinos and Sandia.  Other factors can come
+into play when selecting a priority for a bug.  The priority of a bug can be
+updated if conditions warrant a change.  Possible priority settings include P1,
+P2, P3, P4, and P5.  P1 is the highest priority, P5 is the lowest.
+
+Trilinos reserves the P1 classification for bugs that meet the definition of an ASC
+defect.  ASC defines a defect to be ``A flaw in a system or a system component
+that causes the system or component to fail to perform its required function.''
+In this context, this definition (and therefore the P1 priority designation) applies
+only to Trilinos packages that are currently funded by ASC.  The reason the P1 priority
+is reserved is that ASC requires that Trilinos report defect metrics on a quarterly
+basis, and using the P1 designation significantly reduces the cost of gathering this
+data.  Note that the P1 designation also only applies to ASC required capabilities
+present in the current release version of Trilinos, or scheduled to be a part of the
+next release version and does not apply to enhancements.
+
+Here are some examples of bugs that should be classified as defects, and therefore
+assigned P1 priority:
+
+\begin{itemize}
+\item A compile error, on a release branch or the development branch, in the source
+code of a package that is required to build on the platform that the error is occurring on.
+
+\item Any issue (scaling, correctness, etc) with a required feature on a required
+platform that prevents the feature from performing as required, provided the feature
+is not under initial development, which would make it an enhancement.
+
+\item  A compile error involving a non-required feature on a required platform that
+makes it impossible to compile all required features on the platform.  (Ex - an
+experimental feature that wonít compile and makes it impossible to compile the rest of
+the library without manually modifying the build system.)
+\end{itemize}
+
+Here are some examples of bugs that should not be classified as defects:
+\begin{itemize}
+\item A compile error in the examples or tests of a package, unless the example or test is itself a specific requirement.
+\item A compile error in the source code of a package that is not currently released or scheduled for release in the next release cycle.
+\item A compile error in the source code of any package on a platform that is not a required platform.
+\item A compile error involving a non-required feature that is not compiled by default, but can be enabled at configure time (provided the configure option doesnít also enable any required features that therefore cannot be built on a required platform).
+\item Any issue involving the release process itself, documentation, software quality requirements, or any other issue not related to the delivery of requirements.
+\end{itemize}
+
+A good rule of thumb for priority designations P2-P5 is to assign priorities P2 and
+P3 to bugs that should be fixed
+before the next release and priorities P4 and P5 to bugs
+that do not necessarily need to be addressed prior to the next release.
+The priority of a bug is not necessarily related to its severity.
+
+Bugzilla allows a bug to be listed as dependent on another bug.  If bug 1 is
+dependent on bug 2, bug 2 is called a ``blocker'' for bug 1.  The ability to
+make one bug dependent on another is useful for multiple reasons.  Trilinos
+developers often make use of what are informally called ``meta bugs''.  Meta
+bugs are larger tasks that are broken into several smaller tasks (there are no
+special requirements for filing a meta bug, a meta bug is just a bug that
+depends on other bugs).  For example, a meta bug with the summary ``Port to
+all ASC platforms'' could be filed against a new package.  A separate bug
+could be filed for porting to each individual ASC platform, and then all of
+those bugs would block the meta bug.  The meta bug concept is used during the
+Trilinos release process.  One meta bug is filed for the Trilinos release
+process.  That bug depends on the bugs for each package release process and the
+Trilinos web release process.  Each package also has a meta bug associated with
+its release process.  The use of meta bugs makes the Trilinos release process
+much more manageable at the framework and package levels.
+
+NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in
+existing code, but also to a desired enhancement.  For example, a bug report
+should be submitted to Bugzilla to report a segmentation fault that occurs
+when using an existing Ifpack preconditioner, and a bug report should also be
+submitted to request a new Ifpack preconditioner.  ``Issue'' and ``bug'' are
+used interchangeably in the discussion of Bugzilla in this guide.
+
+\subsection{Mailman}
+\label{subsect:MailMan}
+Email lists are maintained for Trilinos as a whole and for each package
+through Mailman~\cite{Mailman}.  This tool can be found on the web at
+\newline
+\InlineDirectory{http://software.sandia.gov/mailman/listinfo}.
+Those interested in signing
+up for one or more lists may do so at the website.  Non-Sandians are able to
+sign up for the ``Users'' and ``Announce'' lists.  Sandians should keep this
+in mind when posting to these lists.
+
+Lists for new packages can be set up very easily.  Each package usually has
+five mailing lists.  The example mailing lists mentioned below are to be used
+for issues relating to all of Trilinos.  The names for the lists pertaining to
+individual packages follow the same naming scheme, simply replace ``Trilinos''
+with the name of the package.  For example, the list for Trilinos users is
+called Trilinos-Users and the email address is
+\InlineCommand{trilinos-users@software.sandia.gov}  The list
+for Epetra users is called Epetra-Users and the associated email address is
+\InlineCommand{epetra-users@software.sandia.gov}
+
+\framebox{\begin{minipage}[r]{.75\textwidth}{
+{\bf Tip:}
+While those who use Epetra (or any other Trilinos package) are also
+``Trilinos users'', the lists are not set up to recognize this.  In other
+words, those who subscribe to the Epetra-Users mailing list do not necessarily
+form a subset of those who subscribe to the Trilinos-Users mailing list.  This
+is also true of all other list types.  Keep this in mind when subscribing and
+posting to lists.
+}\end{minipage}}
+
+\begin{itemize}
+\item Trilinos-Announce
+\InlineCommand{trilinos-announce@software.sandia.gov}
+
+All Trilinos release announcements and other major news.
+
+\item Trilinos-Checkins
+\InlineCommand{trilinos-checkins@software.sandia.gov}
+
+CVS commit log messages that are related to Trilinos in general or packages
+that have not had separate lists established.
+
+\item Trilinos-Developers
+\InlineCommand{trilinos-developers@software.sandia.gov}
+
+All discussions related to Trilinos-specific development (not specific to a
+Trilinos package) are conducted via this list.  Important development
+decisions that originate in other places (regular email, discussions, etc)
+should also be posted to this list (or to the appropriate package list).
+By doing this, the list archive can provide a record explaining why various
+changes were made over time.
+
+\item Trilinos-regression
+\InlineCommand{trilinos-regression@software.sandia.gov}
+
+All regression test output that is not specific to a package.
+
+\item Trilinos-Users
+\InlineCommand{trilinos-users@software.sandia.gov}
+
+List for Trilinos Users.  General discussions about the use of Trilinos.
+
+\item Trilinos-Leaders
+\InlineCommand{trilinos-leaders@software.sandia.gov}
+
+Mailing list for representatives for each Trilinos package.  There are no
+leaders lists for individual packages.
+\end{itemize}
+
+\subsection{Package Website Template}
+\label{subsect:Website}
+
+A template is available at the new\_package website \newline
+\InlineDirectory{http://trilinos.sandia.gov/packages/new\_package}
+for creating websites for new packages.  Package developers are free to 
+use this template or create their own website from scratch.  The 
+new\_package website also contains information about many of the other 
+services that are available to Trilinos packages.
+
+\subsection{Portable Interface to BLAS and LAPACK}
+
+Portable interface to BLAS and LAPACK: The Basic Linear Algebra
+Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
+provide a large repository of robust, high-performance mathematical
+software for serial and shared memory parallel dense linear algebra
+computations.  However, the BLAS and LAPACK interfaces are Fortran
+specifications, and the mechanism for calling Fortran interfaces from
+C and C++ varies across computing platforms.  Epetra, Tpetra, and
+Teuchos each provide a set of simple, portable interfaces to the BLAS
+and LAPACK that provide uniform access to the BLAS and LAPACK across
+a broad set of platforms.  These interfaces are accessible to
+other packages.
+
+\section{Trilinos Package Requirements}
+\label{Section:PackageRequirements}
+The philosophy of the Trilinos project is to minimize the number of
+explicit requirements placed on packages.  Instead, we attempt to
+describe high-level requirements coupled with {\it suggested
+practices}.  This approach allows freedom to define how
+requirements are satisfied yet, at the same time, provides guidance
+and support for packages that do not have a full set of established
+software engineering practices.  In rare cases, requirements may be waived for
+packages on a case-by-case basis with the approval of the Trilinos Project
+Leader.
+
+Package requirements can be split into two basic categories:
+\begin{enumerate}
+\item Interoperability mechanisms: Depending what a new Trilinos
+package does, it should be able to interact with one or more other
+Trilinos packages.  Often this means being able to accept an application
+matrix and vector objects as either TSF objects or Epetra objects, and
+that the package implements relevant TSF abstract interfaces.
+Response to Trilinos configuration options also falls in this category.
+\item Software engineering processes: This category includes formal
+support for software design, implementation and support, including
+processes for capturing user requirements, documenting
+design, source control, user documentation, issue tracking and product
+release.
+\end{enumerate}
+
+Trilinos package requirements and suggested practices are summarized in
+Table~\ref{Table:RequirementsAndPractices}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|p{2.5in}|p{2.5in}|} \hline
+{\bf Requirement} Package must: & {\bf Suggested Practice} Package can: \\ \hline
+Keep source files as a self-contained collection in a
+single directory under the \InlineDirectory{Trilinos/packages} directory in
+the Trilinos CVS repository.  Change logs must be archived and communicated
+to interested Trilinos developers.  & Utilize Trilinos
+Mailman lists to archive and communicate software change logs.\\\hline
+Have process in place to port to all supported platforms &
+Use the Trilinos Autotools environment and leverage the existing portability
+facilities already used by numerous packages. \\\hline
+Respond to all relevant configure options & Use Autoconf and Automake,
+utilizing the collection of Trilinos M4 macros to minimize extra
+effort. \\\hline
+Respond to software faults in a timely manner &  Use
+Trilinos Bugzilla site to record and track software issues, responding
+to issues in order of priority. \\\hline
+Provide unit and regression testing &
+Register test scripts with the Trilinos test harness,
+which runs nightly on a variety of supported platforms and can be used by
+developers before checking in changes.\\\hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:RequirementsAndPractices} Trilinos Package
+Requirements and Suggested Practices.}
+
+\end{table}
+
+Although there are several requirements listed in
+Table~\ref{Table:RequirementsAndPractices}, we have structured the
+integration
+process so that packages can be incorporated into Trilinos in
+a gradual manner.  Listed below are four levels of requirement compliance.
+It is common for new packages to address these steps one at a time, and not
+necessarily in the listed order.
+
+\subsection{Add Package to Trilinos Repository}
+
+Except for rare instances, placing a package in the Trilinos CVS
+repository is a minimum requirement for any package to become part of
+Trilinos.  Other than receiving approval from the Trilinos Project Leader to
+add a new package to Trilinos, there are no prerequisites for adding a
+package to the Trilinos repository.  At this stage, it does not matter if the
+package is finished.  In fact, we encourage
+developers to keep source files in the repository from package
+inception so that source code is backed up and properly managed.
+Our primary restrictions are:
+\begin{enumerate}
+\item A package must be buildable on one or more platforms in order to
+be added to the Trilinos level configure and build
+structure.
+\item A package must be portable to all supported platform in order to
+be built by default using the top-level Trilinos configure process.
+\end{enumerate}
+
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+
+A package can remain in a predistribution state indefinitely.
+Any package that is not ready or approved for
+release can easily be omitted from a distribution.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+A package can remain in a predistribution state indefinitely.
+}\end{minipage}}
+\end{minipage}
+
+\subsection{Port Package to All Supported Platforms}
+Although use of Trilinos Autotools is the easiest and most robust way
+to ensure portability across all supported platforms, a package is not
+required to use them.  At the same time, a package must provide some
+mechanism to build across all platform that Trilinos supports.
+Typically, if not using autotools, this support would be in the form
+of platform-specific makefiles that the installer could invoke for a
+given platform.
+
+\subsection{Respond to All Relevant Configure Options}
+
+The Trilinos top-level configure script accepts numerous configuration
+options as described in Section~\ref{Subsection:ConfiguringTrilinos}.
+To the extent that each option is appropriate, a package should
+respond to each option.  For example, if a package can be built with
+MPI support, it should respond to the \InlineCommand{--enable-mpi} option.
+
+Note that this does not mean the package must use Trilinos Autotools,
+but must simply be sensitive to certain defined parameters that are
+generated when the Trilinos autotools scripts are invoked.
+
+\subsection{Respond to Issue Reports in a Timely Manner}
+
+The Trilinos Team does not have any specific requirements concerning how
+bugs should be submitted and processed.  However, packages should have a
+process in place that deals with issue tracking.  Packages developer teams
+that are looking for an efficient and useful issue tracking tool are
+encouraged to consider using Bugzilla, which is discussed in
+Section~\ref{subsect:Bugzilla}.
+
+\section{Suggested Software Engineering Practices}
+\label{Section:SuggestPractices}
+
+\begin{minipage}[c]{\textwidth}
+
+\begin{minipage}[l]{.6\textwidth}
+There are many ways to define an effective software engineering
+process.  As a result, the
+Trilinos project specifies very few {\it requirements}.  At the same time,
+many software packages do not have well-defined practices to support good
+software engineering.  In this section, we discuss suggested practices based
+on our experience with some common tools and processes for software
+engineering.  We want to strongly emphasize that these are {\it suggested}
+practices only and we discuss them here in order to facilitate adoption of
+practices for packages that have few existing practices in place.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+$\ldots$ the
+Trilinos project specifies very few {\it requirements} $\ldots$
+we discuss {\it suggested practices} here in order to facilitate
+adoption of practices for packages that have few existing practices in
+place $\ldots$
+}\end{minipage}}
+\end{minipage}
+
+\subsection{Preliminary Steps}
+
+Prior to anything else, a new Trilinos package should have the
+following infrastructure established.  Visit the Trilinos home
+page~\cite{Trilinos-home-page} for information on who to contact for
+these preliminary steps.
+
+The preliminary steps are:
+\begin{enumerate}
+\item Set up user accounts for each package developer
+on \InlineDirectory{software.sandia.gov}.
+\item Establish Bugzilla Product and Component Definitions for the new
+package, identifying who will be default owner of each component.
+\item Establish Email Lists for the package.  Five lists will be
+defined:
+\begin{enumerate}
+\item \InlineCommand{PackageName-Announce@software.sandia.gov}:
+Announcements such as
+new releases, feature lists and any other newsworthy items will be
+sent to this list.  Any person interested in any aspect of the package
+should subscribe to this list.
+\item \InlineCommand{PackageName-Checkins@software.sandia.gov} List
+to which all CVS commit log message for the package are sent.
+Developers with an interest in the day-to-day activity of package
+development can subscribe to this list.
+\item \InlineCommand{PackageName-Developers@software.sandia.gov}
+List by which all development discussions are conducted, or to which
+notes from development discussions are sent and archived.  This is
+also the list to which detailed design documentation is sent for
+review and archiving.
+\item \InlineCommand{PackageName-Regression@software.sandia.gov} List
+to which all automated regression test results are sent for archival purposes.
+\item \InlineCommand{PackageName-Users@software.sandia.gov} User
+forum where package users can communicate with each other.  Developers
+should monitor this list and interject comments as necessary.
+\end{enumerate}
+\end{enumerate}
+These preliminary steps can generally be completed in a few hours.
+Once complete, the new package has a set of tools in place that
+address a large fraction of software engineering practices.
+
+\subsection{Practices to Support the Software Lifecycle}
+
+One common view of software engineering processes breaks the process down into
+seven phases:
+\begin{enumerate}
+\item Requirements.
+\item Specification.
+\item Design.
+\item Implementation.
+\item Integration.
+\item Maintenance.
+\item Retirement/Replacement.
+\end{enumerate}
+In this section we discuss suggested practices to address most of these
+phases.  The value of adopting these specific practices is that they are
+commonly used or planned for use in a number of existing Trilinos packages.
+It is worth noting that testing is not a phase, but should be done at each
+of the above phases in the process as appropriate for that phase.
+
+\subsection{Requirements}
+The majority of requirements for Trilinos packages come either directly or
+indirectly from funded research proposals and plans.  Although these
+requirements are sometimes difficult to elicit from the proposals and plans,
+we assume that a package is satisfying requirements by virtue of being
+funded.  Therefore we suggest that package developers track their
+requirements as part of the communication with funding sponsors.
+Regardless of the source of requirements, the appropriate documents
+should be kept under source control.
+
+\subsection{Specification/Design}
+Package specifications can be done in many ways.  An effective way for
+object-oriented, e.g., C++ packages is to use documented header files and a
+documentation tool such as Doxygen~\cite{Doxygen}, and then communicate the
+generated HTML output to the package development team via the \newline
+\InlineCommand{package-developers@software.sandia.gov} email list.
+Package specifications created using another method should also be
+communicated to the development team.  If
+appropriate, the clients for this feature should also be included on
+this correspondence.  This
+approach satisfies both the specification and the design requirements
+in the case of object-oriented engineering of mathematical software.
+
+Also worth noting in this section is that the end of the design and
+early part of the implementation phases is the ideal time to
+write the first set of unit tests.  These tests can be used to confirm
+the interface structure and prepare for incremental implementation testing.
+
+\subsection{Implementation}
+Assuming that the above approach is used to define a documented header
+file, implementation involves implementing the methods as specified
+and developing test code to verify the correctness of the implementation.
+Implementing new capabilities should never take place in a release branch.
+Changes to release branches should be limited to fixing broken code and
+related activities.  For example, clarifying vague or incorrect documentation
+and making changes necessary to port to a new platform.
+
+\subsection{Integration}
+Prior to checking any new code into the Trilinos CVS repository, all
+regression tests for any affected package should be run by the
+developer.  Also, the developer should make a special point of
+confirming that nightly automatic regression tests ran successfully.
+Confirmation is easily done by visiting the archives for the
+\InlineCommand{package-regression@software.sandia.gov} mail lists.
+The archives contain the results of the regression test runs for all
+Trilinos packages.  A developer will also see the results of
+the regression tests run by a particular script if their
+email address is explicitly listed in that test script.
+
+\subsection{Maintenance}
+Trilinos provides a number of tools to facilitate the ongoing
+development and support of packages.  CVS, Bugzilla, Mailman and the
+regression test harness are the most important ones.
+
+\begin{enumerate}
+\item {\bf CVS:} The Trilinos CVS repository is the most important
+tool for proper maintenance.  With each Trilinos release, a release
+branch of the CVS repository is
+created  that allows simultaneous, independent development on the main
+CVS branch and incremental feature development and
+bugfixes on the release branch.  Prior to a release, each package is
+encouraged to stabilize its source on the main development branch, or
+create a tagged version of the package that is stabilized.  At that
+point, the main Trilinos development branch will be tagged and
+branched using the versions of all packages as specified by the
+package leaders.  After the Trilinos tag and branch is complete,
+package developers are encouraged to continue large scale active
+development on the main development branch, respond to bugfixes in the
+release branch and merge bugfixes from the release branch into the
+development branch.  Further discussion on these topics is in
+Appendix~\ref{Section:CVS}.  For a full discussion of advanced CVS
+topics, we recommend the book by Fogel and Bar~\cite{FogelBarCVS}.
+
+\item {\bf Bugzilla:} The Trilinos Bugzilla site
+allows users and developers to submit issues against a package.
+Issues may be submitted against the following components of a package:
+\begin{enumerate}
+\item Configuration and Building.
+\item Documentation and Web Pages.
+\item Examples.
+\item Source code.
+\item Tests.
+\end{enumerate}
+Issues may range from a critical source code bug to a new feature
+request.  When an issue is submitted, the owner, submitter and any
+party that was explicitly listed will be notified upon submission of
+the issue, and when any subsequent update is made to the issue.
+
+\item {\bf Mail lists:}
+Trilinos mail lists also support ongoing maintenance by allowing
+developers to subscribe to the package checkins list.  When subscribed
+to this list, all CVS commits made for the package will be sent in
+email form to the checkins list, and subscribers will see exactly what
+has changed. The other package lists mentioned in
+Section~\ref{subsect:MailMan} also facilitate ongoing
+communication between developers, users and clients.
+
+\item {\bf Test Harness:}
+The Trilinos test harness simplifies code maintenance in two ways.  First, code
+is tested on a nightly basis on various platforms to help maintain portability.
+Second, developers can execute a suite of tests via the ``runtests'' make targets
+before committing changes.  Developers can easily contribute to the coverage of the
+test harness.  For more information about the test harness see
+Section~\ref{subsect:TestHarness}.
+
+%Add something here about gcov once we have gcov running on a t-h platform
+%Developers are encouraged to utilize a test coverage tool when writing
+%regression tests for the test harness.  For more information about a free test
+%coverage tool called COVTOOL, which has been used to analyze the test coverage
+%for multiple Trilinos packages, see Section~\ref{subsect:RegressionTesting}.
+\end{enumerate}
+
+
+\subsection{Retirement/Replacement}
+To the extent possible, checkins to a release branch should not force
+interface changes for users.  Even on the development branch, users should be
+notified (via the package-users mail list) that checkins are about to happen
+that would require an interface change to user code.
+
+In general, we will be very slow to omit a package, or version of a package,
+that is in use, unless there is equivalent interface and functionality support
+from a new package.
+
+\section{Petra, Thyra, and Teuchos: Special Trilinos Libraries}
+\label{Section:EpetraAndTSF}
+In order to understand what Trilinos provides beyond the software
+engineering tools and the
+contributions of each Trilinos package, we briefly discuss two special
+parts of Trilinos: Petra and Thyra.  Thyra provides a common abstract application
+programmer interface (API) for other Trilinos packages and Petra
+provides a common concrete implementation of basic classes used by most
+Trilinos packages.  In addition, we will introduce Teuchos, the Trilinos
+package that provides a number of useful tools to many Trilinos packages.
+
+\subsection{Petra}
+Matrices, vectors and graphs are basic objects used in most solver
+algorithms. Most Trilinos
+packages interact with these kinds of objects via abstract interfaces that
+allow a package to define what services and behaviors are expected from the objects,
+without enforcing a specific implementation.   This facilitates
+integration of a Trilinos package into almost any existing
+application.
+
+However, in order to use these packages, some concrete
+implementation of matrix and vector classes must be selected.
+Petra is an object model for parallel,
+distributed-memory, object-oriented matrix and vector classes.
+Presently there are three Petra libraries: Epetra, Jpetra and Tpetra.
+Of the three, Epetra is the most mature and the one presently used in
+production computing settings.  Epetra is a collection of concrete
+classes that supports the construction and use of vectors, sparse
+graphs, and dense and sparse matrices.  It provides serial, parallel and
+distributed memory
+capabilities.  It uses the BLAS and LAPACK where possible, and as a
+result has good performance characteristics.
+
+In addition to providing easy construction and use of matrices,
+vectors and graphs in a parallel distributed memory environment,
+one of the most important aspects of Epetra is that every other
+Trilinos package can accept user data as Epetra objects.  This
+facilitates the use of multiple Trilinos packages in combination.  For
+example, Ifpack objects can be used as preconditioners for AztecOO, as
+can ML or Amesos objects.  Users can also use Trilinos packages in
+sequence such as solving linear and eigen problems with the same
+matrix.
+
+In summary, Epetra provides a common foundation for all other Trilinos
+packages while retaining an open architecture that allows any package
+to be used independently.  Epetra also supports light-weight copying of
+user data, allowing easy interoperability with other package such as
+PETSc.
+
+\subsection{Thyra}
+\label{subsect:InteropTSF}
+Many different algorithms are available to solve any given numerical
+problem.  For example, there are many algorithms for solving a system
+of linear equations, and many solver packages are available to solve
+linear systems.  Which package is appropriate is a function of
+many details about the problem being solved and the platform on which
+application is being run. However, even though
+there are many different solvers, conceptually, from an abstract view,
+these solvers are providing a similar capability, and it is
+advantageous to utilize this abstract view.
+Thyra is a collection of abstract classes that provides an application
+programmer interface (API) to perform the most common solver
+operations.  It can provide a single interface to many different
+solvers and has powerful compositional mechanisms that support the
+light-weight construction of composite objects from a set of
+existing objects.  As a result, Thyra users gain easy access to many
+solvers and can bring multiple solvers to bear on a single problem.
+
+Thyra contains a set
+of core classes that are considered essential to almost any abstract
+linear algebra interface including
+Vector, MultiVector, LinearOp and VectorSpace.
+Capabilities build on top of the Thyra core classes
+include overloaded, block and composite operators, all of
+which support powerful abstraction capabilities.
+
+Thyra is important because it allows
+interfacing and sophisticated use of numerical linear algebra objects
+without requiring the user or application to commit to any particular
+concrete linear algebra library.  This approach allows us to leverage
+the investment in sophisticated abstract numerical algorithms across
+many concrete linear algebra libraries and gives application
+developers a single API that provides access to many solver packages.
+
+\subsection{Teuchos}
+
+Teuchos provides a suite of common tools for Trilinos for developers
+to use. These tools include select BLAS and LAPACK wrappers, smart
+pointers, parameter lists, and XML parsers.  Most Trilinos packages
+have a dependence on the Teuchos library. 
+
+\section{Integrating a Package into Trilinos}
+\label{Section:IntegratingPackages}
+Before beginning to add a new package to Trilinos, permission must be
+granted by the Trilinos Project leader.
+Sections~\ref{Subsection:AddSource},~\ref{Section:PackageRequirements},
+and~\ref{Section:SuggestPractices} discuss different aspects of adding a
+package to Trilinos.  These sections cover how to add files to a package,
+what is required of a package, and how these requirements could be met,
+respectively.  This section will address the steps that can be taken to
+integrate a new package into the Trilinos configure and build system.  It is
+assumed throughout that a process like the one in
+Section~\ref{Subsection:AddSource} has already been used to add all of the
+source files for the new package to the CVS repository.  This section also
+assumes that the recommended directory structure for Trilinos packages
+(src, test, example, and doc subdirectories) is being used.
+
+Some useful terminology for this section is listed in
+Table~\ref{Table:NewPackageTerms}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|p{1.3in}|p{3.7in}|} \hline
+Term: & Definition: \\ \hline
+autotool'ed package & A package that can be configured and built
+using Autotools.\\\hline
+new package & A package to be added to the Trilinos Autotools configure
+and build process.\\\hline
+new\_package & A Trilinos package found in
+\InlineDirectory{Trilinos/packages/new\_package}.  Serves as a guide for
+adding new packages to the Trilinos Autotools configure and build
+processes. \\\hline
+np &  The generic name for a new package that is used throughout this
+section.  The source code for np is assumed to be located in
+\InlineDirectory{Trilinos/packages/np}. \\\hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:NewPackageTerms} Useful Terminology for
+Section~\ref{Section:IntegratingPackages}.}
+
+\end{table}
+
+There are seven general steps that need to be followed to add a new package to
+the Trilinos Autotools configure and build system.  Note that these steps do
+not have to be completed in the exact order listed below, nor does a step
+necessarily have to be completed in its entirety before moving onto the next
+step.  (For example, a portion of a library can be autotool'ed and tested
+before work begins on the rest of the library.)  The seven steps are listed
+below.
+
+\begin{enumerate}
+
+\item Request services that are provided to Trilinos packages.
+
+See Section~\ref{Section:AvailableServices} for more information about
+services available to Trilinos packages such as mail lists and issue
+tracking.  To request these services, contact the Trilinos Team Leader.
+It is helpful to complete this step early on because issue tracking can
+begin and mail lists can preserve initial commit comments.
+
+\item Write the non-generated files necessary for Autoconf and Automake.
+
+Examples of all of the new, non-generated Autoconf and Automake files
+required to add a packages to the Trilinos Autotools configure and build
+processes are located within the new\_package directory structure.  Most of
+these files will need to be customized for each new package.  See the
+individual example files for more details.  Instructions for customizing are
+listed behind
+\begin{verbatim}
+#np#
+\end{verbatim}
+in the following files:
+\begin{verbatim}
+   Trilinos/configure.ac
+   Trilinos/packages/Makefile.am
+   Trilinos/packages/new_package/Makefile.am
+   Trilinos/packages/new_package/configure.ac
+   Trilinos/packages/new_package/src/Makefile.am
+   Trilinos/packages/new_package/example/Makefile.am
+   Trilinos/packages/new_package/example/example1/Makefile.am
+   Trilinos/packages/new_package/test/Makefile.am
+   Trilinos/packages/new_package/test/test1/Makefile.am
+\end{verbatim}
+
+Note that not all of these files are used in building new\_package, as it is
+a very simple package.
+
+\item Create generated Autoconf and Automake files.
+
+IMPORTANT: Before starting this phase, please see \newline
+\InlineDirectory{Trilinos/config/AutotoolsVersionInfo}, and obtain the correct
+version of both Autoconf and Automake.
+
+If \InlineDirectory{Trilinos/configure.ac} or
+\InlineDirectory{Trilinos/packages/Makefile.am} have been changed (these files
+will have changed if np is being added to the \InlineDirectory{Trilinos} level
+configure and build system), run
+
+\DisplayCommand{./bootstrap}
+
+in the \InlineDirectory{Trilinos} directory.  If any Autotools files at the
+\InlineDirectory{Trilinos/packages/np} level or lower have been changed, run
+
+\DisplayCommand{./bootstrap}
+
+in the \DisplayCommand{Trilinos/packages/np} directory.
+
+The bootstrap commands should complete without any errors.  Note that
+while bootstrapping at the package level often completes in less than thirty
+seconds, bootstrapping at the Trilinos level can take more than an hour.
+
+\item Test and debug Autoconf and Automake files.
+
+Run \InlineCommand{configure} with the appropriate options in a clean build
+directory.  Once the configure process completes successfully, type
+
+\DisplayCommand{make everything}
+
+to build the configured packages, and the associated tests and examples.
+For information about configuring and
+building Trilinos, see Section~\ref{Section:GettingStarted}.  Testing and
+debugging can become a long iterative process.  Below are some tips for
+improving efficiency in this step.
+
+\begin{itemize}
+
+\item Consider disabling all of the packages that do not need to be built to
+complete the current task.  When debugging the configure.ac script for np,
+consider configuring at the np level, as libraries that np is dependent on are
+not needed at the configure stage.  (To do this, make sure to point at the np
+configure script from the build directory.)
+
+\item The \InlineCommand{echo} command can be used in configure.ac to
+print out the value of variables for debugging purposes.
+
+\item The \InlineCommand{AC\_CHECK\_FILE} macro can be used in configure.ac to
+check for the existence of a particular file or directory.
+
+\item Do not run \InlineCommand{configure} in the source tree, always use a
+separate build tree.
+
+\end{itemize}
+
+\item Add all Autoconf and Automake files to the Trilinos CVS repository.
+
+The \InlineCommand{bootstrap} command will generate files necessary for the
+configure and build processes.  These files must be added to the repository
+because users are not required to have Autoconf or Automake.  See
+Section~\ref{Subsection:AddSource} for information regarding how to add files
+to the repository.
+
+When the new files have been committed, a good sanity check is to checkout
+a new copy of Trilinos and attempt to configure and build.  This will catch
+any files that have not been added.
+
+\item Add regression tests to the Trilinos test harness.
+
+For more information about this step, see Section~\ref{subsect:TestHarness}.
+It is not uncommon for packages to contribute tests to the test harness some
+time after the package has been added to Trilinos.  However, it is important
+that all packages can be tested thoroughly via the test harness.
+
+\item Perform tests.
+
+Build with and without package options and run all tests associated with np on
+a variety of platforms.  Make sure that dependencies have been properly
+established in the Autotools system so that users cannot disable packages that
+np is dependent on.  Finally, use the ``runtests'' make targets to ensure that
+all Trilinos packages still build properly.  For more information about how
+to use the runtests make targets, see the end of Section~\ref{Subsection:AddSource}.
+
+\end{enumerate}
+
+\subsection{Improving Portability}
+
+Trilinos packages build on a wide variety of platforms.  Below are a few tips
+for improving portability using mechanisms associated with Autoconf.
+
+\begin{itemize}
+\item Make sure that np\_config.h is included in all your source
+files, directly or indirectly.  The value of any package-specific options are
+pulled from this file.  It is usually best to include it through a
+ConfigDefs file; read on for more information.
+
+\item Include np\_config.h before (usually indirectly) including \newline
+(AnyOtherPackage)\_ConfigDefs.h, or the Autotools PACKAGE macros will
+be improperly defined.
+
+\item Consider creating a file analogous to Epetra\_ConfigDefs.h.  This file
+takes care of various issues such as setting the value of package-specific
+options and defining macros used in the package.  The ConfigDefs file is usually
+included in all other source files.  Don't forget to include np\_config.h in
+the ConfigDefs file because that is the file that contains the results of the
+checks performed during the configure stage.
+
+\end{itemize}
+
+\section{Interoperability Status for Existing Trilinos Packages}
+
+Most Trilinos packages depend on one or more other Trilinos packages.
+For example, a large number of packages depend on Teuchos, the Trilinos
+tools package.  Many packages also ``can use'' one or more other Trilinos
+packages, meaning that additional features can be conditionally enabled
+that depend on the other packages.
+
+A table illustrating package interoperability can
+be found on the Trilinos website at \InlineDirectory{http://trilinos.sandia.gov/packages/interoperability.html}.
+
+
+%This figure is badly out of date!
+%Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
+%\begin{figure}
+%\begin{center}
+%\includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackageDependencies}
+%\end{center}
+%\caption{\label{Figure:TrilinosPackageDependencies}Current Trilinos Package Dependencies}
+%\end{figure}
+%collection of Trilinos packages depend on each other.
+
+%\section{Platform Portability}
+%	**(List platforms - encourage script submission)**
+
+\clearpage
+\bibliographystyle{plain}
+%\bibliography{TrilinosDevGuide}
+\bibliography{../CommonFiles/TrilinosBibliography}
+\addcontentsline{toc}{section}{References}
+
+\appendix
+\section{Commonly Used CVS Commands}
+\label{Section:CVS}
+To access the Trilinos CVS repository, an account on software.sandia.gov is
+required.  To request an account, send a note to
+\InlineCommand{trilinos-help@software.sandia.gov}.
+The following two
+environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+(Replace ``your\_user\_name'' with your user name on software.sandia.gov.)
+
+Below is a brief description of the most commonly used CVS commands.  For a
+more complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+\begin{itemize}
+\item {\bf Checking Out a Working Copy:}
+To checkout a working copy of the development branch of Trilinos in the
+current directory from the CVS repository, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of only one package of Trilinos in the
+current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+(Replace ``package\_name'' with the name of the package.)
+
+To checkout a different branch or a tagged version of Trilinos, type
+
+\DisplayCommand{cvs checkout -r <name\_of\_branch\_or\_tag> Trilinos}
+
+\item {\bf Updating a Working Copy:}
+To update after a version has been obtained use the \InlineCommand{cvs update}
+command.  First, cd to the directory that is to be updated (often the
+Trilinos root directory).  Then type:
+
+\DisplayCommand{cvs -q update -dP}
+
+The ``-q'' option means ``be somewhat quiet''.  Try an update without the
+``-q'' to see exactly what the option does.
+
+The ``-d'' option means to get any new directories.  For example, if a new
+package is added to the repository, but the ``-d'' option is not used, that
+new package will never appear in the working copy.  However, the first time
+that the ``-d'' option is used, all of the new package directories will be
+downloaded, and from that time on, all CVS updates will update the
+directories that were downloaded.  It is good practice to include this
+option for every CVS update.
+
+Finally the ``-P'' option ``prunes'' empty directories.  This helps to keep
+the directory structure from getting more cluttered than it needs to.  For
+example, the old ``petra'' and ``tsf'' packages were removed from the
+repository, but the directory structures will remain if this option is not
+specified.  If an empty directory is needed, simply issue one update
+command without the ``-P'' and the empty directories will be restored.
+
+\item {\bf Viewing Local Changes:}
+After saving changes to a working copy of a branch of the Trilinos repository,
+the differences between the most recently obtained version of the edited
+file(s) and the current local version of the file(s) can be viewed using the
+following command:
+
+\DisplayCommand{cvs -q diff}
+
+The ``-q'' option again means ``be somewhat quiet''.  Try a diff without the
+``-q'' to see exactly what the option does.
+
+The diff command works recursively, but optionally accepts options that
+specify specific files and/or directories.  For example, to see the diff's
+associated only with a file in the current directory named
+\InlineDirectory{abc.cpp}, as well as all files located (recursively) in the
+relative directory \InlineDirectory{examples}, type
+
+\DisplayCommand{cvs -q diff abc.cpp examples}
+
+\item {\bf Adding Files to and Removing Files From the Repository:}
+
+To add new files \InlineDirectory{abc.cpp} and \InlineDirectory{abc.h} to the
+Trilinos repository, type
+
+\DisplayCommand{cvs add abc.cpp abc.h}
+
+in the directory where the files are located (in a checked out version of the
+Trilinos repository).  To remove the same files, type
+
+\DisplayCommand{cvs remove abc.cpp abc.h}
+
+The above commands do not actually add the files to or remove the files from
+the repository, but simply prepare for the addition or removal of the files.
+The initial version of the file will be written to the repository using
+\InlineCommand{cvs commit}.
+
+The \InlineCommand{cvs add} command can also be
+used to add new directories to the repository.  When adding a directory, no
+subsequent \InlineCommand{cvs commit} is necessary.  Directories cannot be
+removed from the repository using \InlineCommand{cvs remove}.
+
+\item{\bf Committing Changes:}
+Note that the \InlineDirectory{CVSEDITOR} environment variable denotes which
+text editor will be used to edit CVS commit logs.  The default value for
+\InlineDirectory{CVSEDITOR} is \InlineCommand{vi} on most machines.
+
+Before committing changes, be sure to perform a CVS update.  Any conflicts
+must be resolved before a commit will complete properly.  Changes are
+committed (saved) to the repository using the following command:
+
+\DisplayCommand{cvs commit}
+
+The above command will recursively check the current directory and all
+directories that are direct descendants of the current directory for changes.
+To commit only specific files or directories (specified directories will be
+checked recursively for changes), append the files and directories to be
+committed as additional arguments to the commit command.  For example, to
+commit the changes to the file called file1, and the directory called
+directory1, type
+
+\DisplayCommand{cvs commit file1 directory1}
+
+At this point, an editor window will appear with a CVS commit form to fill in
+and a list of files that are to be added, removed, or modified.  The form was
+created to help developers avoid some of the most common mistakes that are made
+when committing to the repository, like not bootstrapping after modifying the
+build system for a package, not using \InlineCommand{cvs add} to
+add a new Makefile.in that was generated when bootstrapping, or not running
+tests before committing a major change.  It is important to enter a description
+of the changes that are being made to make it easier for people to understand what
+happened without the need to look at line by line diffs. Also, including any
+related Bugzilla issue numbers makes it easier to find additional information
+about the change if necessary.
+
+Completing all the steps in the CVS
+commit form is not required, but doing so is a good practice to follow, because
+it significantly reduces the frequency of common mistakes that occur when committing
+code.  Completing the form is very highly recommended for changes made to release
+branches.  For all commits, it is a good practice to make sure that the list
+of files shown under the checklist makes sense for the
+changes that are to be made.  It is easy to inadvertently commit files or to
+forget to remove files.
+
+Here are a few helpful tips to use when verifying the list of files
+to be committed.
+\begin{itemize}
+\item Make sure that all directly modified files appear in the list.
+\item Make sure that files generated from files that were modified
+appear in the list.  When modifying a Makefile.am, the corresponding
+Makefile.in will change also.  When modifying configure.ac, configure will
+also change, but some Makefile.in files will also change when using macros
+such as AC\_SUBST.
+\item If unsure about whether or not a
+file should be in the commit list, abort the commit by closing the editor
+without saving, and choosing \InlineCommand{abort}.  Then, if abc.cpp is in
+question, type
+
+\DisplayCommand{cvs diff abc.cpp}
+
+Next, look at the diff output and see if it makes sense for the changes that
+were made.
+
+\end{itemize}
+
+After completing the CVS commit form, verifying that all of the files that
+are in the list belong there, and verifying that all files that belong in
+the list are listed, save the file and exit the CVS editor to commit the changes.
+
+%Possible future topics include:
+%\item{Working with Branches}
+%cvs status
+
+\end{itemize}
+
+\section{The Trilinos Release Process}
+\label{Section:ReleaseProcess}
+
+From a developer's perspective, the Trilinos Release Process consists
+of six phases.
+
+\begin{itemize}
+\item A target release date is announced in an email to the
+Trilinos-Developers mail list.
+
+This message also describes other details of the release such as
+the (tentative) release version number, which packages are to be
+released (if this is known at the time the message is sent) and
+whether the release will be an internal release or a public release.
+It will be noted in the message that any package development teams
+that would like a version of their code other than what is in the
+development branch at the time of the release to be included in the
+distribution should send the name of a tag that contains the correct
+version to the Trilinos team member who will be
+creating the release branch.  The details of upcoming releases are usually
+also discussed during one or more monthly Trilinos Leaders meetings.
+
+\item A release branch is created and tagged.
+
+The creation of a release branch is discussed in
+Section~\ref{Section:Branching}.
+
+\item All package teams participating in an external release (and in
+some cases, an internal release) complete the appropriate package level
+release process checklists.  During this time, acceptance testing
+in conducted by some of largest Trilinos customers, and the release branch
+is tested on the nightly test harness platforms.  Often tests are run on
+additional platforms as well.  Any issues that arise during the testing
+of the new branch are resolved (either fixed or documented as a failure
+that is ``acceptable'' to the associated package development team).
+
+\item The Trilinos project leader approves the release.
+
+\item The release is is announced and made available.
+
+An announcement of the release is sent to the Trilinos-Announce
+mail list.  For outside releases, the release is made available
+via a compressed tar file from the Trilinos download site.
+
+\item Support for the release continues at least until the next
+release.
+
+\end{itemize}
+
+More information about the Trilinos release process, and the 
+process checklists used during the release process, can be found
+on the website:\newline
+\InlineDirectory{http://software.sandia.gov/trilinos/developer/sqp/release/index.html}
+\newline
+\InlineDirectory{http://software.sandia.gov/trilinos/developer/sqp/checklists/index.html}
+
+\section{Creating a New Trilinos (Release) Branch with CVS}
+\label{Section:Branching}
+
+A CVS branch can be used to maintain a version of the
+code that is different than the primary development branch.
+This section describes how to create a Trilinos release branch, but the
+steps can easily be generalized to apply to other types of branches.  For
+example, developers commonly want to attempt an experimental reworking of
+a piece of code.  If there is a good chance that this code will not be stable
+for some time or if the code might not ever become a part of the development
+branch (ie the experiment fails), the developer might want to create a
+separate branch.  If the experiment is a success, the changes can always be
+merged back into the development branch.
+
+
+
+There are eight steps in creating a Trilinos release branch:
+
+\begin{enumerate}
+\item Checkout Trilinos
+
+It is a good idea to start with a fresh copy of Trilinos.  If an old copy is
+used, various problems can occur.  Most of these problems are beyond the scope
+of this brief tutorial, but be advised that it will not work to make changes
+to a local copy of Trilinos and commit those changes directly to
+a branch.  To create a branch for changes that have already been made to a
+local copy, A developer must checkout a new working copy, create the branch,
+copy the changes over, and then commit the changes to the branch.
+
+To checkout a copy of the development branch, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a different branch or a tagged version of Trilinos, type
+
+\DisplayCommand{cvs checkout -r <name\_of\_branch\_or\_tag> Trilinos}
+
+\item Update packages with specific tags, if necessary
+
+Package developers have the opportunity to include a special tagged version of
+their package in a release instead of the current version in the
+development or release branch that is being branched off of for the release.
+For any packages that have such a tag to use, cd to
+Trilinos/packages/(package\_name) and type
+
+\DisplayCommand{cvs update -dr <name\_of\_tag\_submitted>}
+
+\item Tag the working copy
+
+The existing branch is now tagged to mark the point where the new branch
+will diverge.  To do this, cd to the top Trilinos
+directory and type
+
+\DisplayCommand{cvs tag <tag\_name>}
+
+For a release branch, \InlineDirectory{tag\_name} should be
+\InlineDirectory{root-of-trilinos-release-XYZ-branch}, where XYZ is the
+release number with the component numbers separated by hyphens instead of
+periods.  For example for release 3.1.13, XYZ should be 3-1-13.
+
+\item Create a branch
+
+To create a branch, remain in the top Trilinos directory and type
+
+\DisplayCommand{cvs tag -b <branch\_name>}
+
+For the Trilinos release version XYZ mentioned above, the branch\_name
+should be \InlineDirectory{trilinos-release-XYZ-branch}.
+
+\item Update to convert the working copy to the new branch
+
+The act of creating a new branch does not convert the existing working copy to
+a copy of that branch.  To make this conversion, remain in the top Trilinos
+directory and type
+
+\DisplayCommand{cvs update -r <branch\_name>}
+
+To verify that the preceding command was successful, type
+
+\DisplayCommand{cvs status configure.ac}
+
+The value of the ``Sticky Tag:'' field should begin with ``branch\_name''.
+
+\item Update the Trilinos release version number
+
+When creating a new Trilinos release branch, the Trilinos version number needs
+to be incremented in the \InlineDirectory{Trilinos/configure.ac} file.  The
+version number of individual packages can also be updated at this time.  Note
+that not all packages will have the same version number as Trilinos.  Package
+version numbers do not have to be updated at this time.  Permission must be
+obtained from package developers before the version number for a package can
+be updated.  To update a version number, open the configure.ac file and
+search and replace the old version number with the new
+version number.  The number will need to be updated in one or two places.
+Next, remain in the top level Trilinos directory (or the top level directory
+of the package) and type
+
+\DisplayCommand{./bootstrap}
+
+to update the generated Autotools files to reflect the new version number.
+Finally, follow the commit process listed in Section~\ref{Section:CVS} to
+commit the changes.  Remember to update before committing so that generated
+files are not committed just because the timestamp changed.  In the commit
+message, note that branch\_name is listed.
+
+\item Tag the new branch
+
+It is a good idea to tag the branch at this point so that the initial state
+of the branch is easily retrievable.  It is required that the initial state of
+a release branch is tagged.  To perform this step, type
+
+\DisplayCommand{cvs tag <initial\_tag\_name>}
+
+For the Trilinos release version XYZ mentioned above, the initial\_tag\_name
+should be \InlineDirectory{initial-trilinos-release-XYZ-branch}.
+
+\item Test the new branch
+
+It is a good idea to test the new branch to help make sure that the above
+process has been completed properly.  As a part of the general release process,
+many tests need to be run.  This step simply refers to running a few
+simple sanity checks (for example, configure and build Trilinos and execute
+one of the ``runtests'' make targets or a couple of individual regression tests)
+to work out any obvious problems before the branch is subjected to the more
+complete test suite.
+
+\end{enumerate}
+
+%\section{Common Bugzilla Tasks}
+%\label{Section:BugzillaTasks}
+
+
+\end{document}

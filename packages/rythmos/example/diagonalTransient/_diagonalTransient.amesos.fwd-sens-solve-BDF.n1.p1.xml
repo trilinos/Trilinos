@@ -1,0 +1,26 @@
+<ParameterList>
+  <ParameterList name="TimeStepNonlinearSolver">
+    <Parameter name="Default Max Iters" type="int" value="3"/>
+    <Parameter name="Nonlinear Safety Factor" type="double" value="0.1"/>
+    <Parameter name="Linear Safety Factor" type="double" value="0.05"/>
+    <Parameter name="R Min Fraction" type="double" value="0.3"/>
+    <Parameter name="Thrown on Linear Solve Failure" type="bool" value="0"/>
+  </ParameterList>
+  <ParameterList name="Stratimikos">
+    <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
+  </ParameterList>
+  <ParameterList name="DiagonalTransientModel">
+    <Parameter name="NumElements" type="int" value="1"/>
+    <Parameter name="Coeff_s" type="string" value="{ 31.4159 }"/>
+  </ParameterList>
+  <ParameterList name="Rythmos Stepper">
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="none"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="FD Calc">
+    <Parameter name="FD Method" type="string" value="order-four-central"/>
+    <Parameter name="FD Step Length" type="double" value="1e+1"/>
+    <Parameter name="FD Step Select Type" type="string" value="Relative"/>
+  </ParameterList>
+</ParameterList>

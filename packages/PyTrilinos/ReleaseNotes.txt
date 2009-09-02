@@ -1,0 +1,90 @@
+Release Notes for PyTrilinos 4.1 (Trilinos 9.0)
+===============================================
+
+General notes for PyTrilinos:
+
+  * Added auto-generated documentation.
+
+  * Standardized and upgraded PyTrilinos module docstrings.
+
+  * Improved exception handling.
+
+  * Fixed problem with patch for numpy 0.9.8 bug; moved fix for python
+    2.5 compatibility into file where it is directly needed.
+
+  * Fixed problem some PyTrilinos modules had interpreting elements of
+    numpy arrays as integers.
+
+  * Added logic to python extension module builds so that compile
+    flags -ansi and -pedantic will be ignored.
+
+  * Fixed some incompatibilities between the generated code from swig
+    version 1.3.35 and earlier versions.
+
+  * Better error checking when a python argument is converted to an
+    array of char* strings.
+
+  * Eliminated certain runtime type information errors by moving to
+    shared laibraries, thus ensuring that no symbols get duplicated.
+
+  * Added C89 compliance.
+
+  * Changed PyTrilinos/__init__.py to alter the python dlopen flags so
+    that symbols are shared across all of the PyTrilinos extension
+    modules.  This fixed many bugs associated with symbols crossing
+    shared library boundaries.
+
+  * Added fixes for installation on Fedora Core.
+
+PyTrilinos.Teuchos notes:
+
+  * Added support for Teuchos::Comm, Teuchos::SerialComm,
+    Teuchos::MpiComm and Teuchos::DefaultComm, including tests.
+
+PyTrilinos.Epetra notes:
+
+  * Added support for the Epetra.Comm Broadcast method with string
+    data, including additions to testEpetra_Comm.py to test the
+    capability.  Since these are in-place, users must use numpy arrays
+    of strings.
+
+  * Some PyTrilinos.Epetra MPI reduction operations were returning
+    garbage.  This was fixed by clearing out those arrays prior to the
+    call.
+
+  * Epetra.Finalize() (called automatically when the Epetra module is
+    destroyed) now checks MPI_Finalized() before calling
+    MPI_Finalize().  This should help it play nice with Teuchos MPI
+    support.
+
+  * Upgraded Epetra.FEVector to reflect its new multivector nature.
+
+  * Fixed Epetra.Vector and Epetra.MultiVector objects so that slices
+    return new Epetra.[Multi]Vector objects with accurate Maps.
+
+PyTrilinos.AztecOO notes:
+
+  * Improved the AztecOO wrappers for better compatibility with older
+    versions of numpy.
+
+  * Fixed exAztecOO_Operator.py, exAztecOO_RowMatrix.py and
+    exAztecOO_BasicRowMatrix.py example scripts so that they work in
+    parallel.
+
+PyTrilinos.ML notes:
+
+  * Updated PyTrilinos.ML to be more robust.
+
+PyTrilinos.NOX notes:
+
+  * Fixed NOX.Solver.myBuildSolver to properly use new Teuchos::Ptr
+    templated class.
+
+PyTrilinos.Anasazi notes:
+
+  * Added MPI support to Anasazi wrappers.
+
+  * Updated PyTrilinos w.r.t. changes in Anasazi::SortManager interface.
+
+  * Added support to Anasazi wrappers for extracting eigenvalues and
+    eigenvectors.

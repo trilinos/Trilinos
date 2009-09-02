@@ -1,0 +1,161 @@
+PACKAGE_NAME=ML
+
+# Note:  DESCEND_DIRS means that the test harness cd's to the directories
+#        before running.  This is useful if the examples need to read in data.
+(FRAMEWORK,ValidateParams, MLTests) {
+    DIRS = ValidateParams;
+    COMM = MPI(1,4,9);
+    EXIT-STATUS  = compareTestOutput;
+    COMMAND-FILE = evaluateCriteria;
+    ARG-MASTER-PAIRS  = input1.xml:baseline1.txt;
+}
+
+(INSTALL) {
+    DESCEND_DIRS = YES;
+    DIRS = ../examples/BasicExamples,
+           ../examples/XML,
+           AztecSimple,
+           Communicator,
+           RefMaxwell,
+           MultiLevelPreconditioner_NonSym,
+           MultiLevelPreconditioner_Sym,
+           ML_Operator2Epetra_RowMatrix;
+    COMM = SERIAL, MPI(1-4);
+}
+
+(FRAMEWORK, MLExamples) {
+    DESCEND_DIRS = YES;
+    DIRS = ../examples/BasicExamples,
+           ../examples/MultipleRHS,
+           ../examples/XML,
+           ../examples/TwoLevelDD,
+           #../examples/Advanced,
+           #../examples/Elasticity,
+           # ../examples/MatrixFormats,
+           #../examples/MatrixReading,
+           # ../examples/Maxwell,
+           #../examples/Other,
+           # ../examples/StandAlone,
+           #../examples/Visualization,
+           ../examples/MLAPI;
+    COMM = SERIAL, MPI(1-4);
+}
+
+(FRAMEWORK, MLTests) {
+    DESCEND_DIRS = YES;
+    DIRS = AztecSimple,
+           Communicator,
+           IFPACKSmoothers,
+           ML_Operator2Epetra_RowMatrix,
+           MultiLevelPreconditioner_Maxwell,
+           MultiLevelPreconditioner_NonSym,
+           MultiLevelPreconditioner_Sym,
+           MultiLevelPreconditioner_Restart,
+           MatrixFree,
+           Miscellaneous,
+           RefMaxwell,
+         # Scalability,
+         # VerySimple,
+           Zoltan,
+           SelfSmoother;
+    COMM = SERIAL, MPI(1-4);
+}
+
+
+# These tests should only be run on 1, 4, 9, 16, or 25 processors.
+(FRAMEWORK, MLTests) {
+     DIRS = MultiLevelPreconditioner_Aux,
+            MLAPICompare;
+     COMM = SERIAL, MPI(1-4);
+}
+
+# These tests should only be run on 1 processor
+(FRAMEWORK, MLTests) {
+     DESCEND_DIRS = YES;
+     DIRS = BlockCheby;
+     COMM = SERIAL, MPI(1);
+}
+
+
+#
+# 2d_Poisson group
+# Notice that this also runs in the nightly FRAMEWORK tests
+#
+
+(FRAMEWORK,2d_Poisson) {
+    DIRS = 2d_Poisson;
+    COMM = SERIAL;
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 2dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile1:baseline1, ml_inputfile2:baseline2,
+                        ml_inputfile3:baseline3, ml_inputfile5:baseline5,
+                        ml_inputfile6:baseline6;
+}
+
+#
+# 2d_Poisson_parallel group
+# Notice that this also runs in the nightly FRAMEWORK tests
+#
+
+(FRAMEWORK,2d_Poisson_parallel) {
+    DIRS = 2d_Poisson;
+    COMM = MPI(4);
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 2dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile7:baseline7;
+}
+
+#
+# 3d_Poisson group
+# Notice that this also runs in the nightly FRAMEWORK tests
+#
+
+(FRAMEWORK,3d_Poisson) {
+    DIRS = 3d_Poisson;
+    COMM = SERIAL;
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 3dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile1:baseline1, ml_inputfile2:baseline2,
+                        ml_inputfile3:baseline3, ml_inputfile5:baseline5,
+                        ml_inputfile6:baseline6;
+}
+
+#
+# 3d_Poisson_parallel group
+# Notice that this also runs in the nightly FRAMEWORK tests
+#
+
+(FRAMEWORK,3d_Poisson_parallel) {
+    DIRS = 3d_Poisson;
+    COMM = MPI(4);
+    # use the compareTestOutput script
+    EXIT-STATUS  = compareTestOutput;
+    # this line specified what parts of the test result should be
+    # compared to the gold copy
+    COMMAND-FILE = 3dPoissonEvaluateDefinitions;
+    # this line specifies that the result of using ml_inputfileX should
+    # be compared to the gold copy in baselineX.
+    ARG-MASTER-PAIRS  = ml_inputfile7:baseline7;
+}
+
+(ThirdParty) {
+    DIRS = METISCoarsening;
+    MASTER-FILE = baseline1;
+    COMMAND-FILE = EvaluateDefinitions;
+    COMM = SERIAL, MPI(1);
+}

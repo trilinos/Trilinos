@@ -1,0 +1,20 @@
+#the phrase "interrupt SIG" cannot exist in the output because of
+#the keyword "prohibited" in the second column
+
+"interrupt SIG"		prohibited
+
+#must exist because it shows program completion.
+"Solution time:" 		required
+
+
+#This line defines the element to be evaluated for test 3
+#It uses double quotes so that it can reconize the keyword
+#phrase anywhere in the line
+#For this example assume that +-5% is in range
+"operator complexity" 	10%
+
+# the residual can be +/- 90% of the baseline.
+"residual" 		    90%
+
+# +-1 iteration than the golden is allowed
+"total iterations"	1

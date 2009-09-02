@@ -1,0 +1,29 @@
+PACKAGE_NAME=AztecOO
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, AztecOOTests) {
+    DIRS = AztecOO, AztecOO_StatusTest, AztecOO_SetParameters;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, INSTALL, AztecOOTests) {
+    DIRS = GMRES_Tests;
+    EXIT-STATUS = STRING-COMPARISON(All tests passed);
+    COMM = SERIAL, MPI(1 8);
+}
+
+(FRAMEWORK, INSTALL, AztecOOExamples) {
+    DIRS = ../example/AztecOO_UserOpUserMat;
+    ARGS = 21 21;
+    EXIT-STATUS = STRING-COMPARISON(Solver converged);
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK, INSTALL, AztecOOExamples) {
+    DIRS = ../example/UG_Ex1;
+    COMM = SERIAL, MPI;
+}

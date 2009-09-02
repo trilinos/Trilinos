@@ -1,0 +1,236 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <TITLE>Zoltan User's Guide:  Refinement Tree Based Partition</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_hypergraph.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_hsfc.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="REFTREE"></A>Refinement Tree Partitioning (REFTREE)</H2>
+The refinement tree based partitioning method is due to William Mitchell
+of the National Institute of Standards and Technology
+[<A HREF="ug_refs.html#reftree">Mitchell</A>].
+It is closely related to the Octree and Space-Filling Curve methods,
+except it uses the tree that represents the adaptive refinement process
+that created the grid.  This tree is constructed through the tree-based
+query functions.
+
+<P>Each node of the refinement tree corresponds to an element that
+occurred during the grid refinement process.  The first level of the tree
+(the children of the root of the tree) corresponds to the initial coarse
+grid, one tree node per initial element.  It is assumed that the initial
+coarse grid does not change through the execution of the program, except
+that the local IDs, assignment of elements to processors, and weights
+can change.  If any other aspect of the coarse grid changes, then the
+Zoltan structure should be destroyed and recreated.
+The children of a node in the
+tree correspond to the elements that were created when the corresponding
+element was refined.  The children are ordered such that a traversal of
+the tree creates a space-filling curve within each initial element.
+If the initial elements can be ordered with a contiguous path through them,
+then the traversal creates a space-filling curve through all the elements.
+Each element has a designated "in" vertex and "out" vertex, with the out
+vertex of one element being the same as the in vertex of the next element
+in the path, in other words the path goes through a vertex to move from
+one element to the next (and does not go out the same vertex it came in).
+
+<P>The user may allow Zoltan to determine the order of the coarse grid
+elements, or may specify the order, which might be faster or produce a
+better path.  If Zoltan determines the order, the user can select between
+an order that will produce connected parts, an order based on a Hilbert
+Space Filling Curve, or an order based on a Sierpinski Space Filling Curve.
+See the parameter REFTREE_INITPATH below.  If the user provides the order, then
+the in/out vertices must also be supplied.  Similarly, the
+user may specify the order and in/out vertices of the child elements, or
+allow Zoltan to determine them.  If the user knows how to provide a good
+ordering for the children, this may be significantly faster than the default
+general algorithm.  However, accelerated forms of the ordering algorithm
+are provided for certain types of refinement schemes and should be used in
+those cases.
+See <B><A HREF="ug_query_lb.html#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</A></B>.
+If the user always specifies the order, then the vertices and in/out vertices
+are not used and do not have to be provided.
+
+<P>Weights are assigned to the nodes of the tree.  These weights need not be
+only on the leaves (the elements of the final grid), but can also be on
+interior nodes (for example, to represent work on coarse grids of a multigrid
+algorithm).  The default weights are 1.0 at the leaves and 0.0 at the
+interior nodes, which produces a partition based on the number of elements
+in each part.
+An initial tree traversal is used to sum the weights, and a second traversal
+to cut the space-filling curve into appropriately-sized pieces and assign
+elements to parts.  The number of parts is not necessarily equal
+to the number of processors.
+
+<P> The following limitations should be removed in the future.
+<LI>For multicomponent weights, only the first component is used.
+<LI>Heterogeneous architectures are not supported, in the sense that the
+computational load is equally divided over the processors.  A vector of
+relative part sizes is used to determine the weight assigned to each
+part, but they are currently all equal.  In the future they should
+be input to reflect heterogeneity.
+<BR>&nbsp;
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP><B>Method String:</B></TD>
+
+<TD><B>REFTREE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>REFTREE_HASH_SIZE</I></TD>
+
+<TD> The size of the hash table to map from global IDs to refinement tree
+nodes.  Larger values require more memory but may reduce search time.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>REFTREE_HASH_SIZE</I> = 16384</TD>
+</TR>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>REFTREE_INITPATH</I></TD>
+
+<TD>
+Determines the method for finding an order of the elements in the initial
+grid. </BR>
+"SIERPINSKI" uses a Sierpinski Space Filling Curve and is most appropriate
+for grids consisting of triangles.  It is currently limited to 2D. </BR>
+"HILBERT" uses a Hilbert Space Filling Curve and is most appropriate for grids
+consisting of quadralaterals or hexahedra. </BR>
+"CONNECTED" attempts to produce connected parts (guaranteed for triangles
+and tetrahedra), however they tend to be stringy, i.e., less compact than the
+SFC methods.  It is most appropriate when connected parts are required. </BR>
+An invalid character string will invoke the default method.
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>REFTREE_INITPATH</I> = "SIERPINSKI" if the grid contains only triangles</BR>
+<I>REFTREE_INITPATH</I> = "HILBERT" otherwise
+</BR></BR>
+<I>NOTE:</I> In Zoltan versions 1.53 and earlier the default was "CONNECTED".
+To reproduce old results, use <I>REFTREE_INITPATH</I> = "CONNECTED".
+</TD>
+</TR>
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_COARSE_OBJ_LIST_FN">ZOLTAN_COARSE_OBJ_LIST_FN</A></B>
+or <B><A HREF="ug_query_lb.html#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</A></B>
+pair
+</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD>The following functions are needed only if the order of the initial
+elements will be determined by a space filling curve method:</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD>
+<B><A HREF="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</A></B><B>
+or 
+<B><A HREF="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</A></B>
+</TD>
+</TR>
+
+<TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_alg_hypergraph.html">Next:&nbsp; Hypergraph Partitioning</A>&nbsp;
+|&nbsp; <A HREF="ug_alg_hsfc.html">Previous:&nbsp;&nbsp; Hilbert Space-Filling
+Curve Partitioning</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

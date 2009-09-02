@@ -1,0 +1,55 @@
+# Required dependence on epetra and teuchos
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
+# Optional dependence on epetraext, triutils, ml and ifpack
+@BUILD_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+@BUILD_ML_TRUE@include @abs_top_builddir@/../ml/Makefile.export.ml
+@BUILD_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+@BUILD_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+# Optional dependance on epetra for the belos/epetra adapters
+@BUILD_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
+@BUILD_EPETRA_TRUE@BELOS_EPETRA_INCLUDES = -I@abs_top_srcdir@/epetra/src $(EPETRA_INCLUDES)
+@BUILD_EPETRA_TRUE@BELOS_EPETRA_LIBS = -L@abs_top_builddir@/epetra/src -lbelosepetra $(EPETRA_LIBS)
+
+# Optional dependance on tpetra for the belos/tpetra adapters
+@BUILD_TPETRA_TRUE@include @abs_top_builddir@/../tpetra/Makefile.export.tpetra
+@BUILD_TPETRA_TRUE@BELOS_TPETRA_INCLUDES = -I@abs_top_srcdir@/tpetra/src $(TPETRA_INCLUDES)
+@BUILD_TPETRA_TRUE@BELOS_TPETRA_LIBS = $(TPETRA_LIBS)
+
+_BELOS_INCLUDES = \
+	-I@abs_top_srcdir@/src \
+	-I@abs_top_builddir@/src \
+        $(TEUCHOS_INCLUDES) \
+	$(BELOS_EPETRA_INCLUDES) \
+	$(BELOS_TPETRA_INCLUDES)
+
+_BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRAEXT_LIBS) $(BELOS_EPETRA_LIBS) $(BELOS_TPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@
+
+@USING_GNUMAKE_TRUE@BELOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_INCLUDES))
+@USING_GNUMAKE_TRUE@BELOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_LIBS))
+@USING_GNUMAKE_FALSE@BELOS_INCLUDES = $(_BELOS_INCLUDES)
+@USING_GNUMAKE_FALSE@BELOS_LIBS     = $(_BELOS_LIBS)
+
+# These variables define the include path and libraries that can be used in
+# the examples and tests, but that are not required to compile or link
+# against the library itself.
+
+_BELOS_TEST_INCLUDES = \
+        -I@abs_top_srcdir@/src \
+        -I@abs_top_builddir@/src \
+        $(IFPACK_INCLUDES) \
+        $(ML_INCLUDES) \
+        $(EPETRAEXT_INCLUDES) \
+        $(BELOS_EPETRA_INCLUDES) \
+        $(BELOS_TPETRA_INCLUDES) \
+        $(TRIUTILS_INCLUDES) \
+        $(TEUCHOS_INCLUDES)
+
+_BELOS_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(ML_LIBS) $(IFPACK_LIBS) $(EPETRAEXT_LIBS) $(BELOS_EPETRA_LIBS) $(BELOS_TPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@
+
+@USING_GNUMAKE_TRUE@BELOS_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_TEST_INCLUDES))
+@USING_GNUMAKE_TRUE@BELOS_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@BELOS_TEST_INCLUDES = $(_BELOS_TEST_INCLUDES)
+@USING_GNUMAKE_FALSE@BELOS_TEST_LIBS     = $(_BELOS_TEST_LIBS)
+

@@ -1,0 +1,130 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+from optparse import *
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-n", "--size", action="store", type="int", default=-1,
+                  dest="size", help="global size of problem")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra  = fromPyTrilinosImport('Epetra' , options.testharness)
+AztecOO = fromPyTrilinosImport('AztecOO', options.testharness)
+Komplex = fromPyTrilinosImport('Komplex', options.testharness)
+
+############################################################
+
+def main(comm):
+    
+    # Get the problem size
+    n = options.size
+    if n < 0:
+        n = 10 * comm.NumProc()
+    elif n == 0:
+        print "Problem size must be positive"
+        sys.exit(-1)
+
+    # Build the complex matrix
+    map = Epetra.Map(n, 0, comm)
+    Ar  = Epetra.CrsMatrix(Epetra.Copy, map, 1)
+    Ai  = Epetra.CrsMatrix(Epetra.Copy, map, 1)
+    for gid in map.MyGlobalElements():
+        Ar.InsertGlobalValues(gid, [10 * (1 + float(gid)/n),], [gid,])
+        Ai.InsertGlobalValues(gid, [10 * (1 - float(gid)/n),], [gid,])
+    Ar.FillComplete()
+    Ai.FillComplete()
+
+    # Build the solution vector, the exact solution (=1) and the RHS
+    xr  = Epetra.Vector(map)
+    xi  = Epetra.Vector(map)
+    xxr = Epetra.Vector(map)
+    xxi = Epetra.Vector(map)
+    br  = Epetra.Vector(map)
+    bi  = Epetra.Vector(map)
+    xxr[:] = 1
+    xxi[:] = 0
+    for gid in map.MyGlobalElements():
+        lid = map.LID(gid)
+        br[lid] = Ar[gid,gid] * xxr[lid] - Ai[gid,gid] * xxi[lid]
+        bi[lid] = Ai[gid,gid] * xxr[lid] + Ar[gid,gid] * xxi[lid]
+
+    # Build the complex problem
+    problem = Komplex.LinearProblem(1, 0, Ar,
+                                    1, 0, Ai,
+                                    xr, xi,
+                                    br, bi)
+
+    # Set up the solver
+    solver = AztecOO.AztecOO(problem.KomplexProblem())
+    try:
+       plist = {"Solver"          : "GMRES",
+                "Precond"         : "None",
+                "Output"          : 16
+                }
+       solver.SetParameters(plist,True)
+    except AttributeError:
+       # If AztecOO and its python wrappers have been compiled without Teuchos
+       # support, then then the SetParameters method will not exist, thus raising an
+       # AttributeError exception
+       print "Teuchos ParameterLists not supported"
+       solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres)
+       solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
+       solver.SetAztecOption(AztecOO.AZ_output, 16)
+
+    # Solve the linear problem
+    solver.Iterate(n, 1e-5)
+    return solver.NumIters() < 20 and solver.TrueResidual() < 1e5
+
+############################################################
+
+if __name__ == "__main__":
+    comm = Epetra.PyComm()
+    result = main(comm)
+    if result:
+        if comm.MyPID() == 0:
+            print "End Result: TEST PASSED"

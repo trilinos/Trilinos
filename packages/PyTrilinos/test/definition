@@ -1,0 +1,20 @@
+PACKAGE_NAME=PyTrilinos
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL, PyTrilinos_Tests) {
+    DIRS  = .;
+    ARGS = --testharness;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1-4);
+}
+
+(FRAMEWORK, INSTALL, PyTrilinos_Examples) {
+    DIRS  = ../example;
+    DESCEND_DIRS = YES;
+    ARGS = --testharness;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1-4);
+}

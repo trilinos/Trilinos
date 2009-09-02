@@ -1,0 +1,39 @@
+Q1)  When I run configure in the build directory, it uses object code in 
+the source directory.  
+
+A1) If you wish to configure in a separate build directory (which is
+highly recommended) you must not run configure or make in the source
+directory.  If you have done so, you will have to get rid of all
+conflicting files.  The only way that I know of to guarantee this is
+to start from scratch (checkout a clean set of files and copy your
+source files over).  In principle, "make distclean" should do this,
+but I have mixed success with this.
+
+Q2)  The compiler complains that PACKAGE is defined twice.
+
+A2)  PACKAGE is defined in Epetra_config.h and also in
+YourPackage_config.h.  Consider including YourPackage_config.h first
+before any other include files.
+
+Q3) Some systems offer <stdio> but not <stdio.h> others offer
+<stdio.h> and not <stdio>.
+
+A3) Do not include <Stdio> or <stdio.h> directly.  Include
+Epetra_ConfigDefs.h (also included in almost any Epetra.*.h file)  
+
+Q4)  How do I debug configure.ac, Makefile.am, src/Makefile.am and test/Makefile.am
+
+A4)  You can use echo in configure.ac to print out variables. AC_CHECK_FILE can be used
+like an assert on the existence of a particular file.  
+
+
+Q5)  How can I move files (such as data files or test scripts) from the source directory to the build directory?
+
+A5)  Look at aztecoo/test/AztecOO_UserOpUserMat/Makefile.am.  This creates a Makefile
+which when executed causes Ex_AztecOO_UserOpUserMat to be copied from 
+the source directory and renamed to Ex_AztecOO_UserOpUserMat.exe in 
+the build directory.  It also copies referencelog and renames it to 
+referencelog.txt.  We recommend renaming the files to avoid conflicts 
+for users who run configure in the source directory structure (even though 
+we recommend against running configure in the source directory.  
+

@@ -1,0 +1,23 @@
+
+/** \defgroup Thyra_Op_Vec_fundamental_interfaces_code_grp C++ code for foundational Thyra operator/vector interfaces
+
+\brief These are the \ref Thyra_Op_Vec_foundational_interfaces_sec that
+provide the foundation for all ANAs.
+
+*/
+
+/** \defgroup Thyra_Op_Vec_Behavior_Of_Views_grp State behavior of Thyra views
+
+All views in Thyra have the behavior as outlined in the below diagram:
+
+\image html StateBehaviorOfViews.gif "State Behavior of Thyra Views (UML State Diagram)"
+
+The above state behavior allows for straightforward implementations of both
+"direct" and "detached" views of data from the parent object.  In general, the
+state behavior of these views is based on overlapping views.  It is usually
+okay to allow multiple changeable views to be active if these views do not
+overlap but it depends on the implementation of underlying parent object and
+of the views.  Multiple non-changeable views should always be allowed, even if
+they overlap.
+
+*/

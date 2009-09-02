@@ -1,0 +1,6 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters	= debug_level=3, timer=cpu
+Zoltan Parameters       = phg_from_graph_method=neighbors
+File Type		= Chaco
+File Name		= grid20x19
+Parallel Disk Info	= number=0

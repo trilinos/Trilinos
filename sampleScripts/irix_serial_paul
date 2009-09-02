@@ -1,0 +1,6 @@
+../configure \
+	CXXFLAGS="-g -ptused -LANG:std -DMPI_NO_CPPBIND" \
+	CPPFLAGS="-g -ptused -LANG:std -DMPI_NO_CPPBIND" \
+	CC=cc F77=f77 \
+	--disable-default-packages \
+	--enable-tpetra

@@ -1,0 +1,87 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Adding Parameters</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_add_remap.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_memory.html">Previous</a></i></b></div>
+
+
+<h2>
+<a NAME="new_parameters"></a>Adding new parameters</h2>
+All parameters in Zoltan should be set and accessed through the <a href="dev_services_params.html">parameter
+setting routines</a>. To add a new parameter to an existing method, you
+need to do the following:
+<ul>
+<li>
+In the source code for the desired method, search for&nbsp; the place where
+the static array of parameters is defined. It will look something like:
+<i>static
+PARAM_VARS Method_params[] = { ... }</i>.&nbsp; Add a line with the name
+of the new parameter, a pointer to the variable you want to associate (usually
+NULL), and its type.</li>
+
+<li>
+In the method source code, bind the parameter to a local variable through
+<b><a href="dev_services_params.html#Zoltan_Bind_Param">Zoltan_Bind_Param</a></b>.
+Make sure you do this before <b><a href="dev_services_params.html#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals
+</a></b>is
+invoked.</li>
+
+<li>
+Update the parameter function for the method in question. This routine
+is typically called <b>Zoltan_</b><i>Method</i><b>_Set_Param</b><i>. </i>This
+routine checks if a given string is a valid parameter for that method.
+It may also verify the values.</li>
+</ul>
+When you add a new method to Zoltan, you also need to:
+<ul>
+<li>
+Write a parameter function for your method that checks whether a given
+string and value is a valid parameter pair for your method. See <b>Zoltan_RCB_Set_Param</b>
+in <i>rcb/rcb.c</i> for an example.</li>
+
+<li>
+Let your method access the parameters via <b><a href="dev_services_params.html#Zoltan_Bind_Param">Zoltan_Bind_Param
+</a></b>and
+<b><a href="dev_services_params.html#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>.</li>
+
+<li>
+Change the parameter function array in <i>params/set_params.c</i> to include
+your parameter function. Simply add a new entry to the static array that
+looks like: <i>static ZOLTAN_SET_PARAM_FN * Param_func[] = {...}</i>.</li>
+
+<li>
+Make sure your method uses the <a href="../ug_html/ug_param.html#General_Parameters">key
+parameters</a> in Zoltan correctly.</li>
+</ul>
+One useful convention is to put your method routine and your corresponding
+parameter function in the same source file. This way you can define the
+parameters in a static array. This convention eliminates&nbsp; the risk
+of bugs caused by duplicate declarations (that are, incorrectly, not identical).
+<br>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_remap.html">Next:&nbsp;
+Part Remapping</a>&nbsp; |&nbsp; <a href="dev_add_memory.html">Previous:&nbsp;
+Memory Management</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

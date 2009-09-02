@@ -1,0 +1,10 @@
+These latex files contain the code to generate the topology 
+figures in the Shards User's Guide. Note that tikz and
+and pgf version 2.0 are required to successfully run pdflatex
+on these files.
+ 
+The latex commands to draw the three dimensional figures 
+(hex, tet, wedge, pyramid) were generated using sketch. 
+The input files to sketch are included in this directory
+as well and have '.sk' as their extension. 
+

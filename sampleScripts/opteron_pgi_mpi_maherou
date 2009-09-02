@@ -1,0 +1,12 @@
+../configure --enable-mpi \
+--prefix=/home/mheroux/Trilinos6.0_CVS/EMU_MPI_DEBUG -C \
+CXX=pgCC CC=pgcc F77=pgf77 \
+CXXFLAGS="-O0 -g -I/usr/pgi/linux86-64/6.0/include" \
+CFLAGS="-O0 -g -I/usr/pgi/linux86-64/6.0/include" \
+FFLAGS="-O0 -g -I/usr/pgi/linux86-64/6.0/include" \
+LDFLAGS="-L/usr/pgi/linux86-64/6.0/lib -lmpich -pgf90libs" \
+--disable-default-packages --enable-epetra --enable-epetraext \
+--enable-aztecoo --enable-ifpack --enable-ml --enable-teuchos 
+#--with-blas=/usr/lib/libblas_pgf.a --with-lapack=/usr/lib/liblapack_pgf.a
+#CXX=pgCC CC=pgcc F77=pgf77 \
+#CXX=mpiCC CC=mpiCC F77=mpif77 \

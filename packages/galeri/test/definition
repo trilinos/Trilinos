@@ -1,0 +1,17 @@
+PACKAGE_NAME=Galeri
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL, GaleriExamples) {
+    DIRS = ../example;
+    ARGS = -v;
+    COMM = SERIAL, MPI(1);
+}
+
+(FRAMEWORK, INSTALL, GaleriTests) {
+    DIRS = VerySimple;
+    ARGS = -v;
+    COMM = SERIAL;
+}

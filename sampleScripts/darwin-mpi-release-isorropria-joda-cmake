@@ -1,0 +1,26 @@
+EXTRA_ARGS=$@
+
+cmake \
+-D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR:PATH=/Users/kddevin/code/lib-m64/lam-7.1.4 \
+-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+-D CMAKE_CXX_FLAGS:STRING="-O3 -m64" \
+-D CMAKE_C_FLAGS:STRING="-O3 -m64" \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF \
+-D Trilinos_ENABLE_Isorropia:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D TPL_ENABLE_Scotch:BOOL=ON \
+  -D Scotch_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/include" \
+  -D Scotch_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/lib" \
+-D TPL_ENABLE_ParMETIS:BOOL=ON \
+  -D ParMETIS_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+  -D ParMETIS_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
+-D TPL_ENABLE_PaToH:BOOL=ON \
+  -D PaToH_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
+  -D PaToH_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
+$EXTRA_ARGS \
+../../../Trilinos

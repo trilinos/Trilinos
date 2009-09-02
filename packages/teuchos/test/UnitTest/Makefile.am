@@ -1,0 +1,54 @@
+#@HEADER
+# ************************************************************************
+# 
+#                    Teuchos: Common Tools Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+#@HEADER
+
+EXEEXT = .exe
+
+include $(top_builddir)/Makefile.export.teuchos
+
+bin_PROGRAMS = UnitTest_UnitTests UnitTest_BadUnitTest
+
+UnitTest_UnitTests_SOURCES = \
+  $(srcdir)/Int_UnitTests.cpp \
+  $(srcdir)/TemplateFunc_UnitTests.cpp \
+  $(srcdir)/vector_UnitTests.cpp \
+  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
+UnitTest_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+UnitTest_UnitTests_LDADD = $(TEUCHOS_LIBS)
+
+UnitTest_BadUnitTest_SOURCES = \
+  $(srcdir)/Int_UnitTests.cpp \
+  $(srcdir)/TemplateFunc_UnitTests.cpp \
+  $(srcdir)/Failing_UnitTest.cpp \
+  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
+UnitTest_BadUnitTest_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+UnitTest_BadUnitTest_LDADD = $(TEUCHOS_LIBS)
+
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
+
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

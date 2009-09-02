@@ -1,0 +1,886 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Load-Balancing Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_interface_augment.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Load-Balancing Functions"></a>Load-Balancing Functions</h2>
+The following functions are the load-balancing interface functions in the
+Zoltan library; their descriptions are included below.
+<blockquote><b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+<br><b><a href="#Zoltan_LB_Set_Part_Sizes">Zoltan_LB_Set_Part_Sizes</a></b>
+<br><b><a href="#Zoltan_LB_Eval">Zoltan_LB_Eval</a></b>
+<br><b><a href="#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b></blockquote>
+For <a href="ug_backward.html">backward compatibility</a> with previous
+versions of Zoltan, the following functions are also maintained. These
+functions are applicable only when the number of parts to be generated
+is equal to the number of processors on which the parts are computed.
+That is, these functions assume "parts" and "processors" are synonymous.
+<blockquote>
+<b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+<br><b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
+</blockquote>
+Descriptions of algorithm-specific interface functions are included with 
+the documentation of their associated algorithms.  
+Algorithm-specific functions include:
+<blockquote>
+<b><a href="ug_alg_rcb.html#Zoltan_RCB_Box">Zoltan_RCB_Box</a></b>
+</blockquote>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_LB_Partition"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_LB_Partition</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>changes</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_gid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_import</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>import_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>import_to_part</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>export_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>export_to_part</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_LB_Partition</b>(<i>zz, changes, num_gid_entries,
+num_lid_entries, num_import, import_global_ids, import_local_ids, import_procs,
+import_to_part, num_export, export_global_ids, export_local_ids, export_procs,
+export_to_part</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Partition&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>LOGICAL, INTENT(OUT) :: changes&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_to_part, export_to_part</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::LB_Partition</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>changes</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_gid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_import</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+&<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>import_to_part</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int &<i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+ &<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+ &<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int * &<i>export_to_part</i>);</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_LB_Partition</b> invokes the load-balancing
+routine specified by the <i><a href="ug_alg.html#LB_METHOD">LB_METHOD</a></i>
+parameter. The number of parts it generates is specified by the <i><a href="ug_alg.html#NUM_GLOBAL_PARTS">NUM_GLOBAL_PARTS</a></i>
+or
+<i><a href="ug_alg.html#NUM_LOCAL_PARTS">NUM_LOCAL_PARTS</a></i>
+parameters. Results of the partitioning are returned in lists of objects
+to be imported into and exported from parts on this processor. 
+Objects are included in these lists if <i>either</i> their part
+assignment or their processor assignment is changed by the new decomposition.
+If an application requests multiple parts on a single processor, these 
+lists may include objects whose part assignment is changing, but whose
+processor assignment is unchanged.
+<p>
+Returned arrays are allocated in Zoltan; applications
+should not allocate these arrays before calling <b>Zoltan_LB_Partition</b>.
+The arrays are later freed through calls to <b><a href="#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+to be used in this invocation of the load-balancing routine.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; changes</i></td>
+
+<td>Set to 1 or .TRUE. if the decomposition was changed by the load-balancing
+method; 0 or .FALSE. otherwise.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
+
+<td>Upon return, the number of objects 
+that are newly assigned to this processor or to parts on this processor
+(i.e., the number of objects being imported from different parts to
+parts on this processor).
+If the value returned
+is -1, no import information has been returned and all import arrays below
+are NULL. (The
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter
+determines whether import lists are returned).</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
+
+<td>Upon return, an array of <i>num_import</i> global IDs of objects to
+be imported to parts on this processor.
+<br>(size = <i>num_import</i> * <i>num_gid_entries</i>)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
+
+<td>Upon return, an array of&nbsp; <i>num_import</i> local IDs of objects
+to be imported to parts on this processor.
+<br>(size = <i>num_import</i> * <i>num_lid_entries</i>)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
+
+<td>Upon return, an array of size <i>num_import</i> listing the processor
+IDs of the processors that owned the imported objects in the previous decomposition
+(i.e., the source processors).</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
+
+<td>Upon return, an array of size <i>num_import</i> listing the parts
+to which the imported objects are being imported.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
+<td>Upon return, this value of this count and the following lists
+depends on the value of
+the <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> parameter:
+<UL>
+<LI>It is the count of objects on this processor
+that are newly assigned to other processors or to other parts 
+on this processor, if 
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is "EXPORT" or "EXPORT AND IMPORT".
+<LI>It is the count of all objects on this processor,
+if 
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is "PARTITION ASSIGNMENTS".
+<LI>It is -1 if the value of 
+<a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+indicates that either no lists are to be returned, or only import lists
+are to be returned.
+If the value returned
+is -1, no export information has been returned and all export arrays below
+are NULL .
+</UL>
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
+
+<td>Upon return, an array of <i>num_export</i> global IDs of objects to
+be exported from parts on this processor 
+(if <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is equal to "EXPORT" or "EXPORT AND IMPORT"), 
+or an array of <i>num_export</i> global IDs
+for every object on this processor
+(if <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is equal to "PARTITION ASSIGNMENTS"), 
+.&nbsp;
+<br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
+
+<td>Upon return, an array of <i>num_export</i> local IDs associated
+with the global IDs returned in <i>export_global_ids</i>
+
+<br>(size = <i>num_export</i> * <i>num_lid_entries</i>)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
+
+<td>Upon return, an array of size <i>num_export </i>listing the processor
+ID of the processor to which each object is now assigned
+(i.e., the destination processor).
+If <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is equal to "PARTITION ASSIGNMENTS", this list includes all objects, otherwise
+it only includes the objects which are moving to a new part and/or process.
+
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
+
+<td>Upon return, an array of size <i>num_export</i> listing the parts
+to which the objects are assigned under the new partition.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_LB_Set_Part_Sizes"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_LB_Set_Part_Sizes</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>global_num,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>len</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>part_ids,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>wgt_idx</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>part_sizes</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td WIDTH="85%">
+function <b>Zoltan_LB_Set_Part_Sizes</b>(
+<i>zz,global_part,len,partids,wgtidx,partsizes</i>)
+<br>integer(Zoltan_INT) :: Zoltan_LB_Set_Part_Sizes
+<br>type(Zoltan_Struct) INTENT(IN) zz
+<br>integer(Zoltan_INT) INTENT(IN) global_part,len,partids(*),wgtidx(*)
+<br>real(Zoltan_FLOAT) INTENT(IN) partsizes(*)
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::LB_Set_Part_Sizes</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>global_num,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>len</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>part_ids,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>wgt_idx</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>part_sizes</i>);</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_LB_Set_Part_Sizes</b> is used to specify the
+desired part sizes in Zoltan. By default, Zoltan assumes that all
+parts should be of equal size.&nbsp; With <b>Zoltan_LB_Set_Part_Sizes</b>,
+one can specify the relative (not absolute) sizes of the parts. For
+example, if two parts are requested and the desired sizes are 1 and
+2, that means that the first part will be assigned approximately one
+third of the total load. If the sizes were instead given as 1/3 and 2/3,
+respectively, the result would be exactly the same. Note that if there
+are multiple weights per object, one can (must) specify the part size
+for each weight dimension independently.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure created by <b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; global_num</i></td>
+
+<td>Set to 1 if global part numbers are given, 0 otherwise (local
+part numbers).</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; len</i></td>
+
+<td>Length of the next three input arrays.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>part_ids</i></td>
+
+<td>Array of part numbers, either global or local. (Part numbers
+are integers starting from 0.)</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp; <i>vwgt_idx</i></td>
+
+<td NOSAVE>Array of weight indices (between 0 and OBJ_WEIGHT_DIM-1). This
+array should contain all zeros when there is only one weight per object.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp; <i>part_sizes</i></td>
+
+<td NOSAVE>Relative values for part sizes; <i>part_sizes[i]</i> is
+the desired relative size of the <i>vwgt_idx[i]</i>'th weight of part
+<i>part_ids[i].</i></td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
+</tr>
+</table>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_LB_Eval"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_LB_Eval</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>print_stats</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nobj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>obj_wgt</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>ncuts</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>cut_wgt</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nboundary</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nadj</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_LB_Eval</b>(<i>zz, print_stats,&nbsp; nobj, obj_wgt,
+ncuts, cut_wgt, nboundary, nadj</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Eval
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>LOGICAL, INTENT(IN) :: print_stats&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), OPTIONAL :: nobj, ncuts, nboundary,
+nadj
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(ewgt_dim), OPTIONAL :: cut_wgt&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::LB_Eval</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>print_stats</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nobj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float * const <i>obj_wgt</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>ncuts</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float * const <i>cut_wgt</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nboundary</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nadj</i>);&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_LB_Eval </b>evaluates the quality of a decomposition.
+Some quality metrics are available only if the graph query functions have
+been registered. <b>Zoltan_LB_Eval
+</b>may either print a summary of the
+results to <i>stdout</i> or return the results in the output parameters.
+<i>NOTE: </i>The interface to this function may change in future versions
+of Zoltan. Users are discouraged from relying on the output arguments from
+Zoltan_LB_Eval.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; print_stats</i></td>
+
+<td>If <i>print_stats</i>>0 (.TRUE. in Fortran), print a summary (max,
+min,&nbsp; and sum) of the quality metrics to <i>stdout.</i></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nobj</i></td>
+
+<td>Upon return, the number of objects on this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; obj_wgt</i></td>
+
+<td>Upon return, an array (of dimension <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>)
+containing the sum of object weights on this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ncuts</i></td>
+
+<td>Upon return,&nbsp; the number of (communication) edge cuts&nbsp; for
+this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
+
+<td>Upon return, an array (of dimension <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>)
+of cut weights for this processor.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nboundary</i></td>
+
+<td>Upon return,&nbsp; the number of boundary objects on this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nadj</i></td>
+
+<td>Upon return,&nbsp; the number of adjacent processors as defined by
+the communication graph.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code.</a></td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td><b>Query functions:</b>
+<br>&nbsp;&nbsp;&nbsp;&nbsp; Required:</td>
+
+<td NOSAVE>
+<br><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a>
+<br><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a>
+</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</td>
+
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_F
+N</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_F
+N</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</td>
+
+</tr>
+</table>
+An output parameter is returned only if the input value of that parameter
+was not NULL. The rationale for this feature is that if one wishes just
+to print the evaluation results, one can simply set all (or some of) the
+output parameters to NULL in the function call. From Fortran, one may omit
+one or more of the optional output parameters.
+<p>Note that the sum of <i>ncuts</i> over all processors is actually twice
+the number of edges cut in the graph (because each edge is counted twice).
+The same principle holds for <i>cut_wgt.</i><i></i>
+<p>There are a few improvements in Zoltan_LB_Eval&nbsp; in Zoltan version
+1.5 (or higher). First, the balance data are computed with respect to both
+processors and parts (if applicable). Second, the desired part
+sizes (as set by Zoltan_LB_Set_Part_Sizes)&nbsp; are taken into account
+when computing the imbalance.
+<p>Known bug: If a part is spread across several processors, the computed
+cut information (<i>ncuts </i>and <i>cut_wgt)</i> may be incorrect (too
+high).
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_LB_Free_Part"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_LB_Free_Part</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>procs</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>to_part</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_LB_Free_Part</b>(<i>global_ids, local_ids, procs,
+to_part</i>)
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Free_Part&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: global_ids
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: local_ids
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: procs, to_part</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::LB_Free_Part</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>procs</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>to_part</i>);</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_LB_Free_Part</b> frees the memory allocated
+by Zoltan to return the results of <b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+or
+<b><a href="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>.
+Memory pointed to by the arguments is freed and the arguments are set to
+NULL in C and C++ or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Part</b>.
+Typically, <b>Zoltan_LB_Free_Part</b> is called twice: once for the import lists, and once for the export lists.<br>
+Note that this function does not destroy the Zoltan data structure itself;
+it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>
+in C and Fortran and by the object destructor in C++.
+<br>
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>An array containing the global IDs of objects.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>An array containing the local IDs of objects.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; procs</i></td>
+
+<td>An array containing processor IDs.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; to_part</i></td>
+
+<td>An array containing part numbers.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.&nbsp;</td>
+</tr>
+</table>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_LB_Balance"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_LB_Balance</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>changes</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_gid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_import</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>import_procs</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>export_procs</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_LB_Balance</b>(<i>zz, changes, num_gid_entries,
+num_lid_entries, num_import, import_global_ids, import_local_ids, import_procs,
+num_export, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Balance&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>LOGICAL, INTENT(OUT) :: changes&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_LB_Balance</b> is a wrapper around
+<b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+that excludes the part assignment results. <b>Zoltan_LB_Balance</b>
+assumes the number of parts is equal to the number of processors;
+thus, the part assignment is equivalent to the processor assignment.
+Results of the partitioning are returned in lists of objects to be imported
+and exported. These arrays are allocated in Zoltan; applications should
+not allocate these arrays before calling <b>Zoltan_LB_Balance</b>. The
+arrays are later freed through calls to <b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
+or
+<b><a href="#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>All arguments are analogous to those in <b><a href="#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
+Part-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and parts numbers are considered to
+be the same in <b>Zoltan_LB_Balance</b>.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_LB_Free_Data"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_LB_Free_Data</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>import_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>import_procs</i>,&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>export_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+*<i>export_local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int **<i>export_procs</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_LB_Free_Data</b>(<i>import_global_ids, import_local_ids,
+import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Free_Data&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_LB_Free_Data</b> frees the memory allocated
+by the Zoltan to return the results of <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+or
+<b><a href="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>.
+Memory pointed to by the arguments is freed and the arguments are set to
+NULL in C or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Data</b>.
+Note that this function does not destroy the Zoltan data structure itself;
+it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
+
+<td>The array containing the global IDs of objects imported to this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
+
+<td>The array containing the local IDs of objects imported to this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
+
+<td>The array containing the processor IDs of the processors that owned
+the imported objects in the previous decomposition (i.e., the source processors).</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids&nbsp;</i></td>
+
+<td>The array containing the global IDs of objects exported from this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
+
+<td>The array containing the local IDs of objects exported from this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
+
+<td>The array containing the processor IDs of processors that own the exported
+objects in the new decomposition (i.e., the destination processors).</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.&nbsp;</td>
+</tr>
+</table>
+<!-------------------------------------------------------------------------><!------------------------------------------------------------------------->
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_augment.html">Next:&nbsp;
+Functions for Augmenting a Decomposition</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous:&nbsp;
+Initialization Functions</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

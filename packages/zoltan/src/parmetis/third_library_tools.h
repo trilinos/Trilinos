@@ -1,0 +1,61 @@
+/*****************************************************************************
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+
+#ifndef __THIRD_LIBRARY_TOOLS_H
+#define __THIRD_LIBRARY_TOOLS_H
+
+#include <limits.h>
+#include "zoltan_comm.h"
+#include "third_library_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+/* Misc. local constants */
+#define CHUNKSIZE 20  /* Number of nodes to allocate in initial chunk. */
+#define REALLOC_FACTOR 1.5  /* Increase size by this factor if too small. */
+
+
+/* Macro for error handling */
+#define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
+
+
+/* Data structures used in ParMetis interface routines */
+/* An array of this data structure works with a parallel array of
+ * ZOLTAN_ID_PTR called proc_list_nbor containing the global IDs of the
+ * neighboring object.
+ * This separate array is needed to prevent individual mallocs of
+ * neighboring global IDs.
+ */
+struct Edge_Info {
+  ZOLTAN_ID_PTR my_gid;  /* Pointer to the Global id of local vtx */
+  int my_gno;        /* Global number of local vtx */
+  int nbor_proc;     /* Proc id for the neighboring proc */
+  int *adj;          /* Pointer to adjcny array */
+};
+
+struct Hash_Node {
+  ZOLTAN_ID_PTR gid;     /* Pointer to a Global id */
+  int gno;           /* Global number */
+  struct Hash_Node * next;
+};
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __THIRD_LIBRARY_TOOLS_H */

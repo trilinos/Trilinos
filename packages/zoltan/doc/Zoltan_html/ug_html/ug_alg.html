@@ -1,0 +1,296 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+
+   <title>Zoltan User's Guide:  Load-Balancing Algorithms and Parameters</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_simple.html">Next</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous</a></i></b></div>
+<!---------------------------------------------------------------------------->
+<h2>
+<a NAME="Algorithms"></a>Load-Balancing Algorithms and Parameters</h2>
+The following dynamic load-balancing algorithms are currently included
+in the Zoltan library:
+<blockquote>
+<br><a href="ug_alg_simple.html">Simple Partitioners for Testing</a>
+<blockquote>
+<a href="ug_alg_block.html">Block Partitioning (BLOCK)</a>
+<br><a href="ug_alg_cyclic.html">Cyclic Partitioning (CYCLIC)</a>
+<br><a href="ug_alg_random.html">Random Partitioning (RANDOM)</a>
+</blockquote>
+<a href="ug_alg_geom.html">Geometric (Coordinate-based) Partitioners</a>
+<blockquote>
+<a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a>
+<br><a href="ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a>
+<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve Partitioning (HSFC)</a>
+<br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a>
+<!----------
+<br><a href="ug_alg_oct.html">Octree/Space-Filling Curve (SFC) Partitioning (OCT)</a>
+----------->
+</blockquote>
+<a href="ug_alg_hypergraph.html">Hypergraph Partitioning, Repartitioning and Refinement (HYPERGRAPH)</a> 
+<blockquote>
+<a href="ug_alg_phg.html">PHG</a> 
+<br><a href="ug_alg_patoh.html">PaToH</a>
+</blockquote>
+<a href="ug_alg_graph.html">Graph Partitioning and Repartitioning (GRAPH)</a>
+<blockquote>
+<a href="ug_alg_phg.html">PHG</a> 
+<br><a href="ug_alg_parmetis.html">ParMETIS</a>
+<br><a href="ug_alg_ptscotch.html">Scotch</a>
+</blockquote>
+<a href="ug_alg_hier.html">Hybrid Hierarchical Partitioning (HIER)</a>
+
+</blockquote>
+The parenthetical string is the parameter value for <i><a href="#LB_METHOD">LB_METHOD</a></i>
+parameter; the parameter is set through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+<p>For further analysis and discussion of some of the algorithms, see [<a href="ug_refs.html#hendrickson-devine">Hendrickson
+and Devine</a>].
+<p><!---------------------------------------------------------------------------->
+<h3>
+<a NAME="LB Parameters"></a>
+<hr><b>Load-Balancing Parameters</b></h3>
+While the overall behavior of Zoltan is controlled by <a href="ug_param.html">general
+Zoltan parameters</a>, the behavior of each load-balancing method is controlled
+by parameters specific to partitioning which are also set by calls to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+Many of these parameters are specific to individual partitioning algorithms,
+and are listed in the descriptions of the individual algorithms.&nbsp;
+However, several have meaning across multiple partitioning algorithms.
+These load-balancing parameters are described below. Unless indicated otherwise,
+these parameters apply to both <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+and
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP>
+<td VALIGN=TOP><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="LB_METHOD"></a>&nbsp;&nbsp;&nbsp; <i>LB_METHOD</i></td>
+
+<td>The load-balancing algorithm used by Zoltan is specified by this parameter.
+Valid values are&nbsp;
+<blockquote>
+BLOCK (for <a href="ug_alg_block.html">block partitioning</a>),
+<br>RANDOM (for <a href="ug_alg_random.html">random partitioning</a>),
+<br>RCB (for <a href="ug_alg_rcb.html">recursive coordinate bisection</a>),
+<br>RIB (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
+<br>HSFC (for <a href="ug_alg_hsfc.html">Hilbert space-filling curve
+partitioning</a>),
+<br>REFTREE (for <a href="ug_alg_reftree.html">refinement tree based
+partitioning</a>)
+<br>GRAPH (to choose from collection of methods for <a href=ug_alg_graph.html>graphs</a>),
+<br>HYPERGRAPH (to choose from a collection of methods for <a href=ug_alg_hypergraph.html>hypergraphs</a>),
+<!--------------
+<br>OCTPART (for <a href="ug_alg_oct.html">octree partitioning</a>),
+---------------->
+<br>HIER (for hybrid <a href="ug_alg_hier.html">hierarchical partitioning</a>)
+<br>NONE (for no load balancing).</blockquote>
+</td>
+</tr>
+    <tr>
+      <td style="vertical-align: top;"><span style="font-style: italic;">&nbsp;&nbsp;&nbsp; <a name="LB_APPROACH"></a>LB_APPROACH</span><br>
+      </td>
+      <td style="vertical-align: top;">The desired load balancing
+approach.
+Only <i>LB_METHOD</i> = <a href="ug_alg_hypergraph.html">HYPERGRAPH</a> or
+<a href="ug_alg_graph.html">GRAPH</a> 
+uses the <i>LB_APPROACH</i> parameter.  Valid values are
+<blockquote>
+PARTITION (Partition "from scratch," not taking
+into account the current data distribution; this option is recommended
+for static load balancing.)<br>
+REPARTITION (Partition but take into account current data
+distribution to keep data migration low; this option is recommended for
+dynamic load balancing.)<br>
+REFINE (Quickly improve the current data
+distribution.)<br>
+</blockquote>
+      </td>
+    </tr>
+
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="NUM_GLOBAL_PARTS"></a>&nbsp;&nbsp;&nbsp; <i>NUM_GLOBAL_PARTS</i></td>
+
+<td>The total number of parts to be generated by a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
+Integer values greater than zero are accepted. Not valid for
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.&nbsp;</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="NUM_LOCAL_PARTS"></a>&nbsp;&nbsp;&nbsp; <i>NUM_LOCAL_PARTS</i></td>
+
+<td>The number of parts to be generated on this processor by a call
+to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
+Integer values greater than or equal to zero are accepted. Not valid for <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.&nbsp;
+If any processor sets this parameter, NUM_LOCAL_PARTS is assumed to be
+zero on processors not setting this parameter.  
+</td>  
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="RETURN_LISTS"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
+
+<td>The lists returned by calls to 
+<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+or
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.  Valid values are&nbsp;
+<blockquote>
+<br>"IMPORT",  to return only information about objects to
+be imported to a processor
+<br>"EXPORT", to return only information about
+objects to be exported from a processor
+<br>"ALL", or "IMPORT AND EXPORT" (or any string with both "IMPORT"
+and "EXPORT" in it) to return both import and export information
+<br> "PARTITION ASSIGNMENTS" (or any string with "PARTITION" in it)
+to return the new process and part
+assignment of every local object, including those not being
+exported.  
+<br>"NONE", to return neither import nor export information
+</blockquote>
+</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="REMAP"></a>&nbsp;&nbsp;&nbsp; <i>REMAP</i></td>
+
+<td>Within
+<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+or
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>,
+renumber parts to maximize overlap between the old decomposition and
+the new decomposition (to reduce data movement from old to new decompositions).
+Valid values are "0" (no remapping) or "1" (remapping). Part assignments from
+<a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a> or
+<a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> query functions
+can be used in remapping if provided; otherwise, processor numbers are used
+as part numbers.  Requests for remapping
+are ignored when, in the new decomposition, a part is spread across
+multiple processors or part sizes are specified using <a href="ug_interface_lb.html#Zoltan_LB_Set_Part_Sizes"><b>Zoltan_LB_Set_Part_Sizes</b>.</a></td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="IMBALANCE_TOL"></a>&nbsp;&nbsp;&nbsp; <i>IMBALANCE_TOL</i></td>
+
+<td>The amount of load imbalance the partitioning algorithm should deem
+acceptable. The load on each processor is computed as the sum of the weights
+of objects it is assigned. The imbalance is then computed as the maximum
+load divided by the average load. An value for <i>IMBALANCE_TOL</i> of
+1.2 indicates that 20% imbalance is OK; that is, the maximum over the average
+shouldn't exceed 1.2.&nbsp;</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="MIGRATE_ONLY_PROC_CHANGES"></a>&nbsp;&nbsp;&nbsp; <i>MIGRATE_ONLY_PROC_CHANGES</i></td>
+
+<td>If this value is set to TRUE (non-zero), Zoltan's migration functions will
+migrate only objects moving to new processors.  They will not migrate objects
+for which only the part number has changed; the objects' processor numbers
+must change as well.  If this value is set to FALSE (zero), Zoltan's migration
+functions will migrate all objects with new part or processor assignments.
+</td>
+</tr>
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="AUTO_MIGRATE"></a>&nbsp;&nbsp;&nbsp; <i>AUTO_MIGRATE</i></td>
+
+<td>If this value is set to TRUE (non-zero), Zoltan will automatically
+perform the data migration during calls to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+or
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
+A full discussion of automatic migration can be found in the description
+of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td VALIGN=TOP><a NAME="Default_Parameter_Values"></a><b>Default Values:</b></td>
+
+<td></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>LB_METHOD</i> = RCB</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>LB_APPROACH</i> = REPARTITION</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>NUM_GLOBAL_PARTS</i> = Number of processors specified in
+<b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>NUM_LOCAL_PARTS</i> = 1</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>RETURN_LISTS</i> = ALL</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>REMAP</i> = 1</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>IMBALANCE_TOL</i> = 1.1</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>MIGRATE_ONLY_PROC_CHANGES</i> = 1</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>AUTO_MIGRATE</i> = FALSE</td>
+</tr>
+</table>
+
+<p><!---------------------------------------------------------------------------->
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_simple.html">Next:&nbsp;
+Simple Partitioners for Testing</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous:&nbsp;
+Zoltan Parameters and Output Levels</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

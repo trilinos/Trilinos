@@ -1,0 +1,85 @@
+OSKI is a package used to perform optimized sparse matrix-vector operations.
+It provides both a statically tuned library created upon installation
+and dynamically tuned routines created at runtime.  
+OSKI provides support for single and double
+precision values of both real and complex types, along with indexing using both integer
+and long types.  When possible it follows the sparse BLAS standard \cite{IK:SBLAS}
+ as closely as possible in defining operations and functions.  
+
+Before a matrix can use OSKI functionality, it first must be converted to the matrix
+type \IKcompfont{oski\_matrix\_t}.  To store a matrix as an \IKcompfont{oski\_matrix\_t} object, a create function
+must be called on a CSR or CSC matrix.  An \IKcompfont{oski\_matrix\_t} object can either be created using
+a deep or shallow copy of the matrix.  When a shallow copy is created, the user must
+only make changes to the matrix's structure through the OSKI interface.  When a deep
+copy is created, the matrix that was passed in can be edited by the user as desired.
+OSKI automatically makes a deep copy when any matrix is tuned in a manner that changes its structure.
+
+\begin{table}[htbp] 
+\begin{center}
+\begin{tabular}{|l|l|}
+	\hline
+Routine & Calculation  \\
+	\hline
+Matrix-Vector Multiply   & $y = \alpha Ax + \beta y$ or  \\
+ & $y = \alpha A^Tx + \beta y$ \\ \hline
+Triangular Solve   & $x = \alpha A^{-1}x$ or \\
+ & $x = \alpha {A^T}^{-1}x$\\ \hline
+Matrix Transpose Matrix-Vector Multiply & $y = \alpha A^TAx + \beta y$ or \\
+ & $y = \alpha AA^Tx + \beta y$ \\ \hline
+Matrix Power Vector Multiply  & $y = \alpha A^px + \beta y$ or \\
+ & $y = \alpha {A^T}^px + \beta y$\\ \hline
+Matrix-Vector Multiply and & $y = \alpha Ax + \beta y$ and \\ 
+Matrix Transpose Vector Multiply & $z = \omega Aw + \zeta z$ or \\
+ & $z = \omega A^Tw + \zeta z$ \\
+	\hline
+\end{tabular}
+\caption{Computational kernels from OSKI available in Epetra.}
+\label{IK:fig:oskikernels}
+\end{center}
+\end{table}
+
+OSKI provides five matrix-vector operations to the user.  The operations are
+shown in Table \ref{IK:fig:oskikernels}.  Hermitian operations are available in OSKI,
+but are not shown in the table since Epetra does not include Hermitian functionality.  The last three
+kernels are composed operations using loop fusion \cite{IK:loopfussion} to increase data reuse.
+To further improve performance, OSKI can link to a highly tuned BLAS library.
+
+OSKI creates optimized routines for the target machine's hardware
+based on empirical search, in the same manner as ATLAS \cite{IK:ATLAS} and PHiPAC \cite{IK:PHiPAC}.  The goal of the
+search is create efficient static kernels to perform the operations listed in Table \ref{IK:fig:oskikernels}.
+The static kernels then become the defaults that are called by OSKI when runtime
+tuning is not used.  Static tuning can create efficient kernels for a
+given data structure.
+To use the most efficient kernel, the matrix data structure may need to be reorganized.
+
+When an operation is called enough times to amortize the cost of rearranging the
+data structure, runtime tuning can be more profitable than using statically tuned
+functions.  OSKI provides multiple ways to invoke runtime tuning, along with multiple
+levels of tuning.  A user can explicitly ask for a matrix to always be tuned for a specific
+kernel by selecting either the moderate or aggressive tuning option.  If the user wishes for OSKI to 
+decide whether enough calls to a function occur to justify tuning, hints can be used.
+Possible hints include telling OSKI the number of calls expected to the routine and information
+about the matrix, such as block structure or symmetry.  In either
+case, OSKI tunes the matrix either according to the
+user's requested tuning level, or whether it expects to be able to
+amortize the cost of tuning if hints are provided.  Instead of providing hints the user may,
+periodically call the tune function.  In this case, the tune function predicts
+the number of future kernel calls based on past history, and tunes the routine only
+if it expects the tuning cost to be recovered via future routine calls.
+
+OSKI can also save tuning transformations for later reuse.  Thus, the cost of tuning searches can be
+amortized over future runs.  Specifically, a search for the best tuning options does not need to be
+run again, and only the prescribed transformations need to be applied.  
+
+OSKI is under active development.  As of this writing, the current version is 1.0.1h,
+with a multi-core version under development \cite{IK:Vuduc-convo}.
+While OSKI provides many optimized sparse matrix kernels,
+some features have yet to be implemented, and certain optimizations are missing.
+OSKI is lacking multi-vector kernels and stock versions of the composed kernels.
+These would greatly add to both OSKI's usability and performance.
+The Matrix Power Vector Multiply is not functional.
+Finally, OSKI cannot transform (nearly) symmetric matrices to reduce storage or
+convert from a CSR to a CSC matrix (or vice versa).  Both could
+provide significant memory savings.
+Thus, performance gains from runtime tuning should not be expected for point matrices.
+An exception is pseudo-random matrices, which may benefit from cache blocking.

@@ -1,0 +1,170 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# Portions of this software and documentation are a contribution of NIST     #
+# and not subject to copyright in the United States.                         #
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+Contacts:
+
+  Karen Devine (or Erik Boman)
+  Discrete Algorithms and Math Dept.
+  Sandia National Laboratories
+  P.O. Box 5800
+  Albuquerque, NM  87185-1111
+
+  kddevin@sandia.gov (egboman@sandia.gov)
+##############################################################################
+
+License:
+
+Zoltan is released under the GNU Lesser General Public License.  A 
+copy of the license is included in this distribution.  Contact one 
+of the developers listed above for more information.
+
+##############################################################################
+
+Important Notice:
+
+Neither Sandia, the government, the DOE, nor any of their employees, makes
+any warranty, express or implied, or assumes any legal liability or
+responsibility for the accuracy, completeness, or usefulness of any
+information, apparatus, product, or process disclosed, or represents that
+its use would not infringe privately owned rights. This information is made
+available on an "AS-IS" basis.
+ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+EXCLUDED HEREUNDER.
+Neither Sandia nor the Government, nor their agents, officers and employees
+shall be liable for any loss, damage (including, incidental, consequential
+and special), injury or other casualty of whatsoever kind, or by whomsoever
+caused, to the person or property of anyone arising out of or resulting from
+this information, or the accuracy and validity of this information. 
+
+##############################################################################
+
+QUICK INSTALLATION
+
+In order to build Zoltan, you must do the following steps:
+
+1) Go to Utilities/Config and find a configuration file Config.<platform>
+   that is similar to your platform, for example, gcc, solaris, dec, or tflop.
+   Edit the paths as appropriate for your system. Zoltan can be
+   configured with several optional third-party libraries,
+   like ParMetis. Simply comment out PARMETIS_LIBPATH if you don't 
+   have or need ParMetis, for example. Use Config.generic if you 
+   can't find anything better, or if you prefer a minimal installation. 
+
+2) Go back to the Zoltan root directory and type
+
+      gmake ZOLTAN_ARCH=<platform> zoltan
+
+   where <platform> is your platform. You may simply type "gmake zoltan" 
+   if you are using the generic platform.
+
+3) The Zoltan library is now located in Zoltan/Obj_<platform> as libzoltan.a.
+   You will also need the libraries libzoltan_comm.a and libzoltan_mem.a.
+
+It is strongly recommended that you read the more detailed installation 
+instructions in the Zoltan User's Guide, which can be found at
+Zoltan/docs/Zoltan_html/ug_html/ug.html (HTML) or at
+Zoltan/docs/Zoltan_pdf/ug.pdf (pdf).
+
+##############################################################################
+
+Top-Level Zoltan Library Directory
+
+
+DOCUMENTATION
+-------------
+docs                               -- Documentation for the Zoltan library.
+docs/Zoltan_html/Zoltan.html       -- Zoltan Home Page.
+docs/Zoltan_html/ug_html/ug.html   -- Zoltan User's Guide (in HTML).
+docs/Zoltan_html/dev_html/dev.html -- Zoltan Developer's Guide (in HTML).
+docs/Zoltan_pdf/ug.pdf             -- Zoltan User's Guide (in pdf).
+docs/Zoltan_pdf/dev.pdf            -- Zoltan Developer's Guide (in pdf).
+docs/octree                        -- Documentation for RPI's 
+                                      octree/SFC partitioner. 
+
+ZOLTAN LIBRARY FILES
+--------------------
+
+makefile        -- Top-level Zoltan makefile.  
+
+makefile_sub    -- Lower-level makefile template.  Copied to Obj_target
+                   directories when targets are compiled.
+
+all             -- Memory allocation functions.
+
+coloring        -- Graph coloring routines.
+
+fort            -- William Mitchell's Fortran interface for Zoltan.
+
+ha 		-- Support for heterogeneous architectures (under development).
+
+include         -- include files for apps calling Zoltan
+
+lb              -- Interface definitions, user data type definitions,
+                   load-balancing data structure definitions, interface
+                   functions, and functions related to the load-balancing
+                   interface and migration-help tools.
+
+oct             -- RPI's octree partitioning and space-filling curves 
+                   algorithms.
+
+par             -- Parallel computing utilities.
+
+params		-- Parameter setting routines.
+
+parmetis	-- Routines to interface to ParMETIS and Jostle libraries.
+
+phg             -- Parallel hypergraph partitioning.
+
+rcb             -- Recursive Coordinate Bisection and Recursive Inertial 
+                   Bisection algorithms.
+
+reftree         -- Refinement Tree grid partitioning algorithm.
+
+timer		-- Timer routines.
+
+Utilities 	-- Zoltan utilities, including the memory management and
+		   unstructured communication packages.  Also includes
+		   shared configuration files for Zoltan compilation.
+
+zz              -- Zoltan infrastructure code, used many places.
+
+
+OTHER CODE (not compiled into the Zoltan library)
+-------------------------------------------------
+
+driver          -- Driver programs zdrive and zCPPdrive that read exodus/nemesis 
+                   files, run Zoltan and then write out the new assignment vectors.
+                   These programs are compiled by making zdrive or zCPPdrive target.
+
+ch              -- Routines developed by Hendrickson and Leland to read Chaco
+                   input files and build graphs in the zdrive program.
+
+examples        -- A directory containing very simple C and C++ applications 
+
+fdriver         -- Fortran version of driver, primarily used for testing
+                   the Fortran interface.
+
+ZoltanComponent -- A CCA wrapper around the zoltan library. making it a 
+		   CCA component of the classic kind.
+
+OTHER DIRECTORIES
+-----------------
+
+test		-- Test problems in both Nemesis/Exodus and Chaco formats.
+                   Also contains the script test_zoltan that runs the test 
+                   driver with all the test problems.
+
+util		-- Utility scripts and a graphical partition viewer vtk_view
+
+

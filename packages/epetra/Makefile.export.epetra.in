@@ -1,0 +1,15 @@
+
+# Optional dependence on teuchos
+@ENABLE_EPETRA_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
+_EPETRA_INCLUDES = \
+	-I@abs_top_srcdir@/src \
+	-I@abs_top_builddir@/src \
+	$(TEUCHOS_INCLUDES)
+
+_EPETRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lepetra $(TEUCHOS_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+
+@USING_GNUMAKE_TRUE@EPETRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_EPETRA_INCLUDES))
+@USING_GNUMAKE_TRUE@EPETRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_EPETRA_LIBS))
+@USING_GNUMAKE_FALSE@EPETRA_INCLUDES = $(_EPETRA_INCLUDES)
+@USING_GNUMAKE_FALSE@EPETRA_LIBS     = $(_EPETRA_LIBS)

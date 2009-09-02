@@ -1,0 +1,43 @@
+#!/bin/sh
+# Used on gabriel.sandia.gov with gcc 3.4.6
+rm config.cache
+$HOME/PROJECTS/Trilinos.base/Trilinos/configure \
+--cache-file=config.cache \
+--with-install="/usr/bin/install -p" \
+--enable-mpi \
+--with-mpi-libs="-L/usr/local/mpi/lib -lmpi" \
+--with-libs="-L$HOME/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/HSL -lHSL" \
+CC=/usr/local/mpi/bin/mpicc \
+CXX=/usr/local/mpi/bin/mpiCC \
+F77=/usr/local/mpi/bin/mpif77 \
+CXXFLAGS="-O3 -ansi -Wall" \
+CFLAGS="-O3 -ansi -Wall -fexceptions" \
+FFLAGS="-O5 " \
+FLIBS="-lg2c" \
+--enable-export-makefiles \
+--with-gnumake \
+--disable-default-packages \
+--enable-teuchos --enable-teuchos-extended --disable-teuchos-blasfloat \
+ --enable-teuchos-dotcheck --enable-teuchos-long_long \
+--enable-sacado \
+--enable-thyra \
+--enable-tpetra \
+--enable-epetra \
+--enable-epetraext \
+--enable-amesos \
+--enable-aztecoo \
+--enable-belos \
+--enable-ifpack \
+--enable-ml \
+--enable-anasazi \
+--enable-meros \
+--enable-nox --enable-nox-epetra --enable-nox-epetraext \
+--enable-stratimikos \
+--enable-rythmos \
+--enable-moocho \
+--enable-sundance \
+--with-trilinosdatadir=/home/rabartl/PROJECTS/Trilinos.base/TrilinosData \
+--prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.6/dev/mpi/opt
+
+# 2008/11/13: Intrepid is not even configuring
+#--enable-intrepid \

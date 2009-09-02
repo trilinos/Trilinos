@@ -1,0 +1,11 @@
+interface LB_Set_Child_Weight_Fn
+   module procedure LBf90_Set_Child_Weight_Fn0s
+   module procedure LBf90_Set_Child_Weight_Fn1s
+   module procedure LBf90_Set_Child_Weight_Fn2s
+   module procedure LBf90_Set_Child_Weight_Fn3s
+   module procedure LBf90_Set_Child_Weight_Fn8s
+   module procedure LBf90_Set_Child_Weight_Fn9s
+   module procedure LBf90_Set_Child_Weight_FnAs
+   module procedure LBf90_Set_Child_Weight_FnBs
+end interface
+

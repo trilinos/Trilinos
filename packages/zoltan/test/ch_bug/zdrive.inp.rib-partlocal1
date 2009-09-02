@@ -1,0 +1,7 @@
+Decomposition Method 	= rib
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters       = comm_weight_dim=1
+File Type		= Chaco
+File Name		= bug
+Parallel Disk Info	= number=0
+test local partitions	= 1

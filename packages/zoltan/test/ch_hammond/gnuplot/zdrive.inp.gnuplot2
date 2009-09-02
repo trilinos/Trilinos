@@ -1,0 +1,11 @@
+Decomposition Method 	= graph
+Zoltan Parameters	= num_global_partitions=4
+#Zoltan Parameters       = graph_package=parmetis
+Zoltan Parameters       = lb_approach=partition
+File Type		= Chaco
+File Name		= hammond
+Parallel Disk Info	= number=0
+Test null export lists  = 1
+gnuplot output = 2
+plot partitions = 1
+

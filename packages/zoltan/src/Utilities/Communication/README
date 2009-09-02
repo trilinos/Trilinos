@@ -1,0 +1,45 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+COMM DIRECTORY -- Package to efficiently perform unstructured communication
+		  operations.  The same pattern can be created once and
+		  used repeatedly.
+--------------------------------------------------------------------------------
+
+comm_const.h   -- Comm_Obj data structure definition and prototypes for 
+                  communication package functions.
+
+comm_main.c    -- Main routine to test the communication library.
+
+comm_create.c  -- Routine to create communication object.  
+
+comm_destroy.c -- Free the space allocated for a communication object.
+
+comm_resize.c  -- This routine allows the user to describe variable sizes
+		  for the objects to be communicated.
+
+comm_exchange_sizes.c -- When objects are being resized, this updates the
+		  receiving processors' knowledge of message sizes.
+
+comm_do.c      -- Routine that uses communication object to actually perform
+		  unstructured communication.
+
+comm_do_reverse.c -- This routine performs the inverse communication of the
+		  operation described in a communication object.
+
+comm_invert_map.c -- Given a set of messages to send, determine the
+		  corresponding set of recieves for each processor
+		  (or vice versa).
+
+comm_sort_ints.c -- Version of quicksort which is used in comm routines.

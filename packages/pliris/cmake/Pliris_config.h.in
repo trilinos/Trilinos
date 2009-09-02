@@ -1,0 +1,40 @@
+/* src/Pliris_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if you want to build export makefiles. */
+#cmakedefine HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#cmakedefine HAVE_GNUMAKE
+
+/* Define if want to build with epetra enabled */
+#cmakedefine HAVE_HAVE_EPETRA
+
+/* Define if want to build libcheck */
+#cmakedefine HAVE_LIBCHECK
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build pliris-tests */
+#cmakedefine HAVE_PLIRIS_TESTS
+
+/* Define to 1 if you have the <string> header file. */
+#cmakedefine HAVE_STRING
+
+/* Define to 1 if you have the <strings.h> header file. */
+#cmakedefine HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#cmakedefine HAVE_STRING_H
+
+/* Define if want to build tests */
+#cmakedefine HAVE_TESTS
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#cmakedefine inline
+#endif
+
+/* Define to rpl_malloc if the replacement function should be used. */
+#cmakedefine malloc

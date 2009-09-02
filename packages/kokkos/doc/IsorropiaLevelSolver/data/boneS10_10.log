@@ -1,0 +1,58 @@
+Reading MatrixMarket file /home/cgbaker/Matrices/boneS10.mtx
+1M 2M 3M 4M 5M 6M 7M 8M 9M 10M 11M 12M 13M 14M 15M 16M 17M 18M 19M 20M 21M 22M 23M 24M 25M 26M 27M 28M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  17.493
+
+*** Matrix statistics: /home/cgbaker/Matrices/boneS10.mtx
+Number of rows: 914898
+Number of non-zeros: 28191660
+Mean number of non-zeros per row: 30.8
+Std dev number of non-zeros per row: 11.32
+
+LevelSolver::Analyze() time: 1.81
+LevelSolver::Setup() time: 1.32
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 2367
+Mean level size: 386.52
+Std dev level size: 275.99
+Mean level nnz: 11528.64
+Std dev level nnz: 5659.32
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.32e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.49e-16
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.43e-16
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.26e-16
+
+*** Timings over 10 trials
+LevelSolver  solve,  1 threads,    1.25e+00 total,    1.25e-01 average
+LevelSolver  apply,  1 threads,    1.26e+00 total,    1.26e-01 average
+K::CrsMatrix apply,  1 threads,    1.21e+00 total,    1.21e-01 average
+LevelSolver  solve,  2 threads,    2.38e+00 total,    2.38e-01 average
+LevelSolver  apply,  2 threads,    2.39e+00 total,    2.39e-01 average
+K::CrsMatrix apply,  2 threads,    1.10e+00 total,    1.10e-01 average
+LevelSolver  solve,  4 threads,    1.87e+00 total,    1.87e-01 average
+LevelSolver  apply,  4 threads,    1.89e+00 total,    1.89e-01 average
+K::CrsMatrix apply,  4 threads,    5.61e-01 total,    5.61e-02 average
+LevelSolver  solve,  8 threads,    2.55e+00 total,    2.55e-01 average
+LevelSolver  apply,  8 threads,    2.36e+00 total,    2.36e-01 average
+K::CrsMatrix apply,  8 threads,    5.52e-01 total,    5.52e-02 average
+Epetra_CrsMatrix solve,            1.19e+00 total,    1.19e-01 average
+Epetra_CrsMatrix apply,            1.22e+00 total,    1.22e-01 average

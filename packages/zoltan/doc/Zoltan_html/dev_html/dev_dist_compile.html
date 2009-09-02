@@ -1,0 +1,68 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Compilation</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_lb.html">Next</a>&nbsp; |&nbsp; <a href="dev_dist_dir.html">Previous</a></i></b></div>
+
+
+<h2>
+<a NAME="compilation"></a>Compilation and Makefiles</h2>
+The Zoltan distribution includes a main (top-level) makefile with targets
+for the Zoltan library, the test driver programs, and some graphical tools. 
+When the library is
+<a href="../ug_html/ug_usage.html#Building the Library">compiled for a specific target platform</a>, <i>A</i>, the top-level makefile
+obtains platform-specific values for platform <i>A</i> from the configuration
+file <i>Utilities/Config/Config.A</i>.&nbsp; This file should
+be edited to reflect the environment of the target platform <i>A</i>.&nbsp;
+A subdirectory, <i>Obj_A</i>, is created, and makefile_sub is copied into
+that directory for use by gmake.
+<p>
+New source code files are added to the Zoltan makefiles in two ways.  
+Files added to
+existing directories are added to the source files listed in the
+"<i>&lt;directory_name&gt;</i>_CSRC" and "<i>&lt;directory_name&gt;</i>_INC" 
+variables in <i>zoltan/src/makefile</i>, where <i>&lt;directory_name&gt;</i> 
+corresponds to the existing Zoltan directory name; the files will then 
+be included in the compilation of Zoltan.  
+For new source code files in new directories, new variables 
+"<i>&lt;directory_name&gt;</i>_CSRC" and "<i>&lt;directory_name&gt;</i>_INC"
+should be added to <i>zoltan/src/makefile</i>.  These variables should also
+be included in the "ZOLTAN_CSRC" variable and in the zscript target.
+The variables "ALL_CSRC" and "ALL_INC" can be used as examples.
+<p>
+New algorithms can be added as separate libraries with which Zoltan may link.  
+The implementation of the <a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a>
+interface in Zoltan can serve as an example.  Within the 
+<i>Utilities/Config</i> files, pathnames for the new libraries and their 
+include files can be specified.  Within <i>zoltan/src/makefile</i>, tests 
+should be added for the definition of these paths.  If they are defined,
+appropriate information should be added to the THIRD_PARTY_LIBS,
+THIRD_PARTY_LIBPATH, and THIRD_PARTY_INCPATH variables in <i>zoltan/src/makefile</i>.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_lb.html">Next:&nbsp;
+Zoltan Interface and Data Structures</a>&nbsp; |&nbsp; <a href="dev_dist_dir.html">Previous:&nbsp;
+Layout of Directories</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

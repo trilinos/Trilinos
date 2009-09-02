@@ -1,0 +1,34 @@
+
+**************************************************************************
+2008.03 Testing ideas for VM
+**************************************************************************
+
+Template Temaplate parameters for the Array type will not work.  Teh reason is that in a template template, you are not allowed to have default template arguments.  std::vector has two arguments - a type and an allocator while Teuchos::Array only has one argument - the type.  We could modify Teuchos::Array, but what happens when we want to change the Array to a TEuchos::ArrayView?  A second template argument doesn't make sense.  I think we will wrap the array type into the DataType.  Another idea is to make the ArrayType a macro argument.  I don't like this idea.
+
+**************************************************************************
+2008.04.08 - Copper Mountain, meeting with Kevin Long
+**************************************************************************
+
+1. Sundance doesn't use blas everywhere.  Only get benefits for level 3.  For vector operations - level 1 - don't bother.  Two places where blas/lapack are useful:
+
+- The quadrature integration. - level 3 blas operation
+- The inversion of the jacobian transform matrix - use lapack dgemm.
+
+2. Must use blocks of elements!  The overhead of a function calls is very imporatant.
+
+3. Sundance does not use AD.  The symbolic parser determines the tree operations for the JAcobian evaluation independently.  Kevin has never thought about how to incorporate AD into blas/lapack calls.  No ideas at this point.
+
+4. Sundance does allocate storage for each intermediate variable in tree (just like charon).  Vector are size of #cells * #qp/cell.
+
+5. Cache sizes are so big today, can probably run with 1000 cells.  Single cell allocation like in Charon and Aria is probably not needed anymore.
+
+6. Sundance drops everything to scalar values.  Doesn't use vector or tensor objects in any calculations.
+
+**************************************************************************
+2008.04 Nevada vector/tensor object evaluation
+**************************************************************************
+
+- Nevada's vector and tensor object that we templated are horrible.  They do the absolute worst kind of operator overloading.  We lose 15% of our evaluation time using the their vector tensor object.  We should switch to tvmet so that expression templates are used to speed up the code.
+
+**************************************************************************
+**************************************************************************

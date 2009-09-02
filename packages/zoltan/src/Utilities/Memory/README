@@ -1,0 +1,32 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+MEMORY UTILITIES   -- Routines for memory allocation and deallocation.
+----------------------------------------------------------------
+
+Files compiled into Zoltan:
+
+zoltan_mem.h       -- Prototypes for memory allocation and deallocation
+                      routines in mem.c.  Definition of Zoltan_MALLOC.
+
+mem.c              -- Memory allocation routines Zoltan_Array_Alloc and 
+                      Zoltan_Malloc.
+                      Memory deallocation routine Zoltan_Free.
+		      Parameter setting routing Zoltan_Set_Malloc_Param.
+
+----------------------------------------------------------------
+
+Memory test program
+
+mem_main.c	   -- Stub for a driver program.

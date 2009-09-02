@@ -1,0 +1,15 @@
+#
+#  This script builds amesos on Atlantis with only those packages that it needs.
+#
+../configure  \
+--with-cflags=-64 --with-fflags=-64 \
+--with-cxxflags="-64 -LANG:std  -LANG:ansi-for-init-scope=ON  -ptused -DMPI_NO_CPPBIND" \
+--enable-referencey12m LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 " \
+--with-libdirs="-L/scratch1/ksstanl/Trilinos/lib/SGI64.MPI/" \
+--disable-dependency-tracking --enable-epetra --disable-nox --disable-tsf \
+--disable-komplex --enable-aztecoo --disable-ifpack --enable-triutils \
+--disable-epetraext --enable-amesos --enable-amesos-slud \
+--disable-new_package  --with-trilinos3pldir=/scratch1/ksstanl/Trilinos3PL \
+--enable-mpi --with-mpi-libs=-lmpi
+
+

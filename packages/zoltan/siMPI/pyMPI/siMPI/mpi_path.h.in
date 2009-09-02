@@ -1,0 +1,19 @@
+/**-*-c-*-*****************************************************************/
+/* FILE   **************       mpi_path.h.in       ************************/
+/**************************************************************************/
+/* Author: Patrick Miller July 15 2002					  */
+/* Copyright (C) 2002 University of California Regents			  */
+/**************************************************************************/
+/*  */
+/**************************************************************************/
+
+#ifndef MPI_PATH_H
+#define MPI_PATH_H
+
+#define F77PATH "@F77@"
+#define CCPATH "@CC@"
+#define IFLAG "-I@prefix@/include"
+#define LFLAG "-L@prefix@/lib"
+#define LPATH "@prefix@/lib/libmpi.a"
+
+#endif

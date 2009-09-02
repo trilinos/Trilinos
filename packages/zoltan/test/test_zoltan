@@ -1,0 +1,1184 @@
+#!/bin/csh -f
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      #
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+#
+# This C-shell script runs all the test examples
+# and compares the results against pre-computed results.
+#
+# Usage: test_zoltan [-arch arch-type] [-cmd command]
+#
+# where arch-type is one of {generic, solaris, gcc, gcc64, linux, linux64,
+# tflop, cplant, dec, sgi32, sgi64}.
+# Alternatively, give a run command with the -cmd option.
+#
+
+# Chaco problems to run
+set ch_name  = (simple nograph vwgt ewgt bug degenerate degenerateAA onedbug grid20x19 hammond)
+set ch_nproc = (4 4 3 4 3 6 6 3 5 8) # no. of procs
+
+# Nemesis problems to run
+set nem_name = (ti_4k)
+set nem_nproc = (9) # no. of procs
+set nem_pdisk = (2) # parallel disk info
+
+# Hypergraph problems, methods and sizes.  If you add tests here, you
+# may also want to update the hg_* values in the "yes_serial" case.
+set hg_name  = (simple vwgt ewgt nograph felix diag500_4 ibm03 cage10 ml27)
+set hg_nproc = ( 4      4    4    3       5       4        9     11  27)
+
+# Set default options
+set out_tag = out
+set logfile = test_zoltan.log
+set answers = answers
+set outdir = output
+unset run
+unset arch
+
+# Check for environment variables.
+# They all start with ZOLTAN_ to avoid namespace pollution in the shell.
+if ($?ZOLTAN_ARCH) then
+   set arch = $ZOLTAN_ARCH
+endif
+
+set no_chaco = $?ZOLTAN_NO_CHACO
+set no_rcb = $?ZOLTAN_NO_RCB
+set no_rib = $?ZOLTAN_NO_RIB
+set no_hsfc = $?ZOLTAN_NO_HSFC
+set no_oct = $?ZOLTAN_NO_OCT
+set no_parmetis = $?ZOLTAN_NO_PARMETIS
+set no_scotch = $?ZOLTAN_NO_SCOTCH
+set no_order = $?ZOLTAN_NO_ORDER
+set no_color = $?ZOLTAN_NO_COLOR
+set no_reftree = $?ZOLTAN_NO_REFTREE
+set no_hg = $?ZOLTAN_NO_HG
+set yes_nemesis = $?ZOLTAN_YES_NEMESIS
+set yes_jostle = $?ZOLTAN_YES_JOSTLE
+set yes_fortran = $?ZOLTAN_YES_FORTRAN
+set yes_cpp = $?ZOLTAN_YES_CPP
+set yes_serial = $?ZOLTAN_YES_SERIAL
+set old_interface = $?ZOLTAN_OLD_INTERFACE
+set no_hier = $?ZOLTAN_NO_HIER
+set yes_drum = $?ZOLTAN_YES_DRUM
+
+# Parse command-line options.
+# These options will override the environment variables.
+
+while ( $#argv )
+
+  if ( ("$1" == "-h") || ("$1" == "-help") ) then
+     goto usage
+  else if ( "$1" == "-no_chaco" ) then
+     @ no_chaco = 1
+  else if ( "$1" == "-no_rcb" ) then
+     @ no_rcb = 1
+  else if ( "$1" == "-no_rib" ) then
+     @ no_rib = 1
+  else if ( "$1" == "-no_hsfc" ) then
+     @ no_hsfc = 1
+  else if ( "$1" == "-no_oct" ) then
+     @ no_oct = 1
+  else if ( "$1" == "-no_parmetis" ) then
+     @ no_parmetis = 1
+  else if ( "$1" == "-no_scotch" ) then
+     @ no_scotch = 1
+  else if ( "$1" == "-no_reftree" ) then
+     @ no_reftree = 1
+  else if ( "$1" == "-no_hg" ) then
+     @ no_hg = 1
+  else if ( "$1" == "-no_order" ) then
+     @ no_order = 1
+  else if ( "$1" == "-no_color" ) then
+     @ no_color = 1
+  else if ( "$1" == "-yes_nemesis" ) then
+     @ yes_nemesis = 1
+  else if ( "$1" == "-yes_jostle" ) then
+     @ yes_jostle = 1
+  else if ( "$1" == "-yes_fortran" ) then
+     @ yes_fortran = 1
+  else if ( "$1" == "-yes_cpp" ) then
+     @ yes_cpp = 1
+  else if ( "$1" == "-yes_serial" ) then
+     @ yes_serial = 1
+     @ no_hg = 1
+     @ yes_nemesis = 0   # Nemesis input files require multiple processors
+  else if ( "$1" == "-yes_nemesis" ) then
+     @ yes_nemesis = 1
+  else if ( "$1" == "-no_hier" ) then
+     @ no_hier = 1
+  else if ( "$1" == "-yes_drum" ) then
+     @ yes_drum = 1
+  else if ( "$1" == "-old_interface" ) then
+     @ old_interface = 1
+  else if ( "$1" == "-logfile" || "$1" == "-log" ) then
+
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for $1"
+      goto usage
+    endif
+
+    shift argv
+    set logfile = "$1"
+
+  else if ( "$1" == "-arch" ) then
+
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for -arch"
+      goto usage
+    endif
+
+    shift argv
+    set arch = "$1"
+
+  else if ( "$1" == "-cmd" ) then
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for -cmd"
+      goto usage
+    endif
+
+    shift argv
+    set run = "$1"
+
+  else if ( "$1" == "-exe" ) then
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for -exe"
+      goto usage
+    endif
+
+    shift argv
+    set zdrive = "$1"
+
+  endif
+
+  shift argv
+
+end # while ( $#argv )
+
+set ch_methods = ( )
+if ( $yes_serial ) then
+  set ch_nproc = (1 1 1 1 1 1 1 1 1 1 1) # no. of procs
+
+  set ch_methods = ($ch_methods patoh.felix patoh.vwgt phg.felix phg.vwgt)
+  set ch_name  = ($ch_name serial )
+  set ch_nproc = ($ch_nproc 1 )
+endif
+
+# zfdrive can only handle plain MatrixMarket format, so run only these
+if ( $yes_fortran ) then
+  set hg_name  = (diag500_4 cage10 )
+  set hg_nproc = (  4       11     )
+endif
+
+# Determine what command to use to launch a parallel program based on $arch
+if (! $?run ) then
+  if ( $?arch ) then
+    switch ( $arch )
+    case solaris:
+    case sun:
+    case sgi32:
+    case sgi64:
+      set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
+      breaksw
+    case mac64_siMPI:
+      set run = ""
+      breaksw
+    case bandito:
+      set run = "/opt/mpich-intel/bin/mpirun -np"
+      breaksw
+    case gcc_siMPI:
+      set run = "../../../siMPI/Obj_gcc_siMPI/mpirun -np "
+      breaksw
+    case mpi125:
+      set run = "/Net/local/proj/zoltan/arch/solaris-mpi125/mpich-1.2.5/bin/mpirun -np"
+      breaksw
+    case gcc64:
+      set run = "mpirun -np"
+      breaksw
+    case tflop:
+      set run = "yod -proc 3 -sz"
+      breaksw
+    case cplant:
+      set run = "yod -sz"
+      breaksw
+    case stratus:
+    case stratus_siMPI:
+      set run = "prun -n"
+      breaksw
+    case dec:
+      set run = "dmpirun -np"
+      breaksw
+    case generic:
+    case gcc:
+    case gccP3:
+    case g++:
+    case linux:
+    case mac:
+    case mac32:
+    case mac64:
+    case purecov:
+    case pure:
+      set run = "mpirun -np"
+      breaksw
+    case linux64:
+    case linux64pure:
+      set run = "mpirun --mca mpi_yield_when_idle 1 -np"
+      breaksw
+    case linux64lam:
+    case linux64lampure:
+    case linux64lamcov:
+      set run = "/opt/lam/bin/mpirun -np"
+      breaksw
+    case qed:
+      set run = "mpiexec -comm mpich-p4 -n "
+      set suffix = "linux"
+      breaksw
+    case sadl14088:
+      set run = "mpiexec -np "
+      breaksw
+    case liberty:
+    case icc:
+      set run = "mpiexec -n "
+      set suffix = "linux"
+      breaksw
+    default:
+      echo "Unknown arch type. Please use -cmd to specify the run command."
+      exit -2
+      breaksw
+    endsw
+  else # !$?run and !$?arch
+    echo "Error: No run command. Either -arch or -cmd must be specified."
+    goto usage
+  endif
+endif
+
+if ( $yes_serial ) then
+  # No mpirun in serial case.
+  unset run
+endif
+
+# suffix for special answer files
+if (! ${?suffix}) then
+   set suffix=${arch}
+endif
+
+# Fortran?
+#if ( $yes_fortran ) then
+#   set out_tag = fout
+#endif
+
+# Old interface?
+if ( $old_interface) then
+   set no_reftree = 1
+endif
+
+
+# Find the right zdrive to run
+@ found = 0
+if ( $yes_fortran ) then
+# Using F90
+  if (! $?zdrive ) then
+    set zdrive = zfdrive
+  endif
+  if ( $?arch ) then
+    set zdrives = ( $zdrive `pwd`/../src/Obj_${arch}/zfdrive )
+  else
+    set zdrives = $zdrive
+  endif
+else if ( $yes_cpp ) then
+# Using C++
+  if (! $?zdrive ) then
+    set zdrive = zCPPdrive
+  endif
+  if ( $?arch ) then
+    set zdrives = ( $zdrive `pwd`/../src/Obj_${arch}/zCPPdrive )
+  else
+    set zdrives = $zdrive
+  endif
+else
+# Using C
+  if (! $?zdrive ) then
+    set zdrive = zdrive
+  endif
+  if ( $?arch ) then
+    set zdrives = ( $zdrive `pwd`/../src/Obj_${arch}/zdrive )
+  else
+    set zdrives = $zdrive
+  endif
+endif
+foreach zdrive ($zdrives)
+  if ( -x $zdrive ) then
+    echo "Found zdrive = $zdrive "
+    @ found = 1
+    break
+  endif
+end
+
+if (! $found) then
+  echo "Error: Could not find zdrive executable"
+  exit -3
+endif
+
+# Initially, only the most basic methods are active
+if (! $yes_serial) then
+  set ch_methods = ( $ch_methods block block-partless block-partmore \
+		     random random-partless random-partmore)
+endif
+set nem_methods = ( )
+if (! $yes_fortran && ! $yes_serial) then
+  set ch_methods = ( $ch_methods block-oneproc random-oneproc )
+endif
+
+# Determine ParMETIS version, if any
+if ( $no_parmetis ) then
+  @ pmversion = 0
+else
+    @ pmversion = 3
+endif
+
+echo "ParMETIS version is $pmversion"
+
+# Methods to try
+if ( $yes_fortran ) then
+# Using F90
+  if (! $no_rcb) then
+    set ch_methods = ( $ch_methods rcb rcb-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
+      set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set ch_methods = ( $ch_methods rcb-avg rcb-avg-ts )
+      set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
+      set ch_methods = ( $ch_methods rcb-1D rcb-2D)
+    endif
+  endif
+  if (! $no_rib) then
+    set ch_methods = ( $ch_methods rib rib-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
+      set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
+      set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
+      set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
+      set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+      set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
+      set ch_methods = ( $ch_methods rib-1D rib-2D)
+    endif
+  endif
+  if (! $no_hsfc) then
+    set ch_methods = ( $ch_methods hsfc )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
+      set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
+      set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
+      set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
+    endif
+  endif
+  if (! $no_oct) then
+    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
+    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
+  endif
+  if (! $no_hier) then
+    if (! $yes_serial) then
+      set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
+	hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
+	hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+    endif
+  endif
+  if (! $no_parmetis) then
+    if ( $pmversion == 2) then
+      set ch_methods = ( $ch_methods partkway partgeom diffusion )
+    else # $pmversion > 2
+      set ch_methods = ( $ch_methods partkway-v$pmversion \
+	partgeom-v$pmversion \
+	partgeomkway-v$pmversion adaptive-v$pmversion )     #diffusion-v$pmversion
+      if (! $old_interface) then
+	set ch_methods = ( $ch_methods \
+	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+	  partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+	  adaptive-partlocal1-v$pmversion \
+	  adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+	  adaptive-partlocal5-v$pmversion )
+	  if (! $yes_serial) then
+	    # These tests do not run correctly in serial, due to assumption
+	    # in ParMETIS that at least two processors are used.
+	    set ch_methods = ( $ch_methods \
+	      partkway-v$pmversion.addobjwgt \
+	      adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+	      adaptive-partlocal2-v$pmversion )
+	  endif
+	if (! $no_order) then
+	  set ch_methods = ( $ch_methods order-metis-v$pmversion  \
+	    order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
+	endif
+      endif
+    endif
+  endif
+  if (! $no_hg) then
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods phg phg.addobjwgt)
+    endif
+  endif
+else
+# Using C or C++
+
+  # These Chaco problems are run only for C/C++ driver; F90 driver does not
+  # read assignment input files or multiple weights.
+  if ( $yes_serial ) then
+    set ch_name = ($ch_name vwgt2 hammond2)
+    set ch_nproc = ($ch_nproc 1 1) # no. of procs
+  else
+    set ch_name = ($ch_name drake vwgt2 hammond2 brack2_3)
+    set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
+  endif
+
+  # These Chaco problems are run only for C/C++ driver; F90 driver does not
+  if (! $no_rcb) then
+    set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rcb-reuse rcb-reuse-ts )
+      set ch_methods = ( $ch_methods rcb-rect rcb-rect-ts )
+      set ch_methods = ( $ch_methods rcb-lock rcb-lock-ts )
+      set ch_methods = ( $ch_methods rcb-set1 rcb-set2 )
+      set ch_methods = ( $ch_methods rcb-set3 rcb-set4 )
+      set ch_methods = ( $ch_methods rcb-set5 rcb-set6 )
+      set ch_methods = ( $ch_methods rcb-rcbox rcb-rcbox-ts )
+      set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
+      set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set ch_methods = ( $ch_methods rcb-avg rcb-avg-ts )
+      set ch_methods = ( $ch_methods rcb-rect-avg rcb-rect-avg-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
+      set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
+      set ch_methods = ( $ch_methods rcb-comparable-ts rcb-norm2-ts rcb-norm3-ts)
+      if (! $yes_serial) then
+	set ch_methods = ( $ch_methods rcb-1D rcb-2D)
+      endif
+
+    endif
+    set nem_methods = ( $nem_methods rcb rcb-ts )
+    if (! $old_interface) then
+      set nem_methods = ( $nem_methods rcb-reuse rcb-reuse-ts )
+      set nem_methods = ( $nem_methods rcb-rect rcb-rect-ts )
+      set nem_methods = ( $nem_methods rcb-lock rcb-lock-ts )
+      set nem_methods = ( $nem_methods rcb-set1 rcb-set2 )
+      set nem_methods = ( $nem_methods rcb-set3 rcb-set4 )
+      set nem_methods = ( $nem_methods rcb-set5 rcb-set6 )
+      set nem_methods = ( $nem_methods rcb-partless rcb-partless-ts )
+      set nem_methods = ( $nem_methods rcb-partmore rcb-partmore-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal1 rcb-partlocal1-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal2 rcb-partlocal2-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal3 rcb-partlocal3-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set nem_methods = ( $nem_methods rcb2 rcb2-ts )
+      set nem_methods = ( $nem_methods rcb2-comparable rcb2-comparable-ts )
+      set nem_methods = ( $nem_methods rcb2-norm2 rcb2-norm2-ts )
+      set nem_methods = ( $nem_methods rcb2-norm3 rcb2-norm3-ts )
+      set nem_methods = ( $nem_methods rcb2-partless rcb2-partless-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal1 rcb2-partlocal1-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal2 rcb2-partlocal2-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal3 rcb2-partlocal3-ts )
+      set nem_methods = ( $nem_methods rcb2-partlocal4 rcb2-partlocal4-ts )
+      set nem_methods = ( $nem_methods rcb2-partmore rcb2-partmore-ts )
+      set nem_methods = ( $nem_methods rcb2-set1 rcb2-set1-ts )
+      set nem_methods = ( $nem_methods rcb-avg rcb-avg-ts )
+      set nem_methods = ( $nem_methods rcb-rect-avg rcb-rect-avg-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal1-avg rcb-partlocal1-avg-ts )
+    endif
+  endif
+  if (! $no_rib) then
+    set ch_methods = ( $ch_methods rib rib-oneproc rib-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
+      set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
+      set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
+      set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
+      set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+      set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
+      if (! $yes_serial) then
+	set ch_methods = ( $ch_methods rib-1D rib-2D)
+      endif
+    endif
+    set nem_methods = ( $nem_methods rib rib-ts )
+    if (! $old_interface) then
+      set nem_methods = ( $nem_methods rib-partless rib-partless-ts )
+      set nem_methods = ( $nem_methods rib-partmore rib-partmore-ts )
+      set nem_methods = ( $nem_methods rib-partlocal1 rib-partlocal1-ts )
+      set nem_methods = ( $nem_methods rib-partlocal2 rib-partlocal2-ts )
+      set nem_methods = ( $nem_methods rib-partlocal3 rib-partlocal3-ts )
+      set nem_methods = ( $nem_methods rib-partlocal4 rib-partlocal4-ts )
+      set nem_methods = ( $nem_methods rib-avg rib-avg-ts )
+      set nem_methods = ( $nem_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
+    endif
+  endif
+  if (! $no_hsfc) then
+    set ch_methods = ( $ch_methods hsfc hsfc-oneproc )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
+      set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
+      set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
+      if (! $yes_serial) then
+	set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
+	# These tests assume six or more processors are used.
+	set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
+      endif
+    endif
+    set nem_methods = ( $nem_methods hsfc )
+    if (! $old_interface) then
+      set nem_methods = ( $nem_methods hsfc-partless hsfc-partmore )
+      set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
+      set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
+      set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )
+    endif
+  endif
+  if (! $no_oct) then
+    set ch_methods = ( $ch_methods oct0 oct1 oct2 )
+    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
+    set ch_methods = ( $ch_methods oct0-partlocal6 oct1-partlocal6 oct2-partlocal6 )
+    set ch_methods = ( $ch_methods oct0-partlocal7 oct1-partlocal7 oct2-partlocal7 )
+    set nem_methods = ( $nem_methods oct0 oct1 oct2 )
+    set nem_methods = ( $nem_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
+  endif
+  if (! $no_reftree) then
+    set nem_methods = ( $nem_methods reftree reftree-connected)
+  endif
+  if (! $no_parmetis) then
+    if ( $pmversion == 2) then
+      set ch_methods = ( $ch_methods partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+      set nem_methods = ( $nem_methods partkway partgeom diffusion )
+    else # $pmversion > 2
+      set ch_methods = ( $ch_methods partkway-v$pmversion \
+	partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion \
+	partgeom-v$pmversion  \
+	partgeomkway-v$pmversion adaptive-v$pmversion ) #diffusion-v$pmversion
+      set nem_methods = ( $nem_methods partkway-v$pmversion \
+	partgeomkway-v$pmversion adaptive-v$pmversion )
+      if (! $old_interface) then
+	set ch_methods = ( $ch_methods \
+	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+	  partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+	  adaptive-partlocal1-v$pmversion \
+	  adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+	  adaptive-partlocal5-v$pmversion )
+	if (! $yes_serial) then
+	  # These tests do not run correctly in serial, due to assumption
+	  # in ParMETIS that at least two processors are used.
+	  set ch_methods = ( $ch_methods \
+	    partkway-v$pmversion.addobjwgt \
+	    adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+	    adaptive-partlocal2-v$pmversion )
+	endif
+	set ch_methods = ( $ch_methods graph-parmetis graph-parmetis-partition)
+	set ch_methods = ( $ch_methods graph-parmetis-refine graph-parmetis-repartition)
+	set nem_methods = ( $nem_methods \
+	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+	  partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+	  adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+	  adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+	  adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
+	if (! $no_order) then
+	  set ch_methods = ( $ch_methods order-metis-v$pmversion  \
+	    order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
+	endif
+      endif
+    endif
+  endif
+  if (! $no_scotch) then
+    set ch_methods = ( $ch_methods graph-ptscotch)
+    if (! $no_order) then
+      set ch_methods = ( $ch_methods order-scotch order-ptscotch)
+    endif
+  endif
+  if (! $no_color) then
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods color color-after-phg color-dist2 )
+      set ch_methods = ( $ch_methods color-orderU color-orderB )
+    endif
+  endif
+  if (! $no_hg) then
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods phg phg-oneproc phg.addobjwgt )
+      set ch_methods = ( $ch_methods graph graph-partition \
+				     graph-refine graph-repartition)
+    endif
+  endif
+  if (! $no_hier) then
+    if (! $yes_serial) then
+      set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
+	hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
+	hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+      set nem_methods = ( $nem_methods hier-parmetis3-hsfc hier-parmetis3-rcb \
+	hier-rcb3-hsfc hier-rcb3-parmetis )
+    endif
+  endif
+  if ( $yes_drum ) then
+    set ch_methods = ( $ch_methods hsfc-drum )
+  endif
+endif
+
+# Set up log file
+if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
+echo "Test date  = `date`" > $logfile
+echo "System     = `uname -a`" >> $logfile
+echo "Arch       = ${arch}" >> $logfile
+echo "Fortran    = $yes_fortran" >> $logfile
+echo "C++        = $yes_cpp" >> $logfile
+echo "Run cmd    = $run" >> $logfile
+echo "Run dir    = $cwd" >> $logfile
+echo "Executable = $zdrive" >> $logfile
+echo "Old Interf = $old_interface" >> $logfile
+echo " " >> $logfile
+
+
+# Loop over Chaco problems
+if (! $no_chaco ) then
+  @ nprob = $#ch_name
+  @ nfailed = 0
+  @ ndropfailed = 0
+  while ( $#ch_name )
+
+    # Go to the next test directory, initialize
+    cd ch_${ch_name[1]}
+    @ np = $ch_nproc[1]
+    echo "Running test case ${ch_name[1]} on ${ch_nproc[1]} procs" | tee -a ../$logfile
+
+    # Check output directories
+    if (! -d $outdir ) mkdir $outdir
+    if (! -d $answers ) then
+      echo "Warning: Answer directory missing in ch_${ch_name[1]}" | tee -a ../$logfile
+    endif
+
+    # Save generic input file
+    if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
+
+    # Add special test cases for some multiweight problems
+    if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "hammond2")) then
+       if ($pmversion > 2) then
+	  set methods = ( partkway-imbal-v$pmversion )
+       else
+	  set methods = ( )
+       endif
+       set methods = ( $ch_methods $methods )
+    else
+       set methods = ( $ch_methods )
+    endif
+
+    # Special case for purecov runs:  don't include brack2_3; it takes too long.
+    if ((${ch_name[1]} == "brack2_3") && ($arch == "purecov")) then
+       set methods = ( )
+    endif
+
+    # Loop over all methods
+    foreach mtd ( $methods )
+      # Clear fail flag
+      @ fail = 0
+      @ dropfail = 0
+      @ droptest = 0
+      @ skip = 0  # Was used to skip certain methods in previous versions.
+      setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
+
+      if (! $skip ) then
+
+	# Check input file
+	if (-e zdrive.inp.${mtd} ) then
+	  /bin/cp zdrive.inp.${mtd} zdrive.inp
+	  if (-e ${outdir}/${ch_name[1]}.$mtd.$np.0 ) then
+	    /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
+	  endif
+
+	  #  Delete old drop files, if any.
+	  if (-e ${outdir}/${ch_name[1]}.$mtd.drops.$np.0 ) then
+	    /bin/rm ${outdir}/${ch_name[1]}.$mtd.drops.$np.*
+	  endif
+	  if (-e ${ch_name[1]}.drops.$np.0 ) then
+	    /bin/rm ${ch_name[1]}.drops.$np.*
+	  endif
+
+	  # Run the driver
+          echo "start = `date`" | tee -a ../$logfile
+	  if (! $?run ) then
+	    # serial case
+	    $zdrive
+	  else
+	    ${run} ${np} $zdrive
+	  endif
+          echo "end   = `date`" | tee -a ../$logfile
+	  sleep 1 # Make sure all processes have time to write to disk
+
+	  # Save and compare output files
+	  @ i = 0
+	  while ( $i < $np )
+	    /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
+	    if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
+	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
+	    else
+	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
+	    endif
+	    diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+	    if ( $status ) then
+	      @ fail = 1
+	    endif
+
+	    # If drop files were created, test them.
+	    if (-e ${ch_name[1]}.drops.$np.$i ) then
+	      @ droptest = 1
+	      /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
+	      if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+		set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix
+	      else
+		set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
+	      endif
+	      diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+	      if ( $status ) then
+		@ dropfail = 1
+	      endif
+	    endif
+
+	    @ i = $i + 1
+	  end
+
+	  # Report success or failure
+	  if ( $fail ) then
+	    @ nfailed = $nfailed + 1
+	    echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+	  else
+	    echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile
+	  endif
+
+	  # Report failure of drop tests, if any.
+	  if ( $droptest ) then
+	    if ( $dropfail ) then
+	      @ ndropfailed = $ndropfailed + 1
+	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+	    else
+	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
+	    endif
+	  endif
+
+	else # no such input file
+	  echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
+	endif
+
+
+      endif # !skip
+
+    end # foreach method
+
+    # Restore zdrive.inp
+    if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
+
+    # Shift arguments and return to original directory
+    shift ch_name
+    shift ch_nproc
+    cd ..
+  end
+
+  # Print failure summary
+  echo " " | tee -a $logfile
+  if ( $nfailed == 0 ) then
+    echo "Success: all Chaco problems passed." | tee -a $logfile
+  else
+    echo "Failure: $nfailed Chaco problems failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
+  if ( $ndropfailed == 0 ) then
+    echo "Success: all Chaco drop tests passed." | tee -a $logfile
+  else
+    echo "Failure: $ndropfailed Chaco drop tests failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
+
+endif # chaco
+
+# Loop over Nemesis problems
+if ( $yes_nemesis ) then
+  @ nprob = $#nem_name
+  @ nfailed = 0
+  @ ndropfailed = 0
+  while ( $#nem_name )
+
+    # Go to the next test directory, initialize
+    cd nem_${nem_name[1]}
+    @ np = $nem_nproc[1]
+    echo "Running test case ${nem_name[1]} on ${nem_nproc[1]} procs" | tee -a ../$logfile
+
+    # Check output directories
+    if (! -d $outdir ) mkdir $outdir
+    if (! -d $answers ) then
+      echo "Warning: Answer directory missing in nem_${nem_name[1]}" | tee -a ../$logfile
+    endif
+
+    # Save input file
+    if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
+
+    # Loop over all methods
+    foreach mtd ( $nem_methods )
+      # Clear fail flag
+      @ fail = 0
+      @ dropfail = 0
+      @ droptest = 0
+      @ skip = 0
+      setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
+
+      if (! $skip ) then
+
+	# Check input file
+	if (-e zdrive.inp.${mtd} ) then
+	  /bin/cp zdrive.inp.${mtd} zdrive.inp
+	  /bin/rm ${outdir}/${nem_name[1]}.$mtd.$np.*
+	  /bin/rm ${outdir}/${nem_name[1]}.$mtd.drops.$np.*
+
+	  # Run the driver
+	  $run $np ../$zdrive
+
+	  # Save and compare output files
+	  @ i = 0
+	  @ pdirno = 1 # parallel subdirectory number
+	  while ( $i < $np )
+	    if ( $pdirno < 10 ) then
+	       set pdir = pio_0${pdirno}
+	    else
+	       set pdir = pio_${pdirno}
+	    endif
+	    /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
+	    if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix ) then
+	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix
+	    else
+	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
+	    endif
+	    diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+	    if ( $status ) then
+	      @ fail = 1
+	    endif
+
+	    if (-e ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i ) then
+	      @ droptest = 1
+	      /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i  ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i
+	      if (-e ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+		set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix
+	      else
+		set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i
+	      endif
+	      diff -ciw ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+	      if ( $status ) then
+		@ dropfail = 1
+	      endif
+	    endif
+
+	    @ i = $i + 1
+	    @ pdirno = $pdirno + 1
+	    if ($pdirno > $nem_pdisk[1]) then
+	       @ pdirno = 1
+	    endif
+	  end
+
+	  # Report success or failure
+	  if ( $fail ) then
+	    @ nfailed = $nfailed + 1
+	    echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+	  else
+	    echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile
+	  endif
+
+	  if ( $droptest ) then
+	    if ( $dropfail ) then
+	      @ ndropfailed = $ndropfailed + 1
+	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+	    else
+	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
+	    endif
+	  endif
+
+	else # no such input file
+	  echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
+	endif
+
+      endif # !skip
+
+    end # foreach method
+
+    # Restore zdrive.inp
+    if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
+
+    # Shift list arguments and return to original directory
+    shift nem_name
+    shift nem_nproc
+    shift nem_pdisk
+    cd ..
+  end
+
+  # Print failure summary
+  echo " " | tee -a $logfile
+  if ( $nfailed == 0 ) then
+    echo "Success: all Nemesis problems passed." | tee -a $logfile
+  else
+    echo "Failure: $nfailed Nemesis problems failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
+  if ( $ndropfailed == 0 ) then
+    echo "Success: all Nemesis drop tests passed." | tee -a $logfile
+  else
+    echo "Failure: $ndropfailed Nemesis drop tests failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
+
+endif # Nemesis
+
+# Loop over hg problems
+if (! $no_hg) then
+  set hg_methods=( \
+    phg \
+    phg.addobjwgt \
+    phg.bal_tol_adjustment1.0 \
+    phg.check_hypergraph1 \
+    phg.coarsening_limit200 \
+    phg.coarsening_limit1   \
+    phg.coarsening_method_aipm \
+    phg.coarsening_method_cipm \
+    phg.coarsening_method_lipm \
+    phg.coarsening_method_none \
+    phg.coarsepartition_method_greedy \
+    phg.coarsepartition_method_linear \
+    phg.coarsepartition_method_none \
+    phg.coarsepartition_method_random \
+    phg.cut_objective_hyperedges \
+    phg.debug_level \
+    phg.edge_scaling1 \
+    phg.edge_scaling2 \
+    phg.edge_size_threshold1.0 \
+    phg.fast_coarsening_method \
+    phg.final_output2 \
+    phg.imbalance_tol1.02 \
+    phg.initial_distribution.cols \
+    phg.initial_distribution.cyclic \
+    phg.initial_distribution.file \
+    phg.initial_distribution.rows \
+    phg.fixed01 \
+    phg.fixed02 \
+    phg.fixed03 \
+    phg.fixed04 \
+    phg.fixed05 \
+    phg.fixed06 \
+    phg.fixed07 \
+    phg.fixed08 \
+    phg.fixed09 \
+    phg.fixed10 \
+    phg.k13 \
+    phg.k2 \
+    phg.k63 \
+    phg.k64 \
+    phg.nproc_edge1 \
+    phg.nproc_edge2 \
+    phg.nproc_vertex1 \
+    phg.nproc_vertex2 \
+    phg.output_level0 \
+    phg.output_level4 \
+    phg.partlocal1 \
+    phg.partlocal2 \
+    phg.partlocal3 \
+    phg.partlocal4 \
+    phg.random \
+    phg.randomize_input \
+    phg.refinement_loop_limit20 \
+    phg.refinement_max_neg_move50 \
+    phg.refinement_method_none \
+    phg.refinement_quality3 \
+    phg.remap0 \
+    phg.seed \
+    phg.use_timers1 \
+    phg.use_timers2 \
+    phg.vertex_scaling1 \
+    phg.vertex_scaling2 \
+    phg.vertex_scaling3 \
+    phg.vertex_scaling4 \
+    phg.vertex_visit_order1 \
+    phg.vertex_visit_order2 \
+    phg.vertex_visit_order3 \
+    phg.vertex_visit_order4 \
+    phg.refine \
+    phg.repartition \
+    phg.fast_repartition \
+    phg-pairs \
+    phg.repartition.repart_multiplier80 \
+    phg.repartition.repart_multiplier800 \
+    phg.repartition.repart_multiplier8000 \
+    phg.ipm.refine \
+    phg.ipm-refine \
+    phg.ipm.fixed01 \
+    phg.ipm.fixed02 \
+    phg.ipm.fixed03 \
+    phg.ipm.fixed05 \
+    phg.ipm.fixed07 \
+    phg.ipm.fixed09 \
+    phg.ipm.nproc_edge1 \
+    phg.ipm.nproc_vertex1 \
+  )
+
+  if (! $yes_fortran) then
+    set hg_methods=( $hg_methods phg.oneproc)
+  endif
+
+  @ nprob = $#hg_name
+  @ nfailed = 0
+  while ( $#hg_name )
+
+    # Go to the next test directory, initialize
+    cd hg_${hg_name[1]}
+    @ np = $hg_nproc[1]
+
+    if ( $np > 0 ) then
+      echo "Running test case ${hg_name[1]} on $np procs" | tee -a ../$logfile
+
+      # Check output directories
+      if (! -d $outdir ) mkdir $outdir
+      if (! -d $answers ) then
+	echo "Warning: Answer directory missing in hg_${hg_name[1]}" | tee -a ../$logfile
+      endif
+
+      # Save generic input file
+      if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
+
+      # Loop over all methods
+      foreach mtd ( $hg_methods )
+	# Clear fail flag
+	@ fail = 0
+
+	# Run zdrive and check the output against stored answer
+
+	if (-e zdrive.inp.${mtd} ) then
+	  find ${outdir} -type f -name "${hg_name[1]}.$mtd.$np.*" -exec rm '{}' \;
+	  /bin/mv -f zdrive.inp zdrive.old
+	  /bin/cp zdrive.inp.${mtd} zdrive.inp
+	  setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd}"
+
+	  # Run the driver
+          echo "start = `date`" | tee -a ../$logfile
+	  $run $np $zdrive
+          echo "end   = `date`" | tee -a ../$logfile
+
+	  # Save and compare output files
+
+	  # wait up to 30 sec for files (will poll up to 30 sec for ALL output files)
+	  @ poll = 30
+
+	  #   the following awk deals with processor numbers with leading zeros
+	  #   which creates output files like foo.out.11.08 instead of foo.out.11.8
+	  @ procnos = $np - 1
+	  set fw=`echo -n $procnos | wc -c`  # log10 (procs-1)
+	  @ i = 0
+	  while ( $i < $np )
+	    set awkarg='BEGIN {printf "%0'"$fw"'d", '"$i"'}'
+	    set field=`awk "$awkarg"` < /dev/null
+	    set outfile=${hg_name[1]}.$mtd.$np.$field
+
+	    if (! -e ${hg_name[1]}.$out_tag.$np.$field ) then
+	      while (! -e ${hg_name[1]}.$out_tag.$np.$field )
+		if ( ! $poll ) break
+		sleep 1
+		@ poll--
+	      end
+	    endif
+
+	    /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
+	    if (-e ${answers}/${outfile}.$suffix ) then
+	      set answerfile = ${answers}/${outfile}.$suffix
+	    else
+	      set answerfile = ${answers}/${outfile}
+	    endif
+	    diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
+	    if ( $status ) then
+	      @ fail = 1
+	    endif
+
+	    @ i = $i + 1
+	  end
+
+	  # Report success or failure
+	  if ( $fail ) then
+	    @ nfailed = $nfailed + 1
+	    echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
+	  else
+	    echo "Test problem ${hg_name[1]}/${mtd} OK" | tee -a ../$logfile
+	  endif
+	endif   # if method exists
+      end # next method
+
+      # Restore zdrive.inp
+      if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
+
+    endif  # np > 0
+
+    # Shift arguments and return to original directory
+    shift hg_name
+    shift hg_nproc
+    cd ..
+  end # next name
+
+  # Print failure summary
+  echo " " | tee -a $logfile
+  if ( $nfailed == 0 ) then
+    echo "Success: all hypergraph problems passed." | tee -a $logfile
+  else
+    echo "Failure: $nfailed hypergraph problems failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
+
+endif # hg
+
+###
+
+# Exit successfully
+echo "Test final = `date`" >> $logfile
+exit 0
+
+# Print usage and exit with error
+usage:
+  echo "Usage: $0 [-arch arch-type] [-cmd command]"
+  echo "where arch-type is one of {generic, gcc, gcc64, sun, solaris, tflop, cplant, dec, linux, linux64, sgi32, sgi64}."
+  echo "(If you have set ZOLTAN_ARCH you do not need to use -arch.)"
+  echo "Alternatively, specify the command to load and run a parallel "
+  echo "program with the -cmd option."
+  echo "Other options:"
+  echo "   -logfile filename"
+  echo "   -exe filename"
+  echo "   -no_rcb"
+  echo "   -no_rib"
+  echo "   -no_hsfc"
+  echo "   -no_oct"
+  echo "   -no_parmetis"
+  echo "   -no_scotch"
+  echo "   -no_reftree"
+  echo "   -no_order"
+  echo "   -no_color"
+  echo "   -no_chaco"
+  echo "   -no_hg"
+  echo "   -no_hier"
+  echo "   -yes_nemesis"
+  echo "   -yes_fortran"
+  echo "   -yes_cpp"
+  echo "   -yes_jostle"
+  echo "   -yes_drum"
+  echo "   -old_interface"
+  echo "The default is to run all methods (except Jostle) and file formats."
+  exit -1

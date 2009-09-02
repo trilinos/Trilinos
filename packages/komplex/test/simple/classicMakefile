@@ -1,0 +1,17 @@
+
+DEFINES= -DHAVE_CONFIG_H 
+
+CFLAGS = -I../include
+
+LINKER=g++
+
+LIB_PATHS= -L../lib -lkomplex -laztecoo -lepetra -ltriutils -lteuchos -llapack -lblas -lg2c -lm
+
+simple: simple.o
+	$(LINKER) simple.o $(LIB_PATHS) -o simple
+	@echo " "
+	@echo " "
+	@echo "Simple test driver is built"
+
+clean:
+	rm -rf simple.o simple

@@ -1,0 +1,373 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Library Usage</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_cpp.html">Next</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Using the Library"></a>Using the Zoltan library</h2>
+This section contains information needed to use the Zoltan library with
+applications:
+<blockquote>
+<a href="#System Requirements">System requirements.</a>
+<br><a href="#Building the Library">Building the Zoltan library.</a>
+<br><a href="#Testing the Library">Testing the Zoltan library.</a>
+<br><a href="#ReportingBugs">Reporting bugs</a> in Zoltan.
+<br><a href="#Incorporating Zoltan">Incorporating Zoltan into Applications</a>
+<br><a href="#Building Applications">Building applications</a>
+that use Zoltan.
+<br><a href="#Data Types for Object IDs">Data types</a> for global and
+local IDs.
+<br><a href="ug_cpp.html">C++ interface</a>.
+<br><a href="ug_fortran.html">F90 interface</a>.
+</blockquote>
+
+<hr>
+<h3>
+<a NAME="System Requirements"></a>System Requirements</h3>
+Zoltan was designed to run on parallel computers and clusters of workstations.
+In order to build and use Zoltan, you will need:
+<ul>
+<li>
+ANSI C or C++ compiler.</li>
+
+<li>
+<a href="http://www-unix.mcs.anl.gov/mpi/">MPI</a> library for message
+passing (version 1.1 or higher), such as MPICH, OpenMPI or LAM.</li>
+
+<li>
+A Unix-like operating system (e.g., Linux or Solaris) and
+<i>gmake</i> (GNU Make) are recommended to build the library.</li>
+
+<li>
+A Fortran90 compatible compiler is required if you wish to 
+<a href="ug_fortran.html">use Zoltan
+with Fortran applications</a>.</li>
+</ul>
+
+Zoltan has been tested on a variety of platforms, including Linux, Solaris, Irix, Mac OS X,
+and Sandia's ASC RedStorm</a> machine.
+If you wish to use Zoltan on a non-Unix operating system, for example Windows NT or 2000,
+you will have to port Zoltan yourself.
+
+
+<hr>
+<h3>
+<a NAME="Building the Library"></a>Building the Zoltan Library</h3>
+The Zoltan library is implemented in ANSI C and can be compiled with any
+ANSI C compiler. 
+In Zoltan, there are two build environments currently supported:
+the <a href="#NativeZoltanBuild">native Zoltan build environment</a> 
+and an 
+<a href="#TrilinosAutotools">Autotools-based build
+environment</a> used with the <a href="http://trilinos.sandia.gov">Trilinos</a>
+framework.  The native Zoltan build environment requires the user to 
+specify paths to the desired compilers and libraries in a text file read
+by gmake.  The Autotools-based environment can be used to build Zoltan
+only or to build Zoltan within Trilinos.  User's can use either environment
+to build the Zoltan library, utilities and test drivers.
+<p>
+
+<h4><a NAME="NativeZoltanBuild"></a>Using the Native Zoltan Build Environment</h4>
+In the native Zoltan build environment, makefiles are distributed 
+with the source code in directory zoltan/src; these
+makefiles require the GNU Make (gmake) utility.  The
+top-level makefile defines targets for the Zoltan library,
+<a href="../dev_html/dev_driver.html">test driver</a> programs 
+in C, C++ and Fortran90, and 
+<a href="../dev_html/dev_view.html">two graphical utilities</a> useful
+for visualization of geometric partitions.  (The test drivers and
+utilities are primarily intended for use
+by developers.)  This makefile need not be
+edited to build Zoltan.  Instead, environment-specific definitions
+are specified in the configuration file, <i>zoltan/src/Utilities/Config/Config.&lt;platform></i>,
+where <i>&lt;platform></i> specifies the particular platform for which
+Zoltan is being built.  Paths to compilers, include files, and libraries
+are defined in this file and are then read by the top-level makefile.
+Examples of configuration files for Solaris, Sandia's ASC RedStorm 
+computer, SGI workstations, Macs running OS X, and PCs running Linux are
+included in the <i>zoltan/src/Utilities/Config</i> subdirectory.  
+A well-commented
+version of the configuration file, <i>zoltan/src/Utilities/Config/Config.generic</i>,
+is also included; this file can be used as a template for new environment-specific
+files.  The variables in these files should be edited to reflect the
+new system's environment.
+<p>The command for building Zoltan is shown below:
+<blockquote>cd zoltan/src<br>
+            gmake [options] zoltan</blockquote>
+where the options that may be specified are listed below.
+<table WIDTH="100%" >
+
+<tr>
+<td VALIGN=TOP width="25%"><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform></i></td>
+
+<td>Specify the target architecture for the Zoltan library.  A corresponding
+file, <i>zoltan/src/Utilities/Config/Config.&lt;platform></i>, containing environment
+definitions for <i>&lt;platform</i>>, must be created in the
+<i>zoltan/src/Utilities/Config</i>
+directory.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</i></td>
+
+<td>Include Fortran support in the Zoltan library.&nbsp; By default, the
+Zoltan library is built without the interface that allows use from Fortran
+applications.&nbsp; If this option is specified, the
+<a href="ug_fortran.html">Fortran
+interface</a> is compiled and included in the library.&nbsp; Use of this
+option requires that a Fortran 90 (or 95, or later) compiler is available.
+Currently, the Fortran 90 interface can be built only with the native
+Zoltan build environment.
+</td>
+</tr>
+</table>
+As an alternative to typing the options on the gmake command line, they
+may be set as environment variables; e.g., if you are using a C-shell (csh or tcsh),
+type
+<blockquote>
+setenv ZOLTAN_ARCH <i>&lt;platform></i>
+</blockquote>
+or if you are using a Bourne-type shell (e.g., sh or bash), type
+<blockquote>
+ZOLTAN_ARCH = <i>&lt;platform>; </i>export ZOLTAN_ARCH
+</blockquote>
+The resulting library <i>libzoltan.a</i>, object files, and dependency files
+are stored in the directory Obj_&lt;<i>platform</i>>.
+<p>
+
+<h4><a NAME="TrilinosAutotools"></a>Using Autotools to Build Zoltan</h4>
+
+To build Zoltan using Autotools, users must first run the auto-configuration 
+tool and then compile the library.  The configuration tool allows paths
+to third-party libraries such as ParMETIS, PT-Scotch and PaToH to be specified
+through arguments to the configure command.  These options can be seen
+with the following command issued in the top-level zoltan directory:
+<blockquote>
+./configure --help
+</blockquote>
+<b>IMPORTANT!</b>  To comply with Trilinos practices, the default 
+autotools configuration
+produces a <b>serial</b> build of Zoltan -- that is, a version of Zoltan that
+runs on only one processor.  
+In most cases, Zoltan users prefer a <b>parallel</b> build that runs on 
+multiple processors; users must link with MPI and may choose to compile 
+with the MPI compilers. To enable the parallel build, users must use the 
+<i>--enable-mpi</i> option; they can also require that MPI compilers
+(e.g., mpicc, mpic++) be used by specifying the 
+<i>--with-mpi-compiler</i> option.  
+<p>
+The following script is an example of configuration and build commands
+using Autotools.  It specifies that Zoltan should be built with both
+the <a href="ug_alg_parmetis.html">ParMETIS</a> and 
+<a href="ug_alg_ptscotch.html">PT-Scotch</a> interfaces.  
+Paths to both ParMETIS and PT-Scotch are given.
+The prefix option states where Zoltan should be installed;
+in this example, Zoltan's include files will be installed in
+/homes/username/zoltan_v3.1/OBJ_LINUX/include, and the libraries
+will be installed in /homes/username/zoltan_v3.1/OBJ_LINUX/lib.
+This examples assumes the script is run from 
+/homes/username/zoltan_v3.1/OBJ_LINUX.
+<blockquote>
+#<br>
+../configure \<br>
+  --prefix=/homes/username/zoltan_v3.1/OBJ_LINUX \<br>
+  --enable-mpi --with-mpi-compilers \<br>
+  --enable-zoltan \<br>
+  --with-gnumake \<br>
+  --with-scotch \<br>
+  --with-scotch-incdir="/Net/local/proj/zoltan/arch/all/src/Scotch5" \<br>
+  --with-scotch-libdir="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/Scotch5" \<br>
+  --with-parmetis \<br>
+  --with-parmetis-incdir="/Net/local/proj/zoltan/arch/all/src/ParMETIS3" \<br>
+  --with-parmetis-libdir="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3" <br>
+make everything <br>
+make install 
+</blockquote>
+<p>
+More examples are in the directory zoltan/SampleConfigurationScripts.
+<p>
+Note:  Building Zoltan's Fortran 90 interface is not yet available with
+Autotools; use the 
+<a href="#NativeZoltanBuild">native Zoltan build environment</a> to build the
+Fortran 90 interface.
+<hr>
+<h3>
+<a NAME="Testing the Library"></a>Testing the Zoltan Library</h3>
+The <I>examples</I> directory contains simple C and C++ examples which use
+the Zoltan library.  The makefile in this directory has three targets:
+<DL>
+<DT>gmake ZOLTAN_ARCH=&lt;platform> C_Examples
+<DD>This builds simple C language examples that use the Zoltan library to perform load balancing.
+<DT>gmake ZOLTAN_ARCH=&lt;platform> CPP_Examples
+<DD>This builds simple C++ language examples that use the Zoltan library 
+to perform load balancing.  To build C++ applications, define CPPC to point
+to your C++ compiler in the Config.&lt;platform> file.
+<DT>gmake ZOLTAN_ARCH=&lt;platform> all
+<DD>Build both C and C++ examples.  Don't forget to define CPPC in your 
+Config.&lt;platform> file.
+</DL>
+These examples are built automatically when the 
+<a href="#TrilinosAutotools">Autotools build environment</a> is used.
+<p>
+Some of these examples make use of a small library of support routines found in
+the <I>examples/lib</I> directory.  These routines create simple test
+meshes of varying sizes, perform error checking across the parallel
+application, and define Zoltan call backs.
+<p>
+The "right" answer for these tests depends on the number of processes with
+which you run the tests.  In general, if they compile successfully,
+run quickly (in seconds), and produce reasonable looking output, then
+you have been successful in building Zoltan.
+
+<hr>
+<h3>
+<a NAME="ReportingBugs"></a>Reporting Bugs in Zoltan</h3>
+Zoltan uses <a href="http://www.bugzilla.org">Bugzilla</a> to collect 
+bug reports.  Please read the <a href="../Zoltan_bugreport.html">instructions for reporting bugs</a> through the Zoltan Bugzilla database.
+<p>
+
+<hr>
+<h3>
+<a NAME="Incorporating Zoltan"></a>Incorporating Zoltan into Applications</h3>
+Incorporating Zoltan into applications requires three basic steps:
+<ul>
+<li>
+Writing <a href="ug_query.html">query functions</a> 
+that return information about the application to Zoltan.
+<li>
+<a href="ug_interface_init.html">Initializing</a> Zoltan, <a href="ug_interface_init.html#Zoltan_Create">creating a 
+Zoltan object</a>, and 
+<a href="ug_interface_init.html#Zoltan_Set_Param">setting 
+appropriate parameters</a>.
+<li>
+Calling Zoltan tools to perform <a href="ug_interface_lb.html">partitioning</a>, <a href="ug_interface_order.html">ordering</a>, <a href="ug_interface_mig.html">migration</a>, <a href="ug_interface_color.html">coloring</a>, etc.
+</ul>
+The set of <a href="ug_query.html">query functions</a> 
+needed by an application depends on the 
+particular tools (e.g., <a href="ug_interface_lb.html">partitioning</a>, 
+<a href="ug_interface_order.html">ordering</a>) used and on 
+the <a href="ug_alg.html">algorithms</a>
+selected within the tools.  Not all query functions are needed by 
+every application.  See documentation on tools and algorithms to determine
+which query functions are needed.
+<hr>
+<h3>
+<a NAME="Building Applications"></a>Building Applications that use Zoltan</h3>
+The C library interface is described in the include file <i>include/zoltan.h</i>;
+this file should be included in all C application source files that call
+Zoltan library routines. 
+<p>
+The <a href="ug_cpp.html">C++ interface</a> to 
+Zoltan is implemented in header files which define classes that
+wrap the Zoltan C library.  The file <I>include/zoltan_cpp.h</I> defines the
+<B>Zoltan</B> class which encapsulates a load balancing data structure and the
+Zoltan load balancing functions which operate upon it.  Include this header file
+instead in your C++ application.  Note that C++ applications should call the
+C function <B><a href="ug_interface_init.html#Zoltan_Initialize">Zoltan_Initialize</a></B> before creating a <B>Zoltan</B> object.
+<p>
+<a href="ug_fortran_apps.html">Fortran applications</a> must USE
+<a href="ug_fortran_api.html#fortran ug api zoltan module">module zoltan</a> and 
+specify <i>Zoltan/Obj_&lt;platform></i>
+as a directory to be searched for module information files.
+<p>
+The C, C++ or Fortran application should then be linked with the Zoltan library
+(built with Fortran support in the Fortran case)
+and its <a href="../ug_html/ug_util.html">utility libraries</a> by including
+<blockquote><i>-lzoltan </i></blockquote>
+in the linking command for the application. 
+Communication within
+Zoltan is performed through MPI, so appropriate MPI libraries must be linked
+with the application. Third-party libraries, such as <a href="ug_alg_parmetis.html">ParMETIS</a>, <a href="ug_alg_ptscotch.html">PT-Scotch</a>
+and <a href="ug_alg_patoh.html">PaToH</a>, must be also be
+linked with the application if they were included in compilation of the
+Zoltan library.&nbsp; (A courtesy copy of <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+is included with the Zoltan distribution. <a href="ug_alg_patoh.html">PaToH</a>
+must be obtained directly from <a href="http://bmi.osu.edu/~umit/software.html">http://bmi.osu.edu/~umit/software.html</a>.
+<a href="ug_alg_ptscotch.html">PT-Scotch</a> is available at <a href="http://www.labri.fr/perso/pelegrin/scotch/">http://www.labri.fr/perso/pelegrin/scotch/</a>.)
+<br>&nbsp;
+<p>
+For applications that used versions of Zoltan before Zoltan v.1.3, 
+only minor updates to the application build process are
+needed; see the section on <a href="ug_backward.html">backward
+compatibility</a> of Zoltan.
+<hr>
+<h3>
+<a NAME="Data Types for Object IDs"></a>Data Types for Object IDs</h3>
+Application query functions and application callable library functions
+use global and local identifiers (IDs) for objects. <i>All objects to be
+used in load balancing must have unique global IDs.</i> Zoltan stores an
+ID as an array of unsigned integers. The number of entries in these arrays
+can be set using the <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+and <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> parameters;
+by default, one unsigned integer represents an ID. Applications may use
+whatever format is most convenient to store their IDs; the IDs can then
+be converted to and from Zoltan's ID format in the <a href="ug_query.html">application-registered
+query functions</a>.
+<p>The following type definitions are defined in <i>include/zoltan_types.h</i>; they can
+be used by an application for memory allocation, MPI communication, and
+as arguments to
+<a href="ug_interface.html">load-balancing interface functions</a>
+and
+<a href="ug_query.html">application-registered query functions</a>.
+<blockquote>typedef unsigned int <b>ZOLTAN_ID_TYPE</b>;
+<br>typedef <b>ZOLTAN_ID_TYPE</b> *<b>ZOLTAN_ID_PTR</b>;
+<br>#define <b>ZOLTAN_ID_MPI_TYPE</b> MPI_UNSIGNED</blockquote>
+In the Fortran interface, IDs are passed as arrays of integers since unsigned
+integers are not supported in Fortran. See the description of the <a href="ug_fortran_api.html#fortran ug api IDs">Fortran
+interface</a> for more details.
+<p>The local IDs passed to Zoltan are not used by the library; they are
+provided for the convenience of the application and can contain any information
+desired by the application. For instance, local array indices for objects
+may be passed as local IDs, enabling direct access to object data in the
+query function routines. See the <a href="ug_query.html">application-registered
+query functions</a> for more details. The source code distribution contains
+an example application <i><a href="../dev_html/dev_driver.html">zdrive</a></i>
+in which global IDs are integers and local IDs are local array indices.
+One may choose not to use local ids at all, in which case <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+may be set to zero.
+<p>Some Zoltan routines (e.g., 
+<a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>
+and 
+<a href="ug_interface_mig.html#Zoltan_Invert_Lists"><b>Zoltan_Invert_Lists</b></a>)
+allocate arrays of type <b>ZOLTAN_ID_PTR</b> and return them to the application.
+Others (e.g., <b><a href="ug_interface_order.html#Zoltan_Order">Zoltan_Order</a></b> and 
+<a href="ug_util_dd.html#DD_Find"><b>Zoltan_DD_Find</b></a>) require
+the application to allocate memory for IDs.  Memory for IDs can be allocated
+as follows:
+<blockquote><tt>
+  ZOLTAN_ID_PTR gids;<br>
+  int num_gids, int num_gid_entries;<br>
+  gids = (ZOLTAN_ID_PTR) <a href="ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(num_gids * num_gid_entries * sizeof(ZOLTAN_ID_TYPE);<br>
+</tt></blockquote>
+The system call <i>malloc</i> may be used instead of 
+<a href="ug_util_mem.html#Zoltan_Malloc"><b>ZOLTAN_MALLOC</b></a>.
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_cpp.html">Next:&nbsp;
+C++ Interface</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous:
+Introduction</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

@@ -1,0 +1,623 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+from   math     import *
+import numpy
+from   optparse import *
+import sys
+import time
+import unittest
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+ML     = fromPyTrilinosImport('ML'    , options.testharness)
+
+##########################################################################
+
+class MLMultiVectorTestCase(unittest.TestCase):
+    "TestCase for ML.MultiVector objects"
+
+    def setUp(self):
+        self.comm = Epetra.PyComm()
+        self.dataname = "testMultiVector%d.dat" % comm.MyPID()
+        self.space = ML.Space(-1, 10)  # 10 elements on each processor
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testConstructor0(self):
+        "Test ML.MultiVector default constructor"
+        mv = ML.MultiVector()
+        self.assertEqual(mv.GetNumVectors(), 0)
+        self.assertEqual(mv.GetMyLength(), 0)
+        space = mv.GetVectorSpace()
+        self.assertEqual(space.GetNumMyElements(), 0)
+
+    def testConstructor1(self):
+        "Test ML.MultiVector (Space) constructor"
+        mv = ML.MultiVector(self.space)
+        self.assertEqual(mv.GetNumVectors(), 1)
+        self.assertEqual(mv.GetMyLength(), 10)
+        self.assertEqual(mv.GetVectorSpace(), self.space)
+        self.failUnless((mv.GetValues(0) == 0).all())
+
+    def testConstructor2(self):
+        "Test ML.MultiVector (Space, int) constructor"
+        mv = ML.MultiVector(self.space,2)
+        self.assertEqual(mv.GetNumVectors(), 2)
+        self.assertEqual(mv.GetMyLength(), 10)
+        self.assertEqual(mv.GetVectorSpace(), self.space)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        self.failUnless((mv.GetValues(1) == 0).all())
+
+    def testConstructor3(self):
+        "Test ML.MultiVector (Space, int, bool) constructor"
+        mv = ML.MultiVector(self.space,2,False)
+        self.assertEqual(mv.GetNumVectors(), 2)
+        self.assertEqual(mv.GetMyLength(), 10)
+        self.assertEqual(mv.GetVectorSpace(), self.space)
+
+    def testConstructor4(self):
+        "Test ML.MultiVector (Space, 1D sequence) constructor"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        self.assertEqual(mv.GetNumVectors(), 1)
+        self.assertEqual(mv.GetMyLength(), 10)
+        self.assertEqual(mv.GetVectorSpace(), self.space)
+        self.failUnless((mv.GetValues(0) == v).all())
+
+    def testConstructor5(self):
+        "Test ML.MultiVector (Space, 2D sequence) constructor"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, (v, v))
+        self.assertEqual(mv.GetNumVectors(), 2)
+        self.assertEqual(mv.GetMyLength(), 10)
+        self.assertEqual(mv.GetVectorSpace(), self.space)
+        self.failUnless((mv.GetValues(0) == v).all())
+        self.failUnless((mv.GetValues(1) == v).all())
+
+    def testConstructor6(self):
+        "Test ML.MultiVector (Space, 3D sequence) constructor"
+        v = (range(5), range(5))
+        mv = ML.MultiVector(self.space, (v, v, v))
+        self.assertEqual(mv.GetNumVectors(), 3)
+        self.assertEqual(mv.GetMyLength(), 10)
+        self.assertEqual(mv.GetVectorSpace(), self.space)
+        result = numpy.array(v).ravel()
+        self.failUnless((mv.GetValues(0) == result).all())
+        self.failUnless((mv.GetValues(1) == result).all())
+        self.failUnless((mv.GetValues(2) == result).all())
+
+    def testConstructor7(self):
+        "Test ML.MultiVector copy constructor"
+        v   = range(10)
+        mv1 = ML.MultiVector(self.space, v)
+        mv2 = ML.MultiVector(mv1)
+        self.failUnless((mv1.GetValues(0) == v).all())
+        self.failUnless((mv2.GetValues(0) == v).all())
+
+    def testConstructorBad0(self):
+        "Test ML.MultiVector (Space, int) constructor, negative number of vectors"
+        self.assertRaises(IndexError, ML.MultiVector, self.space, -1)
+
+    def testConstructorBad1(self):
+        "Test ML.MultiVector (Space, 1D sequence) constructor with mismatch"
+        self.assertRaises(TypeError, ML.MultiVector, self.space, range(11))
+
+    def testConstructorBad2(self):
+        "Test ML.MultiVector (Space, 2D sequence) constructor with mismatch"
+        self.assertRaises(TypeError, ML.MultiVector, self.space, (range(9), range(9)))
+
+    def testConstructorBad3(self):
+        "Test ML.MultiVector (Space, 3D sequence) constructor with mismatch"
+        v = ((0,1,2), (3,4,5), (6,7,8))        
+        self.assertRaises(TypeError, ML.MultiVector, self.space, (v, v, v, v))
+
+    def testReshape0(self):
+        "Test ML.MultiVector Reshape method, no arguments"
+        mv = ML.MultiVector(self.space, range(10))
+        self.assertEqual(mv.GetNumVectors(),  1)
+        self.assertEqual(mv.GetMyLength()  , 10)
+        mv.Reshape()
+        self.assertEqual(mv.GetNumVectors(), 0)
+        self.assertEqual(mv.GetMyLength()  , 0)
+
+    def testReshape1(self):
+        "Test ML.MultiVector Reshape method, (Space) argument"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        self.assertEqual(mv.GetNumVectors(),  1)
+        self.assertEqual(mv.GetMyLength()  , 10)
+        self.failUnless((mv.GetValues(0) == v).all())
+        mv.Reshape(ML.Space(-1,9))
+        self.assertEqual(mv.GetNumVectors(), 1)
+        self.assertEqual(mv.GetMyLength()  , 9)
+        self.failUnless((mv.GetValues(0) == 0).all())
+
+    def testReshape2(self):
+        "Test ML.MultiVector Reshape method, (Space, int) arguments"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        self.assertEqual(mv.GetNumVectors(),  1)
+        self.assertEqual(mv.GetMyLength()  , 10)
+        self.failUnless((mv.GetValues(0) == v).all())
+        mv.Reshape(ML.Space(8*self.comm.NumProc()),2)
+        self.assertEqual(mv.GetNumVectors(), 2)
+        self.assertEqual(mv.GetMyLength()  , 8)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        self.failUnless((mv.GetValues(1) == 0).all())
+
+    def testReshape3(self):
+        "Test ML.MultiVector Reshape method, (Space, int, bool) arguments"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        self.assertEqual(mv.GetNumVectors(),  1)
+        self.assertEqual(mv.GetMyLength()  , 10)
+        self.failUnless((mv.GetValues(0) == v).all())
+        mv.Reshape(ML.Space(7*self.comm.NumProc()), 3, False)
+        self.assertEqual(mv.GetNumVectors(), 3)
+        self.assertEqual(mv.GetMyLength()  , 7)
+
+    def testReshapeBad(self):
+        "Test ML.MultiVector Reshape method, with negative number of vectors"
+        mv = ML.MultiVector(self.space, range(10))
+        self.assertEqual(mv.GetNumVectors(),  1)
+        self.assertEqual(mv.GetMyLength()  , 10)
+        self.assertRaises(IndexError, mv.Reshape, ML.Space(7), -3)
+
+    def testAppend0(self):
+        "Test ML.MultiVector Append method, no arguments"
+        mv = ML.MultiVector(self.space)
+        self.assertEqual(mv.GetNumVectors(), 1)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv.Append()
+        self.assertEqual(mv.GetNumVectors(), 2)
+        self.failUnless((mv.GetValues(1) == 0).all())
+
+    def testAppend1(self):
+        "Test ML.MultiVector Append method, (int) argument"
+        mv = ML.MultiVector(self.space)
+        self.assertEqual(mv.GetNumVectors(), 1)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv.Append(2)
+        self.assertEqual(mv.GetNumVectors(), 3)
+        self.failUnless((mv.GetValues(1) == 0).all())
+        self.failUnless((mv.GetValues(2) == 0).all())
+
+    def testAppend2(self):
+        "Test ML.MultiVector Append method, (int, bool) arguments"
+        mv = ML.MultiVector(self.space)
+        self.assertEqual(mv.GetNumVectors(), 1)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv.Append(3, False)
+        self.assertEqual(mv.GetNumVectors(), 4)
+
+    def testAppend3(self):
+        "Test ML.MultiVector Append method, (MultiVector) argument"
+        mv1 = ML.MultiVector(self.space, 2)
+        mv2 = ML.MultiVector(self.space, 3)
+        self.assertEqual(mv1.GetNumVectors(), 2)
+        self.failUnless((mv1.GetValues(0) == 0).all())
+        self.failUnless((mv1.GetValues(1) == 0).all())
+        mv1.Append(mv2)
+        self.assertEqual(mv1.GetNumVectors(), 5)
+        self.failUnless((mv1.GetValues(2) == 0).all())
+        self.failUnless((mv1.GetValues(3) == 0).all())
+        self.failUnless((mv1.GetValues(4) == 0).all())
+
+    def testAppendBad1(self):
+        "Test ML.MultiVector Append method, negative number of vectors"
+        mv = ML.MultiVector(self.space, 9)
+        self.assertEqual(mv.GetNumVectors(), 9)
+        mv.Append(-8)
+        self.assertEqual(mv.GetNumVectors(), 9)
+
+    # This test works, but prints a mess to stderr
+    #def testAppendBad2(self):
+    #    "Test ML.MultiVector Append method, mismatched Spaces"
+    #    mv1 = ML.MultiVector(self.space , 2)
+    #    mv2 = ML.MultiVector(ML.Space(9), 3)
+    #    self.assertEqual(mv1.GetNumVectors(), 2)
+    #    self.assertRaises(RuntimeError, mv1.Append, mv2)
+
+    def testDelete(self):
+        "Test ML.MultiVector Delete method"
+        fill = numpy.ndarray(shape=(10,), dtype='d')
+        fill[:] = 1.0
+        mv = ML.MultiVector(self.space, 3)
+        for i in range(3):
+            mv.GetValues(i)[:] = i * fill
+        self.failUnless((mv.GetValues(0) == 0).all())
+        self.failUnless((mv.GetValues(1) == 1).all())
+        self.failUnless((mv.GetValues(2) == 2).all())
+        mv.Delete(2)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        self.failUnless((mv.GetValues(1) == 1).all())
+        mv.Delete(0)
+        self.failUnless((mv.GetValues(0) == 1).all())
+
+    def testParentheses1(self):
+        "Test ML.MultiVector __call__ method, (int) argument"
+        fill = numpy.ndarray(shape=(10,), dtype='d')
+        fill[:] = 1.0
+        mv = ML.MultiVector(self.space, 1)
+        mv.GetValues(0)[:] = fill
+        for i in range(10):
+            self.assertEqual(mv(i), 1)
+
+    def testParentheses2(self):
+        "Test ML.MultiVector __call__ method, (int,int) argument"
+        fill = numpy.ndarray(shape=(10,), dtype='d')
+        fill[:] = 1.0
+        mv = ML.MultiVector(self.space, 2)
+        mv.GetValues(0)[:] = fill
+        mv.GetValues(1)[:] = fill * 2
+        for i in range(10):
+            for j in range(2):
+                self.assertEqual(mv(i,j), j+1)
+
+    def testParenthesesBad(self):
+        "Test ML.MultiVector __call__ method, invalid vector index"
+        mv = ML.MultiVector(self.space,1)
+        self.assertRaises(IndexError, mv, 0, 2)
+
+    def testGetGlobalLength(self):
+        "Test ML.MultiVector GetGlobalLength method"
+        mv = ML.MultiVector(self.space, 2)
+        self.assertEqual(mv.GetGlobalLength(), 10*self.comm.NumProc())
+
+    def testUpdate1(self):
+        "Test ML.MultiVector Update method, (double) argument"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        mv.Update(-1.0)
+        self.failUnless((mv.GetValues(0) == -1).all())
+
+    def testUpdate2(self):
+        "Test ML.MultiVector Update method, (double, int) arguments"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, (v, v))
+        self.assertEqual(mv.GetNumVectors(), 2)
+        mv.Update(3.14, 0)
+        self.failUnless((mv.GetValues(0) == 3.14).all())
+        self.failUnless((mv.GetValues(1) == v).all())
+
+    def testUpdate3(self):
+        "Test ML.MultiVector Update method, (MultiVector) argument"
+        v   = range(10)
+        mv1 = ML.MultiVector(self.space, 2)
+        self.failUnless((mv1.GetValues(0) == 0).all())
+        self.failUnless((mv1.GetValues(1) == 0).all())
+        mv2 = ML.MultiVector(self.space, (v, v))
+        self.failUnless((mv2.GetValues(0) == v).all())
+        self.failUnless((mv2.GetValues(1) == v).all())
+        mv1.Update(mv2)
+        self.failUnless((mv1.GetValues(0) == v).all())
+        self.failUnless((mv1.GetValues(1) == v).all())
+
+    def testUpdate4(self):
+        "Test ML.MultiVector Update method, (double, MultiVector) arguments"
+        v   = numpy.arange(10)
+        mv1 = ML.MultiVector(self.space, 2)
+        self.failUnless((mv1.GetValues(0) == 0).all())
+        self.failUnless((mv1.GetValues(1) == 0).all())
+        mv2 = ML.MultiVector(self.space, (v, v))
+        self.failUnless((mv2.GetValues(0) == v).all())
+        self.failUnless((mv2.GetValues(1) == v).all())
+        mv1.Update(3.0, mv2)
+        self.failUnless((mv1.GetValues(0) == 3*v).all())
+        self.failUnless((mv1.GetValues(1) == 3*v).all())
+
+    def testUpdate5(self):
+        "Test ML.MultiVector Update method, (double, MultiVector, double, MultiVector) arguments"
+        v1 = numpy.arange(10)
+        v2 = numpy.ones(10) * 2
+        mv0 = ML.MultiVector(self.space)
+        mv1 = ML.MultiVector(self.space, v1)
+        mv2 = ML.MultiVector(self.space, v2)
+        mv0.Update(3,mv1,4,mv2)
+        self.failUnless((mv0.GetValues(0) == 3*v1 + 4*v2).all())
+
+    def testUpdate6(self):
+        "Test ML.MultiVector Update method, (double, MultiVector, double) arguments"
+        v1 = numpy.arange(10)
+        v2 = numpy.ones(10) * 2
+        mv1 = ML.MultiVector(self.space, v1)
+        mv2 = ML.MultiVector(self.space, v2)
+        mv1.Update(3,mv2,4)
+        self.failUnless((mv1.GetValues(0) == 3*v2 + 4*v1).all())
+
+    def testDotProduct1(self):
+        "Test ML.MultiVector DotProduct method, (MultiVector) argument"
+        v  = numpy.arange(10)
+        mv = ML.MultiVector(self.space, v)
+        result = self.comm.NumProc() * numpy.sum(v * v)
+        self.assertEqual(mv.DotProduct(mv), result)
+
+    def testDotProduct2(self):
+        "Test ML.MultiVector DotProduct method, (MultiVector,int) arguments"
+        v0  = numpy.arange(10)
+        v1  = numpy.ones(10)
+        mv = ML.MultiVector(self.space,(v0, v1))
+        result0 = self.comm.NumProc() * numpy.sum(v0 * v0)
+        self.assertEqual(mv.DotProduct(mv,0), result0)
+        result1 = self.comm.NumProc() * numpy.sum(v1 * v1)
+        self.assertEqual(mv.DotProduct(mv,1), result1)
+
+    def testNorm21(self):
+        "Test ML.MultiVector Norm2 method, no arguments"
+        v  = numpy.arange(10)
+        mv = ML.MultiVector(self.space, v)
+        result = sqrt(self.comm.NumProc() * numpy.sum(v * v))
+        self.assertAlmostEqual(mv.Norm2(), result)
+
+    def testNorm22(self):
+        "Test ML.MultiVector Norm2 method, (int) argument"
+        v0  = numpy.arange(10)
+        v1  = numpy.ones(10)
+        mv = ML.MultiVector(self.space,(v0, v1))
+        result0 = sqrt(self.comm.NumProc() * numpy.sum(v0 * v0))
+        self.assertEqual(mv.Norm2(0), result0)
+        result1 = sqrt(self.comm.NumProc() * numpy.sum(v1 * v1))
+        self.assertAlmostEqual(mv.Norm2(1), result1)
+
+    def testNormInf1(self):
+        "Test ML.MultiVector NormInf method, no arguments"
+        v  = numpy.arange(10)
+        mv = ML.MultiVector(self.space, v)
+        self.assertEqual(mv.NormInf(), 9)
+
+    def testNormInf2(self):
+        "Test ML.MultiVector NormInf method, (int) argument"
+        v0  = numpy.arange(10)
+        v1  = numpy.ones(10)
+        mv = ML.MultiVector(self.space,(v0, v1))
+        self.assertEqual(mv.NormInf(0), 9)
+        self.assertEqual(mv.NormInf(1), 1)
+
+    def testNormOne1(self):
+        "Test ML.MultiVector NormOne method, no arguments"
+        v  = numpy.arange(10)
+        mv = ML.MultiVector(self.space, v)
+        result = self.comm.NumProc() * numpy.sum(abs(v))
+        self.assertEqual(mv.NormOne(), result)
+
+    def testNormOne2(self):
+        "Test ML.MultiVector NormOne method, (int) argument"
+        v0  = numpy.arange(10)
+        v1  = numpy.ones(10)
+        mv = ML.MultiVector(self.space,(v0, v1))
+        result0 = self.comm.NumProc() * numpy.sum(abs(v0))
+        self.assertEqual(mv.NormOne(0), result0)
+        result1 = self.comm.NumProc() * numpy.sum(abs(v1))
+        self.assertEqual(mv.NormOne(1), result1)
+
+    def testReciprocal1(self):
+        "Test ML.MultiVector Reciprocal method, no arguments"
+        v  = numpy.arange(10) + 1
+        mv = ML.MultiVector(self.space, v)
+        mv.Reciprocal()
+        self.failUnless((mv.GetValues(0) == 1.0/v).all())
+
+    def testReciprocal2(self):
+        "Test ML.MultiVector Reciprocal method, (int) argument"
+        v0  = numpy.ones(10) * 2
+        v1  = numpy.ones(10) * 4
+        mv = ML.MultiVector(self.space,(v0, v1))
+        mv.Reciprocal(0)
+        self.failUnless((mv.GetValues(0) == 1.0/v0).all())
+        mv.Reciprocal(1)
+        self.failUnless((mv.GetValues(1) == 1.0/v1).all())
+
+    def testScale1(self):
+        "Test ML.MultiVector Scale method, (double) argument"
+        v  = numpy.arange(10)
+        mv = ML.MultiVector(self.space, v)
+        mv.Scale(-2)
+        self.failUnless((mv.GetValues(0) == -2*v).all())
+
+    def testScale2(self):
+        "Test ML.MultiVector Scale method, (double,int) arguments"
+        v0  = numpy.arange(10)
+        v1  = numpy.ones(10)
+        mv = ML.MultiVector(self.space,(v0, v1))
+        mv.Scale(3,0)
+        self.failUnless((mv.GetValues(0) ==  3*v0).all())
+        mv.Scale(-4,1)
+        self.failUnless((mv.GetValues(1) == -4*v1).all())
+
+    def testRandom(self):
+        "Test ML.MultiVector Random method"
+        mv = ML.MultiVector(self.space)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv.Random()
+        self.failIf((mv.GetValues(0) == 0).any())
+
+    def testSort(self):
+        "Test ML.MultiVector Sort method"
+        mv = ML.MultiVector(self.space)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv.Random()
+        mv.Sort()
+        for i in range(9):
+            self.failIf(mv(i) > mv(i+1))
+
+    def testPrint(self):
+        "Test ML.MultiVector Print method"
+        # This does not work under MPI on my MacBook Pro yet...
+        if not isinstance(self.comm, Epetra.SerialComm): return
+        mv = ML.MultiVector(self.space)
+        mv.SetLabel("Test Vector")
+        f = open(self.dataname,"w")
+        mv.Print(f)
+        f.close()
+        result = "\n*** MLAPI::MultiVector ***\n"     + \
+                 "Label             = Test Vector\n"  + \
+                 "Local length      = 10\n"           + \
+                 "Global length     = %d\n"           + \
+                 "Number of vectors = 1\n"            + \
+                 "Flop count        = 0\n"            + \
+                 "Cumulative time   = 0\n"            + \
+                 "MFlops rate       = 0.0\n\n\n"      + \
+                 "    ProcID                 LID                 GID              value 0\n\n" + \
+                 "         0                   0                   0                   0\n" + \
+                 "         0                   1                   1                   0\n" + \
+                 "         0                   2                   2                   0\n" + \
+                 "         0                   3                   3                   0\n" + \
+                 "         0                   4                   4                   0\n" + \
+                 "         0                   5                   5                   0\n" + \
+                 "         0                   6                   6                   0\n" + \
+                 "         0                   7                   7                   0\n" + \
+                 "         0                   8                   8                   0\n" + \
+                 "         0                   9                   9                   0\n\n"
+        result = result % (10*self.comm.NumProc())
+        self.assertEqual(open(self.dataname,"r").read(), result)
+
+    def testAdd(self):
+        "Test ML.MultiVector __add__ operator"
+        vm1 = ML.MultiVector(self.space, (1,)*10)
+        vm2 = vm1 + vm1
+        self.failUnless((vm2.GetValues(0) == 2).all())
+
+    def testSub(self):
+        "Test ML.MultiVector __sub__ operator"
+        vm1 = ML.MultiVector(self.space, (1,)*10)
+        vm2 = vm1 - vm1
+        self.failUnless((vm2.GetValues(0) == 0).all())
+
+    def testMul1(self):
+        "Test ML.MultiVector __mul__ operator with MultiVector"
+        vm1 = ML.MultiVector(self.space, (2,)*10)
+        dotProduct = vm1 * vm1
+        self.assertEqual(dotProduct, 40.0*self.comm.NumProc())
+
+    def testMul2(self):
+        "Test ML.MultiVector __mul__ operator with float"
+        vm1 = ML.MultiVector(self.space, (2,)*10)
+        vm2 = vm1 * 3.0
+        self.failUnless((vm2.GetValues(0) == 6).all())
+
+    def testMul3(self):
+        "Test ML.MultiVector __mul__ operator with int"
+        vm1 = ML.MultiVector(self.space, (2,)*10)
+        vm2 = vm1 * 3
+        self.failUnless((vm2.GetValues(0) == 6).all())
+
+    def testRmul1(self):
+        "Test ML.MultiVector __rmul__ operator with float"
+        vm1 = ML.MultiVector(self.space, (2,)*10)
+        vm2 = 3.0 * vm1
+        self.failUnless((vm2.GetValues(0) == 6).all())
+
+    def testRmul2(self):
+        "Test ML.MultiVector __rmul__ operator with int"
+        vm1 = ML.MultiVector(self.space, (2,)*10)
+        vm2 = 3 * vm1
+        self.failUnless((vm2.GetValues(0) == 6).all())
+
+    def testSetitem1(self):
+        "Test ML.MultiVector __setitem__ operator, (int,int) arguments"
+        mv = ML.MultiVector(self.space)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv[5,0]   = 5
+        result    = [0] * 10
+        result[5] = 5
+        self.failUnless((mv.GetValues(0) == result).all())
+
+    def testSetitem2(self):
+        "Test ML.MultiVector __setitem__ operator, (slice,int) arguments"
+        mv = ML.MultiVector(self.space)
+        self.failUnless((mv.GetValues(0) == 0).all())
+        mv[2:6,0] = 5
+        result    = [0] * 10
+        for i in range(2,6): result[i] = 5
+        self.failUnless((mv.GetValues(0) == result).all())
+
+    def testGetitem1(self):
+        "Test ML.MultiVector __getitem__ operator, (int,int) arguments"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        self.failUnless((mv.GetValues(0) == v).all())
+        for i in v:
+            self.assertEqual(mv[i,0], i)
+
+    def testGetitem2(self):
+        "Test ML.MultiVector __getitem__ operator, (slice,int) arguments"
+        v  = range(10)
+        mv = ML.MultiVector(self.space, v)
+        self.failUnless((mv.GetValues(0) == v).all())
+        result = mv[2:6,0]
+        self.failUnless((result == (2,3,4,5)).all())
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(MLMultiVectorTestCase))
+
+    # Create a communicator
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+
+    # Run the test suite
+    if iAmRoot: print >>sys.stderr, \
+          "\n**********************\nTesting ML.MultiVector\n**********************\n"
+    verbosity = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(errsPlusFails)

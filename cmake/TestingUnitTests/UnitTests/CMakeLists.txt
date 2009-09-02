@@ -1,0 +1,501 @@
+INCLUDE(PackageAddTest)
+INCLUDE(PackageAddAdvancedTest)
+INCLUDE(UnitTestHelpers)
+
+
+#
+# Set up unit test functions that will be called below to actually run the
+# unit tests.
+#
+# The reason that we use functions is so that we can change varibles just
+# inside of the functions that have their own variable scoping.  In that way,
+# we can keep variables that are set in one unit test from affecting the
+# others.
+#
+
+
+FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
+
+  # Needed by PACKAGE_ADD_TEST(...)
+  SET(PACKAGE_NAME PackageA)
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+
+  MESSAGE("Add a single basic test with no arguments")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Add a single basic test with a single argument")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
+    )
+
+  MESSAGE("Add a single basic test with two arguments")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  MESSAGE("Add two tests with simple arguments")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1" "arg2 arg3" )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_0;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;${PACKEXEN}_1;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg2;arg3"
+    )
+
+  MESSAGE("Add a double quoted input argument")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "--arg1=\"bob and cats\"" )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;--arg1=\"bob and cats\""
+    )
+
+  MESSAGE("Add a double quoted with single quotes input argument")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "--arg1=\"'bob' and 'cats'\"" )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;--arg1=\"'bob' and 'cats'\""
+    )
+
+  MESSAGE("Add two tests with different postfixes and arguments")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN}
+    POSTFIX_AND_ARGS_0 pf_arg1 arg1
+    POSTFIX_AND_ARGS_1 pf_arg23 arg2 arg3
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_pf_arg1;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;${PACKEXEN}_pf_arg23;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg2;arg3"
+    )
+
+  MESSAGE("Add an executable with no prefix")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NOEXEPREFIX ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${EXEN}.exe;arg1"
+    )
+
+  MESSAGE("Add an executable with no suffix")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NOEXESUFFIX ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN};arg1"
+    )
+
+  MESSAGE("Add an executable with no prefix and no suffix")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NOEXEPREFIX NOEXESUFFIX ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${EXEN};arg1"
+    )
+
+  MESSAGE("Add a test with a different name from the executable")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NAME SomeOtherName ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKAGE_NAME}_SomeOtherName;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
+    )
+
+  MESSAGE("Add a test with with a postfix appended to the executable name")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NAME_POSTFIX somePostfix ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_somePostfix;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_PACKAGE_ADD_TEST_COMM)
+
+  # Needed by PACKAGE_ADD_TEST(...)
+  SET(PACKAGE_NAME PackageB)
+
+  # Doing default serial mode
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+  SET(MPI_EXEC_MAX_NUMPROCS 5)
+  SET(MPI_EXEC mpiexec)
+  SET(MPI_EXEC_PRE_NUMPROCS_FLAGS --pre-num-procs-flags)
+  SET(MPI_EXEC_NUMPROCS_FLAG --num-procs)
+  SET(MPI_EXEC_POST_NUMPROCS_FLAGS --post-num-procs-flags)
+
+  MESSAGE("Add a test for serial with no COMM input")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Add a test for MPI with no COMM input")
+  SET(TPL_ENABLE_MPI ON)
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  # Doing MPI mode
+  SET(TPL_ENABLE_MPI ON)
+
+  MESSAGE("Add a test for MPI with no COMM input but with some args")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  MESSAGE("Add a serial-only in an MPI-only build (adds no test)")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} COMM serial )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+  MESSAGE("Add a test for MPI with 'COMM mpi'")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" COMM mpi )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  MESSAGE("Add an MPI test with 2 procs")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" COMM mpi NUM_MPI_PROCS 2 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_2;${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};2;${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  MESSAGE("Add an MPI test with more than the number of allowed processors (will not be added)")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" COMM mpi NUM_MPI_PROCS 10 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+  MESSAGE("Add an MPI test with NUM_PROCS 1-10 (will be max num procs)")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" COMM mpi NUM_MPI_PROCS 1-10 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  MESSAGE("Add an MPI test with NUM_PROCS 3-10 (will be max num procs)")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" COMM mpi NUM_MPI_PROCS 3-10 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  MESSAGE("Add an MPI test with NUM_PROCS ${MPI_EXEC_MAX_NUMPROCS}-10 (will be max num procs)")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} ARGS "arg1 arg2" COMM mpi NUM_MPI_PROCS ${MPI_EXEC_MAX_NUMPROCS}-10 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_MPI_${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC};${MPI_EXEC_PRE_NUMPROCS_FLAGS};${MPI_EXEC_NUMPROCS_FLAG};${MPI_EXEC_MAX_NUMPROCS};${MPI_EXEC_POST_NUMPROCS_FLAGS};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;arg2"
+    )
+
+  # Doing serial mode
+  SET(TPL_ENABLE_MPI OFF)
+
+  MESSAGE("Add a test for serial mode with 'COMM serial'")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} COMM serial )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Add a test for serial mode with 'COMM mpi (adds no test)")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} COMM mpi )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+ENDFUNCTION()
+
+
+#
+# PACKAGE_ADD_ADVANCED_TEST(...) UnitTest Stuff
+#
+
+
+FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
+
+  # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
+  SET(PACKAGE_NAME PackageA)
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN}.exe)
+  SET(CMNDN ls)
+
+  MESSAGE("***\n*** Add a single basic command with no arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_1_args_0
+    TEST_0 CMND ${CMNDN}
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMNDN}\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_0.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"ls\""
+      "NUM_CMNDS 1"
+    )
+
+  MESSAGE("***\n*** Add a single package executable with no arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_exec_1_args_0
+    TEST_0 EXEC ${EXEN}
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_exec_1_args_0.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\""
+      "NUM_CMNDS 1"
+    )
+
+  MESSAGE("***\n*** Add a single basic command with two arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_1_args_2
+    TEST_0 CMND ${CMNDN} ARGS CMakeLists.txt CMakeFiles
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMNDN}\" \"CMakeLists.txt\" \"CMakeFiles\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_2.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"ls\" \"CMakeLists.txt\" \"CMakeFiles\""
+      "NUM_CMNDS 1"
+      "CMAKE_MODULE_PATH"
+      "DriveAdvancedTest"
+      "DRIVE_ADVANCED_TEST"
+    )
+
+  MESSAGE("***\n*** Add a single package executable with three arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_exec_1_args_3
+    TEST_0 EXEC ${EXEN} ARGS arg1 arg2 arg3
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\" \"arg1\" \"arg2\" \"arg3\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_exec_1_args_3.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\" \"arg1\" \"arg2\" \"arg3\""
+      "NUM_CMNDS 1"
+    )
+
+  MESSAGE("***\n*** Add two basic commands with 1 and two arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_2_args_1_2
+    TEST_0 CMND echo ARGS "Cats and Dogs"
+    TEST_1 CMND ls ARGS Cats
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    2
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"echo\" \"Cats and Dogs\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_1
+    "\"ls\" \"Cats\""
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_2_args_1_2.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"echo\" \"Cats and Dogs\""
+      "TEST_1_CMND \"ls\" \"Cats\""
+      "NUM_CMNDS 2"
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM)
+
+  # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
+  SET(PACKAGE_NAME PackageA)
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+  SET(MPI_EXEC_MAX_NUMPROCS 5)
+  SET(MPI_EXEC mpiexec)
+  SET(MPI_EXEC_PRE_NUMPROCS_FLAGS --pre-num-procs-flags)
+  SET(MPI_EXEC_NUMPROCS_FLAG --num-procs)
+  SET(MPI_EXEC_POST_NUMPROCS_FLAGS --post-num-procs-flags)
+  SET(CMNDN ls)
+
+  SET(PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT TRUE)
+
+  # Default serial mode
+
+  MESSAGE("***\n*** Add a test with no COMM argument\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( DummyTest
+    TEST_0 CMND ${CMNDN}
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMNDN}\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+
+  MESSAGE("***\n*** Add a serial test with 'COMM serial'\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( DummyTest
+    TEST_0 CMND ${CMNDN}
+    COMM serial
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMNDN}\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+
+  # Doing MPI mode
+  SET(TPL_ENABLE_MPI ON)
+
+  MESSAGE("***\n*** Add serial-only test with 'COMM mpi' (will not add the test)\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( DummyTest
+    TEST_0 CMND ${CMNDN}
+    COMM serial
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    ""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    ""
+    )
+
+  MESSAGE("***\n*** Add an advanced test for MPI with no COMM input but with two args\n***")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_mpi_exec_1_args_2
+    TEST_0 EXEC ${EXEN} ARGS arg1 arg2 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${MPI_EXEC}\" \"${MPI_EXEC_PRE_NUMPROCS_FLAGS}\" \"${MPI_EXEC_NUMPROCS_FLAG}\" \"${MPI_EXEC_MAX_NUMPROCS}\" \"${MPI_EXEC_POST_NUMPROCS_FLAGS}\" \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe\" \"arg1\" \"arg2\""
+    )
+
+ENDFUNCTION()
+
+
+#
+# Execute the unit tests
+#
+
+
+# Set up some global environment stuff
+SET(${PROJECT_NAME}_HOSTNAME testhost.nowhere.com)
+
+
+# Assume that all unit tests will pass by default
+GLOBAL_SET(UNITTEST_OVERALL_PASS TRUE)
+GLOBAL_SET(UNITTEST_OVERALL_NUMPASSED 0)
+GLOBAL_SET(UNITTEST_OVERALL_NUMRUN 0)
+
+
+# Set up the PACKAGE_ADD_TEST(...) function to only capture the output and not
+# actually add the test.
+SET( PACKAGE_ADD_TEST_ADD_TEST_CAPTURE TRUE )
+SET( PACKAGE_ADD_TEST_ADD_TEST_SKIP TRUE )
+
+
+MESSAGE("\n***")
+MESSAGE("*** Testing basic usage of PACAKGE_ADD_TEST(...)")
+MESSAGE("***\n")
+
+UNITEST_PACKAGE_ADD_TEST_BASIC()
+
+UNITEST_PACKAGE_ADD_TEST_COMM()
+
+MESSAGE("\n***")
+MESSAGE("*** Testing basic usage of PACAKGE_ADD_ADVANCED_TEST(...)")
+MESSAGE("***\n")
+
+UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC()
+
+UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM()
+
+MESSAGE("\n***")
+MESSAGE("*** Determine final result of all unit tests")
+MESSAGE("***\n")
+
+# Pass in the number of expected tests that must pass!
+UNITTEST_FINAL_RESULT(57)

@@ -1,0 +1,8 @@
+This directory contains a crude Matlab interface to Zoltan
+for partitioning sparse matrices (by rows or columns).
+This is not a finished product, but work in progress that you
+may find useful. This version is quite slow (inefficient) since it
+is based on file input/output instead of a direct mex interface. 
+You will need to build the zdrive test driver in Zoltan ('make zdrive')
+before calling the zoltan Matlab function.
+

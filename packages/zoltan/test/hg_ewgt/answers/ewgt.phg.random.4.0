@@ -1,0 +1,19 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = hypergraph_package=phg
+Zoltan Parameters	= phg_coarsening_method=none
+Zoltan Parameters	= phg_coarsepartition_method=random
+Zoltan Parameters	= phg_refinement_method=none
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+Zoltan Parameters       = lb_approach=partition
+File Type		= matrixmarket+
+File Name		= ewgt
+Parallel Disk Info	= number=0
+Zoltan Parameters       = edge_weight_dim=1
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+0	0	-1	-1
+6	0	-1	-1
+9	0	-1	-1
+11	0	-1	-1
+17	0	-1	-1
+21	0	-1	-1

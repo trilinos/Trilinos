@@ -1,0 +1,25 @@
+${HOME}/Trilinos/$1/configure \
+  --with-gnumake \
+  --with-install="/usr/bin/install -p" \
+  --enable-mpi \
+  --with-mpi-compilers \
+  --prefix=${HOME}/Trilinos/BEOWULF_MPI -C \
+  CXXFLAGS="-g -O3 -fPIC -DLAM_BUILDING" \
+  CPPFLAGS="-g -O3 -fPIC -DLAM_BUILDING" \
+  CFLAGS="-g -O3 -fPIC" \
+  FFLAGS="-O3 -funroll-all-loops -malign-double" \
+  --with-libs="-llammpi++" \
+  --disable-default-packages \
+  --disable-examples \
+  --disable-tests \
+  --enable-teuchos \
+  --enable-epetra \
+  --enable-epetraext \
+  --enable-amesos \
+  --enable-ifpack \
+  --enable-aztecoo \
+  --enable-triutils \
+  --enable-galeri \
+  --enable-ml \
+  --enable-webtrilinos \
+  --enable-didasko

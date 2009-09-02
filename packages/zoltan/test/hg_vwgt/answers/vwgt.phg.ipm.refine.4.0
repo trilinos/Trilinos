@@ -1,0 +1,16 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters	= obj_weight_dim=1
+zoltan parameters       = lb_approach=refine
+zoltan parameters	= hypergraph_package=phg
+Zoltan parameters       = phg_coarsening_method=ipm
+zoltan parameters	= phg_coarsening_limit=1
+zoltan parameters	= final_output=1
+File Type		= matrixmarket+
+File Name		= vwgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+15	0	-1	-1
+16	0	-1	-1
+20	0	-1	-1
+21	0	-1	-1

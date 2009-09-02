@@ -1,0 +1,49 @@
+Reading MatrixMarket file /home/cgbaker/Matrices/boneS10.mtx
+1M 2M 3M 4M 5M 6M 7M 8M 9M 10M 11M 12M 13M 14M 15M 16M 17M 18M 19M 20M 21M 22M 23M 24M 25M 26M 27M 28M 
+   Sorting local nonzeros
+
+   Constructing the matrix
+   Inserting global values
+   Completing matrix fill
+File Read time (secs):  17.5488
+
+*** Matrix statistics: /home/cgbaker/Matrices/boneS10.mtx
+Number of rows: 914898
+Number of non-zeros: 28191660
+Mean number of non-zeros per row: 30.8
+Std dev number of non-zeros per row: 11.32
+
+LevelSolver::Analyze() time: 1.81
+LevelSolver::Setup() time: 1.30
+
+*** LevelSolver statistics
+PID: 0
+Num Levels: 2367
+Mean level size: 386.52
+Std dev level size: 275.99
+Mean level nnz: 11528.64
+Std dev level nnz: 5659.32
+
+*** Performing verification
+Applying L to x using CrsMatrix
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.32e-16
+
+Applying L to x using CrsMatrix
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 1.44e+04
+
+Applying L to x using LevelSolver
+Solving L*x using CrsMatrix
+||x - inv(L)*(L*x)||/||x||: 1.00e+00
+
+Applying L to x using LevelSolver
+Solving L*x using LevelSolver
+||x - inv(L)*(L*x)||/||x||: 0.00e+00
+
+*** Timings over 10 trials
+LevelSolver  solve,  1 threads,    7.58e-04 total,    7.58e-05 average
+LevelSolver  apply,  1 threads,    4.84e-04 total,    4.84e-05 average
+K::CrsMatrix apply,  1 threads,    1.00e-06 total,    1.00e-07 average
+Epetra_CrsMatrix solve,            1.20e+00 total,    1.20e-01 average
+Epetra_CrsMatrix apply,            1.22e+00 total,    1.22e-01 average

@@ -1,0 +1,16 @@
+Decomposition Method 	= hypergraph
+zoltan parameters	= phg_coarsening_limit=2
+zoltan parameters	= final_output=1
+zoltan parameters       = phg_from_graph_method=neighbors
+File Type		= Chaco, initial procs=1
+File Name		= nograph
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	-1	-1
+2	0	-1	-1
+6	0	-1	-1
+7	0	-1	-1
+8	0	-1	-1
+14	0	-1	-1
+23	0	-1	-1

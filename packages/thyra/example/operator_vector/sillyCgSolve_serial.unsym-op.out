@@ -1,0 +1,332 @@
+
+Echoing the command-line:
+
+../example/operator_vector/sillyCgSolve_serial.exe --echo-command-line --unsym-op 
+
+
+***
+*** Running silly CG solver using scalar type = 'float' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001 ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<float,float>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<float>
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<float,float>::check(...)
+
+Setting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<float,float>::check(op,...) ...
+  
+  describe op:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<float>{numOps = 2}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<float,float>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<float>{rangeDim=500,domainDim=500}
+      numOps = 2
+      Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
+        Op[0] = "adj(ANYM)": Thyra::DefaultScaledAdjointLinearOp<float>{rangeDim=500,domainDim=500}
+            overallScalar=1.000000e+00
+            overallTransp=CONJTRANS
+            Constituent transformations:
+              transp=CONJTRANS
+                origOp = ExampleTridiagSerialLinearOp<float>
+        Op[1] = ExampleTridiagSerialLinearOp<float>
+  
+  describe b:
+    Thyra::DefaultSpmdVector<float>{spmdSpace=Thyra::DefaultSpmdVectorSpace<float>{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  describe x:
+    Thyra::DefaultSpmdVector<float>{spmdSpace=Thyra::DefaultSpmdVectorSpace<float>{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 1.970000e-03
+  Iter = 48, ||b-A*x||/||b-A*x0|| = 9.033525e-05
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 2.680123e-03/2.966170e+01 = 9.035635e-05 <= 10.0*tolerance = 9.999999e-04: passed
+
+Total time = 4.318600e-02 sec
+
+***
+*** Running silly CG solver using scalar type = 'double' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+00 ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<double,double>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<double>
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<double,double>::check(...)
+
+Setting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<double,double>::check(op,...) ...
+  
+  describe op:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<double>{numOps = 2}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<double,double>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<double>{rangeDim=500,domainDim=500}
+      numOps = 2
+      Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
+        Op[0] = "adj(ANYM)": Thyra::DefaultScaledAdjointLinearOp<double>{rangeDim=500,domainDim=500}
+            overallScalar=1.000000e+00
+            overallTransp=CONJTRANS
+            Constituent transformations:
+              transp=CONJTRANS
+                origOp = ExampleTridiagSerialLinearOp<double>
+        Op[1] = ExampleTridiagSerialLinearOp<double>
+  
+  describe b:
+    Thyra::DefaultSpmdVector<double>{spmdSpace=Thyra::DefaultSpmdVectorSpace<double>{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  describe x:
+    Thyra::DefaultSpmdVector<double>{spmdSpace=Thyra::DefaultSpmdVectorSpace<double>{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 9.488548e-05
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 2.768365e-03/2.917586e+01 = 9.488548e-05 <= 10.0*tolerance = 1.000000e-03: passed
+
+Total time = 3.598500e-02 sec
+
+***
+*** Running silly CG solver using scalar type = 'std::complex<float>' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<std::complex<float>,std::complex<float>>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<std::complex<float>>
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<float>,std::complex<float>>::check(...)
+
+Setting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<std::complex<float>,std::complex<float>>::check(op,...) ...
+  
+  describe op:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<std::complex<float> >{numOps = 2}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<float>,std::complex<float>>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<std::complex<float> >{rangeDim=500,domainDim=500}
+      numOps = 2
+      Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
+        Op[0] = "adj(ANYM)": Thyra::DefaultScaledAdjointLinearOp<std::complex<float> >{rangeDim=500,domainDim=500}
+            overallScalar=(1.000000e+00,0.000000e+00)
+            overallTransp=CONJTRANS
+            Constituent transformations:
+              transp=CONJTRANS
+                origOp = ExampleTridiagSerialLinearOp<std::complex<float>>
+        Op[1] = ExampleTridiagSerialLinearOp<std::complex<float>>
+  
+  describe b:
+    Thyra::DefaultSpmdVector<std::complex<float> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<float> >{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  describe x:
+    Thyra::DefaultSpmdVector<std::complex<float> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<float> >{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 22, ||b-A*x||/||b-A*x0|| = 8.391387e-05
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 3.515651e-03/4.188961e+01 = 8.392656e-05 <= 10.0*tolerance = 9.999999e-04: passed
+
+Total time = 6.420600e-02 sec
+
+***
+*** Running silly CG solver using scalar type = 'std::complex<double>' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<std::complex<double>,std::complex<double>>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<std::complex<double>>
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<double>,std::complex<double>>::check(...)
+
+Setting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<std::complex<double>,std::complex<double>>::check(op,...) ...
+  
+  describe op:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<std::complex<double> >{numOps = 2}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<double>,std::complex<double>>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    "(adj(ANYM))*(ANYM)": Thyra::DefaultMultipliedLinearOp<std::complex<double> >{rangeDim=500,domainDim=500}
+      numOps = 2
+      Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
+        Op[0] = "adj(ANYM)": Thyra::DefaultScaledAdjointLinearOp<std::complex<double> >{rangeDim=500,domainDim=500}
+            overallScalar=(1.000000e+00,0.000000e+00)
+            overallTransp=CONJTRANS
+            Constituent transformations:
+              transp=CONJTRANS
+                origOp = ExampleTridiagSerialLinearOp<std::complex<double>>
+        Op[1] = ExampleTridiagSerialLinearOp<std::complex<double>>
+  
+  describe b:
+    Thyra::DefaultSpmdVector<std::complex<double> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<double> >{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  describe x:
+    Thyra::DefaultSpmdVector<std::complex<double> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<double> >{globalDim=500,localSubDim=500,localOffset=0,comm=NULL}}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 10, ||b-A*x||/||b-A*x0|| = 7.136897e-05
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 3.299063e-03/4.622546e+01 = 7.136897e-05 <= 10.0*tolerance = 1.000000e-03: passed
+
+Total time = 4.109300e-02 sec
+
+Congratulations! All of the tests checked out!

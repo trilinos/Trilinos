@@ -1,0 +1,69 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers using purify 
+#  for solaris on Sandia's 980 LAN.  Purify detects memory problems such as 
+#  overwriting memory or leaking memory.
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+DEFS 			= -DZOLTAN_PURIFY
+DEPS			= -xM
+
+RANLIB			= ranlib
+AR			= ar r
+
+# use CFLAGS = $(DBG_FLAGS) with purify.
+CC			= /Net/local/bin/cc
+CPPC			= /Net/local/bin/CC
+PURE_CC			= purify -best-effort -follow-child-processes=yes \
+			  -cache-dir=/Net/local/proj/zoltan/tmp/purify \
+			  -chain-length=20 
+#                               -windows=no -append-logfile=yes -log-file=./purify.output.%v.%p
+
+INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
+			  -I/Net/local/lang/SC3.0.1/ansi_include \
+                          -I/Net/local/proj/zoltan/arch/solaris/include \
+			  -I/Net/local/mpi/include \
+			  -I/Net/local/mpi/build/solaris/ch_p4/include
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS 			= -ftrap=common $(DBG_FLAGS)
+
+F90                     = f90
+LOCAL_F90               = f90
+F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2
+FFLAGS                  =
+SPPR_HEAD               = spprinc.most
+F90_MODULE_PREFIX       = -M
+FARG                    = farg_typical
+
+MPI_LIB			= -lmpich++ -lpmpich -lmpich -lsocket -lnsl -laio -lc -lC
+MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib  -L/Net/local/arch/sun/solaris/opt/SUNWspro/lib/CC4
+
+PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/debug/ParMETIS3
+PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch//all/src/ParMETIS3
+
+#PATOH_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/PaToH
+#PATOH_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/PaToH
+
+#PARKWAY_LIBPATH		= -L/home/u/kddevin/code/parkway-2.0
+#PARKWAY_INCPATH		= -L/home/u/kddevin/code/parkway-2.0/Source/Include
+
+JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
+JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
+JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+
+NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
+NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include

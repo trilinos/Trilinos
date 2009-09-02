@@ -1,0 +1,11 @@
+To test the ParamConvert.py script, First make sure that PyTrilinos is
+installed.  Then copy the params.gold file to params.py.  Then you can
+run, e.g.
+
+  $ ParamConvert.py params.py
+
+or
+
+  $ ParamConvert.py params.py params.xml
+
+and check the resulting XML file.

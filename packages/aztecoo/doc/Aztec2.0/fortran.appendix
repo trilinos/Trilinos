@@ -1,0 +1,203 @@
+To use the tranformation utilities in Fortran, it is necessary
+to declare a few arrays with the correct dimensions. Unfortunately,
+it can be difficult to know the size of these arrays before runtime.
+However, if we know a few things about the communication, then
+these arrays can be declared. The allocation of these arrays is
+shown below:
+
+     integer   update(N_unknowns), update_index(N_unknowns)
+C
+C                  N_unknowns is the number of unknowns which
+C                  this processor is responsible for updating.
+C
+     integer   external(N_needed), extern_index(N_needed)
+C
+C                  N_needed is the number of unknowns which are
+C                  needed by this processor (ghost variables) to 
+C                  update the unknowns for which it is responsible.
+C
+     integer   data_org(AZ_send_list+N_send_to_others)
+C
+C                  AZ_send_list is an aztec defined constant.
+C                  N_send_to_others is the number of unknowns which
+C                  this processor sends to other processors so that
+C                  they may update their ghost variables.
+C
+
+     
+
+
+The syntax of the functions described in the manual is slightly
+different from the syntax necessary to access AZTEC from fortran.
+The fortran syntax is given below (the descriptions are the same
+as those in the manual).
+
+Explanation of notation
+=======================
+
+The following shorthand 
+
+           AZ_broadcast(character ptr(), integer length, 
+			integer proc_config(), integer action)
+
+is used to describe a fortran subroutine defined as
+
+	   subroutine AZ_broadcast(ptr,length,proc_config,action)
+	   character  ptr(1)
+	   integer    length, proc_config(1), action
+
+Note: AZTEC routines which return values are fortran functions.
+
+
+Fortran Syntax
+==============
+
+
+return value     function/subroutine name & parameters
+------------     -------------------------------------
+
+		 AZ_broadcast(character ptr(), integer length, 
+				integer proc_config(), integer action)
+
+integer          AZ_check_input(integer data_org(), integer options(), 
+				double precision params(), 
+				integer proc_config())
+
+		 AZ_check_msr(integer bindx(), integer N_update, 
+				integer N_external, integer option, 
+				integer proc_config())
+
+		 AZ_check_vbr(integer N_update, integer N_external, 
+		 		integer option, integer bindx(), 
+				integer bpntr(), integer cpntr(), 
+				integer rpntr(), integer proc_config())
+
+		 AZ_defaults(integer options(), double precision params())
+
+		 AZ_exchange_bdry(double precision x(), integer data_org())
+
+integer		 AZ_find_index(integer key, integer list(), integer length)
+
+
+		 AZ_find_local_indices(integer N_update, integer bindx(), 
+                 		integer update(), integer external(), 
+                                integer N_external, integer mat_type, 
+                                integer bpntr())
+
+
+                 AZ_find_procs_for_externs(integer N_update, integer update(), 
+                 		integer external(), integer N_external, 
+                        	integer proc_config(), integer extern_proc())
+
+
+                 AZ_free_memory(integer name)
+
+double precision AZ_gavg_double(double precision value, integer proc_config())
+
+double precision AZ_gdot(integer N, double precision r(), double precision z(),
+				integer proc_config())
+
+double precision AZ_gmax_double(double precision value, integer proc_config())
+
+integer   	 AZ_gmax_int(integer value, integer proc_config())
+
+double precision AZ_gmax_matrix_norm(double precision val(), integer indx(), 
+				integer bindx(), integer rpntr(), 
+				integer cpntr(), integer bpntr(), 
+				integer proc_config(), integer data_org())
+
+double precision AZ_gmax_vec(integer N, double precision vec(), 
+				integer proc_config())
+
+double precision AZ_gmin_double(double precision value, integer proc_config())
+
+integer		 AZ_gmin_int(integer value, integer proc_config())
+
+double precision AZ_gsum_double(double precision value, integer proc_config())
+
+integer		 AZ_gsum_int(integer value, integer proc_config())
+
+		 AZ_gsum_vec_int(integer values(), integer wkspace(), 
+				integer length, integer proc_config())
+
+double precision AZ_gvector_norm(integer n, integer p, double precision x(), 
+				integer proc_config())
+
+		 AZ_init_quick_find(integer list(), integer length, 
+				integer shift, integer bins())
+
+                 AZ_invorder_vec(double vector(), integer data_org(), 
+                                integer update_index(), integer rpntr(),
+                                double newvec())
+
+		 AZ_matvec_mult(double precision val(), integer indx(), 
+				integer bindx(), integer rpntr(),
+				integer cpntr(), integer bpntr(), 
+				double precision b(), double precision c(),
+				integer exchange_flag, integer data_org())
+
+		 AZ_msr2vbr(double precision val(), integer indx(), 
+				integer rpntr(), integer cpntr(),
+				integer bpntr(), integer bindx(), 
+				integer bindx2(), double precision val2(),
+				integer total_blk_rows, integer total_blk_cols,
+				integer blk_space, integer nz_space,
+				integer blk_type)
+
+		 AZ_order_ele(integer update_index(), integer extern_index(),
+				integer N_internal, integer N_border, 
+				integer N_update, integer bpntr(), 
+				integer bindx(), integer extern_proc(),
+				integer N_external, integer option, 
+				integer mat_type)
+
+		 AZ_print_error(integer error_code)
+
+		 AZ_processor_info(integer proc_config())
+
+integer		 AZ_quick_find(integer key, integer list(),integer length, 
+				integer shift, integer bins())
+
+		 AZ_read_msr_matrix(integer update(), double precision val(),
+				integer bindx(), integer N_update, 
+				integer proc_config())
+
+		 AZ_read_update(integer N_update, integer update(),
+				integer proc_config(), integer N, 
+				integer chunk, integer input_option)
+
+		 AZ_reorder_matrix(integer N_update, integer bindx(), 
+				double precision val(), integer update_index(),
+				integer extern_index(), integer indx(), 
+				integer rpntr(), integer bpntr(),
+                                integer N_external, integer cpntr(), 
+				integer option, integer mat_type)
+
+                 AZ_reorder_vec(double vector(), int data_org(), 
+                                int update_index(), int rpntr() )
+
+		 AZ_set_message_info(integer N_external, 
+				integer extern_index(), integer N_update, 
+				integer external(), integer extern_proc(), 
+				integer update(), integer update_index(), 
+				integer proc_config(), integer cpntr(), 
+				integer data_org(), integer mat_type)
+
+		 AZ_solve(double precision x(), double precision b(), 
+				integer options(), double precision params(),
+				integer indx(), integer bindx(), 
+				integer rpntr(), integer cpntr(), 
+				integer bpntr(),    double precision val(), 
+				integer data_org(), double precision status(),
+				integer proc_config())
+
+		 AZ_sort(integer list1(), integer N, integer list2(), 
+				double precision list3())
+
+		 AZ_transform(integer proc_config(), integer external(),
+				integer bindx(), double precision val(), 
+				integer update(), integer update_index(), 
+				integer extern_index(), integer data_org(), 
+				integer N_update, integer indx(), 
+				integer bpntr(), integer rpntr(),
+				integer cpntr(), integer mat_type)

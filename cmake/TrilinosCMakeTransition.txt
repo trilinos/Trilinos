@@ -1,0 +1,703 @@
+--------------------------------------------------------------------------------
+                       Trilinos CMake Transition Log
+--------------------------------------------------------------------------------
+
+The purpose of this document is to track the progress made in the transition
+of Trilinos to the CMake build system.
+
+For each package, the following bits of information should be filled out:
+
+     Package: The name of the package
+    
+     Package Transition Lead: This is the name of a person who has the primary
+     responsibility to transition the package to the CMake build system and to
+     certify that the transition is complete.
+ 
+     Status: The status of the Trilinos transition effort for that package.
+     Are the basic libraries at least there?  Are most of the tests and
+     examples supported?  Are all of the important configure-time options
+     supported?  Is the transition of the package complete?
+ 
+     Final Certification Date:  When the package certification is complete
+
+     Final Certification Evidence: What evidence can you provide that the
+     package has all of the needed support in the CMake system?  If you are
+     package lead you can determine this any way you would like.
+
+
+-------------------------------------------------------------------------------
+
+Package: Teuchos
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: Should be completely finished.
+
+Final Certification Date: 07/16/2009
+
+Final Certification Evidence: It is what it is.
+
+-------------------------------------------------------------------------------
+
+Package: RTOp
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: All libraries, tests, examples and configure options are converted
+over.  This is a pretty simple package so this is not hard.
+
+Final Certification Date: 04/28/2009
+
+Final Certification Evidence: I carefully looked over the test defined in
+rtop/test/definition.  That file defines 19 tests.  I then manually matched
+these up with the various CMakeLists.txt files where these tests are build and
+the CTest tests defined from.  I ran the serial and MPI tests and I get 19
+tests run from each.  I did not verify every single argument in every single
+test output but I trust the CMake system after a lot of experience.
+
+-------------------------------------------------------------------------------
+
+Package: Kokkos
+
+Package Transition Lead: Jim Willenbring (jmwille@sandia.gov)
+
+Status: Completed, as far as what is in autotools is supported
+
+Final Certification Date: 04/15/2009
+
+Final Certification Evidence: All tests built under autotools have been cmakified
+  and give the same answers. The Oski library support is not available though
+  the experimental code and option is hooked up. The experimental tests do not
+  compile due to the lack of the Oski library. There is no mention of this library
+  in the autotools system as far as I can find. An autotools build for experimental
+  had the same issues and no complaints about not finding the library when configuring
+  - bmpersc
+
+-------------------------------------------------------------------------------
+
+Package: Epetra
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Code and all tests and examples listed in the definition file have been
+  converted and run.
+
+Final Certification Date: 2/19/2009
+
+Final Certification Evidence: All tests and examples ran and worked on mac os X
+
+-------------------------------------------------------------------------------
+
+Package: Stokhos (Non-released)
+
+Package Transition Lead: Eric Phipps (etphipp@sandia.gov)
+
+Status: Camek transition is complete.
+
+Final Certification Date: 04/02/2009
+
+Final Certification Evidence: Visual inspection of configuration files.
+
+-------------------------------------------------------------------------------
+
+Package: Sacado
+
+Package Transition Lead: Eric Phipps (etphipp@sandia.gov)
+
+Status: CMake transition is complete.
+
+Final Certification Date: 04/02/2009
+
+Final Certification Evidence: Visual inspection of configuration files.
+
+-------------------------------------------------------------------------------
+
+Package: Zoltan
+
+Package Transition Lead: Karen Devine (kddevin@sandia.gov)
+
+Status: Has fairly complete CMake support and should duplicate the
+functionality of the autotools system.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Shards (Non-released)
+
+Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
+
+Status: Has basic CMake support and some tests and examples.
+
+Final Certification Date: 04/22/2009
+
+Final Certification Evidence: All tests are converted and match auto tools results.
+
+-------------------------------------------------------------------------------
+
+Package: Intrepid (Non-released)
+
+Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
+
+Status: Complete CMake support. No longer maintaining autotools.
+
+Final Certification Date: 05/27/2009
+
+Final Certification Evidence: All tests are converted and match autotools results.
+
+-------------------------------------------------------------------------------
+
+Package: GlobiPack (New Package)
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: New package supporting the CMake system only so is is finished.  It
+has good unit tests so it is releasable right now.
+
+Final Certification Date: 2009/02/11
+
+Final Certification Evidence: See Trilinos/packages/globipack and nightly
+tests
+
+-------------------------------------------------------------------------------
+
+Package: Triutils
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Code and all tests and examples listed in the definition file have been
+  converted and run.
+
+Final Certification Date: 3/17/2009
+
+Final Certification Evidence: All tests are converted and match auto tools results.
+
+-------------------------------------------------------------------------------
+
+Package: Tpetra
+
+Package Transition Lead: Chris Baker (cgbaker@sandia.gov)
+
+Status: All tests are built and run under CMake system.
+
+Final Certification Date: 4/9/2009
+
+Final Certification Evidence: All tests run and pass on autotools as well as CMake.
+
+-------------------------------------------------------------------------------
+
+Package: EpetraExt
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Code and all tests and examples listed in the definition file have been
+  converted and run. Several tests that were only built are now being built under
+  cmake. Not all of those builds could be sufficiently tested since the options 
+  aren't all fully supported on my machine. Though they were simple enough that
+  I'm fairly sure that the cmakification is right.
+
+Final Certification Date: 3/23/2009
+
+Final Certification Evidence: All tests are converted and match auto tools results.
+
+-------------------------------------------------------------------------------
+
+Package: Thyra
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: Should be completely finished except for a ModelEvaluator test.
+However, this is being tested in down-stream packages so this is okay for
+now..
+
+Final Certification Date: 07/16/2009
+
+Final Certification Evidence: It is what it is.
+
+-------------------------------------------------------------------------------
+
+Package: OptiPack (New Package)
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: New package supporting the CMake system only so is is finished.  It
+has good unit tests so it is releasable right now.
+
+Final Certification Date: 2009/02/11
+
+Final Certification Evidence: See Trilinos/packages/optipack and nightly tests
+
+-------------------------------------------------------------------------------
+
+Package: Isorropia
+
+Package Transition Lead: Cedric Chevalier (ccheval)
+
+Status: All code and tests compile (without any warning) and pass.
+Dependancies are correctly handle.
+
+Final Certification Date: 2009/04/27
+
+Final Certification Evidence: See Trilinos/packages/isorropia and nightly
+tests.
+
+-------------------------------------------------------------------------------
+
+Package: Pliris
+
+Package Transition Lead: Joseph D. Kotulski (jdkotul@sandia.gov)
+
+Status:  Initial Cmakification done. Library and a test.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Claps (Non-released)
+
+Package Transition Lead: None needed
+
+Status: Will not be converted over to the CMake build system.  Claps will be
+moved into Salinas and another solver package will be put into Trilinos in its
+place.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: AztecOO
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Completed.
+
+Final Certification Date: 03/13/2009
+
+Final Certification Evidence: All tests run under auto tools version are now being
+  built and produce the same answer
+
+-------------------------------------------------------------------------------
+
+Package: Galeri (Orphaned Package)
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Completed
+
+Final Certification Date: 4/14/2009
+
+Final Certification Evidence: All tests running under autotools are now being run
+  under cmake and produce the same answers. All tests being built under auto tools
+  are being built under cmake as well.
+
+-------------------------------------------------------------------------------
+
+Package: Amesos (Orphaned Package)
+
+Package Transition Lead: Jim Willenbring (jmwille@sandia.gov)
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Ifpack
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: 2/24/2009
+
+Final Certification Evidence: All tests and examples ran and worked on mac os X
+
+-------------------------------------------------------------------------------
+
+Package: Komplex
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Complete, in that all tests that the autotools actually builds are built
+  and run. With the addition of one test so that there would be at least one test.
+
+Final Certification Date: 4/15/2009
+
+Final Certification Evidence: All tests and files built by autotools are built.
+
+-------------------------------------------------------------------------------
+
+Package: ML
+
+Package Transition Lead: Jonathan Hu (jhu@sandia.gov)
+
+Status: Basic libraries.  All examples that run under the current test
+harness.  Most of the tests that run under the current test harness.  The
+tests that are missing are those that require CompareTestOutput, which
+compares output to a "gold-copy" output file.  Ross has put this capability
+in, but I haven't finished this off.
+
+I've also added support for Zoltan as a TPL.  This was necessary until Alegra
+(and maybe other Sandia apps?) switch to using Zoltan as a Trilinos package.
+
+One big item that still needs to be done is fixing some nonstandard code that
+breaks native Windows builds.
+
+Final Certification Date: 4/29/2009
+
+Final Certification Evidence: Almost all tests that were running under the old
+test harness are in cdash and passing.  There are still some warnings.
+
+-------------------------------------------------------------------------------
+
+Package: Belos
+
+Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
+
+Status: Builds and runs all tests with cmake/ctest.  This includes library support
+    for all Epetra examples/tests and Tpetra examples/tests.
+
+Final Certification Date:  4/28/2009
+
+Final Certification Evidence: All tests and files built by autotools are built by cmake,
+and possibly more.
+
+-------------------------------------------------------------------------------
+
+Package: Stratimikos
+
+Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
+
+Status: Should have complete support for all libraries, tests and examples.
+
+Final Certification Date: 07/16/209
+
+Final Certification Evidence: It is what it is.
+
+-------------------------------------------------------------------------------
+
+Package: Meros (Orphaned Package)
+
+Package Transition Lead: Kevin Long (kevin.long@ttu.edu)
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: FEI
+
+Package Transition Lead: Alan Williams (william@sandia.gov)
+
+Status: Builds and run tests with cmake/ctest. It is possible that some
+    minor changes still need to be made for optional dependencies and other
+    subtleties, but I think FEI is pretty much cmake-ified.
+
+Final Certification Date: 3/26/2009
+
+Final Certification Evidence: more tests are being built/run with cmake than
+with autotools.
+
+-------------------------------------------------------------------------------
+
+Package: RBGen
+
+Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
+
+Status: Builds and runs all tests with cmake/ctest.  This includes library support
+    for all Epetra examples/tests/drivers.
+
+Final Certification Date: 4/28/2009
+
+Final Certification Evidence: All files and drivers built by autotools are built by cmake.
+
+-------------------------------------------------------------------------------
+
+Package: Anasazi
+
+Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
+
+Status: Builds and runs all tests with cmake/ctest.  This includes library support
+    for all Epetra examples/tests, Thyra examples/tests, and Tpetra
+    examples/tests.
+
+Final Certification Date: 4/28/2009
+
+Final Certification Evidence: more tests are being built/run with cmake than with 
+autotools
+
+-------------------------------------------------------------------------------
+
+Package: ThreadPool
+
+Package Transition Lead: Carter Edwards (hcedwar@sandia.gov)
+
+Status: Builds and runtest tests with cmake/ctest.
+
+Final Certification Date: 7/16/2009
+
+Final Certification Evidence: Tests pass.
+
+-------------------------------------------------------------------------------
+
+Package: Phalanx
+
+Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
+
+Status: Should have complete CMake support.
+
+Final Certification Date: 04/22/2009
+
+Final Certification Evidence: All tests are converted and match auto tools results.
+
+-------------------------------------------------------------------------------
+
+Package: Pamgen
+
+Package Transition Lead: David Hensinger (dmhensi@sandia.gov)
+
+Status: Thanks to the patient and very competent assistance of Brent Pershbaker
+all tests have been moved over to ctest. The library and test executables 
+are building with cmake. Additional functionality and support for the external
+libraies Nemesis and Exodus have been added.
+
+Final Certification Date: 05/08/2009
+
+Final Certification Evidence: Tests converted to ctest and are identical to autotests
+
+-------------------------------------------------------------------------------
+
+Package: Phdmesh
+
+Package Transition Lead: Carter Edwards (hcedwar@sandia.gov)
+
+Status: Initial cmakification complete. Libraries and a test have been converted.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: NOX (and therefore also LOCA)
+
+Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
+
+Status: NOX is complete.  LOCA is complete, except a configuration
+test for GGEV which may not even be necessary anymore.
+
+Final Certification Date: 04/22/2009
+
+Final Certification Evidence: All tests are converted and match auto
+tools results.  In fact we have better coverage under cmake since all
+examples are now under nightly testing.  This is not the case for
+autotools.
+
+-------------------------------------------------------------------------------
+
+Package: Moertel (Orphaned Package)
+
+Package Transition Lead: Jim Willenbring (jmwille@sandia.gov)
+
+Status: Basic libraries should be done.  This package never had any tests
+(i.e. moertel/tests does not even exist and therefore moertel/tests/definition
+does not even exist).  No other package in Trilinos depends on this package.
+Since this package does not contain any tests it is questionable if this
+package should even be released.  We found out that this package has users at
+INL, so this package needs to be transitioned.  Though an ideal test suite
+will not result, we probably should look at turning some of Moertel's examples
+into tests.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: TrilinosCouplings
+
+Package Transition Lead: Jonathan Hu (jhu@sandia.gov)
+
+Status: Basic libraries and examples are done.  Heidi got the epetraext
+examples working.
+
+Final Certification Date: 4/29/2009
+
+Final Certification Evidence:  Local builds and cdash builds.
+
+-------------------------------------------------------------------------------
+
+Package: Rythmos
+
+Package Transition Lead: Todd Coffey (tscoffe@sandia.gov)
+
+Status: Basic libraries and several tests and examples.  Almost complete.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: MOOCHO
+
+Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
+
+Status: All of the primary stable code (libraries and tests/examples) are
+added.  I still need to add back support for MA28 but I can do that next.
+
+Final Certification Date: 2009/04/17
+
+Final Certification Evidence: I carefully went through the file
+moocho/test/defintion and added every test that was there.  That file was kind
+of a mess and was running a few exact same tests twise.  I also found out that
+the perl test harness was not even running with all of the command-line
+arguments and so was not even right.  I also added MPI(1) versions of every
+serial-only test that I could to maximize the coverage for an MPI build.  I
+have not performed coverage testing yet but I am very confident that I have
+added all of the tests and more as was in the autotools/perl system.
+
+-------------------------------------------------------------------------------
+
+Package: Aristos (Non-released)
+
+Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
+
+Status: Has not been started yet.  However, this package will not be released
+in the upcomming release so it is not critical to get in CMake support.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Sundance
+
+Package Transition Lead: Kevin Long (kevin.long@ttu.edu)
+
+Status: All C++ libraries and tests converted. 
+
+Final Certification Date: [24 Apr 2009]
+
+Final Certification Evidence: [Tests are passing, with the exception of a checked STL problem and several random errors on Darwin. As these are unelated to cmake, I consider the cmake transition to be completed.]
+
+-------------------------------------------------------------------------------
+
+Package: TriKota
+
+Package Transition Lead: Andy Salinger (agsalin@sandia.gov)
+
+Status: TriKota builds with CMake. TriKota has a dependence on 
+Dakota TPLs. (There is still the issue of a circular dependency
+between Dakota and Trilinos: Dakota depends on Teuchos, TriKota 
+depends on Dakota. The snapshot of Teuchos in Dakota is updated
+manually whenever they go out of synch enough to cause problems.)
+
+Final Certification Date: 07-16-2009
+
+Final Certification Evidence: The single test runs under ctest
+and passes. The build and install is being tested nightly
+as part of the Albany code project.
+
+-------------------------------------------------------------------------------
+
+Package: CTrilinos (Non-released)
+
+Package Transition Lead: Nicole Lemaster (mnlemas@sandia.gov)
+
+Status: Builds with CMake but no longer with autotools.
+
+Final Certification Date: 07/16/2009
+
+Final Certification Evidence: Has been consistently building for months with
+cmake; the two failing unit tests are not related to issues with cmake.
+
+-------------------------------------------------------------------------------
+
+Package: ForTrilinos (Non-released)
+
+Package Transition Lead: Damian Rouson (rouson@sandia.gov)
+
+Status: Has not been started yet.  However, since this is an experimental
+package and is extremely small, getting CMake suppport is not critical.  Also,
+this package requires *very* a recent GNU Fortran 2003 compiler and
+compiler-specific issues like module file linking needs to be resolved.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: PyTrilinos
+
+Package Transition Lead: Bill Spotz (wfspotz@sandia.gov)
+
+Status: I consider the transition complete with the exception of TPL
+support.  This is typically one-off: PyTrilinos supports Teuchos which
+supports expat; PyTrilinos supports EpetraExt which supports HDF5;
+etc.  Some or all of these may have been addressed since I last checked.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: WebTrilinos (Orphaned package)
+
+Package Transition Lead: None needed (for now)
+
+Status: Not started yet.  However, this packages does not represent a
+significant capability and is only used for running demos and tutorials.  The
+transition to the CMake build system can be put off until after the next
+Trilinos release.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Didasko
+
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
+
+Status: Complete with the exception of the epetraext examples. It requires a
+  version of zoltan that is not the version that is in Trilinos. This will
+  have to be researched more and probably envolves fixing things in epetraext.
+
+Final Certification Date: 4/22/2009
+
+Final Certification Evidence: All examples are producing the same results as auto
+ tools builds (including the epetraext example which exits with a message about
+ needing specific options to be enabled in both)
+
+-------------------------------------------------------------------------------
+
+Package: NewPackage
+
+Package Transition Lead: None needed
+
+Status: Do not represent a capability and therefore does not have to be
+transitioned over to the CMake build system on any schedule.  When someone
+want to update this it can be done but doing so or not doing so will not hold
+up anything else.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------

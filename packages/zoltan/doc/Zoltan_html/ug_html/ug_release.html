@@ -1,0 +1,511 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+  <title>Zoltan User's Guide: Release Notes</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+--><!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#ffffff">
+<div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_backward.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_examples_query.html">Previous</a></i></b></div>
+<!---------------------------------------------------------------------------->
+<h2><a name="Release Notes">Release Notes
+</a></h2>
+<a name="Release Notes">Release notes are available for the following
+releases of Zoltan:
+</a>
+<blockquote>
+  <a href="#Release3.1">Zoltan Release v3.1</a><br>
+  <a href="#Release3.0">Zoltan Release v3.0</a><br>
+  <a href="#Release2.1">Zoltan Release v2.1</a><br>
+  <a href="#Release2.02">Zoltan Release v2.02</a><br>
+  <a href="#Release2.01">Zoltan Release v2.01</a><br>
+  <a href="#Release2.0">Zoltan Release v2.0</a><br>
+  <a href="#Release1.54">Zoltan Release v1.54</a>
+  <br>
+  <a href="#Release1.53">Zoltan Release v1.53</a>
+  <br>
+  <a href="#Release1.52">Zoltan Release v1.52</a>
+  <br>
+  <a href="#Release1.5">Zoltan Release v1.5</a>
+  <br>
+  <a href="#Release1.3">Zoltan Release v1.3</a>
+</blockquote>
+<hr>
+<h2><a name="Release3.1">Zoltan Release Notes v3.1: September 26, 2008</a></h2>
+Zoltan v3.1 includes the following new features:
+<ul>
+<li>
+Important new capabilities for Matrix ordering are included in Zoltan v3.1.
+<ul>
+<li>
+A graph/matrix ordering interface to
+<a href="ug_order_ptscotch.html">PT-Scotch</a>, a
+high-quality graph ordering and partitioning library from the University of
+Bordeaux, is now available.
+<li>
+Zoltan's new <a href="ug_interface_order.html">matrix 
+ordering interface</a>
+returns ordering information such as permutations and
+separators to the application.
+</ul>
+<li>
+New <a href="ug_alg_phg.html">hypergraph partitioning</a>
+options for inexpensively
+<a href="ug_alg.html#LB_APPROACH">refining</a> partitions are
+included and controlled simply by parameters 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a> and 
+<a href="ug_alg_phg.html">PHG_MULTILEVEL</a>.
+<li>
+Robustness improvements have been made to Zoltan's parallel
+<a href="ug_alg_hypergraph.html">hypergraph</a>
+partitioner and repartitioner.
+<li>
+A new <a href="ug_usage.html#TrilinosAutotools">Autotools 
+build environment</a> is available.  
+The native Zoltan build environment is still 
+supported in this release.
+<li>
+<a href="ug_usage.html#TrilinosAutotools">Serial, non-MPI builds</a>
+of Zoltan are enabled through the new Autotools build environment.
+<li>
+Zoltan is now a 
+<a href="http://trilinos.sandia.gov">Trilinos</a> package.
+Integration with <a href="http://trilinos.sandia.gov">Trilinos</a>,
+is now tighter and more seamless.  
+In particular, Zoltan is the default partitioner for the Trilinos package
+<a href="http://trilinos.sandia.gov/packages/isorropia/">Isorropia</a>,
+a matrix-based interface to Zoltan.
+</ul>
+
+<p>
+Please see the <a href="ug_backward.html">backward compatibility</a> section
+for a detailed description of changes that may affect current users.
+
+
+<hr>
+<h2><a name="Release3.0"></a>Zoltan Release Notes v3.0:  May 1, 2007</h2>
+Zoltan v3.0 includes major new features.
+<ul>
+<li> <a href="ug_alg_phg.html">Parallel Hypergraph Repartitioning</a> combining
+the improved communication metric of <a href="ug_alg_hypergraph.html">hypergraph
+partitioning</a> with a 
+<a href="http://www.cs.sandia.gov/~kddevin/papers/Catalyurek_IPDPS07.pdf">new model</a> 
+for representing an existing partition while
+computing a new one.  This work received the "Best Algorithms Paper Award" at
+the <a href="http://www.ipdps.org"> 2007 IEEE International Parallel and
+Distributed Processing Symposium</a>.
+<li> <a href="http://www.cs.sandia.gov/~kddevin/papers/wiley_chapter.pdf">Hypergraph refinement</a> to quickly
+improve the quality of an existing partition. 
+<li> Improved partition quality within the Zoltan 
+<a href="ug_alg_phg.html">parallel hypergraph partitioner</a>.
+<li> <a href="ug_alg_phg.html">Parallel graph partitioning</a> using
+Zoltan's parallel hypergraph partitioner.
+<li> Hypergraph partitioning with <a href="ug_alg_hypergraph.html">fixed 
+vertices</a>
+that allows application to assign or "fix" objects to a desired part
+before partitioning.
+<li> Improved <a href="ug_alg.html#REMAP">part remapping</a> to reduce data migration costs in all
+partitioners.
+<li> Hybrid <a href="ug_alg_hier.html">hierarchical partitioning</a> that allows
+different partitioning algorithms to be applied within a hierarchy of 
+computers (e.g., partitioning across a cluster of shared-memory processors,
+followed by partitioning within each shared-memory processor).
+<li> A new scheme for more easily specifying partitioning 
+<a href="ug_alg.html#LB_METHOD">methods</a> and 
+<a href="ug_alg.html#LB_APPROACH">approaches</a>
+within the hypergraph and graph partitioners.
+<li> Very <a href="ug_alg_simple.html">simple partitioners</a> that serve as
+testing tools and examples for usage.
+</ul>
+
+<p>
+Please see the <a href="ug_backward.html">backward compatibility</a> section
+for a detailed description of changes that may affect current users.
+
+
+<hr>
+<h2><a name="Release2.1"></a>Zoltan Release Notes v2.1:  October 5, 2006</h2>
+Zoltan v2.1 includes a significant bug fix for the hypergraph partitioner.
+We strongly recommend that users upgrade to Zoltan v2.1.
+<hr>
+<h2><a name="Release2.02"></a>Zoltan Release Notes v2.02:  September 26, 2006</h2>
+Zoltan v2.02 includes bugfixes:
+<ul>
+<li>Zoltan_LB_Eval now correctly computes edge cuts with respect to parts 
+when parts are spread across more than one processor.
+</li>
+<li>Extraneous (and annoying) print statement has been removed from
+Zoltan partitioning method RCB.
+</li>
+</ul>
+<hr>
+<h2><a name="Release2.01"></a>Zoltan Release Notes v2.01:  August 2006</h2>
+Zoltan v2.01 includes enhancements to version 2.0.
+<ul>
+  <li>F90 interface fixes to comply with standard F90 (e.g., shortened
+variable names and continuation lines).  The hypergraph callback function
+names have changed, but C and C++ compatibility with v2.0 is maintained.</li>
+  <li>Performance improvement to initial building of hypergraphs from
+application data.</li>
+  <li>Major bug fix for dense-edge removal in parallel hypergraph method; 
+      partitioning of hypergraphs with edges containing more than 25% of 
+      the vertices was affected by this bug.</li>
+  <li>Minor fixes to parallel hypergraph code.</li>
+</ul>
+<hr>
+<h2><a name="Release2.0"></a>Zoltan Release Notes v2.0:  April 2006</h2>
+Zoltan v2.0 includes several major additions:<br>
+<ul>
+  <li><a href="ug_alg_phg.html">Parallel hypergraph partitioning</a>. </li>
+  <li><a href="ug_color.html">Parallel graph coloring</a>, both distance-1 and distance-2.</li>
+  <li><a href="ug_alg_rcb.html">Multicriteria geometric partitioning (RCB)</a>.</li>
+  <li><a href="ug_cpp.html">C++ interface</a>.
+</ul>
+<p></p>
+<hr>
+
+<h2><a name="Release1.54"></a>Zoltan Release Notes v1.54</h2>
+Some versions of MPICH have a bug in MPI_Reduce_scatter; they can
+report
+errors with MPI_TYPE_INDEXED.
+In Zoltan v1.54's unstructured communication package, calls to
+MPI_Reduce_scatter have been replaced with separate calls to MPI_Reduce
+and MPI_Scatter.
+<p></p>
+<hr>
+<h2><a name="Release1.53"></a>Zoltan Release Notes v1.53</h2>
+Zoltan v1.53 includes the following new capabilities:
+<ul>
+  <li> Portability to BSD Unix and Mac OS X was added.
+  </li>
+  <li> Averaging of RCB and RIB cuts was added; see Zoltan parameter
+    <a href="ug_alg_rcb.html#AVERAGE_CUTS">AVERAGE_CUTS</a>.
+  </li>
+  <li> A new function <a href="ug_alg_rcb.html#Zoltan_RCB_Box"><b>Zoltan_RCB_Box</b></a>
+returns information about subdomain bounding
+boxes in RCB decompositions.
+  </li>
+  <li>
+F90 interface to
+    <a href="ug_interface_order.html#Zoltan_Order"><b>Zoltan_Order</b></a>
+was added.
+  </li>
+  <li>
+Warnings that load-imbalance tolerance was not met are no longer
+printed
+when <a href="ug_param.html#Debug%20Levels%20in%20Zoltan">DEBUG_LEVEL</a>
+== 0.
+  </li>
+  <li>
+Minor bugs were addressed.
+  </li>
+</ul>
+<hr>
+<h2><a name="Release1.52"></a>Zoltan Release Notes v1.52</h2>
+Zoltan v1.52 includes the following new capabilities:
+<ul>
+  <li>
+List-based graph callback functions
+    <a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a>
+and <a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a>
+were added to mirror support and performance given by the
+list-based geometric function <a
+ href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a>.
+  </li>
+  <li>
+Support for ParMETIS v3.1 was added. </li>
+  <li>
+Minor bugs were addressed.
+  </li>
+</ul>
+<hr>
+<h2><a name="Release1.5"></a>Zoltan Release Notes v1.5</h2>
+This section describes improvements to Zoltan in Version 1.5.
+Every attempt was made to keep Zoltan v1.3 backwardly compatible with
+previous versions.
+Users of previous versions of Zoltan should refer to the <a
+ href="ug_backward.html">Backward Compatibility Notes</a>.
+<p>Short descriptions of the following features are included below;
+follow the links for more details.
+</p>
+<blockquote><a href="#REMAP">Part remapping</a>
+  <br>
+  <a href="#KNEP">Unequal Numbers of Parts and Processors</a>
+  <br>
+  <a href="#UnequalSizes">Non-Uniform Part Sizes</a>
+  <br>
+  <a href="#Interface1.5">Zoltan Interface Updated</a>
+  <br>
+  <a href="#HSFCBox">Robust HSFC Box Assign</a>
+  <br>
+  <a href="#Matrix">Matrix Ordering</a>
+  <br>
+  <a href="#Performance1.5">Performance Improvements</a>
+  <br>
+  <a href="#BugFixes1.5">Bug Fixes</a>
+</blockquote>
+<!---------------------------------------------------------------------------->
+<h4><a name="REMAP"></a>
+<hr>Part Remapping</h4>
+During partitioning, Zoltan v1.5 can renumber parts so that the
+input and output partitions have greater overlap (and, thus, lower
+data-migration costs). This remapping is controlled by Zoltan parameter
+<i><a href="ug_alg.html#REMAP">REMAP</a></i>. Experiments have shown
+that
+using this parameter can greatly reduce data migration costs.
+<!---------------------------------------------------------------------------->
+<h4><a name="KNEP"></a>
+<hr>Unequal Numbers of Parts and Processors</h4>
+Zoltan v1.5 can be used to generate <i>k</i> parts on <i>p</i>
+processors,
+where <i>k</i> is not equal to <i>p</i>. Function <a
+ href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>
+(replacing <a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>)
+can generate arbitrary numbers of parts on the given processors.
+The number of desired parts is set with parameters <i><a
+ href="ug_alg.html#NUM_GLOBAL_PARTS">NUM_GLOBAL_PARTS</a></i>
+or <i><a href="ug_alg.html#NUM_LOCAL_PARTS">NUM_LOCAL_PARTS</a></i>.
+Both part and processor information are returned by
+<a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>,
+<b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b>,
+and
+<b><a href="ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>.
+New Zoltan query functions
+<b><a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
+and <b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+return objects' part information to Zoltan.
+<a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>
+can still be used for <i>k</i> equal to <i>p</i>.
+<!---------------------------------------------------------------------------->
+<h4><a name="UnequalSizes"></a>
+<hr>Non-Uniform Part Sizes</h4>
+Part sizes for local and global parts can be specified using
+<b><a href="ug_interface_lb.html#Zoltan_LB_Set_Part_Sizes">Zoltan_LB_Set_Part_Sizes</a></b>,
+allowing non-uniformly sized parts to be generated by
+Zoltan's partitioning algorithms.
+<!---------------------------------------------------------------------------->
+<h4><a name="Interface1.5"></a>
+<hr>Zoltan Interface Updated</h4>
+To support the concept of parts separate from processors, many new
+interface functions were added to Zoltan v1.5 (e.g.,
+<a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a>
+and
+<b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>).
+These functions mimic previous Zoltan functions (e.g.,
+<a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>
+and
+<b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>,
+respectively), but include both part and processor information.
+Both the new and old interface functions work in Zoltan v1.5.
+See the notes on <a href="ug_backward.html">Backward Compatibility</a>.
+<!---------------------------------------------------------------------------->
+<h4><a name="HSFCBox"></a>
+<hr>Robust HSFC Box Assign</h4>
+Function
+<b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b>
+now works for the <a href="ug_alg_hsfc.html">Hilbert Space-Filling
+Curve algorithm (HSFC)</a>,
+in addition to the <a href="ug_alg_rcb.html">RCB</a> and <a
+ href="ug_alg_rib.html">RIB</a> algorithms supported in previous
+versions
+of Zoltan. <b><a
+ href="ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>
+continues to work for <a href="ug_alg_hsfc.html">HSFC</a>,
+<a href="ug_alg_rcb.html">RCB</a> and <a href="ug_alg_rib.html">RIB</a>.
+<!---------------------------------------------------------------------------->
+<h4><a name="Matrix"></a>
+<hr>Matrix Ordering</h4>
+Zoltan v1.5 contains a matrix-ordering interface <b><a
+ href="ug_interface_order.html#Zoltan_Order">Zoltan_Order</a></b>
+to ParMETIS' matrix-ordering
+functions. New graph-based matrix-ordering algorithms can be easily
+added behind this interface.
+<!---------------------------------------------------------------------------->
+<h4><a name="Performance1.5"></a>
+<hr>Performance Improvements</h4>
+Many performance improvements were added to Zoltan v1.5.
+<ul>
+  <li>
+List-based callback functions have been added to Zoltan
+(<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>,
+    <b><a href="ug_query_lb.html#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>,
+    <b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>,
+    <b><a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_MULTI_FN">ZOLTAN_PACK_OBJ_MULTI_FN</a></b>,
+and
+    <b><a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_MULTI_FN">ZOLTAN_UNPACK_OBJ_MULTI_FN</a></b>);
+these functions allow entire lists of data to be passed from the
+application to Zoltan, replacing per-object callbacks.
+  </li>
+  <li>
+    <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+now
+can accept either import lists, export lists, or both. It is no longer
+necessary to call <b><a
+ href="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>
+or <b><a href="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>
+to get appropriate input for <b><a
+ href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>.
+  </li>
+  <li>
+Zoltan v1.5 contains performance improvements within individual
+algorithms.
+We recommend users upgrade to the latest version.
+  </li>
+</ul>
+<!---------------------------------------------------------------------------->
+<a name="BugFixes1.5"></a>
+<hr>
+<h4>Bug Fixes</h4>
+Bug fixes were made to Zoltan's algorithms and interface. Users
+of previous versions of Zoltan are encouraged to upgrade.
+<!----------------------------------------------------------------------------><!---------------------------------------------------------------------------->
+<!---------------------------------------------------------------------------->
+<hr>
+<hr>
+<h2><a name="Release1.3"></a>Zoltan Release Notes v1.3</h2>
+This section describes improvements to Zoltan in Version 1.3.
+Every attempt was made to keep Zoltan v1.3 backwardly compatible with
+previous versions.
+Users of previous versions of Zoltan should refer to the <a
+ href="ug_backward.html">Backward Compatibility Notes</a>.
+<p>Short descriptions of the following features are included below;
+follow the links for more details.
+</p>
+<blockquote><a href="#Data%20Services">More Data Services</a>
+  <br>
+  <a href="#New%20HSFC">New Hilbert Space-Filling Curve Partitioning</a>
+  <br>
+  <a href="#New%20Structured">Support for Structured-Grid Partitioning</a>
+  <br>
+  <a href="#ParMETIS3">Support for ParMETIS v3.0</a>
+  <br>
+  <a href="#Performance">Performance Improvements</a>
+  <br>
+  <a href="#New%20Interface">Zoltan Interface Updated</a>
+  <br>
+  <a href="#TestSuite">Improved Test Suite</a>
+  <br>
+  <a href="#BugFixes">Bug Fixes</a>
+</blockquote>
+<!---------------------------------------------------------------------------->
+<a name="Data Services"></a>
+<hr>
+<h4>More Data Services</h4>
+Zoltan's mission has been widened beyond its original focus on dynamic
+load-balancing algorithms. Now Zoltan also provides data management
+services to parallel, unstructured, and adaptive computations.
+Several packages of parallel data services have been added and made
+available to
+application developers. These services include the following:
+<ul>
+  <li>An <a href="ug_util_comm.html">unstructured
+communication package</a> that simplifies complicated communication by
+insulating applications from the details of message
+sends and receives.
+  </li>
+  <li>A <a href="ug_util_dd.html">distributed data directory</a>
+that allows applications to efficiently
+(in memory and time) locate off-processor data.
+  </li>
+  <li>A <a href="ug_util_mem.html">dynamic memory
+management package</a> that simplifies debugging of
+memory allocation problems on state-of-the-art parallel computers.
+  </li>
+</ul>
+<!---------------------------------------------------------------------------->
+<a name="New HSFC"></a>
+<hr>
+<h4>New Hilbert Space-Filling Curve Partitioning</h4>
+Zoltan now includes a fast, efficient implementation of <a
+ href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC)</a>
+partitioning. This geometric method also includes
+support for <a href="ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a>
+and <a href="ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a>
+functions.<!----------------------------------------------------------------------------> <a
+ name="New Structured"></a>
+<hr>
+<h4>Support for Structured-Grid Partitioning</h4>
+Zoltan's <a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a>
+partitioning algorithm has been enhanced to allow
+generation of strictly rectilinear subdomains. This capability can be
+used for partitioning of grids for structured-grid applications. See
+parameter <a href="ug_alg_rcb.html"><i>RCB_RECTILINEAR_BLOCKS</i></a>.
+<!----------------------------------------------------------------------------><a
+ name="ParMETIS3"></a>
+<hr>
+<h4>Support for ParMETIS v3.0</h4>
+In addition to providing interfaces to <a href="ug_alg_parmetis.html">ParMETIS
+v2.0</a>,
+Zoltan now provides an interfaces <a href="ug_alg_parmetis.html">ParMETIS
+v3.0</a>. Full support of ParMETIS v3.0's multiconstraint and
+multiobjective partitioning is
+included.
+<!----------------------------------------------------------------------------><a
+ name="Performance"></a>
+<hr>
+<h4>Performance Improvements</h4>
+Performance of Zoltan's partitioning algorithms has been improved
+through a number of code optimizations and new features. In addition,
+user parameter <a href="ug_alg.html#LB%20Parameters"><i>RETURN_LISTS</i></a>
+can be used to specify which returned arguments are computed by <a
+ href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>,
+allowing reduced work in partitioning.
+In the <a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a>
+partitioning algorithm, user parameters allow cut directions
+to be locked in an attempt to minimize data movement; see parameters
+<a href="ug_alg_rcb.html"><i>RCB_LOCK_DIRECTIONS</i></a> and <a
+ href="ug_alg_rcb.html"><i>RCB_SET_DIRECTIONS</i></a>.
+<!----------------------------------------------------------------------------><a
+ name="New Interface"></a>
+<hr>
+<h4>Zoltan Interface Updated</h4>
+Zoltan has adopted a more modular design, making it easier to use by
+applications and easier to modify by algorithm developers.
+Names in the <a href="ug_interface.html">Zoltan interface</a> and code
+are tied more closely to their functionality.
+Full <a href="ug_backward.html">backward compatibility</a> is
+supported
+for users of previous versions of Zoltan.
+<!----------------------------------------------------------------------------><a
+ name="TestSuite"></a>
+<hr>
+<h4>Improved Test Suite</h4>
+The Zoltan <a href="../dev_html/dev_test_script.html">test suite</a>
+has been improved, with more tests providing greater
+code coverage and platform-specific answer files accounting for
+differences
+due to computer architectures.
+<!----------------------------------------------------------------------------><a
+ name="BugFixes"></a>
+<hr>
+<h4>Bug Fixes</h4>
+Some bug fixes were made to Zoltan's algorithms and interface. Users
+of previous versions of Zoltan are encouraged to upgrade.
+<!---------------------------------------------------------------------------->
+<p></p>
+<hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
+ href="ug_backward.html">Next:&nbsp;
+Backward Compatibility</a>&nbsp; |&nbsp; <a href="ug_examples_query.html">Previous:&nbsp;
+Query Function Examples</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

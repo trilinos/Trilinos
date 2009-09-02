@@ -1,0 +1,196 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="lee ann fisk, lafisk@sandia.gov">
+
+   <TITLE> Zoltan Developer's Guide:  C++ Interface</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_refs.html">Next</a>&nbsp; |&nbsp; <a href="dev_fortran.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="cpp dev"></A>C++ Interface</H2>
+As with the Fortran interface just described, any change to the user 
+API of Zoltan should be reflected in the C++ interface.  This section 
+explains the conventions used in the C++ interface, which you will want
+to follow when you modify or expand it.
+
+<UL><A HREF="#cpp dev classes">Classes</A><BR>
+<A HREF="#cpp dev conventions">Programming Conventions</A>
+  <UL>
+  <A HREF="#cpp dev namespaces"><I>Namespaces</I></A><BR>
+  <A HREF="#cpp dev cnames"><I>Class names</I></A><BR>
+  <A HREF="#cpp dev mnames"><I>Method names</I></A><BR>
+  <A HREF="#cpp dev constmethods"><I>Const methods</I></A><BR>
+  <A HREF="#cpp dev parameters"><I>Declaration of method parameters</I></A><BR>
+  <A HREF="#cpp dev copy"><I>Copy constructor, copy operator</I></A>
+  </UL>
+<A HREF="#cpp dev updating">Keeping the C++ interface up-to-date</A><BR>
+</UL>
+
+<H3> <A NAME="cpp dev classes"></A>Classes</H3>
+The C language Zoltan library already observes the principles of
+object oriented program design.  Each sub function of Zoltan (load
+balancing, timing, etc.) has a data structure
+associated with it.  This data structure maintains all the state required 
+for one instance of that sub function.  Each request of the library for 
+some operation requires that data structure.
+
+<P>The classes in the Zoltan C++ library follow the structure just described.
+Each class is defined in a header
+file and encapsulates a Zoltan data structure and the functions that
+operate on that structure.  A C++ application wishing to use a
+feature of Zoltan, would include the feature's header file in it's source, and
+link with the Zoltan C library.
+
+<P>The C language load balancing data stucture 
+(<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>)
+and the C functions that operate on it are accessed
+through the C++ <B>Zoltan</B> class, defined in <I>zoltan_cpp.h</I>.
+
+<P>The communication package is encapsulated the <B>Zoltan_Comm</B> class
+defined in <I>zoltan_comm_cpp.h</I>.
+Again, to use the communication utility of Zoltan from a C++ program,
+include <I>zoltan_comm_cpp.h</I> and use the C++ methods defined there.
+
+<P>The C++ Zoltan timer class is called <B>Zoltan_Timer_Object</B> and
+is defined in <I>zoltan_timer_cpp.h</I>.
+
+<P>The distributed directory utility of Zoltan is encapsulated in the
+class <B>Zoltan_DD</B> defined in <I>zoltan_dd_cpp.h</I>
+
+<H3> <A NAME="cpp dev conventions"></A>Programming Conventions</H3>
+When modifying the interface to Zoltan , you will want to modify 
+the appropriate C++ header file accordingly.  This section describes the 
+conventions to follow to maintain a consistent and correct library interface 
+for the C++ user of Zoltan.
+
+<H4><I><A NAME="cpp dev namespaces">Namespaces</A></I></H4>
+In order to maintain portability across platforms, there is no Zoltan
+namespace.  Many C++ compilers do not support namespaces at this time.
+The name of each Zoltan class begins with <B>Zoltan_</B>, and hopefully
+this will never clash with another namespace.
+
+<H4><I><A NAME="cpp dev cnames">Class names</A></I></H4>
+Class names are <B>Zoltan_</B> followed by text indicating the sub
+function of Zoltan that is encapsulated by the class.
+
+<H4><I><A NAME="cpp dev mnames">Method names</A></I></H4>
+Method names are derived from the C library function names in such a
+way that the name will be obvious to a person familiar with the C library.
+We remove the beginning of the C library name, the part that identifies
+the subset of the Zoltan library that the function is part of, and keep
+the last part of the C library name, the part that describes what the
+function does.  For example the C function <B>Zoltan_LB_Partition</B> becomes
+the C++ method <B>LB_Partition</B> in the class <B>Zoltan</B> and
+C function <B>Zoltan_Comm_Create</B> becomes the C++ method
+<B>Create</B> in the class <B>Zoltan_Comm</B>.
+
+<H4><I><A NAME="cpp dev constmethods">Const methods</A></I></H4>
+All class methods which can be declared <B>const</B>, because they
+do not modify the object, should be declared <B>const</B>.  This allows
+C++ programmers to call these methods on their <B>const</B> objects.
+
+<H4><I><A NAME="cpp dev parameters">Declaration of method parameters</A></I></H4>
+
+Parameters that are not changed in the method should be declared <B>const</B>.
+This can get complicated, but it helps to read declarations from right to
+left.  <B>const int * & p</B> says <I>p is a reference to a pointer to
+a const int</I> and means the method will not change the value pointed
+to by <I>p</I>.  On the other hand <B>int * const & p</B> says that
+<I>p is a reference to a const pointer to int</I> so the method will
+not change the pointer.
+
+<P>Variables that are passed by value in a C function will be passed by
+const reference in the C++ method.  This is semantically the same, but
+it is more efficient, and it will work with temporary variables created
+by a compiler.
+
+<P>If a C function takes a pointer to a single built-in type (not an aggregate
+type), the associated C++ method will take a reference variable.
+If a C function takes a pointer to a pointer, the C++ function will take
+a pointer reference.  The references are more efficient, and it is
+the behavior a C++ programmer expects.
+A pointer to an array remains a pointer to an array.
+
+<P><TABLE rules=cols,rows frame=box align=center cellpadding=5>
+<TR> <TH>C function parameter</TH> <TH>C++ method parameter</TH> <TH> method's const behavior</TR>
+<TR> <TD>int val</TD> 
+     <TD>const int &val</TD> 
+     <TD>won't change value</TD></TR>
+<TR> <TD>int *singlep</TD> 
+     <TD>int &singlep <br> const int &singlep</TD> 
+     <TD>may change value <br> won't change value</TD></TR>
+<TR> <TD>int **singlep</TD> 
+     <TD>int *&singlep <br> const int * &p <br> int *const &p <br> const int * const &p</TD> 
+     <TD>may change pointer or value<br>won't change value<br>won't change pointer to value<br>won't change anything</TD></TR>
+<TR> <TD>int *arrayp</TD> 
+     <TD>int *arrayp <br> const int * arrayp</TD>
+     <TD>may change array contents <br> won't change array contents</TD> </TR>
+</TABLE>
+
+<P>If a C function takes a pointer to an array of <I>char</I>, the
+associated C++ method will take a <I>string</I> object.
+
+<P><TABLE rules=cols,rows frame=box align=center cellpadding=5>
+<TR> <TH>C function parameter</TH> <TH>C++ method parameter</TH> </TR>
+<TR> <TD>char *fname</TD> <TD>std::string &fname</TD> </TR>
+</TABLE>
+
+<P> In all honesty, it is tedious to carefully apply const'ness in 
+parameter declarations, and we did not do it consistently throughout the
+C++ wrapping of Zoltan.  Please feel free to add <I>const</I> declarations
+where they belong, and try to use them correctly if you add or modify Zoltan
+C++ methods.
+
+<H4><I><A NAME="cpp dev copy">Copy constructor, copy operator</A></I></H4>
+Each class should have a copy constructor and a copy operator.
+
+
+<H3> <A NAME="cpp dev updating"></A>Keeping the C++ interface up-to-date</H3>
+Here we provide a checklist of things to be done when the C interface to
+the Zoltan library is changed:
+
+<UL>
+<LI>If a new major component is added to Zoltan, create a C++ class for
+that component in a new header file, using the programming conventions
+described above.  </LI>
+<LI>If functions are added or removed, or their parameter lists are
+changed, then update the header file defining the class that contains
+those functions.</LI>
+<LI>When Zoltan data structures are changed, be sure to change the C functions
+that copy the data structure.  (They contain <B>Copy</B> in their name.)
+Correct copying is more important in C++,
+where the compiler may generate new temporary objects, than it is in C.</LI>
+<LI>If you change the C++ API, be sure to change:
+  <UL> 
+  <LI><B>zCPPdrive</B>, the test program for the Zoltan C++ library</LI>
+  <LI>the C++ examples in the <B>Examples</B> directory</LI>
+  <LI>the method prototypes in the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>.</LI>
+  </UL>
+</UL>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_refs.html">Next:&nbsp;
+References</A>&nbsp; |&nbsp; <A HREF="dev_fortran.html">Previous:&nbsp;
+FORTRAN Interface</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

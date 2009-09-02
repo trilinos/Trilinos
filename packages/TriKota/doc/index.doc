@@ -1,0 +1,78 @@
+/*! \mainpage TriKota:  A Wrapper for the Dakota Optimization and UQ Toolkit
+\htmlonly
+\endhtmlonly
+
+\section trikota_outline Outline
+
+<ul>
+<li>\ref trikota_intro
+<li>\ref trikota_build
+<li>\ref trikota_adapters
+<li>\ref trikota_help
+</ul>
+
+\section trikota_intro Introduction 
+TriKota is a package that wraps the library-mode use of
+the Dakota Optimization and UQ Toolkit. 
+Note that Dakota has another, more common black-box mode where
+it is run as an executable. The main purposes of TriKota are to:
+
+<ul>
+<li> Simplify the build/install of Dakota libraries for Trilinos
+users so that they can be accessed as simply another package.
+<li> Provide a simple and maintained use case for the
+library-mode usage of Dakota.
+<li> Supply adapters between the Trilinos and Dakota
+interfaces, so users can easily select between using
+Dakota or Trilinos analysis algorithms.
+</ul>
+
+
+\section trikota_build How to Build TriKota, including Dakota
+
+The TriKota build process requires an additional step compared
+to other packages in Trilinos: the Dakota source must be unpacked
+within TriKota. Internal to Sandia, the tarball of dakota can
+be downloaded from:
+https://development.sandia.gov/DAKOTA/licensing/download_votd.html
+
+
+Dakota needs to be untarred within the TriKota directory.
+To verify the paths, make sure that the following file exists: 
+trilinos-dir/packages/TriKota/Dakota/src/DakotaOptimizer.H
+
+After that, just enable TriKota in the cmake build system for
+Trilinos, and cross your fingers.
+
+\section trikota_adapters Using TriKota
+
+TriKota consists of two classes: TriKota::Driver and TriKota::DirectApplicInterface,
+and a test problem.
+
+The TriKota::Driver class wraps a use case for Dakota into a two simple steps.
+The constructor parses the dakota input file and initializes the Dakota
+ (e.g. strategy, model, Problem). The run method requires an object of 
+Dakota's DirectApplicInterface class, and performs the requested analysis.
+
+The TriKota::DirectApplicInterface class is an adapter between the
+Trilinos and Dakota interfaces to codes. This class inherits from 
+Dakota's DirectApplicInterface class so it can be passed to the
+TriKota::Driver::run method. It is constructed with an 
+EpetrExt::ModelEvaluator, which is the Trilinos interface to codes.
+
+The test problem Simple_Main.cpp shows the use case for taking a
+problem that presents itself as a EpetrExt::ModelEvaluator, and
+uses Dakota to solve an optimiztion problem. This example allows
+for Dakota to pick the MPI_Comm during the TriKota::Driver constructor,
+and the application (presenting itself as an EpetrExt::ModelEvaluator)
+is constructed using this communicator. 
+
+\section trikota_help TriKota Contacts
+
+TriKota was put together by Andy Salinger using lots of code,
+ideas, and consulting by Brian Adams, Mike Eldred, Eric Phipps,
+and Ross Bartlett. While the code is built and tested nightly,
+a very small subset of use cases have been tried out as of the
+Trilinos 10.0 Release.
+
+*/

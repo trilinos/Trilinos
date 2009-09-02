@@ -1,0 +1,19 @@
+/* src/Moertel_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build examples */
+#cmakedefine HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#cmakedefine HAVE_EXPORT_MAKEFILES
+
+/* Define if want to build galeri */
+#cmakedefine HAVE_GALERI
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#cmakedefine HAVE_GNUMAKE
+
+/* Define if want to build moertel-examples */
+#cmakedefine HAVE_MOERTEL_EXAMPLES
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI

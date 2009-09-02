@@ -1,0 +1,386 @@
+################################################################################
+#
+# dependencies
+#
+# This file describes what configure flags to insert or remove in order for the
+# test harness to recover from a configure or make failure.
+#
+# Each group can be thought of as reading as follows:
+#
+# IF CONFIGURE OR MAKE FAILS IN PACKAGE package [SUBDIRECTORY subdir] THEN...
+#
+################################################################################
+
+# Amesos -----------------------------------------------------------------------
+IF PACKAGE amesos THEN
+REMOVE --enable-amesos
+REMOVE --with-ml_amesos
+REMOVE --enable-moertel
+REMOVE --enable-sundance
+REMOVE --enable-webtrilinos
+DONE
+
+# Anasazi ----------------------------------------------------------------------
+IF PACKAGE anasazi THEN
+REMOVE --enable-anasazi
+REMOVE --with-loca-anasazi
+DONE
+
+IF PACKAGE anasazi SUBDIRECTORY thyra THEN
+INSERT --disable-anasazi-thyra
+DONE
+
+# Aristos ----------------------------------------------------------------------
+IF PACKAGE aristos THEN
+REMOVE --enable-aristos
+DONE
+
+# AztecOO ----------------------------------------------------------------------
+IF PACKAGE aztecoo THEN
+REMOVE --enable-aztecoo
+REMOVE --enable-komplex
+REMOVE --enable-meros
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --enable-tsfcore-aztecoo
+REMOVE --enable-moertel
+REMOVE --enable-sundance
+REMOVE --enable-webtrilinos
+DONE
+
+# Belos ------------------------------------------------------------------------
+IF PACKAGE belos THEN
+REMOVE --enable-belos
+DONE
+
+# Claps ------------------------------------------------------------------------
+IF PACKAGE claps THEN
+REMOVE --enable-claps
+DONE
+
+# CTrilinos --------------------------------------------------------------------
+IF PACKAGE CTrilinos THEN
+REMOVE --enable-ctrilinos
+DONE
+
+# Didasko ----------------------------------------------------------------------
+IF PACKAGE didasko THEN
+REMOVE --enable-didasko
+DONE
+
+# Epetra -----------------------------------------------------------------------
+IF PACKAGE epetra THEN
+REMOVE --enable-epetra
+REMOVE --enable-amesos
+REMOVE --enable-anasazi
+REMOVE --with-loca-anasazi
+REMOVE --enable-aristos
+REMOVE --enable-aztecoo
+REMOVE --enable-belos
+REMOVE --enable-claps
+REMOVE --enable-epetraext
+REMOVE --enable-galeri
+REMOVE --enable-ifpack
+REMOVE --enable-isorropia
+REMOVE --enable-komplex
+REMOVE --enable-meros
+REMOVE --enable-ml_epetra
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-moertel
+REMOVE --enable-new_package
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --enable-sundance
+REMOVE --enable-triutils
+REMOVE --enable-tsfcore-aztecoo
+REMOVE --enable-tsfcore-epetra
+REMOVE --enable-tsfextended 
+REMOVE --enable-webtrilinos
+REMOVE --enable-ml_multiple_rhs
+DONE
+
+# EpetraExt --------------------------------------------------------------------
+IF PACKAGE epetraext THEN
+REMOVE --enable-epetraext
+REMOVE --enable-moertel
+REMOVE --enable-webtrilinos
+REMOVE --enable-aztecoo
+REMOVE --enable-komplex
+REMOVE --enable-meros
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --enable-sundance
+DONE
+
+# External ---------------------------------------------------------------------
+IF PACKAGE external THEN
+REMOVE --enable-external
+DONE
+
+# Fei ----------------------------------------------------------------------
+IF PACKAGE fei THEN
+REMOVE --enable-fei
+DONE
+
+# ForTrilinos --------------------------------------------------------------
+IF PACKAGE fortrilinos THEN
+REMOVE --enable-fortrilinos
+DONE
+
+# Galeri -----------------------------------------------------------------------
+IF PACKAGE galeri THEN
+REMOVE --enable-galeri
+REMOVE --enable-webtrilinos
+DONE
+
+# Ifpack -----------------------------------------------------------------------
+IF PACKAGE ifpack THEN
+REMOVE --enable-ifpack
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --with-ml_ifpack
+REMOVE --enable-sundance
+REMOVE --enable-webtrilinos
+DONE
+
+# Intrepid ---------------------------------------------------------------------
+IF PACKAGE intrepid THEN
+REMOVE --enable-intrepid
+DONE
+
+# Isorropia --------------------------------------------------------------------
+IF PACKAGE isorropia THEN
+REMOVE --enable-isorropia
+DONE
+
+# Kokkos -----------------------------------------------------------------------
+IF PACKAGE kokkos THEN
+REMOVE --enable-kokkos
+REMOVE --enable-tpetra
+DONE
+
+# Komplex ----------------------------------------------------------------------
+IF PACKAGE komplex THEN
+REMOVE --enable-komplex
+DONE
+
+# Meros ------------------------------------------------------------------------
+IF PACKAGE meros THEN
+REMOVE --enable-meros
+DONE
+
+# ML ---------------------------------------------------------------------------
+IF PACKAGE ml THEN
+REMOVE --enable-ml
+REMOVE --enable-meros
+REMOVE --enable-moertel
+REMOVE --enable-nox
+REMOVE --enable-loca
+INSERT --disable-loca
+REMOVE --enable-sundance
+REMOVE --enable-webtrilinos
+DONE
+
+# Moertel ----------------------------------------------------------------------
+IF PACKAGE moertel THEN
+REMOVE --enable-moertel
+DONE
+
+# MOOCHO -----------------------------------------------------------------------
+IF PACKAGE moocho THEN
+REMOVE --enable-moocho
+DONE
+
+IF PACKAGE moocho SUBDIRECTORY thyra THEN
+INSERT --disable-moocho-thyra
+DONE
+
+# New_Package ------------------------------------------------------------------
+IF PACKAGE new_package THEN
+REMOVE --enable-new_package
+DONE
+
+# NOX --------------------------------------------------------------------------
+IF PACKAGE nox THEN
+REMOVE --enable-nox
+REMOVE --enable-loca
+INSERT --disable-loca
+REMOVE --enable-ml
+REMOVE --enable-sundance
+DONE
+
+# Pamgen -----------------------------------------------------------------------
+IF PACKAGE pamgen THEN
+REMOVE --enable-pamgen
+DONE
+
+# Phalanx ----------------------------------------------------------------------
+IF PACKAGE phalanx THEN
+REMOVE --enable-phalanx
+DONE
+
+# phdMesh ----------------------------------------------------------------------
+IF PACKAGE phdmesh THEN
+REMOVE --enable-phdmesh
+DONE
+
+# Pliris -----------------------------------------------------------------------
+IF PACKAGE pliris THEN
+REMOVE --enable-pliris
+DONE
+
+# PyTrilinos -------------------------------------------------------------------
+IF PACKAGE pytrilinos THEN
+REMOVE --enable-pytrilinos
+REMOVE --enable-webtrilinos
+REMOVE --enable-python
+DONE
+
+IF PACKAGE pytrilinos SUBDIRECTORY shared THEN
+REMOVE --enable-pytrilinos
+REMOVE --enable-webtrilinos
+REMOVE --enable-python
+REMOVE --enable-shared
+DONE
+
+# Rbgen ------------------------------------------------------------------------
+IF PACKAGE rbgen THEN
+REMOVE --enable-rbgen
+END
+
+# RTOp -------------------------------------------------------------------------
+IF PACKAGE rtop THEN
+REMOVE --enable-rtop
+REMOVE --enable-meros
+REMOVE --enable-rythmos
+REMOVE --enable-thyra
+REMOVE --enable-stratimikos
+REMOVE --enable-sundance
+REMOVE --enable-moocho
+DONE
+
+# Rythmos ----------------------------------------------------------------------
+IF PACKAGE rythmos THEN
+REMOVE --enable-rythmos
+DONE
+
+# Sacado -----------------------------------------------------------------------
+IF PACKAGE sacado THEN
+REMOVE --enable-sacado
+REMOVE --enable-sacado-alltests
+DONE
+
+# Stokhos ----------------------------------------------------------------------
+IF PACKAGE stokhos THEN
+REMOVE --enable-stokhos
+DONE
+
+# Stratimikos ------------------------------------------------------------------
+IF PACKAGE stratimikos THEN
+REMOVE --enable-stratimikos
+REMOVE --enable-sundance
+DONE
+
+# Sundance ---------------------------------------------------------------------
+IF PACKAGE sundance THEN
+REMOVE --enable-sundance
+DONE
+
+# Teuchos ----------------------------------------------------------------------
+IF PACKAGE teuchos THEN
+REMOVE --enable-teuchos
+REMOVE --with-ml_teuchos
+REMOVE --enable-tpetra
+REMOVE --enable-loca
+INSERT --disable-loca
+REMOVE --enable-belos
+REMOVE --enable-amesos
+REMOVE --with-ml_amesos
+REMOVE --enable-aristos
+REMOVE --enable-epetraext
+REMOVE --enable-ifpack
+REMOVE --with-ml_ifpack
+REMOVE --enable-intrepid
+REMOVE --enable-isorropia
+REMOVE --enable-moertel
+REMOVE --enable-meros
+REMOVE --enable-moocho
+REMOVE --enable-anasazi
+REMOVE --with-loca-anasazi
+REMOVE --enable-galeri
+REMOVE --enable-nox
+REMOVE --enable-rbgen
+REMOVE --enable-rythmos
+REMOVE --enable-rtop
+REMOVE --enable-thyra
+REMOVE --enable-sacado
+REMOVE --enable-stokhos
+REMOVE --enable-stratimikos
+REMOVE --enable-sundance
+REMOVE --enable-webtrilinos
+DONE
+
+# ThreadPool -------------------------------------------------------------------
+IF PACKAGE threadpool THEN
+REMOVE --enable-threadpool
+REMOVE --enable-phdmesh
+DONE
+
+# Tpetra -----------------------------------------------------------------------
+IF PACKAGE tpetra THEN
+REMOVE --enable-tpetra
+DONE
+
+# Thyra ------------------------------------------------------------------------
+IF PACKAGE thyra THEN
+REMOVE --enable-thyra
+REMOVE --enable-meros
+REMOVE --enable-stratimikos
+REMOVE --enable-rythmos
+REMOVE --enable-amesos-thyra
+REMOVE --enable-anasazi-thyra
+REMOVE --enable-aztecoo-thyra
+REMOVE --enable-belos-thyra
+REMOVE --enable-epetra-thyra
+REMOVE --enable-epetraext-thyra
+REMOVE --enable-ifpack-thyra
+REMOVE --enable-ml-thyra
+REMOVE --enable-moocho-thyra
+REMOVE --enable-sundance
+REMOVE --enable-tpetra-thyra
+DONE
+
+# TrilinosCouplings ------------------------------------------------------------
+IF PACKAGE trilinoscouplings THEN
+REMOVE --enable-trilinoscouplings
+DONE
+
+# TriUtils ---------------------------------------------------------------------
+IF PACKAGE triutils THEN
+REMOVE --enable-triutils
+REMOVE --enable-aztecoo
+REMOVE --enable-komplex
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-tsfcore-aztecoo
+REMOVE --enable-belos
+REMOVE --enable-amesos
+REMOVE --with-ml_amesos 
+REMOVE --enable-meros
+REMOVE --enable-moertel
+REMOVE --enable-sundance
+REMOVE --enable-webtrilinos
+DONE
+
+# WebTrilinos ------------------------------------------------------------------
+IF PACKAGE webtrilinos THEN
+REMOVE --enable-webtrilinos
+DONE
+
+# Zoltan  ------------------------------------------------------------------
+IF PACKAGE zoltan THEN
+REMOVE --enable-zoltan
+REMOVE --enable-isorropia
+DONE
+

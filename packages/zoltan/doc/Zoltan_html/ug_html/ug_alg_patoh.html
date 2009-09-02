@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+  <title>Zoltan User's Guide: PaToH</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+--><!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#ffffff">
+<div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_graph.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_alg_phg.html">Previous</a></i></b></div>
+<h2>
+<a name="PaToH"></a>PaToH</h2>
+
+<a href="http://bmi.osu.edu/%7Eumit/software.htm">PaToH</a>
+is a serial hypergraph partitioning package. It is not distributed 
+with Zoltan and must be obtained separately. (You will also need to
+modify your Zoltan configuration file after installation.)
+<p>
+Since PaToH is serial, it can only be used in Zoltan on a single
+processor. PaToH is faster than Zoltan PHG in serial mode, and
+often produces (slightly) better partition quality.
+<p> 
+
+<table nosave="" width="100%">
+  <tbody>
+<tr>
+<td VALIGN=TOP><b>Value of LB_METHOD:</b></td>
+<td><b>HYPERGRAPH</b></td>
+</tr>
+<tr>
+<td VALIGN=TOP><b>Value of HYPERGRAPH_PACKAGE:</b></td>
+<td><b>PATOH</b></td>
+</tr>
+
+    <tr>
+      <td><b>Parameters:</b></td>
+      <td><br>
+      </td>
+    </tr>
+<tr>
+<td ><i>&nbsp;&nbsp;&nbsp; PATOH_ALLOC_POOL0</i></td>
+<td>
+<br><i>non-zero</i>&nbsp&nbsp(the value of the MemMul_CellNet PATOH parameter)
+<br><i>0</i>&nbsp&nbsp(the default)
+</td>
+</tr>
+<tr>
+<td ><i>&nbsp;&nbsp;&nbsp; PATOH_ALLOC_POOL1</i></td>
+<td>
+<br><i>non-zero</i>&nbsp&nbsp(the value of the MemMul_Pins PATOH parameter)
+<br><i>0</i>&nbsp&nbsp(the default)
+</td>
+</tr>
+<tr>
+<td ><i>&nbsp;&nbsp;&nbsp; USE_TIMERS</i></td>
+<td>
+<br><i>1</i>&nbsp&nbsp(time operations and print results)
+<br><i>0</i>&nbsp&nbsp(don't time, the default)
+</td>
+</tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_EDGE_SIZE_THRESHOLD</span><br>
+      </td>
+      <td nosave="">Value 0.0 through 1.0, if number of vertices in hyperedge divided by total vertices in hypergraph exceeds this fraction, the hyperedge will be omitted.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
+ style="font-style: italic;">ADD_OBJ_WEIGHT</span><br>
+      </td>
+      <td style="vertical-align: top;">Add implicit vertex (object)
+weight.  Multi-weight partitioning is not yet supported, so currently either
+the user-defined weight or the implicit weight will be used.
+Valid values:<br>
+<i>none</i> (the default if <a href=ug_param.html#General_Parameters>OBJ_WEIGHT_DIM</a> > 0)<br>
+<i>unit</i> or <i>vertices</i> (each vertex has weight 1.0, 
+default if <a href=ug_param.html#General_Parameters>OBJ_WEIGHT_DIM</a> 
+is zero)<br> 
+<i>pins</i> or <i>nonzeros</i> or <i>vertex degree</i> (vertex weight 
+equals number hyperedges containing it)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">CHECK_HYPERGRAPH</span><br>
+      </td>
+      <td style="vertical-align: top;">Check that the query functions
+return valid input data; 0 or 1. (This slows performance; intended for debugging.)<br>
+      </td>
+    </tr>
+    <tr>
+      <td><b>Default Values:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><i>PATOH_ALLOC_POOL0</i> = 0 </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><i>PATOH_ALLOC_POOL1</i> = 0 </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><i>USE_TIMERS</i> = 0 </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><i>PHG_EDGE_SIZE_THRESHOLD</i> = 0.25 </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><i>ADD_OBJ_WEIGHT</i> = none </td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><i>CHECK_HYPERGRAPH</i> = 0 </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Required Query Functions:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td><br>
+      </td>
+      <td nosave=""> <b><a href="ug_query_lb.html#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN</a></b>
+      <br>
+      <b><a href="ug_query_lb.html#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN</a></b>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Optional Query Functions:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_HG_SIZE_EDGE_WTS_FN">ZOLTAN_HG_SIZE_EDGE_WTS_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN</a></b></td>
+    </tr>
+
+
+</body>
+</table>
+
+<hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
+ href="ug_alg_graph.html">Next:&nbsp;
+Graph Partitioning</a>&nbsp; |&nbsp; <a href="ug_alg_phg.html">Previous:&nbsp;
+PHG</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

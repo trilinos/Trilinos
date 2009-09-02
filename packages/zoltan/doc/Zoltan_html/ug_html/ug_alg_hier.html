@@ -1,0 +1,296 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <TITLE>Zoltan User's Guide:  Hierarchical Partitioning</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_order.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_ptscotch.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="Hier"></A>Hierarchical Partitioning (HIER)</H2>
+
+Hierarchical partitioning allows the creation of hybrid partitions,
+computed using combinations of other Zoltan procedures.
+For hierarchical and heterogeneous systems, different choices may be
+appropriate in different parts of the parallel environment.  There are
+tradeoffs in execution time and partition quality (<I>e.g.</I>, surface
+indices/communication volume, interprocess connectivity, strictness of load
+balance) and some may be more important than others
+in some circumstances.  For example, consider a cluster of symmetric
+multiprocessor (SMP) nodes connected by Ethernet.  A more costly graph
+partitioning can be done to partition among the nodes, to minimize
+communication across the slow network interface, possibly at the
+expense of some computational imbalance.  Then, a fast geometric
+algorithm can be used to partition independently within each node.<P>
+
+Zoltan's hierarchical balancing, implemented by Jim Teresco (Williams
+College) during a 2003-04 visit to Sandia, automates the creation of
+hierarchical partitions [<U><A HREF="ug_refs.html#para04">Teresco,
+<I>et al.</I></A></U>].  It can be used directly by an application or
+be guided by the tree representation of the computational environment
+created and maintained by the <A
+HREF="http://www.cs.williams.edu/drum/">Dynamic Resource Utilization
+Model (DRUM)</A> [<U><A HREF="ug_refs.html#adapt03">Devine, <I>et
+al.</I> </A>, <A HREF="ug_refs.html#cluster04">Faik, <I>et
+al.</I></A>, <A HREF="ug_refs.html#cise05">Teresco, <I>et
+al.</I></A></U>]. 
+<!-- DRUM is a software system that supports automatic
+resource-aware partitioning and dynamic load balancing for
+heterogeneous, non-dedicated, and hierarchical computing environments.
+DRUM dynamically models the computing environment using a tree
+structure that encapsulates the capabilities and performance of
+communication and processing resources.  The tree is populated with
+performance data obtained from <I>a priori</I> benchmarks and dynamic
+monitoring agents that run concurrently with the application.  It is
+then used to guide partition-weighted and hierarchical partitioning
+and dynamic load balancing.  Partition-weighted balancing is available
+through <A HREF="ug_drum.html">Zoltan's DRUM interface</A>. --><P>
+
+The hierarchical balancing implementation utilizes a lightweight
+intermediate structure and a set of callback functions that permit an
+automated and efficient hierarchical balancing which can use any of
+the procedures available within Zoltan without modification and in any
+combination.  Hierachical balancing is invoked by an application the
+same way as other Zoltan procedures and interfaces with
+applications through callback functions.  A hierarchical balancing
+step begins by building an intermediate structure using these
+callbacks.  This structure is an augmented version of the graph
+structure that Zoltan builds to make use of the ParMetis and
+Jostle libraries.  The hierarchical balancing
+procedure then provides its own callback functions to allow existing
+Zoltan procedures to be used to query and update the intermediate
+structure at each level of a hierarchical balancing.  After all levels
+of the hierarchical balancing have been completed, Zoltan's usual
+migration arrays are constructed and returned to the application.
+Thus, only lightweight objects are migrated internally between levels,
+not the (larger and more costly) application data.<P>
+
+Hierarchical partitioning requires three callback functions to specify
+the number of levels (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>),
+which parts each process should compute at each level (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>),
+and which method and parameters to be used at each level (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>).
+These are in addition to the callbacks needed to specify objects,
+coordinates, and graph edges.  This fairly cumbersome interface can be
+avoided by using the separately available <A
+HREF="http://www.cs.williams.edu/~terescoj/research/zoltanParams/">zoltanParams</A>
+library.  This allows a file-based description to replace these
+callbacks.  A more direct interface with DRUM's hierarchical machine
+model is also planned, allowing hierarchical balancing parameters to
+be set by a graphical configuration tool.<P>
+
+We use a simple example to illustrate the use of the callback
+mechanism to specify hierarchical a hierarchical partitioning.  In the
+figure <a href="#HierFigure">below</a>, a hierarchical computing
+environment and a desired hierarchical partitioning is shown.
+<p>
+<center>
+<a NAME="HierFigure"></a>
+
+<img SRC="figures/hierexample.gif" />
+</center>
+<p>
+
+Assume we start one process for each processor, with the processes of
+ranks 0-3 assigned to Node 0, 4-7 to Node 1, 8-11 to Node 2, and 12-15
+to Node 3.  When hierarchical partitioning is invoked, the following
+callbacks will be made, and the following actions should be taken by
+the callbacks on each node.
+
+<OL>
+
+<LI>The <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>
+callback is called.  All processes should return 2, the number of
+levels in the hierarchy.
+
+<LI>The <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>
+callback is called, with a <B>level</B> parameter equal to 0.  This
+means the callback should return, on each process, the part
+number to be computed at level 0 by that process.  Since in our
+example, the 16 processes are computing a four-way partition at level
+0, processes with ranks 0-3 should return 0, ranks 4-7 should return
+1, 8-11 should return 2, and 12-15 should return 3.
+
+<LI>The <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>
+callback is called, with a <B>level</B> parameter equal to 0, and the
+Zoltan_Struct that has been allocated internally by the hierarchical
+partitioning procedure is passed as <B>zz</B>.  The callback should
+use Zoltan_Set_Param to specify an LB_METHOD and any other parameters
+that should be done by the four-way partition across the 16 processes
+at level 0.  In this case, two calls might be appropriate:
+
+<PRE>
+  Zoltan_Set_Param(zz, "LB_METHOD", "PARMETIS");
+  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY");
+</PRE>
+
+At this point, Zoltan's hierarchical balancing procedure can proceed
+with the level 0 partition, using ParMetis' PARTKWAY method to
+produce a four-way partition across the 16 processes, with part 0
+distributed among the processes with ranks 0-3, part 1
+distributed among 4-7, part 2 distributed among 8-11, and
+part 3 distributed among 12-15.
+
+
+<LI>The <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>
+callback is called again, this time with <B>level</B> equal to 1.  At
+level 1, each group of four processes on the same node is responsible for
+computing its own four-way partition.  To specify this, processes with
+ranks 0, 4, 8, and 12 should return 0, ranks 1, 5, 9, and 13 should
+return 1, ranks 2, 6, 10, and 14 should return 2, and ranks 3, 7, 11,
+and 15 should return 3.  Note that we are specifying four separate four-way
+partitions at this level, so each group of four processes on the same
+node will have one process computing each part 0, 1, 2, and 3,
+for that group.
+
+<LI>The <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>
+callback is called again, with <B>level</B> equal to 1, and another
+internally-allocated Zoltan_Struct passed as <B>zz</B>.  Here, we want
+all processes to be computing a partition using recursive inertial
+bisection.  The following call would be appropriate inside the
+callback:
+
+<PRE>
+  Zoltan_Set_Param(zz, "LB_METHOD", "RIB");
+</PRE>
+
+Additional Zoltan_Set_Param calls would be used to specify any
+additional procedures.  Note that in this case, we are computing four
+separate partitions but all with the same LB_METHOD.  It would be
+allowed to specify different LB_METHODs for each group, but all
+processes cooperating on a partition must agree on their LB_METHOD
+and other parameters (just like any other Zoltan partitioning).
+<P>
+
+At this point, Zoltan's hierarchical balancing procedure can proceed
+with the level 1 partition, using four independent recursive inertial
+bisections produce the four four-way partitions across the processes on
+each node.  Since this is the final level, the 16 resulting parts
+are returned by the hierarchical balancing procedure to the calling
+application.
+
+</OL>
+
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP><B>Method String:</B></TD>
+
+<TD><B>HIER</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; HIER_CHECKS</I></TD>
+
+<TD>If set to 1, forces "sanity checks" to be performed on the
+intermediate structure when it is first created, and after the
+partitioning at each level.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>HIER_DEBUG_LEVEL</I></TD>
+
+<TD>Amount of output the hierarchical partitioning procedures should
+produce.&nbsp;
+<BR>0 = no statistics; 1 = hierarchical balancing lists; 2 = all
+debugging information.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>HIER_CHECKS</I> = 0</TD>
+</TR>
+<TR>
+<TD></TD>
+
+<TD><I>HIER_DEBUG_LEVEL</I> = 1</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</A></B>
+</TD>
+</TR>
+
+<TR>
+<TD></TD>
+<TD><B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>,
+<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</A></B>,
+and <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>.
+</TD>
+</TR>
+
+<tr>
+<td valign=top>Only if one of the methods used at some level of hierarchical
+partitioning requires geometric information:</td>
+
+<td valign=top><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b><br>
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>Only if one of the methods used at some level of hierarchical
+partitioning requires graph information:</td>
+
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</td>
+</tr>
+
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_order.html">Next:&nbsp; Ordering </A>&nbsp;
+|&nbsp; <A HREF="ug_alg_ptscotch.html">Previous:&nbsp;&nbsp; PT-Scotch</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

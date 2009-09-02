@@ -1,0 +1,669 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Ordering Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_interface_color.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_mig.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Ordering Functions"></a>Ordering Functions</h2>
+Zoltan provides functions for ordering a set of objects, 
+typically given as a graph (which may correspond to a sparse matrix).
+The following functions are the ordering interface functions in Zoltan.
+The first is the main function, and the others are accessor functions
+that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
+<blockquote>
+<ul>
+<li>
+<li><b><a href="#Zoltan_Order">Zoltan_Order</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_Num_Blocks">Zoltan_Order_Get_Num_Blocks</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_Block_Bounds">Zoltan_Order_Get_Block_Bounds</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_Block_Size">Zoltan_Order_Get_Block_Size</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_Block_Parent">Zoltan_Order_Get_Block_Parent</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_Num_Leaves">Zoltan_Order_Get_Num_Leaves</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_Block_Leaves">Zoltan_Order_Get_Block_Leaves</a></b></li>
+<li><b><a href="#Zoltan_Order_Get_GID_Order">Zoltan_Order_Get_GID_Order</a></b></li>
+</ul>
+</blockquote>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>)
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Order</b>(<i>zz, num_gid_entries, num_lid_entries</i>,
+<i>num_obj,
+global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>)
+<br>INTEGER(Zoltan_INT) :: Zoltan_Order
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+<br>INTEGER(Zoltan_INT) :: global_ids(*), local_ids(*)
+<br>INTEGER(Zoltan_INT) :: rank(*), iperm(*)
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>);
+</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order </b>invokes the ordering routine specified
+by the&nbsp; <i><a href="ug_order.html#ORDER_METHOD">ORDER_METHOD</a></i> parameter.
+Results of the ordering are returned in&nbsp; the arrays <i>rank </i>and
+<i>iperm</i> (only in sequential).
+<p>
+<li>
+<i>rank[i]</i>
+gives the rank of <i>global_ids[i] </i>in the computed ordering, which is a number between 0 and N-1 where N is the overall number of objects across all the processors.
+</li>
+<li>
+<i>iperm</i> is the inverse permutation of <i>rank, </i>that is,<i>iperm[rank[i]] = i.</i></li>
+&nbsp; The ordering may be either global or local, depending on
+<i><a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a></i>. The arrays
+<i>global_ids, local_ids, rank,</i> and <i>iperm</i>
+should all be allocated by the application before
+<b>Zoltan_Order</b> is
+called. Each array must have space for (at least)
+<i>num_obj </i>elements,
+where <i>num_obj </i>is the number of objects residing on a processor.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+to be used in this invocation of the load-balancing routine.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td NOSAVE>Number of objects to order on this processor. At present, <i>num_obj</i>
+should be the total number of objects residing on a processor. In future
+releases, ordering only a subset of the objects may be permitted.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>An array of global IDs of objects to be ordered on this processor.
+(size = <i>num_obj</i> * <i>num_gid_entries</i>)
+<br>The array may be uninitialized on input (if <i><a href="ug_order.html#REORDER">REORDER</a></i> is false),
+but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>[Optional.] An array of local IDs of objects to be ordered on this
+processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)
+<br>The array may be uninitialized on input (if <i><a href="ug_order.html#REORDER">REORDER</a></i> is false),
+but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; rank</i></td>
+
+<td>Upon return, an array of length <i>num_obj </i>containing the rank
+of each object in the computed ordering. When rank[i] = j, that means that
+the object corresponding to
+<i>global_ids[i]
+</i>is the<i> j</i>th object
+in the ordering. (This array corresponds directly to the <i>perm </i>array
+in METIS and the <i>order</i> array in ParMETIS.) Note that the rank may
+refer to either a local or a global ordering, depending on <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a>.&nbsp;
+Memory for this array must have been allocated before <b>Zoltan_Order</b> is
+called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; iperm</i></td>
+
+<td>Upon return, an&nbsp; array of length <i>num_obj </i>containing the
+inverse permutation of <i>rank</i>, only when the <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a> is <i>local</i>. That is, <i>iperm[rank[i]] = i. </i>In
+other words, <i>iperm[j]</i> gives the <i>j</i>th object in the ordering.
+Memory for this array must have been allocated before <b>Zoltan_Order</b> is
+called.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+<hr WIDTH="100%">
+
+
+<h3>Accessors</h3>
+
+Zoltan primarily supports nested dissection orderings, which are
+typically used to reduce fill in direct solvers. For this use case, it is 
+important to get additional information (the separators).
+The accessor functions below define the Zoltan interface.
+Note that these functions should be called after 
+<a href="#Zoltan_Order">Zoltan_Order</a>.
+
+<!------------------------------------------------------------------------->
+<a NAME="Zoltan_Order_Get_Num_Blocks"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Get_Num_Blocks</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>)
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Num_Blocks</b> ()
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Num_Blocks </b> returns the number of subdomains (or column blocks) computed during the ordering. For a Nested Dissection based ordering method, it corresponds to the sum of the separators and the subgraphs of the lowest level. For example, after one bisection the number of blocks is three.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of <i>blocks</i> (subdomains).</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_Block_Bounds"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Get_Block_Bounds</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>first</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>last</i>)
+</tr>
+
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Block_Bounds</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>first</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>last</i>)
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Bounds </b> gives the
+boundaries of the given block. The <i>first</i> and <i>last</i>
+parameters contain upon return the indices of the begin and the end of
+the block. These indices are from the global continuous numbering
+between 1 and N-1 of the N distributed objects.
+
+<br>&nbsp;
+
+  <table WIDTH="100%" NOSAVE > <tr> <td VALIGN=TOP
+WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; block_id</i></td>
+
+<td>The number of the block we want informations on.</td>
+</tr>
+
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first</i></td>
+
+<td>Upon return, pointer to the value of the begining of the block.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; last</i></td>
+
+<td>Upon return, pointer to the value of the end of the block.</td>
+</tr>
+
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_Block_Size"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Get_Block_Size</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
+</tr>
+
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Block_Size</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Size </b> returns the number of objects in the block <i>block_id</i>.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; block_id</i></td>
+
+<td>The indice of the block we want to know the size.</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of objects in this given <i>block</i>.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_Block_Parent"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Get_Block_Parent</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Block_Parent</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>block_id</i>)
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Parent </b> returns the
+number (id) of the parent block in the elimination tree. The value is
+-1 for the root of the tree.
+
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; block_id</i></td>
+
+<td>The indice of the block we want to know the size.</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number (id) of the parent block in the elimination tree. The
+value is -1 for the root of the tree.</td> </tr> </table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_Num_Leaves"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Get_Num_Leaves</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>)
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_Num_Leaves</b> ()
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Num_Leaves </b> returns the number of leaves in the elimination tree.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of leaves in the elimination tree.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_Block_Leaves"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">void <b>Zoltan_Order_Get_Block_Leaves</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>leaves</i>)
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">void <b>Zoltan::Order_Get_Block_Leaves</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>leaves</i>)
+</tr>
+
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_Block_Leaves </b> get the indices
+of the blocks that are leaves in the elimination tree.
+  <br>&nbsp;
+<table WIDTH="100%" NOSAVE > <tr> <td VALIGN=TOP
+WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; leaves</i></td>
+
+<td>Array of indices of the blocks that are leaves in the elimination. The last element of this array is -1. The array must be of size <i>number of leave + 1</i> and must be allocated by the user before the call.</td>
+</tr>
+
+
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_GID_Order"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Get_GID_Order</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>order_ids</i>)
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Order_Get_GID_Order</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>order_ids</i>)
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Get_GID_Order </b> provides the
+permuted GID associated with the ordering. It corresponds to
+GID[rank[i]] where GID is the concatenation of all the global_ids.
+
+<br>&nbsp;
+
+  <table WIDTH="100%" NOSAVE > <tr> <td VALIGN=TOP
+WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+which has been used in the ordering routine.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Array, filled by the user before calling the function, that hold the GID of local objects.</td>
+</tr>
+
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; order_ids</i></td>
+
+<td>Array of permutted GID. Must be allocated by user before calling.</td>
+</tr>
+
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+
+
+
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_color.html">Next:&nbsp;
+Coloring Functions</a>&nbsp; |&nbsp; <a href="ug_interface_mig.html">Previous:&nbsp;
+Migration Functions</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

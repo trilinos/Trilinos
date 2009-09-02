@@ -1,0 +1,147 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  ParMETIS/Jostle</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_phg.html">Next</a>&nbsp; |&nbsp; <a href="dev_rib.html">Previous</a></i></b></div>
+
+<h2>
+Appendix: <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+and <a href="http://www.gre.ac.uk/jostle">Jostle</a></h2>
+
+<h3>
+Overview of structure (algorithm)</h3>
+This part of Zoltan provides an interface to various graph-based load-balancing
+algorithms. Currently two libraries are supported: <a href="../ug_html/ug_alg_parmetis.html">ParMETIS
+</a>and
+<a href="../ug_html/ug_alg_jostle.html">Jostle.</a>
+Each of these libraries contain several algorithms.
+<h4>
+Interface algorithm</h4>
+The structure of the code is as follows: Each package 
+(<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>,
+<a href="http://www.gre.ac.uk/jostle">Jostle</a>)
+has its own wrapper routine that performs initialization and sets parameters.
+The main routine is <b>Zoltan_ParMetis_Jostle,</b> which constructs an appropriate
+graph data structure using Zoltan's query functions. After the graph structure
+has been constructed, the appropriate library is called and the import/export
+list is created and returned.
+<p>Please note that <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+and <a href="http://www.gre.ac.uk/jostle">Jostle</a> are not integral parts
+of Zoltan. These libraries must be obtained and installed separately. 
+(<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+may be bundled with Zoltan, but it is an independent package developed
+at Univ. of Minnesota.) Zoltan merely provides an interface to these libraries.
+<p>The most complex task in the interface code is the construction of the
+graph data structure. This structure is described in the next section.
+The routine uses the Zoltan query functions to get a list of objects and
+edges on each processor. Each object has a unique global ID which is mapped
+into a unique (global) number between 1 and <i>n</i>, where <i>n</i> is
+the total number of objects. The construction of the local (on-processor)
+part of the graph is straightforward. When an edge goes between objects
+that reside on different processors, global communication is required.
+We use Zoltan's unstructured communication library for this. A hash function
+(<a href="dev_services_hash.html"><b>Zoltan_Hash</b></a>) is used to efficiently map global IDs to integers. 
+The graph construction algorithm has parallel complexity
+<i>O(max<sub>j</sub> {n<sub>j</sub>+m<sub>j</sub>+p})</i>, where
+<i>n<sub>j</sub></i> is the number of objects on processor j, 
+<i>m<sub>j</sub></i> is the number of edges on processor j, and
+<i>p</i> is the number of processors.
+<p>One other feature of the interface code should be mentioned.&nbsp; While
+Zoltan allows objects and edges to have real (float) weights, both ParMETIS and Jostle
+currently require integer weights. Therefore, Zoltan first checks if the
+object weights are integers. If not, the weights are automatically scaled
+and rounded to integers. The scaling is performed such that the weights
+become large integers, subject to the constraint that the sum of (any component
+of) the weights is less than a large constant MAX_WGT_SUM &lt; INT_MAX.
+The scaled weights are rounded up to the nearest integer to ensure that
+nonzero weights never become zero.
+Note that for multidimensional weights, each weight component is scaled independently.
+(The source code is written such that this scaling is simple to change.)
+<p>Currently Zoltan constructs and discards the entire graph structure
+every time a graph-based method (ParMETIS or Jostle) is called. Incremental
+update of the graph structure may be supported in the future.
+<p>The graph construction code in <b>Zoltan_ParMetis_Jostle </b>can also be
+used to interface with other graph-based algorithms. Please contact the
+<a href="mailto:zoltan@cs.sandia.gov">Zoltan developers</a> if you have a parallel partitioning 
+or load-balancing code and would like assistance with interfacing it to Zoltan.
+<h4>
+Algorithms used in ParMETIS and Jostle libraries</h4>
+There are two main types of algorithms used in ParMETIS and Jostle. The
+first is multilevel graph partitioning. The main idea is to take a large
+graph and&nbsp; construct a sequence of smaller and simpler graphs that
+in some sense approximate the original graph. When the graph is sufficiently
+small it is partitioned using some other method. This smallest graph and
+the corresponding partition is then propagated back through all the levels
+to the original graph. A popular local refinement strategy known as Kernighan-Lin
+is employed at some or every level.
+<p>The second main strategy is diffusion. This method assumes that an initial
+partition (balance) is given, and load balance is achieved by repeatedly
+moving objects (nodes) from parts (processors) that have too heavy
+load to neighboring parts (processors) with too small load.
+<p>For further details about the algorithms in a specific library, please
+refer to the documentation that is distributed with that library.
+<h3>
+Data structures</h3>
+We use the ParMETIS parallel graph structure. This is implemented using
+5 arrays:
+<ol>
+<li>
+<i>vtxdist</i>: gives the distribution of the objects (vertices) to processors</li>
+
+<li>
+<i>xadj</i>: indices (pointers) to the <i>adjncy</i> array</li>
+
+<li>
+<i>adjncy</i>: neighbor lists</li>
+
+<li>
+<i>adjwgt</i>: edge weights</li>
+
+<li>
+<i>vwgt</i>: vertex (object) weights</li>
+</ol>
+The <i>vtxdist</i> array is duplicated on all processors, while the other
+arrays are local.
+<br>For more details, see the ParMETIS User's Guide.
+<h3>
+Parameters</h3>
+Zoltan supports the most common parameters in ParMETIS and Jostle. These
+parameters are parsed in the package-specific wrapper routine (<b>Zoltan_ParMetis</b>
+or <b>Zoltan_Jostle</b>) and later passed on to the desired library via <b>Zoltan_ParMetis_Jostle</b>.
+<p>In addition, Zoltan has one graph parameter of its own: <a href="../ug_html/ug_alg_parmetis.html">CHECK_GRAPH</a>.
+This parameter is set in <b>Zoltan_ParMetis_Jostle</b> and specifies the amount
+of verification that is performed on the constructed graph. For example, it
+is required that the graph is symmetric and that the weights are non-negative.
+<h3>
+Main routine</h3>
+The main routine is <b>Zoltan_ParMetis_Jostle</b> but it should always be accessed
+through either <b>Zoltan_ParMetis</b> or <b>Zoltan_Jostle</b>.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_phg.html">Next:&nbsp;
+Hypergraph Partitioning</a>&nbsp; |&nbsp; <a href="dev_rib.html">Previous:&nbsp;
+Recursive Inertial Bisection (RIB)</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

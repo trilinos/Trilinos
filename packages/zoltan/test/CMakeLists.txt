@@ -1,0 +1,30 @@
+ADD_SUBDIRECTORY(ch_brack2_3)
+ADD_SUBDIRECTORY(ch_bug)
+ADD_SUBDIRECTORY(ch_degenerate)
+ADD_SUBDIRECTORY(ch_degenerateAA)
+ADD_SUBDIRECTORY(ch_drake)
+ADD_SUBDIRECTORY(ch_ewgt)
+ADD_SUBDIRECTORY(ch_grid20x19)
+ADD_SUBDIRECTORY(ch_hammond)
+ADD_SUBDIRECTORY(ch_hammond2)
+ADD_SUBDIRECTORY(ch_nograph)
+ADD_SUBDIRECTORY(ch_onedbug)
+ADD_SUBDIRECTORY(ch_serial)
+ADD_SUBDIRECTORY(ch_simple)
+ADD_SUBDIRECTORY(ch_vwgt)
+ADD_SUBDIRECTORY(ch_vwgt2)
+ADD_SUBDIRECTORY(hg_cage10)
+ADD_SUBDIRECTORY(hg_diag500_4)
+ADD_SUBDIRECTORY(hg_ewgt)
+ADD_SUBDIRECTORY(hg_felix)
+ADD_SUBDIRECTORY(hg_ibm03)
+ADD_SUBDIRECTORY(hg_nograph)
+ADD_SUBDIRECTORY(hg_simple)
+ADD_SUBDIRECTORY(hg_vwgt)
+
+# Command that copies files to the executable directory.
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveMainCopyFiles
+  SOURCE_FILES
+    ctest_zoltan.pl
+  )
+

@@ -1,0 +1,34 @@
+# Script for building Zoltan with purify on linux workstation octopi 
+# with openmpi.
+# Assuming running this script from 
+# /Net/local/homes/kddevin/code/trilinos_v9.0/Obj_linux64.
+# PLEASE CHANGE THE PREFIX TO POINT TO YOUR OWN DIRECTORY!  THANKS!
+# This is a 64-bit installation.
+
+set path=(/usr/local/bin $path)
+setenv PURE_CC "purify -best-effort -follow-child-processes=yes -cache-dir=/tmp/purify -chain-length=20"
+setenv CC  "$PURE_CC gcc34  -Wall -Werror-implicit-function-declaration"
+setenv CXX "$PURE_CC g++34  -Wall -Werror-implicit-function-declaration"
+setenv CFLAGS "-m64 -g"
+setenv CXXFLAGS "-m64 -g"
+setenv CPPFLAGS "-m64 -g"
+setenv FFLAGS "-m64 -g"
+setenv MPIINC `mpicc --showme:compile`
+setenv MPILIB `mpicc --showme:link`
+
+../configure -C \
+  --prefix=/Net/local/homes/kddevin/code/trilinos_v9.0/Obj_linux64 \
+  --enable-mpi  \
+  --disable-fortran \
+  --disable-default-packages \
+  --with-gnumake \
+  --enable-zoltan \
+  --disable-zoltan-cppdriver \
+  --with-parmetis \
+  --with-parmetis-incdir="/Net/local/proj/zoltan/arch/all/src/ParMETIS3" \
+  --with-parmetis-libdir="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3_1" \
+  --with-libs="$MPILIB" \
+  --with-incdirs="$MPIINC" \
+   |& tee OUTPUT.C
+make everything |& tee OUTPUT.M
+make install |& tee OUTPUT.I

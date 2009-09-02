@@ -1,0 +1,571 @@
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:kattach
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   socketcall.sendmsg(msg)
+   fun:sendmsg
+   fun:lam_lfopenfd
+   fun:set_stdio
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   socketcall.sendmsg(msg)
+   fun:sendmsg
+   fun:lam_lfopenfd
+   fun:set_stdio
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   socketcall.sendmsg(msg)
+   fun:sendmsg
+   fun:lam_lfopenfd
+   fun:set_stdio
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   readv(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mreadv
+   fun:_cio_recv
+   fun:_cipc_ksrback
+   fun:ksrback
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:nrecv
+   fun:get_mpi_world
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:kdetach
+   fun:lam_kexit
+   fun:kexit
+   fun:main
+}
+
+
+
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:kattach
+   fun:kinit
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:_Z8NextMainiPPc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lpattach
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lpattach
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:_Z8NextMainiPPc
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:kdetach
+   fun:lam_kexit
+   fun:MPI_Finalize
+   fun:_Z8NextMainiPPc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_rtrnamesweep
+   fun:lam_nukepublished
+   fun:MPI_Finalize
+   fun:_Z8NextMainiPPc
+   fun:main
+}
+
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:kattach
+   fun:kinit
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_rtrnamesweep
+   fun:lam_nukepublished
+   fun:MPI_Finalize
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:kdetach
+   fun:lam_kexit
+   fun:MPI_Finalize
+   fun:main
+}
+
+#
+#  Test_Basic - Amesos_Klu 
+#
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:lam_ssi_base_module_find
+   fun:lam_ssi_crlam_base_open
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:sfh_argv_add
+   fun:asc_compat
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:al_append
+   fun:asc_schedule
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:sfh_argv_add
+   fun:asc_compat
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:sfh_argv_add
+   fun:asc_compat
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/lib/libc-2.3.6.so
+   fun:__nss_database_lookup
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:lam_tmpdir_init_opt
+   fun:lam_tmpdir_init
+   fun:_cio_init
+   fun:_cipc_init
+   fun:kinit
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:lam_tmpdir_init_opt
+   fun:lam_tmpdir_init
+   fun:_cio_init
+   fun:_cipc_init
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:al_init
+   fun:nid_parse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:sfh_argv_add
+   fun:sfh_argv_break_quoted
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:tsearch
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:lam_tmpdir_init_opt
+   fun:lam_tmpdir_init
+   fun:_cio_init
+   fun:_cipc_init
+   fun:kinit
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:sfh_argv_add
+   fun:sfh_argv_break_quoted
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:nrecv
+   fun:rpstate
+   fun:lam_send_pid_idx
+   fun:lam_linit
+   fun:lam_mpi_init
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:*
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:nrecv
+   fun:rpstate
+   fun:lam_send_pid_idx
+   fun:lam_linit
+}
+
+
+
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_send_pid_idx
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:NextMain
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+}
+{
+   <KEPERER insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_send_pid_idx
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:NextMain
+}
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   readv(vector)
+   obj:*
+   fun:mreadv
+   fun:_cio_recv
+   fun:_cipc_ksrback
+   fun:ksrback
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+}
+
+

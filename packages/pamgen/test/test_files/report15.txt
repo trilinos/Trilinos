@@ -1,0 +1,16 @@
+mesh
+ radial
+ numz 1
+  zblock 1 10.0 interval 1
+ numr 4 initial radius 1.
+  rblock 1 2. interval 3
+  rblock 2 4. interval 3
+  rblock 3 6. interval 5
+  rblock 4 8. interval 6
+ numa 1
+  ablock 1 60. interval 12
+ end
+ decomposition strategy
+  bisection
+ end
+end

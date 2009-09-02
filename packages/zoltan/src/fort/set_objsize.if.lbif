@@ -1,0 +1,11 @@
+interface LB_Set_Obj_Size_Fn
+   module procedure LBf90_Set_Obj_Size_Fn0f
+   module procedure LBf90_Set_Obj_Size_Fn1f
+   module procedure LBf90_Set_Obj_Size_Fn2f
+   module procedure LBf90_Set_Obj_Size_Fn3f
+   module procedure LBf90_Set_Obj_Size_Fn8f
+   module procedure LBf90_Set_Obj_Size_Fn9f
+   module procedure LBf90_Set_Obj_Size_FnAf
+   module procedure LBf90_Set_Obj_Size_FnBf
+end interface
+

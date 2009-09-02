@@ -1,0 +1,8 @@
+.././configure CXXFLAGS=-O3 CPPFLAGS=-D__USE_STD_IOSTREAM \
+TRILINOS_TEMPLATE_OBJS="./cxx_repository/*.o" \
+--with-cflags=-O3 --with-fflags=-O3 --host=alpha-unknown-linux \
+--enable-referencey12m --enable-nox --enable-nox-epetra \
+CC=/usr/local/cplant/alaska/current/bin/cc \
+CXX=/usr/local/cplant/alaska/current/bin/c++ \
+F77=/usr/local/cplant/alaska/current/bin/f77
+

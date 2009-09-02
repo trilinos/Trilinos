@@ -1,0 +1,5 @@
+Decomposition Method 	= random
+Zoltan Parameters	= num_global_parts=7
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0

@@ -1,0 +1,29 @@
+
+include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+_TRIKOTA_INCLUDES = \
+  -I@abs_top_srcdir@/src \
+  -I@abs_top_builddir@/src \
+  $(EPETRAEXT_INCLUDES)
+
+#DAKOTA_LIBS=-ldakota -levidence -llhs -lsurfpack -lnpsol \
+#-lnlpql -lconmin -lddace -lfsudace -ljega -lcport -lopt -lnewmat     \
+#-lpsuade -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib    \
+#-l3po -lamplsolver -lfl -lteuchos -lpecos -lappspack -lnappspack           \
+#-lconveyor -lshared -lcdd -lgslcblas -llhs -ldl
+
+DAKOTA_LIBS= \
+-ldakota     -lteuchos  -lpecos    -lfftw3  -llhs        \
+-levidence   -lsurfpack -lconmin   -lddace  -lfsudace    \
+-ljega       -lcport    -lnlpql    -lnpsol  -lopt        \
+-lpsuade     -lnewmat   -lncsuopt  -lgsl    -lquadrature \
+-lcoliny     -lcolin    -lpebbl    -lutilib -l3po        \
+-lnappspack  -lappspack -lconveyor -lshared -lcdd        \
+-lamplsolver -ldl
+
+_TRIKOTA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -ltrikota $(DAKOTA_LIBS) $(EPETRAEXT_LIBS) @LIBS@
+
+@USING_GNUMAKE_TRUE@TRIKOTA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_TRIKOTA_INCLUDES))
+@USING_GNUMAKE_TRUE@TRIKOTA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_TRIKOTA_LIBS))
+@USING_GNUMAKE_FALSE@TRIKOTA_INCLUDES = $(_TRIKOTA_INCLUDES)
+@USING_GNUMAKE_FALSE@TRIKOTA_LIBS     = $(_TRIKOTA_LIBS)

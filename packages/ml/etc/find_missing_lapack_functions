@@ -1,0 +1,179 @@
+#!/bin/sh
+
+${echo} "Figuring out blas/lapack dependencies"
+#
+# find_missing_lapack_functions cc -Dnothing1 cc -Dnothing2 -Dnothing3
+#
+COMPILE=$1
+COMP_FLAGS=$2
+LINKER=$3
+THELIBRARIES=$4
+THEARCHS=$5
+
+#
+# see if echo -n or echo "\c" supresses newlines
+# then create a file (used in compile_list) with just a '.'
+#
+\rm -f thedot; echo  -n "." > thedot
+tt2=`wc thedot | sed "s/^ *.//" | sed "s/ *. *//" | sed "s/ *thedot//"`
+if test `expr $tt2` -ne '1'
+then
+   \rm -f thedot ; echo ".\c" > thedot
+   tt2=`wc thedot | sed "s/^ *.//" | sed "s/ *. *//" | sed "s/ *thedot//"`
+   if test `expr $tt2` -ne '1'
+   then
+      \rm -f thedot; echo -n "." | sed "s/-n//" > thedot
+   fi
+fi
+
+\rm -f ml_lapack.c
+ln -s ../src/Utils/ml_lapack.c .
+#
+# Build the file containing the lapack definitions.
+# This file will be used to compile ml_lapack.
+#
+\rm -f la_defs
+${echo} "${COMPILE} ${COMP_FLAGS} -c \\" > la_defs
+grep FUNC ../src/Utils/ml_lapack.c | sed "s/\#ifndef /-D/g" | \
+     sed "s/$/ \\\/" >> la_defs
+${echo} "-o ml_lapack.o -I../Obj ml_lapack.c \\" >> la_defs
+${echo} "-DML_DUMMY_FUNC" >> la_defs
+${echo} "\\" "rm -f ml_lapack1.o" | sed "s/ rm /rm /" >> la_defs
+${echo} "mv ml_lapack.o ml_lapack1.o" >> la_defs
+\rm -f lower_list upper_list 
+
+${echo} xerbla >> lower_list ; ${echo} XERBLA >> upper_list
+${echo} lsame >> lower_list ; ${echo} LSAME >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}"
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dswap >> lower_list ; ${echo} DSWAP >> upper_list
+${echo} dasum >> lower_list ; ${echo} DASUM >> upper_list
+${echo} daxpy >> lower_list ; ${echo} DAXPY >> upper_list
+${echo} ddot >> lower_list ; ${echo} DDOT >> upper_list
+${echo} dscal >> lower_list ; ${echo} DSCAL >> upper_list
+${echo} idamax >> lower_list ; ${echo} IDAMAX >> upper_list
+${echo} ilaenv >> lower_list ; ${echo} ILAENV >> upper_list
+${echo} dcopy >> lower_list ; ${echo} DCOPY >> upper_list
+${echo} dnrm2 >> lower_list ; ${echo} DNRM2 >> upper_list
+${echo} dlapy2 >> lower_list ; ${echo} DLAPY2 >> upper_list
+${echo} dlassq >> lower_list ; ${echo} DLASSQ >> upper_list
+${echo} dlabad >> lower_list ; ${echo} DLABAD >> upper_list
+${echo} dlamc3 >> lower_list ; ${echo} DLAMC3 >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dtrsv >> lower_list ; ${echo} DTRSV >> upper_list
+${echo} dtrsm >> lower_list ; ${echo} DTRSM >> upper_list
+${echo} dlaswp >> lower_list ; ${echo} DLASWP >> upper_list
+${echo} dgemm >> lower_list ; ${echo} DGEMM >> upper_list
+${echo} dger >> lower_list ; ${echo} DGER >> upper_list
+${echo} dtrmm >> lower_list ; ${echo} DTRMM >> upper_list
+${echo} dgemv >> lower_list ; ${echo} DGEMV >> upper_list
+${echo} dtrmv >> lower_list ; ${echo} DTRMV >> upper_list
+${echo} dlamc1 >> lower_list ; ${echo} DLAMC1 >> upper_list
+${echo} dlamc4 >> lower_list ; ${echo} DLAMC4 >> upper_list
+${echo} dlamc5 >> lower_list ; ${echo} DLAMC5 >> upper_list
+${echo} dlaset >> lower_list ; ${echo} DLASET >> upper_list
+${echo} dlange >> lower_list ; ${echo} DLANGE >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dgetrs >> lower_list ; ${echo} DGETRS >> upper_list
+${echo} dgetf2 >> lower_list ; ${echo} DGETF2 >> upper_list
+${echo} dlarft >> lower_list ; ${echo} DLARFT >> upper_list
+${echo} dlamc2 >> lower_list ; ${echo} DLAMC2 >> upper_list
+${echo} dpotrs >> lower_list ; ${echo} DPOTRS >> upper_list
+${echo} dpotf2 >> lower_list ; ${echo} DPOTF2 >> upper_list
+${echo} dsyrk >> lower_list ; ${echo} DSYRK >> upper_list
+${echo} dtrti2 >> lower_list ; ${echo} DTRTI2 >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dgetrf >> lower_list ; ${echo} DGETRF  >> upper_list
+${echo} dlamch >> lower_list ; ${echo} DLAMCH >> upper_list
+${echo} dtrtri >> lower_list ; ${echo} DTRTRI >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dlarfb >> lower_list ; ${echo} DLARFB >> upper_list
+${echo} dlarfg >> lower_list ; ${echo} DLARFG >> upper_list
+${echo} dlascl >> lower_list ; ${echo} DLASCL >> upper_list
+${echo} dlaic1 >> lower_list ; ${echo} DLAIC1 >> upper_list
+${echo} dpotrf >> lower_list ; ${echo} DPOTRF >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dlarf >> lower_list ; ${echo} DLARF >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dgeqr2 >> lower_list ; ${echo} DGEQR2 >> upper_list
+${echo} dorg2r >> lower_list ; ${echo} DORG2R >> upper_list
+${echo} dgelq2 >> lower_list ; ${echo} DGELQ2 >> upper_list
+${echo} dorm2r >> lower_list ; ${echo} DORM2R >> upper_list
+${echo} dorml2 >> lower_list ; ${echo} DORML2 >> upper_list
+${echo} dgetri >> lower_list ; ${echo} DGETRI >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+
+${echo} dgeqrf >> lower_list ; ${echo} DGEQRF >> upper_list
+${echo} dorgqr >> lower_list ; ${echo} DORGQR >> upper_list
+${echo} dgelqf >> lower_list ; ${echo} DGELQF >> upper_list
+${echo} dormqr >> lower_list ; ${echo} DORMQR >> upper_list
+${echo} dormlq >> lower_list ; ${echo} DORMLQ >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+${echo} dgels >> lower_list ; ${echo} DGELS >> upper_list
+
+#####################################################
+./compile_list "${COMPILE}" "${COMP_FLAGS}" "${LINKER}" "${THELIBRARIES}" "${THEARCHS}" ml_lapack1.o
+chmod +x la_defs; ./la_defs
+\rm -f lower_list upper_list
+#####################################################
+
+\rm -f .thedefs
+#no_lines=`cat la_defs | wc | sed "s/^ *//" | sed "s/ .*//"`
+#lineslessone=`expr ${no_lines} - 1`
+#tail -${lineslessone} la_defs | grep FUNC > .thedefs
+grep "^.DML.*FUNC" la_defs > .thedefs
+\rm -f la_defs temprog.c temprog.o ml_lapack.c .errors ml_lapack1.o thedot
+

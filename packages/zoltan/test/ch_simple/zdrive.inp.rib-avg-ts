@@ -1,0 +1,8 @@
+Decomposition Method 	= rib
+Zoltan Parameters	= tflops_special=1
+Zoltan Parameters	= average_cuts=1
+Zoltan Parameters	= keep_cuts=1
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Test Drops		= 1

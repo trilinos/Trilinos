@@ -1,0 +1,11 @@
+
+ADD_SUBDIRECTORY(Utilities)
+ADD_SUBDIRECTORY(Allocators)
+ADD_SUBDIRECTORY(DataContainer)
+ADD_SUBDIRECTORY(DataLayout)
+ADD_SUBDIRECTORY(EvaluatorManager)
+ADD_SUBDIRECTORY(ExpressionTemplates)
+ADD_SUBDIRECTORY(Field)
+ADD_SUBDIRECTORY(FieldTag)
+ADD_SUBDIRECTORY(Performance)
+ADD_SUBDIRECTORY(IntrepidInteroperability)

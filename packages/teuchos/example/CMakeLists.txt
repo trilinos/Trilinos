@@ -1,0 +1,16 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(AddSubdirectories)
+
+ADD_SUBDIRECTORIES(
+  BLAS
+  CommandLineProcessor
+  DenseMatrix
+  ExplicitInstantiation/four_files
+  LAPACK
+  ParameterList
+  RefCountPtr
+  TimeMonitor
+  XML
+  hilbert 
+  )

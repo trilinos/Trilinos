@@ -1,0 +1,88 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  sadl14088.sandia.gov
+#  Linux sadl14088 2.6.18.2-34-default #1 SMP Mon Nov 27 11:46:27 UTC 2006 i686 i686 i386 GNU/Linux
+##############################################################################
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= gcc -Wall
+CPPC			= g++ -Wall -Wno-deprecated
+#CC			= gcc -Wall -fprofile-arcs -ftest-coverage
+
+INCLUDE_PATH		= -I/usr/local/include
+
+DBG_FLAGS		= -g 
+OPT_FLAGS		= -O
+CFLAGS 			= $(DBG_FLAGS)
+
+F90			= mpif77
+LOCAL_F90		= gfortran
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
+FFLAGS    		= 
+SPPR_HEAD 		= spprinc.most
+F90_MODULE_PREFIX 	= -I
+FARG      		= farg_typical
+
+MPI_LIB			= -lmpich -lpthread
+MPI_LIBPATH		= -L/usr/local/lib
+MPI_INCPATH		= -L/usr/local/include
+
+PARMETIS_LIBPATH 	= -L/usr/local/lib
+PARMETIS_INCPATH 	= -I/usr/local/include
+
+#NEMESIS_LIBPATH		= -L/usr/lib
+#NEMESIS_INCPATH		= -I/usr/include
+
+#----------------------------------------------------------------
+# Definitions required to build vtk_view and vtk_write.  Pre-built
+# versions may be found on SNL's LAN in the architecture specific
+# "bin" directory.  To rebuild, you need to provide paths to VTK
+# libraries and include files.  There are versions of these as well
+# on the LAN.  The latest version of VTK may be obtained from www.vtk.org.
+#
+# The location of the VTK libraries, built with OpenGL
+#
+#VTK_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/vtk
+#VTK_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/vtk
+
+# The location of the X libraries, and the X libraries required, if any
+#
+X_LIBPATH = -L/usr/X/lib
+X_LIBS    = -lXt -lX11 -lXt -lXext
+
+# The location of the GL or Mesa libraries, and the libraries
+#
+GL_LIBPATH = -L/usr/lib
+GL_INCPATH = -I/usr/include
+GL_LIBS    = -lGL -lGLU
+
+# vtk_write does off screen rendering and so requires the Mesa GL
+# libraries built with mangled names.  It also requires a different 
+# version of VTK, one that was built with the MANGLED_MESA option 
+# and with Mesa GL header files.  A static build is a good idea.
+
+#VTK_OFFSCREEN_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/vtkMesa
+#VTK_OFFSCREEN_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/vtkMesa
+
+#MESA_LIBPATH = -L/Net/local/proj/zoltan/arch/solaris/lib/Mesa
+#MESA_INCPATH = -I/Net/local/proj/zoltan/arch/solaris/include/mesa
+#MESA_LIBS = -lMGL  -lMGLU -lMOSMesa
+#----------------------------------------------------------------
+
+

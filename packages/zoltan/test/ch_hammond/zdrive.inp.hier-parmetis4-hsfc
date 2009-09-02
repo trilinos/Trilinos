@@ -1,0 +1,7 @@
+Decomposition Method 	= hier
+File Type		= Chaco
+File Name		= hammond
+Parallel Disk Info	= number=0
+Test Drops		= 0
+Test null export lists  = 1
+zoltanParams file       = hier-parmetis4-hsfc.inp

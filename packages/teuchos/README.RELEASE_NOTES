@@ -1,0 +1,15 @@
+
+Changes since Trilinos 9.0 release:
+
+(*) Breaks in backward compatibility:
+
+- The raw pointer T* argument in Teuchos::set_extra_data(...) has been
+changed to Teuchos::Ptr<T>&.  This requires that you replace:
+
+    Teuchos::set_extra_data(data, dataName, &rcpObj);
+
+with:
+
+    Teuchos::set_extra_data(data, dataName, Teuchos::outArg(rcpObj));
+
+

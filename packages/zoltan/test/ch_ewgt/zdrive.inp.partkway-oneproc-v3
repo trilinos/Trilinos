@@ -1,0 +1,6 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= edge_weight_dim=1
+Zoltan Parameters       = parmetis_method=partkway
+File Type		= Chaco, initial procs = 1
+File Name		= ewgt
+Parallel Disk Info	= number=0

@@ -1,0 +1,11 @@
+interface Zoltan_Set_Post_Migrate_Fn
+   module procedure Zf90_Set_Post_Migrate_Fn0s
+   module procedure Zf90_Set_Post_Migrate_Fn1s
+   module procedure Zf90_Set_Post_Migrate_Fn2s
+   module procedure Zf90_Set_Post_Migrate_Fn3s
+   module procedure Zf90_Set_Post_Migrate_Fn4s
+   module procedure Zf90_Set_Post_Migrate_Fn5s
+   module procedure Zf90_Set_Post_Migrate_Fn6s
+   module procedure Zf90_Set_Post_Migrate_Fn7s
+end interface
+

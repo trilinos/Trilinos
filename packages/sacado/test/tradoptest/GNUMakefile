@@ -1,0 +1,24 @@
+
+SRCS = $(wildcard tradoptest_*.cpp)
+EXES = $(SRCS:.cpp=.exe)
+ADC_EXES = $(SRCS:.cpp=_ADC.exe)
+EQA_EXES = $(SRCS:.cpp=_EQA.exe)
+RE1_EXES = $(SRCS:.cpp=_RE1.exe)
+RE2_EXES = $(SRCS:.cpp=_RE2.exe)
+
+all : $(EXES) $(ADC_EXES) $(EQA_EXES) $(RE1_EXES) $(RE2_EXES)
+
+tradoptest_%_ADC.exe : tradoptest_%.cpp
+	$(CXXCOMPILE) -DRAD_AUTO_AD_Const -o $@ $<
+
+tradoptest_%_EQA.exe : tradoptest_%.cpp
+	$(CXXCOMPILE) -DRAD_EQ_ALIAS -o $@ $<
+
+tradoptest_%_RE1.exe : tradoptest_%.cpp
+	$(CXXCOMPILE) -DRAD_REINIT=1 -o $@ $<
+
+tradoptest_%_RE2.exe : tradoptest_%.cpp
+	$(CXXCOMPILE) -DRAD_REINIT=2 -o $@ $<
+
+tradoptest_%.exe : tradoptest_%.cpp
+	$(CXXCOMPILE) -o $@ $<

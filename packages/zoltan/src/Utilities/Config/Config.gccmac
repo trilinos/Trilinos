@@ -1,0 +1,52 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers using gcc 
+#  for solaris on Sandia's 980 LAN.  The compiler flag -Wall tells gcc to
+#  print all warnings!  This option is good for cleaning up the code!
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= gcc -Wall
+INCLUDE_PATH		= -I/Users/kddevin/mpich-current/include
+			  
+DBG_FLAGS		= -g
+OPT_FLAGS		= -O
+CFLAGS 			= $(DBG_FLAGS) -DBSD
+
+F90			= f90
+LOCAL_F90		= f90
+F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2 -DBSD
+FFLAGS    		= -DBSD
+SPPR_HEAD 		= spprinc.most
+F90_MODULE_PREFIX 	= -M
+FARG      		= farg_typical
+
+MPI_LIB			= -lmpich -lpmpich -lgcc
+MPI_LIBPATH		= -L/Users/kddevin/mpich-current/lib
+
+PARMETIS_LIBPATH 	= -L../../ParMETIS3_1
+PARMETIS_INCPATH 	= -I../../ParMETIS3_1
+
+#JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+
+#NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include

@@ -1,0 +1,62 @@
+#############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+#
+# Dynamic Load Balance Library Makefile for machine dependent directories
+#
+
+include ../$(ZOLTAN_CONFIG)
+
+ifndef DCC
+DCC=$(CC)
+endif
+
+ifndef DEPS
+DEPS=-M
+endif
+
+ifdef OBJ_FILES
+include $(OBJ_FILES:.o=.d)
+endif
+
+ifdef MAIN_OBJ
+include $(MAIN_OBJ:.o=.d)
+endif
+
+# On Solaris machines, the C++ include directories may contain .cc files
+# with the same name as headers (i.e. string.cc and string).  make will
+# try to build the .cc file if it's newer than the header.
+#
+%:	%.cc
+	@echo "IGNORE attempt to compile $< "
+#
+#########################################################################
+
+%.o:	%.c
+	@echo "Compiling $<..."
+	@$(CC) $(DEFS) -c $<
+
+%.d:	%.c
+	@echo "(Re)Building dependency for $<..."
+	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*\.o/& $@/g'\'' > $@'
+
+
+$(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES) $(INC_FORTRAN)
+		@echo "creating library..."
+		@$(AR) $(LIB_NAME) $(OBJ_FILES) $(FOBJ_FILES)
+		@$(RANLIB) $(LIB_NAME)
+
+$(TARGET):      $(MAIN_OBJ:.o=.d) $(MAIN_OBJ)
+		@echo "linking driver" $(TARGET) $(MAIN_OBJ)
+		@$(PURE_CC) $(CC) $(MAIN_OBJ) -o $(TARGET) 
+

@@ -1,0 +1,172 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Coloring Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_query.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_order.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Coloring Functions"></a>Coloring Functions</h2>
+Zoltan provides limited capability for coloring a set of objects, 
+typically given as a graph. In graph coloring, each vertex is 
+assigned an integer label such that no two adjacent vertices have 
+the same label.
+The following functions are the coloring interface functions in the Zoltan
+library; their descriptions are included below.
+<blockquote><b><a href="#Zoltan_Color">Zoltan_Color</a></b>
+</blockquote>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Color"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Color</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>color_exp</i>); 
+</td>
+</tr>
+<tr>
+<td>FORTRAN:</td>
+<td>Not yet available.</td>
+</tr>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C++:</td>
+
+<td WIDTH="85%">int <b>Zoltan::Color</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>color_exp</i>);
+</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Color </b>invokes the coloring routine and
+the assigned colors of each object are returned in the array
+<i>color_exp</i>. <i>color_exp[i]</i>gives the color of
+<i>global_ids[i] </i>in the computed coloring. The arrays
+<i>global_ids, local_ids,</i>and <i>color_exp</i>
+should all be allocated by the application before <b>Zoltan_Color</b> is
+called. Each array must have space for (at least) <i>num_obj </i>elements,
+where <i>num_obj </i>is the number of objects residing on a processor.
+
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+to be used in this invocation of the load-balancing routine.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td NOSAVE>Number of objects to color on this processor. <i>num_obj</i>
+should be the total number of objects residing on a processor. &nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Upon return, an array of global IDs of objects to be colored on this processor.
+(size = <i>num_obj</i> * <i>num_gid_entries</i>)
+<br>Memory for this array must have been allocated before
+<b>Zoltan_Color </b>is called.</td> 
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>[Optional.] Upon return, an array of local IDs of objects to be colored on this
+processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)
+<br>Memory for this array must have been allocated before
+<b>Zoltan_Color </b>is called.</td> 
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; color_exp</i></td>
+
+<td>Upon return, an array of length <i>num_obj</i> containing the
+colors of objects. That is, <i>color_exp[i]</i> gives the color of
+<i>global_ids[i]</i> in the computed coloring. By default, colors are 
+positive integers starting at one.
+Memory for this array must have been allocated before <b>Zoltan_Color</b> is
+called.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_query.html">Next:&nbsp;
+Application-Registered Query Functions</a>&nbsp; |&nbsp; <a href="ug_interface_order.html">Previous:&nbsp;
+Ordering Functions</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

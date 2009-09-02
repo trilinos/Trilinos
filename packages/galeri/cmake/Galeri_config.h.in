@@ -1,0 +1,46 @@
+/* src/Galeri_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the <assert.h> header file. */
+#cmakedefine HAVE_ASSERT_H
+
+/* define if bool is a built-in type */
+#cmakedefine HAVE_BOOL
+
+/* Define if want to build examples */
+#cmakedefine HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#cmakedefine HAVE_EXPORT_MAKEFILES
+
+/* Define if want to build with galeri enabled */
+#cmakedefine HAVE_GALERI_EPETRAEXT
+
+/* Define if want to build galeri-examples */
+#cmakedefine HAVE_GALERI_EXAMPLES
+
+/* Define if want to build galeri-tests */
+#cmakedefine HAVE_GALERI_TESTS
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#cmakedefine HAVE_GNUMAKE
+
+/* Define if want to build libcheck */
+#cmakedefine HAVE_LIBCHECK
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* define if the compiler accepts the new for scoping rules */
+#cmakedefine HAVE_NEW_FOR_SCOPING
+
+/* Define if want to build tests */
+#cmakedefine HAVE_TESTS
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#cmakedefine inline
+#endif

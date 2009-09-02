@@ -1,0 +1,9 @@
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1 
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= num_global_parts=64
+Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+Zoltan Parameters       = lb_approach = partition
+File Type		= matrixmarket
+File Name		= nograph
+Parallel Disk Info	= number=0

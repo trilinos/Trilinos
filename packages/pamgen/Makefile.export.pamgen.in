@@ -1,0 +1,26 @@
+#np# List dependencies like this.
+#include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+#np# List optional dependencies like this.  (Uncomment the next line to include
+#np# the optional dependence.)
+#@ENABLE_EPETRA_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
+#np# List all -I's required for this package.  -I's for other packages (both
+#np# dependencies and optional dependencies) should be listed via the 
+#np# corresponding _INCLUDES macros
+_PAMGEN_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src 
+
+#np# List all -L's required for this package.  -L's for other packages (both 
+#np# dependencies and optional dependencies) should be listed via the 
+#np# corresponding _LIBS macros
+_PAMGEN_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -lpamgen\
+			$(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+#np# Nothing needs to be changed below, other than using the name of the
+#np# package instead of PAMGEN, but be sure to include the
+#np# strip_dup_incl_paths.pl and strip_dup_libs.pl scripts in config/
+@USING_GNUMAKE_TRUE@PAMGEN_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_PAMGEN_INCLUDES))
+@USING_GNUMAKE_TRUE@PAMGEN_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_PAMGEN_LIBS))
+
+@USING_GNUMAKE_FALSE@PAMGEN_INCLUDES = $(_PAMGEN_INCLUDES)
+@USING_GNUMAKE_FALSE@PAMGEN_LIBS     = $(_PAMGEN_LIBS)

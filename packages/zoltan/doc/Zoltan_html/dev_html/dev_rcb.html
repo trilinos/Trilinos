@@ -1,0 +1,176 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="sandia.approved" CONTENT="SAND99-1376">
+   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+   <TITLE> Zoltan Developer's Guide:  RCB</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_rib.html">Next</a>&nbsp; |&nbsp; <a href="dev_test_script.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="RCB"></A>Appendix: Recursive Coordinate Bisection (RCB)</H2>
+&nbsp;
+
+<H3>
+Outline of Algorithm</H3>
+
+<P>The implementation of Recursive Coordinate Bisection (RCB) in Zoltan
+is due to Steve Plimpton of Sandia National Laboratories and was modified
+by Matt St. John and Courtenay Vaughan.  In this implementation of RCB, the
+parallel computer is first divided into two pieces and then the computational
+domain is divided into two pieces such that the proportion of work in each
+piece is the same as the proportion of computational power.  The division
+of the parallel machine is done by a subroutine which is part of the support
+for heterogenous architectures that is being built into the Zoltan library.
+This process is repeated recursively on each subdomain and its associated
+part of the computer.  Each of these divisions are done with a cutting plane
+that is orthogonal to one of the coordinate axes.
+
+<P>At each of these stages, each subdomain of processors and the objects
+that are contained on those processors are divided into two sets based
+on which side of the cutting plane each object is on.  Either or both of
+these sets may be empty.  On each processor, the set of objects which are
+on the same side of the cut as the processor are retained by the processor,
+while the other objects are sent to processors on the other side of the
+cut.  In order to minimize the maximum memory usage in each set of processors,
+the objects that are being sent to each set of processors are distributed
+such that each each processor in a set has about the same number of objects
+after the objects from the other set of processors are sent.  In the case
+when a processor has more objects that it will retain than the average
+number of objects that the rest of the processors have in its set, then
+that processor will not receive any objects.  Thus each processor may send
+and receive objects from several (or no) processors in the other set.  The
+process of determining which outgoing objects are sent to which processors
+is determined in the subroutine <B>Zoltan_Create_Proc_List</B>.  Once this new
+distribution of objects is determined, the
+<B><A HREF="../ug_html/ug_util_comm.html">unstructured communication package</A></B> in
+Zoltan is used to determine which processors are going to receive which
+objects and actually move the objects.
+
+<P>For applications that wish to add more objects to the decomposition
+at a later time (e.g., through <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> or <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>), information to do this can be retained during the
+decomposition phase.  This information is kept if the parameter <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>
+is set during the decomposition (see the <a href="../ug_html/ug_alg_rcb.html">RCB section</a> in the
+<B><A HREF="../ug_html/ug.html">Zoltan User's Guide</A></B>).
+This information about the decomposition can be thought of as a tree with
+the nodes which have children representing the cut information and the nodes
+with no children representing processors.  An object is dropped through the
+tree starting with the root node and uses the cut information at each node it
+encounters to determine which subtree it traverses.  When it reaches a terminal
+node, the node contains the processor number that the object belongs to.
+The information to construct the tree is saved during the decomposition.
+At each step in the decomposition, when each set is divided into two sets,
+the set with the lowest numbered processor is designated to be the left set
+and the information about the cut is stored in the lowest numbered processor
+in the other set of processors which is the right set.  As a result of this
+process, each processor will store information for, at most, one cut, since
+once a processor stores information about a cut, by being the lowest numbered
+processor in the right set, it will always be in a left set after each
+subsequent cut since it will be the lowest numbered processor in the set
+being cut and the set it is put into will be the left set.  The processor
+which stores the cut information also stores the root node as its parent.
+After the end of the division process, all of the information is collected
+onto all of the processors.  The parent information is then used to establish
+the leaf information for the parent.  When this information is gathered, the
+tree structure is stored in arrays with the array position determined by the
+processor number that was storing the information.  There is an array which
+stores the position of the cut information for the left set and one for the
+right set as well as arrays for the cut information.  Given that the lowest
+numbered processor after a cut is in the left set, the cut information is
+stored in the right set, and there is one fewer cut than the total number of
+processors, processor 0 has no cut information, so the 0 position of the right
+set array is empty and is used to store the position in the array that the
+first cut is stored.  When this information is used to process an object,
+array position 0 in the right set array is used to determine the array
+position of the first cut.  From there, which side of the cut the object is
+on is determined and that information is used to determine which cut to test
+the object against next.  This process is repeated recursively until a
+terminal node is encountered which contains the processor number that the
+object belongs to.
+<p>
+When the parameter <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a> is 
+specified, the RCB algorithm attempts to use information from a previous
+RCB decomposition to generate an "initial guess" at the new decomposition.
+For problems that change little between invocations of RCB, using <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a>
+can reduce the amount of data movement in RCB, improving the performance
+of the algorithm.  When <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a> is true,the coordinates of all objects obtained through query functions are passed through
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
+to determine their processor assignment in the previous RCB decomposition.
+The information for the objects is then sent to the new processor assignments
+using the <a href="../ug_html/ug_util_comm.html">unstructured communication utilities</a>
+to generate an initial condition matching the output of the previous RCB
+decomposition.
+The normal RCB algorithm is then applied to this new initial condition.
+
+<BR>&nbsp;
+
+<H3>
+Data Structure Definitions</H3>
+
+<P>There are three major data structures in RCB and they are defined in
+<i>rcb/rcb.h</i> and <i>rcb/shared.h</i>.  The points which are being load balanced are represented as a
+structure <i>Dot_Struct</i> which contains the location of the point, its weight, and
+its originating processor number.  The nodes on the decomposition tree are
+represented by the structure <i>rcb_tree</i> which contains the position of the cut,
+the dimension that the cut is perpendicular to, and the node's parent and two
+children (if they exist) in the tree.  The structure <i>RCB_Struct</i> is the RCB data
+structure which holds pointers to all of the other data structures needed for
+RCB.  It contains an array of <i>Dot_Struct</i> to represent the points being load
+balanced, global and local IDs for the points, and an array of <i>rcb_tree</i> (whose length is the number of processors)
+which contains the decomposition tree.
+
+<BR>&nbsp;
+
+<H3>
+Parameters</H3>
+
+<P>The parameters used by RCB and their default values are described in the
+<a href="../ug_html/ug_alg_rcb.html">RCB section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
+Guide</A></B>.  These can be set by use of the <b>Zoltan_RCB_Set_Param</b> subroutine
+in the file <i>rcb/rcb.c</i>.
+
+<p>
+When the parameter <a href="../ug_html/ug_alg_rcb.html">REDUCE_DIMENSIONS</a> 
+is specified, the RCB algorithm will perform lower dimensional
+partitioning if the geometry is found to be degenerate.  More information
+on detecting degenerate
+geometries may be found in another <a href="dev_degenerate.html">
+section</a>.
+ 
+<BR>&nbsp;
+
+<H3>
+Main Routine</H3>
+
+<P>The main routine for RCB is <b>Zoltan_RCB</b> in the file <i>rcb/rcb.c</i>.
+
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of 
+Contents</A>&nbsp; |&nbsp; <a href="dev_rib.html">Next:&nbsp; 
+Recursive Inertial Bisection (RIB)</a>&nbsp; |&nbsp; <A HREF="dev_test_script.html">
+Previous:&nbsp; Using the Test Script</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</BODY>
+</HTML>

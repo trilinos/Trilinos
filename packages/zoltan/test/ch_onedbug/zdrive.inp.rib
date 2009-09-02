@@ -1,0 +1,11 @@
+Decomposition Method	= rib
+Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
+Zoltan Parameters	= obj_weight_dim=1
+Zoltan Parameters	= comm_weight_dim=1
+Zoltan Parameters       = keep_cuts=1
+Zoltan Parameters	= rib_output_level=2
+Zoltan Parameters	= rib_overalloc=2.0
+File Type		= Chaco
+File Name		= onedbug
+Parallel Disk Info	= number=0
+Test Drops		= 1

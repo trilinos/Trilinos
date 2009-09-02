@@ -1,0 +1,3687 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  General Zoltan Query Functions</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_query_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_query.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Load-Balancing Query Functions"></a>General Zoltan Query Functions</h2>
+The following registered functions are used by various Zoltan algorithms
+in the Zoltan library. No single algorithm uses all the query functions;
+the <a href="ug_alg.html">algorithm descriptions</a> indicate which query
+functions are required by individual algorithms.  These query functions should
+NOT contain interprocessor communication.
+<blockquote><a href="#General Functions">Object ID Functions</a>
+<blockquote><b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b> (deprecated)
+<br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> (deprecated)
+<br><b><a href="#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b>
+</blockquote>
+<a href="#Geometry-based Functions">Geometry-Based Functions</a>
+<blockquote><b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
+<br><b><a href="#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b> 
+</blockquote>
+<a href="#Graph-based Functions">Graph-Based Functions</a>
+<blockquote>
+<b><a href="#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br><b><a href="#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</blockquote>
+<a href="#Hypergraph-based Functions">Hypergraph-Based Functions</a>
+<blockquote>
+<b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN</a></b>
+<b><br><a href="#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN</a></b>
+<b><br><a href="#ZOLTAN_HG_SIZE_EDGE_WTS_FN">ZOLTAN_HG_SIZE_EDGE_WTS_FN</a></b>
+<b><br><a href="#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN</a></b>
+<b><br><a href="#ZOLTAN_NUM_FIXED_OBJ_FN">ZOLTAN_NUM_FIXED_OBJ_FN</a></b>
+<b><br><a href="#ZOLTAN_FIXED_OBJ_LIST_FN">ZOLTAN_FIXED_OBJ_LIST_FN</a></b>
+</blockquote>
+<a href="#Tree-based Functions">Tree-Based Functions</a>
+<blockquote><b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_COARSE_OBJ_LIST_FN">ZOLTAN_COARSE_OBJ_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
+<br><b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</a></b>
+</blockquote>
+<a href="#Hierarchical Partitioning Functions">Hierarchical Partitioning Functions</a>
+<blockquote><b><a href="#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</a></b>
+<br><b><a href="#ZOLTAN_HIER_PART_FN">ZOLTAN_HIER_PART_FN</a></b>
+<br><b><a href="#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</a></b>
+</blockquote>
+</blockquote>
+<hr>
+
+<!------------------------------------------------------------------------->
+<h2>
+<a NAME="General Functions"></a><hr>Object ID Functions</h2>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_OBJ_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Obj</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_OBJ_FN</b> query function returns the number
+of objects that are currently assigned to the processor.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of objects that are assigned to the processor.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_OBJ_LIST_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void<b> ZOLTAN_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>obj_wgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
+wgt_dim, obj_wgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_OBJ_LIST_FN</b> query function fills two (three
+if weights are used) arrays with information about the objects currently
+assigned to the processor. Both arrays are allocated (and subsequently
+freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
+query function to get the array size. For many algorithms, either a <b>ZOLTAN_OBJ_LIST_FN</b>
+query function or a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+query-function pair must be registered;
+however, both query options need not
+be provided.  The <b>ZOLTAN_OBJ_LIST_FN</b> is preferred for efficiency.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_OBJ_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Upon return, an array of local IDs, the meaning of which can be determined by the
+application, for all objects assigned to the processor. (Optional.)</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgts</i></td>
+
+<td>Upon return, an array of object weights. Weights for object <i>i</i> are stored in <i>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
+If <i>wgt_dim</i>=0, the return value of <i>obj_wgts</i> is undefined and
+may be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_FIRST_OBJ_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_FIRST_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>first_obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_First_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, first_global_id, first_local_id,
+wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_First_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">
+(Deprecated) A <b>ZOLTAN_FIRST_OBJ_FN</b> query function initializes an
+iteration over objects assigned to the processor. It returns the global
+and local IDs of the first object on the processor. Subsequent calls to
+a <b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> query function iterate
+over and return other objects assigned to the processor. 
+For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or a <b>ZOLTAN_FIRST_OBJ_FN</b><i>/</i><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+query-function pair must be registered;
+however, both query options need not
+be provided.
+The <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) is preferred 
+for efficiency.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_FIRST_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_global_id</i></td>
+
+<td>The returned value of the global ID for the first object; the value
+is ignored if there are no objects.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_local_id</i></td>
+
+<td>The returned value of the local ID for the first object; the value
+is ignored if there are no objects.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
+
+<td>Upon return, the first object's weights; an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
+
+<td>If <i>first_global_id</i> and <i>first_local_id</i> contain valid IDs
+of the first object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
+
+<td>If no objects are available.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NEXT_OBJ_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NEXT_OBJ_FN</b>
+(void&nbsp;*<i>&nbsp;data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
+int&nbsp;<i>wgt_dim,</i>
+float&nbsp;*<i>next_obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Next_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id, next_global_id,
+next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Next_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">
+(Deprecated) A <b>ZOLTAN_NEXT_OBJ_FN</b> query function is an iterator
+function which, when given an object assigned to the processor, returns
+the next object assigned to the processor. The first object of the iteration
+is provided by a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
+query function. 
+For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_OBJ_FN</b>
+query-function pair must be registered;
+however, both query options need not
+be provided.
+The <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) is preferred 
+for efficiency.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NEXT_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the previous object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the previous object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_global_id</i></td>
+
+<td>The returned value of the global ID for the next object; the value
+is ignored if there are no more objects.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_local_id</i></td>
+
+<td>The returned value of the local ID for the next object; the value is
+ignored if there are no more objects.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
+
+<td>Upon return, the next object's weights; an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
+
+<td>If <i>next_global_id</i> and <i>next_local_id</i> contain valid IDs
+of the next object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
+
+<td>If no more objects are available.</td>
+</tr>
+</table>
+
+<p>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_PART_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_PART_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>parts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Part_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids,
+ierr</i>)
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: parts
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_PART_MULTI_FN</b> query function returns a 
+list of 
+parts to which 
+given objects are currently assigned.  
+If a <b>ZOLTAN_PART_MULTI_FN</b> 
+or <b><a href="#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a></b> is not
+registered, Zoltan assumes the part numbers are the processor
+number of the owning processor.  
+Valid part numbers are non-negative
+integers.  
+This function is used when parameter <a href="ug_alg.html#REMAP">REMAP</a>=1 
+and for certain methods with parameter 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a>=<i>Repartition</i>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_PART_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>The global IDs of the objects for which the part numbers should be
+returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>The local IDs of the objects for which the part numbers should be
+returned. (Optional.)</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>parts</i></td>
+
+<td>Upon return, an array of part numbers corresponding to the global 
+and local IDs.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+
+<p>
+<hr><hr>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_PART_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_PART_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Part</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Part&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_PART_FN</b> query function returns the 
+part to which 
+a given object is currently assigned.
+If a <b>ZOLTAN_PART_FN</b> 
+or <b><a href="#ZOLTAN_PART_MULTI_FN">ZOLTAN_PART_MULTI_FN</a></b>
+is not
+registered, Zoltan assumes the part numbers are the processor
+number of the owning processor.  
+Valid part numbers are non-negative
+integers.
+This function is used when parameter <a href="ug_alg.html#REMAP">REMAP</a>=1 
+and for certain methods with parameter 
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a>=<i>Repartition</i>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_PART_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_id</i></td>
+
+<td>The global ID of the object for which the part number should be
+returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_id</i></td>
+
+<td>The local ID of the object for which the part number should be
+returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The part number for the object identified by <i>global_id</i> and
+<i>local_id</i>.</td>
+</tr>
+</table>
+
+<p>
+<hr>
+
+<!------------------------------------------------------------------------->
+<h2>
+<a NAME="Geometry-based Functions"></a><hr>Geometry-based Functions</h2>
+
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_GEOM_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_GEOM_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Geom</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Geom&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_GEOM_FN</b> query function returns the number
+of values needed to express the geometry of an object. For example, for
+a two-dimensional mesh-based application, (<i>x</i>,<i>y</i>) coordinates
+are needed to describe an object's geometry; thus the <b>ZOLTAN_NUM_GEOM_FN</b>
+query function should return the value of two. For a similar three-dimensional
+application, the return value should be three.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_GEOM_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of values needed to express the geometry of an object.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_GEOM_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_GEOM_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;<i>num_dim</i>,
+double&nbsp;*<i>geom_vec</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Geom_Multi</i></b>(<i>data, num_gid_entries, 
+num_lid_entries, num_obj, global_ids, local_ids, num_dim, geom_vec, ierr</i>)
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_obj, num_dim
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>REAL(Zoltan_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_GEOM_MULTI FN</b> query function returns a 
+vector of
+geometry values for a list of given objects. The geometry vector is allocated by
+Zoltan to be of size <i>num_obj</i> * <i>num_dim</i>; its format is described
+below.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_GEOM_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Array of global IDs of objects whose geometry values should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Array of local IDs of objects whose geometry values should be returned. (Optional.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>num_dim</i></td>
+
+<td>Number of coordinate entries per object (typically 1, 2, or 3).
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>geom_vec</i></td>
+
+<td>Upon return, an array containing geometry values.
+For object <i>i</i> 
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+coordinate values should be stored 
+in <i>geom_vec[i*num_dim:(i+1)*num_dim-1]</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<br>&nbsp;
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_GEOM_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_GEOM_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+double&nbsp;*<i>geom_vec</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Geom</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id, geom_vec,
+ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>REAL(Zoltan_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_GEOM_FN</b> query function returns a vector of
+geometry values for a given object. The geometry vector is allocated by
+Zoltan to be of the size returned by a <b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
+query function.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_GEOM_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the object whose geometry values should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the object whose geometry values should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>geom_vec</i></td>
+
+<td>Upon return, an array containing geometry values.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<br>&nbsp;
+<hr>
+
+<!------------------------------------------------------------------------->
+<h2>
+<a NAME="Graph-based Functions"></a><hr>Graph-based Functions</h2>
+
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_EDGES_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_NUM_EDGES_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>num_edges</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Num_Edges_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids, num_edges,
+ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Edges&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>INTEGER(Zoltan_INT), INTENT(OUT),DIMENSION(*) :: num_edges
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_EDGES_MULTI_FN</b> query function returns 
+the number
+of edges in the communication graph of the application for each object in a 
+list of objects.  That is, for each object in the <i>global_ids/local_ids</i> 
+arrays, the number of objects with which the given object must share 
+information is returned.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_EDGES_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>Array of global IDs of objects whose number of edges should be returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>Array of local IDs of objects whose number of edges should be returned. (Optional.)</td>
+</tr>
+
+<tr>
+<td valign=top>&nbsp;&nbsp;&nbsp; <i>num_edges</i></td>
+
+<td>Upon return, an array containing numbers of edges.
+For object <i>i</i> 
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+the number of edges should be stored 
+in <i>num_edges[i]</i>.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+
+<p>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_EDGES_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_EDGES_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Edges</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Edges&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_EDGES_FN</b> query function returns the number
+of edges for a given object in the communication graph of the application
+(i.e., the number of objects with which the given object must share information).
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_EDGES_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_id</i></td>
+
+<td>The global ID of the object for which the number of edges should be
+returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_id</i></td>
+
+<td>The local ID of the object for which the number of edges should be
+returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of edges for the object identified by <i>global_id</i> and
+<i>local_id</i>.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_EDGE_LIST_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_EDGE_LIST_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>num_edges</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>nbor_global_id</i>,
+int&nbsp;*<i>nbor_procs</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>ewgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Edge_List_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids, num_edges,
+nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: num_edges
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: ewgts
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_EDGE_LIST_MULTI_FN</b> query function returns lists
+of global IDs, processor IDs, and optionally edge weights for objects sharing
+edges with objects specified in the <i>global_ids</i> input array; objects share
+edges when they must share information
+with other objects. The arrays for the returned neighbor lists are
+allocated by Zoltan; their size is determined by a
+calls to <b><a href="#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or <b><a href="#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b> query functions.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_EDGE_LIST_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Array of global IDs of objects whose edge lists should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Array of local IDs of objects whose edge lists should be returned. (Optional.)</td>
+</tr>
+
+<tr>
+<td valign=top>&nbsp;&nbsp;&nbsp; <i>num_edges</i></td>
+
+<td>An array containing numbers of edges for each object in <i>global_ids</i>.
+For object <i>i</i> 
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+the number of edges is stored 
+in <i>num_edges[i]</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_global_id</i></td>
+
+<td>Upon return, an array of global IDs of objects sharing edges with the
+objects specified in <i>global_ids</i>.
+For object <i>i</i>
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+edges are stored in 
+<i>nbor_global_id[sum*num_gid_entries]</i> to 
+<i>nbor_global_id[(sum+num_edges[i])*num_gid_entries-1]</i>, where
+<i>sum</i> = the sum of <i>num_edges[j]</i> for <i>j=0,1,...,i-1</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_procs</i></td>
+
+<td>Upon return, an array of processor IDs that identifies where the neighboring
+objects reside. For neighboring object <i>i</i> (stored in
+<i>nbor_global_id[i*num_gid_entries]</i>), the processor owning the neighbor
+is stored in <i>nbor_procs[i]</i>.
+
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an edge (typically 1), or 0 if
+edge weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>ewgts</i></td>
+
+<td>Upon return, an array of edge weights, where <i>ewgts[i*wgt_dim:(i+1)*wgt_dim-1]</i>
+<br>corresponds to the weights for the <i>i</i>th edge. If <i>wgt_dim=0</i>, the
+return value of <i>ewgts</i> is undefined and may be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<br>&nbsp;
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_EDGE_LIST_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_EDGE_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>nbor_global_id</i>,
+int&nbsp;*<i>nbor_procs</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>ewgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Edge_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_EDGE_LIST_FN</b> query function returns lists
+of global IDs, processor IDs, and optionally edge weights for objects sharing
+an edge with a given object (i.e., objects that must share information
+with the given object). The arrays for the returned neighbor lists are
+allocated by Zoltan; their size is determined by a
+call to <b><a href="#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or 
+<b><a href="#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b> query functions.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_EDGE_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the object for which an edge list should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the object for which an edge list should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_global_id</i></td>
+
+<td>Upon return, an array of global IDs of objects sharing edges with the
+given object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_procs</i></td>
+
+<td>Upon return, an array of processor IDs that identifies where the neighboring
+objects reside.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an edge (typically 1), or 0 if
+edge weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>ewgts</i></td>
+
+<td>Upon return, an array of edge weights, where <i>ewgts[i*wgt_dim:(i+1)*wgt_dim-1]</i>
+<br>corresponds to the weights for the <i>i</i>th edge. If <i>wgt_dim=0</i>, the
+return value of <i>ewgts </i>is undefined and may be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<br>&nbsp;
+<hr>
+
+<!------------------------------------------------------------------------->
+<h2>
+<a NAME="Hypergraph-based Functions"></a><hr>Hypergraph-based Functions</h2>
+
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HG_SIZE_CS_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_HG_SIZE_CS_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>num_lists</i>,
+int&nbsp;*<i>num_pins</i>,
+int&nbsp;*<i>format</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_Size_CS</i></b>(<i>data, num_lists, num_pins, 
+format, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_lists&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_pins&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: format&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%">A hypergraph 
+can be supplied to the Zoltan library in
+one of two compressed storage formats.  Although hypergraphs
+are often used to represent the structure of sparse matrices, 
+the Zoltan/PHG terminology is purely in terms of vertices and hyperedges
+(not rows or columns). The two compressed formats are analogous to CRS and CCS 
+for matrices. In compressed hyperedge format 
+(<b>ZOLTAN_COMPRESSED_EDGE</b>)
+a list of global hyperedge IDs is provided.  Then a single
+list of the hypergraph pins, is provided.  
+A pin is the connection between a vertex and a hyperedge
+(corresponds to a nonzero in a sparse matrix).
+Pins do not have separate IDs but are rather
+identified by the
+global ID of the vertex containing the pin, and implicitly also
+by the hyperedge ID.  An example is provided below.
+<p>
+The other format
+is compressed vertex (<b>ZOLTAN_COMPRESSED_VERTEX</b>).  In this
+format a list of vertex global IDs is provided.  Then a
+list of pins ordered by vertex and then by hyperedge is provided.
+The pin ID in this case is the global ID of the hyperedge in which the
+pin appears.  In both formats, an array must be provided pointing to
+the start in the list of pins where each hyperedge or vertex begins.
+<p> 
+The purpose of this query function is to tell Zoltan in which format the
+application will supply the hypergraph, how many vertices and hyperedges
+there will be, and how many pins.  The actual hypergraph is supplied
+with a query function of the type
+<b><a href="#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN_TYPE</a></b>.
+<br> <br>
+This query function is required by all applications using the hypergraph methods
+of Zoltan (unless they are using the
+<a href="#Graph-based Functions">graph-based</a>
+functions with hypergraph code instead).
+
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_CS_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lists</i></td>
+<td>Upon return, the number of vertices (if using compressed vertex storage) or
+hyperedges (if using compressed hyperedge storage) that will be supplied to Zoltan by the application process.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_pins</i></td>
+<td>Upon return, the number of pins (connections between vertices and hyperedges) that will be
+supplied to Zoltan by the application process.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>format</i></td>
+<td>Upon return, the format in which the application process will provide the
+hypergraph to Zoltan.  The options are
+<b>ZOLTAN_COMPRESSED_EDGE</b> and <b>ZOLTAN_COMPRESSED_VERTEX</b>.
+</tr>
+
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HG_CS_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_HG_CS_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_vtx_edge</i>,
+int&nbsp;<i>num_pins</i>,
+int&nbsp;<i>format</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vtxedge_GID</i>,
+int&nbsp;*<i>vtxedge_ptr</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>pin_GID</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_CS</i></b>(<i>data, 
+   num_gid_entries, num_vtx_edge, num_pins, format,
+   vtxedge_GID, vtxedge_ptr, pin_GID, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_vtx_edge, num_pins, format
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vtxedge_GID
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vtxedge_ptr
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: pin_GID
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
+
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_HG_CS_FN</b> returns 
+a hypergraph in a compressed storage (CS) format.  The size and format
+of the data to be returned must have been supplied to Zoltan using a
+<b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN_TYPE</a></b>
+function.
+<br> <br>
+When a hypergraph is distributed across multiple processes, Zoltan
+expects that all processes share a consistent global numbering
+scheme for hyperedges and vertices. Also, no two
+processes should return the same pin (matrix non-zero) in this
+query function. (Pin ownership is unique.)
+<br> <br>
+This query function is required by all applications using the hypergraph methods
+of Zoltan (unless they are using the
+<a href="#Graph-based Functions">graph-based</a>
+functions with hypergraph code instead).
+
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HG_CS_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_vtx_edge</i></td>
+<td>The number of global IDs
+that is expected to appear on return in <i>vtxedge_GID</i>. This may
+correspond to either vertices or (hyper-)edges. </td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_pins</i></td>
+<td>The number of pins 
+that is expected to appear on return in <i>pin_GID</i>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>format</i></td>
+<td>If <i>format</i> is <b>ZOLTAN_COMPRESSED_EDGE</b>, Zoltan expects
+that hyperedge global IDs will be returned in <i>vtxedge_GID</i>,
+and that vertex global IDs will be returned in
+<i>pin_GIDs</i>.  If it is <b>ZOLTAN_COMPRESSED_VERTEX</b>, then
+vertex global IDs are expected to be returned in <i>vtxedge_GID</i> and 
+hyperedge global IDs are expected to be returned in <i>pin_GIDs</i>.
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_GID</i></td>
+<td>Upon return, a list of <i>num_vtx_edge</i> global IDs.  
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_ptr</i></td>
+<td>Upon return, this array contains <i>num_vtx_edge</i> integers.
+The integer in the <i>i'th</i> array element is the index in
+array <i>pin_GID</i> where the pins for the <i>i'th</i> hyperedge
+(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> vertex
+(if format is <b>ZOLTAN_COMPRESSED_VERTEX</b>) begins.  Array indices
+begin at zero.
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>pin_GID</i></td>
+<td>Upon return, a list of <i>num_pins</i> global IDs.  This is the list
+of the pins contained in the hyperedges or vertices 
+listed in <i>vtxedge_GID</i>.
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<br> <br>
+<center>
+<table border=5 cellspacing=10 cellpadding=10>
+<caption>Example</caption>
+<tr>
+<td>
+  <table border=2>
+  <tr>
+  <th colspan=1></th><th colspan=5>vertex</th>
+  </tr>
+  <tr>
+  <th>hyperedge</th> <th>10</th> <th>20</th> <th>30</th> <th>40</th> <th>50</th>
+  </tr>
+  <tr>
+  <th>1</th> <td>0</td> <td>0</td> <td>X</td> <td>X</td> <td>0</td>
+  </tr>
+  <tr>
+  <th>2</th> <td>0</td> <td>X</td> <td>X</td> <td>0</td> <td>0</td>
+  </tr>
+  <tr>
+  <th>3</th> <td>X</td> <td>0</td> <td>0</td> <td>0</td> <td>X</td>
+  </tr>
+  </table>
+</td>
+<td>
+  Compressed hyperedge storage:<br><br>
+  vtxedge_GID = {1, 2, 3}<br>
+  vtxedge_ptr = {0, 2, 4}<br>
+  pin_GID = {30, 40, 20, 30, 10, 50}<br><br>
+  Compressed vertex storage:<br><br>
+  vtxedge_GID = {10, 20, 30, 40, 50}<br>
+  vtxedge_ptr = {0, 1, 2, 4, 5}<br>
+  pin_GID = {3, 2, 1, 2, 1, 3}
+</td>
+</tr>
+</table>
+</center>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HG_SIZE_EDGE_WTS_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_HG_SIZE_EDGE_WTS_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>num_edges</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_Size_Edge_Wts</i></b>(<i>data, num_edges, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_edges
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
+
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_HG_SIZE_EDGE_WTS_FN</b> returns
+the number of hyperedges for which a process will supply edge weights.
+The number of weights per hyperedge was supplied by the application
+with the <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>
+parameter.  The actual edge weights will be supplied with a 
+<b><a href="#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN_TYPE</a></b>
+function.
+<br> <br>
+This query function is not required.  If no hyperedge weights are
+supplied, Zoltan will assume every hyperedge has weight 1.0.
+
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_edges</i></td>
+<td>Upon return, the number of hyperedges for which edge weights
+will be supplied.
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HG_EDGE_WTS_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_HG_EDGE_WTS_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_edges</i>,
+int&nbsp;<i>edge_weight_dim</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>edge_GID</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>edge_LID</i>,
+float &nbsp;*<i>edge_weight</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_Edge_Wts</i></b>(<i>data, num_gid_entries, num_lid_entries, num_edges, edge_weight_dim, edge_GID, edge_LID, edge_weight,
+ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_edges, edge_weight_dim&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: edge_GID&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: edge_LID&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: edge_weight&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
+
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_HG_EDGE_WTS_FN</b> returns
+edges weights for a set of hypergraph edges.  The number of weights
+supplied for each hyperedge should equal the value of the
+<a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>
+parameter.  In the case of a hypergraph which is distributed across
+multiple processes, if more than one process supplies edge weights for the
+same hyperedge, the different edge weights will be resolved according
+to the value of the
+<a href="ug_alg_phg.html#PHG_EDGE_WEIGHT_OPERATION">PHG_EDGE_WEIGHT_OPERATION</a> 
+parameter.
+<br><br>
+This query function is not required.  If no hyperedge weights are
+supplied, Zoltan will assume every hyperedge has weight 1.0.
+
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_edges</i></td>
+<td>The number of hyperedges for which edge weights
+should be supplied in the <i>edge_weight</i> array.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>edge_weight_dim</i></td>
+<td>The number of weights which should be supplied for each hyperedge.  This
+is also the value of the 
+<a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a> parameter.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>edge_GID</i></td>
+<td>Upon return, this array should contain the global IDs of the
+<i>num_edges</i> hyperedges for which the application is supplying
+edge weights.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>edge_LID</i></td>
+<td>Upon return, this array can optionally contain the local IDs of the
+<i>num_edges</i> hyperedges for which the application is supplying
+edge weights.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>edge_weight</i></td>
+<td>Upon return, this array should contain the weights for each
+edge listed in the <i>edge_GID</i>.  If <i>edge_weight_dim</i> is
+greater than one, all weights for one hyperedge are listed before
+the weights for the next hyperedge are listed.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+
+<br>&nbsp;
+
+<p>
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="ZOLTAN_NUM_FIXED_OBJ_FN"></a>
+<hr>
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_FIXED_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Fixed_Obj</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Fixed_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%">
+A <b>ZOLTAN_NUM_FIXED_OBJ_FN </b> returns
+the number of objects on a given processor fixed to particular parts.
+These objects will not be assigned to a part other than the user specified
+part by the parallel hypergraph algorithm.
+<br><br>
+This query function is not required.  If it is not defined, all
+objects are candidates for migration to new parts.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_FIXED_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of objects on this processor that are to be fixed to a specific part.</td>
+</tr>
+
+
+</table>
+
+<br>&nbsp;
+<hr>
+
+<!------------------------------------------------------------------------->
+<a NAME="ZOLTAN_FIXED_OBJ_LIST_FN"></a>
+<hr>
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void<b> ZOLTAN_FIXED_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_fixed_obj</i>,
+int&nbsp;<i>num_gid_entries</i>,
+<b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>fixed_gids</i>,
+int&nbsp;*<i>fixed_parts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Fixed_Obj_List</i></b>(<i>data, num_fixed_obj, num_gid_entries, fixed_gids, fixed_parts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_fixed_obj&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: fixed_gids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: fixed_parts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_FIXED_OBJ_LIST_FN</b> query function fills two
+arrays with information about the objects that should not be moved from
+their user assigned parts.
+These arrays are allocated (and subsequently
+freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_FIXED_OBJ_FN">ZOLTAN_NUM_FIXED_OBJ_FN</a></b>
+query function to get the array size. 
+<p>
+A process should only fix the part of objects that it <i>owns</i>, that is,
+objects that it had previously supplied in a
+<a href=#ZOLTAN_OBJ_LIST_FN>ZOLTAN_OBJ_LIST_FN</a> query function.  It is
+an error to list the global ID of an object owned by another process.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_FIXED_OBJ_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_fixed_obj</i></td>
+
+<td>The number of objects you will list in the two output arrays.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fixed_gids</i></td>
+
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor which are to be fixed to a part.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>fixed_parts</i></td>
+
+<td>Upon return, an array of part numbers, one for each object listed
+in the global ID array.  These objects will not be migrated from this assigned
+part.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+
+<hr>
+
+<p>
+<!------------------------------------------------------------------------->
+<h2>
+<a NAME="Tree-based Functions"></a><hr>Tree-based Functions</h2>
+
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_COARSE_OBJ_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_COARSE_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Coarse_Obj</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Coarse_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_COARSE_OBJ_FN</b> query function returns
+the number of objects (elements) in the initial coarse grid.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_COARSE_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of objects in the coarse grid.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_COARSE_OBJ_LIST_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_COARSE_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>, 
+int&nbsp;*<i>in_order</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>, 
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Coarse_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
+assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
+in_vertex, out_vertex&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: in_order, ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_COARSE_OBJ_LIST_FN</b> query function returns
+lists of global IDs, local IDs, vertices, and order information for all
+objects (elements) of the initial coarse grid. The vertices are designated
+by a global ID such that if two elements share a vertex then the same ID
+designates that vertex in both elements and on all processors.
+The user may choose to provide the order in which the elements should be
+traversed or have Zoltan determine the order. If the user provides the
+order, then entry and exit vertices for a path through the elements may
+also be provided. The arrays for the returned values are allocated by 
+Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
+query function.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_COARSE_OBJ_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Upon return, an array of global IDs of all objects in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Upon return, an array of local IDs of all objects in the coarse grid. (Optional.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an array of integers indicating whether or not each object
+is currently assigned to this processor. A value of 1 indicates it is assigned
+to this processor; a value of 0 indicates it is assigned to some other
+processor. For elements that have been refined, it is ignored unless weights
+are assigned to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, an array containing the number of vertices for each object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array of global IDs of the vertices of each object. If the
+number of vertices for objects 0 through <i>i</i>-1 is <i>N</i>, then the
+vertices for object <i>i</i> are in <i>vertices</i>[<i>N*num_gid_entries:
+(N+num_vert</i>[<i>i</i>]<i>)*num_gid_entries</i>]</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_order</i></td>
+
+<td>Upon return, 1 if the user is providing the objects in the order in
+which they should be traversed, or 0 if Zoltan should determine the order.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, an array of global IDs of the vertices through which to enter
+each element in the user provided traversal. It is required only if the
+user is providing the order for the coarse grid objects (i.e., <i>in_order</i>==1)
+and allowing Zoltan to select the order of the children in at least one
+invocation of
+<b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, an array of global IDs of the vertex through which to exit each
+element in the user provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_FIRST_COARSE_OBJ_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>, 
+int&nbsp;*<i>in_order</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>, 
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_First_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_First_Coarse_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vert, in_order, ierr&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices, in_vertex, out_vertex&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b> query function initializes
+an iteration over the objects of the initial coarse grid. It returns the
+global ID, local ID, vertices, and order information for the first object
+(element) of the initial coarse grid. Subsequent calls to a <b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
+iterate over and return other objects from the coarse grid. The vertices
+are designated by a global ID such that if two elements share a vertex then
+the same ID designates that vertex in both elements and on all processors.
+The user may choose to provide the order in which the elements
+should be traversed, or have Zoltan determine the order. If the user provides
+the order, then entry and exit vertices for a path through the elements
+may also be provided.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Upon return, the global ID of the first object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Upon return, the local ID of the first object in the coarse grid. (Optional.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an integer indicating whether or not this object is currently
+assigned to this processor. A value of 1 indicates it is assigned to this
+processor; a value of 0 indicates it is assigned to some other processor.
+For elements that have been refined, it is ignored unless weights are assigned
+to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, the number of vertices for this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array of global IDs of the vertices of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_order</i></td>
+
+<td>Upon return, 1 if the user is providing the objects in the order in
+which they should be traversed, or 0 if Zoltan should determine the order.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, the vertex through which to enter this element in the
+user provided traversal. It is required only if the user is providing the
+order for the coarse grid objects (i.e., <i>in_order</i>==1) and allowing
+Zoltan to select the order of the children in at least one invocation of
+<b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, the vertex through which to exit this element in the user
+provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
+
+<td>If <i>global_id</i> and <i>local_id</i> contain valid IDs of the first
+object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
+
+<td>If no coarse grid is available.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NEXT_COARSE_OBJ_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>, 
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>, 
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Next_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+next_global_id, next_local_id,
+assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Next_Coarse_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vertex, ierr&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices, in_vertex, out_vertex&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b> query function is an iterator
+function that returns the next object in the initial coarse grid. 
+The first object
+of the iteration is provided by a <b><a href="#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a></b>
+query function.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the previous object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the previous object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_global_id</i></td>
+
+<td>Upon return, the global ID of the next object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_local_id</i></td>
+
+<td>Upon return, the local ID of the next object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an integer indicating whether or not this object is currently
+assigned to this processor. A value of 1 indicates it is assigned to this
+processor; a value of 0 indicates it is assigned to some other processor.
+For elements that have been refined, it is ignored unless weights are assigned
+to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, the number of vertices for this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array of global IDs of the vertices of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, the vertex through which to enter this element in the
+user provided traversal. It is required only if the user is providing the
+order for the coarse grid objects (i.e., <i>in_order</i>==1) and allowing
+Zoltan to select the order of the children in at least one invocation of
+<b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, the vertex through which to exit this element in the user
+provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
+
+<td>If <i>global_id</i> and <i>local_id</i> contain valid IDs of the next
+object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
+
+<td>If no more objects are available.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_CHILD_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_CHILD_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Child</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Child&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_CHILD_FN</b> query function returns the number
+of children of the element with the given global and local IDs. If the
+element has not been refined, the number of children is 0.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_CHILD_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the object for which the number of children is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the object for which the number of children is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of children.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_CHILD_LIST_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_CHILD_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>parent_gid</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>parent_lid</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>child_gids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>child_lids</i>,
+int&nbsp;*<i>assigned</i>,
+int&nbsp;*<i>num_vert</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>,
+<b>ZOLTAN_REF_TYPE</b>&nbsp;*<i>ref_type</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Child_List</i></b>(<i>data, num_gid_entries,
+num_lid_entries, parent_gid, parent_lid,
+child_gids, child_lids, assigned, num_vert, vertices, ref_type, in_vertex,
+out_vertex, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: parent_gid&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: parent_lid&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
+in_vertex, out_vertex&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ref_type, ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_CHILD_LIST_FN</b> query function returns lists
+of global IDs, local IDs, vertices, and order information for all children
+of a refined element. The vertices are designated by a global ID
+such that if two elements share a vertex then the same ID designates that
+vertex in both elements and on all processors. The user may choose to
+provide the order in which the children should be traversed, or have Zoltan
+determine the order based on the type of element refinement used to create
+the children. If the user provides the order, then entry and exit vertices
+for a path through the elements may also be provided. The arrays for the
+returned values are allocated by Zoltan; their size
+is determined by a call to a <b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
+query function.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_CHILD_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; parent_gid</i></td>
+
+<td>The global ID of the object whose children are requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; parent_lid</i></td>
+
+<td>The local ID of the object whose children are requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; child_gids</i></td>
+
+<td>Upon return, an array of global IDs of all children of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; child_lids</i></td>
+
+<td>Upon return, an array of local IDs of all children of this object. (Optional.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an array of integers indicating whether or not each child
+is currently assigned to this processor. A value of 1 indicates it is assigned
+to this processor; a value of 0 indicates it is assigned to some other
+processor. For children that have been further refined, it is ignored unless
+weights are assigned to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, an array containing the number of vertices for each object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array of global IDs of the vertices of each object. If the
+number of vertices for objects 0 through <i>i</i>-1 is <i>N</i>, then the
+vertices for object <i>i</i> are in <i>vertices</i>[<i>N*num_gid_entries:
+(N+num_vert</i>[<i>i</i>]<i>)*num_gid_entries</i>]</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ref_type</i></td>
+
+<td>Upon return, a value indicating what type of refinement was used to
+create the children. This determines how the children will be ordered.
+The values currently supported are:</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_TRI_BISECT</i> Bisection of triangles.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_QUAD_QUAD</i> Quadrasection of quadrilaterals.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_HEX3D_OCT</i> Octasection of hexahedra.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_OTHER_REF</i> All other forms of
+refinement.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_IN_ORDER</i> Traverse the children
+in the order in which they are provided.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, an array of global IDs of the vertex through which to enter
+each element in the user provided traversal. It is required only if the
+user is providing the order for the children of this element (i.e.,
+<i>ref_type</i>==<i>ZOLTAN_IN_ORDER</i>)
+but does not provide the order for the children of at least one of those
+children.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, an array of global IDs of the vertex through which to exit each
+element in the user provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_CHILD_WEIGHT_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void<b> ZOLTAN_CHILD_WEIGHT_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Child_Weight</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
+wgt_dim, obj_wgt, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_CHILD_WEIGHT_FN</b> query function returns the
+weight of an object. Interior nodes of the refinement tree as well as the
+leaves are allowed to have weights.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_CHILD_WEIGHT_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>. (It should be zero if local ids are not used.)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the object whose weight is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the object whose weight is requested.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgt</i></td>
+
+<td>Upon return, an array containing the object's weights. If <i>wgt_dim</i>=0, the return
+value of <i>obj_wgts</i> is undefined and may be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<!------------------------------------------------------------------------->
+<h2>
+<hr>
+<a NAME="Hierarchical Partitioning Functions"></a>
+<hr>
+Hierarchical Partitioning Functions (used only by method <B>HIER</B>)</h2>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HIER_NUM_LEVELS_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_HIER_NUM_LEVELS_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Hier_Num_Levels</i></b>(<i>data, nbor_proc, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Hier_Num_Levels
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_HIER_NUM_LEVELS_FN</b> query function
+returns, for the calling processor, the number of levels of hierarchy
+for hierarchical load balancing.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HIER_NUM_LEVELS_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>the number of levels of balancing hierarchy for method HIER.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HIER_PART_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_HIER_PART_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>level</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Hier_Part</i></b>(<i>data, level, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Hier_Part
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) ::: level&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_HIER_PART_FN</b> query function gets the part number to be used for the given level of a hierarchical balancing procedure.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HIER_PART_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>level</i></td>
+
+<td>The level of a hierarchical balancing for which the part ID is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The part number the process is to compute for this level.</td>
+</tr>
+
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_HIER_METHOD_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_HIER_METHOD_FN</b>
+(void&nbsp;*<i>data</i>, 
+int&nbsp;<i>level</i>,
+struct Zoltan_Struct *&nbsp;<i>zz</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Hier_Method</i></b>(<i>data, level, zz, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: level&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_HIER_METHOD_FN</b> query function provides
+ to the calling process the Zoltan_Struct
+ to be used to guide the partitioning and load balancing at the
+ given level in the hierarchy.  This Zoltan_Struct can be passed to
+ Zoltan_Set_Param to set load balancing parameters for this level
+ in the hierarchical balancing.
+
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_HIER_METHOD_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>level</i></td>
+
+<td>Level in the hierarchy being considered.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
+
+<td>Zoltan_Struct to use to set parameters.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<hr><hr>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_query_mig.html">Next:&nbsp;
+Migration Query Functions</a>&nbsp; |&nbsp; <a href="ug_query.html">Previous:&nbsp;
+Application-Registered Query Functions</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

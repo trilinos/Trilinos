@@ -1,0 +1,26 @@
+#!/bin/sh
+
+EXTRA_ARGS=$@
+
+rm -f CMakeCache.txt
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_CXX_COMPILER:FILEPATH=icpc \
+-D CMAKE_C_COMPILER:FILEPATH=icc \
+-D CMAKE_Fortran_COMPILER:FILEPATH=ifort \
+-D TPL_ENABLE_ExodusII:BOOL=OFF \
+-D ExodusII_LIBRARY_DIRS="/pr/alegra/TPL/exodus/4.68/lib/mac_pro_intel10_opt;/pr/alegra/TPL/netcdf/3.6.1-snl2/lib/mac_pro_intel10_opt" \
+-D ExodusII_INCLUDE_DIRS="/pr/alegra/TPL/exodus/4.68/include;/pr/alegra/TPL/netcdf/3.6.1-snl2/include" \
+-D TPL_ENABLE_Nemesis:BOOL=OFF \
+-D Nemesis_LIBRARY_DIRS="/pr/alegra/TPL/nemesis/3.07-n2/lib/mac_pro_intel10_opt" \
+-D Nemesis_INCLUDE_DIRS="/pr/alegra/TPL/nemesis/3.07-n2/include" \
+-D HAVE_GCC_ABI_DEMANGLE:BOOL=ON \
+-D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE \
+-D Trilinos_ENABLE_Pamgen:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+$EXTRA_ARGS \
+../Trilinos
+#-D TPL_ENABLE_ExodusII:BOOL=ON \

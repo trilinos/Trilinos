@@ -1,0 +1,198 @@
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  HSFC</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_rib.html">Previous</a></i></b></div>
+
+
+<h2>
+<a NAME="HSFC"></a>Hilbert Space Filling Curve (HSFC)</h2>
+The Inverse Hilbert Space-Filling Curve functions map a point in one, two or three dimensions
+into the interval [0,1].  The Hilbert functions that map [0, 1] to normal spatial
+coordinates are also provided. (The one-dimensional inverse Hilbert curve is defined here
+as the identity function, f(x)=x for all x.)
+<p>
+The HSFC partitioning algorithm seeks to divide [0,1] into P intervals each containing
+the same weight of objects associated to these intervals by their inverse Hilbert
+coordinates. N bins are created (where N > P) to partition [0,1].  The weights in
+each bin are summed across all processors.
+A greedy algorithm sums the bins (from left to right) placing a cut when the desired weight
+for current part interval is achieved.
+This process is repeated as needed to improve partitioning tolerance by
+a technique that maintains the same total number of bins but refines the bins previously
+containing a cut.
+<p>
+HSFC returns an warning if the final imbalance exceeds the user specified tolerance.
+<p>
+This code implements both the point assign and box assign functionality.  The point
+assign determines an appropriate part (associated with a specific group of processors)
+for a new point.   The box assign determines the list of processors
+whose associated subdomains intersect the given box.  In order to
+use either of these routines, the user parameter KEEP_CUTS must be turned on.
+Both point assign and box assign now work for points or boxes anywhere in space even if
+they are exterior to the original bounding box.  If a part is empty (due to the
+part being assigned zero work), it is not included in the list of parts
+returned by box assign.  Note: the original box assign algorithm was not rigorous and
+may have missed parts.  This version is both rigorous and fast.
+<p>
+The Zoltan implementation of HSFC has one parameter that can be modified
+by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+function.
+<p>
+This partitioning algorithm is loosely based on the 2D & 3D Hilbert tables used in the Octree
+partitioner and on the BSFC partitioning implementation by Andrew C. Bauer, Department
+of Engineering, State University of New York at Buffalo, as his summer project at SNL
+in 2001.  The box assign algorithm is loosely based on the papers by Lawder referenced both
+in the developers guide and the code itself.  NOTE: This code can be trivially extended to
+any space filling curve by providing the tables implementing the curve's state transition
+diagram.  The only dependance on the curve is through the tables and the box assign
+algorithm will work for all space filling curves (if we have their tables.)
+<p>
+Please refer to the Zoltan Developers Guide,
+ <b><a href="../dev_html/dev_hsfc.html">Appendix: Hilbert Space Filling Curve (HSFC)</a></b>
+ for more detailed information about these algorithms.
+<br>&nbsp;
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP><b>Method String:</b></td>
+
+<td><b>HSFC</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
+
+<td>Information about cuts and bounding box is necessary
+if the application wants to add more objects to the decomposition via calls
+to <b><a href="ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>
+or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b>.&nbsp;
+<br>0 = don't keep cuts; 1 = keep cuts.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> REDUCE_DIMENSIONS</i></td>
+<td>
+When a 3 dimensional geometry is almost flat, it may make more
+sense to treat it as a 2 dimensional geometry when applying the HSFC 
+algorithm.  (Coordinate values in the omitted direction are ignored                  for the purposes of partitioning.)
+If this parameter is set to <B>1</B>, a 3 dimensional
+geometry will be treated as 2 dimensional if is very flat,
+or 1 dimensional if it very thin.  And a 2 dimensional geometry will
+be treated as 1 dimensional if it is very thin.
+Turning this parameter on removes the possibility that disconnected
+parts will appear on the surface of a flat 3 dimensional object.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> DEGENERATE_RATIO</i></td>
+<td>
+If the <B>REDUCE_DIMENSIONS</B> parameter is set, then this parameter
+determines when a geometry is considered to be flat.
+A bounding box which is oriented to the geometry is constructed, and
+the lengths of its sides are tested against a ratio of 1 : <B>DEGENERATE_RATIO</B>.
+</td>
+</tr>
+
+
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+
+<tr>
+<td></td>
+
+<td><i>KEEP_CUTS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>REDUCE_DIMENSIONS</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>DEGENERATE_RATIO</i> = 10</td>
+</tr>
+
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
+</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td>
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; |
+<a href="ug_alg_reftree.html">Next:&nbsp; Refinement Tree Partitioning</a>
+|&nbsp; <a href="ug_alg_rib.html">Previous:&nbsp; Recursive Inertial Bisection</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

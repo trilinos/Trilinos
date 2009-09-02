@@ -1,0 +1,307 @@
+#!/usr/bin/env python
+#$Id$
+"""
+Run a set of programs with gcov analysis to create a spreadsheet. The set of
+executables is contained in a text file with 2 columns; the first for the
+directory of the test, the second for the name of the executable.
+
+This program takes  inputs:
+Name of file that describes the executables
+Name of file that will contain spreadsheet results
+Directory that contains the object files that are analyzed
+Base directory for the test programs
+Optional: the directory path for "analyze_coverage" (required only
+if not in $PATH)
+"""
+import sys, os, re, getopt
+
+class TestSeries:
+    """
+    An object of this class is used for each series run. A series
+    has a set of test programs to be run one after the other
+    with a single coverage analysis at the end.
+    """
+    def __init__(self, series_value, output_file_value, \
+                test_base_directory_value, code_directories_value,\
+                analyze_program_value, header_flag_value):
+        """
+        Initialize new object of class TestSeries.
+        All values used by the class are contained within.
+        """
+        self.series = series_value
+        self.output_file = output_file_value
+        self.test_base_directory = test_base_directory_value
+        self.code_directories = code_directories_value
+        self.analyze_program = analyze_program_value
+        self.header_flag = header_flag_value;
+
+    def run_test_program(self, program_desc):
+        """
+        Run a single test program. This is called for each test
+        defined in the series.
+        """
+        directory, program = program_desc
+        if (os.path.abspath(directory) != directory) :
+            # needs extension with the test_test_base_directory
+            #this is the most likely case
+            test_directory = os.path.join(self.test_base_directory, directory)
+        else:
+            #the directory given in the testfile is an absolute path
+            #and should not be further extended
+            test_directory = directory
+        test_command = "cd %s; ./%s > /dev/null" %(test_directory, program)
+        print "start '%s'" %program
+        #run the test program and discard results
+        os.system(test_command)
+
+    def run(self):
+        """
+        The only public action. This performs all work within the class. It
+        cleans up the code directory, runs each test program defined in the
+        series, performs a coverade analysis, and then cleans again.
+        """
+        #ensure no previous coverage results will be included in this series
+        self.cleanup()
+        #run all test programs before coverage analysis
+        series_name, tests = self.series
+        for test in tests:
+            self.run_test_program(test)
+        dir_string = ""
+        for directory in code_directories:
+            dir_string += directory + " "
+        analysis_command = "%s %s --testname '%s' %s >> %s" \
+                    %(self.analyze_program, self.header_flag, \
+                    series_name, dir_string, self.output_file)
+        os.system(analysis_command)
+        self.cleanup()
+
+    def cleanup(self):
+        """
+        This removes all files with a ".da" extension in the code source
+        directory. These files contain the cumulative coverage data generated
+        when a program using the object file is run
+        """
+        for directory in self.code_directories:
+            files = os.listdir(directory)
+            for filename in files:
+                filename = os.path.join(directory, filename)
+                if (re.findall(r'\.da$', filename)) :
+                    os.unlink(filename)
+
+def cleanup_previous(outputFile):
+    """
+    If a file already exists by the name of the output file the file is deleted.
+    All entries to the output file are done by appendage '>>' so the file must
+    not exist to begin with.
+    """
+    if (os.path.exists(outputFile)):
+        os.unlink(outputFile)
+
+def parse_description_file(filename):
+    """
+    This function reads the test description file and processes it into a list
+    of two element lists. The two element lists contain the data of a single
+    line in the test description file. Each line which contains a "#" is
+    considered a comment and is ignored.
+    """
+    desc_file = open(filename,"r")
+    lines = desc_file.readlines()
+    desc_file.close()
+    result = []
+    for line in lines:
+        #skip comment lines
+        if (re.findall(r'#', line)) :
+            continue
+        line.strip()
+        match_obj = re.match(r'((\S*)\s*(.*))', line)
+        entry = match_obj.group(2, 3)
+        #if the line is empty or has only one value it should
+        #be ignored
+        if (entry[1] == ""):
+            continue
+        result.append(entry)
+    return (result)
+
+def simplify_name(name):
+    """
+    Remove the path and extension information from the name.
+    """
+    #if this is more that a simple one word command,
+    #return "as is"
+    if (len(name.split()) > 1):
+        return name
+    basename = os.path.basename(name)
+    if (re.findall(r'\.', basename)):
+        shortname, ext = basename.split(".")
+    else:
+        shortname = basename
+    return shortname
+
+def build_series_list(tests):
+    """
+    Produce series of runs to performed for each analysis and assign a name to
+    it. The set of series is performed combinatorly from the set of tests. Each
+    series is assigned a unique name that will be used in the spreadsheet.
+    """
+    slist = []
+    #first, a run of all together
+    slist.append(("all", tests))
+    # now each individually
+    for tst in tests:
+        testname = simplify_name(tst[1])
+        tst_list = [tst]
+        slist.append((testname, (tst_list)))
+    #now all except a test
+    for tst in tests:
+        tlist = list(tests)
+        tlist.pop(tlist.index(tst))
+        testname = "all-" + simplify_name(tst[1])
+        slist.append((testname, tlist))
+    return slist
+
+def executable_will_run(command):
+    """
+    Execute the command, then convert stderr output to a string for use
+    by the caller. The caller should check for length of the string.
+    If nonzero the command has failed and the caller can deal with the error
+    text as desired.
+    """
+    f_stin, f_stout, f_sterr = os.popen3(command)
+    f_stin.close()
+    f_stout.close()
+    error_string = f_sterr.read()
+    f_sterr.close()
+    return error_string
+
+def check_errors():
+    """
+    Check for errors in primary input definitions that will
+    cause the program to fail. Report all of them and return
+    error state.
+    """
+    error_string = ""
+    if (not os.path.exists(test_file)):
+        error_string += "\tThe test file '%s' does not exist.\n" \
+            %test_file
+    elif (not os.path.isfile(test_file)):
+        error_string += "\tThe test file '%s' is not a file.\n" \
+            %test_file
+    output_path = os.path.dirname(output_file)
+    if (not os.path.isdir(output_path)):
+        error_string += "\tThe directory '%s' does not exist.\n" \
+                        %output_path
+        error_string += "\t    The output file cannot be written.\n"
+    if (not os.path.exists(test_base_directory)):
+        error_string += "\tThe test base directory '%s' does not exist.\n" \
+            %test_base_directory
+    elif (not os.path.isdir(test_base_directory)):
+        error_string += "\tThe test base directory '%s' is not a directory.\n" \
+            %test_file
+    for code_directory in code_directories:
+        if (not os.path.exists(code_directory)):
+            error_string += "\tThe code directory '%s' does not exist.\n" \
+                %code_directory
+        elif (not os.path.isdir(code_directory)):
+            error_string += "\tThe code directory '%s' is not a directory.\n" \
+                %test_file
+    #Test for an executable analyze_program. A nonzero return value
+    #means execution failed
+    run_error = executable_will_run(analyze_program)
+    if (run_error != ""):
+        error_string += "\tThe analyze_coverage program could not run. Error:\n"
+        error_string += "\t\t" + run_error + "\n"
+    if (len(code_directories) == 0):
+        error_string += \
+        "\tAt least one code directory with object files must be given.\n"
+    return error_string
+
+def print_help():
+    """
+    Print help string for the program.
+    """
+    help_string = """
+usage: coverage_test -h --help -d --test_base_directory
+        -t --test_file -o --output_file code_directory(s)
+    -h --help: print this message
+    -d --test_base_directory: the directory that is the top level for the 
+            package tests
+        default "./test"
+    -t  --test_file: the name of the file that describes the tests to be run
+        default:/tmp/coverage_test
+    -o --output_file: the name of the results file written by this program
+        NOTE: this name should have a ".csv" extension to be read by spreadsheet
+             program
+        default:/tmp/coverage_results.csv
+    --analyze_coverage_directory:The directory path for the program 
+            'analyze_coverage'
+            that is used by 'coverage _test'. This is required only if  
+            'analyze coverage' is not on your normal executable path.
+    code_directory(s): one or more directories that contain the object files to
+            be analyzed
+See README.coverage_test for further details
+"""
+    print help_string
+
+if __name__ == "__main__":
+    #note: the following code would be much cleaner if this program
+    #could be run under python 2.3 but that cannot be a given
+    opts_list, remaining_args = getopt.getopt(sys.argv[1:], 'hd:t:o:', \
+            ["help", "analyze_coverage_directory=", "test_base_directory=", \
+             "test_file=", "output_file="])
+    code_directories = remaining_args
+    opts_dict = {}
+    for opt in opts_list:
+        opts_dict[opt[0]] = opt[1]
+    analyze_coverage_directory = ""
+    test_base_directory = "./test"
+    output_file = "/tmp/coverage_results.csv"
+    test_file = "/tmp/coverage_test"
+    analyze_program = "analyze_coverage"
+    if (opts_dict.has_key("-h") or opts_dict.has_key("--help")):
+        print_help()
+        sys.exit(0)
+
+    #process all command line options
+    if (opts_dict.has_key("-t")):
+        test_file = opts_dict["-t"]
+    if (opts_dict.has_key("--test_file")):
+        test_file = opts_dict["--test_file"]
+
+    if (opts_dict.has_key("-o")) :
+        output_file = opts_dict["-o"]
+    if (opts_dict.has_key("--output_file")):
+        output_file = opts_dict["--output_file"]
+
+    if (opts_dict.has_key("-d")):
+        test_base_directory = opts_dict["-d"]
+    if (opts_dict.has_key("--test_base_directory")):
+        test_base_directory = opts_dict["--test_base_directory"]
+
+    if (opts_dict.has_key("--analyze_coverage_directory")):
+        analyze_coverage_directory = opts_dict["--analyze_coverage_directory"]
+
+    #convert all directories to absolute paths
+    test_file = os.path.abspath(test_file)
+    output_file = os.path.abspath(output_file)
+    test_base_directory = os.path.abspath(test_base_directory)
+    if (analyze_coverage_directory != ""):
+        analyze_program = os.path.join(os.path.abspath(analyze_coverage_directory), \
+                                       analyze_program)
+
+    error_str = check_errors()
+    if (error_str != ""):
+        print >> sys.stderr, "Fatal Error:\n", error_str
+        sys.exit(-1)
+    cleanup_previous(output_file)
+    tests_list = parse_description_file(test_file)
+    series_list = build_series_list(tests_list)
+    header_flag = "--Header"
+    for series in series_list:
+        single_series = TestSeries(series, output_file, \
+                    test_base_directory, code_directories, \
+                    analyze_program, header_flag)
+        single_series.run()
+        #do not print header after the first series
+        header_flag = ""
+
+

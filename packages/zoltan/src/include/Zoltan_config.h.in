@@ -1,0 +1,64 @@
+/* src/include/Zoltan_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build with drum enabled */
+#undef HAVE_DRUM
+
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* Define if want to build with gzip enabled */
+#undef HAVE_GZIP
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* Define if want to build with nemesis_exodus enabled */
+#undef HAVE_NEMESIS_EXODUS
+
+/* Define if want to build with parmetis enabled */
+#undef HAVE_PARMETIS
+
+/* Define if want to build with patoh enabled */
+#undef HAVE_PATOH
+
+/* Define if want to build with scotch enabled */
+#undef HAVE_SCOTCH
+
+/* Define if want to build tests */
+#undef HAVE_TESTS
+
+/* Define if want to build zoltan-cppdriver */
+#undef HAVE_ZOLTAN_CPPDRIVER
+
+/* Define if want to build zoltan-examples */
+#undef HAVE_ZOLTAN_EXAMPLES
+
+/* Define if want to build with octreepartitioning enabled */
+#undef HAVE_ZOLTAN_OCT
+
+/* Define if want to build zoltan-tests */
+#undef HAVE_ZOLTAN_TESTS
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION

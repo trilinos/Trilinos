@@ -1,0 +1,482 @@
+\documentclass[12pt,relax]{TrilinosUserGuide}
+\usepackage{array}
+    \title{Trilinos Users Guide\footnote{For Trilinos Release 8.0}}
+\SANDsubtitle{}
+
+\author{
+Michael A. Heroux and James M. Willenbring \\
+ \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110
+}
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{} % Remove ``\today'' in final version
+
+
+\SANDnum{SAND2003-2952}
+\SANDprintDate{August 2003, last updated September 2007}
+\SANDauthor{
+Michael A. Heroux and James M. Willenbring \\
+Scalable Algorithms Department \\
+Sandia National Laboratories\\
+P.O. Box 5800\\
+Albuquerque, NM 87185-1110
+}
+
+
+\SANDreleaseType{Unlimited Release}
+
+\begin{document}
+\maketitle
+%\setcounter{page}{3} % Accounts for blank page at beginning
+\begin{abstract}
+
+The Trilinos Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+A new software capability is introduced into Trilinos as a {\it
+package}.  A Trilinos package is an integral unit usually developed by
+a small team of experts in a particular algorithms area such as
+algebraic preconditioners, nonlinear solvers, etc.
+
+The Trilinos Users Guide is a resource for new and existing
+Trilinos users.  Topics covered include how to configure and
+build Trilinos, what is required to integrate an existing package into Trilinos
+and examples of how those requirements can be met, as well as what
+tools and services are
+available to Trilinos packages.  Also discussed are some common practices that
+are followed by many Trilinos package developers.  Finally, a snapshot
+of current Trilinos packages and their interoperability status
+is provided, along with a list of supported computer platforms.
+
+\end{abstract}
+
+\clearpage
+
+\section*{Acknowledgments}
+The authors would like to acknowledge the support of the ASCI and LDRD
+programs that funded development of Trilinos and recognize all of our fellow
+Trilinos contributors: Chris Baker, Teri Barth, Ross Bartlett, Paul Boggs, Erik 
+Boman, Todd Coffey, Jason Cross, David Day, Clark Dohrmann, David Gay,
+Michael Gee, Bob Heaphy, Ulrich Hetmaniuk, Robert Hoekstra, Russell Hooper,
+Vicki Howle, Jonathan Hu, Tammy Kolda, Kris Kampshoff, Sarah Knepper, Joe 
+Kotulski, Richard Lehoucq, Kevin Long, Joe Outzen, Roger Pawlowski, Mike Phenow, 
+Eric Phipps, Marzio Sala, Andrew Rothfuss, Andrew Salinger, Paul Sery, Paul 
+Sexton, Chris Siefert, Ken Stanley, Heidi Thornquist, Ray Tuminaro and Alan Williams.
+
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+%The following file is also used in the Dev Guide
+\input{../CommonFiles/TrilinosNomenclature.tex}
+
+\section{Introduction}
+\label{Section:Introduction}
+The Trilinos Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.  Trilinos
+also provides a set of core utility libraries
+that provide common vector, graph and matrix capabilities, as well as
+a common abstract interface for applications to access any appropriate
+Trilinos package.
+
+The overall objective of Trilinos is to promote rapid development and
+deployment of high-quality, state-of-the-art mathematical software in
+an environment that supports interoperability of packages while
+preserving package independence.
+
+The Trilinos Users Guide is meant to assist new and existing
+Trilinos users.  Topics covered include how to configure, build, and install
+Trilinos, as well as how to run tests to insure proper installation.  In
+addition, issue reporting and how to sign up for and use Trilinos mail lists
+are discussed.  Finally, directions for obtaining Trilinos itself and
+documentation for individual Trilinos packages are provided.
+
+%LIST OF POSSIBLE TOPICS:  Brief description of packages, point to package
+%documentation.
+
+For a higher-level view of the Trilinos project, please see An Overview
+of Trilinos~\cite{Trilinos-Overview}.  The Trilinos Tutorial is useful
+resource for new and existing Trilinos users~\cite{Trilinos-Tutorial}.  A
+document is also available specifically for Trilinos developers; please see
+the Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}.  The Developers
+Guide contains both tutorial and general reference material.
+
+An overview of current Trilinos package capabilities can be found on the
+Trilinos website at
+\InlineDirectory{http://trilinos.sandia.gov/capabilities.html}.
+A summary of the packages included in every Trilinos release is also on
+the website at
+\InlineDirectory{http://trilinos.sandia.gov/releases.html}.
+
+\subsection{Typographical Conventions}
+
+Our typographical conventions are found in
+Table~\ref{Table:TypoConventions}.
+\begin{table}[ht]
+\scriptsize
+\begin{center}
+\begin{tabular}{|l|l|p{2.0in}|} \hline
+Notation & Example & Description \\ \hline
+\InlineCommand{Verbatim text} & \InlineCommand{../configure --enable-mpi} &
+Commands, directory and file name examples, and other text associated
+with text displayed in a computer terminal window. \\ \hline
+\InlineCommand{CAPITALIZED\_TEXT} & \InlineCommand{CXXFLAGS} &
+Environment variables used to configure how tools such as compilers behave. \\ \hline
+\InlineCommand{<text in angle brackets>} & \InlineCommand{../configure
+<user parameters>} &
+Optional parameters. \\ \hline
+\end{tabular}
+\end{center}
+\caption{\label{Table:TypoConventions} Typographical Conventions for This Document.}
+
+\end{table}
+
+
+\section{Getting Started}
+\label{Section:GettingStarted}
+\begin{minipage}[c]{\textwidth}
+\begin{minipage}[l]{.4\textwidth}
+
+This chapter covers some of the basics that a user will need to know when
+beginning to use Trilinos.  Specifically, we address how to obtain,
+configure, build, install and test Trilinos.  We will also discuss how to
+link to Trilinos libraries.
+Although this user guide is current at the time of printing, the
+Trilinos Project is under active development.  For the most up-to-date information,
+please visit the online Trilinos Home Page.  The most accurate and complete information
+will be kept at this site.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.55\textwidth}{
+{\bf Tip:}
+Check out the Trilinos Home Page at
+\InlineDirectory{http://trilinos.sandia.gov.}
+At the website a user can:
+\begin{itemize}
+\item Find up-to-date information about Trilinos and its packages.
+\item Download Trilinos.
+\item Sign up for mail lists.
+\item Find documentation.
+\item Submit a bug report.
+\end{itemize}
+}\end{minipage}}
+\end{minipage}
+
+\subsection{Obtaining a Copy of Trilinos}
+
+Trilinos can be obtained in two different ways.  Users outside of Sandia
+most commonly
+download Trilinos in the form of a tarball from the Trilinos website at
+\newline \InlineDirectory{http://trilinos.sandia.gov/download/}.
+On most systems, the following commands can be used to expand the tarball:
+\DisplayCommand{gunzip trilinos-8.0.1.tar.gz}
+\DisplayCommand{tar xf trilinos-8.0.1.tar}
+For versions of Trilinos other than 8.0.1, the file names in the above
+commands will need to be adjusted.
+
+Users who download the tarball from the website may skip to
+Section~\ref{subsect:BuildDirectoryStructure}.
+
+Users may be able to obtain a
+copy of Trilinos via the Trilinos CVS repository.  Access to the Trilinos
+repository is granted only to co-developers, Sandians, and in select
+special cases.
+
+To access the repository, an account on software.sandia.gov is required.  In
+addition, the user account must be a in the ``cvs'' group
+on software.sandia.gov.  To request an account, send a note
+to \InlineDirectory{trilinos-help@software.sandia.gov}.
+The following two environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+Replace ``your\_user\_name'' with your user name on software.sandia.gov.
+
+To checkout a working copy of the development branch of Trilinos in the
+current directory, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of a release branch of Trilinos in the current
+directory, type
+
+\DisplayCommand{cvs checkout -r name\_of\_release\_branch Trilinos}
+
+Replace ``name\_of\_release\_branch'' with the name of the release branch.
+The name of the current release branch can be obtained by sending a note to
+\newline \InlineDirectory{trilinos-help@software.sandia.gov}.
+
+To checkout a working copy of the development version of only one Trilinos
+package in the current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+Replace ``package\_name'' with the name of the package.  Please note
+that most packages have dependencies on other Trilinos packages.
+
+If the machine that is downloading Trilinos from software.sandia.gov has gzip
+available, it is possible to speed up the checkout proces using the -z
+option.  For example, to checkout all of Trilinos using the most aggressive
+compression, type
+
+\DisplayCommand{cvs -z 9 checkout Trilinos}
+
+For those not familiar with CVS, a brief discussion covering some of the most
+common CVS commands is available in Section~\ref{Section:CVS}.  For a more
+complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+%Four subsections common to the Dev Guide and User Guide: Recommended
+%Build Directory Structure, Configuring Trilinos, Building Trilinos,
+%and Trilinos Configuration Options
+
+\input{../DevGuide/TrilinosDUGuideConfigBuild.tex}
+
+\subsection{Testing the Build}
+\label{subsect:TestHarness}
+
+There are two ways that users can run one or more sanity tests after building
+Trilinos.
+
+%Once it is stabilized, we should also mention the ability to test
+%an installed version of Trilinos via the tests Ross wrote.
+
+The runtests utility, which is a component of the Trilinos test
+harness, can be accessed via the runtests-serial and runtests-mpi make
+targets.
+To run the test suite (the tool will only attempt to run tests that were
+built), simply do a make first and then type:
+
+\DisplayCommand{make runtests-serial}
+
+To run the test suite for a single package, cd to
+\InlineDirectory{package/test} (replace "package" with the name of a
+particular package) before running the above command.
+
+The runtests-mpi target is very similar, but expects to you supply the
+variable \InlineCommand{TRILINOS\_MPI\_GO}, either in the environment or as an
+argument to make.  Here is an example of how to call the runtests-mpi make
+target:
+
+\DisplayCommand{make runtests-mpi TRILINOS\_MPI\_GO="'mpiexec -np '"}
+
+Alternatively, the following set of arguments can be used: \newline
+\InlineCommand{TRILINOS\_MPI\_MAX\_PROC=2 TRILINOS\_MPI\_GO="'~/bin/linux/mpirun -np '"}.
+Note that in either case, the \InlineCommand{TRILINOS\_MPI\_GO} argument
+must be double quoted.
+
+A simple alternative that provides a quick santity check is to execute one
+or more Trilinos tests manually.  For example, if Epetra was one of the
+packages that was configured and built in the LINUX\_MPI build tree, the
+Epetra tests were not disabled through the use of configure options, and
+lam mpi is installed, perform
+the following series of steps to run the CrsMatrix tests:
+
+\begin{verbatim}
+	cd Trilinos/LINUX_MPI/packages/epetra/test/CrsMatrix
+	lamboot
+	mpirun -np 3 ./CrsMatrix_test.exe
+	echo $status
+	lamhalt
+\end{verbatim}
+
+For a serial build, the process is shorter:
+
+\begin{verbatim}
+	cd Trilinos/LINUX_SERIAL/packages/epetra/test/CrsMatrix
+	./CrsMatrix_test.exe
+	echo $status
+\end{verbatim}
+
+In the serial case, the status returned will be zero if the tests passed,
+nonzero if the tests failed.  The return codes for mpi executables is less
+reliable, so it is necessary to check the output of the test.  Negative
+non zero error codes are errors, positive codes are warnings.  Epetra has
+many other tests in subdirectories that are peers to the CrsMatrix directory
+listed above.  There are also examples that are located in the example
+directory that is a peer to the test directory.  Most other packages have a
+number of tests and or examples that can be run using the same basic process.
+
+
+\section{Ongoing Use and Support}
+\label{Section:UseSupport}
+In this section we discuss how to report issues (bugs) and how to sign up
+for mail lists.
+
+\subsection{Reporting Bugs}
+\label{subsect:Bugzilla}
+Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.
+Bugzilla can be found on the web at
+\InlineDirectory{http://software.sandia.gov/bugzilla}.
+A Bugzilla account is necessary for submitting bugs through Bugzilla.  Generally only Trilinos
+developers and collaborators are able to get a Bugzilla account.  Those interested can
+sign up at the website.  Users who do not have a Bugzilla account should send bug reports
+to \InlineDirectory{Trilinos-Bugs@software.sandia.gov}.
+
+Regardless of how an issue is submitted, the bug report should be filled out
+with as much detail as possible.  Specifically, be sure to include which
+version of Trilinos the bug was discovered in and which
+platform(s) and compiler(s) the bug is associated with.  Also include any
+specific error messages and any additional information that can be provided.
+
+Two commonly underutilized features of Bugzilla are the ability to assign a
+priority and a severity to a bug.  Taking advantage of these features helps
+users more clearly express their concerns and helps developers organize tasks.
+Below are recommended usage guidelines for the priority and severity settings
+for Bugzilla bugs that are filed against Trilinos.
+
+Severity: Severity should be determined by the person who files the bug
+(reporter) and should be based solely on how “severe” the reporter perceives
+the bug to be at the time the bug is filed.  Considerations for selecting a
+proper severity include whether or not the bug is currently directly impeding
+progress, and if it has the potential to impede progress in the future.  There
+is also an important distinction between enhancements and faults in existing
+functionality.  Severity can be updated if conditions warrant a change.
+Possible severity settings include blocker, critical, major, normal, minor,
+trivial, and enhancement.  The severity of a bug is not necessarily related to
+its priority.
+
+Priority: Priority should be determined by the owner of the bug.  Priority can
+be chosen based on the relative importance of other existing bugs, as well as
+on how important the bug is to Trilinos and Sandia.  When filling out a bug
+report, users can leave the bug at the default priority, or may try to guess
+the priority that the bug owner will select.
+
+NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in
+existing code, but also to a desired enhancement.  For example, a bug report
+should be submitted to Bugzilla to report a segmentation fault that occurs
+when using an existing Ifpack preconditioner, and a bug report should also be
+submitted to request a new Ifpack preconditioner.  ``Issue'' and ``bug'' are
+used interchangeably in this discussion of Bugzilla.
+
+\subsection{Signing Up for Mail Lists}
+\label{subsect:MailMan}
+Email lists are maintained for Trilinos as a whole and for each package
+through Mailman~\cite{Mailman}.  This tool can be found on the web at
+\newline
+\InlineDirectory{http://software.sandia.gov/mailman/listinfo}.
+Those interested in signing
+up for one or more lists may do so at the website.  A digest mode is
+available for those who wish to receive a daily summary of list activity.
+Non-Sandians are able to sign up for the ``Users'' and ``Announce''
+lists.  Sandians should keep this in mind when posting to these lists.
+
+\begin{minipage}[c]{\textwidth}
+\begin{minipage}[l]{.6\textwidth}
+The example mailing lists mentioned below are to be used
+for issues relating to all of Trilinos.  The names for the lists pertaining to
+individual packages follow the same naming scheme, simply replace ``Trilinos''
+with the name of the package.  For example the list for Trilinos users is
+called Trilinos-Users and the email address is
+\InlineCommand{trilinos-users@software.sandia.gov}  The list
+for Epetra users is called Epetra-Users and the associated email address is
+\InlineCommand{epetra-users@software.sandia.gov}
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Tip:}
+While those who use any individual Trilinos package are also
+``Trilinos users'', the lists are not set up to recognize this.  In other
+words, those who subscribe to the Epetra-Users mailing list do not necessarily
+form a subset of those who subscribe to the Trilinos-Users mailing list.  This
+is also true of all other list types.  Keep this in mind when subscribing and
+posting to lists.
+}\end{minipage}}
+\end{minipage}
+
+
+\begin{itemize}
+\item Trilinos-Announce
+\InlineCommand{trilinos-announce@software.sandia.gov}
+
+All Trilinos release announcements and other major news.
+
+\item Trilinos-Users
+\InlineCommand{trilinos-users@software.sandia.gov}
+
+List for Trilinos Users.  General discussions about the use of Trilinos.
+\end{itemize}
+
+%\section{Platform Portability}
+%	**(List platforms - encourage script submission)**
+
+\clearpage
+\bibliographystyle{plain}
+%\bibliography{TrilinosUserGuide}
+\bibliography{../CommonFiles/TrilinosBibliography}
+\addcontentsline{toc}{section}{References}
+
+\appendix
+\section{Commonly Used CVS Commands}
+\label{Section:CVS}
+To access the Trilinos CVS repository, an account on software.sandia.gov is
+required.  To request an account, send a note to
+\InlineCommand{trilinos-help@software.sandia.gov}.
+The following two
+environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+(Replace ``your\_user\_name'' with your user name on software.sandia.gov.)
+
+Below is a brief description of the CVS commands that are most commonly
+used by Trilinos users.  For a
+more complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+\begin{itemize}
+\item {\bf Checking Out a Working Copy:}
+To checkout a working copy of the development branch of Trilinos in the
+current directory from the CVS repository, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of only one package of Trilinos in the
+current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+(Replace ``package\_name'' with the name of the package.
+
+To checkout a different branch or a tagged version of Trilinos, type
+
+\DisplayCommand{cvs checkout -r <name\_of\_branch\_or\_tag> Trilinos}
+
+\item {\bf Updating a Working Copy:}
+To update after a version has been obtained use the \InlineCommand{cvs update}
+command.  First, cd to the directory that is to be updated (often the
+Trilinos root directory).  Then type:
+
+\DisplayCommand{cvs -q update -dP}
+
+The ``-q'' option means ``be somewhat quiet''.  Try an update without the
+``-q'' to see exactly what the option does.
+
+The ``-d'' option means to get any new directories.  For example, if a new
+package is added to the repository, but the ``-d'' option is not used, that
+new package will never appear in the working copy.  However, the first time
+that the ``-d'' option is used, all of the new package directories will be
+downloaded, and from that time on, all CVS updates will update the
+directories that were downloaded.  It is good practice to include this
+option for every CVS update.
+
+Finally the ``-P'' option ``prunes'' empty directories.  This helps to keep
+the directory structure from getting more cluttered than it needs to.  For
+example, the old ``petra'' and ``tsf'' packages were removed from the
+repository, but the directory structures will remain if this option is not
+specified.  If an empty directory is needed, simply issue one update
+command without the ``-P'' and the empty directories will be restored.
+
+%Possible future topics include:
+%\item{Working with Branches}
+%cvs status
+
+\end{itemize}
+
+%\section{Common Bugzilla Tasks}
+%\label{Section:BugzillaTasks}
+
+\end{document}

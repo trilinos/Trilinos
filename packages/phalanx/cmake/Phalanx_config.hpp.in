@@ -1,0 +1,10 @@
+
+#cmakedefine HAVE_MPI
+
+#cmakedefine PHX_DEBUG
+
+#cmakedefine PHX_ETI
+
+#cmakedefine PHX_USE_COMPILETIME_ARRAY
+
+#cmakedefine HAVE_PHALANX_TVMET

@@ -1,0 +1,19 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
+Zoltan Parameters       = num_global_parts=2
+Zoltan Parameters       = parmetis_method=partkway
+Zoltan Parameters	= check_graph=2
+File Type		= Chaco
+File Name		= onedbug
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+18	0	-1	-1
+19	0	-1	-1
+20	0	-1	-1
+44	0	-1	-1
+46	0	-1	-1
+48	0	-1	-1
+52	0	-1	-1
+54	0	-1	-1
+60	0	-1	-1

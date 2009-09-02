@@ -1,0 +1,6 @@
+
+IF (TPL_ENABLE_CppUnit)
+  ADD_SUBDIRECTORY(TestSuite)
+ENDIF()
+
+ADD_SUBDIRECTORY(tradoptest)

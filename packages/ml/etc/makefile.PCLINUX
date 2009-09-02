@@ -1,0 +1,10 @@
+OPT_FLAGS=-O3
+ARCH_FLAGS=$(OPT_FLAGS)
+CC=gcc
+CXX=g++
+FC=g77
+RANLIB=ranlib
+LINKER=$(CC)
+ARCH_LIBS=-lg2c -lm
+AR=ar
+#ARCH_FLAGS=-Wall -Wtraditional -Wpointer-arith -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Wlong-long

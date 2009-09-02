@@ -1,0 +1,163 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Running test_zoltan</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications                                   !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_rcb.html">Next</a>&nbsp; |&nbsp; <a href="dev_view.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="migration_help"></a>Appendix:&nbsp; Using the test script <i>test_zoltan</i></h2>
+The purpose of the Zoltan test script is to run the test driver <i><a href="dev_driver.html">zdrive</a></i> (or 
+<i><a href="dev_driver.html">zfdrive</a></i>)
+on a set of test problems to verify that the Zoltan library works correctly.
+The script compares the output of actual runs with precomputed output.
+The assumption is that if the outputs are identical, then the current implementation
+is is likely to be correct. 
+Small differences may occur depending on the architectures used; developers
+should examine the output and use their judgement in determining its correctness.
+It is strongly recommended that developers
+run <i>test_zoltan</i> to verify correctness before committing changes
+to existing code!
+<br>&nbsp;
+<h3>
+How to run <i>test_zoltan</i></h3>
+First make sure you have compiled the driver <i><a href="dev_driver.html">zdrive</a></i> (or <i><a href="dev_driver.html">zfdrive</a></i>).&nbsp;
+Then go to the Zoltan directory <i>Zoltan/tests</i> and type<i> test_zoltan </i>
+with suitable options as described below. This will run the test script
+in interactive mode. The output from the driver will be sent to <i>stdout</i> 
+and <i>stderr</i<i>stdout</i> 
+and <i>stderr</i>
+with a summary of results. The summary of results is also saved in a log
+file. If&nbsp; an error occured, look at the log file to find out what
+went wrong. The script currently assumes that runs are deterministic
+and reproducible across all architectures,
+which is not necessarily true.
+Hence false alarms may occur.
+<br>&nbsp;
+<h3>
+Syntax</h3>
+<b>&nbsp;&nbsp;&nbsp;&nbsp; test_zoltan </b>[-arch <i>arch-type</i>] [-cmd
+<i>command</i>]
+[other options as listed below] 
+<p>It is required to use either the -arch or the -cmd option.&nbsp; The
+other arguments are optional.
+<p>
+<table BORDER=0 WIDTH="100%" NOSAVE >
+<tr VALIGN=TOP>
+<td WIDTH="25%"><b>Options:</b></td>
+<td WIDTH="75%"></td>
+</tr>
+<tr VALIGN=TOP NOSAVE>
+<td WIDTH="25%" NOSAVE>-arch <i>arch-type</i></td>
+
+<td WIDTH="75%" NOSAVE>The architecture on which the driver is to run.  For a 
+list of currently supported architectures, type <i>test_zoltan</i> with no 
+arguments.
+</td>
+
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>-cmd <i>command</i></td>
+
+<td>The <i>command</i> is the command that the script
+uses to launch the driver. One must include an option to specify the number
+of processors as part of the command. Use quotes appropriately; for example,
+<i>-cmd
+'mpirun -np'</i>. Default settings have been provided for all the supported
+architectures.</td>
+
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>-logfile <i>filename</i></td>
+
+<td NOSAVE>The name of the log file. The default is <i>test_zoltan.log</i>.
+If an old log file exists, it will be moved to <i>test_zoltan.log.old.</i></td>
+
+</tr>
+
+<tr>
+<td>-no_parmetis</td>
+
+<td>Do not run any <a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a> 
+methods.</td>
+
+</tr>
+
+<tr>
+<td>-no_nemesis</td>
+
+<td>Do not run test problems in Nemesis format.</td>
+
+</tr>
+
+<tr>
+<td>-no_chaco</td>
+
+<td>Do not run test problems 
+in <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> format.</td>
+
+</tr>
+
+<tr>
+<td>-yes_fortran</td>
+
+<td>Run the Fortran90 driver <a href="dev_driver.html"><i>zfdrive</i></a> 
+instead of <i>zdrive</i>.</td>
+
+</tr>
+</table>
+
+<p>The default behavior is to run 
+<a href="dev_driver.html"><i>zdrive</i></a>
+all methods on all types of input format.
+<br>&nbsp;
+<h3>
+Test problems</h3>
+The test problems are included in subdirectories of the <i>Zoltan/test</i>
+directory.  Problems using  <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> input files are in subdirectories
+<i>ch_*</i>; problems using Nemesis input files are in subdirectories
+<i>nem_*</i>.
+Please see the README files located in each test directory for more
+details on these test problems.
+<h3>
+Load balancing methods</h3>
+Many different load-balancing methods are currently tested in <i>test_zoltan</i>.
+Input files for the methods are found in the test problem subdirectories.
+The input files are named <i>zdrive.inp.&lt;method&gt;</i>, where <i>&lt;method&gt;</i> indicates which load-balancing method is passed to Zoltan.
+To run only a subset of the methods, 
+edit the <i>test_zoltan</i> script manually; searching for "rcb" shows
+which lines of the script must be changed.
+<br>&nbsp;
+<h3>
+<b>Number of processors</b></h3>
+The script <i>test_zoltan</i> runs each test problem on a predetermined number of processors, currently
+ranging from 3 to 9.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_rcb.html">Next:
+RCB</a>&nbsp; |&nbsp; <a href="dev_view.html">Previous:&nbsp; Visualization of Geometric Partitions</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

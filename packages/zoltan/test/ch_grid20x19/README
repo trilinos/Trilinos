@@ -1,0 +1,27 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+-------------------------------------------------------------------------------
+ch_grid20x19
+  Simple graph.
+  20x19 grid.
+  Graph and coordinates included.
+  No vertex weights.
+-------------------------------------------------------------------------------
+Answers differ for ParMETIS tests on linux platforms 
+Suspect difference in rand() is the cause.
+On linux, rand() returns values in the range 0 to 2147483647; on
+Solaris, it returns values in the range 0 to 32767.  (See definition of
+RAND_MAX in <stdlib.h>.)
+

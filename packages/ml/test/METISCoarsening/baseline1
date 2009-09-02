@@ -1,0 +1,215 @@
+------------------------------------------------------------------------------
+*** 
+*** ML_Epetra::MultiLevelPreconditioner
+***
+Matrix has 250000 rows and 2244004 nonzeros, distributed over 1 process(es)
+The linear system matrix is an Epetra_CrsMatrix
+Default values for `SA'
+Maximum number of levels = 5
+Using increasing levels. Finest level  = 0, coarsest level = 4
+Number of applications of the ML cycle = 1
+Number of PDE equations = 1
+USing ParMETIS 3.x
+Aggregation threshold = 0
+Max coarse size = 16
+R and P smoothing : P = (I-\omega A) P_t, R = P^T
+R and P smoothing : \omega = 1.3333/lambda_max
+Using `Anorm' scheme for eigen-computations
+ML_Gen_MultiLevelHierarchy (level 0) : Gen Restriction and Prolongator 
+ML_Aggregate_Coarsen (level 0) begins
+METIS (level 0) : num PDE eqns = 1
+METIS (level 0) : current eps = 0.000000e+00
+METIS (level 0) : Objective : 100 nodes per aggregate
+METIS (level 0) : avg 2500.000000 (block) aggr/process
+METIS (level 0) : # bdry (block) nodes = 0, # (block) nodes = 250000
+METIS (level 0) : Estimated required mem for METIS = 99477 Kb
+METIS (level 0) : Max estimated mem for METIS = 99477 Kb
+METIS (level 0) : Time to partition graph = 2.776889e+00 (s)
+METIS (level 0) : Using 2500 (block) aggregates (globally)
+METIS (level 0) : # (block) aggre/ # (block) rows =  1.00000 % ( = 2500 / 250000)
+METIS (level 0) : 2500 (block) aggregates (globally)
+METIS (level 0) : Total (block) nnz = 2244004 ( =  8.98/(block)row)
+Calling ML_Operator_UnAmalgamateAndDropWeak
+Gen_Prolongator (level 0) : Max eigenvalue = 2.000000e+00
+
+Prolongator/Restriction smoother (level 0) : damping factor #1 = 5.103361e-01
+Prolongator/Restriction smoother (level 0) : ( = 1.020672e+00 / 2.000000e+00)
+
+Prolongator/Restriction smoother (level 0) : damping factor #2 = 6.042805e-01
+Prolongator/Restriction smoother (level 0) : ( = 1.208561e+00 / 2.000000e+00)
+
+Prolongator/Restriction smoother (level 0) : damping factor #3 = 8.754154e-01
+Prolongator/Restriction smoother (level 0) : ( = 1.750831e+00 / 2.000000e+00)
+
+Prolongator/Restriction smoother (level 0) : damping factor #4 = 1.710615e+00
+Prolongator/Restriction smoother (level 0) : ( = 3.421231e+00 / 2.000000e+00)
+
+Prolongator/Restriction smoother (level 0) : damping factor #5 = 6.299353e+00
+Prolongator/Restriction smoother (level 0) : ( = 1.259871e+01 / 2.000000e+00)
+
+ML_Gen_MultiLevelHierarchy (level 1) : Gen Restriction and Prolongator 
+ML_Aggregate_Coarsen (level 1) begins
+METIS (level 1) : num PDE eqns = 1
+METIS (level 1) : current eps = 0.000000e+00
+METIS (level 1) : Objective : 100 nodes per aggregate
+METIS (level 1) : avg 25.000000 (block) aggr/process
+METIS (level 1) : # bdry (block) nodes = 0, # (block) nodes = 2500
+METIS (level 1) : Estimated required mem for METIS = 1866 Kb
+METIS (level 1) : Max estimated mem for METIS = 1866 Kb
+METIS (level 1) : Time to partition graph = 2.365000e-02 (s)
+METIS (level 1) : Using 25 (block) aggregates (globally)
+METIS (level 1) : # (block) aggre/ # (block) rows =  1.00000 % ( = 25 / 2500)
+METIS (level 1) : 25 (block) aggregates (globally)
+METIS (level 1) : Total (block) nnz = 46854 ( = 18.74/(block)row)
+Calling ML_Operator_UnAmalgamateAndDropWeak
+*ML*WRN* # (block) nodes per (block) aggregate (100) > # (block) nodes (25)
+*ML*WRN* (on proc 0). Now proceeding with aggr_count = 1
+Gen_Prolongator (level 1) : Max eigenvalue = 2.019968e+00
+
+Prolongator/Restriction smoother (level 1) : damping factor #1 = 5.052912e-01
+Prolongator/Restriction smoother (level 1) : ( = 1.020672e+00 / 2.019968e+00)
+
+Prolongator/Restriction smoother (level 1) : damping factor #2 = 5.983068e-01
+Prolongator/Restriction smoother (level 1) : ( = 1.208561e+00 / 2.019968e+00)
+
+Prolongator/Restriction smoother (level 1) : damping factor #3 = 8.667615e-01
+Prolongator/Restriction smoother (level 1) : ( = 1.750831e+00 / 2.019968e+00)
+
+Prolongator/Restriction smoother (level 1) : damping factor #4 = 1.693705e+00
+Prolongator/Restriction smoother (level 1) : ( = 3.421231e+00 / 2.019968e+00)
+
+Prolongator/Restriction smoother (level 1) : damping factor #5 = 6.237080e+00
+Prolongator/Restriction smoother (level 1) : ( = 1.259871e+01 / 2.019968e+00)
+
+ML_Gen_MultiLevelHierarchy (level 2) : Gen Restriction and Prolongator 
+ML_Aggregate_Coarsen (level 2) begins
+METIS (level 2) : num PDE eqns = 1
+METIS (level 2) : current eps = 0.000000e+00
+METIS (level 2) : Objective : 100 nodes per aggregate
+METIS (level 2) : avg 1.000000 (block) aggr/process
+METIS (level 2) : # bdry (block) nodes = 0, # (block) nodes = 25
+METIS (level 2) : Estimated required mem for METIS = 0 Kb
+METIS (level 2) : Max estimated mem for METIS = 0 Kb
+METIS (level 2) : Time to partition graph = 1.270000e-04 (s)
+METIS (level 2) : Using 1 (block) aggregates (globally)
+METIS (level 2) : # (block) aggre/ # (block) rows =  4.00000 % ( = 1 / 25)
+METIS (level 2) : 1 (block) aggregates (globally)
+METIS (level 2) : Total (block) nnz = 479 ( = 19.16/(block)row)
+Calling ML_Operator_UnAmalgamateAndDropWeak
+Gen_Prolongator (level 2) : Max eigenvalue = 2.011667e+00
+
+Prolongator/Restriction smoother (level 2) : damping factor #1 = 5.073762e-01
+Prolongator/Restriction smoother (level 2) : ( = 1.020672e+00 / 2.011667e+00)
+
+Prolongator/Restriction smoother (level 2) : damping factor #2 = 6.007757e-01
+Prolongator/Restriction smoother (level 2) : ( = 1.208561e+00 / 2.011667e+00)
+
+Prolongator/Restriction smoother (level 2) : damping factor #3 = 8.703381e-01
+Prolongator/Restriction smoother (level 2) : ( = 1.750831e+00 / 2.011667e+00)
+
+Prolongator/Restriction smoother (level 2) : damping factor #4 = 1.700694e+00
+Prolongator/Restriction smoother (level 2) : ( = 3.421231e+00 / 2.011667e+00)
+
+Prolongator/Restriction smoother (level 2) : damping factor #5 = 6.262817e+00
+Prolongator/Restriction smoother (level 2) : ( = 1.259871e+01 / 2.011667e+00)
+
+Smoothed Aggregation : operator complexity = 1.021094e+00.
+Time to build the hierarchy = 5.63227 (s)
+Number of actual levels : 4
+
+Smoother (level 0) : # global rows = 250000, # estim. global nnz = 2244004
+Smoother (level 0) : MLS,both
+Smoother (level 0) : Setup time : 0.355821 (s)
+
+Smoother (level 1) : # global rows = 2500, # estim. global nnz = 46854
+Smoother (level 1) : MLS,both
+Smoother (level 1) : Setup time : 0.006637 (s)
+
+Smoother (level 2) : # global rows = 25, # estim. global nnz = 479
+Smoother (level 2) : MLS,both
+Smoother (level 2) : Setup time : 0.000381 (s)
+
+Amesos (level 3) : NumGlobalRows = 1
+Amesos (level 3) : NumGlobalNonzeros = 1
+Amesos (level 3) : Fill-in = 100 %
+Amesos (level 3) : This coarse solver is not available.
+Amesos (level 3) : Now re-building with LAPACK
+Amesos (level 3) : Building KLU
+Amesos (level 3) : Time for factorization  = 9.5e-05 (s)
+
+sum n_i   / n_finest   = 1.0101
+sum nnz_i / nnz_finest = 1.02109
+
+Cumulative timing for construction so far: 
+- for initial setup   = 0.010014 (s)
+- for hierarchy setup = 5.63236 (s)
+- for smoothers setup = 0.363089 (s)
+- for coarse setup    = 0.001122 (s)
+- for final setup     = 0.000115 (s)
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+Unused parameters:
+------------------------------------------------------------------------------
+2D computational stencil for equation 0 at node 125250 (grid is 500 x 500)
+
+	              -1              -1              -1
+	              -1               8              -1
+	              -1              -1              -1
+
+
+		*******************************************************
+		***** Problem: Epetra::CrsMatrix
+		***** Preconditioned CG solution
+		***** ML (L=4, Cheby_pre0/Cheby_post0, ~/Amesos_KLU_3)
+		***** No scaling
+		*******************************************************
+
+                iter:    0           residual = 1.000000e+00
+                iter:    1           residual = 4.275785e-02
+                iter:    2           residual = 1.227267e-03
+                iter:    3           residual = 6.339093e-05
+                iter:    4           residual = 1.202130e-05
+                iter:    5           residual = 1.251343e-06
+                iter:    6           residual = 1.419587e-07
+                iter:    7           residual = 2.174654e-08
+                iter:    8           residual = 2.030363e-09
+                iter:    9           residual = 3.265125e-10
+                iter:   10           residual = 4.161219e-11
+                iter:   11           residual = 4.808802e-12
+                iter:   12           residual = 7.327660e-13
+
+
+		Solution time: 3.074286 (sec.)
+		total iterations: 12
+
+Amesos (level 3) : Time for solve = 0.000738 (s)
+Amesos (level 3) : avg time for solve = 5.67692e-05 (s) ( # solves = 13)
+
+----------------------------------------------------------------------------
+Amesos_Lapack : Time to convert matrix to Klu format = 4e-06 (s)
+Amesos_Lapack : Time to redistribute matrix = 5e-06 (s)
+Amesos_Lapack : Time to redistribute vectors = 0 (s)
+Amesos_Lapack : Number of symbolic factorizations = 1
+Amesos_Lapack : Time for sym fact = 4e-06 (s), avg = 4e-06 (s)
+Amesos_Lapack : Number of numeric factorizations = 1
+Amesos_Lapack : Time for num fact = 5.1e-05 (s), avg = 5.1e-05 (s)
+Amesos_Lapack : Number of solve phases = 13
+Amesos_Lapack : Time for solve = 2.77692e-05 (s), avg = 2.77692e-05 (s)
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+Amesos_Lapack : Matrix has 1 rows and 1 nonzeros
+Amesos_Lapack : Nonzero elements per row = 1
+Amesos_Lapack : Percentage of nonzero elements = 100
+Amesos_Lapack : Use transpose = 0
+----------------------------------------------------------------------------
+------------------------------------------------------------------------------
+   ML time information                    total          avg
+
+   1- Construction time             =    5.99686     5.99686 (s)
+   2- Time for all applications     =    2.80984    0.216142 (s)
+      (w/o first application time)
+   3- Time for first application(s) =   0.267492    0.267492 (s)
+   4- Total time required by ML so far is 9.0742 (s)
+      (constr + all applications)
+------------------------------------------------------------------------------
+||b-Ax||_2 = 4.00096e-09

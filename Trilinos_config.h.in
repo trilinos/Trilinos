@@ -1,0 +1,166 @@
+/* Trilinos_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build amesos */
+#undef HAVE_AMESOS
+
+/* Define if want to build anasazi */
+#undef HAVE_ANASAZI
+
+/* Define if want to build aristos */
+#undef HAVE_ARISTOS
+
+/* Define if want to build aztecoo */
+#undef HAVE_AZTECOO
+
+/* Define if want to build belos */
+#undef HAVE_BELOS
+
+/* Define if want to build claps */
+#undef HAVE_CLAPS
+
+/* Define if want to build ctrilinos */
+#undef HAVE_CTRILINOS
+
+/* Define if want to build default-packages */
+#undef HAVE_DEFAULT_PACKAGES
+
+/* Define if want to build didasko */
+#undef HAVE_DIDASKO
+
+/* Define if want to build epetra */
+#undef HAVE_EPETRA
+
+/* Define if want to build epetraext */
+#undef HAVE_EPETRAEXT
+
+/* Define if want to build external */
+#undef HAVE_EXTERNAL
+
+/* Define if want to build fei */
+#undef HAVE_FEI
+
+/* Define if want to build fortrilinos */
+#undef HAVE_FORTRILINOS
+
+/* Define if want to build galeri */
+#undef HAVE_GALERI
+
+/* Define if want to build ifpack */
+#undef HAVE_IFPACK
+
+/* Define if want to build intrepid */
+#undef HAVE_INTREPID
+
+/* Define if want to build isorropia */
+#undef HAVE_ISORROPIA
+
+/* Define if want to build kokkos */
+#undef HAVE_KOKKOS
+
+/* Define if want to build komplex */
+#undef HAVE_KOMPLEX
+
+/* Define if want to build loca */
+#undef HAVE_LOCA
+
+/* Define if want to build meros */
+#undef HAVE_MEROS
+
+/* Define if want to build ml */
+#undef HAVE_ML
+
+/* Define if want to build moertel */
+#undef HAVE_MOERTEL
+
+/* Define if want to build moocho */
+#undef HAVE_MOOCHO
+
+/* Define if want to build new_package */
+#undef HAVE_NEW_PACKAGE
+
+/* Define if want to build nox */
+#undef HAVE_NOX
+
+/* Define if want to build pamgen */
+#undef HAVE_PAMGEN
+
+/* Define if want to build phalanx */
+#undef HAVE_PHALANX
+
+/* Define if want to build phdmesh */
+#undef HAVE_PHDMESH
+
+/* Define if want to build pliris */
+#undef HAVE_PLIRIS
+
+/* Define if want to build pytrilinos */
+#undef HAVE_PYTRILINOS
+
+/* Define if want to build rbgen */
+#undef HAVE_RBGEN
+
+/* Define if want to build rtop */
+#undef HAVE_RTOP
+
+/* Define if want to build rythmos */
+#undef HAVE_RYTHMOS
+
+/* Define if want to build sacado */
+#undef HAVE_SACADO
+
+/* Define if want to build shards */
+#undef HAVE_SHARDS
+
+/* Define if want to build shared */
+#undef HAVE_SHARED
+
+/* Define if want to build stokhos */
+#undef HAVE_STOKHOS
+
+/* Define if want to build stratimikos */
+#undef HAVE_STRATIMIKOS
+
+/* Define if want to build sundance */
+#undef HAVE_SUNDANCE
+
+/* Define if want to build teuchos */
+#undef HAVE_TEUCHOS
+
+/* Define if want to build threadpool */
+#undef HAVE_THREADPOOL
+
+/* Define if want to build thyra */
+#undef HAVE_THYRA
+
+/* Define if want to build tpetra */
+#undef HAVE_TPETRA
+
+/* Define if want to build trikota */
+#undef HAVE_TRIKOTA
+
+/* Define if want to build trilinoscouplings */
+#undef HAVE_TRILINOSCOUPLINGS
+
+/* Define if want to build triutils */
+#undef HAVE_TRIUTILS
+
+/* Define if want to build webtrilinos */
+#undef HAVE_WEBTRILINOS
+
+/* Define if want to build zoltan */
+#undef HAVE_ZOLTAN
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION

@@ -1,0 +1,94 @@
++=======================================================+
+| How to visualize non-smoothed aggregates using OpenDX |
++=======================================================+
+
+This file briefly describes how to visualize non-smoothed aggregates,
+using OpenDX. 
+An example is reported in the file
+<ML_DIRECTORY>/example/ml_aztec_simple_METIS.c.
+
+The procedure consists of two parts: first, you have to create the OpenDX
+input files, then you have to run OpenDX.
+
+-------------------------------------
+PART I : how to generate output files
+-------------------------------------
+
+The procedure is as follows:
+
+1) add the following line after the creation of the ML_Aggregate object
+   (which is typically something like `ML_Aggregate_Create( &ag )'):
+   
+   ML_Aggregate_Viz_Stats_Setup( ag, MaxMgLevels );
+   
+   where `MaxMgLevels' is the maximum number of levels (this is the same value
+   used to create the ML object).
+   
+2) Create the multilevel hierarchy;
+
+3) Write OpenDX file using the instruction
+
+   ML_Aggregate_Visualize( ml, ag, MaxMgLevels, x, y, z, option, filename);
+   
+   where `ml' is the ML object, `ag' the ML_Aggregation object, `MaxMgLevels'
+   the maximum number of levels, `x,y,z' are double vectors, whose size
+   equals the number of local nodes in the fine grid, containing the coordinates
+   of fine grids nodes. `option' is an integer value defined so that:
+   - option == 1 : solution of 1D problem (y and z can be NULL);
+   - option == 2 : solution of 2D problems (z can be NULL);
+   - option == 3 : solution of 3D problems.
+   Processor X will write its own file, `filename_levelY_procX', where
+   Y is the level. `filename' can be set to NULL (default value of 
+   `.graph' will be used in this case).
+   NOTE: as in smoothed aggregation there is no grid for coarser levels,
+   ML_Aggregate_Visualize needs to assign to each aggregate a set of
+   coordinates. This is done by computing the center of gravity of each
+   aggregates (starting from the fine grid, up to the coarsest level).
+   
+4) deallocate memory using `ML_Aggregate_Viz_Stats_Clean( ag, MaxMgLevels )'.
+
+
+-------------------------------------------
+PART II : how read output files with OpenDX
+-------------------------------------------
+
+1) You may want to copy `viz_aggre.net' and `viz_aggre.cfg' in the directory
+   where the ML executable has been run.
+   
+2) run OpenDX and edit the net file `viz_aggre.net':
+
+   % dx -edit viz_aggre.net
+   
+3) On the main DX window, click on "Windows" > "Open Control Panel By Name" > 
+   "Control Panel" (this requires the file viz_aggre.cfg in the same directory).
+   This opens a new window.
+  
+4) In the new window, you will have to set the "Number of Processors" and 
+   the base file name (without the process number at the end) the correct 
+   values. Also, specify the correct number of total number of aggregates
+   in order to have a better palette.
+
+5) Then, on the main DX window press CTRL-E or click on 
+   "Execute" > "Execute Once"
+
+6) To re-execute after a change, press CRTL-R to reset the server, then
+   CTRL-E.
+   
+6) You may wish to modify the edge thickness (tube diameter).
+
+
+-----
+NOTES
+-----
+
+1) Currently, only METIS and ParMETIS aggregation routines can dump files
+   in OpenDX format.
+   
+2) for structured cartesian grids, you can create the nodal coordinates
+   with the function `AZ_ML_Build_NodalCoordinates'. See documentation
+   in file <ML_DIRECTORY>/src/Utils/ml_aztec_utils.c.
+   
+   
+   
+Albuquerque, 14-Otc-03
+   

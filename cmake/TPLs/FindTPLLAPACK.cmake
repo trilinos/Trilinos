@@ -1,0 +1,4 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( LAPACK
+  REQUIRED_LIBS_NAMES "lapack lapack_win32")

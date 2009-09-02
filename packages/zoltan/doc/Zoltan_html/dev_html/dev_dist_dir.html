@@ -1,0 +1,249 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Directory Layout</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_dist_compile.html">Next</a>&nbsp; |&nbsp; <a href="dev_dist_cvs.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="directories"></a>Layout of Directories</h2>
+The source code is organized into several subdirectories within the Zoltan
+main directory. General interface routines are stored
+in a single directory. Communication and memory allocation utilities available
+to all algorithms are in separate directories. Each load-balancing method
+(or family of methods) should be stored in its own directory. 
+In addition, a courtesy copy of the 
+<a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a>
+graph-partitioning package is included in the top-level directory <i>ParMETIS</i>.
+<p>
+In the following
+<a href="#directory table">table</a>,
+the source-code directories currently in the Zoltan directory are listed
+and described.
+<br>&nbsp;
+<table BORDER NOSAVE >
+<tr>
+<th><a NAME="directory table"></a>Directory</th>
+
+<th>Description</th>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>zz</i></td>
+
+<td>General Interface definitions,
+Zoltan data structure definitions, interface functions
+and functions related to the interface 
+See <a href="dev_lb_interface.html">Interface Functions</a>,
+<a href="dev_lb_types.html">ID Data Types</a>, and 
+<a href="dev_lb_structs.html">Data Structures</a>.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>lb</i></td>
+
+<td>Load-Balancing interface routines,
+and load-balancing data structure definitions.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>all</i></td>
+
+<td><a href="dev_add_memory.html">Special memory allocation functions</a> for memory returned by Zoltan to an application.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>par</i></td>
+
+<td><a href="dev_services_parallel.html">Parallel computing routines</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>param</i></td>
+
+<td><a href="dev_services_params.html">Routines for changing parameter values</a> at runtime.</td>
+</tr>
+
+<tr>
+<td><i>parmetis</i></td>
+
+<td>Routines to access the <a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a>
+and <a href="../ug_html/ug_alg_jostle.html">Jostle</a>
+partitioning libraries.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>rcb</i></td>
+
+<td><a href="../ug_html/ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a> and 
+<a href="../ug_html/ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a> algorithms.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>hsfc</i></td>
+
+<td><a href="../ug_html/ug_alg_hsfc.html">Hilbert Space-Filling Curve partitioning</a> 
+algorithm.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>bsfc</i></td>
+
+<td>Binned Space-Filling Curve partitioning algorithm.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>oct</i></td>
+
+<td>Rensselaer Polytechnic Institute's <a href="../ug_html/ug_alg_oct.html">octree partitioning</a> algorithms. 
+</td>
+</tr>
+
+<tr>
+<td><i>reftree</i></td>
+
+<td>William Mitchell's <a href="../ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>
+algorithm and refinement tree data structure.</td>
+</tr>
+
+<tr>
+<td><i>timer</i></td>
+
+<td><a href="dev_services_time.html">Timing</a> routines.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>ch</i></td>
+
+<td>Routines to read <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
+input files and build graphs for the driver program <i><a href="dev_driver.html">zdrive.</a></i></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>ha</i></td>
+
+<td>Routines to support heterogeneous architectures.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>fort</i></td>
+
+<td><a href="../ug_html/ug_fortran.html">Fortran (F90) interface</a> for Zoltan.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/shared</i></td>
+
+<td VALIGN=TOP NOSAVE>Simple functions and utilities shared by Zoltan and
+other Zoltan Utilities.
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/Memory</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_util_mem.html">Memory management utilities</a></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/Communication</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_util_comm.html">Unstructured communication
+utilities</a></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/DDirectory</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_util_dd.html">Distributed Data Directory
+utilities</a></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>Utilities/Config</i></td>
+
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_usage.html#Building the Library">Platform-specific
+makefile definitions</a> for compiler, library and include-file paths.</td>
+</tr>
+
+<tr>
+<td><i>driver</i></td>
+
+<td>Test driver programs, <i><a href="dev_driver.html">zdrive</a></i> and
+    <i><a href="dev_driver.html">zCPPdrive</a></i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>fdriver</i></td>
+
+<td>Fortran90 version of the <a href="dev_driver.html">test driver</a> program.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>examples</i></td>
+
+<td>Simple examples written in C and C++ that use Zoltan. </td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>docs/Zoltan_html</i></td>
+
+<td>Zoltan documentation and <a href="../Zoltan.html">home page</a>.</td>
+</tr>
+
+<tr>
+<td><i>docs/Zoltan_html/ug_html</i></td>
+
+<td><a href="../ug_html/ug.html">User's guide</a> in HTML format.</td>
+</tr>
+
+<tr>
+<td><i>docs/Zoltan_html/dev_html</i></td>
+
+<td><a href="dev.html">Developer's guide</a> in HTML format.</td>
+</tr>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>docs/Zoltan_pdf</i></td>
+
+<td>PDF versions of the Zoltan User's Guide and Developer's Guide.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>docs/internal</i></td>
+
+<td>SQA documents for the Zoltan project.</td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>The directory structure of the Zoltan distribution.</i></caption>
+</table>
+
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_dist_compile.html">Next:&nbsp;
+Compilation</a>&nbsp; |&nbsp; <a href="dev_dist_cvs.html">Previous:&nbsp;
+CVS</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

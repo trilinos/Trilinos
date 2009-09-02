@@ -1,0 +1,20 @@
+../configure \
+F77=/opt/intel/fc/9.0/bin/ifort \
+CXXFLAGS="-fpic -g -lmpi++" \
+CFLAGS="-fpic -g" \
+FFLAGS="-fpic -g" \
+--enable-mpi \
+--with-mpi-libs="-lmpi" \
+--with-blas="/home/kstanley/Trilinos3PL/SCALAPACK/scalapack-1.7.3/libscalapack.a -L/home/kstanley/TrilinosPrefix/lib/Linux_IA64Itan_2/lib  -llapack /home/kstanley/Trilinos3PL/lapack/liblapack.a -lcblas -lf77blas -latlas " \
+--with-libs="/home/kstanley/Trilinos3PL/MUMPS_4.6.1/MUMPS_4.6.1/lib/libdmumps.a /home/kstanley/Trilinos3PL/MUMPS_4.6.1/MUMPS_4.6.1/PORD/lib/libpord.a /home/kstanley/Trilinos3PL/SCALAPACK/scalapack-1.7.3/libscalapack.a /home/kstanley/Trilinos3PL/SCALAPACK/BLACS/LIB/blacsF77init_MPI-SGI5-0.a /home/kstanley/Trilinos3PL/SCALAPACK/BLACS/LIB/blacs_MPI-SGI5-0.a /home/kstanley/Trilinos3PL/SCALAPACK/BLACS/LIB/blacsF77init_MPI-SGI5-0.a  /home/kstanley/Trilinos3PL/SCALAPACK/BLACS/LIB/blacs_MPI-SGI5-0.a /opt/intel/fc/9.0/lib/libifcore.a  /opt/intel/fc/9.0/lib/libimf.a /opt/intel/fc/9.0/lib/libirc.a " \
+--with-incdirs="-I/home/kstanley/Trilinos3PL/MUMPS_4.6.1/MUMPS_4.6.1/include" \
+--cache-file=config.cache \
+--disable-default-packages \
+--enable-aztecoo \
+--enable-amesos \
+--enable-amesos-mumps \
+--enable-epetraext \
+--enable-galeri \
+--enable-triutils \
+--with-gnumake \
+--prefix=/home/kstanley/TrilinosWithMumps

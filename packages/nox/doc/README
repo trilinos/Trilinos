@@ -1,0 +1,67 @@
+#@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#                                                                                 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA                                                                                
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov), Sandia National Laboratories.
+# 
+# ************************************************************************
+#@HEADER
+
+
+NOX Documentation
+-----------------
+
+You may access/create the NOX documentation in three ways...
+
+1. ONLINE DOCUMENTATION
+
+   The documentation is online at http://trilinos.sandia.gov/packages/nox.
+
+2. MANUALLY GENERATE THE DOCUMENTATION
+
+   Within the doc subdirectory, type
+
+   > doxygen Doxyfile.default
+
+   Then browse to doc/html/index.html to get started.  
+
+   Note that graphical dependency trees will not be generated with this option,
+   since doxygen requires the "dot" library out of the graphviz
+   package to build the graphics.  By using option 3 below, the
+   configure script will check for the dot library and build the extra
+   documentation.
+
+3. AUTOMATICALLY GENERATE THE DOCUMENTATION
+
+   Let $NOX_SRC denote the top level NOX directory, and let $NOX_BUILD
+   denote the top level build directory (often these are the same). 
+
+   Within the $NOX_BUILD directory, type
+
+   > configure [options]
+   > make dox
+
+   This will create the documentation inside the $NOX_SRC
+   directory. Browse to $NOX_SRC/doc/html/index.html.
+   
+

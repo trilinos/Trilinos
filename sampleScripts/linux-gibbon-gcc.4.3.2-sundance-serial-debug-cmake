@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# Script for building Trilinos on Linux machines with configurations
+# similar to gibbon.math.ttu.edu. 
+#
+# Assumes ExodusII and NetCDF libraries are installed. 
+#
+# Originally written by Ross Bartlett, modified by Kevin Long
+
+
+EXTRA_ARGS=$@
+
+# Set the location of the compilers and libraries. On a simple out-of-the-box
+# Linux system, COMPILER_ROOT will probably be someplace like /usr/local. 
+# On Kevin's TTU machines, there are multiple compiler versions located
+# in subdirectories of /usr/local, e.g., /usr/local/gcc-4.3.2.
+
+COMPILER_VERSION=gcc-4.3.2
+COMPILER_ROOT=/usr/local/${COMPILER_VERSION}
+BIN_PATH=${COMPILER_ROOT}/bin
+LIB_PATH=${COMPILER_ROOT}/lib
+INC_PATH=${COMPILER_ROOT}/include
+
+# Set the path to the Trilinos data files. Some of the Sundance tests require
+# large mesh files stored in TrilinosData. If the TrilinosData directory
+# cannot be found, these tests will be disabled.
+TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
+
+# Set the fortran compiler and libraries. 
+# Currently configured for gfortran. Older systems may need g77 and -lg2c. 
+FORTRAN_COMP=${BIN_PATH}/gfortran
+# IMPORTANT: be sure to use -lgfortran instead of libgfortran.a so that 
+# the linker can choose correctly between shared and static 
+# fortran libraries when you're building shared Trilinos libraries.
+FORTRAN_LIBS="-lgfortran"
+
+# Run cmake
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
+-D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="${FORTRAN_COMP}" \
+-D BUILD_SHARED_LIBS:BOOL=OFF \
+-D TPL_ENABLE_ExodusII:BOOL=ON \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \
+-D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Sundance:BOOL=ON \
+-D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
+-D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
+-D NOX_ENABLE_LOCA:BOOL=OFF \
+-D CMAKE_INSTALL_PREFIX:PATH=$PWD \
+$EXTRA_ARGS \
+../../Trilinos
+
+#-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \

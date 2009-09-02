@@ -1,0 +1,50 @@
+Many real world scientific problems, in fields such as atmospheric science, 
+quantum physics, and
+structural engineering, are simulated on computers.  Due to model complexity, fidelity, or 
+time scales, such simulations often must be run on massively parallel computers.
+The time and effort involved in designing these simulations is large.
+%Therefore, many simulations attempt to reuse common operations and methods whenever possible.   Libraries containing common operations are typically developed to facilitate simulation design.  At Sandia one complex library is Trilinos \cite{IK:Trilinos}.
+Therefore, many simulations leverage existing optimized kernels and algorithms provided by other software libraries.
+At Sandia, one such source of state-of-the-art numerical algorithms is the Trilinos project \cite{IK:Trilinos}.
+
+Trilinos is a collection of scientific computing libraries called ``packages''.  Each package in Trilinos has
+unique functionality, and is written by domain experts. Packages are typically autonomous, but can leverage capabilities
+in other Trilinos packages.  Functionality available
+within Trilinos packages includes basic linear algebra operations, preconditioning, solvers, data distribution and 
+load balancing.  The Trilinos project provides application developers a suite of modern optimized numerical methods.
+In turn, Trilinos leverages basic libraries such as the BLAS \cite{IK:BLAS} and LAPACK \cite{IK:LaPACK}. 
+
+Epetra, a foundational package within Trilinos, is frequently used by other packages \cite{IK:Epetra-site}.  
+Epetra provides fundamental classes and methods for serial and parallel linear algebra.  Classes available include
+point and block matrices, multivectors, and graphs.  These and other classes support the usual linear algebra
+operations.  All solver packages within Trilinos can use
+Epetra kernels as building blocks for both serial and parallel algorithms.  For this reason, the performance of
+solvers depends upon Epetra's performance.  Therefore, making Epetra as efficient as
+possible will improve the performance and efficiency of other packages that depend on it.
+
+Just as a program is only as efficient as its underlying components, a parallel program can only
+be as efficient as the code run on each processor.  Even if a program scales efficiently, if its underlying
+serial code is inefficient, its parallel implementation will be inefficient.  By improving the performance of the single-processor
+portion of a parallel program, the potential top speed of a parallel program is improved.  For example, in many scientific programs an
+important kernel operation is matrix-vector multiplication.  By speeding up this kernel,
+overall simulation speed can be improved.
+
+The Optimized Sparse Kernel Interface (OSKI)
+provides many highly tuned matrix vector multiply kernels \cite{IK:OSKI-paper,IK:OSKI-site,IK:OSKI-user}.  OSKI 
+provides five optimized, serial, sparse matrix-vector kernels: four routines that perform matrix-vector multiplication and
+one that performs a triangular solve of a system of equations.
+At install time, OSKI's kernels can be tuned according to the underlying machines architecture.
+At runtime, OSKI's kernels can be tuned according to matrix/vector structure.
+%By making OSKI's kernels and most of the rest of its interface available in Epetra, we
+The new Epetra/OSKI interface
+enables Trilinos and application developers to leverage the highly tuned kernels
+provided by OSKI in a standardized manner.
+
+In this paper, we discuss our implementation of an interface to OSKI within Epetra and assess its performance.
+In Section \ref{IK:sec:oski}, we give an overview of the design and features of the OSKI
+package itself.  In Section \ref{IK:sec:design}, we discuss the design of the Epetra interface to OSKI.
+In Section \ref{IK:sec:results}, we discuss the results of performance tests
+run on the OSKI kernels within Epetra.  Tests were run on individual OSKI kernels, and
+include small scaling studies.  In Section \ref{IK:sec:conclu}, conclusions of the work and results
+described in this paper are presented.  In Section \ref{IK:sec:future}, ways to add more functionality to our
+implementation, and suggestions of things to test in new OSKI releases are presented.

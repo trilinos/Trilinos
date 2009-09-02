@@ -1,0 +1,560 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# This document is released under the GNU Lesser General Public License.     #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+#
+# EXAMPLE OF zdrive.inp INPUT FILE FOR zdrive AND zfdrive.
+#
+##############################################################################
+# GENERAL NOTES
+#
+# 1) Any line beginning with a "#" is considered a comment and will be
+# ignored by the file parser.
+#
+# 2) The order of the lines IS NOT significant.
+#
+# 3) Any lines that are optional are marked as such in this file. Unless
+# otherwise noted a line is required to exist in any input file.
+#
+# 4) The case of words IS NOT significant, e.g., "file" IS equivalent
+# to "FILE" or "File", etc.
+#
+# 5) The amount of blank space in between words IS significant. Each
+# word should only be separated by a single space.
+#
+# 6) Blank lines are ignored.
+#
+#
+##############################################################################
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Decomposition Method = <method>
+#
+# This line is used to specify the algorithm that Zoltan will use
+# for load balancing. Currently, the following methods that are acceptable:
+#	rcb - Reverse Coordinate Bisection
+#	octpart - Octree/Space Filling Curve
+#	parmetis - ParMETIS graph partitioning
+#	reftree - Refinement tree partitioning
+#	
+#-----------------------------------------------------------------------------
+Decomposition Method	= rcb
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Zoltan Parameters = <options>
+#
+# This line is OPTIONAL. If it is not included, no user-defined parameters
+# will be passed to Zoltan.
+#
+# This line is used to to specify parameter values to overwrite the default
+# parameter values used in Zoltan.  These parameters will be passed to Zoltan
+# through calls to Zoltan_Set_Param(). Parameters are set by entries consisting
+# of pairs of strings "<parameter string>=<value string>". 
+# The <parameter string> should be a string that is recognized by the
+# particular load-balancing method being used.
+# The parameter entries should be separated by commas. 
+# When many parameters must be specified, multiple
+# "Zoltan Parameters" lines may be included in the input file.
+# NOTE:  The Fortran90 driver zfdrive can read only one parameter per line.
+#-----------------------------------------------------------------------------
+Zoltan Parameters	= DEBUG_LEVEL=3
+Zoltan Parameters	= RCB_REUSE=0
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# File Type = <file type><,chaco or Matrix Market options>
+#
+# This line is OPTIONAL. If it is not included, then it is assumed that
+# the file type is parallel nemesis.
+#
+# This line indicates which format the file is in. The current
+# file types for this line are:
+#	NemesisI	- parallel ExodusII/NemesisI files (1 per processor)
+#	Chaco		- Chaco graph and/or geometry file(s)
+#       hypergraph      - format documented in driver/dr_hg_readfile.c,
+#                         suffix .hg
+#       matrixmarket    - Matrix Market exchange format, suffix .mtx
+#       matrixmarket+   - our enhanced Matrix Market format, documented in
+#                         driver/dr_hg_io.c, includes vertex and edge weights,
+#                         and process ownership of matrix data for 
+#                         a distributed matrix, suffix .mtxp
+#
+# For NemesisI input, the initial distribution of data is given in the 
+# Nemesis files.  For Chaco input, however, an initial decomposition is
+# imposed by the zdrive.  Four initial distribution methods are provided.
+# The method to be used can be specified in the chaco options:
+#       initial distribution = <option>
+# where <option> is
+#       linear  -- gives the first n/p objects to proc 0, the
+#                  next n/p objects to proc 1, etc.  
+#       cyclic  -- assigns the objects to processors as one would
+#                  deal cards; i.e., gives the first object to proc 0, 
+#                  the second object to proc 1, ..., the pth object to 
+#                  proc (p-1),the (p+1)th object to proc 0, the (p+2)th 
+#                  object to proc 1, etc.
+#       file    -- reads an initial distribution from the input file
+#                  <filename>.assign, where File Name is specified by
+#                  the "File Name" command line below.
+#       owner   -- for vertices, same as "linear."  For hyperedge, send a 
+#                  copy of a hyperedge to each processor owning one of its
+#                  vertices.  (Multiple processors may then store each
+#                  hyperedge.)
+# If an initial distribution is not specified, the default is linear.
+#
+# A second Chaco option is to distribute the objects over a subset
+# of the processors, not all processors. The syntax for this is:
+#       initial procs = k
+# where k is an integer between 1 and the number of processors.
+# The objects will be evenly distributed among the k first
+# processors, using the distribution method optionally specified by 
+# the "initial distribution" option. 
+#
+# Example:
+#     File Type = chaco, initial distribution = cyclic, initial procs = 2
+# will give proc 0 objects 1, 3, 5, ... and proc 1 objects 2, 4, 6, ...
+# while procs 2 and higher get no objects.
+#
+# For hypergraph, matrixmarket and matrixmarket+ files, there are three
+# options that determine how zdrive divides the hypergraph or matrix data
+# across the processes initially.  (The Zoltan library will redistribute
+# these elements yet again before the parallel hypergraph methods begins.)
+#
+#  initial_distribution = {val}     initial vertex (object) distribution
+#
+#    linear (default) - First n/p vertices supplied by first process,
+#      next n/p vertices supplied by next process, and so on.
+#    cyclic - Deal out the vertex ownership in round robin fashion.
+#    file - Use process vertex assignment found in the file (.mtxp only)
+#
+#  initial_pins =  {val}       initial pin (matrix non-zero) distribution
+#
+#    row (default) - Each zdrive process supplies entire rows of the matrix,
+#      in compressed row storage format
+#    column - Each zdrive process supplies entire columns of the matrix, in
+#      compressed column storage format
+#    linear - First n/p pins (matrix non-zeroes) supplied by first process,
+#      next n/p pins supplied by next process, and so on.
+#    cyclic - Deal out the pin ownership in round robin fashion.
+#    file - Use process pin assignment found in the file (.mtxp only)
+#    zero - Process zero initially has all pins
+#
+#  initial_procs = {n}
+#     This has the same meaning that it has for Chaco files.  The initial
+#     vertices, pins and weights are all provided by only {n} processes.
+#
+#  objects = {val}             how the file is viewed (define the vertices)
+#
+#    rows    - Vertices are the row of the matrix
+#    columns (default) - Vertices are the columns of the matrix
+#    nonzeros - Vertices are the nonzeros of the matrix
+# NOTE:  matrixmarket+ driver only support "columns"
+
+# NOTE:  The Fortran90 driver zfdrive does not read NemesisI files.
+# NOTE:  The Fortran90 driver zfdrive does not accept any Chaco options.
+#-----------------------------------------------------------------------------
+File Type		= NemesisI
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Compression = <type of compression>
+#
+# This line is OPTIONAL. If it is not included, then it is assumed that
+# the input file is not compressed.
+# Currently, we support compression for Chaco, hypergraph and matrixmarket file
+# format.
+#
+# This line indicates which compression is used for the file. The current
+# compression supported for this line are:
+#	uncompressed	- No compression
+#	gzip		- input file is gzipped. The name should be postfixed by
+#                         the ".gz" extension. example: foo.mtx.gz for original
+#                         file foo in matrix market format.
+
+# NOTE: however, if the corresponding compressed file is not found, the driver try
+# to open the file with the "usual" name.
+Compression = uncompressed
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# File Name = <filename>
+#
+# This line contains the filename for the input finite element mesh.
+#
+# If the file type is NemesisI then this name refers to the base name
+# of the parallel ExodusII files that contain the results. The base
+# name is the parallel filename without the trailing .<# proc>.<file #>
+# on it. This file must contain the Nemesis global information.
+#
+# If the file type is Chaco, this name refers to the base name of the
+# Chaco files containing graph and/or coordinates information.  The
+# file <filename>.graph will be read for the Chaco graph information;
+# The file <filename>.coords will be read for Chaco geometry information.
+# The optional file <filename>.assign may be read for an initial decomposition
+# by specifying "initial distribution=file" on the "File Type" input line.
+# For more information about the format of these files, see
+# the Chaco user's guide.
+#-----------------------------------------------------------------------------
+File Name	= testa.par
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Parallel Disk Info = <options>
+#
+# This line is OPTIONAL. If this line is left blank, then it is assumed
+# that there is no parallel disk information, and all of the files are
+# in a single directory.  This line is used only for Nemesis files.
+#
+# This line gives all of the information about the parallel file system
+# being used. There are a number of options that can be used with it,
+# although for most cases only a couple will be needed. The options are:
+#
+#       number=<integer> - this is the number of parallel disks that the
+#                          results files are spread over. This number must
+#                          be specified, and must be first in the options
+#                          list. If zero (0) is specified, then all of the
+#                          files should be in the root directory specified
+#                          below.
+#       list={list}      - OPTIONAL, If the disks are not sequential, then a
+#                          list of disk numbers can be given. This list should
+#                          be enclosed in brackets "{}", and the disk numbers
+#                          can be seperated by any of the following comma,
+#                          blank space, tab, or semicolon.
+#       offset=<integer> - OPTIONAL, This is the offset from zero that the
+#                          disk numbers begin with. If no number is specified,
+#                          this defaults to 1. This option is ignored if
+#                          "list" is specified.
+#       zeros            - OPTIONAL, This specifies that leading zeros are
+#                          used in the parallel file naming convention. For
+#                          example, on the Paragon, the file name for the
+#                          first pfs disk is "/pfs/tmp/io_01/". If this is
+#                          specified, then the default is not to have leading
+#                          zeros in the path name, such as on the teraflop
+#                          machine "/pfs/tmp_1/".
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Parallel Disk Info	= number=4,zeros
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Parallel file location = <options>
+#
+# This line is OPTIONAL, only if the above line is excluded as well, or
+# the number of raids is specified as zero (0). If this line is excluded,
+# then the root directory is set to the execution directory, ".", and all
+# files should be in that directory.  This line is used only for Nemesis 
+# files.
+#
+# This line gives all of the information about where the parallel files are
+# located. There are only two options for this line, and both must be
+# specified. The options are:
+#       root=<root directory name>
+#         This line is used to specify what the name of the root directory is
+#         on the target machine. This can be any valid root directory
+#         name. For example, if one is running on an SGI workstation and
+#         using the "tflop" numbering scheme then you could use something
+#         similar to "/usr/tmp/pio_" in this field so that files would be
+#         written to root directories named:
+#               /usr/tmp/pio_1
+#               /usr/tmp/pio_2
+#                       .
+#                       .
+#                       .
+#               /usr/tmp/pio_<Parallel Disk Info, number>
+#
+#       subdir=<subdirectory name>
+#         This line specifies the name of the subdirectory, under the root
+#         directory, where files are to be written. This is tacked onto
+#         the end of the "root" after an appropriate integer is added to
+#         "root". Continuing with the example given for "root", if "subdir"
+#         had a value of "run1/input" files would be written to directories
+#         named:
+#               /usr/tmp/pio_1/run1/input/
+#               /usr/tmp/pio_1/run1/input/
+#                       .
+#                       .
+#                       .
+#               /usr/tmp/pio_<Parallel Disk Info, number>/run1/input/
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
+
+#-----------------------------------------------------------------------------
+# Zdrive debug level = <integer>
+#
+# This line is optional.  It sets a debug level within zdrive (not within
+# Zoltan) that determines what output is written to stdout at runtime.
+# The currently defined values are listed below.  For a given debug level
+# value i, all debug output for levels <= i is printed.
+#
+# 	0   --  No debug output is produced.
+#	1   --  Evaluation of the initial and final partition is done
+#               through calls to driver_eval and Zoltan_LB_Eval.
+#	2   --  Function call traces through major driver functions are
+#               printed.
+#       3   --  Generate output files of initial distribution.
+#               Debug Chaco input files.
+#       4   --  Entire distributed mesh (elements, adjacencies, communication
+#               maps, etc.) is printed.  This output is done serially and can
+#               be big and slow.
+#
+# Default value is 1.
+#-----------------------------------------------------------------------------
+Zdrive debug level = 1
+
+#-----------------------------------------------------------------------------
+# text output = <integer>
+#
+# This line is optional.  If the integer specified is greater than zero,
+# zdrive produces files listing the part and processor assignment of
+# each object.  When "text output = 1," P files are generated, where P is
+# the number of processors used for the run.  Files have suffix ".out.P.N",
+# where P is the number of processors and N = 0,...,P-1 is the processor that
+# generated the particular file.
+#
+# Default value is 1.
+#-----------------------------------------------------------------------------
+text output = 1
+
+#-----------------------------------------------------------------------------
+# gnuplot output = <integer>
+#
+# This line is optional.  If the integer specified is greater than zero,
+# zdrive produces files that can be plotted using gnuplot.  If the integer is
+# one, only the vertices of the graph are outputted.  If the integer is 
+# greater than 1, edges are also outputted.  Each processor generates
+# files containing its decomposition; these files are named similarly 
+# to the standard output filenames generated by zdrive but they include 
+# a "gnu" field.  A file containing the gnuplot commands to actually
+# plot the decomposition is also generated; this file has a ".gnuload" suffix.
+# To plot the results, start gnuplot; then type 
+#   load "filename.gnuload"
+# 
+# The decomposition can be based on processor assignment or part
+# assignment.  See zdrive input line "plot partition".
+#
+# For Chaco input files, edges are not drawn between neighboring subdomains (
+# as Chaco input is balanced with respect to graph nodes).  Data style
+# "linespoints" is used; this style can be changed using gnuplot's
+# "set data style ..." command.
+#
+# In addition, processor assignments are written to the parallel Nemesis files
+# to be viewed by other graphics packages (avs, mustafa, blot, etc.).  Note
+# that the parallel Nemesis files must have space allocated for at least one
+# elemental variable; this allocation is done by nem_spread.
+#
+# Gnuplot capability currently works only for 2D problems.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+gnuplot output = 0
+
+#-----------------------------------------------------------------------------
+# nemesis output = <integer>
+#
+# This line is optional.  If the integer specified is greater than zero,
+# zdrive writes subdomain assignment information to parallel nemesis files.  
+# These files match the input nemesis file names, but contain a ".blot" suffix. 
+# The SEACAS utility nem_join can combine these files into a single Exodus file 
+# for plotting by blot, avs, mustafa, etc.  Note that the input parallel 
+# Nemesis files must have space allocated for at least one
+# elemental variable; this allocation is done by nem_spread.
+#
+# The decomposition can be based on processor assignment or part
+# assignment.  See zdrive input line "plot partition".
+#
+# This option does nothing for Chaco input files.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+nemesis output = 0
+
+#-----------------------------------------------------------------------------
+# plot partition = <integer>
+#
+# This line is optional.  If the integer specified is greater than zero,
+# zdrive writes part assignments to the gnuplot or nemesis output files;
+# one file per part is generated.
+# Otherwise, zdrive writes processor assignments to the gnuplot or nemesis
+# output files, with one file per processor generated.
+#
+# See zdrive input lines "gnuplot output" and "nemesis output".
+#
+# Default value is 0 (processor assignments written).
+#-----------------------------------------------------------------------------
+plot partition = 0
+
+#-----------------------------------------------------------------------------
+# print mesh info file = <integer>
+#
+# This line is optional.  If the integer specified is greater than zero,
+# zdrive produces files describing the mesh connectivity.  Each processor
+# generates a file containing its vertices (with coordinates) and elements
+# (with vertex connectivity); these files are named
+# similarly to the standard output filenames generated by zdrive but they
+# include a ".mesh" suffix. 
+# 
+# Default value is 0.
+#-----------------------------------------------------------------------------
+print mesh info file = 0
+
+#-----------------------------------------------------------------------------
+# Chaco input assignment inverse = <integer>
+#
+# This line is optional.  It sets the IN_ASSIGN_INV flag, indicating that
+# the "inverse" Chaco assignment format should be used if a Chaco assignment
+# file is read for the initial decomposition.  If this flag is 0, the assignment
+# file lists, for each vertex, the processor to which it is assigned.  If this
+# flag is 1, the assignment file includes, for each processor, the number of
+# vertices assigned to the processor followed by a list of those vertices.
+# See the Chaco User's guide for a more detailed description of this parameter.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Chaco input assignment inverse = 0
+
+
+#-----------------------------------------------------------------------------
+# Number of Iterations = <integer>
+#
+# This line is optional.  It indicates the number of time the load-balancing
+# method should be run on the input data.  The original input data is passed
+# to the method for each invocation.  
+# Multiple iterations are useful primarily for testing the RCB_REUSE parameter.
+# 
+# Default value is 1.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Number of Iterations = 1
+
+#-----------------------------------------------------------------------------
+# zdrive action = <integer>
+#
+# This line is optional.  It indicates the action the driver should take,
+# typically load-balancing or ordering. Valid values are:
+# 
+# 	0   --  No action.
+#	1   --  Load balance.
+#	2   --  Order.
+#	3   --  First load balance, then order.
+#
+# Default value is 1 (load balance).
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+zdrive action = 1
+
+
+#-----------------------------------------------------------------------------
+# Test Drops = <integer>
+#
+# This line signals that zdrive should exercise the box- and point-assign
+# capability of Zoltan.  Note that the partitioning method must support
+# box- and point-drop, and appropriate parameters (e.g., Keep_Cuts) must also
+# be passed to Zoltan; otherwise, an error is returned from the box- and
+# point-assign functions.
+#
+# Default value is 0.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Test Drops = 0
+
+#-----------------------------------------------------------------------------
+# Test DDirectory = <integer>
+#
+# This line signals that zdrive should exercise the Distributed Directory
+# utility of Zoltan.  Comparisons between zdrive-generated communication maps
+# and DDirectory-generated communication maps are done.  If a difference is
+# found, a diagnostic message containing "DDirectory Test" is printed as 
+# output from zdrive.
+#
+# Default value is 0.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Test DDirectory = 0
+
+#-----------------------------------------------------------------------------
+# Test Null Import Lists = <integer>
+#
+# This line signals that zdrive should test Zoltan's capability to accept
+# NULL import lists to Zoltan_Help_Migrate.  It allows the driver to pass NULL
+# import lists.  This flag's value should not affect the output of zdrive.
+#
+# Default value is 0.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Test Null Import Lists = 0
+
+#-----------------------------------------------------------------------------
+# Test Multi Callbacks = <integer>
+#
+# This line signals that zdrive should test the list-based (MULTI) callback
+# functions.  If this line is set to 1, zdrive registers list-based callback 
+# functions.  Otherwise, callbacks on individual functions are registered.
+# This flag's value should not affect the output of zdrive.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Test Multi Callbacks = 0
+
+#-----------------------------------------------------------------------------
+# Test Local Partitions = <integer>
+#
+# This line signals that zdrive should test Zoltan using various values
+# of the NUM_LOCAL_PARTS parameter and/or nonuniform part sizes.
+# While setting NUM_LOCAL_PARTS using a "Zoltan Parameter" above
+# would make all processors have the same number of local parts,
+# this flag allows different processors to have different values for
+# NUM_LOCAL_PARTS.
+# Valid values are integers from 0 to 7.
+#     0:  NUM_LOCAL_PARTS is not set (unless specified as a 
+#         "Zoltan Parameter" above).
+#     1:  Each processor sets NUM_LOCAL_PARTS to its processor number;
+#         e.g., processor 0 requests zero local parts; processor 1
+#         requests 1 local part, etc.
+#     2:  Each odd-numbered processor sets NUM_LOCAL_PARTS to its
+#         processor number; even-numbered processors do not set 
+#         NUM_LOCAL_PARTS.  
+#     3:  One part per proc, but variable part sizes.
+#         Only set part sizes for upper half of procs 
+#         (using Zoltan_LB_Set_Part_Sizes and global part numbers).
+#     4:  Variable number of parts per proc, and variable 
+#         part sizes. Proc i requests i parts, each
+#         of size 1/i.
+#     5:  One part per proc, but variable part sizes.
+#         Same as case 3, except all sizes are increased by one to 
+#         avoid possible zero-sized parts.
+#     6:  One part per proc, but variable part sizes.
+#         When nprocs >= 6, zero-sized parts on processors >= 2.
+#         (This case is of particular interest for HSFC.)
+#     7:  One part per proc, but variable part sizes.
+#         When nprocs >= 6, zero-sized parts on processors <= 3.
+#         (This case is of particular interest for HSFC.)
+# 
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Test Local Partitions = 0
+
+#-----------------------------------------------------------------------------
+# Test Generate Files = <integer>
+#
+# This line signals that zdrive should test Zoltan using Zoltan_Generate_Files
+# to produce output files that describe the geometry, graph, or hypergraph
+# used in the load-balancing. Such files may be useful for debugging.
+#
+#   0: Do not generate files.
+#   1: Generate files.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Test Generate Files = 0

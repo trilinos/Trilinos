@@ -1,0 +1,18 @@
+INCLUDE(GlobalSet)
+
+MACRO(ADD_OPTION_AND_DEFINE USER_OPTION_NAME MACRO_DEFINE_NAME DOCSTRING DEFAULT_VALUE)
+  #MESSAGE("ADD_OPTION_AND_DEFINE: '${USER_OPTION_NAME}' '${MACRO_DEFINE_NAME}' '${DEFAULT_VALUE}'")
+  SET( ${USER_OPTION_NAME} "${DEFAULT_VALUE}" CACHE BOOL "${DOCSTRING}" )
+  IF(NOT ${MACRO_DEFINE_NAME} STREQUAL "")
+    IF(${USER_OPTION_NAME})
+      GLOBAL_SET(${MACRO_DEFINE_NAME} ON)
+    ELSE()
+      GLOBAL_SET(${MACRO_DEFINE_NAME} OFF)
+    ENDIF()
+  ENDIF()
+ENDMACRO()
+
+# 2008/10/05: rabartl: ToDo: Add an option to automatically add the macro
+# define to any XXX_config.h file that gets configured by
+# PACKAGE_CONFIGURE_FILE(...).  This will help to eliminate
+# duplication.

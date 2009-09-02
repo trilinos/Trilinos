@@ -1,0 +1,541 @@
+/*--------------------------------------------------------------------*/
+/*    Copyright 2005 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+
+Beginning with version 2.06.00, this file records all significant changes
+made to the code, with the goal being to let users know if/why they should
+migrate from one version to another.
+
+Previous major changes are as follows.
+
+1997 - 1999:
+  Initial development, several releases to the ALE3D group at LLNL and
+  to the SIERRA group and Sandia. None of these early releases are able to
+  be recovered or supported any longer.
+
+Nov 8, 1999: version 1.2.0
+  This version had the monogram 'FEI_' prepended to the C wrapper functions.
+  The primary point of interaction for a C++ user became the class
+  called FEI_Implementation.
+
+Feb 22, 2000: version 1.3.0
+  This version remodeled the C wrapper functions to use C structs for context
+  rather than an index into a static array of FEI instances.
+  Also, all FEI functions began returning integer error codes.
+
+Mar 17, 2000: version 1.4.0
+  This version added the 'residualNorm' capability to both the public FEI
+  interface and the underlying LinearSystemCore interface.
+
+July 18, 2000: version 1.5.0
+  This version added the public FEI methods 'resetMatrix' and 'resetRHSVector'.
+
+December 2000: version 1.5.7
+  This was the last of the 1.5 releases.
+
+Dec 11, 2000: version 2.0.0
+  This version contained several significant interface changes.
+   - Some multi-dimensioned array arguments were replaced with cleaner 1-D
+     pointers.
+   - The cumbersome 'begin/end' sequence used in many FEI method-calling
+     sequences was removed.
+   - Added missing 'putIntoSystemMatrix' function implementation in the
+     ISIS-support code.
+
+Jan 24, 2002: many minor versions up to 2.0.25
+  Many implementation improvements, some performance improvements, several
+  bug-fixes related to multi-physics problems (differing element-blocks etc.),
+  shared-node and other parallel issues, boundary-condition handling.
+
+March 7, 2002: version 2.1.0
+  Added the public FEI method for initializing 'slave variables'. This is
+  also otherwise referred to as constraint reduction. It is an
+  alternative to using Lagrange-Multiplier constraints. Instead, a dependent
+  degree-of-freedom or slave variable is chosen for each constraint, and the
+  constraint is essentially projected out of the system. This allows for
+  solving constrained problems without producing indefinite matrices. It allows
+  some problems to be solved that previously couldn't be solved by iterative
+  solvers.
+  Around this time the "new" fei interfaces began to be deployed also. This is
+  a significant modularization of the fei, where the single monolithic
+  interface is broken up into separate classes to handle initialization and
+  population of VectorSpaces, MatrixGraphs, etc. An abstraction layer which
+  encapsulates general linear-system and linear-solver concepts is preserved,
+  but it's no longer an obstruction to the user. Users are now able to
+  access and manipulate all underlying solver-library objects and data, if
+  they wish to.
+  Also, the narrow focus on nodal finite-element formulations has been
+  abandoned.
+  These new abstract interfaces lie in the "fei::" namespace, and concrete
+  implementations of them lie in the "snl_fei::" namespace.
+  Starting now, the fei code distribution will carry two version numbers:
+  The "old" single large FEI interface will continue to carry the
+  version number 2.1.x, and will continue to be maintained and supported but
+  not further developed.
+  The "new" family of fei:: and snl_fei:: classes will start with the current
+  version number but the version number of the code-distribution will be
+  incremented as they are developed and changed.
+
+several release versions up to 2.5.0  Dec 11, 2002
+  A variety of bug-fixes to the constraint-reduction capability, along with
+  performance improvements and general maintenance, and the FEI version is
+  now at 2.1.13.
+  Several interface changes as the new modular interfaces evolve and stabilize.
+
+May 2, 2003: version 2.06.00
+  - Variety of minor bug-fixes, general 'code-tightening'.
+  - Further stabilization of new interfaces, improved Factory support.
+  - Users can *optionally* now specify that the STL map be used for internal
+  fei storage and lookup operations. This is a significant performance increase
+  in some cases. This doesn't appear to work correctly on janus at this time
+  due to an error in the Rogue Wave STL implementation on that platform. There
+  also appears to be a problem in optimized mode on SGI...
+  - Fixed minor memory errors and leaks in src/utest/cube.C and cube3.C
+  - Fixed minor bug in EqnCommMgr::deepCopy.
+  - The new snl_fei:: implementations can now solve complete test problems
+  that involve constraint-reduction.
+  - Added support for using Epetra_VbrMatrix as the template parameter for the
+  snl_fei::Matrix<> class. This needs further work, it contains hotspots and
+  parallelization bugs. But the initial capability can run tests in serial.
+  - No longer maintain confusing separate version numbers for "old" and "new"
+    FEI interfaces. The one-and-only version number is now 2.06.00.
+
+April 21, 2004: version 2.07.00
+  - Variety of minor bug-fixes
+  - Performance optimizations
+  - Improved some interfaces, such as the Factory interfaces.
+  - Improved support for Trilinos, including the relatively new packages
+    Amesos and ML.
+
+June 17 2004: version 2.08.00
+  - Add a method to fei::MatrixGraph so that two matrix-graph objects
+    can be compared to see whether they are structurally equivalent.
+
+July 12 2004: version 2.09.00
+  - More refinement of capabilities in the "new" interfaces
+  - improved support for Amesos and ML packages in Trilinos
+
+July 20 2004: version 2.10.00
+  - improved support for ML (ability to control debug output)
+  - improvements to comm code
+  - fleshed out snl_fei::Super class (eventual replacement for
+    FEI_Implementation)
+
+December 09 2004: version 2.11.00
+  - restructuring of template code to allow explicit instantiation
+  - restructuring of headers containing configuration macros to
+    improve portability, and ensure that applications never need to
+    provide fei macros when compiling application code
+  - improvement of snl_fei::Set to allow std::set implementation
+  - addition of performance regression tests
+  - further development of snl_fei::Super, to now include aggregate
+    solve cases. at this point it can handle most cases that
+    FEI_Implementation can handle. (snl_fei::Super implements the FEI
+    interface, same as FEI_Implementation, but is based on newer underlying
+    implementation code. There are a couple of functions in the FEI
+    interface that snl_fei::Super has not implemented...)
+  - begin using std::vector and std::string (from <vector> and <string>)
+    The C++ standard has been around long enough now that it is reasonable
+    to require these.
+  - modernizing/improving parameter-setting methods, and I/O/parsing code.
+  - begin using exceptions and eliminating antiquated int return-code interfaces
+  - continuing improvements to autoconf-configure scripts and portability
+  - add a shared-pointer container to improve the memory management model. This
+    removes uncertainty regarding life-span of objects created by factories,
+    and used by other created objects. i.e., the user will no longer need to
+    figure out when objects can be destroyed, etc.
+  - significant optimization of slave-constraint-reduction
+
+March 02 2005: version 2.12.00
+  - stabilization/consolidation version
+  - finish remodeling of interfaces to return useful results rather than
+    err-codes
+  - finish integration of fei::SharedPtr
+  - improve performance regression test mechanisms
+  - fix bug in slave-constraint reduction where constraints with nonzero
+    right-hand-side values were not being handled correctly.
+
+March 18 2005: version 2.13.00
+  - further work on the slave-constraint nonzero right-hand-side fix. Now allow
+    caller to reset constraint coefficients for all types of constraints.
+  - also update fei/support-Trilinos to use recently released Trilinos 5.0.
+
+July 7 2005: version 2.14.00
+  - fix a bug where id-type was hard-wired to 0 in BCManager (where it gets
+    indices from fei::VectorSpace).
+  - re-organized the getConnectivityIndices methods in fei::MatrixGraph.
+    Moved some of them to fei::VectorSpace.
+  - fixed some memory leaks in usage of Trilinos/Amesos/ML
+  - changed some code in support-Trilinos to use Epetra_MultiVector instead
+    of Epetra_Vector
+  - added methods to Factory_Trilinos to wrap fei::Vector objects around
+    already-existing Epetra_MultiVector objects.
+  - substantial performance optimizations in matrix-graph creation and in
+    assembly of matrices when there are master-slave constraints
+  - removed 'using std' directives from fei headers. (those directives were
+    used to allow for some platforms supplying 'std::ostream'  in <iostream>
+    while other platforms supplied 'ostream' in <iostream.h>. This is now
+    handled via fei macros.
+
+ July 13 2005: minor version 2.14.01
+  - minor performance improvement in SNL_FEI_Structure
+
+ Aug 8 2005: minor version 2.14.02
+  - fixed compile error in snl_fei_Database_Map.h related to instantiating
+    Database template with the second template parameter being a pair.
+  - added some #undefs in include/base/fei_autoconf_macros.h to make sure
+    that the autoconf-defined macros PACKAGE_NAME, etc., can't be seen by
+    calling-code compilation scopes.
+
+ Aug 9 2005: minor version 2.14.03
+  - temporarily added '#include <stdio.h>' because a few files still use
+    some old C io stuff like sprintf and FILE,fopen, etc. This stuff will
+    all be converted to C++ io for version 2.15.
+
+ Aug 23 2005: minor version 2.14.04
+  - changes to snl_fei::LinearSystem_General and Solver_AztecOO to respond
+    to debug-output parameters to dump matrix and vector files. Solver_AztecOO
+    wasn't printing out the solution vector at all, and LinearSystem_General
+    was only responding to FEI_OUTPUT_LEVEL but not outputLevel.
+  - fix a couple of memory leaks in src/support-Trilinos/Solver_AztecOO.C that
+    were related to usage of the Trilinos ML package. At least one of these
+    fixes was made in fei version 2.13, but not in the fei votd branch, so it
+    hadn't made it into version 2.14.
+
+ Sep 13 2005: minor version 2.14.05
+  - fixed fei_hash_map.h and fei_hash_set.h so they would compile using
+    the intel compiler. Previously they were erroneously depending on the
+    __GNUC__ macro to mean that g++ was being used. Unfortunately, the intel
+    compiler also defines that macro.
+
+ Sep 14 2005: minor version 2.14.06
+  - minor interface additions:
+    + fei::MatrixGraph::getConstrainedIndices fills a vector of global indices
+      that are involved in constraint-relations.
+    + fei::LinearSystem::eqnIsEssentialBC,
+      fei::LinearSystem::getEssentialBC_Eqns,
+      fei::LinearSystem::getConstrainedEqns
+        The first two methods relate to equations for which essential BCs
+        are imposed. The third one is similar to the above MatrixGraph method.
+  - also alter the mirrorProcs functions in EqnCommMgr and snl_fei::CommUtils
+    to use MPI_Reduce_scatter rather than point-to-point recvs and sends.
+  - switch to Trilinos 6.0
+
+ Oct 26 2005: version 2.15.00
+  - removed all occurrences of sprintf,fprintf,FILE, and other symbols from
+    stdio.h, from all fei sources in include/base and src/base. Some still
+    exist in src/utest/cFeiTester.C.
+  - fix memory leaks in src/support-Trilinos/Solver_AztecOO.C associated
+    with usage of Trilinos ML package.
+  - add support for submatrix/elem-matrix format FEI_BLOCK_DIAGONAL_ROW
+  - remove executables cube, cube3, poisson, poisson3, feiDriver. These are now
+    replaced by running Utst_base with the -main argument to specify one of
+    cube_main, cube3_main, poisson_main or poisson3_main, feiDriver_main.
+  - performance improvements in FEDataFilter.C, which is the layer that
+    passes data to the FETI-DP solver.
+  - debug some VBR loading issues, also debugged the HexCubeCR class in utils.
+
+ Dec 22 2005: version 2.16.00
+  - eliminate snl_fei::Database (instead using std::map, now that janus is
+    no longer supported)
+  - eliminate un-needed headers snl_fei_hash_map.h, FEI_SNL.h, LSC.h
+  - remove support for the ISIS++ and SPOOLES solver libraries
+  - substantial improvements in src/support-Trilinos/Solver_AztecOO, to
+    improve parameter parsing, and allow it to detect when the matrix hasn't
+    changed since the last solve, and reuse preconditioner data.
+
+ Jan 09 2006: minor version 2.16.01
+  - a bug in the loading of lagrange constraint coefficients was causing
+    the array in which the coefficients are stored, to be twice too long.
+    This bug was exposed only when running the Sierra/eagle application
+    with the ML-NOX solver.
+
+ Feb 20 2006: minor version 2.16.02
+  - For essential/dirichlet BC enforcement, the column-modification is now
+    optional. Pass this parameter to the linear-system:
+     BC_ENFORCEMENT_NO_COLUMN_MOD
+
+ Mar 6 2006 minor version 2.16.03
+  - Minor bug fix. A temporary string variable in FEI_Implementation::
+     allocateInternalFEIs was being referenced after it went out of scope,
+     causing purify to flag free-memory-read errors.
+
+ Mar 17 2006 minor version 2.16.04
+  - Bug-fix related to slave-constraint reduction. When multiple fields
+    at the same (finite-element) node were being slaved, indexing was not
+    being done correctly and wrong answers were being produced.
+
+ Mar 30 2006 minor version 2.16.05
+  - Fix some minor compiler warnings that were appearing on the sun10
+    platform.
+
+ Apr 5 2006 minor version 2.16.06
+  - Fix some parameter-handling specific to Trilinos/AztecOO usage.
+    (User-specified max-iters and tolerance were sometimes being
+    over-ridden by default values.)
+
+ Apr 27 2006 minor version 2.16.07
+  - Fix a bug related to rectangular matrix contributions combined with
+    slave constraints.
+
+ May 10 2006 version 2.17.00
+  - Rename files so that C++ headers have extension .hpp and C++ sources
+    have extension .cpp.
+  - Extensively improve in-header doxygen documentation.
+  - Reorganize directory structure so that headers and sources are not in
+    separate 'include' and 'src' directory trees. 'include/base' and 'src/base'
+    are now replaced with simply 'base'. 'include/utils' and 'src/utils'
+    are now replaced with 'test_utils'.
+  - Bug-fix related to slave-constraint reduction. When multiple fields
+    at the same (finite-element) node were being slaved, indexing was not
+    being done correctly and wrong answers were being produced.
+  - Removed the obscure and rarely-used SocketOStream stuff that was for
+    sending matrix data to a socket. The code was a portability problem,
+    and it's better to just write the matrix to a file for later viewing.
+
+ Jul 24 2006 minor version 2.17.01
+
+ Aug 15 2006 version 2.18.00
+  - fix vector->copyOut functions to ignore out-of-range indices
+  - add fei_fwd.hpp header, etc.
+
+ Feb 12 2007 version 2.19.00
+  - Performance optimizations in AztecDMSR_Matrix class, among several other
+    minor changes. Also switch to use Trilinos 7.0.2.
+  - Several changes/improvements in the fei/make_distribution directory,
+    in files associated with the autoconf/make distribution of fei.
+
+ Apr 12 2007 version 2.20.00
+  - Replaced more instances of feiArray with std::vector.
+  - Fixed bug in "old-fei", where element-dofs were not being handled
+    correctly in parallel. The error was occurring in SNL_FEI_Structure.cpp.
+  - Fixed bug in "new-fei", where a seg-fault was occurring if one processor
+    in a multi-proc run had no data (no locally-owned eqns). The error
+    was occurring in snl_fei_RaggedTable_specialize.cpp.
+  - Remove some dead code (related to slave-reduction) from FEDataFilter.cpp.
+    Slave-reduction can't be used with FETI. Also removed the check where
+    FEDataFilter.cpp decides whether to pass a 'loadComplete' call on through
+    to FETI. It should always be passed through.
+  - Removed the explicit template instantiation option
+    (--enable-explicit-templates). This was a maintenance problem and didn't
+    provide a clear benefit.
+  - Fixed a bug in snl_fei::Vector_base::copyOut where incorrect indices were
+    being obtained and used for slave dofs.
+  - All 2.20.00 changes are included in revision 24 of the subversion
+    repository, April 16, 2007.
+
+ Apr 19 2007 minor version 2.20.1
+  - Fix a bug encountered in Adagio, where FEDataFilter.cpp was creating
+    screen-output for inconsequential feiArray out-of-bounds errors.
+
+ May 18 2007 version 2.21.00
+  - renamed a couple of fei::VectorSpace methods:
+      - getNumLocalIDs becomes getNumOwnedAndSharedIDs
+      - getLocalIDs becomes getOwnedAndSharedIDs 
+  - long overdue overhaul of the slave-constraint reduction code. This is
+    actually pretty major, several classes removed and new classes added.
+    Improves robustness, gives more verbose error messages in at least
+    some cases. Specifically motivated by errors that were appearing in some
+    parallel adaptive SIERRA/Calore cases.
+  - Also includes a fix for the utility function snl_fei::removeCouplings
+    which had a horrible hot-spot that caused cases with more than a few
+    thousand slave constraints to run extremely slowly, and occasionally
+    incorrectly.
+  - All 2.21.00 changes are included in revision 39 of the subversion
+    repository.
+  - Additionally, this revision is copied to branch "branches/2.21" in the
+    subversion repository.
+
+ Jun 08 2007 minor version 2.21.01
+  - Fix bug in remote-bc-enforcement when slave constraints are present.
+  - Fix memory leak in fei::MatrixGraph_Impl2::initComplete (in
+    createSlaveMatrices, during SSVec::operator=)
+
+ Jun 27 2007 minor version 2.21.02
+  - Fix naming/numbering of output files containing matrices/vectors. It
+    was incorrect for the Fuego application, which uses several linear systems
+    at once, and shares some fei objects among them.
+
+ Oct 5 2007 minor version 2.21.03
+  - Fix a compiler error for GC 4.1.2 on reddish, where a template was being
+    specialized outside the namespace it had been declared in.
+  - Couple other minor tweaks related to building against Trilinos, with some
+    packages being missing or disabled.
+
+ Jan 10 2008 version 2.22.00
+  - Fix bug in enforcement of remote ess BCs, when slave constraints are
+    present. (This bug was encountered by a parallel adaptive aria case.)
+  - Fix bug related to element-dofs, where solution values could come out
+    in the wrong order, depending on what order the elements were initialized.
+    A level of indirection was missing in the equation indexing.
+  - Added local-assembly classes fei::Matrix_Local and fei::Vector_Local,
+    which simply accumulate subdomain matrices and vectors without assembling
+    them into global objects with uniquely owned rows.
+  - fei_eps ("arbitrary small number") used to be 1.e-49, has now been
+    replaced with std::numeric_limits<double>::epsilon() in a couple of places.
+    Replacing all occurrences seemed to cause some numerical diffs, which will
+    be further investigated in a future release.
+  - fix a memory leak which occurred during fei::MatrixGraph_Impl2::initComplete
+    (during the SSVec::operator= assignment operator).
+  - Significant progress towards removing the feiArray template, replacing it
+    with std::vector. This is a big job, not finished yet.
+  - Move several classes from the 'snl_fei' namespace to the 'fei' namespace.
+    Originally, the intent was to only have abstract interfaces in the fei
+    namespace, with concrete implementation classes in the snl_fei namespace.
+    It has been decided now that there is really no need to have separate
+    namespaces, and so the snl_fei namespace is being eliminated. All classes
+    will be moved into the fei namespace. This is a big job, may be spread
+    over a couple of fei release versions.
+  - Removed the implementation class snl_fei::IdxSet. It was an experimental
+    class which turned out to not be worth the effort.
+  - Moved FEI code distribution into Trilinos. FEI will now be a Trilinos
+    package. This will have several advantages. One dis-advantage is that
+    Trilinos uses a CVS repository, so we will lose code-history from the
+    FEI subversion repository. But the FEI subversion repository will not be
+    immediately deleted, so previous versions can still be retrieved if needed.
+  - Fixed constraint-relation bug whereby fei was incorrectly identifying all
+    nodes in a slave-constraint as slave nodes. Only one of the nodes in the
+    constraint is a slave, the rest are master-nodes.
+  - To get a copy of fei which matches what Sierra has for version 2.22, do a
+    cvs checkout data 4:30pm on 1/11/2008.
+
+ Jan 28 2008 minor version 2.22.01
+  - add a missing end-quote for line 44 of fei_iostream.hpp. This was causing a
+    compile error on just one platform surprisingly (intel 8.1).
+  - fixed a compile error that only showed up on Mac OS X, where
+    fei_Pool_alloc.hpp was missing a templated member 'construct'.
+
+ Feb 21 2008 minor version 2.22.02
+  - fixed a bug where the hasSlaveDof_ member of fei::Record wasn't initialized
+    in the constructor. This was causing some erroneous is_slave() queries in
+    the Aria application.
+  - added a call to AZ_manage_memory(AZ_CLEAR_ALL) in fei_Solver_AztecOO's
+    destructor, to make sure that Aztec cleans up any memory allocated with
+    AZ_keep_info=1. This cured some memory leaks seen by the Aria application.
+  - Fixed a compile-error in fei_Pool_alloc.hpp where the max_size() function
+    was not defined.
+
+ May 5 2008 minor version 2.22.03
+  - Fixed a few method signatures in fei::Matrix and derived classes for
+    const-ness. (Some methods which could have been const, weren't.) Also
+    fixed similar issues in fei::Vector and derived classes.
+  - Fixed some array-bounds-read errors in fei::ctg_set.
+
+ June 12 2008 minor version 2.22.04
+  - Fixed a bug in fei_AztecDMSR_Matrix.cpp where sumIntoRow wasn't handling
+    the case where an incoming list of column-indices contains repeated
+    indices.
+  - Minor change in fei::Matrix_Impl::writeToFile to sort column-indices (and
+    corresponding coefficients) in each row before writing to file. This
+    ensures that matrix entries will be written out in the same order for
+    the "old" Aztec DMSR structure as for the Epetra_CrsMatrix. It simply makes
+    the resulting matrix-market files diff-able against each other.
+  - Re-arranged the OutputLevel enums in fei_fwd.hpp to put MATRIX_FILES
+    below BRIEF_LOGS. This changes slightly the debug-output-logging behavior
+    in some cases, producing fewer and smaller files when matrix files are all
+    that is really wanted.
+  - Corrected fei_macros.hpp so that non-MPI builds work correctly. (Respond
+    correctly if HAVE_MPI is not set.)
+  - Alter the logging behavior so that if multiple linear systems are being
+    used, output of matrix files can be specified for some of them rather than
+    all or none.
+
+ July 21 2008 minor version 2.22.05
+  - Fix insidious memory leak where fei::FillableMat (which uses a pool-
+    allocator) wasn't returning its memory to the pool on destruction. This
+    resulted in memory leaking during the program's execution, but the memory
+    still gets cleaned up at program exit. Thus tools like purify couldn't 
+    spot it, but it was exhausting available memory for long runs.
+  - Fix a link error on IBM due to fei_Aztec_Vector.cpp containing an explicit
+    reference to dcopy_. IBM's fortran symbols don't have trailing underscores.
+
+ July 25 2008 minor version 2.22.06
+  - Fix a bug in fei_AztecDMSR_Matrix::sumIntoRow where a certain case of
+    input (1 row index, 1 col index, row == col) caused an array-bounds-read.
+
+ Aug 18 2008 minor version 2.22.07
+  - Add simplified API functions for dirichlet boundary condition
+    specifications. Rather than the confusing previous scheme that took
+    alpha/beta/gamma arguments, the new functions simply take lists of
+    prescribed values along with the ids and field-ids which specify where
+    the prescribed value is to be imposed. This allows the underlying
+    implementation code to be greatly simplified also.
+
+ Sep 10 2008 version 2.23.00
+  - Removed API functions (and implementations) for the old boundary-condition
+    mechanism that involved the alpha/beta/gamma arguments. Replacement
+    functions accept lists of prescribed values along with offsets into the
+    field for which values are being specified. This is more intuitive, and
+    the implementation code is more robust. As part of this, removed the
+    fei_BCRecord.* and fei_BCManager.* files.
+  - Removed the fei::Exception class. Now use std::runtime_error instead.
+    Also removed feiPoolAllocator. Now use fei_Pool_alloc, which is more
+    similar to a standard allocator.
+  - Fixed a bug in fei_Aztec_LinSysCore.cpp where dirichlet boundary-condition
+    enforcement was assuming that the structure of the matrix is symmetric.
+
+ Oct 09 2008 minor version 2.23.01
+  - Fixed a bug where fei::VectorSpace::getGlobalIndexOffsets would seg-fault
+    if called before any initialization data had been input.
+  - Fixed a bug in fei_Reducer.cpp where submatrix contributions were
+    assumed to be symmetric.
+
+ Dec 18 2008 minor version 2.23.02
+  - Fixed a performance problem in fei_Aztec_LinSysCore.cpp in the method
+    enforceEssentialBCs. It now executes much faster in performing the
+    column modification.
+  - Fixed a bug in base/fei_Reducer.cpp that was erroneously assuming
+    matrix symmetry.
+  - Fixed a bug in base/fei_Reducer.cpp that was erroneously using the
+    projection reduction for solution-vector operations. It should only
+    use the projection for right-hand-side and matrix assembly ops.
+
+ Jan 13 2009 minor version 2.23.03
+  - Fix a bug in AztecDMSR_Matrix where maxRowLen_ was not calculated
+    correctly. This was causing an error in the sumIntoRow method that
+    was discovered by a Sierra application. maxRowLen_ is no longer a
+    class member. A non-member temporary maxRowLen is now computed and
+    used in sumIntoRow.
+
+ Mar 11 2009 version 2.24.00
+  - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
+    are replaced by functions in fei_CommUtils.hpp. This is a simplification
+    and cleanup of the communications-code infrastructure.
+  - Changed several method APIs in fei::VectorSpace and fei::MatrixGraph,
+    to replace the three-argument pattern
+    (..., int alloc_len, int* array, int& used_len, ...)
+    with simply passing in a reference to a std::vector. This is a much
+    better mechanism for filling an array to return to the caller.
+    There are still occurrences of the cumbersome three-argument pattern in
+    various fei API's, but all of them will eventually be replaced.
+  - Removed remaining occurences of feiArray, using std::vector instead. This
+    effects the API in places where an array is a return value. Specifically
+    in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
+  - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec.
+  - Removed fei_SSVec.{hpp,cpp} and fei_SSMat.{hpp,cpp}, which have now been
+    replaced by fei::Fillable{Mat,Vec} and CSRMat,CSVec.
+  - Removed fei_SSGraph.{hpp,cpp}
+  - Removed the *CoefAccessPattern* functions from the 'old' FEI interface.
+    These methods were ill-conceived and overly cumbersome, and not used by
+    any known customers.
+  - Removed support for the PETSc library. This support code was extremely
+    outdated, tied to a 5-year-old version of PETSc.
+  - Remove the 'C' support files. As far as I know these were unused.
+  - Fixed bug in fei_Solver_AztecOO.cpp where using ML multiple times led to
+    a null pointer read in Aztec.
+
+ Aug 20 2009 minor version 2.24.01
+  - Fixed a couple issues of const-ness in fei::Vector_Impl and
+    fei::Matrix_Impl, and several other APIs.
+  - Removed an unused argument (reducer) from
+    fei::Trilinos_Helpers::create_Epetra_CrsGraph.
+  - Added matrix diagonal contribution for FiniteElementData interface.
+    (Not yet implemented for other objects.)
+  - change API for MatrixGraph::definePattern so that patternID is an output
+    rather than an input.
+  - changed a few (mostly internal) functions to have void return-type instead
+    of int error-code.

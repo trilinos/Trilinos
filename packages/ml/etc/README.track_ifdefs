@@ -1,0 +1,43 @@
+Track Ifdefs
+
+A large software project developed over time will inevitably accrete blocks of 
+code that are no longer used but are retained unused behind #ifdef statements, 
+perhaps because the code was simply a test or has been superseded by later 
+development. Other blocks of code bracketed by ifdefs may always be used and 
+no longer need conditional compilation. Software developers working with the 
+source code may have difficulty in determining which ifdefs will be used and 
+become dangerously confused and might well waste time updating unused code, 
+trying to determine the purpose of the code, or simply tracking the flow in 
+source file. In addition, different developers may use different #ifdef values 
+for blocks of code that should always be used together. These problems are 
+very difficult to identify because the use of the ifdef variables may be spread
+across a number of source files.
+
+The 'track_ifdefs' program can aid the tracking of ifdef statements in an 
+arbitrary set of source files. It will report the ifdef variables used within 
+the files in several different ways to aid the code maintainers in pruning and 
+correcting ifdef use in the source code. 
+
+'track ifdefs' is easy to use. First, create a file of ifdefs by running a 
+	grep ifdef 
+on the group of files that you wish to analyze. Use this file as the input file
+for 'track_fidefs'. 'track_ifdefs will generate three different views of the 
+ifdef usage by the grepped files. By default all three views are sent to 
+stdout. 
+
+You may choose a single view by command line flags. 
+
+The first view is sorted by ifdef variable name an contains the the number of 
+times this variable is used in all of the files. This is a quick summary view. 
+If this is the only view you desire use the '-c' or '- -ifdef_counts' flag.
+
+The second view expands the first with a listing of the files that use the 
+variable and a count of the uses in each file. If this is the only view you 
+desire use the '-p' or '--files_using_ifdef' flag.
+
+The third view is sorted by filename. It lists all ifdef variables used by 
+the file with a count of each. If this is the only view you desire use the 
+'-i' or '--total_ifdefs_in_file' flag.
+
+
+

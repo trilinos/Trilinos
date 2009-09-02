@@ -1,0 +1,37 @@
+#qt.sandia.gov
+#qt: /bin
+#   cd /projects/alegra/rich_work/TPL/trilinos/5.0/build/qt && /projects/alegra/rich_work/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
+../configure \
+        --prefix=/scratch_qt/jmwille/TrilinosTestHarness/TrilinosDevelopment/install \
+        --enable-nox-epetra \
+        --enable-aztecoo-azlu \
+        --enable-amesos \
+        --without-ml_superlu \
+        --enable-teuchos \
+        --enable-triutils \
+        --enable-anasazi \
+        --enable-epetraext-transform \
+        --disable-examples \
+        --disable-tests \
+        --disable-libcheck \
+        --disable-ml_enrich \
+        --disable-dependency-tracking \
+        --with-blas="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/qt -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/qt -lblas" \
+        --with-lapack="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/qt -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/qt -lblas" \
+        --with-incdirs="-I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
+        --with-ldflags="-L/projects/alegra/rich_work/TPL/trilinos/5.0/y12m -L/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU" \
+        --with-libs="-L/dev/null" \
+        --enable-mpi \
+        --with-mpi-incdir="" \
+        --with-mpi-libdir="" \
+        --with-mpi-libs="" \
+        CC="cc " \
+        CXX="cxx -tlocal -D__DECFIXCXXL1200 -D__USE_STD_IOSTREAM" \
+        F77="f77 -assume no2underscores" \
+        CPPFLAGS="-DNO_FCTNL -DCATCH_FPE -DLC_FLINK -DCODE_MP -I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
+        CFLAGS="" \
+        CXXFLAGS="" \
+        FFLAGS="" \
+        LDFLAGS=" " \
+        --with-ar="ar -rcv"
+

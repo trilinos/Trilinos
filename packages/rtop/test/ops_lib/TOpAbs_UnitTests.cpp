@@ -1,0 +1,58 @@
+
+#include "RTOpPack_TOpAbs.hpp"
+
+#include "supportUnitTestsHelpers.hpp"
+
+
+namespace {
+
+
+template<class Scalar>
+void basicTest(const int stride, FancyOStream &out, bool &success)
+{
+
+  typedef ScalarTraits<Scalar> ST;
+
+  ConstSubVectorView<Scalar> v0 =
+    newStridedRandomSubVectorView<Scalar>(n, stride);
+
+  SubVectorView<Scalar> z0 =
+    newStridedSubVectorView<Scalar>(n, stride, ST::nan());
+  
+  RTOpPack::TOpAbs<Scalar> absOp;
+  absOp.apply_op( tuple(v0), tuple(z0)(), null );
+
+  SubVectorView<Scalar> expected_z0
+    = newStridedSubVectorView<Scalar>(n, stride, ST::nan());
+  for (int k = 0; k < v0.subDim(); ++k)
+    expected_z0[k] = ST::magnitude(v0[k]);
+
+  if (verbose) {
+    dumpSubVectorView(v0, "v0", out);
+    dumpSubVectorView(z0, "z0", out);
+    dumpSubVectorView(expected_z0, "expected_z0", out);
+  }
+
+  TEST_COMPARE_ARRAYS( constSubVectorViewAsArray(z0),
+    constSubVectorViewAsArray(expected_z0) );
+
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpAbs, unitStride, Scalar )
+{
+  basicTest<Scalar>(1, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpAbs, unitStride )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TOpAbs, nonunitStride, Scalar )
+{
+  basicTest<Scalar>(4, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( TOpAbs, nonunitStride )
+
+
+} // namespace

@@ -1,0 +1,94 @@
+/* src/Isorropia_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define if bool is a built-in type */
+#undef HAVE_BOOL
+
+/* define unconditionally since Isorropia depends on Epetra */
+#undef HAVE_EPETRA
+
+/* Define if want to build with isorropia enabled */
+#undef HAVE_EPETRAEXT
+
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
+/* Define to 1 if you have the <exception> header file. */
+#undef HAVE_EXCEPTION
+
+/* Define if you want to build export makefiles. */
+#undef HAVE_EXPORT_MAKEFILES
+
+/* Define to 1 if you have the <fstream> header file. */
+#undef HAVE_FSTREAM
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#undef HAVE_GNUMAKE
+
+/* Define to 1 if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* Define if want to build isorropia-examples */
+#undef HAVE_ISORROPIA_EXAMPLES
+
+/* Define if want to build isorropia-tests */
+#undef HAVE_ISORROPIA_TESTS
+
+/* define unconditionally since Isorropia depends on Zoltan */
+#undef HAVE_ISORROPIA_ZOLTAN
+
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
+/* define if we want to use MPI */
+#undef HAVE_MPI
+
+/* define if the compiler supports the mutable keyword */
+#undef HAVE_MUTABLE
+
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
+/* define if the compiler accepts the new for scoping rules */
+#undef HAVE_NEW_FOR_SCOPING
+
+/* Define to 1 if you have the <set> header file. */
+#undef HAVE_SET
+
+/* define if std::sprintf is supported */
+#undef HAVE_STD_SPRINTF
+
+/* define if the compiler supports Standard Template Library */
+#undef HAVE_STL
+
+/* Define if want to build tests */
+#undef HAVE_TESTS
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif

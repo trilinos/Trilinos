@@ -1,0 +1,4 @@
+handle SIGUSR1 nostop pass
+br MPI_Init
+set args  4 -p4pg /home/rppawlo/Trilinos/examples/petra_nonlinear/PI2979 -p4wd /home/rppawlo/Trilinos/examples/petra_nonlinear
+run

@@ -1,0 +1,198 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Scotch Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_hier.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="PT-Scotch"></a>Graph partitioning: Scotch/PT-Scotch</h2>
+
+<p>
+For more information about graph partitioning, see <a href="ug_alg_parmetis.html">ParMetis</a>.
+</p>
+<p>
+Scotch is a library for ordering and partitioning, developed at LaBRI in Bordeaux, France. PT-Scotch is the parallel module in Scotch. (We use the name PT-Scotch when it applies only to parallel version, Scotch when it concerns at least the serial version.) Scotch is a third-party library in Zoltan and should be obtained separately from the <a href="http://www.labri.fr/perso/pelegrin/scotch/">Scotch web site</a>. Currently, Zoltan supports version 5.1 of Scotch, compiled with the support of PT-Scotch and <i>int</i> coding for vertices, not <i>long</i> (on architectures where <i>sizeof(int) != sizeof(long)</i>).
+<p>
+If the parameter <a href="#SCOTCH_TYPE">SCOTCH_TYPE</a> is set to LOCAL and the number of processor is 1, it's the sequential version of Scotch which is called, not the parallel (thus the PT-Scotch specific function).
+</p>
+<p>
+Both the serial (Scotch) and the parallel (PT-Scotch) compute k-way partitioning by doing recursive bisection.
+</p>
+<p>
+Scotch must be used in the context LB_APPROACH=partition, to balance poorly distributed data. Unlike ParMetis, Scotch doesn't support the multiconstraint partitioning feature. However, for single constraint partitioning it seems to produce better results than ParMetis although it requires less memory.
+</p>
+
+
+<table WIDTH="100%" NOSAVE >
+    <tr>
+      <td valign="top"><b>Value of LB_METHOD:</b></td>
+      <td><b>GRAPH</b></td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Value of GRAPH_PACKAGE:</b></td>
+      <td><b>Scotch</b></td>
+    </tr>
+
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp; LB_APPROACH<br>
+      </i></td>
+      <td>The load balancing approach:. <br>
+      <i>PARTITION</i>&nbsp; - partition from scratch, not taking
+the current data distribution into account<br>
+
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>SCOTCH_METHOD</i></td>
+<td>For now, always set to RBISECT</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>SCOTCH_STRAT</i></td>
+<td>The Scotch strategy string; see the Scotch documentation.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <i>SCOTCH_STRAT_FILE</i></td>
+<td>A file that contains an arbitrary long Scotch strategy string; see the Scotch documentation.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; <a NAME="SCOTCH_TYPE"></a><i>SCOTCH_TYPE</i></td>
+<td>Whether or not the parallel library is used. The default value is
+<i>GLOBAL</i> and if not set to <i>LOCAL</i>, the parallel graph
+partitioning is used.</td>
+</tr>
+
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
+      <td nosave="">Level of error checking for graph input: 0 = no
+checking, 1
+= on-processor checking, 2 = full checking. (CHECK_GRAPH==2 is very
+slow
+and should be used only during debugging).</td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
+      <td nosave="">Scatter graph data by distributing contiguous
+chunks of objects
+(vertices) of roughly equal size to each processor before calling the
+partitioner.
+0 = don't scatter; 
+1 = scatter only if all objects are on a single processor;
+2 = scatter if at least one processor owns no objects; 
+3 = always scatter.&nbsp;</td>
+    </tr>
+
+
+    <tr>
+      <td valign="top"><b>Default values:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>LB_APPROACH</i> = Partition</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SCOTCH_METHOD</i> = RBISECT</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SCOTCH_STRAT</i> = "" (default Scotch strategy)</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SCOTCH_STRAT_FILE</i> = "" (default Scotch strategy)</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>CHECK_GRAPH</i> = 1</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>SCATTER_GRAPH </i>= 1</td>
+    </tr>
+
+
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+
+<td></td>
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_F
+N</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_F
+N</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</td>
+
+</tr>
+
+</table>
+
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_hier.html">Next:&nbsp;
+Hybrid Hierarchical Partitioning</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Previous:&nbsp;
+ParMETIS</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>

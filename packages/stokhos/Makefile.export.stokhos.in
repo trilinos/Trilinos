@@ -1,0 +1,56 @@
+## $Id$ 
+## $Source$ 
+# @HEADER
+# ************************************************************************
+# 
+#                           Stokhos Package
+#                 Copyright (2008) Sandia Corporation
+# 
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+# 
+# ************************************************************************
+# @HEADER
+
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+## Optional Dependency on Dakota
+@HAVE_STOKHOS_DAKOTA_TRUE@DAKOTA_INCLUDES = -DHAVE_DAKOTA -I@dakota_installdir@/include -I@dakota_installdir@/include/pecos
+#@HAVE_STOKHOS_DAKOTA_TRUE@DAKOTA_LIBS = -L@dakota_installdir@/lib -ldakota -lteuchos -lpecos -lfftw3 -llhs -levidence -lsurfpack -lconmin -lddace -ldot -lfsudace  -ljega -lcport -lnlpql -lnpsol -lopt -lpsuade -lnewmat  -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib -l3po -lnappspack -lappspack -lconveyor -lshared -lcdd -lamplsolver -llhs
+@HAVE_STOKHOS_DAKOTA_TRUE@DAKOTA_LIBS = -L@dakota_installdir@/lib -ldakota -lteuchos -lpecos -lfftw3 -llhs -levidence -lsurfpack -lconmin -lddace -ldot -lfsudace  -ljega -lnlpql -lnpsol -lopt -lpsuade -lnewmat  -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib -l3po -lnappspack -lappspack -lconveyor -lshared -lcdd -lamplsolver -llhs
+
+@HAVE_STOKHOS_FORUQTK_TRUE@FOR_UQTK_LIBS = -L@fortan_uqtk_installdir@ @fortran_uqtk_libs@
+
+_STOKHOS_INCLUDES = \
+	-I@abs_top_srcdir@/src \
+	-I@abs_top_builddir@/src \
+	$(TEUCHOS_INCLUDES) \
+	$(EPETRA_INCLUDES) \
+	$(EPETRAEXT_INCLUDES) \
+	$(DAKOTA_INCLUDES)
+
+_STOKHOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lstokhos $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(DAKOTA_LIBS) $(FOR_UQTK_LIBS)
+
+@USING_GNUMAKE_TRUE@STOKHOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_STOKHOS_INCLUDES))
+@USING_GNUMAKE_TRUE@STOKHOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_STOKHOS_LIBS))
+
+@USING_GNUMAKE_FALSE@STOKHOS_INCLUDES = $(_STOKHOS_INCLUDES)
+@USING_GNUMAKE_FALSE@STOKHOS_LIBS     = $(_STOKHOS_LIBS)

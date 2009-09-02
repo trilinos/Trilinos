@@ -1,0 +1,4 @@
+@INCLUDE=amesos/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+@INCLUDE=aztecoo/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/ifpackBrowser.tag=$(TRILINOS_HOME)/packages/ifpack/browser/doc/html

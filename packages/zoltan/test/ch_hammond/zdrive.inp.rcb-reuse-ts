@@ -1,0 +1,11 @@
+Decomposition Method 	= rcb
+Zoltan Parameters	= tflops_special=1
+Zoltan Parameters	= rcb_output_level=2
+Zoltan Parameters	= rcb_reuse=1
+Zoltan Parameters       = keep_cuts=1
+File Type		= Chaco
+File Name		= hammond
+Parallel Disk Info	= number=0
+Test Drops		= 1
+Test null export lists  = 1
+Number of iterations	= 3

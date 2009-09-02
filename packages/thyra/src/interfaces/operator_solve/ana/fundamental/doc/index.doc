@@ -1,0 +1,54 @@
+/*! \mainpage Fundamental Thyra Operator Solve Interfaces for Abstract Numerical Algorithms
+
+
+\section thyra_src_interfaces_operator_solve_ana_fundamental_outline_sec Outline
+
+<ul>
+<li> \ref thyra_src_interfaces_operator_solve_ana_fundamental_into_sec
+<li> \ref thyra_src_interfaces_operator_solve_ana_fundamental_software_sec
+<li> \ref thyra_src_interfaces_operator_solve_ana_fundamental_links_sec
+</ul>
+
+\section thyra_src_interfaces_operator_solve_ana_fundamental_into_sec Introduction
+
+This doxygen collection documents a set of interfaces for linear
+operators to which a solver can be applied to solve, in some sense, a linear system of equations.  
+These linear operators are derived from or extend the <a
+href="../../../fundamental/doc/html/index.html">Fundamental Thyra ANA
+Operator/Vector Interfaces</a>.  These interfaces comprise the basic interface
+to linear equation solvers.  Below we use the term "forward" to denote the original operator 
+to which a solver is associated to distinguish it from the "inverse" operator.
+
+\section thyra_src_interfaces_operator_solve_ana_fundamental_software_sec Software
+
+<ul>
+
+<li><tt>Thyra::PreconditionerBase</tt> defines an interface to left, right,
+split left/right, and otherwise general preconditioners.
+
+<li><tt>Thyra::PreconditionerFactoryBase</tt> defines an interface for
+generating or updating a <tt>Thyra::PreconditionerBase</tt> object given a
+forward <tt>Thyra::LinearOpBase</tt> object.
+
+<li><tt>Thyra::LinearOpWithSolveBase</tt> defines a simple interface for
+performing the inverse linear operator application.
+
+<li><tt>Thyra::LinearOpWithSolveFactoryBase</tt> defines an interface for
+generating or updating a <tt>Thyra::LinearOpWithSolveBase</tt> object given a
+forward <tt>Thyra::LinearOpBase</tt> object.
+
+</ul>
+  
+\section thyra_src_interfaces_operator_solve_ana_fundamental_links_sec Links
+
+<ul>
+
+<li> <a href="../../../../../operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a>
+
+<li> <a href="../../../../../../support/operator_solve/doc/html/index.html">Operator Solve Support Software and Examples</a>
+
+<li> <a href="../../../../../../../doc/html/index.html">Main Thyra Package Documentation Page</a>
+
+</ul>
+
+*/
