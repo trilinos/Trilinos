@@ -35,6 +35,8 @@ PACKAGE_ADD_TEST_DIRECTORIES(src/driver)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
 #
 # D) Do standard postprocessing
 #

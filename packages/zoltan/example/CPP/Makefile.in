@@ -44,7 +44,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = simpleBLOCK$(EXEEXT)
+noinst_PROGRAMS = exampleBLOCK$(EXEEXT)
 subdir = example/CPP
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -70,9 +70,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/Zoltan_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_simpleBLOCK_OBJECTS = simpleBLOCK-simpleBLOCK.$(OBJEXT)
-simpleBLOCK_OBJECTS = $(am_simpleBLOCK_OBJECTS)
-simpleBLOCK_LINK = $(CXXLD) $(simpleBLOCK_CXXFLAGS) $(CXXFLAGS) \
+am_exampleBLOCK_OBJECTS = exampleBLOCK-exampleBLOCK.$(OBJEXT)
+exampleBLOCK_OBJECTS = $(am_exampleBLOCK_OBJECTS)
+exampleBLOCK_LINK = $(CXXLD) $(exampleBLOCK_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -82,8 +82,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(simpleBLOCK_SOURCES)
-DIST_SOURCES = $(simpleBLOCK_SOURCES)
+SOURCES = $(exampleBLOCK_SOURCES)
+DIST_SOURCES = $(exampleBLOCK_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -206,10 +206,10 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-simpleBLOCK_SOURCES = simpleBLOCK.cpp
-simpleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
-simpleBLOCK_CXXFLAGS = $(ZOLTAN_INCLUDES)
-simpleBLOCK_LDADD = $(ZOLTAN_LIBS)
+exampleBLOCK_SOURCES = exampleBLOCK.cpp
+exampleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
+exampleBLOCK_CXXFLAGS = $(ZOLTAN_INCLUDES)
+exampleBLOCK_LDADD = $(ZOLTAN_LIBS)
 EXTRA_DIST = classicMakefile objects.txt
 all: all-am
 
@@ -247,9 +247,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-simpleBLOCK$(EXEEXT): $(simpleBLOCK_OBJECTS) $(simpleBLOCK_DEPENDENCIES) 
-	@rm -f simpleBLOCK$(EXEEXT)
-	$(simpleBLOCK_LINK) $(simpleBLOCK_OBJECTS) $(simpleBLOCK_LDADD) $(LIBS)
+exampleBLOCK$(EXEEXT): $(exampleBLOCK_OBJECTS) $(exampleBLOCK_DEPENDENCIES) 
+	@rm -f exampleBLOCK$(EXEEXT)
+	$(exampleBLOCK_LINK) $(exampleBLOCK_OBJECTS) $(exampleBLOCK_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -257,7 +257,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simpleBLOCK-simpleBLOCK.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleBLOCK-exampleBLOCK.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -273,19 +273,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-simpleBLOCK-simpleBLOCK.o: simpleBLOCK.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleBLOCK_CXXFLAGS) $(CXXFLAGS) -MT simpleBLOCK-simpleBLOCK.o -MD -MP -MF $(DEPDIR)/simpleBLOCK-simpleBLOCK.Tpo -c -o simpleBLOCK-simpleBLOCK.o `test -f 'simpleBLOCK.cpp' || echo '$(srcdir)/'`simpleBLOCK.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/simpleBLOCK-simpleBLOCK.Tpo $(DEPDIR)/simpleBLOCK-simpleBLOCK.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='simpleBLOCK.cpp' object='simpleBLOCK-simpleBLOCK.o' libtool=no @AMDEPBACKSLASH@
+exampleBLOCK-exampleBLOCK.o: exampleBLOCK.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleBLOCK_CXXFLAGS) $(CXXFLAGS) -MT exampleBLOCK-exampleBLOCK.o -MD -MP -MF $(DEPDIR)/exampleBLOCK-exampleBLOCK.Tpo -c -o exampleBLOCK-exampleBLOCK.o `test -f 'exampleBLOCK.cpp' || echo '$(srcdir)/'`exampleBLOCK.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/exampleBLOCK-exampleBLOCK.Tpo $(DEPDIR)/exampleBLOCK-exampleBLOCK.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='exampleBLOCK.cpp' object='exampleBLOCK-exampleBLOCK.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleBLOCK_CXXFLAGS) $(CXXFLAGS) -c -o simpleBLOCK-simpleBLOCK.o `test -f 'simpleBLOCK.cpp' || echo '$(srcdir)/'`simpleBLOCK.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleBLOCK_CXXFLAGS) $(CXXFLAGS) -c -o exampleBLOCK-exampleBLOCK.o `test -f 'exampleBLOCK.cpp' || echo '$(srcdir)/'`exampleBLOCK.cpp
 
-simpleBLOCK-simpleBLOCK.obj: simpleBLOCK.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleBLOCK_CXXFLAGS) $(CXXFLAGS) -MT simpleBLOCK-simpleBLOCK.obj -MD -MP -MF $(DEPDIR)/simpleBLOCK-simpleBLOCK.Tpo -c -o simpleBLOCK-simpleBLOCK.obj `if test -f 'simpleBLOCK.cpp'; then $(CYGPATH_W) 'simpleBLOCK.cpp'; else $(CYGPATH_W) '$(srcdir)/simpleBLOCK.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/simpleBLOCK-simpleBLOCK.Tpo $(DEPDIR)/simpleBLOCK-simpleBLOCK.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='simpleBLOCK.cpp' object='simpleBLOCK-simpleBLOCK.obj' libtool=no @AMDEPBACKSLASH@
+exampleBLOCK-exampleBLOCK.obj: exampleBLOCK.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleBLOCK_CXXFLAGS) $(CXXFLAGS) -MT exampleBLOCK-exampleBLOCK.obj -MD -MP -MF $(DEPDIR)/exampleBLOCK-exampleBLOCK.Tpo -c -o exampleBLOCK-exampleBLOCK.obj `if test -f 'exampleBLOCK.cpp'; then $(CYGPATH_W) 'exampleBLOCK.cpp'; else $(CYGPATH_W) '$(srcdir)/exampleBLOCK.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/exampleBLOCK-exampleBLOCK.Tpo $(DEPDIR)/exampleBLOCK-exampleBLOCK.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='exampleBLOCK.cpp' object='exampleBLOCK-exampleBLOCK.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(simpleBLOCK_CXXFLAGS) $(CXXFLAGS) -c -o simpleBLOCK-simpleBLOCK.obj `if test -f 'simpleBLOCK.cpp'; then $(CYGPATH_W) 'simpleBLOCK.cpp'; else $(CYGPATH_W) '$(srcdir)/simpleBLOCK.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleBLOCK_CXXFLAGS) $(CXXFLAGS) -c -o exampleBLOCK-exampleBLOCK.obj `if test -f 'exampleBLOCK.cpp'; then $(CYGPATH_W) 'exampleBLOCK.cpp'; else $(CYGPATH_W) '$(srcdir)/exampleBLOCK.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
