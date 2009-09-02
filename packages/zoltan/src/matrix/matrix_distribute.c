@@ -294,6 +294,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   }
   outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, (nEdge + 1)*sizeof(int));
   if (outmat->mtx.ystart == NULL) MEMORY_ERROR;
+  outmat->mtx.yend = outmat->mtx.ystart + 1;
   outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO, (outmat->mtx.nPins) * sizeof(int));
   if (outmat->mtx.nPins && (outmat->mtx.pinGNO == NULL)) MEMORY_ERROR;
   outmat->mtx.pinwgt = (float *) ZOLTAN_REALLOC(outmat->mtx.pinwgt,

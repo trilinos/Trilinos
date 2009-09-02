@@ -50,7 +50,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
   for (i=0, cnt = 0 ; i < matrix->nY ; ++i) {
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {
-      tr_tab[cnt].yGNO = matrix->yGNO[i];                          /* Normal arc */
+      tr_tab[cnt].yGNO = matrix->yGNO[i] + bipartite*matrix->globalX;   /* Normal arc */
       tr_tab[cnt].pinGNO = matrix->pinGNO[j];
       tr_tab[cnt].offset = j;
       cnt ++;
@@ -109,10 +109,10 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     Zoltan_DD_Destroy (&matrix->ddX);
 
   /* Update yGNO: new yGNO = prev yGNO + matrix->globalX */
-    for (i=0 ; i < matrix->nY ; ++i) {
-      matrix->yGNO[i] += matrix->globalX;
-      Input_Parts[i] = -1;
-    }
+    /* for (i=0 ; i < matrix->nY ; ++i) { */
+    /*   matrix->yGNO[i] += matrix->globalX; */
+    /*   Input_Parts[i] = -1; */
+    /* } */
 
     matrix->offsetY = matrix->globalX;
     matrix->globalX += matrix->globalY;
