@@ -149,16 +149,6 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
-  <Package name="Claps" dir="claps">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-  </Package>
   <Package name="AztecOO" dir="aztecoo">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Triutils"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>
@@ -266,16 +256,6 @@
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
     <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-  </Package>
-  <Package name="RBGen" dir="rbgen">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -399,16 +379,6 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
-  <Package name="Aristos" dir="aristos">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Amesos,AztecOO,Ifpack,ML"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,ML"/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-  </Package>
   <Package name="Sundance" dir="Sundance">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,Belos,Stratimikos,NOX,Intrepid"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="MOOCHO"/>
@@ -422,7 +392,7 @@
   <Package name="CTrilinos" dir="CTrilinos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Amesos"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
@@ -430,10 +400,10 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="ForTrilinos" dir="ForTrilinos">
-    <LIB_REQUIRED_DEP_PACKAGES value="CTrilinos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="CTrilinos,Epetra,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="CTrilinos,Epetra,Teuchos"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -449,16 +419,6 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
-  <Package name="WebTrilinos" dir="WebTrilinos">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,Amesos,AztecOO,Ifpack,ML"/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-  </Package>
   <Package name="Didasko" dir="didasko">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -468,16 +428,6 @@
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="ZoltanTpl,HYPRE"/>
-  </Package>
-  <Package name="NewPackage" dir="new_package">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Optika" dir="optika">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>

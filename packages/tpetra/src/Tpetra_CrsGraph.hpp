@@ -314,8 +314,8 @@ namespace Tpetra
       void setSorted(bool sorted);
       bool indicesAreAllocated() const;
       void staticAssertions();
-      size_t findMyIndex(size_t row, LocalOrdinal ind) const;
-      size_t findGlobalIndex(size_t row, GlobalOrdinal ind) const;
+      size_t findLocalIndex(size_t row, LocalOrdinal ind, const Teuchos::ArrayRCP<const LocalOrdinal> &alreadyHaveAView) const;
+      size_t findGlobalIndex(size_t row, GlobalOrdinal ind, const Teuchos::ArrayRCP<const GlobalOrdinal> &alreadyHaveAView) const;
       inline size_t RNNZ(size_t row) const;
       inline size_t RNumAlloc(size_t row) const;
       void checkInternalState() const;
@@ -711,7 +711,7 @@ namespace Tpetra
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getFullLocalRowView(LocalOrdinal LocalRow) { 
+  Teuchos::ArrayRCP<LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getFullLocalRowView(LocalOrdinal LocalRow) {
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(isLocallyIndexed() == false, std::logic_error, 
         Teuchos::typeName(*this) << "::getFullLocalRowView(): Internal logic error. Please contact Tpetra team.");
@@ -1082,8 +1082,8 @@ namespace Tpetra
           Teuchos::typeName(*this) << "::insertLocalIndices(): new indices exceed statically allocated graph structure.");
       TPETRA_EFFICIENCY_WARNING(true, std::runtime_error,
           "::insertLocalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
-      // update allocation
-      size_t newAlloc = rowNE + toAdd;
+      // update allocation only as much as necessary
+      const size_t newAlloc = rowNE + toAdd;
       updateLocalAllocation(lrow,newAlloc);
     }
     // get pointers to row allocation
@@ -2059,11 +2059,18 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::findMyIndex(size_t row, LocalOrdinal ind) const {
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::findLocalIndex(
+                                size_t row, 
+                                LocalOrdinal ind, 
+                                const Teuchos::ArrayRCP<const LocalOrdinal> &alreadyHaveAView) const {
     typedef typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator IT;
     bool found = true;
     const size_t nE = RNNZ(row);
-    Teuchos::ArrayRCP<const LocalOrdinal> rowview = getLocalRowView(row);
+    // get a view of the row, if it wasn't passed by the caller
+    Teuchos::ArrayRCP<const LocalOrdinal> rowview = alreadyHaveAView;
+    if (rowview == Teuchos::null) {
+      rowview = getLocalRowView(row);
+    }
     IT rptr, locptr;
     rptr = rowview.begin();
     if (isSorted()) {
@@ -2094,11 +2101,18 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::findGlobalIndex(size_t row, GlobalOrdinal ind) const {
+  size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::findGlobalIndex(
+                                size_t row, 
+                                GlobalOrdinal ind, 
+                                const Teuchos::ArrayRCP<const GlobalOrdinal> &alreadyHaveAView) const {
     typedef typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator IT;
     bool found = true;
     const size_t nE = RNNZ(row);
-    Teuchos::ArrayRCP<const GlobalOrdinal> rowview = getGlobalRowView(row);
+    // get a view of the row, if it wasn't passed by the caller
+    Teuchos::ArrayRCP<const GlobalOrdinal> rowview = alreadyHaveAView;
+    if (rowview == Teuchos::null) {
+      rowview = getGlobalRowView(row);
+    }
     IT rptr, locptr;
     rptr = rowview.begin();
     if (isSorted()) {
