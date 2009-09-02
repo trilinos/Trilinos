@@ -35,9 +35,7 @@ extern "C" {
 #include "all_allo_const.h"
 #include "order_const.h"
 #include "phg_const.h"
-#if defined(TPL_NEW_GRAPH) || defined(COLORING_NEW_GRAPH)
 #include "graph_const.h"
-#endif
 #ifdef ZOLTAN_HIER
 #include "hier.h"
 #endif
@@ -55,7 +53,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Set_Malloc_Param,
        Zoltan_RCB_Set_Param,
        Zoltan_Third_Set_Param,
-       Zoltan_Build_Graph_Set_Param,
 #ifdef ZOLTAN_PARMETIS
        Zoltan_ParMetis_Set_Param,
 #endif /* ZOLTAN_PARMETIS_SET_PARAM */
@@ -76,9 +73,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 #ifdef ZOLTAN_DRUM
        Zoltan_Drum_Set_Param,
 #endif
-#if defined(TPL_NEW_GRAPH) || defined(COLORING_NEW_GRAPH)
        Zoltan_ZG_Set_Param,
-#endif
        /* Zoltan_Set_Machine_Param, */
        Zoltan_Color_Set_Param,
        /*** Add your new parameter setting function here! ***/

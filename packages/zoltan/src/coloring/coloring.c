@@ -25,11 +25,7 @@ extern "C" {
 #include "g2l_hash.h"
 #include "params_const.h"
 #include "zz_util_const.h"
-#ifndef COLORING_NEW_GRAPH
-#include "third_library_const.h"
-#else
 #include "graph.h"
-#endif
 #include "all_allo_const.h"
 #include "zz_rand.h"
 
@@ -162,13 +158,6 @@ int Zoltan_Color(
   int nvtx = num_obj;               /* number of vertices */
   int gvtx;                         /* number of global vertices */
 
-#ifndef COLORING_NEW_GRAPH
-  int *input_parts=NULL;                 /* Initial partitions for objects. */
-  float *ewgts=NULL, *float_vwgt=NULL;        /* weights - not used */
-  int obj_wgt_dim, edge_wgt_dim;    /* weight dimensions - not used */
-  int graph_type, check_graph;
-#endif /* COLORING_NEW_GRAPH */
-
   int *color=NULL;                       /* array to store colors of local and D1
 				       neighbor vertices */
   int i, j;
@@ -180,9 +169,7 @@ int Zoltan_Color(
   int comm[2],gcomm[2];
 
   int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
-#ifdef COLORING_NEW_GRAPH
   ZG graph;
-#endif
 
   /* PARAMETER SETTINGS */
 
@@ -264,47 +251,10 @@ int Zoltan_Color(
   if (!color_exp)
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
-#ifndef COLORING_NEW_GRAPH
-  #error "Coloring needs new graph interface !"
-
-  /* Initialize all local pointers to NULL. This is necessary
-     because we free all non-NULL pointers upon errors. */
-  vtxdist = xadj = adjncy = adjproc = NULL;
-  ewgts = float_vwgt = NULL;
-  input_parts = NULL;
-
-  /* Default graph type is GLOBAL. */
-  SET_GLOBAL_GRAPH(&graph_type);
-  check_graph = 1;
-  obj_wgt_dim = 0; /* We do not use weights */
-  edge_wgt_dim = 0;
-
-  /* Get object ids and part information */
-  ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids,
-			     obj_wgt_dim, &float_vwgt, &input_parts);
-  if (ierr) { /* Return error */
-      ZOLTAN_COLOR_ERROR(ierr, "Get_Obj_List returned error.");
-  }
-  /* Free not useful arrays */
-  Zoltan_Multifree(__FILE__,__LINE__, 2,  &input_parts, &float_vwgt);
-
-  /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, &graph_type, check_graph, nvtx,
-	 global_ids, local_ids, 0, &edge_wgt_dim,
-	 &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned error.");
-  }
-  /* Weights are not useful */
-  ZOLTAN_FREE(&ewgts);
-
-  MPI_Allreduce(&nvtx, &gvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
-#else /* COLORING_NEW_GRAPH */
   Zoltan_ZG_Build (zz, &graph, 0);
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
 		    NULL, NULL, &partialD2);
-#endif
 
   /* CREATE THE HASH TABLE */
   /* Determine hash size and allocate hash table */
@@ -342,7 +292,6 @@ int Zoltan_Color(
   if (!(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
       MEMORY_ERROR;
 
-#ifndef COLORING_NEW_GRAPH
   if (coloring_problem == 'P') {
       if (!(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
 	  MEMORY_ERROR;
@@ -350,7 +299,6 @@ int Zoltan_Color(
 	  partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
 			     1: indicates vertex needs to be colored, 0 means don't color  */
   }
-#endif  /* COLORING_NEW_GRAPH */
 
   /* Select Coloring algorithm and perform the coloring */
   if (coloring_problem == '1')
@@ -358,11 +306,6 @@ int Zoltan_Color(
   else if (coloring_problem == '2' || coloring_problem == 'P')
       D2coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color, partialD2);
 
-#ifndef COLORING_NEW_GRAPH
-  /* Fill the return array */
-  for (i=0; i<nvtx; i++)
-      color_exp[i] = color[i];
-#else /* COLORING_NEW_GRAPH */
   Zoltan_ZG_Register (zz, &graph, color);
 
 /*   /\* Get object ids and part information *\/ */
@@ -377,7 +320,6 @@ int Zoltan_Color(
 /*     ZOLTAN_FREE(&input_part); */
 /*   } */
   Zoltan_ZG_Query(zz, &graph, global_ids, nvtx, color_exp);
-#endif /* COLORING_NEW_GRAPH */
 
 #if 0
   /* Check if there is an error in coloring */
@@ -394,12 +336,7 @@ int Zoltan_Color(
 
  End:
   /* First, free graph */
-#ifdef COLORING_NEW_GRAPH
   Zoltan_ZG_Free (&graph);
-#else /* COLORING_NEW_GRAPH */
-  Zoltan_Multifree(__FILE__,__LINE__, 4, &vtxdist, &xadj, &adjncy, &input_parts);
-  ZOLTAN_FREE(&partialD2);
-#endif /* COLORING_NEW_GRAPH */
   ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&color);
   Zoltan_G2LHash_Destroy(&hash);

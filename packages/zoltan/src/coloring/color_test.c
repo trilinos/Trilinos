@@ -26,7 +26,7 @@ extern "C" {
 #include "g2l_hash.h"
 #include "params_const.h"
 #include "zz_util_const.h"
-#include "third_library_const.h"
+#include "graph.h"
 #include "all_allo_const.h"
 
 
@@ -58,13 +58,7 @@ int Zoltan_Color_Test(
 )
 {
   static char *yo = "color_test_fn";
-  indextype *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
-  int *adjproc=NULL;
-  int *input_parts=NULL;                 /* Initial partitions for objects. */
   int nvtx = num_obj;               /* number of vertices */
-  float *ewgts=NULL, *float_vwgt=NULL;        /* weights - not used */
-  int obj_wgt_dim, edge_wgt_dim;    /* weight dimensions - not used */
-  int graph_type, check_graph;
   int i, j;
   int ierr = ZOLTAN_OK;
   int ferr = ZOLTAN_OK;             /* final error signal */
@@ -75,6 +69,13 @@ int Zoltan_Color_Test(
   char comm_pattern='S', coloring_order='I', coloring_method='F';
   int comm[2],gcomm[2];
   int *color=NULL, *reccnt=NULL;
+
+
+  int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
+  int *adjproc=NULL;
+  int gvtx;                         /* number of global vertices */
+  ZG graph;
+
 
   /* PARAMETER SETTINGS */
   Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
@@ -142,46 +143,16 @@ int Zoltan_Color_Test(
   if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz))
       return ZOLTAN_OK;
 
-#ifdef COLORING_NEW_GRAPH
-  return ZOLTAN_OK;
-#endif /* COLORING_NEW_GRAPH */
-
   /* BUILD THE GRAPH */
   /* Check that the user has allocated space for the return args. */
   if (!color_exp)
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
-  /* Initialize all local pointers to NULL. This is necessary
-     because we free all non-NULL pointers upon errors. */
-  vtxdist = xadj = adjncy = adjproc = NULL;
-  ewgts = float_vwgt = NULL;
-  input_parts = NULL;
 
-  /* Default graph type is GLOBAL. */
-  SET_GLOBAL_GRAPH(&graph_type);
-  check_graph = 1;
-  obj_wgt_dim = 0; /* We do not use weights */
-  edge_wgt_dim = 0;
-
-  /* Get object ids and part information */
-  ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids,
-			     obj_wgt_dim, &float_vwgt, &input_parts);
-  if (ierr) { /* Return error */
-      ZOLTAN_COLOR_ERROR(ierr, "Get_Obj_List returned error.");
-  }
-
-  /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, &graph_type, check_graph, nvtx,
-	 global_ids, local_ids, obj_wgt_dim, &edge_wgt_dim,
-	 &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned error.");
-  }
-
-  if (nvtx!=num_obj) {
-      ierr = ZOLTAN_FATAL;
-      ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned different number of vertices.");
-  }
+  Zoltan_ZG_Build (zz, &graph, 0);
+  Zoltan_ZG_Export (zz, &graph,
+		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
+		    NULL, NULL, NULL);
 
 
   /* Exchange global color information */
@@ -225,7 +196,10 @@ int Zoltan_Color_Test(
   else
       ierr = ZOLTAN_OK;
 
-  Zoltan_Multifree(__FILE__, __LINE__, 7, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color, &reccnt);
+  Zoltan_ZG_Free (&graph);
+  ZOLTAN_FREE(&adjproc);
+  ZOLTAN_FREE(&color);
+  ZOLTAN_FREE(&reccnt);
 
   return ierr;
 }

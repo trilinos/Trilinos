@@ -25,9 +25,7 @@ extern "C" {
 #include "params_const.h"
 #include "order_const.h"
 #include "third_library.h"
-#ifdef TPL_NEW_GRAPH
 #include "graph.h"
-#endif
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
@@ -82,6 +80,8 @@ static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
 			       int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
 
+static int
+give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc);
 
 /**
  *  This function fills data structures in order to call a third party
@@ -103,10 +103,8 @@ int Zoltan_Preprocess_Graph(
   int ierr;
   float *float_vwgt, *float_ewgts;
   char msg[256];
-#ifdef TPL_NEW_GRAPH
   ZG *graph = &(gr->graph);
   int local;
-#endif /* TPL_NEW_GRAPH */
 
   char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
@@ -188,11 +186,6 @@ int Zoltan_Preprocess_Graph(
   /* Build Graph for third party library data structures, or just get vtxdist. */
 
   if (gr->get_data) {
-#ifndef TPL_NEW_GRAPH
-    ierr = Zoltan_Build_Graph(zz, &gr->graph_type, gr->check_graph, gr->num_obj,
-			      *global_ids, *local_ids, gr->obj_wgt_dim, &gr->edge_wgt_dim,
-			      &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
-#else
     local = IS_LOCAL_GRAPH(gr->graph_type);
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
     ierr = Zoltan_ZG_Export (zz, graph,
@@ -209,8 +202,6 @@ int Zoltan_Preprocess_Graph(
 /*     if (prt) { */
 /*       prt->input_part = (int *)ZOLTAN_CALLOC(gr->num_obj, sizeof(int)); */
 /*     } */
-
-#endif
 
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
@@ -793,6 +784,45 @@ void Zoltan_Third_DisplayTime(ZZ* zz, double* times)
 		     " Partitioner Total time           ");
   if (zz->Proc==zz->Debug_Proc) printf("\n");
 }
+
+static int
+give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
+{
+  int currentproc;
+
+
+  if ((((*myproc) >= 0) && (*myproc) < numProc) &&
+    (vertex >= vtxdist[*myproc]) && (vertex < vtxdist[*myproc+1])) {
+    return (*myproc);
+  }
+
+  currentproc = vertex / (vtxdist[1]-vtxdist[0]);  /* Assume that vertices are balanced */
+
+  if (currentproc >= numProc)
+    currentproc = numProc - 1;
+
+  if ((vertex < vtxdist[0])||( vertex >= vtxdist[numProc])) {
+    ZOLTAN_PRINT_WARN ((*myproc), "Symmetrize Graph problem (1)", "Unknown vertex");
+    return (-1);
+  }
+
+  while (1) {
+    if (vertex >= vtxdist[currentproc + 1]) {
+      currentproc ++;
+      continue;
+    }
+    if (vertex < vtxdist[currentproc]) {
+      currentproc --;
+      continue;
+    }
+    break;
+  }
+
+  *myproc =currentproc;
+  return (currentproc);
+}
+
+
 
 
 int Zoltan_Third_Set_Param(
