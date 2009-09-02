@@ -15,11 +15,11 @@ include $(top_builddir)/Makefile.export.zoltan
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = simpleBLOCK
+noinst_PROGRAMS = exampleBLOCK
 
-simpleBLOCK_SOURCES      = simpleBLOCK.cpp
-simpleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
-simpleBLOCK_CXXFLAGS     = $(ZOLTAN_INCLUDES)
-simpleBLOCK_LDADD        = $(ZOLTAN_LIBS)
+exampleBLOCK_SOURCES      = exampleBLOCK.cpp
+exampleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
+exampleBLOCK_CXXFLAGS     = $(ZOLTAN_INCLUDES)
+exampleBLOCK_LDADD        = $(ZOLTAN_LIBS)
 
 EXTRA_DIST = classicMakefile objects.txt
