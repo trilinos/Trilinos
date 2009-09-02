@@ -63,7 +63,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   OptiPack              optipack                       PS
   Isorropia             isorropia                      PS
   Pliris                pliris                         PS
-  Claps                 claps                          SS
   AztecOO               aztecoo                        PS
   Galeri                galeri                         PS
   Amesos                amesos                         PS
@@ -75,7 +74,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stratimikos           stratimikos                    PS
   Meros                 meros                          PS
   FEI                   fei                            PS
-  RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
   TriKota               TriKota                        SS
   Stokhos               stokhos                        SS
@@ -88,14 +86,11 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosCouplings     trilinoscouplings              SS
   Rythmos               rythmos                        PS
   MOOCHO                moocho                         PS
-  Aristos               aristos                        EX
   Sundance              Sundance                       PS
   CTrilinos             CTrilinos                      EX
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
-  WebTrilinos           WebTrilinos                    EX # Should be SS
   Didasko               didasko                        SS
-  NewPackage            new_package                    EX # Should be SS
   Optika		optika			       SS
   Mesquite              mesquite                       EX
   )
