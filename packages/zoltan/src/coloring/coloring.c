@@ -136,12 +136,9 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
-    int *num_gid_entries,     /* # of entries for a global id */
-    int *num_lid_entries,     /* # of entries for a local id */
+    int num_gid_entries,     /* # of entries for a global id */
     int num_obj,              /* Input: number of objects */
     ZOLTAN_ID_PTR global_ids, /* Input: global ids of the vertices */
-			      /* The application must allocate enough space */
-    ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
 			      /* The application must allocate enough space */
     int *color_exp            /* Output: Colors assigned to local vertices */
 			      /* The application must allocate enough space */
@@ -250,8 +247,11 @@ int Zoltan_Color(
   comm[0] = zz->Num_GID;
   comm[1] = zz->Num_LID;
   MPI_Allreduce(comm, gcomm, 2, MPI_INT, MPI_MAX, zz->Communicator);
-  zz->Num_GID = *num_gid_entries = gcomm[0];
-  zz->Num_LID = *num_lid_entries = gcomm[1];
+  zz->Num_GID = gcomm[0];
+  zz->Num_LID = gcomm[1];
+
+  if (num_gid_entries != zz->Num_GID)
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
 
   /* Return if this processor is not in the Zoltan structure's
      communicator. */
@@ -265,6 +265,8 @@ int Zoltan_Color(
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
 #ifndef COLORING_NEW_GRAPH
+  #error "Coloring needs new graph interface !"
+
   /* Initialize all local pointers to NULL. This is necessary
      because we free all non-NULL pointers upon errors. */
   vtxdist = xadj = adjncy = adjproc = NULL;
@@ -363,17 +365,17 @@ int Zoltan_Color(
 #else /* COLORING_NEW_GRAPH */
   Zoltan_ZG_Register (zz, &graph, color);
 
-  /* Get object ids and part information */
-  {
-    /* TODO: find a way to not allocate this memory ! */
-    float *vtxwgt = NULL;
-    int *input_part = NULL;
+/*   /\* Get object ids and part information *\/ */
+/*   { */
+/*     /\* TODO: find a way to not allocate this memory ! *\/ */
+/*     float *vtxwgt = NULL; */
+/*     int *input_part = NULL; */
 
-    ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids,
-			       0, &vtxwgt, &input_part);
-    ZOLTAN_FREE(&vtxwgt);
-    ZOLTAN_FREE(&input_part);
-  }
+/*     ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids, */
+/* 			       0, &vtxwgt, &input_part); */
+/*     ZOLTAN_FREE(&vtxwgt); */
+/*     ZOLTAN_FREE(&input_part); */
+/*   } */
   Zoltan_ZG_Query(zz, &graph, global_ids, nvtx, color_exp);
 #endif /* COLORING_NEW_GRAPH */
 

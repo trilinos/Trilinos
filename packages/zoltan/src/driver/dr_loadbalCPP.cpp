@@ -734,9 +734,13 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 
 
   if (Driver_Action & 4) {
+    int i;
       int *color = NULL;          /* Color vector */
       ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
+
+      num_lid_entries =1;
+      num_gid_entries = 1;
 
       color = new int [mesh->num_elems];
       gids = new ZOLTAN_ID_TYPE[mesh->num_elems];
@@ -750,10 +754,14 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 	  return 0;
       }
 
+      for (i = 0 ; i < mesh->num_elems ; ++i) {
+	gids[i*num_gid_entries+num_gid_entries-1] = mesh->elements[i].globalID;
+	lids[num_lid_entries * i + (num_lid_entries - 1)] = i;
+      }
+
       /* Only do coloring if it is specified in the driver input file */
       /* Do coloring after load balancing */
-      if (zz.Color(num_gid_entries, num_lid_entries,
-		       mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
+      if (zz.Color(num_gid_entries, mesh->num_elems, gids, color) == ZOLTAN_FATAL) {
 	  Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
 	  delete [] color;
 	  delete [] gids;

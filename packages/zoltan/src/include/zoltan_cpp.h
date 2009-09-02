@@ -189,14 +189,12 @@ public:
   }
 
   int Color (int &num_gid_entries,
-             int &num_lid_entries,
              const int &num_objs,
              ZOLTAN_ID_PTR global_ids,
-             ZOLTAN_ID_PTR local_ids,
              int *color_exp )
   {
-    return Zoltan_Color(ZZ_Ptr, &num_gid_entries, &num_lid_entries,
-      num_objs, global_ids, local_ids, color_exp);
+    return Zoltan_Color(ZZ_Ptr, num_gid_entries,
+			num_objs, global_ids, color_exp);
   }
   /* Simpler method to do coloring */
 /*   int Color (int *color_exp); */
