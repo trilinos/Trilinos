@@ -58,7 +58,7 @@ namespace Rythmos {
  *
  * \section Rythmos_ForwardSensitivityStepper_intro_sec Introduction
  *
- * The form of the parameterized state equation is:
+ * The most general form of the parameterized state equation is:
 
  \verbatim
 
@@ -70,7 +70,11 @@ namespace Rythmos {
 
  * As shown above, the parameters <tt>p</tt> are assumed to be steady state
  * parameters and can enter through the intial condition and/or through the
- * DAE equation itself.
+ * DAE equation itself.  This class also supports a form of the problem where
+ * parameters <tt>p</tt> are only assumed to bin the initial condition
+ * <tt>x_init(p)</tt> and not in the state equation.  In this case, you can
+ * just drop out all of the terms <tt>d(f)/d(p)</tt> shown in the equations
+ * below because they are zero.
  *
  * The forward sensitivity equations that are solved along with the state
  * equation, written in multi-vector form, are:
@@ -215,7 +219,7 @@ public:
   /** \brief Constructs to uninitialized. */
   ForwardSensitivityStepper();
 
-  /** \brief Intialize for sycned state and sens steppers.
+  /** \brief Intialize for synced state and sens steppers.
    *
    * \param stateModel [in,persisting] The ModelEvaluator that defines the
    * parameterized state model <tt>f(x_dot,x,p)</tt>.
@@ -271,6 +275,40 @@ public:
   void initializeSyncedSteppers(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
+    const RCP<StepperBase<Scalar> > &stateStepper,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+    const RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
+    );
+
+  /** \brief Intialize for synced state and sens steppers for an
+   * initial-condition only parametrized sensitivity problem.
+   *
+   * \param stateModel [in,persisting] See initializeSyncedSteppers().
+   *
+   * \param p_space [in] The vector space for the parameterized initial
+   * condition parameters.
+   *
+   * \param baseStatePoint [in]  See initializeSyncedSteppers().
+   *
+   * \param stateStepper [in,persisting] See initializeSyncedSteppers().
+   *
+   * \param stateTimeStepSolver [in,persisting] See initializeSyncedSteppers().
+   *
+   * \param sensStepper [in,persisting] See initializeSyncedSteppers().
+   *
+   * \param sensTimeStepSolver [in,persisting] See initializeSyncedSteppers().
+   *
+   * Here <tt>*this</tt> is set up to synchronize the state and sensitivity
+   * solvers for an initial-condition only forward sensitivity problem.
+   * Currently, error control is only done by the state stepper and not the
+   * sensitivity stepper but the overall implementation has a high degree of
+   * resuse and will therefore compute sensitivities quite fast.
+   */
+  void initializeSyncedSteppersInitCondOnly(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
     const RCP<StepperBase<Scalar> > &stateStepper,
     const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
@@ -509,10 +547,17 @@ private:
 
   // /////////////////////////
   // Private member functions
+  
 
+  // Common initialization helper
+  //
+  // Preconditions:
+  // (*) p_index >=0 or nonnull(p_space) == true
+  //
   void initializeCommon(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
     const RCP<StepperBase<Scalar> > &stateStepper,
     const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
@@ -698,7 +743,23 @@ void ForwardSensitivityStepper<Scalar>::initializeSyncedSteppers(
   )
   
 {
-  initializeCommon(stateModel, p_index, stateBasePoint, stateStepper,
+  initializeCommon( stateModel, p_index, Teuchos::null, stateBasePoint, stateStepper,
+    stateTimeStepSolver, sensStepper, sensTimeStepSolver );
+}
+
+
+template<class Scalar> 
+void ForwardSensitivityStepper<Scalar>::initializeSyncedSteppersInitCondOnly(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
+  const RCP<StepperBase<Scalar> > &stateStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+  const RCP<StepperBase<Scalar> > &sensStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
+  )
+{
+  initializeCommon(stateModel, -1, p_space, stateBasePoint, stateStepper,
     stateTimeStepSolver, sensStepper, sensTimeStepSolver );
 }
 
@@ -716,8 +777,8 @@ void ForwardSensitivityStepper<Scalar>::initializeDecoupledSteppers(
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
   )
 {
-  TEST_FOR_EXCEPT(is_null(stateIntegrator));
-  initializeCommon(stateModel, p_index, stateBasePoint, stateStepper,
+  TEUCHOS_ASSERT(nonnull(stateIntegrator));
+  initializeCommon( stateModel, p_index, Teuchos::null, stateBasePoint, stateStepper,
     stateTimeStepSolver, sensStepper, sensTimeStepSolver );
   stateIntegrator_ = stateIntegrator;
   finalTime_ = finalTime;
@@ -1102,6 +1163,7 @@ template<class Scalar>
 void ForwardSensitivityStepper<Scalar>::initializeCommon(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
   const RCP<StepperBase<Scalar> > &stateStepper,
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
@@ -1118,12 +1180,18 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
   // Validate input
   //
 
+  TEUCHOS_ASSERT( p_index >= 0 || nonnull(p_space) );
+  if (nonnull(p_space)) {
+    TEUCHOS_ASSERT_EQUALITY(p_index, -1);
+  }
+  if (p_index >= 0) {
+    TEUCHOS_ASSERT(is_null(p_space));
+  }
   TEST_FOR_EXCEPT( is_null(stateModel) );
   TEST_FOR_EXCEPT( is_null(stateStepper) );
   if (stateStepper->isImplicit()) {
     TEST_FOR_EXCEPT( is_null(stateTimeStepSolver) ); // allow to be null for explicit methods
   }
-
 
   //
   // Create the sensModel which will do some more validation
@@ -1140,7 +1208,12 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
     sensModel = Teuchos::rcp(new ForwardSensitivityExplicitModelEvaluator<Scalar>);
   }
 
-  sensModel->initializeStructure(stateModel,p_index);
+  if (p_index >= 0) {
+    sensModel->initializeStructure(stateModel, p_index);
+  }
+  else {
+    sensModel->initializeStructureInitCondOnly(stateModel, p_space);
+  }
   
   //
   // Get the input objects
@@ -1284,7 +1357,8 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
     const Scalar curr_t = stateStepStatus.time;
 
     RCP<ForwardSensitivityImplicitModelEvaluator<Scalar> > implicitSensModel = 
-      Teuchos::rcp_dynamic_cast<ForwardSensitivityImplicitModelEvaluator<Scalar> >(sensModel_,false);
+      Teuchos::rcp_dynamic_cast<ForwardSensitivityImplicitModelEvaluator<Scalar> >(
+        sensModel_,false);
     if (!is_null(implicitSensModel)) { // ForwardSensitivityImplicitModelEvaluator
       // Get both x and x_dot since these are needed compute other derivative
       // objects at these points.
@@ -1325,7 +1399,8 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
     } else { // explicit ME:
       // ForwardSensitivityExplicitModelEvaluator
       RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> > explicitSensModel = 
-        Teuchos::rcp_dynamic_cast<ForwardSensitivityExplicitModelEvaluator<Scalar> > (sensModel_,true);
+        Teuchos::rcp_dynamic_cast<ForwardSensitivityExplicitModelEvaluator<Scalar> > (
+          sensModel_, true);
       
       RCP<const Thyra::VectorBase<Scalar> > x;
       x = get_x(*stateStepper_,curr_t);

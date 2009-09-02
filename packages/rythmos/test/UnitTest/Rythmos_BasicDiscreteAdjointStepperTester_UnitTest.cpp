@@ -28,7 +28,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
-//#include "Rythmos_BasicDiscreateAdjointStepperTester.hpp"
+#include "Rythmos_BasicDiscreteAdjointStepperTester.hpp"
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_AdjointModelEvaluator.hpp"
@@ -42,7 +42,7 @@
 namespace Rythmos {
 
 
-TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, rawNonlinearAdjoint )
+TEUCHOS_UNIT_TEST( BasicDiscreteAdjointStepperTester, rawNonlinearAdjoint )
 {
 
   using Teuchos::outArg;
@@ -54,8 +54,7 @@ TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, rawNonlinearAdjoi
   out << "\nA) Create the nonlinear ME ...\n";
   //
 
-  RCP<VanderPolModel> stateModel = vanderPolModel();
-  stateModel->setParameterList(
+  RCP<VanderPolModel> stateModel = vanderPolModel(
     getParametersFromXmlString(
       "<ParameterList>"
       "  <Parameter name=\"Implicit model formulation\" type=\"bool\" value=\"1\"/>"
@@ -67,9 +66,7 @@ TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, rawNonlinearAdjoi
   out << "\nB) Create the nonlinear solver ...\n";
   //
 
-  RCP<TimeStepNonlinearSolver<double> > nlSolver =
-    timeStepNonlinearSolver<double>();
-  nlSolver->setParameterList(
+  RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>(
     getParametersFromXmlString(
       "<ParameterList>"
       "  <Parameter name=\"Default Tol\" type=\"double\" value=\"1.0e-10\"/>"
@@ -82,32 +79,31 @@ TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, rawNonlinearAdjoi
   out << "\nC) Create the integrator for the forward state problem ...\n";
   //
 
-  RCP<ParameterList> ibPL = Teuchos::getParametersFromXmlString(
-    "<ParameterList>"
-    "  <ParameterList name=\"Stepper Settings\">"
-    "    <ParameterList name=\"Stepper Selection\">"
-    "      <Parameter name=\"Stepper Type\" type=\"string\" value=\"Backward Euler\"/>"
-    "    </ParameterList>"
-    "  </ParameterList>"
-    "  <ParameterList name=\"Integration Control Strategy Selection\">"
-    "    <Parameter name=\"Integration Control Strategy Type\" type=\"string\""
-    "      value=\"Simple Integration Control Strategy\"/>"
-    "    <ParameterList name=\"Simple Integration Control Strategy\">"
-    "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
-    "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>" // Gives 2 time steps!
-    "    </ParameterList>"
-    "  </ParameterList>"
-    "  <ParameterList name=\"Interpolation Buffer Settings\">"
-    "    <ParameterList name=\"Trailing Interpolation Buffer Selection\">"
-    "      <Parameter name=\"Interpolation Buffer Type\" type=\"string\" value=\"Interpolation Buffer\"/>"
-    "    </ParameterList>"
-    "  </ParameterList>"
-    "</ParameterList>"
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>(
+    Teuchos::getParametersFromXmlString(
+      "<ParameterList>"
+      "  <ParameterList name=\"Stepper Settings\">"
+      "    <ParameterList name=\"Stepper Selection\">"
+      "      <Parameter name=\"Stepper Type\" type=\"string\" value=\"Backward Euler\"/>"
+      "    </ParameterList>"
+      "  </ParameterList>"
+      "  <ParameterList name=\"Integration Control Strategy Selection\">"
+      "    <Parameter name=\"Integration Control Strategy Type\" type=\"string\""
+      "      value=\"Simple Integration Control Strategy\"/>"
+      "    <ParameterList name=\"Simple Integration Control Strategy\">"
+      "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
+      "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>" // Gives 2 time steps!
+      "    </ParameterList>"
+      "  </ParameterList>"
+      "  <ParameterList name=\"Interpolation Buffer Settings\">"
+      "    <ParameterList name=\"Trailing Interpolation Buffer Selection\">"
+      "      <Parameter name=\"Interpolation Buffer Type\" type=\"string\" value=\"Interpolation Buffer\"/>"
+      "    </ParameterList>"
+      "  </ParameterList>"
+      "</ParameterList>"
+      )
     );
-
-  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-  ib->setParameterList(ibPL);
-
+  
   MEB::InArgs<double> ic = stateModel->getNominalValues();
   RCP<IntegratorBase<double> > integrator = ib->create(stateModel, ic, nlSolver);
   //integrator->setVerbLevel(Teuchos::VERB_EXTREME);
@@ -187,70 +183,113 @@ TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, rawNonlinearAdjoi
 
 }
 
-//
-//TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, create )
-//{
-//  //const RCP<BasicDiscreateAdjointStepperTester<double> >
-//  //  adjStepperTester = forwardSensitivityStepperTester<double>();
-//  //TEST_ASSERT(adjStepperTester != Teuchos::null);
-//  TEST_FOR_EXCEPT(true); // ToDo: Implement!
-//}
-//
-//
-//TEUCHOS_UNIT_TEST( Rythmos_BasicDiscreateAdjointStepperTester, linear )
-//{
-//
-//  typedef Thyra::ModelEvaluatorBase MEB;
-//
-//  // Create the basic model
-// 
-//  RCP<ParameterList> modelPL = Teuchos::parameterList();
-//  modelPL->set("Implicit model formulation", true);
-//  modelPL->set("Accept model parameters", true);
-//  RCP<SinCosModel> model = sinCosModel();
-//  model->setParameterList(modelPL);
-//
-//  // Set up the IntegratorBuilder
-//
-//  RCP<ParameterList> ibPL = Teuchos::getParametersFromXmlString(
-//    "<ParameterList>"
-//    "  <ParameterList name=\"Stepper Settings\">"
-//    "    <ParameterList name=\"Stepper Selection\">"
-//    "      <Parameter name=\"Stepper Type\" type=\"string\" value=\"Backward Euler\"/>"
-//    "    </ParameterList>"
-//    "  </ParameterList>"
-//    "  <ParameterList name=\"Integration Control Strategy Selection\">"
-//    "    <Parameter name=\"Integration Control Strategy Type\" type=\"string\""
-//    "      value=\"Simple Integration Control Strategy\"/>"
-//    "    <ParameterList name=\"Simple Integration Control Strategy\">"
-//    "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
-//    "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>"
-//    "    </ParameterList>"
-//    "  </ParameterList>"
-//    "</ParameterList>"
-//    );
-//  //pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
-//  //pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
-//  //pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
-//  //pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
-//  
-//  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>(ibPL);
-//  ib->setParameterList(ibPL);
-//
-//  // Create the actual integrator ready to go
-//
-//  RCP<Thyra::NonlinearSolverBase<double> >
-//    nlSolver = timeStepNonlinearSolver<double>();
-//
-//  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
-//
-//  RCP<IntegratorBase<double> >
-//    integrator = ib->create(model, ic, nlSolver);
-//
-//  TEST_FOR_EXCEPT(true); // ToDo: Implement!
-//
-//}
+
+TEUCHOS_UNIT_TEST( BasicDiscreteAdjointStepperTester, create )
+{
+  const RCP<BasicDiscreteAdjointStepperTester<double> >
+    adjStepperTester = basicDiscreteAdjointStepperTester<double>();
+  TEST_ASSERT(adjStepperTester != Teuchos::null);
+}
+
+
+TEUCHOS_UNIT_TEST( BasicDiscreteAdjointStepperTester, linear )
+{
+
+  using Teuchos::getParametersFromXmlString;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  //
+  out << "\nA) Create the nonlinear ME ...\n";
+  //
+
+  RCP<VanderPolModel> stateModel = vanderPolModel(
+    getParametersFromXmlString(
+      "<ParameterList>"
+      "  <Parameter name=\"Implicit model formulation\" type=\"bool\" value=\"1\"/>"
+      "</ParameterList>"
+      )
+    );
+
+  //
+  out << "\nB) Create the nonlinear solver ...\n";
+  //
+
+  RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>(
+    getParametersFromXmlString(
+      "<ParameterList>"
+      "  <Parameter name=\"Default Tol\" type=\"double\" value=\"1.0e-10\"/>"
+      "  <Parameter name=\"Default Max Iters\" type=\"int\" value=\"20\"/>"
+      "</ParameterList>"
+      )
+    );
+
+  //
+  out << "\nC) Create the integrator for the forward state problem ...\n";
+  //
+
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>(
+    getParametersFromXmlString(
+      "<ParameterList>"
+      "  <ParameterList name=\"Stepper Settings\">"
+      "    <ParameterList name=\"Stepper Selection\">"
+      "      <Parameter name=\"Stepper Type\" type=\"string\" value=\"Backward Euler\"/>"
+      "    </ParameterList>"
+      "  </ParameterList>"
+      "  <ParameterList name=\"Integration Control Strategy Selection\">"
+      "    <Parameter name=\"Integration Control Strategy Type\" type=\"string\""
+      "      value=\"Simple Integration Control Strategy\"/>"
+      "    <ParameterList name=\"Simple Integration Control Strategy\">"
+      "      <Parameter name=\"Take Variable Steps\" type=\"bool\" value=\"false\"/>"
+      "      <Parameter name=\"Fixed dt\" type=\"double\" value=\"0.5\"/>" // Gives 2 time steps!
+      "    </ParameterList>"
+      "  </ParameterList>"
+      "  <ParameterList name=\"Interpolation Buffer Settings\">"
+      "    <ParameterList name=\"Trailing Interpolation Buffer Selection\">"
+      "      <Parameter name=\"Interpolation Buffer Type\" type=\"string\" value=\"Interpolation Buffer\"/>"
+      "    </ParameterList>"
+      "  </ParameterList>"
+      "</ParameterList>"
+      )
+    );
+  
+  MEB::InArgs<double> ic = stateModel->getNominalValues();
+  RCP<IntegratorBase<double> > integrator = ib->create(stateModel, ic, nlSolver);
+  //integrator->setVerbLevel(Teuchos::VERB_EXTREME);
+
+  // ToDo: Set the trailing IB to pick up the entire state solution!
+
+  const TimeRange<double> fwdTimeRange = integrator->getFwdTimeRange();
+
+  //
+  out << "\nD) Create the basic adjoint model (no distributed response) ...\n";
+  //
+
+  RCP<AdjointModelEvaluator<double> > adjModel =
+    adjointModelEvaluator<double>(
+      stateModel, fwdTimeRange
+      );
+  adjModel->setFwdStateSolutionBuffer(integrator);
+
+  //
+  out << "\nE) Test the adjoint stepper against forward sensitivities ...\n";
+  //
+
+  const RCP<BasicDiscreteAdjointStepperTester<double> > adjStepperTester =
+    basicDiscreteAdjointStepperTester<double>();
+
+  adjStepperTester->setOStream(Teuchos::fancyOStream(Teuchos::rcpFromRef(out)));
+
+  // For now this throws so this is the parital test!
+  TEST_THROW(adjStepperTester->testAdjointStepper( *adjModel, integrator.ptr() ),
+    std::logic_error);
+
+  out << "\nToDo: Get this above test working!  The fact that it runs up to here"
+    " without throwing is a partial test!\n";
+
+  //if (!result)
+  //  success = false;
+
+}
 
 
 } // namespace Rythmos
-

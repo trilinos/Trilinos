@@ -132,14 +132,14 @@ void BackwardEulerStepper<Scalar>::setInterpolator(
 
 template<class Scalar>
 RCP<InterpolatorBase<Scalar> >
-  BackwardEulerStepper<Scalar>::getNonconstInterpolator()
+BackwardEulerStepper<Scalar>::getNonconstInterpolator()
 {
   return interpolator_;
 }
 
 template<class Scalar>
 RCP<const InterpolatorBase<Scalar> >
-  BackwardEulerStepper<Scalar>::getInterpolator() const
+BackwardEulerStepper<Scalar>::getInterpolator() const
 {
   return interpolator_;
 }
@@ -340,6 +340,14 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 
   haveInitialCondition_ = true;
 
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+BackwardEulerStepper<Scalar>::getInitialCondition() const
+{
+  return basePoint_;
 }
 
 

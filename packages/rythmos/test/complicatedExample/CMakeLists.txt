@@ -72,13 +72,26 @@ IF (Stratimikos_ENABLE_Amesos)
       "--numelements=10 --method=BE --T=0.1 --numsteps=500 --maxerror=1e-5 --verbose --echo-command-line --verb-level=VERB_MEDIUM"
       # Vector Implicit BDF
       "--numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line"
-      # Vector Implicit BDF w/NOX
-      "--numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --useNOX --verbose --echo-command-line"
-      # Vector Backward Euler
-      "--method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line"
     COMM serial mpi  
     NUM_MPI_PROCS 1
     )
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
+  IF (${PACKAGE_NAME}_ENABLE_NOX)
+    PACKAGE_ADD_TEST(
+      complicatedExample
+      NAME complicatedExample_amesos
+      POSTFIX_AND_ARGS_0 nox_bdf
+        --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6
+        --abstol=1e-6 --T=0.1 --maxerror=1e-4 --useNOX --verbose --echo-command-line
+      POSTFIX_AND_ARGS_1 nox_bd
+        --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose
+        --echo-command-line
+      COMM serial mpi  
+      NUM_MPI_PROCS 1
+      )
+  ENDIF()
+
 
 ENDIF()
 
@@ -109,8 +122,6 @@ IF (Stratimikos_ENABLE_AztecOO)
       "--method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params=\"${AZTECOO_PL}\" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line"
       # Vector Implicit BDF with AztecOO
       "--numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params=\"${AZTECOO_PL}\" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line"
-      # Vector Implicit BDF with AztecOO w/NOX
-      "--numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --useNOX --verbose --extra-linear-solver-params=\"${AZTECOO_PL}\" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line"
     COMM serial mpi  
     NUM_MPI_PROCS 1
     )
@@ -162,11 +173,23 @@ IF (Stratimikos_ENABLE_Belos)
       "--method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params=\"${BELOS_BLOCK_GMRES_PL}\" --linear-solver-params-used-file=lowsf.belos.used.xml"
       # Vector Implicit BDF with Belos
       "--numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params=\"${BELOS_BLOCK_GMRES_PL}\" --linear-solver-params-used-file=lowsf.belos.used.xml" 
-      # Vector Implicit BDF with Belos w/NOX
-      "--numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --useNOX --verbose --extra-linear-solver-params=\"${BELOS_BLOCK_GMRES_PL}\" --linear-solver-params-used-file=lowsf.belos.used.xml" 
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
 
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
+  IF (${PACKAGE_NAME}_ENABLE_NOX)
+    PACKAGE_ADD_TEST(
+      complicatedExample
+      NAME complicatedExample_belos
+      POSTFIX_AND_ARGS_0 nox_bdf
+        --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 
+        --abstol=1e-6 --T=0.1 --maxerror=1e-4 --useNOX --verbose
+        --extra-linear-solver-params="${BELOS_BLOCK_GMRES_PL}"
+        --linear-solver-params-used-file=lowsf.belos.used.xml 
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+  ENDIF()
 
 ENDIF()

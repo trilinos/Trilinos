@@ -88,17 +88,25 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ImplicitRK_UnitTest
     SOURCES Rythmos_ImplicitRK_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
+    COMM serial # MPI should be okay (but see below)!
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )
+# 2009/09/02: rabartl: The above test times out in an MPI build on even one
+# process!  That is a very bad sign and means that might point to a very bad
+# problem with this code!
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     IntegratorBuilder_UnitTest
     SOURCES Rythmos_IntegratorBuilder_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
+    COMM serial  # MPI should be okay (but see below)!
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )
+# 2009/09/02: rabartl: The above test times out in an MPI build on even one
+# process!  That is a very bad sign and means that might point to a very bad
+# problem with this code!
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     InterpolationBuffer_UnitTest

@@ -92,22 +92,9 @@ namespace {
 
 } // namespace
 
+
 namespace Rythmos {
 
-// non-member Constructor
-RCP<VanderPolModel> vanderPolModel() 
-{
-  RCP<VanderPolModel> model = rcp(new VanderPolModel);
-  return(model);
-}
-
-// non-member Constructor
-RCP<VanderPolModel> vanderPolModel(bool implicit) 
-{
-  RCP<VanderPolModel> model = vanderPolModel();
-  model->setImplicitFlag(implicit);
-  return(model);
-}
 
 // Constructor
 VanderPolModel::VanderPolModel()
@@ -668,3 +655,31 @@ void VanderPolModel::eval_f(
 
 } // namespace Rythmos
 
+
+// non-member Constructors
+
+
+Teuchos::RCP<Rythmos::VanderPolModel>
+Rythmos::vanderPolModel() 
+{
+  RCP<VanderPolModel> model = rcp(new VanderPolModel);
+  return(model);
+}
+
+
+Teuchos::RCP<Rythmos::VanderPolModel>
+Rythmos::vanderPolModel(bool implicit) 
+{
+  RCP<VanderPolModel> model = vanderPolModel();
+  model->setImplicitFlag(implicit);
+  return(model);
+}
+
+
+Teuchos::RCP<Rythmos::VanderPolModel>
+Rythmos::vanderPolModel(const RCP<ParameterList> &pl)
+{
+  RCP<VanderPolModel> model = vanderPolModel();
+  model->setParameterList(pl);
+  return(model);
+}

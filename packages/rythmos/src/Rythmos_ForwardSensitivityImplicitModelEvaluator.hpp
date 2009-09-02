@@ -307,33 +307,6 @@ public:
   /** \brief . */
   ForwardSensitivityImplicitModelEvaluator();
 
-  /** \brief Intialize the with the model structure.
-   *
-   * \param  stateModel
-   *           [in,persisting] The ModelEvaluator that defines the
-   *           parameterized state model <tt>f(x_dot,x,p)</tt>.
-   * \param  p_index
-   *           [in] The index of the parameter subvector in <tt>stateModel</tt>
-   *           for which sensitivities will be computed for.
-   *
-   * This function only intializes the spaces etc. needed to define structure
-   * of the problem.  <tt>*this</tt> model object is not fully initialized at
-   * this point in that <tt>evalModel()</tt> will not work yet and will thrown
-   * exceptions if called.  The function <tt>initalizeState()</tt> must be
-   * called later in order to fully initalize the model.
-   */
-  void initializeStructure(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const int p_index
-    );
-  
-  /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getStateModel() const;
-  
-  /** \brief . */
-  int get_p_index() const;
-
   /** \brief Set the state integrator that will be used to get x and x_dot at
    * various time points.
    *
@@ -385,7 +358,7 @@ public:
    * <tt>Teuchos::null</tt>.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>!is_null(W_tilde)</tt>
+   * <li><tt>nonnull(W_tilde)</tt>
    * </ul>
    *
    * This function must be called after <tt>intializeStructure()</tt> and
@@ -409,6 +382,33 @@ public:
   // in through stateBasePoint).  The values of x(t) and xdot(t) can then be
   // gotten from the stateInterpBuffer object!
   
+  //@}
+
+  /** \name Public functions overridden from ForwardSensitivityModelEvaluatorBase. */
+  //@{
+
+  /** \brief . */
+  void initializeStructure(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const int p_index
+    );
+  
+  /** \brief . */
+  void initializeStructureInitCondOnly(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    );
+  
+  /** \brief . */
+  RCP<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+  
+  /** \brief . */
+  int get_p_index() const;
+  
+  /** \brief . */
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
+
   //@}
 
   /** \name Public functions overridden from ModelEvaulator. */
@@ -468,6 +468,7 @@ private:
 
   RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
   int np_;
 
   RCP<IntegratorBase<Scalar> > stateIntegrator_;
@@ -491,6 +492,14 @@ private:
 
   // /////////////////////////
   // Private member functions
+
+  bool hasStateFuncParams() const { return p_index_ >= 0; }
+  
+  void initializeStructureCommon(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const int p_index,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    );
 
   void wrapNominalValuesAndBounds();
 
@@ -517,79 +526,6 @@ template<class Scalar>
 ForwardSensitivityImplicitModelEvaluator<Scalar>::ForwardSensitivityImplicitModelEvaluator()
   : p_index_(0), np_(-1)
 {}
-
-
-template<class Scalar>
-void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructure(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-  const int p_index
-  )
-{
-
-  typedef Thyra::ModelEvaluatorBase MEB;
-
-  //
-  // Validate input
-  //
-
-  TEST_FOR_EXCEPT( is_null(stateModel) );
-  TEST_FOR_EXCEPTION(
-    !( 0 <= p_index && p_index < stateModel->Np() ), std::logic_error,
-    "Error, p_index does not fall in the range [0,"<<(stateModel->Np()-1)<<"]!" );
-  // ToDo: Validate support for DfDp!
-
-  //
-  // Set the input objects
-  //
-
-  stateModel_ = stateModel;
-  p_index_ = p_index;
-  np_ = stateModel_->get_p_space(p_index)->dim();
-
-  //
-  // Create the structure of the model
-  //
-
-  s_bar_space_ = Thyra::multiVectorProductVectorSpace(
-    stateModel_->get_x_space(), np_
-    );
-
-  f_sens_space_ = Thyra::multiVectorProductVectorSpace(
-    stateModel_->get_f_space(), np_
-    );
-
-  nominalValues_ = this->createInArgs();
-
-  //
-  // Wipe out matrix storage
-  //
-
-  stateBasePoint_ = MEB::InArgs<Scalar>();
-  W_tilde_ = Teuchos::null;
-  coeff_x_dot_ = 0.0;
-  coeff_x_ = 0.0;
-  DfDx_dot_ = Teuchos::null;
-  DfDp_ = Teuchos::null;
-  W_tilde_compute_ = Teuchos::null;
-  DfDx_dot_compute_ = Teuchos::null;
-  DfDp_compute_ = Teuchos::null;
-
-}
-
-
-template<class Scalar>
-RCP<const Thyra::ModelEvaluator<Scalar> >
-ForwardSensitivityImplicitModelEvaluator<Scalar>::getStateModel() const
-{
-  return stateModel_;
-}
-
-
-template<class Scalar>
-int ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_index() const
-{
-  return p_index_;
-}
 
 
 template<class Scalar>
@@ -623,20 +559,23 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
     );
   TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
   TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x_dot()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
+  if (hasStateFuncParams()) {
+    TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
+  }
   // What about the other parameter values?  We really can't say anything
   // about these and we can't check them.  They can be null just fine.
-  if (!is_null(W_tilde)) {
-    THYRA_ASSERT_VEC_SPACES("",*W_tilde->domain(),*stateModel_->get_x_space());
-    THYRA_ASSERT_VEC_SPACES("",*W_tilde->range(),*stateModel_->get_f_space());
+  if (nonnull(W_tilde)) {
+    THYRA_ASSERT_VEC_SPACES("", *W_tilde->domain(), *stateModel_->get_x_space());
+    THYRA_ASSERT_VEC_SPACES("", *W_tilde->range(), *stateModel_->get_f_space());
   }
-  if (!is_null(DfDx_dot)) {
-    THYRA_ASSERT_VEC_SPACES("",*DfDx_dot->domain(),*stateModel_->get_x_space());
-    THYRA_ASSERT_VEC_SPACES("",*DfDx_dot->range(),*stateModel_->get_f_space());
+  if (nonnull(DfDx_dot)) {
+    THYRA_ASSERT_VEC_SPACES("", *DfDx_dot->domain(), *stateModel_->get_x_space());
+    THYRA_ASSERT_VEC_SPACES("", *DfDx_dot->range(), *stateModel_->get_f_space());
   }
-  if (!is_null(DfDp)) {
-    THYRA_ASSERT_VEC_SPACES("",*DfDp->domain(),*stateModel_->get_p_space(p_index_));
-    THYRA_ASSERT_VEC_SPACES("",*DfDp->range(),*stateModel_->get_f_space());
+  if (nonnull(DfDp)) {
+    TEUCHOS_ASSERT(hasStateFuncParams());
+    THYRA_ASSERT_VEC_SPACES("", *DfDp->domain(), *p_space_);
+    THYRA_ASSERT_VEC_SPACES("", *DfDp->range(), *stateModel_->get_f_space());
   }
 #endif
 
@@ -654,6 +593,53 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
 
   wrapNominalValuesAndBounds();
 
+}
+
+
+// Public functions overridden from ForwardSensitivityModelEvaluatorBase
+
+
+template<class Scalar>
+void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructure(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const int p_index
+  )
+{
+  initializeStructureCommon(stateModel, p_index, Teuchos::null);
+}
+
+
+template<class Scalar>
+void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+  )
+{
+  initializeStructureCommon(stateModel, -1, p_space);
+}
+
+
+template<class Scalar>
+RCP<const Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityImplicitModelEvaluator<Scalar>::getStateModel() const
+{
+  return stateModel_;
+}
+
+
+template<class Scalar>
+int ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_index() const
+{
+  return p_index_;
+}
+
+
+template<class Scalar>
+RCP<const Thyra::VectorSpaceBase<Scalar> >
+ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_space() const
+{
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
 }
 
 
@@ -761,7 +747,8 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   
   {
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices");
+    TEUCHOS_FUNC_TIME_MONITOR(
+      "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices");
 #endif
     computeDerivativeMatrices(inArgs);
   }
@@ -808,10 +795,11 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   // Compute the requested functions
   //
 
-  if(!is_null(F_sens)) {
+  if(nonnull(F_sens)) {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeSens");
+    TEUCHOS_FUNC_TIME_MONITOR(
+      "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeSens");
 #endif
 
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
@@ -831,10 +819,11 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
       ST::one(), ST::one()
       );
     // F_sens += d(f)/d(p)
-    Vp_V( &*F_sens, *DfDp_ );
+    if (hasStateFuncParams())
+      Vp_V( &*F_sens, *DfDp_ );
   }
   
-  if(!is_null(W_sens)) {
+  if(nonnull(W_sens)) {
     TEST_FOR_EXCEPTION(
       alpha != coeff_x_dot_, std::logic_error,
       "Error, alpha="<<alpha<<" != coeff_x_dot="<<coeff_x_dot_
@@ -853,6 +842,80 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
 
 
 // private
+
+
+template<class Scalar>
+void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureCommon(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const int p_index,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  //
+  // Validate input
+  //
+
+  TEUCHOS_ASSERT(nonnull(stateModel));
+  TEUCHOS_ASSERT(p_index >= 0 || nonnull(p_space));
+  if (p_index >= 0) {
+    TEST_FOR_EXCEPTION(
+      !( 0 <= p_index && p_index < stateModel->Np() ), std::logic_error,
+      "Error, p_index does not fall in the range [0,"<<(stateModel->Np()-1)<<"]!" );
+    // ToDo: Validate support for DfDp!
+  }
+  else {
+    TEUCHOS_ASSERT_EQUALITY(p_index, -1);
+  }
+
+  //
+  // Set the input objects
+  //
+
+  stateModel_ = stateModel;
+
+  if (p_index >= 0) {
+    p_index_ = p_index;
+    p_space_ = stateModel_->get_p_space(p_index);
+  }
+  else {
+    p_index_ = -1;
+    p_space_ = p_space;
+  }
+
+  np_ = p_space_->dim();
+
+  //
+  // Create the structure of the model
+  //
+
+  s_bar_space_ = Thyra::multiVectorProductVectorSpace(
+    stateModel_->get_x_space(), np_
+    );
+
+  f_sens_space_ = Thyra::multiVectorProductVectorSpace(
+    stateModel_->get_f_space(), np_
+    );
+
+  nominalValues_ = this->createInArgs();
+
+  //
+  // Wipe out matrix storage
+  //
+
+  stateBasePoint_ = MEB::InArgs<Scalar>();
+  W_tilde_ = Teuchos::null;
+  coeff_x_dot_ = 0.0;
+  coeff_x_ = 0.0;
+  DfDx_dot_ = Teuchos::null;
+  DfDp_ = Teuchos::null;
+  W_tilde_compute_ = Teuchos::null;
+  DfDx_dot_compute_ = Teuchos::null;
+  DfDp_compute_ = Teuchos::null;
+
+}
 
 
 template<class Scalar>
@@ -911,9 +974,9 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
     }
 
     Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > DfDp_compute;
-    if (is_null(DfDp_)) {
+    if (is_null(DfDp_) && hasStateFuncParams()) {
       DfDp_compute = Thyra::create_DfDp_mv(
-        *stateModel_,p_index_,
+        *stateModel_, p_index_,
         MEB::DERIV_MV_BY_COL
         ).getMultiVector();
       outArgs.set_DfDp(
@@ -924,14 +987,14 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
     
     VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
     stateModel_->evalModel(inArgs,outArgs);
-    if (!is_null(DfDx_dot_compute))
+    if (nonnull(DfDx_dot_compute))
       DfDx_dot_ = DfDx_dot_compute;
-    if (!is_null(DfDp_compute))
+    if (nonnull(DfDp_compute))
       DfDp_ = DfDp_compute;
   
   }
 
-  TEST_FOR_EXCEPT_MSG( !is_null(stateIntegrator_),
+  TEST_FOR_EXCEPT_MSG( nonnull(stateIntegrator_),
     "ToDo: Update for using the stateIntegrator!" );
 
 /* 2007/12/11: rabartl: ToDo: Update the code below to work for the general
@@ -957,7 +1020,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   bool update_DfDx_dot = false;
   bool update_DfDp = false;
 
-  if (!is_null(stateIntegrator_)) {
+  if (nonnull(stateIntegrator_)) {
     // Get x and x_dot at t and flag to recompute all matrices!
     RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
     get_fwd_x_and_x_dot( *stateIntegrator_, t, &x, &x_dot );
@@ -1029,10 +1092,10 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
     // B.4) Set the outputs
 
-    if (!is_null(DfDx_dot_compute_))
+    if (nonnull(DfDx_dot_compute_))
       DfDx_dot_ = DfDx_dot_compute_;
 
-    if (!is_null(DfDp_compute_))
+    if (nonnull(DfDp_compute_))
       DfDp_ = DfDp_compute_;
   
   }
@@ -1069,7 +1132,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
     // B.4) Set the outputs
 
-    if (!is_null(W_tilde_compute_))
+    if (nonnull(W_tilde_compute_))
       W_tilde_ = W_tilde_compute_;
 
   }

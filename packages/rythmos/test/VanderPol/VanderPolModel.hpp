@@ -172,9 +172,10 @@ private:
 
 };
 
-// Non-member constructor
-RCP<VanderPolModel> vanderPolModel(bool implicit);
+// Non-member constructors
 RCP<VanderPolModel> vanderPolModel();
+RCP<VanderPolModel> vanderPolModel(bool implicit);
+RCP<VanderPolModel> vanderPolModel(const RCP<ParameterList> &pl);
 
 } // namespace Rythmos 
 

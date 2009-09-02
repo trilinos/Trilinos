@@ -202,6 +202,20 @@ public:
   virtual void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
+
+  /** \brief Get the currently set initial condtion.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>!is_null(this->getModel())</tt>
+   * </ul>
+   *
+   * The default implementation throwns an exception.
+   *
+   * ToDo: Remove this default implementation and make every concrete subclass
+   * implement this!  Every stepper should except an initial condition that is
+   * separate from the model object.
+   */
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
   
   /** \brief Take a step.
    *

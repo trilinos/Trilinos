@@ -41,13 +41,6 @@
 namespace Rythmos {
 
 
-template <class Scalar>
-RCP<TimeStepNonlinearSolver<Scalar> > timeStepNonlinearSolver()
-{
-  return Teuchos::rcp(new TimeStepNonlinearSolver<Scalar>);
-}
-
-
 // ////////////////////////
 // Defintions
 
@@ -544,6 +537,32 @@ void TimeStepNonlinearSolver<Scalar>::set_W_is_current(bool W_is_current)
   J_is_current_ = W_is_current;
 }
 
+
+} // namespace Rythmos
+
+
+// Nonmember constructors
+
+
+template <class Scalar>
+Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
+Rythmos::timeStepNonlinearSolver()
+{
+  return Teuchos::rcp(new TimeStepNonlinearSolver<Scalar>);
+}
+
+
+template <class Scalar>
+Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
+Rythmos::timeStepNonlinearSolver(const RCP<ParameterList> &pl)
+{
+  const RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
+    solver = timeStepNonlinearSolver<Scalar>();
+  solver->setParameterList(pl);
+  return solver;
+}
+
+
 // 
 // Explicit Instantiation macro
 //
@@ -554,12 +573,11 @@ void TimeStepNonlinearSolver<Scalar>::set_W_is_current(bool W_is_current)
   \
   template class TimeStepNonlinearSolver< SCALAR >; \
   \
-  template RCP<TimeStepNonlinearSolver< SCALAR > > timeStepNonlinearSolver(); 
-   
+  template RCP<TimeStepNonlinearSolver< SCALAR > > timeStepNonlinearSolver(); \
+  \
+  template RCP<TimeStepNonlinearSolver<SCALAR > > \
+  timeStepNonlinearSolver(const RCP<ParameterList> &pl);
 
-
-
-} // namespace Rythmos
 
 
 #endif // RYTHMOS_TIME_STEP_NONLINEAR_SOLVER_DEF_HPP

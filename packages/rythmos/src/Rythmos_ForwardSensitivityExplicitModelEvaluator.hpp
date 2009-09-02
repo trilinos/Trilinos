@@ -43,10 +43,11 @@
 namespace Rythmos {
 
 
-/** \brief Forward sensitivity transient <tt>ModelEvaluator</tt> subclass.
+/** \brief Explicit forward sensitivity transient <tt>ModelEvaluator</tt>
+ * subclass.
  *
  * This class provides a very general implemenation of a linear forward
- * sensitivity model evaluator for an ODE.
+ * sensitivity model evaluator for an explicit ODE.
  *
  * \section Rythmos_ForwardSensitivityExplicitModelEvaluator_intro_sec Introduction
  *
@@ -63,7 +64,8 @@ namespace Rythmos {
  * As shown above, the parameters are assumed to be steady state and can enter
  * through the intial condition and/or through the ODE equation itself.
  *
- * The forward sensitivity equations written in multi-vector form are:
+ * The explicit forward sensitivity equations written in multi-vector form
+ * are:
 
  \verbatim
 
@@ -130,33 +132,6 @@ public:
   /** \brief . */
   ForwardSensitivityExplicitModelEvaluator();
 
-  /** \brief Intialize the with the model structure.
-   *
-   * \param  stateModel
-   *           [in,persisting] The ModelEvaluator that defines the
-   *           parameterized state model <tt>x_dot =f(x,p)</tt>.
-   * \param  p_index
-   *           [in] The index of the parameter subvector in <tt>stateModel</tt>
-   *           for which sensitivities will be computed for.
-   *
-   * This function only intializes the spaces etc. needed to define structure
-   * of the problem.  <tt>*this</tt> model object is not fully initialized at
-   * this point in that <tt>evalModel()</tt> will not work yet and will thrown
-   * exceptions if called.  The function <tt>initalizeState()</tt> must be
-   * called later in order to fully initalize the model.
-   */
-  void initializeStructure(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const int p_index
-    );
-  
-  /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getStateModel() const;
-  
-  /** \brief . */
-  int get_p_index() const;
-
   /** \brief Initialize full state for a single point in time.
    *
    * \param stateBasePoint [in] The base point
@@ -173,6 +148,33 @@ public:
   void initializePointState(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
     );
+
+  //@}
+
+  /** \name Public functions overridden from ForwardSensitivityModelEvaluatorBase. */
+  //@{
+
+  /** \brief . */
+  void initializeStructure(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const int p_index
+    );
+  
+  /** \brief . */
+  void initializeStructureInitCondOnly(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    );
+  
+  /** \brief . */
+  RCP<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+  
+  /** \brief . */
+  int get_p_index() const;
+  
+  /** \brief . */
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
 
   //@}
 
@@ -247,11 +249,13 @@ private:
 
 // Constructors/Intializers/Accessors
 
-// Nonmember constructor
+
 template<class Scalar>
-RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> > forwardSensitivityExplicitModelEvaluator()
+RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> >
+forwardSensitivityExplicitModelEvaluator()
 {
-  RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> > fseme = rcp(new ForwardSensitivityExplicitModelEvaluator<Scalar> );
+  RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> > fseme =
+    rcp(new ForwardSensitivityExplicitModelEvaluator<Scalar> );
   return fseme;
 }
 
@@ -260,6 +264,39 @@ template<class Scalar>
 ForwardSensitivityExplicitModelEvaluator<Scalar>::ForwardSensitivityExplicitModelEvaluator()
   : p_index_(0), np_(-1)
 {}
+
+
+template<class Scalar>
+void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+#ifdef RYTHMOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    is_null(stateModel_), std::logic_error,
+    "Error, you must call intializeStructure(...) before you call initializePointState(...)"
+    );
+  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
+  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
+  // What about the other parameter values?  We really can't say anything
+  // about these and we can't check them.  They can be null just fine.
+#endif
+
+  stateBasePoint_ = stateBasePoint;
+
+  // Set whatever derivatives where passed in.  If an input in null, then the
+  // member will be null and the null linear operators will be computed later
+  // just in time.
+
+  wrapNominalValuesAndBounds();
+
+}
+
+
+// Public functions overridden from ForwardSensitivityModelEvaluatorBase
 
 
 template<class Scalar>
@@ -317,6 +354,16 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
 
 
 template<class Scalar>
+void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+  )
+{
+  TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement initializeStructureInitCondOnly()!" );
+}
+
+
+template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityExplicitModelEvaluator<Scalar>::getStateModel() const
 {
@@ -332,32 +379,11 @@ int ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_index() const
 
 
 template<class Scalar>
-void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
-  )
+RCP<const Thyra::VectorSpaceBase<Scalar> >
+ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_space() const
 {
-
-  typedef Thyra::ModelEvaluatorBase MEB;
-
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
-    is_null(stateModel_), std::logic_error,
-    "Error, you must call intializeStructure(...) before you call initializePointState(...)"
-    );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
-  // What about the other parameter values?  We really can't say anything
-  // about these and we can't check them.  They can be null just fine.
-#endif
-
-  stateBasePoint_ = stateBasePoint;
-
-  // Set whatever derivatives where passed in.  If an input in null, then the
-  // member will be null and the null linear operators will be computed later
-  // just in time.
-
-  wrapNominalValuesAndBounds();
-
+  TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
 }
 
 

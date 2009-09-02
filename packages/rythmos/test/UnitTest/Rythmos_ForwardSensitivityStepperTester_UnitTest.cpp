@@ -80,13 +80,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepperTester, linear )
     "  </ParameterList>"
     "</ParameterList>"
     );
-  //pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
-  //pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
-  //pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
-  //pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
   
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>(ibPL);
-  ib->setParameterList(ibPL);
 
   // Create the actual integrator ready to go
 

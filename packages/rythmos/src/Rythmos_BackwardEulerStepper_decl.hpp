@@ -262,12 +262,13 @@ public:
   void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
 
   /** \brief . */
-  RCP<InterpolatorBase<Scalar> >
-    getNonconstInterpolator();
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
   /** \brief . */
-  RCP<const InterpolatorBase<Scalar> >
-    getInterpolator() const;
+  RCP<InterpolatorBase<Scalar> > getNonconstInterpolator();
+
+  /** \brief . */
+  RCP<const InterpolatorBase<Scalar> > getInterpolator() const;
   
   /** \brief . */
   RCP<InterpolatorBase<Scalar> > unSetInterpolator();

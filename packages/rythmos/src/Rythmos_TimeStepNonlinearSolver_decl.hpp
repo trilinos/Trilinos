@@ -162,6 +162,15 @@ private:
 template <class Scalar>
 RCP<TimeStepNonlinearSolver<Scalar> > timeStepNonlinearSolver();
 
+
+/** \brief Nonmember constructor.
+ *
+ * \relates TimeStepNonlinearSolver
+ */
+template <class Scalar>
+RCP<TimeStepNonlinearSolver<Scalar> >
+timeStepNonlinearSolver(const RCP<ParameterList> &pl);
+
 } // namespace Rythmos
 
 

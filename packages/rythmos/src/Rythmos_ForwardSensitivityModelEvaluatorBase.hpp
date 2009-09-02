@@ -48,14 +48,14 @@
 namespace Rythmos {
 
 
-/** \brief Forward sensitivity transient <tt>ModelEvaluator</tt> subclass.
+/** \brief Forward sensitivity transient <tt>ModelEvaluator</tt> node
+ * interface class.
  *
- * This class provides a very general implemenation of a linear forward
+ * This base interface class provides the generalities of a linear forward
  * sensitivity model evaluator for a differential equation.
  *  
  * There are two derived classes which implement an implicit DAE and explicit
  * ODE formulation of the sensitivity equations.
- *
  */
 template<class Scalar>
 class ForwardSensitivityModelEvaluatorBase
@@ -63,14 +63,13 @@ class ForwardSensitivityModelEvaluatorBase
 {
 public:
 
-  /** \brief Intialize the with the model structure.
+  /** \brief Initialize the structure of the model.
    *
-   * \param  stateModel
-   *           [in,persisting] The ModelEvaluator that defines the
-   *           parameterized state model <tt>f(x_dot,x,p)</tt>.
-   * \param  p_index
-   *           [in] The index of the parameter subvector in <tt>stateModel</tt>
-   *           for which sensitivities will be computed for.
+   * \param stateModel [in,persisting] The ModelEvaluator that defines the
+   * parameterized state model <tt>f(x_dot,x,p)</tt>.
+   *
+   * \param p_index [in] The index of the parameter subvector in
+   * <tt>stateModel</tt> for which sensitivities will be computed for.
    *
    * This function only intializes the spaces etc. needed to define structure
    * of the problem.  <tt>*this</tt> model object is not fully initialized at
@@ -81,16 +80,40 @@ public:
   virtual void initializeStructure(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
-    ) =0;
+    ) = 0;
+
+  /** \brief Initialize the structure of the model for an initial condition
+   * only sensitivity problem.
+   *
+   * \param stateModel [in,persisting] The ModelEvaluator that defines the
+   * parameterized state model <tt>f(x_dot,x,p)</tt>.
+   *
+   * \param p_space [in] The vector space for the parameterized initial
+   * condition parameters.
+   *
+   * This function only intializes the spaces etc. needed to define structure
+   * of the problem.  <tt>*this</tt> model object is not fully initialized at
+   * this point in that <tt>evalModel()</tt> will not work yet and will thrown
+   * exceptions if called.  The function <tt>initalizeState()</tt> must be
+   * called later in order to fully initalize the model.
+   */
+  virtual void initializeStructureInitCondOnly(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    ) = 0;
   
   /** \brief . */
   virtual RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const =0;
   
   /** \brief . */
-  virtual int get_p_index() const =0;
+  virtual int get_p_index() const = 0;
+  
+  /** \brief . */
+  virtual RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const = 0;
 
 };
+
 
 } // namespace Rythmos
 
