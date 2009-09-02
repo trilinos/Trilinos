@@ -15,30 +15,26 @@ include $(top_builddir)/Makefile.export.zoltan
 
 EXEEXT = .exe
 
-ZOLTAN_EX_DEPS = $(top_builddir)/src/libzoltan.a 
-
-ZOLTAN_EX_INCLUDES = $(ZOLTAN_INCLUDES)
-
 noinst_PROGRAMS = simpleBLOCK simpleRCB simpleGRAPH simplePHG 
 
 simpleBLOCK_SOURCES      = simpleBLOCK.c
-simpleBLOCK_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleBLOCK_CFLAGS     = $(ZOLTAN_EX_INCLUDES)
+simpleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
+simpleBLOCK_CFLAGS     = $(ZOLTAN_INCLUDES)
 simpleBLOCK_LDADD        = $(ZOLTAN_LIBS)
 
 simpleRCB_SOURCES      = simpleRCB.c
-simpleRCB_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleRCB_CFLAGS     = $(ZOLTAN_EX_INCLUDES)
-simpleRCB_LDADD        = $(ZOLTAN_EX_LIBS)
+simpleRCB_DEPENDENCIES = $(ZOLTAN_DEPS)
+simpleRCB_CFLAGS     = $(ZOLTAN_INCLUDES)
+simpleRCB_LDADD        = $(ZOLTAN_LIBS)
 
 simpleGRAPH_SOURCES      = simpleGRAPH.c
-simpleGRAPH_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleGRAPH_CFLAGS     = $(ZOLTAN_EX_INCLUDES)
-simpleGRAPH_LDADD        = $(ZOLTAN_EX_LIBS)
+simpleGRAPH_DEPENDENCIES = $(ZOLTAN_DEPS)
+simpleGRAPH_CFLAGS     = $(ZOLTAN_LIBRARY_INCLUDES)
+simpleGRAPH_LDADD        = $(ZOLTAN_LIBS)
 
 simplePHG_SOURCES      = simplePHG.c
-simplePHG_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simplePHG_CFLAGS     = $(ZOLTAN_EX_INCLUDES)
-simplePHG_LDADD        = $(ZOLTAN_EX_LIBS)
+simplePHG_DEPENDENCIES = $(ZOLTAN_DEPS)
+simplePHG_CFLAGS     = $(ZOLTAN_INCLUDES)
+simplePHG_LDADD        = $(ZOLTAN_LIBS)
 
 EXTRA_DIST = classicMakefile objects.txt hypergraph.txt graph.txt mesh.txt
