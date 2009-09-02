@@ -178,7 +178,7 @@ TEST:  foreach $file (@inpfiles) {
 
   ### Execute zdrive.exe.
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $loop_np);
-  if ($loop_np > 1) {
+  if ($np > 1) {  # Test on $np because we want to know is the binary needs mpiexec
     $cmd = sprintf("$mpiexec $mpiexecargs -np %d %s %s 2>&1 | tee %s\n", 
                     $loop_np, $zdrive, $file, $zouterrfile);
   }
