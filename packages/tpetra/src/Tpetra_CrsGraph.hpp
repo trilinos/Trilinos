@@ -292,6 +292,11 @@ namespace Tpetra
       //@}
 
 
+    private:
+      // copy constructor disabled
+      CrsGraph(const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &Source);
+      // operator= disabled
+      CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & operator=(const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     protected:
       enum AllocateLocalGlobal {
         AllocateLocal,
@@ -363,7 +368,7 @@ namespace Tpetra
       Teuchos::ArrayRCP<size_t>       numEntriesPerRow_;
 
       // graph indices. before allocation, both are Teuchos::null. 
-      // after allocation, except during makeIndicesLocal(), one of these is Teuchos::null.
+      // after allocation, except during makeIndicesLocal(), one of these is Teuchos::Null.
       // this is a parallel compute buffer, not host memory
       // 1D == StaticAllocation, 2D == DynamicAllocation
       Teuchos::ArrayRCP< LocalOrdinal>                     pbuf_lclInds1D_;
