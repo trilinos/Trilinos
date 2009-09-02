@@ -1143,7 +1143,7 @@ def checkinTest(inOptions):
             subjectLine = "COMMIT FAILED"
             commitEmailBodyExtra += "\n\nCommit failed because final update failed!  See 'update2.out'\n\n"
           elif commitRtn == 0:
-            if forcedCommitMsg:
+            if forcedCommit:
               subjectLine = "FORCED COMMIT"
               commitEmailBodyExtra += forcedCommitMsg
             else:
