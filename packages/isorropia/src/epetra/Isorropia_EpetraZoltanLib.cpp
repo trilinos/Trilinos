@@ -610,18 +610,12 @@ order(Teuchos::ParameterList& zoltanParamList,
 
   precompute();
 
-  //Generate Load Balance
-  int num_gid_entries, num_lid_entries;
   /* Note : this works because epetra ordinal type is int */
-  ZOLTAN_ID_PTR import_global_ids = new ZOLTAN_ID_TYPE[num_obj_];
-  ZOLTAN_ID_PTR import_local_ids = new ZOLTAN_ID_TYPE[num_obj_];
+  int num_gid_entries = 1;
 
   properties.resize(num_obj_);
-  int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_,
-		       import_global_ids, import_local_ids, &properties[0], NULL);
-
-  delete[] import_local_ids;
-  delete[] import_global_ids;
+  int err = zz_->Order(num_gid_entries, num_obj_,
+		       (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(), &properties[0], NULL);
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing ordering with Zoltan");
