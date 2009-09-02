@@ -29,12 +29,12 @@
 // @HEADER
 
 /** \file test_02.cpp
-\brief  Patch test for the Intrepid::Basis_HGRAD_TET_C2_FEM class.
+\brief  Patch test for the Intrepid::Basis_HGRAD_QUAD_C1_FEM class.
 \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
 #include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
@@ -50,29 +50,27 @@
 using namespace std;
 using namespace Intrepid;
 
-void rhsFunc(FieldContainer<double> &, const FieldContainer<double> &, int, int, int);
+void rhsFunc(FieldContainer<double> &, const FieldContainer<double> &, int, int);
 void neumann(FieldContainer<double>       & ,
              const FieldContainer<double> & ,
              const FieldContainer<double> & ,
              const shards::CellTopology   & ,
-             int, int, int, int);
-void u_exact(FieldContainer<double> &, const FieldContainer<double> &, int, int, int);
+             int, int, int);
+void u_exact(FieldContainer<double> &, const FieldContainer<double> &, int, int);
 
 /// right-hand side function
 void rhsFunc(FieldContainer<double> & result,
              const FieldContainer<double> & points,
              int xd,
-             int yd,
-             int zd) {
+             int yd) {
 
-  int x = 0, y = 1, z = 2;
+  int x = 0, y = 1;
 
   // second x-derivatives of u
   if (xd > 1) {
     for (int cell=0; cell<result.dimension(0); cell++) {
       for (int pt=0; pt<result.dimension(1); pt++) {
-        result(cell,pt) = - xd*(xd-1)*std::pow(points(cell,pt,x), xd-2) *
-                            std::pow(points(cell,pt,y), yd) * std::pow(points(cell,pt,z), zd);
+        result(cell,pt) = - xd*(xd-1)*std::pow(points(cell,pt,x), xd-2) * std::pow(points(cell,pt,y), yd);
       }
     }
   }
@@ -81,18 +79,7 @@ void rhsFunc(FieldContainer<double> & result,
   if (yd > 1) {
     for (int cell=0; cell<result.dimension(0); cell++) {
       for (int pt=0; pt<result.dimension(1); pt++) {
-        result(cell,pt) -=  yd*(yd-1)*std::pow(points(cell,pt,y), yd-2) *
-                            std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,z), zd);
-      }
-    }
-  }
-
-  // second z-derivatives of u
-  if (zd > 1) {
-    for (int cell=0; cell<result.dimension(0); cell++) {
-      for (int pt=0; pt<result.dimension(1); pt++) {
-        result(cell,pt) -=  zd*(zd-1)*std::pow(points(cell,pt,z), zd-2) *
-                            std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,y), yd);
+        result(cell,pt) -=  yd*(yd-1)*std::pow(points(cell,pt,y), yd-2) * std::pow(points(cell,pt,x), xd);
       }
     }
   }
@@ -100,7 +87,7 @@ void rhsFunc(FieldContainer<double> & result,
   // add u
   for (int cell=0; cell<result.dimension(0); cell++) {
     for (int pt=0; pt<result.dimension(1); pt++) {
-      result(cell,pt) +=  std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,y), yd) * std::pow(points(cell,pt,z), zd);
+      result(cell,pt) +=  std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,y), yd);
     }
   }
 
@@ -112,23 +99,22 @@ void neumann(FieldContainer<double>       & result,
              const FieldContainer<double> & points,
              const FieldContainer<double> & jacs,
              const shards::CellTopology   & parentCell,
-             int sideOrdinal, int xd, int yd, int zd) {
+             int sideOrdinal, int xd, int yd) {
 
-  int x = 0, y = 1, z = 2;
+  int x = 0, y = 1;
 
   int numCells  = result.dimension(0);
   int numPoints = result.dimension(1);
 
-  FieldContainer<double> grad_u(numCells, numPoints, 3);
-  FieldContainer<double> side_normals(numCells, numPoints, 3);
+  FieldContainer<double> grad_u(numCells, numPoints, 2);
+  FieldContainer<double> side_normals(numCells, numPoints, 2);
   FieldContainer<double> normal_lengths(numCells, numPoints);
 
   // first x-derivatives of u
   if (xd > 0) {
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
-        grad_u(cell,pt,x) = xd*std::pow(points(cell,pt,x), xd-1) *
-                            std::pow(points(cell,pt,y), yd) * std::pow(points(cell,pt,z), zd);
+        grad_u(cell,pt,x) = xd*std::pow(points(cell,pt,x), xd-1) * std::pow(points(cell,pt,y), yd);
       }
     }
   }
@@ -137,18 +123,7 @@ void neumann(FieldContainer<double>       & result,
   if (yd > 0) {
     for (int cell=0; cell<numCells; cell++) {
       for (int pt=0; pt<numPoints; pt++) {
-        grad_u(cell,pt,y) = yd*std::pow(points(cell,pt,y), yd-1) *
-                            std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,z), zd);
-      }
-    }
-  }
-
-  // first z-derivatives of u
-  if (zd > 0) {
-    for (int cell=0; cell<numCells; cell++) {
-      for (int pt=0; pt<numPoints; pt++) {
-        grad_u(cell,pt,z) = zd*std::pow(points(cell,pt,z), zd-1) *
-                            std::pow(points(cell,pt,x), xd) * std::pow(points(cell,pt,y), yd);
+        grad_u(cell,pt,y) = yd*std::pow(points(cell,pt,y), yd-1) * std::pow(points(cell,pt,x), xd);
       }
     }
   }
@@ -164,11 +139,11 @@ void neumann(FieldContainer<double>       & result,
 }
 
 /// exact solution
-void u_exact(FieldContainer<double> & result, const FieldContainer<double> & points, int xd, int yd, int zd) {
-  int x = 0, y = 1, z = 2;
+void u_exact(FieldContainer<double> & result, const FieldContainer<double> & points, int xd, int yd) {
+  int x = 0, y = 1;
   for (int cell=0; cell<result.dimension(0); cell++) {
     for (int pt=0; pt<result.dimension(1); pt++) {
-      result(cell,pt) = std::pow(points(pt,x), xd)*std::pow(points(pt,y), yd)*std::pow(points(pt,z), zd);
+      result(cell,pt) = std::pow(points(pt,x), xd)*std::pow(points(pt,y), yd);
     }
   }
 }
@@ -197,13 +172,18 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                    Unit Test (Basis_HGRAD_TET_C2_FEM)                       |\n" \
+    << "|                    Unit Test (Basis_HGRAD_QUAD_C1_FEM)                      |\n" \
     << "|                                                                             |\n" \
     << "|     1) Patch test involving mass and stiffness matrices,                    |\n" \
-    << "|        for the Neumann problem on a tetrahedral patch                       |\n" \
-    << "|        Omega with boundary Gamma.                                           |\n" \
+    << "|        for the Neumann problem on a physical parallelogram                  |\n" \
+    << "|        AND a reference quad Omega with boundary Gamma.                      |\n" \
     << "|                                                                             |\n" \
     << "|        - div (grad u) + u = f  in Omega,  (grad u) . n = g  on Gamma        |\n" \
+    << "|                                                                             |\n" \
+    << "|        For a generic parallelogram, the basis recovers a complete           |\n" \
+    << "|        polynomial space of order 1. On a (scaled and/or translated)         |\n" \
+    << "|        reference quad, the basis recovers a complete tensor product         |\n" \
+    << "|        space of order 1 (i.e. incl. the xy term).                           |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
@@ -224,93 +204,79 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int max_order = 2;                                                                  // max total order of polynomial solution
-    DefaultCubatureFactory<double>  cubFactory;                                         // create factory
-    shards::CellTopology cell(shards::getCellTopologyData< shards::Tetrahedron<> >());  // create parent cell topology
-    shards::CellTopology side(shards::getCellTopologyData< shards::Triangle<> >());     // create relevant subcell (side) topology
+    int max_order = 1;                                                                    // max total order of polynomial solution
+    DefaultCubatureFactory<double>  cubFactory;                                           // create cubature factory
+    shards::CellTopology cell(shards::getCellTopologyData< shards::Quadrilateral<> >());  // create parent cell topology
+    shards::CellTopology side(shards::getCellTopologyData< shards::Line<> >());           // create relevant subcell (side) topology
     int cellDim = cell.getDimension();
     int sideDim = side.getDimension();
 
-    // Define array containing points at which the solution is evaluated, on the reference tet.
+    // Define array containing points at which the solution is evaluated, in reference cell.
     int numIntervals = 10;
-    int numInterpPoints = ((numIntervals + 1)*(numIntervals + 2)*(numIntervals + 3))/6;
-    FieldContainer<double> interp_points_ref(numInterpPoints, 3);
+    int numInterpPoints = (numIntervals + 1)*(numIntervals + 1);
+    FieldContainer<double> interp_points_ref(numInterpPoints, 2);
     int counter = 0;
-    for (int k=0; k<=numIntervals; k++) {
-      for (int j=0; j<=numIntervals; j++) {
-        for (int i=0; i<=numIntervals; i++) {
-          if (i+j+k <= numIntervals) {
-            interp_points_ref(counter,0) = i*(1.0/numIntervals);
-            interp_points_ref(counter,1) = j*(1.0/numIntervals);
-            interp_points_ref(counter,2) = k*(1.0/numIntervals);
-            counter++;
-          }
-        }
+    for (int j=0; j<=numIntervals; j++) {
+      for (int i=0; i<=numIntervals; i++) {
+        interp_points_ref(counter,0) = i*(2.0/numIntervals)-1.0;
+        interp_points_ref(counter,1) = j*(2.0/numIntervals)-1.0;
+        counter++;
       }
     }
 
-    /* Definition of parent cell. */
-    FieldContainer<double> cell_nodes(1, 4, cellDim);
-    // funky tet
-    cell_nodes(0, 0, 0) = -1.0;
-    cell_nodes(0, 0, 1) = -2.0;
-    cell_nodes(0, 0, 2) = 0.0;
-    cell_nodes(0, 1, 0) = 6.0;
-    cell_nodes(0, 1, 1) = 2.0;
-    cell_nodes(0, 1, 2) = 0.0;
-    cell_nodes(0, 2, 0) = -5.0;
-    cell_nodes(0, 2, 1) = 1.0;
-    cell_nodes(0, 2, 2) = 0.0;
-    cell_nodes(0, 3, 0) = -4.0;
-    cell_nodes(0, 3, 1) = -1.0;
-    cell_nodes(0, 3, 2) = 3.0;
-    // perturbed reference tet
-    /*cell_nodes(0, 0, 0) = 0.1;
-    cell_nodes(0, 0, 1) = -0.1;
-    cell_nodes(0, 0, 2) = 0.2;
-    cell_nodes(0, 1, 0) = 1.2;
-    cell_nodes(0, 1, 1) = -0.1;
-    cell_nodes(0, 1, 2) = 0.05;
-    cell_nodes(0, 2, 0) = 0.0;
-    cell_nodes(0, 2, 1) = 0.9;
-    cell_nodes(0, 2, 2) = 0.1;
-    cell_nodes(0, 3, 0) = 0.1;
-    cell_nodes(0, 3, 1) = -0.1;
-    cell_nodes(0, 3, 2) = 1.1;*/
-    // reference tet
-    /*cell_nodes(0, 0, 0) = 0.0;
-    cell_nodes(0, 0, 1) = 0.0;
-    cell_nodes(0, 0, 2) = 0.0;
-    cell_nodes(0, 1, 0) = 1.0;
-    cell_nodes(0, 1, 1) = 0.0;
-    cell_nodes(0, 1, 2) = 0.0;
-    cell_nodes(0, 2, 0) = 0.0;
-    cell_nodes(0, 2, 1) = 1.0;
-    cell_nodes(0, 2, 2) = 0.0;
-    cell_nodes(0, 3, 0) = 0.0;
-    cell_nodes(0, 3, 1) = 0.0;
-    cell_nodes(0, 3, 2) = 1.0;*/
+    /* Parent cell definition. */
+    FieldContainer<double> cell_nodes[2];
+    cell_nodes[0].resize(1, 4, cellDim);
+    cell_nodes[1].resize(1, 4, cellDim);
 
-    FieldContainer<double> interp_points(1, numInterpPoints, cellDim);
-    CellTools<double>::mapToPhysicalFrame(interp_points, interp_points_ref, cell_nodes, cell);
-    interp_points.resize(numInterpPoints, cellDim);
+    // Generic parallelogram.
+    cell_nodes[0](0, 0, 0) = -5.0;
+    cell_nodes[0](0, 0, 1) = -1.0;
+    cell_nodes[0](0, 1, 0) = 4.0;
+    cell_nodes[0](0, 1, 1) = 1.0;
+    cell_nodes[0](0, 2, 0) = 8.0;
+    cell_nodes[0](0, 2, 1) = 3.0;
+    cell_nodes[0](0, 3, 0) = -1.0;
+    cell_nodes[0](0, 3, 1) = 1.0;
+    // Reference quad. 
+    cell_nodes[1](0, 0, 0) = -1.0;
+    cell_nodes[1](0, 0, 1) = -1.0;
+    cell_nodes[1](0, 1, 0) = 1.0;
+    cell_nodes[1](0, 1, 1) = -1.0;
+    cell_nodes[1](0, 2, 0) = 1.0;
+    cell_nodes[1](0, 2, 1) = 1.0;
+    cell_nodes[1](0, 3, 0) = -1.0;
+    cell_nodes[1](0, 3, 1) = 1.0;
 
-    for (int x_order=0; x_order <= max_order; x_order++) {
-      for (int y_order=0; y_order <= max_order-x_order; y_order++) {
-        for (int z_order=0; z_order <= max_order-x_order-y_order; z_order++) {
+    std::stringstream mystream[2];
+    mystream[0].str("\n>> Now testing basis on a generic parallelogram ...\n");
+    mystream[1].str("\n>> Now testing basis on the reference quad ...\n");
+
+    for (int pcell = 0; pcell < 2; pcell++) {
+      *outStream << mystream[pcell].str();
+      FieldContainer<double> interp_points(1, numInterpPoints, cellDim);
+      CellTools<double>::mapToPhysicalFrame(interp_points, interp_points_ref, cell_nodes[pcell], cell);
+      interp_points.resize(numInterpPoints, cellDim);
+
+      for (int x_order=0; x_order <= max_order; x_order++) {
+        int max_y_order = max_order;
+        if (pcell == 0) {
+          max_y_order -= x_order;
+        }
+        for (int y_order=0; y_order <= max_y_order; y_order++) {
 
           // evaluate exact solution
           FieldContainer<double> exact_solution(1, numInterpPoints);
-          u_exact(exact_solution, interp_points, x_order, y_order, z_order);
+          u_exact(exact_solution, interp_points, x_order, y_order);
 
-          int basis_order = 2;
+          int basis_order = 1;
 
-          // set test tolerance;
-          double zero = basis_order*basis_order*basis_order*100*INTREPID_TOL;
+          // set test tolerance
+          double zero = basis_order*basis_order*100*INTREPID_TOL;
 
           //create basis
           Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
-            Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM<double,FieldContainer<double> >() );
+            Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer<double> >() );
           int numFields = basis->getCardinality();
 
           // create cubatures
@@ -357,8 +323,8 @@ int main(int argc, char *argv[]) {
           FieldContainer<double> neumann_fields_per_side(1, numFields);
 
           /* Section 3: Related to global interpolant. */
-          FieldContainer<double> value_of_basis_at_interp_points_ref(numFields, numInterpPoints);
-          FieldContainer<double> transformed_value_of_basis_at_interp_points_ref(1, numFields, numInterpPoints);
+          FieldContainer<double> value_of_basis_at_interp_points(numFields, numInterpPoints);
+          FieldContainer<double> transformed_value_of_basis_at_interp_points(1, numFields, numInterpPoints);
           FieldContainer<double> interpolant(1, numInterpPoints);
 
           FieldContainer<int> ipiv(numFields);
@@ -371,7 +337,7 @@ int main(int argc, char *argv[]) {
           cellCub->getCubature(cub_points_cell, cub_weights_cell);
 
           // compute geometric cell information
-          CellTools<double>::setJacobian(jacobian_cell, cub_points_cell, cell_nodes, cell);
+          CellTools<double>::setJacobian(jacobian_cell, cub_points_cell, cell_nodes[pcell], cell);
           CellTools<double>::setJacobianInv(jacobian_inv_cell, jacobian_cell);
           CellTools<double>::setJacobianDet(jacobian_det_cell, jacobian_cell);
 
@@ -383,7 +349,7 @@ int main(int argc, char *argv[]) {
           // tabulate values of basis functions at (reference) cubature points
           basis->getValues(value_of_basis_at_cub_points_cell, cub_points_cell, OPERATOR_VALUE);
 
-          // transform values of basis functions 
+          // transform values of basis functions
           FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_cub_points_cell,
                                                           value_of_basis_at_cub_points_cell);
 
@@ -404,7 +370,7 @@ int main(int argc, char *argv[]) {
           // tabulate gradients of basis functions at (reference) cubature points
           basis->getValues(grad_of_basis_at_cub_points_cell, cub_points_cell, OPERATOR_GRAD);
 
-          // transform gradients of basis functions 
+          // transform gradients of basis functions
           FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_grad_of_basis_at_cub_points_cell,
                                                          jacobian_inv_cell,
                                                          grad_of_basis_at_cub_points_cell);
@@ -425,10 +391,10 @@ int main(int argc, char *argv[]) {
           ///////////////////////////////
           // Computing RHS contributions:
           // map cell (reference) cubature points to physical space
-          CellTools<double>::mapToPhysicalFrame(cub_points_cell_physical, cub_points_cell, cell_nodes, cell);
+          CellTools<double>::mapToPhysicalFrame(cub_points_cell_physical, cub_points_cell, cell_nodes[pcell], cell);
 
           // evaluate rhs function
-          rhsFunc(rhs_at_cub_points_cell_physical, cub_points_cell_physical, x_order, y_order, z_order);
+          rhsFunc(rhs_at_cub_points_cell_physical, cub_points_cell_physical, x_order, y_order);
 
           // compute rhs
           FunctionSpaceTools::integrate<double>(rhs_and_soln_vector,
@@ -441,11 +407,11 @@ int main(int argc, char *argv[]) {
           for (unsigned i=0; i<numSides; i++) {
             // compute geometric cell information
             CellTools<double>::mapToReferenceSubcell(cub_points_side_refcell, cub_points_side, sideDim, (int)i, cell);
-            CellTools<double>::setJacobian(jacobian_side_refcell, cub_points_side_refcell, cell_nodes, cell);
+            CellTools<double>::setJacobian(jacobian_side_refcell, cub_points_side_refcell, cell_nodes[pcell], cell);
             CellTools<double>::setJacobianDet(jacobian_det_side_refcell, jacobian_side_refcell);
 
-            // compute weighted face measure
-            FunctionSpaceTools::computeFaceMeasure<double>(weighted_measure_side_refcell,
+            // compute weighted edge measure
+            FunctionSpaceTools::computeEdgeMeasure<double>(weighted_measure_side_refcell,
                                                            jacobian_side_refcell,
                                                            cub_weights_side,
                                                            i,
@@ -453,7 +419,7 @@ int main(int argc, char *argv[]) {
 
             // tabulate values of basis functions at side cubature points, in the reference parent cell domain
             basis->getValues(value_of_basis_at_cub_points_side_refcell, cub_points_side_refcell, OPERATOR_VALUE);
-            // transform 
+            // transform
             FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_cub_points_side_refcell,
                                                             value_of_basis_at_cub_points_side_refcell);
 
@@ -464,10 +430,10 @@ int main(int argc, char *argv[]) {
 
             // compute Neumann data
             // map side cubature points in reference parent cell domain to physical space
-            CellTools<double>::mapToPhysicalFrame(cub_points_side_physical, cub_points_side_refcell, cell_nodes, cell);
+            CellTools<double>::mapToPhysicalFrame(cub_points_side_physical, cub_points_side_refcell, cell_nodes[pcell], cell);
             // now compute data
             neumann(neumann_data_at_cub_points_side_physical, cub_points_side_physical, jacobian_side_refcell,
-                    cell, (int)i, x_order, y_order, z_order);
+                    cell, (int)i, x_order, y_order);
 
             FunctionSpaceTools::integrate<double>(neumann_fields_per_side,
                                                   neumann_data_at_cub_points_side_physical,
@@ -489,13 +455,15 @@ int main(int argc, char *argv[]) {
           ////////////////////////
           // Building interpolant:
           // evaluate basis at interpolation points
-          basis->getValues(value_of_basis_at_interp_points_ref, interp_points_ref, OPERATOR_VALUE);
-          // transform values of basis functions 
-          FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_interp_points_ref,
-                                                          value_of_basis_at_interp_points_ref);
+          basis->getValues(value_of_basis_at_interp_points, interp_points_ref, OPERATOR_VALUE);
+
+          // transform values of basis functions
+          FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_interp_points,
+                                                          value_of_basis_at_interp_points);
+
           for (int bf=0; bf<numFields; bf++) {
             for (int pt=0; pt<numInterpPoints; pt++) {
-              interpolant(0, pt) += rhs_and_soln_vector(0, bf) * transformed_value_of_basis_at_interp_points_ref(0, bf, pt);
+              interpolant(0, pt) += rhs_and_soln_vector(0, bf) * transformed_value_of_basis_at_interp_points(0, bf, pt);
             }
           }
           ////////////////////////
@@ -505,20 +473,19 @@ int main(int argc, char *argv[]) {
           RealSpaceTools<double>::subtract(interpolant, exact_solution);
 
           *outStream << "\nRelative norm-2 error between exact solution polynomial of order ("
-                     << x_order << ", " << y_order << ", " << z_order
-                     << ") and finite element interpolant of order " << basis_order << ": "
+                     << x_order << ", " << y_order << ") and finite element interpolant of order " << basis_order << ": "
                      << RealSpaceTools<double>::vectorNorm(&interpolant[0], interpolant.dimension(1), NORM_TWO) /
                         RealSpaceTools<double>::vectorNorm(&exact_solution[0], exact_solution.dimension(1), NORM_TWO) << "\n";
 
           if (RealSpaceTools<double>::vectorNorm(&interpolant[0], interpolant.dimension(1), NORM_TWO) /
               RealSpaceTools<double>::vectorNorm(&exact_solution[0], exact_solution.dimension(1), NORM_TWO) > zero) {
             *outStream << "\n\nPatch test failed for solution polynomial order ("
-                       << x_order << ", " << y_order << ", " << z_order << ") and basis order " << basis_order << "\n\n";
+                       << x_order << ", " << y_order << ") and basis order " << basis_order << "\n\n";
             errorFlag++;
           }
-        } // end for z_order
-      } // end for y_order
-    } // end for x_order
+        } // end for y_order
+      } // end for x_order
+    } // end for pcell
 
   }
   // Catch unexpected errors
