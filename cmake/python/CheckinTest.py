@@ -522,6 +522,8 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
     emailBody += "\nExtra CMake Options: " + inOptions.extraCmakeOptions + "\n"
+  if inOptions.makeOptions:
+    emailBody += "\nMake Options: " + inOptions.makeOptions + "\n"
   if inOptions.ctestOptions:
     emailBody += "\nCTest Options: " + inOptions.ctestOptions + "\n"
   emailBody += "\n"
