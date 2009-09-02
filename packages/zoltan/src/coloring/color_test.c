@@ -77,6 +77,8 @@ int Zoltan_Color_Test(
   ZG graph;
 
 
+  memset (&graph, 0, sizeof(ZG));
+
   /* PARAMETER SETTINGS */
   Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
   Zoltan_Bind_Param(Color_params, "SUPERSTEP_SIZE", (void *) &ss);
