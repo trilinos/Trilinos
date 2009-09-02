@@ -29,8 +29,6 @@
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
 #include <Teuchos_LabeledObject.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -38,6 +36,10 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Range1D.hpp>
+
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_DefaultArithmetic.hpp>
+
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CombineMode.hpp"
@@ -49,7 +51,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Vector, needed to prevent circular inclusions
-  template<class S, class LO, class GO, class N, class LMV, class LMVT> class Vector;
+  template<class S, class LO, class GO, class N> class Vector;
 #endif
 
   //! \brief A class for constructing and using dense, distributors multivectors.
@@ -58,7 +60,7 @@ namespace Tpetra {
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
      type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType, class LocalMV=Kokkos::MultiVector<Scalar,Node>, class LocalMVTraits=Kokkos::DefaultArithmetic<LocalMV> >
+  template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
   class MultiVector : public DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
     public:
@@ -70,7 +72,7 @@ namespace Tpetra {
     MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true);
 
     //! MultiVector copy constructor.
-    MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &source);
+    MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
@@ -115,7 +117,7 @@ namespace Tpetra {
     //! = Operator.
     /*! \param In A - Multivector to copy
      */
-    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &source);
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
     //@}
 
@@ -130,28 +132,28 @@ namespace Tpetra {
     //@{
 
     //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > subCopy(const Teuchos::Range1D &colRng) const;
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const;
 
     //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const;
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > subView(const Teuchos::Range1D &colRng) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > subView(Teuchos::ArrayView<const size_t> cols) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(Teuchos::ArrayView<const size_t> cols) const;
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > subViewNonConst(const Teuchos::Range1D &colRng);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > subViewNonConst(Teuchos::ArrayView<const size_t> cols);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(Teuchos::ArrayView<const size_t> cols);
 
     //! Const Vector access function.
-    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > getVector(size_t j) const;
+    Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const;
 
     //! Vector access function.
-    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> > getVectorNonConst(size_t j);
+    Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j);
 
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
@@ -185,13 +187,13 @@ namespace Tpetra {
     //@{ 
 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A, const Teuchos::ArrayView<Scalar> &dots) const;
+    void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const;
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A);
+    void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A);
+    void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     void scale(const Scalar &alpha);
@@ -200,13 +202,13 @@ namespace Tpetra {
     void scale(Teuchos::ArrayView<const Scalar> alpha);
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A);
+    void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A);
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A, const Scalar &beta);
+    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta);
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &B, const Scalar &gamma);
+    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma);
 
     //! Compute 1-norm of each vector in multi-vector.
     void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
@@ -218,19 +220,19 @@ namespace Tpetra {
     void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
+    void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
     //! Compute mean (average) value of each vector in multi-vector.
     void meanValue(const Teuchos::ArrayView<Scalar> &means) const;
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &B, const Scalar &beta);
+    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
 
     //! Multiply a MultiVector with another, element-by-element: this(i,j) = beta*this(i,j) + alpha*A(i,j)*B(i,j)
-    void multiply(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &B, const Scalar &beta);
+    void multiply(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
 
     //! Multiply a MultiVector by the reciprocal of another, element-by-element. this(i,j) = beta*this(i,j) + alpha*B(i,j)/A(i,j)
-    void reciprocalMultiply(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMV,LocalMVTraits> &B, const Scalar &beta);
+    void reciprocalMultiply(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
 
     //@} 
 
@@ -267,9 +269,10 @@ namespace Tpetra {
 
     protected:
 
-    typedef LocalMVTraits MVT;
+    typedef Kokkos::MultiVector<Scalar,Node> KMV;
+    typedef Kokkos::DefaultArithmetic<KMV>   MVT;
 
-    LocalMV lclMV_;
+    KMV lclMV_;
     Teuchos::Array<size_t> whichVectors_;
 
     template <class T>
