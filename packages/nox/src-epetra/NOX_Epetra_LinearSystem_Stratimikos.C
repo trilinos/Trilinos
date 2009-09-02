@@ -388,6 +388,14 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   // Dump solution of linear system
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
+  ++linearSolveCount;
+  std::ostringstream iterationNumber;
+  iterationNumber << linearSolveCount;
+    
+  std::string prefixName = p.get("Write Linear System File Prefix", 
+				 "NOX_LinSys");
+  std::string postfixName = iterationNumber.str();
+  postfixName += ".mm";
   if (p.get("Write Linear System", false)) {
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
     EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
