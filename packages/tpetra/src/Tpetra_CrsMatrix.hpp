@@ -417,7 +417,8 @@ namespace Tpetra
       Kokkos::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> lclMatrix_;
       LocalMatVec lclMatVec_;
       LocalMatSolve lclMatSolve_;
-      bool staticGraph_,
+      bool valuesAreAllocated_,
+           staticGraph_,
            constructedWithFilledGraph_,
            fillComplete_,
            storageOptimized_;
@@ -448,6 +449,7 @@ namespace Tpetra
   : lclMatrix_(rowMap->getNode()),
   , lclMatVec_(rowMap->getNode()),
   , lclMatSolve_(rowMap->getNode()),
+  , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
@@ -468,6 +470,7 @@ namespace Tpetra
   : lclMatrix_(rowMap->getNode()),
   , lclMatVec_(rowMap->getNode()),
   , lclMatSolve_(rowMap->getNode()),
+  , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
@@ -488,6 +491,7 @@ namespace Tpetra
   : lclMatrix_(rowMap->getNode()),
   , lclMatVec_(rowMap->getNode()),
   , lclMatSolve_(rowMap->getNode()),
+  , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
@@ -508,6 +512,7 @@ namespace Tpetra
   : lclMatrix_(rowMap->getNode()),
   , lclMatVec_(rowMap->getNode()),
   , lclMatSolve_(rowMap->getNode()),
+  , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
@@ -526,6 +531,7 @@ namespace Tpetra
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::CrsMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &graph)
   : graph_(graph)
+  , valuesAreAllocated_(false)
   , staticGraph_(true)
   , fillComplete_(false)
   , storageOptimized_(false) {
@@ -767,36 +773,40 @@ namespace Tpetra
         fvals.push_back(values[i]);
       }
     }
-    Teuchos::ArrayView<const LocalOrdinal> findices = finds();
-    Teuchos::ArrayView<const Scalar      > fvalues  = fvals();
-    const size_t rowNNZ = getNumEntriesInLocalRow(localRow),
-                  toAdd = findices.size();
-    size_t rowAlloc = graph_->numAllocatedEntriesForMyRow(localRow);
-    if (rowNNZ+toAdd > rowAlloc) {
-      TEST_FOR_EXCEPTION(graph_->isStaticProfile() == true, std::runtime_error,
-          Teuchos::typeName(*this) << "::insertLocalValues(): new indices exceed statically allocated graph structure.");
-      TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-          "::insertLocalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
+    if (finds.size() > 0) {
+      if (valuesAreAllocated_ == false) {
+        allocateValues();
 #ifdef HAVE_TPETRA_DEBUG
-      // assumption: the number currently allocated in values_ is that stored in the graph.
-      TEST_FOR_EXCEPTION( rowAlloc != values_[localRow].size(), std::logic_error,
-          Teuchos::typeName(*this) << "::insertLocalValues(): Internal logic error or unsupported use case. Please contact Tpetra team.");
+        TEST_FOR_EXCEPTION(valuesAreAllocated_ == false, std::logic_error, 
+            Teuchos::typeName(*this) << "::insertLocalValues(): Internal logic error. Please contact Tpetra team.");
 #endif
-      // increase the allocation, copy old entries to new storage
-      rowAlloc = rowNNZ+toAdd;
-      ArrayRCP<Scalar> newVals = Teuchos::arcp<Scalar>(rowAlloc);
-      std::copy(values_[localRow].begin(), values_[localRow].begin()+rowNNZ, newVals.begin());
-      values_[localRow] = newVals;
+      }
+      Teuchos::ArrayView<const LocalOrdinal> findices = finds();
+      Teuchos::ArrayView<const Scalar      > fvalues  = fvals();
+      const size_t rowNNZ = getNumEntriesInLocalRow(localRow),
+            toAdd = findices.size();
+      size_t rowAlloc = graph_->numAllocatedEntriesForMyRow(localRow);
+      if (rowNNZ+toAdd > rowAlloc) {
+        TEST_FOR_EXCEPTION(graph_->isStaticProfile() == true, std::runtime_error,
+            Teuchos::typeName(*this) << "::insertLocalValues(): new indices exceed statically allocated graph structure.");
+        TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
+            "::insertLocalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
+#ifdef HAVE_TPETRA_DEBUG
+        // assumption: the number currently allocated in values_ is that stored in the graph.
+        TEST_FOR_EXCEPTION( rowAlloc != values_[localRow].size(), std::logic_error,
+            Teuchos::typeName(*this) << "::insertLocalValues(): Internal logic error or unsupported use case. Please contact Tpetra team.");
+#endif
+        // increase the allocation, copy old entries to new storage
+        rowAlloc = rowNNZ+toAdd;
+        ArrayRCP<Scalar> newVals = Teuchos::arcp<Scalar>(rowAlloc);
+        std::copy(values_[localRow].begin(), values_[localRow].begin()+rowNNZ, newVals.begin());
+        values_[localRow] = newVals;
+      }
+      // insert indices and values
+      graph_->insertMyIndices(localRow,findices);  // this will enlarge allocation and append new indices
+      std::copy( fvalues.begin(), fvalues.end(),  getVptr(localRow)+rowNNZ);
+      checkInternalState();
     }
-    // insert indices and values
-    graph_->insertMyIndices(localRow,findices);  // this will enlarge allocation and append new indices
-    std::copy( fvalues.begin(), fvalues.end(),  getVptr(localRow)+rowNNZ);
-#ifdef HAVE_TPETRA_DEBUG
-    // the assumption is that graph_->numAllocatedEntriesForMyRow is the allocated size here
-    TEST_FOR_EXCEPTION( rowAlloc != graph_->numAllocatedEntriesForMyRow(localRow) 
-                        || rowNNZ+toAdd != getNumEntriesInLocalRow(localRow), std::logic_error,
-                        Teuchos::typeName(*this) << "::insertLocalValues(): Internal logic error or unsupported use case. Please contact Tpetra team.");
-#endif
   }
 
 
