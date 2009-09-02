@@ -262,6 +262,10 @@ void Operator::stringToUpper(std::string &s, int &changed)
       *siter = toupper(*siter);
       changed++;
     }
+    if (*siter == '_') {
+      *siter = ' ';
+      changed ++;
+    }
   }
 }
 

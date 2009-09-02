@@ -100,8 +100,7 @@ int main(int argc, char** argv) {
 
   Teuchos::ParameterList paramlist;
 
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
+  paramlist.set("PARTITIONING METHOD", "HYPERGRAPH");
 
   // Now create the partitioner.  By default the partitioning occurs
   // in the constructor.  Include a flag to omit the partitioning.

@@ -32,7 +32,7 @@
 // --f={filename} will read a different coordinate file
 // --v will print out the partitioning (small coordinate files only)
 //
-// The input file should be a text file containing 1, 2 or 3-dimensional 
+// The input file should be a text file containing 1, 2 or 3-dimensional
 // coordinates, one per line, with white space separating coordinate values.
 //
 
@@ -68,14 +68,14 @@
 static int localProc = 0;
 static int numProcs = 1;
 static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
-                    Teuchos::RCP<const Epetra_MultiVector> &weights,
-                    const Teuchos::ParameterList &params);
+		    Teuchos::RCP<const Epetra_MultiVector> &weights,
+		    const Teuchos::ParameterList &params);
 static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
-                    const Teuchos::ParameterList &params);
+		    const Teuchos::ParameterList &params);
 
 int main(int argc, char** argv) {
 
-  int fail = 0, dim=0;  
+  int fail = 0, dim=0;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
   clp.setOption( "f", inputFile, "Name of coordinate input file");
 
   clp.setOption( "v", "q", &verbose,
-                "Display coordinates and weights before and after partitioning.");
+		"Display coordinates and weights before and after partitioning.");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
     clp.parse(argc,argv);
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
   // Open file of coordinates and distribute them across processes
   // so they are unbalanced.
   // =============================================================
-  
+
   Epetra_MultiVector *mv = ispatest::file2multivector(Comm, *inputFile);
 
   if (!mv || ((dim = mv->NumVectors()) < 1)){
@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
       std::cerr << "Invalid input file " << *inputFile << std::endl;
     exit(1);
   }
-  
+
   if (localProc == 0){
     std::cerr << "Found input file " << *inputFile << ", " ;
     std::cerr << dim << " dimensional coordinates" << std::endl;
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
   int globalSize = mv->GlobalLength();
   int myShare = 0;
   int n = numProcs - 1;
-  
+
   if (n){
     if (localProc < n){
       int oneShare = globalSize / n;
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
 
   delete mv;
 
-  Teuchos::RCP<const Epetra_MultiVector> coords = 
+  Teuchos::RCP<const Epetra_MultiVector> coords =
     Teuchos::rcp(new const Epetra_MultiVector(umv));
 
   // =============================================================
@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
   Teuchos::ParameterList internalParams;
 
   internalParams.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
-  
+
 
   Teuchos::ParameterList zoltanParams;
 
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
   // =============================================================
   // Run some tests
   // =============================================================
-  sublist.set("LB_METHOD", "RCB");
+  zoltanParams.set("PARTITIONING METHOD", "RCB");
 
   if (localProc == 0){
     std::cerr << "RCB - unit weights" << std::endl;
@@ -214,7 +214,7 @@ int main(int argc, char** argv) {
 
   fail = run_test(coords, unit_weights_rcp, zoltanParams);
 
-  if (fail) goto failure; 
+  if (fail) goto failure;
 
   if (localProc == 0){
     std::cerr << "PASS" << std::endl << std::endl;
@@ -225,11 +225,11 @@ int main(int argc, char** argv) {
     std::cerr << "HSFC - V weights" << std::endl;
   }
 
-  sublist.set("LB_METHOD", "HSFC");
 
+  zoltanParams.set("PARTITIONING METHOD", "HSFC");
   fail = run_test(coords, vee_weights_rcp, zoltanParams);
 
-  if (fail) goto failure; 
+  if (fail) goto failure;
 
   if (localProc == 0){
     std::cerr << "PASS" << std::endl << std::endl;
@@ -240,11 +240,11 @@ int main(int argc, char** argv) {
   if (localProc == 0){
     std::cerr << "RIB - alternate weights" << std::endl;
   }
-  sublist.set("LB_METHOD", "RIB");
+  zoltanParams.set("PARTITIONING METHOD", "RIB");
 
   fail = run_test(coords, alt_weights_rcp, zoltanParams);
 
-  if (fail) goto failure; 
+  if (fail) goto failure;
 
   if (localProc == 0){
     std::cerr << "PASS" << std::endl << std::endl;
@@ -255,11 +255,11 @@ int main(int argc, char** argv) {
   if (localProc == 0){
     std::cerr << "RIB - no weights supplied" << std::endl;
   }
-  sublist.set("LB_METHOD", "RIB");
+  zoltanParams.set("PARTITIONING METHOD", "RIB");
 
   fail = run_test(coords, zoltanParams);
 
-  if (fail) goto failure; 
+  if (fail) goto failure;
 
   if (localProc == 0){
     std::cerr << "PASS" << std::endl << std::endl;
@@ -286,8 +286,8 @@ done:
 }
 
 static int check_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
-                    Teuchos::RCP<const Epetra_MultiVector> &weights,
-                    Teuchos::RCP<Isorropia::Epetra::Partitioner> &part)
+		    Teuchos::RCP<const Epetra_MultiVector> &weights,
+		    Teuchos::RCP<Isorropia::Epetra::Partitioner> &part)
 {
   // Create a Redistributor based on the partitioning
 
@@ -328,8 +328,8 @@ static int check_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
   return (avg2 > avg1);
 }
 static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
-                    Teuchos::RCP<const Epetra_MultiVector> &weights,
-                    const Teuchos::ParameterList &params)
+		    Teuchos::RCP<const Epetra_MultiVector> &weights,
+		    const Teuchos::ParameterList &params)
 {
 
   Teuchos::RCP<Isorropia::Epetra::Partitioner> part =
@@ -339,7 +339,7 @@ static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
 }
 
 static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
-                    const Teuchos::ParameterList &params)
+		    const Teuchos::ParameterList &params)
 {
   Teuchos::RCP<Isorropia::Epetra::Partitioner> part =
     Teuchos::rcp(new Isorropia::Epetra::Partitioner(coords, params));
@@ -350,7 +350,7 @@ static int run_test(Teuchos::RCP<const Epetra_MultiVector> &coords,
   Epetra_MultiVector tmp(coords->Map(), 1);
   tmp.PutScalar(1.0);
 
-  Teuchos::RCP<const Epetra_MultiVector> unitweights = 
+  Teuchos::RCP<const Epetra_MultiVector> unitweights =
     Teuchos::rcp(new const Epetra_MultiVector(tmp));
 
   return check_test(coords, unitweights, part);

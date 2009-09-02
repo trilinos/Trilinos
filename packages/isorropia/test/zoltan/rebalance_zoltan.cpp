@@ -139,8 +139,7 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
   //We'll use Zoltan for the rebalancing:
 
   Teuchos::ParameterList paramlist;
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
+  paramlist.set("PARTITIONING METHOD", "HYPERGRAPH");
 
   Epetra_CrsMatrix *balanced_matrix;
   try {

@@ -162,9 +162,8 @@ partition(bool force_repartitioning)
 {
 
   int input_type = Library::unspecified_input_;
-  Teuchos::ParameterList sublist = paramlist_;
 
-  std::string partitioning_method_str("PARTITIONING_METHOD");
+  std::string partitioning_method_str("PARTITIONING METHOD");
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
@@ -193,34 +192,44 @@ partition(bool force_repartitioning)
   else{
     throw Isorropia::Exception("Partitioner::partition - no input object.");
   }
-  sublist = (paramlist_.sublist(zoltan));
 
   lib_->numPartSizes = numPartSizes;
   lib_->partGIDs = partGIDs;
   lib_->partSizes = partSizes;
 
 #endif /* HAVE_ISORROPIA_ZOLTAN */
+  Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
+  // TODO: Add "block" and "random" partitioning.
 
   if (input_coords_.get() != 0){
+    if (partitioning_method == "UNSPECIFIED")
+      sublist.set("LB_METHOD", "RCB");
+    else
+      sublist.set("LB_METHOD", partitioning_method);
     input_type = Library::geometric_input_;
   }
   else{
-    std::string lb_method_str("LB_METHOD");
-    if (sublist.isParameter(lb_method_str)){
-      std::string lb_meth = sublist.get(lb_method_str, "HYPERGRAPH");
-      if (lb_meth == "GRAPH"){
-        input_type = Library::graph_input_;
-      }
-      else if (lb_meth == "HYPERGRAPH"){
-        input_type = Library::hgraph_input_;
-      }
-      else{
-        throw Isorropia::Exception("Valid LB_METHOD parameters for input type are HYPERGRAPH or GRAPH");
-      }
+    if (partitioning_method == "GRAPH"){
+      input_type = Library::graph_input_;
+      sublist.set("LB_METHOD", "GRAPH");
     }
-    else{
+    else // if (lb_meth == "HYPERGRAPH")  // Hypergraph by default
+      {
       input_type = Library::hgraph_input_;
+      sublist.set("LB_METHOD", "HYPERGRAPH");
     }
+  }
+
+
+  if (paramlist_.isParameter("NUM PARTS")) {
+    sublist.set("NUM_GLOBAL_PARTS", paramlist_.get<std::string>("NUM PARTS"));
+  }
+  if (paramlist_.isParameter("IMBALANCE TOL")) {
+    sublist.set("IMBALANCE_TOL", paramlist_.get<std::string>("IMBALANCE TOL"));
+  }
+  if (paramlist_.isParameter("BALANCE OBJECTIVE")
+      && paramlist_.get<std::string>("BALANCE OBJECTIVE") == "NONZEROS") {
+    sublist.set("ADD_OBJ_WEIGHT", "NONZEROS");
   }
 
   lib_->input_type_ = input_type;

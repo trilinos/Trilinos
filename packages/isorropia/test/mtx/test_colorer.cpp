@@ -155,13 +155,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   // Set the Zoltan parameters for this problem
 
-  Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
 
     //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
     //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
     //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
-
-  sublist.set("LB_METHOD", "GRAPH");
 
   // Perform partitioning with Zoltan (if we have it)
 

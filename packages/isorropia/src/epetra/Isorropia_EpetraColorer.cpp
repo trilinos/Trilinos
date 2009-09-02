@@ -110,6 +110,10 @@ Colorer::color(bool force_coloring)
   std::string zoltan("ZOLTAN");
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
 
+  if (paramlist_.isParameter("DISTANCE")) {
+    sublist.set("COLORING_PROBLEM", "DISTANCE-"+paramlist_.get<std::string>("DISTANCE"));
+  }
+
   lib_->color(sublist, properties_);
   operation_already_computed_ = true;
   computeNumberOfProperties();

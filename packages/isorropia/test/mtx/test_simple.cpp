@@ -189,7 +189,7 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
 
   if (numPartitions > 0){
     std::cout << std::endl << "      ";
-    std::cout << "NUM_GLOBAL_PARTS is " << numPartitions;
+    std::cout << "NUM PARTS is " << numPartitions;
   }
   std::cout << std::endl;
 
@@ -433,7 +433,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       std::ostringstream os;
       os << numPartitions;
       std::string s = os.str();
-      sublist.set("NUM_GLOBAL_PARTS", s);
+      params.set("NUM PARTS", s);
     }
 
     //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
@@ -441,11 +441,11 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
 
     if (partitioningType == GRAPH_PARTITIONING){
-      sublist.set("LB_METHOD", "GRAPH");
+      params.set("PARTITIONING METHOD", "GRAPH");
       sublist.set("GRAPH_PACKAGE", "PHG");
     }
     else{
-      sublist.set("LB_METHOD", "HYPERGRAPH");
+      params.set("PARTITIONING METHOD", "HYPERGRAPH");
       sublist.set("LB_APPROACH", "PARTITION");
       sublist.set("PHG_CUT_OBJECTIVE", "CONNECTIVITY");  // "cutl"
     }

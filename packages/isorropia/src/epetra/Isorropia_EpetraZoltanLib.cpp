@@ -129,13 +129,6 @@ int ZoltanLibClass::precompute()
     }
   }
 
-  if (!zoltanParamList_.isParameter("GRAPH_UNSYMMETRIC"))
-    zoltanParamList_.set("GRAPH_UNSYMMETRIC", "1");
-  if (!zoltanParamList_.isParameter("GRAPH_SYMMETRIZE"))
-    zoltanParamList_.set("GRAPH_SYMMETRIZE", "1");
-  if (!zoltanParamList_.isParameter("GRAPH_FAST_BUILD"))
-    zoltanParamList_.set("GRAPH_FAST_BUILD", "FORCE");
-
   if (input_type_ == graph_input_)
     itype = ZoltanLib::QueryObject::graph_input_;
   else if (input_type_ == hgraph_input_)
@@ -201,7 +194,8 @@ int ZoltanLibClass::precompute()
       zoltanParamList_.set(lb_method_str, "GRAPH");
     }
     else if (input_type_ == geometric_input_){
-      zoltanParamList_.set(lb_method_str, "RCB");
+      if (!zoltanParamList_.isParameter(lb_method_str))
+	zoltanParamList_.set(lb_method_str, "RCB");
     }
     else{
       zoltanParamList_.set(lb_method_str, "HYPERGRAPH");
@@ -581,7 +575,9 @@ color(Teuchos::ParameterList& zoltanParamList,
       std::vector<int>& properties)
 {
   zoltanParamList_ = zoltanParamList;
-  zoltanParamList_.set("COLORING_PROBLEM", "DISTANCE-2");
+  // Distance 2 coloring by default.
+  if (!zoltanParamList_.isParameter("COLORING_PROBLEM"))
+    zoltanParamList_.set("COLORING_PROBLEM", "DISTANCE-2");
 
   precompute();
 
