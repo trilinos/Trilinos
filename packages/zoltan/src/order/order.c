@@ -45,12 +45,9 @@ static PARAM_VARS Order_params[] = {
 
 int Zoltan_Order(
   ZZ *zz,               /* Zoltan structure */
-  int *num_gid_entries, /* # of entries for a global id */
-  int *num_lid_entries, /* # of entries for a local id */
+  int num_gid_entries, /* # of entries for a global id */
   int num_obj,		/* Number of objects to order */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
-                        /* The application must allocate enough space */
-  ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
                         /* The application must allocate enough space */
   int *rank,            /* rank[i] is the rank of gids[i] */
   int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
@@ -58,11 +55,11 @@ int Zoltan_Order(
 {
 /*
  * Main user-call for ordering.
- * Input:  
+ * Input:
  *   zz, a Zoltan structure with appropriate function pointers set.
  *   gids, a list of global ids or enough space to store such a list
  *   lids, a list of local ids or enough space to store such a list
- * Output: 
+ * Output:
  *   num_gid_entries
  *   num_lid_entries
  *   gids, a list of global ids (filled in if empty on entry)
@@ -80,8 +77,10 @@ int Zoltan_Order(
   int comm[2],gcomm[2];
   ZOLTAN_ORDER_FN *Order_fn;
   struct Zoltan_Order_Options opt;
-  int * vtxdist;
-
+  int * vtxdist = NULL;
+  ZOLTAN_ID_PTR local_gids=NULL, lids=NULL;
+  int local_num_obj;
+  int *local_rank = NULL, *local_iperm=NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -98,8 +97,13 @@ int Zoltan_Order(
   comm[0] = zz->Num_GID;
   comm[1] = zz->Num_LID;
   MPI_Allreduce(comm, gcomm, 2, MPI_INT, MPI_MAX, zz->Communicator);
-  zz->Num_GID = *num_gid_entries = gcomm[0];
-  zz->Num_LID = *num_lid_entries = gcomm[1];
+  zz->Num_GID = gcomm[0];
+
+  if (num_gid_entries != zz->Num_GID) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "num_gid_entries doesn't have the good value");
+    return (ZOLTAN_FATAL);
+  }
+
 
   zz->Order.nbr_objects = num_obj;
   zz->Order.rank = rank;
@@ -152,7 +156,7 @@ int Zoltan_Order(
   /*
    *  Check that the user has allocated space for the return args.
    */
-  if (!(gids && lids && rank)){
+  if (!(gids && rank)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input argument is NULL. Please allocate all required arrays before calling this routine.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
@@ -201,7 +205,13 @@ int Zoltan_Order(
     return (ZOLTAN_FATAL);
   }
 
+  if (!strcmp(opt.order_type, "GLOBAL"))
+    strcpy (opt.order_type, "DIST");
+  if (!strcmp(opt.order_type, "LOCAL"))
+    strcpy (opt.order_type, "SERIAL");
+
   strcpy(zz->Order.order_type, opt.order_type);
+
 
   /*
    *  Construct the heterogenous machine description.
@@ -218,9 +228,43 @@ int Zoltan_Order(
 
   /*
    * Call the actual ordering function.
+   * Compute gid according to the local graph.
    */
 
-  ierr = (*Order_fn)(zz, num_obj, gids, lids, rank, iperm, &opt);
+
+  if (zz->Get_Num_Obj != NULL) {
+    local_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_Obj.");
+      return (ierr);
+    }
+  }
+  else {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_NUM_OBJ_FN.");
+    return (ZOLTAN_FATAL);
+  }
+
+  if ((num_obj < 0) || (local_num_obj <= num_obj)) { /* Want only local informations */
+    if (num_obj < 0)
+      local_gids = gids; /* We have to keep content here */
+    else
+      local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
+    local_rank = rank;
+    local_iperm = iperm;
+  }
+  else {
+    local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
+    if (rank != NULL || num_obj == 0) {
+      local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
+    }
+    if (iperm != NULL || num_obj == 0) {
+      local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
+    }
+  }
+  lids = ZOLTAN_MALLOC_LID_ARRAY(zz, local_num_obj);
+
+  ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, local_iperm, &opt);
+  ZOLTAN_FREE(&lids);
 
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
@@ -248,17 +292,40 @@ int Zoltan_Order(
     if (!(opt.return_args & RETURN_RANK) && (rank != NULL)){
       /* Compute rank from iperm */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, opt.order_type, opt.start_index);
+      Zoltan_Inverse_Perm(zz, local_iperm, local_rank, vtxdist, opt.order_type, opt.start_index);
     }
     else if (!(opt.return_args & RETURN_IPERM) && (iperm != NULL)){
     /* Compute iperm from rank */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, opt.order_type, opt.start_index);
+      Zoltan_Inverse_Perm(zz, local_rank, local_iperm, vtxdist, opt.order_type, opt.start_index);
     }
     ZOLTAN_FREE(&vtxdist);
   }
 
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
+  ZOLTAN_TRACE_DETAIL(zz, yo, "Done Invert Permutation");
+
+
+  /* TODO: Use directly the "graph" structure to avoid to duplicate things. */
+  if (num_obj >= 0) { /* We have to use distributed data directory */
+    struct Zoltan_DD_Struct *dd = NULL;
+
+    /* I store : GNO, rank, iperm */
+    ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0);
+    /* Hope a linear assignment will help a little */
+    Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
+    /* Associate all the data with our xGNO */
+    Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, (ZOLTAN_ID_PTR) local_iperm, NULL, local_num_obj);
+
+    Zoltan_DD_Find (dd, gids, (ZOLTAN_ID_PTR)rank, (ZOLTAN_ID_PTR)iperm, NULL,
+		    num_obj, NULL);
+    Zoltan_DD_Destroy(&dd);
+  }
+
+  ZOLTAN_TRACE_DETAIL(zz, yo, "Done Registering results");
+
+  if (local_gids != gids) ZOLTAN_FREE(&local_gids);
+  if (local_rank != rank) ZOLTAN_FREE(&local_rank);
+  if (local_iperm != iperm) ZOLTAN_FREE(&local_iperm);
 
   end_time = Zoltan_Time(zz->Timer);
   order_time[0] = end_time - start_time;
@@ -270,7 +337,7 @@ int Zoltan_Order(
     printf("ZOLTAN: rank for ordering on Proc %d\n", zz->Proc);
     for (i = 0; i < nobjs; i++) {
       printf("GID = ");
-      ZOLTAN_PRINT_GID(zz, &(gids[i*(*num_gid_entries)]));
+      ZOLTAN_PRINT_GID(zz, &(gids[i*(num_gid_entries)]));
       printf(", rank = %3d\n", rank[i]);
     }
     printf("\n");

@@ -148,16 +148,13 @@ public:
   }
 
   int Order    ( int &num_gid_entries,
-                 int &num_lid_entries,
                  const int &num_objs,
                  ZOLTAN_ID_PTR global_ids,
-                 ZOLTAN_ID_PTR local_ids,
                  int * rank,
                  int * iperm )
   {
     return Zoltan_Order( ZZ_Ptr,
-                         &num_gid_entries, &num_lid_entries,
-                         num_objs, global_ids, local_ids,
+                         num_gid_entries, num_objs, global_ids,
                          rank, iperm);
   }
 

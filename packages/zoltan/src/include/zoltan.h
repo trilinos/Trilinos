@@ -2803,11 +2803,9 @@ int Zoltan_RCB_Box(
 
 extern int Zoltan_Order(
   struct Zoltan_Struct *zz,
-  int *num_gid_entries,
-  int *num_lid_entries,
+  int num_gid_entries,
   int num_obj,
   ZOLTAN_ID_PTR global_ids,
-  ZOLTAN_ID_PTR local_ids,
   int *rank,
   int *iperm
 );

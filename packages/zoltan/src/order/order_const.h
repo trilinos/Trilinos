@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *  
+ * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -38,7 +38,7 @@ struct Zoltan_Order_Struct {
   int nbr_objects;              /* # of objects (local) */
   ZOLTAN_ID_PTR gids;           /* ptr to list of global ids */
   ZOLTAN_ID_PTR lids;           /* ptr to list of local ids */
-  int *rank;        		/* rank[i] is the rank of gids[i] */
+  int *rank;		/* rank[i] is the rank of gids[i] */
   ZOLTAN_ID_PTR gidrank;
   int *iperm;
   int  start_index;
@@ -78,13 +78,13 @@ struct Zoltan_Order_Options {
 typedef struct Zoltan_Order_Options ZOOS;
 
 /*
- * Type definitions for functions that depend on 
+ * Type definitions for functions that depend on
  * ordering method or uses the ordering struct.
  */
 
-typedef int ZOLTAN_ORDER_FN(  struct Zoltan_Struct *zz, int, 
-                         ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
-                         int *, int *, ZOOS *);
+typedef int ZOLTAN_ORDER_FN(  struct Zoltan_Struct *zz, int,
+			      ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+			      int *, int *, ZOOS *);
 
 /*****************************************************************************/
 /* PROTOTYPES */

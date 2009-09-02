@@ -763,9 +763,13 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Only do ordering if this was specified in the driver input file */
       /* NOTE: This part of the code is not modified to recognize
 	       blanked vertices. */
+    int i;
       int *order = NULL;		/* Ordering vector(s) */
       ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
+
+      num_lid_entries =1;
+      num_gid_entries = 1;
 
       if (Test.Dynamic_Graph && !Proc){
 	printf("ORDERING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
@@ -773,8 +777,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
 
       order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
-      order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
-      order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+      order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_gid_entries * sizeof(int));
+      order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_lid_entries * sizeof(int));
 
       if (!order || !order_gids || !order_lids) {
 	  /* Free order data */
@@ -785,6 +789,11 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	  return 0;
       }
 
+      for (i = 0 ; i < mesh->num_elems ; ++i) {
+	order_gids[i*num_gid_entries+num_gid_entries-1] = mesh->elements[i].globalID;
+	order_lids[num_lid_entries * i + (num_lid_entries - 1)] = i;
+      }
+
 
     /* Evaluate the old ordering */
     if (Debug_Driver > 0) {
@@ -792,8 +801,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* Not yet impl. */
     }
 
-    if (Zoltan_Order(zz, &num_gid_entries, &num_lid_entries,
-	mesh->num_elems, order_gids, order_lids,
+    if (Zoltan_Order(zz, num_gid_entries,
+	mesh->num_elems, order_gids,
 	order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
       return 0;
