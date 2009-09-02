@@ -30,6 +30,13 @@ COLORING = \
 	$(srcdir)/coloring/color_test.c \
 	$(srcdir)/coloring/g2l_hash.c
 
+GRAPH_H = \
+	$(srcdir)/graph/graph_const.h \
+	$(srcdir)/graph/graph.h
+
+GRAPH = \
+	$(srcdir)/graph/graph.c
+
 HA_H = \
 	$(srcdir)/ha/ha_const.h \
 	$(srcdir)/ha/ha_drum.h
@@ -71,7 +78,7 @@ INCLUDE_H = \
 	$(srcdir)/include/zoltan_timer.h \
 	$(srcdir)/include/zoltan_dd.h \
 	$(srcdir)/include/zoltan_dd_cpp.h \
-	$(srcdir)/include/zoltan_mem.h  
+	$(srcdir)/include/zoltan_mem.h
 
 #       $(srcdir)/Zoltan_ConfigDefs.h
 
@@ -94,6 +101,16 @@ LB = \
 	$(srcdir)/lb/lb_set_fn.c \
 	$(srcdir)/lb/lb_set_method.c \
 	$(srcdir)/lb/lb_set_part_sizes.c
+
+MATRIX_H = \
+	$(srcdir)/matrix/matrix.h
+
+MATRIX = \
+	$(srcdir)/matrix/matrix_build.c \
+	$(srcdir)/matrix/matrix_distribute.c \
+	$(srcdir)/matrix/matrix_operations.c \
+	$(srcdir)/matrix/matrix_sym.c \
+	$(srcdir)/matrix/matrix_utils.c
 
 EXTRA_OCT_H = \
 	$(srcdir)/oct/costs_const.h \
@@ -187,11 +204,9 @@ PARMETIS_H = \
 
 PARMETIS = \
 	$(srcdir)/parmetis/build_graph.c \
-	$(srcdir)/parmetis/build_graph2.c \
 	$(srcdir)/parmetis/postprocessing.c \
 	$(srcdir)/parmetis/preprocessing.c \
 	$(srcdir)/parmetis/scatter_graph.c \
-	$(srcdir)/parmetis/sym_graph.c \
 	$(srcdir)/parmetis/third_library.c \
 	$(srcdir)/parmetis/verify_graph.c
 
@@ -384,11 +399,13 @@ ZOLTAN_LIB = libzoltan.a
 ZOLTAN_H = \
 	$(ALL_H) \
 	$(COLORING_H) \
+	$(GRAPH_H) \
 	$(HA_H) \
 	$(HIER_H) \
 	$(HSFC_H) \
 	$(INCLUDE_H) \
 	$(LB_H) \
+	$(MATRIX_H) \
 	$(OCT_H) \
 	$(ORDER_H) \
 	$(PAR_H) \
@@ -406,10 +423,12 @@ ZOLTAN_H = \
 libzoltan_a_SOURCES = \
 	$(ALL) \
 	$(COLORING) \
+	$(GRAPH) \
 	$(HA) \
 	$(HIER) \
 	$(HSFC) \
 	$(LB) \
+	$(MATRIX) \
 	$(OCT) \
 	$(ORDER) \
 	$(PAR) \
@@ -781,5 +800,5 @@ SUBDIRS = . driver $(FDRIVER_SUBDIR)
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
-MAINTAINERCLEANFILES = Makefile.in 
+MAINTAINERCLEANFILES = Makefile.in
 

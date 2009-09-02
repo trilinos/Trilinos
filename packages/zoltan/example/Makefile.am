@@ -15,6 +15,8 @@ if HAVE_ZOLTAN_CPPDRIVER
   CPP_EXAMPLES = CPP
 endif
 
-SUBDIRS = C $(CPP_EXAMPLES)
+SUBDIRS =
+# C $(CPP_EXAMPLES)
+## I don't know what we need to compile !
 
 EXTRA_DIST = makefile

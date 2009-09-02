@@ -331,15 +331,16 @@ AC_CONFIG_FILES([
 		src/Makefile
 		src/driver/Makefile
 		Makefile.export.zoltan
-		example/lib/Makefile
 		example/Makefile
-		example/C/Makefile
-		example/C/sparse_matrix/Makefile
-		example/CPP/Makefile
 		siMPI/Makefile
 		siMPI/pyMPI/Makefile
 		siMPI/pyMPI/siMPI/Makefile
 		])
+#		example/lib/Makefile
+#		example/C/Makefile
+#		example/C/sparse_matrix/Makefile
+#		example/CPP/Makefile
+
 #		src/fdriver/Makefile
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile

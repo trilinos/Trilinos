@@ -6808,7 +6808,12 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile src/Makefile src/driver/Makefile Makefile.export.zoltan example/lib/Makefile example/Makefile example/C/Makefile example/C/sparse_matrix/Makefile example/CPP/Makefile siMPI/Makefile siMPI/pyMPI/Makefile siMPI/pyMPI/siMPI/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/driver/Makefile Makefile.export.zoltan example/Makefile siMPI/Makefile siMPI/pyMPI/Makefile siMPI/pyMPI/siMPI/Makefile"
+
+#		example/lib/Makefile
+#		example/C/Makefile
+#		example/C/sparse_matrix/Makefile
+#		example/CPP/Makefile
 
 #		src/fdriver/Makefile
 #		Utilities/Makefile
@@ -7532,11 +7537,7 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/driver/Makefile") CONFIG_FILES="$CONFIG_FILES src/driver/Makefile" ;;
     "Makefile.export.zoltan") CONFIG_FILES="$CONFIG_FILES Makefile.export.zoltan" ;;
-    "example/lib/Makefile") CONFIG_FILES="$CONFIG_FILES example/lib/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-    "example/C/Makefile") CONFIG_FILES="$CONFIG_FILES example/C/Makefile" ;;
-    "example/C/sparse_matrix/Makefile") CONFIG_FILES="$CONFIG_FILES example/C/sparse_matrix/Makefile" ;;
-    "example/CPP/Makefile") CONFIG_FILES="$CONFIG_FILES example/CPP/Makefile" ;;
     "siMPI/Makefile") CONFIG_FILES="$CONFIG_FILES siMPI/Makefile" ;;
     "siMPI/pyMPI/Makefile") CONFIG_FILES="$CONFIG_FILES siMPI/pyMPI/Makefile" ;;
     "siMPI/pyMPI/siMPI/Makefile") CONFIG_FILES="$CONFIG_FILES siMPI/pyMPI/siMPI/Makefile" ;;
