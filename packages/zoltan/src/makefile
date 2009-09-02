@@ -174,7 +174,7 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
-		  ../phg  ../simple ../util \
+		  ../phg  ../simple ../util ../graph ../matrix \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree ../hier  \
 		  ../Utilities/Communication ../Utilities/Memory \
@@ -182,7 +182,7 @@ SUB_VPATH	= ../include ../Utilities/shared \
 		  ../postprocessing/ordering
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb \
-		  -I../coloring -I../simple -I../oct  \
+		  -I../coloring -I../graph -I../matrix -I../simple -I../oct  \
 		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer  \
@@ -225,6 +225,9 @@ RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
 COLOR_CSRC      = coloring.c g2l_hash.c color_test.c
 COLOR_INC       = coloring.h g2l_hash.h color_test.c
 
+GRAPH_INC	= graph.h graph_const.h
+GRAPH_CSRC	= graph.c build_graph.c verify_graph.c scatter_graph.c
+
 ifdef ZOLTAN_OCT
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c migtags.c octree.c rootlist.c oct_plot.c
@@ -241,6 +244,10 @@ endif
 
 HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
+
+MATRIX_INC	= matrix.h
+MATRIX_CSRC	= matrix_build.c matrix_distribute.c matrix_operations.c \
+		  matrix_sym.c matrix_utils.c
 
 PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
 		  phg_coarse.c phg_distrib.c phg_gather.c \
@@ -262,9 +269,7 @@ PAR_INC		= par_const.h par_average_const.h par_median_const.h \
 		  par_bisect_const.h \
                   par_tflops_special_const.c
 
-PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c \
-		  build_graph.c verify_graph.c build_graph2.c sym_graph.c \
-                  scatter_graph.c
+PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c
 PARMETIS_INC	= third_library_const.h
 ifdef PARMETIS_LIBPATH
 PARMETIS_CSRC  += parmetis_interface.c
@@ -347,7 +352,7 @@ endif
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH) \
 		  $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
-		  $(COLOR_CSRC) $(SIMPLE_CSRC) \
+		  $(COLOR_CSRC) $(GRAPH_CSRC) $(MATRIX_CSRC) $(SIMPLE_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) \
