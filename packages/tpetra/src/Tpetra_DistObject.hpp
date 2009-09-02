@@ -65,7 +65,7 @@ namespace Tpetra {
     </ul>
   */
 
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : public Teuchos::Describable {
 
   public:
@@ -74,7 +74,7 @@ namespace Tpetra {
     //@{ 
 
     //! constructor
-    DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+    explicit DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! copy constructor
     DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
@@ -127,6 +127,11 @@ namespace Tpetra {
 
   protected:
 
+    enum ReverseOption {
+      DoForward,
+      DoReverse
+    };
+
     //! Perform transfer (redistribution) of data across memory images.
     virtual void doTransfer(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source,
                             CombineMode CM,
@@ -136,7 +141,7 @@ namespace Tpetra {
                             const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,
                             const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
                             Distributor &distor,
-                            bool doReverse);
+                            ReverseOption revOp);
 
     // The following four methods must be implemented by the derived class
 
@@ -236,7 +241,7 @@ namespace Tpetra {
     const Teuchos::ArrayView<const LocalOrdinal> permuteToLIDs   = importer.getPermuteToLIDs();
     const Teuchos::ArrayView<const LocalOrdinal> permuteFromLIDs = importer.getPermuteFromLIDs();
     this->doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-                     importer.getDistributor(), false);
+                     importer.getDistributor(), DoForward);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -251,7 +256,7 @@ namespace Tpetra {
     Teuchos::ArrayView<const LocalOrdinal> permuteToLIDs   = exporter.getPermuteToLIDs();
     Teuchos::ArrayView<const LocalOrdinal> permuteFromLIDs = exporter.getPermuteFromLIDs();
     doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-               exporter.getDistributor(), false);
+               exporter.getDistributor(), DoForward);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -267,7 +272,7 @@ namespace Tpetra {
     Teuchos::ArrayView<const LocalOrdinal> permuteToLIDs   = exporter.getPermuteFromLIDs();
     Teuchos::ArrayView<const LocalOrdinal> permuteFromLIDs = exporter.getPermuteToLIDs();
     doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-               exporter.getDistributor(), true);
+               exporter.getDistributor(), DoReverse);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -282,7 +287,7 @@ namespace Tpetra {
     Teuchos::ArrayView<const LocalOrdinal> permuteToLIDs   = importer.getPermuteFromLIDs();
     Teuchos::ArrayView<const LocalOrdinal> permuteFromLIDs = importer.getPermuteToLIDs();
     doTransfer(A, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs, exportLIDs,
-               importer.getDistributor(), true);
+               importer.getDistributor(), DoReverse);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -305,7 +310,7 @@ namespace Tpetra {
       const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs,
       const Teuchos::ArrayView<const LocalOrdinal> &remoteLIDs,    
       const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-      Distributor &distor, bool doReverse) 
+      Distributor &distor, ReverseOption revOp) 
   {
     size_t packetSize;
     TEST_FOR_EXCEPTION( checkSizes(source,packetSize) == false, std::runtime_error, 
@@ -318,10 +323,10 @@ namespace Tpetra {
       copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
     }
     packAndPrepare(source,exportLIDs,exports_(),distor);
-    if ((isDistributed() && doReverse) || (source.isDistributed() && !doReverse)) 
+    if ((isDistributed() && revOp == DoReverse) || (source.isDistributed() && revOp == DoForward)) 
     {
       // call one of the doPostsAndWaits functions
-      if (doReverse) {
+      if (revOp == DoReverse) {
         distor.doReversePostsAndWaits(exports_().getConst(),packetSize,imports_());
       }
       else {

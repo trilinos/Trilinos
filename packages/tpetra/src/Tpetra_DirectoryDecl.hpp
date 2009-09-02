@@ -58,7 +58,7 @@ namespace Tpetra {
     //@{ 
 
     //! Constructor
-    Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+    explicit Directory(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! Destructor.
     ~Directory();

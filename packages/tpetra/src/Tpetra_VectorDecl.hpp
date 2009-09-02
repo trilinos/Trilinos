@@ -51,7 +51,7 @@ namespace Tpetra {
     //@{ 
 
     //! Sets all vector entries to zero.
-    Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
+    explicit Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
 
     //! Vector copy constructor.
     Vector(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);

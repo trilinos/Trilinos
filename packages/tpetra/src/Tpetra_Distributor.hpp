@@ -59,7 +59,7 @@ namespace Tpetra {
     //@{ 
 
     //! Construct the Distributor using the specified communicator.
-    Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > & comm);
+    explicit Distributor(const Teuchos::RCP<const Teuchos::Comm<int> > & comm);
 
     //! Copy Constructor
     Distributor(const Distributor &distributor);

@@ -18,6 +18,7 @@
 #endif
 
 // TODO: add test where some nodes have zero rows
+// TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
 
 namespace Teuchos {
   template <>

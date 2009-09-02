@@ -51,7 +51,7 @@ namespace Tpetra {
       //@{ 
 
       //! Constructor
-      MpiPlatform(Teuchos::RCP<Node> node);
+      explicit MpiPlatform(Teuchos::RCP<Node> node);
 
       //! Constructor
       MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);

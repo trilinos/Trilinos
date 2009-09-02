@@ -846,8 +846,8 @@ namespace Kokkos {
         Teuchos::ArrayRCP<Scalar> Adata = A.getValuesNonConst();
         // we'll overwrite all data covered by the multivector, but not off-stride data
         // therefore, we are write-only only in the case that stride=nR
-        bool writeOnly = (stride == nR);
-        Teuchos::ArrayRCP<Scalar> mvdata = node->template viewBufferNonConst<Scalar>(writeOnly,stride*(nC-1)+nR,Adata);
+        ReadWriteOption rw = (stride == nR ? WriteOnly : ReadWrite);
+        Teuchos::ArrayRCP<Scalar> mvdata = node->template viewBufferNonConst<Scalar>(rw,stride*(nC-1)+nR,Adata);
         for (size_t j=0; j<nC; ++j) {
           for (size_t i=0; i<nR; ++i) {
             mvdata[j*stride + i] = SCT::random();

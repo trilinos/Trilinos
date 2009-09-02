@@ -65,6 +65,7 @@
 #endif
                                                                                 
 #include <Kokkos_config.h>
+#include <Teuchos_ConfigDefs.hpp>
 
 #ifdef HAVE_STRING
 # include <string>

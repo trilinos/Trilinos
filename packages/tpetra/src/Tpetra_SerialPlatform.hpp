@@ -51,7 +51,7 @@ namespace Tpetra {
     //@{ 
 
     //! Constructor
-    SerialPlatform(const Teuchos::RCP<Node> &node);
+    explicit SerialPlatform(const Teuchos::RCP<Node> &node);
 
     //! Destructor
     ~SerialPlatform();

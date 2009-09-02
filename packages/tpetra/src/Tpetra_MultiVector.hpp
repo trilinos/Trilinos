@@ -107,7 +107,7 @@ namespace Tpetra {
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
       Teuchos::ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
-      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(true,myLen*NumVectors,mydata);
+      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
       typename Teuchos::ArrayView<const Scalar>::iterator srcit = A.begin();
       for (size_t j = 0; j < NumVectors; ++j) {
         std::copy(srcit,srcit+myLen,myview);
@@ -131,7 +131,7 @@ namespace Tpetra {
       Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
       Teuchos::ArrayRCP<Scalar> mydata = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,mydata,myLen);
-      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(true,myLen*NumVectors,mydata);
+      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,myLen*NumVectors,mydata);
       for (size_t j = 0; j < NumVectors; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
         TEST_FOR_EXCEPTION(Teuchos::as<size_t>(ArrayOfPtrs[j].size()) != getLocalLength(), std::runtime_error,
@@ -253,7 +253,7 @@ namespace Tpetra {
     srcbuff = MVT::getValues(sourceMV.lclMV_);
     srcview = node->template viewBuffer<Scalar>(srcbuff.size(),srcbuff);
     dstbuff = MVT::getValuesNonConst(lclMV_);
-    dstview = node->template viewBufferNonConst<Scalar>(false,dstbuff.size(),dstbuff);
+    dstview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,dstbuff.size(),dstbuff);
     for (size_t j = 0; j < numCols; ++j) {
       // The first numImportIDs GIDs are the same between source and target,
       // We can just copy them
@@ -340,7 +340,7 @@ namespace Tpetra {
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     Teuchos::ArrayRCP<Scalar> mybuff = MVT::getValuesNonConst(lclMV_);
     // TODO: determine whether this viewBuffer is write-only or not; for now, safe option is not
-    Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(false,mybuff.size(),mybuff);
+    Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,mybuff.size(),mybuff);
     typename ArrayView<const       Scalar>::iterator impptr;
     typename ArrayView<const LocalOrdinal>::iterator  idptr;
     impptr = imports.begin();
@@ -915,7 +915,7 @@ namespace Tpetra {
   Teuchos::ArrayRCP<Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDataNonConst(size_t j) {
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    return node->template viewBufferNonConst<Scalar>(false, getLocalLength(), getSubArrayRCP(MVT::getValuesNonConst(lclMV_),j) );
+    return node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite, getLocalLength(), getSubArrayRCP(MVT::getValuesNonConst(lclMV_),j) );
   }
 
 
@@ -1219,7 +1219,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dViewNonConst(): requires that this MultiVector have constant stride.");
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    return node->template viewBufferNonConst<Scalar>( false, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
+    return node->template viewBufferNonConst<Scalar>( Kokkos::ReadWrite, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
   }
 
 
@@ -1234,7 +1234,7 @@ namespace Tpetra {
                     numCols = getNumVectors(),
                     myLen   = getLocalLength();
       if (myLen > 0) {
-        Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(false,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
+        Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<numCols; ++j) {
           views[j] = myview.persistingView(0,myLen);
           myview += myStride;
@@ -1247,7 +1247,7 @@ namespace Tpetra {
                      myCols = getNumVectors(),
                      myLen  = MVT::getNumRows(lclMV_);
       if (myLen > 0) {
-        Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(false,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
+        Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<myCols; ++j) {
           views[j] = myview.persistingView(whichVectors_[j]*myStride,myLen);
         }
@@ -1439,7 +1439,7 @@ namespace Tpetra {
     Teuchos::Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
     bool packed = isConstantStride() && (myStride == myLen);
     ArrayRCP<Scalar> bufView = node->template viewBufferNonConst<Scalar>(
-                                          false,myStride*(numCols-1)+myLen,
+                                          Kokkos::ReadWrite,myStride*(numCols-1)+myLen,
                                           MVT::getValuesNonConst(lclMV_) );
     if (packed) {
       // copy data from view to sourceBuffer, reduce into view below

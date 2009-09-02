@@ -49,14 +49,14 @@ namespace Tpetra
      The \c GlobalOrdinal type defaults to the \c LocalOrdinal type.
      The \c Node type defaults to the default node in Kokkos.
    */
-  template<class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowGraph : public Teuchos::Describable {
     public: 
       //! @name Destructor Method
       //@{ 
 
-      // !Destructor.
-      virtual ~RowGraph() {};
+      //! Destructor.
+      virtual ~RowGraph();
 
       //@}
 
@@ -202,6 +202,11 @@ namespace Tpetra
       //@}
 
   }; // class RowGraph
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  RowGraph<LocalOrdinal,GlobalOrdinal,Node>::~RowGraph() {
+  }
+
 
 } // namespace Tpetra
 

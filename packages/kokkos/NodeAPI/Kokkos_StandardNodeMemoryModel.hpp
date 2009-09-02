@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <algorithm>
-#include <Kokkos_ConfigDefs.hpp>
+#include <Kokkos_NodeAPIConfigDefs.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
@@ -92,7 +92,7 @@ namespace Kokkos {
       }
 
       template <class T> inline
-      Teuchos::ArrayRCP<T> viewBufferNonConst(bool writeOnly, size_t size, const Teuchos::ArrayRCP<T> &buff) {
+      Teuchos::ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
         return buff.persistingView(0,size);
       }
 

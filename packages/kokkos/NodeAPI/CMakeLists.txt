@@ -59,6 +59,7 @@ APPEND_SET(TPI_HEADERS
 APPEND_SET(HEADERS
     Kokkos_DefaultNode.hpp
     Kokkos_NodeHelpers.hpp
+    Kokkos_NodeAPIConfigDefs.hpp
     Kokkos_NodeAPIVersion.hpp
     Kokkos_SerialNode.hpp
     Kokkos_StandardNodeMemoryModel.hpp

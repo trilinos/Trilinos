@@ -421,7 +421,7 @@
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
-    <Dependency name="Stratimikos" type="TO"/>
+    <Dependency name="Stratimikos" type="LO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
@@ -468,6 +468,7 @@
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
+    <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
@@ -622,6 +623,7 @@
     <Dependency name="Komplex" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Stratimikos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
@@ -667,6 +669,7 @@
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>
     <Dependency name="Belos" type="TO"/>
+    <Dependency name="Stratimikos" type="ITO"/>
     <Dependency name="Anasazi" type="TO"/>
     <Dependency name="TriKota" type="ITO"/>
     <Dependency name="Stokhos" type="ITO"/>

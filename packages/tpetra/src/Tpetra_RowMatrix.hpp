@@ -48,14 +48,14 @@ namespace Tpetra
      The \c GlobalOrdinal type defaults to the \c LocalOrdinal type.
      The \c Node type defaults to the default node in Kokkos.
    */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class RowMatrix : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
       //! @name Destructor Method
       //@{ 
 
-      // !Destructor.
-      virtual ~RowMatrix() {};
+      //! Destructor.
+      virtual ~RowMatrix();
 
       //@}
 
@@ -209,6 +209,10 @@ namespace Tpetra
       //@}
 
   }; // class RowMatrix
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::~CrsMatrix() {
+  }
 
 } // namespace Tpetra
 

@@ -351,7 +351,7 @@
   </Package>
   <Package name="NOX" dir="nox">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Sacado"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Belos,Anasazi,Sacado,Stratimikos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos,Isorropia"/>
     <LIB_REQUIRED_DEP_TPLS/>

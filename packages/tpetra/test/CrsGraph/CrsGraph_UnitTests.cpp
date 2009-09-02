@@ -21,6 +21,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::arcpClone;
   using Tpetra::Map;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
@@ -360,7 +361,7 @@ namespace {
     TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
     TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
     TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-    TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
+    TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
     TEST_EQUALITY( zero->getNodeNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );
     TEST_EQUALITY( zero->isUpperTriangular(), true );
@@ -404,7 +405,7 @@ namespace {
     TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
     TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
     TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-    TEST_EQUALITY( zero->getGlobalNumCols(), numImages*numLocal );
+    TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
     TEST_EQUALITY( zero->getNodeNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );
     TEST_EQUALITY( zero->isUpperTriangular(), true );
@@ -440,21 +441,19 @@ namespace {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
       {
-        // create a diagonal graph, where only my middle row has an entry
-        // let node i contribute to row i+1, where node the last node contributes to row 0
-        ArrayRCP<size_t> toalloc = arcp<size_t>(3);
-        toalloc[0] = 0; toalloc[1] = 1; toalloc[2] = 0;
+        // create a diagonal graph, but where only my middle row has an entry
+        ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
         GRAPH ddgraph(map,toalloc,pftype);
-        ddgraph.insertGlobalIndices(mymiddle, arrayView(&mymiddle,1));
+        ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
         // before globalAssemble(), there should be one local entry on middle, none on the others
         ArrayRCP<const GO> myrow_gbl;
         myrow_gbl = ddgraph.getGlobalRowView(mymiddle-1); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        myrow_gbl = ddgraph.getGlobalRowView(mymiddle  ); TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&mymiddle,1) );
+        myrow_gbl = ddgraph.getGlobalRowView(mymiddle  ); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
         myrow_gbl = ddgraph.getGlobalRowView(mymiddle+1); TEST_EQUALITY( myrow_gbl.size(), 0 );
         if (pftype == StaticProfile) { // no room for more, on any row
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,arrayView(&mymiddle,1)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,arrayView(&mymiddle,1)), std::runtime_error );
-          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,arrayView(&mymiddle,1)), std::runtime_error );
+          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle)), std::runtime_error );
+          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle)), std::runtime_error );
+          TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle)), std::runtime_error );
         }
         ddgraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
@@ -467,7 +466,7 @@ namespace {
           TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
         }
         // also, the row map and column map should be equivalent
-        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (global_size_t)(3*numImages) );
+        TEST_EQUALITY( ddgraph.getGlobalNumCols(), (global_size_t)(numImages) );
         TEST_EQUALITY( ddgraph.getGlobalNumRows(), (global_size_t)(3*numImages) );
         TEST_EQUALITY( ddgraph.getGlobalNumDiags(), (global_size_t)numImages );
         TEST_EQUALITY_CONST( ddgraph.getNodeNumDiags(), 1 );
@@ -513,9 +512,9 @@ namespace {
         TEST_EQUALITY( myrow_gbl.size(), (numImages == 1 ? 1 : 0) );
         diaggraph.globalAssemble();   // after globalAssemble(), there should be one local entry per row, corresponding to the diagonal
         myrow_gbl = diaggraph.getGlobalRowView(myrowind);
-        TEST_COMPARE_ARRAYS( myrow_gbl, arrayView(&myrowind,1) );
+        TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(myrowind) );
         if (pftype == StaticProfile) { // no room for more
-          TEST_THROW( diaggraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
+          TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
         }
         diaggraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal

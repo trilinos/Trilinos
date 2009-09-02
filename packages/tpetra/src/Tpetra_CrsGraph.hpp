@@ -539,7 +539,7 @@ namespace Tpetra
       if (getProfileType() == StaticProfile) {
         // determine how many entries to allocate and setup offsets into 1D arrays
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(numRows+1);
-        Teuchos::ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(true,numRows+1,pbuf_rowOffsets_);
+        Teuchos::ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(Kokkos::WriteOnly,numRows+1,pbuf_rowOffsets_);
         if (numAllocPerRow_ != Teuchos::null) {
           // allocate offsets, get host view
           nodeNumAllocated_ = 0;
@@ -623,9 +623,9 @@ namespace Tpetra
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumCols() const {
-    TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
-      Teuchos::typeName(*this) << ": cannot call getGlobalNumCols() until fillComplete() is called.");
-    return domainMap_->getGlobalNumElements();
+    TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error,
+      Teuchos::typeName(*this) << ": cannot call getGlobalNumCols() without column map.");
+    return colMap_->getGlobalNumElements();
   }
 
 
@@ -722,18 +722,18 @@ namespace Tpetra
     if (indicesAreAllocated() && nodeNumAllocated_ > 0) {
       Teuchos::RCP<Node> node = lclGraph_.getNode();
       const size_t rnnz = RNNZ(LocalRow);
-      const bool writeOnly = (rnnz == 0);
+      Kokkos::ReadWriteOption rw = (rnnz == 0 ? Kokkos::WriteOnly : Kokkos::ReadWrite);
       if (getProfileType() == StaticProfile) {
         Teuchos::ArrayRCP<const size_t> offs = node->template viewBuffer<size_t>(2,pbuf_rowOffsets_+LocalRow);
         const size_t rna = offs[1] - offs[0];
         if (rna > 0) {
-          ret = node->template viewBufferNonConst<LocalOrdinal>(writeOnly, rna, pbuf_lclInds1D_ + offs[0]);
+          ret = node->template viewBufferNonConst<LocalOrdinal>(rw, rna, pbuf_lclInds1D_ + offs[0]);
         }
       }
       else {  // dynamic profile
         const size_t rna = pbuf_lclInds2D_[LocalRow].size();
         if (rna > 0) {
-          ret = node->template viewBufferNonConst<LocalOrdinal>(writeOnly, rna, pbuf_lclInds2D_[LocalRow]);
+          ret = node->template viewBufferNonConst<LocalOrdinal>(rw, rna, pbuf_lclInds2D_[LocalRow]);
         }
       }
     }
@@ -754,18 +754,18 @@ namespace Tpetra
     if (indicesAreAllocated() && nodeNumAllocated_ > 0) {
       Teuchos::RCP<Node> node = lclGraph_.getNode();
       const size_t rnnz = RNNZ(lrow);
-      const bool writeOnly = (rnnz == 0);
+      Kokkos::ReadWriteOption rw = (rnnz == 0 ? Kokkos::WriteOnly : Kokkos::ReadWrite);
       if (getProfileType() == StaticProfile) {
         Teuchos::ArrayRCP<const size_t> offs = node->template viewBuffer<size_t>(2,pbuf_rowOffsets_+lrow);
         const size_t rna = offs[1] - offs[0];
         if (rna > 0) {
-          ret = node->template viewBufferNonConst<GlobalOrdinal>(writeOnly, rna, pbuf_gblInds1D_ + offs[0]);
+          ret = node->template viewBufferNonConst<GlobalOrdinal>(rw, rna, pbuf_gblInds1D_ + offs[0]);
         }
       }
       else {  // dynamic profile
         const size_t rna = pbuf_gblInds2D_[lrow].size();
         if (rna > 0) {
-          ret = node->template viewBufferNonConst<GlobalOrdinal>(writeOnly, rna, pbuf_gblInds2D_[lrow]);
+          ret = node->template viewBufferNonConst<GlobalOrdinal>(rw, rna, pbuf_gblInds2D_[lrow]);
         }
       }
     }
@@ -1501,7 +1501,7 @@ namespace Tpetra
       if (nodeNumAllocated_) {
         if (getProfileType() == StaticProfile) {
           ArrayRCP<const size_t> view_offsets = node->template viewBuffer<size_t>(pbuf_rowOffsets_.size(), pbuf_rowOffsets_);
-          ArrayRCP<GlobalOrdinal> view_ginds = node->template viewBufferNonConst<GlobalOrdinal>(false,pbuf_gblInds1D_.size(), pbuf_gblInds1D_);
+          ArrayRCP<GlobalOrdinal> view_ginds = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::ReadWrite,pbuf_gblInds1D_.size(), pbuf_gblInds1D_);
           // do the conversion in situ. this must be done from front to back.
           ArrayRCP< LocalOrdinal> view_linds = Teuchos::arcp_reinterpret_cast<LocalOrdinal>(view_ginds);
           for (size_t r=0; r < getNodeNumRows(); ++r) {
@@ -1528,7 +1528,7 @@ namespace Tpetra
           for (size_t r=0; r < getNodeNumRows(); ++r) {
             if (pbuf_gblInds2D_[r] != Teuchos::null) {
               const size_t rna = pbuf_gblInds2D_[r].size();
-              ArrayRCP<GlobalOrdinal> view_ginds = node->template viewBufferNonConst<GlobalOrdinal>(false,rna,pbuf_gblInds2D_[r]);
+              ArrayRCP<GlobalOrdinal> view_ginds = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::ReadWrite,rna,pbuf_gblInds2D_[r]);
               // do the conversion in situ. this must be done from front to back.
               ArrayRCP< LocalOrdinal> view_linds = Teuchos::arcp_reinterpret_cast<LocalOrdinal>(view_ginds);
               const size_t numentry = numEntriesPerRow_[r];
@@ -1850,7 +1850,7 @@ namespace Tpetra
     if (nlrs > 0 && nodeNumAllocated_ > 0) {
       if (getProfileType() == DynamicProfile) {
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(nlrs+1);
-        ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(true,nlrs+1,pbuf_rowOffsets_);
+        ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(Kokkos::WriteOnly,nlrs+1,pbuf_rowOffsets_);
         if (nodeNumEntries_ > 0) {
           pbuf_lclInds1D_ = node->template allocBuffer<LocalOrdinal>(nodeNumEntries_);
           ArrayRCP<LocalOrdinal> curptr = pbuf_lclInds1D_;
@@ -1879,7 +1879,7 @@ namespace Tpetra
       else {
         // storage is already allocated; just need to pack
         if (nodeNumEntries_ > 0) {
-          ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(false,nlrs+1,pbuf_rowOffsets_);
+          ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(Kokkos::WriteOnly,nlrs+1,pbuf_rowOffsets_);
           ArrayRCP<LocalOrdinal> curptr = pbuf_lclInds1D_,
                                  oldptr = pbuf_lclInds1D_;
           size_t sofar = 0;
