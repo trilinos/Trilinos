@@ -298,11 +298,7 @@ int Zoltan_Color(
 
   MPI_Allreduce(&nvtx, &gvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);
 #else /* COLORING_NEW_GRAPH */
-  /* CC: TODO choose good construction method */
-  if (coloring_problem == 'P')
-    Zoltan_ZG_Build (zz, &graph, 1, 1, 0); /* Bipartite & we color vertices */
-  else
-    Zoltan_ZG_Build (zz, &graph, 0, 0, 0); /* Normal graph */
+  Zoltan_ZG_Build (zz, &graph, 0);
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
 		    NULL, NULL, &partialD2);

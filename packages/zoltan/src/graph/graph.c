@@ -21,11 +21,21 @@ extern "C" {
 #include "zz_util_const.h"
 #include "matrix.h"
 #include "graph.h"
+#include "graph_const.h"
+#include "params_const.h"
+
+/* Parameters for how to build the graph */
+static PARAM_VARS ZG_params[] = {
+	{ "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
+	{ "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
+	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
+	{ NULL, NULL, NULL, 0 } };
 
 #define CHECK_IERR do {   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) \
     goto End;  } while (0)
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
+
 
 /* At this time function is in parmetis directory but it will change soon */
 extern int
@@ -36,27 +46,52 @@ Zoltan_Verify_Graph(MPI_Comm comm, int *vtxdist, int *xadj,
 
 /* This function needs a distribution : rows then cols to work properly */
 int
-Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
+Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 {
-  static char *yo = "ZG_Build";
+  static char *yo = "Zoltan_ZG_Build";
   int ierr = ZOLTAN_OK;
   int diag;
   int *diagarray=NULL;
   Zoltan_matrix_options opt;
+  char symmetrization[MAX_PARAM_STRING_LEN+1];
+  char bipartite_type[MAX_PARAM_STRING_LEN+1];
+  char weigth_type[MAX_PARAM_STRING_LEN+1];
+  int bipartite = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   memset (graph, 0, sizeof(ZG));
+
+  /* Read graph build parameters */
+  Zoltan_Bind_Param(ZG_params, "GRAPH_SYMMETRIZE", (void *) &symmetrization);
+  Zoltan_Bind_Param(ZG_params, "GRAPH_SYM_WEIGHT", (void *) &weigth_type);
+  Zoltan_Bind_Param(ZG_params, "GRAPH_BIPARTITE_TYPE", (void *) &bipartite_type);
+
+  /* Set default values */
+  strncpy(symmetrization, "NONE", MAX_PARAM_STRING_LEN);
+  strncpy(bipartite_type, "OBJ", MAX_PARAM_STRING_LEN);
+  strncpy(weigth_type, "ADD", MAX_PARAM_STRING_LEN);
+
+  Zoltan_Assign_Param_Vals(zz->Params, ZG_params, zz->Debug_Level, zz->Proc,
+			   zz->Debug_Proc);
 
   graph->mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (graph->mtx.comm == NULL) MEMORY_ERROR;
 
   memset(&opt, 0, sizeof(Zoltan_matrix_options));
-  opt.enforceSquare = 1;
-  opt.pinwgtop = ADD_WEIGHT;
+  opt.enforceSquare = 1;      /* We want a graph: square matrix */
+  if (!strcasecmp(weigth_type, "ADD"))
+    opt.pinwgtop = ADD_WEIGHT;
+  else if (!strcasecmp(weigth_type, "MAX"))
+    opt.pinwgtop = MAX_WEIGHT;
+  else if (!strcasecmp(weigth_type, "CMP"))
+    opt.pinwgtop = MAX_WEIGHT;
   opt.pinwgt = 1;
   opt.randomize = 0;
   opt.local = local;
   opt.keep_distribution = 1;
+  if (strcasecmp(symmetrization, "NONE")) {
+    opt.symmetrize = 1;
+  }
 
   ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx);
   CHECK_IERR;
@@ -68,8 +103,12 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
     CHECK_IERR;
   }
 
-/*   ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite); */
-/*   CHECK_IERR; */
+  if (opt.symmetrize) {
+    if (!strcasecmp(symmetrization, "BIPARTITE"))
+      bipartite = 1;
+    ierr = Zoltan_Matrix_Sym(zz, &graph->mtx.mtx, bipartite);
+    CHECK_IERR;
+  }
 
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;
@@ -87,10 +126,11 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int bipartite, int fixObj, int local)
     graph->fixed_vertices = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
     if (graph->mtx.mtx.nY && graph->fixed_vertices == NULL) MEMORY_ERROR;
     limit = graph->mtx.mtx.offsetY;
-    graph->fixObj = fixObj;
+    /* What kind of vertices do we want to keep ? */
+    graph->fixObj = !strcasecmp(bipartite_type, "OBJ"); /* Non-zero value means "objects" */
 
     offset = graph->mtx.mtx.offsetY - graph->mtx.dist_y[graph->mtx.comm->myProc_y];
-    if (fixObj)
+    if (graph->fixObj) /* What kind of vertices do we want to keep ? */
       for (vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++ vertlno)
 	graph->fixed_vertices[vertlno] = (vertlno < offset);
     else
@@ -170,7 +210,7 @@ Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
 int
 Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
 {
-  static char *yo = "ZG_Register";
+  static char *yo = "Zoltan_ZG_Register";
   int ierr = ZOLTAN_OK;
   int *props;
   struct Zoltan_DD_Struct *dd;
@@ -241,19 +281,23 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 
 void
 Zoltan_ZG_Free(ZG *graph){
-  /* TODO : free the communicators properly */
-
   if (graph->bipartite)
     ZOLTAN_FREE(&graph->fixed_vertices);
-
-
-/*   Zoltan_Matrix_Free(zz, &graph->mtx.mtx); */
 
   Zoltan_Matrix2d_Free(&graph->mtx);
   ZOLTAN_FREE(&graph->mtx.comm);
 }
 
 
+int Zoltan_ZG_Set_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+  int  index;
+  PARAM_UTYPE result;
+
+  return Zoltan_Check_Param(name, val, ZG_params, &result, &index);
+}
 
 
 

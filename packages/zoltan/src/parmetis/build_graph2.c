@@ -29,7 +29,6 @@ extern "C" {
 /* Parameters for how to build the graph */
 static PARAM_VARS Graph_params[] = {
 	{ "GRAPH_UNSYMMETRIC", NULL, "INT", 0 },
-	{ "GRAPH_SYMMETRIZE", NULL, "INT", 0 },
 	{ "GRAPH_FAST_BUILD", NULL, "STRING", 0 },
 	{ NULL, NULL, NULL, 0 } };
 
@@ -75,7 +74,6 @@ int Zoltan_Build_Graph(
   strcpy(try_fast_str, "NO");  /* default */
 
   Zoltan_Bind_Param(Graph_params, "GRAPH_UNSYMMETRIC", (void *) &unsymmetric);
-  Zoltan_Bind_Param(Graph_params, "GRAPH_SYMMETRIZE", (void *) &symmetrize);
   Zoltan_Bind_Param(Graph_params, "GRAPH_FAST_BUILD", (void *) try_fast_str);
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);

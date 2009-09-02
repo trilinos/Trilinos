@@ -194,7 +194,7 @@ int Zoltan_Preprocess_Graph(
 			      &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
 #else
     local = IS_LOCAL_GRAPH(gr->graph_type);
-    ierr = Zoltan_ZG_Build (zz, graph, 0, 0, local); /* Normal graph */
+    ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
     ierr = Zoltan_ZG_Export (zz, graph,
 			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
