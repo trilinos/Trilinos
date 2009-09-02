@@ -47,7 +47,9 @@
 #include "Rythmos_UnitTestModels.hpp"
 #include "Rythmos_RKButcherTableau.hpp"
 
-#include "Thyra_NonlinearSolver_NOX.hpp"
+#ifdef HAVE_RYTHMOS_NOX
+#  include "Thyra_NonlinearSolver_NOX.hpp"
+#endif
 
 namespace Rythmos {
 
@@ -959,6 +961,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE ) {
   TEST_ASSERT( true ); 
 }
 
+#ifdef HAVE_RYTHMOS_NOX
+
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE_NOX ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<SinCosModel> model = sinCosModel(true);
@@ -978,6 +982,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE_NOX ) {
   integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
   TEST_ASSERT( true ); 
 }
+
+#endif // HAVE_RYTHMOS_NOX
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_DIRK ) {
   // DIRK/SDIRK w/o WFactory

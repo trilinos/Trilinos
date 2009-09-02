@@ -10,6 +10,11 @@ ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 FILE(GLOB SOURCES *.cpp)
 
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
+IF (${PACKAGE_NAME}_ENABLE_NOX)
+  ADD_DEFINITIONS(-DHAVE_RYTHMOS_NOX)
+ENDIF()
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   ADD_DEFINITIONS(-DHAVE_RYTHMOS_STRATIMIKOS)
@@ -109,6 +114,22 @@ IF (Stratimikos_ENABLE_AztecOO)
     COMM serial mpi  
     NUM_MPI_PROCS 1
     )
+
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_NOX)
+  IF (${PACKAGE_NAME}_ENABLE_NOX)
+
+    PACKAGE_ADD_TEST(
+      complicatedExample
+      NAME complicatedExample_aztecoo
+      POSTFIX_AND_ARGS_0 nox
+        --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6
+        --T=0.1 --maxerror=1e-4 --useNOX --verbose --extra-linear-solver-params="${AZTECOO_PL}"
+        --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line
+      COMM serial mpi  
+      NUM_MPI_PROCS 1
+      )
+
+  ENDIF()
 
 ENDIF()
 

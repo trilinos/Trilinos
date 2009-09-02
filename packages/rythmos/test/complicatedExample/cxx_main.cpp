@@ -59,7 +59,10 @@
 #include "Thyra_LinearNonlinearSolver.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Thyra_NonlinearSolver_NOX.hpp"
+
+#ifdef HAVE_RYTHMOS_NOX
+#  include "Thyra_NonlinearSolver_NOX.hpp"
+#endif
 
 // Includes for Stratimikos:
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
@@ -266,12 +269,16 @@ int main(int argc, char *argv[])
       RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolverSlave;
       if (useNOX) {
+#ifdef HAVE_RYTHMOS_NOX
         RCP<Thyra::NOXNonlinearSolver>
           _nonlinearSolver = rcp(new Thyra::NOXNonlinearSolver);
         RCP<Thyra::NOXNonlinearSolver>
           _nonlinearSolverSlave = rcp(new Thyra::NOXNonlinearSolver);
         nonlinearSolver = _nonlinearSolver;
         nonlinearSolverSlave = _nonlinearSolverSlave;
+#else // HAVE_RYTHMOS_NOX
+        TEST_FOR_EXCEPT_MSG(true, "Error: NOX is not enabled!");
+#endif // HAVE_RYTHMOS_NOX
       } 
       else {
         RCP<Rythmos::TimeStepNonlinearSolver<double> >
