@@ -39,6 +39,7 @@
 #include <Tpetra_Operator.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_Array.hpp>
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -59,7 +60,7 @@ namespace Belos {
   public:
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs ) { 
-      return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>(mv.getNode(),mv.getMap(),numvecs)); 
+      return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>(mv.getMap(),numvecs)); 
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv ) {
@@ -78,7 +79,8 @@ namespace Belos {
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
           // not contiguous; short circuit
-          return mv.subCopy(Teuchos::arrayViewFromVector(index));
+          Teuchos::Array<size_t> stinds(index.begin(), index.end());
+          return mv.subCopy(stinds);
         }
       }
       // contiguous
@@ -98,7 +100,8 @@ namespace Belos {
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
           // not contiguous; short circuit
-          return mv.subViewNonConst(Teuchos::arrayViewFromVector(index));
+          Teuchos::Array<size_t> stinds(index.begin(), index.end());
+          return mv.subViewNonConst(stinds);
         }
       }
       // contiguous
@@ -118,7 +121,8 @@ namespace Belos {
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
           // not contiguous; short circuit
-          return mv.subView(Teuchos::arrayViewFromVector(index));
+          Teuchos::Array<size_t> stinds(index.begin(), index.end());
+          return mv.subView(stinds);
         }
       }
       // contiguous
@@ -135,10 +139,13 @@ namespace Belos {
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  const Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      Tpetra::Map<LO,GO> LocalMap(B.numRows(), 0, A.getMap().getComm(),true);
-      // TODO: this multivector should be a view of the data of B, not a copy
+      // create local map
+      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated);
+      // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
-      Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(A.getNode(),LocalMap,Bvalues,B.stride(),B.numCols());
+      // create locally replicated MultiVector with a copy of this data
+      Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(Teuchos::rcpFromRef(LocalMap),Bvalues,B.stride(),B.numCols());
+      // multiply
       mv.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, alpha, A, B_mv, beta);
     }
 
@@ -155,11 +162,15 @@ namespace Belos {
 
     static void MvTransMv( const Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B )
     { 
-      Tpetra::Map<LO,GO> LocalMap(B.numRows(), 0, A.getMap().getComm(),true);
-      // TODO: this multivector should be a view of the data of B, so we don't have to perform the copy afterwards
-      Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(A.getNode(),LocalMap,B.numCols(),true);
+      // create local map
+      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated);
+      // create local multivector to hold the result
+      Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(Teuchos::rcpFromRef(LocalMap),B.numCols(),true);
+      // multiply result into local multivector
       B_mv.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,mv,Teuchos::ScalarTraits<Scalar>::zero());
+      // create arrayview encapsulating the Teuchos::SerialDenseMatrix
       Teuchos::ArrayView<Scalar> av(B.values(),B.stride()*B.numCols());
+      // extract a copy of the result into the array view (and therefore, the SerialDenseMatrix)
       B_mv.get1dCopy(av,B.stride());
     }
 
@@ -201,7 +212,7 @@ namespace Belos {
       TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
-      Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = mv.subViewNonConst(Teuchos::arrayViewFromVector(index));
+      Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneView(mv,index);
       if ((typename std::vector<int>::size_type)A.getNumVectors() > index.size()) {
         Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > Asub = A.subView(Teuchos::Range1D(0,index.size()-1));
         (*mvsub) = (*Asub);

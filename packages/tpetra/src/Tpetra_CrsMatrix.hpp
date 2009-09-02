@@ -734,6 +734,7 @@ namespace Tpetra
     return staticGraph_; 
   }
 
+
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
@@ -768,9 +769,9 @@ namespace Tpetra
     }
     Teuchos::ArrayView<const LocalOrdinal> findices = finds();
     Teuchos::ArrayView<const Scalar      > fvalues  = fvals();
-    size_t rowNNZ = getNumEntriesInLocalRow(localRow),
-                     toAdd = findices.size(),
-                  rowAlloc = graph_->numAllocatedEntriesForMyRow(localRow);
+    const size_t rowNNZ = getNumEntriesInLocalRow(localRow),
+                  toAdd = findices.size();
+    size_t rowAlloc = graph_->numAllocatedEntriesForMyRow(localRow);
     if (rowNNZ+toAdd > rowAlloc) {
       TEST_FOR_EXCEPTION(graph_->isStaticProfile() == true, std::runtime_error,
           Teuchos::typeName(*this) << "::insertLocalValues(): new indices exceed statically allocated graph structure.");

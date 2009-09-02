@@ -60,11 +60,6 @@ namespace {
     return rcp(new Teuchos::SerialComm<int>());
   }
 
-  Node& getDefaultNode()
-  {
-    return DefaultPlatform::getDefaultPlatform().getNode();
-  }
-
   //REFACTOR// template<class Scalar, class O1, class O2>
   //REFACTOR// RCP<CrsMatrix<Scalar,O1,O2> > constructDiagMatrix(const Map<O1,O2> &map) 
   //REFACTOR// {
@@ -88,12 +83,11 @@ namespace {
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a uniform contiguous map
-    Map<O1,O2> map(dim,0,comm);
-    RCP<MV> mvec = rcp( new MV(node,map,numVecs,true) );
+    RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Belos::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
@@ -110,12 +104,11 @@ namespace {
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a uniform contiguous map
-    Map<O1,O2> map(dim,0,comm,true);
-    RCP<MV> mvec = rcp( new MV(node,map,numVecs,true) );
+    RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Belos::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
