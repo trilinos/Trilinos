@@ -500,8 +500,10 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)
 
+    # Tell CTest to run our script for this test.  Pass the test-time
+    # configuration name to the script in the TEST_CONFIG variable.
     ADD_TEST( ${TEST_NAME}
-      ${CMAKE_COMMAND} -P "${TEST_SCRIPT_FILE}"
+      ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}" -P "${TEST_SCRIPT_FILE}"
       )
 
     PACKAGE_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
