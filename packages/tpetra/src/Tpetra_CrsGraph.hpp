@@ -539,7 +539,7 @@ namespace Tpetra
       if (getProfileType() == StaticProfile) {
         // determine how many entries to allocate and setup offsets into 1D arrays
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(numRows+1);
-        Teuchos::ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(Kokkos::WriteOnly,numRows+1,pbuf_rowOffsets_);
+        Teuchos::ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,numRows+1,pbuf_rowOffsets_);
         if (numAllocPerRow_ != Teuchos::null) {
           // allocate offsets, get host view
           nodeNumAllocated_ = 0;
@@ -1261,7 +1261,7 @@ namespace Tpetra
         char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
         Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,&gblerror);
-        TEST_FOR_EXCEPTION(gblerror, std::runtime_error,
+        TEST_FOR_EXCEPTION(gblerror != 0, std::runtime_error,
             Teuchos::typeName(*this) << "::globalAssemble(): non-local entries correspond to invalid rows.");
       }
 

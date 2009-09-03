@@ -11,7 +11,6 @@
 
 namespace {
 
-  using Teuchos::asSafe;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Tpetra::DefaultPlatform;
@@ -127,7 +126,7 @@ namespace {
       }
       // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
       for (size_t j=0; j<numVectors; ++j) {
-        mvMine->replaceLocalValue(0,j,asSafe<Scalar>(myImageID + j*numImages));
+        mvMine->replaceLocalValue(0,j,static_cast<Scalar>(myImageID + j*numImages));
       }
       // create Import from smap to tmap, Export from tmap to smap, test them
       Import<Ordinal> importer(smap,tmap);
@@ -137,14 +136,14 @@ namespace {
       TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
       TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
       TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( importer.getNumPermuteIDs(), asSafe<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( importer.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       // exporter testing
       TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
       TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
       TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( exporter.getNumPermuteIDs(), asSafe<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( exporter.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       // import neighbors, test their proper arrival
       //                   [ 0    n     2n    3n    4n ]
       // mvWithNeighbors = [...  ....  ....  ....  ....]
@@ -152,21 +151,21 @@ namespace {
       mvWithNeighbors->doImport(*mvMine,importer,REPLACE);
       if (myImageID == 0) {
         for (size_t j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,asSafe<Scalar>(myImageID+j*numImages)); // me
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,asSafe<Scalar>(j*numImages)+ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)); // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,static_cast<Scalar>(j*numImages)+ST::one()); // neighbor
         }
       }
       else if (myImageID == numImages-1) {
         for (size_t j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,asSafe<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,asSafe<Scalar>(myImageID+j*numImages));           // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,static_cast<Scalar>(myImageID+j*numImages));           // me
         }
       }
       else {
         for (size_t j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,asSafe<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,asSafe<Scalar>(myImageID+j*numImages));           // me
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,asSafe<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,static_cast<Scalar>(myImageID+j*numImages));           // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,static_cast<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
         }
       }
       // export values, test 
@@ -175,13 +174,13 @@ namespace {
       if (myImageID == 0 || myImageID == numImages-1) {
         for (size_t j=0; j<numVectors; ++j) {
           // contribution from me and one neighbor: double original value
-          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::asSafe<Scalar>(2.0)*asSafe<Scalar>(myImageID+j*numImages));
+          TEST_EQUALITY(mvMine->getData(j)[0],static_cast<Scalar>(2.0)*static_cast<Scalar>(myImageID+j*numImages));
         }
       }
       else {
         for (size_t j=0; j<numVectors; ++j) {
           // contribution from me and two neighbors: triple original value
-          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::asSafe<Scalar>(3.0)*asSafe<Scalar>(myImageID+j*numImages));
+          TEST_EQUALITY(mvMine->getData(j)[0],static_cast<Scalar>(3.0)*static_cast<Scalar>(myImageID+j*numImages));
         }
       }
       success &= local_success;
@@ -235,7 +234,7 @@ namespace {
       }
       // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
       for (size_t j=0; j<numVectors; ++j) {
-        mvMine->replaceLocalValue(0,j,asSafe<Scalar>(myImageID + j*numImages));
+        mvMine->replaceLocalValue(0,j,static_cast<Scalar>(myImageID + j*numImages));
       }
       // create Import from smap to tmap, Export from tmap to smap, test them
       Import<Ordinal> importer(smap,tmap);
@@ -245,14 +244,14 @@ namespace {
       TEST_EQUALITY_CONST( importer.getSourceMap() == smap, true );
       TEST_EQUALITY_CONST( importer.getTargetMap() == tmap, true );
       TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( importer.getNumPermuteIDs(), asSafe<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( importer.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       TEST_EQUALITY( importer.getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       TEST_EQUALITY( importer.getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       // exporter testing: FINISH
       TEST_EQUALITY_CONST( exporter.getSourceMap() == tmap, true );
       TEST_EQUALITY_CONST( exporter.getTargetMap() == smap, true );
       TEST_EQUALITY( importer.getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
-      TEST_EQUALITY( exporter.getNumPermuteIDs(), asSafe<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( exporter.getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       // import neighbors, test their proper arrival
       //                   [ 0    n     2n    3n    4n ]
       // mvWithNeighbors = [...  ....  ....  ....  ....]
@@ -260,21 +259,21 @@ namespace {
       mvWithNeighbors->doImport(*mvMine,exporter,REPLACE);
       if (myImageID == 0) {
         for (size_t j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,asSafe<Scalar>(myImageID+j*numImages)); // me
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,asSafe<Scalar>(j*numImages)+ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)); // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,static_cast<Scalar>(j*numImages)+ST::one()); // neighbor
         }
       }
       else if (myImageID == numImages-1) {
         for (size_t j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,asSafe<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,asSafe<Scalar>(myImageID+j*numImages));           // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,static_cast<Scalar>(myImageID+j*numImages));           // me
         }
       }
       else {
         for (size_t j=0; j<numVectors; ++j) {
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,asSafe<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,asSafe<Scalar>(myImageID+j*numImages));           // me
-          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,asSafe<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),0,static_cast<Scalar>(myImageID+j*numImages)-ST::one()); // neighbor
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),1,static_cast<Scalar>(myImageID+j*numImages));           // me
+          TEST_ARRAY_ELE_EQUALITY(mvWithNeighbors->getData(j),2,static_cast<Scalar>(myImageID+j*numImages)+ST::one()); // neighbor
         }
       }
       // export values, test 
@@ -283,13 +282,13 @@ namespace {
       if (myImageID == 0 || myImageID == numImages-1) {
         for (size_t j=0; j<numVectors; ++j) {
           // contribution from me and one neighbor: double original value
-          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::asSafe<Scalar>(2.0)*asSafe<Scalar>(myImageID+j*numImages));
+          TEST_EQUALITY(mvMine->getData(j)[0],static_cast<Scalar>(2.0)*static_cast<Scalar>(myImageID+j*numImages));
         }
       }
       else {
         for (size_t j=0; j<numVectors; ++j) {
           // contribution from me and two neighbors: triple original value
-          TEST_EQUALITY(mvMine->getData(j)[0],Teuchos::asSafe<Scalar>(3.0)*asSafe<Scalar>(myImageID+j*numImages));
+          TEST_EQUALITY(mvMine->getData(j)[0],static_cast<Scalar>(3.0)*static_cast<Scalar>(myImageID+j*numImages));
         }
       }
       success &= local_success;

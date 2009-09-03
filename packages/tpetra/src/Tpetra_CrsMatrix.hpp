@@ -1023,6 +1023,8 @@ namespace Tpetra
 #else
     graph_->getLocalRowCopy(LocalRow,indices,numEntries);
 #endif
+    Teuchos::ArrayRCP<const Scalar> valrowview = getLocalRowView(LocalRow);
+    Teuchos::ArrayRCP<const Indices> indrowview = graph_->getLocalRowView(LocalRow);
     typename Teuchos::ArrayRCP<const Scalar>::iterator vptr = getVptr(LocalRow);
     std::copy( vptr, vptr+numEntries, values.begin() );
   }
