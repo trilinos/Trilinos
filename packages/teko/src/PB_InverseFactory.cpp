@@ -99,6 +99,26 @@ PreconditionerInverseFactory::PreconditionerInverseFactory(const Teuchos::RCP<Th
    : precFactory_(precFactory)
 { }
 
+/** \brief Constructor that takes a Thyra solve factory and 
+  *        makes it look like an InverseFactory. This constructor
+  *        also permits the passing of an "Extra Parameters" parameter
+  *        list.
+  *
+  * Constructor that takes a Thyra solve factory and 
+  * makes it look like an InverseFactory.  This constructor
+  * also permits the passing of an "Extra Parameters" parameter
+  * list to be used and updated through the "RequestedParameters" function.
+  * 
+  * \param[in] precFactory Thyra PreconditionerFactoryBase used for building 
+  *                        the inverse.
+  * \param[in] xtraParam Parameter list containing extra parameters.
+  */
+PreconditionerInverseFactory::PreconditionerInverseFactory(
+              const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
+              const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam)
+   : precFactory_(precFactory), extraParams_(rcp(new Teuchos::ParameterList(*xtraParam)))
+{ }
+
 //! Copy constructor
 PreconditionerInverseFactory::PreconditionerInverseFactory(const PreconditionerInverseFactory & pFactory)
    : precFactory_(pFactory.precFactory_)
@@ -179,8 +199,11 @@ Teuchos::RCP<Teuchos::ParameterList> PreconditionerInverseFactory::getRequestedP
    Teuchos::RCP<BlockPreconditionerFactory> bpf = rcp_dynamic_cast<BlockPreconditionerFactory>(precFactory_);
 
    // request the parameters from a BPF is required
-   if(bpf==Teuchos::null) return Teuchos::null;
-   else return bpf->getRequestedParameters();
+   if(bpf!=Teuchos::null) 
+      return bpf->getRequestedParameters();
+
+   // for non block preconditioners see if there are user requested additional parameters
+   return extraParams_;
 }
 
 /** \brief Update this object with the fields from a parameter list.
@@ -201,8 +224,41 @@ bool PreconditionerInverseFactory::updateRequestedParameters(const Teuchos::Para
    Teuchos::RCP<BlockPreconditionerFactory> bpf = rcp_dynamic_cast<BlockPreconditionerFactory>(precFactory_);
 
    // update the parameters of a BPF is required
-   if(bpf==Teuchos::null) return false;
-   else return bpf->updateRequestedParameters(pl);
+   if(bpf!=Teuchos::null)
+      return bpf->updateRequestedParameters(pl);
+
+   // for non block preconditioners see if there are user requested additional parameters
+   if(extraParams_==Teuchos::null)
+      return true;
+
+   Teuchos::ParameterList::ConstIterator itr;
+   RCP<Teuchos::ParameterList> srcPl = precFactory_->unsetParameterList();
+
+   // find name of settings sublist
+   std::string subName = "";
+   for(itr=srcPl->begin();itr!=srcPl->end();++itr) {
+      // search for string with "Settings" in name
+      if(itr->first.find("Settings")!=string::npos) {
+         subName = itr->first;
+         continue;
+      }
+   }
+
+   // update fails if no settings list was found
+   if(subName=="") {
+      precFactory_->setParameterList(srcPl);
+      return false;
+   }
+
+   // add extra parameters to list
+   Teuchos::ParameterList & settingsList = srcPl->sublist(subName);
+   for(itr=pl.begin();itr!=pl.end();++itr)
+      settingsList.setEntry(itr->first,itr->second);
+
+   // set the parameter list
+   precFactory_->setParameterList(srcPl);
+
+   return true;
 }
 
 //! Build an inverse operator using a factory and a linear operator
@@ -262,7 +318,7 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
   *
   * \returns An inverse factory using the specified inverse operation.
   */
-RCP<const InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,const std::string & type)
+RCP<InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,const std::string & type)
 {
    RCP<Teuchos::ParameterList> myList = rcp(new Teuchos::ParameterList(list));
 

@@ -172,6 +172,23 @@ public:
      */
    PreconditionerInverseFactory(const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory);
 
+   /** \brief Constructor that takes a Thyra solve factory and 
+     *        makes it look like an InverseFactory. This constructor
+     *        also permits the passing of an "Extra Parameters" parameter
+     *        list.
+     *
+     * Constructor that takes a Thyra solve factory and 
+     * makes it look like an InverseFactory.  This constructor
+     * also permits the passing of an "Extra Parameters" parameter
+     * list to be used and updated through the "RequestedParameters" function.
+     * 
+     * \param[in] precFactory Thyra PreconditionerFactoryBase used for building 
+     *                        the inverse.
+     * \param[in] xtraParam Parameter list containing extra parameters.
+     */
+   PreconditionerInverseFactory(const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
+                                const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam);
+
    //! Copy constructor
    PreconditionerInverseFactory(const PreconditionerInverseFactory & pFactory);
    //@}
@@ -249,8 +266,17 @@ public:
    /** Return a string that describes this factory */
    virtual std::string toString() const { return precFactory_->description(); }
 
+   /** Get the preconditioner factroy */
+   Teuchos::RCP<const Thyra::PreconditionerFactoryBase<double> > getPrecFactory() const
+   { return precFactory_; }
+
+   /** Get the preconditioner factroy */
+   Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > getPrecFactory()
+   { return precFactory_; }
+
 protected:
    Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > precFactory_;
+   Teuchos::RCP<Teuchos::ParameterList> extraParams_;
 
 private:
    // hide me!
@@ -378,7 +404,7 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
   *
   * \relates InverseFactory
   */
-Teuchos::RCP<const InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,const std::string & type);
+Teuchos::RCP<InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,const std::string & type);
 
 /** \brief Get a valid parameter list for the inverse factory class.
   *

@@ -2,13 +2,13 @@
 
 namespace PB {
 
-InvFactoryDiagStrategy::InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory)
+InvFactoryDiagStrategy::InvFactoryDiagStrategy(const Teuchos::RCP<InverseFactory> & factory)
 {
    // only one factory to use!
    invDiagFact_.resize(1,factory);
 }
 
-InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<const InverseFactory> > & factories)
+InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories)
 {
    invDiagFact_ = factories;
 }

@@ -37,7 +37,7 @@ public:
    Teuchos::RCP<const Teuchos::ParameterList> getParameterList(const std::string & label) const;
 
    //! Get the inverse factory associated with a particular label
-   Teuchos::RCP<const InverseFactory> getInverseFactory(const std::string & label) const;
+   Teuchos::RCP<InverseFactory> getInverseFactory(const std::string & label) const;
 
 protected:
 

@@ -108,7 +108,7 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
    }
 
    RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
-   RCP<const PB::InverseFactory> invFact = invLib->getInverseFactory("Amesos");
+   RCP<PB::InverseFactory> invFact = invLib->getInverseFactory("Amesos");
    RCP<PB::NS::InvLSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(invFact,M));
    strategy->setHScaling(PB::getDiagonal(H));
    strategy->setUseFullLDU(false);

@@ -22,15 +22,15 @@ public:
    //! \name Constructors
    //@{
    InvLSCStrategy();
-   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,
+   InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,
                   bool rzn=false);
-   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,
+   InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,
                   LinearOp & mass,bool rzn=false);
-   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
-                  const Teuchos::RCP<const InverseFactory> & invFactS,
+   InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
+                  const Teuchos::RCP<InverseFactory> & invFactS,
                   bool rzn=false);
-   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
-                  const Teuchos::RCP<const InverseFactory> & invFactS,
+   InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
+                  const Teuchos::RCP<InverseFactory> & invFactS,
                   LinearOp & mass,bool rzn=false);
    //@}
 
@@ -171,8 +171,8 @@ public:
 
 protected:
    // how to invert the matrices
-   Teuchos::RCP<const InverseFactory> invFactoryF_;
-   Teuchos::RCP<const InverseFactory> invFactoryS_;
+   Teuchos::RCP<InverseFactory> invFactoryF_;
+   Teuchos::RCP<InverseFactory> invFactoryS_;
 
    // operators requested, to be filled by user
    LinearOp massMatrix_;

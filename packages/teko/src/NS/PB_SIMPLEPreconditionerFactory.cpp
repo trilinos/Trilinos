@@ -12,14 +12,14 @@ namespace NS {
 
 // Constructor definition
 SIMPLEPreconditionerFactory
-   ::SIMPLEPreconditionerFactory(const RCP<const InverseFactory> & inverse,
+   ::SIMPLEPreconditionerFactory(const RCP<InverseFactory> & inverse,
                                  double alpha)
    : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha)
 { }
 
 SIMPLEPreconditionerFactory
-   ::SIMPLEPreconditionerFactory(const RCP<const InverseFactory> & invVFact,
-                                 const RCP<const InverseFactory> & invPFact,
+   ::SIMPLEPreconditionerFactory(const RCP<InverseFactory> & invVFact,
+                                 const RCP<InverseFactory> & invPFact,
                                  double alpha)
    : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha)
 { }
@@ -112,7 +112,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    if(invPStr=="") invPStr = invStr;
 
    //  two inverse factory objects
-   RCP<const InverseFactory> invVFact, invPFact;
+   RCP<InverseFactory> invVFact, invPFact;
 
    // build velocity inverse factory
    invVFact = invLib->getInverseFactory(invVStr);

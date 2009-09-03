@@ -122,7 +122,7 @@ Teuchos::RCP<const Teuchos::ParameterList> InverseLibrary::getParameterList(cons
 }
 
 //! Get the inverse factory associated with a particular label
-Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::string & label) const
+Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string & label) const
 {
    PB_DEBUG_MSG("Begin InverseLibrary::getInverseFactory",10);
 
@@ -165,17 +165,32 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
 
    // build inverse factory
    if(isStratPrecond) {
+      // remove required parameters
+      RCP<Teuchos::ParameterList> plCopy = rcp(new Teuchos::ParameterList(*pl));
+      std::string type = plCopy->get<std::string>("Preconditioner Type");
+      RCP<Teuchos::ParameterList> xtraParams = rcp(new Teuchos::ParameterList(
+            plCopy->sublist("Preconditioner Types").sublist(type).sublist("Required Parameters"))); 
+      plCopy->sublist("Preconditioner Types").sublist(type).remove("Required Parameters"); 
+
+      // print some debuggin info
+      PB_DEBUG_MSG_BEGIN(10);
+         DEBUG_STREAM << "Printing parameter list: " << std::endl; 
+         PB_DEBUG_PUSHTAB(); plCopy->print(DEBUG_STREAM); PB_DEBUG_POPTAB();
+
+         DEBUG_STREAM << "Printing extra parameters: " << std::endl; 
+         PB_DEBUG_PUSHTAB(); xtraParams->print(DEBUG_STREAM); PB_DEBUG_POPTAB();
+      PB_DEBUG_MSG_END();
+
       Stratimikos::DefaultLinearSolverBuilder strat;
-      strat.setParameterList(rcp(new Teuchos::ParameterList(*pl)));
+      strat.setParameterList(plCopy);
 
       // try to build a preconditioner factory
-      std::string type = pl->get<std::string>("Preconditioner Type");
       RCP<Thyra::PreconditionerFactoryBase<double> > precFact = strat.createPreconditioningStrategy(type);
 
       PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Stratimikos preconditioner)",10);
 
       // string must map to a preconditioner
-      return rcp(new PreconditionerInverseFactory(precFact));
+      return rcp(new PreconditionerInverseFactory(precFact,xtraParams));
    }
    else if(isStratSolver) {
       Stratimikos::DefaultLinearSolverBuilder strat;

@@ -11,12 +11,12 @@ namespace NS {
 class SIMPLEPreconditionerFactory : public BlockPreconditionerFactory {
 public:
    // Constructor
-   SIMPLEPreconditionerFactory(const Teuchos::RCP<const InverseFactory> & inverse,
+   SIMPLEPreconditionerFactory(const Teuchos::RCP<InverseFactory> & inverse,
                                double alpha);
 
    // Constructor
-   SIMPLEPreconditionerFactory(const Teuchos::RCP<const InverseFactory> & invVelFactory,
-                               const Teuchos::RCP<const InverseFactory> & invPrsFactory,
+   SIMPLEPreconditionerFactory(const Teuchos::RCP<InverseFactory> & invVelFactory,
+                               const Teuchos::RCP<InverseFactory> & invPrsFactory,
                                double alpha);
 
    //! Default constructor
@@ -28,8 +28,8 @@ public:
     
 protected:
    // class members
-   Teuchos::RCP<const InverseFactory> invVelFactory_;
-   Teuchos::RCP<const InverseFactory> invPrsFactory_;
+   Teuchos::RCP<InverseFactory> invVelFactory_;
+   Teuchos::RCP<InverseFactory> invPrsFactory_;
    double alpha_;
    
    //! Initialize from a parameter list

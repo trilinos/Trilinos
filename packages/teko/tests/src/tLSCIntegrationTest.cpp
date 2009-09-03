@@ -169,7 +169,7 @@ bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
    Teuchos::ParameterList paramList;
    solveList(paramList,8);
 
-   RCP<const PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
+   RCP<PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
    TEUCHOS_ASSERT(invFact!=Teuchos::null);
 
    bool status = false;
@@ -234,7 +234,7 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
    Teuchos::ParameterList paramList;
    solveList(paramList,8);
 
-   RCP<const PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
+   RCP<PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
    TEUCHOS_ASSERT(invFact!=Teuchos::null);
 
    bool status = false;

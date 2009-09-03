@@ -242,7 +242,7 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
 
    Teuchos::ParameterList paramList;
    paramList.set("Linear Solver Type","Amesos");
-   RCP<const PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"Amesos");
+   RCP<PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"Amesos");
 
    // build F matrix
    const RCP<Epetra_CrsMatrix> ptrMass  = rcp(new Epetra_CrsMatrix(Copy,*map,2));

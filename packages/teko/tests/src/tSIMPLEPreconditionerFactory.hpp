@@ -40,8 +40,8 @@ protected:
    Teuchos::RCP<const Thyra::LinearOpBase<double> > Bt_; 
    Teuchos::RCP<const Thyra::LinearOpBase<double> > C_; 
 
-   Teuchos::RCP<const InverseFactory> invF_; 
-   Teuchos::RCP<const InverseFactory> invS_; 
+   Teuchos::RCP<InverseFactory> invF_; 
+   Teuchos::RCP<InverseFactory> invS_; 
    Teuchos::RCP<Epetra_SerialComm> comm;
 
    double tolerance_;

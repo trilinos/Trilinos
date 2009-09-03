@@ -83,25 +83,25 @@ InvLSCStrategy::InvLSCStrategy()
    , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false)
 { }
 
-InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn)
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false)
 { }
 
-InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
-                               const Teuchos::RCP<const InverseFactory> & invFactS,
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
+                               const Teuchos::RCP<InverseFactory> & invFactS,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false)
 { }
 
-InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn)
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false)
 { }
 
-InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
-                               const Teuchos::RCP<const InverseFactory> & invFactS,
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
+                               const Teuchos::RCP<InverseFactory> & invFactS,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false)
@@ -324,6 +324,7 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    /////////////////////////////////////////////////////////
 
    // (re)build the inverse of F
+   PB_DEBUG_MSG("LSC::computeInverses Building inv(F)",1);
    PB_DEBUG_EXPR(invTimer.start(true));
    InverseLinearOp invF = state->getInverse("invF");
    if(invF==Teuchos::null) {
@@ -338,6 +339,7 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    /////////////////////////////////////////////////////////
 
    // (re)build the inverse of BQBt 
+   PB_DEBUG_MSG("LSC::computeInverses Building inv(BQBtmC)",1);
    PB_DEBUG_EXPR(invTimer.start(true));
    const LinearOp BQBt = state->getInverse("BQBtmC");
    InverseLinearOp invBQBt = state->getInverse("invBQBtmC");
@@ -356,6 +358,7 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    ModifiableLinearOp invBHBt = state->getInverse("invBHBtmC");
    if(hScaling_!=Teuchos::null) {
       // (re)build the inverse of BHBt 
+      PB_DEBUG_MSG("LSC::computeInverses Building inv(BHBtmC)",1);
       PB_DEBUG_EXPR(invTimer.start(true));
       const LinearOp BHBt = state->getInverse("BHBtmC");
       if(invBHBt==Teuchos::null) {
@@ -413,7 +416,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    if(invPStr=="") invPStr = invStr;
 
    //  two inverse factory objects
-   RCP<const InverseFactory> invVFact, invPFact;
+   RCP<InverseFactory> invVFact, invPFact;
 
    // build velocity inverse factory
    invFactoryF_ = invLib.getInverseFactory(invVStr);
@@ -429,30 +432,57 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
 //! For assiting in construction of the preconditioner
 Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() const 
 {
+   Teuchos::RCP<Teuchos::ParameterList> result;
    Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
 
-   // use the mass matrix
-   if(useMass_)
-      pl->set<PB::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
+   // grab parameters from F solver
+   RCP<Teuchos::ParameterList> fList = invFactoryF_->getRequestedParameters();
+   if(fList!=Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for(itr=fList->begin();itr!=fList->end();++itr)
+         pl->setEntry(itr->first,itr->second);
+      result = pl;
+   }
 
-   return Teuchos::null;
+   // grab parameters from S solver
+   RCP<Teuchos::ParameterList> sList = invFactoryS_->getRequestedParameters();
+   if(sList!=Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for(itr=sList->begin();itr!=sList->end();++itr)
+         pl->setEntry(itr->first,itr->second);
+      result = pl;
+   }
+
+   // use the mass matrix
+   if(useMass_) {
+      pl->set<PB::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
+      result = pl;
+   }
+
+   return result;
 }
 
 //! For assiting in construction of the preconditioner
 bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
 {
+   bool result = true;
+ 
+   // update requested parameters in solvers
+   result &= invFactoryF_->updateRequestedParameters(pl);
+   result &= invFactoryS_->updateRequestedParameters(pl);
+
    // set the mass matrix: throw if the strategy is not the right type
    if(useMass_) {
       PB::LinearOp mass = pl.get<PB::LinearOp>("Velocity Mass Matrix");
 
       // we must have a mass matrix
-      if(mass==Teuchos::null) return false;
-
-      // set the mass matrix
-      setMassMatrix(mass);
+      if(mass==Teuchos::null)
+         result &= false;
+      else
+         setMassMatrix(mass);
    }
 
-   return true;
+   return result;
 }
 
 } // end namespace NS

@@ -77,7 +77,7 @@ public:
      *
      * \param[in] factory Factory to be used to invert each diagonal block.
      */
-   InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory);
+   InvFactoryDiagStrategy(const Teuchos::RCP<InverseFactory> & factory);
 
    /** Constructor that lets the inverse of each block be set individually.
      *
@@ -85,7 +85,7 @@ public:
      *                      which should be the same length as the number of
      *                      diagonal blocks.
      */
-   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<const InverseFactory> > & factories);
+   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories);
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
@@ -99,7 +99,7 @@ public:
 
 protected:
    // stored inverse operators
-   std::vector<Teuchos::RCP<const InverseFactory> > invDiagFact_;
+   std::vector<Teuchos::RCP<InverseFactory> > invDiagFact_;
 
 private:
    InvFactoryDiagStrategy();
