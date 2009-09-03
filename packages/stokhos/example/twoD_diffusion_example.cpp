@@ -98,14 +98,12 @@ int n, p, d;
 //char polyType;
 //double * evaluationPoint = new double(d);
 if(argc < 7){
-  std::cout<< "Usage is: Stokhos_twoD_diffusion_example.cpp <# meshPoints> <PC Degree> <PC Dimension> <sigma> <mu> <Weight Cut>\n";
-  std::cout << "assuming: Stokhos_twoD_diffusion_example.cpp 32 5 1 3 1 3\n";
   n = 32; //Number of mesh points
   p = 5; //Polynomial degree
-  d = 1;  //Terms in KL expansion
-  sigma = 3;
-  mean = 1;
-  weightCut = 3;     // Support for distribution is +-weightCut
+  d = 2;  //Terms in KL expansion
+  sigma = .1;
+  mean = .2;
+  weightCut = 1;     // Support for distribution is +-weightCut
 }else{
   n = atoi(argv[1]);
   p = atoi(argv[2]);

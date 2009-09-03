@@ -87,12 +87,22 @@ int main(int argc, char **argv)
 
     //Parse the input arguments.
     //
-    int n = atoi(argv[1]);
-    int level = atoi(argv[2]);
-    int d = atoi(argv[3]);
-    sigma = atof(argv[4]);
-    mean = atof(argv[5]);
-    double weightCut = atof(argv[6]);
+      int n,level,d;
+      if(argc < 7){
+        n = 32; //Number of mesh points
+        level = 5; //Polynomial degree
+        d = 2;  //Terms in KL expansion
+        sigma = .1;
+        mean = .2;
+        weightCut = 1;     // Support for distribution is +-weightCut
+      }else{
+        n = atoi(argv[1]);
+        level = atoi(argv[2]);
+        d = atoi(argv[3]);
+        sigma = atof(argv[4]);
+        mean = atof(argv[5]);
+        weightCut = atof(argv[6]);
+      }
     std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 
     /////////////////////////////////////////////////////////////////////////////////
