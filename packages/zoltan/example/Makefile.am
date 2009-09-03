@@ -11,10 +11,4 @@
 
 all-local:
 
-if HAVE_ZOLTAN_CPPDRIVER
-  CPP_EXAMPLES = CPP
-endif
-
-SUBDIRS = C $(CPP_EXAMPLES)
-
-EXTRA_DIST = makefile
+SUBDIRS = C CPP

@@ -55,7 +55,7 @@ MPI_LIBS=
 CFLAGS=-g -Wall
 CXXFLAGS=-g -Wall
 
-CPP_EXAMPLES = simpleBLOCK 
+CPP_EXAMPLES = exampleBLOCK 
 
 all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 

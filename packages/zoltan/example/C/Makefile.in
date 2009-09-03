@@ -220,24 +220,22 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ZOLTAN_EX_DEPS = $(top_builddir)/src/libzoltan.a 
-ZOLTAN_EX_INCLUDES = $(ZOLTAN_INCLUDES)
 simpleBLOCK_SOURCES = simpleBLOCK.c
-simpleBLOCK_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleBLOCK_CFLAGS = $(ZOLTAN_EX_INCLUDES)
+simpleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
+simpleBLOCK_CFLAGS = $(ZOLTAN_INCLUDES)
 simpleBLOCK_LDADD = $(ZOLTAN_LIBS)
 simpleRCB_SOURCES = simpleRCB.c
-simpleRCB_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleRCB_CFLAGS = $(ZOLTAN_EX_INCLUDES)
-simpleRCB_LDADD = $(ZOLTAN_EX_LIBS)
+simpleRCB_DEPENDENCIES = $(ZOLTAN_DEPS)
+simpleRCB_CFLAGS = $(ZOLTAN_INCLUDES)
+simpleRCB_LDADD = $(ZOLTAN_LIBS)
 simpleGRAPH_SOURCES = simpleGRAPH.c
-simpleGRAPH_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simpleGRAPH_CFLAGS = $(ZOLTAN_EX_INCLUDES)
-simpleGRAPH_LDADD = $(ZOLTAN_EX_LIBS)
+simpleGRAPH_DEPENDENCIES = $(ZOLTAN_DEPS)
+simpleGRAPH_CFLAGS = $(ZOLTAN_LIBRARY_INCLUDES)
+simpleGRAPH_LDADD = $(ZOLTAN_LIBS)
 simplePHG_SOURCES = simplePHG.c
-simplePHG_DEPENDENCIES = $(ZOLTAN_EX_DEPS)
-simplePHG_CFLAGS = $(ZOLTAN_EX_INCLUDES)
-simplePHG_LDADD = $(ZOLTAN_EX_LIBS)
+simplePHG_DEPENDENCIES = $(ZOLTAN_DEPS)
+simplePHG_CFLAGS = $(ZOLTAN_INCLUDES)
+simplePHG_LDADD = $(ZOLTAN_LIBS)
 EXTRA_DIST = classicMakefile objects.txt hypergraph.txt graph.txt mesh.txt
 all: all-am
 
@@ -252,9 +250,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/C/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  example/C/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/C/Makefile
+	  $(AUTOMAKE) --gnu  example/C/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

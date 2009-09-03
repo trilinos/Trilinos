@@ -121,7 +121,7 @@ AC_ARG_ENABLE(mpi-recv-limit,
 # Checks for programs
 # ------------------------------------------------------------------------
 
-AC_PROG_CC(cc gcc)
+AM_PROG_CC_C_O(cc gcc)
 #Conditional only?
 #if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 AC_PROG_CXX(CC g++ c++ cxx)
@@ -331,15 +331,18 @@ AC_CONFIG_FILES([
 		src/Makefile
 		src/driver/Makefile
 		Makefile.export.zoltan
-		example/lib/Makefile
 		example/Makefile
 		example/C/Makefile
-		example/C/sparse_matrix/Makefile
 		example/CPP/Makefile
 		siMPI/Makefile
 		siMPI/pyMPI/Makefile
 		siMPI/pyMPI/siMPI/Makefile
 		])
+#		example/lib/Makefile
+#		example/C/Makefile
+#		example/C/sparse_matrix/Makefile
+#		example/CPP/Makefile
+
 #		src/fdriver/Makefile
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile

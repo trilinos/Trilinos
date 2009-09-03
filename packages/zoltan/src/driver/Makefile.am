@@ -9,13 +9,8 @@
 
 include $(top_builddir)/Makefile.export.zoltan
 
-if USING_GNUMAKE
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ZOLTAN_LIBS))
-EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ZOLTAN_INCLUDES))
-else
 EXPORT_LIBS = $(ZOLTAN_LIBS)
 EXPORT_INC_PATH = $(ZOLTAN_INCLUDES)
-endif
 
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
