@@ -6,9 +6,54 @@ Several example programs reside in the example subdirectory, to
 demonstrate using Isorropia to partition and rebalance Epetra objects.
 
 Isorropia was refactored for version 3.0 (Trilinos 9.0), and now depends
-on Zoltan and Epetra. There are several new features, including coloring 
+on Zoltan and Epetra. There are several new features, including coloring
 and ordering. Please see the release notes for details.
 
 For documentation, see our website:
 http://trilinos.sandia.gov/packages/isorropia/
+
+===================
+List of Isorropia Parameters:
+-----------------------------
+
+FOO:
+     *DEFAULT*		  Default for parameter FOO
+     NOT DEFAULT          Other meaningful value for parameter FOO
+     ANOTHER NOT DEFAULT  another value for FOO
+
+
+
+STRUCTURALLY SYMMETRIC:
+     *NO*                 Implies that all the graph algorithms will
+			  symmetrize the graph first.
+     YES		  No symmetrization needed.
+
+
+Partitioning parameters:
+------------------------
+
+PARTITIONING METHOD:      Related to Zoltan LB_METHOD parameter.
+     *RCB*		  Default when geometry is provided.
+     HSCF                 Available when geometry is provided.
+     GRAPH                Use a graph partitioner
+     *HYPERGRAPH*         Use an hypergraph partitioner, default.
+
+NUM PARTS:
+     number               Global number of parts wanted.
+			  Default is the number of processes.
+
+IMBALANCE TOL:
+     number               Imbalance allowed during partitioning.
+
+BALANCE OBJECTIVE:
+     *ROWS*		  By default, we balance rows of the matrix.
+     NONZEROS		  Balance nonzeros of the matrix.
+
+
+Coloring parameters:
+--------------------
+
+DISTANCE:
+     number               Distance of the coloring problem, default is 2.
+			  1 and 2 are the only valid values.
 
