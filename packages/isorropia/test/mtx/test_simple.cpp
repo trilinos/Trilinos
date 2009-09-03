@@ -198,6 +198,7 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
 static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 	  bool verbose,           // display the graph before & after
 	  bool contract,          // set global number of partitions to 1/2 num procs
+		    bool extend,  // set global number of partitions to 2* num procs
 	  int partitioningType,   // hypergraph or graph partitioning, or simple
 	  int vertexWeightType,   // use vertex weights?
 	  int edgeWeightType,     // use edge/hyperedge weights?
@@ -250,6 +251,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     else{
       contract = 0;
     }
+    if (extend) {
+      numPartitions *= numProcs;
+    }
+
   }
 
   // Check that input matrix is valid.  This test constructs an "x"
@@ -728,12 +733,24 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     true,                   // make #partitions < #processes
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_UNEQUAL_WEIGHTS,
 	     SUPPLY_EQUAL_WEIGHTS,
 	     EPETRA_CRSMATRIX);
 
     CHECK_FAILED();
+  fail = run_test(testm,
+	     verbose,
+	     false,                   // make #partitions < #processes
+		  true,
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
+
+    CHECK_FAILED();
+
     goto Report;
 #else
 
@@ -742,6 +759,7 @@ int main(int argc, char** argv) {
     fail = run_test(testm,
 	       verbose,            // draw graph before and after partitioning
 	       false,                   // do not make #partitions < #processes
+		    false,
 	       GRAPH_PARTITIONING,      // do graph partitioning
 	       SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
 	       SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
@@ -750,8 +768,21 @@ int main(int argc, char** argv) {
     CHECK_FAILED();
 
     fail = run_test(testm,
+	       verbose,            // draw graph before and after partitioning
+	       false,                   // do not make #partitions < #processes
+		    true,
+	       GRAPH_PARTITIONING,      // do graph partitioning
+	       SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
+	       SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
+	       EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
+
+    CHECK_FAILED();
+
+
+    fail = run_test(testm,
 	       verbose,
 	       false,
+		    false,
 	       GRAPH_PARTITIONING,
 	       SUPPLY_UNEQUAL_WEIGHTS,
 	       SUPPLY_EQUAL_WEIGHTS,
@@ -762,6 +793,18 @@ int main(int argc, char** argv) {
     fail = run_test(testm,
 	       verbose,
 	       true,               // make #partitions < #processes
+		    false,
+	       GRAPH_PARTITIONING,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       EPETRA_CRSGRAPH);
+
+    CHECK_FAILED();
+
+    fail = run_test(testm,
+	       verbose,
+	       false,               // make #partitions < #processes
+		    true,
 	       GRAPH_PARTITIONING,
 	       SUPPLY_EQUAL_WEIGHTS,
 	       SUPPLY_EQUAL_WEIGHTS,
@@ -772,6 +815,7 @@ int main(int argc, char** argv) {
     fail = run_test(testm,
 	       verbose,
 	       false,
+		    false,
 	       GRAPH_PARTITIONING,
 	       NO_APPLICATION_SUPPLIED_WEIGHTS,
 	       NO_APPLICATION_SUPPLIED_WEIGHTS,
@@ -788,6 +832,7 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     false,
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_EQUAL_WEIGHTS,
 	     SUPPLY_EQUAL_WEIGHTS,
@@ -798,6 +843,7 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     false,
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_EQUAL_WEIGHTS,
 	     SUPPLY_UNEQUAL_WEIGHTS,
@@ -808,6 +854,18 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     true,                   // make #partitions < #processes
+		  false,
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
+
+  CHECK_FAILED();
+
+  fail = run_test(testm,
+	     verbose,
+	     false,                   // make #partitions < #processes
+		  true,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_UNEQUAL_WEIGHTS,
 	     SUPPLY_EQUAL_WEIGHTS,
@@ -818,6 +876,7 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     false,
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	     NO_APPLICATION_SUPPLIED_WEIGHTS,
