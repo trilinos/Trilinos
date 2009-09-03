@@ -1724,7 +1724,7 @@ namespace {
     mvec.normWeighted(weight1,normsW1());
     {
       Mag vnrm = mvec.getVector(0)->normWeighted(*weight1.getVector(0));
-      TEST_EQUALITY( vnrm, normsW1[0] );
+      TEST_FLOATING_EQUALITY( vnrm, normsW1[0], tol );
     }
     for (size_t j=0; j < numVectors; ++j) {
       Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );

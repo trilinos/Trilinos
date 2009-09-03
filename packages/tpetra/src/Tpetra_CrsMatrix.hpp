@@ -1002,7 +1002,6 @@ namespace Tpetra
 
 
   /////////////////////////////////////////////////////////////////////////////
-  // REFACTOR
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getLocalRowCopy(
@@ -1010,28 +1009,25 @@ namespace Tpetra
                                 const Teuchos::ArrayView<LocalOrdinal> &indices, 
                                 const Teuchos::ArrayView<Scalar>       &values,
                                 size_t &numEntries) const {
-    numEntries = getNumEntriesInLocalRow(LocalRow);
     TEST_FOR_EXCEPTION(getRowMap()->isNodeLocalElement(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,...): specified row (==" << LocalRow << ") is not valid on this node.");
+    Teuchos::ArrayRCP<const Scalar      > valrowview = getLocalRowView(LocalRow);
+    Teuchos::ArrayRCP<const LocalOrdinal> indrowview = graph_->getLocalRowView(LocalRow);
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(indrowview.size() != valrowview.size(), std::logic_error, 
+        Teuchos::typeName(*this) << "::getLocalRowCopy(): Internal logic error. Please contact Tpetra team.");
+#endif
+    numEntries = valrowview.size();
     TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
         Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
-#ifdef HAVE_TPETRA_DEBUG
-    size_t nnzagain;
-    graph_->getLocalRowCopy(LocalRow,indices,nnzagain);
-    TEST_FOR_EXCEPTION(nnzagain != numEntries, std::logic_error, 
-        Teuchos::typeName(*this) << "::getLocalRowCopy(): Internal logic error. Please contact Tpetra team.");
-#else
-    graph_->getLocalRowCopy(LocalRow,indices,numEntries);
-#endif
-    Teuchos::ArrayRCP<const Scalar> valrowview = getLocalRowView(LocalRow);
-    Teuchos::ArrayRCP<const Indices> indrowview = graph_->getLocalRowView(LocalRow);
-    typename Teuchos::ArrayRCP<const Scalar>::iterator vptr = getVptr(LocalRow);
-    std::copy( vptr, vptr+numEntries, values.begin() );
+    std::copy( indrowview.begin(), indrowview.begin() + numEntries, indices.begin() );
+    std::copy( valrowview.begin(), valrowview.begin() + numEntries, values.begin() );
+    valrowview = Teuchos::null;
+    indrowview = Teuchos::null;
   }
 
 
   /////////////////////////////////////////////////////////////////////////////
-  // REFACTOR
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getGlobalRowCopy(GlobalOrdinal globalRow, 
@@ -1042,20 +1038,19 @@ namespace Tpetra
     size_t myRow = getRowMap()->getLocalIndex(globalRow);
     TEST_FOR_EXCEPTION(myRow == LOT::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::getGlobalRowCopy(globalRow,...): globalRow does not belong to this node.");
-    numEntries = getNumEntriesInLocalRow(myRow);
-    TEST_FOR_EXCEPTION(
-        indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
-        Teuchos::typeName(*this) << "::getGlobalRowCopy(globalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
+    Teuchos::ArrayRCP<const Scalar       > valrowview = getGlobalRowView(globalRow);
+    Teuchos::ArrayRCP<const GlobalOrdinal> indrowview = graph_->getGlobalRowView(globalRow);
 #ifdef HAVE_TPETRA_DEBUG
-    size_t nnzagain;
-    graph_->getGlobalRowCopy(globalRow,indices,nnzagain);
-    TEST_FOR_EXCEPTION(nnzagain != numEntries, std::logic_error, 
-        Teuchos::typeName(*this) << "::getLocalRowCopy(): Internal logic error. Please contact Tpetra team.");
-#else
-    graph_->getGlobalRowCopy(globalRow,indices,numEntries);
+    TEST_FOR_EXCEPTION(indrowview.size() != valrowview.size(), std::logic_error, 
+        Teuchos::typeName(*this) << "::getGlobalRowCopy(): Internal logic error. Please contact Tpetra team.");
 #endif
-    typename Teuchos::ArrayRCP<const Scalar>::iterator vptr = getVptr(myRow);
-    std::copy( vptr, vptr+numEntries, values.begin() );
+    numEntries = indrowview.size();
+    TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
+        Teuchos::typeName(*this) << "::getGlobalRowCopy(GlobalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
+    std::copy( indrowview.begin(), indrowview.begin() + numEntries, indices.begin() );
+    std::copy( valrowview.begin(), valrowview.begin() + numEntries, values.begin() );
+    valrowview = Teuchos::null;
+    indrowview = Teuchos::null;
   }
 
 
