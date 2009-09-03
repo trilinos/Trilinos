@@ -114,6 +114,11 @@ FUNCTION(DRIVE_ADVANCED_TEST)
       
       #PRINT_VAR(EXEC_CMND)
 
+      # Provide the test configuration in an environment variable.
+      IF(TEST_CONFIG)
+        SET(ENV{TEST_CONFIG} "${TEST_CONFIG}")
+      ENDIF(TEST_CONFIG)
+
       EXECUTE_PROCESS(${EXEC_CMND} RESULT_VARIABLE EXEC_RESULT)
 
       IF (TEST_${CMND_IDX}_OUTPUT_FILE)
