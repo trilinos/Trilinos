@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CTEST_EXE=/home/trilinos/cmake/bin/ctest
-BASEDIR=/Users/bmpersc/nightly/Trilinos.base
+BASEDIR=/home/bmpersc/nightly/Trilinos.base
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
 
 # Source the 
