@@ -1468,7 +1468,9 @@ namespace Tpetra
       TEST_FOR_EXCEPTION((size_t)indices.size() < NumIndices, std::runtime_error,
           Teuchos::typeName(*this) << "::getLocalRowCopy(): specified storage (size==" << indices.size() 
           << ") is not large enough to hold all entries for this row (NumIndices == " << NumIndices << ").");
-      std::copy( lview.begin(), lview.begin() + NumIndices, indices.begin());
+      if (NumIndices > 0) {
+        std::copy( lview.begin(), lview.begin() + NumIndices, indices.begin());
+      }
       lview = Teuchos::null;
     }
     else if (isGloballyIndexed()) {
@@ -1485,6 +1487,7 @@ namespace Tpetra
     }
     else {
 #ifdef HAVE_TPETRA_DEBUG
+      // should have fallen in one of the above
       TEST_FOR_EXCEPTION( indicesAreAllocated() == true, std::logic_error, 
           Teuchos::typeName(*this) << "::getLocalRowCopy(): Internal logic error. Please contact Tpetra team.");
 #endif
