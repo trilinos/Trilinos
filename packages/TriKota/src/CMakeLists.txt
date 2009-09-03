@@ -2,8 +2,28 @@
 INCLUDE(PackageLibraryMacros)
 
 #
-# Define the configure Dakota libraries
+IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/configure)
+  MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota needs to 
+ be untarred into the Trikota Directory before running cmake!")
+ENDIF()
+
 #
+# Configure Dakota libraries
+#   Skip configuring if dakota_config.h already exists,
+#   unless -DTriKota_ENABLE_DakotaReconfigure:BOOL=ON
+#
+SET(${PACKAGE_NAME}_ENABLE_DakotaReconfigure OFF CACHE BOOL
+    "Whether to force reconfiguration of Dakota")
+
+IF(NOT ${PACKAGE_NAME}_ENABLE_DakotaReconfigure 
+  AND EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/dakota_config.h)
+
+EXECUTE_PROCESS(
+  COMMAND echo "   TriKota: Dakota already configured, skipping reconfigure."
+  WORKING_DIRECTORY ${PACKAGE_SOURCE_DIR}/Dakota
+)
+
+ELSE()
 
 EXECUTE_PROCESS(
   COMMAND echo "-->TriKota: Launching Dakota configure script -- takes several minutes."
@@ -21,16 +41,12 @@ EXECUTE_PROCESS(
     OUTPUT_FILE ${PACKAGE_SOURCE_DIR}/Dakota/configure.out
   )
 
-## ToDo: Add *all* compiler options.  See Makefile.export.in and
-## PackageWriteExportMakefile.cmake for how to grab *all* the compiler options
-## that you need to be consistent with building against Trilinos.
-#  ...try these...
-#    CC=mpicc CXX=mpicxx F77=mpif90 FC=mpif90
-
 EXECUTE_PROCESS(
   COMMAND echo "<--TriKota: Finished Dakota configure script."
   WORKING_DIRECTORY ${PACKAGE_SOURCE_DIR}/Dakota
 )
+
+ENDIF()
 
 # Customize the build process, by adding a custom make
 # target, which makes Dakota (in source tree) and then
@@ -78,15 +94,6 @@ APPEND_SET(SOURCES
     TriKota_Version.cpp
   )
 
-# Add Dakota libraries to the list of TriKota libraries
-#SET(DAKOTA_LIBS
-#    -ldakota -lpecos -lfftw3 -llhs -levidence -lsurfpack 
-#    -lconmin -lddace -lfsudace -ljega -lnlpql -lnpsol -lopt
-#    -lpsuade -lnewmat -lncsuopt -lquadrature -lcoliny -lcolin
-#    -lpebbl -lutilib -l3po -lnappspack -lappspack -lconveyor
-#    -lshared -lcdd -lcport -lamplsolver -llhs
-#  )
-
 SET(DAKOTA_LIBS
     dakota pecos fftw3 lhs evidence surfpack 
     conmin ddace fsudace jega nlpql npsol opt
@@ -94,13 +101,18 @@ SET(DAKOTA_LIBS
     pebbl utilib 3po nappspack appspack conveyor
     shared cdd cport amplsolver lhs
   )
+
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/lib)
+
+# Compiling code that includes Dakota headers requires
+# -DHAVE_CONFIG_H.
+ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
 PACKAGE_ADD_LIBRARY(
   trikota
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS ${DAKOTA_LIBS}
+  IMPORTEDLIBS ${DAKOTA_LIBS}
   )
 
 # Custom "make install" command to copy contents of Dakota lib
