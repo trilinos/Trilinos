@@ -3283,36 +3283,6 @@ extern int Zoltan_LB_Box_Assign(
   int *numprocs
 );
 
-/*****************************************************************************/
-/* 
- * Routine to compute statistics about the current balance/partitioning.
- *
- * Input:
- *   zz                   -- pointer to Zoltan structure
- *   print_stats          -- if >0, compute and print max and sum of the metrics
- *
- * Output:
- *   nobj                 -- number of objects (for each processor)
- *   obj_wgt              -- obj_wgt[0:vwgt_dim-1] are the object weights 
- *                           (on each processor)
- *   cut_wgt              -- cut size/weight (for each processor)
- *   nboundary            -- number of boundary objects (for each processor)
- *   nadj                 -- the number of adjacent procs (for each processor)
- *
- * Returned value:        -- error code
- */
-
-extern int Zoltan_LB_Eval(
-  struct Zoltan_Struct *zz, 
-  int print_stats, 
-  int *nobj,
-  float *obj_wgt,
-  int *ncuts,
-  float *cut_wgt, 
-  int *nboundary,
-  int *nadj
-);
-
 /*
  *  Function to set the desired partition sizes. 
  *

@@ -225,18 +225,9 @@ public:
     return Zoltan_LB_Eval_HG(ZZ_Ptr, print_stats, hg);
   }
 
-  int LB_Eval( const int &print_stats,
-                int *num_objects,
-                float *const object_weights,
-                int *num_cuts,
-                float *const cut_weights,
-                int *num_boundary_objects,
-                int *num_adj_procs )
+  int LB_Eval( const int &print_stats, BALANCE_EVAL *eval, GRAPH_EVAL *graph, HG_EVAL *hg)
   {
-    return Zoltan_LB_Eval( ZZ_Ptr, print_stats,
-                    num_objects, object_weights,
-                    num_cuts, cut_weights,
-                    num_boundary_objects, num_adj_procs );
+    return Zoltan_LB_Eval( ZZ_Ptr, print_stats, eval, graph, hg); 
   }
 
   int RCB_Box( const int &part,
