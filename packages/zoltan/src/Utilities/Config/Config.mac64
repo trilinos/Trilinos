@@ -42,10 +42,8 @@ FARG      		= farg_typical
 MPI_LIB			= 
 MPI_LIBPATH		=
 
-PARMETIS_LIBPATH 	= -L/Users/kddevin/code/ParMETIS3.1.1
-PARMETIS_INCPATH        = -I/Users/kddevin/code/ParMETIS3.1.1
-#PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
-#PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
 
 #SCOTCH_LIBPATH 		= -L/Users/kddevin/code/lib-m64/scotch_5.1/lib
 #SCOTCH_INCPATH        	= -I/Users/kddevin/code/lib-m64/scotch_5.1/include

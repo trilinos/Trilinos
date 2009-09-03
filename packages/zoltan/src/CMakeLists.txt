@@ -328,6 +328,7 @@ APPEND_SET(NOINSTALLHEADERS
   parmetis/third_library_const.h
   parmetis/third_library.h
   parmetis/third_library_tools.h
+  parmetis/graph_util.h
   )
 
 APPEND_SET(SOURCES

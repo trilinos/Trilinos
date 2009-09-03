@@ -200,7 +200,8 @@ PARAMS = \
 PARMETIS_H = \
 	$(srcdir)/parmetis/third_library_const.h \
 	$(srcdir)/parmetis/third_library.h \
-	$(srcdir)/parmetis/third_library_tools.h
+	$(srcdir)/parmetis/third_library_tools.h \
+	$(srcdir)/parmetis/graph_util.h 
 
 PARMETIS = \
 	$(srcdir)/parmetis/build_graph.c \
