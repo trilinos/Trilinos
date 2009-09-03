@@ -251,7 +251,7 @@ Operator::computeNumberOfProperties()
   localNumberOfProperties_ = max - base_ + 1;
 }
 
-void Operator::stringToUpper(std::string &s, int &changed)
+void Operator::stringToUpper(std::string &s, int &changed, bool rmUnderscore)
 {
   std::string::iterator siter;
   changed = 0;
@@ -262,14 +262,14 @@ void Operator::stringToUpper(std::string &s, int &changed)
       *siter = toupper(*siter);
       changed++;
     }
-    if (*siter == '_') {
+    if (rmUnderscore && (*siter == '_')) {
       *siter = ' ';
       changed ++;
     }
   }
 }
 
-void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
+void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed, bool rmUnderscore)
 {
   changed = 0;
 
@@ -283,7 +283,7 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
   while (1){
     //////////////////////////////////////////////////////////////////////
     // Compiler considered this while statement an error
-    // while ( pIter = plist.begin() ; pIter != plist.end() ; pIter++ ){
+    // for ( pIter = plist.begin() ; pIter != plist.end() ; pIter++ ){
     // }
     //////////////////////////////////////////////////////////////////////
     if (pIter == plist.end()) break;
@@ -298,13 +298,13 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
 
     std::string origName(paramNames[i]);
     int paramNameChanged = 0;
-    stringToUpper(paramNames[i], paramNameChanged);
+    stringToUpper(paramNames[i], paramNameChanged, rmUnderscore);
 
     if (plist.isSublist(origName)){
       Teuchos::ParameterList &sublist = plist.sublist(origName);
 
       int sublistChanged=0;
-      paramsToUpper(sublist, sublistChanged);
+      paramsToUpper(sublist, sublistChanged, false);
 
       if (paramNameChanged){
 

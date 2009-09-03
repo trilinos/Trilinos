@@ -229,8 +229,8 @@ public:
 
 private:
 
-  void paramsToUpper(Teuchos::ParameterList &, int &changed);
-  void stringToUpper(std::string &s, int &changed);
+  void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
+  void stringToUpper(std::string &s, int &changed, bool rmUnderscore=false);
   int numberOfProperties_;
   int localNumberOfProperties_;
   std::vector<int> numberElemsByProperties_;
