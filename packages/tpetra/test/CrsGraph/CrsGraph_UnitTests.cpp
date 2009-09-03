@@ -49,6 +49,11 @@ namespace {
   using std::string;
   using std::unique;
   using Teuchos::tuple;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -587,6 +592,59 @@ namespace {
   }
 
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, Describable, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const GO INVALID = OrdinalTraits<GO>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    // create Map
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,static_cast<size_t>(3),0,comm) );
+    {
+      GRAPH graph(map,1,StaticProfile);
+      // test labeling
+      const string lbl("graphA");
+      string desc1 = graph.description();
+      out << desc1 << endl;
+      graph.setObjectLabel(lbl);
+      string desc2 = graph.description();
+      out << desc2 << endl;
+      TEST_EQUALITY( graph.getObjectLabel(), lbl );
+    }
+    {
+      GRAPH graph(map,1,StaticProfile);
+      // test describing at different verbosity levels
+      if (myImageID==0) out << "Describing with verbosity VERB_DEFAULT..." << endl;
+      graph.describe(out);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_NONE..." << endl;
+      graph.describe(out,VERB_NONE);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_LOW..." << endl;
+      graph.describe(out,VERB_LOW);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_MEDIUM..." << endl;
+      graph.describe(out,VERB_MEDIUM);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_HIGH..." << endl;
+      graph.describe(out,VERB_HIGH);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_EXTREME..." << endl;
+      graph.describe(out,VERB_EXTREME);
+      comm->barrier();
+      comm->barrier();
+    }
+  }
+
+
+
   // 
   // INSTANTIATIONS
   //
@@ -604,7 +662,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, NonLocals , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
      UNIT_TEST_GROUP_LO_GO(int,int)

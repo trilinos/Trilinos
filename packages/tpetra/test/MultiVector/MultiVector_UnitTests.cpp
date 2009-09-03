@@ -378,7 +378,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, LabeledObject, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, Describable, LO, GO, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const GO INVALID = OrdinalTraits<GO>::invalid();
@@ -1847,7 +1847,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, NonContigView     , ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Describable       , ORDINAL, ORDINAL, SCALAR )
 
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

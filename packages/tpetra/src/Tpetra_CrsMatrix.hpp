@@ -1068,11 +1068,12 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(lrow == LOT::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::getGlobalRowView(GlobalRow,...): GlobalRow (== " << GlobalRow << ") does not belong to this node.");
     size_t rnnz = getNumEntriesInLocalRow(lrow);
-    graph_->getGlobalRowView(GlobalRow,indices);
+    indices = graph_->getGlobalRowView(GlobalRow);
     if (rnnz == 0) {
-      values = Teuchos::ArrayView<Scalar>(Teuchos::null);
+      values = Teuchos::null;
     }
     else {
+
       if (isStorageOptimized() == true || graph_->isStaticProfile() == true) {
         values = Teuchos::arrayView<Scalar>(Teuchos::getRawPtr(valuesPtrs_[lrow]),rnnz);
       }
@@ -1080,6 +1081,10 @@ namespace Tpetra
         values = values_[lrow](0,rnnz);
       }
     }
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION( (indices.size() != values.size()) || (indices.size() != rnnz) || ((indices == Teuchos::null) != (values == Teuchos::null)), 
+        std::logic_error, Teuchos::typeName(*this) << "::getGlobalRowView(): Internal logic error. Please contact Tpetra team.");
+#endif
     return;
   }
 
