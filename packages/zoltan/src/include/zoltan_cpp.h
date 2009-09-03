@@ -210,22 +210,23 @@ public:
       num_objs, global_ids, local_ids, color_exp);
   }
 
-  int LB_Eval_Balance(int print_stats, BALANCE_EVAL *eval)
+  int LB_Eval_Balance(int print_stats, ZOLTAN_BALANCE_EVAL *eval)
   {
     return Zoltan_LB_Eval_Balance(ZZ_Ptr, print_stats, eval);
   }
 
-  int LB_Eval_Graph(int print_stats, GRAPH_EVAL *graph)
+  int LB_Eval_Graph(int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   {
     return Zoltan_LB_Eval_Graph(ZZ_Ptr, print_stats, graph);
   }
 
-  int LB_Eval_HG(int print_stats, HG_EVAL *hg)
+  int LB_Eval_HG(int print_stats, ZOLTAN_HG_EVAL *hg)
   {
     return Zoltan_LB_Eval_HG(ZZ_Ptr, print_stats, hg);
   }
 
-  int LB_Eval( const int &print_stats, BALANCE_EVAL *eval, GRAPH_EVAL *graph, HG_EVAL *hg)
+  int LB_Eval( const int &print_stats, ZOLTAN_BALANCE_EVAL *eval, 
+               ZOLTAN_GRAPH_EVAL *graph, ZOLTAN_HG_EVAL *hg)
   {
     return Zoltan_LB_Eval( ZZ_Ptr, print_stats, eval, graph, hg); 
   }

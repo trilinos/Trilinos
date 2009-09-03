@@ -49,10 +49,10 @@ extern int zoltan_lb_eval_sort_increasing(const void *a, const void *b);
 
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
+int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
 {
   /*****************************************************************************/
-  /* Return performance metrics in BALANCE_EVAL structure.                     */ 
+  /* Return performance metrics in ZOLTAN_BALANCE_EVAL structure.                     */ 
   /* Also print them out if print_stats is true.                               */
   /*****************************************************************************/
 
@@ -62,7 +62,7 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
   int i, j, ierr;
   int nparts, nonempty_nparts, req_nparts;
   int num_obj = 0;
-  BALANCE_EVAL localEval;
+  ZOLTAN_BALANCE_EVAL localEval;
 
   int *parts=NULL;
   float *vwgts=NULL;
@@ -77,7 +77,7 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
   if (!eval)
     eval = &localEval;
 
-  memset(eval, 0, sizeof(BALANCE_EVAL));
+  memset(eval, 0, sizeof(ZOLTAN_BALANCE_EVAL));
 
   /* Get requested number of parts.  Actual number may differ  */
 
@@ -214,10 +214,10 @@ End:
 }
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
+int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 {
   /****************************************************************************/
-  /* Return performance metrics in GRAPH_EVAL structure.                      */ 
+  /* Return performance metrics in ZOLTAN_GRAPH_EVAL structure.                      */ 
   /* Also print them out if print_stats is true.                              */
   /****************************************************************************/
 
@@ -255,7 +255,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   int partPair[2], dummyValue[2];
 
-  GRAPH_EVAL localEval;
+  ZOLTAN_GRAPH_EVAL localEval;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -264,7 +264,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   if (!graph)
     graph = &localEval;
 
-  memset(graph, 0, sizeof(GRAPH_EVAL));
+  memset(graph, 0, sizeof(ZOLTAN_GRAPH_EVAL));
 
   if ((zz->Get_Num_Edges == NULL && zz->Get_Num_Edges_Multi == NULL) ||
            (zz->Get_Edge_List == NULL && zz->Get_Edge_List_Multi == NULL)) {
@@ -887,10 +887,10 @@ End:
 }
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
+int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
 {
   /****************************************************************************/
-  /* Return performance metrics in HG_EVAL structure.  Also print them out    */
+  /* Return performance metrics in ZOLTAN_HG_EVAL structure.  Also print them out    */
   /* if print_stats is true.  Results are per part, not per process.      */
   /****************************************************************************/
 
@@ -912,7 +912,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   ZHG* zhg=NULL;
 
-  HG_EVAL localEval;
+  ZOLTAN_HG_EVAL localEval;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -922,7 +922,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
   if (!hg)
     hg = &localEval;
 
-  memset(hg, 0, sizeof(HG_EVAL));
+  memset(hg, 0, sizeof(ZOLTAN_HG_EVAL));
 
   if ((zz->Get_HG_Size_CS==NULL) && (zz->Get_HG_CS==NULL) &&
       (zz->Get_Num_Edges==NULL) && (zz->Get_Num_Edges_Multi==NULL) &&
@@ -1134,7 +1134,7 @@ End:
 /************************************************************************/
 /************************************************************************/
 /************************************************************************/
-int Zoltan_LB_Eval (ZZ *zzin, int print_stats, BALANCE_EVAL *obj, GRAPH_EVAL *graph, HG_EVAL *hg)
+int Zoltan_LB_Eval (ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_GRAPH_EVAL *graph, ZOLTAN_HG_EVAL *hg)
 /*
  * Input:
  *   zzin        - pointer to Zoltan structure
@@ -1142,12 +1142,12 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats, BALANCE_EVAL *obj, GRAPH_EVAL *gr
  *                 if == 0, stay silent but update EVAL structures with metrics
  *
  * Input/Output:
- *   obj         - pointer to a BALANCE_EVAL structure, if non-NULL partitioning
+ *   obj         - pointer to a ZOLTAN_BALANCE_EVAL structure, if non-NULL partitioning
  *                 metrics will be written to the structure
- *   graph       - pointer to a GRAPH_EVAL structure, if non_null and graph query
+ *   graph       - pointer to a ZOLTAN_GRAPH_EVAL structure, if non_null and graph query
  *                 functions are defined by the application, graph partitioning
  *                 quality metrics will be written to the structure
- *   hg          - pointer to an HG_EVAL structure, if non_null and graph or
+ *   hg          - pointer to an ZOLTAN_HG_EVAL structure, if non_null and graph or
  *                 hypergraph query functions are defined by the application,
  *                 hypergraph partitioning quality metrics will be written to the structure
  *
@@ -1697,7 +1697,7 @@ int zoltan_lb_eval_sort_increasing(const void *a, const void *b)
 
 /************************************************************************/
 
-void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb)
+void Zoltan_LB_Eval_Print_Balance(ZOLTAN_BALANCE_EVAL *lb)
 {
   int i;
 
@@ -1732,7 +1732,7 @@ void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb)
 }
 /************************************************************************/
 
-void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg)
+void Zoltan_LB_Eval_Print_HG(ZOLTAN_HG_EVAL *hg)
 {
   int i;
 
@@ -1776,7 +1776,7 @@ void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg)
 
 /************************************************************************/
 
-void Zoltan_LB_Eval_Print_Graph(GRAPH_EVAL *graph)
+void Zoltan_LB_Eval_Print_Graph(ZOLTAN_GRAPH_EVAL *graph)
 {
   int i;
 

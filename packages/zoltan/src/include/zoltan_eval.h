@@ -44,7 +44,7 @@ struct _eval_hg_struct{
   float xtra_obj_wgt[EVAL_MAX_XTRA_VWGTS][EVAL_SIZE];
 };
 
-typedef struct _eval_hg_struct HG_EVAL;
+typedef struct _eval_hg_struct ZOLTAN_HG_EVAL;
 
 struct _eval_graph_struct{
   float cutl[EVAL_SIZE];        /* HG ConCut measure */
@@ -65,7 +65,7 @@ struct _eval_graph_struct{
   float xtra_cut_wgt[EVAL_MAX_XTRA_EWGTS][EVAL_SIZE];
 };
 
-typedef struct _eval_graph_struct GRAPH_EVAL;
+typedef struct _eval_graph_struct ZOLTAN_GRAPH_EVAL;
 
 struct _eval_balance_struct{
   float obj_imbalance;          /* vertex number imbalance */
@@ -77,22 +77,22 @@ struct _eval_balance_struct{
   float xtra_obj_wgt[EVAL_MAX_XTRA_VWGTS][EVAL_SIZE];
 };
 
-typedef struct _eval_balance_struct BALANCE_EVAL;
+typedef struct _eval_balance_struct ZOLTAN_BALANCE_EVAL;
 
-int Zoltan_LB_Eval_Balance(struct Zoltan_Struct *zz, int print_stats, BALANCE_EVAL *eval);
+int Zoltan_LB_Eval_Balance(struct Zoltan_Struct *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval);
 
-int Zoltan_LB_Eval_Graph(struct Zoltan_Struct  *zz, int print_stats, GRAPH_EVAL *graph);
+int Zoltan_LB_Eval_Graph(struct Zoltan_Struct  *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph);
 
-int Zoltan_LB_Eval_HG(struct Zoltan_Struct  *zz, int print_stats, HG_EVAL *hg);
+int Zoltan_LB_Eval_HG(struct Zoltan_Struct  *zz, int print_stats, ZOLTAN_HG_EVAL *hg);
 
 int Zoltan_LB_Eval(struct Zoltan_Struct  *zz, int print_stats, 
-                    BALANCE_EVAL *obj, GRAPH_EVAL *graph, HG_EVAL *hg);
+                    ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_GRAPH_EVAL *graph, ZOLTAN_HG_EVAL *hg);
 
-void Zoltan_LB_Eval_Print_Graph(GRAPH_EVAL *graph);
+void Zoltan_LB_Eval_Print_Graph(ZOLTAN_GRAPH_EVAL *graph);
 
-void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg);
+void Zoltan_LB_Eval_Print_HG(ZOLTAN_HG_EVAL *hg);
 
-void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb);
+void Zoltan_LB_Eval_Print_Balance(ZOLTAN_BALANCE_EVAL *lb);
 
 
 
