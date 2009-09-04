@@ -90,7 +90,8 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ndim, lid
   character(len=FILENAME_MAX+1) :: fname
   real(Zoltan_DOUBLE) :: xmin, ymin, zmin, xmax, ymax, zmax
-
+  type(ELEM_INFO), pointer :: current_elem
+  integer(Zoltan_INT) :: curr_idx
 !/***************************** BEGIN EXECUTION ******************************/
 
   run_zoltan = .true.
@@ -450,13 +451,15 @@ type(PARIO_INFO) :: pio_info
 
     allocate(order(mesh%num_elems));
     allocate(iperm(mesh%num_elems));
-    allocate(order_gids(mesh%num_elems));
-    allocate(order_lids(mesh%num_elems));
+    allocate(order_gids(mesh%num_elems*num_gid_entries));
+    do i = 0, mesh%num_elems-1
+      order_gids(num_gid_entries*(i+1)) = mesh%elements(i)%globalID
+    enddo
 
     if (Proc .eq. 0) print *, "BEFORE ordering"
 
-    ierr = Zoltan_Order(zz_obj, num_gid_entries, num_lid_entries, &
-        mesh%num_elems, order_gids, order_lids, &
+    ierr = Zoltan_Order(zz_obj, num_gid_entries, &
+        mesh%num_elems, order_gids, &
         order, iperm)
     if (ierr .ne. ZOLTAN_OK) then
       print *, "fatal:  error returned from Zoltan_Order()"
@@ -468,10 +471,11 @@ type(PARIO_INFO) :: pio_info
     if (Proc == 0) print *, "AFTER ordering"
 
 !   /* Copy ordering permutation into mesh structure */
-    do i = 0, mesh%num_elems-1
-      lid = order_lids(num_lid_entries * i + 1)
-      mesh%elements(lid)%perm_value = order(i+1);
-      mesh%elements(lid)%invperm_value = iperm(i+1);
+    do i = 1, mesh%num_elems
+      current_elem => search_by_global_id(Mesh, order_gids(num_gid_entries*i), &
+                                          curr_idx)
+      current_elem%perm_value = order(i);
+      current_elem%invperm_value = iperm(i);
     enddo
 
 9998 continue
@@ -479,7 +483,6 @@ type(PARIO_INFO) :: pio_info
     deallocate(order);
     deallocate(iperm);
     deallocate(order_gids);
-    deallocate(order_lids);
 
 
   endif  ! End Driver_Action ==> Do ordering
@@ -488,11 +491,15 @@ type(PARIO_INFO) :: pio_info
 !   /* Do only coloring if this was specified in the driver input file */
 
     allocate(color(mesh%num_elems));
-    allocate(gids(mesh%num_elems));
-    allocate(lids(mesh%num_elems));
+    allocate(gids(mesh%num_elems*num_gid_entries));
+    allocate(lids(mesh%num_elems*num_lid_entries));
+    do i = 0, mesh%num_elems-1
+      gids(num_gid_entries*(i+1)) = mesh%elements(i)%globalID
+      lids(num_lid_entries*(i+1)) = i;  ! Temp until Zoltan_Color_Test changes;
+    enddo
 
-    ierr = Zoltan_Color(zz_obj, num_gid_entries, num_lid_entries, &
-        mesh%num_elems, gids, lids, &
+    ierr = Zoltan_Color(zz_obj, num_gid_entries, &
+        mesh%num_elems, gids, &
         color)
     if (ierr .ne. ZOLTAN_OK) then
       print *, "fatal:  error returned from Zoltan_Color()"
@@ -513,7 +520,7 @@ type(PARIO_INFO) :: pio_info
 
 !   /* Copy coloring permutation into mesh structure */
     do i = 0, mesh%num_elems-1
-      lid = lids(num_lid_entries * i + 1)
+      lid = lids(num_lid_entries * (i + 1))
       mesh%elements(lid)%perm_value = color(i+1);
     enddo
 
