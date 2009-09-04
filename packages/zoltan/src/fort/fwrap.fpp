@@ -279,7 +279,6 @@ integer, parameter :: stderr = 6
 ! interface blocks for the C wrapper functions
 
 interface
-!NAS$ ALIEN "F77 zfw_get_address_int"
 subroutine Zfw_Get_Address_int(arg,ret_addr)
 use zoltan_types
 use lb_user_const
@@ -290,7 +289,6 @@ end subroutine Zfw_Get_Address_int
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_get_address_struct"
 subroutine Zfw_Get_Address_struct(arg,ret_addr)
 use zoltan_types
 use lb_user_const
@@ -301,7 +299,6 @@ end subroutine Zfw_Get_Address_struct
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_initialize"
 function Zfw_Initialize(ver)
 use zoltan_types
 use lb_user_const
@@ -313,7 +310,6 @@ end function Zfw_Initialize
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_initialize1"
 function Zfw_Initialize1(argc,argv,starts,ver)
 use zoltan_types
 use lb_user_const
@@ -327,7 +323,6 @@ end function Zfw_Initialize1
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_create"
 subroutine Zfw_Create(communicator,zz,nbytes)
 use zoltan_types
 use lb_user_const
@@ -340,7 +335,6 @@ end subroutine Zfw_Create
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_copy"
 subroutine Zfw_Copy(zzIn, zzOut, nbytes)
 use zoltan_types
 use lb_user_const
@@ -353,7 +347,6 @@ end subroutine Zfw_Copy
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_copy_to"
 function Zfw_Copy_To(zz1, zz2, nbytes)
 use zoltan_types
 use lb_user_const
@@ -366,7 +359,6 @@ end function Zfw_Copy_To
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_destroy"
 subroutine Zfw_Destroy(zz,nbytes)
 use zoltan_types
 use lb_user_const
@@ -378,7 +370,6 @@ end subroutine Zfw_Destroy
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_align"
 function Zfw_Align(size)
 use zoltan_types
 use lb_user_const
@@ -390,7 +381,6 @@ end function Zfw_Align
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_memory_stats"
 subroutine Zfw_Memory_Stats()
 use zoltan_types
 use lb_user_const
@@ -400,7 +390,6 @@ end subroutine Zfw_Memory_Stats
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn0f"
 function Zfw_Set_Fn0f(zz,nbytes,fn_type,fn_ptr)
 use zoltan_types
 use lb_user_const
@@ -414,7 +403,6 @@ end function Zfw_Set_Fn0f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn0s"
 function Zfw_Set_Fn0s(zz,nbytes,fn_type,fn_ptr)
 use zoltan_types
 use lb_user_const
@@ -428,7 +416,6 @@ end function Zfw_Set_Fn0s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn1f"
 function Zfw_Set_Fn1f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -443,7 +430,6 @@ end function Zfw_Set_Fn1f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn1s"
 function Zfw_Set_Fn1s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -458,7 +444,6 @@ end function Zfw_Set_Fn1s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn2f"
 function Zfw_Set_Fn2f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -473,7 +458,6 @@ end function Zfw_Set_Fn2f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn2s"
 function Zfw_Set_Fn2s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -488,7 +472,6 @@ end function Zfw_Set_Fn2s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn3f"
 function Zfw_Set_Fn3f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -503,7 +486,6 @@ end function Zfw_Set_Fn3f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn3s"
 function Zfw_Set_Fn3s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -518,7 +500,6 @@ end function Zfw_Set_Fn3s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn4f"
 function Zfw_Set_Fn4f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -533,7 +514,6 @@ end function Zfw_Set_Fn4f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn4s"
 function Zfw_Set_Fn4s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -548,7 +528,6 @@ end function Zfw_Set_Fn4s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn5f"
 function Zfw_Set_Fn5f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -563,7 +542,6 @@ end function Zfw_Set_Fn5f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn5s"
 function Zfw_Set_Fn5s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -578,7 +556,6 @@ end function Zfw_Set_Fn5s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn6f"
 function Zfw_Set_Fn6f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -593,7 +570,6 @@ end function Zfw_Set_Fn6f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn6s"
 function Zfw_Set_Fn6s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -608,7 +584,6 @@ end function Zfw_Set_Fn6s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn7f"
 function Zfw_Set_Fn7f(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -623,7 +598,6 @@ end function Zfw_Set_Fn7f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn7s"
 function Zfw_Set_Fn7s(zz,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -638,7 +612,6 @@ end function Zfw_Set_Fn7s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_param"
 function Zfw_Set_Param(zz,nbytes,param_name,param_name_len, &
                           new_value,new_value_len)
 use zoltan_types
@@ -652,7 +625,6 @@ end function Zfw_Set_Param
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_param_vec"
 function Zfw_Set_Param_Vec(zz,nbytes,param_name,param_name_len, &
                           new_value,new_value_len,index)
 use zoltan_types
@@ -667,7 +639,6 @@ end function Zfw_Set_Param_Vec
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_partition"
 function Zfw_LB_Partition(zz,nbytes,changes,num_gid_entries,num_lid_entries, &
                 num_import,import_global_ids, &
                 import_local_ids,import_procs,import_to_part,num_export, &
@@ -690,7 +661,6 @@ end function Zfw_LB_Partition
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_eval"
 function Zfw_LB_Eval(zz,nbytes,print_stats)
 use zoltan_types
 use lb_user_const
@@ -703,7 +673,6 @@ end function Zfw_LB_Eval
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_part_sizes"
 function Zfw_LB_Set_Part_Sizes(zz,nbytes,global_part,len,partids,&
                                wgtidx,partsizes)
 use zoltan_types
@@ -718,7 +687,6 @@ end function Zfw_LB_Set_Part_Sizes
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_point_assign"
 function Zfw_LB_Point_Assign(zz,nbytes,coords,proc)
 use zoltan_types
 use lb_user_const
@@ -733,7 +701,6 @@ end function Zfw_LB_Point_Assign
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_point_pp_assign"
 function Zfw_LB_Point_PP_Assign(zz,nbytes,coords,proc,part)
 use zoltan_types
 use lb_user_const
@@ -749,7 +716,6 @@ end function Zfw_LB_Point_PP_Assign
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_box_assign"
 function Zfw_LB_Box_Assign(zz,nbytes,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 use zoltan_types
 use lb_user_const
@@ -765,7 +731,6 @@ end function Zfw_LB_Box_Assign
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_box_pp_assign"
 function Zfw_LB_Box_PP_Assign(zz,nbytes,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs,parts,numparts)
 use zoltan_types
 use lb_user_const
@@ -783,7 +748,6 @@ end function Zfw_LB_Box_PP_Assign
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_invert_lists"
 function Zfw_Invert_Lists(zz,nbytes, &
                        num_input,input_global_ids,input_local_ids, &
                        input_procs,input_to_part, &
@@ -809,7 +773,6 @@ end function Zfw_Invert_Lists
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_compute_destinations"
 function Zfw_Compute_Destinations(zz,nbytes, &
                        num_input,input_global_ids, &
                        input_local_ids,input_procs,num_output, &
@@ -833,7 +796,6 @@ end function Zfw_Compute_Destinations
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_migrate"
 function Zfw_Migrate(zz,nbytes, &
                      num_import,import_global_ids,import_local_ids, &
                      import_procs,import_to_part, &
@@ -854,7 +816,6 @@ end function Zfw_Migrate
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_help_migrate"
 function Zfw_Help_Migrate(zz,nbytes, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
@@ -874,7 +835,6 @@ end function Zfw_Help_Migrate
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_order"
 function Zfw_Order(zz,nbytes,num_gid_entries,num_obj, &
                    gids,rank,iperm)
 use zoltan_types
@@ -891,7 +851,6 @@ end function Zfw_Order
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_color"
 function Zfw_Color(zz,nbytes,num_gid_entries,num_obj, &
                    gids,color_exp)
 use zoltan_types
@@ -908,7 +867,6 @@ end function Zfw_Color
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_color_test"
 function Zfw_Color_Test(zz,nbytes,num_gid_entries,num_lid_entries,num_obj, &
                    gids,lids,color_exp)
 use zoltan_types
@@ -925,7 +883,6 @@ end function Zfw_Color_Test
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_generate_files"
 function Zfw_Generate_Files(zz,nbytes,filename,filename_len, &
                           base_index, gen_geom, gen_graph, gen_hg)
 use zoltan_types
@@ -940,7 +897,6 @@ end function Zfw_Generate_Files
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_rcb_box"
 function Zfw_RCB_Box(zz,nbytes,part,ndim,xmin,ymin,zmin,xmax,ymax,zmax)
 use zoltan_types
 use lb_user_const
@@ -956,7 +912,6 @@ end function Zfw_RCB_Box
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_register_fort_malloc"
 subroutine Zfw_Register_Fort_Malloc(malloc_int,free_int,&
       fort_malloc_set_struct)
 use zoltan_types
@@ -968,7 +923,6 @@ end subroutine Zfw_Register_Fort_Malloc
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_get_wgt_dim"
 function Zfw_Get_Wgt_Dim(zz,nbytes)
 use zoltan_types
 use lb_user_const
@@ -981,7 +935,6 @@ end function Zfw_Get_Wgt_Dim
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_get_comm_dim"
 function Zfw_Get_Comm_Dim(zz,nbytes)
 use zoltan_types
 use lb_user_const
@@ -994,7 +947,6 @@ end function Zfw_Get_Comm_Dim
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_get_child_order"
 subroutine Zfw_Reftree_Get_Child_Order(zz,nbytes,order,ierr)
 use zoltan_types
 use lb_user_const

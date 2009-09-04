@@ -273,7 +273,6 @@ end interface
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn8f"
 function Zfw_Set_Fn8f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -287,7 +286,6 @@ end function Zfw_Set_Fn8f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn8s"
 function Zfw_Set_Fn8s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -301,7 +299,6 @@ end function Zfw_Set_Fn8s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn9f"
 function Zfw_Set_Fn9f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -315,7 +312,6 @@ end function Zfw_Set_Fn9f
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn9s"
 function Zfw_Set_Fn9s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -329,7 +325,6 @@ end function Zfw_Set_Fn9s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn10f"
 function Zfw_Set_FnAf(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -343,7 +338,6 @@ end function Zfw_Set_FnAf
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn10s"
 function Zfw_Set_FnAs(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -357,7 +351,6 @@ end function Zfw_Set_FnAs
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn11f"
 function Zfw_Set_FnBf(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
@@ -371,7 +364,6 @@ end function Zfw_Set_FnBf
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_fn11s"
 function Zfw_Set_FnBs(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
