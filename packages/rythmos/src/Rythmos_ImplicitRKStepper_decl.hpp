@@ -115,16 +115,21 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
-  void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+  void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
   
   /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getModel() const;
+  RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> > getNonconstModel();
 
   /** \brief . */
   void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
+
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
   /** \brief . */
   Scalar takeStep(Scalar dt, StepSizeType flag);
@@ -204,7 +209,7 @@ private:
   // Private date members
 
   bool isInitialized_;
-  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
   RCP<ParameterList> paramList_;
@@ -248,10 +253,10 @@ implicitRKStepper();
 template<class Scalar>
 RCP<ImplicitRKStepper<Scalar> >
 implicitRKStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RCP<const RKButcherTableauBase<Scalar> > &irkbt
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
+  const RCP<const RKButcherTableauBase<Scalar> >& irkbt
   );
 
 

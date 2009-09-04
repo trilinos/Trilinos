@@ -180,8 +180,8 @@ public:
    * the parameter list as the fuctions are performed.
    */
   bool testAdjointStepper(
-    const Thyra::ModelEvaluator<Scalar> &adjointModel,
-    const Ptr<IntegratorBase<Scalar> > &forwardIntegrator
+    Thyra::ModelEvaluator<Scalar>& adjointModel,
+    const Ptr<IntegratorBase<Scalar> >& forwardIntegrator
     );
 
   //@}

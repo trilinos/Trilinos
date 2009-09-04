@@ -63,10 +63,10 @@ public:
 
   /** \brief . */
   void initializeIRKModel(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
-    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-    const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
+    const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
+    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
+    const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
     );
 
   /** \brief . */
@@ -114,7 +114,7 @@ private:
 
 private:
 
-  RCP<const Thyra::ModelEvaluator<Scalar> > daeModel_;
+  RCP<Thyra::ModelEvaluator<Scalar> > daeModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
   RCP<const RKButcherTableauBase<Scalar> > irkButcherTableau_;
@@ -144,10 +144,10 @@ private:
 template<class Scalar>
 RCP<ImplicitRKModelEvaluator<Scalar> >
 implicitRKModelEvaluator(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
+  const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
+  const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
   )
 {
   RCP<ImplicitRKModelEvaluator<Scalar> >
@@ -177,10 +177,10 @@ ImplicitRKModelEvaluator<Scalar>::ImplicitRKModelEvaluator()
 
 template<class Scalar>
 void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
+  const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
+  const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
   )
 {
   // ToDo: Assert input arguments!

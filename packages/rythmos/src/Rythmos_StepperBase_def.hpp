@@ -78,34 +78,6 @@ StepperBase<Scalar>::cloneStepperAlgorithm() const
 
 
 template<class Scalar>
-void StepperBase<Scalar>::setInitialCondition(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
-  )
-{
-  TEST_FOR_EXCEPTION(
-    true, std::logic_error,
-    "Error, the function setIntialCondition(...) is not implemented\n"
-    "in the class \"" << Teuchos::typeName(*this) << "\"!" );
-  // ToDo: Remove this default implementation and make every concrete
-  // subclass implement this!
-}
-
-
-template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar>
-StepperBase<Scalar>::getInitialCondition() const
-{
-  TEST_FOR_EXCEPTION(
-    true, std::logic_error,
-    "Error, the function getIntialCondition(...) is not implemented\n"
-    "in the class \"" << Teuchos::typeName(*this) << "\"!" );
-  // ToDo: Remove this default implementation and make every concrete
-  // subclass implement this!
-  return Thyra::ModelEvaluatorBase::InArgs<Scalar>();
-}
-
-
-template<class Scalar>
 void StepperBase<Scalar>::setStepControlData(const StepperBase & stepper)
 {
   // 2009/08/31: rabartl ToDo: Should this really be left empty?

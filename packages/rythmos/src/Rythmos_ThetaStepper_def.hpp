@@ -44,9 +44,9 @@ namespace Rythmos {
 template<class Scalar>
 RCP<ThetaStepper<Scalar> >
 thetaStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
-  RCP<Teuchos::ParameterList> &parameterList
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  RCP<Teuchos::ParameterList>& parameterList
   )
 {
   Teuchos::RCP<ThetaStepper<Scalar> > stepper = 
@@ -265,7 +265,7 @@ ThetaStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ThetaStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
 
@@ -303,6 +303,14 @@ void ThetaStepper<Scalar>::setModel(
 template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
 ThetaStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+
+template<class Scalar>
+RCP<Thyra::ModelEvaluator<Scalar> >
+ThetaStepper<Scalar>::getNonconstModel() 
 {
   return model_;
 }
@@ -376,6 +384,14 @@ void ThetaStepper<Scalar>::setInitialCondition(
 
   haveInitialCondition_ = true;
 
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+ThetaStepper<Scalar>::getInitialCondition() const
+{
+  return basePoint_;
 }
 
 
@@ -1152,9 +1168,9 @@ void ThetaStepper<Scalar>::obtainPredictor_()
   \
   template RCP< ThetaStepper< SCALAR > > \
   thetaStepper( \
-    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
-    const RCP<Thyra::NonlinearSolverBase< SCALAR > > &solver, \
-    RCP<Teuchos::ParameterList> &parameterList \
+    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<Thyra::NonlinearSolverBase< SCALAR > >& solver, \
+    RCP<Teuchos::ParameterList>& parameterList \
       );
    
 

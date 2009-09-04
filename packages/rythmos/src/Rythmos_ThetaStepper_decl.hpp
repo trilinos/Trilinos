@@ -145,16 +145,21 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
-  void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+  void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
   
   /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getModel() const;
+  RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> > getNonconstModel();
 
   /** \brief . */
   void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
+
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
   /** \brief . */
   Scalar takeStep(Scalar dt, StepSizeType flag);
@@ -235,7 +240,7 @@ private:
 
   bool isInitialized_;
   bool haveInitialCondition_;
-  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
@@ -284,9 +289,9 @@ private:
 template<class Scalar>
 RCP<ThetaStepper<Scalar> >
 thetaStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
-  RCP<Teuchos::ParameterList> &parameterList
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  RCP<Teuchos::ParameterList>& parameterList
   );
 
 } // namespace Rythmos

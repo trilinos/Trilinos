@@ -145,9 +145,9 @@ public:
    *
    */
   RCP<IntegratorBase<Scalar> > create(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > model,
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& initialCondition,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver
     ) const;
   
   /** \name Overridden from Teuchos::ParameterListAcceptor */
@@ -221,7 +221,7 @@ integratorBuilder(const RCP<ParameterList> &paramList);
  */
 template<class Scalar>
 RCP<IntegratorBase<Scalar> > createForwardSensitivityIntegrator(
-    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const int& p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& model_ic,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver,

@@ -115,9 +115,9 @@ private:
   // Private member functions:
   void defaultInitializeAll_();
   RCP<StepperBase<Scalar> > getStepper_(
-      const RCP<const Thyra::ModelEvaluator<Scalar> > model,
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition,
-      const RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver
+      const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& initialCondition,
+      const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver
       ) const;
   bool isImplicitStepper_() const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getSomeIC_(
@@ -132,6 +132,9 @@ private:
   // Validate that we can get the initial condition through getPoints after
   // setInitialCondition has been set and after the first step.
   void validateGetIC_() const;
+  // Validate that we can get the initial condition through
+  // getInitialCondition
+  void validateGetIC2_() const;
   // Validate that the stepper supports getNodes, which is used by the
   // Trailing Interpolation Buffer feature of the Integrator.
   void validateGetNodes_() const;
@@ -586,6 +589,15 @@ template<class Scalar>
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
   success_array.push_back(local_success);
 
+  // Verify that getInitialCondition() returns the IC after
+  // setInitialCondition(...)
+  local_success = true;
+  try {
+    this->validateGetIC2_();
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
+  success_array.push_back(local_success);
+
   // Validate that the stepper supports getNodes, which is used by the Trailing Interpolation Buffer feature of the Integrator.
   local_success = true;
   try {
@@ -652,9 +664,9 @@ template<class Scalar>
 
 template<class Scalar>
 RCP<StepperBase<Scalar> > StepperValidator<Scalar>::getStepper_(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > model,
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& initialCondition,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver
     ) const
 {
   RCP<IntegratorBase<Scalar> > integrator = integratorBuilder_->create(model,initialCondition,nlSolver);
@@ -901,6 +913,40 @@ void StepperValidator<Scalar>::validateGetIC_() const
         "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial"
         " condition for XDOT through getPoints after taking a step!"
         );
+    }
+  }
+}
+
+
+template<class Scalar>
+void StepperValidator<Scalar>::validateGetIC2_() const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  // Determine if the stepper is implicit or not:
+  bool isImplicit = this->isImplicitStepper_();
+  RCP<StepperValidatorMockModel<Scalar> > model = 
+    stepperValidatorMockModel<Scalar>(isImplicit);
+  // Set up some initial condition:
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
+  // Create nonlinear solver (if needed)
+  RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver;
+  if (isImplicit) {
+    nlSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
+  }
+  RCP<StepperBase<Scalar> > stepper = this->getStepper_(model,stepper_ic,nlSolver);
+  // Verify we can get the IC back through getInitialCondition:
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> new_ic = stepper->getInitialCondition();
+  //TEUCHOS_ASSERT( new_ic == stepper_ic );
+  // Verify new_ic == stepper_ic
+  {
+    TEUCHOS_ASSERT( new_ic.get_t() == stepper_ic.get_t() );
+    TEUCHOS_ASSERT( new_ic.get_x() == stepper_ic.get_x() );
+    for (int i=0 ; i<stepper_ic.Np() ; ++i) {
+      TEUCHOS_ASSERT( new_ic.get_p(i) == stepper_ic.get_p(i) );
+    }
+    if (isImplicit) {
+      TEUCHOS_ASSERT( new_ic.get_x_dot() == stepper_ic.get_x_dot() );
     }
   }
 }

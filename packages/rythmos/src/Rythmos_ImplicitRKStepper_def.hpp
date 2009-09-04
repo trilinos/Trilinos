@@ -64,10 +64,10 @@ implicitRKStepper()
 template<class Scalar>
 RCP<ImplicitRKStepper<Scalar> >
 implicitRKStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RCP<const RKButcherTableauBase<Scalar> > &irkbt
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
+  const RCP<const RKButcherTableauBase<Scalar> >& irkbt
   )
 {
   RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
@@ -213,7 +213,7 @@ ImplicitRKStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > & model
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
   TEST_FOR_EXCEPT(is_null(model));
@@ -225,6 +225,14 @@ void ImplicitRKStepper<Scalar>::setModel(
 template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
 ImplicitRKStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+
+template<class Scalar>
+RCP<Thyra::ModelEvaluator<Scalar> >
+ImplicitRKStepper<Scalar>::getNonconstModel() 
 {
   return model_;
 }
@@ -283,6 +291,14 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
 
   haveInitialCondition_ = true;
 
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+ImplicitRKStepper<Scalar>::getInitialCondition() const
+{
+  return basePoint_;
 }
 
 
@@ -659,10 +675,10 @@ void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
   \
   template RCP< ImplicitRKStepper< SCALAR > > \
   implicitRKStepper( \
-    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
-    const RCP<Thyra::NonlinearSolverBase< SCALAR > >  &solver, \
-    const RCP<Thyra::LinearOpWithSolveFactoryBase< SCALAR > > &irk_W_factory, \
-    const RCP<const RKButcherTableauBase< SCALAR > > &irkbt \
+    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<Thyra::NonlinearSolverBase< SCALAR > >& solver, \
+    const RCP<Thyra::LinearOpWithSolveFactoryBase< SCALAR > >& irk_W_factory, \
+    const RCP<const RKButcherTableauBase< SCALAR > >& irkbt \
       ); 
 
 } // namespace Rythmos

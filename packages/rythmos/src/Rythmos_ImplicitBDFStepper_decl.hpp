@@ -66,15 +66,15 @@ public:
 
   /** \brief . */
   ImplicitBDFStepper(
-    const RCP<const Thyra::ModelEvaluator<Scalar> >  &model
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
     ,const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver
     );
 
   /** \brief . */
   ImplicitBDFStepper(
-    const RCP<const Thyra::ModelEvaluator<Scalar> >  &model
-    ,const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver
-    ,const RCP<Teuchos::ParameterList> &parameterList
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
+    ,const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+    ,const RCP<Teuchos::ParameterList>& parameterList
     );
 
   /** \brief . */
@@ -146,16 +146,21 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
-  void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+  void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
   /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getModel() const;
+  RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> > getNonconstModel();
 
   /** \brief . */
   void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
+
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
   /** \brief . */
   Scalar takeStep(Scalar dt, StepSizeType flag);
@@ -238,7 +243,7 @@ private:
   // Private data members
   //
 
-  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Rythmos::SingleResidualModelEvaluator<Scalar>   neModel_;
 
@@ -306,9 +311,9 @@ RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper();
 
 template<class Scalar>
 RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
-  const RCP<Teuchos::ParameterList> &parameterList
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  const RCP<Teuchos::ParameterList>& parameterList
   );
 
 } // namespace Rythmos 

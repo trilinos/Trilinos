@@ -286,13 +286,13 @@ RCP<const ParameterList> ForwardEulerStepperMomento<Scalar>::getValidParameters(
 }
 
 template<class Scalar>
-void ForwardEulerStepperMomento<Scalar>::set_model(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+void ForwardEulerStepperMomento<Scalar>::set_model(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
 { 
   model_ = model; 
 }
 
 template<class Scalar>
-RCP<const Thyra::ModelEvaluator<Scalar> > ForwardEulerStepperMomento<Scalar>::get_model() const
+RCP<Thyra::ModelEvaluator<Scalar> > ForwardEulerStepperMomento<Scalar>::get_model() const
 { 
   return model_; 
 }
@@ -323,7 +323,7 @@ RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper()
 
 // Nonmember constructor
 template<class Scalar>
-RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<const Thyra::ModelEvaluator<Scalar> > &model)
+RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
 {
   RCP<ForwardEulerStepper<Scalar> > stepper = forwardEulerStepper<Scalar>();
   stepper->setModel(model);
@@ -569,7 +569,7 @@ ForwardEulerStepper<Scalar>::getValidParameters() const
 }
 
 template<class Scalar>
-void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
+void ForwardEulerStepper<Scalar>::setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
 {
   TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
@@ -579,6 +579,13 @@ void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::Model
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardEulerStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
+ForwardEulerStepper<Scalar>::getNonconstModel() 
 {
   return model_;
 }
@@ -595,6 +602,15 @@ void ForwardEulerStepper<Scalar>::setInitialCondition(
   solution_vector_old_ = solution_vector_->clone_v();
   haveInitialCondition_ = true;
 }
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+ForwardEulerStepper<Scalar>::getInitialCondition() const
+{
+  return basePoint_;
+}
+
 
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::supportsCloning() const
@@ -706,7 +722,7 @@ void ForwardEulerStepper<Scalar>::checkConsistentState_()
   \
   template RCP<ForwardEulerStepper< SCALAR > > forwardEulerStepper(); \
   template RCP<ForwardEulerStepper< SCALAR > > forwardEulerStepper( \
-      const RCP<const Thyra::ModelEvaluator< SCALAR > > &model \
+      const RCP<Thyra::ModelEvaluator< SCALAR > >& model \
       ); 
 
 

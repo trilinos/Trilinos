@@ -153,6 +153,12 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
   return(inArgs);
 }
 
+//
+// 06/24/09 tscoffe:
+// These are the exact sensitivities for the problem assuming the initial conditions are specified as:
+//    s(0) = [1;0]    s(1) = [0;b/L]                 s(2) = [0;-b*f/(L*L)]
+// sdot(0) = [0;0] sdot(1) = [0;-3*f*f*b/(L*L*L)] sdot(2) = [0;3*f*f*f*b/(L*L*L*L)]
+//
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, double t) const
 {
   TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
@@ -166,6 +172,10 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, doub
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
   double exact_t = t;
+  double b = b_;
+  double f = f_;
+  double L = L_;
+  double phi = phi_;
   inArgs.set_t(exact_t);
   RCP<VectorBase<double> > exact_s = createMember(x_space_);
   { // scope to delete DetachedVectorView
@@ -174,11 +184,11 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, doub
       exact_s_view[0] = 1.0;
       exact_s_view[1] = 0.0;
     } else if (j == 1) { // dx/df
-      exact_s_view[0] = (b_/L_)*t*cos((f_/L_)*t+phi_);
-      exact_s_view[1] = (b_/L_)*cos((f_/L_)*t+phi_)-(b_*f_*t/(L_*L_))*sin((f_/L_)*t+phi_);
+      exact_s_view[0] = (b/L)*t*cos((f/L)*t+phi);
+      exact_s_view[1] = (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi);
     } else { // dx/dL
-      exact_s_view[0] = -(b_*f_*t/(L_*L_))*cos((f_/L_)*t+phi_);
-      exact_s_view[1] = -(b_*f_/(L_*L_))*cos((f_/L_)*t+phi_)+(b_*f_*f_*t/(L_*L_*L_))*sin((f_/L_)*t+phi_);
+      exact_s_view[0] = -(b*f*t/(L*L))*cos((f/L)*t+phi);
+      exact_s_view[1] = -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi);
     }
   }
   inArgs.set_x(exact_s);
@@ -190,11 +200,11 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, doub
         exact_s_dot_view[0] = 0.0;
         exact_s_dot_view[1] = 0.0;
       } else if (j == 1) { // dxdot/df
-        exact_s_dot_view[0] = (b_/L_)*cos((f_/L_)*t+phi_)-(b_*f_*t/(L_*L_))*sin((f_/L_)*t+phi_);
-        exact_s_dot_view[1] = -(2.0*b_*f_/(L_*L_))*sin((f_/L_)*t+phi_)-(b_*f_*f_*t/(L_*L_*L_))*cos((f_/L_)*t+phi_);
+        exact_s_dot_view[0] = (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi);
+        exact_s_dot_view[1] = -(2.0*b*f/(L*L))*sin((f/L)*t+phi)-(b*f*f*t/(L*L*L))*cos((f/L)*t+phi);
       } else { // dxdot/dL
-        exact_s_dot_view[0] = -(b_*f_/(L_*L_))*cos((f_/L_)*t+phi_)+(b_*f_*f_*t/(L_*L_*L_))*sin((f_/L_)*t+phi_);
-        exact_s_dot_view[1] = (2.0*b_*f_*f_/(L_*L_*L_))*sin((f_/L_)*t+phi_)+(b_*f_*f_*f_*t/(L_*L_*L_*L_))*cos((f_/L_)*t+phi_);
+        exact_s_dot_view[0] = -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi);
+        exact_s_dot_view[1] = (2.0*b*f*f/(L*L*L))*sin((f/L)*t+phi)+(b*f*f*f*t/(L*L*L*L))*cos((f/L)*t+phi);
       }
     }
     inArgs.set_x_dot(exact_s_dot);

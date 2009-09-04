@@ -73,11 +73,13 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 
     /** \brief . */
-    void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+    void setModel(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
     /** \brief . */
-    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-    getModel() const;
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+
+    /** \brief . */
+    RCP<Thyra::ModelEvaluator<Scalar> > getNonconstModel();
     
     /** \brief . */
     ~ExplicitRKStepper();
@@ -86,6 +88,9 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
     void setInitialCondition(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
       );
+
+    /** \brief . */
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
     /** \brief . */
     Scalar takeStep(Scalar dt, StepSizeType flag);
@@ -141,7 +146,7 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
 
   private:
 
-    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_old_;
     Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;
@@ -174,13 +179,13 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper();
 
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model 
     );
 
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-    const RCP<const RKButcherTableauBase<Scalar> > &rkbt 
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<const RKButcherTableauBase<Scalar> >& rkbt 
     );
 
 } // namespace Rythmos

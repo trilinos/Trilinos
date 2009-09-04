@@ -65,7 +65,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, args ) {
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_x), true );
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_x_dot), false );
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_alpha), false );
-    TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_beta), false );
+    TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_beta), true );
   }
   {
     MEB::OutArgs<double> outArgs = model->createOutArgs();
@@ -139,8 +139,10 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
   }
   model->initializeStructure(innerModel, 0 );
   RCP<VectorBase<double> > x;
+  MEB::InArgs<double> pointInArgs;  // Used to change the solution for re-evaluation
+  RCP<StepperBase<double> > stepper; // Used for initializePointState
   {
-    MEB::InArgs<double> pointInArgs = innerModel->createInArgs();
+    pointInArgs = innerModel->createInArgs();
     pointInArgs.set_t(0.1);
     x = Thyra::createMember(innerModel->get_x_space());
     {
@@ -157,7 +159,13 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
       p0_view[2] = L;
     }
     pointInArgs.set_p(0,p0);
-    model->initializePointState(pointInArgs);
+    {
+      // Create a stepper with these initial conditions to use to call
+      // initializePointState on this ME:
+      stepper = forwardEulerStepper<double>();
+      stepper->setInitialCondition(pointInArgs);
+      model->initializePointState(Teuchos::inOutArg(*stepper),false);
+    }
   }
   MEB::InArgs<double> inArgs = model->createInArgs();
   RCP<VectorBase<double> > x_bar = Thyra::createMember(model->get_x_space());
@@ -250,6 +258,11 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
     x_view[0] = 20.0;
     x_view[1] = 21.0;
   }
+  // We need to call initializePointState again due to the vector
+  // being cloned inside.
+  stepper->setInitialCondition(pointInArgs);
+  model->initializePointState(Teuchos::inOutArg(*stepper),false);
+
   model->evalModel(inArgs,outArgs);
   {
     TEST_EQUALITY_CONST( F_sens->domain()->dim(), 3 );

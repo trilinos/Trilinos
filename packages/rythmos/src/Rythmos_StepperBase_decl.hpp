@@ -168,7 +168,7 @@ public:
    * </ul>
    */
   virtual void setModel(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &model
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
     ) = 0;
     
   /** \brief Get the model.
@@ -181,13 +181,18 @@ public:
   virtual RCP<const Thyra::ModelEvaluator<Scalar> >
   getModel() const = 0;
 
+  /** \brief Get the model nonconst.
+   */
+  virtual RCP<Thyra::ModelEvaluator<Scalar> >
+  getNonconstModel() = 0;
+
   /** \brief Specify initial condition and re-initialize.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>!is_null(this->getModel())</tt>
    * </ul>
    *
-   * The default implementation throwns an exception.
+   * The default implementation throws an exception.
    *
    * <b>Preconditions:</b><ul>
    *
@@ -201,21 +206,16 @@ public:
    */
   virtual void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
-    );
-
+    ) = 0;
+  
   /** \brief Get the currently set initial condtion.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>!is_null(this->getModel())</tt>
    * </ul>
-   *
-   * The default implementation throwns an exception.
-   *
-   * ToDo: Remove this default implementation and make every concrete subclass
-   * implement this!  Every stepper should except an initial condition that is
-   * separate from the model object.
    */
-  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
+  virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+    getInitialCondition() const = 0;
   
   /** \brief Take a step.
    *

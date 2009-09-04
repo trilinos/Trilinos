@@ -132,22 +132,23 @@ public:
   /** \brief . */
   ForwardSensitivityExplicitModelEvaluator();
 
+  /** \brief . */
+  RCP<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> >
+  getNonconstStateModel() const;
+  
+  /** \brief . */
+  int get_p_index() const;
+
   /** \brief Initialize full state for a single point in time.
-   *
-   * \param stateBasePoint [in] The base point
-   * <tt>(x_tilde,t_tilde,...)</tt> for which the sensitivities
-   * will be computed and represented at time <tt>t_tilde</tt>.  Any
-   * sensitivities that are needed must be computed at this same time point.
-   * The value of <tt>alpha</tt> and <tt>beta</tt> here are ignored.
-   *
-   * This function must be called after <tt>intializeStructure()</tt> and
-   * before <tt>evalModel()</tt> is called.  After this function is called,
-   * <tt>*this</tt> model is fully initialized and ready to compute the
-   * requested outputs.
    */
   void initializePointState(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
-    );
+      Ptr<StepperBase<Scalar> > stateStepper,
+      bool forceUpToDateW
+      );
 
   //@}
 
@@ -156,22 +157,15 @@ public:
 
   /** \brief . */
   void initializeStructure(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
   
   /** \brief . */
   void initializeStructureInitCondOnly(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     );
-  
-  /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getStateModel() const;
-  
-  /** \brief . */
-  int get_p_index() const;
   
   /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
@@ -214,7 +208,7 @@ private:
   // /////////////////////////
   // Private data members
 
-  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  RCP<Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
   int np_;
 
@@ -266,42 +260,13 @@ ForwardSensitivityExplicitModelEvaluator<Scalar>::ForwardSensitivityExplicitMode
 {}
 
 
-template<class Scalar>
-void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
-  )
-{
-
-  typedef Thyra::ModelEvaluatorBase MEB;
-
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPTION(
-    is_null(stateModel_), std::logic_error,
-    "Error, you must call intializeStructure(...) before you call initializePointState(...)"
-    );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_x()) );
-  TEST_FOR_EXCEPT( is_null(stateBasePoint.get_p(p_index_)) );
-  // What about the other parameter values?  We really can't say anything
-  // about these and we can't check them.  They can be null just fine.
-#endif
-
-  stateBasePoint_ = stateBasePoint;
-
-  // Set whatever derivatives where passed in.  If an input in null, then the
-  // member will be null and the null linear operators will be computed later
-  // just in time.
-
-  wrapNominalValuesAndBounds();
-
-}
-
 
 // Public functions overridden from ForwardSensitivityModelEvaluatorBase
 
 
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index
   )
 {
@@ -340,6 +305,8 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
 
   nominalValues_ = this->createInArgs();
 
+  this->wrapNominalValuesAndBounds();
+
   //
   // Wipe out matrix storage
   //
@@ -355,8 +322,8 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
 
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )
 {
   TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement initializeStructureInitCondOnly()!" );
@@ -372,9 +339,51 @@ ForwardSensitivityExplicitModelEvaluator<Scalar>::getStateModel() const
 
 
 template<class Scalar>
+RCP<Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityExplicitModelEvaluator<Scalar>::getNonconstStateModel() const
+{
+  return stateModel_;
+}
+
+
+template<class Scalar>
 int ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_index() const
 {
   return p_index_;
+}
+
+
+template<class Scalar>
+void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
+    Ptr<StepperBase<Scalar> > stateStepper,
+    bool forceUpToDateW
+    )
+{
+  TEUCHOS_ASSERT( Teuchos::nonnull(stateStepper) );
+#ifdef RYTHMOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    is_null(stateModel_), std::logic_error,
+    "Error, you must call intializeStructure(...) before you call initializePointState(...)"
+    );
+#endif // RYTHMOS_DEBUG
+
+  Scalar curr_t = stateStepper->getStepStatus().time;
+  RCP<const Thyra::VectorBase<Scalar> > x;
+  x = get_x(*stateStepper,curr_t);
+#ifdef RYTHMOS_DEBUG
+  TEST_FOR_EXCEPT( Teuchos::is_null(x) );
+#endif // RYTHMOS_DEBUG
+      
+  stateBasePoint_ = stateStepper->getInitialCondition(); // set parameters
+  stateBasePoint_.set_x( x );
+  stateBasePoint_.set_t( curr_t );
+
+  // Set whatever derivatives where passed in.  If an input in null, then the
+  // member will be null and the null linear operators will be computed later
+  // just in time.
+
+  wrapNominalValuesAndBounds();
+  
 }
 
 
@@ -433,8 +442,8 @@ ForwardSensitivityExplicitModelEvaluator<Scalar>::createInArgs() const
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports( MEB::IN_ARG_x );
   inArgs.setSupports( MEB::IN_ARG_t );
-  //inArgs.setSupports( MEB::IN_ARG_beta,
-  //  stateModelInArgs.supports(MEB::IN_ARG_beta) );
+  inArgs.setSupports( MEB::IN_ARG_beta,
+    stateModelInArgs.supports(MEB::IN_ARG_beta) );
   return inArgs;
 }
 
@@ -547,6 +556,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::wrapNominalValuesAndBound
 
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   // nominalValues_.clear(); // ToDo: Implement this!
 
@@ -558,6 +568,11 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::wrapNominalValuesAndBound
   // object!  In the future, a more general use of this class might benefit
   // from setting the initial condition here.
 
+  // 2009/07/20: tscoffe/ccober:  This is the future.  We're going to use this
+  // in a more general way, so we need legitimate nominal values now.
+  RCP<VectorBase<Scalar> > s_bar_ic = Thyra::createMember(this->get_x_space());
+  Thyra::V_S(&*s_bar_ic,ST::zero());
+  nominalValues_.set_x(s_bar_ic);
 }
 
 
@@ -580,7 +595,9 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   if (is_null(DfDx_)) {
     DfDx_ = stateModel_->create_W_op();
   }
-  inArgs.set_beta(1.0);
+  if (inArgs.supports(MEB::IN_ARG_beta)) {
+    inArgs.set_beta(1.0);
+  }
   outArgs.set_W_op(DfDx_);
 
   if (is_null(DfDp_)) {

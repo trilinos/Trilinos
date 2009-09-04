@@ -48,8 +48,8 @@ namespace Rythmos {
 template<class Scalar>
 RCP<BackwardEulerStepper<Scalar> >
 backwardEulerStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
   )
 {
   return Teuchos::rcp(new BackwardEulerStepper<Scalar>(model, solver));
@@ -82,8 +82,8 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper()
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -246,7 +246,7 @@ bool BackwardEulerStepper<Scalar>::isImplicit() const
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
 
@@ -280,6 +280,14 @@ void BackwardEulerStepper<Scalar>::setModel(
 template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
 BackwardEulerStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+
+template<class Scalar>
+RCP<Thyra::ModelEvaluator<Scalar> >
+BackwardEulerStepper<Scalar>::getNonconstModel() 
 {
   return model_;
 }
@@ -964,7 +972,7 @@ BackwardEulerStepper<Scalar>::getMomento() const
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setMomento(
     const Ptr<const MomentoBase<Scalar> >& momentoPtr,
-    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
     ) 
 { 
@@ -1029,8 +1037,8 @@ void BackwardEulerStepper<Scalar>::checkConsistentState_()
   \
   template RCP< BackwardEulerStepper< SCALAR > > \
   backwardEulerStepper( \
-    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
-    const RCP<Thyra::NonlinearSolverBase< SCALAR > > &solver \
+    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<Thyra::NonlinearSolverBase< SCALAR > >& solver \
       ); \
   template RCP< BackwardEulerStepper< SCALAR > > \
   backwardEulerStepper(); 

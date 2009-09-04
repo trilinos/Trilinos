@@ -78,7 +78,7 @@ public:
    * called later in order to fully initalize the model.
    */
   virtual void initializeStructure(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     ) = 0;
 
@@ -98,19 +98,29 @@ public:
    * called later in order to fully initalize the model.
    */
   virtual void initializeStructureInitCondOnly(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     ) = 0;
   
   /** \brief . */
   virtual RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const =0;
+
+  /** \brief . */
+  virtual RCP<Thyra::ModelEvaluator<Scalar> >
+  getNonconstStateModel() const =0;
   
   /** \brief . */
   virtual int get_p_index() const = 0;
   
   /** \brief . */
   virtual RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const = 0;
+
+  /** \brief . */
+  virtual void initializePointState(
+      Ptr<StepperBase<Scalar> > stateStepper,
+      bool forceUpToDateW
+      ) =0;
 
 };
 

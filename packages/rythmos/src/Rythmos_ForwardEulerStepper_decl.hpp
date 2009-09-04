@@ -296,8 +296,8 @@ template<class Scalar>
     void setParameterList(const RCP<ParameterList>& paramList);
     RCP<const ParameterList> getValidParameters() const;
 
-    void set_model(const RCP<const Thyra::ModelEvaluator<Scalar> >& model);
-    RCP<const Thyra::ModelEvaluator<Scalar> > get_model() const;
+    void set_model(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    RCP<Thyra::ModelEvaluator<Scalar> > get_model() const;
 
     void set_basePoint(const RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> >& basePoint);
     RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> > get_basePoint() const;
@@ -315,7 +315,7 @@ template<class Scalar>
     RCP<ParameterList> parameterList_;
      
     // Objects that must be set prior to serialization and deSerialization:
-    RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+    RCP<Thyra::ModelEvaluator<Scalar> > model_;
     // Objects that must be set prior to calling ForwardEulerStepper::setMomento: 
     RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> > basePoint_;
 };
@@ -340,16 +340,21 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
     /** \brief . */
-    void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+    void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
     /** \brief . */
-    RCP<const Thyra::ModelEvaluator<Scalar> >
-    getModel() const;
+    RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+
+    /** \brief . */
+    RCP<Thyra::ModelEvaluator<Scalar> > getNonconstModel();
 
     /** \brief . */
     void setInitialCondition(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
       );
+
+    /** \brief . */
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
     /** \brief . */
     RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
@@ -431,7 +436,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 
   private:
 
-    RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+    RCP<Thyra::ModelEvaluator<Scalar> > model_;
     RCP<Thyra::VectorBase<Scalar> > solution_vector_;
     RCP<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
@@ -458,7 +463,7 @@ RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper();
 
 // Nonmember constructor
 template<class Scalar>
-RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 } // namespace Rythmos
 

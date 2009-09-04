@@ -32,6 +32,8 @@
 
 #include "Rythmos_IntegratorBase.hpp"
 #include "Rythmos_ForwardSensitivityModelEvaluatorBase.hpp"
+#include "Rythmos_SolverAcceptingStepperBase.hpp"
+#include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -307,6 +309,37 @@ public:
   /** \brief . */
   ForwardSensitivityImplicitModelEvaluator();
 
+  /** \brief Intialize the with the model structure.
+   *
+   * \param  stateModel
+   *           [in,persisting] The ModelEvaluator that defines the
+   *           parameterized state model <tt>f(x_dot,x,p)</tt>.
+   * \param  p_index
+   *           [in] The index of the parameter subvector in <tt>stateModel</tt>
+   *           for which sensitivities will be computed for.
+   *
+   * This function only intializes the spaces etc. needed to define structure
+   * of the problem.  <tt>*this</tt> model object is not fully initialized at
+   * this point in that <tt>evalModel()</tt> will not work yet and will thrown
+   * exceptions if called.  The function <tt>initalizeState()</tt> must be
+   * called later in order to fully initalize the model.
+   */
+  void initializeStructure(
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const int p_index
+    );
+  
+  /** \brief . */
+  RCP<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> >
+  getNonconstStateModel() const;
+  
+  /** \brief . */
+  int get_p_index() const;
+
   /** \brief Set the state integrator that will be used to get x and x_dot at
    * various time points.
    *
@@ -367,13 +400,57 @@ public:
    * requested outputs.
    */
   void initializePointState(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-    const RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
-    const Scalar &coeff_x_dot,
-    const Scalar &coeff_x,
-    const RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
-    const RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
-    );
+      Ptr<StepperBase<Scalar> > stateStepper,
+      bool forceUpToDateW
+      );
+
+//  /** \brief Initialize full state for a single point in time.
+//   *
+//   * \param stateBasePoint [in] The base point
+//   * <tt>(x_dot_tilde,x_tilde,t_tilde,...)</tt> for which the sensitivities
+//   * will be computed and represented at time <tt>t_tilde</tt>.  Any
+//   * sensitivities that are needed must be computed at this same time point.
+//   * The value of <tt>alpha</tt> and <tt>beta</tt> here are ignored.
+//   *
+//   * \param W_tilde [in,persisting] The composite state derivative matrix
+//   * computed at the base point <tt>stateBasePoint</tt> with
+//   * <tt>alpha=coeff_x_dot</tt> and <tt>beta=coeff_x</tt>.  This argument can
+//   * be null, in which case it can be computed internally if needed or not at
+//   * all.
+//   *
+//   * \param coeff_x_dot [in] The value of <tt>alpha</tt> for which
+//   * <tt>W_tilde</tt> was computed.
+//   *
+//   * \param coeff_x [in] The value of <tt>beta</tt> for which <tt>W_tilde</tt>
+//   * was computed.
+//   *
+//   * \param DfDx_dot [in] The matrix <tt>d(f)/d(x_dot)</tt> computed at
+//   * <tt>stateBasePoint</tt> if available.  If this argument is null, then it
+//   * will be computed internally if needed.  The default value is
+//   * <tt>Teuchos::null</tt>.
+//   *
+//   * \param DfDp [in] The matrix <tt>d(f)/d(p(p_index))</tt> computed at
+//   * <tt>stateBasePoint</tt> if available.  If this argument is null, then it
+//   * will be computed internally if needed.  The default value is
+//   * <tt>Teuchos::null</tt>.
+//   *
+//   * <b>Preconditions:</b><ul>
+//   * <li><tt>!is_null(W_tilde)</tt>
+//   * </ul>
+//   *
+//   * This function must be called after <tt>intializeStructure()</tt> and
+//   * before <tt>evalModel()</tt> is called.  After this function is called,
+//   * <tt>*this</tt> model is fully initialized and ready to compute the
+//   * requested outputs.
+//   */
+//  void initializePointState(
+//    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
+//    const RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
+//    const Scalar &coeff_x_dot,
+//    const Scalar &coeff_x,
+//    const RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
+//    const RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
+//    );
 
   // 2007/05/22: rabartl: ToDo: Add an InterpolationBufferBase
   // stateInterpBuffer object to the initailizeState(...) function that can be
@@ -388,23 +465,10 @@ public:
   //@{
 
   /** \brief . */
-  void initializeStructure(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const int p_index
-    );
-  
-  /** \brief . */
   void initializeStructureInitCondOnly(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     );
-  
-  /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getStateModel() const;
-  
-  /** \brief . */
-  int get_p_index() const;
   
   /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
@@ -438,11 +502,7 @@ public:
     const Scalar &coeff_x,
     const RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
     const RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
-    )
-    {
-      initializePointState( stateBasePoint, W_tilde, coeff_x_dot, coeff_x,
-        DfDx_dot, DfDp );
-    }
+    );
 
   //@}
 
@@ -466,7 +526,7 @@ private:
   // /////////////////////////
   // Private data members
 
-  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  RCP<Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
   RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
   int np_;
@@ -496,7 +556,7 @@ private:
   bool hasStateFuncParams() const { return p_index_ >= 0; }
   
   void initializeStructureCommon(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
     );
@@ -529,6 +589,29 @@ ForwardSensitivityImplicitModelEvaluator<Scalar>::ForwardSensitivityImplicitMode
 
 
 template<class Scalar>
+RCP<const Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityImplicitModelEvaluator<Scalar>::getStateModel() const
+{
+  return stateModel_;
+}
+
+
+template<class Scalar>
+RCP<Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityImplicitModelEvaluator<Scalar>::getNonconstStateModel() const
+{
+  return stateModel_;
+}
+
+
+template<class Scalar>
+int ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_index() const
+{
+  return p_index_;
+}
+
+
+template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::setStateIntegrator(
   const RCP<IntegratorBase<Scalar> > &stateIntegrator,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint
@@ -538,9 +621,94 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::setStateIntegrator(
   stateBasePoint_ = stateBasePoint;
 }
 
-
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
+      Ptr<StepperBase<Scalar> > stateStepper,
+      bool forceUpToDateW
+      )
+{
+  TEUCHOS_ASSERT( Teuchos::nonnull(stateStepper) );
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+
+  const StepStatus<Scalar> stateStepStatus = stateStepper->getStepStatus();
+  TEST_FOR_EXCEPTION(
+      stateStepStatus.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
+      "Error, the status should be converged since a positive step size was returned!"
+      );
+  Scalar curr_t = stateStepStatus.time;
+
+  // Get both x and x_dot since these are needed compute other derivative
+  // objects at these points.
+  RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
+  get_x_and_x_dot(*stateStepper,curr_t,&x,&x_dot);
+      
+  stateBasePoint_ = stateStepper->getInitialCondition();
+  stateBasePoint_.set_x_dot( x_dot );
+  stateBasePoint_.set_x( x );
+  stateBasePoint_.set_t( curr_t );
+
+  // Grab the SingleResidualModel that was used to compute the state timestep.
+  // From this, we can get the constants that where used to compute W!
+  RCP<SolverAcceptingStepperBase<Scalar> > 
+    sasStepper = Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
+        Teuchos::rcpFromRef(*stateStepper),true
+        );
+  RCP<Thyra::NonlinearSolverBase<Scalar> > 
+    stateTimeStepSolver = sasStepper->getNonconstSolver();
+  RCP<const SingleResidualModelEvaluatorBase<Scalar> >
+    singleResidualModel
+    = Teuchos::rcp_dynamic_cast<const SingleResidualModelEvaluatorBase<Scalar> >(
+        stateTimeStepSolver->getModel(), true
+        );
+  const Scalar
+    coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
+    coeff_x = singleResidualModel->get_coeff_x();
+
+  // Get W (and force an update if not up to date already)
+
+  using Teuchos::as;
+  if ((as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM)) && forceUpToDateW) {
+    *out << "\nForcing an update of W at the converged state timestep ...\n";
+  }
+
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+    W_tilde = stateTimeStepSolver->get_nonconst_W(forceUpToDateW);
+
+  TEST_FOR_EXCEPTION(
+      is_null(W_tilde), std::logic_error,
+      "Error, the W from the state time step must be non-null!"
+      );
+
+#ifdef RYTHMOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    is_null(stateModel_), std::logic_error,
+    "Error, you must call intializeStructure(...) before you call initializeState(...)"
+    );
+  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x()) );
+  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_x_dot()) );
+  TEST_FOR_EXCEPT( is_null(stateBasePoint_.get_p(p_index_)) );
+  // What about the other parameter values?  We really can't say anything
+  // about these and we can't check them.  They can be null just fine.
+  if (!is_null(W_tilde)) {
+    THYRA_ASSERT_VEC_SPACES("",*W_tilde->domain(),*stateModel_->get_x_space());
+    THYRA_ASSERT_VEC_SPACES("",*W_tilde->range(),*stateModel_->get_f_space());
+  }
+#endif
+
+  W_tilde_ = W_tilde;
+  coeff_x_dot_ = coeff_x_dot;
+  coeff_x_ = coeff_x;
+  DfDx_dot_ = Teuchos::null;
+  DfDp_ = Teuchos::null;
+
+  wrapNominalValuesAndBounds();
+
+}
+
+
+template<class Scalar>
+void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeState(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
   const RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
   const Scalar &coeff_x_dot,
@@ -601,7 +769,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
 
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructure(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
   const int p_index
   )
 {
@@ -611,26 +779,11 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructure(
 
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )
 {
   initializeStructureCommon(stateModel, -1, p_space);
-}
-
-
-template<class Scalar>
-RCP<const Thyra::ModelEvaluator<Scalar> >
-ForwardSensitivityImplicitModelEvaluator<Scalar>::getStateModel() const
-{
-  return stateModel_;
-}
-
-
-template<class Scalar>
-int ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_index() const
-{
-  return p_index_;
 }
 
 
@@ -846,9 +999,9 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
 
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureCommon(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
   const int p_index,
-  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
+  const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )
 {
 

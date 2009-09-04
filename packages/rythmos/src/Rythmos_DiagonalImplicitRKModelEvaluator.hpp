@@ -63,10 +63,10 @@ public:
 
   /** \brief . */
   void initializeDIRKModel(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
-    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &dirk_W_factory,
-    const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
+    const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
+    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& dirk_W_factory,
+    const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
     );
 
   /** \brief . */
@@ -125,7 +125,7 @@ private:
 
 private:
 
-  RCP<const Thyra::ModelEvaluator<Scalar> > daeModel_;
+  RCP<Thyra::ModelEvaluator<Scalar> > daeModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > dirk_W_factory_;
   RCP<const RKButcherTableauBase<Scalar> > dirkButcherTableau_;
@@ -155,7 +155,7 @@ private:
 template<class Scalar>
 RCP<DiagonalImplicitRKModelEvaluator<Scalar> >
 diagonalImplicitRKModelEvaluator(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &dirk_W_factory,
   const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
@@ -189,10 +189,10 @@ DiagonalImplicitRKModelEvaluator<Scalar>::DiagonalImplicitRKModelEvaluator()
 
 template<class Scalar>
 void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &dirk_W_factory,
-  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
+  const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& dirk_W_factory,
+  const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
   )
 {
   typedef ScalarTraits<Scalar> ST;

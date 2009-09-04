@@ -239,11 +239,17 @@ class FoolishStepper :
     const Thyra::ModelEvaluatorBase::InArgs<double> &initialCondition
     )
   { }
+  Thyra::ModelEvaluatorBase::InArgs<double> getInitialCondition() const
+  { Thyra::ModelEvaluatorBase::InArgs<double> inArgs; return inArgs; }
   void setModel(
-    const RCP<const Thyra::ModelEvaluator<double> > &model
+    const RCP<Thyra::ModelEvaluator<double> >& model
     )
   { }
   RCP<const Thyra::ModelEvaluator<double> > getModel() const
+  {
+    return Teuchos::null;
+  }
+  RCP<Thyra::ModelEvaluator<double> > getNonconstModel() 
   {
     return Teuchos::null;
   }

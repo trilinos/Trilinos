@@ -47,9 +47,9 @@ RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper() {
 
 template<class Scalar>
 RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
-  const RCP<Teuchos::ParameterList> &parameterList
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  const RCP<Teuchos::ParameterList>& parameterList
   )
 {
   RCP<ImplicitBDFStepper<Scalar> > stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>(model,solver,parameterList));
@@ -70,9 +70,9 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
 
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
-  ,const RCP<Teuchos::ParameterList> &parameterList
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  ,const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+  ,const RCP<Teuchos::ParameterList>& parameterList
   )
 {
   this->defaultInitializeAll_();
@@ -87,8 +87,8 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
 
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  ,const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
   )
 {
   this->defaultInitializeAll_();
@@ -211,7 +211,7 @@ ImplicitBDFStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -224,6 +224,14 @@ void ImplicitBDFStepper<Scalar>::setModel(
 template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
 ImplicitBDFStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+
+template<class Scalar>
+RCP<Thyra::ModelEvaluator<Scalar> >
+ImplicitBDFStepper<Scalar>::getNonconstModel()
 {
   return model_;
 }
@@ -256,6 +264,14 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
   if (isInitialized_) {
     initialize_();
   }
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+ImplicitBDFStepper<Scalar>::getInitialCondition() const
+{
+  return basePoint_;
 }
 
 
@@ -1133,9 +1149,9 @@ void ImplicitBDFStepper<Scalar>::setStepControlData(const StepperBase<Scalar> & 
   \
   template RCP< ImplicitBDFStepper< SCALAR > > \
   implicitBDFStepper( \
-    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
-    const RCP<Thyra::NonlinearSolverBase< SCALAR > > &solver, \
-    const RCP<Teuchos::ParameterList> &parameterList \
+    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<Thyra::NonlinearSolverBase< SCALAR > >& solver, \
+    const RCP<Teuchos::ParameterList>& parameterList \
     ); \
 
 

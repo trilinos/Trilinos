@@ -91,8 +91,8 @@ BasicDiscreteAdjointStepperTester<Scalar>::getValidParameters() const
 
 template<class Scalar>
 bool BasicDiscreteAdjointStepperTester<Scalar>::testAdjointStepper(
-  const Thyra::ModelEvaluator<Scalar> &adjointModel,
-  const Ptr<IntegratorBase<Scalar> > &forwardIntegrator
+  Thyra::ModelEvaluator<Scalar>& adjointModel,
+  const Ptr<IntegratorBase<Scalar> >& forwardIntegrator
   )
 {
 
@@ -118,7 +118,7 @@ bool BasicDiscreteAdjointStepperTester<Scalar>::testAdjointStepper(
   //
 
   const RCP<Rythmos::StepperBase<Scalar> > fwdStepper = forwardIntegrator->getNonconstStepper();
-  const RCP<const Thyra::ModelEvaluator<Scalar> > fwdModel = fwdStepper->getModel();
+  const RCP<Thyra::ModelEvaluator<Scalar> > fwdModel = fwdStepper->getNonconstModel();
 
   //
   *out << "\nA) Construct the IC basis B ...\n";

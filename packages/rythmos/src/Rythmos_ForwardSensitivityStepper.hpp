@@ -273,7 +273,7 @@ public:
    * degree of resuse and will therefore compute sensitivities quite fast.
    */
   void initializeSyncedSteppers(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
     const RCP<StepperBase<Scalar> > &stateStepper,
@@ -307,13 +307,13 @@ public:
    * resuse and will therefore compute sensitivities quite fast.
    */
   void initializeSyncedSteppersInitCondOnly(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-    const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-    const RCP<StepperBase<Scalar> > &stateStepper,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-    const RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
+    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& stateBasePoint,
+    const RCP<StepperBase<Scalar> >& stateStepper,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& stateTimeStepSolver,
+    const RCP<StepperBase<Scalar> >& sensStepper = Teuchos::null,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& sensTimeStepSolver = Teuchos::null
     );
 
   /** \brief Intialize for decoupled state and sens steppers.
@@ -352,7 +352,7 @@ public:
    * driven by the sens stepper.
    */
   void initializeDecoupledSteppers(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
     const RCP<StepperBase<Scalar> > &stateStepper,
@@ -410,7 +410,7 @@ public:
 
   /** \brief Throws exception. */
   void setModel(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &model
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
     );
 
   /** \brief Returns <tt>getStateAndFwdSensModel()</tt>.
@@ -419,8 +419,10 @@ public:
    * or define a W object.  It is just used for getting the spaces and for
    * creating an InArgs object for setting the initial condition.
    */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getModel() const;
+  RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> > getNonconstModel();
 
   // RAB: ToDo: 2007/05/15: I need to talk with Todd about potentially
   // removing the setModel() and getModel() functions from the StepperBase
@@ -504,7 +506,7 @@ public:
 
   /** \brief Deprecated. */
   void initialize(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
     const RCP<StepperBase<Scalar> > &stateStepper,
@@ -527,7 +529,7 @@ private:
   // Private data members
 
   bool forceUpToDateW_;
-  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  RCP<Thyra::ModelEvaluator<Scalar> > stateModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
   RCP<StepperBase<Scalar> > stateStepper_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
@@ -555,7 +557,7 @@ private:
   // (*) p_index >=0 or nonnull(p_space) == true
   //
   void initializeCommon(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
@@ -733,7 +735,7 @@ ForwardSensitivityStepper<Scalar>::ForwardSensitivityStepper()
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::initializeSyncedSteppers(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
   const RCP<StepperBase<Scalar> > &stateStepper,
@@ -750,13 +752,13 @@ void ForwardSensitivityStepper<Scalar>::initializeSyncedSteppers(
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::initializeSyncedSteppersInitCondOnly(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
-  const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const RCP<StepperBase<Scalar> > &stateStepper,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-  const RCP<StepperBase<Scalar> > &sensStepper,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
+  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& stateBasePoint,
+  const RCP<StepperBase<Scalar> >& stateStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& stateTimeStepSolver,
+  const RCP<StepperBase<Scalar> >& sensStepper,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& sensTimeStepSolver
   )
 {
   initializeCommon(stateModel, -1, p_space, stateBasePoint, stateStepper,
@@ -766,7 +768,7 @@ void ForwardSensitivityStepper<Scalar>::initializeSyncedSteppersInitCondOnly(
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::initializeDecoupledSteppers(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
   const RCP<StepperBase<Scalar> > &stateStepper,
@@ -864,7 +866,7 @@ bool ForwardSensitivityStepper<Scalar>::acceptsModel() const
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {
   TEST_FOR_EXCEPT_MSG( true,
@@ -876,6 +878,14 @@ void ForwardSensitivityStepper<Scalar>::setModel(
 template<class Scalar> 
 RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getModel() const
+{
+  return stateAndSensModel_;
+}
+
+
+template<class Scalar> 
+RCP<Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityStepper<Scalar>::getNonconstModel() 
 {
   return stateAndSensModel_;
 }
@@ -1161,7 +1171,7 @@ int ForwardSensitivityStepper<Scalar>::getOrder() const
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::initializeCommon(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
   const int p_index,
   const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
@@ -1334,89 +1344,14 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
       *out << "\nThe state stepper has failed so return a failed timestep!\n";
     return state_dt;
   }
-  
-  const StepStatus<Scalar> stateStepStatus = stateStepper_->getStepStatus();
-  if (mediumTrace)
-    *out << "\nState step status:\n" << stateStepStatus;
-
-  //
-  // B) Setup the sensitivity model for this timestep
-  //
 
   {
-
 #ifdef ENABLE_RYTHMOS_TIMERS
     TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: updateSensModel");
 #endif
-    
-    TEST_FOR_EXCEPTION(
-      stateStepStatus.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
-      "Error, the status should be converged since a positive step size was returned!"
-      );
-    
-    const Scalar curr_t = stateStepStatus.time;
-
-    RCP<ForwardSensitivityImplicitModelEvaluator<Scalar> > implicitSensModel = 
-      Teuchos::rcp_dynamic_cast<ForwardSensitivityImplicitModelEvaluator<Scalar> >(
-        sensModel_,false);
-    if (!is_null(implicitSensModel)) { // ForwardSensitivityImplicitModelEvaluator
-      // Get both x and x_dot since these are needed compute other derivative
-      // objects at these points.
-      RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
-      get_x_and_x_dot(*stateStepper_,curr_t,&x,&x_dot);
-      
-      stateBasePoint_t_ = stateBasePoint_;
-      stateBasePoint_t_.set_x_dot( x_dot );
-      stateBasePoint_t_.set_x( x );
-      stateBasePoint_t_.set_t( curr_t );
-
-      // Grab the SingleResidualModel that was used to compute the state timestep.
-      // From this, we can get the constants that where used to compute W!
-      RCP<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
-        singleResidualModel
-        = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
-          stateTimeStepSolver_->getModel(), true
-          );
-      const Scalar
-        coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
-        coeff_x = singleResidualModel->get_coeff_x();
-      
-      // Get W (and force an update if not up to date already)
-
-      if (mediumTrace && forceUpToDateW_)
-        *out << "\nForcing an update of W at the converged state timestep ...\n";
-      
-      RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-        W_tilde = stateTimeStepSolver_->get_nonconst_W(forceUpToDateW_);
-      
-      TEST_FOR_EXCEPTION(
-        is_null(W_tilde), std::logic_error,
-        "Error, the W from the state time step be non-null!"
-        );
-      
-      implicitSensModel->initializeState( stateBasePoint_t_, W_tilde, coeff_x_dot, coeff_x );
-
-    } else { // explicit ME:
-      // ForwardSensitivityExplicitModelEvaluator
-      RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> > explicitSensModel = 
-        Teuchos::rcp_dynamic_cast<ForwardSensitivityExplicitModelEvaluator<Scalar> > (
-          sensModel_, true);
-      
-      RCP<const Thyra::VectorBase<Scalar> > x;
-      x = get_x(*stateStepper_,curr_t);
-      
-      stateBasePoint_t_ = stateBasePoint_;
-      stateBasePoint_t_.set_x( x );
-      stateBasePoint_t_.set_t( curr_t );
-
-      explicitSensModel->initializePointState( stateBasePoint_t_ );
-    }
-
-  }
-  // 2007/09/04: rabartl: ToDo: Move the above code that initializes the
-  // senstivity stepper from the state stepper as a strategy object that can
-  // be redefined.  This will allow me to make this class 100% general for all
-  // time stepper methods ... Including explicit steppers!
+    // Set up the sensitivity model for this timestep
+    sensModel_->initializePointState(Teuchos::inOutArg(*stateStepper_),forceUpToDateW_);
+  } 
 
   //
   // C) Compute the sensitivity timestep for the exact same timestep as was

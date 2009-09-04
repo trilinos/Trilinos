@@ -54,7 +54,7 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper()
 
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model 
     )
 {
   RCP<RKButcherTableauBase<Scalar> > rkbt = createRKBT<Scalar>("Explicit 4 Stage");
@@ -67,8 +67,8 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
 
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-    const RCP<const RKButcherTableauBase<Scalar> > &rkbt 
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<const RKButcherTableauBase<Scalar> >& rkbt 
     )
 {
   RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>());
@@ -382,7 +382,7 @@ ExplicitRKStepper<Scalar>::getValidParameters() const
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
+void ExplicitRKStepper<Scalar>::setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
 {
   TEST_FOR_EXCEPT( is_null(model) );
   TEST_FOR_EXCEPT( !is_null(model_) ); // For now you can only call this once.
@@ -390,12 +390,22 @@ void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEv
   model_ = model;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ExplicitRKStepper<Scalar>::getModel() const
 {
   return model_;
 }
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
+ExplicitRKStepper<Scalar>::getNonconstModel() 
+{
+  return model_;
+}
+
 
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::setInitialCondition(
@@ -430,6 +440,14 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
 
   haveInitialCondition_ = true;
 
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+ExplicitRKStepper<Scalar>::getInitialCondition() const
+{
+  return basePoint_;
 }
 
 template<class Scalar>
@@ -480,13 +498,13 @@ RCP<StepperBase<Scalar> > ExplicitRKStepper<Scalar>::cloneStepperAlgorithm() con
   \
   template RCP< ExplicitRKStepper< SCALAR > > \
   explicitRKStepper( \
-    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model \
+    const RCP<Thyra::ModelEvaluator< SCALAR > >& model \
       ); \
   \
   template RCP< ExplicitRKStepper< SCALAR > > \
   explicitRKStepper( \
-    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
-    const RCP<const RKButcherTableauBase< SCALAR > > &rkbt \
+    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<const RKButcherTableauBase< SCALAR > >& rkbt \
       ); \
    
 } // namespace Rythmos
