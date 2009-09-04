@@ -135,7 +135,6 @@ int main(int argc, char *argv[]) {
   shards::getTopologies(topologies);
   printSelectTopologies(topologies);
   
-  
 return 0;
 }
 
