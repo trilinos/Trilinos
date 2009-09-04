@@ -194,10 +194,10 @@ void Operator::setParameters(const Teuchos::ParameterList& paramlist)
 
   Teuchos::ParameterList &sublist = paramlist_.sublist("ZOLTAN");
   std::string str_sym="STRUCTURALLY SYMMETRIC";
-  sublist.set("GRAPH_SYMMETRIZATION", "TRANSPOSE");
+  sublist.set("GRAPH_SYMMETRIZE", "TRANSPOSE");
   if (paramlist_.isParameter(str_sym)
       && paramlist_.get<std::string>(str_sym) == "YES") {
-    sublist.set("GRAPH_SYMMETRIZATION", "NONE");
+    sublist.set("GRAPH_SYMMETRIZE", "NONE");
   }
 
 }
