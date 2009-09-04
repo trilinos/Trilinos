@@ -82,6 +82,7 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base)
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
 }
 
+
 Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 const Teuchos::ParameterList& paramlist, int base)
@@ -117,6 +118,20 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 }
 
 Operator::
+Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base)
+  : input_graph_(0),
+    input_matrix_(input_matrix),
+    input_coords_(0),
+    costs_(0),
+    weights_(0),
+    operation_already_computed_(false),
+    lib_(0),
+    base_(base)
+{
+  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()), false);
+}
+
+Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	 const Teuchos::ParameterList& paramlist, int base)
   : input_graph_(0),
@@ -147,6 +162,20 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
   setParameters(paramlist);
+}
+
+Operator::
+Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base)
+  : input_graph_(0),
+    input_matrix_(0),
+    input_coords_(input_coords),
+    costs_(0),
+    weights_(0),
+    operation_already_computed_(false),
+    lib_(0),
+    base_(base)
+{
+  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
 }
 
 Operator::

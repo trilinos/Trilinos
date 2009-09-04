@@ -63,6 +63,33 @@ namespace Isorropia {
 namespace Epetra {
 
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 bool compute_partitioning_now):
+  Operator (input_graph, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+			 bool compute_partitioning_now):
+  Operator (coords, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, paramlist, 0),

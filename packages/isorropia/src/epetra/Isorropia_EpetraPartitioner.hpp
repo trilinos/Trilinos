@@ -63,6 +63,9 @@ class Partitioner : public Isorropia::Partitioner, public Isorropia::Epetra::Ope
 public:
   
   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+              bool compute_partitioning_now=true);
+
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
   
@@ -72,12 +75,18 @@ public:
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+              bool compute_partitioning_now=true);
+
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist,
+              bool compute_partitioning_now=true);
+
+  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
