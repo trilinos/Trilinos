@@ -102,10 +102,10 @@ type LB_Struct
    private
    sequence
    type(Zoltan_PTR) :: addr
-#ifdef ABSOFT
+!#ifdef ABSOFT
 ! workaround for a bug in the Absoft compiler
-   integer :: dummy
-#endif
+!   integer :: dummy
+!#endif
 end type LB_Struct
 
 !--------------------------------------------------------------------------

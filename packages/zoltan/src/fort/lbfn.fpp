@@ -3,20 +3,20 @@ subroutine LB_to_ZZ(lb, zz)
 type(LB_Struct) INTENT_IN lb
 type(Zoltan_Struct) INTENT_OUT zz
 zz%addr = lb%addr
-#ifdef ABSOFT
+!#ifdef ABSOFT
 ! workaround for a bug in the Absoft compiler
-zz%dummy = lb%dummy
-#endif
+!zz%dummy = lb%dummy
+!#endif
 end subroutine LB_to_ZZ
 
 subroutine ZZ_to_LB(zz, lb)
 type(Zoltan_Struct) INTENT_IN zz
 type(LB_Struct) INTENT_OUT lb
 lb%addr = zz%addr
-#ifdef ABSOFT
+!#ifdef ABSOFT
 ! workaround for a bug in the Absoft compiler
-lb%dummy = zz%dummy
-#endif
+!lb%dummy = zz%dummy
+!#endif
 end subroutine ZZ_to_LB
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
