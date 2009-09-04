@@ -51,15 +51,19 @@ ENDIF()
 # Customize the build process, by adding a custom make
 # target, which makes Dakota (in source tree) and then
 # uses Dakota's PREFIX to install it in the build tree.
-ADD_CUSTOM_COMMAND(
-  OUTPUT ${PACKAGE_SOURCE_DIR}/Dakota/src/dakota
-  COMMAND make -j 4 && make -j 4 install
-  WORKING_DIRECTORY ${PACKAGE_SOURCE_DIR}/Dakota
+
+ADD_CUSTOM_TARGET( TriKota_Dakota_libs ALL
+   COMMAND make -j 4
+   WORKING_DIRECTORY ${PACKAGE_SOURCE_DIR}/Dakota
   )
 
-ADD_CUSTOM_TARGET( ${PACKAGE_NAME}_Dakota_libs ALL
-  DEPENDS ${PACKAGE_SOURCE_DIR}/Dakota/src/dakota
+ADD_CUSTOM_TARGET( TriKota_Dakota_install ALL
+   COMMAND make install
+   WORKING_DIRECTORY ${PACKAGE_SOURCE_DIR}/Dakota
   )
+
+## Make must finish before make install, for ampl
+ADD_DEPENDENCIES(TriKota_Dakota_install  TriKota_Dakota_libs)
 
 #
 # Build the TriKota library
