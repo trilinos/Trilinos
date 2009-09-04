@@ -21,11 +21,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_Fn0s = Zfw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr))
-#else
 LBf90_Set_Mid_Migrate_Fn0s = Zfw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr)
-#endif
 end function LBf90_Set_Mid_Migrate_Fn0s
 
 
@@ -52,11 +48,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_Fn1s = Zfw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_Fn1s = Zfw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_Fn1s
 
 
@@ -83,11 +75,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_Fn2s = Zfw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_Fn2s = Zfw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_Fn2s
 
 
@@ -114,11 +102,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_Fn3s = Zfw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_Fn3s = Zfw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_Fn3s
 
 
@@ -147,11 +131,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_Fn8s = Zfw_Set_Fn8s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_Fn8s = Zfw_Set_Fn8s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_Fn8s
 
 
@@ -180,11 +160,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_Fn9s = Zfw_Set_Fn9s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_Fn9s = Zfw_Set_Fn9s(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_Fn9s
 
 
@@ -213,11 +189,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_FnAs = Zfw_Set_FnAs(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_FnAs = Zfw_Set_FnAs(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_FnAs
 
 
@@ -246,11 +218,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Mid_Migrate_FnBs = Zfw_Set_FnBs(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Mid_Migrate_FnBs = Zfw_Set_FnBs(lb_addr,nbytes,ZOLTAN_MID_MIGRATE_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Mid_Migrate_FnBs
 
 

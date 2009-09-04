@@ -277,18 +277,11 @@ interface
 function Zfw_Set_Fn8f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn8f
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 integer(Zoltan_INT), external :: fn_ptr
-#endif
 type(LB_User_Data_1) INTENT_IN data
 end function Zfw_Set_Fn8f
 end interface
@@ -298,18 +291,11 @@ interface
 function Zfw_Set_Fn8s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn8s
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 external fn_ptr
-#endif
 type(LB_User_Data_1) INTENT_IN data
 end function Zfw_Set_Fn8s
 end interface
@@ -319,18 +305,11 @@ interface
 function Zfw_Set_Fn9f(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn9f
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 integer(Zoltan_INT), external :: fn_ptr
-#endif
 type(LB_User_Data_2) INTENT_IN data
 end function Zfw_Set_Fn9f
 end interface
@@ -340,18 +319,11 @@ interface
 function Zfw_Set_Fn9s(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn9s
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 external fn_ptr
-#endif
 type(LB_User_Data_2) INTENT_IN data
 end function Zfw_Set_Fn9s
 end interface
@@ -361,18 +333,11 @@ interface
 function Zfw_Set_FnAf(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnAf
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 integer(Zoltan_INT), external :: fn_ptr
-#endif
 type(LB_User_Data_3) INTENT_IN data
 end function Zfw_Set_FnAf
 end interface
@@ -382,18 +347,11 @@ interface
 function Zfw_Set_FnAs(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnAs
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 external fn_ptr
-#endif
 type(LB_User_Data_3) INTENT_IN data
 end function Zfw_Set_FnAs
 end interface
@@ -403,18 +361,11 @@ interface
 function Zfw_Set_FnBf(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnBf
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 integer(Zoltan_INT), external :: fn_ptr
-#endif
 type(LB_User_Data_4) INTENT_IN data
 end function Zfw_Set_FnBf
 end interface
@@ -424,18 +375,11 @@ interface
 function Zfw_Set_FnBs(lb,nbytes,fn_type,fn_ptr,data)
 use zoltan_types
 use lb_user_const
-#ifdef NASOFTWARE
-use nas_system
-#endif
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnBs
 integer(Zoltan_INT), dimension(*) INTENT_IN lb
 integer(Zoltan_INT) INTENT_IN nbytes, fn_type
-#ifdef NASOFTWARE
-type(address), intent(in) :: fn_ptr
-#else
 external fn_ptr
-#endif
 type(LB_User_Data_4) INTENT_IN data
 end function Zfw_Set_FnBs
 end interface

@@ -16,11 +16,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_Fn0f = Zfw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr))
-#else
 LBf90_Set_Num_Obj_Fn0f = Zfw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr)
-#endif
 end function LBf90_Set_Num_Obj_Fn0f
 
 
@@ -42,11 +38,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_Fn1f = Zfw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_Fn1f = Zfw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_Fn1f
 
 
@@ -68,11 +60,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_Fn2f = Zfw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_Fn2f = Zfw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_Fn2f
 
 
@@ -94,11 +82,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_Fn3f = Zfw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_Fn3f = Zfw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_Fn3f
 
 
@@ -122,11 +106,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_Fn8f = Zfw_Set_Fn8f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_Fn8f = Zfw_Set_Fn8f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_Fn8f
 
 
@@ -150,11 +130,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_Fn9f = Zfw_Set_Fn9f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_Fn9f = Zfw_Set_Fn9f(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_Fn9f
 
 
@@ -178,11 +154,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_FnAf = Zfw_Set_FnAf(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_FnAf = Zfw_Set_FnAf(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_FnAf
 
 
@@ -206,11 +178,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Obj_FnBf = Zfw_Set_FnBf(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Obj_FnBf = Zfw_Set_FnBf(lb_addr,nbytes,ZOLTAN_NUM_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Obj_FnBf
 
 

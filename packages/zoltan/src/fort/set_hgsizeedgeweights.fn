@@ -15,11 +15,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr))
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn0s
 
 
@@ -40,11 +36,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn1s
 
 
@@ -65,11 +57,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn2s
 
 
@@ -90,11 +78,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn3s
 
 
@@ -117,11 +101,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn4s
 
 
@@ -144,11 +124,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn5s
 
 
@@ -171,11 +147,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn6s
 
 
@@ -198,11 +170,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_HG_Size_Edge_Wts_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_HG_Size_Edge_Wts_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_HG_Size_Edge_Wts_Fn7s
 
 

@@ -21,11 +21,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr))
-#else
 Zf90_Set_Coarse_Obj_List_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn0s
 
 
@@ -52,11 +48,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn1s
 
 
@@ -83,11 +75,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn2s
 
 
@@ -114,11 +102,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn3s
 
 
@@ -147,11 +131,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn4s
 
 
@@ -180,11 +160,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn5s
 
 
@@ -213,11 +189,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn6s
 
 
@@ -246,11 +218,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Coarse_Obj_List_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Coarse_Obj_List_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Coarse_Obj_List_Fn7s
 
 

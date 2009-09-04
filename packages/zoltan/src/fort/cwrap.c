@@ -1919,9 +1919,9 @@ int Zfw_Help_Migrate(int *addr_lb, int *nbytes,
 /*****************************************************************************/
 int Zfw_Order(
  int *addr_lb, int *nbytes,
- int *num_gid_entries, int *num_lid_entries,
+ int *num_gid_entries,
  int *num_obj,
- ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ ZOLTAN_ID_PTR gids, 
  int *rank, int *iperm)
 {
    struct Zoltan_Struct *lb;
@@ -1931,17 +1931,17 @@ int Zfw_Order(
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Current = lb;
-   ierr = Zoltan_Order(lb,num_gid_entries,num_lid_entries,*num_obj,
-                       gids, lids, rank, iperm);
+   ierr = Zoltan_Order(lb,*num_gid_entries,*num_obj,
+                       gids, rank, iperm);
    return ierr;
 }
 
 /*****************************************************************************/
 int Zfw_Color(
  int *addr_lb, int *nbytes,
- int *num_gid_entries, int *num_lid_entries,
+ int *num_gid_entries, 
  int *num_obj,
- ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ ZOLTAN_ID_PTR gids,
  int *color_exp)
 {
    struct Zoltan_Struct *lb;
@@ -1951,8 +1951,8 @@ int Zfw_Color(
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Current = lb;
-   ierr = Zoltan_Color(lb,num_gid_entries,num_lid_entries,*num_obj,
-                       gids, lids, color_exp);
+   ierr = Zoltan_Color(lb,*num_gid_entries,*num_obj,
+                       gids, color_exp);
    return ierr;
 }
 

@@ -18,11 +18,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr))
-#else
 Zf90_Set_Part_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr)
-#endif
 end function Zf90_Set_Part_Fn0f
 
 
@@ -47,11 +43,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn1f
 
 
@@ -76,11 +68,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn2f
 
 
@@ -105,11 +93,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn3f
 
 
@@ -136,11 +120,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn4f
 
 
@@ -167,11 +147,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn5f
 
 
@@ -198,11 +174,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn6f
 
 
@@ -229,11 +201,7 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Part_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Part_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_PART_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Part_Fn7f
 
 
