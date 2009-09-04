@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
       fst::HGRADtransformGRAD<double>(hexGradsTransformed, hexJacobInv, hexGrads);
       
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
      // multiply values with weighted measure
       fst::multiplyMeasure<double>(hexGradsTransformedWeighted,

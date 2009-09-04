@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
         CellTools<double>::setJacobianDet(jacobian_det, jacobian);
 
         // compute weighted measure
-        FunctionSpaceTools::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
+        FunctionSpaceTools::computeCellMeasure<double>(weighted_measure, jacobian_det, cub_weights);
 
         ///////////////////////////
         // Computing mass matrices:

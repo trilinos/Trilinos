@@ -216,29 +216,6 @@ void FunctionSpaceTools::dataIntegral(ArrayOutData &            outputData,
 } // dataIntegral
 
 
-template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
-inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
-                                               const ArrayDet       & inDet,
-                                               const ArrayWeights   & inWeights) {
-
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Input determinants container must have rank 2.");
-#endif
-
-  ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
-  // must use absolute value of inDet, so flip sign where needed
-  for (int cell=0; cell<outVals.dimension(0); cell++) {
-    if (inDet(cell,0) < 0.0) {
-      for (int point=0; point<outVals.dimension(1); point++) {
-        outVals(cell, point) *= -1.0;
-      }
-    }
-  }
-
-} // computeMeasure
-
-
 
 template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
 inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVals,
@@ -505,24 +482,83 @@ void FunctionSpaceTools::applyRightFieldSigns(ArrayTypeInOut        & inoutOpera
 
 
 template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
-void FunctionSpaceTools::applyFieldSigns(ArrayTypeInOut        & inoutFunctional,
+void FunctionSpaceTools::applyFieldSigns(ArrayTypeInOut        & inoutFunction,
                                          const ArrayTypeSign   & fieldSigns) {
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inoutFunctional.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input functional container must have rank 2.");
+  TEST_FOR_EXCEPTION( ((inoutFunction.rank() < 2) || (inoutFunction.rank() > 5)), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input function container must have rank 2.");
   TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input field signs container must have rank 2.");
-  TEST_FOR_EXCEPTION( (inoutFunctional.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
-  TEST_FOR_EXCEPTION( (inoutFunctional.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the functional and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutFunction.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the function and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutFunction.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the function and field signs containers must agree!");
 #endif
 
-  for (int cell=0; cell<inoutFunctional.dimension(0); cell++) {
-    for (int bf=0; bf<inoutFunctional.dimension(1); bf++) {
-      inoutFunctional(cell, bf) *= fieldSigns(cell, bf);
+  int numCells  = inoutFunction.dimension(0);
+  int numFields = inoutFunction.dimension(1);
+  int fRank     = inoutFunction.rank();
+
+  switch (fRank) {
+    case 2: {
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          inoutFunction(cell, bf) *= fieldSigns(cell, bf);
+        }
+      }
     }
-  }
+    break;
+  
+    case 3: {
+      int numPoints = inoutFunction.dimension(2);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numPoints; pt++) {
+            inoutFunction(cell, bf, pt) *= fieldSigns(cell, bf);
+          }
+        }
+      }
+    }
+    break;
+  
+    case 4: {
+      int numPoints = inoutFunction.dimension(2);
+      int spaceDim1 = inoutFunction.dimension(3);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numPoints; pt++) {
+            for (int d1=0; d1<spaceDim1; d1++) {
+             inoutFunction(cell, bf, pt, d1) *= fieldSigns(cell, bf);
+            }
+          }
+        }
+      }
+    }
+    break;
+  
+    case 5: {
+      int numPoints = inoutFunction.dimension(2);
+      int spaceDim1 = inoutFunction.dimension(3);
+      int spaceDim2 = inoutFunction.dimension(4);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numPoints; pt++) {
+            for (int d1=0; d1<spaceDim1; d1++) {
+              for (int d2=0; d2<spaceDim2; d2++) {
+                inoutFunction(cell, bf, pt, d1, d2) *= fieldSigns(cell, bf);
+              }
+            }
+          }
+        }
+      }
+    }
+    break;
+
+    default:
+      TEST_FOR_EXCEPTION( !( (fRank == 2) || (fRank == 3) || (fRank == 4) || (fRank == 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Method defined only for rank-2, 3, 4, or 5 input function containers.");
+  
+  }  // end switch fRank
 
 } // applyFieldSigns
 

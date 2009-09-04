@@ -768,7 +768,7 @@ int main(int argc, char *argv[]) {
       fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
       
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
       // combine mu value with weighted measure
       for (int nC = 0; nC < numCells; nC++){

@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
       CellTools<double>::setJacobianDet(jacobian_det, jacobian);
 
       // compute weighted measure
-      fst::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
+      fst::computeCellMeasure<double>(weighted_measure, jacobian_det, cub_weights);
 
       // Computing stiffness matrices:
       // tabulate curls of basis functions at (reference) cubature points

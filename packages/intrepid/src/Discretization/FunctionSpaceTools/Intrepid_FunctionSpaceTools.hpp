@@ -314,12 +314,6 @@ class FunctionSpaceTools {
                            const ECompEngine         compEngine,
                            const bool                sumInto = false);
 
-
-  template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
-  static void computeMeasure(ArrayOut             & outVals,
-                             const ArrayDet       & inDet,
-                             const ArrayWeights   & inWeights);
-
   template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
   static void computeCellMeasure(ArrayOut             & outVals,
                                  const ArrayDet       & inDet,
@@ -344,12 +338,16 @@ class FunctionSpaceTools {
                               const ArrayTypeMeasure   & inMeasure,
                               const ArrayTypeIn        & inVals);
 
-  /** \brief There are two use cases:
-             (1) multiplies a rank-3, 4, or 5 container \a <b>inputFields</b> with dimensions (C,F,P),
+  /** \brief Scalar multiplication of data and fields; please read the description below.
+             
+             There are two use cases:
+             \li
+             multiplies a rank-3, 4, or 5 container \a <b>inputFields</b> with dimensions (C,F,P),
              (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a set of scalar, vector
              or tensor fields, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P),
              representing the values of scalar data, OR
-             (2) multiplies a rank-2, 3, or 4 container \a <b>inputFields</b> with dimensions (F,P),
+             \li
+             multiplies a rank-2, 3, or 4 container \a <b>inputFields</b> with dimensions (F,P),
              (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
              tensor field, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P),
              representing the values of scalar data;
@@ -379,12 +377,16 @@ class FunctionSpaceTools {
                                       ArrayInFields &      inputFields,
                                       const bool           reciprocal = false);
 
-  /** \brief There are two use cases:
-             (1) multiplies a rank-2, 3, or 4 container \a <b>inputDataRight</b> with dimensions (C,P),
+  /** \brief Scalar multiplication of data and data; please read the description below.
+
+             There are two use cases:
+             \li
+             multiplies a rank-2, 3, or 4 container \a <b>inputDataRight</b> with dimensions (C,P),
              (C,P,D1) or (C,P,D1,D2), representing the values of a set of scalar, vector
              or tensor data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P),
              representing the values of scalar data, OR
-             (2) multiplies a rank-1, 2, or 3 container \a <b>inputDataRight</b> with dimensions (P),
+             \li
+             multiplies a rank-1, 2, or 3 container \a <b>inputDataRight</b> with dimensions (P),
              (P,D1) or (P,D1,D2), representing the values of scalar, vector or
              tensor data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P),
              representing the values of scalar data;
@@ -413,13 +415,17 @@ class FunctionSpaceTools {
                                      ArrayInDataRight &       inputDataRight,
                                      const bool               reciprocal = false);
 
-  /** \brief There are two use cases:
-             (1) dot product of a rank-3, 4 or 5 container \a <b>inputFields</b> with dimensions (C,F,P)
+  /** \brief Dot product of data and fields; please read the description below.
+             
+             There are two use cases:
+             \li
+             dot product of a rank-3, 4 or 5 container \a <b>inputFields</b> with dimensions (C,F,P)
              (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a set of scalar, vector
              or tensor fields, by the values in a rank-2, 3 or 4 container \a <b>inputData</b> indexed by
              (C,P), (C,P,D1), or (C,P,D1,D2) representing the values of scalar, vector or
              tensor data, OR
-             (2) dot product of a rank-2, 3 or 4 container \a <b>inputFields</b> with dimensions (F,P),
+             \li
+             dot product of a rank-2, 3 or 4 container \a <b>inputFields</b> with dimensions (F,P),
              (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or tensor
              field, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or
              (C,P,D1,D2), representing the values of scalar, vector or tensor data;
@@ -445,13 +451,17 @@ class FunctionSpaceTools {
                                    const ArrayInData &    inputData,
                                    const ArrayInFields &  inputFields);
 
-  /** \brief There are two use cases:
-             (1) dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (C,P)
+  /** \brief Dot product of data and data; please read the description below.
+
+             There are two use cases:
+             \li
+             dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (C,P)
              (C,P,D1) or (C,P,D1,D2), representing the values of a scalar, vector or a
              tensor set of data, by the values in a rank-2, 3 or 4 container \a <b>inputDataLeft</b> indexed by
              (C,P), (C,P,D1), or (C,P,D1,D2) representing the values of scalar, vector or
              tensor data, OR
-             (2) dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (P),
+             \li
+             dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (P),
              (P,D1) or (P,D1,D2), representing the values of scalar, vector or tensor
              data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D1) or
              (C,P,D1,D2), representing the values of scalar, vector, or tensor data;
@@ -476,17 +486,23 @@ class FunctionSpaceTools {
                                   const ArrayInDataLeft &   inputDataLeft,
                                   const ArrayInDataRight &  inputDataRight);
 
-  /** \brief There are four use cases:
-             (1) cross product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
+  /** \brief Cross or outer product of data and fields; please read the description below.
+
+             There are four use cases:
+             \li
+             cross product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
              representing the values of a set of vector fields, on the left by the values in a rank-3
              container \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data, OR
-             (2) cross product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
+             \li
+             cross product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
              representing the values of a vector field, on the left by the values in a rank-3 container
              \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data, OR
-             (3) outer product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
+             \li
+             outer product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
              representing the values of a set of vector fields, on the left by the values in a rank-3
              container \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data, OR
-             (4) outer product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
+             \li
+             outer product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
              representing the values of a vector field, on the left by the values in a rank-3 container
              \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data;
              for cross products, the output value container \a <b>outputFields</b> is indexed by
@@ -509,17 +525,23 @@ class FunctionSpaceTools {
                                       const ArrayInData &    inputData,
                                       const ArrayInFields &  inputFields);
 
-  /** \brief There are four use cases:
-             (1) cross product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
+  /** \brief Cross or outer product of data and data; please read the description below.
+
+             There are four use cases:
+             \li
+             cross product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
              representing the values of a set of vector data, on the left by the values in a rank-3
              container \a <b>inputDataLeft</b> indexed by (C,P,D) representing the values of vector data, OR
-             (2) cross product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
+             \li
+             cross product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
              representing the values of vector data, on the left by the values in a rank-3 container
              \a <b>inputDataLeft</b> indexed by (C,P,D), representing the values of vector data, OR
-             (3) outer product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
+             \li
+             outer product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
              representing the values of a set of vector data, on the left by the values in a rank-3
              container \a <b>inputDataLeft</b> indexed by (C,P,D) representing the values of vector data, OR
-             (4) outer product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
+             \li
+             outer product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
              representing the values of vector data, on the left by the values in a rank-3 container
              \a <b>inputDataLeft</b> indexed by (C,P,D), representing the values of vector data;
              for cross products, the output value container \a <b>outputData</b> is indexed by
@@ -541,20 +563,26 @@ class FunctionSpaceTools {
                                      const ArrayInDataLeft &   inputDataLeft,
                                      const ArrayInDataRight &  inputDataRight);
 
-  /** \brief There are four use cases:
-             (1) matrix-vector product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
+  /** \brief Matrix-vector or matrix-matrix product of data and fields; please read the description below.
+
+             There are four use cases:
+             \li
+             matrix-vector product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
              representing the values of a set of vector fields, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data, OR
-             (2) matrix-vector product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
+             \li
+             matrix-vector product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
              representing the values of a vector field, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data, OR
-             (3) matrix-matrix product of a rank-5 container \a <b>inputFields</b> with dimensions (C,F,P,D,D),
+             \li
+             matrix-matrix product of a rank-5 container \a <b>inputFields</b> with dimensions (C,F,P,D,D),
              representing the values of a set of tensor fields, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data, OR
-             (4) matrix-matrix product of a rank-4 container \a <b>inputFields</b> with dimensions (F,P,D,D),
+             \li
+             matrix-matrix product of a rank-4 container \a <b>inputFields</b> with dimensions (F,P,D,D),
              representing the values of a tensor field, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data;
@@ -591,20 +619,26 @@ class FunctionSpaceTools {
                                       const ArrayInFields &  inputFields,
                                       const char             transpose = 'N');
 
-  /** \brief There are four use cases:
-             (1) matrix-vector product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
+  /** \brief Matrix-vector or matrix-matrix product of data and data; please read the description below.
+
+             There are four use cases:
+             \li
+             matrix-vector product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
              representing the values of a set of vector data, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data, OR
-             (2) matrix-vector product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
+             \li
+             matrix-vector product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
              representing the values of vector data, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data, OR
-             (3) matrix-matrix product of a rank-4 container \a <b>inputDataRight</b> with dimensions (C,P,D,D),
+             \li
+             matrix-matrix product of a rank-4 container \a <b>inputDataRight</b> with dimensions (C,P,D,D),
              representing the values of a set of tensor data, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data, OR
-             (4) matrix-matrix product of a rank-3 container \a <b>inputDataRight</b> with dimensions (P,D,D),
+             \li
+             matrix-matrix product of a rank-3 container \a <b>inputDataRight</b> with dimensions (P,D,D),
              representing the values of tensor data, on the left by the values in a rank-2, 3, or 4
              container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
              representing the values of tensor data;
@@ -643,18 +677,18 @@ class FunctionSpaceTools {
 
   /** \brief Applies left (row) signs, stored in the user-provided container
              <var><b>fieldSigns</b></var> and indexed by (C,L), to the operator
-             <var><b>inoutFields</b></var> indexed by (C,L,R).
+             <var><b>inoutOperator</b></var> indexed by (C,L,R).
 
              Math here ...
-    \code
-    |------|----------------------|----------------------------------------------------|
-    |      |         Index        |                   Dimension                        |
-    |------|----------------------|----------------------------------------------------|
-    |   C  |         cell         |  0 <= C < num. integration domains                 |
-    |   L  | num. "left" fields   |  0 <= L < dim. of the left basis (in inoutFields)  |
-    |   R  | num. "right" fields  |  0 <= R < dim. of the right basis (in inoutFields) |
-    |------|----------------------|----------------------------------------------------|
-    \endcode
+
+      \code
+        C    - num. integration domains
+        L    - num. left fields
+        R    - num. right fields
+      \endcode
+
+      \param  inoutOperator [in/out] - Input / output operator array.
+      \param  fieldSigns        [in] - Left field signs.
   */
   template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
   static void applyLeftFieldSigns(ArrayTypeInOut        & inoutOperator,
@@ -662,39 +696,40 @@ class FunctionSpaceTools {
 
   /** \brief Applies right (column) signs, stored in the user-provided container
              <var><b>fieldSigns</b></var> and indexed by (C,R), to the operator
-             <var><b>inoutFields</b></var> indexed by (C,L,R).
+             <var><b>inoutOperator</b></var> indexed by (C,L,R).
 
              Math here ...
-    \code
-    |------|----------------------|----------------------------------------------------|
-    |      |         Index        |                   Dimension                        |
-    |------|----------------------|----------------------------------------------------|
-    |   C  |         cell         |  0 <= C < num. integration domains                 |
-    |   L  | num. "left" fields   |  0 <= L < dim. of the left basis (in inoutFields)  |
-    |   R  | num. "right" fields  |  0 <= R < dim. of the right basis (in inoutFields) |
-    |------|----------------------|----------------------------------------------------|
-    \endcode
+
+      \code
+        C    - num. integration domains
+        L    - num. left fields
+        R    - num. right fields
+      \endcode
+
+      \param  inoutOperator [in/out] - Input / output operator array.
+      \param  fieldSigns        [in] - Right field signs.
   */
   template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
   static void applyRightFieldSigns(ArrayTypeInOut        & inoutOperator,
                                    const ArrayTypeSign   & fieldSigns);
 
   /** \brief Applies field signs, stored in the user-provided container
-             <var><b>fieldSigns</b></var> and indexed by (C,F), to the functional
-             <var><b>inoutFields</b></var> indexed by (C,F).
+             <var><b>fieldSigns</b></var> and indexed by (C,F), to the function
+             <var><b>inoutFunction</b></var> indexed by (C,F), (C,F,P),
+             (C,F,P,D1) or (C,F,P,D1,D2).
 
              Math here ...
-    \code
-    |------|----------------------|----------------------------------------------------|
-    |      |         Index        |                   Dimension                        |
-    |------|----------------------|----------------------------------------------------|
-    |   C  |         cell         |  0 <= C < num. integration domains                 |
-    |   F  |      num. fields     |  0 <= F < dim. of the basis (in inoutFields)       |
-    |------|----------------------|----------------------------------------------------|
-    \endcode
+
+      \code
+        C    - num. integration domains
+        F    - num. fields
+        P    - num. integration points
+        D1   - spatial dimension
+        D2   - spatial dimension
+      \endcode
   */
   template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
-  static void applyFieldSigns(ArrayTypeInOut        & inoutFunctional,
+  static void applyFieldSigns(ArrayTypeInOut        & inoutFunction,
                               const ArrayTypeSign   & fieldSigns);
 
   

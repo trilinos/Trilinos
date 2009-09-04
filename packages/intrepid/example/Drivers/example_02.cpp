@@ -800,7 +800,7 @@ int main(int argc, char *argv[]) {
       fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
                                    hexCVals);
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexCValsTransformedWeighted,
