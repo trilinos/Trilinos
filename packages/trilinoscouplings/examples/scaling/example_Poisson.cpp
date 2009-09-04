@@ -551,7 +551,7 @@ int main(int argc, char *argv[]) {
       fst::HGRADtransformGRAD<double>(hexGradsTransformed, hexJacobInv, hexGrads);
       
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
      // multiply values with weighted measure
       fst::multiplyMeasure<double>(hexGradsTransformedWeighted,
@@ -742,7 +742,7 @@ int main(int argc, char *argv[]) {
        fst::HGRADtransformGRAD<double>(uhGradsTrans, hexJacobInvE, uhGrads);
 
       // compute weighted measure
-       fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+       fst::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
       // loop over cubature points
        for (int nPt = 0; nPt < numCubPointsErr; nPt++){

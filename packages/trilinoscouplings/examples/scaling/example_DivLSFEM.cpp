@@ -1027,7 +1027,7 @@ int main(int argc, char *argv[]) {
                                    hexCVals);
 
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
      // combine mu value with weighted measure
       for (int nC = 0; nC < numCells; nC++){
@@ -1426,7 +1426,7 @@ int main(int argc, char *argv[]) {
        fst::HDIVtransformDIV<double>(uhDivsTrans, hexJacobDetE, uhDivs);
 
       // compute weighted measure
-       fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+       fst::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
      // loop over cubature points
        for (int nPt = 0; nPt < numCubPointsErr; nPt++){

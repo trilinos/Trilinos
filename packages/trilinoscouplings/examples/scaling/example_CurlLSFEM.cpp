@@ -983,7 +983,7 @@ int main(int argc, char *argv[]) {
       fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
       
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+      fst::computeCellMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
       // combine mu value with weighted measure
       for (int nC = 0; nC < numCells; nC++){
@@ -1393,7 +1393,7 @@ int main(int argc, char *argv[]) {
        fst::HCURLtransformCURL<double>(uhCurlsTrans, hexJacobianE, hexJacobDetE, uhCurls);
 
       // compute weighted measure
-       fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+       fst::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
      // loop over cubature points
        for (int nPt = 0; nPt < numCubPointsErr; nPt++){
