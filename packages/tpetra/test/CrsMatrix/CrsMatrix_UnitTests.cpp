@@ -40,14 +40,17 @@ namespace Teuchos {
 
 namespace {
 
-  using Teuchos::as;
   using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::arcpClone;
   using Tpetra::Map;
+  using Tpetra::OptimizeOption;
+  using Tpetra::DoOptimizeStorage;
+  using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
-  using std::vector;
+  using Tpetra::global_size_t;
   using std::sort;
-  using Teuchos::arrayViewFromVector;
   using Teuchos::arrayView;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
@@ -58,9 +61,6 @@ namespace {
   using std::swap;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  using Teuchos::NO_TRANS;
-  using Teuchos::TRANS;
-  using Teuchos::CONJ_TRANS;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsGraph;
   using Tpetra::RowMatrix;
@@ -68,6 +68,17 @@ namespace {
   using Tpetra::Import;
   using std::string;
   using Teuchos::tuple;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
+  using Tpetra::ProfileType;
+  using Tpetra::StaticProfile;
+  using Tpetra::DynamicProfile;
+  using Teuchos::NO_TRANS;
+  using Teuchos::TRANS;
+  using Teuchos::CONJ_TRANS;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -85,11 +96,11 @@ namespace {
 #define STD_TESTS(matrix) \
   { \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap().getMyGlobalEntries(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getMyGlobalEntries(); \
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
-    Teuchos_Ordinal STMAX = 0; \
-    for (Teuchos_Ordinal STR=0; STR<matrix.getNodeNumRows(); ++STR) { \
+    size_t STMAX = 0; \
+    for (size_t STR=0; STR<matrix.getNodeNumRows(); ++STR) { \
       LO numEntries = matrix.getNumEntriesForGlobalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesForGlobalRow( STMYGIDS[STR] ) ); \
       matrix.extractMyRowConstView(0,loview,sview); \
@@ -98,8 +109,8 @@ namespace {
       STMAX = std::max( STMAX, matrix.getNumEntriesForGlobalRow(STR) ); \
     } \
     TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
-    Teuchos_Ordinal STGMAX; \
-    reduceAll( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
+    global_size_t STGMAX; \
+    Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
   }
 
@@ -121,15 +132,14 @@ namespace {
 
   RCP<const Comm<int> > getDefaultComm()
   {
+    RCP<const Comm<int> > ret;
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      ret = DefaultPlatform::getDefaultPlatform().getComm();
     }
-    return rcp(new Teuchos::SerialComm<int>());
-  }
-
-  Node& getDefaultNode()
-  {
-    return DefaultPlatform::getDefaultPlatform().getNode();
+    else {
+      ret = rcp(new Teuchos::SerialComm<int>());
+    }
+    return ret;
   }
 
   //
@@ -145,11 +155,10 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
-    const Teuchos_Ordinal numLocal = 10;
+    const size_t numLocal = 10;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     MV mv1(node,map,1), mv2(node,map,2), mv3(node,map,3);
     // create the zero matrix
@@ -181,12 +190,11 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     // create a Map
-    const Teuchos_Ordinal numLocal = 10;
+    const size_t numLocal = 10;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     CrsGraph<LO,GO> graph(map,3,true);
     for (GO r=map.getMinGlobalIndex(); r<=map.getMaxGlobalIndex(); ++r) 
@@ -240,12 +248,11 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     // create a Map
-    const Teuchos_Ordinal numLocal = 10;
+    const size_t numLocal = 10;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     {
       MAT matrix(map,1,true);
@@ -289,12 +296,11 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     // create a Map
-    const Teuchos_Ordinal numLocal = 1; // change to 10
+    const size_t numLocal = 1; // change to 10
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     {
       // room for two on each row
@@ -332,7 +338,7 @@ namespace {
         ArrayView<const Scalar> vals;
         TEST_NOTHROW( matrix.extractMyRowConstView(r,inds,vals) );
         TEST_COMPARE_ARRAYS( inds, tuple<LO>(r) );
-        TEST_COMPARE_ARRAYS( vals, tuple<Scalar>(as<Scalar>(3.0)) );
+        TEST_COMPARE_ARRAYS( vals, tuple<Scalar>(static_cast<Scalar>(3.0)) );
       }
     }
     // All procs fail if any node fails
@@ -351,15 +357,14 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = size(*comm);
     const int myImageID = rank(*comm);
     if (numImages < 2) return;
     // create a Map, one row per processor
-    const Teuchos_Ordinal indexBase = 0;
-    const Teuchos_Ordinal numLocal = 1;
+    const GO indexBase = 0;
+    const size_t numLocal = 1;
     Map<LO,GO> rmap(INVALID,numLocal,indexBase,comm);
     GO myrowind = rmap.getGlobalIndex(0);
     // specify the column map to control ordering
@@ -388,7 +393,7 @@ namespace {
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
       ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
       ArrayView<GO> GView; ArrayView<LO> LView; ArrayView<Scalar> SView;
-      Teuchos_Ordinal numentries;
+      size_t numentries;
       // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
       matrix.extractMyRowCopy(0,LCopy,SCopy,numentries);
       matrix.extractMyRowView(0,LView,SView);
@@ -397,7 +402,7 @@ namespace {
       matrix.extractGlobalRowView(myrowind,GView,SView);
       matrix.extractGlobalRowConstView(myrowind,CGView,CSView);
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
-      for (Teuchos_Ordinal j=0; j<(Teuchos_Ordinal)ginds.size(); ++j) {
+      for (size_t j=0; j<(size_t)ginds.size(); ++j) {
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
       }
       TEST_EQUALITY( matrix.getNumEntriesForGlobalRow(0), matrix.getCrsGraph().getNumAllocatedEntriesForLocalRow(0) ); // test that we only allocated as much room as necessary
@@ -450,14 +455,13 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
     const LO numLocal = 10;
-    const Teuchos_Ordinal numVecs  = 5;
+    const size_t numVecs  = 5;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     MV mvrand(node,map,numVecs,false), mvres(node,map,numVecs,false);
     mvrand.randomize();
@@ -484,9 +488,9 @@ namespace {
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
-    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getColMap())   , true);
-    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
-    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getRangeMap()) , true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorDomainMap()), true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorRangeMap()) , true);
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
@@ -506,9 +510,8 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const GO M = 3;
     const GO P = 5;
     const int N = comm->getSize();
@@ -544,7 +547,7 @@ namespace {
     // 
     // 
     // 
-    const Teuchos_Ordinal numVecs  = 3;
+    const size_t numVecs  = 3;
     Map<LO,GO> rowmap(INVALID,M,0,comm);
     Map<LO,GO> lclmap(P,0,comm,true);
     // create the matrix
@@ -561,14 +564,14 @@ namespace {
     MV X(node,lclmap,numVecs);
     for (GO i=0; i<P; ++i) {
       for (GO j=0; j<numVecs; ++j) {
-        X.replaceGlobalValue(i,j,as<Scalar>(i+j*P));
+        X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
       }
     }
     // build the expected output multivector B
     MV Bexp(node,rowmap,numVecs), Bout(node,rowmap,numVecs);
     for (GO i=myImageID*M; i<myImageID*M+M; ++i) {
       for (GO j=0; j<numVecs; ++j) {
-        Bexp.replaceGlobalValue(i,j,as<Scalar>(j*i*P*P + (i+j*M*N*P)*(P*P-P)/2 + M*N*P*(P-1)*(2*P-1)/6));
+        Bexp.replaceGlobalValue(i,j,static_cast<Scalar>(j*i*P*P + (i+j*M*N*P)*(P*P-P)/2 + M*N*P*(P-1)*(2*P-1)/6));
       }
     }
     // test the action
@@ -591,9 +594,8 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const GO M = 3;
     const GO P = 5;
     const int N = comm->getSize();
@@ -638,7 +640,7 @@ namespace {
     // = sum k(i+j)MN + ij(MN)(MN) + k^2 = (i+j)(MN)^2(MN-1)/2 + ij(MN)^3 + (MN)(MN-1)(2MN-1)/6
     //   k=0
     // 
-    const Teuchos_Ordinal numVecs  = 3;
+    const size_t numVecs  = 3;
     Map<LO,GO> rowmap(INVALID,M,0,comm);
     Map<LO,GO> lclmap(P,0,comm,true);
     // create the matrix
@@ -656,14 +658,14 @@ namespace {
     MV X(node,rowmap,numVecs);
     for (int i=myImageID*M; i<myImageID*M+M; ++i) {
       for (int j=0; j<numVecs; ++j) {
-        X.replaceGlobalValue(i,j,as<Scalar>( i + j*M*N ) );
+        X.replaceGlobalValue(i,j,static_cast<Scalar>( i + j*M*N ) );
       }
     }
     // build the expected output multivector B
     MV Bexp(node,lclmap,numVecs), Bout(node,lclmap,numVecs);
     for (int i=0; i<P; ++i) {
       for (int j=0; j<numVecs; ++j) {
-        Bexp.replaceGlobalValue(i,j,as<Scalar>( (i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6 ));
+        Bexp.replaceGlobalValue(i,j,static_cast<Scalar>( (i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6 ));
       }
     }
     // test the action
@@ -686,9 +688,8 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages == 1) return;
@@ -726,7 +727,7 @@ namespace {
     // col map is [0,1,2] [1,2,3,4] [3,4,5,6] etc     (assembled by CrsMatrix, we construct one only for comparison)
     // domain map will be equal to the row map
     // range  map will be [0,np] [1,np+1] [2,np+2]
-    const Teuchos_Ordinal numVecs  = 5;
+    const size_t numVecs  = 5;
     Map<LO,GO> rowmap(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm);
     Map<LO,GO> rngmap(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm);
     RCP<RowMatrix<Scalar,LO,GO> > tri;
@@ -763,27 +764,27 @@ namespace {
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
     TEST_EQUALITY(tri->getLocalMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
-    TEST_EQUALITY_CONST(tri->getRowMap().isSameAs(rowmap), true);
-    TEST_EQUALITY_CONST(tri->getRangeMap().isSameAs(rngmap), true);
-    TEST_EQUALITY_CONST(tri->getDomainMap().isSameAs(rowmap), true);
+    TEST_EQUALITY_CONST(tri->getRowMap()->isSameAs(*rowmap), true);
+    TEST_EQUALITY_CONST(tri->getOperatorRangeMap()->isSameAs(*rngmap), true);
+    TEST_EQUALITY_CONST(tri->getOperatorDomainMap()->isSameAs(*rowmap), true);
     // build the input and corresponding output multivectors
     MV mvin(node,rowmap,numVecs), mvout(node,rngmap,numVecs), mvexp(node,rngmap,numVecs);
     for (int j=0; j<numVecs; ++j) {
-      mvin.replaceMyValue(0,j,as<Scalar>(j*2*numImages+2*myImageID  )); // entry (2*myImageID  ,j)
-      mvin.replaceMyValue(1,j,as<Scalar>(j*2*numImages+2*myImageID+1)); // entry (2*myImageID+1,j)
+      mvin.replaceMyValue(0,j,static_cast<Scalar>(j*2*numImages+2*myImageID  )); // entry (2*myImageID  ,j)
+      mvin.replaceMyValue(1,j,static_cast<Scalar>(j*2*numImages+2*myImageID+1)); // entry (2*myImageID+1,j)
       // entry (myImageID,j)
       if (myImageID==0) {
-        mvexp.replaceMyValue(0,j,as<Scalar>(4*numImages*j+1));
+        mvexp.replaceMyValue(0,j,static_cast<Scalar>(4*numImages*j+1));
       }                                                                    
       else {                                                               
-        mvexp.replaceMyValue(0,j,as<Scalar>(6*numImages*j+3*myImageID));
+        mvexp.replaceMyValue(0,j,static_cast<Scalar>(6*numImages*j+3*myImageID));
       }                                                                    
       // entry (numImages+myImageID,j)
       if (myImageID==numImages-1) {                                        
-        mvexp.replaceMyValue(1,j,as<Scalar>(4*numImages*(j+1)-3));
+        mvexp.replaceMyValue(1,j,static_cast<Scalar>(4*numImages*(j+1)-3));
       }
       else {
-        mvexp.replaceMyValue(1,j,as<Scalar>(6*numImages*j+3*(numImages+myImageID)));
+        mvexp.replaceMyValue(1,j,static_cast<Scalar>(6*numImages*j+3*(numImages+myImageID)));
       }
     }
     // test the action
@@ -805,14 +806,13 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
     const LO numLocal = 10;
-    const Teuchos_Ordinal numVecs  = 5;
+    const size_t numVecs  = 5;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     MV mvrand(node,map,numVecs,false), mvres(node,map,numVecs,false);
     mvrand.randomize();
@@ -839,9 +839,9 @@ namespace {
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
     TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
-    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getColMap())   , true);
-    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
-    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getRangeMap()) , true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorDomainMap()), true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorRangeMap()) , true);
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
@@ -862,9 +862,8 @@ namespace {
     typedef ScalarTraits<Mag> MT;
     const LO ONE = OrdinalTraits<LO>::one();
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -884,17 +883,17 @@ namespace {
        [           1 2]
      this matrix has an eigenvalue lambda=3, with eigenvector v = [1 ... 1]
     */
-    Teuchos_Ordinal myNNZ;
+    size_t myNNZ;
     MAT A(map,3);
     if (myImageID == 0) {
       myNNZ = 2;
-      Array<Scalar> vals(tuple<Scalar>(as<Scalar>(2)*ST::one(), ST::one()));
+      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(), ST::one()));
       Array<GO> cols(tuple<GO>(myImageID, myImageID+1));
       A.insertGlobalValues(myImageID,cols(),vals());
     }
     else if (myImageID == numImages-1) {
       myNNZ = 2;
-      Array<Scalar> vals(tuple<Scalar>(ST::one(), as<Scalar>(2)*ST::one()));
+      Array<Scalar> vals(tuple<Scalar>(ST::one(), static_cast<Scalar>(2)*ST::one()));
       Array<GO> cols(tuple<GO>(myImageID-1,myImageID));
       A.insertGlobalValues(myImageID,cols(),vals());
     }
@@ -916,14 +915,14 @@ namespace {
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , (numImages > 2 ? 3 : 2));
     TEST_EQUALITY(A.getLocalMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorDomainMap()), true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorRangeMap()) , true);
     // test the action
     threes.randomize();
     A.apply(ones,threes);
     // now, threes should be 3*ones
-    threes.update(as<Scalar>(-3)*ST::one(),ones,ST::one());
+    threes.update(static_cast<Scalar>(-3)*ST::one(),ones,ST::one());
     Array<Mag> norms(1), zeros(1,MT::zero());
     threes.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
@@ -942,9 +941,8 @@ namespace {
     typedef ScalarTraits<Mag> MT;
     const LO ONE = OrdinalTraits<LO>::one();
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 3) return;
@@ -961,11 +959,11 @@ namespace {
        [       4 1]
    n-1 [       1 2]
     */
-    Teuchos_Ordinal myNNZ;
+    size_t myNNZ;
     MAT A(map,4);
     MV mveye(node,map,numImages), mvans(node,map,numImages), mvres(node,map,numImages,false);
     if (myImageID != numImages-1) { // last image assigns none
-      Array<Scalar> vals(tuple<Scalar>(as<Scalar>(2)*ST::one(),ST::one(),as<Scalar>(2)*ST::one()));
+      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(),ST::one(),static_cast<Scalar>(2)*ST::one()));
       Array<GO> cols(tuple<GO>(myImageID,myImageID + 1));
       A.insertGlobalValues(myImageID  ,cols(),vals(0,2));
       A.insertGlobalValues(myImageID+1,cols(),vals(1,2));
@@ -974,19 +972,19 @@ namespace {
     mveye.replaceMyValue(0,myImageID,ST::one());
     if (myImageID == 0) {
       myNNZ = 2;
-      mvans.replaceMyValue(0,0,as<Scalar>(2));
-      mvans.replaceMyValue(0,1,as<Scalar>(1));
+      mvans.replaceMyValue(0,0,static_cast<Scalar>(2));
+      mvans.replaceMyValue(0,1,static_cast<Scalar>(1));
     }
     else if (myImageID == numImages-1) {
       myNNZ = 2;
-      mvans.replaceMyValue(0,numImages-2,as<Scalar>(1));
-      mvans.replaceMyValue(0,numImages-1,as<Scalar>(2));
+      mvans.replaceMyValue(0,numImages-2,static_cast<Scalar>(1));
+      mvans.replaceMyValue(0,numImages-1,static_cast<Scalar>(2));
     }
     else {
       myNNZ = 3;
-      mvans.replaceMyValue(0,myImageID-1,as<Scalar>(1));
-      mvans.replaceMyValue(0,myImageID  ,as<Scalar>(4));
-      mvans.replaceMyValue(0,myImageID+1,as<Scalar>(1));
+      mvans.replaceMyValue(0,myImageID-1,static_cast<Scalar>(1));
+      mvans.replaceMyValue(0,myImageID  ,static_cast<Scalar>(4));
+      mvans.replaceMyValue(0,myImageID+1,static_cast<Scalar>(1));
     }
     A.fillComplete();
     // test the properties
@@ -1000,9 +998,9 @@ namespace {
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
     TEST_EQUALITY(A.getLocalMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
-    TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getRangeMap()) , true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorDomainMap()), true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorRangeMap()) , true);
     // test the action
     A.apply(mveye,mvres);
     mvres.update(-ST::one(),mvans,ST::one());
@@ -1023,9 +1021,8 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
@@ -1100,7 +1097,7 @@ namespace {
     TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
     TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A_crs.getRowMap().isSameAs(A_crs.getRangeMap()) , true);
+    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getOperatorRangeMap()) , true);
     // test the action
     A_crs.apply(mveye,mvres);
     mvres.update(-ST::one(),A_mv,ST::one());
@@ -1121,9 +1118,8 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
@@ -1203,8 +1199,8 @@ namespace {
     x->update(ST::one(),*r,-lam_left);  // x = A'*x - x*lam_left
     x->norm2(arrayView<Mag>(&nrm_left,1));
     out << "lam_left: " << lam_left << "\t\tnrm_left: " << nrm_left << endl;
-    TEST_FLOATING_EQUALITY(lam, Scalar(70.322f,0.0f), as<Mag>(0.000001f));
-    TEST_FLOATING_EQUALITY(lam_left, lam, as<Mag>(0.000001f));
+    TEST_FLOATING_EQUALITY(lam, Scalar(70.322f,0.0f), static_cast<Mag>(0.000001f));
+    TEST_FLOATING_EQUALITY(lam_left, lam, static_cast<Mag>(0.000001f));
     TEST_EQUALITY_CONST(nrm      < 0.0001f, true);
     TEST_EQUALITY_CONST(nrm_left < 0.0001f, true);
   }
@@ -1221,9 +1217,8 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
@@ -1270,7 +1265,7 @@ namespace {
       int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          Scalar s = as<Scalar>(*dptr);
+          Scalar s = static_cast<Scalar>(*dptr);
           A_crs.insertGlobalValues(*rptr-1,tuple<GO>(c),tuple(s));
           A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,s);
           ++rptr;
@@ -1299,7 +1294,7 @@ namespace {
     TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
     TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A_crs.getRowMap().isSameAs(A_crs.getRangeMap()) , true);
+    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getOperatorRangeMap()) , true);
     // test the action
     A_crs.apply(mveye,mvres);
     mvres.update(-ST::one(),A_mv,ST::one());
@@ -1320,9 +1315,8 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
@@ -1358,12 +1352,11 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    Node &node = getDefaultNode();
     // create a Map
     const LO numLocal = 10;
-    const Teuchos_Ordinal numVecs  = 5;
+    const size_t numVecs  = 5;
     Map<LO,GO> map(INVALID,numLocal,0,comm);
     MV mvrand(node,map,numVecs,false), mvres(node,map,numVecs,false);
     mvrand.randomize();

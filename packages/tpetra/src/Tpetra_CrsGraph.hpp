@@ -1919,7 +1919,6 @@ namespace Tpetra
 
     // mark transformation as successfully completed
     fillComplete_ = true;
-
     checkInternalState();
 
     if (os == DoOptimizeStorage) optimizeStorage();

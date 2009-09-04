@@ -41,9 +41,6 @@ namespace {
   using Teuchos::ArrayView;
   using Tpetra::CrsGraph;
   using Tpetra::RowGraph;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::global_size_t;
   using Teuchos::arcp;
   using std::string;
@@ -54,6 +51,9 @@ namespace {
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
+  using Tpetra::ProfileType;
+  using Tpetra::StaticProfile;
+  using Tpetra::DynamicProfile;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -114,7 +114,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const GO indexBase = 0;
@@ -145,7 +145,7 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -190,7 +190,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -233,7 +233,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -318,7 +318,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create a Map, one row per processor
@@ -346,7 +346,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc0, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
     // create a Map
@@ -390,7 +390,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc1, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
     // create a Map
@@ -434,7 +434,7 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map, three rows per processor
@@ -491,7 +491,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -597,7 +597,7 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const GO INVALID = OrdinalTraits<GO>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create Map
