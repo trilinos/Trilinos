@@ -34,3 +34,6 @@
 
 /* Use to have only filename when debugging memory */
 #define SHORT_FILE
+
+/* Use to have only filename when debugging memory */
+#define SHORT_FILE

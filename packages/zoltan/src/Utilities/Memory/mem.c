@@ -282,6 +282,7 @@ double *Zoltan_Malloc(size_t n, char *filename, int lineno)
   struct malloc_debug_data *new_ptr;     /* data structure for malloc data */
   int       proc;             /* processor ID for debugging msg */
   double *pntr;           /* return value */
+  char *basefile;
 
   if (n > 0) {
     pntr = (double *) malloc(n);
@@ -319,7 +320,13 @@ double *Zoltan_Malloc(size_t n, char *filename, int lineno)
     new_ptr->order = nmalloc;
     new_ptr->size = n;
     new_ptr->ptr = pntr;
-    strncpy(new_ptr->file, filename, MAX_STRING_LEN);
+#ifdef SHORT_FILE
+    basefile = strrchr(filename, '/');
+    basefile = ((basefile != NULL)?basefile:filename-1)+1;
+#else
+    basefile = filename;
+#endif /* SHORT_FILE */
+    strncpy(new_ptr->file, basefile, MAX_STRING_LEN);
     new_ptr->line = lineno;
     new_ptr->next = top;
     top = new_ptr;
