@@ -288,15 +288,21 @@ Partitioner::createNewMap()
   else
     input_map_->MyGlobalElements(NULL);
 
-  std::vector<int> myNewGID (numMyElements - exportsSize_);
-  std::vector<int>::iterator newElemsIter;
-  std::vector<int>::const_iterator elemsIter;
+  int newGIDSize = numMyElements - exportsSize_;
 
-  for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
-       elemsIter != properties_.end() ; elemsIter ++) {
-    if ((*elemsIter) == myPID) {
-      (*newElemsIter) = elementList[elemsIter - properties_.begin()];
-      newElemsIter ++;
+  std::vector<int> myNewGID;
+
+  if (newGIDSize > 0){
+    myNewGID.resize(newGIDSize);
+    std::vector<int>::iterator newElemsIter;
+    std::vector<int>::const_iterator elemsIter;
+
+    for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
+         elemsIter != properties_.end() ; elemsIter ++) {
+      if ((*elemsIter) == myPID) {
+        (*newElemsIter) = elementList[elemsIter - properties_.begin()];
+        newElemsIter ++;
+      }
     }
   }
   //Add imports to end of list
