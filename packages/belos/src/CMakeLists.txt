@@ -33,8 +33,6 @@ APPEND_SET(HEADERS
   BelosCGIteration.hpp
   BelosConfigDefs.hpp
   BelosDGKSOrthoManager.hpp
-  BelosPCPGIter.hpp
-  BelosPCPGSolMgr.hpp
   BelosGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
   BelosGmresIteration.hpp
