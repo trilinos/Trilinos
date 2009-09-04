@@ -691,9 +691,7 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 zfw_eval"
-function Zfw_LB_Eval(zz,nbytes,print_stats,nobj,obj_wgt, &
-                      ncuts,cut_wgt,nboundary,nadj,is_nobj, &
-                      is_obj_wgt,is_ncuts,is_cut_wgt,is_nboundary,is_nadj)
+function Zfw_LB_Eval(zz,nbytes,print_stats)
 use zoltan_types
 use lb_user_const
 use zoltan_user_data
@@ -701,10 +699,6 @@ implicit none
 integer(Zoltan_INT) :: Zfw_LB_Eval
 integer(Zoltan_INT), dimension(*) INTENT_IN zz
 integer(Zoltan_INT) INTENT_IN nbytes, print_stats
-integer(Zoltan_INT), intent(out) :: nobj, ncuts, nboundary, nadj
-real(Zoltan_FLOAT), intent(out) :: obj_wgt(*), cut_wgt(*)
-integer(Zoltan_INT), intent(in) :: is_nobj, is_ncuts, is_cut_wgt, &
-                               is_nboundary, is_nadj, is_obj_wgt
 end function Zfw_LB_Eval
 end interface
 
@@ -1791,18 +1785,12 @@ changes = .not.(int_changes==0)
 end function Zf90_LB_Balance
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-function Zf90_LB_Eval(zz,print_stats,nobj,obj_wgt, &
-                    ncuts,cut_wgt,nboundary,nadj)
+function Zf90_LB_Eval(zz,print_stats)
 integer(Zoltan_INT) :: Zf90_LB_Eval
 type(Zoltan_Struct) INTENT_IN zz
 logical INTENT_IN print_stats
-integer(Zoltan_INT), intent(out), optional :: nobj, ncuts, nboundary, nadj
-real(Zoltan_FLOAT), intent(out), optional :: obj_wgt(*), cut_wgt(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i, int_print_stats, dim, edim
-integer(Zoltan_INT) :: loc_nobj, loc_ncuts, loc_nboundary, loc_nadj
-real(Zoltan_FLOAT), allocatable :: loc_obj_wgt(:), loc_cut_wgt(:)
-integer(Zoltan_INT) :: is_nobj, is_ncuts, is_cut_wgt, is_nboundary, is_nadj, is_obj_wgt
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
@@ -1812,60 +1800,7 @@ if (print_stats) then
 else
    int_print_stats = 0
 endif
-if (present(nobj)) then
-   is_nobj = 1
-else
-   is_nobj = 0
-endif
-if (present(ncuts)) then
-   is_ncuts = 1
-else
-   is_ncuts = 0
-endif
-if (present(nboundary)) then
-   is_nboundary = 1
-else
-   is_nboundary = 0
-endif
-if (present(nadj)) then
-   is_nadj = 1
-else
-   is_nadj = 0
-endif
-if (present(obj_wgt)) then
-   is_obj_wgt = 1
-   dim = Zfw_Get_Wgt_Dim(zz_addr,nbytes)
-   allocate(loc_obj_wgt(dim))
-else
-   is_obj_wgt = 0
-   allocate(loc_obj_wgt(1))
-endif
-if (present(cut_wgt)) then
-   is_cut_wgt = 1
-   edim = Zfw_Get_Comm_Dim(zz_addr,nbytes)
-   allocate(loc_cut_wgt(edim))
-else
-   is_cut_wgt = 0
-   allocate(loc_cut_wgt(1))
-endif
-Zf90_LB_Eval = Zfw_LB_Eval(zz_addr,nbytes,int_print_stats,loc_nobj,loc_obj_wgt, &
-                loc_ncuts,loc_cut_wgt,loc_nboundary,loc_nadj,is_nobj, &
-                is_obj_wgt,is_ncuts,is_cut_wgt,is_nboundary,is_nadj)
-if (present(nobj)) nobj = loc_nobj
-if (present(obj_wgt)) then
-   do i = 1,dim
-      obj_wgt(i) = loc_obj_wgt(i)
-   end do
-endif
-if (present(cut_wgt)) then
-   do i = 1,edim
-      cut_wgt(i) = loc_cut_wgt(i)
-   end do
-endif
-if (present(ncuts)) ncuts = loc_ncuts
-if (present(nboundary)) nboundary = loc_nboundary
-if (present(nadj)) nadj = loc_nadj
-deallocate(loc_obj_wgt)
+Zf90_LB_Eval = Zfw_LB_Eval(zz_addr,nbytes,int_print_stats)
 end function Zf90_LB_Eval
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -333,17 +333,13 @@ LBf90_LB_Balance = Zf90_LB_Balance(zz,changes, &
 end function LBf90_LB_Balance
 
 
-function LBf90_LB_Eval(lb,print_stats,nobj,obj_wgt, &
-                    ncuts,cut_wgt,nboundary,nadj)
+function LBf90_LB_Eval(lb,print_stats)
 integer(Zoltan_INT) :: LBf90_LB_Eval
 type(LB_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
-integer(Zoltan_INT), intent(out), optional :: nobj, ncuts, nboundary, nadj
-real(Zoltan_FLOAT), intent(out), optional :: obj_wgt(*), cut_wgt(*)
 type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
-LBf90_LB_Eval = Zf90_LB_Eval(zz,print_stats,nobj,obj_wgt, &
-                              ncuts,cut_wgt,nboundary,nadj)
+LBf90_LB_Eval = Zf90_LB_Eval(zz,print_stats)
 end function LBf90_LB_Eval
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

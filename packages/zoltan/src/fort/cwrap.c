@@ -1648,29 +1648,20 @@ int Zfw_LB_Partition(int *addr_lb, int *nbytes, int *changes,
 }
 
 /*****************************************************************************/
-int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats,
-                int *nobj, float *obj_wgt, int *ncuts, float *cut_wgt,
-                int *nboundary, int *nadj,
-                int *is_nobj, int *is_obj_wgt, int *is_ncuts, int *is_cut_wgt,
-                int *is_nboundary, int *is_nadj)
+int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats)
 {
+/* KDD Note that we are not yet ready to support the return arguments
+ * KDD of Zoltan_LB_Eval in the F90 interface yet.  For now, we'll only
+ * KDD print stats.
+ */
    struct Zoltan_Struct *lb;
-   int *loc_nobj, *loc_ncuts, *loc_nboundary, *loc_nadj;
-   float *loc_obj_wgt, *loc_cut_wgt;
    unsigned char *p;
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    Zoltan_Current = lb;
-   if (*is_nobj) {loc_nobj = nobj;} else {loc_nobj = NULL;}
-   if (*is_ncuts) {loc_ncuts = ncuts;} else {loc_ncuts = NULL;}
-   if (*is_obj_wgt) {loc_obj_wgt = obj_wgt;} else {loc_obj_wgt = NULL;}
-   if (*is_cut_wgt) {loc_cut_wgt = cut_wgt;} else {loc_cut_wgt = NULL;}
-   if (*is_nboundary) {loc_nboundary = nboundary;} else {loc_nboundary = NULL;}
-   if (*is_nadj) {loc_nadj = nadj;} else {loc_nadj = NULL;}
 
-   return  Zoltan_LB_Eval(lb, *print_stats, loc_nobj, loc_obj_wgt, loc_ncuts, loc_cut_wgt,
-           loc_nboundary, loc_nadj);
+   return  Zoltan_LB_Eval(lb, *print_stats, NULL, NULL, NULL);
 }
 
 /*****************************************************************************/
