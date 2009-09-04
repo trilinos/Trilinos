@@ -29,13 +29,16 @@
 #ifndef KOKKOS_DEFAULTSPARSEMULTIPLY_H
 #define KOKKOS_DEFAULTSPARSEMULTIPLY_H
 
+#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_DataAccess.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_CrsMatrix.hpp" 
+// #include "Kokkos_CrsMatrix.hpp" 
+// #include "Kokkos_CrsGraph.hpp" 
 #include "Kokkos_MultiVector.hpp"
 
 #ifndef KERNEL_PREFIX
@@ -46,16 +49,19 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   struct DefaultSparseMultiplyOp {
-    Teuchos::ArrayRCP<const size_type> offsets;
-    Teuchos::ArrayRCP<const Ordinal> inds;
-    Teuchos::ArrayRCP<const  Scalar> x, vals;
-    Teuchos::ArrayRCP<       Scalar> y;
-    Scalar alpha, beta;
+    // mat data
+    const size_t  *offsets;
+    const Ordinal *inds;
+    const Scalar  *vals;
+    // matvec params
+    Scalar        alpha, beta;
+    // mv data
+    const Scalar  *x;
+    Scalar        *y;
 
-    inline KERNEL_PREFIX void execute(int i)
-    {
+    inline KERNEL_PREFIX void execute(size_t i) {
       Scalar tmp = 0;
-      for (size_type c=offsets[i]; c != offsets[i+1]; ++c) {
+      for (size_t c=offsets[i]; c != offsets[i+1]; ++c) {
         tmp += vals[c] * x[inds[c]];
       }
       Scalar tmp2 = beta*y[i];
@@ -64,87 +70,9 @@ namespace Kokkos {
   };
 
 
-  template<class MAT, class MV>
-  class DefaultSparseMultiply {
-  public:
-    typedef typename MAT::ScalarType  ScalarType;
-    typedef typename MAT::OrdinalType OrdinalType;
-    typedef typename MAT::NodeType    NodeType;
-
-    //! @name Constructors/Destructor
-
-    //@{
-
-    //! DefaultSparseMultiply constuctor with variable number of indices per row.
-    DefaultSparseMultiply(typename MAT::NodeType &node);
-
-    //! DefaultSparseMultiply Destructor
-    ~DefaultSparseMultiply();
-
-    //@}
-
-    //! @name Initialization of structure
-
-    //@{
-
-    //! Initialize structure of matrix
-    int initializeStructure(const MAT& A, bool view);
-
-    //! Initialize values of matrix
-    int initializeValues(const MAT& A, bool view);
-
-    //@}
-
-    //! @name Computational methods
-
-    //@{
-
-    //! Applies the matrix to a MultiVector.
-    int Apply(bool transpose, ScalarType alpha, const MV &X, ScalarType beta, MV &Y) const;
-
-    //@}
-
-  protected:
-    // No data yet, because we have no implementations 
-  };
-
-  template <class MAT, class MV>
-  DefaultSparseMultiply<MAT,MV>::DefaultSparseMultiply(typename MAT::NodeType &node)
-  {}
-
-  template <class MAT, class MV>
-  DefaultSparseMultiply<MAT,MV>::~DefaultSparseMultiply()
-  {}
-
-  template <class MAT, class MV>
-  int DefaultSparseMultiply<MAT,MV>::initializeStructure(const MAT& A, bool view)
-  {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
-        "DefaultSparseMultiply::initializeStructure() not implemented for matrix type " << Teuchos::TypeNameTraits<MAT>::name() << std::endl;);
-    return 0;
-  }
-
-  template <class MAT, class MV>
-  int DefaultSparseMultiply<MAT,MV>::initializeValues(const MAT& A, bool view)
-  {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
-        "DefaultSparseMultiply::initializeValues() not implemented for matrix type " << Teuchos::TypeNameTraits<MAT>::name() << std::endl;);
-    return 0;
-  }
-
-  template <class MAT, class MV>
-  int DefaultSparseMultiply<MAT,MV>::Apply(bool transpose, ScalarType alpha, const MV &X, ScalarType beta, MV &Y) const
-  {
-    TEST_FOR_EXCEPTION(true, std::logic_error, 
-        "DefaultSparseMultiply::Apply() not implemented for matrix type " << Teuchos::TypeNameTraits<MAT>::name()
-        << " and multivector type " << Teuchos::TypeNameTraits<MV>::name() << std::endl;);
-    return 0;
-  }
-
-
   // default implementation
-  template<class Scalar, class Ordinal, class Node>
-  class DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> > {
+  template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
+  class DefaultSparseMultiply {
   public:
     typedef Scalar  ScalarType;
     typedef Ordinal OrdinalType;
@@ -155,10 +83,18 @@ namespace Kokkos {
     //@{
 
     //! DefaultSparseMultiply constuctor with variable number of indices per row.
-    DefaultSparseMultiply(Node &node);
+    DefaultSparseMultiply(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
 
     //! DefaultSparseMultiply Destructor
     ~DefaultSparseMultiply();
+
+    //@}
+
+    //! @name Accessor routines.
+    //@{ 
+    
+    //! Node accessor.
+    Teuchos::RCP<Node> getNode() const;
 
     //@}
 
@@ -167,10 +103,12 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    int initializeStructure(const CrsMatrix<Scalar,Ordinal,Node> & A, bool view);
+    template <class GRAPH>
+    Teuchos::DataAccess initializeStructure(GRAPH &graph, Teuchos::DataAccess cv);
 
     //! Initialize values of matrix
-    int initializeValues(const CrsMatrix<Scalar,Ordinal,Node> & A, bool view);
+    template <class MATRIX>
+    Teuchos::DataAccess initializeValues(MATRIX &matrix, Teuchos::DataAccess cv);
 
     //@}
 
@@ -179,7 +117,7 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    inline int Apply(bool transpose, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const;
+    void apply(Teuchos::ETransp trans, Scalar alpha, const MultiVector<Scalar,Node> &X, Scalar beta, MultiVector<Scalar,Node> &Y) const;
 
     //@}
 
@@ -187,94 +125,42 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultSparseMultiply(const DefaultSparseMultiply& source);
 
-    Node &node_;
+    Teuchos::RCP<Node> node_;
     mutable DefaultSparseMultiplyOp<Scalar,Ordinal,Node> op_;
-
-    Ordinal numRows_;
-    size_type numEntries_;
-
-    bool storedStructure_, storedValues_;
   };
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::DefaultSparseMultiply(Node &node)
-  : node_(node), storedStructure_(false), storedValues_(false)
-  {
+  DefaultSparseMultiply<Scalar,Ordinal,Node>::DefaultSparseMultiply(const Teuchos::RCP<Node> &node)
+  : node_(node) {
     op_.alpha = Teuchos::ScalarTraits<Scalar>::one();
     op_.beta =  Teuchos::ScalarTraits<Scalar>::zero();
   }
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::~DefaultSparseMultiply() {
+  DefaultSparseMultiply<Scalar,Ordinal,Node>::~DefaultSparseMultiply() {
   }
 
   template<class Scalar, class Ordinal, class Node>
-  int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::initializeStructure(const CrsMatrix<Scalar,Ordinal,Node> &A, bool view)
-  {
-    node_ = A.getNode();
-    numRows_ = A.getNumRows();
-    numEntries_ = A.getNumEntries();
-    if (view) {
-      op_.offsets = A.const_offsets();
-      op_.inds = A.const_indices();
-    }
-    else {
-      Teuchos::ArrayRCP<const size_type> srcoffsets;
-      Teuchos::ArrayRCP<const Ordinal>   srcindices;
-      Teuchos::ArrayRCP<size_type>       nc_offsets;
-      Teuchos::ArrayRCP<Ordinal>         nc_indices;
-      srcoffsets = A.const_offsets();
-      srcindices = A.const_indices();
-      nc_offsets = node_.template allocBuffer<size_type>(numRows_+1);
-      nc_indices = node_.template allocBuffer<Ordinal>(numEntries_);
-      node_.template copyBuffers<size_type>(numRows_+1,srcoffsets,nc_offsets);
-      node_.template copyBuffers<Ordinal>(numEntries_,srcindices,nc_indices);
-      op_.inds = nc_indices;
-      op_.offsets = nc_offsets;
-      storedStructure_ = true;
-    }
-    return 0;
+  template <class GRAPH>
+  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
+    TEST_FOR_EXCEPT(true);
+  }
+
+  template<class Scalar, class Ordinal, class Node>
+  template <class MATRIX>
+  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
+    TEST_FOR_EXCEPT(true);
   }
 
   template <class Scalar, class Ordinal, class Node>
-  int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::initializeValues(const CrsMatrix<Scalar,Ordinal,Node> &A, bool view)
-  {
-#ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(A.numRows() != numRows_ || A.numEntries() != numEntries_, std::runtime_error,
-        Teuchos::typeName(*this) << "::initializevalues(A): structure of A does not match current structure.");
-#endif
-    if (view) {
-      op_.vals = A.const_values();
-    }
-    else {
-      Teuchos::ArrayRCP<const Scalar> srcvalues;
-      Teuchos::ArrayRCP<Scalar> nc_values;
-      srcvalues = A.const_values();
-      nc_values = node_.template allocBuffer<Scalar>(numEntries_);
-      node_.template copyBuffers<Scalar>(numEntries_,srcvalues,nc_values);
-      op_.vals = nc_values;
-      storedValues_ = true;
-    }
-    return 0;
+  Teuchos::RCP<Node> DefaultSparseMultiply<Scalar,Ordinal,Node>::getNode() const { 
+    return node_; 
   }
 
   template <class Scalar, class Ordinal, class Node>
-  inline int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::Apply(
-      bool transpose, 
-      Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, 
-      Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const 
-  {
-    TEST_FOR_EXCEPTION(transpose == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::Apply(): Operation does not currently support tranpose.");
-#ifdef HAVE_KOKKOS_DEBUG
-#endif
-    op_.alpha = alpha;
-    op_.beta  = beta;
-    op_.x = X.getValues(0);
-    op_.y = Y.getValues(0);
-    node_.template parallel_for<DefaultSparseMultiplyOp<Scalar,Ordinal,Node> >(0,numRows_,op_);
-    return 0;
+  void DefaultSparseMultiply<Scalar,Ordinal,Node>::apply(Teuchos::ETransp trans, Scalar alpha, const MultiVector<Scalar,Node> &X, Scalar beta, MultiVector<Scalar,Node> &Y) const {
   }
 
 } // namespace Kokkos
+
 #endif /* KOKKOS_DEFAULTSPARSEMULTIPLY_H */

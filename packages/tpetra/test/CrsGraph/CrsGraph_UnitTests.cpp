@@ -346,6 +346,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc0, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const size_t STINV = OrdinalTraits<size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
@@ -358,7 +359,7 @@ namespace {
     {
       // allocate with no space
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
-      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), 0 ); // zero, because none are allocated yet
+      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
       zero_crs->fillComplete(DoOptimizeStorage);
       zero = zero_crs;
     }
@@ -390,6 +391,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc1, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const size_t STINV = OrdinalTraits<size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
@@ -402,7 +404,7 @@ namespace {
     {
       // allocated with space for one entry per row
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,1));
-      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), 0 ); // zero, because none are allocated yet
+      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
       zero_crs->fillComplete(DoOptimizeStorage);
       zero = zero_crs;
     }

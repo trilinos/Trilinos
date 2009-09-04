@@ -181,6 +181,12 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
+    //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
+    const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const;
+
+    //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
+    Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst();
+
     //@}
 
     //! @name Mathematical methods

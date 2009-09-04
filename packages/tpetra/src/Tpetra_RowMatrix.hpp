@@ -38,8 +38,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Vector.hpp"
 
-namespace Tpetra 
-{
+namespace Tpetra {
 
   //! \brief A pure virtual interface for row-partitioned matrices.
   /*!
@@ -75,7 +74,7 @@ namespace Tpetra
       virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const = 0;
 
       //! Returns the RowGraph associated with this matrix. 
-      virtual Teuchos::RCP<RowGraph<LocalOrdinal,GlobalOrdinal> > getGraph() const = 0;
+      virtual Teuchos::RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const = 0;
 
       //! Returns the number of global rows in this matrix.
       virtual global_size_t getGlobalNumRows() const = 0;
@@ -211,7 +210,7 @@ namespace Tpetra
   }; // class RowMatrix
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::~CrsMatrix() {
+  RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~RowMatrix() {
   }
 
 } // namespace Tpetra

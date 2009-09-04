@@ -26,3 +26,5 @@ namespace Tpetra {
   };
 
 }
+
+#endif

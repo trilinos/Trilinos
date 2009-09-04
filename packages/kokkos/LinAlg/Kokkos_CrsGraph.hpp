@@ -26,12 +26,13 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_CRSMATRIX_H
-#define KOKKOS_CRSMATRIX_H
+#ifndef KOKKOS_CRSGRAPH_H
+#define KOKKOS_CRSGRAPH_H
+
+#include <Teuchos_RCP.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
-#include <Teuchos_RCP.hpp>
 
 namespace Kokkos {
 
@@ -55,6 +56,7 @@ namespace Kokkos {
     //@{
 
     //! @name Accessor routines.
+    //@{ 
     
     //! Node accessor.
     Teuchos::RCP<Node> getNode() const;
@@ -62,14 +64,7 @@ namespace Kokkos {
     //@}
 
     //! @name Harwell-Boeing Format Initialization Methods
-
     //@{
-
-    //! Initialize structure of matrix
-    void initializeProfile(size_t N, size_t nnzEachRow);
-
-    //! Initialize structure of matrix
-    void initializeProfile(size_t N, const size_t *nnzPerRow);
 
     //@}
 

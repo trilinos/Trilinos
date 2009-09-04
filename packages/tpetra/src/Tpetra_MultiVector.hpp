@@ -1546,6 +1546,18 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Kokkos::MultiVector<Scalar,Node> & 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMV() const {
+    return lclMV_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Kokkos::MultiVector<Scalar,Node> & 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMVNonConst() {
+    return lclMV_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::description() const
   {
     std::ostringstream oss;
