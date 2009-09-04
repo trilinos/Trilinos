@@ -27,6 +27,13 @@ USA
 */
 //@HEADER
 
+// We don't want warnings for using deprecated create_balanced_copy.
+// TODO: remove this line when removing support of create_balanced_copy.
+#ifdef __deprecated
+#undef __deprecated
+#endif
+#define __deprecated
+
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Utils.hpp>
 #include <Isorropia_Epetra.hpp>
