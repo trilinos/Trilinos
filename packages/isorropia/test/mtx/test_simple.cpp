@@ -476,12 +476,12 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       // Test the Epetra_CrsGraph interface of Isorropia
       Teuchos::RCP<const Epetra_CrsGraph> graph =
 	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
-      partitioner = Isorropia::Epetra::create_partitioner(graph, params);
+      partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph, params));
     }
     else{
       // Test the Epetra_CrsMatrix interface of Isorropia
       Teuchos::RCP<const Epetra_RowMatrix> rm = matrix;
-      partitioner = Isorropia::Epetra::create_partitioner(rm, params);
+      partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(rm, params));
     }
 
   }
@@ -491,12 +491,12 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       // Test the Epetra_CrsGraph interface of Isorropia
       Teuchos::RCP<const Epetra_CrsGraph> graph =
 	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
-      partitioner = Isorropia::Epetra::create_partitioner(graph, costs, params);
+      partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph, costs, params));
     }
     else{
       // Test the Epetra_CrsMatrix interface of Isorropia
       Teuchos::RCP<const Epetra_RowMatrix> rm = matrix;
-      partitioner = Isorropia::Epetra::create_partitioner(rm, costs, params);
+      partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(rm, costs, params));
     }
   }
   // Create a Redistributor based on the partitioning
