@@ -37,6 +37,7 @@ compilers should be tested for compatibility.
 looping for continuous integration testing.  Assist in getting 
 continuous integration testing set up on trilinos-test.sandia.gov.
 
+
 (*) [CDash] [P2] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
@@ -53,10 +54,10 @@ have to entry the query fields again on the non-collapsed page.
 (*) [CTest] [P3] Add general summary timing to the console summary
 outputting:
 
-- Print the CPU time for each test (not just the start and end times
-in the log file): The test run time helps to determine what tests are
-taking too long and need to be revised.  This feature should be very
-easy to add to the CTest C++ source code.
+- {Done} Print the CPU time for each test (not just the start and end times in
+the log file): The test run time helps to determine what tests are taking too
+long and need to be revised.  This feature should be very easy to add to the
+CTest C++ source code.
 
 - Print intermediate summary times for individual groups of tests (see
 example below): This will allow us to see how long individual Trilinos
@@ -64,8 +65,8 @@ packages are taking to complete their tests.  This could be
 facilitated with an option like --summary-testing-group=REGEX that
 causes test to be grouped together based on REGEX matching.
 
-- Print the overall testing time at the end of the summary and
-detailed log files (see below):
+- {Done} Print the overall testing time at the end of the summary and detailed
+log files (see below):
 
 Example output showing the above items:
 
@@ -333,20 +334,24 @@ Total CPU time = 1050 sec
 
 Summary of subproject tests:
 
-  Teuchos: #passed = 25, #failed = 1, CPU time = 26 sec
-  Epetra: #passed = 48, #failed=0, CPU time = 150 sec
+  Teuchos: passed = 25, failed = 1, CPU time = 26 sec
+  Epetra: passed = 48, failed=0, CPU time = 150 sec
   ...
 
 =========================================================
 
+Workaround: We could write our own post-processor to take the console output
+from ctest and then write the summary results like this.
+
 
 (*) [CTest] Echo the console output to a summary file
 Testing/Temporary/LastTestSummary.log: That way, we can get the same
-information later given what is printed to the console.  In C++, this
-can be implemented with a splitting stream.  We don't have one in
-Teuchos yet but we could create one and then copy it over to the CTest
-sources.  Actually, I think boost has one that could be extracted,
-renamed, simplified and then moved into the CTest sources.
+information later given what is printed to the console.  In C++, this can be
+implemented with a splitting stream.  We don't have one in Teuchos yet but we
+could create one and then copy it over to the CTest sources.  Actually, I
+think boost has one that could be extracted, renamed, simplified and then
+moved into the CTest sources.  Workaround: People can just run ctest with '
+2>&1 | tee ctest.out' at the end; no big deal.
 
 
 (*) [CTest] Support an EXEC_DEPENDENCIES property for tests to deal
