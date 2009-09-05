@@ -182,7 +182,7 @@ namespace Tpetra {
     }
     else {  // lOrG == LocallyReplicated
       // compute the min/max global IDs
-      indexBase_ = indexBase_;
+      indexBase_ = indexBase_in;
       numGlobalElements_ = numGlobalElements_in;
       numLocalElements_  = as<size_t>(numGlobalElements_in);
       minAllGID_ = indexBase_;

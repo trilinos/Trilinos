@@ -157,12 +157,12 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
     MV mv1(map,1), mv2(map,2), mv3(map,3);
     // create the zero matrix
     RCP<RowMatrix<Scalar,LO,GO> > zero;
@@ -173,10 +173,8 @@ namespace {
       // throw exception because we required increased allocation
       TEST_THROW(zero_crs->insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
 #   endif
-      TEST_EQUALITY_CONST( zero_crs->getProfileType(), DynamicProfile );
+      TEST_EQUALITY_CONST( zero_crs->getProfileType() == DynamicProfile, true );
       zero_crs->fillComplete();
-      // global submit after transform to local
-      TEST_THROW(zero_crs->insertGlobalValues(0,tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error); 
       zero = zero_crs;
     }
     STD_TESTS((*zero));
@@ -194,7 +192,7 @@ namespace {
     typedef Vector<Scalar,LO,GO,Node> V;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = size(*comm);
@@ -216,7 +214,7 @@ namespace {
     graph.fillComplete(DoOptimizeStorage);
     // create a matrix using the graph
     MAT matrix(rcpFromRef(graph));
-    TEST_EQUALITY_CONST( matrix.getProfileType(), StaticProfile );
+    TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
     // insert throws exception: not allowed with static graph
     TEST_THROW( matrix.insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(map->getMinGlobalIndex()),tuple(ST::one())), std::runtime_error );
     // suminto and replace are allowed
@@ -256,7 +254,7 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = size(*comm);
@@ -304,7 +302,7 @@ namespace {
     typedef ScalarTraits<Scalar> ST;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = size(*comm);
@@ -364,7 +362,7 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = size(*comm);
@@ -455,13 +453,13 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
-    const LO numLocal = 10;
+    const size_t numLocal = 10;
     const size_t numVecs  = 5;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
@@ -474,7 +472,7 @@ namespace {
       for (int i=0; i<numLocal; ++i) {
         eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
       }
-      TEST_EQUALITY_CONST( eye_crs->getProfileType(), DynamicProfile );
+      TEST_EQUALITY_CONST( eye_crs->getProfileType() == DynamicProfile, true );
       eye_crs->fillComplete();
       eye = eye_crs;
     }
@@ -510,11 +508,11 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const GO M = 3;
-    const GO P = 5;
+    const size_t M = 3;
+    const size_t P = 5;
     const int N = comm->getSize();
     const int myImageID = comm->getRank();
     // create Maps
@@ -549,17 +547,21 @@ namespace {
     // 
     // 
     const size_t numVecs  = 3;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm) );
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,0,comm,LocallyReplicated) );
+    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,static_cast<GO>(0),comm) );
+    rowmap->setObjectLabel("Row Map");
+    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(static_cast<global_size_t>(P),static_cast<GO>(0),comm,LocallyReplicated) );
+    lclmap->setObjectLabel("Local Map");
+    rowmap->describe(out,VERB_EXTREME);
+    lclmap->describe(out,VERB_EXTREME);
     // create the matrix
-    MAT A(rowmap,P);
+    MAT A(rowmap,P,DynamicProfile);
     for (GO i=0; i<M; ++i) {
       for (GO j=0; j<P; ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
-    TEST_EQUALITY_CONST( A.getProfileType(), DynamicProfile );
+    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
     MV X(lclmap,numVecs);
@@ -594,11 +596,11 @@ namespace {
     typedef typename ST::magnitudeType Mag;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const GO M = 3;
-    const GO P = 5;
+    const size_t M = 3;
+    const size_t P = 5;
     const int N = comm->getSize();
     const int myImageID = comm->getRank();
     // create Maps
@@ -652,7 +654,7 @@ namespace {
       }
     }
     // call fillComplete()
-    TEST_EQUALITY_CONST( A.getProfileType(), DynamicProfile );
+    TEST_EQUALITY_CONST( A.getProfileType() == DynamicProfile, true );
     A.fillComplete(lclmap,rowmap);
     out << "A: " << endl << A << endl;
     // build the input multivector X
@@ -688,7 +690,7 @@ namespace {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -806,13 +808,13 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
-    const LO numLocal = 10;
+    const size_t numLocal = 10;
     const size_t numVecs  = 5;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
@@ -861,8 +863,8 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const LO ONE = OrdinalTraits<LO>::one();
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const size_t ONE = OrdinalTraits<size_t>::one();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -940,8 +942,8 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const LO ONE = OrdinalTraits<LO>::one();
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const size_t ONE = OrdinalTraits<size_t>::one();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -1318,13 +1320,13 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
-    const LO numLocal = 10;
+    const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
     {
       // create the matrix
@@ -1355,14 +1357,16 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const GO INVALID = OrdinalTraits<GO>::invalid();
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const LO numLocal = 10;
+    const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
+    mvrand.describe(out,VERB_EXTREME);
+    mvres.describe(out,VERB_EXTREME);
     mvrand.randomize();
     // create the zero matrix
     MAT zero(map,0);

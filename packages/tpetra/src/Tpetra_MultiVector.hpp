@@ -61,6 +61,9 @@ namespace Tpetra {
         MVT::Init(lclMV_,0.0);
       }
     }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -84,6 +87,9 @@ namespace Tpetra {
           dstdata += myLen;
         }
       }
+    }
+    else {
+      MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
     }
   }
 
@@ -117,6 +123,9 @@ namespace Tpetra {
       mydata = Teuchos::null;
       myview = Teuchos::null;
     }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -145,6 +154,9 @@ namespace Tpetra {
       myview = Teuchos::null;
       mydata = Teuchos::null;
     }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
 
@@ -169,6 +181,9 @@ namespace Tpetra {
     }
     if (myLen > 0) {
       MVT::initializeValues(lclMV_,myLen,maxVector+1,data,LDA);
+    }
+    else {
+      MVT::initializeValues(lclMV_,0,WhichVectors.size(),Teuchos::null,0);
     }
   }
 
@@ -226,7 +241,8 @@ namespace Tpetra {
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(sourceObj);
     // objects maps have already been checked. simply check the number of vectors.
     packetSize = this->getNumVectors();
-    return (A.getNumVectors() == packetSize);
+    bool compat = (A.getNumVectors() == this->getNumVectors());
+    return compat;
   }
 
 
@@ -386,12 +402,14 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   inline size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumVectors() const {
+    size_t ret;
     if (isConstantStride()) {
-      return MVT::getNumCols(lclMV_);
+      ret = MVT::getNumCols(lclMV_);
     }
     else {
-      return whichVectors_.size();
+      ret = whichVectors_.size();
     }
+    return ret;
   }
 
 

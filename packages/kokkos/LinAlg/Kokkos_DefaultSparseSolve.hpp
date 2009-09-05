@@ -97,6 +97,12 @@ namespace Kokkos {
     template <class MATRIX>
     Teuchos::DataAccess initializeValues(MATRIX &matrix, Teuchos::DataAccess cv);
 
+    //! Initialize structure of matrix, using Kokkos::CrsGraph
+    Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv);
+
+    //! Initialize values of matrix, using Kokkos::CrsMatrix
+    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Ordinal,Node> &matrix, Teuchos::DataAccess cv);
+
     //@}
 
     //! @name Computational methods
@@ -130,13 +136,25 @@ namespace Kokkos {
   template<class Scalar, class Ordinal, class Node>
   template <class GRAPH>
   Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
+    // not implemented for general sparse graphs
     TEST_FOR_EXCEPT(true);
   }
 
   template<class Scalar, class Ordinal, class Node>
   template <class MATRIX>
   Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
+    // not implemented for general sparse matrices
     TEST_FOR_EXCEPT(true);
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv) {
+    // FINISH
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node> &graph, Teuchos::DataAccess cv) {
+    // FINISH
   }
 
   template <class Scalar, class Ordinal, class Node>
