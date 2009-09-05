@@ -73,6 +73,14 @@ PACKAGE_NAME=Belos
 }
 
 (FRAMEWORK,INSTALL,BelosEpetraTests) {
+    TESTS = ../epetra/test/RCG/rcg_hb.exe,
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --tol=1e-6 --filename="../epetra/test/RCG/bcsstk14.hb" --num-rhs=2 --max-subspace=100 --recycle=10 --max-iters=4000;
+    COMM = SERIAL, MPI;
+    X-HOST = gabriel.sandia.gov;
+}
+
+(FRAMEWORK,INSTALL,BelosEpetraTests) {
     TESTS = ../epetra/test/GCRODR/gcrodr_hb.exe,
             ../epetra/test/GCRODR/prec_gcrodr_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;

@@ -8536,7 +8536,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile test/Makefile test/MVOPTester/Makefile epetra/Makefile epetra/src/Makefile epetra/example/Makefile epetra/example/BlockGmres/Makefile epetra/example/BlockCG/Makefile epetra/example/GCRODR/Makefile epetra/example/PCPG/Makefile epetra/test/Makefile epetra/test/MVOPTester/Makefile epetra/test/BlockCG/Makefile epetra/test/BlockGmres/Makefile epetra/test/GCRODR/Makefile epetra/test/PCPG/Makefile epetra/test/TFQMR/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile tpetra/test/BlockGmres/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile test/Makefile test/MVOPTester/Makefile epetra/Makefile epetra/src/Makefile epetra/example/Makefile epetra/example/BlockGmres/Makefile epetra/example/BlockCG/Makefile epetra/example/GCRODR/Makefile epetra/example/RCG/Makefile epetra/example/PCPG/Makefile epetra/test/Makefile epetra/test/MVOPTester/Makefile epetra/test/BlockCG/Makefile epetra/test/BlockGmres/Makefile epetra/test/RCG/Makefile epetra/test/GCRODR/Makefile epetra/test/PCPG/Makefile epetra/test/TFQMR/Makefile tpetra/Makefile tpetra/src/Makefile tpetra/test/Makefile tpetra/test/MVOPTester/Makefile tpetra/test/BlockCG/Makefile tpetra/test/BlockGmres/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9263,11 +9263,13 @@ do
     "epetra/example/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/BlockGmres/Makefile" ;;
     "epetra/example/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/BlockCG/Makefile" ;;
     "epetra/example/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/GCRODR/Makefile" ;;
+    "epetra/example/RCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/RCG/Makefile" ;;
     "epetra/example/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/example/PCPG/Makefile" ;;
     "epetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/Makefile" ;;
     "epetra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/MVOPTester/Makefile" ;;
     "epetra/test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockCG/Makefile" ;;
     "epetra/test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/BlockGmres/Makefile" ;;
+    "epetra/test/RCG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/RCG/Makefile" ;;
     "epetra/test/GCRODR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/GCRODR/Makefile" ;;
     "epetra/test/PCPG/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/PCPG/Makefile" ;;
     "epetra/test/TFQMR/Makefile") CONFIG_FILES="$CONFIG_FILES epetra/test/TFQMR/Makefile" ;;
