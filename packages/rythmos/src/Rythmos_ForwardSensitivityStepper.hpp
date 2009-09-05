@@ -44,6 +44,7 @@
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
@@ -363,26 +364,29 @@ public:
     const RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
     );
 
-  /** \brief Return the state model that was passed into
-   * <tt>initialize()</tt>.
+  /** \brief Return if the state model is const-only or not. */
+  bool stateModelIsConst() const;
+
+  /** \brief Return the state model that was passed into an initialize
+   * function.
    */
   RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
 
-  /** \brief Return the state stepper that was passed into
-   * <tt>initialize()</tt>.
+  /** \brief Return the state stepper that was passed into an initialize
+   * function.
    */
   RCP<StepperBase<Scalar> >
   getNonconstStateStepper();
 
   /** \brief Return the forward sensitivity model evaluator object that got
-   * created internally when <tt>initialize()</tt> was called.
+   * created internally when the initialize function was called.
    */
   RCP<const ForwardSensitivityModelEvaluatorBase<Scalar> >
   getFwdSensModel() const;
 
   /** \brief Return the state and forward sensitivity model evaluator object
-   * that got created internally when <tt>initialize()</tt> was called.
+   * that got created internally when the nitialize function was called.
    *
    * This is also the same model returned by the function <tt>getModel()</tt>,
    * except through it's concrete subclass type.
@@ -524,12 +528,16 @@ public:
   //@}
 
 private:
+  // ///////////////////
+  // Private types
+
+  typedef Teuchos::ConstNonconstObjectContainer<Thyra::ModelEvaluator<Scalar> > CNCME;
 
   // /////////////////////////
   // Private data members
 
   bool forceUpToDateW_;
-  RCP<Thyra::ModelEvaluator<Scalar> > stateModel_;
+  CNCME stateModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
   RCP<StepperBase<Scalar> > stateStepper_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
@@ -574,6 +582,25 @@ private:
 };
 
 
+// 2009/09/05: rabartl: ToDo: To fix the const and non-const handling of the
+// stateModel in this class is going to be a lot of work but here is what
+// needs to be done:
+//
+// (*) Duplicate each function that sets the stateModel, one for const and one
+// for non-const.
+//
+// (*) Create a single a private version for each of these functions that
+// accepts a Teuchos::ConstNonconstObjectContainer<> object and will implement
+// the guts of the set up same as the existing functions.
+//
+// (*) Get all of the concrete StepperBase subclasses to implement the
+// setModel(const RCP<const ME>&) and modelIsConst() functions and get them to
+// use the Teuchos::ConstNonconstObjectContainer<> class as described above.
+// This should be pretty easy as the only function that needs to be addressed
+// in most cases is just the setModel(...) function.
+//
+
+
 /** \brief Nonmember constructor.
  *
  * \relates ForwardSensitivityStepper
@@ -595,7 +622,7 @@ template<class Scalar>
 inline
 RCP<ForwardSensitivityStepper<Scalar> >
 forwardSensitivityStepper(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
   const RCP<StepperBase<Scalar> > &stateStepper,
@@ -606,7 +633,7 @@ forwardSensitivityStepper(
 {
   RCP<ForwardSensitivityStepper<Scalar> >
     fwdSensStepper = Teuchos::rcp(new ForwardSensitivityStepper<Scalar>());
-  fwdSensStepper->initialize(
+  fwdSensStepper->initializeSyncedSteppers(
     stateModel, p_index, stateBasePoint, stateStepper, stateTimeStepSolver );
   return fwdSensStepper;
 }
@@ -786,12 +813,19 @@ void ForwardSensitivityStepper<Scalar>::initializeDecoupledSteppers(
   finalTime_ = finalTime;
 }
 
-  
+
+template<class Scalar> 
+bool ForwardSensitivityStepper<Scalar>::stateModelIsConst() const
+{
+  return stateModel_.isConst();
+}
+
+
 template<class Scalar> 
 RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getStateModel() const
 {
-  return stateModel_;
+  return stateModel_.getConstObj();
 }
 
   
@@ -930,7 +964,7 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
 
   // Set initial condition for the state
 
-  MEB::InArgs<Scalar> state_ic = stateModel_->createInArgs();
+  MEB::InArgs<Scalar> state_ic = stateModel_.getConstObj()->createInArgs();
   state_ic.setArgs(state_and_sens_ic_no_x,true,true); // Set time, parameters etc.
   state_ic.set_x(x_bar_init->getVectorBlock(0)->clone_v());
   if (state_ic.supports(MEB::IN_ARG_x_dot)) {
@@ -1182,6 +1216,7 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
   )
 {
 
+  using Teuchos::rcp_implicit_cast;
   using Teuchos::rcp_dynamic_cast;
 
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -1229,7 +1264,7 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
   // Get the input objects
   //
 
-  stateModel_ = stateModel;
+  stateModel_.initialize(stateModel);
 
   stateBasePoint_ = stateBasePoint;
 
@@ -1272,18 +1307,18 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
   isSingleResidualStepper_ = true; // ToDo: Add dynamic cast on
                                    // stateTimeStepSolver to check this!
 
-  stateStepper_->setModel(stateModel_);
+  stateStepper_->setModel(stateModel_.getNonconstObj()); // ToDo: use getConstObj()!
   if (stateStepper_->isImplicit()) {
     rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
         stateStepper_,true)->setSolver(stateTimeStepSolver_);
   }
-  sensStepper_->setModel(sensModel_);
+  sensStepper_->setModel(sensModel_); // ToDo: Pass in the const object!
   if (sensStepper_->isImplicit()) {
     rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
         sensStepper_,true)->setSolver(sensTimeStepSolver_);
   }
 
-  stateBasePoint_t_ = stateModel_->createInArgs();
+  stateBasePoint_t_ = stateModel_.getConstObj()->createInArgs();
 
   // 2007/05/18: rabartl: ToDo: Move the above initialization code to give
   // setInitializeCondition(...) a chance to set the initial condition.

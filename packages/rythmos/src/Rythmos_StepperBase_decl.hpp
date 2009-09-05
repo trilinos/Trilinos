@@ -165,12 +165,48 @@ public:
    *
    * <b>Postconditions:</b><ul>
    * <li><tt>this->getModel() == model</tt>
+   * <li><tt>this->modelIsConst() == false</tt>
    * </ul>
    */
   virtual void setModel(
     const RCP<Thyra::ModelEvaluator<Scalar> >& model
     ) = 0;
-    
+
+
+  /** \brief Accept a const-only model.
+   *
+   * See the full details on non-const version of this function above.
+   *
+   * <b>Postconditions:</b>
+   * <ul>
+   * <li><tt>this->getModel() == model</tt>
+   * <li><tt>this->modelIsConst() == true</tt>
+   * </ul>
+   */
+//  virtual void setModel(
+//    const RCP<const Thyra::ModelEvaluator<Scalar> >& model
+//    )
+//    {
+//      TEST_FOR_EXCEPT_MSG(true,
+//        this->description()
+//        +"::setModel(const RCP<const ME>&) not implemented yet!");
+//    }
+
+  // 2009/09/05: rabart: ToDo: Uncomment the above const version of
+  // setModel(...) and then change the name of the non-const version
+  // setModel(...) to setNonconstModel(...) to avoid ambiguity problems.
+
+  /** \brief Return of the model is only const or can be returned as a
+   * non-const object.
+   */
+  virtual bool modelIsConst() const  { return false; }
+   
+  // 2009/09/05: rabartl: ToDo: Make setModel(const model) and modelIsConst()
+  // pure virtual and make all subclasses implement them.  All subclasses will
+  // need to use the Teuchos::ConstNonconstObjectContainer class to make this
+  // work.  See Rythmos::ForwardSensitivityStepper and Rythmos::BackwardEuler
+  // to see how this works.
+ 
   /** \brief Get the model.
    *
    * Every stepper is expected to return the model that represents problem
