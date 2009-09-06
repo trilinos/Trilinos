@@ -92,8 +92,7 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_hiernumlevels.if		set_hiernumlevels.fn \
 		set_hierpartition.if		set_hierpartition.fn \
 		set_hiermethod.if		set_hiermethod.fn \
-		$(ZOD)/sppr $(ZOD)/sppr_header
-	/bin/cp $(ZOD)/sppr_header sppr_header
+		$(ZOD)/sppr 
 	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
 
 $(ZOD)/zoltan_user_data.o:	zoltan_user_data.f90 \
@@ -110,15 +109,11 @@ $(ZOD)/ztypes.o: 	$(ZOD)/ztypes.f90
 	$(F90) -c  $(ZOM) $(ZOD)/ztypes.f90
 	/bin/mv *.o *.mod $(ZOD)
 
-$(ZOD)/ztypes.f90:	ztypes.fpp $(ZOD)/sppr $(ZOD)/sppr_header
-	/bin/cp $(ZOD)/sppr_header sppr_header
+$(ZOD)/ztypes.f90:	ztypes.fpp $(ZOD)/sppr
 	$(ZOD)/sppr < ztypes.fpp > $(ZOD)/ztypes.f90
 
-$(ZOD)/sppr_header: $(SPPR_HEAD)
-	cp $(SPPR_HEAD) $(ZOD)/sppr_header
 
-$(ZOD)/cwrap.o: cwrap.c $(ZOD)/sppr_header
-	/bin/cp $(ZOD)/sppr_header sppr_header
+$(ZOD)/cwrap.o: cwrap.c
 	$(CC) -c cwrap.c
 	/bin/mv *.o $(ZOD)
 

@@ -19,20 +19,16 @@ module zoltan_types
 
 integer, parameter :: &
    Zoltan_INT = selected_int_kind(9), &
-#ifdef PTR_64BIT
+!  Always assume 64-bit pointers.  If sizeof(void*) < 8, extra bytes are
+!  padded to zero in Zfw_Create.
    Zoltan_INT_PTR = selected_int_kind(17), &
-#else
-   Zoltan_INT_PTR = selected_int_kind(9), &
-#endif
    Zoltan_FLOAT = selected_real_kind(6), &
    Zoltan_DOUBLE = selected_real_kind(15)
 
 
-#ifdef PTR_64BIT
+! Always assume 64-bit pointers.  If sizeof(void*) < 8, extra bytes are
+! padded to zero in Zfw_Create.
 integer, parameter :: Zoltan_PTR_LENGTH = 8
-#else
-integer, parameter :: Zoltan_PTR_LENGTH = 4
-#endif
 
 type Zoltan_PTR
    sequence
@@ -41,9 +37,7 @@ end type Zoltan_PTR
 
 type(Zoltan_PTR), parameter :: &
    Zoltan_NULL_PTR = Zoltan_PTR( &
-#ifdef PTR_64BIT
                  char(0)//char(0)//char(0)//char(0)// &
-#endif
                  char(0)//char(0)//char(0)//char(0))
 
 !--------------------------------------------------------------------------

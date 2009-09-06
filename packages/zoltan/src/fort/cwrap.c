@@ -19,7 +19,6 @@ extern "C" {
 
 #include "zz_const.h"
 #include "all_allo_const.h"
-#include "sppr_header"
 
 /*--------------------------------------------------------------------*/
 /* procedure name mangling                                            */
@@ -294,49 +293,29 @@ MPI_Comm Zoltan_comm_f2c(int *f_comm)
 /*****************************************************************************/
 /* These routines get the address of an array allocated by fortran and
    return it */
-#ifdef PTR_64BIT
 void Zfw_Get_Address_int(int *addr,
                          long *ret_addr)
 {
+   /* Assuming sizeof(long) == pointer size.  True on most linux systems. */
+   /* May not be true in 64-bit Windows, but does anyone use F90 on Windoze? */
    if (sizeof(long) != sizeof(int *)) {
      ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
-       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
+       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.\n Contact Zoltan developers for help.");
    }
    *ret_addr = (long)addr;
 }
-#else
-void Zfw_Get_Address_int(int *addr,
-                         int *ret_addr)
-{
-   if (sizeof(int) != sizeof(int *)) {
-     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
-       "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
-   }
-   *ret_addr = (int)addr;
-}
-#endif  /* PTR_64BIT */
 
-#ifdef PTR_64BIT
 void Zfw_Get_Address_struct(int *addr,
 			    long *ret_addr)
 {
+   /* Assuming sizeof(long) == pointer size.  True on most linux systems. */
+   /* May not be true in 64-bit Windows, but does anyone use F90 on Windoze? */
    if (sizeof(long) != sizeof(int *)) {
      ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_struct", 
-       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
+       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.\n Contact Zoltan developers for help.");
    }
    *ret_addr = (long)addr;
 }
-#else
-void Zfw_Get_Address_struct(int *addr,
-			    int *ret_addr)
-{
-   if (sizeof(int) != sizeof(int *)) {
-     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_struct", 
-       "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
-   }
-   *ret_addr = (int)addr;
-}
-#endif  /* PTR_64BIT */
 
 /*****************************************************************************/
 int Zfw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
@@ -970,13 +949,8 @@ void Zoltan_Hier_Method_Fort_Wrapper(void *data, int level,
   unsigned char *p;
   int i, nbytes;
   extern ZOLTAN_FORT_MALLOC_SET_STRUCT_FN fort_malloc_set_struct;
-#ifdef PTR_64BIT
   int zz_addr_bytes[8];
   nbytes = 8;
-#else
-  int zz_addr_bytes[4];
-  nbytes = 4;
-#endif
   /* create an integer array containing the address of zz one byte at
      a time */
   p = (unsigned char *) &zz;
@@ -1042,7 +1016,17 @@ void Zfw_Create(int *f_communicator, int *addr_lb, int *nbytes)
    lb = Zoltan_Create(c_communicator);
    lb->Fortran = 1;
    p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;}
+   /* Always assuming 64-bit pointers in F90 interface.
+    * If 32-bit pointers, pad remaining fields with 0.
+    */
+   for (i = 0; i < sizeof(struct Zoltan_Struct *); i++) {
+     addr_lb[i] = (int) *p; 
+     p++;
+   }
+   for (i = sizeof(struct Zoltan_Struct *); i < (*nbytes); i++)
+     addr_lb[i] = 0;
+
+/*   for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;} */
 }
 
 /*****************************************************************************/
