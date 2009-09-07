@@ -332,6 +332,7 @@ namespace Tpetra
       void clearGlobalConstants();
       void updateLocalAllocation(size_t lrow, size_t allocSize);
       void updateGlobalAllocation(size_t lrow, size_t allocSize);
+      void fillLocalGraph();
 
       //! \brief Get the sizes associated with the allocated rows.
       /*! This is used by the row view routines and others. It computes the size and offset information
@@ -455,7 +456,7 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype)
   : rowMap_(rowMap)
-  , lclGraph_(rowMap->getNode())
+  , lclGraph_(rowMap->getNodeNumElements(), rowMap->getNode())
   , nodeNumEntries_(0)
   , nodeNumDiags_(0)
   , nodeMaxNumRowEntries_(0)
@@ -485,7 +486,7 @@ namespace Tpetra
                                                       size_t maxNumEntriesPerRow, ProfileType pftype)
   : rowMap_(rowMap)
   , colMap_(colMap)
-  , lclGraph_(rowMap->getNode())
+  , lclGraph_(rowMap->getNodeNumElements(), rowMap->getNode())
   , nodeNumEntries_(0)
   , nodeNumDiags_(0)
   , nodeMaxNumRowEntries_(0)
@@ -513,7 +514,7 @@ namespace Tpetra
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
                                                       const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype)
   : rowMap_(rowMap)
-  , lclGraph_(rowMap->getNode())
+  , lclGraph_(rowMap->getNodeNumElements(), rowMap->getNode())
   , nodeNumEntries_(0)
   , nodeNumDiags_(0)
   , nodeMaxNumRowEntries_(0)
@@ -550,7 +551,7 @@ namespace Tpetra
   CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::CrsGraph(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype)
   : rowMap_(rowMap)
   , colMap_(colMap)
-  , lclGraph_(rowMap->getNode())
+  , lclGraph_(rowMap->getNodeNumElements(), rowMap->getNode())
   , nodeNumEntries_(0)
   , nodeNumDiags_(0)
   , nodeMaxNumRowEntries_(0)
@@ -1405,6 +1406,14 @@ namespace Tpetra
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillLocalGraph() {
+    // FINISH
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   //                                                                         //
   //                  User-visible class methods                             //
   //                                                                         //
@@ -1986,9 +1995,13 @@ namespace Tpetra
     fillComplete_ = true;
     checkInternalState();
 
-    if (os == DoOptimizeStorage) optimizeStorage();
-
-    // TEST_FOR_EXCEPT(true); // FINISH fill localGraph_
+    if (os == DoOptimizeStorage) {
+      // optimizeStorage will call fillLocalGraph()
+      optimizeStorage();
+    }
+    else {
+      fillLocalGraph();
+    }
   }
 
 
@@ -2435,7 +2448,7 @@ namespace Tpetra
 
     checkInternalState();
 
-    // TEST_FOR_EXCEPT(true); // FINISH fill localGraph_
+    fillLocalGraph();
   }
 
 

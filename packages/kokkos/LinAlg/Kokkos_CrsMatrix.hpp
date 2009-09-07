@@ -33,67 +33,101 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
+#include "Kokkos_CrsGraph.hpp"
 
 namespace Kokkos {
 
 //! Kokkos::CrsMatrix: Kokkos compressed index sparse matrix class.
 
-  template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
-  class CrsMatrix {
-  public:
-    typedef Scalar  ScalarType;
-    typedef Ordinal OrdinalType;
-    typedef Node    NodeType;
+template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
+class CrsMatrix {
+public:
+  typedef Scalar  ScalarType;
+  typedef Ordinal OrdinalType;
+  typedef Node    NodeType;
 
-    //! @name Constructors/Destructor
-    //@{
+  //! @name Constructors/Destructor
+  //@{
 
-    //! Default CrsMatrix constuctor.
-    CrsMatrix(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
+  //! Default CrsMatrix constuctor.
+  CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
 
-    //! CrsMatrix Destructor
-    ~CrsMatrix();
+  //! CrsMatrix Destructor
+  ~CrsMatrix();
 
-    //@}
+  //@}
 
-    //! @name Accessor routines.
-    //@{ 
-    
-    //! Node accessor.
-    Teuchos::RCP<Node> getNode() const;
+  //! @name Accessor routines.
+  //@{ 
+  
+  //! Node accessor.
+  Teuchos::RCP<Node> getNode() const;
 
-    //@}
+  //! Graph accessor.
+  const CrsGraph<Ordinal,Node> & getGraph() const;
 
-    //! @name Matrix entry methods
-    //@{
+  //@}
 
-    //@}
+  //! @name Data entry and accessor methods.
+  //@{
 
-  protected:
+  //! Submit the values for a 1D storage.
+  void set1DValues(const Teuchos::ArrayRCP<const Scalar> &allvals);
 
-    //! Copy constructor (protected and not implemented)
-    CrsMatrix(const CrsMatrix& source);
+  //! Submit the values for one row of 2D storage.
+  void set2DValues(size_t row, const Teuchos::ArrayRCP<const Scalar> &rowvals);
 
-    Teuchos::RCP<Node> node_;
-  };
+  //! Retrieve the values for a 1D storage.
+  Teuchos::ArrayRCP<const Scalar> get1DValues() const;
+
+  //! Retrieve the values for one row of 2D storage.
+  Teuchos::ArrayRCP<const Scalar> get2DValues(size_t row) const;
+
+  //! Release data associated with this matrix.
+  void clear();
+
+  //@}
+
+protected:
+
+  //! Copy constructor (protected and not implemented)
+  CrsMatrix(const CrsMatrix& source);
+
+  Teuchos::RCP<Node> node_;
+  size_t numRows_;
+  bool isInitialized_;
+
+  Teuchos::ArrayRCP<Scalar>                      pbuf_values1D_;
+  Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > pbuf_values2D_;
+};
 
 
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  CrsMatrix<Scalar,Ordinal,Node>::CrsMatrix(const Teuchos::RCP<Node> &node)
-  : node_(node) {
-  }
+//==============================================================================
+template <class Scalar, class Ordinal, class Node>
+CrsMatrix<Scalar,Ordinal,Node>::CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node)
+: node_(node)
+, numRows_(numRows)
+, isInitialized_(false) {
+}
 
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  CrsMatrix<Scalar,Ordinal,Node>::~CrsMatrix() {
-  }
+//==============================================================================
+template <class Scalar, class Ordinal, class Node>
+CrsMatrix<Scalar,Ordinal,Node>::~CrsMatrix() {
+}
 
-  //==============================================================================
-  template <class Scalar, class Ordinal, class Node>
-  Teuchos::RCP<Node> CrsMatrix<Scalar,Ordinal,Node>::getNode() const { 
-    return node_; 
-  }
+//==============================================================================
+template <class Scalar, class Ordinal, class Node>
+Teuchos::RCP<Node> CrsMatrix<Scalar,Ordinal,Node>::getNode() const { 
+  return node_; 
+}
+
+//==============================================================================
+template <class Scalar, class Ordinal, class Node>
+void CrsMatrix<Scalar,Ordinal,Node>::clear() { 
+  pbuf_values1D_ = Teuchos::null;
+  pbuf_values2D_ = Teuchos::null;
+  isInitialized_ = false;
+}
 
 } // namespace Kokkos
 

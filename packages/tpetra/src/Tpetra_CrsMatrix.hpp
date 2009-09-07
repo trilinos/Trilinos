@@ -408,6 +408,7 @@ namespace Tpetra
       void mergeRedundantEntries();
       void checkInternalState() const;
       void updateAllocation(size_t lrow, size_t allocSize);
+      void fillLocalMatrix();
 
       //! \brief Get a persisting const view of the elements in a specified local row of the matrix.
       /*! This protected method is used internally for almost all access to the matrix elements.
@@ -469,7 +470,7 @@ namespace Tpetra
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
                                           size_t maxNumEntriesPerRow, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNode())
+  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , valuesAreAllocated_(false)
@@ -493,7 +494,7 @@ namespace Tpetra
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
                                           const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNode())
+  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , valuesAreAllocated_(false)
@@ -518,7 +519,7 @@ namespace Tpetra
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
                                           size_t maxNumEntriesPerRow, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNode())
+  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , valuesAreAllocated_(false)
@@ -543,7 +544,7 @@ namespace Tpetra
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
                                           const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNode())
+  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , valuesAreAllocated_(false)
@@ -565,7 +566,7 @@ namespace Tpetra
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::CrsMatrix(const Teuchos::RCP< CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &graph)
   : graph_(graph)
-  , lclMatrix_(graph->getNode())
+  , lclMatrix_(graph->getRowMap()->getNodeNumElements(), graph->getRowMap()->getNode())
   , lclMatVec_(graph->getNode())
   , lclMatSolve_(graph->getNode())
   , valuesAreAllocated_(false)
@@ -959,6 +960,14 @@ namespace Tpetra
     }
     old_row = Teuchos::null;
     pbuf_values2D_[lrow] = new_row;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillLocalMatrix() {
+    // FINISH
   }
 
 
@@ -1870,15 +1879,18 @@ namespace Tpetra
     fillComplete_ = true;
 
     if (os == DoOptimizeStorage) {
+      // this will call optimizeStorage() on the graph as well, if isStaticGraph() == false
+      // these routines will fill the local graph and local matrix
       optimizeStorage();
-      if (isStaticGraph() == false) {
-        graph_->optimizeStorage();
-      }
+    }
+    else { 
+      // local graph already filled.
+      // fill the local matrix.
+      fillLocalMatrix();
     }
 
-    // 
-    // fill lclMatrix_, submit to lclMatVec_ and lclMatSolve_
-    // lclMatVec_ and lclMatSolve_ are allowed to view, but we don't care whether they do or not
+    // submit local matrix and local graph to lclMatVec_ and lclMatSolve_
+    // lclMatVec_ and lclMatSolve_ are permitted to view, but we don't care whether they do or not
     Teuchos::DataAccess ret;
     ret = lclMatVec_.initializeStructure( graph_->lclGraph_, Teuchos::View );
     ret = lclMatVec_.initializeValues( lclMatrix_, Teuchos::View );
@@ -1886,6 +1898,10 @@ namespace Tpetra
       ret = lclMatSolve_.initializeStructure( graph_->lclGraph_, Teuchos::View );
       ret = lclMatSolve_.initializeValues( lclMatrix_, Teuchos::View );
     }
+    else {
+      // lclMatSolve_.clear();
+    }
+
     checkInternalState();
   }
 
@@ -2038,6 +2054,13 @@ namespace Tpetra
       }
     }
     storageOptimized_ = true;
+
+    if (isStaticGraph() == false) {
+      graph_->optimizeStorage();
+    }
+
+    // local graph was filled during graph_->optimizeStorage()
+    fillLocalMatrix(); 
   }
 
 
