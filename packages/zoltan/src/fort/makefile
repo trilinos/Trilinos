@@ -17,14 +17,10 @@ all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
 			$(ZOD)/zoltan_user_data.o  $(ZOD)/lb_user_const.o \
 			$(ZOD)/fwrap.o 
 
-$(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
-			$(ZOD)/ztypes.o  \
+$(ZOD)/fwrap.o: 	$(ZOD)/ztypes.o  \
 			$(ZOD)/zoltan_user_data.o \
-			$(ZOD)/lb_user_const.o 
-	$(F90) -c $(ZOM) $(ZOD)/fwrap.f90
-	/bin/mv *.o *.mod $(ZOD)
-
-$(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
+			$(ZOD)/lb_user_const.o  \
+	 	fwrap.f90 lbif.f90 lbfn.f90 \
 		set_numgeom.if			set_numgeom.fn \
 		set_geommulti.if		set_geommulti.fn \
 		set_geom.if			set_geom.fn \
@@ -91,9 +87,9 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_nextcoarseobj.if.lbif	set_nextcoarseobj.fn.lbfn \
 		set_hiernumlevels.if		set_hiernumlevels.fn \
 		set_hierpartition.if		set_hierpartition.fn \
-		set_hiermethod.if		set_hiermethod.fn \
-		$(ZOD)/sppr 
-	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
+		set_hiermethod.if		set_hiermethod.fn 
+	$(F90) -c $(ZOM) fwrap.f90
+	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/zoltan_user_data.o:	zoltan_user_data.f90 \
 			$(ZOD)/ztypes.o
@@ -105,20 +101,15 @@ $(ZOD)/lb_user_const.o:	lb_user_const.f90 \
 	$(F90) -c  $(ZOM) lb_user_const.f90
 	/bin/mv *.o *.mod $(ZOD)
 
-$(ZOD)/ztypes.o: 	$(ZOD)/ztypes.f90
-	$(F90) -c  $(ZOM) $(ZOD)/ztypes.f90
+$(ZOD)/ztypes.o: 	ztypes.f90
+	$(F90) -c  $(ZOM) ztypes.f90
 	/bin/mv *.o *.mod $(ZOD)
-
-$(ZOD)/ztypes.f90:	ztypes.fpp $(ZOD)/sppr
-	$(ZOD)/sppr < ztypes.fpp > $(ZOD)/ztypes.f90
 
 
 $(ZOD)/cwrap.o: cwrap.c
 	$(CC) -c cwrap.c
 	/bin/mv *.o $(ZOD)
 
-$(ZOD)/sppr: sppr.f90
-	$(LOCAL_F90) -o $(ZOD)/sppr sppr.f90
 
 clean:
 	@rm -f $(ZOD)/*.f90 $(ZOD)/*.mod debug V* $(ZOD)/*.vo \
@@ -127,6 +118,6 @@ clean:
 	      $(ZOD)/ztypes.o \
 	      $(ZOD)/zoltan_user_data.o \
 	      $(ZOD)/lb_user_const.o \
-              sppr_header *.vo *.mod *.dbg \
-	      $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
+              *.vo *.mod *.dbg \
+	      $(ZOD)/zfdrive 
 	@rm -Rf album

@@ -1,7 +1,7 @@
 
 function Zf90_Set_Child_Weight_Fn0s(zz,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn0s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
@@ -26,12 +26,12 @@ end function Zf90_Set_Child_Weight_Fn0s
 
 function Zf90_Set_Child_Weight_Fn1s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn1s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
-  integer(Zoltan_INT) INTENT_IN data(*)
+  integer(Zoltan_INT) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -39,7 +39,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-integer(Zoltan_INT) INTENT_IN data(*)
+integer(Zoltan_INT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -52,12 +52,12 @@ end function Zf90_Set_Child_Weight_Fn1s
 
 function Zf90_Set_Child_Weight_Fn2s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn2s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
-  real(Zoltan_FLOAT) INTENT_IN data(*)
+  real(Zoltan_FLOAT) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -65,7 +65,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-real(Zoltan_FLOAT) INTENT_IN data(*)
+real(Zoltan_FLOAT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -78,12 +78,12 @@ end function Zf90_Set_Child_Weight_Fn2s
 
 function Zf90_Set_Child_Weight_Fn3s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn3s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
-  real(Zoltan_DOUBLE) INTENT_IN data(*)
+  real(Zoltan_DOUBLE) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -91,7 +91,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-real(Zoltan_DOUBLE) INTENT_IN data(*)
+real(Zoltan_DOUBLE) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -104,14 +104,14 @@ end function Zf90_Set_Child_Weight_Fn3s
 
 function Zf90_Set_Child_Weight_Fn4s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn4s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
-  type(Zoltan_User_Data_1) INTENT_IN data
+  type(Zoltan_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -119,7 +119,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-type(Zoltan_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -132,14 +132,14 @@ end function Zf90_Set_Child_Weight_Fn4s
 
 function Zf90_Set_Child_Weight_Fn5s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn5s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
-  type(Zoltan_User_Data_2) INTENT_IN data
+  type(Zoltan_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -147,7 +147,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-type(Zoltan_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -160,14 +160,14 @@ end function Zf90_Set_Child_Weight_Fn5s
 
 function Zf90_Set_Child_Weight_Fn6s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn6s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
-  type(Zoltan_User_Data_3) INTENT_IN data
+  type(Zoltan_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -175,7 +175,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-type(Zoltan_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -188,14 +188,14 @@ end function Zf90_Set_Child_Weight_Fn6s
 
 function Zf90_Set_Child_Weight_Fn7s(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Child_Weight_Fn7s
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
     local_id, wdim, objwgts, ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
-  type(Zoltan_User_Data_4) INTENT_IN data
+  type(Zoltan_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(in)  :: wdim
@@ -203,7 +203,7 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end subroutine fn_ptr
 end interface
-type(Zoltan_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH

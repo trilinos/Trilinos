@@ -10,7 +10,6 @@
 !     $Revision$
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#include "sppr_header"
 module zoltan_types
 
 !--------------------------------------------------------------------------
@@ -57,7 +56,11 @@ interface operator(==)
 end interface
 
 !  Include this section for backward compatibility with old Zoltan interface.
-#include "ztypes.lbif"
+integer, parameter :: &
+   LB_INT = Zoltan_INT, &
+   LB_INT_PTR = Zoltan_INT_PTR, &
+   LB_FLOAT = Zoltan_FLOAT, &
+   LB_DOUBLE = Zoltan_DOUBLE
 
 private :: ptrcompare
 

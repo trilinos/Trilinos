@@ -1,7 +1,7 @@
 
 subroutine LB_to_ZZ(lb, zz)
-type(LB_Struct) INTENT_IN lb
-type(Zoltan_Struct) INTENT_OUT zz
+type(LB_Struct) , intent(in) :: lb
+type(Zoltan_Struct) , intent(out) :: zz
 zz%addr = lb%addr
 !#ifdef ABSOFT
 ! workaround for a bug in the Absoft compiler
@@ -10,8 +10,8 @@ zz%addr = lb%addr
 end subroutine LB_to_ZZ
 
 subroutine ZZ_to_LB(zz, lb)
-type(Zoltan_Struct) INTENT_IN zz
-type(LB_Struct) INTENT_OUT lb
+type(Zoltan_Struct) , intent(in) :: zz
+type(LB_Struct) , intent(out) :: lb
 lb%addr = zz%addr
 !#ifdef ABSOFT
 ! workaround for a bug in the Absoft compiler
@@ -24,7 +24,7 @@ end subroutine ZZ_to_LB
 function LBf90_Create(communicator)
 type(LB_Struct), pointer :: LBf90_Create
 type(Zoltan_Struct), pointer :: zz
-integer INTENT_IN communicator
+integer , intent(in) :: communicator
 allocate(LBf90_Create)
 zz => Zf90_Create(communicator)
 if (associated(zz)) then
@@ -53,8 +53,8 @@ end subroutine LBf90_Destroy
 
 function LBf90_Set_Fn0f(lb,fn_type,fn_ptr)
 integer(Zoltan_INT) :: LBf90_Set_Fn0f
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
@@ -67,8 +67,8 @@ end function LBf90_Set_Fn0f
 
 function LBf90_Set_Fn0s(lb,fn_type,fn_ptr)
 integer(Zoltan_INT) :: LBf90_Set_Fn0s
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
@@ -81,10 +81,10 @@ end function LBf90_Set_Fn0s
 
 function LBf90_Set_Fn1f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn1f
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-integer(Zoltan_INT) INTENT_IN data(*)
+integer(Zoltan_INT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -96,10 +96,10 @@ end function LBf90_Set_Fn1f
 
 function LBf90_Set_Fn1s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn1s
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-integer(Zoltan_INT) INTENT_IN data(*)
+integer(Zoltan_INT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -111,10 +111,10 @@ end function LBf90_Set_Fn1s
 
 function LBf90_Set_Fn2f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn2f
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-real(Zoltan_FLOAT) INTENT_IN data(*)
+real(Zoltan_FLOAT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -126,10 +126,10 @@ end function LBf90_Set_Fn2f
 
 function LBf90_Set_Fn2s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn2s
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-real(Zoltan_FLOAT) INTENT_IN data(*)
+real(Zoltan_FLOAT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -141,10 +141,10 @@ end function LBf90_Set_Fn2s
 
 function LBf90_Set_Fn3f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn3f
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-real(Zoltan_DOUBLE) INTENT_IN data(*)
+real(Zoltan_DOUBLE) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -156,10 +156,10 @@ end function LBf90_Set_Fn3f
 
 function LBf90_Set_Fn3s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn3s
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-real(Zoltan_DOUBLE) INTENT_IN data(*)
+real(Zoltan_DOUBLE) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -171,10 +171,10 @@ end function LBf90_Set_Fn3s
 
 function LBf90_Set_Fn8f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn8f
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_1) INTENT_IN data
+type(LB_User_Data_1) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -186,10 +186,10 @@ end function LBf90_Set_Fn8f
 
 function LBf90_Set_Fn8s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn8s
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-type(LB_User_Data_1) INTENT_IN data
+type(LB_User_Data_1) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -201,10 +201,10 @@ end function LBf90_Set_Fn8s
 
 function LBf90_Set_Fn9f(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn9f
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_2) INTENT_IN data
+type(LB_User_Data_2) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -216,10 +216,10 @@ end function LBf90_Set_Fn9f
 
 function LBf90_Set_Fn9s(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Fn9s
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-type(LB_User_Data_2) INTENT_IN data
+type(LB_User_Data_2) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -231,10 +231,10 @@ end function LBf90_Set_Fn9s
 
 function LBf90_Set_FnAf(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_FnAf
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_3) INTENT_IN data
+type(LB_User_Data_3) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -246,10 +246,10 @@ end function LBf90_Set_FnAf
 
 function LBf90_Set_FnAs(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_FnAs
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-type(LB_User_Data_3) INTENT_IN data
+type(LB_User_Data_3) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -261,10 +261,10 @@ end function LBf90_Set_FnAs
 
 function LBf90_Set_FnBf(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_FnBf
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPEF) , intent(in) :: fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_4) INTENT_IN data
+type(LB_User_Data_4) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -276,10 +276,10 @@ end function LBf90_Set_FnBf
 
 function LBf90_Set_FnBs(lb,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_FnBs
-type(LB_Struct) INTENT_IN lb
-type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
+type(LB_Struct) , intent(in) :: lb
+type(ZOLTAN_FN_TYPES) , intent(in) :: fn_type
 external fn_ptr
-type(LB_User_Data_4) INTENT_IN data
+type(LB_User_Data_4) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -293,8 +293,8 @@ end function LBf90_Set_FnBs
 
 function LBf90_LB_Set_Method(lb,string)
 integer(Zoltan_INT) :: LBf90_LB_Set_Method
-type(LB_Struct) INTENT_IN lb
-character(len=*) INTENT_IN string
+type(LB_Struct) , intent(in) :: lb
+character(len=*) , intent(in) :: string
 type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
 LBf90_LB_Set_Method = Zf90_Set_Param(zz,"LB_METHOD",string)
@@ -302,8 +302,8 @@ end function LBf90_LB_Set_Method
 
 function LBf90_Set_Param(lb,param_name,new_value)
 integer(Zoltan_INT) :: LBf90_Set_Param
-type(LB_Struct) INTENT_IN lb
-character(len=*) INTENT_IN param_name, new_value
+type(LB_Struct) , intent(in) :: lb
+character(len=*) , intent(in) :: param_name, new_value
 type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
 LBf90_Set_Param = Zf90_Set_Param(zz,param_name,new_value)
@@ -316,7 +316,7 @@ function LBf90_LB_Balance(lb,changes,num_gid_entries,num_lid_entries, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: LBf90_LB_Balance
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 logical, intent(out) :: changes
 integer(Zoltan_INT), intent(out) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(out) :: num_import, num_export
@@ -335,8 +335,8 @@ end function LBf90_LB_Balance
 
 function LBf90_LB_Eval(lb,print_stats)
 integer(Zoltan_INT) :: LBf90_LB_Eval
-type(LB_Struct) INTENT_IN lb
-logical INTENT_IN print_stats
+type(LB_Struct) , intent(in) :: lb
+logical , intent(in) :: print_stats
 type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
 LBf90_LB_Eval = Zf90_LB_Eval(zz,print_stats)
@@ -346,8 +346,8 @@ end function LBf90_LB_Eval
 
 function LBf90_LB_Point_Assign(lb,coords,proc)
 integer(Zoltan_INT) :: LBf90_LB_Point_Assign
-type(LB_Struct) INTENT_IN lb
-real(Zoltan_DOUBLE), dimension(*) INTENT_IN coords
+type(LB_Struct) , intent(in) :: lb
+real(Zoltan_DOUBLE), dimension(*) , intent(in) :: coords
 integer(Zoltan_INT), intent(out) :: proc
 type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
@@ -356,8 +356,8 @@ end function LBf90_LB_Point_Assign
 
 function LBf90_LB_Box_Assign(lb,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 integer(Zoltan_INT) :: LBf90_LB_Box_Assign
-type(LB_Struct) INTENT_IN lb
-real(Zoltan_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
+type(LB_Struct) , intent(in) :: lb
+real(Zoltan_DOUBLE) , intent(in) :: xmin,ymin,zmin,xmax,ymax,zmax
 integer(Zoltan_INT), intent(out), dimension(*) :: procs
 integer(Zoltan_INT), intent(out) :: numprocs
 type(Zoltan_Struct) :: zz
@@ -373,8 +373,8 @@ function LBf90_Compute_Destinations(lb, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: LBf90_Compute_Destinations
-type(LB_Struct) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN num_import
+type(LB_Struct) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: num_import
 integer(Zoltan_INT), intent(out) :: num_export
 integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
@@ -393,8 +393,8 @@ function LBf90_Help_Migrate(lb, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: LBf90_Help_Migrate
-type(LB_Struct) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN num_import, num_export
+type(LB_Struct) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: num_import, num_export
 integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
@@ -409,7 +409,7 @@ end function LBf90_Help_Migrate
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine LBf90_Reftree_Get_Child_Order(lb,order,ierr)
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 integer(Zoltan_INT), intent(inout), dimension(*) :: order
 integer(Zoltan_INT), intent(out) :: ierr
 type(Zoltan_Struct) :: zz

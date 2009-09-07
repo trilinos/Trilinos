@@ -278,10 +278,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn8f
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_1) INTENT_IN data
+type(LB_User_Data_1) , intent(in) :: data
 end function Zfw_Set_Fn8f
 end interface
 
@@ -291,10 +291,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn8s
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 external fn_ptr
-type(LB_User_Data_1) INTENT_IN data
+type(LB_User_Data_1) , intent(in) :: data
 end function Zfw_Set_Fn8s
 end interface
 
@@ -304,10 +304,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn9f
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_2) INTENT_IN data
+type(LB_User_Data_2) , intent(in) :: data
 end function Zfw_Set_Fn9f
 end interface
 
@@ -317,10 +317,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_Fn9s
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 external fn_ptr
-type(LB_User_Data_2) INTENT_IN data
+type(LB_User_Data_2) , intent(in) :: data
 end function Zfw_Set_Fn9s
 end interface
 
@@ -330,10 +330,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnAf
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_3) INTENT_IN data
+type(LB_User_Data_3) , intent(in) :: data
 end function Zfw_Set_FnAf
 end interface
 
@@ -343,10 +343,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnAs
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 external fn_ptr
-type(LB_User_Data_3) INTENT_IN data
+type(LB_User_Data_3) , intent(in) :: data
 end function Zfw_Set_FnAs
 end interface
 
@@ -356,10 +356,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnBf
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 integer(Zoltan_INT), external :: fn_ptr
-type(LB_User_Data_4) INTENT_IN data
+type(LB_User_Data_4) , intent(in) :: data
 end function Zfw_Set_FnBf
 end interface
 
@@ -369,10 +369,10 @@ use zoltan_types
 use lb_user_const
 implicit none
 integer(Zoltan_INT) :: Zfw_Set_FnBs
-integer(Zoltan_INT), dimension(*) INTENT_IN lb
-integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+integer(Zoltan_INT), dimension(*) , intent(in) :: lb
+integer(Zoltan_INT) , intent(in) :: nbytes, fn_type
 external fn_ptr
-type(LB_User_Data_4) INTENT_IN data
+type(LB_User_Data_4) , intent(in) :: data
 end function Zfw_Set_FnBs
 end interface
 
