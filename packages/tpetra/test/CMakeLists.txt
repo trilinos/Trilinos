@@ -10,5 +10,5 @@ ADD_SUBDIRECTORIES(
   #BasicPerfTest
   Utils
   CrsGraph
-  #CrsMatrix
+  CrsMatrix
   )

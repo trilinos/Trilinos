@@ -29,6 +29,7 @@
 #ifndef KOKKOS_BASESPARSESOLVE_H
 #define KOKKOS_BASESPARSESOLVE_H
 
+#include <Teuchos_BLAS_types.hpp>
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CrsMatrix.hpp" 
 #include "Kokkos_CrsGraph.hpp" 
@@ -101,7 +102,10 @@ namespace Kokkos {
     Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv);
 
     //! Initialize values of matrix, using Kokkos::CrsMatrix
-    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Ordinal,Node> &matrix, Teuchos::DataAccess cv);
+    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv);
+
+    //! Clear all matrix structure and values.
+    void clear();
 
     //@}
 
@@ -110,7 +114,8 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    inline int Apply(bool transpose, Scalar alpha, const MultiVector<Scalar,Node> &X, Scalar beta, MultiVector<Scalar,Node> &Y) const;
+    template <class DomainScalar, class RangeScalar>
+    void solve(Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, Scalar alpha, const MultiVector<DomainScalar,Node> &Y, Scalar beta, MultiVector<RangeScalar,Node> &X) const;
 
     //@}
 
@@ -153,13 +158,27 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node> &graph, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Node> &graph, Teuchos::DataAccess cv) {
     // FINISH
   }
 
   template <class Scalar, class Ordinal, class Node>
   Teuchos::RCP<Node> DefaultSparseSolve<Scalar,Ordinal,Node>::getNode() const { 
     return node_; 
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultSparseSolve<Scalar,Ordinal,Node>::clear() { 
+    // FINISH
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void DefaultSparseSolve<Scalar,Ordinal,Node>::solve(
+                      Teuchos::ETransp trans, Teuchos::EUplo uplo, Teuchos::EDiag diag, 
+                      Scalar alpha, const MultiVector<DomainScalar,Node> &Y,
+                      Scalar beta, MultiVector<RangeScalar,Node> &X) const {
+    TEST_FOR_EXCEPT(true); // FINISH
   }
 
 } // namespace Kokkos

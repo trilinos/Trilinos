@@ -32,6 +32,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
@@ -43,9 +44,9 @@ namespace Kokkos {
   template <class Ordinal, class Node = DefaultNode::DefaultNodeType>  
   class CrsGraph {
   public:
-    typedef Ordinal OrdinalType;
-    typedef Node    NodeType;
 
+  typedef Ordinal OrdinalType;
+  typedef Node    NodeType;
 
     //! @name Constructors/Destructor
     //@{
@@ -66,13 +67,12 @@ namespace Kokkos {
 
     //@}
 
-    //! @name Data entry methods.
+    //! @name Data entry and accessor methods.
     //@{
 
     //! Submit the indices and offset for 1D storage.
-    void set1DStructure(const Teuchos::ArrayRCP<const size_t> &numEntriesPerRow,
-                        const Teuchos::ArrayRCP<const size_t> &offsets,
-                        const Teuchos::ArrayRCP<const Ordinal> &allinds);
+    void setPackedStructure(const Teuchos::ArrayRCP<const size_t> &offsets,
+                            const Teuchos::ArrayRCP<const Ordinal> &allinds);
 
     //! Submit the indices and offset for 1D storage.
     //! Submit the indices for one row of 2D storage.
@@ -80,9 +80,6 @@ namespace Kokkos {
 
     //! Retrieve the offsets for 1D storage.
     Teuchos::ArrayRCP<const size_t> get1DOffsets() const;
-
-    //! Retrieve number of entries per row. Returns <tt>Teuchos::null</tt> if graph is uninitialized or packed.
-    Teuchos::ArrayRCP<const size_t> getNumEntriesPerRow() const;
 
     //! Retrieve the indices for 1D storage.
     Teuchos::ArrayRCP<const Ordinal> get1DIndices() const;
@@ -92,6 +89,9 @@ namespace Kokkos {
 
     //! Indicates whether or not the graph entries are packed.
     bool isPacked() const;
+  
+    //! Indicates that the graph is initialized, but empty.
+    bool isEmpty() const;
 
     //! Release data associated with this graph.
     void clear();
@@ -104,20 +104,22 @@ namespace Kokkos {
 
     Teuchos::RCP<Node> node_;
     size_t numRows_;
-    bool isInitialized_, isPacked_;
+    bool isInitialized_, isPacked_, isEmpty_;
 
-    Teuchos::ArrayRCP<size_t>                       numRowEntries_;
-    Teuchos::ArrayRCP<Ordinal>                      pbuf_indices1D_;
-    Teuchos::ArrayRCP<size_t>                       pbuf_offsets_;
-    Teuchos::ArrayRCP< Teuchos::ArrayRCP<Ordinal> > pbuf_indices2D_;
+    Teuchos::ArrayRCP<const Ordinal>                      pbuf_indices1D_;
+    Teuchos::ArrayRCP<const size_t>                       pbuf_offsets_;
+    Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Ordinal> > pbuf_indices2D_;
   };
+
 
   //==============================================================================
   template <class Ordinal, class Node>
   CrsGraph<Ordinal,Node>::CrsGraph(size_t numRows, const Teuchos::RCP<Node> &node) 
   : node_(node)
   , numRows_(numRows)
-  , isInitialized_(false) {
+  , isInitialized_(false)
+  , isPacked_(false)
+  , isEmpty_(true) {
   }
 
   //==============================================================================
@@ -134,21 +136,27 @@ namespace Kokkos {
   //==============================================================================
   template <class Ordinal, class Node>
   void CrsGraph<Ordinal,Node>::clear() { 
-    numRowEntries_  = Teuchos::null;
     pbuf_indices1D_ = Teuchos::null;
     pbuf_indices2D_ = Teuchos::null;
     pbuf_offsets_   = Teuchos::null;
     isInitialized_ = false;
+    isEmpty_       = true;
   }
 
   //==============================================================================
   template <class Ordinal, class Node>
-  void CrsGraph<Ordinal,Node>::set1DStructure(
-                        const Teuchos::ArrayRCP<const size_t> &numEntriesPerRow,
+  void CrsGraph<Ordinal,Node>::setPackedStructure(
                         const Teuchos::ArrayRCP<const size_t> &offsets,
                         const Teuchos::ArrayRCP<const Ordinal> &allinds) {
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::set1DStructure(): graph is already initialized.");
+        Teuchos::typeName(*this) << "::setPackedStructure(): graph is already initialized. Call clear() before reinitializing.");
+#endif
+    isEmpty_ = (allinds == Teuchos::null);
+    pbuf_indices1D_ = allinds;
+    pbuf_offsets_ = offsets;
+    isInitialized_ = true;
+    isPacked_ = true;
   }
 
   //==============================================================================
@@ -156,37 +164,44 @@ namespace Kokkos {
   void CrsGraph<Ordinal,Node>::set2DStructure(
                               size_t row, 
                               const Teuchos::ArrayRCP<const Ordinal> &rowinds) {
-    TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::set2DStructure(): graph is already initialized.");
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isPacked_ == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::set2DStructure(): graph is already initialized with 1D structure. Call clear() before reinitializing.");
+#endif
+    if (isInitialized_ == false) {
+      pbuf_indices2D_ = Teuchos::arcp<Teuchos::ArrayRCP<const Ordinal> >(numRows_);
+      isInitialized_ = true;
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
+        Teuchos::typeName(*this) << ":;set2DStructure(): specified row is invalid.");
+#endif
+    isEmpty_ = isEmpty_ && (rowinds == Teuchos::null);
+    pbuf_indices2D_[row] = rowinds;
   }
 
   //==============================================================================
   template <class Ordinal, class Node>
-  Teuchos::ArrayRCP<const size_t> CrsGraph<Ordinal,Node>::get1DOffsets() const {
-    TEST_FOR_EXCEPTION(isInitialized_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::get1DOffsets(): graph is already initialized.");
+  Teuchos::ArrayRCP<const Ordinal> 
+  CrsGraph<Ordinal,Node>::get1DIndices() const {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::get1DIndices(): graph is uninitialized or not packed.");
+#endif
+    return pbuf_indices1D_;
   }
 
   //==============================================================================
   template <class Ordinal, class Node>
-  Teuchos::ArrayRCP<const size_t> CrsGraph<Ordinal,Node>::getNumEntriesPerRow() const {
-    TEST_FOR_EXCEPTION(isInitialized_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::getNumEntriesPerRow(): graph is already initialized.");
-  }
-
-  //==============================================================================
-  template <class Ordinal, class Node>
-  Teuchos::ArrayRCP<const Ordinal> CrsGraph<Ordinal,Node>::get1DIndices() const {
-    TEST_FOR_EXCEPTION(isInitialized_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::get1DIndices(): graph is already initialized.");
-  }
-
-  //==============================================================================
-  template <class Ordinal, class Node>
-  Teuchos::ArrayRCP<const Ordinal> CrsGraph<Ordinal,Node>::get2DIndices(
-                                size_t row) const {
-    TEST_FOR_EXCEPTION(isInitialized_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::get2DIndices(): graph is already initialized.");
+  Teuchos::ArrayRCP<const Ordinal> 
+  CrsGraph<Ordinal,Node>::get2DIndices(size_t row) const {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isInitialized_ == false || isPacked_ == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::get2DIndices(): graph is uninitialized or initialized packed.");
+    TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
+        Teuchos::typeName(*this) << "::get2DIndices(): row number is invalid.");
+#endif
+    return pbuf_indices2D_[row];
   }
 
   //==============================================================================
@@ -195,7 +210,23 @@ namespace Kokkos {
     return isPacked_;
   }
 
+  //==============================================================================
+  template <class Ordinal, class Node>
+  bool CrsGraph<Ordinal,Node>::isEmpty() const {
+    return isEmpty_;
+  }
 
-}
-
+  //==============================================================================
+  template <class Ordinal, class Node>
+  Teuchos::ArrayRCP<const size_t> 
+  CrsGraph<Ordinal,Node>::get1DOffsets() const {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::get1DOffsets(): graph is uninitialized or not packed.");
 #endif
+    return pbuf_offsets_;
+  }
+
+} // namespace Kokkos
+
+#endif /* KOKKOS_CRSGRAPH_H */

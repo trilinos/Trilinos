@@ -30,7 +30,7 @@
 #define TPETRA_CRSMATRIX_HPP
 
 // TODO: add support for alpha,beta term coefficients: Y = alpha*A*X + beta*Y
-// TODO: row-wise insertion of entries in globalAssemble()
+// TODO: row-wise insertion of entries in globalAssemble() may be more efficient
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_CrsMatrix.hpp>
@@ -434,7 +434,7 @@ namespace Tpetra
 
       Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal> > graph_;
 
-      Kokkos::CrsMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
+      Kokkos::CrsMatrix<Scalar,Node> lclMatrix_;
       LocalMatVec lclMatVec_;
       LocalMatSolve lclMatSolve_;
 
@@ -571,17 +571,14 @@ namespace Tpetra
   , lclMatSolve_(graph->getNode())
   , valuesAreAllocated_(false)
   , staticGraph_(true)
-  , fillComplete_(false)
+  , fillComplete_(graph->isFillComplete())
   , storageOptimized_(graph->isStorageOptimized()) {
     TEST_FOR_EXCEPTION(graph_ == Teuchos::null, std::runtime_error,
         Teuchos::typeName(*this) << "::CrsMatrix(graph): specified pointer is null.");
     // we won't prohibit the case where the graph is not yet filled, but we will check below to ensure that the
-    // graph isn't filled between now and when fillComplete() is called on this matrix
+    // graph isn't filled between now and when fillComplete() is called on this matrix.
+    // the user is not allowed to modify the graph. this check is about the most that we can do to check whether they have.
     constructedWithFilledGraph_ = graph_->isFillComplete();
-#ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION( storageOptimized_ == false && constructedWithFilledGraph_ == true, std::logic_error,
-        Teuchos::typeName(*this) << "::CrsMatrix(graph): Internal logic error. Please constact Tpetra team.");
-#endif
     checkInternalState();
   }
 
@@ -873,10 +870,61 @@ namespace Tpetra
     Teuchos::RCP<Node> node = getNode();
     const global_size_t gsti = Teuchos::OrdinalTraits<global_size_t>::invalid();
     using Teuchos::null;
-    std::string err = Teuchos::typeName(*this) + "::checkInternalState(): Internal logic error. Please contact Tpetra team.";
+    std::string err = Teuchos::typeName(*this) + "::checkInternalState(): Likely internal logic error. Please contact Tpetra team.";
     // check the internal state of this data structure
     // this is called by numerous state-changing methods, in a debug build, to ensure that the object 
     // always remains in a valid state
+
+    // constructedWithFilledGraph_ should only be true if matrix was constructed with a graph, in which case staticGraph_ should be true
+    TEST_FOR_EXCEPTION( staticGraph_ == false && constructedWithFilledGraph_ == true,                  std::logic_error, err ); 
+    // matrix values cannot be allocated without the graph indices being allocated
+    TEST_FOR_EXCEPTION( valuesAreAllocated_ == true && graph_->indicesAreAllocated() == false,         std::logic_error, err );
+    // if matrix is fill complete, then graph must be fill complete
+    TEST_FOR_EXCEPTION( fillComplete_ == true && graph_->isFillComplete() == false,                    std::logic_error, err );
+    // if matrix is storage optimized, then graph must be storage optimizied
+    TEST_FOR_EXCEPTION( storageOptimized_   != graph_->isStorageOptimized(),                           std::logic_error, err );
+    // if matrix is storage optimized, it must have been fill completed
+    TEST_FOR_EXCEPTION( storageOptimized_ == true && fillComplete_ == false,                           std::logic_error, err );
+    // if matrix is storage optimized, it should have a 1D allocation 
+    TEST_FOR_EXCEPTION( storageOptimized_ == true && pbuf_values2D_ != Teuchos::null,                  std::logic_error, err );
+    // if matrix/graph are static profile, then 2D allocation should not be present
+    TEST_FOR_EXCEPTION( graph_->getProfileType() == StaticProfile  && pbuf_values2D_ != Teuchos::null, std::logic_error, err );
+    // if matrix/graph are dynamic profile, then 1D allocation should not be present
+    TEST_FOR_EXCEPTION( graph_->getProfileType() == DynamicProfile && pbuf_values1D_ != Teuchos::null, std::logic_error, err );
+    // if values are allocated and they are non-zero in number, then one of the allocations should be present
+    TEST_FOR_EXCEPTION( valuesAreAllocated_ == true && graph_->getNodeAllocationSize() && pbuf_values2D_ == Teuchos::null && pbuf_values1D_ == Teuchos::null,
+                        std::logic_error, err );
+    // we can nae have both a 1D and 2D allocation
+    TEST_FOR_EXCEPTION( pbuf_values1D_ != Teuchos::null && pbuf_values2D_ != Teuchos::null, std::logic_error, err );
+    // compare matrix allocations against graph allocations
+    if (valuesAreAllocated_ && graph_->getNodeAllocationSize() > 0) {
+      if (graph_->getProfileType() == StaticProfile) {
+        if (graph_->isLocallyIndexed()) {
+          TEST_FOR_EXCEPTION( pbuf_values1D_.size() != graph_->pbuf_lclInds1D_.size(),  std::logic_error, err );
+        }
+        else {
+          TEST_FOR_EXCEPTION( pbuf_values1D_.size() != graph_->pbuf_gblInds1D_.size(),  std::logic_error, err );
+        }
+      } 
+      else { // graph_->getProfileType() == DynamicProfile
+        if (graph_->isLocallyIndexed()) {
+          for (size_t r=0; r < getNodeNumRows(); ++r) {
+            TEST_FOR_EXCEPTION( (pbuf_values2D_[r] == Teuchos::null) != (graph_->pbuf_lclInds2D_[r] == Teuchos::null), std::logic_error, err );
+            if (pbuf_values2D_[r] != Teuchos::null && graph_->pbuf_lclInds2D_[r] != Teuchos::null) {
+              TEST_FOR_EXCEPTION( pbuf_values2D_[r].size() != graph_->pbuf_lclInds2D_[r].size(), std::logic_error, err );
+            }
+          }
+        }
+        else {
+          for (size_t r=0; r < getNodeNumRows(); ++r) {
+            TEST_FOR_EXCEPTION( (pbuf_values2D_[r] == Teuchos::null) != (graph_->pbuf_gblInds2D_[r] == Teuchos::null), std::logic_error, err );
+            if (pbuf_values2D_[r] != Teuchos::null && graph_->pbuf_gblInds2D_[r] != Teuchos::null) {
+              TEST_FOR_EXCEPTION( pbuf_values2D_[r].size() != graph_->pbuf_gblInds2D_[r].size(), std::logic_error, err );
+            }
+          }
+        }
+      }
+    }
 #endif
   }
 
@@ -967,7 +1015,49 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillLocalMatrix() {
-    // FINISH
+    lclMatrix_.clear();
+    if (storageOptimized_) {
+      // fill packed matrix; it is okay for pbuf_values1D_ to be null; the matrix will flag itself as empty
+      lclMatrix_.setPackedValues(pbuf_values1D_);
+    }
+    else if (graph_->getProfileType() == StaticProfile) {
+      if (pbuf_values1D_ != Teuchos::null) {
+        const size_t nlrs = getNodeNumRows();
+        for (size_t r=0; r < nlrs; ++r) {
+          RowInfo sizeInfo = graph_->getRowInfo(r);
+          Teuchos::ArrayRCP<const Scalar> rowvals;
+          if (sizeInfo.numEntries > 0) {
+            rowvals = pbuf_values1D_.persistingView(sizeInfo.offset1D, sizeInfo.numEntries);
+            lclMatrix_.set2DValues(r,rowvals);
+          }
+        }
+      }
+    }
+    else if (graph_->getProfileType() == DynamicProfile) {
+      if (pbuf_values2D_ != Teuchos::null) {
+        const size_t nlrs = getNodeNumRows();
+        for (size_t r=0; r < nlrs; ++r) {
+          RowInfo sizeInfo = graph_->getRowInfo(r);
+          Teuchos::ArrayRCP<const Scalar> rowvals = pbuf_values2D_[r];
+          if (sizeInfo.numEntries > 0) {
+            rowvals = rowvals.persistingView(0,sizeInfo.numEntries);
+            lclMatrix_.set2DValues(r,rowvals);
+          }
+        }
+      }
+    }
+
+    // submit local matrix and local graph to lclMatVec_ and lclMatSolve_
+    // lclMatVec_ and lclMatSolve_ are permitted to view, but we don't care whether they do or not
+    lclMatVec_.clear();
+    lclMatSolve_.clear();
+    Teuchos::DataAccess ret;
+    ret = lclMatVec_.initializeStructure( graph_->lclGraph_, Teuchos::View );
+    ret = lclMatVec_.initializeValues( lclMatrix_, Teuchos::View );
+    if (isLowerTriangular() || isUpperTriangular()) {
+      ret = lclMatSolve_.initializeStructure( graph_->lclGraph_, Teuchos::View );
+      ret = lclMatSolve_.initializeValues( lclMatrix_, Teuchos::View );
+    }
   }
 
 
@@ -1889,19 +1979,6 @@ namespace Tpetra
       fillLocalMatrix();
     }
 
-    // submit local matrix and local graph to lclMatVec_ and lclMatSolve_
-    // lclMatVec_ and lclMatSolve_ are permitted to view, but we don't care whether they do or not
-    Teuchos::DataAccess ret;
-    ret = lclMatVec_.initializeStructure( graph_->lclGraph_, Teuchos::View );
-    ret = lclMatVec_.initializeValues( lclMatrix_, Teuchos::View );
-    if (isLowerTriangular() || isUpperTriangular()) {
-      ret = lclMatSolve_.initializeStructure( graph_->lclGraph_, Teuchos::View );
-      ret = lclMatSolve_.initializeValues( lclMatrix_, Teuchos::View );
-    }
-    else {
-      // lclMatSolve_.clear();
-    }
-
     checkInternalState();
   }
 
@@ -2047,6 +2124,7 @@ namespace Tpetra
             }
             sofar += sizeInfo.numEntries;
           }
+          pbuf_values1D_ = pbuf_values1D_.persistingView(0,sofar);
 #ifdef HAVE_TPETRA_DEBUG
           TEST_FOR_EXCEPTION(sofar != numEntries, std::logic_error, err);
 #endif
@@ -2179,7 +2257,12 @@ namespace Tpetra
         lclX = &importMV_->getLocalMVNonConst();
       }
       // Do actual computation
-      lclMatSolve_.apply(Teuchos::NO_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+      if (isUpperTriangular()) {
+        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+      }
+      else {
+        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+      }
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV solve..." << std::endl;
       if (exporter != null) {
@@ -2231,12 +2314,17 @@ namespace Tpetra
 #endif
       }
       // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
-      // We will compute colutioni into the to-be-exported MV; get a view
+      // We will compute solution into the to-be-exported MV; get a view
       if (exporter != null) {
         lclX = &exportMV_->getLocalMVNonConst();
       }
       // Do actual computation
-      lclMatVec_.apply(Teuchos::CONJ_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+      if (isUpperTriangular()) {
+        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+      }
+      else {
+        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+      }
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV solve..." << std::endl;
       if (exporter != null) {
@@ -2246,6 +2334,7 @@ namespace Tpetra
         X.describe(*out,Teuchos::VERB_EXTREME);
       }
 #endif
+      // do the export
       if (exporter != null) {
         X.putScalar(ST::zero()); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         X.doExport(*exportMV_,*exporter,ADD);
@@ -2373,7 +2462,7 @@ namespace Tpetra
         lclY = &exportMV_->getLocalMVNonConst();
       }
       // Do actual computation
-      lclMatVec_.apply(Teuchos::NO_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclX, Teuchos::ScalarTraits<Scalar>::zero(), *lclY);
+      lclMatVec_.template multiply<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclX, Teuchos::ScalarTraits<Scalar>::zero(), *lclY);
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
       if (exportMV_ != null) {
@@ -2423,7 +2512,7 @@ namespace Tpetra
         lclY = &importMV_->getLocalMVNonConst();
       }
       // Do actual computation
-      lclMatVec_.apply(Teuchos::CONJ_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclX, Teuchos::ScalarTraits<Scalar>::zero(), *lclY);
+      lclMatVec_.template multiply<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclX, Teuchos::ScalarTraits<Scalar>::zero(), *lclY);
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
       if (importMV_ != null) {

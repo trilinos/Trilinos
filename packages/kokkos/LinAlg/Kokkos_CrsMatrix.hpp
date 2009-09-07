@@ -37,97 +37,173 @@
 
 namespace Kokkos {
 
-//! Kokkos::CrsMatrix: Kokkos compressed index sparse matrix class.
+  //! Kokkos::CrsMatrix: Kokkos compressed index sparse matrix class.
 
-template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
-class CrsMatrix {
-public:
-  typedef Scalar  ScalarType;
-  typedef Ordinal OrdinalType;
-  typedef Node    NodeType;
+  template <class Scalar, class Node = DefaultNode::DefaultNodeType>
+  class CrsMatrix {
+  public:
 
-  //! @name Constructors/Destructor
-  //@{
+    typedef Scalar  ScalarType;
+    typedef Node    NodeType;
 
-  //! Default CrsMatrix constuctor.
-  CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
+    //! @name Constructors/Destructor
+    //@{
 
-  //! CrsMatrix Destructor
-  ~CrsMatrix();
+    //! Default CrsMatrix constuctor.
+    CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
 
-  //@}
+    //! CrsMatrix Destructor
+    ~CrsMatrix();
 
-  //! @name Accessor routines.
-  //@{ 
+    //@}
+
+    //! @name Accessor routines.
+    //@{ 
+    
+    //! Node accessor.
+    Teuchos::RCP<Node> getNode() const;
+
+    //@}
+
+    //! @name Data entry and accessor methods.
+    //@{
+
+    //! Submit the values for a 1D storage.
+    void setPackedValues(const Teuchos::ArrayRCP<const Scalar> &allvals);
+
+    //! Submit the values for one row of 2D storage.
+    void set2DValues(size_t row, const Teuchos::ArrayRCP<const Scalar> &rowvals);
+
+    //! Retrieve the values for a 1D storage.
+    Teuchos::ArrayRCP<const Scalar> get1DValues() const;
+
+    //! Retrieve the values for one row of 2D storage.
+    Teuchos::ArrayRCP<const Scalar> get2DValues(size_t row) const;
+
+    //! Indicates whether or not the graph entries are packed.
+    bool isPacked() const;
   
-  //! Node accessor.
-  Teuchos::RCP<Node> getNode() const;
+    //! Indicates that the matrix is initialized, but empty.
+    bool isEmpty() const;
 
-  //! Graph accessor.
-  const CrsGraph<Ordinal,Node> & getGraph() const;
+    //! Release data associated with this matrix.
+    void clear();
 
-  //@}
+    //@}
 
-  //! @name Data entry and accessor methods.
-  //@{
+  private:
+    //! Copy constructor (protected and not implemented)
+    CrsMatrix(const CrsMatrix& source);
 
-  //! Submit the values for a 1D storage.
-  void set1DValues(const Teuchos::ArrayRCP<const Scalar> &allvals);
+    Teuchos::RCP<Node> node_;
+    size_t numRows_;
+    bool isInitialized_, isPacked_, isEmpty_;
 
-  //! Submit the values for one row of 2D storage.
-  void set2DValues(size_t row, const Teuchos::ArrayRCP<const Scalar> &rowvals);
-
-  //! Retrieve the values for a 1D storage.
-  Teuchos::ArrayRCP<const Scalar> get1DValues() const;
-
-  //! Retrieve the values for one row of 2D storage.
-  Teuchos::ArrayRCP<const Scalar> get2DValues(size_t row) const;
-
-  //! Release data associated with this matrix.
-  void clear();
-
-  //@}
-
-protected:
-
-  //! Copy constructor (protected and not implemented)
-  CrsMatrix(const CrsMatrix& source);
-
-  Teuchos::RCP<Node> node_;
-  size_t numRows_;
-  bool isInitialized_;
-
-  Teuchos::ArrayRCP<Scalar>                      pbuf_values1D_;
-  Teuchos::ArrayRCP< Teuchos::ArrayRCP<Scalar> > pbuf_values2D_;
-};
+    Teuchos::ArrayRCP<const Scalar>                      pbuf_values1D_;
+    Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > pbuf_values2D_;
+  };
 
 
-//==============================================================================
-template <class Scalar, class Ordinal, class Node>
-CrsMatrix<Scalar,Ordinal,Node>::CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node)
-: node_(node)
-, numRows_(numRows)
-, isInitialized_(false) {
-}
+  //==============================================================================
+  template <class Scalar, class Node>
+  CrsMatrix<Scalar,Node>::CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node)
+  : node_(node)
+  , numRows_(numRows)
+  , isInitialized_(false)
+  , isPacked_(false)
+  , isEmpty_(true) {
+  }
 
-//==============================================================================
-template <class Scalar, class Ordinal, class Node>
-CrsMatrix<Scalar,Ordinal,Node>::~CrsMatrix() {
-}
+  //==============================================================================
+  template <class Scalar, class Node>
+  CrsMatrix<Scalar,Node>::~CrsMatrix() {
+  }
 
-//==============================================================================
-template <class Scalar, class Ordinal, class Node>
-Teuchos::RCP<Node> CrsMatrix<Scalar,Ordinal,Node>::getNode() const { 
-  return node_; 
-}
+  //==============================================================================
+  template <class Scalar, class Node>
+  Teuchos::RCP<Node> CrsMatrix<Scalar,Node>::getNode() const {
+    return node_;
+  }
 
-//==============================================================================
-template <class Scalar, class Ordinal, class Node>
-void CrsMatrix<Scalar,Ordinal,Node>::clear() { 
-  pbuf_values1D_ = Teuchos::null;
-  pbuf_values2D_ = Teuchos::null;
-  isInitialized_ = false;
-}
+  //==============================================================================
+  template <class Scalar, class Node>
+  void CrsMatrix<Scalar,Node>::clear() { 
+    pbuf_values1D_ = Teuchos::null;
+    pbuf_values2D_ = Teuchos::null;
+    isInitialized_ = false;
+    isEmpty_       = true;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  void CrsMatrix<Scalar,Node>::setPackedValues(
+                        const Teuchos::ArrayRCP<const Scalar> &allvals) {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::setPackedValues(): matrix is already initialized. Call clear() before reinitializing.");
+#endif
+    isEmpty_ = (allvals == Teuchos::null);
+    pbuf_values1D_ = allvals;
+    isInitialized_ = true;
+    isPacked_ = true;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  void CrsMatrix<Scalar,Node>::set2DValues(
+                              size_t row,
+                              const Teuchos::ArrayRCP<const Scalar> &rowvals) {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isPacked_ == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::set2DValues(): matrix is already initialized with 1D structure. Call clear() before reinitializing.");
+#endif
+    if (isInitialized_ == false) {
+      pbuf_values2D_ = Teuchos::arcp<Teuchos::ArrayRCP<const Scalar> >(numRows_);
+      isInitialized_ = true;
+    }
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
+        Teuchos::typeName(*this) << ":;set2DValues(): specified row is invalid.");
+#endif
+    isEmpty_ = isEmpty_ && (rowvals == Teuchos::null);
+    pbuf_values2D_[row] = rowvals;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  Teuchos::ArrayRCP<const Scalar> 
+  CrsMatrix<Scalar,Node>::get1DValues() const {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::get1DValues(): matrix is uninitialized or not packed.");
+#endif
+    return pbuf_values1D_;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  Teuchos::ArrayRCP<const Scalar>
+  CrsMatrix<Scalar,Node>::get2DValues(size_t row) const {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(isInitialized_ == false || isPacked_ == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::get2DValues(): matrix is uninitialized or initialized packed.");
+    TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
+        Teuchos::typeName(*this) << "::get2DValues(): row number is invalid.");
+#endif
+    return pbuf_values2D_[row];
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  bool CrsMatrix<Scalar,Node>::isPacked() const {
+    return isPacked_;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  bool CrsMatrix<Scalar,Node>::isEmpty() const {
+    return isEmpty_;
+  }
 
 } // namespace Kokkos
 

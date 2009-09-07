@@ -470,7 +470,7 @@ namespace Tpetra
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true) 
+  , indicesAreSorted_(true)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow > Teuchos::OrdinalTraits<size_t>::max() || (maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0), std::runtime_error,
@@ -500,7 +500,7 @@ namespace Tpetra
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true) 
+  , indicesAreSorted_(true)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow > Teuchos::OrdinalTraits<size_t>::max() || (maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0), std::runtime_error,
@@ -529,7 +529,7 @@ namespace Tpetra
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true) 
+  , indicesAreSorted_(true)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
@@ -566,7 +566,7 @@ namespace Tpetra
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true) 
+  , indicesAreSorted_(true)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
@@ -1340,40 +1340,71 @@ namespace Tpetra
     const global_size_t gsti = Teuchos::OrdinalTraits<global_size_t>::invalid();
     const size_t         sti = Teuchos::OrdinalTraits<size_t>::invalid();
     using Teuchos::null;
-    std::string err = Teuchos::typeName(*this) + "::checkInternalState(): Internal logic error. Please contact Tpetra team.";
+    std::string err = Teuchos::typeName(*this) + "::checkInternalState(): Likely internal logic error. Please contact Tpetra team.";
     // check the internal state of this data structure
     // this is called by numerous state-changing methods, in a debug build, to ensure that the object 
     // always remains in a valid state
+    // the graph should have been allocated with a row map
     TEST_FOR_EXCEPTION( rowMap_ == null, std::logic_error, err );
+    // if the graph thinks it has a column map, then it had better have one
     TEST_FOR_EXCEPTION( hasColMap() == (colMap_ == null), std::logic_error, err );
+    // if the graph has been fill completed, then all maps should be present
     TEST_FOR_EXCEPTION( isFillComplete() == true && (colMap_ == null || rangeMap_ == null || domainMap_ == null), std::logic_error, err );
+    // if storage has been optimized, then indices should have been allocated (even if trivially so)
     TEST_FOR_EXCEPTION( isStorageOptimized() == true && indicesAreAllocated() == false, std::logic_error, err );
+    // if storage has been optimized, then number of allocated is now the number of entries
     TEST_FOR_EXCEPTION( isStorageOptimized() == true && nodeNumAllocated_ != nodeNumEntries_, std::logic_error, err );
+    // if graph doesn't have the global constants, then they should all be marked as invalid
     TEST_FOR_EXCEPTION( haveGlobalConstants_ == false && ( globalNumEntries_ != gsti || globalNumDiags_ != gsti || globalMaxNumRowEntries_ != gsti ), std::logic_error, err ); 
+    // if the graph has global cosntants, then they should be valid.
+    TEST_FOR_EXCEPTION( haveGlobalConstants_ == true && ( globalNumEntries_ == gsti || globalNumDiags_ == gsti || globalMaxNumRowEntries_ == gsti ), std::logic_error, err ); 
     TEST_FOR_EXCEPTION( haveGlobalConstants_ == true && ( globalNumEntries_ < nodeNumEntries_ || globalNumDiags_ < nodeNumDiags_ || globalMaxNumRowEntries_ < nodeMaxNumRowEntries_ ),
                         std::logic_error, err );
-    TEST_FOR_EXCEPTION( indicesAreAllocated() && (numAllocPerRow_ != null || numAllocForAllRows_ != 0), std::logic_error, err );
-    TEST_FOR_EXCEPTION( isStorageOptimized() && pftype_ == DynamicProfile, std::logic_error, err );
+    // if indices are allocated, then the information dictating the allocation quantities should be freed
+    TEST_FOR_EXCEPTION( indicesAreAllocated() == true  && (numAllocForAllRows_ != 0 || numAllocPerRow_ != null),  std::logic_error, err );
+    // if indices are not allocated, then information dictating allocation quantities should be present
+    TEST_FOR_EXCEPTION( indicesAreAllocated() == false && (nodeNumAllocated_ != sti || nodeNumEntries_ != 0),     std::logic_error, err );
+    // if storage is optimized, then profile should be static
+    TEST_FOR_EXCEPTION( isStorageOptimized() && pftype_ != StaticProfile, std::logic_error, err );
+    // if profile is dynamic and we have a non-trivial allocation, then 2D allocations should be present
     TEST_FOR_EXCEPTION( pftype_ == DynamicProfile && indicesAreAllocated() && nodeNumAllocated_ > 0 && pbuf_lclInds2D_ == null && pbuf_gblInds2D_ == null, std::logic_error, err );
+    // if profile is dynamic, then 1D allocations should not be present
     TEST_FOR_EXCEPTION( pftype_ == DynamicProfile && (pbuf_lclInds1D_ != null || pbuf_gblInds1D_ != null), std::logic_error, err );
+    // if profile is static and we have a non-trivial allocation, then 1D allocations should be present
     TEST_FOR_EXCEPTION( pftype_ == StaticProfile && indicesAreAllocated() && nodeNumAllocated_ > 0 && pbuf_lclInds1D_ == null && pbuf_gblInds1D_ == null, std::logic_error, err );
+    // if profile is static, then 2D allocations should not be present
     TEST_FOR_EXCEPTION( pftype_ == StaticProfile && (pbuf_lclInds2D_ != null || pbuf_gblInds2D_ != null), std::logic_error, err );
+    // if profile is dynamic, then row offsets should not be allocated (they are used only for 1D indexing)
     TEST_FOR_EXCEPTION( pftype_ == DynamicProfile && pbuf_rowOffsets_ != null, std::logic_error, err );
+    // if profile is static and we have a non-trivial application, then roww offsets should be allocated
     TEST_FOR_EXCEPTION( pftype_ == StaticProfile && indicesAreAllocated() && nodeNumAllocated_ > 0 && pbuf_rowOffsets_ == null, std::logic_error, err );
+    // if indices are not allocated, then non of the buffers should be.
     TEST_FOR_EXCEPTION( indicesAreAllocated() == false && (pbuf_rowOffsets_ != null || numEntriesPerRow_ != null||
                                                           pbuf_lclInds1D_ != null || pbuf_lclInds2D_ != null ||
                                                           pbuf_gblInds1D_ != null || pbuf_gblInds2D_ != null), std::logic_error, err );
+    // for a trivial (i.e., zero) allocation, row offsets and num entries should be freed, because they are not needed
     TEST_FOR_EXCEPTION( nodeNumAllocated_ == 0 && (pbuf_rowOffsets_ != null || numEntriesPerRow_ != null), std::logic_error, err );
+    // for a non-trivial allocation with optimal storage, num entries is redundant and therefore should be freed
     TEST_FOR_EXCEPTION( indicesAreAllocated() && nodeNumAllocated_ > 0 && storageOptimized_ == true  && numEntriesPerRow_ != null, std::logic_error, err );
+    // for a non-trivial allocation without optimal storage, num entries is necessary and should be present
     TEST_FOR_EXCEPTION( indicesAreAllocated() && nodeNumAllocated_ > 0 && storageOptimized_ == false && numEntriesPerRow_ == null, std::logic_error, err );
+    // indices may be local or global only if they are allocated (numAllocated is redundant; could simply be indicesAreLocal_ || indicesAreGlobal_)
     TEST_FOR_EXCEPTION( (indicesAreLocal_ == true || indicesAreGlobal_ == true) && indicesAreAllocated_ == false, std::logic_error, err );
+    // indices may be local or global, but not both
     TEST_FOR_EXCEPTION( indicesAreLocal_ == true && indicesAreGlobal_ == true, std::logic_error, err );
+    // if indices are local, then global allocations should not be present
     TEST_FOR_EXCEPTION( indicesAreLocal_ == true && (pbuf_gblInds1D_ != null || pbuf_gblInds2D_ != null), std::logic_error, err );
+    // if indices are global, then local allocations should not be present
     TEST_FOR_EXCEPTION( indicesAreGlobal_ == true && (pbuf_lclInds1D_ != null || pbuf_lclInds2D_ != null), std::logic_error, err );
+    // if indices are local and non-trivial, then local allocations should be present
     TEST_FOR_EXCEPTION( indicesAreLocal_ == true && nodeNumAllocated_ > 0 && pbuf_lclInds1D_ == null && pbuf_lclInds2D_ == null, std::logic_error, err );
+    // if indices are global and non-trivial, then global allocations should be present
     TEST_FOR_EXCEPTION( indicesAreGlobal_ == true && nodeNumAllocated_ > 0 && pbuf_gblInds1D_ == null && pbuf_gblInds2D_ == null, std::logic_error, err );
-    TEST_FOR_EXCEPTION( indicesAreAllocated() == false && (nodeNumAllocated_ != sti || nodeNumEntries_ != 0), std::logic_error, err );
-    TEST_FOR_EXCEPTION( indicesAreAllocated() && nodeNumAllocated_ == sti, std::logic_error, err );
+    // if indices are allocated, then we should have recorded how many were allocated
+    TEST_FOR_EXCEPTION( indicesAreAllocated() == true  && nodeNumAllocated_ == sti, std::logic_error, err );
+    // if indices are not allocated, then the allocation size should be marked invalid
+    TEST_FOR_EXCEPTION( indicesAreAllocated() == false && nodeNumAllocated_ != sti, std::logic_error, err );
+    // check the actual allocations
     size_t actualNumAllocated = 0;
     if (pftype_ == DynamicProfile) {
       if (isGloballyIndexed() && pbuf_gblInds2D_ != Teuchos::null) {
@@ -1396,8 +1427,8 @@ namespace Tpetra
       else {
         actualNumAllocated = 0;
       }
-      TEST_FOR_EXCEPTION( storageOptimized_ == false && isLocallyIndexed() == true && (size_t)pbuf_lclInds1D_.size() != actualNumAllocated, std::logic_error, err );
-      TEST_FOR_EXCEPTION(                              isGloballyIndexed() == true && (size_t)pbuf_gblInds1D_.size() != actualNumAllocated, std::logic_error, err );
+      TEST_FOR_EXCEPTION(  isLocallyIndexed() == true && (size_t)pbuf_lclInds1D_.size() != actualNumAllocated, std::logic_error, err );
+      TEST_FOR_EXCEPTION( isGloballyIndexed() == true && (size_t)pbuf_gblInds1D_.size() != actualNumAllocated, std::logic_error, err );
     }
     TEST_FOR_EXCEPTION(indicesAreAllocated() == true && actualNumAllocated != nodeNumAllocated_, std::logic_error, err );
 #endif
@@ -1408,7 +1439,37 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::fillLocalGraph() {
-    // FINISH
+    lclGraph_.clear();
+    if (storageOptimized_) {
+      // fill packed matrix; it is okay for pbuf_lclInds1D_ to be null; the matrix will flag itself as empty
+      lclGraph_.setPackedStructure(pbuf_rowOffsets_, pbuf_lclInds1D_);
+    }
+    else if (getProfileType() == StaticProfile) {
+      if (pbuf_lclInds1D_ != Teuchos::null) {
+        const size_t nlrs = getNodeNumRows();
+        for (size_t r=0; r < nlrs; ++r) {
+          RowInfo sizeInfo = getRowInfo(r);
+          Teuchos::ArrayRCP<const LocalOrdinal> rowinds;
+          if (sizeInfo.numEntries > 0) {
+            rowinds = pbuf_lclInds1D_.persistingView(sizeInfo.offset1D, sizeInfo.numEntries);
+            lclGraph_.set2DStructure(r,rowinds);
+          }
+        }
+      }
+    }
+    else if (getProfileType() == DynamicProfile) {
+      if (pbuf_lclInds2D_ != Teuchos::null) {
+        const size_t nlrs = getNodeNumRows();
+        for (size_t r=0; r < nlrs; ++r) {
+          RowInfo sizeInfo = getRowInfo(r);
+          Teuchos::ArrayRCP<const LocalOrdinal> rowinds = pbuf_lclInds2D_[r];
+          if (sizeInfo.numEntries > 0) {
+            rowinds = rowinds.persistingView(0,sizeInfo.numEntries);
+            lclGraph_.set2DStructure(r,rowinds);
+          }
+        }
+      }
+    }
   }
 
 
@@ -2435,6 +2496,8 @@ namespace Tpetra
           TEST_FOR_EXCEPTION( nodeNumEntries_ != sofar, std::logic_error, 
               Teuchos::typeName(*this) << "::optimizeStorage(): Internal Tpetra logic error. Please contact Tpetra team.");
 #endif
+          // resize to num allocated
+          pbuf_lclInds1D_ = pbuf_lclInds1D_.persistingView(0,sofar);
         }
       }
       nodeNumAllocated_ = nodeNumEntries_;

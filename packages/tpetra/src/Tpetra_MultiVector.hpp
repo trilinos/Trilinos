@@ -356,47 +356,49 @@ namespace Tpetra {
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     Teuchos::ArrayRCP<Scalar> mybuff = MVT::getValuesNonConst(lclMV_);
     // TODO: determine whether this viewBuffer is write-only or not; for now, safe option is not
-    Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,mybuff.size(),mybuff);
-    typename ArrayView<const       Scalar>::iterator impptr;
-    typename ArrayView<const LocalOrdinal>::iterator  idptr;
-    impptr = imports.begin();
-    if (CM == INSERT || CM == REPLACE) {
-      if (isConstantStride()) {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*j + *idptr] = *impptr++;
+    if (numVecs > 0 && importLIDs.size()) {
+      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,mybuff.size(),mybuff);
+      typename ArrayView<const       Scalar>::iterator impptr;
+      typename ArrayView<const LocalOrdinal>::iterator  idptr;
+      impptr = imports.begin();
+      if (CM == INSERT || CM == REPLACE) {
+        if (isConstantStride()) {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*j + *idptr] = *impptr++;
+            }
+          }
+        }
+        else {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*whichVectors_[j] + *idptr] = *impptr++;
+            }
+          }
+        }
+      }
+      else if (CM == ADD) {
+        if (isConstantStride()) {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*j + *idptr] += *impptr++;
+            }
+          }
+        }
+        else {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*whichVectors_[j] + *idptr] += *impptr++;
+            }
           }
         }
       }
       else {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*whichVectors_[j] + *idptr] = *impptr++;
-          }
-        }
+        TEST_FOR_EXCEPTION(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
+            "Tpetra::MultiVector::unpackAndCombine(): Invalid CombineMode: " << CM);
       }
+      myview = Teuchos::null;
     }
-    else if (CM == ADD) {
-      if (isConstantStride()) {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*j + *idptr] += *impptr++;
-          }
-        }
-      }
-      else {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*whichVectors_[j] + *idptr] += *impptr++;
-          }
-        }
-      }
-    }
-    else {
-      TEST_FOR_EXCEPTION(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
-          "Tpetra::MultiVector::unpackAndCombine(): Invalid CombineMode: " << CM);
-    }
-    myview = Teuchos::null;
   }
 
 

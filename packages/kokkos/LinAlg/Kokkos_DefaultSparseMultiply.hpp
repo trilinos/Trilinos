@@ -114,7 +114,10 @@ namespace Kokkos {
     Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv);
 
     //! Initialize values of matrix, using Kokkos::CrsMatrix
-    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Ordinal,Node> &matrix, Teuchos::DataAccess cv);
+    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv);
+
+    //! Clear all matrix structure and values.
+    void clear();
 
     //@}
 
@@ -123,7 +126,8 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    void apply(Teuchos::ETransp trans, Scalar alpha, const MultiVector<Scalar,Node> &X, Scalar beta, MultiVector<Scalar,Node> &Y) const;
+    template <class DomainScalar, class RangeScalar>
+    void multiply(Teuchos::ETransp trans, Scalar alpha, const MultiVector<DomainScalar,Node> &X, Scalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
     //@}
 
@@ -166,7 +170,7 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node> &graph, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Node> &graph, Teuchos::DataAccess cv) {
     // FINISH
   }
 
@@ -176,7 +180,17 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultSparseMultiply<Scalar,Ordinal,Node>::apply(Teuchos::ETransp trans, Scalar alpha, const MultiVector<Scalar,Node> &X, Scalar beta, MultiVector<Scalar,Node> &Y) const {
+  void DefaultSparseMultiply<Scalar,Ordinal,Node>::clear() { 
+    // FINISH
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void DefaultSparseMultiply<Scalar,Ordinal,Node>::multiply(
+                                Teuchos::ETransp trans, 
+                                Scalar alpha, const MultiVector<DomainScalar,Node> &X, 
+                                Scalar beta, MultiVector<RangeScalar,Node> &Y) const {
+    // TEST_FOR_EXCEPT(true); // FINISH
   }
 
 } // namespace Kokkos
