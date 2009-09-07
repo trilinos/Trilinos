@@ -35,7 +35,6 @@ F90			= mpif77 -m64
 LOCAL_F90		= gfortran -m64
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
 FFLAGS    		= 
-SPPR_HEAD 		= spprinc.64bit
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 

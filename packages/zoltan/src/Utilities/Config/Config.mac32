@@ -20,28 +20,27 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= /Users/kddevin/code/lib-m32/lam-7.1.4/bin/mpicc -bind_at_load -Wall 
-CPPC			= /Users/kddevin/code/lib-m32/lam-7.1.4/bin/mpic++ -bind_at_load 
+CC			= /usr/local/openmpi-1.3.3-32bit/bin/mpicc -bind_at_load -Wall 
+CPPC			= /usr/local/openmpi-1.3.3-32bit/bin/mpic++ -bind_at_load 
 INCLUDE_PATH		= 
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS 			= $(DBG_FLAGS)
+CFLAGS 			= -m32 $(DBG_FLAGS)
 
-# To use fortran, MUST USE lam mpi in ~/code/lib-m32/lam-7.1.2.
-# Make sure path to mpif77 points to ~/code/lib-m32/lam-7.1.2/bin/mpif77.
-F90			= /Users/kddevin/code/lib-m32/lam-7.1.4/bin/mpif77 
+# To use fortran, MUST USE /usr/local/openmpi-1.3.3-32bit/bin/mpif77
+F90			= /usr/local/openmpi-1.3.3-32bit/bin/mpif77 
 LOCAL_F90		= gfortran
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
-FFLAGS    		= 
-SPPR_HEAD 		= spprinc.most
+FFLAGS    		= -m32 $(DBG_FLAGS)
+SPPR_HEAD 		= 
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
 MPI_LIB			= 
 MPI_LIBPATH		=
 
-PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m32/ParMETIS3_1
-PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m32/ParMETIS3_1
+#PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m32/ParMETIS3_1
+#PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m32/ParMETIS3_1
 
 #PATOH_LIBPATH		= -L../../lib-m32/PaToH/lib
 #PATOH_INCPATH		= -I../../lib-m32/PaToH/src/api
@@ -50,5 +49,5 @@ PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m32/ParMETIS3_1
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH	= -L/Users/kddevin/code/lib-m64/lib
-NEMESIS_INCPATH	= -I/Users/kddevin/code/lib-m64/include
+#NEMESIS_LIBPATH	= -L/Users/kddevin/code/lib-m64/lib
+#NEMESIS_INCPATH	= -I/Users/kddevin/code/lib-m64/include
