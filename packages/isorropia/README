@@ -10,9 +10,9 @@ demonstrate using Isorropia to partition and rebalance Epetra objects.
 For documentation, see our website:
 http://trilinos.sandia.gov/packages/isorropia/
 
-===================
+=============================
 List of Isorropia Parameters:
------------------------------
+=============================
 
 FOO:
      *DEFAULT*		  Default for parameter FOO
@@ -32,9 +32,9 @@ Partitioning parameters:
 
 PARTITIONING METHOD:      Related to Zoltan LB_METHOD parameter.
      *RCB*		  Default when geometry is provided.
-     HSCF                 Available when geometry is provided.
-     GRAPH                Use a graph partitioner
-     *HYPERGRAPH*         Use an hypergraph partitioner, default.
+     HSFC                 Available when geometry is provided.
+     GRAPH                Use a graph partitioner (Zoltan or 3rd party).
+     *HYPERGRAPH*         Use a hypergraph partitioner (Zoltan), default.
 
 NUM PARTS:
      number               Global number of parts wanted.

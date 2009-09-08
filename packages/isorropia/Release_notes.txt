@@ -1,5 +1,8 @@
 Release notes for Isorropia 3.2 (Trilinos 10.0), Sept. 2009:
 
+Isorropia 3.2 improves upon version 3.0 (Trilinos 9.0)
+in many ways. The most important changes are listed below.
+
 General:
  - Isorropia now has a set of parameters for common options,
    such that many users do not need to use Zoltan parameters. 
@@ -15,3 +18,8 @@ Coloring:
  - Distance-2 coloring for Jacobians is now the default.
  - New methods Isorropia::Epetra::Colorer::generateRowMapColoring 
    and Isorropia::Epetra::Colorer::generateColMapColoring.
+
+Prober:
+ - New class to construct a sparse matrix from an operator efficiently via
+   coloring.
+
