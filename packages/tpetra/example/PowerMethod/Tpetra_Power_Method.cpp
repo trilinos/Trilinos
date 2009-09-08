@@ -26,226 +26,209 @@
 // ************************************************************************
 //@HEADER
 
-#include <cstdio>
-#include <cstdlib>
-#include <cassert>
-#include <string>
-#include <cmath>
-#include <vector>
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_OrdinalTraits.hpp"
+#include <Teuchos_Array.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_oblackholestream.hpp>
+
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Version.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#ifdef Tpetra_MPI
-#include "mpi.h"
-#include "Teuchos_MpiComm.hpp"
-#endif
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultSerialComm.hpp"
-#include "Tpetra_Version.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Kokkos_DefaultNode.hpp"
 
-//#define getNumMyElements getNumMyEntries
-//#define getNumGlobalElements getNumGlobalEntries
-//#define getMyGlobalElements getMyGlobalEntries
-#define isNodeGlobalElement isMyGlobalIndex
-#define getNodeElementList getElementList
-#define getNodeNumElements getLocalNumElements
+
 // prototype
-template<class ST,class MT,class OT>
-void power_method(Tpetra::CrsMatrix<ST,OT>& A, ST & lambda, OT niters, MT tolerance, bool verbose);
+template<class Scalar,class Magnitude,class Ordinal>
+void power_method(const Tpetra::CrsMatrix<Scalar,Ordinal> & A, Scalar & lambda, size_t niters, Magnitude tolerance, bool verbose);
 
 
 int main(int argc, char *argv[]) {
-	typedef double ST;
-	typedef Teuchos::ScalarTraits<ST>::magnitudeType MT;
-	typedef int OT;
-	
-	
-	
-#ifdef Tpetra_MPI
-	
-	// Initialize MPI
-	
-	MPI_Init(&argc,&argv);
-	
-	Teuchos::RCP<Teuchos::Comm<OT> > comm = Teuchos::rcp(new Teuchos::MpiComm<OT>( RCP<OpaqueWrapper<MPI_Comm> &MPI_COMM_WORLD ));
-	
-#else
-	
-	Teuchos::RCP<const Teuchos::Comm<OT> > comm = Teuchos::rcp(new Teuchos::SerialComm<OT>());
-	
-#endif
-	
-	OT myRank = comm->getRank();
-	OT numProc = comm->getSize();
+  Teuchos::oblackholestream blackhole;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+	typedef double Scalar;
+	typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+	typedef int Ordinal;
+  using Tpetra::global_size_t;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+	int myRank = comm->getRank();
+	int numProc = comm->getSize();
 	bool verbose = (myRank==0);
-	
-	if (verbose)
+
+	if (verbose) {
 		std::cout << Tpetra::version() << std::endl << std::endl;
-	
-	std::cout << comm << std::endl;
-	
+  }
+  std::cout << *comm;
+
 	// Get the number of local equations from the command line
-	if (argc!=2)
-	{
-		if (verbose) 
+	if (argc != 2) {
+		if (verbose) {
 			std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
+    }
 		std::exit(1);
 	}
-	OT numGlobalElements = std::atoi(argv[1]);
-	
-	if (numGlobalElements < numProc)
-	{
-		if (verbose)
+	const global_size_t numGlobalElements = std::atoi(argv[1]);
+
+	if (numGlobalElements < numProc) {
+		if (verbose) {
 			std::cout << "numGlobalBlocks = " << numGlobalElements 
-			<< " cannot be < number of processors = " << numProc << std::endl;
+			          << " cannot be less than the number of processors = " << numProc << std::endl;
+    }
 		std::exit(1);
 	}
-	
+
 	// Construct a Map that puts approximately the same number of 
 	// equations on each processor.
-	
-	Tpetra::Map<OT> map(numGlobalElements, 0, comm);
-	
+
+  const Ordinal indexBase = 0;
+  Teuchos::RCP<const Tpetra::Map<Ordinal> > map; 
+  map = Teuchos::rcp( new Tpetra::Map<Ordinal>(numGlobalElements, indexBase, comm) );
+
 	// Get update list and number of local equations from newly created map.
-	
-	size_t numMyElements = map.getNodeNumElements();
-	
-	Teuchos::ArrayView<const OT> myGlobalElements = map.getNodeElementList();
-	
+
+	const size_t numMyElements = map->getNodeNumElements();
+
+	Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+
 	// Create an OTeger vector NumNz that is used to build the Petra Matrix.
 	// NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
 	// on this processor
-	
-    std::vector<size_t> NumNz(numMyElements);
-	
+
+  Teuchos::ArrayRCP<size_t> NumNz = Teuchos::arcp<size_t>(numMyElements);
+
 	// We are building a tridiagonal matrix where each row has (-1 2 -1)
 	// So we need 2 off-diagonal terms (except for the first and last equation)
-	
-	for (size_t i=0; i<numMyElements; i++)
-		if (myGlobalElements[i]==0 || myGlobalElements[i] == numGlobalElements-1)
+
+	for (size_t i=0; i < numMyElements; ++i) {
+		if (myGlobalElements[i] == 0 || myGlobalElements[i] == numGlobalElements-1) {
+      // boundary
 			NumNz[i] = 2;
-		else
-			NumNz[i] = 3;
-	
-	// Create a Tpetra::Matrix
-	
-	Tpetra::CrsMatrix<ST,OT> A(map, Teuchos::ArrayView<size_t>(&NumNz[0], numMyElements));
-	
-	// Add  rows one-at-a-time
-	// Need some vectors to help
-	// Off diagonal values will always be -1
-	
-	
-	std::vector<ST> values(2);
-	values[0] = -1.0; values[1] = -1.0;
-	std::vector<OT> indices(2);
-	ST two = 2.0;
-	OT numEntries;
-	
-	for (size_t i=0; i<numMyElements; i++)
-    {
-		if (myGlobalElements[i]==0)
-		{
-			indices[0] = 1;
-			numEntries = 1;
-		}
-		else if (myGlobalElements[i] == numGlobalElements-1)
-		{
-			indices[0] = numGlobalElements-2;
-			numEntries = 1;
-		}
-		else
-		{
-			indices[0] = myGlobalElements[i]-1;
-			indices[1] = myGlobalElements[i]+1;
-			numEntries = 2;
-		}
-		A.insertGlobalValues(myGlobalElements[i], Teuchos::ArrayView<OT>(&indices[0], numEntries), 
-									Teuchos::ArrayView<ST>(&values[0], numEntries));
-		// Put in the diagonal entry
-		A.insertGlobalValues(myGlobalElements[i], Teuchos::ArrayView<const OT>(&myGlobalElements[i], 1), Teuchos::ArrayView<const ST>(&two, 1));
     }
-	
+		else {
+			NumNz[i] = 3;
+    }
+  }
+
+	// Create a Tpetra::Matrix using the Map, with a static allocation dictated by NumNz
+
+	Tpetra::CrsMatrix<Scalar,Ordinal> A(map, NumNz, Tpetra::StaticProfile);
+  
+  // We are done with NumNZ
+  NumNz = Teuchos::null;
+
+	// Add  rows one-at-a-time
+	// Off diagonal values will always be -1
+	const Scalar two    = static_cast<Scalar>( 2.0);
+  const Scalar negOne = static_cast<Scalar>(-1.0);
+	for (size_t i=0; i<numMyElements; i++) {
+		if (myGlobalElements[i] == 0) {
+      A.insertGlobalValues( myGlobalElements[i],
+                            Teuchos::tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
+                            Teuchos::tuple<Scalar> ( two, negOne ) );
+		}
+		else if (myGlobalElements[i] == numGlobalElements-1) {
+      A.insertGlobalValues( myGlobalElements[i],
+                            Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
+                            Teuchos::tuple<Scalar> ( negOne, two ) );
+		}
+		else {
+      A.insertGlobalValues( myGlobalElements[i],
+                            Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+                            Teuchos::tuple<Scalar> ( negOne, two, negOne ) );
+		}
+  }
+
 	// Finish up
-	A.fillComplete();
-	
+	A.fillComplete(Tpetra::DoOptimizeStorage);
+  if (verbose) std::cout << std::endl << A.description() << std::endl << std::endl;
+
 	// Create vectors for Power method
-	
-	
+
 	// variable needed for iteration
-	ST lambda = 0.0;
-	OT niters = numGlobalElements*10;
-	ST tolerance = 1.0e-2;
-	
+	Scalar lambda;
+	const size_t niters = static_cast<size_t>(numGlobalElements*10);
+	const Scalar tolerance = 1.0e-2;
+
 	// Iterate
-	power_method<ST,MT,OT>(A, lambda, niters, tolerance, verbose);
-	
+  lambda = 0;
+	power_method<Scalar,Magnitude,Ordinal>(A, lambda, niters, tolerance, verbose);
+
 	// Increase diagonal dominance
-	if (verbose) 
-		std::cout << "\nIncreasing magnitude of first diagonal term, solving again\n\n"
-		<< std::endl;
-	
-	if (A.getRowMap().isNodeGlobalElement(0)) {
-		size_t numvals = A.getNumEntriesForGlobalRow(0);
-		std::vector<ST> Rowvals(numvals);
-		std::vector<OT> Rowinds(numvals);
-		A.getGlobalRowCopy(0, Teuchos::ArrayView<OT>(&Rowinds[0], numvals), Teuchos::ArrayView<ST>(&Rowvals[0], numvals), numvals); // Get A[0,0]
-		for (size_t i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
-		
-		A.replaceGlobalValues(0, Teuchos::ArrayView<OT>(&Rowinds[0], numvals), Teuchos::ArrayView<ST>(&Rowvals[0], numvals));
+	if (verbose) {
+		std::cout << "\nIncreasing magnitude of first diagonal term, solving again\n"
+		          << std::endl;
+  }
+
+	if (A.getRowMap()->isNodeGlobalElement(0)) {
+    // get a copy of the row with with global index 0
+    // modify the diagonal entry of that row
+    // submit the modified values to the matrix
+    const Ordinal ID = 0;
+		size_t numVals = A.getNumEntriesInGlobalRow(ID);
+    Teuchos::Array<Scalar>  rowvals(numVals);
+    Teuchos::Array<Ordinal> rowinds(numVals);
+		A.getGlobalRowCopy(ID, rowinds, rowvals, numVals);       // Get A(0,:)
+		for (size_t i=0; i<numVals; i++) {
+      if (rowinds[i] == ID) {
+        // we have found the diagonal; modify it and break the loop
+        rowvals[i] *= 10.0;
+        break;
+      }
+    }
+		A.replaceGlobalValues(ID, rowinds(), rowvals());
 	}
-	
+
 	// Iterate (again)
 	lambda = 0.0;
-	power_method<ST,MT,OT>(A, lambda, niters, tolerance, verbose);	
-	
-	// Release all objects
-#ifdef Tpetra_MPI
-	MPI_Finalize() ;
-#endif
-	
+	power_method<Scalar,Magnitude,Ordinal>(A, lambda, niters, tolerance, verbose);	
+
 	/* end main
 	 */
+  if (verbose) {
+    std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+  }
+  return 0;
 }
-template<class ST,class MT,class OT>
-void power_method(Tpetra::CrsMatrix<ST,OT> & A, ST &lambda, OT niters, MT tolerance, bool verbose) {  
-	Kokkos::DefaultNode::DefaultNodeType node;
-	Tpetra::Vector<ST,OT> q(node, A.getRowMap());
-	Tpetra::Vector<ST,OT> z(node, A.getRowMap());
-	Tpetra::Vector<ST,OT> resid(node, A.getRowMap());
-	
-	// Fill z with random Numbers
-	z.randomize();
-	
-	// variable needed for iteration
-	MT normz, residual;
-	
-	ST one = Teuchos::ScalarTraits<ST>::one();
-	ST zero = Teuchos::ScalarTraits<ST>::zero();
 
-	
-	for (OT iter = 0; iter < niters; iter++)
-    {
-		normz = z.norm2(); // Compute 2-norm of z
-		q.scale(one/normz, z);
-		A.apply(q, z); // Compute z = A*q
-		lambda = q.dot(z); // Approximate maximum eigenvalue
-		if (iter%100==0 || iter+1==niters)
-		{
-			resid.update(one, z, -lambda, q, zero); // Compute A*q - lambda*q
-			residual = resid.norm2();
-			if (verbose) std::cout << "Iter = " << iter << "  Lambda = " << lambda 
-			    << "  Residual of A*q - lambda*q = " 
-			    << residual << std::endl;
-		} 
-		if (residual < tolerance) {
-			break;
-		}
+
+template<class Scalar,class Magnitude,class Ordinal>
+void power_method(const Tpetra::CrsMatrix<Scalar,Ordinal> &A, Scalar &lambda, size_t niters, Magnitude tolerance, bool verbose) {  
+  // create three vectors; do not bother initializing them to zero
+	Tpetra::Vector<Scalar,Ordinal> q(A.getRowMap(), false);
+	Tpetra::Vector<Scalar,Ordinal> z(A.getRowMap(), false);
+	Tpetra::Vector<Scalar,Ordinal> resid(A.getRowMap(), false);
+
+	// Fill z with random numbers
+	z.randomize();
+
+	// Variables needed for iteration
+	Magnitude normz, residual;
+
+	const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+	const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+
+  for (size_t iter = 0; iter < niters; ++iter) {
+    normz = z.norm2();                            // Compute 2-norm of z
+    q.scale(one/normz, z);                        // Set q = z / normz
+    A.apply(q, z);                                // Compute z = A*q
+    lambda = q.dot(z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+    if ( iter % 100 == 0 || iter + 1 == niters ) {
+      resid.update(one, z, -lambda, q, zero);     // Compute A*q - lambda*q
+      residual = resid.norm2();
+      if (verbose) {
+        std::cout << "Iter = " << iter << "  Lambda = " << lambda 
+                  << "  Residual of A*q - lambda*q = " 
+                  << residual << std::endl;
+      }
+    } 
+    if (residual < tolerance) {
+      break;
     }
-	return;
+  }
+  return;
 }

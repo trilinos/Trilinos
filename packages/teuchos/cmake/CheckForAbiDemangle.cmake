@@ -7,6 +7,7 @@ FUNCTION(CHECK_FOR_ABI_DEMANGLE VARNAME)
   SET(SOURCE
   "
   #include <cxxabi.h>
+  #include <stdlib.h>
   #include <string>
   namespace MyNamespace {
     class MyClass {};

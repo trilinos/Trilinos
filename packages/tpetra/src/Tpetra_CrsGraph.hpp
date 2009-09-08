@@ -36,6 +36,7 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_NullIteratorTraits.hpp>
+#include <Teuchos_CompileTimeAssert.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_CrsGraph.hpp>
