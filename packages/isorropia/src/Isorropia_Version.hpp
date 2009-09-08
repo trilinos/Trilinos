@@ -36,7 +36,7 @@ USA
 namespace Isorropia {
 
         std::string Isorropia_Version() {
-                return("Isorropia Version 3.0");
+                return("Isorropia Version 3.3d");
         }
 } // namespace Isorropia
 
