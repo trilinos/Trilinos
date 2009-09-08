@@ -2,8 +2,7 @@
 // Basic C++ example of using Zoltan to compute a quick partitioning
 // of a set of objects.
 //
-
-#define MPICPP 1
+//#define MPICPP // Uncomment to use C++ interface for MPI.
 
 #include <mpi.h>
 #include <zoltan_cpp.h>
