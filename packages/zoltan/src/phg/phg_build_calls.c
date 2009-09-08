@@ -527,7 +527,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (map1 < 0) goto End;
 
       for (i=0; i < zhg->nObj; i++){
-        indexptr = (int *)(i+1);
+        indexptr = (int *)(long)(i+1);
         ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, indexptr);
         if (ierr != ZOLTAN_OK) goto End;
       }
@@ -790,7 +790,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       for (j=0; j < zhg->Esize[i]; j++, k++){
          gnos[0] = zhg->objGNO[i];
          gnos[1] = zhg->pinGNO[k];
-         indexptr = (int *)(k+1);
+         indexptr = (int *)(long)(k+1);
          ierr = Zoltan_Map_Add(zz, map2, gnos, indexptr);
          if (ierr != ZOLTAN_OK) goto End;
       }

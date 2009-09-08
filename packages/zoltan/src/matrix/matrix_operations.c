@@ -329,7 +329,7 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
  * TODO: at this time we only do symmetric permutations (don't know xGNO !).
  */
 int
-Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
+Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
 {
   static char *yo = "Zoltan_Matrix_Permute";
   int ierr = ZOLTAN_OK;
@@ -377,7 +377,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
 
-  Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, perm_y, NULL, NULL, m->nY);
+  Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, (ZOLTAN_ID_PTR)perm_y, NULL, NULL, m->nY);
 
   pinGNO = (int*)ZOLTAN_MALLOC(m->nPins*sizeof(int));
   if (m->nPins && pinGNO == NULL)

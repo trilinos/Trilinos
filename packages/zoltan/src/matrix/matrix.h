@@ -141,7 +141,7 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
  * Zoltan_Matrix2d_Distribute.
  */
 int
-Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y);
+Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y);
 
 /* Distribute the matrix in the 2D layout defined by user in outmat
  * if !copy, inmat is not usable after this call */
