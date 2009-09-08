@@ -65,8 +65,11 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = gcrodr_hb$(EXEEXT) Dummy$(EXEEXT)
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = prec_gcrodr_hb$(EXEEXT)
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 =  \
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	gcrodr_hb$(EXEEXT) \
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = prec_gcrodr_hb$(EXEEXT) \
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
@@ -223,8 +226,8 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb 
-@BUILD_TRIUTILS_TRUE@BELOS_GCRODR_NOPREC_EX = gcrodr_hb Dummy 
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb Dummy
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_GCRODR_NOPREC_EX = gcrodr_hb Dummy 
 Dummy_SOURCES = Dummy
 gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
 prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp

@@ -231,8 +231,6 @@ CORE_H = \
 	$(srcdir)/BelosCGIteration.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
-	$(srcdir)/BelosPCPGIter.hpp \
-	$(srcdir)/BelosPCPGSolMgr.hpp \
 	$(srcdir)/BelosGCRODRIter.hpp \
 	$(srcdir)/BelosGCRODRSolMgr.hpp \
         $(srcdir)/BelosGmresIteration.hpp \

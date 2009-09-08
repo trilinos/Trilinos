@@ -358,13 +358,14 @@ AC_CONFIG_FILES([
 		epetra/example/BlockGmres/Makefile
 		epetra/example/BlockCG/Makefile
 		epetra/example/GCRODR/Makefile
-		epetra/example/PCPG/Makefile
+		epetra/example/RCG/Makefile
+		epetra/example/TFQMR/Makefile
 		epetra/test/Makefile
 		epetra/test/MVOPTester/Makefile
 		epetra/test/BlockCG/Makefile
 		epetra/test/BlockGmres/Makefile
 		epetra/test/GCRODR/Makefile
-		epetra/test/PCPG/Makefile
+		epetra/test/RCG/Makefile
 		epetra/test/TFQMR/Makefile
 		tpetra/Makefile
 		tpetra/src/Makefile
