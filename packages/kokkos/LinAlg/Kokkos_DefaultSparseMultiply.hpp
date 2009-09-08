@@ -40,6 +40,8 @@
 #include "Kokkos_CrsMatrix.hpp" 
 #include "Kokkos_CrsGraph.hpp" 
 #include "Kokkos_MultiVector.hpp"
+#include "Kokkos_NodeHelpers.hpp"
+#include "Kokkos_DefaultArithmetic.hpp"
 
 #ifndef KERNEL_PREFIX
   #define KERNEL_PREFIX
@@ -47,25 +49,62 @@
 
 namespace Kokkos {
 
-  template <class Scalar, class Ordinal, class Node>
-  struct DefaultSparseMultiplyOp {
+  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  struct DefaultSparseMultiplyOp1 {
     // mat data
     const size_t  *offsets;
     const Ordinal *inds;
     const Scalar  *vals;
     // matvec params
     Scalar        alpha, beta;
+    size_t numRows;
     // mv data
-    const Scalar  *x;
-    Scalar        *y;
+    const DomainScalar  *x;
+    RangeScalar         *y;
+    size_t xstride, ystride;
 
     inline KERNEL_PREFIX void execute(size_t i) {
+      const size_t row = i % numRows;
+      const size_t rhs = (i - row) / numRows;
       Scalar tmp = 0;
-      for (size_t c=offsets[i]; c != offsets[i+1]; ++c) {
-        tmp += vals[c] * x[inds[c]];
+      const DomainScalar *xj = x + rhs * xstride;
+      RangeScalar        *yj = y + rhs * ystride;
+      for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
+        tmp += vals[c] * xj[inds[c]];
       }
-      Scalar tmp2 = beta*y[i];
-      y[i] = alpha*tmp + tmp2;
+      Scalar tmp2 = beta * yj[row];
+      yj[row] = (Scalar)(alpha * tmp + tmp2);
+    }
+  };
+
+
+  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  struct DefaultSparseMultiplyOp2 {
+    // mat data
+    const Ordinal * const * inds_beg;
+    const Scalar  * const * vals_beg;
+    const size_t  *         numEntries;
+    // matvec params
+    Scalar        alpha, beta;
+    size_t numRows;
+    // mv data
+    const DomainScalar  *x;
+    RangeScalar         *y;
+    size_t xstride, ystride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+      const size_t row = i % numRows;
+      const size_t rhs = (i - row) / numRows;
+      Scalar tmp = 0;
+      const DomainScalar *xj = x + rhs * xstride;
+      RangeScalar        *yj = y + rhs * ystride;
+      const Scalar  *curval = vals_beg[row];
+      const Ordinal *curind = inds_beg[row];
+      for (size_t j=0; j != numEntries[row]; ++j) {
+        tmp += (curval[j]) * xj[curind[j]];
+      }
+      Scalar tmp2 = beta * yj[row];
+      yj[row] = (Scalar)(alpha * tmp + tmp2);
     }
   };
 
@@ -136,14 +175,28 @@ namespace Kokkos {
     DefaultSparseMultiply(const DefaultSparseMultiply& source);
 
     Teuchos::RCP<Node> node_;
-    mutable DefaultSparseMultiplyOp<Scalar,Ordinal,Node> op_;
+
+    // we do this one of two ways: 
+    // 1D/packed: array of offsets, pointer for ordinals, pointer for values. obviously the smallest footprint.
+    Teuchos::ArrayRCP<const Ordinal> pbuf_inds1D_;
+    Teuchos::ArrayRCP<const size_t>  pbuf_offsets1D_;
+    Teuchos::ArrayRCP<const Scalar>  pbuf_vals1D_;
+    // 2D: array of pointers to 
+    Teuchos::ArrayRCP<const Ordinal *> pbuf_inds2D_;
+    Teuchos::ArrayRCP<const Scalar  *> pbuf_vals2D_;
+    Teuchos::ArrayRCP<size_t>          pbuf_numEntries_;
+    
+    size_t numRows_;
+    bool indsInit_, valsInit_, isPacked_, isEmpty_;
   };
 
   template<class Scalar, class Ordinal, class Node>
   DefaultSparseMultiply<Scalar,Ordinal,Node>::DefaultSparseMultiply(const Teuchos::RCP<Node> &node)
-  : node_(node) {
-    op_.alpha = Teuchos::ScalarTraits<Scalar>::one();
-    op_.beta =  Teuchos::ScalarTraits<Scalar>::zero();
+  : node_(node)
+  , indsInit_(false)
+  , valsInit_(false)
+  , isPacked_(false) 
+  , isEmpty_(false) {
   }
 
   template<class Scalar, class Ordinal, class Node>
@@ -164,25 +217,103 @@ namespace Kokkos {
     TEST_FOR_EXCEPT(true);
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv) {
-    // FINISH
-  }
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Node> &graph, Teuchos::DataAccess cv) {
-    // FINISH
+  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv) {
+    using Teuchos::ArrayRCP;
+    TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
+        Teuchos::typeName(*this) << "::initializeStructure(): requires View access.");
+    TEST_FOR_EXCEPTION(indsInit_ == true, std::runtime_error, 
+        Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
+    numRows_ = graph.getNumRows();
+    if (graph.isEmpty() || numRows_ == 0) {
+      isEmpty_ = true;
+    }
+    else if (graph.isPacked()) {
+      isEmpty_ = false;
+      isPacked_ = true;
+      pbuf_inds1D_    = graph.get1DIndices();
+      pbuf_offsets1D_ = graph.get1DOffsets();
+    }
+    else {
+      isEmpty_ = false;
+      isPacked_ = false;
+      pbuf_inds2D_     = node_->template allocBuffer<const Ordinal *>(numRows_);
+      pbuf_numEntries_ = node_->template allocBuffer<size_t>(numRows_);
+      ArrayRCP<const Ordinal *> inds2Dview = node_->template viewBufferNonConst<const Ordinal *>(WriteOnly, numRows_, pbuf_inds2D_);
+      ArrayRCP<         size_t> numEntview = node_->template viewBufferNonConst<         size_t>(WriteOnly, numRows_, pbuf_numEntries_);
+      for (size_t r=0; r < numRows_; ++r) {
+        ArrayRCP<const Ordinal> rowinds = graph.get2DIndices(r);
+        if (rowinds != Teuchos::null) {
+          inds2Dview[r] = rowinds.getRawPtr();
+          numEntview[r] = rowinds.size();
+        }
+        else {
+          inds2Dview[r] = NULL;
+          numEntview[r] = 0;
+        }
+      }
+    }
+    indsInit_ = true;
+    return Teuchos::View;
   }
+
+
+  template <class Scalar, class Ordinal, class Node>
+  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv) {
+    using Teuchos::ArrayRCP;
+    TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
+        Teuchos::typeName(*this) << "::initializeValues(): requires View access.");
+    TEST_FOR_EXCEPTION(valsInit_ == true, std::runtime_error, 
+        Teuchos::typeName(*this) << "::initializeValues(): values already initialized.");
+    TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || (!isEmpty_ && isPacked_ != matrix.isPacked()), std::runtime_error,
+        Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
+    if (isEmpty_ || matrix.isEmpty() || numRows_ == 0) {
+      isEmpty_ = true;
+    }
+    else if (matrix.isPacked()) {
+      isEmpty_ = false;
+      pbuf_vals1D_ = matrix.get1DValues();
+    }
+    else {
+      isEmpty_ = false;
+      pbuf_vals2D_ = node_->template allocBuffer<const Scalar *>(numRows_);
+      ArrayRCP<const Scalar *> vals2Dview = node_->template viewBufferNonConst<const Scalar *>(WriteOnly, numRows_, pbuf_vals2D_);
+      for (size_t r=0; r < numRows_; ++r) {
+        ArrayRCP<const Scalar> rowvals = matrix.get2DValues(r);
+        if (rowvals != Teuchos::null) {
+          vals2Dview[r] = rowvals.getRawPtr();
+        }
+        else {
+          vals2Dview[r] = NULL;
+        }
+      }
+    }
+    valsInit_ = true;
+    return Teuchos::View;
+  }
+
 
   template <class Scalar, class Ordinal, class Node>
   Teuchos::RCP<Node> DefaultSparseMultiply<Scalar,Ordinal,Node>::getNode() const { 
     return node_; 
   }
 
+
   template <class Scalar, class Ordinal, class Node>
-  void DefaultSparseMultiply<Scalar,Ordinal,Node>::clear() { 
-    // FINISH
+  void DefaultSparseMultiply<Scalar,Ordinal,Node>::clear() {
+    pbuf_inds1D_     = Teuchos::null;
+    pbuf_offsets1D_  = Teuchos::null;
+    pbuf_vals1D_     = Teuchos::null;
+    pbuf_inds2D_     = Teuchos::null;
+    pbuf_vals2D_     = Teuchos::null;
+    pbuf_numEntries_ = Teuchos::null;
+    indsInit_ = false;
+    valsInit_ = false;
+    isPacked_ = false;
+    isEmpty_  = false;
   }
+
 
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
@@ -190,7 +321,53 @@ namespace Kokkos {
                                 Teuchos::ETransp trans, 
                                 Scalar alpha, const MultiVector<DomainScalar,Node> &X, 
                                 Scalar beta, MultiVector<RangeScalar,Node> &Y) const {
-    // TEST_FOR_EXCEPT(true); // FINISH
+    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar> Op1D;
+    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar> Op2D;
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(trans != Teuchos::NO_TRANS);
+    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    ReadyBufferHelper<Node> rbh(node_);
+    if (isEmpty_ == true) {
+      // Y <= alpha * 0 * X + beta * Y 
+      //   <= beta * Y
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
+    }
+    else if (isPacked_ == true) {
+      Op1D wdp;
+      rbh.begin();
+      wdp.alpha   = alpha;
+      wdp.beta    = beta;
+      wdp.numRows = numRows_;
+      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+      wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+      wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+      wdp.xstride = X.getStride();
+      wdp.ystride = Y.getStride();
+      rbh.end();
+      const size_t numRHS = X.getNumCols();
+      node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+    }
+    else {
+      Op2D wdp;
+      rbh.begin();
+      wdp.alpha   = alpha;
+      wdp.beta    = beta;
+      wdp.numRows = numRows_;
+      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+      wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+      wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+      wdp.xstride = X.getStride();
+      wdp.ystride = Y.getStride();
+      rbh.end();
+      const size_t numRHS = X.getNumCols();
+      node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+    }
+    return;
   }
 
 } // namespace Kokkos

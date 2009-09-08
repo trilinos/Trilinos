@@ -86,6 +86,9 @@ namespace Kokkos {
     //! Indicates that the matrix is initialized, but empty.
     bool isEmpty() const;
 
+    //! Return the number of rows in the graph.
+    size_t getNumRows() const;
+
     //! Release data associated with this matrix.
     void clear();
 
@@ -203,6 +206,12 @@ namespace Kokkos {
   template <class Scalar, class Node>
   bool CrsMatrix<Scalar,Node>::isEmpty() const {
     return isEmpty_;
+  }
+
+  //==============================================================================
+  template <class Scalar, class Node>
+  size_t CrsMatrix<Scalar,Node>::getNumRows() const {
+    return numRows_;
   }
 
 } // namespace Kokkos

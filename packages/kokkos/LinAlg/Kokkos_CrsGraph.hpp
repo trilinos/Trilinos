@@ -96,6 +96,9 @@ namespace Kokkos {
     //! Release data associated with this graph.
     void clear();
 
+    //! Return the number of rows in the graph.
+    size_t getNumRows() const;
+
     //@}
 
   private:
@@ -225,6 +228,12 @@ namespace Kokkos {
         Teuchos::typeName(*this) << "::get1DOffsets(): graph is uninitialized or not packed.");
 #endif
     return pbuf_offsets_;
+  }
+
+  //==============================================================================
+  template <class Ordinal, class Node>
+  size_t CrsGraph<Ordinal,Node>::getNumRows() const {
+    return numRows_;
   }
 
 } // namespace Kokkos

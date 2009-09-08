@@ -51,8 +51,8 @@
 
 using namespace Teuchos;
 using namespace Belos;
+using Tpetra::global_size_t;
 using Tpetra::DefaultPlatform;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::DiagPrecond;
@@ -69,7 +69,7 @@ using Teuchos::tuple;
 bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
 ParameterList mptestpl; 
-int rnnzmax;
+size_t rnnzmax;
 int mptestdim, numrhs; 
 double *dvals; 
 int *colptr, *rowind;
@@ -87,7 +87,7 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   typedef MultiVector<Scalar,int>      MV;
   typedef OperatorTraits<Scalar,MV,OP> OPT;
   typedef MultiVecTraits<Scalar,MV>    MVT;
-  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(*vmap,rnnzmax));
+  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(vmap,rnnzmax));
   if (mptestmypid == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
     const double *dptr = dvals;
@@ -107,25 +107,27 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   A->fillComplete();
   // Create initial MV and solution MV
   RCP<MV> B, X;
-  X = rcp( new MV(*vmap,numrhs) );
+  X = rcp( new MV(vmap,numrhs) );
   MVT::MvRandom( *X );
-  B = rcp( new MV(*vmap,numrhs) );
+  B = rcp( new MV(vmap,numrhs) );
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );
   // Construct a linear problem instance with zero initial MV
   RCP<LinearProblem<Scalar,MV,OP> > problem = rcp( new LinearProblem<Scalar,MV,OP>(A,X,B) );
   problem->setLabel(Teuchos::typeName(SCT::one()));
   // diagonal preconditioner
-  if (precond) {
-    Vector<Scalar,int> diags(A->getRowMap());
-    A->getLocalDiagCopy(diags);
-    for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
-      TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
-      diags[i] = SCT::one() / diags[i];
-    }
-    RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
-    problem->setRightPrec(P);
-  }
+  // if (precond) {
+  //   RCP<Vector<Scalar,int> > diags = rcp( new Vector<Scalar,int>(A->getRowMap()) );
+  //   A->getLocalDiagCopy(*diags);
+  //   ArrayRCP<Scalar> dview = diags->get1dViewNonConst();
+  //   for (Teuchos_Ordinal i=0; i < vmap->getNodeNumElements(); ++i) {
+  //     TEST_FOR_EXCEPTION(dview[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << dview[i]);
+  //     dview[i] = SCT::one() / dview[i];
+  //   }
+  //   dview = Teuchos::null;
+  //   RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
+  //   problem->setRightPrec(P);
+  // }
   TEST_FOR_EXCEPT(problem->setProblem() == false);
   return problem;
 }
@@ -191,7 +193,7 @@ bool runTest(double ltol, double times[], int &numIters)
     RCP<const MV> B = problem->getRHS();
     std::vector<MT> actual_resids( numrhs );
     std::vector<MT> rhs_norm( numrhs );
-    MV resid(*vmap, numrhs);
+    MV resid(vmap, numrhs);
     OPT::Apply( *A, *X, resid );
     MVT::MvAddMv( -ONE, resid, ONE, *B, resid );
     MVT::MvNorm( resid, actual_resids );
@@ -214,8 +216,7 @@ bool runTest(double ltol, double times[], int &numIters)
 int main(int argc, char *argv[]) 
 {
   GlobalMPISession mpisess(&argc,&argv,&cout);
-  RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
 
   //
   // Get test parameters from command-line processor
@@ -293,7 +294,7 @@ int main(int argc, char *argv[])
   }
 
   // create map
-  vmap = rcp(new Map<int>(mptestdim,0,comm));
+  vmap = rcp(new Map<int>(static_cast<global_size_t>(mptestdim),static_cast<int>(0),comm));
   //
   mptestpl.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   mptestpl.set( "Num Blocks", numblocks);

@@ -493,10 +493,10 @@ namespace {
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
-    // REFACTOR // FINISH // mvres.update(-ST::one(),mvrand,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    // REFACTOR // FINISH // mvres.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.update(-ST::one(),mvrand,ST::one());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    mvres.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -580,10 +580,10 @@ namespace {
     // test the action
     Bout.randomize();
     A.apply(X,Bout);
-    // REFACTOR // FINISH // Bout.update(-ST::one(),Bexp,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    // REFACTOR // FINISH // Bout.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    Bout.update(-ST::one(),Bexp,ST::one());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    Bout.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -674,10 +674,10 @@ namespace {
     // test the action
     Bout.randomize();
     A.apply(X,Bout,CONJ_TRANS);
-    // REFACTOR // FINISH // Bout.update(-ST::one(),Bexp,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    // REFACTOR // FINISH // Bout.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    Bout.update(-ST::one(),Bexp,ST::one());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    Bout.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -792,10 +792,10 @@ namespace {
     // test the action
     mvout.randomize();
     tri->apply(mvin,mvout);
-    // REFACTOR // FINISH // mvout.update(-ST::one(),mvexp,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    // REFACTOR // FINISH // mvout.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvout.update(-ST::one(),mvexp,ST::one());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    mvout.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -847,10 +847,10 @@ namespace {
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
-    // REFACTOR // FINISH // mvres.update(-ST::one(),mvrand,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    // REFACTOR // FINISH // mvres.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.update(-ST::one(),mvrand,ST::one());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    mvres.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -924,10 +924,10 @@ namespace {
     threes.randomize();
     A.apply(ones,threes);
     // now, threes should be 3*ones
-    // REFACTOR // FINISH // threes.update(static_cast<Scalar>(-3)*ST::one(),ones,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(1), zeros(1,MT::zero());
-    // REFACTOR // FINISH // threes.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    threes.update(static_cast<Scalar>(-3)*ST::one(),ones,ST::one());
+    Array<Mag> norms(1), zeros(1,MT::zero());
+    threes.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -1005,10 +1005,10 @@ namespace {
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorRangeMap()) , true);
     // test the action
     A.apply(mveye,mvres);
-    // REFACTOR // FINISH // mvres.update(-ST::one(),mvans,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(numImages), zeros(numImages,MT::zero());
-    // REFACTOR // FINISH // mvres.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.update(-ST::one(),mvans,ST::one());
+    Array<Mag> norms(numImages), zeros(numImages,MT::zero());
+    mvres.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -1103,10 +1103,10 @@ namespace {
     TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getOperatorRangeMap()) , true);
     // test the action
     A_crs.apply(mveye,mvres);
-    // REFACTOR // FINISH mvres.update(-ST::one(),A_mv,ST::one());
-    // REFACTOR // FINISH Array<Mag> norms(dim), zeros(dim,MT::zero());
-    // REFACTOR // FINISH mvres.norm2(norms());
-    // REFACTOR // FINISH TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.update(-ST::one(),A_mv,ST::one());
+    Array<Mag> norms(dim), zeros(dim,MT::zero());
+    mvres.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 #endif
 
@@ -1302,10 +1302,10 @@ namespace {
     TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getOperatorRangeMap()) , true);
     // test the action
     A_crs.apply(mveye,mvres);
-    // REFACTOR // FINISH // mvres.update(-ST::one(),A_mv,ST::one());
-    // REFACTOR // FINISH // Array<Mag> norms(dim), zeros(dim,MT::zero());
-    // REFACTOR // FINISH // mvres.norm2(norms());
-    // REFACTOR // FINISH // TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    mvres.update(-ST::one(),A_mv,ST::one());
+    Array<Mag> norms(dim), zeros(dim,MT::zero());
+    mvres.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 #endif
 
@@ -1372,9 +1372,9 @@ namespace {
     zero.fillComplete();
     mvres.randomize();
     zero.apply(mvrand,mvres);
-    // REFACTOR // FINISH Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
-    // REFACTOR // FINISH mvres.norm2(norms());
-    // REFACTOR // FINISH TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+    Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
+    mvres.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
 
@@ -1425,7 +1425,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, FullMatrixTriDiag, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, DomainRange, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR ) \
+      /*TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR )*/ \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \
