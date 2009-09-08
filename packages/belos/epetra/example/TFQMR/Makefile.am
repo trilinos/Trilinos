@@ -17,7 +17,7 @@ EXEEXT = .exe
 
 if BUILD_TRIUTILS
 if BUILD_IFPACK
-BELOS_TFQMR_PREC_EX = ptfqmr_hb Dummy
+BELOS_TFQMR_PREC_EX = TFQMREpetraExFile Dummy
 endif
 endif
 
@@ -28,16 +28,16 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
-ptfqmr_hb_SOURCES = $(srcdir)/TFQMREpetraExFile.cpp $(srcdir)/createEpetraProblem.cpp
+TFQMREpetraExFile_SOURCES = $(srcdir)/TFQMREpetraExFile.cpp $(srcdir)/createEpetraProblem.cpp
 
-ptfqmr_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+TFQMREpetraExFile_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-ptfqmr_hb_CXXFLAGS = 	-I$(top_srcdir)/src 
+TFQMREpetraExFile_CXXFLAGS = 	-I$(top_srcdir)/src 
 
-ptfqmr_hb_LDADD = $(EXPORT_LIBS)
+TFQMREpetraExFile_LDADD = $(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 

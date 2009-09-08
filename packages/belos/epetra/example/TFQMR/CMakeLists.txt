@@ -9,7 +9,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   IF (${PACKAGE_NAME}_ENABLE_Ifpack)
 
   PACKAGE_ADD_EXECUTABLE(
-    tfqmr_ex
+    TFQMR_Epetra_File_Ex
     SOURCES TFQMREpetraExFile.cpp createEpetraProblem.cpp
     COMM serial mpi
   )
@@ -17,7 +17,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleTFQMRFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockGmres
     SOURCE_FILES orsirr1.hb 
-    EXEDEPS tfqmr_ex
+    EXEDEPS TFQMR_Epetra_File_Ex
     )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
