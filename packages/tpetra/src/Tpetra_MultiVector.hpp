@@ -779,7 +779,7 @@ namespace Tpetra {
     const size_t myLen = getLocalLength();
     try {
       if (isConstantStride() && A.isConstantStride()) {
-        MVT::Divide(lclMV_,(const KMV&)A.lclMV_);
+        MVT::Recip(lclMV_,(const KMV&)A.lclMV_);
       }
       else {
         KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
@@ -790,7 +790,7 @@ namespace Tpetra {
                           avj = A.getSubArrayRCP(avptr,j);
           MVT::initializeValues(a,myLen, 1, avj, myLen);
           MVT::initializeValues(v,myLen, 1,  vj, myLen);
-          MVT::Divide(v,(const KMV &)a);
+          MVT::Recip(v,(const KMV &)a);
         }
       }
     }

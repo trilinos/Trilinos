@@ -46,6 +46,7 @@ namespace {
   using Kokkos::MultiVector;
   using Kokkos::DefaultArithmetic;
   using Kokkos::SerialNode;
+  using Teuchos::ScalarTraits;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -103,11 +104,12 @@ namespace {
     MV1.initializeValues(N,numVecs,buf          ,N);
     MV2.initializeValues(N,numVecs,buf+numVecs*N,N);
     vec.initializeValues(N,1,buf,N);                    // MV1 collocated with vec
-    DefaultArithmetic<MV>::Init(MV2,1);                 // MV2 = ones()
     DefaultArithmetic<MV>::Init(MV1,2);                 // MV1 = twos()
-    DefaultArithmetic<MV>::Multiply(MV2,(const MV)MV1); // MV2 *= MV1 => twos()
-    DefaultArithmetic<MV>::Divide(MV2,(const MV)MV1);   // MV2 /= MV1 => ones()
-    DefaultArithmetic<MV>::Divide(MV2,(const MV)vec);   // MV2 /= vec => ones()/twos()
+    DefaultArithmetic<MV>::Recip( MV2,(const MV&)MV1);  // MV2 = 1./MV1 = ones()/two()
+    ArrayRCP<const Scalar> viewMV2 = node->template viewBuffer<Scalar>(numVecs*N, buf+numVecs*N);
+    ArrayRCP<Scalar> halfs(numVecs*N, static_cast<Scalar>(1.0/2.0) );
+    TEST_COMPARE_FLOATING_ARRAYS(viewMV2, halfs(), ScalarTraits<Scalar>::eps());
+    viewMV2 = Teuchos::null;
     buf = Teuchos::null;
   }
 
@@ -127,7 +129,6 @@ namespace {
       UNIT_TEST_TBBNODE( SCALAR, ORDINAL )
 
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
      UNIT_TEST_GROUP_ORDINAL(int)

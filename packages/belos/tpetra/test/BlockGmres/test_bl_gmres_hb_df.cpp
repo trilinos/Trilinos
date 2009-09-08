@@ -31,8 +31,6 @@
 // The initial guesses are all set to zero. 
 // The problem is solver for multiple scalar types, and timings are reported.
 //
-// NOTE: No preconditioner is used in this case. 
-//
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
@@ -46,7 +44,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DiagPrecond.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
 using namespace Teuchos;
@@ -55,7 +52,6 @@ using Tpetra::global_size_t;
 using Tpetra::DefaultPlatform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
-using Tpetra::DiagPrecond;
 using Tpetra::MultiVector;
 using Tpetra::Vector;
 using Tpetra::Map;
@@ -75,12 +71,12 @@ double *dvals;
 int *colptr, *rowind;
 int mptestmypid = 0;
 int mptestnumimages = 1;
+int maxIters = 100;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar> 
-RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem()
-{
+RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem() {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
   typedef Operator<Scalar,int>         OP;
@@ -115,19 +111,6 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   // Construct a linear problem instance with zero initial MV
   RCP<LinearProblem<Scalar,MV,OP> > problem = rcp( new LinearProblem<Scalar,MV,OP>(A,X,B) );
   problem->setLabel(Teuchos::typeName(SCT::one()));
-  // diagonal preconditioner
-  // if (precond) {
-  //   RCP<Vector<Scalar,int> > diags = rcp( new Vector<Scalar,int>(A->getRowMap()) );
-  //   A->getLocalDiagCopy(*diags);
-  //   ArrayRCP<Scalar> dview = diags->get1dViewNonConst();
-  //   for (Teuchos_Ordinal i=0; i < vmap->getNodeNumElements(); ++i) {
-  //     TEST_FOR_EXCEPTION(dview[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << dview[i]);
-  //     dview[i] = SCT::one() / dview[i];
-  //   }
-  //   dview = Teuchos::null;
-  //   RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
-  //   problem->setRightPrec(P);
-  // }
   TEST_FOR_EXCEPT(problem->setProblem() == false);
   return problem;
 }
@@ -136,8 +119,7 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar>
-bool runTest(double ltol, double times[], int &numIters) 
-{
+bool runTest(double ltol, double times[], int &numIters) {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
   typedef Operator<Scalar,int>         OP;
@@ -213,8 +195,7 @@ bool runTest(double ltol, double times[], int &numIters)
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[]) 
-{
+int main(int argc, char *argv[]) {
   GlobalMPISession mpisess(&argc,&argv,&cout);
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
 
@@ -241,6 +222,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("reduce-tol","fixed-tol",&reduce_tol,"Require increased accuracy from higher precision scalar types.");
   cmdp.setOption("use-precond","no-precond",&precond,"Use a diagonal preconditioner.");
   cmdp.setOption("dump-data","no-dump-data",&dumpdata,"Dump raw data to data.dat.");
+  cmdp.setOption("num-iters",&maxIters,"Number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -296,8 +278,10 @@ int main(int argc, char *argv[])
   // create map
   vmap = rcp(new Map<int>(static_cast<global_size_t>(mptestdim),static_cast<int>(0),comm));
   //
-  mptestpl.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-  mptestpl.set( "Num Blocks", numblocks);
+  mptestpl.set<int>( "Maximum Restarts", maxIters/blocksize + 1);
+  mptestpl.set<int>( "Maximum Iterations", maxIters);
+  mptestpl.set<int>( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  mptestpl.set<int>( "Num Blocks", numblocks);
   int verbLevel = Errors + Warnings;
   if (debug) {
     verbLevel |= Debug;
@@ -366,5 +350,3 @@ int main(int argc, char *argv[])
   if (mptestmypid==0) cout << "\nEnd Result: TEST PASSED" << endl;
   return 0;
 }
-
-

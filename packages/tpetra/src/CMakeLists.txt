@@ -39,7 +39,6 @@ APPEND_SET(HEADERS
   Tpetra_CrsGraph.hpp
   Tpetra_CrsMatrix.hpp
   Tpetra_DefaultPlatform.hpp
-  Tpetra_DiagPrecond.hpp
   Tpetra_Directory.hpp
   Tpetra_DirectoryDecl.hpp
   Tpetra_DistObject.hpp

@@ -96,17 +96,6 @@ namespace Kokkos {
   };
 
   template <class Scalar>
-  struct ScaleOp {
-    const Scalar *scale;
-    Scalar *x;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      Scalar tmp = x[i];
-      x[i] = scale[i]*tmp;
-    }
-  };
-
-  template <class Scalar>
   struct AbsOp {
     const Scalar *y;
     Scalar *x;
@@ -117,13 +106,12 @@ namespace Kokkos {
   };
 
   template <class Scalar>
-  struct RecipScaleOp {
+  struct RecipOp {
     const Scalar *scale;
     Scalar *x;
     inline KERNEL_PREFIX void execute(size_t i) const
     {
-      Scalar tmp = x[i];
-      x[i] = tmp / scale[i];
+      x[i] = Teuchos::ScalarTraits<Scalar>::one() / scale[i];
     }
   };
 
@@ -326,63 +314,14 @@ namespace Kokkos {
         }
       }
 
-      //! Multiply one MultiVector by another, element-wise: B *= A
-      inline static void Multiply(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
+      //! Set MultiVector to the reciprocal of another: B(i,j) = 1/A(i,j)
+      inline static void Recip(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
         const size_t nR = A.getNumRows();
         const size_t nC = A.getNumCols();
         const size_t Astride = A.getStride();
         const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  
-                            || nR != B.getNumRows(), 
-                           std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Multiply(A,B): A and B must have the same dimensions.");
-        Teuchos::RCP<Node> node = B.getNode();
-        // prepare buffers
-        ReadyBufferHelper<Node> rbh(node);
-        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
-        Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
-        rbh.begin();
-        rbh.template addConstBuffer<Scalar>(Bdata);
-        rbh.template addNonConstBuffer<Scalar>(Adata);
-        rbh.end();
-        // prepare op
-        ScaleOp<Scalar> wdp;
-        if (B.getNumCols() == 1) {
-          wdp.scale = Bdata(0,nR).getRawPtr();
-          for (size_t j = 0; j < nC; ++j) {
-            wdp.x = Adata(0,nR).getRawPtr();
-            node->template parallel_for<ScaleOp<Scalar> >(0,nR,wdp);
-            Adata += Astride;
-          }
-        }
-        else if (Astride == nR && Bstride == nR) {
-          // one kernel invocation for whole multivector
-          wdp.scale = Bdata(0,nR*nC).getRawPtr();
-          wdp.x = Adata(0,nR*nC).getRawPtr();
-          node->template parallel_for<ScaleOp<Scalar> >(0,nR*nC,wdp);
-        }
-        else {
-          // one kernel invocation for each column
-          for (size_t j=0; j<nC; ++j) {
-            wdp.scale = Bdata(0,nR).getRawPtr();
-            wdp.x = Adata(0,nR).getRawPtr();
-            node->template parallel_for<ScaleOp<Scalar> >(0,nR,wdp);
-            Adata += Astride;
-            Bdata += Bstride;
-          }
-        }
-      }
-
-      //! Divide one MultiVector by another, element-wise: B /= A
-      inline static void Divide(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
-        const size_t nR = A.getNumRows();
-        const size_t nC = A.getNumCols();
-        const size_t Astride = A.getStride();
-        const size_t Bstride = B.getStride();
-        TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  
-                           || nR != B.getNumRows(), 
-                           std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+        TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Recip(A,B): A and B must have the same dimensions.");
         Teuchos::RCP<Node> node = B.getNode();
         Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
         Teuchos::ArrayRCP<Scalar>       Adata = A.getValuesNonConst();
@@ -392,28 +331,19 @@ namespace Kokkos {
         rbh.template addConstBuffer<Scalar>(Bdata);
         rbh.template addNonConstBuffer<Scalar>(Adata);
         rbh.end();
-        RecipScaleOp<Scalar> wdp;
-        if (B.getNumCols() == 1) {
-          // one kernel invocation for each column
-          wdp.scale = Bdata(0,nR).getRawPtr();
-          for (size_t j=0; j<nC; ++j) {
-            wdp.x = Adata(0,nR).getRawPtr();
-            node->template parallel_for<RecipScaleOp<Scalar> >(0,nR,wdp);
-            Adata += Astride;
-          }
-        }
-        else if (A.getStride() == nR && B.getStride() == nR) {
+        RecipOp<Scalar> wdp;
+        if (A.getStride() == nR && B.getStride() == nR) {
           // one kernel invocation for whole multivector
           wdp.scale = Bdata(0,nR*nC).getRawPtr();
           wdp.x = Adata(0,nR*nC).getRawPtr();
-          node->template parallel_for<RecipScaleOp<Scalar> >(0,nR*nC,wdp);
+          node->template parallel_for<RecipOp<Scalar> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           for (size_t j=0; j<nC; ++j) {
             wdp.x = Adata(0,nR).getRawPtr();
             wdp.scale = Bdata(0,nR).getRawPtr();
-            node->template parallel_for<RecipScaleOp<Scalar> >(0,nR,wdp);
+            node->template parallel_for<RecipOp<Scalar> >(0,nR,wdp);
             Adata += Astride;
             Bdata += Bstride;
           }
@@ -561,7 +491,7 @@ namespace Kokkos {
         const size_t Bstride = B.getStride();
         const size_t Cstride = C.getStride();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() || nR != B.getNumRows(), std::runtime_error,
-                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::GESUM(C,alpha,A,beta,B,gamma): A and B must have the same dimensions.");
         Teuchos::RCP<Node> node = B.getNode();
         Teuchos::ArrayRCP<const Scalar> Adata = A.getValues(),
                                         Bdata = B.getValues();
