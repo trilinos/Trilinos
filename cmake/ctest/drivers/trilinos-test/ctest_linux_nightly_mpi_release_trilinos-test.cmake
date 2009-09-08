@@ -8,6 +8,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cma
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME MPI_RELEASE_10.0)
+SET(Trilinos_TRACK "Nightly Release 10.0")
 
 SET(Trilinos_BRANCH "-r trilinos-release-10-0-branch")
 

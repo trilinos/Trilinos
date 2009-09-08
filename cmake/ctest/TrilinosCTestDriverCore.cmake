@@ -163,6 +163,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # The type of test (e.g. Nightly, Experimental, Continuous)
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
   
+  # The default track to send the build to. This can be changed to send
+  # the data to a different nightly grouping on the dashboard.
+  SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "")
+  
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
@@ -310,8 +314,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Start up a new dashbaord
   #
   
-  CTEST_START(${CTEST_TEST_TYPE})
-
+  IF(Trilinos_TRACK)
+    CTEST_START(${CTEST_TEST_TYPE} TRACK ${Trilinos_TRACK})
+  ELSE()
+    CTEST_START(${CTEST_TEST_TYPE})
+  ENDIF()
+  
   #
   # Do the VC update
   #
