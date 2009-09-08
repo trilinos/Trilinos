@@ -31,9 +31,9 @@ time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_trilinos
 
 echo
 echo "Doing mpi optimized release 10.0  shared library build: `date`"
-echo
+echo "Temporarily disabled do to hang on submit"
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake -VV &> "MPI_RELEASE_10.0_SHARED_$DATE.log"
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake -VV &> "MPI_RELEASE_10.0_SHARED_$DATE.log"
 
 echo
 echo "Doing serial release 10.0 build: `date`"
