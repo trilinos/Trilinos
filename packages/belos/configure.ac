@@ -360,6 +360,7 @@ AC_CONFIG_FILES([
 		epetra/example/GCRODR/Makefile
 		epetra/example/RCG/Makefile
 		epetra/example/PCPG/Makefile
+		epetra/example/TFQMR/Makefile
 		epetra/test/Makefile
 		epetra/test/MVOPTester/Makefile
 		epetra/test/BlockCG/Makefile

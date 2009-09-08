@@ -17,9 +17,11 @@ EXEEXT = .exe
 
 if BUILD_TRIUTILS
 if BUILD_IFPACK
-BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb 
+BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb Dummy
 endif
+if BUILD_EPETRAEXT
 BELOS_GCRODR_NOPREC_EX = gcrodr_hb Dummy 
+endif
 endif
 
 noinst_PROGRAMS = $(BELOS_GCRODR_NOPREC_EX) $(BELOS_GCRODR_IFPACK_EX)
