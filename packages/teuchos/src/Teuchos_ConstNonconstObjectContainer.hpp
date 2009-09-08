@@ -102,7 +102,30 @@ public:
   /** \brief Perform shorthand for <tt>getConstObj(). */
   RCP<const ObjType> operator()() const
     { return getConstObj(); }
+
+  /** \brief Pointer (<tt>-></tt>) access to underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
+   * </ul>
+   */
+  const ObjType* operator->() const
+    { TEST_FOR_EXCEPT(!constObj_.get()); return constObj_.get(); }
+
+  /** \brief Dereference the underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
+   * </ul>
+   */
+  const ObjType& operator*() const
+    { return *constObj_; }
   
+  /** \brief Perform an implicit conversion to an RCP<const ObjType>
+   */
+  operator RCP<const ObjType>() const
+    { return constObj_; }
+
 private:
   RCP<const ObjType>   constObj_;
   bool                         isConst_;
