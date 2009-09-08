@@ -186,14 +186,14 @@ int main(int argc, char *argv[]) {
 
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
-      std::cout << std::endl << "End Result: TEST FAILED" << std::endl;	
+      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   return 0;
-  //
-} // end test_rcg_hb.cpp
+
+} 

@@ -125,30 +125,30 @@ int main(int argc, char *argv[]) {
   // ************Construct preconditioner*************
   //
   ParameterList ifpackList;
-
+    
   // allocates an IFPACK factory. No data is associated
   // to this object (only method Create()).
   Ifpack Factory;
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  std::string PrecType = "ICT"; // incomplete Cholesky
-  int OverlapLevel = 0; // must be >= 0. If Comm.NumProc() == 1,
+  std::string PrecType = "ILU"; // incomplete LU
+  int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
-
+  
   RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
   assert(Prec != Teuchos::null);
-
-  // specify parameters for ICT 
+  
+  // specify parameters for ILU
   ifpackList.set("fact: drop tolerance", 1e-9);
-  ifpackList.set("fact: ict level-of-fill", 1.0);
+  ifpackList.set("fact: level-of-fill", 1);
   // the combine mode is on the following:
   // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
   // Their meaning is as defined in file Epetra_CombineMode.h
   ifpackList.set("schwarz: combine mode", "Add");
   // sets the parameters
   IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
-
+    
   // initialize the preconditioner. At this point the matrix must
   // have been FillComplete()'d, but actual values are ignored.
   IFPACK_CHK_ERR(Prec->Initialize());
@@ -224,7 +224,8 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   //
   int numIters = solver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  if (proc_verbose)
+    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //
@@ -245,6 +246,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
+
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
@@ -257,8 +262,5 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   return 0;
 
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
   //
 } 

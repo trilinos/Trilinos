@@ -174,7 +174,8 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   //
   int numIters = newSolver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  if (proc_verbose)
+    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //
@@ -195,6 +196,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
+
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;	
@@ -207,8 +212,5 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   return 0;
   
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
   //
 } 

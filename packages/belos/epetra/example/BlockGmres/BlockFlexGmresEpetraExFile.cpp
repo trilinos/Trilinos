@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  std::string PrecType = "ILUT"; // incomplete LU
+  std::string PrecType = "ILU"; // incomplete LU
   int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
@@ -248,6 +248,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
+
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
@@ -260,8 +264,5 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   return 0;
 
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
   //
 } 
