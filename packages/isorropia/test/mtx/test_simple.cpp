@@ -527,38 +527,48 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   Isorropia::Epetra::Redistributor rd(partitioner);
 
   // Redistribute the matrix
-
-  Teuchos::RCP<Epetra_CrsMatrix> newMatrix = rd.redistribute(*matrix);
+  Teuchos::RCP<Epetra_CrsMatrix> newMatrix;
+  try {
+    newMatrix = rd.redistribute(*matrix);
+  }
+  catch(...) {
+    if (numPartitions > numProcs) {// Redistribution has to fail
+      if (localProc == 0){
+	std::cout << "Too many parts for too few processors, distribution has to fail" << std::endl ;
+      }
+      return (0);
+    }
+    ERRORRETURN((localProc==0), "Error in computing partitioning metrics after rebalancing")
+  }
 
   // Redistribute the vertex weights
 
-  if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS)){
+    if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS)){
 
-    Teuchos::RCP<Epetra_Vector> newvwgts = rd.redistribute(*vptr);
-    costs->setVertexWeights(newvwgts);
-  }
+      Teuchos::RCP<Epetra_Vector> newvwgts = rd.redistribute(*vptr);
+      costs->setVertexWeights(newvwgts);
+    }
 
   // Redistribute the edge weights
 
-  if (edgeWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS){
+    if (edgeWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS){
 
-    if (partitioningType == GRAPH_PARTITIONING){
-      Teuchos::RCP<Epetra_CrsMatrix> newewgts = rd.redistribute(*eptr);
-      costs->setGraphEdgeWeights(newewgts);
+      if (partitioningType == GRAPH_PARTITIONING){
+	Teuchos::RCP<Epetra_CrsMatrix> newewgts = rd.redistribute(*eptr);
+	costs->setGraphEdgeWeights(newewgts);
+      }
     }
-  }
+    if (partitioningType == HYPERGRAPH_PARTITIONING){
+      rc = ispatest::compute_hypergraph_metrics(newMatrix->Graph(), *costs,
+						myShare, balance2, cutn2, cutl2);
+    }
+    else{
+      rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs,
+					   myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
+    }
 
   // After partitioning, recompute the metrics
 
-  if (partitioningType == HYPERGRAPH_PARTITIONING){
-    rc = ispatest::compute_hypergraph_metrics(newMatrix->Graph(), *costs,
-	     myShare, balance2, cutn2, cutl2);
-  }
-  else{
-    rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs,
-	     myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
-
-  }
   if (rc){
     ERRORRETURN((localProc==0), "Error in computing partitioning metrics after rebalancing")
   }

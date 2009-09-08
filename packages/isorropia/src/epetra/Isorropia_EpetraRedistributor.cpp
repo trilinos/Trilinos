@@ -66,7 +66,8 @@ Redistributor::~Redistributor()
 {
 }
 
-void Redistributor::redistribute(const Epetra_SrcDistObject& src,
+void
+Redistributor::redistribute(const Epetra_SrcDistObject& src,
 				 Epetra_DistObject& target)
 {
   if (!created_importer_) {
@@ -315,6 +316,10 @@ Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epet
 void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
   if (created_importer_) return;
+
+  if (partitioner_->numProperties() > src_map.Comm().NumProc()) {
+    throw Isorropia::Exception("Cannot redistribute: Too many parts for too few processors.");
+  }
 
   target_map_ = partitioner_->createNewMap();
 
