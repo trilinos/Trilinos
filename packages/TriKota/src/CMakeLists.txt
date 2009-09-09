@@ -51,9 +51,12 @@ ENDIF()
 # Customize the build process, by adding a custom make
 # target, which makes Dakota (in source tree) and then
 # uses Dakota's PREFIX to install it in the build tree.
+#   Reverting to "make" from "make -j 4" which might
+#   have been causing problems by being launched within
+#   another make -j 4 at the Trilinos level
 
 ADD_CUSTOM_TARGET( TriKota_Dakota_libs ALL
-   COMMAND make -j 4
+   COMMAND make
    WORKING_DIRECTORY ${PACKAGE_SOURCE_DIR}/Dakota
   )
 
@@ -119,43 +122,6 @@ PACKAGE_ADD_LIBRARY(
   IMPORTEDLIBS ${DAKOTA_LIBS}
   )
 
-# Custom "make install" command to copy contents of Dakota lib
-FILE(GLOB_RECURSE dakota_lib_files ${PACKAGE_BINARY_DIR}/Dakota/lib/*)
-INSTALL(FILES ${dakota_lib_files} DESTINATION lib)
-
-# Custom "make install" command for dakota includes,
-# preserving directory structure
-SET(DAKINC  ${PACKAGE_BINARY_DIR}/Dakota/include)
-
-# Q: need *hpp.inl  as well?
-FILE(GLOB dakota_header_files ${DAKINC}/*.h  ${DAKINC}/*.H  ${DAKINC}/*.hpp)
-INSTALL(FILES ${dakota_header_files} DESTINATION include)
-
-FILE(GLOB tpo_header_files ${DAKINC}/3po/*.h)
-INSTALL(FILES ${tpo_header_files} DESTINATION include/3po)
-
-# Q: need ampl/*.hd as well?
-FILE(GLOB ampl_header_files ${DAKINC}/ampl/*.h)
-INSTALL(FILES ${ampl_header_files} DESTINATION include/ampl)
-
-# Q: need boost subdirectories as well?
-FILE(GLOB boost_header_files ${DAKINC}/boost/*.hpp)
-INSTALL(FILES ${boost_header_files} DESTINATION include/boost)
-
-FILE(GLOB colin_header_files ${DAKINC}/colin/*.h)
-INSTALL(FILES ${colin_header_files} DESTINATION include/colin)
-
-FILE(GLOB coliny_header_files ${DAKINC}/coliny/*.h)
-INSTALL(FILES ${coliny_header_files} DESTINATION include/coliny)
-
-FILE(GLOB coliny_header_files ${DAKINC}/coliny/*.h)
-INSTALL(FILES ${coliny_header_files} DESTINATION include/coliny)
-
-FILE(GLOB pebbl_header_files ${DAKINC}/pebbl/*.h)
-INSTALL(FILES ${pebbl_header_files} DESTINATION include/pebbl)
-
-FILE(GLOB pecos_header_files ${DAKINC}/pecos/*.h ${DAKINC}/pecos/*.hpp)
-INSTALL(FILES ${pecos_header_files} DESTINATION include/pecos)
-
-FILE(GLOB utilib_header_files ${DAKINC}/utilib/*.h)
-INSTALL(FILES ${utilib_header_files} DESTINATION include/utilib)
+# Custom "make install" command to copy contents of Dakota lib&include
+INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/lib/ DESTINATION lib)
+INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/include/ DESTINATION include)
