@@ -290,7 +290,7 @@ DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
 #endif
   assertBlockFillIsActive(false);
   assertBlockRowCol(i,j);
-  return Ops_[numRowBlocks_*j+i].getConstObj();
+  return Ops_[numRowBlocks_*j+i];
 } 
 
 
@@ -673,7 +673,7 @@ void DefaultBlockedLinearOp<Scalar>::adjustBlockSpaces()
   for (int i = 0; i < numRowBlocks_; ++i) {
     for (int j = 0; j < numColBlocks_; ++j) {
       const RCP<const LinearOpBase<Scalar> >
-        op_i_j = Ops_[numRowBlocks_*j+i].getConstObj();
+        op_i_j = Ops_[numRowBlocks_*j+i];
       if (is_null(op_i_j))
         continue;
       const RCP<const VectorSpaceBase<Scalar> > range_i_j = op_i_j->range();
@@ -688,7 +688,7 @@ void DefaultBlockedLinearOp<Scalar>::adjustBlockSpaces()
   for (int j = 0; j < numColBlocks_; ++j) {
     for (int i = 0; i < numRowBlocks_; ++i) {
       const RCP<const LinearOpBase<Scalar> >
-        op_i_j = Ops_[numRowBlocks_*j+i].getConstObj();
+        op_i_j = Ops_[numRowBlocks_*j+i];
       if (is_null(op_i_j))
         continue;
       const RCP<const VectorSpaceBase<Scalar> >

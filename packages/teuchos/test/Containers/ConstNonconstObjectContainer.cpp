@@ -95,6 +95,18 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, ConstInitialize) {
 }
 
 
+TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, AssignmentFromRCP) {
+  RCP<const std::vector<double> > vec = rcp(new std::vector<double> );
+  ConstNonconstObjectContainer<std::vector<double> > vectorObj;
+  vectorObj = vec;
+  TEST_ASSERT( vectorObj.isConst() == true );
+  RCP<const std::vector<double> > vec2 = vectorObj.getConstObj();
+  TEST_ASSERT( vec == vec2 );
+  RCP<std::vector<double> > vec3;
+  TEST_THROW( vec3 = vectorObj.getNonconstObj(), NonconstAccessError );
+}
+
+
 TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, uninitialize) {
   RCP<const std::vector<double> > vec = rcp(new std::vector<double> );
   ConstNonconstObjectContainer<std::vector<double> > vectorObj(vec);
