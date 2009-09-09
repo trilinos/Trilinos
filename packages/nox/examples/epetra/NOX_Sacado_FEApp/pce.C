@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   double alpha = 2.0;
   double leftBC = 0.0;
   double rightBC = 0.1;
-  unsigned int numalpha = 1;
+  unsigned int numalpha = 2;
   unsigned int p = 5;
 
   bool do_pce = true;
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
       for (unsigned int i=0; i<d; i++)
         bases[i] = Teuchos::rcp(new basis_type(p));
-      Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+      Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
         Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
