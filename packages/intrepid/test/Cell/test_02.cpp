@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
         // Move vertices +/-0.125 along their axes. Gives nondegenerate cells for base and extended topologies 
         for(int nodeOrd = 0; nodeOrd < numNodes; nodeOrd++){
           for(int d = 0; d < cellDim; d++){
-            double delta = Teuchos::ScalarTraits<double>::random()/8.0;
+            double delta = Teuchos::ScalarTraits<double>::random()/16.0;
             cellWorkset(cellOrd, nodeOrd, d) = refCellNodes(nodeOrd, d) + delta;
           } // d
         }// nodeOrd           

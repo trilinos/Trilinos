@@ -1278,7 +1278,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
       
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<10>::key:
-      cellCenter(0) = 1./3.;    cellCenter(1) =  1./3.;    cellCenter(2) =  1./3.;  break;
+      cellCenter(0) = 1./6.;    cellCenter(1) =  1./6.;    cellCenter(2) =  1./6.;  break;
       
     case shards::Hexahedron<8>::key:
     case shards::Hexahedron<27>::key:
@@ -1383,7 +1383,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
     }
     
     // Stopping criterion:
-    if (totalError < 2.0*INTREPID_EPSILON) {		          
+    if (totalError < INTREPID_TOL) {		          
       break;
     } 
     else if ( iter > INTREPID_MAX_NEWTON) {

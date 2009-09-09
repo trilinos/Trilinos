@@ -206,7 +206,7 @@ void RealSpaceTools<Scalar>::vectorNorm(NormArray & normArray, const VecArray & 
           offset     *= dim;
           Scalar temp = (Scalar)0;
           for(int i = 0; i < dim; i++){
-            temp += inVecs[i]*inVecs[i];
+            temp += inVecs[offset+i]*inVecs[offset+i];
           }
           normArray[normOffset] = std::sqrt(temp);
         }
@@ -225,7 +225,7 @@ void RealSpaceTools<Scalar>::vectorNorm(NormArray & normArray, const VecArray & 
           Scalar temp = (Scalar)0;
           temp = std::abs(inVecs[0]);
           for(int i = 1; i < dim; i++){
-            Scalar absData = std::abs(inVecs[i]);
+            Scalar absData = std::abs(inVecs[offset+i]);
             if (temp < absData) temp = absData;
           }
           normArray[normOffset] = temp;
@@ -244,7 +244,7 @@ void RealSpaceTools<Scalar>::vectorNorm(NormArray & normArray, const VecArray & 
           offset     *= dim;
           Scalar temp = (Scalar)0;
           for(int i = 0; i < dim; i++){
-            temp += std::abs(inVecs[i]);
+            temp += std::abs(inVecs[offset+i]);
           }
           normArray[normOffset] = temp;
         }
