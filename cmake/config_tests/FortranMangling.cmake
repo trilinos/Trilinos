@@ -60,7 +60,7 @@ FUNCTION(FORTRAN_MANGLING)
         SET(F_FLAGS "${CMAKE_Fortran_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
         TRY_COMPILE(_fcmngl ${_fcmangledir_case} ${_fcmakelists} fmangle
           CMAKE_FLAGS "-DCMAKE_C_FLAGS:STRING=${C_FLAGS}"
-          "-DCMAKE_Fortran_DEF_FLAGS:STRING=${F_FLAGS}" 
+          "-DCMAKE_Fortran_FLAGS:STRING=${F_FLAGS}"
           "-DCOMMON_DEFS=${COMMON_DEFS}"
           OUTPUT_VARIABLE _fcmngl_output
           )
