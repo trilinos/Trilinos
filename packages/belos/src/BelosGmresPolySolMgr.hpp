@@ -39,6 +39,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
+#include "BelosGmresPolyOp.hpp"
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
@@ -314,7 +315,8 @@ private:
   int poly_dim_;
   Teuchos::RCP<Teuchos::SerialDenseMatrix<int, ScalarType> > poly_H_, poly_y_;
   Teuchos::RCP<Teuchos::SerialDenseVector<int, ScalarType> > poly_r0_;
-    
+  Teuchos::RCP<Belos::GmresPolyOp<ScalarType, MV, OP> > poly_Op_;  
+  
   // Timers.
   std::string label_;
   Teuchos::RCP<Teuchos::Time> timerSolve_;
@@ -854,13 +856,17 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::checkStatusTest() {
 template<class ScalarType, class MV, class OP>
 bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
 {
+  std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> xnorm(1), bnorm(1);
+
   // Create a copy of the linear problem that has a zero initial guess and random RHS.
   Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > newProblem
     = Teuchos::rcp( new LinearProblem<ScalarType,MV,OP>( *problem_ ) );
   Teuchos::RCP<MV> newX  = MVT::Clone( *(problem_->getLHS()), 1 );
   Teuchos::RCP<MV> newB  = MVT::Clone( *(problem_->getRHS()), 1 );
-  MVT::MvInit( *newX ); 
-  MVT::MvRandom( *newB );
+  MVT::MvInit( *newX, SCT::one() ); 
+//  MVT::MvRandom( *newB );
+  OPT::Apply( *newProblem->getOperator(), *newX, *newB );
+  MVT::MvInit( *newX, SCT::zero() );
   newProblem->setProblem( newX, newB );
   std::vector<int> idx(1,0);       // Must set the index to be the first vector (0)!
   newProblem->setLSIndex( idx );
@@ -935,16 +941,19 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
     throw;
   }
 
+  // Get the solution for this polynomial, use in comparison below
+  Teuchos::RCP<MV> currX = gmres_iter->getCurrentUpdate();
+
   // Record polynomial info, get current GMRES state
   GmresIterationState<ScalarType,MV> gmresState = gmres_iter->getState();
   //
-  //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
+  //  Make a view and then copy the RHS of the least squares problem.
   //
   poly_dim_ = gmresState.curDim;
   poly_y_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *gmresState.z, poly_dim_, 1 ) );
   poly_H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( *gmresState.H ) );
   //
-  //  Solve the least squares problem.
+  // Solve the least squares problem.
   //
   const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   Teuchos::BLAS<int,ScalarType> blas;
@@ -953,6 +962,14 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
              Teuchos::NON_UNIT_DIAG, poly_dim_, 1, one,
              gmresState.R->values(), gmresState.R->stride(), 
              poly_y_->values(), poly_y_->stride() );
+  //
+  // Generate the polynomial operator
+  //
+  poly_Op_ = Teuchos::rcp( 
+               new Belos::GmresPolyOp<ScalarType,MV,OP>( problem_->getOperator(), problem_->getLeftPrec(),
+                                                         problem_->getRightPrec(), poly_H_, poly_y_, poly_r0_ ) );
+
+  poly_Op_->Apply( *newB, *newX );
   
   return true;
 }

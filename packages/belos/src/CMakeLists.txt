@@ -36,6 +36,7 @@ APPEND_SET(HEADERS
   BelosGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
   BelosGmresIteration.hpp
+  BelosGmresPolyOp.hpp
   BelosGmresPolySolMgr.hpp
   BelosICGSOrthoManager.hpp
   BelosIMGSOrthoManager.hpp
