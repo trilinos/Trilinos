@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	// Create product basis
         for (unsigned int i=0; i<d; i++)
           bases[i] = Teuchos::rcp(new basis_type(p));
-	Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
 	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 	std::cout << *basis << std::endl;
 
@@ -113,9 +113,9 @@ int main(int argc, char **argv)
 	// Compute Stieltjes basis
 	Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(1);
 	st_bases[0] = 
-	  Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *basis, 
-								  *quad, true));
-	Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > st_basis = 
+	  Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *quad, 
+								  true));
+	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > st_basis = 
 	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
 	std::cout << *st_basis << std::endl;
 

@@ -32,6 +32,7 @@
 #define STOKHOS_DERIVORTHOGPOLYEXPANSION_HPP
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
+#include "Stokhos_DerivBasis.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
@@ -47,7 +48,7 @@ namespace Stokhos {
   public:
 
     //! Constructor
-    DerivOrthogPolyExpansion(const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis);
+    DerivOrthogPolyExpansion(const Teuchos::RCP<const DerivBasis<ordinal_type, value_type> >& basis);
 
     //! Destructor
     virtual ~DerivOrthogPolyExpansion() {}
@@ -215,7 +216,7 @@ namespace Stokhos {
   protected:
 
     //! Basis
-    Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > basis;
+    Teuchos::RCP< const Stokhos::DerivBasis<ordinal_type, value_type> > basis;
 
     //! Derivative double-product tensor
     Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij;

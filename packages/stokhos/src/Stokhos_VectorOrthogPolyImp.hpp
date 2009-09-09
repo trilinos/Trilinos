@@ -28,6 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_ProductBasis.hpp"
+
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
 VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
@@ -142,10 +144,12 @@ coeff_type&
 Stokhos::VectorOrthogPoly<coeff_type>::
 term(ordinal_type dimension, ordinal_type order)
 {
-  ordinal_type d = basis.dimension();
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
+  ordinal_type d = basis->dimension();
   Teuchos::Array<ordinal_type> term(d);
   term[dimension] = order;
-  ordinal_type index = basis.getIndex(term);
+  ordinal_type index = product_basis->getIndex(term);
   return *(coeff_[index]);
 }
 
@@ -154,10 +158,12 @@ const coeff_type&
 Stokhos::VectorOrthogPoly<coeff_type>::
 term(ordinal_type dimension, ordinal_type order) const
 {
-  ordinal_type d = basis.dimension();
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
+  ordinal_type d = basis->dimension();
   Teuchos::Array<ordinal_type> term(d);
   term[dimension] = order;
-  ordinal_type index = basis.getIndex(term);
+  ordinal_type index = product_basis->getIndex(term);
   return *(coeff_[index]);
 }
 

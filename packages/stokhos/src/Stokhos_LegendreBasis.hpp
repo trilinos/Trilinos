@@ -31,39 +31,20 @@
 #ifndef STOKHOS_LEGENDREBASIS_HPP
 #define STOKHOS_LEGENDREBASIS_HPP
 
-#include "Stokhos_OneDOrthogPolyBasisBase.hpp"
+#include "Stokhos_RecurrenceBasis.hpp"
 
 namespace Stokhos {
 
   template <typename ordinal_type, typename value_type>
   class LegendreBasis : 
-    public OneDOrthogPolyBasisBase<ordinal_type, value_type> {
+    public RecurrenceBasis<ordinal_type, value_type> {
   public:
 
     //! Constructor
-    LegendreBasis(ordinal_type p);
+    LegendreBasis(ordinal_type p, bool normalize = false);
 
     //! Destructor
     ~LegendreBasis();
-
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<value_type>& poly, 
-		     Teuchos::Array<value_type>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(ordinal_type i, 
-			   Teuchos::Array<value_type>& coeffs) const;
-
-    //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const value_type& point,
-                               Teuchos::Array<value_type>& basis_pts) const;
-
-    //! Get Gauss quadrature points, weights, and values of basis at points
-    virtual void 
-    getQuadPoints(ordinal_type quad_order,
-		  Teuchos::Array<value_type>& points,
-		  Teuchos::Array<value_type>& weights,
-		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
     //! Get sparse grid rule number
     virtual ordinal_type getRule() const { return 1; }
@@ -74,6 +55,15 @@ namespace Stokhos {
     //! Get quadrature point factor
     virtual value_type getQuadPointFactor() const { return 1.0; }
 
+  protected:
+
+    //! Compute recurrence coefficients
+    virtual void 
+    computeRecurrenceCoefficients(ordinal_type n,
+				  Teuchos::Array<value_type>& alpha,
+				  Teuchos::Array<value_type>& beta,
+				  Teuchos::Array<value_type>& delta) const;
+
   private:
 
     // Prohibit copying
@@ -81,11 +71,6 @@ namespace Stokhos {
 
     // Prohibit Assignment
     LegendreBasis& operator=(const LegendreBasis& b);
-
-  protected:
-
-    //! Derivative coefficients
-    Teuchos::Array< Teuchos::Array<value_type> > deriv_coeffs;
 
   }; // class LegendreBasis
 

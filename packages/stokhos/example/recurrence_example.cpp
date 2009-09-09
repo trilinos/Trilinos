@@ -61,16 +61,15 @@ int main(int argc, char **argv)
     const double rightEndPt = 3;
     //Generate a basis up to order p with the support of the weight = [-5,5] using normalization.
     //Stokhos::OneDOrthogPolyBasis<int,double> basis = new Stokhos::RysBasis<int,double>(p,5,true);
-    Teuchos::RCP<const Stokhos::RecurrenceBasis<int,double> > basis;
-    basis = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"Beta",&weightFunction,leftEndPt,rightEndPt,true));
+    Teuchos::RCP<const Stokhos::DiscretizedStieltjesBasis<int,double> > basis;
+    basis = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weightFunction,leftEndPt,rightEndPt,true));
     Teuchos::Array<double> alpha;
     Teuchos::Array<double> beta;
+    Teuchos::Array<double> delta;
     Teuchos::Array<double> gamma;
     Teuchos::Array<double> norm_sq;
     norm_sq = basis->norm_squared();
-    basis->getAlpha(alpha);
-    basis->getBeta(beta);
-    basis->getGamma(gamma);
+    basis->getRecurrenceCoefficients(alpha, beta, delta, gamma);
      
     
     //Fetch alpha, beta, gamma and the computed norms and print.

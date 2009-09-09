@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     for (int i=0; i<d; i++) {
       bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
     }
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
     // Quadrature method

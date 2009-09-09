@@ -72,20 +72,7 @@ namespace Stokhos {
     virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
 
     virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-      getLowOrderTripleProductTensor(ordinal_type order) const;
-
-    //! Compute derivative triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getDerivTripleProductTensor() const;
-
-    //! Compute derivative double product tensor
-    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const;
-
-    //! Project product of basis polynomials i and j onto this basis
-    virtual void projectProduct(ordinal_type i, ordinal_type j, Teuchos::Array<value_type>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    virtual void projectDerivative(ordinal_type i, 
-                                   Teuchos::Array<value_type>& coeffs) const;
+    getLowOrderTripleProductTensor(ordinal_type order) const;
 
     //! Evaluate basis polynomial at zero
     virtual value_type evaluateZero(ordinal_type i) const;
@@ -97,19 +84,10 @@ namespace Stokhos {
     //! Print basis
     virtual void print(std::ostream& os) const;
 
-    //! Get term
-    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const;
-
-    //! Get index
-    virtual ordinal_type 
-    getIndex(const Teuchos::Array<ordinal_type>& term) const;
-
     //! Return name of basis
     virtual const std::string& getName() const;
 
-    //! Return coordinate bases
-    const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& getCoordinateBases() const;
-
+    //! Transform coefficients from original basis to this basis
     void transformCoeffs(const value_type *in, value_type *out) const;
 
   private:

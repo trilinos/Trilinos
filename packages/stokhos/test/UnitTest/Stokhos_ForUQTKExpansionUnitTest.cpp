@@ -43,7 +43,7 @@ namespace ForUQTKExpansionUnitTest {
   struct UnitTestSetup {
     ValueType rtol, atol;
     OrdinalType sz;
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
     Teuchos::RCP< Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2;

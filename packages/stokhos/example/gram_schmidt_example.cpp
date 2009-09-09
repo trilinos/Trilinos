@@ -59,14 +59,14 @@ int main(int argc, char **argv)
 {
   try {
 
-    const unsigned int d = 1;
+    const unsigned int d = 2;
     const unsigned int p = 5;
 
     // Create product basis
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
     for (unsigned int i=0; i<d; i++)
       bases[i] = Teuchos::rcp(new basis_type(p));
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
     // Create approximation
@@ -91,12 +91,12 @@ int main(int argc, char **argv)
     // Compute tensor product Stieltjes basis for u and v
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
     st_bases[0] = 
-      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *basis, 
-							      *quad, true));
+      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *quad, 
+							      true));
     st_bases[1] = 
-      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, v, *basis, 
-							      *quad, true));
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > st_basis = 
+      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, v, *quad, 
+							      true));
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > st_basis =
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
     Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis), 
       w_st(st_basis);
@@ -104,15 +104,6 @@ int main(int argc, char **argv)
     u_st.term(0, 1) = 1.0;
     v_st.term(0, 0) = v.mean();
     v_st.term(1, 1) = 1.0;
-    
-    // Stieltjes quadrature expansion
-    Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
-    Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis, 
-							     st_quad);
-    
-    // Compute w_st = u_st*v_st in Stieltjes basis
-    st_quad_exp.times(w_st, u_st, v_st);
     
     // Use Gram-Schmidt to orthogonalize Stieltjes basis of u and v
     Teuchos::Array<double> st_points_0;
@@ -165,6 +156,17 @@ int main(int argc, char **argv)
     // Project w_gs back to original basis
     pce_quad_func gs_func(w_gs, *gs_basis);
     quad_exp.binary_op(gs_func, w2, u, v);
+
+    // Stieltjes quadrature expansion
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
+      Teuchos::rcp(new Stokhos::UserDefinedQuadrature<int,double>(st_basis,
+								  points,
+								  weights));
+    Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis, 
+							     st_quad);
+    
+    // Compute w_st = u_st*v_st in Stieltjes basis
+    st_quad_exp.times(w_st, u_st, v_st);
     
     // Project w_st back to original basis
     pce_quad_func st_func(w_st, *st_basis);

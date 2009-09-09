@@ -34,7 +34,7 @@
 template <typename ordinal_type, typename value_type> 
 Stokhos::DerivOrthogPolyExpansion<ordinal_type, value_type>::
 DerivOrthogPolyExpansion(
-     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_) :
+     const Teuchos::RCP<const Stokhos::DerivBasis<ordinal_type, value_type> >& basis_) :
   basis(basis_),
   Bij(basis->getDerivDoubleProductTensor()),
   Cijk(basis->getTripleProductTensor()),

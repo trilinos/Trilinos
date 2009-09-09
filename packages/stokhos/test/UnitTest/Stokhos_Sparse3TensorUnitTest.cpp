@@ -43,7 +43,7 @@ namespace Sparse3TensorUnitTest {
   struct UnitTestSetup {
     ValueType rtol, atol;
     OrdinalType sz;
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
     Teuchos::RCP<const Stokhos::Sparse3Tensor<OrdinalType,ValueType> > Cijk;
     

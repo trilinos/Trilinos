@@ -136,9 +136,9 @@ int main(int argc, char **argv)
     PolyBasisTimer.start();
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
     for (int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"Beta",&weight,leftEndPt,rightEndPt,true));
+      bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weight,leftEndPt,rightEndPt,true));
     }
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     PolyBasisTimer.stop();
     

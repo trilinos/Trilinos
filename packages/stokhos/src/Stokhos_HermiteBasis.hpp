@@ -31,39 +31,20 @@
 #ifndef STOKHOS_HERMITEBASIS_HPP
 #define STOKHOS_HERMITEBASIS_HPP
 
-#include "Stokhos_OneDOrthogPolyBasisBase.hpp"
+#include "Stokhos_RecurrenceBasis.hpp"
 
 namespace Stokhos {
 
   template <typename ordinal_type, typename value_type>
   class HermiteBasis : 
-    public OneDOrthogPolyBasisBase<ordinal_type, value_type> {
+    public RecurrenceBasis<ordinal_type, value_type> {
   public:
     
     //! Constructor
-    HermiteBasis(ordinal_type p);
+    HermiteBasis(ordinal_type p, bool normalize = false);
     
     //! Destructor
     ~HermiteBasis();
-    
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<value_type>& poly, 
-		     Teuchos::Array<value_type>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(ordinal_type i, 
-			   Teuchos::Array<value_type>& coeffs) const;
-
-    //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const value_type& point,
-                               Teuchos::Array<value_type>& basis_pts) const;
-
-    //! Get Gauss quadrature points, weights, and values of basis at points
-    virtual void 
-    getQuadPoints(ordinal_type quad_order,
-		  Teuchos::Array<value_type>& points,
-		  Teuchos::Array<value_type>& weights,
-		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
     //! Get sparse grid rule number
     virtual ordinal_type getRule() const { return 5; }
@@ -75,6 +56,15 @@ namespace Stokhos {
 
     //! Get quadrature point factor
     virtual value_type getQuadPointFactor() const { return std::sqrt(2.0); }
+
+  protected:
+
+    //! Compute recurrence coefficients
+    virtual void 
+    computeRecurrenceCoefficients(ordinal_type n,
+				  Teuchos::Array<value_type>& alpha,
+				  Teuchos::Array<value_type>& beta,
+				  Teuchos::Array<value_type>& delta) const;
 
   private:
 

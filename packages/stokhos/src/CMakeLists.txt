@@ -42,8 +42,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_Polynomial.hpp
   Stokhos_PolynomialImp.hpp
   Stokhos_OneDOrthogPolyBasis.hpp
-  Stokhos_OneDOrthogPolyBasisBase.hpp
-  Stokhos_OneDOrthogPolyBasisBaseImp.hpp
+  Stokhos_RecurrenceBasis.hpp
+  Stokhos_RecurrenceBasisImp.hpp
   Stokhos_HermiteBasis.hpp
   Stokhos_HermiteBasisImp.hpp
   Stokhos_RysBasis.hpp
@@ -55,6 +55,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
+  Stokhos_ProductBasis.hpp
+  Stokhos_DerivBasis.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
@@ -66,8 +68,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_Quadrature.hpp
   Stokhos_TensorProductQuadrature.hpp
   Stokhos_TensorProductQuadratureImp.hpp
-  Stokhos_SparseGridQuadrature.hpp
-  Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_OrthogPolyApprox.hpp
@@ -81,7 +81,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
-  Stokhos_StochGalerkin_Precon.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
@@ -94,14 +93,32 @@ SET(HEADERS ${HEADERS}
 
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
-  Stokhos_SparseGridQuadrature.cpp
-  Stokhos_StochGalerkin_Precon.cpp
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp
   )
+
+IF(Stokhos_ENABLE_TriKota)
+  SET(HEADERS ${HEADERS}
+    Stokhos_SparseGridQuadrature.hpp
+    Stokhos_SparseGridQuadratureImp.hpp
+    )
+  SET(SOURCES ${SOURCES}
+    Stokhos_SparseGridQuadrature.cpp
+    )
+ENDIF()
+
+IF(Stokhos_ENABLE_ML)
+  SET(HEADERS ${HEADERS}
+    Stokhos_MLPrecOp.hpp
+    )
+  SET(SOURCES ${SOURCES}
+    Stokhos_MLPrecOp.cpp
+    )
+ENDIF()
+
 
 #
 # C) Define the targets for package's library(s)

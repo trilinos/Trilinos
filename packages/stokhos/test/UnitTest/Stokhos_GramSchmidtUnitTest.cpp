@@ -76,7 +76,7 @@ template <typename OrdinalType, typename ValueType>
 struct GramSchmidt_PCE_Setup {
   ValueType rtol, atol;
   OrdinalType sz, gs_sz;
-  Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
+  Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
   Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
   Teuchos::RCP<const  Stokhos::GramSchmidtBasis<OrdinalType,ValueType> > gs_basis;
   Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > gs_quad;
@@ -120,8 +120,8 @@ struct GramSchmidt_PCE_Setup {
     
     // Compute Stieltjes basis
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > st_bases(2);
-    st_bases[0] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, u, *basis, *quad, true));
-    st_bases[1] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, v, *basis, *quad, true));
+    st_bases[0] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, u, *quad, true));
+    st_bases[1] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, v, *quad, true));
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > st_basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(st_bases, 1e-15));
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> u_st(st_basis), v_st(st_basis);

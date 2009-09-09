@@ -140,10 +140,10 @@ double meshSize = x[1]-x[0];
 /////////////////////////////////////////////////////////////////////////////////
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
 for (int i = 0; i< d; i++){
-  bases[i] = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"beta",&weight,-weightCut,weightCut,true));
+  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
 }
 
-Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis =
+Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
   Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->getLowOrderTripleProductTensor(d+1);
 

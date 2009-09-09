@@ -28,6 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_ProductBasis.hpp"
+
 template <typename ordinal_type, typename value_type> 
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 OrthogPolyApprox() :
@@ -155,10 +157,12 @@ value_type&
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 term(ordinal_type dimension, ordinal_type order)
 {
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
   ordinal_type d = basis_->dimension();
   Teuchos::Array<ordinal_type> term(d);
   term[dimension] = order;
-  ordinal_type index = basis_->getIndex(term);
+  ordinal_type index = product_basis->getIndex(term);
   return coeff_[index];
 }
 
@@ -167,10 +171,12 @@ const value_type&
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 term(ordinal_type dimension, ordinal_type order) const
 {
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
   ordinal_type d = basis_->dimension();
   Teuchos::Array<ordinal_type> term(d);
   term[dimension] = order;
-  ordinal_type index = basis_->getIndex(term);
+  ordinal_type index = product_basis->getIndex(term);
   return coeff_[index];
 }
 
@@ -226,12 +232,27 @@ print(std::ostream& os) const
   Teuchos::Array<ordinal_type> trm;
   os << "Stokhos::OrthogPolyApprox of size " << coeff_.size() << " in basis "
      << "\n\t" << basis_->getName() << ":" << std::endl;
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++) {
-    trm = basis_->getTerm(i);
-    os << "\t\t(";
-    for (ordinal_type j=0; j<static_cast<ordinal_type>(trm.size())-1; j++)
-      os << trm[j] << ", ";
-    os << trm[trm.size()-1] << ") = " << coeff_[i] << std::endl;
+
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_);
+
+  if (product_basis != Teuchos::null) {
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++) {
+      trm = product_basis->getTerm(i);
+      os << "\t\t(";
+      for (ordinal_type j=0; j<static_cast<ordinal_type>(trm.size())-1; j++)
+	os << trm[j] << ", ";
+      os << trm[trm.size()-1] << ") = " << coeff_[i] << std::endl;
+    }
+  }
+  else {
+    os << "[ ";
+      
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++) {
+      os << coeff_[i] << " ";
+    }
+
+    os << "]\n";
   }
 
   return os;

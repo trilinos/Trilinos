@@ -35,7 +35,7 @@
 #ifdef HAVE_STOKHOS_DAKOTA
 
 #include "Stokhos_Quadrature.hpp"
-#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace Stokhos {
@@ -49,7 +49,7 @@ namespace Stokhos {
   public:
 
     //! Constructor
-    SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis,
+    SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
 			 ordinal_type sparse_grid_level = 0);
 
     //! Destructor

@@ -240,48 +240,6 @@ getLowOrderTripleProductTensor(ordinal_type order) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> >
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getDerivTripleProductTensor() const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error,
-  		     "Stokhos::GramSchmidtBasis::getDerivTripleProductTensor():"
-  		     << "  Method not implemented!");
-  return Teuchos::null;
-}
-
-template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getDerivDoubleProductTensor() const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error,
-  		     "Stokhos::GramSchmidtBasis::getDerivDoubleProductTensor():"
-  		     << "  Method not implemented!");
-  return Teuchos::null;
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-projectProduct(ordinal_type i, ordinal_type j, Teuchos::Array<value_type>& coeffs) const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error,
-  		     "Stokhos::GramSchmidtBasis::projectProduct():"
-  		     << "  Method not implemented!");
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-projectDerivative(ordinal_type i, Teuchos::Array<value_type>& coeffs) const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error,
-  		     "Stokhos::GramSchmidtBasis::projectDerivative():"
-  		     << "  Method not implemented!");
-}
-
-template <typename ordinal_type, typename value_type>
 value_type
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 evaluateZero(ordinal_type i) const
@@ -325,41 +283,11 @@ print(std::ostream& os) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::Array<ordinal_type>
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getTerm(ordinal_type i) const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error,
-  		     "Stokhos::GramSchmidtBasis::getTerm():"
-  		     << "  Method not implemented!");
-  return basis->getTerm(i);
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getIndex(const Teuchos::Array<ordinal_type>& term) const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error,
-  		     "Stokhos::GramSchmidtBasis::getIndex():"
-  		     << "  Method not implemented!");
-  return basis->getIndex(term);
-}
-
-template <typename ordinal_type, typename value_type>
 const std::string&
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
 getName() const
 {
   return name;
-}
-
-template <typename ordinal_type, typename value_type>
-const Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >&
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getCoordinateBases() const
-{
-  return basis->getCoordinateBases();
 }
 
 template <typename ordinal_type, typename value_type>

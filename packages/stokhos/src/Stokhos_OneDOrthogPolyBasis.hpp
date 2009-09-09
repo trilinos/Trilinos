@@ -33,7 +33,6 @@
 
 #include <ostream>
 #include <string>
-#include "Stokhos_Polynomial.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -69,24 +68,12 @@ namespace Stokhos {
     //! Compute derivative double product tensor
     virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const = 0;
 
-    //! Project a polynomial into this basis
-    virtual void projectPoly(const Polynomial<value_type>& poly, 
-                             Teuchos::Array<value_type>& coeffs) const = 0;
-
-    //! Project product of two basis polynomials into this basis
-    virtual void projectProduct(ordinal_type i, ordinal_type j,
-                                Teuchos::Array<value_type>& coeffs) const = 0;
-
-    //! Project derivative of basis polynomial into this basis
-    virtual void projectDerivative(ordinal_type i, 
-                                   Teuchos::Array<value_type>& coeffs) const = 0;
-
-    //! Evaluate basis polynomial at zero
-    virtual value_type evaluateZero(ordinal_type i) const = 0;
-
     //! Evaluate basis polynomials at given point
     virtual void evaluateBases(const value_type& point,
                                Teuchos::Array<value_type>& basis_pts) const = 0;
+
+    //! Evaluate basis polynomial given by order at given point 
+    virtual value_type evaluate(const value_type& point, ordinal_type order) const = 0;
 
     //! Print basis
     virtual void print(std::ostream& os) const = 0;

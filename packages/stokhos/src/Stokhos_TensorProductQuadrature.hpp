@@ -32,7 +32,7 @@
 #define STOKHOS_TENSORPRODUCTQUADRATURE
 
 #include "Stokhos_Quadrature.hpp"
-#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_ProductBasis.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace Stokhos {
@@ -42,10 +42,10 @@ namespace Stokhos {
   public:
 
     //! Constructor
-    TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis);
+    TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis);
 
     //! Variable order Constructor
-    TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis, const ordinal_type& quad_order);
+    TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis, const ordinal_type& quad_order);
 
     //! Destructor
     virtual ~TensorProductQuadrature() {}

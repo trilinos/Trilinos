@@ -31,10 +31,8 @@
 #ifndef STOKHOS_STIELTJESPCEBASIS_HPP
 #define STOKHOS_STIELTJESPCEBASIS_HPP
 
-#include <string>
-#include "Stokhos_OneDOrthogPolyBasis.hpp"
+#include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
-#include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Quadrature.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -43,66 +41,19 @@ namespace Stokhos {
 
   template <typename ordinal_type, typename value_type>
   class StieltjesPCEBasis : 
-    public OneDOrthogPolyBasis<ordinal_type, value_type> {
+    public RecurrenceBasis<ordinal_type, value_type> {
   public:
 
     //! Constructor
     StieltjesPCEBasis(
        ordinal_type p,
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-       const Stokhos::OrthogPolyBasis<ordinal_type, value_type>& pce_basis,
        const Stokhos::Quadrature<ordinal_type, value_type>& quad,
-       bool use_pce_quad_points);
+       bool use_pce_quad_points,
+       bool normalize = false);
 
     //! Destructor
     ~StieltjesPCEBasis();
-
-    //! Return order of basis
-    virtual ordinal_type order() const;
-
-    //! Return total size of basis
-    virtual ordinal_type size() const;
-
-    //! Compute norm squared of each basis element
-    virtual const Teuchos::Array<value_type>& norm_squared() const;
-
-    //! Compute norm squared of ith element
-    virtual const value_type& norm_squared(ordinal_type i) const;
-
-    //! Compute triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
-
-    //! Compute derivative double product tensor
-    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const;
-
-    //! Project a polynomial into this basis
-    virtual void projectPoly(const Polynomial<value_type>& poly, 
-                             Teuchos::Array<value_type>& coeffs) const;
-
-    //! Project product of two basis polynomials into this basis
-    virtual void projectProduct(ordinal_type i, ordinal_type j,
-                                Teuchos::Array<value_type>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    virtual void projectDerivative(ordinal_type i, 
-                                   Teuchos::Array<value_type>& coeffs) const;
-
-    //! Write polynomial in standard basis
-    virtual Polynomial<value_type> toStandardBasis(const value_type coeffs[], 
-						   ordinal_type n) const;
-
-    //! Evaluate basis polynomial at zero
-    virtual value_type evaluateZero(ordinal_type i) const;
-
-    //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const value_type& point,
-                               Teuchos::Array<value_type>& basis_pts) const;
-
-    //! Print basis
-    virtual void print(std::ostream& os) const;
-
-    //! Return name of basis
-    virtual const std::string& getName() const;
 
     //! Get Gauss quadrature points, weights, and values of basis at points
     virtual void 
@@ -123,6 +74,13 @@ namespace Stokhos {
     void transformCoeffsFromStieltjes(const value_type *in, value_type *out) const;
 
   protected:
+
+    //! Compute recurrence coefficients
+    virtual void 
+    computeRecurrenceCoefficients(ordinal_type n,
+				  Teuchos::Array<value_type>& alpha,
+				  Teuchos::Array<value_type>& beta,
+				  Teuchos::Array<value_type>& delta) const;
 
     //! Compute 3-term recurrence using Stieljtes procedure
     void stieltjes(ordinal_type nstart,
@@ -160,21 +118,6 @@ namespace Stokhos {
 
   protected:
 
-    //! Name
-    std::string name;
-
-    //! Order
-    ordinal_type p;
-
-    //! Polynomial norms
-    mutable Teuchos::Array<value_type> norms;
-
-    //! 3-term recurrence alpha coefficients
-    mutable Teuchos::Array<value_type> alpha;
-
-    //! 3-term recurrence beta coefficients
-    mutable Teuchos::Array<value_type> beta;
-
     //! Values of PCE at quadrature points
     mutable Teuchos::Array<value_type> pce_vals;
 
@@ -183,9 +126,6 @@ namespace Stokhos {
 
     //! Values of generated polynomials at PCE quadrature points
     mutable Teuchos::Array< Teuchos::Array<value_type> > phi_vals;
-
-    //! Triple product tensor
-    mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Cijk;
 
     //! Use underlying pce's quadrature data
     bool use_pce_quad_points;

@@ -79,6 +79,68 @@ namespace Stokhos {
     
     return success;
   }
+
+  template<class ValueType>
+  bool compareValues(const ValueType& a1, 
+		     const std::string& a1_name,
+		     const ValueType&a2, 
+		     const std::string& a2_name,
+		     const ValueType& rel_tol, const ValueType& abs_tol,
+		     Teuchos::FancyOStream& out)
+  {
+    bool success = true;
+    
+    ValueType err = std::abs(a1 - a2);
+    ValueType tol = abs_tol + rel_tol*std::max(std::abs(a1),std::abs(a2));
+    if (err  > tol) {
+      out << "\nError, relErr(" << a1_name <<","
+	  << a2_name << ") = relErr(" << a1 <<"," << a2 <<") = "
+	  << err << " <= tol = " << tol << ": failed!\n";
+      success = false;
+    }
+    
+    return success;
+  }
+
+  template<class Array1, class Array2, class ValueType>
+  bool compareArrays(const Array1& a1, const std::string& a1_name,
+		     const Array2& a2, const std::string& a2_name,
+		     const ValueType& rel_tol, 
+		     const ValueType& abs_tol,
+		     Teuchos::FancyOStream& out)
+{
+  using Teuchos::as;
+  bool success = true;
+
+  out << "Comparing " << a1_name << " == " << a2_name << " ... ";
+
+  const int n = a1.size();
+
+  // Compare sizes
+  if (as<int>(a2.size()) != n) {
+    out << "\nError, "<<a1_name<<".size() = "<<a1.size()<<" == " 
+        << a2_name<<".size() = "<<a2.size()<<" : failed!\n";
+    return false;
+  }
+  
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    ValueType err = std::abs(a1[i] - a2[i]);
+    ValueType tol = abs_tol + rel_tol*std::max(std::abs(a1[i]),std::abs(a2[i]));
+    if (err > tol) {
+      out << "\nError, relErr(" << a1_name << "[" << i << "]," << a2_name 
+	  << "[" << i << "]) = relErr(" << a1[i] << "," <<a2[i] <<") = "
+	  << err << " <= tol = " << tol << ": failed!\n";
+      success = false;
+    }
+  }
+  if (success) {
+    out << "passed\n";
+  }
+
+  return success;
+
+}
 }
 
 #endif // STOKHOS_UNIT_TEST_HELPERS_HPP

@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
 // ***********************************************************************
 // 
 //                           Stokhos Package
@@ -20,7 +23,49 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Christopher W. Miller (cmiller@math.umd.edu).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
+
+#ifndef STOKHOS_PRODUCTBASIS_HPP
+#define STOKHOS_PRODUCTBASIS_HPP
+
+#include "Stokhos_OrthogPolyBasis.hpp"
+
+namespace Stokhos {
+
+  template <typename ordinal_type, typename value_type>
+  class ProductBasis : 
+    public virtual OrthogPolyBasis<ordinal_type, value_type> {
+  public:
+
+    //! Constructor
+    ProductBasis() {};
+
+    //! Destructor
+    virtual ~ProductBasis() {};
+
+    //! Get term
+    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const = 0;
+
+    //! Get index
+    virtual ordinal_type 
+    getIndex(const Teuchos::Array<ordinal_type>& term) const = 0;
+
+    //! Return coordinate bases
+    virtual Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > > getCoordinateBases() const = 0;
+
+  private:
+
+    // Prohibit copying
+    ProductBasis(const ProductBasis&);
+
+    // Prohibit Assignment
+    ProductBasis& operator=(const ProductBasis& b);
+
+  }; // class ProductBasis
+
+} // Namespace Stokhos
+
+#endif // STOKHOS_PRODUCTBASIS
