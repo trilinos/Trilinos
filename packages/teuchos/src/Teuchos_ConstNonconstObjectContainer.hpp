@@ -59,11 +59,19 @@ public:
   /** \brief. Initialize using a non-const object.
    * Allows both const and non-const access to the contained object. */
   void initialize( const RCP<ObjType> &obj )
-    { TEST_FOR_EXCEPT(!obj.get()); constObj_=obj; isConst_=false; }
+    {
+      TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
+      constObj_ = obj;
+      isConst_ = false;
+    }
   /** \brief. Initialize using a const object.
    * Allows only const access enforced with a runtime check. */
   void initialize( const RCP<const ObjType> &obj )
-    { TEST_FOR_EXCEPT(!obj.get()); constObj_=obj; isConst_=true; }
+    {
+      TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
+      constObj_ = obj; 
+      isConst_ = true;
+    }
   /** \brief. Uninitialize. */
   void uninitialize()
     { constObj_=null; isConst_=true; }
@@ -75,6 +83,7 @@ public:
    * <b>Preconditions:</b>
    * <ul>
    * <li> [<tt>getConstObj().get()!=NULL</tt>] <tt>isConst()==false</tt>
+   *      (throws <tt>NonconstAccessError</tt>)
    * </ul>
    *
    * <b>Postconditions:</b>
@@ -86,9 +95,9 @@ public:
   RCP<ObjType> getNonconstObj()
     {
       TEST_FOR_EXCEPTION(
-        constObj_.get() && isConst_, std::logic_error
-        ,"Error, the object of reference type \""<<TypeNameTraits<ObjType>::name()<<"\" was given "
-        "as a const-only object and non-const access is not allowed."
+        constObj_.get() && isConst_, NonconstAccessError,
+        "Error, the object of reference type \""<<TypeNameTraits<ObjType>::name()
+        <<"\" was given as a const-only object and non-const access is not allowed."
         );
       return rcp_const_cast<ObjType>(constObj_);
     }
@@ -102,16 +111,14 @@ public:
   /** \brief Perform shorthand for <tt>getConstObj(). */
   RCP<const ObjType> operator()() const
     { return getConstObj(); }
-
-  /** \brief Pointer (<tt>-></tt>) access to underlying object.
+  /** \brief Pointer (<tt>-></tt>) access to underlying const object.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
    * </ul>
    */
   const ObjType* operator->() const
-    { TEST_FOR_EXCEPT(!constObj_.get()); return constObj_.get(); }
-
+    { return &*getConstObj(); } // Does assert also!
   /** \brief Dereference the underlying object.
    *
    * <b>Preconditions:</b><ul>
@@ -119,16 +126,14 @@ public:
    * </ul>
    */
   const ObjType& operator*() const
-    { return *constObj_; }
-  
-  /** \brief Perform an implicit conversion to an RCP<const ObjType>
-   */
+    { return *getConstObj(); }
+  /** \brief Perform an implicit conversion to an RCP<const ObjType>. */
   operator RCP<const ObjType>() const
-    { return constObj_; }
+    { return getConstObj(); }
 
 private:
-  RCP<const ObjType>   constObj_;
-  bool                         isConst_;
+  RCP<const ObjType> constObj_;
+  bool isConst_;
 };
 
 } // namespace Teuchos

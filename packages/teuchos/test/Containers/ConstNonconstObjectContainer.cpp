@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, ConstConstruct) {
   RCP<const std::vector<double> > vec2 = vectorObj.getConstObj();
   TEST_ASSERT( vec == vec2 );
   RCP<std::vector<double> > vec3;
-  TEST_THROW( vec3 = vectorObj.getNonconstObj(), std::logic_error );
+  TEST_THROW( vec3 = vectorObj.getNonconstObj(), NonconstAccessError );
 }
 
 
@@ -91,7 +91,7 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, ConstInitialize) {
   RCP<const std::vector<double> > vec2 = vectorObj.getConstObj();
   TEST_ASSERT( vec == vec2 );
   RCP<std::vector<double> > vec3;
-  TEST_THROW( vec3 = vectorObj.getNonconstObj(), std::logic_error );
+  TEST_THROW( vec3 = vectorObj.getNonconstObj(), NonconstAccessError );
 }
 
 
@@ -128,7 +128,9 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, arrow ) {
 
 TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, arrowEmpty ) {
   ConstNonconstObjectContainer<std::vector<double> > vectorObj;
-  TEST_THROW( vectorObj->size(), std::logic_error );
+#ifdef TEUCHOS_DEBUG
+  TEST_THROW( vectorObj->size(), NullReferenceError );
+#endif
 }
 
 
@@ -145,7 +147,9 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, dereference ) {
 
 TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, dereferenceEmpty ) {
   ConstNonconstObjectContainer<std::vector<double> > vectorObj;
-  TEST_THROW( (*vectorObj).size(), std::logic_error );
+#ifdef TEUCHOS_DEBUG
+  TEST_THROW( (*vectorObj).size(), NullReferenceError );
+#endif
 }
 
 
