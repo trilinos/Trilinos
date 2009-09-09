@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     typedef Stokhos::HermiteBasis<int,double> basis_type;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
     bases[0] = Teuchos::rcp(new basis_type(d));
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<int,double>(basis));

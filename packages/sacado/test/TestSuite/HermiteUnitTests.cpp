@@ -37,7 +37,7 @@ HermiteUnitTest::HermiteUnitTest() :
   urand(0.0, 1.0), tol_a(1.0e-15), tol_r(1.0e-14) {
   std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
   bases[0] = Teuchos::rcp(new basis_type(0));
-  Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+  Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
     Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
   expansion = Teuchos::rcp(new exp_type(basis));
 }
