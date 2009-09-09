@@ -246,7 +246,7 @@ bool BackwardEulerStepper<Scalar>::isImplicit() const
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setModel(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
 
@@ -276,6 +276,13 @@ void BackwardEulerStepper<Scalar>::setModel(
   
 }
 
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setNonconstModel(
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  )
+{
+  this->setModel(model); // TODO:  09/09/09 tscoffe:  Use ConstNonconstObjectContainer here!
+}
 
 template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
@@ -289,7 +296,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 BackwardEulerStepper<Scalar>::getNonconstModel() 
 {
-  return model_;
+  return Teuchos::null;
 }
 
 

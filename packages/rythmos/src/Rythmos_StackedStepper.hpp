@@ -198,9 +198,15 @@ void ForwardSensitivityStackedStepperStepStrategy<Scalar>::setupNextStepper(
   typedef Thyra::ModelEvaluatorBase MEB;
   if (i > 0) {
     RCP<StepperBase<Scalar> > baseStepper = stepperArray[0];
+    RCP<Thyra::ModelEvaluator<Scalar> > modelI = 
+      // TODO:  09/09/09 tscoffe:  This should be replaced by
+      // getNonconstModel() when it is implemented correctly. 
+      Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar> >(
+          stepperArray[i]->getModel()
+          );
     RCP<ForwardSensitivityModelEvaluatorBase<Scalar> > fwdSensME = 
       Teuchos::rcp_dynamic_cast<ForwardSensitivityModelEvaluatorBase<Scalar> > (
-          stepperArray[i]->getNonconstModel(),false
+          modelI,false
           );
     if (Teuchos::nonnull(fwdSensME)) {
       bool forceUpToDateW = true;
@@ -295,6 +301,11 @@ public:
 
   /** \brief Throws exception. */
   void setModel(
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model
+    );
+
+  /** \brief Throws exception. */
+  void setNonconstModel(
     const RCP<Thyra::ModelEvaluator<Scalar> >& model
     );
 
@@ -512,6 +523,17 @@ bool StackedStepper<Scalar>::acceptsModel() const
 
 template<class Scalar> 
 void StackedStepper<Scalar>::setModel(
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model
+  )
+{
+  TEST_FOR_EXCEPT_MSG( true,
+    "Error, this stepper subclass does not accept a model"
+    " as defined by the StepperBase interface!");
+}
+
+
+template<class Scalar> 
+void StackedStepper<Scalar>::setNonconstModel(
   const RCP<Thyra::ModelEvaluator<Scalar> >& model
   )
 {

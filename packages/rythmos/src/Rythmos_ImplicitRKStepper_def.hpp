@@ -64,7 +64,7 @@ implicitRKStepper()
 template<class Scalar>
 RCP<ImplicitRKStepper<Scalar> >
 implicitRKStepper(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
   const RCP<const RKButcherTableauBase<Scalar> >& irkbt
@@ -213,12 +213,21 @@ ImplicitRKStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::setModel(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
   TEST_FOR_EXCEPT(is_null(model));
   assertValidModel( *this, *model );
   model_ = model;
+}
+
+
+template<class Scalar>
+void ImplicitRKStepper<Scalar>::setNonconstModel(
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  )
+{
+  this->setModel(model); // TODO 09/09/09 tscoffe:  use ConstNonconstObjectContainer!
 }
 
 
@@ -234,7 +243,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 ImplicitRKStepper<Scalar>::getNonconstModel() 
 {
-  return model_;
+  return Teuchos::null;
 }
 
 
@@ -675,7 +684,7 @@ void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
   \
   template RCP< ImplicitRKStepper< SCALAR > > \
   implicitRKStepper( \
-    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<const Thyra::ModelEvaluator< SCALAR > >& model, \
     const RCP<Thyra::NonlinearSolverBase< SCALAR > >& solver, \
     const RCP<Thyra::LinearOpWithSolveFactoryBase< SCALAR > >& irk_W_factory, \
     const RCP<const RKButcherTableauBase< SCALAR > >& irkbt \

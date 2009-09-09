@@ -325,7 +325,7 @@ public:
    * called later in order to fully initalize the model.
    */
   void initializeStructure(
-    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
   
@@ -466,7 +466,7 @@ public:
 
   /** \brief . */
   void initializeStructureInitCondOnly(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
     const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     );
   
@@ -526,7 +526,7 @@ private:
   // /////////////////////////
   // Private data members
 
-  RCP<Thyra::ModelEvaluator<Scalar> > stateModel_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
   RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
   int np_;
@@ -556,7 +556,7 @@ private:
   bool hasStateFuncParams() const { return p_index_ >= 0; }
   
   void initializeStructureCommon(
-    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const RCP<const Thyra::VectorSpaceBase<Scalar> > &p_space
     );
@@ -600,7 +600,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityImplicitModelEvaluator<Scalar>::getNonconstStateModel() const
 {
-  return stateModel_;
+  return Teuchos::null;
 }
 
 
@@ -769,7 +769,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeState(
 
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructure(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
   const int p_index
   )
 {
@@ -779,7 +779,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructure(
 
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
   const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )
 {
@@ -999,7 +999,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
 
 template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureCommon(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
   const int p_index,
   const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )

@@ -115,7 +115,10 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
-  void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model);
+
+  /** \brief . */
+  void setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
   
   /** \brief . */
   RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
@@ -209,7 +212,7 @@ private:
   // Private date members
 
   bool isInitialized_;
-  RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
   RCP<ParameterList> paramList_;
@@ -253,7 +256,7 @@ implicitRKStepper();
 template<class Scalar>
 RCP<ImplicitRKStepper<Scalar> >
 implicitRKStepper(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
   const RCP<const RKButcherTableauBase<Scalar> >& irkbt

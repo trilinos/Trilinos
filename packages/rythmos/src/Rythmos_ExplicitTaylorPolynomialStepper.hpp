@@ -176,7 +176,10 @@ namespace Rythmos {
     RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 
     //! Set model
-    void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model);
+
+    //! Set model
+    void setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
     /** \brief . */
     RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
@@ -270,7 +273,7 @@ namespace Rythmos {
     ScalarMag estimateLogRadius_();
 
     //! Underlying model
-    RCP<Thyra::ModelEvaluator<Scalar> > model_;
+    RCP<const Thyra::ModelEvaluator<Scalar> > model_;
 
     //! Parameter list
     RCP<Teuchos::ParameterList> parameterList_;
@@ -392,11 +395,11 @@ namespace Rythmos {
     numSteps_ = -1;
     t_ = nan;
     dt_ = nan;
-    t_initial_ = nan;;
-    t_final_ = nan;;
-    local_error_tolerance_ = nan;;
-    min_step_size_ = nan;;
-    max_step_size_ = nan;;
+    t_initial_ = nan;
+    t_final_ = nan;
+    local_error_tolerance_ = nan;
+    min_step_size_ = nan;
+    max_step_size_ = nan;
     degree_ = 0;
     linc_ = nan;
   }
@@ -404,7 +407,7 @@ namespace Rythmos {
 
   template<class Scalar>
   void ExplicitTaylorPolynomialStepper<Scalar>::setModel(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& model
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model
     )
   {
     TEST_FOR_EXCEPT( is_null(model) );
@@ -412,6 +415,15 @@ namespace Rythmos {
     
     model_ = model;
     f_vector_ = Thyra::createMember(model_->get_f_space());
+  }
+
+
+  template<class Scalar>
+  void ExplicitTaylorPolynomialStepper<Scalar>::setNonconstModel(
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
+    )
+  {
+    this->setModel(model); // TODO 09/09/09 tscoffe:  use ConstNonconstObjectContainer!
   }
 
 
@@ -427,7 +439,7 @@ namespace Rythmos {
   RCP<Thyra::ModelEvaluator<Scalar> >
   ExplicitTaylorPolynomialStepper<Scalar>::getNonconstModel() 
   {
-    return model_;
+    return Teuchos::null;
   }
 
 

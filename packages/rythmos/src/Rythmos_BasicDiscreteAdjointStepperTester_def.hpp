@@ -104,7 +104,7 @@ bool BasicDiscreteAdjointStepperTester<Scalar>::testAdjointStepper(
   typedef Thyra::ModelEvaluatorBase MEB;
   namespace BDASTU = BasicDiscreteAdjointStepperTesterUtils;
 
-  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  //const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
 
   const RCP<ParameterList> paramList = this->getMyNonconstParamList();

@@ -351,6 +351,24 @@ private:
 };
 
 
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
+ *
+ * \relates ConstNonconstObjectContainer
+ */
+template<class T>
+bool is_null( const ConstNonconstObjectContainer<T> &p )
+{ return is_null(p.getConstObj()); }
+
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ *
+ * \relates ConstNonconstObjectContainer
+ */
+template<class T>
+bool nonnull( const ConstNonconstObjectContainer<T> &p )
+{ return nonnull(p.getConstObj()); }
+
+
 } // namespace Teuchos
 
 

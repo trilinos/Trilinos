@@ -78,7 +78,7 @@ public:
    * called later in order to fully initalize the model.
    */
   virtual void initializeStructure(
-    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     ) = 0;
 
@@ -98,7 +98,7 @@ public:
    * called later in order to fully initalize the model.
    */
   virtual void initializeStructureInitCondOnly(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
     const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     ) = 0;
   

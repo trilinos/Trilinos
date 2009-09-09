@@ -63,7 +63,7 @@ public:
 
   /** \brief . */
   void initializeIRKModel(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
     const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
     const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
@@ -114,7 +114,7 @@ private:
 
 private:
 
-  RCP<Thyra::ModelEvaluator<Scalar> > daeModel_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > daeModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
   RCP<const RKButcherTableauBase<Scalar> > irkButcherTableau_;
@@ -144,7 +144,7 @@ private:
 template<class Scalar>
 RCP<ImplicitRKModelEvaluator<Scalar> >
 implicitRKModelEvaluator(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
   const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau
@@ -177,7 +177,7 @@ ImplicitRKModelEvaluator<Scalar>::ImplicitRKModelEvaluator()
 
 template<class Scalar>
 void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& daeModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar>& basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >& irk_W_factory,
   const RCP<const RKButcherTableauBase<Scalar> >& irkButcherTableau

@@ -146,7 +146,10 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
-  void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model);
+
+  /** \brief . */
+  void setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
   /** \brief . */
   RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
@@ -243,7 +246,7 @@ private:
   // Private data members
   //
 
-  RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Rythmos::SingleResidualModelEvaluator<Scalar>   neModel_;
 

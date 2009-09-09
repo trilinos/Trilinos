@@ -286,13 +286,13 @@ RCP<const ParameterList> ForwardEulerStepperMomento<Scalar>::getValidParameters(
 }
 
 template<class Scalar>
-void ForwardEulerStepperMomento<Scalar>::set_model(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
+void ForwardEulerStepperMomento<Scalar>::set_model(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 { 
   model_ = model; 
 }
 
 template<class Scalar>
-RCP<Thyra::ModelEvaluator<Scalar> > ForwardEulerStepperMomento<Scalar>::get_model() const
+RCP<const Thyra::ModelEvaluator<Scalar> > ForwardEulerStepperMomento<Scalar>::get_model() const
 { 
   return model_; 
 }
@@ -323,10 +323,16 @@ RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper()
 
 // Nonmember constructor
 template<class Scalar>
-RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
+RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
+    )
 {
   RCP<ForwardEulerStepper<Scalar> > stepper = forwardEulerStepper<Scalar>();
-  stepper->setModel(model);
+  {
+    RCP<StepperBase<Scalar> > stepperBase = 
+      Teuchos::rcp_dynamic_cast<StepperBase<Scalar> >(stepper,true);
+    setStepperModel(Teuchos::inOutArg(*stepperBase),model);
+  }
   return stepper;
 }
 
@@ -554,6 +560,7 @@ Teuchos::RCP<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::unsetParameter
   return(temp_param_list);
 }
 
+
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
 ForwardEulerStepper<Scalar>::getValidParameters() const
@@ -568,13 +575,22 @@ ForwardEulerStepper<Scalar>::getValidParameters() const
   return validPL;
 }
 
+
 template<class Scalar>
-void ForwardEulerStepper<Scalar>::setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
+void ForwardEulerStepper<Scalar>::setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
   TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
   model_ = model;
 }
+
+
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
+{
+  this->setModel(model); // TODO 09/09/09 tscoffe:  use ConstNonconstObjectContainer!
+}
+
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
@@ -587,7 +603,7 @@ template<class Scalar>
 Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
 ForwardEulerStepper<Scalar>::getNonconstModel() 
 {
-  return model_;
+  return Teuchos::null;
 }
 
 template<class Scalar>
@@ -626,14 +642,16 @@ ForwardEulerStepper<Scalar>::cloneStepperAlgorithm() const
   // Just use the interface to clone the algorithm in a basically
   // uninitialized state
 
-  RCP<ForwardEulerStepper<Scalar> >
+  RCP<StepperBase<Scalar> >
     stepper = Teuchos::rcp(new ForwardEulerStepper<Scalar>());
 
-  if (!is_null(model_))
-    stepper->setModel(model_); // Shallow copy is okay!
+  if (!is_null(model_)) {
+    setStepperModel(Teuchos::inOutArg(*stepper),model_); // Shallow copy is okay!
+  }
 
-  if (!is_null(parameterList_))
+  if (!is_null(parameterList_)) {
     stepper->setParameterList(Teuchos::parameterList(*parameterList_));
+  }
 
   return stepper;
 

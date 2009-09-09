@@ -31,6 +31,7 @@
 
 // General Trilinos includes:
 #include "Thyra_ModelEvaluatorBase.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -38,7 +39,7 @@
 #include "Rythmos_StepperSupportTypes.hpp"
 
 namespace RythmosCharon {
-  class RythmosCharonIntegrationControlAndObserver;
+  class CharonIntegrationControlAndObserver;
 }
 namespace Thyra {
   template<class Scalar> class NonlinearSolverBase;
@@ -65,14 +66,13 @@ public:
     const Teuchos::RCP<Teuchos::ParameterList> &rythmosStepperSelectionPL,
     Teuchos::FancyOStream &out
     );
-  static Teuchos::RCP<RythmosCharon::RythmosCharonIntegrationControlAndObserver>
+  static Teuchos::RCP<RythmosCharon::CharonIntegrationControlAndObserver>
   buildIntegrationControlAndObserverStrategy(
     const Teuchos::RCP<Teuchos::ParameterList> &charonStepControlAndObservationSettingsPL,
-    const Teuchos::RCP<const Thyra::EpetraModelEvaluator> &epetraThyraModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> > &epetraThyraModel,
     Teuchos::FancyOStream &out
     );
-  static Thyra::ModelEvaluatorBase::InArgs<double>
-  getStateInitialCondition();
+  Thyra::ModelEvaluatorBase::InArgs<double> getStateInitialCondition();
   static void updateCharonState(
     const Thyra::VectorBase<double> &x_dot,
     const Thyra::VectorBase<double> &x,
@@ -102,9 +102,10 @@ public:
 private:
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
   Teuchos::RCP<Rythmos::SolverAcceptingStepperBase<double> > rythmosStepper_;
-  Teuchos::RCP<RythmosCharon::RythmosCharonIntegrationControlAndObserver>
+  Teuchos::RCP<RythmosCharon::CharonIntegrationControlAndObserver>
     ryhmosCharonIntegrationControlAndObserver_;
   Teuchos::RCP<Rythmos::IntegratorBase<double> > rythmosStateIntegrator_;
+  Teuchos::RCP<Thyra::ModelEvaluator<double> > epetraThyraModel_;
 };
 
 

@@ -73,7 +73,10 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
 
     /** \brief . */
-    void setModel(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model);
+
+    /** \brief . */
+    void setNonconstModel(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
     /** \brief . */
     Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
@@ -146,7 +149,7 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
 
   private:
 
-    Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_old_;
     Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;

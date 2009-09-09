@@ -34,6 +34,7 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Rythmos_InterpolatorBase.hpp"
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 namespace Rythmos {
 
@@ -104,6 +105,28 @@ void defaultGetPoints(
     const Ptr<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> >& accuracy_vec, // optional outArg
     const Ptr<InterpolatorBase<Scalar> > interpolator // optional inArg (note:  not const)
     );
+
+// This function sets a model on a stepper by creating the appropriate
+// ConstNonconstObjectContainer object.
+template<class Scalar>
+  void setStepperModel(
+      const Ptr<StepperBase<Scalar> >& stepper,
+      const RCP<const Thyra::ModelEvaluator<Scalar> >& model
+      );
+
+template<class Scalar>
+  void setStepperModel(
+      const Ptr<StepperBase<Scalar> >& stepper,
+      const RCP<Thyra::ModelEvaluator<Scalar> >& model
+      );
+
+template<class Scalar>
+  void setStepperModel(
+      const Ptr<StepperBase<Scalar> >& stepper,
+      Teuchos::ConstNonconstObjectContainer<Thyra::ModelEvaluator<Scalar> >& 
+        model
+      );
+
 
 } // namespace Rythmos
 

@@ -190,7 +190,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, checkConsistentState ) {
       // Check if isInitialized_ == true, but model_ = null or residual_vector = null
       RCP<ForwardEulerStepperMomento<double> > m = Teuchos::rcp_dynamic_cast<ForwardEulerStepperMomento<double> >(momento->clone(),true);
       RCP<ForwardEulerStepper<double> > stepper = forwardEulerStepper<double>();
-      RCP<Thyra::ModelEvaluator<double> > model = m->get_model();
+      RCP<const Thyra::ModelEvaluator<double> > model = m->get_model();
       TEST_NOTHROW(stepper->setMomento(m.ptr()));
       m->set_model(Teuchos::null);
       TEST_THROW(stepper->setMomento(m.ptr()),std::logic_error);

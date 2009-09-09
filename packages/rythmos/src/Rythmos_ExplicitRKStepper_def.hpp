@@ -382,12 +382,19 @@ ExplicitRKStepper<Scalar>::getValidParameters() const
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
+void ExplicitRKStepper<Scalar>::setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
   TEST_FOR_EXCEPT( is_null(model) );
   TEST_FOR_EXCEPT( !is_null(model_) ); // For now you can only call this once.
   assertValidModel( *this, *model );
   model_ = model;
+}
+
+
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model)
+{
+  this->setModel(model); // TODO 09/09/09 tscoffe:  use ConstNonconstObjectContainer!
 }
 
 
@@ -403,7 +410,7 @@ template<class Scalar>
 Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
 ExplicitRKStepper<Scalar>::getNonconstModel() 
 {
-  return model_;
+  return Teuchos::null;
 }
 
 

@@ -265,7 +265,7 @@ ThetaStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ThetaStepper<Scalar>::setModel(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
 
@@ -299,6 +299,14 @@ void ThetaStepper<Scalar>::setModel(
   
 }
 
+template<class Scalar>
+void ThetaStepper<Scalar>::setNonconstModel(
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  )
+{
+  this->setModel(model); // TODO 09/09/09 tscoffe:  use ConstNonconstObjectContainer!
+}
+
 
 template<class Scalar>
 RCP<const Thyra::ModelEvaluator<Scalar> >
@@ -312,7 +320,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 ThetaStepper<Scalar>::getNonconstModel() 
 {
-  return model_;
+  TEST_FOR_EXCEPT(true);
 }
 
 

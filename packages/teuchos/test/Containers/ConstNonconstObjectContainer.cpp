@@ -188,6 +188,19 @@ TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, castFromRCP ) {
 }
 
 
+TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, is_null ) {
+  ConstNonconstObjectContainer<std::vector<double> > vectorObj;
+  TEST_ASSERT( is_null(vectorObj) );
+}
+
+
+TEUCHOS_UNIT_TEST( ConstNonconstObjectContainer, nonnull ) {
+  RCP<std::vector<double> > vec = rcp(new std::vector<double>);
+  ConstNonconstObjectContainer<std::vector<double> > vectorObj(vec);
+  TEST_ASSERT( nonnull(vectorObj) );
+}
+
+
 } // namespace Teuchos
 
 

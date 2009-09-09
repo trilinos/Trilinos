@@ -211,13 +211,21 @@ ImplicitBDFStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setModel(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT( is_null(model) );
   assertValidModel( *this, *model );
   model_ = model;
+}
+
+template<class Scalar>
+void ImplicitBDFStepper<Scalar>::setNonconstModel(
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model
+  )
+{
+  this->setModel(model); // TODO 09/09/09 tscoffe:  use ConstNonconstObjectContainer!
 }
 
 
@@ -233,7 +241,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 ImplicitBDFStepper<Scalar>::getNonconstModel()
 {
-  return model_;
+  return Teuchos::null;
 }
 
 

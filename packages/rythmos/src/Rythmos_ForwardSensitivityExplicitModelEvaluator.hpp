@@ -157,13 +157,13 @@ public:
 
   /** \brief . */
   void initializeStructure(
-    const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
   
   /** \brief . */
   void initializeStructureInitCondOnly(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
     const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     );
   
@@ -208,7 +208,7 @@ private:
   // /////////////////////////
   // Private data members
 
-  RCP<Thyra::ModelEvaluator<Scalar> > stateModel_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
   int np_;
 
@@ -266,7 +266,7 @@ ForwardSensitivityExplicitModelEvaluator<Scalar>::ForwardSensitivityExplicitMode
 
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
-  const RCP<Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index
   )
 {
@@ -322,7 +322,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructure(
 
 template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializeStructureInitCondOnly(
-  const RCP<Thyra::ModelEvaluator<Scalar> >& stateModel,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
   const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
   )
 {
@@ -342,7 +342,7 @@ template<class Scalar>
 RCP<Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityExplicitModelEvaluator<Scalar>::getNonconstStateModel() const
 {
-  return stateModel_;
+  return Teuchos::null;
 }
 
 

@@ -721,7 +721,7 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, DfDp ) {
   const double x1_ex = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
   const double x1prime_ex = -2*cos(t)+eps*(-0.75*sin(t)+3.0*0.75*sin(3.0*t));
   const double forcing_term = x1prime_ex - eps*(1.0-x0_ex*x0_ex)*x1_ex+x0_ex;
-  const double forcing_term_d_eps = - (1.0-x0_ex*x0_ex)*x1_ex;
+  //const double forcing_term_d_eps = - (1.0-x0_ex*x0_ex)*x1_ex;
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Accept model parameters", true);

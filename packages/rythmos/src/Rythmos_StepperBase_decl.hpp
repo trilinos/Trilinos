@@ -131,11 +131,6 @@ public:
     
   /** \brief Specify the model problem to integrate.
    *
-   * By default, the initial condition will be taken from
-   * <tt>model->getNominalValues()</tt>.  If this initial condition is not
-   * complete or is not the desired initial condition, it can be set using
-   * <tt>setInitialCondition()</tt>.
-   *
    * <b>Preconditions:</b><ul>
    *
    * <li><tt>acceptsModel()==true</tt>
@@ -165,41 +160,33 @@ public:
    *
    * <b>Postconditions:</b><ul>
    * <li><tt>this->getModel() == model</tt>
-   * <li><tt>this->modelIsConst() == false</tt>
+   * <li><tt>this->modelIsConst() == true</tt>
    * </ul>
    */
   virtual void setModel(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& model
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model
     ) = 0;
 
 
-  /** \brief Accept a const-only model.
+  /** \brief Accept a nonconst model.
    *
-   * See the full details on non-const version of this function above.
+   * See the full details on const version of this function above.
    *
    * <b>Postconditions:</b>
    * <ul>
    * <li><tt>this->getModel() == model</tt>
-   * <li><tt>this->modelIsConst() == true</tt>
+   * <li><tt>this->modelIsConst() == false</tt>
    * </ul>
    */
-//  virtual void setModel(
-//    const RCP<const Thyra::ModelEvaluator<Scalar> >& model
-//    )
-//    {
-//      TEST_FOR_EXCEPT_MSG(true,
-//        this->description()
-//        +"::setModel(const RCP<const ME>&) not implemented yet!");
-//    }
+  virtual void setNonconstModel(
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model
+    ) = 0;
 
-  // 2009/09/05: rabart: ToDo: Uncomment the above const version of
-  // setModel(...) and then change the name of the non-const version
-  // setModel(...) to setNonconstModel(...) to avoid ambiguity problems.
 
   /** \brief Return of the model is only const or can be returned as a
    * non-const object.
    */
-  virtual bool modelIsConst() const  { return false; }
+  virtual bool modelIsConst() const  { return true; }
    
   // 2009/09/05: rabartl: ToDo: Make setModel(const model) and modelIsConst()
   // pure virtual and make all subclasses implement them.  All subclasses will

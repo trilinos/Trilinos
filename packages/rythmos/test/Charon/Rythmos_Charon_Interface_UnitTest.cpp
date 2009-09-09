@@ -231,6 +231,13 @@ TEUCHOS_UNIT_TEST( Rythmos_Charon, integrator_IBDF ) {
   TEST_ASSERT( !is_null(integrator) );
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_Charon, setupAndSolve ) {
+  Teuchos::RCP<RythmosCharonSolver> rcs = Teuchos::rcp(new RythmosCharonSolver());
+  rcs->setup();
+  bool status = rcs->solve();
+  TEST_ASSERT( status == true );
+}
+
 } // namespace RythmosCharon
 
 

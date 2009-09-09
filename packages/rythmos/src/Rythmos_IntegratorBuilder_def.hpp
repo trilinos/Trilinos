@@ -377,7 +377,7 @@ RCP<const ParameterList> IntegratorBuilder<Scalar>::getParameterList() const
 template<class Scalar>
 RCP<IntegratorBase<Scalar> >
 IntegratorBuilder<Scalar>::create(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& initialCondition,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver
     ) const
@@ -658,7 +658,7 @@ Rythmos::integratorBuilder(const RCP<ParameterList> &paramList)
 
 template<class Scalar>
 Teuchos::RCP<Rythmos::IntegratorBase<Scalar> > Rythmos::createForwardSensitivityIntegrator(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     const int& p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& model_ic,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver,
@@ -700,7 +700,7 @@ Teuchos::RCP<Rythmos::IntegratorBase<Scalar> > Rythmos::createForwardSensitivity
   \
   template RCP<IntegratorBase< SCALAR > > \
   createForwardSensitivityIntegrator( \
-    const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
+    const RCP<const Thyra::ModelEvaluator< SCALAR > >& model, \
     const int& p_index, \
     const Thyra::ModelEvaluatorBase::InArgs< SCALAR >& model_ic, \
     const RCP<Thyra::NonlinearSolverBase< SCALAR > >& nlSolver, \

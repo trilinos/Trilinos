@@ -38,6 +38,7 @@
 
 namespace Rythmos {
 
+using Teuchos::ConstNonconstObjectContainer;
 
 template<class Scalar>
 void assertValidModel(
@@ -292,6 +293,40 @@ void defaultGetPoints(
   }
 }
 
+
+template<class Scalar>
+  void setStepperModel(
+      const Ptr<StepperBase<Scalar> >& stepper,
+      const RCP<const Thyra::ModelEvaluator<Scalar> >& model
+      )
+{
+  stepper->setModel(model);
+}
+
+template<class Scalar>
+  void setStepperModel(
+      const Ptr<StepperBase<Scalar> >& stepper,
+      const RCP<Thyra::ModelEvaluator<Scalar> >& model
+      )
+{
+  stepper->setNonconstModel(model);
+}
+
+template<class Scalar>
+  void setStepperModel(
+      const Ptr<StepperBase<Scalar> >& stepper,
+      ConstNonconstObjectContainer<Thyra::ModelEvaluator<Scalar> >& model
+      )
+{
+  if (model.isConst()) {
+    stepper->setModel(model.getConstObj());
+  } 
+  else {
+    stepper->setNonconstModel(model.getNonconstObj());
+  }
+}
+
+
 // 
 // Explicit Instantiation macro
 //
@@ -338,7 +373,22 @@ void defaultGetPoints(
       const Ptr<Array<Teuchos::RCP<const Thyra::VectorBase< SCALAR > > > >& xdot_vec, \
       const Ptr<Array<Teuchos::ScalarTraits< SCALAR >::magnitudeType> >& accuracy_vec, \
       const Ptr<InterpolatorBase< SCALAR > > interpolator  \
-      ); 
+      );  \
+  \
+  template void setStepperModel( \
+        const Ptr<StepperBase< SCALAR > >& stepper, \
+        const RCP<const Thyra::ModelEvaluator< SCALAR > >& model \
+        ); \
+  \
+  template void setStepperModel( \
+        const Ptr<StepperBase< SCALAR > >& stepper, \
+        const RCP<Thyra::ModelEvaluator< SCALAR > >& model \
+        ); \
+  \
+  template void setStepperModel( \
+        const Ptr<StepperBase< SCALAR > >& stepper, \
+        Teuchos::ConstNonconstObjectContainer<Thyra::ModelEvaluator< SCALAR > >& model \
+        );
 
 } // namespace Rythmos
 

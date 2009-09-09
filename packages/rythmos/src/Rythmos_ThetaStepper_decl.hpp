@@ -145,7 +145,10 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
-  void setModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> >& model);
+
+  /** \brief . */
+  void setNonconstModel(const RCP<Thyra::ModelEvaluator<Scalar> >& model);
   
   /** \brief . */
   RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
@@ -240,7 +243,7 @@ private:
 
   bool isInitialized_;
   bool haveInitialCondition_;
-  RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
