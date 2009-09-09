@@ -223,7 +223,7 @@ void RealSpaceTools<Scalar>::vectorNorm(NormArray & normArray, const VecArray & 
           normOffset  = offset;
           offset     *= dim;
           Scalar temp = (Scalar)0;
-          temp = std::abs(inVecs[0]);
+          temp = std::abs(inVecs[offset]);
           for(int i = 1; i < dim; i++){
             Scalar absData = std::abs(inVecs[offset+i]);
             if (temp < absData) temp = absData;

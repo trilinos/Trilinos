@@ -635,6 +635,38 @@ int main(int argc, char *argv[]) {
         va_x_x_d[i] = Teuchos::ScalarTraits<double>::random();
       }
 
+      *outStream << "\n************ Checking vectorNorm ************\n";
+     
+      rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_TWO);
+      *outStream << va_x_x_d;
+      *outStream << vnorms_x_x;
+      if ( std::abs(rst::vectorNorm(&vnorms_x_x[0], vnorms_x_x.size(), NORM_TWO) - 
+                    rst::vectorNorm(&va_x_x_d[0], va_x_x_d.size(), NORM_TWO)) > zero) {
+        *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
+        errorFlag = -1000;
+      }
+
+      rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_ONE);
+      *outStream << va_x_x_d;
+      *outStream << vnorms_x_x;
+      if ( std::abs(rst::vectorNorm(&vnorms_x_x[0], vnorms_x_x.size(), NORM_ONE) - 
+                    rst::vectorNorm(&va_x_x_d[0], va_x_x_d.size(), NORM_ONE)) > zero) {
+        *outStream << "\n\nINCORRECT vectorNorm NORM_ONE\n\n";
+        errorFlag = -1000;
+      }
+
+      rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_INF);
+      *outStream << va_x_x_d;
+      *outStream << vnorms_x_x;
+      if ( std::abs(rst::vectorNorm(&vnorms_x_x[0], vnorms_x_x.size(), NORM_INF) - 
+                    rst::vectorNorm(&va_x_x_d[0], va_x_x_d.size(), NORM_INF)) > zero) {
+        *outStream << "\n\nINCORRECT vectorNorm NORM_INF\n\n";
+        errorFlag = -1000;
+      }
+
+      /******************************************/
+
+
       *outStream << "\n************ Checking inverse, subtract, and vectorNorm ************\n";
      
       rst::inverse(mb_x_x_d_d, ma_x_x_d_d); // B = inv(A)
@@ -780,6 +812,38 @@ int main(int argc, char *argv[]) {
       for (int i=0; i<va_x_d.size(); i++) {
         va_x_d[i] = Teuchos::ScalarTraits<double>::random();
       }
+
+      *outStream << "\n************ Checking vectorNorm ************\n";
+     
+      rst::vectorNorm(vnorms_x, va_x_d, NORM_TWO);
+      *outStream << va_x_d;
+      *outStream << vnorms_x;
+      if ( std::abs(rst::vectorNorm(&vnorms_x[0], vnorms_x.size(), NORM_TWO) - 
+                    rst::vectorNorm(&va_x_d[0], va_x_d.size(), NORM_TWO)) > zero) {
+        *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
+        errorFlag = -1000;
+      }
+
+      rst::vectorNorm(vnorms_x, va_x_d, NORM_ONE);
+      *outStream << va_x_d;
+      *outStream << vnorms_x;
+      if ( std::abs(rst::vectorNorm(&vnorms_x[0], vnorms_x.size(), NORM_ONE) - 
+                    rst::vectorNorm(&va_x_d[0], va_x_d.size(), NORM_ONE)) > zero) {
+        *outStream << "\n\nINCORRECT vectorNorm NORM_ONE\n\n";
+        errorFlag = -1000;
+      }
+
+      rst::vectorNorm(vnorms_x, va_x_d, NORM_INF);
+      *outStream << va_x_d;
+      *outStream << vnorms_x;
+      if ( std::abs(rst::vectorNorm(&vnorms_x[0], vnorms_x.size(), NORM_INF) - 
+                    rst::vectorNorm(&va_x_d[0], va_x_d.size(), NORM_INF)) > zero) {
+        *outStream << "\n\nINCORRECT vectorNorm NORM_INF\n\n";
+        errorFlag = -1000;
+      }
+
+      /******************************************/
+
 
       *outStream << "\n************ Checking inverse, subtract, and vectorNorm ************\n";
      
