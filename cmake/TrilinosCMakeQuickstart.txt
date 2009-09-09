@@ -700,6 +700,17 @@ Last Updated: 2009/05/04
   sure that it gets rebuilt correctly.
 
 
+(*) Building with verbose output without reconfiguring:
+
+    $ make [<SOME_TARGET>] VERBOSE=1
+
+
+(*) Relink a target without considering dependencies:
+
+    $ make <SOME_TARGET>/fast
+
+
+
 \section Testing E) Testing with CTest
 ---------------------
 
