@@ -4,6 +4,9 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+# This is needed to compile codes with dakota headers.
+ADD_DEFINITIONS(-DHAVE_CONFIG_H)
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TriKota_Simple
   SOURCES 
