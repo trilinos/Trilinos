@@ -129,6 +129,7 @@ bool runTest(double ltol, double times[], int &numIters) {
 
   const Scalar ONE  = SCT::one();
   mptestpl.set<MT>( "Convergence Tolerance", ltol );         // Relative convergence tolerance requested
+  mptestpl.set( "Explicit Residual Test", true );
   mptestpl.set( "Timer Label", typeName(ONE) );         // Set timer label to discern between the two solvers.
 
   if (mptestmypid==0) cout << "Testing Scalar == " << typeName(ONE) << endl;
@@ -157,6 +158,11 @@ bool runTest(double ltol, double times[], int &numIters) {
       cout << "Caught exception: " << endl << e.what() << endl;
       ret = Unconverged;
     }
+  }
+  if (solver->isLOADetected()) {
+    if (proc_verbose) cout << "Solver reports Loss of Accuracy. Computing residual anyway." << endl;
+    // set Converged and check below.
+    ret = Converged;
   }
   numIters = solver->getNumIters();
   times[0] = btimer.totalElapsedTime();

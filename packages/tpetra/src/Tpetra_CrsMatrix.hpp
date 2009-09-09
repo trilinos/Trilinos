@@ -334,6 +334,19 @@ namespace Tpetra
 
       //@}
 
+      //! @name Matrix-vector multiplication and solve methods
+      //@{
+
+      //! Multiplies this matrix by a MultiVector.
+      template <class DomainScalar, class RangeScalar>
+      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans) const;
+
+      //! Solves a linear system when the underlying matrix is triangular.
+      template <class DomainScalar, class RangeScalar>
+      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+          
+      //@}
+
       //! @name Methods implementing Operator
       //@{ 
 
@@ -347,6 +360,9 @@ namespace Tpetra
 
       //! Computes this matrix-vector multilication y = A x.
       void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+
+      //! Indicates whether this operator supports applying the adjoint operator.
+      bool hasTransposeApply() const;
 
       //@}
 
@@ -363,6 +379,9 @@ namespace Tpetra
 
       //! Computes this matrix-vector multilication y = A x.
       void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+
+      //! Indicates whether this operator supports inverting the adjoint operator.
+      bool hasTransposeApplyInverse() const;
 
       //@}
 
@@ -789,6 +808,17 @@ namespace Tpetra
     return staticGraph_; 
   }
 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApply() const {
+    return true;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApplyInverse() const {
+    return true;
+  }
+      
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -2145,213 +2175,226 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                                                                                                       MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-                                                                                                       Teuchos::ETransp mode) const {
-    // Solve U X = Y  or  L X = Y
-    // X belongs to domain map, while Y belongs to range map
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    using Teuchos::null;
-    using Teuchos::ArrayView;
-    TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error, 
-        Teuchos::typeName(*this) << ": cannot call applyInverse() until fillComplete() has been called.");
-    TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-        Teuchos::typeName(*this) << "::applyInverse(X,Y): X and Y must have the same number of vectors.");
-    TEST_FOR_EXCEPTION(isLowerTriangular() == false && isUpperTriangular() == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::applyInverser() requires either upper or lower triangular structure.");
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyInverse(
+                                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+                                          MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+                                          Teuchos::ETransp mode) const {
+    solve<Scalar,Scalar>(Y,X,mode);
+  }
 
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-    int myImageID = Teuchos::rank(*getComm());
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    if (myImageID == 0) {
-      *out << "Entering CrsMatrix::applyInverse()" << std::endl
-                << "Column Map: " << std::endl;
-    }
-    *out << *this->getColMap() << std::endl;
-    if (myImageID == 0) {
-      *out << "Initial input: " << std::endl;
-    }
-    Y.describe(*out,Teuchos::VERB_EXTREME);
-#endif
 
-    const size_t numVectors = X.getNumVectors();
-    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal> > importer = graph_->getImporter();
-    Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal> > exporter = graph_->getExporter();
-    Teuchos::RCP<MV>        Xcopy;
-    Teuchos::RCP<const MV>  Ycopy;
-    Kokkos::MultiVector<Scalar,Node>        *lclX = &X.getLocalMVNonConst();
-    const Kokkos::MultiVector<Scalar,Node>  *lclY = &Y.getLocalMV();
-
-    // cannot handle non-constant stride right now
-    if (X.isConstantStride() == false) {
-      // generate a copy of X 
-      Xcopy = Teuchos::rcp(new MV(X));
-      lclX = &Xcopy->getLocalMVNonConst();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "X is not constant stride, duplicating X results in a strided copy" << std::endl;
-      Xcopy->describe(*out,Teuchos::VERB_EXTREME);
-#endif
-    }
-
-    // cannot handle non-constant stride right now
-    if (Y.isConstantStride() == false) {
-      // generate a copy of Y 
-      Ycopy = Teuchos::rcp(new MV(Y));
-      lclY = &Ycopy->getLocalMV();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "Y is not constant stride, duplicating Y results in a strided copy" << std::endl;
-      Ycopy->describe(*out,Teuchos::VERB_EXTREME);
-#endif
-    }
-
-    // it is okay if X and Y reference the same data, because we can perform a triangular solve in-situ
-    // however, for simplicity, for now we will not support this use case
-    if (lclX==lclY && importer==null && exporter==null) {
-      TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-          "::applyInverse(X,Y): If X and Y are the same, it necessitates a temporary copy of Y, which is inefficient.");
-      // generate a copy of Y
-      Ycopy = Teuchos::rcp(new MV(Y));
-      lclY = &Ycopy->getLocalMV();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "X and Y are co-located, duplicating Y results in a strided copy" << std::endl;
-      Ycopy->describe(*out,Teuchos::VERB_EXTREME);
-#endif
-    }
-
-    if (importer != null) {
-      if (importMV_ != null && importMV_->getNumVectors() != numVectors) importMV_ = null;
-      if (importMV_ == null) {
-        importMV_ = Teuchos::rcp( new MV(getColMap(),numVectors) );
-      }
-    }
-    if (exporter != null) {
-      if (exportMV_ != null && exportMV_->getNumVectors() != numVectors) exportMV_ = null;
-      if (exportMV_ == null) {
-        exportMV_ = Teuchos::rcp( new MV(getRowMap(),numVectors) );
-      }
-    }
-
-    // import/export patterns are different depending on transpose.
-    if (mode == Teuchos::NO_TRANS) {
-      // applyInverse(NO_TRANS): RangeMap -> DomainMap
-      // lclMatSolve_: RowMap -> ColMap
-      // importer: DomainMap -> ColMap
-      // exporter: RowMap -> RangeMap
-      // 
-      // applyInverse = reverse(exporter)  o   lclMatSolve_  o reverse(importer)
-      //                RangeMap   ->    RowMap     ->     ColMap         ->    DomainMap
-      // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
-      if (exporter != null) {
-        exportMV_->doImport(Y, *exporter, INSERT);
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) {
-          *out << "Performed import of Y using exporter..." << std::endl;
-        }
-        exportMV_->describe(*out,Teuchos::VERB_EXTREME);
-#endif
-        lclY = &exportMV_->getLocalMV();
-      }
-      // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
-      // We will compute solution into the to-be-exported MV; get a view
-      if (importer != null) {
-        lclX = &importMV_->getLocalMVNonConst();
-      }
-      // Do actual computation
-      if (isUpperTriangular()) {
-        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
-      }
-      else {
-        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
-      }
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "Matrix-MV solve..." << std::endl;
-      if (exporter != null) {
-        exportMV_->describe(*out,Teuchos::VERB_EXTREME);
-      } 
-      else {
-        X.describe(*out,Teuchos::VERB_EXTREME);
-      }
-#endif
-      // do the export
-      if (importer != null) {
-        // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
-        X.putScalar(ST::zero());  
-        X.doExport(*importMV_, *importer, ADD); // Fill Y with Values from export vector
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Output vector after export() using exporter..." << std::endl;
-        X.describe(*out,Teuchos::VERB_EXTREME);
-#endif
-      }
-      // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
-      if (X.isDistributed() == false) {
-        X.reduce();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
-        X.describe(*out,Teuchos::VERB_EXTREME);
-#endif
-      }
-    }
-    else {
-      // mode == CONJ_TRANS or TRANS
-      TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<Scalar>::isComplex && mode == Teuchos::TRANS, std::logic_error,
-          Teuchos::typeName(*this) << "::applyInverse() does not currently support transposed multiplications for complex scalar types.");
-      // applyInverse(TRANS): DomainMap -> RangeMap
-      // lclMatSolve_(TRANS): ColMap -> RowMap
-      // importer: DomainMap -> ColMap
-      // exporter: RowMap -> RangeMap
-      // 
-      // applyInverse =        importer o   lclMatSolve_  o  exporter
-      //                Domainmap -> ColMap     ->      RowMap -> RangeMap
-      // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
-      if (importer != null) {
-        importMV_->doImport(Y,*importer,INSERT);
-        lclY = &importMV_->getLocalMV();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) {
-          *out << "Performed import of Y using importer..." << std::endl;
-        }
-        importMV_->describe(*out,Teuchos::VERB_EXTREME);
-#endif
-      }
-      // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
-      // We will compute solution into the to-be-exported MV; get a view
-      if (exporter != null) {
-        lclX = &exportMV_->getLocalMVNonConst();
-      }
-      // Do actual computation
-      if (isUpperTriangular()) {
-        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
-      }
-      else {
-        lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
-      }
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "Matrix-MV solve..." << std::endl;
-      if (exporter != null) {
-        exportMV_->describe(*out,Teuchos::VERB_EXTREME);
-      } 
-      else {
-        X.describe(*out,Teuchos::VERB_EXTREME);
-      }
-#endif
-      // do the export
-      if (exporter != null) {
-        X.putScalar(ST::zero()); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
-        X.doExport(*exportMV_,*exporter,ADD);
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Output vector after export() using exporter..." << std::endl;
-        X.describe(*out,Teuchos::VERB_EXTREME);
-#endif
-      }
-      // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
-      if (X.isDistributed() == false) {
-        X.reduce();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-        if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
-        X.describe(*out,Teuchos::VERB_EXTREME);
-#endif
-      }
-    }
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  template <class DomainScalar, class RangeScalar>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::solve(
+                                    const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>  &Y, 
+                                          MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                                          Teuchos::ETransp trans) const {
+//     // Solve U X = Y  or  L X = Y
+//     // X belongs to domain map, while Y belongs to range map
+//     typedef Teuchos::ScalarTraits<Scalar> ST;
+//     using Teuchos::null;
+//     using Teuchos::ArrayView;
+//     TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error, 
+//         Teuchos::typeName(*this) << ": cannot call applyInverse() until fillComplete() has been called.");
+//     TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+//         Teuchos::typeName(*this) << "::applyInverse(X,Y): X and Y must have the same number of vectors.");
+//     TEST_FOR_EXCEPTION(isLowerTriangular() == false && isUpperTriangular() == false, std::runtime_error,
+//         Teuchos::typeName(*this) << "::applyInverser() requires either upper or lower triangular structure.");
+// 
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//     int myImageID = Teuchos::rank(*getComm());
+//     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+//     if (myImageID == 0) {
+//       *out << "Entering CrsMatrix::applyInverse()" << std::endl
+//                 << "Column Map: " << std::endl;
+//     }
+//     *out << *this->getColMap() << std::endl;
+//     if (myImageID == 0) {
+//       *out << "Initial input: " << std::endl;
+//     }
+//     Y.describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+// 
+//     const size_t numVectors = X.getNumVectors();
+//     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal> > importer = graph_->getImporter();
+//     Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal> > exporter = graph_->getExporter();
+//     Teuchos::RCP<MV>        Xcopy;
+//     Teuchos::RCP<const MV>  Ycopy;
+//     Kokkos::MultiVector<Scalar,Node>        *lclX = &X.getLocalMVNonConst();
+//     const Kokkos::MultiVector<Scalar,Node>  *lclY = &Y.getLocalMV();
+// 
+//     // cannot handle non-constant stride right now
+//     if (X.isConstantStride() == false) {
+//       // generate a copy of X 
+//       Xcopy = Teuchos::rcp(new MV(X));
+//       lclX = &Xcopy->getLocalMVNonConst();
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//       if (myImageID == 0) *out << "X is not constant stride, duplicating X results in a strided copy" << std::endl;
+//       Xcopy->describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//     }
+// 
+//     // cannot handle non-constant stride right now
+//     if (Y.isConstantStride() == false) {
+//       // generate a copy of Y 
+//       Ycopy = Teuchos::rcp(new MV(Y));
+//       lclY = &Ycopy->getLocalMV();
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//       if (myImageID == 0) *out << "Y is not constant stride, duplicating Y results in a strided copy" << std::endl;
+//       Ycopy->describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//     }
+// 
+//     // it is okay if X and Y reference the same data, because we can perform a triangular solve in-situ
+//     // however, for simplicity, for now we will not support this use case
+//     if (lclX==lclY && importer==null && exporter==null) {
+//       TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
+//           "::applyInverse(X,Y): If X and Y are the same, it necessitates a temporary copy of Y, which is inefficient.");
+//       // generate a copy of Y
+//       Ycopy = Teuchos::rcp(new MV(Y));
+//       lclY = &Ycopy->getLocalMV();
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//       if (myImageID == 0) *out << "X and Y are co-located, duplicating Y results in a strided copy" << std::endl;
+//       Ycopy->describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//     }
+// 
+//     if (importer != null) {
+//       if (importMV_ != null && importMV_->getNumVectors() != numVectors) importMV_ = null;
+//       if (importMV_ == null) {
+//         importMV_ = Teuchos::rcp( new MV(getColMap(),numVectors) );
+//       }
+//     }
+//     if (exporter != null) {
+//       if (exportMV_ != null && exportMV_->getNumVectors() != numVectors) exportMV_ = null;
+//       if (exportMV_ == null) {
+//         exportMV_ = Teuchos::rcp( new MV(getRowMap(),numVectors) );
+//       }
+//     }
+// 
+//     // import/export patterns are different depending on transpose.
+//     if (mode == Teuchos::NO_TRANS) {
+//       // applyInverse(NO_TRANS): RangeMap -> DomainMap
+//       // lclMatSolve_: RowMap -> ColMap
+//       // importer: DomainMap -> ColMap
+//       // exporter: RowMap -> RangeMap
+//       // 
+//       // applyInverse = reverse(exporter)  o   lclMatSolve_  o reverse(importer)
+//       //                RangeMap   ->    RowMap     ->     ColMap         ->    DomainMap
+//       // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+//       if (exporter != null) {
+//         exportMV_->doImport(Y, *exporter, INSERT);
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//         if (myImageID == 0) {
+//           *out << "Performed import of Y using exporter..." << std::endl;
+//         }
+//         exportMV_->describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//         lclY = &exportMV_->getLocalMV();
+//       }
+//       // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+//       // We will compute solution into the to-be-exported MV; get a view
+//       if (importer != null) {
+//         lclX = &importMV_->getLocalMVNonConst();
+//       }
+//       // Do actual computation
+//       if (isUpperTriangular()) {
+//         lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+//       }
+//       else {
+//         lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+//       }
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//       if (myImageID == 0) *out << "Matrix-MV solve..." << std::endl;
+//       if (exporter != null) {
+//         exportMV_->describe(*out,Teuchos::VERB_EXTREME);
+//       } 
+//       else {
+//         X.describe(*out,Teuchos::VERB_EXTREME);
+//       }
+// #endif
+//       // do the export
+//       if (importer != null) {
+//         // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
+//         X.putScalar(ST::zero());  
+//         X.doExport(*importMV_, *importer, ADD); // Fill Y with Values from export vector
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//         if (myImageID == 0) *out << "Output vector after export() using exporter..." << std::endl;
+//         X.describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//       }
+//       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
+//       if (X.isDistributed() == false) {
+//         X.reduce();
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//         if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
+//         X.describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//       }
+//     }
+//     else {
+//       // mode == CONJ_TRANS or TRANS
+//       TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<Scalar>::isComplex && mode == Teuchos::TRANS, std::logic_error,
+//           Teuchos::typeName(*this) << "::applyInverse() does not currently support transposed multiplications for complex scalar types.");
+//       // applyInverse(TRANS): DomainMap -> RangeMap
+//       // lclMatSolve_(TRANS): ColMap -> RowMap
+//       // importer: DomainMap -> ColMap
+//       // exporter: RowMap -> RangeMap
+//       // 
+//       // applyInverse =        importer o   lclMatSolve_  o  exporter
+//       //                Domainmap -> ColMap     ->      RowMap -> RangeMap
+//       // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+//       if (importer != null) {
+//         importMV_->doImport(Y,*importer,INSERT);
+//         lclY = &importMV_->getLocalMV();
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//         if (myImageID == 0) {
+//           *out << "Performed import of Y using importer..." << std::endl;
+//         }
+//         importMV_->describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//       }
+//       // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+//       // We will compute solution into the to-be-exported MV; get a view
+//       if (exporter != null) {
+//         lclX = &exportMV_->getLocalMVNonConst();
+//       }
+//       // Do actual computation
+//       if (isUpperTriangular()) {
+//         lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+//       }
+//       else {
+//         lclMatSolve_.template solve<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Teuchos::ScalarTraits<Scalar>::one(), *lclY, Teuchos::ScalarTraits<Scalar>::zero(), *lclX);
+//       }
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//       if (myImageID == 0) *out << "Matrix-MV solve..." << std::endl;
+//       if (exporter != null) {
+//         exportMV_->describe(*out,Teuchos::VERB_EXTREME);
+//       } 
+//       else {
+//         X.describe(*out,Teuchos::VERB_EXTREME);
+//       }
+// #endif
+//       // do the export
+//       if (exporter != null) {
+//         X.putScalar(ST::zero()); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
+//         X.doExport(*exportMV_,*exporter,ADD);
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//         if (myImageID == 0) *out << "Output vector after export() using exporter..." << std::endl;
+//         X.describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//       }
+//       // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
+//       if (X.isDistributed() == false) {
+//         X.reduce();
+// #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
+//         if (myImageID == 0) *out << "Output vector is local; result after reduce()..." << std::endl;
+//         X.describe(*out,Teuchos::VERB_EXTREME);
+// #endif
+//       }
+//     }
   }
 
 
@@ -2362,19 +2405,31 @@ namespace Tpetra
                                         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                                         MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                                         Teuchos::ETransp mode) const {
+    multiply<Scalar,Scalar>(X,Y,mode);
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  template <class DomainScalar, class RangeScalar>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::multiply(
+                                        const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+                                        MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+                                        Teuchos::ETransp mode) const {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::null;
     using Teuchos::ArrayView;
     TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error, 
-        Teuchos::typeName(*this) << ": cannot call apply() until fillComplete() has been called.");
+        Teuchos::typeName(*this) << ": cannot call multiply() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-        Teuchos::typeName(*this) << "::apply(X,Y): X and Y must have the same number of vectors.");
+        Teuchos::typeName(*this) << "::multiply(X,Y): X and Y must have the same number of vectors.");
 
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
     int myImageID = Teuchos::rank(*getComm());
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
     if (myImageID == 0) {
-      *out << "Entering CrsMatrix::apply()" << std::endl
+      *out << "Entering CrsMatrix::multiply()" << std::endl
                 << "Column Map: " << std::endl;
     }
     *out << *this->getColMap() << std::endl;
@@ -2420,7 +2475,7 @@ namespace Tpetra
     // cannot handle in-situ matvec
     if (lclX==lclY && importer==null && exporter==null) {
       TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-          "::apply(X,Y): If X and Y are the same, it necessitates a temporary copy of X, which is inefficient.");
+          "::multiply(X,Y): If X and Y are the same, it necessitates a temporary copy of X, which is inefficient.");
       // generate a copy of X 
       Xcopy = Teuchos::rcp(new MV(X));
       lclX = &Xcopy->getLocalMV();
@@ -2494,7 +2549,7 @@ namespace Tpetra
     else {
       // mode == CONJ_TRANS or TRANS
       TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<Scalar>::isComplex && mode == Teuchos::TRANS, std::logic_error,
-          Teuchos::typeName(*this) << "::apply() does not currently support transposed multiplications for complex scalar types.");
+          Teuchos::typeName(*this) << "::multiply() does not currently support transposed multiplications for complex scalar types.");
       // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
       if (exporter != null) {
         exportMV_->doImport(X,*exporter,INSERT);
@@ -2523,7 +2578,7 @@ namespace Tpetra
       }
 #endif
       if (importer != null) {
-        Y.putScalar(ST::zero()); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
+        Y.putScalar(ST::zero()); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta multiply()
         Y.doExport(*importMV_,*importer,ADD);
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
         if (myImageID == 0) *out << "Output vector after export() using importer..." << std::endl;

@@ -7,7 +7,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Tpetra_BlockGMRES_hb_DoubleFloat_test
     SOURCES test_bl_gmres_hb_df.cpp 
-    ARGS "--num-iters=20000 --num-blocks=500 --block-size=10 --tol=1e-4 --filename=bcsstk17.rsa"
+    ARGS "--num-iters=1000 --num-blocks=200"
     COMM serial mpi
     )
 

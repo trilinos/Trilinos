@@ -68,9 +68,17 @@ namespace Tpetra {
 						   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
 						   Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
+    //! Indicates whether this operator supports applying the adjoint operator.
+    virtual bool hasTransposeApply() const;
+
     //@}
 
 	};
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
+    return false;
+  }
 
 } // Tpetra namespace
 
