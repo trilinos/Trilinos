@@ -45,14 +45,6 @@ if the BLAS finding capability could handle finding library dependencies of
 BLAS (e.g. -lgfortran for static Atlas installations).
 
 
-(*) [CDash] [P3] Append all query fields when going from 'collapsed'
-view page to 'non-collapsed' view page: Currently, if you create a
-query and limit the builds shown in a 'collapsed' view, when you click
-on a build name collapsed group, you go to a new page that does not
-contain your query fields.  This is not at all what you expect and you
-have to entry the query fields again on the non-collapsed page.
-
-
 (*) [CTest] [P3] Add general summary timing to the console summary
 outputting:
 
@@ -499,4 +491,11 @@ hassle and does not interact well with MS Visual C++ projects.
 
 (*) [CMake] [P2] Native and mixed-language support for Fortran 2003
 (and some 2008): Collaborate with Damian Rouson on this.
+
+(*) [CDash] [P3] Append all query fields when going from 'collapsed'
+view page to 'non-collapsed' view page: Currently, if you create a
+query and limit the builds shown in a 'collapsed' view, when you click
+on a build name collapsed group, you go to a new page that does not
+contain your query fields.  This is not at all what you expect and you
+have to entry the query fields again on the non-collapsed page.
 
