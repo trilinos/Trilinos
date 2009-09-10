@@ -111,6 +111,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   WgtFctPtr wgtfct;
   int nY, nPin;
   int i;
+  int prev_pinGNO;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 /*   if (addweight) */
@@ -130,6 +131,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   qsort ((void*)arcs, size, sizeof(Zoltan_Arc),
 	 (int (*)(const void*,const void*))compar_arcs);
 
+  prev_pinGNO = -2;
   for (i = 0, nY=-1, nPin=-1; i < size ; ++i) {
     int new = 0;
     int yGNO = arcs[i].yGNO;
@@ -140,10 +142,11 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
       nY++;
       outmat->ystart[nY] = nPin + 1;
       outmat->yGNO[nY] = yGNO;
+      prev_pinGNO = -1;
       if (pinGNO < 0)
 	continue;
     }
-    new = new |((nPin <0) || outmat->pinGNO[nPin] != pinGNO);
+    new = new ||(pinGNO != prev_pinGNO);
     if (new) { /* New edge */
       nPin ++;
       outmat->pinGNO[nPin] = pinGNO;
@@ -154,6 +157,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
       wgtfct(outmat->pinwgt + nPin* outmat->pinwgtdim,
 	     pinwgt + arcs[i].offset*outmat->pinwgtdim, outmat->pinwgtdim);
     }
+    prev_pinGNO = outmat->pinGNO[nPin];
   }
   nY ++;
   outmat->ystart[nY] = nPin+1; /* compact mode */
