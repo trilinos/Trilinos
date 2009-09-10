@@ -46,10 +46,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_RecurrenceBasisImp.hpp
   Stokhos_HermiteBasis.hpp
   Stokhos_HermiteBasisImp.hpp
+  Stokhos_DiscretizedStieltjesBasis.hpp
+  Stokhos_DiscretizedStieltjesBasisImp.hpp
   Stokhos_RysBasis.hpp
   Stokhos_RysBasisImp.hpp
-  Stokhos_RecurrenceBasis.hpp
-  Stokhos_RecurrenceBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
