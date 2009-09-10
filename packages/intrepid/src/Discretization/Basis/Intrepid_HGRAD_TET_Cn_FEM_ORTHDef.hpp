@@ -187,6 +187,8 @@ void TabulatorTet<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
     outputValues(idxcur,i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1) + z(i,2) - z(i,2);
   }
   
+  if (deg > 0) {
+
   // D^{1,0,0}
   idxcur = idx(1,0,0);
   for (int i=0;i<np;i++) {
@@ -255,6 +257,20 @@ void TabulatorTet<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
 	}
       }
     }
+  }
+
+  }  
+  // normalize
+  for (int p=0;p<=deg;p++) {
+  	for (int q=0;q<=deg-p;q++) {
+  	  for (int r=0;r<=deg-p-q;r++) {
+        int idxcur = idx(p,q,r);
+        Scalar scal = sqrt( (p+0.5)*(p+q+1.0)*(p+q+r+1.5) );
+  	    for (int i=0;i<np;i++) {
+  	      outputValues(idxcur,i) *= scal;
+  	    }
+  	  }
+  	}
   }
   
   return;

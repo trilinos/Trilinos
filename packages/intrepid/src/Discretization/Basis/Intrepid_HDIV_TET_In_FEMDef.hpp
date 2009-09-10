@@ -178,26 +178,28 @@ namespace Intrepid {
     // points of a lattice of degree+2
     // This way, RT0 --> degree = 1 and internal lattice has no points
     // RT1 --> degree = 2, and internal lattice has one point (inside of quartic)
-    const int numInternalPoints = PointTools::getLatticeSize( this->getBaseCellTopology() ,
-							      n + 2 ,
-							      1 );
+    if (n > 1) {
+      const int numInternalPoints = PointTools::getLatticeSize( this->getBaseCellTopology() ,
+  	  						        n + 2 ,
+							        1 );
 
-    FieldContainer<Scalar> internalPoints( numInternalPoints , 3 );
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
-							    this->getBaseCellTopology() , 
+      FieldContainer<Scalar> internalPoints( numInternalPoints , 3 );
+      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
+	 						    this->getBaseCellTopology() , 
 							    n + 2 ,
 							    1 ,
 							    pointType );
     
-    FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
-    Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
+      FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
+      Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
 
-    // copy values into right positions of V2
-    for (int i=0;i<numInternalPoints;i++) {
-      for (int j=0;j<scalarBigN;j++) {
-	for (int k=0;k<3;k++) {
-	  V2(4*numPtsPerFace+k*numInternalPoints+i,k*scalarBigN+j) = phisAtInternalPoints(j,i);
-	}
+      // copy values into right positions of V2
+      for (int i=0;i<numInternalPoints;i++) {
+        for (int j=0;j<scalarBigN;j++) {
+	  for (int k=0;k<3;k++) {
+	    V2(4*numPtsPerFace+k*numInternalPoints+i,k*scalarBigN+j) = phisAtInternalPoints(j,i);
+	  }
+        }
       }
     }
     
