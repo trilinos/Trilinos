@@ -88,7 +88,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ImplicitRK_UnitTest
     SOURCES Rythmos_ImplicitRK_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
+    COMM serial
     STANDARD_PASS_OUTPUT
     )
 
@@ -96,7 +96,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     IntegratorBuilder_UnitTest
     SOURCES Rythmos_IntegratorBuilder_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
+    COMM serial
     STANDARD_PASS_OUTPUT
     )
 
