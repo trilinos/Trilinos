@@ -249,11 +249,12 @@ Package: Pliris
 
 Package Transition Lead: Joseph D. Kotulski (jdkotul@sandia.gov)
 
-Status:  Initial Cmakification done. Library and a test.
+Status:  Initial Cmakification done.  The tests exercise the 
+double precision real libraries that are created using Epetra interfaces.
 
-Final Certification Date: [???]
+Final Certification Date: 2009/06/15
 
-Final Certification Evidence: [???]
+Final Certification Evidence:  All tests run and pass on autotools as well as CMake.
 
 -------------------------------------------------------------------------------
 
