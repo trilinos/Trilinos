@@ -14,10 +14,6 @@ Prioritized Backlog Items:
 -------------------------
 
 
-(*) [CMake] [P1] C++ Fortran 77/90 mixed language issues.  See
-Trilinos bug https://software.sandia.gov/bugzilla/show_bug.cgi?id=4448
-
-
 (*) [General] [P1] MS Windows port and installer: We would like
 Kitware to set up our MS Windows HPC Server 2008 machine and get the
 Trilinos CMake build going with nightly testing.  We would also like
@@ -41,6 +37,12 @@ continuous integration testing set up on trilinos-test.sandia.gov.
 (*) [CDash] [P2] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
+
+
+(*) [CMake] [P3] Improve BLAS library detection.  Brad said there is a
+BLAS finding macro that we are currently not using.  It would also be nice
+if the BLAS finding capability could handle finding library dependencies of
+BLAS (e.g. -lgfortran for static Atlas installations).
 
 
 (*) [CDash] [P3] Append all query fields when going from 'collapsed'
@@ -485,6 +487,9 @@ failures.
 (*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
 machine purple.sandia.gov.  See Trilinos bug
 https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
+
+(*) [CMake] [P1] C++ Fortran 77/90 mixed language issues.  See
+Trilinos bug https://software.sandia.gov/bugzilla/show_bug.cgi?id=4448
 
 (*) [CTest] [P2] By default, automatically widen the main summary
 output to show the full test names: Currently, only the first 30
