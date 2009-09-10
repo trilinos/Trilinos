@@ -1,7 +1,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -32,12 +32,32 @@
 
 namespace Stokhos {
 
+  //! Rys polynomial basis
+  /*!
+   * Rys polynomials are polynomials orthogonal with respect to the weight
+   * function
+   * \f[
+   *     w(x) = e^{\frac{-x^2}{2}}
+   * \f]
+   * defined on the interval \f$[-c,c]\f$, for a given choice of \f$c\f$.  The
+   * corresponding density \f$\rho(x)\f$ is obtained by scaling \f$w(x)\f$ to
+   * unit probability.
+   *
+   * The coefficients of the corresponding three-term recursion are generated
+   * using the Discretized Stieltjes procedure implemented by
+   * Stokhos::DiscretizedStieltjesBasis.
+   */
   template <typename ordinal_type, typename value_type>
   class RysBasis : 
     public DiscretizedStieltjesBasis<ordinal_type, value_type> {
   public:
     
     //! Constructor
+    /*!
+     * \param p order of the basis
+     * \param c defines domain of support of weight function
+     * \param normalize whether polynomials should be given unit norm
+     */
     RysBasis(ordinal_type p, value_type c, bool normalize) :
       DiscretizedStieltjesBasis<ordinal_type,value_type>("Rys", p, rysWeight, 
 							 -c, c, normalize) {}

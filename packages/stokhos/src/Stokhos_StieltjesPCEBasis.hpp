@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -39,12 +39,25 @@
 
 namespace Stokhos {
 
+  /*! 
+   * \brief Generates three-term recurrence using the Discretized Stieltjes 
+   * procedure applied to a polynomial chaos expansion in another basis.
+   */
   template <typename ordinal_type, typename value_type>
   class StieltjesPCEBasis : 
     public RecurrenceBasis<ordinal_type, value_type> {
   public:
 
     //! Constructor
+    /*!
+     * \param p order of the basis
+     * \param pce polynomial chaos expansion defining new density function
+     * \param quad quadrature data for basis of PC expansion
+     * \param use_pce_quad_points whether to use quad to define quadrature
+     *        points for the new basis, or whether to use the Golub-Welsch
+     *        system.
+     * \param normalize whether polynomials should be given unit norm
+     */
     StieltjesPCEBasis(
        ordinal_type p,
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
@@ -55,6 +68,9 @@ namespace Stokhos {
     //! Destructor
     ~StieltjesPCEBasis();
 
+    //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
+    //@{
+
     //! Get Gauss quadrature points, weights, and values of basis at points
     virtual void 
     getQuadPoints(ordinal_type quad_order,
@@ -62,18 +78,39 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
-    //! Get sparse grid rule number
+    //! Get sparse grid rule number as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.  A rule number of 10 is not defined by the webbur package, and
+     * this rule number is used internally by Stokhos::SparseGridQuadrature
+     * to pass an arbitrary one-dimensional basis to that package.
+     */
     virtual ordinal_type getRule() const;
 
-    //! Get quadrature weight factor
+    //! Get quadrature weight factor as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.
+     */
     virtual value_type getQuadWeightFactor() const;
 
-    //! Get quadrature point factor
+    //! Get quadrature point factor as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.
+     */
     virtual value_type getQuadPointFactor() const;
 
-    void transformCoeffsFromStieltjes(const value_type *in, value_type *out) const;
+    //@}
+
+    //! Map expansion coefficients from this basis to original
+    void transformCoeffsFromStieltjes(const value_type *in, 
+				      value_type *out) const;
 
   protected:
+
+    //! \name Implementation of Stokhos::RecurrenceBasis methods
+    //@{ 
 
     //! Compute recurrence coefficients
     virtual void 
@@ -81,6 +118,8 @@ namespace Stokhos {
 				  Teuchos::Array<value_type>& alpha,
 				  Teuchos::Array<value_type>& beta,
 				  Teuchos::Array<value_type>& delta) const;
+
+    //@}
 
     //! Compute 3-term recurrence using Stieljtes procedure
     void stieltjes(ordinal_type nstart,
@@ -92,7 +131,10 @@ namespace Stokhos {
 		   Teuchos::Array<value_type>& nrm,
 		   Teuchos::Array< Teuchos::Array<value_type> >& phi_vals) const;
 
-    //! Compute \int \phi^2_k(t) d\lambda(t) and \int t\phi^2_k(t) d\lambda(t)
+    /*! 
+     * \brief Compute \f$\int\psi^2_k(t) d\lambda(t)\f$ and 
+     * \f$\int t\psi^2_k(t) d\lambda(t)\f$
+     */
     void integrateBasisSquared(ordinal_type k, 
 			       const Teuchos::Array<value_type>& a,
 			       const Teuchos::Array<value_type>& b,

@@ -35,6 +35,7 @@
 
 namespace Stokhos {
 
+  //! Abstract base class for quadrature methods
   template <typename ordinal_type, typename value_type>
   class Quadrature {
   public:
@@ -46,14 +47,25 @@ namespace Stokhos {
     virtual ~Quadrature() {}
 
     //! Get quadrature points
+    /*!
+     * Array is dimensioned Q-by-d where Q is the number of quadrature
+     * points and d is the dimension of the basis.
+     */
     virtual const Teuchos::Array< Teuchos::Array<value_type> >& 
     getQuadPoints() const = 0;
 
     //! Get quadrature weights
+    /*!
+     * Array is of size Q where Q is the number of quadrature points.
+     */
     virtual const Teuchos::Array<value_type>& 
     getQuadWeights() const = 0;
 
     //! Get values of basis at quadrature points
+    /*!
+     * Array is dimensioned Q-by-P where Q is the number of quadrature
+     * points and P is the size of the basis.
+     */
     virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
     getBasisAtQuadPoints() const = 0;
 

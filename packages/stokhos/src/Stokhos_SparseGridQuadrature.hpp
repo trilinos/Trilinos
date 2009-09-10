@@ -40,30 +40,51 @@
 
 namespace Stokhos {
 
-  //! Multivariate quadrature using sparse grids
   /*!
-   * Requires Dakota webbur quadrature package.
+   * \brief Defines quadrature for a tensor product basis by Smolyak sparse
+   * grids.
+   */
+  /*!
+   * Requires Dakota webbur quadrature package, which is currently provided
+   * through TriKota.  To enable, configure Stokhos with TriKota enabled
+   * and see the TriKota instructions for building TriKota with Dakota.
    */
   template <typename ordinal_type, typename value_type>
   class SparseGridQuadrature : public Quadrature<ordinal_type,value_type> {
   public:
 
     //! Constructor
-    SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
-			 ordinal_type sparse_grid_level = 0);
+    /*!
+     * \param product_basis product basis
+     * \param sparse_grid_level sparse grid level defining the order of the 
+     *                          quadrature.  If equal to 0, the level is
+     *                          calculated using a heuristic formula.
+     */
+    SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis, ordinal_type sparse_grid_level = 0);
 
     //! Destructor
     virtual ~SparseGridQuadrature() {}
 
     //! Get quadrature points
+    /*!
+     * Array is dimensioned Q-by-d where Q is the number of quadrature
+     * points and d is the dimension of the basis.
+     */
     virtual const Teuchos::Array< Teuchos::Array<value_type> >& 
     getQuadPoints() const;
 
     //! Get quadrature weights
+    /*!
+     * Array is of size Q where Q is the number of quadrature points.
+     */
     virtual const Teuchos::Array<value_type>& 
     getQuadWeights() const;
 
     //! Get values of basis at quadrature points
+    /*!
+     * Array is dimensioned Q-by-P where Q is the number of quadrature
+     * points and P is the size of the basis.
+     */
     virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
     getBasisAtQuadPoints() const;
 

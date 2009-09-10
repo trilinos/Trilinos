@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -34,7 +34,12 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 
 namespace Stokhos {
-
+  
+  /*! 
+   * \brief Abstract base class for multivariate orthogonal polynomials
+   * that support computing double and triple products involving derivatives
+   * of the basis polynomials.
+   */
   template <typename ordinal_type, typename value_type>
   class DerivBasis : 
     public virtual OrthogPolyBasis<ordinal_type, value_type> {
@@ -46,11 +51,30 @@ namespace Stokhos {
     //! Destructor
     virtual ~DerivBasis() {};
 
-    //! Compute derivative triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getDerivTripleProductTensor() const = 0;
+    /*! 
+     * \brief Compute triple product tensor 
+     * \f$D_{ijk} = \langle\Psi_i\Psi_j D_v\Psi_k\rangle\f$ where 
+     * \f$D_v\Psi_k\f$ represents the derivative of \f$\Psi_k\f$ in the 
+     * direction \f$v\f$.
+     */
+    /*!
+     * The definition of \f$v\f$ is defined by the derived class implementation.
+     */
+    virtual 
+    Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > 
+    getDerivTripleProductTensor() const = 0;
 
-    //! Compute derivative double product tensor
-    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const = 0;
+    /*! 
+     * \brief Compute double product tensor 
+     * \f$B_{ij} = \langle \Psi_i D_v\Psi_j\rangle\f$ where \f$D_v\Psi_j\f$
+     * represents the derivative of \f$\Psi_j\f$ in the direction \f$v\f$.
+     */
+    /*!
+     * The definition of \f$v\f$ is defined by the derived class implementation.
+     */
+    virtual 
+    Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
+    getDerivDoubleProductTensor() const = 0;
 
   private:
 

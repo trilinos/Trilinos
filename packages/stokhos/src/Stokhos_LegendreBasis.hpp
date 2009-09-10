@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -35,27 +35,66 @@
 
 namespace Stokhos {
 
+  //! Legendre polynomial basis
+  /*!
+   * Legendre polynomials are defined by the recurrence relationship
+   * \f[
+   *   \psi_{k+1}(x) = \frac{2k+1}{k+1}x\psi_{k}(x) - \frac{k}{k+1}\psi_{k-1}(x)
+   * \f]
+   * with \f$\psi_{-1}(x) = 0\f$ and \f$\psi_{0}(x) = 1\f$.  The corresponding
+   * density function is 
+   * \f[
+   *   \rho(x) = \frac{1}{2}, \quad x\in[-1,1].
+   * \f]
+   *
+   * This class implements computeRecurrenceCoefficients() using the
+   * above formula.
+   */
   template <typename ordinal_type, typename value_type>
   class LegendreBasis : 
     public RecurrenceBasis<ordinal_type, value_type> {
   public:
 
     //! Constructor
+    /*!
+     * \param p order of the basis
+     * \param normalize whether polynomials should be given unit norm
+     */
     LegendreBasis(ordinal_type p, bool normalize = false);
 
     //! Destructor
     ~LegendreBasis();
 
-    //! Get sparse grid rule number
+    //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
+    //@{ 
+
+    //! Get sparse grid rule number as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.
+     */
     virtual ordinal_type getRule() const { return 1; }
 
-    //! Get quadrature weight factor
+    //! Get quadrature weight factor as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.
+     */
     virtual value_type getQuadWeightFactor() const { return 0.5; }
 
-    //! Get quadrature point factor
+    //! Get quadrature point factor as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.
+     */
     virtual value_type getQuadPointFactor() const { return 1.0; }
 
+    //@}
+
   protected:
+
+    //! \name Implementation of Stokhos::RecurrenceBasis methods
+    //@{ 
 
     //! Compute recurrence coefficients
     virtual void 
@@ -63,6 +102,8 @@ namespace Stokhos {
 				  Teuchos::Array<value_type>& alpha,
 				  Teuchos::Array<value_type>& beta,
 				  Teuchos::Array<value_type>& delta) const;
+
+    //@}
 
   private:
 

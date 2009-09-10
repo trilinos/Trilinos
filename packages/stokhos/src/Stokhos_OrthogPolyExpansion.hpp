@@ -50,7 +50,7 @@ namespace Stokhos {
     //! Constructor
     OrthogPolyExpansion() {}
 
-    //! Desturctor
+    //! Destructor
     virtual ~OrthogPolyExpansion() {}
 
     //! Get expansion size
