@@ -118,7 +118,8 @@ void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & var
    int numGlobals = baseMap->NumGlobalElements();
 
    // build maps and exporters/importers
-   PB::Epetra::buildSubMaps(numGlobals,vars,comm,blockMaps_);
+   // PB::Epetra::buildSubMaps(numGlobals,vars,comm,blockMaps_);
+   PB::Epetra::buildSubMaps(*baseMap,vars,comm,blockMaps_);
    PB::Epetra::buildExportImport(*baseMap, blockMaps_, blockExport_,blockImport_);
 }
 

@@ -23,11 +23,19 @@ void buildSubMaps(int numGlobals,int numVars,const Epetra_Comm & comm,std::vecto
 }
 
 // build maps to make other conversions
+void buildSubMaps(const Epetra_Map & globalMap,const std::vector<int> & vars,const Epetra_Comm & comm,
+                  std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps)
+{
+   buildSubMaps(globalMap.NumGlobalElements(),globalMap.NumMyElements(),globalMap.MinMyGID(),
+                vars,comm,subMaps);
+}
+
+// build maps to make other conversions
 void buildSubMaps(int numGlobals,const std::vector<int> & vars,const Epetra_Comm & comm,std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps)
 {
    std::vector<int>::const_iterator varItr;
 
-   // compute total number of variables...largely for fun and debugging
+   // compute total number of variables
    int numGlobalVars = 0;
    for(varItr=vars.begin();varItr!=vars.end();++varItr)
       numGlobalVars += *varItr;
@@ -36,8 +44,76 @@ void buildSubMaps(int numGlobals,const std::vector<int> & vars,const Epetra_Comm
    TEUCHOS_ASSERT((numGlobals%numGlobalVars)==0);
 
    Epetra_Map sampleMap(numGlobals/numGlobalVars,0,comm);
+
+   buildSubMaps(numGlobals,numGlobalVars*sampleMap.NumMyElements(),numGlobalVars*sampleMap.MinMyGID(),vars,comm,subMaps);
+/*
    int numBlocks  = sampleMap.NumMyElements();
    int minBlockID = sampleMap.MinMyGID();
+
+   subMaps.clear();
+
+   // index into local block in strided map
+   int blockOffset = 0;
+   for(varItr=vars.begin();varItr!=vars.end();++varItr) {
+      int numLocalVars = *varItr;
+      int numAllElmts = numLocalVars*numGlobals/numGlobalVars;
+      int numMyElmts = numLocalVars * numBlocks;
+
+      // create global arrays describing the as of yet uncreated maps
+      std::vector<int> subGlobals;
+      std::vector<int> contigGlobals; // the contiguous globals
+
+      // loop over each block of variables
+      int count = 0;
+      for(int blockNum=0;blockNum<numBlocks;blockNum++) {
+
+         // loop over each local variable in the block
+         for(int local=0;local<numLocalVars;++local) {
+            // global block number = minGID+blockNum 
+            // block begin global id = numGlobalVars*(minGID+blockNum)
+            // global id block offset = blockOffset+local
+            subGlobals.push_back((minBlockID+blockNum)*numGlobalVars+blockOffset+local);
+
+            // also build the contiguous IDs
+            contigGlobals.push_back(numLocalVars*minBlockID+count);
+            count++;
+         }
+      }
+
+      // sanity check
+      assert(numMyElmts==subGlobals.size());
+
+      // create the map with contiguous elements and the map with global elements
+      RCP<Epetra_Map> subMap = rcp(new Epetra_Map(numAllElmts,numMyElmts,&subGlobals[0],0,comm));
+      RCP<Epetra_Map> contigMap = rcp(new Epetra_Map(numAllElmts,numMyElmts,&contigGlobals[0],0,comm));
+
+      Teuchos::set_extra_data(contigMap,"contigMap",Teuchos::inOutArg(subMap));
+      subMaps.push_back(std::make_pair(numLocalVars,subMap));
+
+      // update the block offset
+      blockOffset += numLocalVars;
+   }
+*/
+}
+
+// build maps to make other conversions
+void buildSubMaps(int numGlobals,int numMyElements,int minMyGID,const std::vector<int> & vars,const Epetra_Comm & comm,
+                  std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps)
+{
+   std::vector<int>::const_iterator varItr;
+
+   // compute total number of variables
+   int numGlobalVars = 0;
+   for(varItr=vars.begin();varItr!=vars.end();++varItr)
+      numGlobalVars += *varItr;
+
+   // must be an even number of globals
+   TEUCHOS_ASSERT((numGlobals%numGlobalVars)==0);
+   TEUCHOS_ASSERT((numMyElements%numGlobalVars)==0);
+   TEUCHOS_ASSERT((minMyGID%numGlobalVars)==0);
+
+   int numBlocks  = numMyElements/numGlobalVars;
+   int minBlockID = minMyGID/numGlobalVars;
 
    subMaps.clear();
 

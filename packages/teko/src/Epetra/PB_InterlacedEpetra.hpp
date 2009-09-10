@@ -22,12 +22,36 @@
 namespace PB {
 namespace Epetra {
 
-// build maps to make other conversions
+/** Build maps to make other conversions. This functions build maps assuming
+  * that there are number of variables and you want to break them all up
+  * into single blocks.
+  *
+  * \param[in] numGlobals The number of global unknowns in the original map
+  * \param[in] numVars The number of sub maps to build
+  * \param[in] comm Communicator to use in construction of the maps
+  * \param[in,out] subMaps The maps for each block of unknowns. This vector
+  *                        will be of length <code>numVars</code>. The integer
+  *                        in the pair is the number of local variables being
+  *                        represented. For this function it will always be 1.
+  *                        The map itself will contain the global indices from
+  *                        the original problem. This is useful for Export/Import
+  *                        operations. The RCP for the map contains another map
+  *                        associated with the string "contigMap" based on a
+  *                        contiguous unknown numbering.
+  *
+  * \note <code> numGlobals % numVars == 0 </code>
+  */
 void buildSubMaps(int numGlobals,int numVars,const Epetra_Comm & comm,
                   std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps);
 
 // build maps to make other conversions
 void buildSubMaps(int numGlobals,const std::vector<int> & vars,const Epetra_Comm & comm,
+                  std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps);
+
+void buildSubMaps(int numGlobals,int numMyElements,int minMyGID,const std::vector<int> & vars,const Epetra_Comm & comm,
+                  std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps);
+
+void buildSubMaps(const Epetra_Map & sampleMap,const std::vector<int> & vars,const Epetra_Comm & comm,
                   std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps);
 
 // build conversion import and export operators
