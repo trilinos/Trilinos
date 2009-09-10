@@ -35,6 +35,7 @@
 
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosConfigDefs.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -64,13 +65,12 @@ namespace Belos {
     GmresPolyOp() {}
     
     //! Basic contstructor 
-    GmresPolyOp( const Teuchos::RCP<const OP>& matrixA, const Teuchos::RCP<const OP>& precL, 
-                 const Teuchos::RCP<const OP>& precR,
+    GmresPolyOp( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem_in, 
                  const Teuchos::RCP<Teuchos::SerialDenseMatrix<int, ScalarType> >& hess,
                  const Teuchos::RCP<Teuchos::SerialDenseMatrix<int, ScalarType> >& comb,
                  const Teuchos::RCP<Teuchos::SerialDenseVector<int, ScalarType> >& scal
                ) 
-      : A_(matrixA), LP_(precL), RP_(precR), H_(hess), y_(comb), r0_(scal)
+      : problem_(problem_in), LP_(problem_in->getLeftPrec()), RP_(problem_in->getRightPrec()), H_(hess), y_(comb), r0_(scal)
     {
       dim_ = y_->numRows();
     }
@@ -92,11 +92,11 @@ namespace Belos {
     private:
 
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT ;
     typedef Teuchos::ScalarTraits<ScalarType> SCT ;
 
     int dim_;
-    Teuchos::RCP<const OP> A_, LP_, RP_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<const OP> LP_, RP_;
     Teuchos::RCP<MV> V_, wL_, wR_;
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_, y_;
     Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > r0_;
@@ -126,9 +126,10 @@ namespace Belos {
       idxi[0] = 0;
       idxj[0] = j;
       Teuchos::RCP<const MV> x_view = MVT::CloneView( x, idxj );
+      Teuchos::RCP<MV> y_view = MVT::CloneView( y, idxj );
       if (LP_ != Teuchos::null) {
 	v_curr = MVT::CloneView( *V_, idxi );
-	OPT::Apply( *LP_, *x_view, *v_curr ); // Left precondition x into the first vector of V
+	problem_->applyLeftPrec( *x_view, *v_curr ); // Left precondition x into the first vector of V
       } else {
 	MVT::SetBlock( *x_view, idxi, *V_ );  // Set x as the first vector of V
       }
@@ -148,7 +149,7 @@ namespace Belos {
 	//---------------------------------------------
 	// 1) Apply right preconditioner, if we have one.
 	if (RP_ != Teuchos::null) {
-	  OPT::Apply( *RP_, *v_curr, *wR_ );
+	  problem_->applyRightPrec( *v_curr, *wR_ );
 	} else {
 	  wR_ = v_curr;
 	}
@@ -157,10 +158,10 @@ namespace Belos {
 	  wL_ = v_next;
 	}
 	// 3) Apply operator A.
-	OPT::Apply( *A_, *wR_, *wL_ );
+	problem_->applyOp( *wR_, *wL_ );
 	// 4) Apply left preconditioner, if we have one.
 	if (LP_ != Teuchos::null) {
-	  OPT::Apply( *LP_, *wL_, *v_next );
+	  problem_->applyLeftPrec( *wL_, *v_next );
 	}
 	
 	// Compute A*v_curr - v_prev*H(1:i,i)
@@ -174,9 +175,9 @@ namespace Belos {
       // Compute output y = V*y_./r0_
       if (RP_ != Teuchos::null) {
 	MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), *wR_ );
-	OPT::Apply( *RP_, *wR_, y );
+	problem_->applyRightPrec( *wR_, *y_view );
       } else {
-	MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), y );
+	MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), *y_view );
       }
     } // (int j=0; j<n; ++j)
   } // end Apply()

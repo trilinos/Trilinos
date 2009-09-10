@@ -169,7 +169,7 @@ public:
    *   - time spent in solve() routine
    */
   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
-    return tuple(timerSolve_);
+    return tuple(timerSolve_, timerPoly_);
   }
   
   //! Get the iteration count for the most recent call to \c solve().
@@ -319,7 +319,7 @@ private:
   
   // Timers.
   std::string label_;
-  Teuchos::RCP<Teuchos::Time> timerSolve_;
+  Teuchos::RCP<Teuchos::Time> timerSolve_, timerPoly_;
 
   // Internal state variables.
   bool isPolyBuilt_;	
@@ -576,6 +576,8 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
+      timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
     }
   }
 
@@ -772,10 +774,15 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
     }  
   }
 
-  // Create the timer if we need to.
+  // Create the timers if we need to.
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+  }
+  
+  if (timerPoly_ == Teuchos::null) {
+    std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
+    timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
   }
 
   // Inform the solver manager that the current parameters were set.
@@ -865,6 +872,7 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
     Teuchos::rcp( new LinearProblem<ScalarType,MV,OP>( problem_->getOperator(), newX, newB ) );
   newProblem->setLeftPrec( problem_->getLeftPrec() );
   newProblem->setRightPrec( problem_->getRightPrec() );
+  newProblem->setLabel("Belos GMRES Poly Generation");
   newProblem->setProblem();
   std::vector<int> idx(1,0);       // Must set the index to be the first vector (0)!
   newProblem->setLSIndex( idx );
@@ -945,10 +953,15 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
 
   // Record polynomial info, get current GMRES state
   GmresIterationState<ScalarType,MV> gmresState = gmres_iter->getState();
+
+  // If the polynomial has no dimension, the tolerance is too low, return false
+  poly_dim_ = gmresState.curDim;
+  if (poly_dim_ == 0) {
+    return false;
+  }
   //
   //  Make a view and then copy the RHS of the least squares problem.
   //
-  poly_dim_ = gmresState.curDim;
   poly_y_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *gmresState.z, poly_dim_, 1 ) );
   poly_H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( *gmresState.H ) );
   //
@@ -956,7 +969,6 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
   //
   const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   Teuchos::BLAS<int,ScalarType> blas;
-
   blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
              Teuchos::NON_UNIT_DIAG, poly_dim_, 1, one,
              gmresState.R->values(), gmresState.R->stride(), 
@@ -965,8 +977,7 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
   // Generate the polynomial operator
   //
   poly_Op_ = Teuchos::rcp( 
-               new Belos::GmresPolyOp<ScalarType,MV,OP>( problem_->getOperator(), problem_->getLeftPrec(),
-                                                         problem_->getRightPrec(), poly_H_, poly_y_, poly_r0_ ) );
+               new Belos::GmresPolyOp<ScalarType,MV,OP>( problem_, poly_H_, poly_y_, poly_r0_ ) );
  
   return true;
 }
@@ -998,78 +1009,82 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 
   // If the GMRES polynomial has not been constructed for this matrix, preconditioner pair, generate it
   if (!isPolyBuilt_) {
+    Teuchos::TimeMonitor slvtimer(*timerPoly_);
     isPolyBuilt_ = generatePoly();
+    TEST_FOR_EXCEPTION( !isPolyBuilt_ && poly_dim_==0, GmresPolySolMgrPolynomialFailure,
+      "Belos::GmresPolySolMgr::generatePoly(): Failed to generate a non-trivial polynomial, reduce polynomial tolerance.");
     TEST_FOR_EXCEPTION( !isPolyBuilt_, GmresPolySolMgrPolynomialFailure,
       "Belos::GmresPolySolMgr::generatePoly(): Failed to generate polynomial that satisfied requirements.");
   } 
 
-  // Apply the polynomial to the current linear system
-  poly_Op_->Apply( *problem_->getRHS(), *problem_->getLHS() );
-
-  // Reset the problem to acknowledge the updated solution
-  problem_->setProblem(); 
-
   // Assume convergence is achieved if user does not require strict convergence.
-  bool isConverged = true;	
+  bool isConverged = true;	  
 
-  // If we have to strictly adhere to the requested convergence tolerance, set up a standard GMRES solver.
-  if (strictConvTol_) {
+  // Solve the linear system using the polynomial
+  {
+    Teuchos::TimeMonitor slvtimer(*timerSolve_);
     
-    // Create indices for the linear systems to be solved.
-    int startPtr = 0;
-    int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
-    int numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+    // Apply the polynomial to the current linear system
+    poly_Op_->Apply( *problem_->getRHS(), *problem_->getLHS() );
     
-    std::vector<int> currIdx;
-    //  If an adaptive block size is allowed then only the linear systems that need to be solved are solved.
-    //  Otherwise, the index set is generated that informs the linear problem that some linear systems are augmented.
-    currIdx.resize( blockSize_ );
-    for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; }
-    for (int i=numCurrRHS; i<blockSize_; ++i) 
-      { currIdx[i] = -1; }
+    // Reset the problem to acknowledge the updated solution
+    problem_->setProblem(); 
     
-    // Inform the linear problem of the current linear system to solve.
-    problem_->setLSIndex( currIdx );
-    
-    //////////////////////////////////////////////////////////////////////////////////////
-    // Parameter list
-    Teuchos::ParameterList plist;
-    plist.set("Block Size",blockSize_);
-    
-    int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
-    if (blockSize_*numBlocks_ > dim) {
-      int tmpNumBlocks = 0;
-      if (blockSize_ == 1)
-	tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
-      else
-	tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
-      printer_->stream(Warnings) << 
-	"Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
-	" The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
-      plist.set("Num Blocks",tmpNumBlocks);
-    } 
-    else 
-      plist.set("Num Blocks",numBlocks_);
-    
-    // Reset the status test.  
-    outputTest_->reset();
-    loaDetected_ = false;
-    
-    // Assume convergence is achieved, then let any failed convergence set this to false.
-    isConverged = true;	
-    
-    //////////////////////////////////////////////////////////////////////////////////////
-    // BlockGmres solver
-    
-    Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
-    
-    block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
-    
-    // Enter solve() iterations
-    {
-      Teuchos::TimeMonitor slvtimer(*timerSolve_);
+    // If we have to strictly adhere to the requested convergence tolerance, set up a standard GMRES solver.
+    if (strictConvTol_) {
       
+      // Create indices for the linear systems to be solved.
+      int startPtr = 0;
+      int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
+      int numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+      
+      std::vector<int> currIdx;
+      //  If an adaptive block size is allowed then only the linear systems that need to be solved are solved.
+      //  Otherwise, the index set is generated that informs the linear problem that some linear systems are augmented.
+      currIdx.resize( blockSize_ );
+      for (int i=0; i<numCurrRHS; ++i) 
+	{ currIdx[i] = startPtr+i; }
+      for (int i=numCurrRHS; i<blockSize_; ++i) 
+	{ currIdx[i] = -1; }
+      
+      // Inform the linear problem of the current linear system to solve.
+      problem_->setLSIndex( currIdx );
+      
+      //////////////////////////////////////////////////////////////////////////////////////
+      // Parameter list
+      Teuchos::ParameterList plist;
+      plist.set("Block Size",blockSize_);
+      
+      int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
+      if (blockSize_*numBlocks_ > dim) {
+	int tmpNumBlocks = 0;
+	if (blockSize_ == 1)
+	  tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
+	else
+	  tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
+	printer_->stream(Warnings) << 
+	  "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
+	  " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
+	plist.set("Num Blocks",tmpNumBlocks);
+      } 
+      else 
+	plist.set("Num Blocks",numBlocks_);
+      
+      // Reset the status test.  
+      outputTest_->reset();
+      loaDetected_ = false;
+      
+      // Assume convergence is achieved, then let any failed convergence set this to false.
+      isConverged = true;	
+      
+      //////////////////////////////////////////////////////////////////////////////////////
+      // BlockGmres solver
+      
+      Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
+      
+      block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+      
+      // Enter solve() iterations
       while ( numRHS2Solve > 0 ) {
 	
 	// Set the current number of blocks and blocksize with the Gmres iteration.
@@ -1262,12 +1277,12 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 	}
 	
       }// while ( numRHS2Solve > 0 )
-    }
-    
-    // print final summary
-    sTest_->print( printer_->stream(FinalSummary) );
-
-  } // if (strictConvTol_)
+      
+      // print final summary
+      sTest_->print( printer_->stream(FinalSummary) );
+      
+    } // if (strictConvTol_)
+  } // timing block
 
   // print timing information
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
