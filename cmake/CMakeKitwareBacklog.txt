@@ -20,15 +20,6 @@ Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
 
 
-(*) [CMake] [P1] Verify compatibility of compilers.  If compilers are not
-specified in the environment and a compiler, or an mpi compiler wrapper, is
-found in some directory, that directory should be searched first for the
-remaining compilers that need to be found.  In our experience, mixing compiler
-vendors, or even versions within the same vendor tends not to work.  After
-finding all compilers, if any mixed language linking is to take place, the
-compilers should be tested for compatibility.
-
-
 (*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
 looping for continuous integration testing.  Assist in getting 
 continuous integration testing set up on trilinos-test.sandia.gov.
@@ -482,6 +473,14 @@ https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
 
 (*) [CMake] [P1] C++ Fortran 77/90 mixed language issues.  See
 Trilinos bug https://software.sandia.gov/bugzilla/show_bug.cgi?id=4448
+
+(*) [CMake] [P1] Verify compatibility of compilers.  If compilers are not
+specified in the environment and a compiler, or an mpi compiler wrapper, is
+found in some directory, that directory should be searched first for the
+remaining compilers that need to be found.  In our experience, mixing compiler
+vendors, or even versions within the same vendor tends not to work.  After
+finding all compilers, if any mixed language linking is to take place, the
+compilers should be tested for compatibility.
 
 (*) [CTest] [P2] By default, automatically widen the main summary
 output to show the full test names: Currently, only the first 30
