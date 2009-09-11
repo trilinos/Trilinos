@@ -147,6 +147,12 @@ Write scripts and handle everything on our own.  However, CDash would
 not display the list of files without a lot of work.
 
 
+(*) [CMake] [P3] Add support for a 3-state variable that allows for
+"on", "off", and "default" values.  This would be useful specifically
+for enabling packages via a gui or ccmake.  This items has been brought
+up independently by multiple users.
+
+
 (*) [CDash] [P3] Separate out coverage results for library code and
 for test/example code: Currently, our coverage shows lower coverage
 than it should due to some test code logic not getting tested always
@@ -169,6 +175,12 @@ the completion of the tests and even times them out (by calling 'qsub
 programmed on top of ctest through the use of cmake -P scripts and the
 ctest -jN option but it would be better if ctest could handle this in
 a more direct way.
+
+
+(*) [CMake] [P4] Reduce the options shown in the default view of the
+CMake GUI, moving most options to the advanced area.  There are a lot
+of Trilinos options, and users could easily have trouble finding
+what they are looking for.
 
 
 (*) [CDash] [P4] Implement a tool that will go back in time and delete
