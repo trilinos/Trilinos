@@ -209,8 +209,11 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Generate the XML dependency output files or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
 
-  # Flags used when doing a CVS update
+  # Flags used on cvs when doing a CVS update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
+
+  # Flags used on update when doing a CVS update
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "${Trilinos_BRANCH}")
 
   # Flags passed to 'make' assume gnumake with unix makefiles
   IF("${CTEST_CMAKE_GENERATOR}" MATCHES "Unix Makefiles")
