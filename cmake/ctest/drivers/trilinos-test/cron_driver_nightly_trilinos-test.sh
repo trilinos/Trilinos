@@ -1,9 +1,8 @@
 #!/bin/bash
 
 CTEST_EXE=/home/trilinos/cmake/bin/ctest
-BASEDIR=/home/bmpersc/nightly/Trilinos.base
-CHECKOUT_DIR=Trilinos_release_10.0
-DRIVER_SCRIPT_DIR=$BASEDIR/$CHECKOUT_DIR/cmake/ctest/drivers/trilinos-test
+BASEDIR=/home/bmpersc/nightly/Trilinos.base/release_10
+DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
 BRANCH="-r trilinos-release-10-0-branch"
 
 # Source the 
@@ -23,7 +22,7 @@ echo "Checking out just the drivers: `date`"
 echo
 
 cd $BASEDIR
-cvs -q -d :ext:software:/space/CVS co $BRANCH -d $CHECKOUT_DIR Trilinos/cmake Trilinos/CTestConfig.cmake
+cvs -q -d :ext:software:/space/CVS co $BRANCH Trilinos/cmake Trilinos/CTestConfig.cmake
 
 echo
 echo "Doing mpi optimized release 10.0 build: `date`"
