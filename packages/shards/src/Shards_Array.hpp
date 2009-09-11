@@ -229,9 +229,12 @@ void stride_to_natural_indices(
         iType   offset ,
         iType * const indices )
 {
-  for ( iType i = 0 ; i < rank ; ++i ) {
-    offset -= indices[(rank-1)-i] = offset % stride[i] ;
+  iType * i = indices ;
+  for ( const iType * s = stride + rank - 1 ; stride < s-- ; ++i ) {
+    *i = offset / *s ;
+    offset %= *s ;
   }
+  *i = offset ;
 }
 
 /** \brief  Generate array stride from natural dimensions */

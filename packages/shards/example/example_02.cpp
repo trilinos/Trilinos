@@ -65,8 +65,8 @@ int main(int argc, char *argv[]) {
     << "| EXAMPLE 1: Creating CellTopology objects from CellTopologyData structs      |\n"      
     << "===============================================================================\n\n" ; 
   
-  // Default ctor creates invalid cell with NULL topology and NULL base topology
-  shards::CellTopology emptyCell;
+  // Creates invalid cell with NULL topology and NULL base topology
+  shards::CellTopology emptyCell( NULL );
 
   
   // Creates CellTopology from raw CellTopologyData struct to provide safe access to the latter 

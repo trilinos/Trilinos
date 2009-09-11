@@ -135,6 +135,16 @@ int isPredefinedCell(const CellTopology &  cell);
  *  \author Created by P. Bochev, H. C. Edwards and D. Ridzal.
  *
  *  \nosubgrouping
+ *
+ *  Two kinds of CellTopology objects are used:
+ *  (1) wrappers for the predefined basic cell topologies and
+ *  (2) temporary custom cell topologies.
+ *
+ *  A temporary custom cell topology is created by a calling code,
+ *  passed to a computational kernel such as those supplied by Intrepid,
+ *  and then discarded.  The use case is discretization function
+ *  evaluations on a arbitrary polyhedon mesh does not have
+ *  standard or consistent cell topologies.
  */
 class CellTopology {
 private:
@@ -198,6 +208,8 @@ public:
         
   /** \brief  Unique key for this cell topology;
    *          under certain subcell uniformity conditions.
+   *
+   *  The key is only guaranteed to be unique for predefined cell topologies.
    */
   unsigned getKey() const
     {
@@ -208,6 +220,8 @@ public:
         
   /** \brief  Unique key for this cell's base topology;
    *          under certain subcell uniformity conditions.
+   *
+   *  The key is only guaranteed to be unique for predefined cell topologies.
    */
   unsigned getBaseKey() const
     {
@@ -219,6 +233,8 @@ public:
         
   /** \brief  Unique name for this cell topology;
    *          
+   *  The name is only guaranteed to be unique for predefined cell topologies.
+   *  A calling code may construct custom cell topologies with arbitrary names.
    */
   const char* getName() const
     {
@@ -260,6 +276,13 @@ public:
       return m_cell->edge_count ;
     }
   
+  /** \brief  Face boundary subcell count of this cell topology */
+  unsigned getFaceCount() const
+    {
+      SHARDS_REQUIRE( requireCell() );
+      return m_cell->dimension == 3 ? m_cell->edge_count : 0 ;
+    }
+  
         
   /** \brief  Side boundary subcell count of this cell topology */
   unsigned getSideCount() const
@@ -271,10 +294,7 @@ public:
         
   /** \brief  This cell's raw topology data */
   const CellTopologyData * getTopology() const
-    {
-      SHARDS_REQUIRE( requireCell() );
-      return m_cell ;
-    }
+    { return m_cell ; }
 
         
   /** \brief  This cell's base cell topology's raw topology data */
@@ -480,7 +500,7 @@ public:
    */
   CellTopology( const CellTopologyData * cell )
     : m_cell( cell ), m_owned( NULL )
-    { SHARDS_REQUIRE( requireCell() ); }
+    {}
   
         
   /** \brief  Constructs custom 1-cell (line) with base topology Line<>. 
@@ -537,10 +557,10 @@ public:
 
   /** \brief Copy constructor */
   CellTopology( const CellTopology& right );
-  
-  /** \brief  Default constructor yields the predefined Cell^0 (a.k.a. Node) topology. */
+
+  /** \brief  Default constructor initializes to NULL */
   CellTopology();
-  
+
   /** \brief Destructor */
   ~CellTopology();
   

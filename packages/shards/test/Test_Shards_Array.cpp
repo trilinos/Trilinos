@@ -686,7 +686,7 @@ void local_test_array_truncate()
 
         array_traits::stride_to_natural_indices( 3, stride, offset, indices );
 
-        if ( c != indices[0] || pt != indices[1] || dim != dims[2] ) {
+        if ( c != indices[0] || pt != indices[1] || dim != indices[2] ) {
           throw std::runtime_error( std::string("Array indices test failed") );
         }
 
@@ -730,9 +730,11 @@ void test_shards_array()
   }
   catch( const std::exception & x ) {
     std::cout << method << "\n" << "End Result: TEST FAILED: " << x.what() << std::endl ;
+    throw x ;
   }
   catch( ... ) {
     std::cout << method << "\n" << "End Result: TEST FAILED: <unknown>" << std::endl ;
+    throw ;
   }
 }
 
