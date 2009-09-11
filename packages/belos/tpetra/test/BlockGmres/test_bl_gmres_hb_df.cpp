@@ -46,6 +46,8 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
+// #define PRINT_MATRIX
+
 using namespace Teuchos;
 using namespace Belos;
 using Tpetra::global_size_t;
@@ -60,7 +62,8 @@ using std::cout;
 using std::string;
 using std::setw;
 using std::vector;
-using Teuchos::tuple;
+using Teuchos::arrayView;
+
 
 bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
@@ -68,7 +71,7 @@ ParameterList mptestpl;
 size_t rnnzmax;
 int mptestdim, numrhs; 
 double *dvals; 
-int *colptr, *rowind;
+const int *offsets, *colinds;
 int mptestmypid = 0;
 int mptestnumimages = 1;
 int maxIters = 100;
@@ -84,23 +87,20 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   typedef OperatorTraits<Scalar,MV,OP> OPT;
   typedef MultiVecTraits<Scalar,MV>    MVT;
   RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(vmap,rnnzmax));
+  Array<Scalar> vals(rnnzmax);
   if (mptestmypid == 0) {
-    // HB format is compressed column. CrsMatrix is compressed row.
-    const double *dptr = dvals;
-    const int *rptr = rowind;
-    for (int c=0; c<mptestdim; ++c) {
-      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValues(*rptr-1,tuple(c),tuple<Scalar>(*dptr));
-        if (c != *rptr -1) {
-          A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*dptr));
-        }
-        ++rptr;
-        ++dptr;
+    for (size_t row=0; row < mptestdim; ++row) {
+      const size_t nE = offsets[row+1] - offsets[row];
+      if (nE > 0) {
+        // convert row values from double to Scalar
+        std::copy( dvals+offsets[row], dvals+offsets[row]+nE, vals.begin() );
+        // add row to matrix
+        A->insertGlobalValues( row, arrayView<const int>(colinds+offsets[row], nE), vals(0,nE) );
       }
     }
   }
   // distribute matrix data to other nodes
-  A->fillComplete();
+  A->fillComplete(Tpetra::DoOptimizeStorage);
   // Create initial MV and solution MV
   RCP<MV> B, X;
   X = rcp( new MV(vmap,numrhs) );
@@ -252,22 +252,94 @@ int main(int argc, char *argv[]) {
   nnz = -1;
   if (mptestmypid == 0) {
     int dim2;
+    int *colptr, *rowind;
     info = readHB_newmat_double(filename.c_str(),&mptestdim,&dim2,&nnz,&colptr,&rowind,&dvals);
-    // find maximum NNZ over all rows
-    vector<int> rnnz(mptestdim,0);
-    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-      ++rnnz[*ri-1];
+#ifdef PRINT_MATRIX
+    std::cout << "\n\nColumn format: " << std::endl;
+    for (int c=0; c < mptestdim; ++c) {
+      for (int o=colptr[c]; o != colptr[c+1]; ++o) {
+        std::cout << rowind[o-1]-1 << ", " << c << ", " << dvals[o-1] << std::endl;
+      }
     }
-    for (int c=0; c<mptestdim; ++c) {
-      rnnz[c] += colptr[c+1]-colptr[c];
+#endif
+    // Find number of non-zeros for each row
+    vector<size_t> rnnz(mptestdim,0);
+    // Move through all row indices, adding the contribution to the appropriate row
+    // Skip the diagonals, we'll catch them below on the column pass.
+    // Remember, the file uses one-based indexing. We'll convert it to zero-based later.
+    int curcol_0 = 0, currow_0;
+    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+      // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
+      // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
+      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
+      // make sure not to count it twice
+      ++rnnz[curcol_0];
+      currow_0 = rowind[curnnz_1-1] - 1;
+      if (curcol_0 != currow_0) {
+        ++rnnz[currow_0];
+      }
     }
+    const size_t totalnnz = std::accumulate( rnnz.begin(), rnnz.end(), 0 );
+    // mark the maximum nnz per row, used to allocated data for the crsmatrix
     rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
+    // allocate row structure and fill it
+    double *newdvals  = new double[totalnnz];
+    int *newoffs = new int[mptestdim+1];
+    int *newinds    = new int[totalnnz];
+    // set up pointers
+    newoffs[0] = 0;
+    for (size_t row=1; row != mptestdim+1; ++row) {
+      newoffs[row] = newoffs[row-1] + rnnz[row-1];
+    }
+    // reorganize data from column oriented to row oriented, duplicating symmetric part as well
+    // rowind are one-based; account for that, and convert them to zero-based.
+    // use nnz as the number of entries add per row thus far
+    std::fill( rnnz.begin(), rnnz.end(), 0 );
+    curcol_0 = 0;
+    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+      // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
+      // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
+      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
+      // it must be added twice if curcol_0 != rowind[curnnz_1]
+      currow_0 = rowind[curnnz_1-1] - 1;
+      // add (currow_0, curcol_0)
+      const double curval = dvals[curnnz_1-1];
+      size_t newnnz = newoffs[currow_0] + rnnz[currow_0];
+      newdvals[newnnz] = curval;
+      newinds [newnnz] = curcol_0;
+      ++rnnz[currow_0];
+      if (curcol_0 != currow_0) {
+        newnnz = newoffs[curcol_0] + rnnz[curcol_0];
+        newdvals[newnnz] = curval;
+        newinds [newnnz] = currow_0;
+        ++rnnz[curcol_0];
+      }
+    }
+    const size_t totalnnz2 = std::accumulate( rnnz.begin(), rnnz.end(), 0 );
+    TEST_FOR_EXCEPT( totalnnz2 != totalnnz );
+    // free the original data, point to new dada
+    delete [] dvals;
+    dvals = newdvals;
+    delete [] colptr; colptr = NULL;
+    delete [] rowind; rowind = NULL;
+    offsets = newoffs;
+    colinds = newinds;
+#ifdef PRINT_MATRIX
+    std::cout << "\n\nRow format: " << std::endl;
+    for (int r=0; r < mptestdim; ++r) {
+      for (int o=offsets[r]; o != offsets[r+1]; ++o) {
+        std::cout << r << ", " << colinds[o] << ", " << dvals[o] << std::endl;
+      }
+    }
+#endif
   }
   else {
     // address uninitialized data warnings
     dvals = NULL;
-    colptr = NULL;
-    rowind = NULL;
+    offsets = NULL;
+    colinds = NULL;
   }
   broadcast(*comm,0,&info);
   broadcast(*comm,0,&nnz);
@@ -324,9 +396,9 @@ int main(int argc, char *argv[]) {
 
   // done with the matrix data now; delete it
   if (mptestmypid == 0) {
-    free( dvals );
-    free( colptr );
-    free( rowind );
+    delete [] dvals; dvals = NULL;
+    delete [] colinds; colinds = NULL;
+    delete [] offsets; offsets = NULL;
   }
 
   if (mptestmypid==0) {

@@ -1721,7 +1721,7 @@ namespace Tpetra
     numEntriesPerRow_[lrow] = rowptr - rowview;
     rowptr = Teuchos::null;
     rowview = Teuchos::null;
-    checkInternalState();
+    // checkInternalState();
   }
 
 
@@ -1787,7 +1787,7 @@ namespace Tpetra
         nonlocals_[grow].push_back(*i);
       }
     }
-    checkInternalState();
+    // checkInternalState();
   }
 
 

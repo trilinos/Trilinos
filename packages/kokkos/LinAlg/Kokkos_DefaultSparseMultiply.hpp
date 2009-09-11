@@ -73,7 +73,39 @@ namespace Kokkos {
         tmp += vals[c] * xj[inds[c]];
       }
       Scalar tmp2 = beta * yj[row];
-      yj[row] = (Scalar)(alpha * tmp + tmp2);
+      yj[row] = (RangeScalar)(alpha * tmp + tmp2);
+    }
+  };
+
+
+  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  struct DefaultSparseTransposeMultiplyOp1 {
+    // mat data
+    const size_t  *offsets;
+    const Ordinal *inds;
+    const Scalar  *vals;
+    // matvec params
+    Scalar        alpha, beta;
+    size_t numRows, numCols;
+    // mv data
+    const DomainScalar  *x;
+    RangeScalar         *y;
+    size_t xstride, ystride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+      // multiply entire matrix for rhs i
+      const size_t rhs = i;
+      Scalar tmp = 0;
+      const DomainScalar *xj = x + rhs * xstride;
+      RangeScalar        *yj = y + rhs * ystride;
+      for (size_t row=0; row < numCols; ++row) {
+        yj[row] = (RangeScalar)(yj[row] * beta);
+      }
+      for (size_t row=0; row < numRows; ++row) {
+        for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
+          yj[inds[c]] += (RangeScalar)(alpha * vals[c] * xj[row]);
+        }
+      }
     }
   };
 
@@ -105,6 +137,39 @@ namespace Kokkos {
       }
       Scalar tmp2 = beta * yj[row];
       yj[row] = (Scalar)(alpha * tmp + tmp2);
+    }
+  };
+
+
+  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  struct DefaultSparseTransposeMultiplyOp2 {
+    // mat data
+    const Ordinal * const * inds_beg;
+    const Scalar  * const * vals_beg;
+    const size_t  *         numEntries;
+    // matvec params
+    Scalar        alpha, beta;
+    size_t numRows, numCols;
+    // mv data
+    const DomainScalar  *x;
+    RangeScalar         *y;
+    size_t xstride, ystride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+      // multiply entire matrix for rhs i
+      const size_t rhs = i;
+      const DomainScalar *xj = x + rhs * xstride;
+      RangeScalar        *yj = y + rhs * ystride;
+      for (size_t row=0; row < numCols; ++row) {
+        yj[row] = (RangeScalar)(yj[row] * beta);
+      }
+      for (size_t row=0; row < numRows; ++row) {
+        const Scalar  *rowval = vals_beg[row];
+        const Ordinal *rowind = inds_beg[row];
+        for (size_t j=0; j != numEntries[row]; ++j) {
+          yj[rowind[j]] += (RangeScalar)(alpha * rowval[j] * xj[row]);
+        }
+      }
     }
   };
 
@@ -321,11 +386,12 @@ namespace Kokkos {
                                 Teuchos::ETransp trans, 
                                 Scalar alpha, const MultiVector<DomainScalar,Node> &X, 
                                 Scalar beta, MultiVector<RangeScalar,Node> &Y) const {
-    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar> Op1D;
-    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar> Op2D;
+    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
+    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
+    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar> TOp1D;
+    typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar> TOp2D;
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(trans != Teuchos::NO_TRANS);
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
@@ -334,38 +400,78 @@ namespace Kokkos {
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
     }
     else if (isPacked_ == true) {
-      Op1D wdp;
-      rbh.begin();
-      wdp.alpha   = alpha;
-      wdp.beta    = beta;
-      wdp.numRows = numRows_;
-      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
-      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
-      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
-      wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-      wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-      wdp.xstride = X.getStride();
-      wdp.ystride = Y.getStride();
-      rbh.end();
-      const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+      if (trans == Teuchos::NO_TRANS) {
+        Op1D wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = beta;
+        wdp.numRows = numRows_;
+        wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+        wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+      }
+      else {
+        TOp1D wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = beta;
+        wdp.numRows = numRows_;
+        wdp.numCols = Y.getNumRows();
+        wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+        wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
+      }
     }
     else {
-      Op2D wdp;
-      rbh.begin();
-      wdp.alpha   = alpha;
-      wdp.beta    = beta;
-      wdp.numRows = numRows_;
-      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
-      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
-      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
-      wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-      wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-      wdp.xstride = X.getStride();
-      wdp.ystride = Y.getStride();
-      rbh.end();
-      const size_t numRHS = X.getNumCols();
-      node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+      if (trans == Teuchos::NO_TRANS) {
+        Op2D wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = beta;
+        wdp.numRows = numRows_;
+        wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+        wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+        wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+      }
+      else {
+        TOp2D wdp;
+        rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = beta;
+        wdp.numRows = numRows_;
+        wdp.numCols = Y.getNumRows();
+        wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+        wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+        wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
+        wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<TOp2D>(0,numRHS,wdp);
+      }
     }
     return;
   }

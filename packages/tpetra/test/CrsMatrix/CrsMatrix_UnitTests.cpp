@@ -551,8 +551,6 @@ namespace {
     rowmap->setObjectLabel("Row Map");
     RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(static_cast<global_size_t>(P),static_cast<GO>(0),comm,LocallyReplicated) );
     lclmap->setObjectLabel("Local Map");
-    rowmap->describe(out,VERB_EXTREME);
-    lclmap->describe(out,VERB_EXTREME);
     // create the matrix
     MAT A(rowmap,P,DynamicProfile);
     for (GO i=0; i<M; ++i) {
@@ -645,7 +643,7 @@ namespace {
     // 
     const size_t numVecs  = 3;
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm) );
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,0,comm,LocallyReplicated) );
+    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,static_cast<GO>(0),comm,LocallyReplicated) );
     // create the matrix
     MAT A(rowmap,P);
     for (int i=0; i<M; ++i) {
@@ -1364,8 +1362,6 @@ namespace {
     const size_t numVecs  = 5;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
-    mvrand.describe(out,VERB_EXTREME);
-    mvres.describe(out,VERB_EXTREME);
     mvrand.randomize();
     // create the zero matrix
     MAT zero(map,0);
@@ -1425,7 +1421,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, FullMatrixTriDiag, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, DomainRange, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR ) \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR ) */ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \

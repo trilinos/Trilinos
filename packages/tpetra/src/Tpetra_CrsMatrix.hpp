@@ -1176,7 +1176,7 @@ namespace Tpetra
       // 
       rowindsview = Teuchos::null;
       rowvalsview = Teuchos::null;
-      checkInternalState();
+      // checkInternalState();
     }
   }
 
@@ -1261,7 +1261,7 @@ namespace Tpetra
         // 
         rowindsview = Teuchos::null;
         rowvalsview = Teuchos::null;
-        checkInternalState();
+        // checkInternalState();
       }
     }
     else {
