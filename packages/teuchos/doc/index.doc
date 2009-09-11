@@ -118,6 +118,9 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   <li> Teuchos::ArrayView: A light-weight replacement for raw pointers for passing
   arrays into functions.  This is only for non-persisting relationships.
 
+  <li> Teuchos::ConstNonconstObjectContainer: A simple wrapper class for
+  implementing the "runtime protection of const" idiom.
+
   </ul>
 
 <li> <b> Low-Level Language Support: </b>
