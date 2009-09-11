@@ -95,7 +95,6 @@ namespace Kokkos {
     inline KERNEL_PREFIX void execute(size_t i) {
       // multiply entire matrix for rhs i
       const size_t rhs = i;
-      Scalar tmp = 0;
       const DomainScalar *xj = x + rhs * xstride;
       RangeScalar        *yj = y + rhs * ystride;
       for (size_t row=0; row < numCols; ++row) {

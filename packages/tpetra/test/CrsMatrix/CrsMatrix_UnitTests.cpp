@@ -930,6 +930,99 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TriSolve, LO, GO, Scalar )
+  {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const size_t numLocal = 13, numVecs = 7;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create a Map
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
+    Scalar SONE = static_cast<Scalar>(1.0);
+    Scalar STWO = static_cast<Scalar>(2.0);
+
+    /* create the following matrix:
+    0  [1 2       ] 
+    1  [  1 2     ] 
+    .  [    .  .  ] 
+   N-2 [       1 2]
+    N  [         1]
+
+      We'll do this twice. 
+      The first time, we use an explicit unit diagonal.
+      The latter, we use an implicit unit diagonal.
+    */
+    {
+      MAT A(map,2);
+      for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+        if (gid == map->getMaxAllGlobalIndex()) {
+          A.insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
+        }
+        else {
+          A.insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<Scalar>(SONE,STWO) );
+        }
+      }
+      A.fillComplete(DoOptimizeStorage);
+      TEST_EQUALITY_CONST(A.isUpperTriangular(), true);
+      TEST_EQUALITY(A.getGlobalNumDiags(), A.getGlobalNumRows());
+      MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
+      X.randomize();
+      Xhat.randomize();
+      B.randomize();
+      A.apply(X,B,NO_TRANS);
+      A.applyInverse(B,Xhat,NO_TRANS);
+      //
+      Xhat.update(-ST::one(),X,ST::one());
+      Array<Mag> norms(numVecs), normsB(numVecs);
+      Xhat.norm2(norms());
+      B.norm2(normsB());
+      for (size_t j=0; j < numVecs; ++j) {
+        TEST_EQUALITY_CONST( norms[j]/normsB[j] < tol, true );
+      }
+    }
+    {
+      MAT A(map,2);
+      for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+        if (gid == map->getMaxAllGlobalIndex()) {
+          // do nothing
+        }
+        else {
+          A.insertGlobalValues( gid, tuple<GO>(gid+1), tuple<Scalar>(STWO) );
+        }
+      }
+      A.fillComplete(DoOptimizeStorage);
+      TEST_EQUALITY_CONST(A.isUpperTriangular(), true);
+      TEST_EQUALITY_CONST(A.getGlobalNumDiags(), 0);
+      MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
+      X.randomize();
+      Xhat.randomize();
+      B.randomize();
+      // we want (I+A)*X -> B
+      // A*X -> B needs to be augmented with X
+      A.apply(X,B,NO_TRANS);
+      B.update(ST::one(),X,ST::one());
+      A.applyInverse(B,Xhat,NO_TRANS);
+      //
+      Xhat.update(-ST::one(),X,ST::one());
+      Array<Mag> norms(numVecs), normsB(numVecs);
+      Xhat.norm2(norms());
+      B.norm2(normsB());
+      for (size_t j=0; j < numVecs; ++j) {
+        TEST_EQUALITY_CONST( norms[j]/normsB[j] < tol, true );
+      }
+    }
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, FullMatrixTriDiag, LO, GO, Scalar )
   {
     // do a FEM-type communication, then apply to a MultiVector containing the identity
@@ -1426,6 +1519,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR ) \
+      /* TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR ) */ \
       TRIUTILS_USING_TESTS( LO, GO, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
