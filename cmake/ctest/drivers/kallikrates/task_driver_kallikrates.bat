@@ -1,7 +1,6 @@
 rem Call this script and pass in the base directory for the dashboard
 rem save state before changing anything
 setlocal
-set foo=%1%
 
 rem cygwin CVS needs to know to use ssh
 set CVS_RSH=C:/cygwin/bin/ssh.exe
@@ -20,11 +19,12 @@ call "C:\Program Files (x86)\Microsoft Visual Studio 9.0\Common7\Tools\vsvars32.
 
 rem change into the basedir
 cd %BASEDIR%
+
 rem checkout the basics from Trilinos needed to run the dashboard including
 rem this script.
-%CVS_EXE% -q -d :ext:software.sandia.gov:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
+call %CVS_EXE% -q -d :ext:software.sandia.gov:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 
 rem Now run ctest on each of the ctest build scripts for this machine
 
-%CTEST_EXE% -S %BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_release.cmake -VV > %BASEDIR%\ctest_msvc_nightly_serial_release_kallikrates.out
+call %CTEST_EXE% -S %BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_release.cmake -VV > %BASEDIR%\ctest_msvc_nightly_serial_release_kallikrates.out
 endlocal
