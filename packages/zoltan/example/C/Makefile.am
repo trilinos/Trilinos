@@ -15,7 +15,7 @@ include $(top_builddir)/Makefile.export.zoltan
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = simpleBLOCK simpleRCB simpleGRAPH simplePHG 
+noinst_PROGRAMS = simpleBLOCK simpleRCB simpleGRAPH simplePHG problemGRAPH
 
 simpleBLOCK_SOURCES      = simpleBLOCK.c
 simpleBLOCK_DEPENDENCIES = $(ZOLTAN_DEPS)
@@ -37,4 +37,14 @@ simplePHG_DEPENDENCIES = $(ZOLTAN_DEPS)
 simplePHG_CFLAGS     = $(ZOLTAN_INCLUDES)
 simplePHG_LDADD        = $(ZOLTAN_LIBS)
 
+problemGRAPH_SOURCES      = problemGRAPH.c
+problemGRAPH_DEPENDENCIES = $(ZOLTAN_DEPS)
+problemGRAPH_CFLAGS     = $(ZOLTAN_LIBRARY_INCLUDES)
+problemGRAPH_LDADD        = $(ZOLTAN_LIBS)
+
 EXTRA_DIST = classicMakefile objects.txt hypergraph.txt graph.txt mesh.txt
+
+FNAMES=$(EXTRA_DIST:%=$(srcdir)/%)
+
+all-local:
+	if test -e Makefile.am ; then : ; else cp $(FNAMES) $(builddir); fi
