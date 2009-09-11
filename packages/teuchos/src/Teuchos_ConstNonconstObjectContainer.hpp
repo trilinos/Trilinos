@@ -44,7 +44,7 @@ namespace Teuchos {
  * support involves having the client create the "held" object, give it to the
  * "container" object, and where the "container" object has functions to give
  * the "held" object back again.  In this case, there are to specific roles
- * the "container" object is performing.  On role, the primary role, is the
+ * the "container" object is performing.  One role, the primary role, is the
  * primary function the "container" object was designed to perform where it
  * needs functionality of the the "held" object where only the const interface
  * of the "held" object is required.  If this primary role were the only
@@ -71,7 +71,7 @@ namespace Teuchos {
  * The problem with this design of the "container" class is that it does not
  * well support the second natural role of any such "container" object, and
  * that is to act as a general object container that can be used to store and
- * extract the "held" object.  The difficulting that occurs is when the client
+ * extract the "held" object.  The difficulty that occurs is when the client
  * has a non-const reference to the "held" object, gives it to the "container"
  * object and then needs to get back a non-const reference to the "held"
  * object later.  With the current design, the client code must do a const
@@ -306,7 +306,7 @@ public:
    * <li>[<tt>getConstObj().get()!=NULL</tt>] <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  RCP<ObjType> getNonconstObj()
+  RCP<ObjType> getNonconstObj() const
     {
       TEST_FOR_EXCEPTION(
         constObj_.get() && isConst_, NonconstAccessError,
