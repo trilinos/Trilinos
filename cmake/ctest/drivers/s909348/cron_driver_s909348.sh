@@ -37,16 +37,28 @@ echo
 #time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV
 
 echo
-echo "Doing mpi optimized build: `date`"
+echo "Doing mpi optimized release 10.0 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/s909348/ctest_mac_nightly_mpi_release_s909348.cmake -VV &> "MPI_RELEASE_$DATE.log"
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/s909348/ctest_mac_nightly_mpi_release_s909348.cmake -VV &> "MPI_RELEASE_10.0_$DATE.log"
 
 echo
-echo "Doing serial debug build: `date`"
+echo "Doing serial release 10.0 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/s909348/ctest_mac_nightly_serial_debug_s909348.cmake -VV &> "SERIAL_DEBUG_$DATE.log"
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/s909348/ctest_mac_nightly_serial_release_s909348.cmake -VV &> "SERIAL_RELEASE_10.0_$DATE.log"
+
+echo
+echo "Doing mpi optimized development build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/s909348/ctest_mac_nightly_mpi_opt_s909348.cmake -VV &> "MPI_OPT_DEV_$DATE.log"
+
+echo
+echo "Doing serial debug development build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/s909348/ctest_mac_nightly_serial_debug_s909348.cmake -VV &> "SERIAL_DEBUG_DEV_$DATE.log"
 
 echo
 echo "Doing mpi optimized shared library build: `date`"

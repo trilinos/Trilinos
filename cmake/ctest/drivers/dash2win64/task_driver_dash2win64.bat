@@ -7,7 +7,7 @@ set CVS_RSH=C:\Dashboards\Support\Trilinos-ssh\ssh.cmd
 rem Driver script for dashboards on Corrin
 rem Set location of CTEST_EXE, and CVS_EXE
 set CVS_EXE=C:\Program Files (x86)\CVSNT\cvs.exe
-set CTEST_EXE=C:\Program Files (x86)\CMake 2.7.20090814\bin\ctest.exe
+set CTEST_EXE=C:\Program Files (x86)\CMake 2.7.20090908\bin\ctest.exe
 
 rem Set the base directory which is one above where Trilinos will be 
 rem checked out.

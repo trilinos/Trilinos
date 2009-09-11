@@ -1,5 +1,5 @@
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s909348.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -12,14 +12,11 @@ SET(Trilinos_TRACK "Nightly Release 10.0")
 
 SET(Trilinos_BRANCH "-r trilinos-release-10-0-branch")
 
-SET(EXTRA_EXCLUDE_PACKAGES Zoltan)
-
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DDART_TESTING_TIMEOUT:STRING=600"
   "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
+  "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTPL_ENABLE_Boost:BOOL=ON"
-  "-DBoost_INCLUDE_DIRS=/Users/bmpersc/lib/boost_1_38_0"
+  "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
   )
 
 #

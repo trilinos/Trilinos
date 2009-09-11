@@ -163,6 +163,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # The type of test (e.g. Nightly, Experimental, Continuous)
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
   
+  # The default track to send the build to. This can be changed to send
+  # the data to a different nightly grouping on the dashboard.
+  SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "")
+  
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
@@ -205,8 +209,11 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Generate the XML dependency output files or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
 
-  # Flags used when doing a CVS update
+  # Flags used on cvs when doing a CVS update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
+
+  # Flags used on update when doing a CVS update
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "${Trilinos_BRANCH}")
 
   # Flags passed to 'make' assume gnumake with unix makefiles
   IF("${CTEST_CMAKE_GENERATOR}" MATCHES "Unix Makefiles")
@@ -287,7 +294,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     SET(CTEST_UPDATE_COMMAND "${CVS_EXECUTABLE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
     SET( CTEST_CHECKOUT_COMMAND
-      "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS} -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}" )
+      "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS} -d :ext:software.sandia.gov:/space/CVS co ${Trilinos_BRANCH} ${CTEST_SOURCE_NAME}" )
     MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
   ENDIF() 
   
@@ -310,7 +317,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Start up a new dashbaord
   #
   
-  CTEST_START(${CTEST_TEST_TYPE})
+  IF(Trilinos_TRACK)
+    CTEST_START(${CTEST_TEST_TYPE} TRACK ${Trilinos_TRACK})
+  ELSE()
+    CTEST_START(${CTEST_TEST_TYPE})
+  ENDIF()
+  
 
   #
   # Do the VC update
