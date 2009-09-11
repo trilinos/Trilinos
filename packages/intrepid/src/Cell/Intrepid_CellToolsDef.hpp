@@ -21,8 +21,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
+//                    Denis Ridzal  (dridzal@sandia.gov), or
+//                    Kara Peterson (kjpeter@sandia.gov) 
 //
 // ************************************************************************
 // @HEADER
@@ -453,7 +454,7 @@ namespace Intrepid {
     TEST_FOR_EXCEPTION( !(hasReferenceCell(cell) ), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::getReferenceVertex): the specified cell topology does not have a reference cell.");
     
-    TEST_FOR_EXCEPTION( !( (0 <= vertexOrd) && (vertexOrd < cell.getVertexCount() ) ), std::invalid_argument,
+    TEST_FOR_EXCEPTION( !( (0 <= vertexOrd) && (vertexOrd < (int)cell.getVertexCount() ) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::getReferenceVertex): invalid node ordinal for the specified cell topology. ");
 #endif
     
@@ -474,7 +475,7 @@ namespace Intrepid {
                         ">>> ERROR (Intrepid::CellTools::getReferenceSubcellVertices): the specified cell topology does not have a reference cell.");
 
     // subcellDim can equal the cell dimension because the cell itself is a valid subcell! In this case
-    // the method will return all cell nodes.
+    // the method will return all cell cellWorkset.
     TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <= (int)parentCell.getDimension()) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::getReferenceSubcellVertices): subcell dimension out of range.");
     
@@ -511,11 +512,11 @@ namespace Intrepid {
     TEST_FOR_EXCEPTION( !(hasReferenceCell(cell) ), std::invalid_argument, 
                         ">>> ERROR (Intrepid::CellTools::getReferenceNode): the specified cell topology does not have a reference cell.");
 
-    TEST_FOR_EXCEPTION( !( (0 <= nodeOrd) && (nodeOrd < cell.getNodeCount() ) ), std::invalid_argument,
+    TEST_FOR_EXCEPTION( !( (0 <= nodeOrd) && (nodeOrd < (int)cell.getNodeCount() ) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::getReferenceNode): invalid node ordinal for the specified cell topology. ");
 #endif
     
-    // Cartesian coordinates of supported reference cell nodes, padded to three-dimensions.
+    // Cartesian coordinates of supported reference cell cellWorkset, padded to three-dimensions.
     // Node order follows cell topology definition in Shards
     static const double line[2][3] ={
       {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0} 
@@ -538,7 +539,7 @@ namespace Intrepid {
     };
     static const double triangle_6[6][3] = {
       { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
-      // Extension nodes: 3 edge midpoints
+      // Extension cellWorkset: 3 edge midpoints
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}
     };
     
@@ -549,12 +550,12 @@ namespace Intrepid {
     };
     static const double quadrilateral_8[8][3] = {
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
-      // Extension nodes: 4 edge midpoints
+      // Extension cellWorkset: 4 edge midpoints
       { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0}
     };
     static const double quadrilateral_9[9][3] = {
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
-      // Extension nodes: 4 edge midpoints + 1 cell center
+      // Extension cellWorkset: 4 edge midpoints + 1 cell center
       { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0}, { 0.0, 0.0, 0.0}
     };
     
@@ -565,12 +566,12 @@ namespace Intrepid {
     };
     static const double tetrahedron_8[8][3] = {
       { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      // Extension nodes: 4 face centers (do not follow natural face order - see the cell topology!)
+      // Extension cellWorkset: 4 face centers (do not follow natural face order - see the cell topology!)
       { 1/3, 0.0, 1/3}, { 1/3, 1/3, 1/3}, { 1/3, 1/3, 0.0}, { 0.0, 1/3, 1/3} 
     };
     static const double tetrahedron_10[10][3] = {
       { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      // Extension nodes: 6 edge midpoints
+      // Extension cellWorkset: 6 edge midpoints
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
     };
 
@@ -583,7 +584,7 @@ namespace Intrepid {
     static const double hexahedron_20[20][3] = {
       {-1.0,-1.0,-1.0}, { 1.0,-1.0,-1.0}, { 1.0, 1.0,-1.0}, {-1.0, 1.0,-1.0},
       {-1.0,-1.0, 1.0}, { 1.0,-1.0, 1.0}, { 1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0},
-      // Extension nodes: 12 edge midpoints (do not follow natural edge order - see cell topology!)
+      // Extension cellWorkset: 12 edge midpoints (do not follow natural edge order - see cell topology!)
       { 0.0,-1.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, {-1.0, 0.0,-1.0}, 
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
       { 0.0,-1.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0}, {-1.0, 0.0, 1.0}
@@ -591,7 +592,7 @@ namespace Intrepid {
     static const double hexahedron_27[27][3] = {
       {-1.0,-1.0,-1.0}, { 1.0,-1.0,-1.0}, { 1.0, 1.0,-1.0}, {-1.0, 1.0,-1.0},
       {-1.0,-1.0, 1.0}, { 1.0,-1.0, 1.0}, { 1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0},
-      // Extension nodes: 12 edge midpoints + 1 cell center + 6 face centers  (do not follow natural subcell order!)
+      // Extension cellWorkset: 12 edge midpoints + 1 cell center + 6 face centers  (do not follow natural subcell order!)
       { 0.0,-1.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, {-1.0, 0.0,-1.0}, 
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
       { 0.0,-1.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0}, {-1.0, 0.0, 1.0},
@@ -606,13 +607,13 @@ namespace Intrepid {
     };
     static const double pyramid_13[13][3] = {
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      // Extension nodes: 8 edge midpoints 
+      // Extension cellWorkset: 8 edge midpoints 
       { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0},
       {-0.5,-0.5, 0.5}, { 0.5,-0.5, 0.5}, { 0.5, 0.5, 0.5}, {-0.5, 0.5, 0.5}   
     };
     static const double pyramid_14[14][3] = {
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      // Extension nodes: 8 edge midpoints + quadrilateral face midpoint 
+      // Extension cellWorkset: 8 edge midpoints + quadrilateral face midpoint 
       { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0},
       {-0.5,-0.5, 0.5}, { 0.5,-0.5, 0.5}, { 0.5, 0.5, 0.5}, {-0.5, 0.5, 0.5}, { 0.0, 0.0, 0.0}  
     };
@@ -624,13 +625,13 @@ namespace Intrepid {
     };
     static const double wedge_15[15][3] = {
       { 0.0, 0.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, { 0.0, 0.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0},
-      // Extension nodes: 9 edge midpoints (do not follow natural edge order - see cell topology!)
+      // Extension cellWorkset: 9 edge midpoints (do not follow natural edge order - see cell topology!)
       { 0.5, 0.0,-1.0}, { 0.5, 0.5,-1.0}, { 0.0, 0.5,-1.0}, { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
       { 0.5, 0.0, 1.0}, { 0.5, 0.5, 1.0}, { 0.0, 0.5, 1.0}
     };
     static const double wedge_18[18][3] = {
       { 0.0, 0.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, { 0.0, 0.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0},
-      // Extension nodes: 9 edge midpoints + 3 quad face centers (do not follow natural subcell order - see cell topology!)
+      // Extension cellWorkset: 9 edge midpoints + 3 quad face centers (do not follow natural subcell order - see cell topology!)
       { 0.5, 0.0,-1.0}, { 0.5, 0.5,-1.0}, { 0.0, 0.5,-1.0}, { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
       { 0.5, 0.0, 1.0}, { 0.5, 0.5, 1.0}, { 0.0, 0.5, 1.0},
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}
@@ -763,7 +764,7 @@ namespace Intrepid {
                         ">>> ERROR (Intrepid::CellTools::getReferenceSubcellNodes): the specified cell topology does not have a reference cell.");
     
     // subcellDim can equal the cell dimension because the cell itself is a valid subcell! In this case
-    // the method will return all cell nodes.
+    // the method will return all cell cellWorkset.
     TEST_FOR_EXCEPTION( !( (0 <= subcellDim) && (subcellDim <= (int)parentCell.getDimension()) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::getReferenceSubcellNodes): subcell dimension out of range.");
     
@@ -786,10 +787,10 @@ namespace Intrepid {
     }
 #endif 
     
-    // Find how many nodes does the specified subcell have.
+    // Find how many cellWorkset does the specified subcell have.
     int subcNodeCount = parentCell.getNodeCount(subcellDim, subcellOrd);
     
-    // Loop over subcell nodes
+    // Loop over subcell cellWorkset
     for(int subcNodeOrd = 0; subcNodeOrd < subcNodeCount; subcNodeOrd++){
       
       // Get the node number relative to the parent reference cell
@@ -862,14 +863,14 @@ namespace Intrepid {
   template<class ArrayScalar>
   void CellTools<Scalar>::setJacobian(ArrayScalar &                jacobian,
                                       const ArrayScalar &          points,
-                                      const ArrayScalar &          nodes,
+                                      const ArrayScalar &          cellWorkset,
                                       const shards::CellTopology & cellTopo,
                                       const int &                  whichCell) 
   {
-    INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, nodes, whichCell,  cellTopo) );
+    INTREPID_VALIDATE( validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  cellTopo) );
     
     int spaceDim  = (int)cellTopo.getDimension();
-    int numCells  = nodes.dimension(0);
+    int numCells  = cellWorkset.dimension(0);
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
     int numPoints = (points.rank() == 2) ? points.dimension(0) : points.dimension(1);
     
@@ -879,7 +880,7 @@ namespace Intrepid {
     // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
     switch( cellTopo.getKey() ){
       
-      // Standard Base topologies (number of nodes = number of vertices)
+      // Standard Base topologies (number of cellWorkset = number of vertices)
       case shards::Line<2>::key:
         HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
         break;
@@ -982,10 +983,10 @@ namespace Intrepid {
                   for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                     
                     if(whichCell == -1) {
-                      jacobian(cellOrd, pointOrd, row, col) += nodes(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                      jacobian(cellOrd, pointOrd, row, col) += cellWorkset(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
                     }
                     else {
-                      jacobian(pointOrd, row, col) += nodes(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                      jacobian(pointOrd, row, col) += cellWorkset(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
                     }
                   } // bfOrd
                 } // col
@@ -1020,7 +1021,7 @@ namespace Intrepid {
                   
                   // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
                   for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
-                    jacobian(cellOrd, pointOrd, row, col) += nodes(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    jacobian(cellOrd, pointOrd, row, col) += cellWorkset(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
                   } // bfOrd
                 } // col
               } // row
@@ -1070,14 +1071,14 @@ template<class Scalar>
 template<class ArrayScalar>
 void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoints,
                                           const ArrayScalar &          refPoints,
-                                          const ArrayScalar &          nodes,
+                                          const ArrayScalar &          cellWorkset,
                                           const shards::CellTopology & cellTopo,
                                           const int &                  whichCell)
 {
-  INTREPID_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, nodes, cellTopo, whichCell) );
+  INTREPID_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
   
   int spaceDim  = (int)cellTopo.getDimension();
-  int numCells  = nodes.dimension(0);
+  int numCells  = cellWorkset.dimension(0);
   //points can be rank-2 (P,D), or rank-3 (C,P,D)
   int numPoints = (refPoints.rank() == 2) ? refPoints.dimension(0) : refPoints.dimension(1);
     
@@ -1087,7 +1088,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
   // Choose the H(grad) basis depending on the cell topology. \todo define maps for shells and beams
   switch( cellTopo.getKey() ){
     
-    // Standard Base topologies (number of nodes = number of vertices)
+    // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
       HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
       break;
@@ -1188,10 +1189,10 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
               for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                 
                 if(whichCell == -1){
-                  physPoints(cellOrd, pointOrd, dim) += nodes(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                  physPoints(cellOrd, pointOrd, dim) += cellWorkset(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
                 }
                 else{
-                  physPoints(pointOrd, dim) += nodes(whichCell, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                  physPoints(pointOrd, dim) += cellWorkset(whichCell, bfOrd, dim)*basisVals(bfOrd, pointOrd);
                 }
               } // bfOrd
             }// dim
@@ -1223,7 +1224,7 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
             for(int dim = 0; dim < spaceDim; dim++){
               for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                 
-                physPoints(cellOrd, pointOrd, dim) += nodes(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
+                physPoints(cellOrd, pointOrd, dim) += cellWorkset(cellOrd, bfOrd, dim)*basisVals(bfOrd, pointOrd);
                 
               } // bfOrd
             }// dim
@@ -1238,33 +1239,26 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
   }
 }
 
-  
+
 
 template<class Scalar>
 template<class ArrayScalar>
-void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoints,
-                                           const ArrayScalar &           physPoints,
-                                           const ArrayScalar &           nodes,
-                                           const shards::CellTopology &  cellTopo,
-                                           const int &                   whichCell)
+void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                 refPoints,
+                                            const ArrayScalar &           physPoints,
+                                            const ArrayScalar &           cellWorkset,
+                                            const shards::CellTopology &  cellTopo,
+                                            const int &                   whichCell)
 {
-  INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, physPoints, nodes, cellTopo, whichCell) );
-
+  INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo, whichCell) );
+  
   int spaceDim  = (int)cellTopo.getDimension();
   int numPoints;
   int numCells;
   
-  // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-  FieldContainer<Scalar> xOld;
-  FieldContainer<Scalar> xTem;  
-  FieldContainer<Scalar> jacobian;
-  FieldContainer<Scalar> jacobInv;
-  FieldContainer<Scalar> error; 
+  // Define initial guesses to be  the Cell centers of the reference cell topology
   FieldContainer<Scalar> cellCenter(spaceDim);
-  
-  // Cell center of the reference cell topology serves as initial guess
   switch( cellTopo.getKey() ){
-    // Standard Base topologies (number of nodes = number of vertices)
+    // Standard Base topologies (number of cellWorkset = number of vertices)
     case shards::Line<2>::key:
       cellCenter(0) = 0.0;    break;
       
@@ -1288,7 +1282,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
     case shards::Wedge<18>::key:
       cellCenter(0) = 1./3.;    cellCenter(1) =  1./3.;     cellCenter(2) = 0.0;    break;
       
-    // These extended topologies are not used for mapping purposes
+      // These extended topologies are not used for mapping purposes
     case shards::Quadrilateral<8>::key:
     case shards::Hexahedron<20>::key:
     case shards::Wedge<15>::key:
@@ -1315,10 +1309,68 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
                           ">>> ERROR (Intrepid::CellTools::mapToReferenceFrame): Cell topology not supported.");        
   }// switch key 
   
+  // Resize initial guess depending on the rank of the physical points array
+  FieldContainer<Scalar> initGuess;
+  
+  // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) initial guess.
+  if(whichCell == -1){
+    numPoints = physPoints.dimension(1);
+    numCells = cellWorkset.dimension(0);
+    initGuess.resize(numCells, numPoints, spaceDim);
+    // Set initial guess:
+    for(int c = 0; c < numCells; c++){
+      for(int p = 0; p < numPoints; p++){
+        for(int d = 0; d < spaceDim; d++){
+          initGuess(c, p, d) = cellCenter(d);
+        }// d
+      }// p
+    }// c
+  }
+  // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) initial guess.
+  else {
+    numPoints = physPoints.dimension(0);
+    initGuess.resize(numPoints, spaceDim);
+    // Set initial guess:
+    for(int p = 0; p < numPoints; p++){
+      for(int d = 0; d < spaceDim; d++){
+        initGuess(p, d) = cellCenter(d);
+      }// d
+    }// p
+  }
+  
+  // Call method with initial guess
+  mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell);  
+}
+  
+  
+
+template<class Scalar>
+template<class ArrayType1, class ArrayType2>
+void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoints,
+                                            const ArrayType2 &            initGuess,
+                                            const ArrayType1 &            physPoints,
+                                            const ArrayType1 &            cellWorkset,
+                                            const shards::CellTopology &  cellTopo,
+                                            const int &                   whichCell)
+{
+  INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
+
+  int spaceDim  = (int)cellTopo.getDimension();
+  int numPoints;
+  int numCells;
+  
+  // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
+  FieldContainer<Scalar> xOld;
+  FieldContainer<Scalar> xTem;  
+  FieldContainer<Scalar> jacobian;
+  FieldContainer<Scalar> jacobInv;
+  FieldContainer<Scalar> error; 
+  FieldContainer<Scalar> cellCenter(spaceDim);
+  
   // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
   if(whichCell == -1){
     numPoints = physPoints.dimension(1);
-    numCells = nodes.dimension(0);
+    numCells = cellWorkset.dimension(0);
     xOld.resize(numCells, numPoints, spaceDim);
     xTem.resize(numCells, numPoints, spaceDim);  
     jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
@@ -1328,7 +1380,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
     for(int c = 0; c < numCells; c++){
       for(int p = 0; p < numPoints; p++){
         for(int d = 0; d < spaceDim; d++){
-          xOld(c, p, d) = cellCenter(d);
+          xOld(c, p, d) = initGuess(c, p, d);
         }// d
       }// p
     }// c
@@ -1344,7 +1396,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
     // Set initial guess to xOld
     for(int p = 0; p < numPoints; p++){
       for(int d = 0; d < spaceDim; d++){
-        xOld(p, d) = cellCenter(d);
+        xOld(p, d) = initGuess(p, d);
       }// d
     }// p
   }
@@ -1355,11 +1407,11 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                refPoin
   for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter)	{	
     
     // Jacobians at the old iterates and their inverses. 
-    setJacobian(jacobian, xOld, nodes, cellTopo, whichCell);
+    setJacobian(jacobian, xOld, cellWorkset, cellTopo, whichCell);
     setJacobianInv(jacobInv, jacobian);
         
     // The Newton step.
-    mapToPhysicalFrame( xTem, xOld, nodes, cellTopo, whichCell );      // xTem <- F(xOld)
+    mapToPhysicalFrame( xTem, xOld, cellWorkset, cellTopo, whichCell );      // xTem <- F(xOld)
     RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
     RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
     RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
@@ -2016,12 +2068,12 @@ template<class Scalar>
 template<class ArrayInt, class ArrayPoint, class ArrayScalar>
 void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    inCell,
                                                 const ArrayPoint &            points,
-                                                const ArrayScalar &           nodes,
+                                                const ArrayScalar &           cellWorkset,
                                                 const shards::CellTopology &  cell,
                                                 const int &                   whichCell, 
                                                 const double &                threshold)
 {
-  INTREPID_VALIDATE( validateArguments_checkPointwiseInclusion(inCell, points, nodes, whichCell, cell) );
+  INTREPID_VALIDATE( validateArguments_checkPointwiseInclusion(inCell, points, cellWorkset, whichCell, cell) );
   
   // For cell topologies with reference cells this test maps the points back to the reference cell
   // and uses the method for reference cells
@@ -2041,12 +2093,12 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    in
         
         if(points.rank() == 2){
           refPoints.resize(points.dimension(0), points.dimension(1) );
-          mapToReferenceFrame(refPoints, points, nodes, cell, whichCell);
+          mapToReferenceFrame(refPoints, points, cellWorkset, cell, whichCell);
           checkPointwiseInclusion(inCell, refPoints, cell, threshold );
         }
         else if(points.rank() == 3){
           refPoints.resize(points.dimension(0), points.dimension(1), points.dimension(2) );
-          mapToReferenceFrame(refPoints, points, nodes, cell, whichCell);
+          mapToReferenceFrame(refPoints, points, cellWorkset, cell, whichCell);
           checkPointwiseInclusion(inCell, refPoints, cell, threshold );          
         }
         break;
@@ -2069,25 +2121,25 @@ template<class Scalar>
 template<class ArrayScalar> 
 void CellTools<Scalar>::validateArguments_setJacobian(const ArrayScalar &          jacobian,
                                                       const ArrayScalar &          points,
-                                                      const ArrayScalar &          nodes,
+                                                      const ArrayScalar &          cellWorkset,
                                                       const int &                  whichCell,
                                                       const shards::CellTopology & cellTopo){
   
-  // Validate nodes array
-  TEST_FOR_EXCEPTION( (nodes.rank() != 3), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 3 required for nodes array");
+  // Validate cellWorkset array
+  TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 3 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(0) <= 0), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of cells) >= 1 required for nodes array");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(1) != (int)cellTopo.getSubcellCount(0) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 1 (number of nodes) of nodes array does not match cell topology");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(1) != (int)cellTopo.getSubcellCount(0) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(2) != (int)cellTopo.getDimension() ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of nodes array  does not match cell dimension");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(2) != (int)cellTopo.getDimension() ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
     
   // validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < nodes.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): whichCell = -1 or a valid cell ordinal is required.");
   
   
@@ -2105,8 +2157,8 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayScalar &       
       TEST_FOR_EXCEPTION( (jacobian.rank() != 4), std::invalid_argument, 
                           ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): rank = 4 required for jacobian array");
       
-      TEST_FOR_EXCEPTION( (jacobian.dimension(0) != nodes.dimension(0)), std::invalid_argument,
-                          ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of jacobian array must equal dim 0 of nodes array");
+      TEST_FOR_EXCEPTION( (jacobian.dimension(0) != cellWorkset.dimension(0)), std::invalid_argument,
+                          ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of jacobian array must equal dim 0 of cellWorkset array");
       
       TEST_FOR_EXCEPTION( (jacobian.dimension(1) != points.dimension(0)), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 1 (number of points) of jacobian array must equal dim 0 of points array");
@@ -2141,8 +2193,8 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayScalar &       
   // Point array is rank-3 (C,P,D): requires whichCell = -1 and rank-4 (C,P,D,D) jacobians
   else if(points.rank() ==3){
     std::string errmsg  = ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian):";
-    TEST_FOR_EXCEPTION( (points.dimension(0) != nodes.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of points array must equal dim 0 of nodes array");
+    TEST_FOR_EXCEPTION( (points.dimension(0) != cellWorkset.dimension(0) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of points array must equal dim 0 of cellWorkset array");
 
     TEST_FOR_EXCEPTION( (points.dimension(1) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 1 (number of points) >= 1 required for points array ");
@@ -2197,18 +2249,12 @@ void CellTools<Scalar>::validateArguments_setJacobianInv(const ArrayScalar &  ja
   TEST_FOR_EXCEPTION( !( (0 < jacobian.dimension(jacobRank - 1) ) && (jacobian.dimension(jacobRank - 1) < 4) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianInv): dim(rank-1) and dim(rank-2) (spatial dimensions) must be between 1 and 3. ");
   
-  // Validate output jacobianInv array
-  // Global function returns -1 if ranks don't match, the ordinal of first non-matching dimension + 1, or 0 if all dimensions match
-  int result = compareArrays(jacobian, jacobianInv);
+  // Validate output jacobianInv array: must have the same rank and dimensions as the input array.
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianInv):";
+
+  TEST_FOR_EXCEPTION( !(requireRankMatch(errmsg, jacobianInv, jacobian) ), std::invalid_argument, errmsg);
   
-  TEST_FOR_EXCEPTION( result == -1, std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianInv): output jacobianInv and input jacobian arrays must have the same rank. ");
-  
-  if(result > 0) {
-    std::ostringstream msg ;
-    msg << ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobianInv): non-matching dimension " << result - 1 << " in jacobian and jacobianInv.";
-    TEST_FOR_EXCEPTION( true, std::invalid_argument, msg);
-  }  
+  TEST_FOR_EXCEPTION( !(requireDimensionMatch(errmsg, jacobianInv, jacobian) ), std::invalid_argument, errmsg);
 }
 
 
@@ -2260,28 +2306,28 @@ template<class Scalar>
 template<class ArrayScalar>
 void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayScalar &           physPoints,
                                                              const ArrayScalar &           refPoints,
-                                                             const ArrayScalar &           nodes,
+                                                             const ArrayScalar &           cellWorkset,
                                                              const shards::CellTopology &  cellTopo,
                                                              const int&                    whichCell)
 {
   std::string errmsg = ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame):";
   
-  // Validate nodes array
-  TEST_FOR_EXCEPTION( (nodes.rank() != 3), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for nodes array");
+  // Validate cellWorkset array
+  TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(0) <= 0), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) >= 1 required for nodes array");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(1) != (int)cellTopo.getSubcellCount(0) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of nodes) of nodes array does not match cell topology");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(1) != (int)cellTopo.getSubcellCount(0) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(2) != (int)cellTopo.getDimension() ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 2 (spatial dimension) of nodes array  does not match cell dimension");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(2) != (int)cellTopo.getDimension() ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
   
     
   // validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < nodes.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): whichCell = -1 or a valid cell ordinal is required.");
   
   // Validate refPoints array: can be rank-2 (P,D) or rank-3 (C,P,D) array
@@ -2298,8 +2344,8 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayScalar &
       TEST_FOR_EXCEPTION( ( (physPoints.rank() != 3) && (whichCell == -1) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): rank = 3 required for physPoints array for the default whichCell value");
       
-      TEST_FOR_EXCEPTION( (physPoints.dimension(0) != nodes.dimension(0)), std::invalid_argument,
-                          ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) of physPoints array must equal dim 0 of nodes array");
+      TEST_FOR_EXCEPTION( (physPoints.dimension(0) != cellWorkset.dimension(0)), std::invalid_argument,
+                          ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) of physPoints array must equal dim 0 of cellWorkset array");
       
       TEST_FOR_EXCEPTION( (physPoints.dimension(1) != refPoints.dimension(0)), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of points) of physPoints array must equal dim 0 of refPoints array"); 
@@ -2323,8 +2369,8 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayScalar &
   else if(refPoints.rank() == 3) {
     
     // 1. validate refPoints dimensions and rank
-    TEST_FOR_EXCEPTION( (refPoints.dimension(0) != nodes.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) of refPoints and nodes arraya are required to match ");
+    TEST_FOR_EXCEPTION( (refPoints.dimension(0) != cellWorkset.dimension(0) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 0 (number of cells) of refPoints and cellWorkset arraya are required to match ");
 
     TEST_FOR_EXCEPTION( (refPoints.dimension(1) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): dim 1 (number of points) >= 1 required for refPoints array ");
@@ -2353,28 +2399,28 @@ template<class Scalar>
 template<class ArrayScalar>
 void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayScalar &           refPoints,
                                                               const ArrayScalar &           physPoints,
-                                                              const ArrayScalar &           nodes,
+                                                              const ArrayScalar &           cellWorkset,
                                                               const shards::CellTopology &  cellTopo,
                                                               const int&                    whichCell)
 {
   std::string errmsg  = ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame):";
   std::string errmsg1 = ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame):";
   
-  // Validate nodes array
-  TEST_FOR_EXCEPTION( (nodes.rank() != 3), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): rank = 3 required for nodes array");
+  // Validate cellWorkset array
+  TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): rank = 3 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(0) <= 0), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 0 (number of cells) >= 1 required for nodes array");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(1) != (int)cellTopo.getSubcellCount(0) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 1 (number of nodes) of nodes array does not match cell topology");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(1) != (int)cellTopo.getSubcellCount(0) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(2) != (int)cellTopo.getDimension() ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 2 (spatial dimension) of nodes array  does not match cell dimension");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(2) != (int)cellTopo.getDimension() ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
     
   // Validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < nodes.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): whichCell = -1 or a valid cell ordinal is required.");
   
   // Admissible ranks and dimensions of refPoints and physPoints depend on whichCell value:
@@ -2397,29 +2443,47 @@ void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayScalar 
 
 
 template<class Scalar>
+template<class ArrayType1, class ArrayType2>
+void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayType1 &            refPoints,
+                                                              const ArrayType2 &            initGuess,
+                                                              const ArrayType1 &            physPoints,
+                                                              const ArrayType1 &            cellWorkset,
+                                                              const shards::CellTopology &  cellTopo,
+                                                              const int&                    whichCell)
+{
+  // Call the method that validates arguments with the default initial guess selection
+  validateArguments_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo, whichCell);
+  
+  // Then check initGuess: its rank and dimensions must match those of physPoints.
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame):";
+  TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, initGuess, physPoints), std::invalid_argument, errmsg);  
+}
+
+
+template<class Scalar>
 template<class ArrayInt, class ArrayPoint, class ArrayScalar>
 void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayInt &                    inCell,
                                                                   const ArrayPoint &            physPoints,
-                                                                  const ArrayScalar &           nodes,
+                                                                  const ArrayScalar &           cellWorkset,
                                                                   const int &                   whichCell,
                                                                   const shards::CellTopology &  cell)
 {
-  // Validate nodes array
-  TEST_FOR_EXCEPTION( (nodes.rank() != 3), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): rank = 3 required for nodes array");
+  // Validate cellWorkset array
+  TEST_FOR_EXCEPTION( (cellWorkset.rank() != 3), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): rank = 3 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(0) <= 0), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells) >= 1 required for nodes array");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(0) <= 0), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells) >= 1 required for cellWorkset array");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(1) != (int)cell.getSubcellCount(0) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of nodes) of nodes array does not match cell topology");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(1) != (int)cell.getSubcellCount(0) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of cell nodes) of cellWorkset array does not match cell topology");
   
-  TEST_FOR_EXCEPTION( (nodes.dimension(2) != (int)cell.getDimension() ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 2 (spatial dimension) of nodes array  does not match cell dimension");
+  TEST_FOR_EXCEPTION( (cellWorkset.dimension(2) != (int)cell.getDimension() ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
   
   
   // Validate whichCell It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < nodes.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 or a valid cell ordinal is required.");
   
   // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)
@@ -2442,8 +2506,8 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayInt &    
   // If rank-3: admissible inCell is rank-2 (C,P); admissible whichCell = -1.
   else if (physPoints.rank() == 3){
     
-    TEST_FOR_EXCEPTION( (physPoints.dimension(0) != nodes.dimension(0) ), std::invalid_argument,
-                        ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells)  of physPoints array must equal dim 0 of nodes array ");
+    TEST_FOR_EXCEPTION( (physPoints.dimension(0) != cellWorkset.dimension(0) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells)  of physPoints array must equal dim 0 of cellWorkset array ");
 
     TEST_FOR_EXCEPTION( (physPoints.dimension(1) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 1 (number of points) >= 1 required for physPoints array ");
@@ -2517,14 +2581,14 @@ void CellTools<Scalar>::printSubcellVertices(const int subcellDim,
 
 template<class Scalar>
 template<class ArrayTypeIn>
-void CellTools<Scalar>::printWorksetSubcell(const ArrayTypeIn&            worksetNodes,
+void CellTools<Scalar>::printWorksetSubcell(const ArrayTypeIn&            cellWorkset,
                                             const shards::CellTopology&   parentCell,
                                             const int&                    pCellOrd,
                                             const int&                    subcellDim,
                                             const int&                    subcellOrd,
                                             const int&                    fieldWidth){
   
-  // Get the ordinals, relative to reference cell, of subcell nodes
+  // Get the ordinals, relative to reference cell, of subcell cellWorkset
   int subcNodeCount = parentCell.getNodeCount(subcellDim, subcellOrd);
   int pCellDim      = parentCell.getDimension();
   std::vector<int> subcNodeOrdinals(subcNodeCount);
@@ -2533,7 +2597,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayTypeIn&            workse
     subcNodeOrdinals[i] = parentCell.getNodeMap(subcellDim, subcellOrd, i);
   }
   
-  // Loop over parent cells and print subcell nodes
+  // Loop over parent cells and print subcell cellWorkset
   
   std::cout 
     << " Subcell " << subcellOrd << " on parent cell " << pCellOrd << " is " 
@@ -2544,7 +2608,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayTypeIn&            workse
     // print Cartesian coordinates of the node
     for(int dim = 0; dim < pCellDim; dim++){
       std::cout
-      << std::setw(fieldWidth) << std::right << worksetNodes(pCellOrd, subcNodeOrdinals[i], dim); 
+      << std::setw(fieldWidth) << std::right << cellWorkset(pCellOrd, subcNodeOrdinals[i], dim); 
       if(dim < pCellDim - 1){ std::cout << ","; }
     }
     std::cout << "}";
