@@ -441,11 +441,7 @@ int main(int argc, char *argv[]) {
           // transform values of basis functions
           FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_interp_points,
                                                           value_of_basis_at_interp_points);
-          for (int bf=0; bf<numFields; bf++) {
-            for (int pt=0; pt<numInterpPoints; pt++) {
-              interpolant(0, pt) += rhs_and_soln_vector(0, bf) * transformed_value_of_basis_at_interp_points(0, bf, pt);
-            }
-          }
+          FunctionSpaceTools::evaluate<double>(interpolant, rhs_and_soln_vector, transformed_value_of_basis_at_interp_points);
           ////////////////////////
 
           /******************* END COMPUTATION ***********************/

@@ -314,11 +314,46 @@ class FunctionSpaceTools {
                            const ECompEngine         compEngine,
                            const bool                sumInto = false);
 
+  /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
+               (C,P) used for the for computation of cell integrals, by multiplying the provided
+               cell Jacobian determinants \a <b>inDet</b> with dimensions (C,P) with the
+               provided integration weights \a <b>inWeights</b> with dimensions (C,P).
+
+               Math here ...
+
+        \code
+          C - num. integration domains                     dim0 in all containers
+          P - num. integration points                      dim1 in all containers
+        \endcode
+
+        \param  outVals     [out] - Output array with weighted cell measures.
+        \param  inDet        [in] - Input array containing determinants of cell Jacobians.
+        \param  inWeights    [in] - Input integration weights.
+  */
   template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
   static void computeCellMeasure(ArrayOut             & outVals,
                                  const ArrayDet       & inDet,
                                  const ArrayWeights   & inWeights);
 
+  /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
+               (C,P) used for the for computation of face integrals, based on the provided
+               cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
+               provided integration weights \a <b>inWeights</b> with dimensions (C,P). 
+
+               Math here ...
+
+        \code
+          C - num. integration domains                     dim0 in all input containers
+          P - num. integration points                      dim1 in all input containers
+          D - spatial dimension                            dim2 and dim3 in Jacobian container
+        \endcode
+
+        \param  outVals     [out] - Output array with weighted face measures.
+        \param  inJac        [in] - Input array containing cell Jacobians.
+        \param  inWeights    [in] - Input integration weights.
+        \param  whichFace    [in] - Index of the face subcell relative to the parent cell; defines the domain of integration.
+        \param  parentCell   [in] - Parent cell topology.
+  */
   template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
   static void computeFaceMeasure(ArrayOut                   & outVals,
                                  const ArrayJac             & inJac,
@@ -326,6 +361,25 @@ class FunctionSpaceTools {
                                  const int                    whichFace,
                                  const shards::CellTopology & parentCell);
 
+  /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
+               (C,P) used for the for computation of edge integrals, based on the provided
+               cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
+               provided integration weights \a <b>inWeights</b> with dimensions (C,P). 
+
+               Math here ...
+
+        \code
+          C - num. integration domains                     dim0 in all input containers
+          P - num. integration points                      dim1 in all input containers
+          D - spatial dimension                            dim2 and dim3 in Jacobian container
+        \endcode
+
+        \param  outVals     [out] - Output array with weighted edge measures.
+        \param  inJac        [in] - Input array containing cell Jacobians.
+        \param  inWeights    [in] - Input integration weights.
+        \param  whichEdge    [in] - Index of the edge subcell relative to the parent cell; defines the domain of integration.
+        \param  parentCell   [in] - Parent cell topology.
+  */
   template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
   static void computeEdgeMeasure(ArrayOut                   & outVals,
                                  const ArrayJac             & inJac,
@@ -333,6 +387,14 @@ class FunctionSpaceTools {
                                  const int                    whichEdge,
                                  const shards::CellTopology & parentCell);
 
+  /** \brief   Multiplies fields \a <b>inVals</b> by weighted measures \a <b>inMeasure</b> and
+               returns the field array \a <b>outVals</b>; this is a simple redirection to the call
+               FunctionSpaceTools::scalarMultiplyDataField.
+
+        \param  outVals     [out] - Output array with scaled field values.
+        \param  inMeasure    [in] - Input array containing weighted measures.
+        \param  inVals       [in] - Input fields.
+  */
   template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
   static void multiplyMeasure(ArrayTypeOut             & outVals,
                               const ArrayTypeMeasure   & inMeasure,
@@ -727,11 +789,47 @@ class FunctionSpaceTools {
         D1   - spatial dimension
         D2   - spatial dimension
       \endcode
+
+      \param  inoutFunction [in/out] - Input / output function array.
+      \param  fieldSigns        [in] - Right field signs.
   */
   template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
   static void applyFieldSigns(ArrayTypeInOut        & inoutFunction,
                               const ArrayTypeSign   & fieldSigns);
 
+
+  /** \brief Computes point values \a <b>outPointVals</b> of a discrete function
+             specified by the basis \a <b>inFields</b> and coefficients
+             \a <b>inCoeffs</b>.
+
+             The array \a <b>inFields</b> with dimensions (C,F,P), (C,F,P,D1),
+             or (C,F,P,D1,D2) represents the signed, transformed field (basis) values at
+             points in REFERENCE frame; the \a <b>outPointVals</b> array with
+             dimensions (C,P), (C,P,D1), or (C,P,D1,D2), respectively, represents
+             values of a discrete function at points in PHYSICAL frame.
+             The array \a <b>inCoeffs</b> dimensioned (C,F) supplies the coefficients
+             for the field (basis) array.
+
+             Math here ...
+
+             Code example here ...
+
+      \code
+        C    - num. integration domains
+        F    - num. fields
+        P    - num. integration points
+        D1   - spatial dimension
+        D2   - spatial dimension
+      \endcode
+
+      \param  outPointVals [out] - Output point values of a discrete function.
+      \param  inCoeffs      [in] - Coefficients associated with the fields (basis) array.
+      \param  inFields      [in] - Field (basis) values.
+  */
+  template<class Scalar, class ArrayOutPointVals, class ArrayInCoeffs, class ArrayInFields>
+  static void evaluate(ArrayOutPointVals     & outPointVals,
+                       const ArrayInCoeffs   & inCoeffs,
+                       const ArrayInFields   & inFields);
   
 };  // end FunctionSpaceTools
 
