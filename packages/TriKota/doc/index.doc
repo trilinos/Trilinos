@@ -1,4 +1,4 @@
-/*! \mainpage TriKota:  A Wrapper for the Dakota Optimization and UQ Toolkit
+/*! \mainpage TriKota:  A Trilinos Wrapper for Dakota 
 \htmlonly
 \endhtmlonly
 
@@ -12,21 +12,30 @@
 </ul>
 
 \section trikota_intro Introduction 
-TriKota is a package that wraps the library-mode use of
-the Dakota Optimization and UQ Toolkit. 
-Note that Dakota has another, more common black-box mode where
-it is run as an executable. The main purposes of TriKota are to:
 
+TriKota is a package that wraps the library-mode use of
+Dakota, which is Sandia's Toolkit for
+Large-Scale Engineering Optimization and Uncertainty Analysis.
+For information on Dakota's capabilities, see
+ http://www.cs.sandia.gov/dakota .
+Note that TriKota only wraps the library-mode usage of Dakota,
+and not the more common black-box mode where
+Dakota is run as an executable.
+
+ The main purposes of TriKota are to:
 <ul>
-<li> Simplify the build/install of Dakota libraries for Trilinos
-users so that they can be accessed as simply another package.
-<li> Provide a simple and maintained use case for the
-library-mode usage of Dakota.
+<li> Simplify the build/install of Dakota libraries for 
+Trilinos users so that Dakota capabilities can be accessed 
+as simply as those in native Trilinos packages.
+<li> Provide a simple and continuously maintained example
+for the library-mode usage of Dakota from a Trilinos code.
 <li> Supply adapters between the Trilinos and Dakota
-interfaces, so users can easily select between using
+interfaces, so that users can easily select between using
 Dakota or Trilinos analysis algorithms.
 </ul>
-
+It is hoped that these steps will lower the software 
+hurdles between the Trilinos and Dakota frameworks for 
+both developers and users.
 
 \section trikota_build How to Build TriKota, including Dakota
 
@@ -42,30 +51,33 @@ To verify the paths, make sure that the following file exists:
 trilinos-dir/packages/TriKota/Dakota/src/DakotaOptimizer.H
 
 After that, just enable TriKota in the cmake build system for
-Trilinos, and cross your fingers.
+Trilinos and do the usual "./cmake-script; make; make install;".
 
 \section trikota_adapters Using TriKota
 
 TriKota consists of two classes: TriKota::Driver and TriKota::DirectApplicInterface,
 and a test problem.
 
-The TriKota::Driver class wraps a use case for Dakota into a two simple steps.
+The TriKota::Driver class wraps the library-mode usage of Dakota into two simple steps.
 The constructor parses the dakota input file and initializes the Dakota
- (e.g. strategy, model, Problem). The run method requires an object of 
+(e.g. strategy, model, problem). The run method takes as input an object of 
 Dakota's DirectApplicInterface class, and performs the requested analysis.
 
 The TriKota::DirectApplicInterface class is an adapter between the
 Trilinos and Dakota interfaces to codes. This class inherits from 
 Dakota's DirectApplicInterface class so it can be passed to the
 TriKota::Driver::run method. It is constructed with an 
-EpetrExt::ModelEvaluator, which is the Trilinos interface to codes.
+EpetrExt::ModelEvaluator, which is a standard Trilinos 
+interface to codes. Note: the initial guess for the problem parameters
+are taken from the ModelEvaluator and overwrite any initial
+guess from the dakota input file.
 
 The test problem Simple_Main.cpp shows the use case for taking a
 problem that presents itself as a EpetrExt::ModelEvaluator, and
 uses Dakota to solve an optimiztion problem. This example allows
 for Dakota to pick the MPI_Comm during the TriKota::Driver constructor,
 and the application (presenting itself as an EpetrExt::ModelEvaluator)
-is constructed using this communicator. 
+is constructed using this communicator.
 
 \section trikota_help TriKota Contacts
 

@@ -12,8 +12,10 @@ Simple_ModelEval::Simple_ModelEval(const MPI_Comm appComm)
 
 #ifdef HAVE_MPI
     Comm = Teuchos::rcp(new Epetra_MpiComm(appComm));
+cout << "XXX MPI" << endl;
 #else
     Comm = Teuchos::rcp(new Epetra_SerialComm);
+cout << "XXX NO MPI" << endl;
 #endif
 
     //set up responses
