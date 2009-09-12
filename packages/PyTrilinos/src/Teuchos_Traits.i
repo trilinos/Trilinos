@@ -45,10 +45,12 @@ template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned short>
   : public DirectSerializationTraits<Ordinal,unsigned short>
 {};
+#ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_INT
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned int>
   : public DirectSerializationTraits<Ordinal,unsigned int>
 {};
+#endif
 #ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_LONG
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned long>
@@ -132,6 +134,7 @@ struct ScalarTraits<unsigned short>
 };
 
 // Type unsigned int
+#ifdef TEUCHOS_SCALARTRAITS_UNSIGNED_INT
 template<>
 struct ScalarTraits<unsigned int>
 {
@@ -158,6 +161,7 @@ struct ScalarTraits<unsigned int>
   static inline unsigned int pow(unsigned int x, unsigned int y)
   { return (unsigned int) std::pow((double)x,(double)y); }
 };
+#endif
 
 // Type unsigned long, already taken care of in Teuchos_ScalarTraits.hpp
 #ifdef TEUCHOS_SCALARTRAITS_UNSIGNED_LONG
