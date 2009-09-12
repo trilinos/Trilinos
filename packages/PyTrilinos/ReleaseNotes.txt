@@ -1,3 +1,35 @@
+Release Notes for PyTrilinos 4.2 (Trilinos 10.0)
+================================================
+
+General notes for PyTrilinos:
+
+PyTrilinos.Teuchos notes:
+
+PyTrilinos.Epetra notes:
+
+PyTrilinos.TriUtils notes:
+
+PyTrilinos.EpetraExt notes:
+
+PyTrilinos.Pliris notes:
+
+PyTrilinos.AztecOO notes:
+
+PyTrilinos.Galeri notes:
+
+PyTrilinos.Amesos notes:
+
+PyTrilinos.IFPACK notes:
+
+PyTrilinos.Komplex notes:
+
+PyTrilinos.Anasazi notes:
+
+PyTrilinos.ML notes:
+
+PyTrilinos.NOX notes:
+
+
 Release Notes for PyTrilinos 4.1 (Trilinos 9.0)
 ===============================================
 
