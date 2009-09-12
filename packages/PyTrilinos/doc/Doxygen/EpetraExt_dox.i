@@ -16,7 +16,8 @@ Constructor ";
 
 %feature("docstring")  EpetraExt::BlockAdjacencyGraph::compute "Teuchos::RCP< Epetra_CrsGraph >
 EpetraExt::BlockAdjacencyGraph::compute(Epetra_CrsGraph &B, int nbrr,
-std::vector< int > &r, std::vector< double > &weights)
+std::vector< int > &r, std::vector< double > &weights, bool
+verbose=false)
 
 Constructs an adjacency graph representing the block connectivity of
 the input graph, where nbrr is the number of block rows in B and r
@@ -2290,6 +2291,31 @@ floating point format.
 (See the <a href=\"http://www.mathworks.com\">Matlab</a> home page for
 details.) ";
 
+%feature("docstring")  EpetraExt::HypreFileToCrsMatrix "int
+EpetraExt::HypreFileToCrsMatrix(const char *filename, const
+Epetra_Comm &comm, Epetra_CrsMatrix *&A)
+
+Constructs an Epetra_CrsMatrix object from a Hypre Matrix Print
+command, the row map is specified.
+
+Reads an Epetra_CrsMatrix object from a Hypre Matrix Printout, the
+matrix should be square.
+
+Parameters:
+-----------
+
+filename:  (In) A filename not including the processor id extension,
+including path if desired.
+
+comm:  (In) An Epetra_Comm object describing the communication among
+processors.
+
+A:  (Out) An Epetra_CrsMatrix object constructed from file contents.
+
+WARNING:  User must delete!!.
+
+Returns 0 if no error, -1 if any problems with file system. ";
+
 %feature("docstring")  EpetraExt::mm_read_unsymmetric_sparse "int
 EpetraExt::mm_read_unsymmetric_sparse(const char *fname, int *M_, int
 *N_, int *nz_, double **val_, int **I_, int **J_) ";
@@ -2938,6 +2964,9 @@ graph.
 
 David Day, Heidi Thornquist ";
 
+%feature("docstring")  EpetraExt::ceil31log2 "int
+EpetraExt::ceil31log2(int n) ";
+
 
 // File: namespaceTeuchos.xml
 
@@ -3155,6 +3184,9 @@ David Day, Heidi Thornquist ";
 // File: EpetraExt__SymmRCM__CrsGraph_8h.xml
 
 
+// File: EpetraExt__TimedEpetraOperator_8cpp.xml
+
+
 // File: EpetraExt__Transform_8h.xml
 
 
@@ -3227,17 +3259,17 @@ std::string &delimiters=\" \") ";
 // File: EpetraExt__XMLWriter_8h.xml
 
 
-// File: dir_5160b780ca5eeed2130957ad6c24b8fe.xml
+// File: dir_d1923ac50019c5d7b72cec5608d91d28.xml
 
 
-// File: dir_b0a614e57f8b15865ce8ecc71bf75a9b.xml
+// File: dir_e24d42781784f4d1209ac569b0e4a792.xml
 
 
-// File: dir_47d8c79f7cdbd834e539a30c847c8ef7.xml
+// File: dir_abc7902dd096ce627c1e2268a3c45e99.xml
 
 
-// File: dir_145b3fcc995de1835eb81e0108c7b537.xml
+// File: dir_ad66cadac939accebd41c47ea32b9a61.xml
 
 
-// File: dir_0c80dd837b56e19c0fe33bd14868bace.xml
+// File: dir_c6750b3786dc1d73be719dddd8167e44.xml
 

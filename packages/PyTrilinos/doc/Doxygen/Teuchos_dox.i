@@ -767,8 +767,16 @@ C++ includes: Teuchos_ScalarTraits.hpp ";
 %feature("docstring") Teuchos::ScalarTraits< long int > " ";
 
 
+// File: structTeuchos_1_1ScalarTraits_3_01long_01unsigned_01int_01_4.xml
+%feature("docstring") Teuchos::ScalarTraits< long unsigned int > " ";
+
+
 // File: structTeuchos_1_1ScalarTraits_3_01short_01int_01_4.xml
 %feature("docstring") Teuchos::ScalarTraits< short int > " ";
+
+
+// File: structTeuchos_1_1ScalarTraits_3_01unsigned_01int_01_4.xml
+%feature("docstring") Teuchos::ScalarTraits< unsigned int > " ";
 
 
 // File: classTeuchos_1_1StringInputSource.xml
@@ -1498,10 +1506,10 @@ XML version of the parameter list specification. ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_daa2443682d0f547b84c7fa838636502.xml
+// File: dir_f1995afbbd1de7c89d616ba16eb52204.xml
 
 
-// File: dir_2c9d975476051ec1d3cf6e8ee401cf57.xml
+// File: dir_e08f9c3377f10c029145e2c0ed3aaa5a.xml
 
 
 // File: ParameterList_2cxx__main_8cpp-example.xml

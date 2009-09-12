@@ -3578,6 +3578,11 @@ Galeri::Maps::Interlaced(Epetra_Comm &Comm, int NumGlobalElements) ";
 %feature("docstring")  Galeri::Maps::Linear "Epetra_Map*
 Galeri::Maps::Linear(Epetra_Comm &Comm, int NumGlobalElements) ";
 
+%feature("docstring")  Galeri::Maps::NodeCartesian2D "Epetra_Map*
+Galeri::Maps::NodeCartesian2D(const Epetra_Comm &Comm, const
+Epetra_Comm &NodeComm, const int MyNodeID, const int nx, const int ny,
+const int ndx, const int ndy, const int px, const int py) ";
+
 %feature("docstring")  Galeri::Maps::Random "Epetra_Map*
 Galeri::Maps::Random(const Epetra_Comm &Comm, const int n) ";
 
@@ -3801,6 +3806,9 @@ Galeri::Matrices::Vander(const Epetra_Map *Map, const double value) ";
 // File: Galeri__Minij_8h.xml
 
 
+// File: Galeri__NodeCartesian2D_8h.xml
+
+
 // File: Galeri__Ones_8h.xml
 
 
@@ -3892,17 +3900,17 @@ Galeri::Matrices::Vander(const Epetra_Map *Map, const double value) ";
 // File: ml_MLAPI.xml
 
 
-// File: dir_dad9536a530087834c53c8a1fc908af2.xml
+// File: dir_01dc0644ad4a745f78c27b0d0d6cc12e.xml
 
 
-// File: dir_3518104126ba458117d40c42e44a711b.xml
+// File: dir_07f2aea23232a271f76b871b3e134b1b.xml
 
 
-// File: dir_69fde23b69dedf947fc59bdddc323a56.xml
+// File: dir_0880843289d338d9270dda919c0978c2.xml
 
 
-// File: dir_04da62f73c35c0d596b64c2d89077398.xml
+// File: dir_19b6ee04c1080127ac85c37f3524e991.xml
 
 
-// File: dir_b5c576487c45df520204c19b7627f3f6.xml
+// File: dir_e879c205722a48f38660aa50581b7e77.xml
 

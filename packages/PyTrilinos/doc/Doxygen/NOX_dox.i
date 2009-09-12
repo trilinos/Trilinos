@@ -169,7 +169,15 @@ solver. ";
 NOX::Direction::Broyden::compute(NOX::Abstract::Vector &dir,
 NOX::Abstract::Group &grp, const NOX::Solver::LineSearchBased &solver)
 
-Add this direction to the memory ";
+Same as compute( NOX::Abstract::Vector&, NOX::Abstract::Group&, const
+NOX::Solver::Generic&).
+
+Enables direct support for line search based solvers for the purpose
+of efficiency since the LineSearchBased object has a getStep()
+function that some directions require.
+
+If it is not redefined in the derived class, it will just call the
+compute with the NOX::Solver::Generic argument. ";
 
 
 // File: classNOX_1_1Direction_1_1Broyden_1_1BroydenMemory.xml
@@ -362,6 +370,12 @@ the Broyden matrix, e.g. a block diagonal matrix.
 
 C++ includes: NOX_Epetra_BroydenOperator.H ";
 
+/*  IsValid flags  */
+
+/* True if objects are current with respect to the currect stepVec.
+
+*/
+
 /*  "Is" functions  */
 
 /* Checks to see if various objects have been computed. Returns true
@@ -378,12 +392,6 @@ BroydenOperator::isYield() const ";
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::isBroyden "bool
 BroydenOperator::isBroyden() const ";
-
-/*  IsValid flags  */
-
-/* True if objects are current with respect to the currect stepVec.
-
-*/
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::BroydenOperator "BroydenOperator::BroydenOperator(Teuchos::ParameterList &nlParams,
 const Teuchos::RCP< NOX::Utils > &utils, Epetra_Vector &solnVec, const
@@ -743,6 +751,15 @@ inner iterations $ k $ performed by this object.
 
 C++ includes: NOX_LineSearch_Utils_Counters.H ";
 
+/*  Common Line Search Data Members  */
+
+/* All line searches in general should report the following
+information. We save a pointer to the parameter list associated with
+the line search and set an output sublist with each of the following
+parameters.
+
+*/
+
 /*  Increment Methods  */
 
 %feature("docstring")
@@ -807,15 +824,6 @@ NOX::LineSearch::Utils::Counters::getNumIterations() const
 
 Return the counter for the total number of line search inner
 iterations. ";
-
-/*  Common Line Search Data Members  */
-
-/* All line searches in general should report the following
-information. We save a pointer to the parameter list associated with
-the line search and set an output sublist with each of the following
-parameters.
-
-*/
 
 %feature("docstring")  NOX::LineSearch::Utils::Counters::Counters "NOX::LineSearch::Utils::Counters::Counters()
 
@@ -999,7 +1007,9 @@ Without storing this inside the direction object, there is no
 guarantee that the second parameter params will still exist. It can be
 deleted by the top level RCP.
 
-params:  Sublist with direction construction parameters. ";
+params:  Sublist with direction construction parameters.
+
+Nonmember function to build a direction object. ";
 
 
 // File: classNOX_1_1LineSearch_1_1Factory.xml
@@ -1078,7 +1088,9 @@ Without storing this inside the line searchobject, there is no
 guarantee that the second parameter params will still exist. It can be
 deleted by the top level RCP.
 
-params:  Sublist with line search construction parameters. ";
+params:  Sublist with line search construction parameters.
+
+Nonmember function to build a line search object. ";
 
 
 // File: classNOX_1_1Solver_1_1Factory.xml
@@ -1761,7 +1773,9 @@ computation was successful. ";
 NOX::Epetra::FiniteDifferenceColoring::createColorContainers "void
 FiniteDifferenceColoring::createColorContainers()
 
-Create containers for using color and index maps in parallel coloring.
+Output the coloring map, index map and underlying matrix.
+
+Create containers for using color and index maps in parallel coloring
 ";
 
 
@@ -2550,6 +2564,13 @@ be treated for the operator=() and clone() functions.
 
 C++ includes: NOX_Multiphysics_Group.H ";
 
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
 %feature("docstring")  NOX::Multiphysics::Group::setX "void
 NOX::Multiphysics::Group::setX(const NOX::Abstract::Vector &y)
 
@@ -2652,13 +2673,6 @@ not supported.
 
 Any shared data should have its ownership transfered to this group
 from the source for a NOX::DeepCopy. ";
-
-/*  IsValid flags  */
-
-/* True if the current solution is up-to-date with respect to the
-currect xVector.
-
-*/
 
 %feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Teuchos::RCP< vector<
 Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const Teuchos::RCP<
@@ -3111,7 +3125,24 @@ solver.
 
 C++ includes: NOX_Epetra_Group.H ";
 
+/*  Vectors  */
+
+/* */
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
+/*  Shared Operators  */
+
+/* */
+
 /*  "Compute" functions.  */
+
+/* */
 
 %feature("docstring")  NOX::Epetra::Group::setX "void
 Group::setX(const NOX::Epetra::Vector &y) ";
@@ -3482,17 +3513,6 @@ Returns the 2-norm of the residual of the linear model used in the
 Newton solve computation, ||Js+f||. This does not account for line
 search adjustments to the step length! ";
 
-/*  Vectors  */
-
-/*  IsValid flags  */
-
-/* True if the current solution is up-to-date with respect to the
-currect xVector.
-
-*/
-
-/*  Shared Operators  */
-
 %feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
 Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
 NOX::Epetra::Vector &initialGuess)
@@ -3680,6 +3700,9 @@ NOX::Direction::Utils::InexactNewton::computeForcingTerm "double
 NOX::Direction::Utils::InexactNewton::computeForcingTerm(const
 NOX::Abstract::Group &soln, const NOX::Abstract::Group &oldSoln, int
 niter, const NOX::Solver::Generic &solver, double eta_last=-1.0)
+
+Called each iteration to reset the forcing term (ie, the convergence
+tolerance for the linear solver).
 
 if the user supplied eta_last then it will use this value for eta_km1
 instead of looking for it in the \"Linear Solver\" sublist. ";
@@ -4216,6 +4239,195 @@ Set preconditioner operator for solve.
 
 Note: This should only be called if hasPreconditioner() returns true.
 ";
+
+
+// File: classNOX_1_1Epetra_1_1LinearSystemAmesos.xml
+%feature("docstring") NOX::Epetra::LinearSystemAmesos "
+
+Concrete implementation of NOX::Epetra::LinearSolver for Amesos. This
+class has been written taking NOX::Epetra::LinearSystemAztecOO as an
+example.
+
+The NOX::Epetra::LinearSystemAmesos object provides a way to interface
+an Epetra based application code to the Amesos linear solver. This
+class handles construction the Amesos solver. All options are
+determined through parameter lists and the basic constructor.
+
+This class contains exclusively NOX::Epetra::LinearSolver virtual
+methods. Scaling of the linear system is currently not implemented.
+
+Constructing a Linear System
+
+At the time being there is only one constructor that can be used:
+among other things, parameter, the user must provide a NOX printing
+parameter sublist, a NOX linear solver sublist, and a Jacobian. This
+constructor is analogous to one of the NOX:Epetra: LinearSystemAmesos
+ones.
+
+The user can select an Amesos solver type via the parameter Amesos
+Solver in the NOX linear solver sublist. The default solver is
+\"Amesos_Klu\".
+
+C++ includes: NOX_Epetra_LinearSystem_Amesos.H ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::LinearSystemAmesos "NOX::Epetra::LinearSystemAmesos::LinearSystemAmesos(Teuchos::ParameterList
+&printingParams, Teuchos::ParameterList &linearSolverParams, const
+Teuchos::RCP< NOX::Epetra::Interface::Required > &iReq, const
+Teuchos::RCP< NOX::Epetra::Interface::Jacobian > &iJac, const
+Teuchos::RCP< Epetra_Operator > &J, const NOX::Epetra::Vector
+&cloneVector, const Teuchos::RCP< NOX::Epetra::Scaling >
+scalingObject=Teuchos::null)
+
+Constructor with a user supplied Jacobian Operator. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::~LinearSystemAmesos "NOX::Epetra::LinearSystemAmesos::~LinearSystemAmesos()
+
+Destructor. ";
+
+%feature("docstring")  NOX::Epetra::LinearSystemAmesos::applyJacobian
+"bool NOX::Epetra::LinearSystemAmesos::applyJacobian(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Applies Jacobian to the given input vector and puts the answer in the
+result.
+
+Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector. Returns true if
+successful. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::applyJacobianTranspose "bool
+NOX::Epetra::LinearSystemAmesos::applyJacobianTranspose(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Applies Jacobian-Transpose to the given input vector and puts the
+answer in the result.
+
+Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector. Returns true if
+successful. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::applyJacobianInverse "bool
+NOX::Epetra::LinearSystemAmesos::applyJacobianInverse(Teuchos::ParameterList
+&params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector
+&result)
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The parameter list contains the linear solver options. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::applyRightPreconditioning "bool
+NOX::Epetra::LinearSystemAmesos::applyRightPreconditioning(bool
+useTranspose, Teuchos::ParameterList &params, const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Returns false. ";
+
+%feature("docstring")  NOX::Epetra::LinearSystemAmesos::getScaling "Teuchos::RCP< NOX::Epetra::Scaling >
+NOX::Epetra::LinearSystemAmesos::getScaling()
+
+Returns supplied scaling object. ";
+
+%feature("docstring")  NOX::Epetra::LinearSystemAmesos::resetScaling "void NOX::Epetra::LinearSystemAmesos::resetScaling(const Teuchos::RCP<
+NOX::Epetra::Scaling > &s)
+
+Reset supplied scaling object. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::computeJacobian "bool
+NOX::Epetra::LinearSystemAmesos::computeJacobian(const
+NOX::Epetra::Vector &x)
+
+Evaluates the Jacobian based on the solution vector x. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::createPreconditioner "bool
+NOX::Epetra::LinearSystemAmesos::createPreconditioner(const
+NOX::Epetra::Vector &x, Teuchos::ParameterList &p, bool
+recomputeGraph) const
+
+Returns false. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::destroyPreconditioner "bool
+NOX::Epetra::LinearSystemAmesos::destroyPreconditioner() const
+
+Returns false. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::recomputePreconditioner "bool
+NOX::Epetra::LinearSystemAmesos::recomputePreconditioner(const
+NOX::Epetra::Vector &x, Teuchos::ParameterList &linearSolverParams)
+const
+
+Returns false. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::getPreconditionerPolicy "NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
+NOX::Epetra::LinearSystemAmesos::getPreconditionerPolicy(bool
+advanceReuseCounter=true)
+
+Returns PRPT_REUSE;. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::isPreconditionerConstructed "bool
+NOX::Epetra::LinearSystemAmesos::isPreconditionerConstructed() const
+
+Returns false. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::hasPreconditioner "bool
+NOX::Epetra::LinearSystemAmesos::hasPreconditioner() const
+
+Returns false. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::getJacobianOperator "Teuchos::RCP<
+const Epetra_Operator >
+NOX::Epetra::LinearSystemAmesos::getJacobianOperator() const
+
+Returns jacobian operator. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::getJacobianOperator "Teuchos::RCP<
+Epetra_Operator >
+NOX::Epetra::LinearSystemAmesos::getJacobianOperator()
+
+Returns jacobian operator. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator "Teuchos::RCP< const Epetra_Operator >
+NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator() const
+
+Returns Teuchos::null. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator "Teuchos::RCP< Epetra_Operator >
+NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator()
+
+Returns Teuchos::null. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::setJacobianOperatorForSolve "void
+NOX::Epetra::LinearSystemAmesos::setJacobianOperatorForSolve(const
+Teuchos::RCP< const Epetra_Operator > &solveJacOp)
+
+Resets the jacobian operator. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemAmesos::setPrecOperatorForSolve "void
+NOX::Epetra::LinearSystemAmesos::setPrecOperatorForSolve(const
+Teuchos::RCP< const Epetra_Operator > &solvePrecOp)
+
+Does nothing. ";
 
 
 // File: classNOX_1_1Epetra_1_1LinearSystemAztecOO.xml
@@ -4841,6 +5053,331 @@ Note: This should only be called if hasPreconditioner() returns true.
 ";
 
 
+// File: classNOX_1_1Epetra_1_1LinearSystemStratimikos.xml
+%feature("docstring") NOX::Epetra::LinearSystemStratimikos "
+
+Concrete implementation of NOX::Epetra::LinearSolver for Stratimikos.
+
+This solver provides the linear algebra services provided by Trilinos
+through the Stratimikos linear solver strategies package.
+
+This class handles construction of both the preconditioners and
+solvers. All options are determined through parameter lists and the
+basic constructors.
+
+Constructing a Linear System
+
+EDIT THE FOLLOWING FOR STRATIMIKOS Ther between constructors is based
+on whether the user supplies a Jacobian, a preconditioner, neither or
+both.
+
+If a Jacobian is not supplied then this object can create an
+internally constructed Jacobian based on a Finite Difference or
+Matrif-Free object. The user can specify which type of object to use
+by setting the parameter \"Jacobian Operator\" in the parameter list.
+The choices are \"Matrix-Free\" or \"Finite Difference\".
+
+The user can supply their own preconditioner as an Epetra_Operator, or
+they can supply their own matrix (an Epetra_RowMatrix derived object)
+that can be used by one of the internal preconditioner libraries
+(currently aztecoo or ifpack). If they supply their own preconditioner
+the object must implement the Epetra_Operator::ApplyInverse method.
+This is the method called during the linear solve to introduce
+preconditoning into aztecoo. If the user supplies a matrix to be used
+with an internal preconditioner, it must be derived from the
+Epetra_RowMatrix class and must implement all functionality in the
+Epetra_RowMatrix. If a Preconditioner is not supplied, then this
+object can create an internal preconditioner matrix by finite
+differencing or it can use the Jacobian operator if the Jacobian
+derives from the Epetra_RowMatrix class. The user can specify which
+type of object to use by setting the parameter \"Preconditioner
+Operator\" in the parameter list. The choices are \"Use Jacobian\" or
+\"Finite Difference\".
+
+The Jacobian and preconditioner each require an interface to update
+the state of the operator with respect to the solution vector and any
+other parameters. There are three interfaces that can be implemented,
+NOX::Epetra::Interface::Required, NOX::Epetra::Interface::Jacobian,
+and NOX::Epetra::Interface::Preconditioner.
+
+NOX::Epetra::Interface::Required supplies the computeF() function so
+codes can tell NOX what the nonlinear equations are. This is the
+minimum requirement to run nox through the epetra interface.
+LinearSolverAztecOO requires this in some constructors so that if a
+Jacobian or preconditoner is not supplied, it will use computeF from
+the Required interface to estimate the Jacobian or preconditioner via
+finite differences or directional derivatives.
+
+NOX::Epetra::Interface::Jacobian is used for updating a user supplied
+Jacobian opertor with respect to the solution vector and any other
+parameters. It is required only in constructors in which a user
+supplies a Jacobian operator.
+
+NOX::Epetra::Interface::Preconditioner is used for updating a user
+supplied preconditioner opertor/matrix with respect to the solution
+vector and any other parameters. It is required only in constructors
+in which a user supplies a preconditioner operator.
+
+C++ includes: NOX_Epetra_LinearSystem_Stratimikos.H ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos "NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos(Teuchos::ParameterList
+&printingParams, Teuchos::ParameterList &linearSolverParams, const
+Teuchos::RCP< NOX::Epetra::Interface::Required > &iReq, const
+Teuchos::RCP< NOX::Epetra::Interface::Jacobian > &iJac, const
+Teuchos::RCP< Epetra_Operator > &J, const NOX::Epetra::Vector
+&cloneVector, const Teuchos::RCP< NOX::Epetra::Scaling >
+scalingObject=Teuchos::null)
+
+Constructor with a user supplied Jacobian Operator.
+
+Either there is no preconditioning or the preconditioner will be
+used/created internally. The Jacobian (if derived from an
+Epetra_RowMatrix class can be used with an internal preconditioner. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos "NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos(Teuchos::ParameterList
+&printingParams, Teuchos::ParameterList &linearSolverParams, const
+Teuchos::RCP< NOX::Epetra::Interface::Jacobian > &iJac, const
+Teuchos::RCP< Epetra_Operator > &J, const Teuchos::RCP<
+NOX::Epetra::Interface::Preconditioner > &iPrec, const Teuchos::RCP<
+Epetra_Operator > &M, const NOX::Epetra::Vector &cloneVector, const
+bool &precIsAlreadyInverted=false, const Teuchos::RCP<
+NOX::Epetra::Scaling > scalingObject=Teuchos::null)
+
+Constructor with user supplied separate objects for the Jacobian (J)
+and Preconditioner (M). linearSolverParams is the \"Linear Solver\"
+sublist of parameter list. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos "NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos()
+
+Destructor. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::applyJacobian "bool
+NOX::Epetra::LinearSystemStratimikos::applyJacobian(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Applies Jacobian to the given input vector and puts the answer in the
+result.
+
+Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector. Returns true if
+successful. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::applyJacobianTranspose "bool
+NOX::Epetra::LinearSystemStratimikos::applyJacobianTranspose(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Applies Jacobian-Transpose to the given input vector and puts the
+answer in the result.
+
+Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector. Returns true if
+successful. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::applyJacobianInverse "bool
+NOX::Epetra::LinearSystemStratimikos::applyJacobianInverse(Teuchos::ParameterList
+&linearSolverParams, const NOX::Epetra::Vector &input,
+NOX::Epetra::Vector &result)
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The parameter list contains the linear solver options. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning "bool
+NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning(bool
+useTranspose, Teuchos::ParameterList &linearSolverParams, const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Apply right preconditiong to the given input vector.
+
+Let $M$ be a right preconditioner for the Jacobian $J$; in other
+words, $M$ is a matrix such that \\\\[ JM \\\\approx I. \\\\]
+
+Compute \\\\[ u = M^{-1} v, \\\\] where $u$ is the input vector and
+$v$ is the result vector.
+
+If useTranspose is true, then the transpose of the preconditioner is
+applied: \\\\[ u = {M^{-1}}^T v, \\\\] The transpose preconditioner is
+currently only required for Tensor methods.
+
+The parameter list contains the linear solver options. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::createPreconditioner "bool
+NOX::Epetra::LinearSystemStratimikos::createPreconditioner(const
+NOX::Epetra::Vector &x, Teuchos::ParameterList &linearSolverParams,
+bool recomputeGraph) const
+
+Explicitly constructs a preconditioner based on the solution vector x
+and the parameter list p.
+
+The user has the option of recomputing the graph when a new
+preconditioner is created. The NOX::Epetra::Group controls the isValid
+flag for the preconditioner and will control when to call this. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::destroyPreconditioner "bool
+NOX::Epetra::LinearSystemStratimikos::destroyPreconditioner() const
+
+Deletes all objects associated with the chosen preconditioner. This is
+called during linear solves and when the solution vector changes to
+reset the preconditioner. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner "bool
+NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner(const
+NOX::Epetra::Vector &x, Teuchos::ParameterList &linearSolverParams)
+const
+
+Recalculates the preconditioner using an already allocated graph.
+
+Use this to compute a new preconditioner while using the same graph
+for the preconditioner. This avoids deleting and reallocating the
+memory required for the preconditioner and results in a big speed-up
+for large-scale jobs. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getPreconditionerPolicy "NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
+NOX::Epetra::LinearSystemStratimikos::getPreconditionerPolicy(bool
+advanceReuseCounter=true)
+
+Evaluates the preconditioner policy at the current state.
+
+NOTE: This can change values between nonlienar iterations. It is not a
+static value. ";
+
+%feature("docstring")  NOX::Epetra::LinearSystemStratimikos::reset "void
+NOX::Epetra::LinearSystemStratimikos::reset(Teuchos::ParameterList
+&linearSolverParams)
+
+Reset the linear solver parameters. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getScaling "Teuchos::RCP<
+NOX::Epetra::Scaling >
+NOX::Epetra::LinearSystemStratimikos::getScaling()
+
+Get the scaling object. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::resetScaling "void
+NOX::Epetra::LinearSystemStratimikos::resetScaling(const Teuchos::RCP<
+NOX::Epetra::Scaling > &s)
+
+Sets the diagonal scaling vector(s) used in scaling the linear system.
+See NOX::Epetra::Scaling for details on how to specify scaling of the
+linear system. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::computeJacobian "bool
+NOX::Epetra::LinearSystemStratimikos::computeJacobian(const
+NOX::Epetra::Vector &x)
+
+Compute the Jacobian. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getJacobianInterface "Teuchos::RCP< const NOX::Epetra::Interface::Jacobian >
+NOX::Epetra::LinearSystemStratimikos::getJacobianInterface() const
+
+NOX::Interface::Jacobian accessor. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getPrecInterface "Teuchos::RCP<
+const NOX::Epetra::Interface::Preconditioner >
+NOX::Epetra::LinearSystemStratimikos::getPrecInterface() const
+
+NOX::Interface::Preconditioiner accessor. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::isPreconditionerConstructed "bool
+NOX::Epetra::LinearSystemStratimikos::isPreconditionerConstructed()
+const
+
+Indicates whether a preconditioner has been constructed. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::hasPreconditioner "bool
+NOX::Epetra::LinearSystemStratimikos::hasPreconditioner() const
+
+Indicates whether the linear system has a preconditioner. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getJacobianOperator "Teuchos::RCP< const Epetra_Operator >
+NOX::Epetra::LinearSystemStratimikos::getJacobianOperator() const
+
+Jacobian Epetra_Operator accessor. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getJacobianOperator "Teuchos::RCP< Epetra_Operator >
+NOX::Epetra::LinearSystemStratimikos::getJacobianOperator()
+
+Jacobian Epetra_Operator accessor. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getPrecOperator "Teuchos::RCP<
+const Epetra_Operator >
+NOX::Epetra::LinearSystemStratimikos::getPrecOperator() const
+
+Preconditioner Epetra_Operator accessor (only the base matrix if using
+an internal preconditioner - aztecoo or ifpack). ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator "Teuchos::RCP< const Epetra_Operator >
+NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator() const
+
+Return preconditioner operator generated and stored in AztecOO.
+
+Note: This should only be called if hasPreconditioner() returns true.
+";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator "Teuchos::RCP< Epetra_Operator >
+NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator()
+
+Return preconditioner operator generated and stored in AztecOO. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getTimeCreatePreconditioner "double
+NOX::Epetra::LinearSystemStratimikos::getTimeCreatePreconditioner()
+const
+
+Returns the total time (sec.) spent in createPreconditioner(). ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::getTimeApplyJacobianInverse "double
+NOX::Epetra::LinearSystemStratimikos::getTimeApplyJacobianInverse()
+const
+
+Returns the total time (sec.) spent in applyJacobianInverse(). ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::setJacobianOperatorForSolve "void
+NOX::Epetra::LinearSystemStratimikos::setJacobianOperatorForSolve(const
+Teuchos::RCP< const Epetra_Operator > &solveJacOp)
+
+Set Jacobian operator for solve. ";
+
+%feature("docstring")
+NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve "void
+NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(const
+Teuchos::RCP< const Epetra_Operator > &solvePrecOp)
+
+Set preconditioner operator for solve.
+
+Note: This should only be called if hasPreconditioner() returns true.
+";
+
+
 // File: classNOX_1_1Solver_1_1LineSearchBased.xml
 %feature("docstring") NOX::Solver::LineSearchBased "
 
@@ -5329,7 +5866,10 @@ Destructor. ";
 
 %feature("docstring")  NOX::Epetra::ModelEvaluatorInterface::computeF
 "bool NOX::Epetra::ModelEvaluatorInterface::computeF(const
-Epetra_Vector &x, Epetra_Vector &F, const FillType fillFlag) ";
+Epetra_Vector &x, Epetra_Vector &F, const FillType fillFlag)
+
+Compute the function, F, given the specified input vector x. Returns
+true if computation was successful. ";
 
 %feature("docstring")
 NOX::Epetra::ModelEvaluatorInterface::computeJacobian "bool
@@ -5346,6 +5886,14 @@ Epetra_Vector &x, Epetra_Operator &M, Teuchos::ParameterList
 *precParams=0)
 
 Computes a user defined preconditioner. ";
+
+%feature("docstring")
+NOX::Epetra::ModelEvaluatorInterface::inargs_set_p "bool
+NOX::Epetra::ModelEvaluatorInterface::inargs_set_p(const Teuchos::RCP<
+const Epetra_Vector > p, const int l=0)
+
+Set the parameter vector in inargs of the underlying model evaluator.
+";
 
 
 // File: classNOX_1_1LineSearch_1_1MoreThuente.xml
@@ -5557,6 +6105,191 @@ directional line searches such as the Bader/Schnabel curvillinear line
 search.
 
 Return value is true for a successful line search computation. ";
+
+
+// File: classNOX_1_1Epetra_1_1MultiVector.xml
+%feature("docstring") NOX::Epetra::MultiVector "
+
+Implementation of NOX::Abstract::MultiVector for Epetra multi-vectors.
+
+C++ includes: NOX_Epetra_MultiVector.H ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
+"Epetra_MultiVector &
+NOX::Epetra::MultiVector::getEpetraMultiVector()
+
+Get reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
+"const Epetra_MultiVector &
+NOX::Epetra::MultiVector::getEpetraMultiVector() const
+
+Get const reference to underlying Epetra vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::init "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::init(double
+value)
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::random "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
+NOX::Epetra::MultiVector &source, const vector< int > &index) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
+NOX::Epetra::MultiVector &source) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::scale "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::scale(double
+gamma)
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Epetra::MultiVector &a, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
+alpha, const NOX::Epetra::MultiVector &a, double beta, const
+NOX::Epetra::MultiVector &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
+NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Abstract::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
+
+Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
+is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
+NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Epetra::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(CopyType
+type=DeepCopy) const
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(int
+numvecs) const
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::subCopy "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Epetra::MultiVector::subCopy(const vector< int > &index) const
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::subView "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Epetra::MultiVector::subView(const vector< int > &index) const
+
+Creates a new multi-vector with ndex.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::norm "void
+NOX::Epetra::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const
+
+Norm. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
+NOX::Epetra::MultiVector::multiply(double alpha, const
+NOX::Epetra::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Teuchos::RCP<
+Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
+NOX::Epetra::MultiVector::MemoryType
+memoryType=NOX::Epetra::MultiVector::CreateCopy)
+
+Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
+
+NOTE: This ctor should just always create a view. It should be
+implicit from the fact that a RCP object is being passed in that a
+persisting relationship is present. However, since this could cause
+confusion, the default is to make a copy and if a user wants a view,
+they must pass in an explicit flag.
+
+A VIEW of a vector uses the same underlying memory. WARNING: A View
+can be dangerous since multiple objects can access the same memory
+locations. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector
+&source, NOX::CopyType type=NOX::DeepCopy)
+
+Construct by copying map and/or elements of an Epetra_MultiVector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const NOX::Epetra::MultiVector
+&source, NOX::CopyType type=NOX::DeepCopy)
+
+Copy constructor. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::~MultiVector "NOX::Epetra::MultiVector::~MultiVector()
+
+Destruct MultiVector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::length "int
+NOX::Epetra::MultiVector::length() const
+
+Return the length of multi-vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::numVectors "int
+NOX::Epetra::MultiVector::numVectors() const
+
+Return the number of vectors in the multi-vector. ";
+
+%feature("docstring")  NOX::Epetra::MultiVector::print "void
+NOX::Epetra::MultiVector::print(std::ostream &stream) const
+
+Print the vector. This is meant for debugging purposes only. ";
 
 
 // File: classNOX_1_1MultiVector.xml
@@ -5853,191 +6586,6 @@ Return the number of vectors in the multi-vector. ";
 
 %feature("docstring")  NOX::Abstract::MultiVector::print "virtual
 void NOX::Abstract::MultiVector::print(std::ostream &stream) const =0
-
-Print the vector. This is meant for debugging purposes only. ";
-
-
-// File: classNOX_1_1Epetra_1_1MultiVector.xml
-%feature("docstring") NOX::Epetra::MultiVector "
-
-Implementation of NOX::Abstract::MultiVector for Epetra multi-vectors.
-
-C++ includes: NOX_Epetra_MultiVector.H ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
-"Epetra_MultiVector &
-NOX::Epetra::MultiVector::getEpetraMultiVector()
-
-Get reference to underlying Epetra vector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::getEpetraMultiVector
-"const Epetra_MultiVector &
-NOX::Epetra::MultiVector::getEpetraMultiVector() const
-
-Get const reference to underlying Epetra vector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::init "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::init(double
-value)
-
-Initialize every element of this multi-vector with gamma. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::random "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::random(bool
-useSeed=false, int seed=1)
-
-Initialize each element of this multi-vector with a random value. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)
-
-Copy the vectors in source to a set of vectors in *this. The
-index.size() vectors in source are copied to a subset of vectors in
-*this indicated by the indices given in index. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
-NOX::Epetra::MultiVector &source, const vector< int > &index) ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
-NOX::Abstract::MultiVector &source)
-
-Append the vectors in source to *this. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
-NOX::Epetra::MultiVector &source) ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::scale "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::scale(double
-gamma)
-
-Scale each element of this multivector by gamma. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)
-
-Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
-= *this. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Epetra::MultiVector &a, double gamma=0.0) ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double beta, const
-NOX::Abstract::MultiVector &b, double gamma=0.0)
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
-multi-vectors and x = *this. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::update(double
-alpha, const NOX::Epetra::MultiVector &a, double beta, const
-NOX::Epetra::MultiVector &b, double gamma=0.0) ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
-NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
-alpha, const NOX::Abstract::MultiVector &a, const
-NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
-
-Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
-is a dense matrix, x = *this, and op(b) = b if transb =
-Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
-";
-
-%feature("docstring")  NOX::Epetra::MultiVector::update "NOX::Abstract::MultiVector &
-NOX::Epetra::MultiVector::update(Teuchos::ETransp transb, double
-alpha, const NOX::Epetra::MultiVector &a, const
-NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(CopyType
-type=DeepCopy) const
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\". Note that there is no assumption that a vector
-created by ShapeCopy is initialized to zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::Epetra::MultiVector::clone(int
-numvecs) const
-
-Creates a new multi-vector with numvecs columns. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::subCopy "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Epetra::MultiVector::subCopy(const vector< int > &index) const
-
-Creates a new multi-vector with index.size() columns whose columns are
-copies of the columns of *this given by index. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::subView "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Epetra::MultiVector::subView(const vector< int > &index) const
-
-Creates a new multi-vector with ndex.size() columns that shares the
-columns of *this given by index. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::norm "void
-NOX::Epetra::MultiVector::norm(vector< double > &result,
-NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
-const
-
-Norm. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
-NOX::Epetra::MultiVector::multiply(double alpha, const
-NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
-&b) const
-
-Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::multiply "void
-NOX::Epetra::MultiVector::multiply(double alpha, const
-NOX::Epetra::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
-&b) const ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Teuchos::RCP<
-Epetra_MultiVector > &source, NOX::CopyType type=NOX::DeepCopy,
-NOX::Epetra::MultiVector::MemoryType
-memoryType=NOX::Epetra::MultiVector::CreateCopy)
-
-Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
-
-NOTE: This ctor should just always create a view. It should be
-implicit from the fact that a RCP object is being passed in that a
-persisting relationship is present. However, since this could cause
-confusion, the default is to make a copy and if a user wants a view,
-they must pass in an explicit flag.
-
-A VIEW of a vector uses the same underlying memory. WARNING: A View
-can be dangerous since multiple objects can access the same memory
-locations. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector
-&source, NOX::CopyType type=NOX::DeepCopy)
-
-Construct by copying map and/or elements of an Epetra_MultiVector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::MultiVector "NOX::Epetra::MultiVector::MultiVector(const NOX::Epetra::MultiVector
-&source, NOX::CopyType type=NOX::DeepCopy)
-
-Copy constructor. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::~MultiVector "NOX::Epetra::MultiVector::~MultiVector()
-
-Destruct MultiVector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::length "int
-NOX::Epetra::MultiVector::length() const
-
-Return the length of multi-vector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::numVectors "int
-NOX::Epetra::MultiVector::numVectors() const
-
-Return the number of vectors in the multi-vector. ";
-
-%feature("docstring")  NOX::Epetra::MultiVector::print "void
-NOX::Epetra::MultiVector::print(std::ostream &stream) const
 
 Print the vector. This is meant for debugging purposes only. ";
 
@@ -6870,9 +7418,9 @@ Polynomial Models of the Merit Function
 
 We compute $ p_k(\\\\lambda) $ by interpolating $f$. For the quadratic
 fit, we interpolate $ \\\\phi(0) $, $ \\\\phi'(0) $, and $
-\\\\phi(\\\\lambda_{k-1}) $ where $ \\\\lambda_{k-1} $ is the $ k-1
-$st approximation to the step. For the cubit fit, we additionally
-include $\\\\phi(\\\\lambda{k-2})$.
+\\\\phi(\\\\lambda_{k-1}) $ where $ \\\\lambda_{k-1} $ is the $ k-1 $
+approximation to the step. For the cubit fit, we additionally include
+$\\\\phi(\\\\lambda{k-2})$.
 
 The steps are calculated iteratively as follows, depending on the
 choice of \"Interpolation Type\".
@@ -6997,7 +7545,7 @@ the convergence criteria. Defaults to false.
 
 \"Use Counters\" (boolean) - Set to true if we should use counters and
 then output the result to the paramter list as described in Output
-Parameters . Defaults to true.
+Parameters. Defaults to true.
 
 \"Maximum Iteration for Increase\" - Maximum index of the nonlinear
 iteration for which we allow a relative increase. See
@@ -7145,6 +7693,63 @@ Epetra_Vector &x, Epetra_Operator &M, Teuchos::ParameterList
 Computes a user defined preconditioner. ";
 
 
+// File: classNOX_1_1Solver_1_1PrePostOperator.xml
+%feature("docstring") NOX::Solver::PrePostOperator "
+
+Functor to process the pre/post operator object in the parameter list.
+
+This is a wrapper class for a user derived
+NOX::Abstract::PrePostOperator (ppo) object. All solvers use this
+class so we don't have to repeat all parsing code in each NOX::Solver.
+This class searches the \"Solver Options\" parameter list passed into
+the ctor and if a ppo is found will wrap the object.
+
+For instructions on how to implement a PrePostOperator, see
+NOX::Abstract::PrePostOperator.
+
+C++ includes: NOX_Solver_PrePostOperator.H ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::PrePostOperator "NOX::Solver::PrePostOperator::PrePostOperator(const Teuchos::RCP<
+NOX::Utils > &utils, Teuchos::ParameterList &solverOptionsSubList)
+
+Ctor. ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::~PrePostOperator
+"NOX::Solver::PrePostOperator::~PrePostOperator()
+
+Destructor. ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::reset "void
+NOX::Solver::PrePostOperator::reset(const Teuchos::RCP< NOX::Utils >
+&utils, Teuchos::ParameterList &solverOptionsSublist)
+
+Resets the pre/post operator. ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPreIterate "void NOX::Solver::PrePostOperator::runPreIterate(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the start of a call to
+NOX::Solver::Generic::iterate(). ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPostIterate "void NOX::Solver::PrePostOperator::runPostIterate(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the end of a call to
+NOX::Solver::Generic::iterate(). ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPreSolve "void NOX::Solver::PrePostOperator::runPreSolve(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the start of a call to
+NOX::Solver::Generic::solve(). ";
+
+%feature("docstring")  NOX::Solver::PrePostOperator::runPostSolve "void NOX::Solver::PrePostOperator::runPostSolve(const
+NOX::Solver::Generic &solver)
+
+User defined method that will be executed at the end of a call to
+NOX::Solver::Generic::solve(). ";
+
+
 // File: classNOX_1_1Abstract_1_1PrePostOperator.xml
 %feature("docstring") NOX::Abstract::PrePostOperator "
 
@@ -7207,63 +7812,6 @@ User defined method that will be executed at the start of a call to
 NOX::Solver::Generic::solve(). ";
 
 %feature("docstring")  NOX::Abstract::PrePostOperator::runPostSolve "void NOX::Abstract::PrePostOperator::runPostSolve(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the end of a call to
-NOX::Solver::Generic::solve(). ";
-
-
-// File: classNOX_1_1Solver_1_1PrePostOperator.xml
-%feature("docstring") NOX::Solver::PrePostOperator "
-
-Functor to process the pre/post operator object in the parameter list.
-
-This is a wrapper class for a user derived
-NOX::Abstract::PrePostOperator (ppo) object. All solvers use this
-class so we don't have to repeat all parsing code in each NOX::Solver.
-This class searches the \"Solver Options\" parameter list passed into
-the ctor and if a ppo is found will wrap the object.
-
-For instructions on how to implement a PrePostOperator, see
-NOX::Abstract::PrePostOperator.
-
-C++ includes: NOX_Solver_PrePostOperator.H ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::PrePostOperator "NOX::Solver::PrePostOperator::PrePostOperator(const Teuchos::RCP<
-NOX::Utils > &utils, Teuchos::ParameterList &solverOptionsSubList)
-
-Ctor. ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::~PrePostOperator
-"NOX::Solver::PrePostOperator::~PrePostOperator()
-
-Destructor. ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::reset "void
-NOX::Solver::PrePostOperator::reset(const Teuchos::RCP< NOX::Utils >
-&utils, Teuchos::ParameterList &solverOptionsSublist)
-
-Resets the pre/post operator. ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPreIterate "void NOX::Solver::PrePostOperator::runPreIterate(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the start of a call to
-NOX::Solver::Generic::iterate(). ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPostIterate "void NOX::Solver::PrePostOperator::runPostIterate(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the end of a call to
-NOX::Solver::Generic::iterate(). ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPreSolve "void NOX::Solver::PrePostOperator::runPreSolve(const
-NOX::Solver::Generic &solver)
-
-User defined method that will be executed at the start of a call to
-NOX::Solver::Generic::solve(). ";
-
-%feature("docstring")  NOX::Solver::PrePostOperator::runPostSolve "void NOX::Solver::PrePostOperator::runPostSolve(const
 NOX::Solver::Generic &solver)
 
 User defined method that will be executed at the end of a call to
@@ -8606,6 +9154,214 @@ Constructor. ";
 Destructor. ";
 
 
+// File: classNOX_1_1Abstract_1_1Vector.xml
+%feature("docstring") NOX::Abstract::Vector "
+
+NOX's pure abstract vector interface for vectors that are used by the
+nonlinear solver.
+
+This class is a member of the namespace NOX::Abstract.
+
+The user should implement their own concrete implementation of this
+class or use one of the implementations provided by us.
+
+Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+
+C++ includes: NOX_Abstract_Vector.H ";
+
+%feature("docstring")  NOX::Abstract::Vector::init "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::init(double gamma)=0
+
+Initialize every element of this vector with gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\] Reference to
+this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::random "NOX::Abstract::Vector & NOX::Abstract::Vector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this vector with a random value.
+
+If useSeed is true, uses the value of seed to seed the random number
+generator before filling the entries of this vector. So, if two calls
+are made where useSeed is true and seed is the same, then the vectors
+returned should be the same.
+
+Default implementation throw an error. Only referenced by LOCA
+methods.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::abs "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::abs(const
+NOX::Abstract::Vector &y)=0
+
+Put element-wise absolute values of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i = | y_i |
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::reciprocal "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::reciprocal(const
+NOX::Abstract::Vector &y)=0
+
+Put element-wise reciprocal of source vector y into this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\frac{1}{y_i} \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::scale "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::scale(double gamma)=0
+
+Scale each element of this vector by gamma.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\gamma x_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::scale "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::scale(const
+NOX::Abstract::Vector &a)=0
+
+Scale this vector element-by-element by the vector a.
+
+Here x represents this vector, and we update it as \\\\[ x_i = x_i
+\\\\cdot a_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::update "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (gamma * x) where x is this vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\gamma \\\\; x_i \\\\quad \\\\mbox{for }
+i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::update "virtual
+NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
+const NOX::Abstract::Vector &a, double beta, const
+NOX::Abstract::Vector &b, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this
+vector.
+
+Here x represents this vector, and we update it as \\\\[ x_i =
+\\\\alpha \\\\; a_i + \\\\beta \\\\; b_i + \\\\gamma \\\\; x_i
+\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Abstract::Vector::clone "virtual
+Teuchos::RCP<NOX::Abstract::Vector>
+NOX::Abstract::Vector::clone(NOX::CopyType type=NOX::DeepCopy) const
+=0
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (the memory is allocated for the objects, but
+the current values are not copied into the vector). Note that there is
+no assumption that a vector created by ShapeCopy is initialized to
+zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Abstract::Vector::createMultiVector(const NOX::Abstract::Vector
+*const *vecs, int numVecs, NOX::CopyType type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs+1 columns out of an array of
+Vectors. The vector stored under this will be the first column with
+the remaining numVecs columns given by vecs.
+
+The default implementation creates a generic NOX::MultiVector with
+either Shape or Deep copies of the supplied vectors. ";
+
+%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
+NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a MultiVector with numVecs columns.
+
+The default implementation creates a generic NOX::MultiVector with
+either Shape or Deep copies of the supplied vector. ";
+
+%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
+NOX::Abstract::Vector::norm(NOX::Abstract::Vector::NormType
+type=NOX::Abstract::Vector::TwoNorm) const =0
+
+Norm.
+
+Here x represents this vector, and we compute its norm as follows: for
+each NOX::Abstract::Vector::NormType:  NOX::Abstract::Vector::TwoNorm
+\\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\sum_{i=1}^{n} x_i^2} \\\\]
+
+NOX::Abstract::Vector::OneNorm \\\\[ \\\\|x\\\\| = \\\\sum_{i=1}^{n}
+|x_i| \\\\]
+
+NOX::Abstract::Vector::MaxNorm \\\\[ \\\\|x\\\\| = \\\\max_{i} |x_i|
+\\\\]
+
+$\\\\|x\\\\|$ ";
+
+%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
+NOX::Abstract::Vector::norm(const NOX::Abstract::Vector &weights)
+const =0
+
+Weighted 2-Norm.
+
+Here x represents this vector, and we compute its weighted norm as
+follows: \\\\[ \\\\|x\\\\|_w = \\\\sqrt{\\\\sum_{i=1}^{n} w_i \\\\;
+x_i^2} \\\\]  $ \\\\|x\\\\|_w $ ";
+
+%feature("docstring")  NOX::Abstract::Vector::innerProduct "virtual
+double NOX::Abstract::Vector::innerProduct(const NOX::Abstract::Vector
+&y) const =0
+
+Inner product with y.
+
+Here x represents this vector, and we compute its inner product with y
+as follows: \\\\[ \\\\langle x,y \\\\rangle = \\\\sum_{i=1}^n x_i y_i
+\\\\]  $\\\\langle x,y \\\\rangle$ ";
+
+%feature("docstring")  NOX::Abstract::Vector::Vector "NOX::Abstract::Vector::Vector()
+
+Abstract Vector constructor (does nothing) ";
+
+%feature("docstring")  NOX::Abstract::Vector::~Vector "virtual
+NOX::Abstract::Vector::~Vector()
+
+Abstract Vector destructor (does nothing) ";
+
+%feature("docstring")  NOX::Abstract::Vector::length "virtual int
+NOX::Abstract::Vector::length() const =0
+
+Return the length of vector.
+
+The length of this vector
+
+Even if the vector is distributed across processors, this should
+return the  global length of the vector. ";
+
+%feature("docstring")  NOX::Abstract::Vector::print "void
+NOX::Abstract::Vector::print(std::ostream &stream) const
+
+Print the vector. To be used for debugging only. ";
+
+
 // File: classNOX_1_1Epetra_1_1Vector.xml
 %feature("docstring") NOX::Epetra::Vector "
 
@@ -8858,214 +9614,6 @@ Print the vector. To be used for debugging only. ";
 NOX::Epetra::Vector::getVectorSpace() const
 
 Returns the NOX::Epetra::VectorSpace associated with this vector. ";
-
-
-// File: classNOX_1_1Abstract_1_1Vector.xml
-%feature("docstring") NOX::Abstract::Vector "
-
-NOX's pure abstract vector interface for vectors that are used by the
-nonlinear solver.
-
-This class is a member of the namespace NOX::Abstract.
-
-The user should implement their own concrete implementation of this
-class or use one of the implementations provided by us.
-
-Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
-
-C++ includes: NOX_Abstract_Vector.H ";
-
-%feature("docstring")  NOX::Abstract::Vector::init "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::init(double gamma)=0
-
-Initialize every element of this vector with gamma.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\gamma \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\] Reference to
-this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::random "NOX::Abstract::Vector & NOX::Abstract::Vector::random(bool
-useSeed=false, int seed=1)
-
-Initialize each element of this vector with a random value.
-
-If useSeed is true, uses the value of seed to seed the random number
-generator before filling the entries of this vector. So, if two calls
-are made where useSeed is true and seed is the same, then the vectors
-returned should be the same.
-
-Default implementation throw an error. Only referenced by LOCA
-methods.
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::abs "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::abs(const
-NOX::Abstract::Vector &y)=0
-
-Put element-wise absolute values of source vector y into this vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i = | y_i |
-\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::reciprocal "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::reciprocal(const
-NOX::Abstract::Vector &y)=0
-
-Put element-wise reciprocal of source vector y into this vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\frac{1}{y_i} \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::scale "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::scale(double gamma)=0
-
-Scale each element of this vector by gamma.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\gamma x_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::scale "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::scale(const
-NOX::Abstract::Vector &a)=0
-
-Scale this vector element-by-element by the vector a.
-
-Here x represents this vector, and we update it as \\\\[ x_i = x_i
-\\\\cdot a_i \\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::update "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
-const NOX::Abstract::Vector &a, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (gamma * x) where x is this vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\alpha \\\\; a_i + \\\\gamma \\\\; x_i \\\\quad \\\\mbox{for }
-i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::update "virtual
-NOX::Abstract::Vector& NOX::Abstract::Vector::update(double alpha,
-const NOX::Abstract::Vector &a, double beta, const
-NOX::Abstract::Vector &b, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this
-vector.
-
-Here x represents this vector, and we update it as \\\\[ x_i =
-\\\\alpha \\\\; a_i + \\\\beta \\\\; b_i + \\\\gamma \\\\; x_i
-\\\\quad \\\\mbox{for } i=1,\\\\dots,n \\\\]
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Abstract::Vector::clone "virtual
-Teuchos::RCP<NOX::Abstract::Vector>
-NOX::Abstract::Vector::clone(NOX::CopyType type=NOX::DeepCopy) const
-=0
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\" (the memory is allocated for the objects, but
-the current values are not copied into the vector). Note that there is
-no assumption that a vector created by ShapeCopy is initialized to
-zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Abstract::Vector::createMultiVector(const NOX::Abstract::Vector
-*const *vecs, int numVecs, NOX::CopyType type=NOX::DeepCopy) const
-
-Create a MultiVector with numVecs+1 columns out of an array of
-Vectors. The vector stored under this will be the first column with
-the remaining numVecs columns given by vecs.
-
-The default implementation creates a generic NOX::MultiVector with
-either Shape or Deep copies of the supplied vectors. ";
-
-%feature("docstring")  NOX::Abstract::Vector::createMultiVector "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType
-type=NOX::DeepCopy) const
-
-Create a MultiVector with numVecs columns.
-
-The default implementation creates a generic NOX::MultiVector with
-either Shape or Deep copies of the supplied vector. ";
-
-%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
-NOX::Abstract::Vector::norm(NOX::Abstract::Vector::NormType
-type=NOX::Abstract::Vector::TwoNorm) const =0
-
-Norm.
-
-Here x represents this vector, and we compute its norm as follows: for
-each NOX::Abstract::Vector::NormType:  NOX::Abstract::Vector::TwoNorm
-\\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\sum_{i=1}^{n} x_i^2} \\\\]
-
-NOX::Abstract::Vector::OneNorm \\\\[ \\\\|x\\\\| = \\\\sum_{i=1}^{n}
-|x_i| \\\\]
-
-NOX::Abstract::Vector::MaxNorm \\\\[ \\\\|x\\\\| = \\\\max_{i} |x_i|
-\\\\]
-
-$\\\\|x\\\\|$ ";
-
-%feature("docstring")  NOX::Abstract::Vector::norm "virtual double
-NOX::Abstract::Vector::norm(const NOX::Abstract::Vector &weights)
-const =0
-
-Weighted 2-Norm.
-
-Here x represents this vector, and we compute its weighted norm as
-follows: \\\\[ \\\\|x\\\\|_w = \\\\sqrt{\\\\sum_{i=1}^{n} w_i \\\\;
-x_i^2} \\\\]  $ \\\\|x\\\\|_w $ ";
-
-%feature("docstring")  NOX::Abstract::Vector::innerProduct "virtual
-double NOX::Abstract::Vector::innerProduct(const NOX::Abstract::Vector
-&y) const =0
-
-Inner product with y.
-
-Here x represents this vector, and we compute its inner product with y
-as follows: \\\\[ \\\\langle x,y \\\\rangle = \\\\sum_{i=1}^n x_i y_i
-\\\\]  $\\\\langle x,y \\\\rangle$ ";
-
-%feature("docstring")  NOX::Abstract::Vector::Vector "NOX::Abstract::Vector::Vector()
-
-Abstract Vector constructor (does nothing) ";
-
-%feature("docstring")  NOX::Abstract::Vector::~Vector "virtual
-NOX::Abstract::Vector::~Vector()
-
-Abstract Vector destructor (does nothing) ";
-
-%feature("docstring")  NOX::Abstract::Vector::length "virtual int
-NOX::Abstract::Vector::length() const =0
-
-Return the length of vector.
-
-The length of this vector
-
-Even if the vector is distributed across processors, this should
-return the  global length of the vector. ";
-
-%feature("docstring")  NOX::Abstract::Vector::print "void
-NOX::Abstract::Vector::print(std::ostream &stream) const
-
-Print the vector. To be used for debugging only. ";
 
 
 // File: classNOX_1_1Epetra_1_1VectorSpace.xml
@@ -9401,10 +9949,22 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: NOX__Epetra__LinearSystem_8H.xml
 
 
+// File: NOX__Epetra__LinearSystem__Amesos_8C.xml
+
+
+// File: NOX__Epetra__LinearSystem__Amesos_8H.xml
+
+
 // File: NOX__Epetra__LinearSystem__AztecOO_8C.xml
 
 
 // File: NOX__Epetra__LinearSystem__AztecOO_8H.xml
+
+
+// File: NOX__Epetra__LinearSystem__Stratimikos_8C.xml
+
+
+// File: NOX__Epetra__LinearSystem__Stratimikos_8H.xml
 
 
 // File: NOX__Epetra__MatrixFree_8C.xml
@@ -9755,13 +10315,13 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: deprecated.xml
 
 
-// File: dir_e7bb972fb76fb15d2d2bf66a325dbc03.xml
+// File: dir_158cfa3e80dc919e7a7063bb64852968.xml
 
 
-// File: dir_1d63dbacd1cd7f54fba948451b809b40.xml
+// File: dir_9eb76648ff6ecbecf5fe772193fafbbe.xml
 
 
-// File: dir_11a8b4cd265098abd718f8f6a22af659.xml
+// File: dir_379f5aae3a9aaf0e6d83d598647f16ed.xml
 
 
 // File: indexpage.xml
