@@ -921,6 +921,8 @@ def checkinTest(inOptions):
 
   timings = Timings()
 
+  subjectLine = None
+
   try:
 
 
@@ -1217,10 +1219,13 @@ def checkinTest(inOptions):
 
     traceback.print_exc()
 
+  # Print the final status at the very end
+  if subjectLine:
+    print \
+      "\n\n" + subjectLine + "\n\n"
+
   return success
 
-
-  return (allKeywords, ' '. join(testDirs))
 
 
 #
