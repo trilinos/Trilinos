@@ -37,6 +37,10 @@
 
 namespace Tpetra {
 
+  // forward declaration
+  template <class S, class LO, class GO, class N>
+  class Operator;
+
   //! \brief Abstract interface for linear inverse operators accepting Tpetra MultiVector objects.
   /*!
      This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node. 
@@ -51,17 +55,11 @@ namespace Tpetra {
    
    */
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-	class InverseOperator : public Teuchos::Describable {
+	class InverseOperator : virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 	public:
 
 		/** \name Pure virtual functions to be overridden by subclasses. */
     //@{
-
-		//! Returns the Map associated with the domain of this inverse operator, which must be compatible with Y.getMap().
-		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getInverseOperatorDomainMap() const = 0;
-
-		//! Returns the Map associated with the range of this inverse operator, which must be compatible with X.getMap().
-		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getInverseOperatorRangeMap() const = 0;
 
     //! Computes the inverse operator-multivector operation, given the operator \f$M\f$ and input multivector \f$X\f$, find \f$Y\f$ such that \f$MY = A X\f$.
 		virtual void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 

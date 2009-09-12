@@ -245,7 +245,7 @@ namespace Kokkos {
     Teuchos::ArrayRCP<const Ordinal> pbuf_inds1D_;
     Teuchos::ArrayRCP<const size_t>  pbuf_offsets1D_;
     Teuchos::ArrayRCP<const Scalar>  pbuf_vals1D_;
-    // 2D: array of pointers to 
+    // 2D: array of pointers
     Teuchos::ArrayRCP<const Ordinal *> pbuf_inds2D_;
     Teuchos::ArrayRCP<const Scalar  *> pbuf_vals2D_;
     Teuchos::ArrayRCP<size_t>          pbuf_numEntries_;
@@ -439,17 +439,17 @@ namespace Kokkos {
       if (trans == Teuchos::NO_TRANS) {
         Op2D wdp;
         rbh.begin();
-        wdp.alpha   = alpha;
-        wdp.beta    = beta;
         wdp.numRows = numRows_;
         wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
         wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
         wdp.x          = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.y          = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
+        rbh.end();
+        wdp.alpha   = alpha;
+        wdp.beta    = beta;
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
-        rbh.end();
         const size_t numRHS = X.getNumCols();
         node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
       }

@@ -62,6 +62,8 @@ namespace {
   using std::swap;
   using Teuchos::Array;
   using Teuchos::ArrayView;
+  using Tpetra::InverseOperator;
+  using Tpetra::Operator;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsGraph;
   using Tpetra::RowMatrix;
@@ -77,9 +79,16 @@ namespace {
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
+  using Teuchos::ETransp;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
   using Teuchos::CONJ_TRANS;
+  using Teuchos::EDiag;
+  using Teuchos::UNIT_DIAG;
+  using Teuchos::NON_UNIT_DIAG;
+  using Teuchos::EUplo;
+  using Teuchos::UPPER_TRI;
+  using Teuchos::LOWER_TRI;
   using Tpetra::LocallyReplicated;
   using Tpetra::GloballyDistributed;
 
@@ -488,8 +497,8 @@ namespace {
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
-    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorDomainMap()), true);
-    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorRangeMap()) , true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getRangeMap()) , true);
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
@@ -765,8 +774,8 @@ namespace {
     TEST_EQUALITY(tri->getNodeMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(tri->getRowMap()->isSameAs(*rowmap), true);
-    TEST_EQUALITY_CONST(tri->getOperatorRangeMap()->isSameAs(*rngmap), true);
-    TEST_EQUALITY_CONST(tri->getOperatorDomainMap()->isSameAs(*rowmap), true);
+    TEST_EQUALITY_CONST(tri->getRangeMap()->isSameAs(*rngmap), true);
+    TEST_EQUALITY_CONST(tri->getDomainMap()->isSameAs(*rowmap), true);
     // build the input and corresponding output multivectors
     MV mvin(rowmap,numVecs), mvout(rngmap,numVecs), mvexp(rngmap,numVecs);
     for (int j=0; j<numVecs; ++j) {
@@ -840,8 +849,8 @@ namespace {
     TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
-    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorDomainMap()), true);
-    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getOperatorRangeMap()) , true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
+    TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getRangeMap()) , true);
     // test the action
     mvres.randomize();
     eye->apply(mvrand,mvres);
@@ -916,8 +925,8 @@ namespace {
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
-    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorDomainMap()), true);
-    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorRangeMap()) , true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getDomainMap()), true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getRangeMap()) , true);
     // test the action
     threes.randomize();
     A.apply(ones,threes);
@@ -933,6 +942,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TriSolve, LO, GO, Scalar )
   {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Operator<Scalar,LO,GO,Node>  OP;
+    typedef InverseOperator<Scalar,LO,GO,Node>  IOP;
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
@@ -949,75 +960,117 @@ namespace {
     Scalar SONE = static_cast<Scalar>(1.0);
     Scalar STWO = static_cast<Scalar>(2.0);
 
-    /* create the following matrix:
+    /* create one of the following locally triangular matries:
+     
     0  [1 2       ] 
     1  [  1 2     ] 
-    .  [    .  .  ] 
-   N-2 [       1 2]
-    N  [         1]
+    .  [    .  .  ] = U
+   n-2 [       1 2]
+   n-1 [         1]
 
-      We'll do this twice. 
-      The first time, we use an explicit unit diagonal.
-      The latter, we use an implicit unit diagonal.
+    0  [1         ] 
+    1  [2 1       ] 
+    .  [   .  .   ] = L
+   n-2 [     2 1  ]
+   n-1 [       2 1]
+
+      Global matrices are diag(U,U,...,U) and diag(L,L,...,L)
+    
+      For each of these, we test with explicit and implicit unit diagonal, Transpose and Non-Transpose application, 1D or 2D storage
+      Ultimately, that is 16 combinations:
+      (Upper vs. Lower)  x  (Explicit vs. Implicit diagonal)  x  (Transpose vs. Non-Transpose)  x  (Optimized vs. Non-Optimzied storage)
     */
-    {
-      MAT A(map,2);
-      for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
-        if (gid == map->getMaxAllGlobalIndex()) {
-          A.insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
+    
+    MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
+    X.setObjectLabel("X");
+    B.setObjectLabel("B");
+    Xhat.setObjectLabel("Xhat");
+    X.randomize();
+    for (size_t tnum=0; tnum < 8; ++tnum) { // FINISH: set this back to 16 to enable the transpose tests
+      EUplo   uplo      = ((tnum & 1) == 1 ? UPPER_TRI         : LOWER_TRI);
+      EDiag   diag      = ((tnum & 2) == 2 ? UNIT_DIAG         : NON_UNIT_DIAG);
+      OptimizeOption os = ((tnum & 4) == 4 ? DoOptimizeStorage : DoNotOptimizeStorage);
+      ETransp trans     = ((tnum & 8) == 8 ? CONJ_TRANS        : NO_TRANS);
+      RCP<OP> AOp;
+      RCP<IOP> AIOp;
+      {
+        RCP<MAT> AMat;
+        if (diag == UNIT_DIAG) {
+          // must explicitly specify the column map
+          AMat = rcp(new MAT(map,map,2));
         }
         else {
-          A.insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<Scalar>(SONE,STWO) );
+          // can let the matrix compute a column map
+          AMat = rcp(new MAT(map,2));
         }
-      }
-      A.fillComplete(DoOptimizeStorage);
-      TEST_EQUALITY_CONST(A.isUpperTriangular(), true);
-      TEST_EQUALITY(A.getGlobalNumDiags(), A.getGlobalNumRows());
-      MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
-      X.randomize();
-      Xhat.randomize();
-      B.randomize();
-      A.apply(X,B,NO_TRANS);
-      A.applyInverse(B,Xhat,NO_TRANS);
-      //
-      Xhat.update(-ST::one(),X,ST::one());
-      Array<Mag> norms(numVecs), normsB(numVecs);
-      Xhat.norm2(norms());
-      B.norm2(normsB());
-      for (size_t j=0; j < numVecs; ++j) {
-        TEST_EQUALITY_CONST( norms[j]/normsB[j] < tol, true );
-      }
-    }
-    {
-      MAT A(map,2);
-      for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
-        if (gid == map->getMaxAllGlobalIndex()) {
-          // do nothing
+        // fill the matrix
+        if (uplo == UPPER_TRI) {
+          if (diag == UNIT_DIAG) {
+            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+              if (gid == map->getMaxGlobalIndex()) {
+                // do nothing
+              }
+              else {
+                AMat->insertGlobalValues( gid, tuple<GO>(gid+1), tuple<Scalar>(STWO) );
+              }
+            }
+          }
+          else {
+            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+              if (gid == map->getMaxGlobalIndex()) {
+                AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
+              }
+              else {
+                AMat->insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<Scalar>(SONE,STWO) );
+              }
+            }
+          }
         }
         else {
-          A.insertGlobalValues( gid, tuple<GO>(gid+1), tuple<Scalar>(STWO) );
+          if (diag == UNIT_DIAG) {
+            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+              if (gid == map->getMinGlobalIndex()) {
+                // do nothing
+              }
+              else {
+                AMat->insertGlobalValues( gid, tuple<GO>(gid-1), tuple<Scalar>(STWO) );
+              }
+            }
+          }
+          else {
+            for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+              if (gid == map->getMinGlobalIndex()) {
+                AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
+              }
+              else {
+                AMat->insertGlobalValues( gid, tuple<GO>(gid-1,gid), tuple<Scalar>(STWO,SONE) );
+              }
+            }
+          }
         }
+        AMat->fillComplete(os);
+        TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
+        TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
+        TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
+        AOp = AMat;
+        AIOp = AMat;
       }
-      A.fillComplete(DoOptimizeStorage);
-      TEST_EQUALITY_CONST(A.isUpperTriangular(), true);
-      TEST_EQUALITY_CONST(A.getGlobalNumDiags(), 0);
-      MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
-      X.randomize();
-      Xhat.randomize();
       B.randomize();
-      // we want (I+A)*X -> B
-      // A*X -> B needs to be augmented with X
-      A.apply(X,B,NO_TRANS);
-      B.update(ST::one(),X,ST::one());
-      A.applyInverse(B,Xhat,NO_TRANS);
+      AOp->apply(X,B,trans);
+      if (diag == UNIT_DIAG) {
+        // we want (I+A)*X -> B
+        // A*X -> B needs to be augmented with X
+        B.update(ST::one(),X,ST::one());
+      }
+      Xhat.randomize();
+      AIOp->applyInverse(B,Xhat,trans);
       //
       Xhat.update(-ST::one(),X,ST::one());
-      Array<Mag> norms(numVecs), normsB(numVecs);
-      Xhat.norm2(norms());
+      Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
+      Xhat.norm2(errnrms());
       B.norm2(normsB());
-      for (size_t j=0; j < numVecs; ++j) {
-        TEST_EQUALITY_CONST( norms[j]/normsB[j] < tol, true );
-      }
+      Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
+      TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
     }
   }
 
@@ -1092,8 +1145,8 @@ namespace {
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
-    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorDomainMap()), true);
-    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getOperatorRangeMap()) , true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getDomainMap()), true);
+    TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getRangeMap()) , true);
     // test the action
     A.apply(mveye,mvres);
     mvres.update(-ST::one(),mvans,ST::one());
@@ -1191,7 +1244,7 @@ namespace {
     TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
     TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getOperatorRangeMap()) , true);
+    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getRangeMap()) , true);
     // test the action
     A_crs.apply(mveye,mvres);
     mvres.update(-ST::one(),A_mv,ST::one());
@@ -1390,7 +1443,7 @@ namespace {
     TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
     TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getOperatorRangeMap()) , true);
+    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getRangeMap()) , true);
     // test the action
     A_crs.apply(mveye,mvres);
     mvres.update(-ST::one(),A_mv,ST::one());
@@ -1519,7 +1572,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR ) \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR ) */ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR ) \
       TRIUTILS_USING_TESTS( LO, GO, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \

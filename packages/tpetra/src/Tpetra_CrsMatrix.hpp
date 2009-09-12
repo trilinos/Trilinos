@@ -105,7 +105,7 @@ namespace Tpetra
    *
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
-  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, public InverseOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
       //! @name Constructor/Destructor Methods
       //@{ 
@@ -351,12 +351,12 @@ namespace Tpetra
       //@{ 
 
       //! \brief Returns the Map associated with the domain of this operator.
-      //! This will be equal to the row map until fillComplete() is called.
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getOperatorDomainMap() const;
+      //! This will be <tt>Teuchos::null</tt> until fillComplete() is called.
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
       //! Returns the Map associated with the domain of this operator.
-      //! This will be equal to the row map until fillComplete() is called.
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getOperatorRangeMap() const;
+      //! This will be <tt>Teuchos::null</tt> until fillComplete() is called.
+      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
       //! Computes this matrix-vector multilication y = A x.
       void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
@@ -368,14 +368,6 @@ namespace Tpetra
 
       //! @name Methods implementing InverseOperator
       //@{ 
-
-      //! \brief Returns the Map associated with the domain of this operator.
-      //! This will be equal to the row map until fillComplete() is called.
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getInverseOperatorDomainMap() const;
-
-      //! Returns the Map associated with the domain of this operator.
-      //! This will be equal to the row map until fillComplete() is called.
-      const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getInverseOperatorRangeMap() const;
 
       //! Computes this matrix-vector multilication y = A x.
       void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
@@ -751,29 +743,15 @@ namespace Tpetra
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getOperatorDomainMap() const { 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getDomainMap() const { 
     return graph_->getDomainMap(); 
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getOperatorRangeMap() const { 
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getRangeMap() const { 
     return graph_->getRangeMap(); 
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getInverseOperatorDomainMap() const { 
-    return graph_->getRangeMap(); 
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getInverseOperatorRangeMap() const { 
-    return graph_->getDomainMap(); 
   }
 
 
@@ -2666,13 +2644,13 @@ namespace Tpetra
           if (myImageID == 0) out << "\nColumn map: " << std::endl;
           getColMap()->describe(out,vl);
         }
-        if (getOperatorDomainMap() != Teuchos::null) {
+        if (getDomainMap() != Teuchos::null) {
           if (myImageID == 0) out << "\nDomain map: " << std::endl;
-          getOperatorDomainMap()->describe(out,vl);
+          getDomainMap()->describe(out,vl);
         }
-        if (getOperatorRangeMap() != Teuchos::null) {
+        if (getRangeMap() != Teuchos::null) {
           if (myImageID == 0) out << "\nRange map: " << std::endl;
-          getOperatorRangeMap()->describe(out,vl);
+          getRangeMap()->describe(out,vl);
         }
       }
       // O(P) data
@@ -2713,8 +2691,8 @@ namespace Tpetra
                   Teuchos::ArrayRCP<const Scalar> rowvals;
                   getGlobalRowView(gid,rowinds,rowvals);
                   for (size_t j=0; j < nE; ++j) {
-                    out << "(" << std::setw(width) << rowinds[j]
-                        << "," << std::setw(width) << rowvals[j]
+                    out << " (" << rowinds[j]
+                        << ", " << rowvals[j]
                         << ") ";
                   }
                 }
@@ -2723,8 +2701,8 @@ namespace Tpetra
                   Teuchos::ArrayRCP<const Scalar> rowvals;
                   getLocalRowView(r,rowinds,rowvals);
                   for (size_t j=0; j < nE; ++j) {
-                    out << "(" << std::setw(width) << getColMap()->getGlobalElement(rowinds[j]) 
-                        << "," << std::setw(width) << rowvals[j]
+                    out << " (" << getColMap()->getGlobalElement(rowinds[j]) 
+                        << ", " << rowvals[j]
                         << ") ";
                   }
                 }

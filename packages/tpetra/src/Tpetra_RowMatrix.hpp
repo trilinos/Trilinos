@@ -48,7 +48,7 @@ namespace Tpetra {
      The \c Node type defaults to the default node in Kokkos.
    */
   template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class RowMatrix : public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class RowMatrix : virtual public Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
       //! @name Destructor Method
       //@{ 
