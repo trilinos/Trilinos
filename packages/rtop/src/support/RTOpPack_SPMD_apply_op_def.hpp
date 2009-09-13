@@ -412,7 +412,7 @@ void RTOpPack::SPMD_apply_op(
       << "\n";
     if( num_vecs && sub_vecs ) {
       *out << "\nInput vectors:\n";
-      Teuchos::OSTab tab(out);
+      Teuchos::OSTab tab2(out);
       for( int kc = 0; kc < num_cols; ++kc ) {
         for( int k = 0; k < num_vecs; ++k ) {
           *out << "\nvecs["<<kc<<","<<k<<"] =\n";
@@ -422,7 +422,7 @@ void RTOpPack::SPMD_apply_op(
     }
     if( num_targ_vecs && sub_targ_vecs ) {
       *out << "\nInput/output vectors *before* transforamtion:\n";
-      Teuchos::OSTab tab(out);
+      Teuchos::OSTab tab2(out);
       for( int kc = 0; kc < num_cols; ++kc ) {
         for( int k = 0; k < num_targ_vecs; ++k ) {
           *out << "\nvecs["<<kc<<","<<k<<"] =\n";
@@ -432,7 +432,7 @@ void RTOpPack::SPMD_apply_op(
     }
     if(reduct_objs) {
       *out << "\nInput/output reduction objects *before* reduction:\n";
-      Teuchos::OSTab tab(out);
+      Teuchos::OSTab tab2(out);
       for( int kc = 0; kc < num_cols; ++kc ) {
         *out
           << "\nreduct_objs["<<kc<<"] =\n"
@@ -495,7 +495,7 @@ void RTOpPack::SPMD_apply_op(
       if(show_spmd_apply_op_dump) {
         if(reduct_objs) {
           *out << "\nIntermediate reduction objects in this process before global reduction:\n";
-          Teuchos::OSTab tab(out);
+          Teuchos::OSTab tab2(out);
           for( int kc = 0; kc < num_cols; ++kc ) {
             *out
               << "\ni_reduct_objs["<<kc<<"] =\n"
@@ -526,7 +526,7 @@ void RTOpPack::SPMD_apply_op(
   if(show_spmd_apply_op_dump) {
     if( num_targ_vecs && sub_targ_vecs ) {
       *out << "\nInput/output vectors *after* transforamtion:\n";
-      Teuchos::OSTab tab(out);
+      Teuchos::OSTab tab2(out);
       for( int kc = 0; kc < num_cols; ++kc ) {
         for( int k = 0; k < num_targ_vecs; ++k ) {
           *out << "\nvecs["<<kc<<","<<k<<"] =\n";
@@ -536,7 +536,7 @@ void RTOpPack::SPMD_apply_op(
     }
     if(reduct_objs) {
       *out << "\nInput/output reduction objects *after* reduction:\n";
-      Teuchos::OSTab tab(out);
+      Teuchos::OSTab tab2(out);
       for( int kc = 0; kc < num_cols; ++kc ) {
         *out
           << "\nreduct_objs["<<kc<<"] =\n"
