@@ -95,11 +95,11 @@ int main( int argc, char *argv[] )
     
     success = runTests<double>(n, out) ;
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     success = runTests<float>(n, out) && success;
 #endif
 
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_THYRA_COMPLEX)
     success = runTests<std::complex<double> >(n, out) && success;
 #endif
   }

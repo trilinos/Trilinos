@@ -1,0 +1,9 @@
+
+
+(*) MS Windows support with MS Visual C++:
+
+- Thyra complex support and float support are disabled by default.
+The complex-related code just did not work correctly and there was not
+time to track down the problem.
+
+- 

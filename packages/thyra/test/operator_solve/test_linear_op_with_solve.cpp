@@ -212,14 +212,14 @@ bool run_linear_op_with_solve_tests(
 } // namespace Thyra
 
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[] )
+{
 
   using Teuchos::CommandLineProcessor;
   using Teuchos::ScalarTraits;
   using Teuchos::as;
 
   bool success = true;
-  bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
@@ -240,12 +240,9 @@ int main( int argc, char* argv[] ) {
     int n = 4;
     clp.setOption( "n", &n, "Size of the system." );
 
-    double epsScale = 200.0;
+    double epsScale = 2e+2;
     clp.setOption( "eps-scale", &epsScale,
       "Constant (greater than 1) to scale eps by in error tests." );
-
-    clp.setOption( "verbose", "quiet", &verbose,
-      "Determines if any output is printed or not." );
 
     bool showAllTests = false;
     clp.setOption( "show-all-tests", "no-show-all-tests", &showAllTests,
@@ -264,20 +261,20 @@ int main( int argc, char* argv[] ) {
 
 #ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !Thyra::run_linear_op_with_solve_tests<float>(
-          n, as<float>(epsScale*ScalarTraits<float>::eps()),showAllTests, dumpAll, *out)
+          n, as<float>(epsScale*ScalarTraits<float>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
 #endif
     if( !Thyra::run_linear_op_with_solve_tests<double>(
-          n, as<double>(epsScale*ScalarTraits<double>::eps()),showAllTests, dumpAll, *out)
+          n, as<double>(epsScale*ScalarTraits<double>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
-#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_THYRA_TEUCHOS_BLASFLOAT)
+#if defined(HAVE_THYRA_COMPLEX) && defined(HAVE_THYRA_TEUCHOS_BLASFLOAT)
     if( !Thyra::run_linear_op_with_solve_tests<std::complex<float> >(
-          n, as<float>(epsScale*ScalarTraits<float>::eps()),showAllTests, dumpAll, *out)
+          n, as<float>(epsScale*ScalarTraits<float>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
 #endif
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_THYRA_COMPLEX)
     if( !Thyra::run_linear_op_with_solve_tests<std::complex<double> >(
-          n, as<double>(epsScale*ScalarTraits<double>::eps()),showAllTests, dumpAll, *out)
+          n, as<double>(epsScale*ScalarTraits<double>::eps()), showAllTests, dumpAll, *out)
       ) success = false;
 #endif
 

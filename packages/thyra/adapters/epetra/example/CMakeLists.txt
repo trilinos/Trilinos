@@ -18,5 +18,4 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyPowerMethod_epetra
   SOURCES sillyPowerMethod_epetra.cpp ${COMMON_SOURCES}
   COMM serial mpi
-  ARGS --verbose 
  )

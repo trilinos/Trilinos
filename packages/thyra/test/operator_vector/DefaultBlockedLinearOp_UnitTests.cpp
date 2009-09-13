@@ -10,6 +10,7 @@
 #include "Teuchos_FancyOStream.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Thyra_UnitTestHelpers.hpp"
 
 
 namespace {
@@ -18,6 +19,17 @@ namespace {
 //
 // Helper code and declarations
 //
+
+
+bool dumpAll = false;
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "dump-all", "no-dump-all", &dumpAll,
+    "Dump lots of data" );
+}
 
 
 using Teuchos::as;
@@ -85,7 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, defaultConstruct,
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
   defaultConstruct )
 
 
@@ -93,8 +105,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, block1x1,
   Scalar )
 {
 
-  typedef Scalar S;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Scalar S;  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
@@ -116,6 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, block1x1,
  
   Thyra::LinearOpTester<S> linearOpTester;
   linearOpTester.set_all_error_tol(1e3*SMT::eps());
+  linearOpTester.dump_all(dumpAll);
 
   updateSuccess(linearOpTester.check(*M, ptrFromRef(out)), success);
 
@@ -133,7 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, block1x1,
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
   block1x1 )
 
 
@@ -205,6 +217,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, nestedBlock2x2,
  
   Thyra::LinearOpTester<S> linearOpTester;
   linearOpTester.set_all_error_tol(1e3*SMT::eps());
+  linearOpTester.dump_all(dumpAll);
 
   updateSuccess(linearOpTester.check(*M, ptrFromRef(out)), success);
 
@@ -239,7 +252,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedLinearOp, nestedBlock2x2,
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedLinearOp,
   nestedBlock2x2 )
 
 

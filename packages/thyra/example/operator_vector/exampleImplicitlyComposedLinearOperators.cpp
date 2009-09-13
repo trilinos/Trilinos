@@ -109,21 +109,20 @@ int exampleImplicitlyComposedLinearOperators(
 
   // Create the component linear operators first as multi-vectors
   const RCP<MultiVectorBase<Scalar> >
-    mvA = createMembers(space2,n0,"A"),
-    mvB = createMembers(space0,n2,"B"),
-    mvC = createMembers(space0,n0,"C"),
-    mvE = createMembers(space0,n1,"E"),
-    mvF = createMembers(space0,n1,"F"),
-    mvJ = createMembers(space2,n1,"J"),
-    mvK = createMembers(space1,n2,"K"),
-    mvL = createMembers(space2,n1,"L"),
-    mvN = createMembers(space0,n1,"N"),
-    mvP = createMembers(space2,n1,"P"),
-    mvQ = createMembers(space0,n2,"Q");
+    mvA = createMembers(space2, n0, "A"),
+    mvB = createMembers(space0, n2, "B"),
+    mvC = createMembers(space0, n0, "C"),
+    mvE = createMembers(space0, n1, "E"),
+    mvF = createMembers(space0, n1, "F"),
+    mvJ = createMembers(space2, n1, "J"),
+    mvK = createMembers(space1, n2, "K"),
+    mvL = createMembers(space2, n1, "L"),
+    mvN = createMembers(space0, n1, "N"),
+    mvP = createMembers(space2, n1, "P"),
+    mvQ = createMembers(space0, n2, "Q");
 
   // Create the vector diagonal for D
-  const RCP<VectorBase<Scalar> >
-    d = createMember(space2);
+  const RCP<VectorBase<Scalar> > d = createMember(space2);
 
   // Get the constants
   const Scalar
@@ -159,16 +158,28 @@ int exampleImplicitlyComposedLinearOperators(
     N = mvN,
     P = mvP,
     Q = mvQ;
-  
+
+  out << describe(*A, verbLevel);
+  out << describe(*B, verbLevel);
+  out << describe(*C, verbLevel);
+  out << describe(*E, verbLevel);
+  out << describe(*F, verbLevel);
+  out << describe(*J, verbLevel);
+  out << describe(*K, verbLevel);
+  out << describe(*L, verbLevel);
+  out << describe(*N, verbLevel);
+  out << describe(*P, verbLevel);
+  out << describe(*Q, verbLevel);
+
   //
   // B) Create the composed linear operators
   //
 
   // I
-  const RCP<const LinearOpBase<Scalar> > I = identity(space1,"I");
+  const RCP<const LinearOpBase<Scalar> > I = identity(space1, "I");
 
   // D = diag(d)
-  const RCP<const LinearOpBase<Scalar> > D = diagonal(d,"D");
+  const RCP<const LinearOpBase<Scalar> > D = diagonal(d, "D");
 
   // M00 = [ gama*B*A + C,  E + F ] ^H
   //       [ J^H * A,       I     ]
@@ -181,7 +192,7 @@ int exampleImplicitlyComposedLinearOperators(
       "M00"
       );
 
-  out << "\nM00 = " << describe(*M00,verbLevel);
+  out << "\nM00 = " << describe(*M00, verbLevel);
 
   // M01 = beta * [ Q ]
   //              [ K ]
@@ -192,7 +203,7 @@ int exampleImplicitlyComposedLinearOperators(
       "M01"
       );
 
-  out << "\nM01 = "  << describe(*M01,verbLevel);
+  out << "\nM01 = "  << describe(*M01, verbLevel);
             
   // M10 = [ L * N^H,  eta*P ]
   const RCP<const LinearOpBase<Scalar> > M10 =
@@ -201,13 +212,13 @@ int exampleImplicitlyComposedLinearOperators(
       "M10"
       );
 
-  out << "\nM10 = " << describe(*M10,verbLevel);
+  out << "\nM10 = " << describe(*M10, verbLevel);
 
   // M11 = D - Q^H*Q
   const RCP<const LinearOpBase<Scalar> > M11 =
     subtract( D, multiply(adjoint(Q),Q), "M11" );
 
-  out << "\nM11 = "  << describe(*M11,verbLevel);
+  out << "\nM11 = "  << describe(*M11, verbLevel);
   
 
   // M = [ M00, M01 ]
@@ -219,7 +230,7 @@ int exampleImplicitlyComposedLinearOperators(
       "M"
       );
 
-  out << "\nM = " << describe(*M,verbLevel);
+  out << "\nM = " << describe(*M, verbLevel);
 
   
   //
@@ -282,7 +293,7 @@ int main( int argc, char *argv[] )
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     // Run using float
     result = exampleImplicitlyComposedLinearOperators<float>(
       n0, n1, n2, *out, verbLevel, 1e-5, true );
@@ -294,9 +305,9 @@ int main( int argc, char *argv[] )
       n0, n1, n2, *out, verbLevel, 1e-12, true );
     if (!result) success = false;
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_THYRA_COMPLEX
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     // Run using std::complex<float>
     result = exampleImplicitlyComposedLinearOperators<std::complex<float> >(
       n0, n1, n2, *out, verbLevel, 1e-5, false );
@@ -306,7 +317,7 @@ int main( int argc, char *argv[] )
     //    rel_err((-3.00939,-0.836347),(-0.275689,1.45244)) = 1.14148.
     // Since this works just fine for the next complex<double> case, I am
     // going to just skip this test.
-#endif // defined(HAVE_TEUCHOS_FLOAT)
+#endif // defined(HAVE_THYRA_FLOAT)
 
 
     // Run using std::complex<double>
@@ -314,7 +325,7 @@ int main( int argc, char *argv[] )
       n0, n1, n2, *out, verbLevel, 1e-12, true );
     if (!result) success = false;
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // HAVE_THYRA_COMPLEX
 
 #ifdef HAVE_TEUCHOS_GNU_MP
 

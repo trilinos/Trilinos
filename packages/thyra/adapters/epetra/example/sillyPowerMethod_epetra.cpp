@@ -71,11 +71,12 @@ void scaleFirstDiagElement( const double diagScale, Thyra::LinearOpBase<double> 
 //
 int main(int argc, char *argv[])
 {
+
+  using Teuchos::outArg;
   using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
  
   bool success = true;
-  bool verbose = true;
   bool result;
   
   //
@@ -100,23 +101,25 @@ int main(int argc, char *argv[])
     // (C) Read in commandline options
     //
 
-    int    globalDim                  = 500;
-    bool   dumpAll                    = false;
 
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
-    clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
+    int globalDim = 500;
     clp.setOption( "global-dim", &globalDim, "Global dimension of the linear system." );
+
+    bool dumpAll = false;
     clp.setOption( "dump-all", "no-dump", &dumpAll, "Determines if quantities are dumped or not." );
 
-    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+    CommandLineProcessor::EParseCommandLineReturn
+      parse_return = clp.parse(argc,argv);
+    if (parse_return != CommandLineProcessor::PARSE_SUCCESSFUL)
+      return parse_return;
 
     TEST_FOR_EXCEPTION( globalDim < 2, std::logic_error, "Error, globalDim=" << globalDim << " < 2 is not allowed!" );
 
-    if(verbose) *out << "\n***\n*** Running power method example using Epetra implementation\n***\n" << std::scientific;
+    *out << "\n***\n*** Running power method example using Epetra implementation\n***\n" << std::scientific;
 
     //
     // (D) Setup the operator and run the power method!
@@ -131,53 +134,53 @@ int main(int argc, char *argv[])
     //       [          -1  2  -1 ]
     //       [             -1   2 ]
     //
-    if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
+    *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
     RCP<Epetra_Operator>
       A_epetra = createTridiagEpetraLinearOp(
-        globalDim
+        globalDim,
 #ifdef HAVE_MPI
-        ,mpiComm
+        mpiComm,
 #endif
-        ,1.0,verbose,*out
+        1.0, true, *out
         );
     // Wrap in an Thyra::EpetraLinearOp object
     RCP<Thyra::LinearOpBase<double> >
       A = Thyra::nonconstEpetraLinearOp(A_epetra);
     //
-    if( verbose && dumpAll ) *out << "\nA =\n" << *A; // This works even in parallel!
+    if (dumpAll) *out << "\nA =\n" << *A; // This works even in parallel!
     
     //
     // (2) Run the power method ANA
     //
-    if(verbose) *out << "\n(2) Running the power method on matrix A ...\n";
+    *out << "\n(2) Running the power method on matrix A ...\n";
     double  lambda      = 0.0;
     double  tolerance   = 1e-3;
     int     maxNumIters = 10*globalDim;
-    result = sillyPowerMethod<double>(*A,maxNumIters,tolerance,&lambda,(verbose?&*out:NULL));
+    result = sillyPowerMethod<double>(*A, maxNumIters, tolerance, outArg(lambda), *out);
     if(!result) success = false;
-    if(verbose) *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
+    *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
     
     //
     // (3) Increase dominance of first eigenvalue
     //
-    if(verbose) *out << "\n(3) Scale the diagonal of A by a factor of 10 ...\n";
+    *out << "\n(3) Scale the diagonal of A by a factor of 10 ...\n";
     scaleFirstDiagElement( 10.0, &*A );
     
     //
     // (4) Run the power method ANA again
     //
-    if(verbose) *out << "\n(4) Running the power method again on matrix A ...\n";
-    result = sillyPowerMethod<double>(*A,maxNumIters,tolerance,&lambda,(verbose?&*out:NULL));
+    *out << "\n(4) Running the power method again on matrix A ...\n";
+    result = sillyPowerMethod<double>(*A, maxNumIters, tolerance, outArg(lambda), *out);
     if(!result) success = false;
-    if(verbose) *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
+    *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
   
-  if (verbose) {
-    if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
-    else         *out << "\nOh no! At least one of the tests failed!\n";
-  }
+  if (success)
+    *out << "\nCongratulations! All of the tests checked out!\n";
+  else
+    *out << "\nOh no! At least one of the tests failed!\n";
 
   return success ? 0 : 1;
 
