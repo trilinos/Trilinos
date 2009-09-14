@@ -37,11 +37,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Aztec2_1
   "Enable the Aztec 2.1 functionality."
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_AztecOO
-  HAVE_ML_AZTECOO
-  "Enable the AztecOO functionality."
-  OFF )
-
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SUPERLU
   HAVE_ML_SUPERLU
   "Enable the SUPERLU functionality."
