@@ -54,7 +54,7 @@ namespace Stokhos {
    * Note that a three term recurrence can always be defined with 
    * \f$\delta_k = 1\f$ in which case the polynomials are monic.  However
    * typical normalizations of some polynomial families (see 
-   * Stokhos::LegrendreBasis) require the extra terms.
+   * Stokhos::LegendreBasis) require the extra terms.
    */
   template <typename ordinal_type, typename value_type>
   class RecurrenceBasis : 
