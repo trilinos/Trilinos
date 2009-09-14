@@ -6,37 +6,63 @@
 
 <ul>
 <li>\ref stokhos_intro
-<li>\ref stokhos_startup
-<li>\ref stokhos_browser
+<li>\ref stokhos_tpl
+<li>\ref stokhos_contacts
 </ul>
 
 \section stokhos_intro Introduction 
-Stokhos is a Trilinos package for applying intrusive stochastic Galerkin
+%Stokhos is a Trilinos package for applying intrusive stochastic Galerkin
 uncertainty quantification methods to nonlinear dynamical systems, primarily
 stochastic partial differential equations.
 
-\section stokhos_startup Overview of stokhos
-
-Stokhos provides three types of capabilities
+%Stokhos provides several types of capabilities
 
 <ul> 
-
+<li> Classes defining families of univariate and multivariate
+  orthogonal polynomials:  Stokhos::OneDOrthogPolyBasis and
+  Stokhos::OrthogPolyBasis.
+<li> Classes defining quadrature methods for orthogonal polynomials:
+  Stokhos::Quadrature.
 <li> Classes for generating stochastic residual coefficients using 
 automatic differentiation with Sacado:  Stokhos::OrthogPolyExpansion 
 <li> Classes for forming and solving stochastic Galerkin linear systems:
-Stokhos::MatrixFreeEpetraOp
+Stokhos::MatrixFreeEpetraOp and Stokhos::MeanEpetraOp.
 <li> Classes for providing a nonlinear interface to nonlinear stochastic
 Galerkin problems:  Stokhos::SGModelEvaluator.
-
 </ul>
 
-\section stokhos_browser Browse all of stokhos as a single doxygen collection
+\section stokhos_tpl Third-Party Libraries
 
-You can browse all of Stokhos as a <A HREF="../../browser/doc/html/index.html">single
-doxygen collection</A>. Warning, this is not the recommended way to learn
-about Stokhos software.  However, this is a good way to browse the <a
-href="../../browser/doc/html/dirs.html">directory structure of stokhos</a>, to <a
-href="../../browser/doc/html/files.html">locate files</a>, etc.
+In addition to the standard Trilinos third-party libraries of BLAS,
+LAPACK, and MPI, %Stokhos can make use of two more:  the fortran UQ
+Toolkit of Debusschere et al,
+and <a href="http://www.cs.sandia.gov/DAKOTA/">Dakota</a>.
 
+\subsection stokhos_foruqtk Fortran UQ Toolkit
+To enable the fortran UQ toolkit, add -D TPL_ENABLE_ForUQTK=ON to your
+cmake configure arguments and specify the library path to your
+installation via -D ForUQTK_LIBRARY_DIRS.  This activates the
+expansion class Stokhos::ForUQTKOrthogPolyExpansion for generating
+stochastic galerkin residual coefficients using either time
+integration or Taylor series calculations.
+
+\subsection stokhos_dakota Dakota
+Dakota support is provided through the Trilinos package 
+<a href="http://trilinos.sandia.gov/packages/TriKota/">TriKota</a> and
+currently, requires the development version of Dakota
+available <a href="http://www.cs.sandia.gov/DAKOTA/download.html">here</a>.
+To enable Dakota support, unpack a recent Dakota tarball in
+Trilinos/packages/TriKota and then add -D
+Trilinos_ENABLE_TriKota:BOOL=ON to your configure arguments.  This
+activates sparse-grid quadrature methods based on Smolyak algorithms
+through Stokhos::SparseGridQuadrature.  See
+the <a href="http://trilinos.sandia.gov/packages/docs/dev/packages/TriKota/doc/html/index.html">TriKota
+  package documentation</a> for more information on building and using
+TriKota.
+
+\section stokhos_contacts Contacts
+%Stokhos is primarily developed and maintained by Eric Phipps with
+significant contributions by Bert Debusschere, Omar Knio, Chris
+Miller, and Habib Najm.
 
 */
