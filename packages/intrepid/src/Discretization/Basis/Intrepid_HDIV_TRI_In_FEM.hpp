@@ -74,24 +74,6 @@ namespace Intrepid {
 	    the interior points.
 
   
-    \remarks
-        DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HDIV              |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_FIAT                   |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
   */
   
 template<class Scalar, class ArrayScalar> 

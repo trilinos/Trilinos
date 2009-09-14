@@ -60,7 +60,8 @@ namespace Intrepid {
             subcell of particular dimension, and the last field gives the total number of basis
             functions associated with that subcell; see Section \ref basis_dof_tag_ord_sec for details.
   
-  \remark   To limit memory use by the basis factory, tag data is not initialized by basis ctors,
+  \remark   To limit memory use by factory-type objects (basis factories will be included in future
+            releases of Intrepid), tag data is not initialized by basis ctors,
             instead, whenever a function that requires tag data is invoked for a first time, it calls
             initializeTags() to fill <var>ordinalToTag_</var> and <var>tagToOrdinal_</var>. Because  
             tag data is basis specific, every concrete basis class requires its own implementation

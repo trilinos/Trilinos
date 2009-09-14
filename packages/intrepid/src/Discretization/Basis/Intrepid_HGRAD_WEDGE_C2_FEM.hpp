@@ -100,25 +100,6 @@ namespace Intrepid {
                 L_6 to L_14 are not associated with edges 0 to 9 in that order. The last three nodes
                 are located on 2-subcells (faces) and follow their order. Thus, L_15, L_16 and L17 are 
                 associated with faces 0, 1 and 2 in that order.
-  
-      \remarks
-      \li       DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Wedge                            |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
 template<class Scalar, class ArrayScalar> 
 class Basis_HGRAD_WEDGE_C2_FEM : public Basis<Scalar, ArrayScalar> {

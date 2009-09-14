@@ -80,24 +80,6 @@ namespace Intrepid {
             in this topology follows the natural order of k-subcells where the nodes are located, i.e.,
             L_0 to L_3 correspond to 0-subcells (vertices) 0 to 3 and L_4 to L_9 correspond to
             1-subcells (edges) 0 to 5.
-  \remarks
-  \li       DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Tetrahedron                      |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  2                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
 template<class Scalar, class ArrayScalar> 
 class Basis_HGRAD_TET_C2_FEM : public Basis<Scalar, ArrayScalar> {

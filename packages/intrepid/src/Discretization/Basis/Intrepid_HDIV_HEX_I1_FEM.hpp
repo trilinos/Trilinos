@@ -86,23 +86,6 @@ namespace Intrepid {
             flux as a DoF functional. Note that the faces of reference Hexahedron<> cells all 
             have the same area equal to 4.
   
-    \li       DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Hexahedron                       |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HDIV              |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
   
 template<class Scalar, class ArrayScalar> 

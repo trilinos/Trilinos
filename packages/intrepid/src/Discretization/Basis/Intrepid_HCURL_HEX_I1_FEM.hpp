@@ -96,23 +96,6 @@ namespace Intrepid {
             circulation as a DoF functional. Note that all edges of reference Hexahedron<> cells 
             have length 2.  
   
-    \li       DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Hexahedron                       |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HCURL             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
   
 template<class Scalar, class ArrayScalar> 

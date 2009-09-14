@@ -71,24 +71,6 @@ namespace Intrepid {
   |=========|==============|==============|==============|=============|===========================|
   \endverbatim
   
-    \remarks
-    \li       DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Hexahedron                       |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
   
 template<class Scalar, class ArrayScalar> 

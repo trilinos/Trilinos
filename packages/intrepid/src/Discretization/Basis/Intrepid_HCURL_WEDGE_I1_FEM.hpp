@@ -90,23 +90,6 @@ namespace Intrepid {
             circulation as a DoF functional. Note that edges 0, 2, 3 and 5 of reference Wedge<> cells 
             have unit lengths; edges 1 and 4 have length Sqrt(2), and edges 6, 7, and 8 have length 2.  
   
-    \li       DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Wedge                            |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HCURL             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
   
 template<class Scalar, class ArrayScalar> 

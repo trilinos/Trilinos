@@ -77,23 +77,6 @@ namespace Intrepid {
             edge length. The resulting basis is equivalent to a basis defined by using the edge circulation as a DoF functional. Note that edges
             0 and 2 of reference Triangle<> cells have unit lengths and edge 1 has length Sqrt(2).  
   
-    \li     DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HCURL             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  1                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_DEFAULT                |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-\endverbatim
  */
   
 template<class Scalar, class ArrayScalar> 

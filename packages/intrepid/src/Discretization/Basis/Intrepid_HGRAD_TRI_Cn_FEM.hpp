@@ -64,25 +64,6 @@ namespace Intrepid {
 	    dof number 0 is at the bottom left vertex (0,0).  The dof increase
 	    along the lattice with points along the lines of constant
 	    x adjacent in the enumeration. 
-
-    \remarks
-     DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_FIAT                   |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
   */
   
 template<class Scalar, class ArrayScalar> 

@@ -46,22 +46,6 @@ namespace Intrepid {
             arbitrary degree on tetrahedron.
   
     \remarks
-    \li     DefaultBasisFactory will select this class if the following parameters are specified:
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Tetrahedron                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_HIERARCHICAL           |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
 
     \li   All degrees of freedom are considered to be internal (ie not assembled)
   */

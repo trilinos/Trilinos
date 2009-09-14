@@ -64,25 +64,7 @@ namespace Intrepid {
 	    are chosen on each edge and the interior of warp-blend lattice of order n+1 is chosen for
 	    the interior points.
   
-    \remarks
-        DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HCURL             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_FIAT                   |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
-  */
+ */
   
 template<class Scalar, class ArrayScalar> 
 class Basis_HCURL_TRI_In_FEM: public Basis<Scalar, ArrayScalar> {
