@@ -2203,6 +2203,9 @@ namespace Tpetra
     Kokkos::MultiVector<Scalar,Node>        *lclX = &X.getLocalMVNonConst();
     const Kokkos::MultiVector<Scalar,Node>  *lclY = &Y.getLocalMV();
 
+    // it is okay if X and Y reference the same data, because we can perform a triangular solve in-situ.
+    // however, we require that column access to each is strided.
+
     // cannot handle non-constant stride right now
     if (X.isConstantStride() == false) {
       // generate a copy of X 
@@ -2221,20 +2224,6 @@ namespace Tpetra
       lclY = &Ycopy->getLocalMV();
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Y is not constant stride, duplicating Y results in a strided copy" << std::endl;
-      Ycopy->describe(*out,Teuchos::VERB_EXTREME);
-#endif
-    }
-
-    // it is okay if X and Y reference the same data, because we can perform a triangular solve in-situ
-    // however, for simplicity, for now we will not support this use case
-    if (lclX==lclY && importer==null && exporter==null) {
-      TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-          "::applyInverse(X,Y): If X and Y are the same, it necessitates a temporary copy of Y, which is inefficient.");
-      // generate a copy of Y
-      Ycopy = Teuchos::rcp(new MV(Y));
-      lclY = &Ycopy->getLocalMV();
-#ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
-      if (myImageID == 0) *out << "X and Y are co-located, duplicating Y results in a strided copy" << std::endl;
       Ycopy->describe(*out,Teuchos::VERB_EXTREME);
 #endif
     }

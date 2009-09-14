@@ -53,20 +53,25 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
-  template<class Scalar, class LO, class GO, class Node>
+  template <class Scalar, class LO, class GO, class Node>
   class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> >
   {
   public:
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs ) { 
-      return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>(mv.getMap(),numvecs)); 
+
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
+    {
+      return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>(mv.getMap(), numvecs) ); 
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv ) {
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    {
       return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>( mv ) ); 
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index ) { 
+
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    {
       TEST_FOR_EXCEPTION(index.size() == 0,std::runtime_error,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
 #ifdef TPETRA_DEBUG
@@ -134,6 +139,7 @@ namespace Belos {
     static int GetNumberVecs( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.getNumVectors(); }
 
+
     static void MvTimesMatAddMv( const Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  const Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
@@ -152,10 +158,10 @@ namespace Belos {
     static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
     { mv.scale(alpha); }
 
-    static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alpha )
-    { mv.scale(alpha); }
+    static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
+    { mv.scale(alphas); }
 
-    static void MvTransMv( const Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B )
+    static void MvTransMv(const Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B)
     { 
       Tpetra::Map<LO,GO> LocalMap(B.numRows(), static_cast<GO>(0), A.getMap()->getComm(), Tpetra::LocallyReplicated, A.getMap()->getNode());
       Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(Teuchos::rcpFromRef(LocalMap),B.numCols(),true);
@@ -164,8 +170,8 @@ namespace Belos {
       B_mv.get1dCopy(av,B.stride());
     }
 
-    static void MvDot( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar>& dots)
-    { 
+    static void MvDot( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
+    {
       TEST_FOR_EXCEPTION(A.getNumVectors() != B.getNumVectors(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
 #ifdef TPETRA_DEBUG
@@ -176,7 +182,7 @@ namespace Belos {
       A.dot(B,av(0,A.getNumVectors()));
     }
 
-    static void MvNorm( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm )
+    static void MvNorm(const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &normvec, NormType type=TwoNorm )
     { 
 #ifdef TPETRA_DEBUG
       TEST_FOR_EXCEPTION(normvec.size() < (typename std::vector<int>::size_type)mv.getNumVectors(),std::invalid_argument,
@@ -230,11 +236,11 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////
 
-  template <class Scalar, class LO, class GO, class Node> 
-  class OperatorTraits < Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO> >
+  template <class Scalar, class LO, class GO, class Node>
+  class OperatorTraits < Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node>, Tpetra::Operator<Scalar,LO,GO,Node> >
   {
   public:
-    static void Apply ( const Tpetra::Operator<Scalar,LO,GO> & Op, 
+    static void Apply ( const Tpetra::Operator<Scalar,LO,GO,Node> & Op, 
                         const Tpetra::MultiVector<Scalar,LO,GO,Node> & X,
                               Tpetra::MultiVector<Scalar,LO,GO,Node> & Y,
                         ETrans trans=NOTRANS )

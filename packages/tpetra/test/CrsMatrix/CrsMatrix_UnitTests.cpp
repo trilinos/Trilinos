@@ -20,6 +20,8 @@
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
 
+// FINISH: add test of multiply/solve with diagonal matrix and solve with implicit unit-diagonal matrix
+
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -958,21 +960,20 @@ namespace {
     // create a Map
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
     Scalar SONE = static_cast<Scalar>(1.0);
-    Scalar STWO = static_cast<Scalar>(2.0);
 
     /* create one of the following locally triangular matries:
      
     0  [1 2       ] 
-    1  [  1 2     ] 
+    1  [  1 3     ] 
     .  [    .  .  ] = U
-   n-2 [       1 2]
+   n-2 [       1 n]
    n-1 [         1]
 
-    0  [1         ] 
-    1  [2 1       ] 
-    .  [   .  .   ] = L
-   n-2 [     2 1  ]
-   n-1 [       2 1]
+    0  [1           ] 
+    1  [2 1         ] 
+    .  [   .  .     ] = L
+   n-2 [     n-1 1  ]
+   n-1 [         n 1]
 
       Global matrices are diag(U,U,...,U) and diag(L,L,...,L)
     
@@ -986,7 +987,7 @@ namespace {
     B.setObjectLabel("B");
     Xhat.setObjectLabel("Xhat");
     X.randomize();
-    for (size_t tnum=0; tnum < 8; ++tnum) { // FINISH: set this back to 16 to enable the transpose tests
+    for (size_t tnum=0; tnum < 16; ++tnum) {
       EUplo   uplo      = ((tnum & 1) == 1 ? UPPER_TRI         : LOWER_TRI);
       EDiag   diag      = ((tnum & 2) == 2 ? UNIT_DIAG         : NON_UNIT_DIAG);
       OptimizeOption os = ((tnum & 4) == 4 ? DoOptimizeStorage : DoNotOptimizeStorage);
@@ -1011,7 +1012,7 @@ namespace {
                 // do nothing
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid+1), tuple<Scalar>(STWO) );
+                AMat->insertGlobalValues( gid, tuple<GO>(gid+1), tuple<Scalar>(static_cast<GO>(gid+2)) );
               }
             }
           }
@@ -1021,19 +1022,19 @@ namespace {
                 AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<Scalar>(SONE,STWO) );
+                AMat->insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<Scalar>(SONE,static_cast<GO>(gid+2)) );
               }
             }
           }
         }
-        else {
+        else { // uplo == LOWER_TRI
           if (diag == UNIT_DIAG) {
             for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
               if (gid == map->getMinGlobalIndex()) {
                 // do nothing
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid-1), tuple<Scalar>(STWO) );
+                AMat->insertGlobalValues( gid, tuple<GO>(gid-1), tuple<Scalar>(static_cast<GO>(gid+1)) );
               }
             }
           }
@@ -1043,7 +1044,7 @@ namespace {
                 AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<Scalar>(SONE) );
               }
               else {
-                AMat->insertGlobalValues( gid, tuple<GO>(gid-1,gid), tuple<Scalar>(STWO,SONE) );
+                AMat->insertGlobalValues( gid, tuple<GO>(gid-1,gid), tuple<Scalar>(static_cast<GO>(gid+1),SONE) );
               }
             }
           }

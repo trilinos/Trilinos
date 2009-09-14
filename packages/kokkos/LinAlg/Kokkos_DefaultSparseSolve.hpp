@@ -29,6 +29,7 @@
 #ifndef KOKKOS_BASESPARSESOLVE_H
 #define KOKKOS_BASESPARSESOLVE_H
 
+#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CrsMatrix.hpp" 
@@ -38,6 +39,7 @@
 #ifndef KERNEL_PREFIX
   #define KERNEL_PREFIX
 #endif
+
 
 namespace Kokkos {
 
@@ -61,7 +63,7 @@ namespace Kokkos {
       DomainScalar      *xj = x + rhs * xstride;
       const RangeScalar *yj = y + rhs * ystride;
       // unitDiag indictes whether we neglect the diagonal row entry and scale by it
-      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't scale)
+      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
       // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
       // upper -> diagonal is first entry on row
       // lower -> diagonal is last entry on row
@@ -152,7 +154,7 @@ namespace Kokkos {
       Scalar dval;
       size_t nE;
       // unitDiag indictes whether we neglect the diagonal row entry and scale by it
-      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't scale)
+      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
       // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
       // upper -> diagonal is first entry on row
       // lower -> diagonal is last entry on row
@@ -236,6 +238,188 @@ namespace Kokkos {
           }
           xj[row] /= dval;
         }
+      }
+    }
+  };
+
+
+  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  struct DefaultSparseTransposeSolveOp1 {
+    // mat data
+    const size_t  *offsets;
+    const Ordinal *inds;
+    const Scalar  *vals;
+    size_t numRows;
+    // matvec params
+    bool unitDiag, upper;
+    // mv data
+    DomainScalar  *x;
+    const RangeScalar *y;
+    size_t xstride, ystride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+      // solve rhs i for lhs i
+      const size_t rhs = i;
+      DomainScalar      *xj = x + rhs * xstride;
+      const RangeScalar *yj = y + rhs * ystride;
+      // unitDiag indictes whether we neglect the diagonal row entry and scale by it
+      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
+      // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
+      // upper -> diagonal is first entry on row
+      // lower -> diagonal is last entry on row
+      // 
+      // put y into x and solve system in-situ
+      // this is copy-safe, in the scenario that x and y point to the same location.
+      //
+      for (size_t row=0; row < numRows; ++row) {
+        xj[row] = yj[row];
+      }
+      // 
+      if (upper && unitDiag) {
+        // upper + unit
+        size_t beg, endplusone;
+        for (size_t row=0; row < numRows-1; ++row) {
+          beg = offsets[row]; 
+          endplusone = offsets[row+1];
+          for (size_t j=beg; j < endplusone; ++j) {
+            xj[inds[j]] -= (vals[j] * xj[row]);
+          }
+        }
+      }
+      else if (upper && !unitDiag) {
+        // upper + non-unit; diag is first element in row
+        size_t diag, endplusone;
+        Scalar dval;
+        for (size_t row=0; row < numRows-1; ++row) {
+          diag = offsets[row]; 
+          endplusone = offsets[row+1];
+          dval = vals[diag];
+          xj[row] /= dval;
+          for (size_t j=diag+1; j < endplusone; ++j) {
+            xj[inds[j]] -= (vals[j] * xj[row]);
+          }
+        }
+        diag = offsets[numRows-1];
+        dval = vals[diag];
+        xj[numRows-1] /= dval;
+      }
+      else if (!upper && unitDiag) {
+        // lower + unit
+        for (size_t row=numRows-1; row > 0; --row) {
+          size_t beg = offsets[row], endplusone = offsets[row+1];
+          for (size_t j=beg; j < endplusone; ++j) {
+            xj[inds[j]] -= (vals[j] * xj[row]);
+          }
+        }
+      }
+      else if (!upper && !unitDiag) {
+        // lower + non-unit; diag is last element in row
+        Scalar dval;
+        for (size_t row=numRows-1; row > 0; --row) {
+          size_t beg = offsets[row], diag = offsets[row+1]-1;
+          dval = vals[diag];
+          xj[row] /= dval;
+          for (size_t j=beg; j < diag; ++j) {
+            xj[inds[j]] -= (vals[j] * xj[row]);
+          }
+        }
+        // last row
+        dval = offsets[0];
+        xj[0] /= dval;
+      }
+    }
+  };
+
+
+  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+  struct DefaultSparseTransposeSolveOp2 {
+    // mat data
+    const Ordinal * const * inds_beg;
+    const Scalar  * const * vals_beg;
+    const size_t  *         numEntries;
+    size_t numRows;
+    // matvec params
+    bool unitDiag, upper;
+    // mv data
+    DomainScalar      *x;
+    const RangeScalar *y;
+    size_t xstride, ystride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+      // solve rhs i for lhs i
+      const size_t rhs = i;
+      DomainScalar      *xj = x + rhs * xstride;
+      const RangeScalar *yj = y + rhs * ystride;
+      const Scalar  *rowvals;
+      const Ordinal *rowinds;
+      Scalar dval;
+      size_t nE;
+      // unitDiag indictes whether we neglect the diagonal row entry and scale by it
+      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
+      // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
+      // upper -> diagonal is first entry on row
+      // lower -> diagonal is last entry on row
+      // 
+      // put y into x and solve system in-situ
+      // this is copy-safe, in the scenario that x and y point to the same location.
+      //
+      for (size_t row=0; row < numRows; ++row) {
+        xj[row] = yj[row];
+      }
+      // 
+      if (upper && unitDiag) {
+        // upper + unit
+        for (size_t row=0; row < numRows-1; ++row) {
+          nE = numEntries[row];
+          rowvals = vals_beg[row];
+          rowinds = inds_beg[row];
+          for (size_t j=0; j < nE; ++j) {
+            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+          }
+        }
+      }
+      else if (upper && !unitDiag) {
+        // upper + non-unit; diag is first element in row
+        for (size_t row=0; row < numRows-1; ++row) {
+          nE = numEntries[row];
+          rowvals = vals_beg[row];
+          rowinds = inds_beg[row];
+          dval = rowvals[0];
+          xj[row] /= dval;
+          for (size_t j=1; j < nE; ++j) {
+            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+          }
+        }
+        rowvals = vals_beg[numRows-1];
+        dval = rowvals[0];
+        xj[numRows-1] /= dval;
+      }
+      else if (!upper && unitDiag) {
+        // lower + unit
+        for (size_t row=numRows-1; row > 0; --row) {
+          nE = numEntries[row];
+          rowvals = vals_beg[row];
+          rowinds = inds_beg[row];
+          for (size_t j=0; j < nE; ++j) {
+            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+          }
+        }
+      }
+      else if (!upper && !unitDiag) {
+        // lower + non-unit; diag is last element in row
+        for (size_t row=numRows-1; row > 0; --row) {
+          nE = numEntries[row];
+          rowvals = vals_beg[row];
+          rowinds = inds_beg[row];
+          dval = rowvals[nE-1];
+          xj[row] /= dval;
+          for (size_t j=0; j < nE-1; ++j) {
+            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+          }
+        }
+        rowvals = vals_beg[0];
+        dval = rowvals[0];
+        xj[0] /= dval;
       }
     }
   };
@@ -339,14 +523,16 @@ namespace Kokkos {
   template <class GRAPH>
   Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse graphs
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(true, std::exception, 
+        Teuchos::typeName(*this) << "::initializeStructure(): method is not implemented for graph of type " << Teuchos::typeName(graph));
   }
 
   template<class Scalar, class Ordinal, class Node>
   template <class MATRIX>
-  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(MATRIX &matrix, Teuchos::DataAccess cv) {
     // not implemented for general sparse matrices
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(true, std::exception, 
+        Teuchos::typeName(*this) << "::initializeValues(): method is not implemented for matrix of type " << Teuchos::typeName(matrix));
   }
 
   template <class Scalar, class Ordinal, class Node>
@@ -436,11 +622,15 @@ namespace Kokkos {
                       MultiVector<RangeScalar,Node> &X) const {
     typedef DefaultSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
     typedef DefaultSparseSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
+    typedef DefaultSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp1D;
+    typedef DefaultSparseTransposeSolveOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  TOp2D;
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
-    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
-    TEST_FOR_EXCEPT(X.getNumRows() < numRows_);
-    TEST_FOR_EXCEPT(X.getNumRows() < numRows_);
+        Teuchos::typeName(*this) << "::solve(): this solve was not fully initialized.");
+    TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
+        Teuchos::typeName(*this) << "::solve(): Left hand side and right hand side multivectors have differing numbers of vectors.");
+    TEST_FOR_EXCEPTION(X.getNumRows() < numRows_ || Y.getNumRows() < numRows_, std::runtime_error,
+        Teuchos::typeName(*this) << "::solve(): Either left or right hand side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
+         
     ReadyBufferHelper<Node> rbh(node_);
     if (isPacked_ == true) {
       if (trans == Teuchos::NO_TRANS) {
@@ -461,7 +651,21 @@ namespace Kokkos {
         node_->template parallel_for<Op1D>(0,numRHS,wdp);
       }
       else {
-        TEST_FOR_EXCEPT(true);  // FINISH
+        TOp1D wdp;
+        rbh.begin();
+        wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+        wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+        wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
+        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        rbh.end();
+        wdp.numRows = numRows_;
+        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
+        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<TOp1D>(0,numRHS,wdp);
       }
     }
     else {
@@ -483,7 +687,21 @@ namespace Kokkos {
         node_->template parallel_for<Op2D>(0,numRHS,wdp);
       }
       else {
-        TEST_FOR_EXCEPT(true);  // FINISH
+        TOp2D wdp;
+        rbh.begin();
+        wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+        wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+        wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+        wdp.x       = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
+        wdp.y       = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        rbh.end();
+        wdp.numRows = numRows_;
+        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG ? true : false);
+        wdp.upper    = (uplo == Teuchos::UPPER_TRI ? true : false);
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<TOp2D>(0,numRHS,wdp);
       }
     }
     return;
