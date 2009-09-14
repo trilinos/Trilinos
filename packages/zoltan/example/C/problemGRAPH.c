@@ -281,10 +281,11 @@ float *nextWgt;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
+  srand48(graph->numMyVertices);
 
   if ( (sizeGID != 1) || (sizeLID != 1) || 
        (num_obj != graph->numMyVertices)||
-       (wgt_dim != 0)){
+       (wgt_dim != 1)){
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -308,7 +309,7 @@ float *nextWgt;
 
       *nextNbor++ = graph->nborGID[j];
       *nextProc++ = graph->nborProc[j];
-      *nextWgt++ = 1.0;
+      *nextWgt++ = (float)10.0*drand48();
     }
   }
   return;
