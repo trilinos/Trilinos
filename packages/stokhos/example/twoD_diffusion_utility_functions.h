@@ -1,7 +1,10 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -23,7 +26,9 @@
 // Questions? Contact Christopher W. Miller (cmiller@math.umd.edu).
 // 
 // ***********************************************************************
-
+#ifndef PI
+#define PI 3.1415926535897932384626433832795
+#endif
 
 //If the RHS function is expanded in a KL-expansion, use this to generate the RHS vector.
 void generateRHS(double (*rhs_function)(double, double, int), Teuchos::Array<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
@@ -65,7 +70,7 @@ void generateRHS(double (*rhs_function)(double, double, int), Teuchos::Array<dou
 
 // for an arbitary RHS function f(x,\xi) computes the RHS vector via quadrature. VERY SLOW if there are many basis functions
 // and the dimension is high.
-void generateRHS(double (*rhs_function)(double, double, Teuchos::Array<double>&), Teuchos::Array<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
+void generateRHS(double (*rhs_function)(double, double, Teuchos::Array<double>&), Teuchos::Array<double> mesh, Epetra_Vector& RHS,Teuchos::RCP<const Stokhos::ProductBasis<int,double> > basis){
 
   int N_xi = basis->size();
   int N_x = mesh.size();

@@ -1,7 +1,10 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -20,95 +23,179 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Christopher W. Miller (cmiller@math.umd.edu).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-// ************************************************************************
-// Class attempts to generate an orthogonal polynomial basis for a given
-// weight function and interval.  The Discritized Stilges procidure described
-// in described in "On the Calculation of Rys Polynomials and Quadratures",
-// Robin P. Sagar, Vedene H. Smith is used to generate the recurrence 
-// coefficients.
-// Please be aware that this method is not fullproof and that it appears to
-// encounter trouble with strongly singular weights since Gaussan quadrature
-// is used to compute the relavant integrals.  For 'nice' weight functions the
-// method seems relatively robust.
-// *************************************************************************
 #ifndef STOKHOS_RECURRENCEBASIS_HPP
 #define STOKHOS_RECURRENCEBASIS_HPP
 
-#include "Stokhos_OneDOrthogPolyBasisBase.hpp"
+#include "Stokhos_OneDOrthogPolyBasis.hpp"
 
 namespace Stokhos {
 
+  /*! 
+   * \brief Implementation of OneDOrthogPolyBasis based on the general
+   * three-term recurrence relationship:
+   * \f[
+   *    \psi_{k+1}(x) = 
+   *       \gamma_{k+1}\big( (\alpha_k - \delta_k x)\psi_k(x) - 
+   *                         \beta_k\psi_{k-1}(x) \big)
+   * \f]
+   * for \f$k=0,\dots,P\f$ where \f$\psi_{-1}(x) = 0\f$, \f$\psi_{0}(x) = 1\f$,
+   * and \f$\beta_{0} = 1\f$.  
+   */
+  /*!Derived classes implement the recurrence
+   * relationship by implementing computeRecurrenceCoefficients().  If
+   * \c normalize = \c true in the constructor, then 
+   * \f$\gamma_k = 1/\sqrt{\langle\psi_k^2\rangle}\f$, otherwise 
+   * \f$\gamma_k = 1\f$.
+   * Note that a three term recurrence can always be defined with 
+   * \f$\delta_k = 1\f$ in which case the polynomials are monic.  However
+   * typical normalizations of some polynomial families (see 
+   * Stokhos::LegendreBasis) require the extra terms.
+   */
   template <typename ordinal_type, typename value_type>
   class RecurrenceBasis : 
-    public OneDOrthogPolyBasisBase<ordinal_type, value_type> {
+    public OneDOrthogPolyBasis<ordinal_type, value_type> {
   public:
-    
-    //! Constructor
-    RecurrenceBasis(const ordinal_type& p , const char* label,
-                    const value_type (*weightFn)(const value_type),
-                    const value_type& leftEndPt,
-                    const value_type& rightEndPt,const bool normalize);
-    
+
     //! Destructor
-    ~RecurrenceBasis();
-    
-    //! Project a polynomial into this basis (NOT IMPLIMENTED)
-    virtual void projectPoly(const Polynomial<value_type>& poly, 
-		     Teuchos::Array<value_type>& coeffs) const;
+    virtual ~RecurrenceBasis();
 
-    //! Project derivative of basis polynomial into this basis (NOT IMPLIMENTED)
-    virtual void projectDerivative(ordinal_type i, 
-                             Teuchos::Array<value_type>& coeffs) const;
- 
-    //! Evaluates the scaled weight function.
-    virtual value_type evaluateWeight(const value_type& x) const;
+    //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
+    //@{
 
+    //! Return order of basis (largest monomial degree \f$P\f$).
+    virtual ordinal_type order() const;
 
-    ////! return vectors containing recurrance coefficients.
-    virtual void getAlpha(Teuchos::Array<value_type>& alphaOut) const {alphaOut = this->alpha;}
-    virtual void getBeta(Teuchos::Array<value_type>& betaOut) const {betaOut = this->beta;}
-    virtual void getGamma(Teuchos::Array<value_type>& gammaOut) const {gammaOut = this->gamma;}
+    //! Return total size of basis (given by order() + 1).
+    virtual ordinal_type size() const;
 
-    //! Quadrature functions for generating recurrance coefficients.
-    virtual value_type expectedValue_tJ_nsquared(const ordinal_type& order) const;
-    virtual value_type expectedValue_J_nsquared(const ordinal_type& order) const;
-    
-    //!Evaluate inner product of two basis functions to test orthogonality.
-    virtual value_type eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const;
-    
-    //!Evaluate p_th basis function at a given point.
-    virtual value_type evaluateBasesOrder_p(const value_type& x, 
-					const ordinal_type& order) const;
+    //! Return array storing norm-squared of each basis polynomial
+    /*!
+     * Entry \f$l\f$ of returned array is given by \f$\langle\psi_l^2\rangle\f$
+     * for \f$l=0,\dots,P\f$ where \f$P\f$ is given by order().
+     */
+    virtual const Teuchos::Array<value_type>& norm_squared() const;
 
-    //! Evaluate basis polynomials at given point
+    //! Return norm squared of basis polynomial \c i.
+    virtual const value_type& norm_squared(ordinal_type i) const;
+
+    //! Compute triple product tensor
+    /*!
+     * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
+     * \f$C_{ijk} = \langle\psi_i\psi_j\psi_k\rangle\f$ where \f$\psi_l\f$
+     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
+     * \f$P\f$ is the order of the basis.
+     *
+     * This method is implemented by computing \f$C_{ijk}\f$ using Gaussian
+     * quadrature.
+     */
+    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
+
+    //! Compute derivative double product tensor
+    /*!
+     * The \f$(i,j)\f$ entry of the tensor \f$B_{ij}\f$ is given by
+     * \f$B_{ij} = \langle\psi_i'\psi_j\rangle\f$ where \f$\psi_l\f$
+     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
+     * \f$P\f$ is the order of the basis.
+     *
+     * This method is implemented by computing \f$B_{ij}\f$ using Gaussian
+     * quadrature.
+     */
+    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const;
+
+    //! Evaluate each basis polynomial at given point \c point
+    /*!
+     * Size of returned array is given by size(), and coefficients are
+     * ordered from order 0 up to order order().
+     */
     virtual void evaluateBases(const value_type& point,
                                Teuchos::Array<value_type>& basis_pts) const;
 
+    /*! 
+     * \brief Evaluate basis polynomial given by order \c order at given 
+     * point \c point.
+     */
+    virtual value_type evaluate(const value_type& point, 
+				ordinal_type order) const;
 
-    //! Get Gauss quadrature points, weights, and values of basis at points
+    //! Print basis to stream \c os
+    virtual void print(std::ostream& os) const;
+
+    //! Return string name of basis
+    virtual const std::string& getName() const;
+
+    /*! 
+     * \brief Compute quadrature points, weights, and values of 
+     * basis polynomials at given set of points \c points.
+     */
+    /*!
+     * \c quad_order specifies the order to which the quadrature should be
+     * accurate, not the number of quadrature points.  The number of points
+     * is given by (\c quad_order + 1) / 2.   Note however the passed arrays
+     * do NOT need to be sized correctly on input as they will be resized
+     * appropriately.
+     *
+     * The quadrature points and weights are computed from the three-term
+     * recurrence by solving a tri-diagional symmetric eigenvalue problem
+     * (see Gene H. Golub and John H. Welsch, "Calculation of Gauss Quadrature 
+     * Rules", Mathematics of Computation, Vol. 23, No. 106 (Apr., 1969), 
+     * pp. 221-230).
+     */
     virtual void 
     getQuadPoints(ordinal_type quad_order,
 		  Teuchos::Array<value_type>& points,
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
-    //! Get sparse grid rule number
-    virtual ordinal_type getRule() const { return 10; }
+    //@}
 
-    //! Get quadrature weight factor
-    virtual value_type getQuadWeightFactor() const { return 1; }
+    //! Return recurrence coefficients defined by above formula
+    virtual void getRecurrenceCoefficients(Teuchos::Array<value_type>& alpha,
+					   Teuchos::Array<value_type>& beta,
+					   Teuchos::Array<value_type>& delta,
+					   Teuchos::Array<value_type>& gamma) const;
 
-    //! Get quadrature point factor
-    virtual value_type getQuadPointFactor() const { return 1; }
+    //! Evaluate basis polynomials and their derivatives at given point \c point
+    virtual void evaluateBasesAndDerivatives(const value_type& point,
+					     Teuchos::Array<value_type>& vals,
+					     Teuchos::Array<value_type>& derivs) const;
 
+  protected:
 
-    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
-    
+    //! Constructor to be called by derived classes
+    /*!
+     * \c name is the name for the basis that will be displayed when
+     * printing the basis, \c p is the order of the basis, and \c normalize
+     * indicates whether the basis polynomials should have unit-norm.
+     */
+    RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize);
+
+    //! Compute recurrence coefficients
+    /*!
+     * Derived classes should implement this method to compute their
+     * recurrence coefficients.  \c n is the number of coefficients to compute.
+     * Derived classes should call this method in their constructor, followed
+     * be setup() to fully setup the basis.  The method is also called by
+     * getQuadPoints() if a quadrature order greater than twice the polynomial
+     * order is requested.
+     */
+    virtual void 
+    computeRecurrenceCoefficients(ordinal_type n,
+				  Teuchos::Array<value_type>& alpha,
+				  Teuchos::Array<value_type>& beta,
+				  Teuchos::Array<value_type>& delta) const = 0;
+
+    //! Setup basis after computing recurrence coefficients
+    /*!
+     * Derived classes should call this method after computing their recurrence
+     * coefficients in their constructor to finish setting up the basis.
+     */
+    void setup();
+
   private:
 
     // Prohibit copying
@@ -118,33 +205,42 @@ namespace Stokhos {
     RecurrenceBasis& operator=(const RecurrenceBasis& b);
     
   protected:
-    //! Scale for the weight
-    value_type scaleFactor;
 
-    //! Normalized?
-    const bool normalize_;
+    //! Name of basis
+    std::string name;
 
-    //! Domain Params
-    const value_type leftEndPt_;
-    const value_type rightEndPt_;
+    //! Order of basis
+    ordinal_type p;
 
-    //!Weight function
-    const value_type (*weightFn_)(const value_type);
-  
-    //!label
-    const char * label_;
+    //! Normalize basis
+    bool normalize;
 
-    //! Recurrance coeffs
+    //! Recurrence \f$\alpha\f$ coefficients
     Teuchos::Array<value_type> alpha;
+
+    //! Recurrence \f$\beta\f$ coefficients
     Teuchos::Array<value_type> beta;
+
+    //! Recurrence \f$\delta\f$ coefficients
+    Teuchos::Array<value_type> delta;
+
+    //! Recurrence \f$\gamma\f$ coefficients
     Teuchos::Array<value_type> gamma;
-    
-    
+
+    //! Norms
+    Teuchos::Array<value_type> norms;
+
+    //! Triple product tensor
+    mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Cijk;
+
+    //! Deriv double product tensor
+    mutable Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij;
+
   }; // class RecurrenceBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-
 #include "Stokhos_RecurrenceBasisImp.hpp"
+
 #endif

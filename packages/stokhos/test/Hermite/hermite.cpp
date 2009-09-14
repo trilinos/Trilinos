@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     const int d = 7;
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
     bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(d));
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
     Stokhos::OrthogPolyApprox<int,double> u(basis),v(basis),w(basis);

@@ -47,3 +47,6 @@ INPUT                  = ../src index.doc
 EXAMPLE_PATH           = ../example
 
 GENERATE_TAGFILE       = ../../common/tag_files/stokhos.tag
+
+PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS HAVE_STOKHOS_DAKOTA HAVE_STOKHOS_FORUQTK
+TEMPLATE_RELATIONS     = NO

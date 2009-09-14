@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -38,9 +38,8 @@
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_RysBasis.hpp"
-#include "Stokhos_RecurrenceBasis.hpp"
+#include "Stokhos_DiscretizedStieltjesBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
-
 
 // Expansion methods
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -60,11 +59,9 @@
 #include "Stokhos_Dense3Tensor.hpp"
 
 // Operators
-#include "Stokhos_StochGalerkin_Precon.hpp"
+#include "Stokhos_MLPrecOp.hpp"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 #include "Stokhos_MeanEpetraOp.hpp"
 #include "Stokhos_KLMatrixFreeEpetraOp.hpp"
-
-//#include "Stokhos_StochGalerkin_FiniteDiff.hpp"
 
 #endif // STOKHOS_HPP 

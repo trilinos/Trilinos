@@ -1,10 +1,10 @@
 // $Id$ 
-// $Source$
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -48,40 +48,53 @@ int main(int argc, char **argv)
 {
   try {
 
-    // 1-D basis for order 10
-    int p = 10;
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
-    bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    // Basis of dimension 3, order 5
+    const int d = 3;
+    const int p = 5;
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    for (int i=0; i<d; i++) {
+      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
+    }
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 
+    // Quadrature method
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+
     // Expansion method
-    Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
+    Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, quad);
 
     // Polynomial expansions
     Stokhos::OrthogPolyApprox<int,double> u(basis), v(basis), w(basis);
-    u[0] = 1.0;
-    u[1] = 0.4;
-    u[2] = 0.06;
-    u[3] = 0.002;
-    
+    u.term(0,0) = 1.0;
+    for (int i=0; i<d; i++) {
+      u.term(i,1) = 0.4 / d;
+      u.term(i,2) = 0.06 / d;
+      u.term(i,3) = 0.002 / d;
+    }
+
     // Compute expansion
     expn.log(v,u);
     expn.times(w,v,v);
     expn.plusEqual(w,1.0);
     expn.divide(v,1.0,w);
-    
+
     // Print u and v
     std::cout << "v = 1.0 / (log(u)^2 + 1):" << std::endl;
-    std::cout << "\tu = " << u;
-    std::cout << "\tv = " << w;
+    std::cout << "\tu = ";
+    u.print(std::cout);
+    std::cout << "\tv = ";
+    v.print(std::cout);
 
     // Compute moments
     double mean = v.mean();
     double std_dev = v.standard_deviation();
 
-    // Evaluate PCE and function at a point = 0.25
-    Teuchos::Array<double> pt(1); pt[0] = 0.25;
+    // Evaluate PCE and function at a point = 0.25 in each dimension
+    Teuchos::Array<double> pt(d); 
+    for (int i=0; i<d; i++) 
+      pt[i] = 0.25;
     double up = u.evaluate(pt);
     double vp = 1.0/(std::log(up)*std::log(up)+1.0);
     double vp2 = v.evaluate(pt);

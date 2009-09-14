@@ -1,7 +1,10 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -98,14 +101,12 @@ int n, p, d;
 //char polyType;
 //double * evaluationPoint = new double(d);
 if(argc < 7){
-  std::cout<< "Usage is: Stokhos_twoD_diffusion_example.cpp <# meshPoints> <PC Degree> <PC Dimension> <sigma> <mu> <Weight Cut>\n";
-  std::cout << "assuming: Stokhos_twoD_diffusion_example.cpp 32 5 1 3 1 3\n";
   n = 32; //Number of mesh points
   p = 5; //Polynomial degree
-  d = 1;  //Terms in KL expansion
-  sigma = 3;
-  mean = 1;
-  weightCut = 3;     // Support for distribution is +-weightCut
+  d = 2;  //Terms in KL expansion
+  sigma = .1;
+  mean = .2;
+  weightCut = 1;     // Support for distribution is +-weightCut
 }else{
   n = atoi(argv[1]);
   p = atoi(argv[2]);
@@ -142,10 +143,10 @@ double meshSize = x[1]-x[0];
 /////////////////////////////////////////////////////////////////////////////////
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
 for (int i = 0; i< d; i++){
-  bases[i] = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"beta",&weight,-weightCut,weightCut,true));
+  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
 }
 
-Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis =
+Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
   Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->getLowOrderTripleProductTensor(d+1);
 

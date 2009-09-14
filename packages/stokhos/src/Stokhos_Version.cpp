@@ -2,7 +2,7 @@
 // ***********************************************************************
 // 
 //                     Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -30,6 +30,6 @@
 
 std::string Stokhos_Version() 
 { 
-  return("Stokhos Version 1.0d - 01/08/2008"); 
+  return("Stokhos Version 2.0d - 10/01/2009"); 
 }
 

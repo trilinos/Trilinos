@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -31,17 +31,9 @@
 #include "sparse_grid_mixed_growth.H"
 #include "sandia_rules.H"
 
-// namespace webbur {
-//   int sparse_grid_mixed_size ( int dim_num, int level_max, int rule[] );
-//   void sparse_grid_mixed_point ( int dim_num, int level_max, int rule[], 
-//                                  int point_num, double sparse_point[] );
-//   void sparse_grid_mixed_weight ( int dim_num, int level_max, int rule[], 
-//                                   int point_num, double sparse_weight[] );
-// }
-
 template <typename ordinal_type, typename value_type>
 Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
-SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis,
+SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
 		     ordinal_type sparse_grid_level) 
 {
   ordinal_type d = product_basis->dimension();
@@ -58,7 +50,7 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 
   std::cout << "Sparse grid level = " << level << std::endl;
 
-  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
+  Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > > coordinate_bases = product_basis->getCoordinateBases();
 
   // Compute quad points, weights, values
   Teuchos::Array<int> rules(d);

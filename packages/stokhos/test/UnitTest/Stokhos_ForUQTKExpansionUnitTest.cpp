@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -43,7 +43,7 @@ namespace ForUQTKExpansionUnitTest {
   struct UnitTestSetup {
     ValueType rtol, atol;
     OrdinalType sz;
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
     Teuchos::RCP< Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2;

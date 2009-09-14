@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -41,6 +41,21 @@
 
 namespace Stokhos {
 
+  //! Abstract base class for multivariate orthogonal polynomials.
+  /*!
+   * This class provides an abstract interface for multivariate orthogonal
+   * polynomials.  Orthogonality is defined by the inner product
+   * \f[
+   *      (f,g) = \langle fg \rangle = 
+   *              \int_{R^d} f(x)g(x) \rho(x) dx
+   * \f]
+   * where \f$\rho\f$ is the density function of the measure associated with
+   * the orthogonal polynomials and \f$d\f$ is the dimension of the domain.
+   *
+   * Like most classes in Stokhos, the class is templated on the ordinal
+   * and value types.  Typically \c ordinal_type = \c int and \c value_type
+   * = \c double.
+   */
   template <typename ordinal_type, typename value_type>
   class OrthogPolyBasis {
   public:
@@ -60,53 +75,54 @@ namespace Stokhos {
     //! Return total size of basis
     virtual ordinal_type size() const = 0;
 
-    //! Compute norm squared of each basis element
+    //! Return array storing norm-squared of each basis polynomial
+    /*!
+     * Entry \f$l\f$ of returned array is given by \f$\langle\Psi_l^2\rangle\f$
+     * for \f$l=0,\dots,P\f$ where \f$P\f$ is size()-1.
+     */
     virtual const Teuchos::Array<value_type>& norm_squared() const = 0;
 
-    //! Compute norm squared of ith element
+    //! Return norm squared of basis polynomial \c i.
     virtual const value_type& norm_squared(ordinal_type i) const = 0;
 
     //! Compute triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > getTripleProductTensor() const = 0;
+    /*!
+     * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
+     * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
+     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1 of the basis.
+     */
+    virtual 
+    Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    getTripleProductTensor() const = 0;
 
-    virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    /*!
+     * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
+     * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
+     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
+     * is the supplied \c order.
+     */
+    virtual 
+    Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
     getLowOrderTripleProductTensor(ordinal_type order) const = 0;
-    
-    //! Compute derivative triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getDerivTripleProductTensor() const = 0;
 
-    //! Compute derivative double product tensor
-    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const = 0;
-
-    //! Project product of basis polynomials i and j onto this basis
-    virtual void projectProduct(ordinal_type i, ordinal_type j, Teuchos::Array<value_type>& coeffs) const = 0;
-    
-    //! Project derivative of basis polynomial into this basis
-    virtual void projectDerivative(ordinal_type i, 
-                                   Teuchos::Array<value_type>& coeffs) const = 0;
-
-    //! Evaluate basis polynomial at zero
+    //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const = 0;
 
-    //! Evaluate basis polynomials at given point
+    //! Evaluate basis polynomials at given point \c point
+    /*!
+     * Size of returned array is given by size(), and coefficients are
+     * ordered from order 0 up to size size()-1.
+     */
     virtual void evaluateBases(const Teuchos::Array<value_type>& point,
 			       Teuchos::Array<value_type>& basis_vals) const = 0;
 
-    //! Print basis
+    //! Print basis to stream \c os
     virtual void print(std::ostream& os) const = 0;
 
-    //! Get term
-    virtual Teuchos::Array<ordinal_type> getTerm(ordinal_type i) const = 0;
-
-    //! Get index
-    virtual ordinal_type 
-    getIndex(const Teuchos::Array<ordinal_type>& term) const = 0;
-
-    //! Return name of basis
+    //! Return string name of basis
     virtual const std::string& getName() const = 0;
-
-    //! Return coordinate bases
-    virtual const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& getCoordinateBases() const = 0;
 
   private:
 
@@ -118,6 +134,7 @@ namespace Stokhos {
 
   }; // class OrthogPolyBasis
 
+  //! Print basis to stream \c os.
   template <typename ordinal_type, typename value_type> 
   std::ostream& operator << (std::ostream& os, 
 			     const OrthogPolyBasis<ordinal_type, value_type>& b)

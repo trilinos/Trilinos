@@ -28,57 +28,64 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_QUADRATURE
-#define STOKHOS_QUADRATURE
+#ifndef STOKHOS_DERIVBASIS_HPP
+#define STOKHOS_DERIVBASIS_HPP
 
-#include "Teuchos_Array.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
 
 namespace Stokhos {
-
-  //! Abstract base class for quadrature methods
+  
+  /*! 
+   * \brief Abstract base class for multivariate orthogonal polynomials
+   * that support computing double and triple products involving derivatives
+   * of the basis polynomials.
+   */
   template <typename ordinal_type, typename value_type>
-  class Quadrature {
+  class DerivBasis : 
+    public virtual OrthogPolyBasis<ordinal_type, value_type> {
   public:
 
     //! Constructor
-    Quadrature() {}
+    DerivBasis() {};
 
     //! Destructor
-    virtual ~Quadrature() {}
+    virtual ~DerivBasis() {};
 
-    //! Get quadrature points
-    /*!
-     * Array is dimensioned Q-by-d where Q is the number of quadrature
-     * points and d is the dimension of the basis.
+    /*! 
+     * \brief Compute triple product tensor 
+     * \f$D_{ijk} = \langle\Psi_i\Psi_j D_v\Psi_k\rangle\f$ where 
+     * \f$D_v\Psi_k\f$ represents the derivative of \f$\Psi_k\f$ in the 
+     * direction \f$v\f$.
      */
-    virtual const Teuchos::Array< Teuchos::Array<value_type> >& 
-    getQuadPoints() const = 0;
+    /*!
+     * The definition of \f$v\f$ is defined by the derived class implementation.
+     */
+    virtual 
+    Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > 
+    getDerivTripleProductTensor() const = 0;
 
-    //! Get quadrature weights
-    /*!
-     * Array is of size Q where Q is the number of quadrature points.
+    /*! 
+     * \brief Compute double product tensor 
+     * \f$B_{ij} = \langle \Psi_i D_v\Psi_j\rangle\f$ where \f$D_v\Psi_j\f$
+     * represents the derivative of \f$\Psi_j\f$ in the direction \f$v\f$.
      */
-    virtual const Teuchos::Array<value_type>& 
-    getQuadWeights() const = 0;
-
-    //! Get values of basis at quadrature points
     /*!
-     * Array is dimensioned Q-by-P where Q is the number of quadrature
-     * points and P is the size of the basis.
+     * The definition of \f$v\f$ is defined by the derived class implementation.
      */
-    virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
-    getBasisAtQuadPoints() const = 0;
+    virtual 
+    Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
+    getDerivDoubleProductTensor() const = 0;
 
   private:
 
     // Prohibit copying
-    Quadrature(const Quadrature&);
+    DerivBasis(const DerivBasis&);
 
     // Prohibit Assignment
-    Quadrature& operator=(const Quadrature& b);
+    DerivBasis& operator=(const DerivBasis& b);
 
-  }; // class Quadrature
+  }; // class DerivBasis
 
-} // namespace Stokhos
+} // Namespace Stokhos
 
-#endif // STOKHOS_QUADRATURE
+#endif // STOKHOS_DERIVBASIS

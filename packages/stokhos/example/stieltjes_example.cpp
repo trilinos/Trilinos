@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -36,15 +36,6 @@
 #include "Stokhos_StieltjesPCEBasis.hpp"
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
-
-// This example compares various PCE methods for computing moments of
-//
-// u = exp(x1 + ... + xd)
-//
-// where x1, ..., xd are uniform random variables on [-1,1].  The methods
-// are compared to computing the "true" value via very high-order quadrature.
-// Because of the structure of the exponential, the moments can easily
-// be computed in one dimension.
 
 struct stieltjes_pce_quad_func {
   stieltjes_pce_quad_func(
@@ -81,7 +72,7 @@ int main(int argc, char **argv)
 	// Create product basis
         for (unsigned int i=0; i<d; i++)
           bases[i] = Teuchos::rcp(new basis_type(p));
-	Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
 	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
 	std::cout << *basis << std::endl;
 
@@ -113,9 +104,9 @@ int main(int argc, char **argv)
 	// Compute Stieltjes basis
 	Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(1);
 	st_bases[0] = 
-	  Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *basis, 
-								  *quad, true));
-	Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > st_basis = 
+	  Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *quad, 
+								  true));
+	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > st_basis = 
 	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
 	std::cout << *st_basis << std::endl;
 

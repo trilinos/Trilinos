@@ -1,7 +1,10 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
 // ***********************************************************************
 // 
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -25,23 +28,22 @@
 // ***********************************************************************
 // @HEADER
 
-// recurrence_basis_example
+// recurrence_example
 //
 //  usage: 
 //     recurrence_example
 //
 //  output:  
 //     Prints the recurrence coefficients for the first 5 normalized polynomials
-//     orthogonal wrt the given weight.  Follows up by printing the computed norms
-//     and outputting a 11 point gaussian quadrature rule.  Demonstrate orthogonality
-//     by outputting the maximum computed |<psi_i, psi_j>| for j != i.
+//     orthogonal wrt the given weight.  Follows up by printing the computed 
+//     norms and outputting a 11 point gaussian quadrature rule.  
+//     Demonstrate orthogonality by outputting the maximum computed 
+//     |<psi_i, psi_j>| for j != i.
 
 #include <iostream>
 #include <iomanip>
 
 #include "Stokhos.hpp"
-
-const double weightFunction(const double x);
 
 const double weightFunction(const double x){
   if(2*abs(x+2) < 1){
@@ -59,19 +61,17 @@ int main(int argc, char **argv)
     const int p = 5;
     const double leftEndPt = -3;
     const double rightEndPt = 3;
+
     //Generate a basis up to order p with the support of the weight = [-5,5] using normalization.
-    //Stokhos::OneDOrthogPolyBasis<int,double> basis = new Stokhos::RysBasis<int,double>(p,5,true);
-    Teuchos::RCP<const Stokhos::RecurrenceBasis<int,double> > basis;
-    basis = Teuchos::rcp(new Stokhos::RecurrenceBasis<int,double>(p,"Beta",&weightFunction,leftEndPt,rightEndPt,true));
+    Teuchos::RCP<const Stokhos::DiscretizedStieltjesBasis<int,double> > basis = 
+      Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weightFunction,leftEndPt,rightEndPt,true));
     Teuchos::Array<double> alpha;
     Teuchos::Array<double> beta;
+    Teuchos::Array<double> delta;
     Teuchos::Array<double> gamma;
     Teuchos::Array<double> norm_sq;
     norm_sq = basis->norm_squared();
-    basis->getAlpha(alpha);
-    basis->getBeta(beta);
-    basis->getGamma(gamma);
-     
+    basis->getRecurrenceCoefficients(alpha, beta, delta, gamma);
     
     //Fetch alpha, beta, gamma and the computed norms and print.
     for(int i = 0; i<p; i++){
@@ -81,7 +81,6 @@ int main(int argc, char **argv)
     for(int i = 0; i<=p; i++){
       std::cout << "E(P_"<<i<<"^2) = "<< norm_sq[i] <<"\n";
     }
-    
     
     Teuchos::Array<double> quad_points;
     Teuchos::Array<double> quad_weights;

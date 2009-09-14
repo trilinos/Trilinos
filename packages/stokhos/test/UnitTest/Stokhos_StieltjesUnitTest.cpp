@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -63,10 +63,10 @@ struct Stieltjes_PCE_Setup {
   Func func;
   bool use_pce_quad_points;
   OrdinalType sz, st_sz;
-  Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > basis;
+  Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
   Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
   Teuchos::RCP<const Stokhos::StieltjesPCEBasis<OrdinalType,ValueType> > st_1d_basis;
-  Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > st_basis;
+  Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > st_basis;
   Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > st_quad;
   Stokhos::OrthogPolyApprox<OrdinalType,ValueType> u, v, u_st, v_st;
   
@@ -107,7 +107,7 @@ struct Stieltjes_PCE_Setup {
     
     // Compute Stieltjes basis
     st_1d_basis = 
-      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, u, *basis, *quad, use_pce_quad_points));
+      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, u, *quad, use_pce_quad_points));
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > st_bases(1);
     st_bases[0] = st_1d_basis;
     st_basis = 

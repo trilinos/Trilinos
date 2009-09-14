@@ -4,7 +4,7 @@
 // ***********************************************************************
 // 
 //                           Stokhos Package
-//                 Copyright (2008) Sandia Corporation
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -30,14 +30,12 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
-TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis) 
+TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis) 
 {
   ordinal_type d = product_basis->dimension();
   ordinal_type sz = product_basis->size();
 
-  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
-
-  
+  Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > > coordinate_bases = product_basis->getCoordinateBases();
 
   // Compute quad points, weights, values
   Teuchos::Array< Teuchos::Array<value_type> > gp(d);
@@ -96,14 +94,12 @@ TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_ty
 
 template <typename ordinal_type, typename value_type>
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
-TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis,const ordinal_type& quad_order) 
+TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,const ordinal_type& quad_order) 
 {
   ordinal_type d = product_basis->dimension();
   ordinal_type sz = product_basis->size();
 
-  const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& coordinate_bases = product_basis->getCoordinateBases();
-
-  
+  Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > > coordinate_bases = product_basis->getCoordinateBases();
 
   // Compute quad points, weights, values
   Teuchos::Array< Teuchos::Array<value_type> > gp(d);
