@@ -39,8 +39,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_Version.hpp
   Stokhos_gaussq.h
   Stokhos_DynamicArrayTraits.hpp
-  Stokhos_Polynomial.hpp
-  Stokhos_PolynomialImp.hpp
   Stokhos_OneDOrthogPolyBasis.hpp
   Stokhos_RecurrenceBasis.hpp
   Stokhos_RecurrenceBasisImp.hpp
@@ -49,7 +47,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_DiscretizedStieltjesBasis.hpp
   Stokhos_DiscretizedStieltjesBasisImp.hpp
   Stokhos_RysBasis.hpp
-  Stokhos_RysBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
