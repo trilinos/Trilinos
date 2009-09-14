@@ -1612,7 +1612,7 @@ void CellTools<Scalar>::getReferenceSideNormal(ArrayTypeOut &                ref
                       ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
   
   // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
-  TEST_FOR_EXCEPTION( !( (0 <= sideOrd) && (sideOrd < parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( (0 <= sideOrd) && (sideOrd < (int)parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
 #endif  
   
@@ -1646,7 +1646,7 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                ref
   TEST_FOR_EXCEPTION( !(spaceDim == 3), std::invalid_argument, 
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
   
-  TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < parentCell.getSubcellCount(2) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < (int)parentCell.getSubcellCount(2) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
   
   TEST_FOR_EXCEPTION( !( refFaceNormal.rank() == 1 ), std::invalid_argument,  
@@ -1967,10 +1967,19 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
                                               const shards::CellTopology &  cellTopo, 
                                               const double &                threshold) {
   
-  // create temp output array depending on the rank of the input array 
-  int rank = points.rank();
-  FieldContainer<int> inRefCell;
+  int rank = points.rank();  
   
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( !( (1 <= points.rank() ) && (points.rank() <= 3) ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::checkPointsetInclusion): rank-1, 2 or 3 required for input points array. ");
+
+  // The last dimension of points array at (rank - 1) is the spatial dimension. Must equal the cell dimension.
+  TEST_FOR_EXCEPTION( !( points.dimension(rank - 1) == (int)cellTopo.getDimension() ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::checkPointsetInclusion): Point and cell dimensions do not match. ");
+#endif
+  
+  // create temp output array depending on the rank of the input array 
+  FieldContainer<int> inRefCell;
   switch(rank) {
     case 1: inRefCell.resize(1); break;
     case 2: inRefCell.resize( points.dimension(0) ); break;
@@ -1999,8 +2008,42 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    in
                                                 const ArrayPoint &            points,
                                                 const shards::CellTopology &  cellTopo, 
                                                 const double &                threshold) {
-  // Initializations
   int apRank   = points.rank();
+  
+#ifdef HAVE_INTREPID_DEBUG
+  
+  // Verify that points and inRefCell have correct ranks and dimensions
+  std::string errmsg = ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion):";
+  if(points.rank() == 1) {
+    TEST_FOR_EXCEPTION( !(inRefCell.rank() == 1 ), std::invalid_argument, 
+                        ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1 input array requires rank-1 output array.");  
+    TEST_FOR_EXCEPTION( !(inRefCell.dimension(0) == 1), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1 input array requires dim0 = 1 for output array.");  
+  }
+  else if(points.rank() == 2){
+    TEST_FOR_EXCEPTION( !(inRefCell.rank() == 1 ), std::invalid_argument, 
+                        ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-2 input array requires rank-1 output array.");  
+    // dimension 0 of the arrays must match
+    TEST_FOR_EXCEPTION( !requireDimensionMatch( errmsg, inRefCell, 0,  points, 0), std::invalid_argument, errmsg);
+  }
+  else if (points.rank() == 3) {
+    TEST_FOR_EXCEPTION( !(inRefCell.rank() == 2 ), std::invalid_argument, 
+                        ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-3 input array requires rank-2 output array.");  
+    // dimensions 0 and 1 of the arrays must match
+    TEST_FOR_EXCEPTION( !requireDimensionMatch( errmsg, inRefCell, 0,1,  points, 0,1), std::invalid_argument, errmsg);
+  }
+  else{
+    TEST_FOR_EXCEPTION( !( (points.rank() == 1) || (points.rank() == 2) || (points.rank() == 3) ), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1, 2 or 3 required for input points array. ");      
+  }    
+  
+  // The last dimension of points array at (rank - 1) is the spatial dimension. Must equal the cell dimension.
+  TEST_FOR_EXCEPTION( !( points.dimension(apRank - 1) == (int)cellTopo.getDimension() ), std::invalid_argument,
+                      ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): Point and cell dimensions do not match. ");
+  
+#endif
+  
+  // Initializations
   int dim0     = 1;
   int dim1     = 1;
   int pointDim = 0;
@@ -2018,17 +2061,10 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    in
       pointDim = points.dimension(2);
       break;
     default:
-      TEST_FOR_EXCEPTION( !( (1 <= apRank) && (apRank <= 3) ), std::invalid_argument,
+      TEST_FOR_EXCEPTION( !( (1 <= points.rank() ) && (points.rank() <= 3) ), std::invalid_argument,
                           ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): rank-1, 2 or 3 required for input points array. ");      
   }// switch
   
-  // If rank of input array is 1,2, or 3, respectively; rank of output array must be 1, 1 and 2, resp.
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( !( (apRank == 1) && (inRefCell.rank() == 1 ) ||
-                         (apRank == 2) && (inRefCell.rank() == 1 ) ||
-                         (apRank == 3) && (inRefCell.rank() == 2 ) ), std::invalid_argument,
-                      ">>> ERROR (Intrepid::CellTools::checkPointwiseInclusion): Output array has invalid rank. ");      
-#endif
   
   // This method can handle up to rank-3 input arrays. The spatial dim must be the last dimension. 
   // The method uses [] accessor because array rank is determined at runtime and the appropriate
@@ -2486,10 +2522,14 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayInt &    
   TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 or a valid cell ordinal is required.");
   
+  
   // Validate points array: can be rank-2 (P,D) or rank-3 (C,P,D)
   // If rank-2: admissible inCell is rank-1 (P); admissible whichCell is valid cell ordinal but not -1.
   if(physPoints.rank() == 2) {
     
+    TEST_FOR_EXCEPTION( (whichCell == -1), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = a valid cell ordinal is required with rank-2 input array.");
+
     TEST_FOR_EXCEPTION( (physPoints.dimension(0) <= 0), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of points) >= 1 required for physPoints array ");
     
@@ -2505,6 +2545,9 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayInt &    
   }
   // If rank-3: admissible inCell is rank-2 (C,P); admissible whichCell = -1.
   else if (physPoints.rank() == 3){
+    
+    TEST_FOR_EXCEPTION( !(whichCell == -1), std::invalid_argument,
+                        ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 is required with rank-3 input array.");
     
     TEST_FOR_EXCEPTION( (physPoints.dimension(0) != cellWorkset.dimension(0) ), std::invalid_argument,
                         ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): dim 0 (number of cells)  of physPoints array must equal dim 0 of cellWorkset array ");

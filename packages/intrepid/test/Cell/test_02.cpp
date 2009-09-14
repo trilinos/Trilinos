@@ -552,6 +552,7 @@ int main(int argc, char *argv[]) {
     int P = 21;
     int N;
     int D;
+    int V;
     
     // Array arguments
     FieldContainer<double> jacobian;
@@ -567,10 +568,11 @@ int main(int argc, char *argv[]) {
       *                          Exception tests for setJacobian method                            *
       **********************************************************************************************/
     
-    // Use the first cell topology for these tests
-    topo_iterator = supportedTopologies.begin();
+    // Use the second cell topology for these tests (Triangle<6>)
+    topo_iterator = ++supportedTopologies.begin();
     D = (*topo_iterator).getDimension();
     N = (*topo_iterator).getNodeCount();
+    V = (*topo_iterator).getVertexCount();
 
     // 1. incorrect jacobian rank
     jacobian.resize(C, P, D);
@@ -626,7 +628,6 @@ int main(int argc, char *argv[]) {
     cellWorkset.resize(C - 1, N, D);
     INTREPID_TEST_COMMAND( CellTools::setJacobian(jacobian, points, cellWorkset, (*topo_iterator) ), 
                            throwCounter, nException );
-    
     
     // 10. Incompatible ranks
     jacobian.resize(C, D, D);
@@ -738,7 +739,6 @@ int main(int argc, char *argv[]) {
     cellWorkset.resize(C, N, D);
     INTREPID_TEST_COMMAND( CellTools::mapToPhysicalFrame(physPoints, refPoints, cellWorkset, (*topo_iterator) ),
                            throwCounter, nException );
-    
     
     // 26. Incompatible dimensions
     refPoints.resize(C, P, D);
@@ -956,7 +956,6 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( CellTools::getReferenceFaceNormal(refSideNormal, 0, (*topo_iterator)),
                            throwCounter, nException );
     
-    
     // 56-57. Incorrect dimension for 3D cell 
     refSideNormal.resize(D - 1);
     INTREPID_TEST_COMMAND( CellTools::getReferenceSideNormal(refSideNormal, 0, (*topo_iterator)),
@@ -988,6 +987,210 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( CellTools::getReferenceFaceNormal(refSideNormal, 0, (*topo_iterator)),
                            throwCounter, nException );
     
+    /***********************************************************************************************
+      *          Exception tests for checkPoint/Pointset/PointwiseInclusion methods        *
+      **********************************************************************************************/
+    points.resize(2,3,3,4);
+    FieldContainer<int> inCell;
+    
+    // 63. Point dimension does not match cell topology
+    double * point;
+    INTREPID_TEST_COMMAND(CellTools::checkPointInclusion(point, (*topo_iterator).getDimension() + 1, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 64. Invalid cell topology
+    CellTopology pentagon_5(shards::getCellTopologyData<shards::Pentagon<> >() );
+    INTREPID_TEST_COMMAND(CellTools::checkPointInclusion(point, pentagon_5.getDimension(), pentagon_5 ),
+                          throwCounter, nException );
+        
+    // 65. Incorrect spatial dimension of points
+    points.resize(10, 10, (*topo_iterator).getDimension() + 1);
+    INTREPID_TEST_COMMAND(CellTools::checkPointsetInclusion(points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 66. Incorrect rank of input array
+    points.resize(10,10,10,3);
+    INTREPID_TEST_COMMAND(CellTools::checkPointsetInclusion(points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 67. Incorrect rank of output array
+    points.resize(10,10,(*topo_iterator).getDimension() );
+    inCell.resize(10);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+  
+    // 68. Incorrect rank of output array
+    points.resize(10, (*topo_iterator).getDimension() );
+    inCell.resize(10, 10);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 69. Incorrect rank of output array
+    points.resize((*topo_iterator).getDimension() );
+    inCell.resize(10, 10);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 70. Incorrect dimension of output array
+    points.resize(10, 10, (*topo_iterator).getDimension() );
+    inCell.resize(10, 9);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 71. Incorrect dimension of output array
+    points.resize(10, 10, (*topo_iterator).getDimension() );
+    inCell.resize(9, 10);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 72. Incorrect dimension of output array
+    points.resize(10, (*topo_iterator).getDimension() );
+    inCell.resize(9);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 73. Incorrect spatial dimension of input array
+    points.resize(10, 10, (*topo_iterator).getDimension() + 1);
+    inCell.resize(10, 10);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 74. Incorrect rank of input array.
+    points.resize(10,10,10,3);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, points, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+        
+    physPoints.resize(C, P, D);
+    inCell.resize(C, P);
+    // 75. Invalid rank of cellWorkset
+    cellWorkset.resize(C, N, D, D);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 76. Invalid dimension 1 (node count) of cellWorkset
+    cellWorkset.resize(C, N + 1, D);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 77. Invalid dimension 2 (spatial dimension) of cellWorkset
+    cellWorkset.resize(C, N, D + 1);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 78. Invalid whichCell value (exceeds cell count in the workset)
+    cellWorkset.resize(C, N, D);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator), C + 1 ),
+                          throwCounter, nException );
+    
+    // 79. Invalid whichCell for rank-3 physPoints (must be -1, here it is valid cell ordinal)
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator), 0 ),
+                          throwCounter, nException );
+    
+    // 80. Invalid whichCell for rank-2 physPoints (must be a valid cell ordinal, here it is the default -1)
+    physPoints.resize(P, D);
+    inCell.resize(P);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator) ),
+                          throwCounter, nException );
+    
+    // 81. Incompatible ranks of I/O arrays
+    physPoints.resize(C, P, D);
+    inCell.resize(P);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator)),
+                          throwCounter, nException );
+    
+    // 82. Incompatible ranks of I/O arrays
+    physPoints.resize(P, D);
+    inCell.resize(C, P);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator), 0),
+                          throwCounter, nException );
+    
+    // 83. Incompatible dimensions of I/O arrays
+    physPoints.resize(C, P, D);
+    inCell.resize(C, P + 1);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator)),
+                          throwCounter, nException );
+
+    // 84. Incompatible dimensions of I/O arrays: rank-3 Input
+    physPoints.resize(C + 1, P, D);
+    inCell.resize(C, P);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator)),
+                          throwCounter, nException );
+    
+    // 85. Incompatible dimensions of I/O arrays: rank-2 Input
+    physPoints.resize(P, D);
+    inCell.resize(P + 1);
+    INTREPID_TEST_COMMAND(CellTools::checkPointwiseInclusion(inCell, physPoints, cellWorkset, (*topo_iterator), 0 ),
+                          throwCounter, nException );
+    
+    
+    /***********************************************************************************************
+      *               Exception tests for getReferenceVertex/vertices/Node/Nodes methods           *
+      **********************************************************************************************/
+    
+    FieldContainer<double> subcellNodes;
+    
+    // 86-89. Cell does not have reference cell
+    INTREPID_TEST_COMMAND(CellTools::getReferenceVertex(pentagon_5, 0), throwCounter, nException);
+    INTREPID_TEST_COMMAND(CellTools::getReferenceNode(pentagon_5, 0), throwCounter, nException);    
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellVertices(subcellNodes, 0, 0, pentagon_5), throwCounter, nException);
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, 0, 0, pentagon_5), throwCounter, nException);
+
+    // Use last cell topology (Wedge<18>) for these tests
+    topo_iterator = --supportedTopologies.end();
+    D = (*topo_iterator).getDimension();
+    int subcDim = D - 1;
+    int S = (*topo_iterator).getSubcellCount(subcDim);
+    V = (*topo_iterator).getVertexCount(subcDim, S - 1);
+    subcellNodes.resize(V, D);
+    // 90. subcell ordinal out of range
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellVertices(subcellNodes, subcDim, S + 1, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 91. subcell dim out of range
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellVertices(subcellNodes, D + 1, S, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 92. Incorrect rank for subcellNodes 
+    subcellNodes.resize(V, D, D); 
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellVertices(subcellNodes, subcDim, S - 1, (*topo_iterator)), 
+                          throwCounter, nException);
+
+    // 93. Incorrect dimension for subcellNodes 
+    subcellNodes.resize(V - 1, D); 
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellVertices(subcellNodes, subcDim, S - 1, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 94. Incorrect dimension for subcellNodes 
+    subcellNodes.resize(V, D - 1); 
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellVertices(subcellNodes, subcDim, S - 1, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+          
+    N = (*topo_iterator).getNodeCount(subcDim, S - 1);
+    subcellNodes.resize(N, D);
+    // 95. subcell ordinal out of range
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, subcDim, S + 1, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 96. subcell dim out of range
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, D + 1, S, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 97. Incorrect rank for subcellNodes 
+    subcellNodes.resize(N, D, D); 
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, subcDim, S - 1, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 98. Incorrect dimension for subcellNodes 
+    subcellNodes.resize(N - 1, D); 
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, subcDim, S - 1, (*topo_iterator)), 
+                          throwCounter, nException);
+    
+    // 99. Incorrect dimension for subcellNodes 
+    subcellNodes.resize(N, D - 1); 
+    INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, subcDim, S - 1, (*topo_iterator)), 
+                          throwCounter, nException);
     
 #endif    
   } // try exception testing

@@ -1074,7 +1074,7 @@ public:
                   \end{array}\right.
         \f]
                 For multiple point sets in a rank-3 array (C,P,D) and \c whichCell=-1 (default value)
-                returns a rank-2 (P,D) array such that
+                returns a rank-2 (C,P) array such that
         \f[
                 \mbox{inCell}(c,p) = 
                   \left\{\begin{array}{rl} 
