@@ -226,8 +226,8 @@ namespace Intrepid {
   
     // Basis-dependent initializations
     int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // poisition in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // poisition in the tag, counting from 0, of the subcell ordinal
+    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
     // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
