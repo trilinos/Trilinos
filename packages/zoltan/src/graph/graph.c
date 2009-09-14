@@ -31,9 +31,6 @@ static PARAM_VARS ZG_params[] = {
 	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
 	{ NULL, NULL, NULL, 0 } };
 
-#define CHECK_IERR do {   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) \
-    goto End;  } while (0)
-
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
 
 
@@ -76,6 +73,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 
   graph->mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (graph->mtx.comm == NULL) MEMORY_ERROR;
+  Zoltan_PHGComm_Init (graph->mtx.comm);
 
   memset(&opt, 0, sizeof(Zoltan_matrix_options));
   opt.enforceSquare = 1;      /* We want a graph: square matrix */
@@ -246,6 +244,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
     if (graph->mtx.mtx.ddY == NULL) {
       ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
 			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
+      CHECK_IERR;
       /* Hope a linear assignment will help a little */
       Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);
     }
@@ -253,6 +252,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
   }
   /* Make our new numbering public */
   ierr = Zoltan_DD_Update (dd, GID, NULL, NULL, props, size);
+  CHECK_IERR;
 
   End:
   if (graph->bipartite) {

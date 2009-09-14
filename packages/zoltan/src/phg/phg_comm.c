@@ -266,9 +266,12 @@ Zoltan_PHGComm_Destroy(PHGComm* comm)
 {
   if (comm == NULL)
     return;
-  MPI_Comm_free (&comm->Communicator);
-  MPI_Comm_free (&comm->row_comm);
-  MPI_Comm_free (&comm->col_comm);
+  if(comm->Communicator != 0 && comm->Communicator != MPI_COMM_NULL)
+    MPI_Comm_free (&comm->Communicator);
+  if(comm->row_comm != 0 && comm->row_comm != MPI_COMM_NULL)
+    MPI_Comm_free (&comm->row_comm);
+  if(comm->col_comm != 0 && comm->col_comm != MPI_COMM_NULL)
+    MPI_Comm_free (&comm->col_comm);
 }
 
 void

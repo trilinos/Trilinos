@@ -90,6 +90,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
 			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 0);
+  CHECK_IERR;
 
   /* Make our new numbering public */
   Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, (ZOLTAN_ID_PTR)xwgt,  NULL, nX);
@@ -97,6 +98,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   /* I store : xGNO, xGID, xwgt, Input_Part */
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
 			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int), matrix->globalX/zz->Num_Proc, 0);
+  CHECK_IERR;
+
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
   /* Associate all the data with our xGNO */
@@ -110,7 +113,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   else
     matrix->pinwgtdim = 0;
 
-  matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
+  ierr = matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
+  CHECK_IERR;
   matrix->nY_ori = matrix->nY;
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
@@ -167,6 +171,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     /*     int nGlobalEdges = 0; */
     ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, matrix->yGNO, matrix->nY,
 					     matrix->opts.randomize, &matrix->globalY);
+    CHECK_IERR;
 
 /*     /\**************************************************************************************** */
 /*      * If it is desired to remove dense edges, divide the list of edges into */
@@ -259,6 +264,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
 				     &matrix->nPins, yGID, &matrix->ystart,
 				     pinID);
+    CHECK_IERR;
     matrix->yend = matrix->ystart + 1;
   }
   else if (graph_callbacks) {
@@ -313,6 +319,8 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 	edge += edgeSize[vertex];
       }
     }
+    CHECK_IERR;
+
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
     ZOLTAN_FREE(xGID);
