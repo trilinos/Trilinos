@@ -15,20 +15,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  stieltjes_example
-  SOURCES stieltjes_example.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  gram_schmidt_example
-  SOURCES gram_schmidt_example.cpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
 PACKAGE_ADD_EXECUTABLE(
   recurrence_example
   SOURCES recurrence_example.cpp

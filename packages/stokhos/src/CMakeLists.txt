@@ -49,15 +49,11 @@ SET(HEADERS ${HEADERS}
   Stokhos_RysBasis.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
-  Stokhos_StieltjesPCEBasis.hpp
-  Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
   Stokhos_ProductBasis.hpp
   Stokhos_DerivBasis.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
-  Stokhos_GramSchmidtBasis.hpp
-  Stokhos_GramSchmidtBasisImp.hpp
   Stokhos_Sparse3Tensor.hpp
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp

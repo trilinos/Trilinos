@@ -43,20 +43,6 @@ IF(TPL_ENABLE_ForUQTK)
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  StieltjesUnitTest
-  SOURCES Stokhos_StieltjesUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  GramSchmidtUnitTest
-  SOURCES Stokhos_GramSchmidtUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Sparse3TensorUnitTest
   SOURCES Stokhos_Sparse3TensorUnitTest.cpp
   COMM serial mpi
