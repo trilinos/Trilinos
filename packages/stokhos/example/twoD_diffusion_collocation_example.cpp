@@ -28,17 +28,6 @@
 // ***********************************************************************
 // @HEADER
 
-// recurrence_basis_example
-//
-//  usage: 
-//     recurrence_example
-//
-//  output:  
-//     Prints the recurrence coefficients for the first 5 normalized polynomials
-//     orthogonal wrt the given weight.  Follows up by printing the computed norms
-//     and outputting a 11 point gaussian quadrature rule.  Demonstrate orthogonality
-//     by outputting the maximum computed |<psi_i, psi_j>| for j != i.
-
 #include <iostream>
 #include <iomanip>
 #include <fstream>

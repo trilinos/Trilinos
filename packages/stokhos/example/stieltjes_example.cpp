@@ -37,15 +37,6 @@
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 
-// This example compares various PCE methods for computing moments of
-//
-// u = exp(x1 + ... + xd)
-//
-// where x1, ..., xd are uniform random variables on [-1,1].  The methods
-// are compared to computing the "true" value via very high-order quadrature.
-// Because of the structure of the exponential, the moments can easily
-// be computed in one dimension.
-
 struct stieltjes_pce_quad_func {
   stieltjes_pce_quad_func(
    const Stokhos::OrthogPolyApprox<int,double>& pce_,

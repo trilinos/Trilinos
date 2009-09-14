@@ -35,7 +35,7 @@
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 
-// This example compares various PCE methods for computing moments of
+// This example uses PC expansions for computing moments of
 //
 // u = exp(x1 + ... + xd)
 //
@@ -43,18 +43,6 @@ typedef Stokhos::LegendreBasis<int,double> basis_type;
 // are compared to computing the "true" value via very high-order quadrature.
 // Because of the structure of the exponential, the moments can easily
 // be computed in one dimension.
-
-// Computes first and second moments of a PCE
-void pce_moments(const Stokhos::OrthogPolyApprox<int,double>& pce,
-                 const Stokhos::OrthogPolyBasis<int,double>& basis,
-                 double& mean, double& std_dev) {
-  mean = pce[0];
-  std_dev = 0.0;
-  const Teuchos::Array<double> nrm2 = basis.norm_squared();
-  for (int i=1; i<basis.size(); i++)
-    std_dev += pce[i]*pce[i]*nrm2[i];
-  std_dev = std::sqrt(std_dev);
-}
 
 int main(int argc, char **argv)
 {
@@ -105,7 +93,7 @@ int main(int argc, char **argv)
 
 	// Create approximation
 	int sz = basis->size();
-	Stokhos::OrthogPolyApprox<int,double> x(basis), u_quad(basis);
+	Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis);
 	for (unsigned int i=0; i<d; i++) {
 	  x.term(i,1) = 1.0;
 	}
@@ -118,17 +106,17 @@ int main(int argc, char **argv)
 	Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, quad);
 
 	// Compute PCE via quadrature expansion
-	quad_exp.exp(u_quad,x);
-	double mean_quad, sd_quad;
-	pce_moments(u_quad,*basis,mean_quad,sd_quad);
+	quad_exp.exp(u,x);
+	double mean = u.mean(); 
+	double sd = u.standard_deviation();
         
 	std::cout.precision(4);
 	std::cout.setf(std::ios::scientific);
 	std::cout << "d = " << d << " p = " << p
 		  << " sz = " << sz
 		  << "\tmean err = " 
-		  << std::fabs(true_mean-mean_quad) << "\tstd. dev. err = "
-		  << std::fabs(true_sd-sd_quad) << std::endl;
+		  << std::fabs(true_mean-mean) << "\tstd. dev. err = "
+		  << std::fabs(true_sd-sd) << std::endl;
       }
       
     }

@@ -28,23 +28,22 @@
 // ***********************************************************************
 // @HEADER
 
-// recurrence_basis_example
+// recurrence_example
 //
 //  usage: 
 //     recurrence_example
 //
 //  output:  
 //     Prints the recurrence coefficients for the first 5 normalized polynomials
-//     orthogonal wrt the given weight.  Follows up by printing the computed norms
-//     and outputting a 11 point gaussian quadrature rule.  Demonstrate orthogonality
-//     by outputting the maximum computed |<psi_i, psi_j>| for j != i.
+//     orthogonal wrt the given weight.  Follows up by printing the computed 
+//     norms and outputting a 11 point gaussian quadrature rule.  
+//     Demonstrate orthogonality by outputting the maximum computed 
+//     |<psi_i, psi_j>| for j != i.
 
 #include <iostream>
 #include <iomanip>
 
 #include "Stokhos.hpp"
-
-const double weightFunction(const double x);
 
 const double weightFunction(const double x){
   if(2*abs(x+2) < 1){
@@ -62,10 +61,10 @@ int main(int argc, char **argv)
     const int p = 5;
     const double leftEndPt = -3;
     const double rightEndPt = 3;
+
     //Generate a basis up to order p with the support of the weight = [-5,5] using normalization.
-    //Stokhos::OneDOrthogPolyBasis<int,double> basis = new Stokhos::RysBasis<int,double>(p,5,true);
-    Teuchos::RCP<const Stokhos::DiscretizedStieltjesBasis<int,double> > basis;
-    basis = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weightFunction,leftEndPt,rightEndPt,true));
+    Teuchos::RCP<const Stokhos::DiscretizedStieltjesBasis<int,double> > basis = 
+      Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weightFunction,leftEndPt,rightEndPt,true));
     Teuchos::Array<double> alpha;
     Teuchos::Array<double> beta;
     Teuchos::Array<double> delta;
@@ -73,7 +72,6 @@ int main(int argc, char **argv)
     Teuchos::Array<double> norm_sq;
     norm_sq = basis->norm_squared();
     basis->getRecurrenceCoefficients(alpha, beta, delta, gamma);
-     
     
     //Fetch alpha, beta, gamma and the computed norms and print.
     for(int i = 0; i<p; i++){
@@ -83,7 +81,6 @@ int main(int argc, char **argv)
     for(int i = 0; i<=p; i++){
       std::cout << "E(P_"<<i<<"^2) = "<< norm_sq[i] <<"\n";
     }
-    
     
     Teuchos::Array<double> quad_points;
     Teuchos::Array<double> quad_weights;
