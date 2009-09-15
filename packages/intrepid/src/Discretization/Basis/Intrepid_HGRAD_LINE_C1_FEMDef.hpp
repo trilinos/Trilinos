@@ -79,6 +79,8 @@ void Basis_HGRAD_LINE_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
       break;
       
     case OPERATOR_GRAD:
+    case OPERATOR_DIV:
+    case OPERATOR_CURL:
     case OPERATOR_D1:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
