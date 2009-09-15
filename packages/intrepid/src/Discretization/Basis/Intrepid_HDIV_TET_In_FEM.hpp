@@ -50,26 +50,26 @@ namespace Intrepid {
 /** \class  Intrepid::Basis_HDIV_TET_In_FEM
     \brief  Implementation of the default H(div)-compatible
             Raviart-Thomas basis of arbitrary degree  on Tetrahedron
-	    cell. The lowest order instance starts with n.  Implements
-	    the nodal basis of degree n the reference Tetrahedron cell. The basis has
-	    cardinality n(n+1)(n+3)/2 and spans an INCOMPLETE
-	    polynomial space of degree n. Basis functions are dual 
+            cell. The lowest order instance starts with n.  Implements
+            the nodal basis of degree n the reference Tetrahedron cell. The basis has
+            cardinality n(n+1)(n+3)/2 and spans an INCOMPLETE
+            polynomial space of degree n. Basis functions are dual 
             to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
-	    \li The normal component on a lattice of order n+1 and
-	    offset 1 on each face (see PointTools). This gives one point per edge in
-	    the lowest-order case.  These are the first
-	    4 * (n*(n+1)/2) degrees of freedom.
+            \li The normal component on a lattice of order n+1 and
+            offset 1 on each face (see PointTools). This gives one point per edge in
+            the lowest-order case.  These are the first
+            4 * (n*(n+1)/2) degrees of freedom.
 
-	    \li If n > 1, the x and y z components at a lattice of
-	    order n+2 and offset on the interior of the tetrahedron.  These are the rest
-	    of the degrees of freedom.  
+            \li If n > 1, the x and y z components at a lattice of
+            order n+2 and offset on the interior of the tetrahedron.  These are the rest
+            of the degrees of freedom.  
 
-	    If the pointType argument to the constructor specifies equispaced points, then the face
- 	    and interior points will be equispaced.  If
-	    the pointType argument specifies warp-blend points, the
- 	    interior of a warp-blend lattice will be used on each face
- 	    and also for the cell interior.
+            If the pointType argument to the constructor specifies equispaced points, then the face
+            and interior points will be equispaced.  If
+            the pointType argument specifies warp-blend points, the
+            interior of a warp-blend lattice will be used on each face
+            and also for the cell interior.
 
 
   */

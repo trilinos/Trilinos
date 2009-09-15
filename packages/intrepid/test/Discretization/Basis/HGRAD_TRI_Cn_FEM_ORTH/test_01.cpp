@@ -49,7 +49,7 @@ using namespace Intrepid;
     and does a code comparison to FIAT for values of derivatives
     \param argc [in] - number of command-line arguments
     \param argv [in] - command-line arguments
- */
+*/
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -107,17 +107,17 @@ int main(int argc, char *argv[]) {
     // Now let's compute the mass matrix
     for (int i=0;i<polydim;i++) {
       for (int j=i;j<polydim;j++) {
-	double cur = 0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
-	}
-	if (i != j && fabs( cur ) > INTREPID_TOL) {
-	  errorFlag++;
-	}
-	else if (i == j && fabs( cur ) < INTREPID_TOL ) {
-	  errorFlag++;
-	}
-	
+        double cur = 0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
+        }
+        if (i != j && fabs( cur ) > INTREPID_TOL) {
+          errorFlag++;
+        }
+        else if (i == j && fabs( cur ) < INTREPID_TOL ) {
+          errorFlag++;
+        }
+        
       }
     }
   }
@@ -134,10 +134,10 @@ int main(int argc, char *argv[]) {
     const int np_lattice = PointTools::getLatticeSize( myTri_3 , deg , 0 );
     FieldContainer<double> lattice( np_lattice , 2);
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myTri_3 , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_EQUISPACED );	 
+                                                            myTri_3 , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_EQUISPACED );
     const int polydim = myBasis.getCardinality();
     
     FieldContainer<double> dBasisAtLattice( polydim , np_lattice , 2 );
@@ -249,20 +249,20 @@ int main(int argc, char *argv[]) {
     int fiat_index_cur = 0;
     for (int i=0;i<polydim;i++) {
       for (int j=0;j<np_lattice;j++) {
-	for (int k=0;k<2;k++) {
-	  if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > INTREPID_TOL ) {
-	    errorFlag++;
-	    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-	    
-	    // Output the multi-index of the value where the error is:
-	    *outStream << " At multi-index { ";
-	    *outStream << i << " " << j << " " << k;
-	    *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
-		       << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
-	    *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
-	  }
-	  fiat_index_cur++;
-	}
+        for (int k=0;k<2;k++) {
+          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > INTREPID_TOL ) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            
+            // Output the multi-index of the value where the error is:
+            *outStream << " At multi-index { ";
+            *outStream << i << " " << j << " " << k;
+            *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
+                      << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
+            *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
+          }
+          fiat_index_cur++;
+        }
       }
     }
   }
@@ -280,10 +280,10 @@ int main(int argc, char *argv[]) {
     const int np_lattice = PointTools::getLatticeSize( myTri_3 , deg , 0 );
     FieldContainer<double> lattice( np_lattice , 2);
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myTri_3 , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_EQUISPACED );	 
+                                                            myTri_3 , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_EQUISPACED );
 
     
     FieldContainer<double> dBasisAtLattice( polydim , np_lattice , 3 );
@@ -395,20 +395,20 @@ int main(int argc, char *argv[]) {
     int fiat_index_cur = 0;
     for (int i=0;i<polydim;i++) {
       for (int j=0;j<np_lattice;j++) {
-	for (int k=0;k<3;k++) {
-	  if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*INTREPID_TOL ) {
-	    errorFlag++;
-	    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-	    
-	    // Output the multi-index of the value where the error is:
-	    *outStream << " At multi-index { ";
-	    *outStream << i << " " << j << " " << k;
-	    *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
-		       << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
-	    *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
-	  }
-	  fiat_index_cur++;
-	}
+        for (int k=0;k<3;k++) {
+          if (std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) > 10.0*INTREPID_TOL ) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            
+            // Output the multi-index of the value where the error is:
+            *outStream << " At multi-index { ";
+            *outStream << i << " " << j << " " << k;
+            *outStream << "}  computed value: " << dBasisAtLattice(i,j,k)
+                      << " but correct value: " << fiat_vals[fiat_index_cur] << "\n";
+            *outStream << "Difference: " << std::abs( dBasisAtLattice(i,j,k) - fiat_vals[fiat_index_cur] ) << "\n";
+          }
+          fiat_index_cur++;
+        }
       }
     }
   }

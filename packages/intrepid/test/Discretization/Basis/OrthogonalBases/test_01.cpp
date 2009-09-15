@@ -104,13 +104,13 @@ int main(int argc, char *argv[]) {
     for (int j=0;j<polydim;j++) {
       double cur = 0;
       for (int k=0;k<myCub.getNumPoints();k++) {
-	cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
+        cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
       }
       if (i != j && fabs( cur ) > INTREPID_TOL) {
-	errorFlag++;
+        errorFlag++;
       }
       else if (i == j && fabs( cur ) < INTREPID_TOL ) {
-	errorFlag++;
+        errorFlag++;
       }
 
     }

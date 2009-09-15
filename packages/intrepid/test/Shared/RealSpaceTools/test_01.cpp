@@ -741,7 +741,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT matvec OR inverse OR subtract OR vectorNorm\n\n";
         errorFlag = -1000;
       }
-	     
+     
       /******************************************/
 
 
@@ -769,7 +769,7 @@ int main(int argc, char *argv[]) {
           errorFlag = -1000;
         }
       }
-	     
+
       /******************************************/
 
 
@@ -786,7 +786,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
         errorFlag = -1000;
       }
-	     
+
       /******************************************/
 
       *outStream << "\n";
@@ -918,7 +918,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT matvec OR inverse OR subtract OR vectorNorm\n\n";
         errorFlag = -1000;
       }
-	     
+
       /******************************************/
 
 
@@ -945,7 +945,7 @@ int main(int argc, char *argv[]) {
           errorFlag = -1000;
         }
       }
-	     
+ 
       /******************************************/
 
 
@@ -961,7 +961,7 @@ int main(int argc, char *argv[]) {
         *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
         errorFlag = -1000;
       }
-	     
+      
       /******************************************/
 
       *outStream << "\n";

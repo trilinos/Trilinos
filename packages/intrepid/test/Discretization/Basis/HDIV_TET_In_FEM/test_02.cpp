@@ -1,8 +1,8 @@
 // @HEADER
 // ************************************************************************
 //
-//							 Intrepid Package
-//				   Copyright (2007) Sandia Corporation
+//                          Intrepid Package
+//                Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -14,22 +14,22 @@
 //
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Pavel Bochev	(pbboche@sandia.gov), 
-//					  Denis Ridzal	(dridzal@sandia.gov),
-//					  Kara Peterson (kjpeter@sandia.gov).
+// Questions? Contact Pavel Bochev (pbboche@sandia.gov), 
+//            Denis Ridzal (dridzal@sandia.gov),
+//            Kara Peterson (kjpeter@sandia.gov).
 //
 // ************************************************************************
 // @HEADER
 
-/** \file test_02.cpp
-    \brief	Patch test for the Intrepid::Basis_HDIV_TET_In_FEM class.
+/** \file   test_02.cpp
+    \brief  Patch test for the Intrepid::Basis_HDIV_TET_In_FEM class.
     \author Created by P. Bochev, R. Kirby, D. Ridzal, K. Peterson.
 */
 
@@ -57,41 +57,41 @@ void u_exact( FieldContainer<double> &, const FieldContainer<double> &, int, int
 // This is the rhs for (div tau,w) = (f,w),
 // which makes f the negative Laplacian of scalar solution
 void rhsFunc( FieldContainer<double> &result, 
-	      const FieldContainer<double> &points,
-	      int xd,
-	      int yd ,
-	      int zd)
+              const FieldContainer<double> &points,
+              int xd,
+              int yd ,
+              int zd)
 {
   for (int cell=0;cell<result.dimension(0);cell++) {
     for (int pt=0;pt<result.dimension(1);pt++) {
       result(cell,pt) = 0.0;
       if (xd >=2) {
-	result(cell,pt) += xd*(xd-1)*pow(points(cell,pt,0),xd-2)*pow(points(cell,pt,1),yd)
-	  *pow(points(cell,pt,2),zd);
+        result(cell,pt) += xd*(xd-1)*pow(points(cell,pt,0),xd-2)*pow(points(cell,pt,1),yd)
+          *pow(points(cell,pt,2),zd);
       }
       if (yd >=2) {
-	result(cell,pt) += yd*(yd-1)*pow(points(cell,pt,0),xd)*pow(points(cell,pt,1),yd-2)
-	  *pow(points(cell,pt,2),zd);
+        result(cell,pt) += yd*(yd-1)*pow(points(cell,pt,0),xd)*pow(points(cell,pt,1),yd-2)
+          *pow(points(cell,pt,2),zd);
       }
       if (zd>=2) {
-	result(cell,pt) += zd*(zd-1)*pow(points(cell,pt,0),xd)*pow(points(cell,pt,1),yd)
-	  *pow(points(cell,pt,2),zd-2);
-	
+        result(cell,pt) += zd*(zd-1)*pow(points(cell,pt,0),xd)*pow(points(cell,pt,1),yd)
+          *pow(points(cell,pt,2),zd-2);
+        
       }
     }
   }
 }
 
 void u_exact( FieldContainer<double> &result, 
-	      const FieldContainer<double> &points,
-	      int xd,
-	      int yd,
-	      int zd)
+              const FieldContainer<double> &points,
+              int xd,
+              int yd,
+              int zd)
 {
   for (int cell=0;cell<result.dimension(0);cell++){
     for (int pt=0;pt<result.dimension(1);pt++) {
       result(cell,pt) = std::pow(points(cell,pt,0),xd)*std::pow(points(cell,pt,1),yd)
-	*std::pow(points(cell,pt,2),zd);
+        *std::pow(points(cell,pt,2),zd);
     }
   }
   return;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
-  int iprint	 = argc - 1;
+  int iprint = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
@@ -114,25 +114,25 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
   
-  *outStream								\
+  *outStream \
     << "===============================================================================\n" \
-    << "|																			  |\n" \
-    << "|				 Unit Test (Basis_HGRAD_TET_In_FEM)					  |\n" \
-    << "|																			  |\n" \
-    << "|	  1) Patch test involving H(div) matrices								  |\n" \
-    << "|		 for the Dirichlet problem on a tetrahedral patch					  |\n" \
-    << "|		 Omega with boundary Gamma.											  |\n" \
-    << "|																			  |\n" \
-    << "|  Questions? Contact  Pavel Bochev	 (pbboche@sandia.gov),					  |\n" \
-    << "|					   Robert Kirby	 (robert.c.kirby@ttu.edu),				  |\n" \
-    << "|					   Denis Ridzal	 (dridzal@sandia.gov),					  |\n" \
-    << "|					   Kara Peterson (kjpeter@sandia.gov).					  |\n" \
-    << "|																			  |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid			  |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov							  |\n" \
-    << "|																			  |\n" \
+    << "|                                                                             |\n" \
+    << "|                  Unit Test (Basis_HGRAD_TET_In_FEM)                         |\n" \
+    << "|                                                                             |\n" \
+    << "| 1) Patch test involving H(div) matrices                                     |\n" \
+    << "|    for the Dirichlet problem on a tetrahedral patch                         |\n" \
+    << "|    Omega with boundary Gamma.                                               |\n" \
+    << "|                                                                             |\n" \
+    << "|   Questions? Contact Pavel Bochev (pbboche@sandia.gov),                     |\n" \
+    << "|                      Robert Kirby (robert.c.kirby@ttu.edu),                 |\n" \
+    << "|                      Denis Ridzal (dridzal@sandia.gov),                     |\n" \
+    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
+    << "|                                                                             |\n" \
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|                                                                             |\n" \
     << "===============================================================================\n" \
-    << "| TEST 1: Patch test														  |\n" \
+    << "| TEST 1: Patch test                                                          |\n" \
     << "===============================================================================\n";
   
   
@@ -141,9 +141,9 @@ int main(int argc, char *argv[]) {
   outStream -> precision(16);
   
   try {
-    DefaultCubatureFactory<double>	cubFactory;										 // create cubature factory
-    shards::CellTopology cell(shards::getCellTopologyData< shards::Tetrahedron<> >());	// create parent cell topology
-    shards::CellTopology side(shards::getCellTopologyData< shards::Triangle<> >());		 // create relevant subcell (side) topology
+    DefaultCubatureFactory<double> cubFactory;                                          // create cubature factory
+    shards::CellTopology cell(shards::getCellTopologyData< shards::Tetrahedron<> >());  // create parent cell topology
+    shards::CellTopology side(shards::getCellTopologyData< shards::Triangle<> >());     // create relevant subcell (side) topology
     
     int cellDim = cell.getDimension();
     int sideDim = side.getDimension();
@@ -157,12 +157,12 @@ int main(int argc, char *argv[]) {
     int counter = 0;
     for (int j=0; j<=numIntervals; j++) {
       for (int i=0; i<=numIntervals-j; i++) {
-	for (int k=0;k<numIntervals-j-i;k++) {
-	  interp_points_ref(counter,0) = i*(1.0/numIntervals);
-	  interp_points_ref(counter,1) = j*(1.0/numIntervals);
-	  interp_points_ref(counter,2) = k*(1.0/numIntervals);
-	  counter++;
-	}
+        for (int k=0;k<numIntervals-j-i;k++) {
+          interp_points_ref(counter,0) = i*(1.0/numIntervals);
+          interp_points_ref(counter,1) = j*(1.0/numIntervals);
+          interp_points_ref(counter,2) = k*(1.0/numIntervals);
+          counter++;
+        }
       }
     }
     
@@ -171,9 +171,9 @@ int main(int argc, char *argv[]) {
     for (int basis_order=min_order;basis_order<=max_order;basis_order++) {
       // create bases
       Teuchos::RCP<Basis<double,FieldContainer<double> > > vectorBasis =
-	Teuchos::rcp(new Basis_HDIV_TET_In_FEM<double,FieldContainer<double> >(basis_order+1,POINTTYPE_EQUISPACED) );
+        Teuchos::rcp(new Basis_HDIV_TET_In_FEM<double,FieldContainer<double> >(basis_order+1,POINTTYPE_EQUISPACED) );
       Teuchos::RCP<Basis<double,FieldContainer<double> > > scalarBasis =
-	Teuchos::rcp(new Basis_HGRAD_TET_Cn_FEM_ORTH<double,FieldContainer<double> >(basis_order) );
+        Teuchos::rcp(new Basis_HGRAD_TET_Cn_FEM_ORTH<double,FieldContainer<double> >(basis_order) );
       
       int numVectorFields = vectorBasis->getCardinality();
       int numScalarFields = scalarBasis->getCardinality();
@@ -237,195 +237,195 @@ int main(int argc, char *argv[]) {
       
       // need the vector basis & its divergences
       vectorBasis->getValues(value_of_v_basis_at_cub_points_cell,
-			     cub_points_cell,
-			     OPERATOR_VALUE);
+                             cub_points_cell,
+                             OPERATOR_VALUE);
       vectorBasis->getValues(div_of_v_basis_at_cub_points_cell,
-			     cub_points_cell,
-			     OPERATOR_DIV);
+                             cub_points_cell,
+                             OPERATOR_DIV);
       
       // need the scalar basis as well
       scalarBasis->getValues(value_of_s_basis_at_cub_points_cell,
-			     cub_points_cell,
-			     OPERATOR_VALUE);
+                             cub_points_cell,
+                             OPERATOR_VALUE);
       
-      // construct mass matrix		
+      // construct mass matrix
       cub_weights_cell.resize(1,numCubPointsCell);
       FunctionSpaceTools::multiplyMeasure<double>(w_value_of_v_basis_at_cub_points_cell ,
-						  cub_weights_cell ,
-						  value_of_v_basis_at_cub_points_cell ); 
+                                                  cub_weights_cell ,
+                                                  value_of_v_basis_at_cub_points_cell ); 
       cub_weights_cell.resize(numCubPointsCell);
       
       
       value_of_v_basis_at_cub_points_cell.resize( 1 , numVectorFields , numCubPointsCell , cellDim );
       FunctionSpaceTools::integrate<double>(fe_matrix_M,
-					    w_value_of_v_basis_at_cub_points_cell ,
-					    value_of_v_basis_at_cub_points_cell ,
-					    COMP_BLAS );
+                                            w_value_of_v_basis_at_cub_points_cell ,
+                                            value_of_v_basis_at_cub_points_cell ,
+                                            COMP_BLAS );
       value_of_v_basis_at_cub_points_cell.resize( numVectorFields , numCubPointsCell , cellDim );
       
       // div matrix
       cub_weights_cell.resize(1,numCubPointsCell);
       FunctionSpaceTools::multiplyMeasure<double>(w_div_of_v_basis_at_cub_points_cell,
-						  cub_weights_cell,
-						  div_of_v_basis_at_cub_points_cell);
+                                                  cub_weights_cell,
+                                                  div_of_v_basis_at_cub_points_cell);
       cub_weights_cell.resize(numCubPointsCell);
       
       value_of_s_basis_at_cub_points_cell.resize(1,numScalarFields,numCubPointsCell);
       FunctionSpaceTools::integrate<double>(fe_matrix_B,
-					    w_div_of_v_basis_at_cub_points_cell ,
-					    value_of_s_basis_at_cub_points_cell ,
-					    COMP_BLAS );
+                                            w_div_of_v_basis_at_cub_points_cell ,
+                                            value_of_s_basis_at_cub_points_cell ,
+                                            COMP_BLAS );
       value_of_s_basis_at_cub_points_cell.resize(numScalarFields,numCubPointsCell);
       
       
       // construct div matrix
       
       for (int x_order=0;x_order<=basis_order;x_order++) {
-	for (int y_order=0;y_order<=basis_order-x_order;y_order++) {
-	  for (int z_order=0;z_order<=basis_order-x_order-y_order;z_order++) {
-	    *outStream << "Basis order: " << basis_order << "\n";
-	    *outStream << "x_order: " << x_order << "\n";
-	    *outStream << "y_order: " << y_order << "\n";
-	    *outStream << "z_order: " << z_order << "\n";
-	    
-	    
-	    // reset global matrix since I destroyed it in LU factorization.
-	    fe_matrix.initialize();
-	    // insert mass matrix into global matrix
-	    for (int i=0;i<numVectorFields;i++) {
-	      for (int j=0;j<numVectorFields;j++) {
-		fe_matrix(0,i,j) = fe_matrix_M(0,i,j);
-	      }
-	    }
-	    
-	    // insert div matrix into global matrix
-	    for (int i=0;i<numVectorFields;i++) {
-	      for (int j=0;j<numScalarFields;j++) {
-		fe_matrix(0,i,numVectorFields+j)=-fe_matrix_B(0,i,j);
-		fe_matrix(0,j+numVectorFields,i)=fe_matrix_B(0,i,j);
-	      }
-	    }
-	    
-	    // clear old vector data
-	    rhs_vector_vec.initialize();
-	    rhs_vector_scal.initialize();
-	    rhs_and_soln_vec.initialize();
-	    
-	    // now get rhs vector
-	    // rhs_vector_scal is just (rhs,w) for w in the scalar basis
-	    // I already have the scalar basis tabulated.
-	    cub_points_cell.resize(1,numCubPointsCell,cellDim);
-	    rhsFunc(rhs_at_cub_points_cell,
-		    cub_points_cell,
-		    x_order,
-		    y_order,
-		    z_order);
-	    
-	    cub_points_cell.resize(numCubPointsCell,cellDim);
-	    
-	    cub_weights_cell.resize(1,numCubPointsCell);
-	    FunctionSpaceTools::multiplyMeasure<double>(w_value_of_s_basis_at_cub_points_cell,
-							cub_weights_cell,
-							value_of_s_basis_at_cub_points_cell);
-	    cub_weights_cell.resize(numCubPointsCell);
-	    FunctionSpaceTools::integrate<double>(rhs_vector_scal,
-						  rhs_at_cub_points_cell,
-						  w_value_of_s_basis_at_cub_points_cell,
-						  COMP_BLAS);
-	    
-	    for (int i=0;i<numScalarFields;i++) {
-	      rhs_and_soln_vec(0,numVectorFields+i) = rhs_vector_scal(0,i);
-	    }
-	    
-	    
-	    // now get <u,v.n> on boundary
-	    for (unsigned side_cur=0;side_cur<4;side_cur++) {
-	      // map side cubature to current side
-	      CellTools<double>::mapToReferenceSubcell( cub_points_side_refcell ,
-							cub_points_side ,
-							sideDim ,
-							(int)side_cur ,
-							cell );
-	      
-	      // Evaluate dirichlet data
-	      cub_points_side_refcell.resize(1,numCubPointsSide,cellDim);
-	      u_exact(diri_data_at_cub_points_side,
-		      cub_points_side_refcell,x_order,y_order,z_order);
-	      cub_points_side_refcell.resize(numCubPointsSide,cellDim);
-	      
-	      // get normal direction, this has the edge weight factored into it already
-	      CellTools<double>::getReferenceSideNormal(side_normal , 
-							(int)side_cur,cell );
-	      
-	      // v.n at cub points on side
-	      vectorBasis->getValues(value_of_v_basis_at_cub_points_side ,
-				     cub_points_side_refcell ,
-				     OPERATOR_VALUE );
-	      
-	      
-	      for (int i=0;i<numVectorFields;i++) {
-		for (int j=0;j<numCubPointsSide;j++) {
-		  n_of_v_basis_at_cub_points_side(i,j) = 0.0;
-		  for (int k=0;k<cellDim;k++) {
-		    n_of_v_basis_at_cub_points_side(i,j) += side_normal(k) * 
-		      value_of_v_basis_at_cub_points_side(i,j,k);
-		  }
-		} 
-	      }
-	      
-	      cub_weights_side.resize(1,numCubPointsSide);
-	      FunctionSpaceTools::multiplyMeasure<double>(w_n_of_v_basis_at_cub_points_side,
-							  cub_weights_side,
-							  n_of_v_basis_at_cub_points_side);
-	      cub_weights_side.resize(numCubPointsSide);
-	      
-	      FunctionSpaceTools::integrate<double>(rhs_vector_vec,
-						    diri_data_at_cub_points_side,
-						    w_n_of_v_basis_at_cub_points_side,
-						    COMP_BLAS,
-						    false);
-	      for (int i=0;i<numVectorFields;i++) {
-		rhs_and_soln_vec(0,i) -= rhs_vector_vec(0,i);
-	      }
-	      
-	    }
-	    
-	    //	  *outStream << rhs_and_soln_vec << endl;
-	    
-	    
-	    // solve linear system					
-	    int info = 0;
-	    Teuchos::LAPACK<int, double> solver;
-	    solver.GESV(numTotalFields, 1, &fe_matrix[0], numTotalFields, &ipiv(0), &rhs_and_soln_vec[0], 
-			numTotalFields, &info);
-	    
-	    // compute interpolant; the scalar entries are last
-	    scalarBasis->getValues(value_of_s_basis_at_interp_points,
-				   interp_points_ref,
-				   OPERATOR_VALUE);
-	    for (int pt=0;pt<numInterpPoints;pt++) {
-	      interpolant(0,pt)=0.0;
-	      for (int i=0;i<numScalarFields;i++) {
-		interpolant(0,pt) += rhs_and_soln_vec(0,numVectorFields+i)
-		  * value_of_s_basis_at_interp_points(i,pt);
-	      }
-	    }
-	    
-	    interp_points_ref.resize(1,numInterpPoints,cellDim);
-	    // get exact solution for comparison
-	    FieldContainer<double> exact_solution(1,numInterpPoints);
-	    u_exact( exact_solution , interp_points_ref , x_order, y_order, z_order);
-	    interp_points_ref.resize(numInterpPoints,cellDim);
-	    
-	    //	  *outStream << interpolant << endl;
-	    RealSpaceTools<double>::add(interpolant,exact_solution);
-	    //			 *outStream << interpolant << endl;
-	    
-	    double nrm= RealSpaceTools<double>::vectorNorm(&interpolant[0],interpolant.dimension(1), NORM_TWO);
-	    *outStream << nrm << "\n";
-	    
-	  }
-	}
+        for (int y_order=0;y_order<=basis_order-x_order;y_order++) {
+          for (int z_order=0;z_order<=basis_order-x_order-y_order;z_order++) {
+            *outStream << "Basis order: " << basis_order << "\n";
+            *outStream << "x_order: " << x_order << "\n";
+            *outStream << "y_order: " << y_order << "\n";
+            *outStream << "z_order: " << z_order << "\n";
+            
+            
+            // reset global matrix since I destroyed it in LU factorization.
+            fe_matrix.initialize();
+            // insert mass matrix into global matrix
+            for (int i=0;i<numVectorFields;i++) {
+              for (int j=0;j<numVectorFields;j++) {
+                fe_matrix(0,i,j) = fe_matrix_M(0,i,j);
+              }
+            }
+            
+            // insert div matrix into global matrix
+            for (int i=0;i<numVectorFields;i++) {
+              for (int j=0;j<numScalarFields;j++) {
+                fe_matrix(0,i,numVectorFields+j)=-fe_matrix_B(0,i,j);
+                fe_matrix(0,j+numVectorFields,i)=fe_matrix_B(0,i,j);
+              }
+            }
+            
+            // clear old vector data
+            rhs_vector_vec.initialize();
+            rhs_vector_scal.initialize();
+            rhs_and_soln_vec.initialize();
+            
+            // now get rhs vector
+            // rhs_vector_scal is just (rhs,w) for w in the scalar basis
+            // I already have the scalar basis tabulated.
+            cub_points_cell.resize(1,numCubPointsCell,cellDim);
+            rhsFunc(rhs_at_cub_points_cell,
+                    cub_points_cell,
+                    x_order,
+                    y_order,
+                    z_order);
+            
+            cub_points_cell.resize(numCubPointsCell,cellDim);
+            
+            cub_weights_cell.resize(1,numCubPointsCell);
+            FunctionSpaceTools::multiplyMeasure<double>(w_value_of_s_basis_at_cub_points_cell,
+                                                        cub_weights_cell,
+                                                        value_of_s_basis_at_cub_points_cell);
+            cub_weights_cell.resize(numCubPointsCell);
+            FunctionSpaceTools::integrate<double>(rhs_vector_scal,
+                                                  rhs_at_cub_points_cell,
+                                                  w_value_of_s_basis_at_cub_points_cell,
+                                                  COMP_BLAS);
+            
+            for (int i=0;i<numScalarFields;i++) {
+              rhs_and_soln_vec(0,numVectorFields+i) = rhs_vector_scal(0,i);
+            }
+            
+            
+            // now get <u,v.n> on boundary
+            for (unsigned side_cur=0;side_cur<4;side_cur++) {
+              // map side cubature to current side
+              CellTools<double>::mapToReferenceSubcell( cub_points_side_refcell ,
+                                                        cub_points_side ,
+                                                        sideDim ,
+                                                        (int)side_cur ,
+                                                        cell );
+              
+              // Evaluate dirichlet data
+              cub_points_side_refcell.resize(1,numCubPointsSide,cellDim);
+              u_exact(diri_data_at_cub_points_side,
+                      cub_points_side_refcell,x_order,y_order,z_order);
+              cub_points_side_refcell.resize(numCubPointsSide,cellDim);
+              
+              // get normal direction, this has the edge weight factored into it already
+              CellTools<double>::getReferenceSideNormal(side_normal , 
+                                                        (int)side_cur,cell );
+              
+              // v.n at cub points on side
+              vectorBasis->getValues(value_of_v_basis_at_cub_points_side ,
+                                    cub_points_side_refcell ,
+                                    OPERATOR_VALUE );
+              
+              
+              for (int i=0;i<numVectorFields;i++) {
+                for (int j=0;j<numCubPointsSide;j++) {
+                  n_of_v_basis_at_cub_points_side(i,j) = 0.0;
+                  for (int k=0;k<cellDim;k++) {
+                    n_of_v_basis_at_cub_points_side(i,j) += side_normal(k) * 
+                      value_of_v_basis_at_cub_points_side(i,j,k);
+                  }
+                } 
+              }
+              
+              cub_weights_side.resize(1,numCubPointsSide);
+              FunctionSpaceTools::multiplyMeasure<double>(w_n_of_v_basis_at_cub_points_side,
+                                                          cub_weights_side,
+                                                          n_of_v_basis_at_cub_points_side);
+              cub_weights_side.resize(numCubPointsSide);
+              
+              FunctionSpaceTools::integrate<double>(rhs_vector_vec,
+                                                    diri_data_at_cub_points_side,
+                                                    w_n_of_v_basis_at_cub_points_side,
+                                                    COMP_BLAS,
+                                                    false);
+              for (int i=0;i<numVectorFields;i++) {
+                rhs_and_soln_vec(0,i) -= rhs_vector_vec(0,i);
+              }
+              
+            }
+            
+            //  *outStream << rhs_and_soln_vec << endl;
+            
+            
+            // solve linear system
+            int info = 0;
+            Teuchos::LAPACK<int, double> solver;
+            solver.GESV(numTotalFields, 1, &fe_matrix[0], numTotalFields, &ipiv(0), &rhs_and_soln_vec[0], 
+                        numTotalFields, &info);
+            
+            // compute interpolant; the scalar entries are last
+            scalarBasis->getValues(value_of_s_basis_at_interp_points,
+                                  interp_points_ref,
+                                  OPERATOR_VALUE);
+            for (int pt=0;pt<numInterpPoints;pt++) {
+              interpolant(0,pt)=0.0;
+              for (int i=0;i<numScalarFields;i++) {
+                interpolant(0,pt) += rhs_and_soln_vec(0,numVectorFields+i)
+                  * value_of_s_basis_at_interp_points(i,pt);
+              }
+            }
+            
+            interp_points_ref.resize(1,numInterpPoints,cellDim);
+            // get exact solution for comparison
+            FieldContainer<double> exact_solution(1,numInterpPoints);
+            u_exact( exact_solution , interp_points_ref , x_order, y_order, z_order);
+            interp_points_ref.resize(numInterpPoints,cellDim);
+            
+            //  *outStream << interpolant << endl;
+            RealSpaceTools<double>::add(interpolant,exact_solution);
+            // *outStream << interpolant << endl;
+            
+            double nrm= RealSpaceTools<double>::vectorNorm(&interpolant[0],interpolant.dimension(1), NORM_TWO);
+            *outStream << nrm << "\n";
+            
+          }
+        }
       }
     }
     

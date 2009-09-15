@@ -30,7 +30,7 @@
 
 /** \file   Intrepid_HCURL_TET_In_FEM_Def.hpp
     \brief  Definition file for FEM basis functions (Raviart-Thomas)
-    of degree n for H(div) functions on TET.  
+            of degree n for H(div) functions on TET.  
     \author Created by R. Kirby.
 */
 
@@ -38,7 +38,7 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar>
   Basis_HCURL_TET_In_FEM<Scalar,ArrayScalar>::Basis_HCURL_TET_In_FEM( const int n ,
-								      const EPointType pointType ):
+                                                                      const EPointType pointType ):
     Phis_( n ),
     coeffs_( (n+1)*(n+2)*(n+3)/2 , n*(n+2)*(n+3)/2  )
   {
@@ -99,21 +99,21 @@ namespace Intrepid {
       // write into second spatial component, where
       // I integrate z phi_j phi_i
       for (int i=0;i<scalarBigN;i++) {
-	V1(scalarBigN+i,littleN+j) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(scalarBigN+i,littleN+j) -= cubWeights(k) * cubPoints(k,2) 
-	    * phisAtCubPoints(start_PkH+j,k)
-	    * phisAtCubPoints(i,k);
-	}
+        V1(scalarBigN+i,littleN+j) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(scalarBigN+i,littleN+j) -= cubWeights(k) * cubPoints(k,2) 
+            * phisAtCubPoints(start_PkH+j,k)
+            * phisAtCubPoints(i,k);
+        }
       }  
       // write into third spatial component (-y phi_j, phi_i)
       for (int i=0;i<scalarBigN;i++) {
-	V1(2*scalarBigN+i,littleN+j) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(2*scalarBigN+i,littleN+j) += cubWeights(k) * cubPoints(k,1) 
-	    * phisAtCubPoints(start_PkH+j,k)
-	    * phisAtCubPoints(i,k);
-	}
+        V1(2*scalarBigN+i,littleN+j) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(2*scalarBigN+i,littleN+j) += cubWeights(k) * cubPoints(k,1) 
+            * phisAtCubPoints(start_PkH+j,k)
+            * phisAtCubPoints(i,k);
+        }
       }  
     }
 
@@ -122,21 +122,21 @@ namespace Intrepid {
       // write into first spatial component, where
       // I integrate -z phi_j phi_i
       for (int i=0;i<scalarBigN;i++) {
-	V1(i,littleN+dim_PkH+j) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(i,littleN+dim_PkH+j) += cubWeights(k) * cubPoints(k,2) 
-	    * phisAtCubPoints(start_PkH+j,k)
-	    * phisAtCubPoints(i,k);
-	}
+        V1(i,littleN+dim_PkH+j) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(i,littleN+dim_PkH+j) += cubWeights(k) * cubPoints(k,2) 
+            * phisAtCubPoints(start_PkH+j,k)
+            * phisAtCubPoints(i,k);
+        }
       }  
       // third spatial component, x phi_j phi_i
       for (int i=0;i<scalarBigN;i++) {
-	V1(2*scalarBigN+i,littleN+dim_PkH+j) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(2*scalarBigN+i,littleN+dim_PkH+j) -= cubWeights(k) * cubPoints(k,0) 
-	    * phisAtCubPoints(start_PkH+j,k)
-	    * phisAtCubPoints(i,k);
-	}
+        V1(2*scalarBigN+i,littleN+dim_PkH+j) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(2*scalarBigN+i,littleN+dim_PkH+j) -= cubWeights(k) * cubPoints(k,0) 
+            * phisAtCubPoints(start_PkH+j,k)
+            * phisAtCubPoints(i,k);
+        }
       }  
     }
     
@@ -145,21 +145,21 @@ namespace Intrepid {
       // write into first spatial component, where
       // I integrate y phi_j phi_i
       for (int i=0;i<scalarBigN;i++) {
-	V1(i,littleN+2*dim_PkH+j) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(i,littleN+2*dim_PkH+j) -= cubWeights(k) * cubPoints(k,1) 
-	    * phisAtCubPoints(start_PkH+j,k)
-	    * phisAtCubPoints(i,k);
-	}
+        V1(i,littleN+2*dim_PkH+j) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(i,littleN+2*dim_PkH+j) -= cubWeights(k) * cubPoints(k,1) 
+            * phisAtCubPoints(start_PkH+j,k)
+            * phisAtCubPoints(i,k);
+        }
       }  
       // second spatial component, -x phi_j phi_i
       for (int i=0;i<scalarBigN;i++) {
-	V1(scalarBigN+i,littleN+2*dim_PkH+j) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(scalarBigN+i,littleN+2*dim_PkH+j) += cubWeights(k) * cubPoints(k,0) 
-	    * phisAtCubPoints(start_PkH+j,k)
-	    * phisAtCubPoints(i,k);
-	}
+        V1(scalarBigN+i,littleN+2*dim_PkH+j) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(scalarBigN+i,littleN+2*dim_PkH+j) += cubWeights(k) * cubPoints(k,0) 
+            * phisAtCubPoints(start_PkH+j,k)
+            * phisAtCubPoints(i,k);
+        }
       }  
     }
 
@@ -175,21 +175,21 @@ namespace Intrepid {
     Teuchos::LAPACK<int,Scalar> lala;
 
     lala.GESVD( 'S',  
-		'N',
-		V1.numRows() ,
-		V1.numCols() ,
-		V1.values() ,
-		V1.stride() ,
-		S.values() ,
-		U.values() ,
-		U.stride() ,
-		Vt.values() ,
-		Vt.stride() ,
-		work.values() ,
-		5*bigN ,
-		rWork.values() ,
-		&info );
-				
+                'N',
+                V1.numRows() ,
+                V1.numCols() ,
+                V1.values() ,
+                V1.stride() ,
+                S.values() ,
+                U.values() ,
+                U.stride() ,
+                Vt.values() ,
+                Vt.stride() ,
+                work.values() ,
+                5*bigN ,
+                rWork.values() ,
+                &info );
+                                
     // apply nodes to big space
     Teuchos::SerialDenseMatrix<int,Scalar> V2(N, bigN);
 
@@ -198,8 +198,8 @@ namespace Intrepid {
 
 
     const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
-							  n+1 ,
-							  1 );
+                                                          n+1 ,
+                                                          1 );
 
     const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
                                                           n+1 ,
@@ -222,7 +222,7 @@ namespace Intrepid {
       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( oneDPts , 
                                                               edgeTop ,
                                                               n+1 , 
-							      1 ,
+                                                              1 ,
                                                               pointType );
     }
 
@@ -238,25 +238,25 @@ namespace Intrepid {
 
     FieldContainer<Scalar> facePts( numPtsPerFace , 3 );
     FieldContainer<Scalar> phisAtFacePoints( scalarBigN , 
-                                             numPtsPerFace );   
+                                            numPtsPerFace );   
 
     FieldContainer<Scalar> edgeTan( 3 );
     
     // loop over the edges
     for (int edge=0;edge<6;edge++) {
       CellTools<Scalar>::getReferenceEdgeTangent( edgeTan ,
-						  edge ,
-						  this->basisCellTopology_ );
+                                                  edge ,
+                                                  this->basisCellTopology_ );
       /* multiply by 2.0 to account for a scaling in Pavel's definition */
       for (int j=0;j<3;j++) {
-	edgeTan(j) *= 2.0;
+        edgeTan(j) *= 2.0;
       }
 
       CellTools<Scalar>::mapToReferenceSubcell( edgePts ,
-						oneDPts ,
-						1 ,
-						edge ,
-						this->basisCellTopology_ );
+                                                oneDPts ,
+                                                1 ,
+                                                edge ,
+                                                this->basisCellTopology_ );
       
       Phis_.getValues( phisAtEdgePoints , edgePts , OPERATOR_VALUE );
 
@@ -264,9 +264,9 @@ namespace Intrepid {
       for (int j=0;j<numPtsPerEdge;j++) {
         // loop over orthonormal basis functions (columns of V2)
         for (int k=0;k<scalarBigN;k++) {
-	  for (int d=0;d<3;d++) {
-	    V2(edge*numPtsPerEdge+j,k+scalarBigN*d) = edgeTan(d) * phisAtEdgePoints(k,j);
-	  }
+          for (int d=0;d<3;d++) {
+            V2(edge*numPtsPerEdge+j,k+scalarBigN*d) = edgeTan(d) * phisAtEdgePoints(k,j);
+          }
         }
       }
     }
@@ -276,26 +276,26 @@ namespace Intrepid {
       FieldContainer<Scalar> refFaceTanU(3);
       FieldContainer<Scalar> refFaceTanV(3);
       for (int face=0;face<4;face++) {
-	CellTools<Scalar>::getReferenceFaceTangents( refFaceTanU ,
-						     refFaceTanV ,
-						     face ,
-						     this->basisCellTopology_ );
-	CellTools<Scalar>::mapToReferenceSubcell( facePts ,
-						  twoDPts ,
-						  2 ,
-						  face ,
-						  this->basisCellTopology_ );
-	Phis_.getValues( phisAtFacePoints , facePts , OPERATOR_VALUE );
-	for (int j=0;j<numPtsPerFace;j++) {
-	  for (int k=0;k<scalarBigN;k++) {
-	    for (int d=0;d<3;d++) {
-	      V2(6*numPtsPerEdge+2*face*numPtsPerFace+2*j,k+scalarBigN*d) =
-		refFaceTanU(d) * phisAtFacePoints(k,j);
-	      V2(6*numPtsPerEdge+2*face*numPtsPerFace+2*j+1,k+scalarBigN*d) =
-		refFaceTanV(d) * phisAtFacePoints(k,j);
-	    }
-	  }
-	}
+        CellTools<Scalar>::getReferenceFaceTangents( refFaceTanU ,
+                                                    refFaceTanV ,
+                                                    face ,
+                                                    this->basisCellTopology_ );
+        CellTools<Scalar>::mapToReferenceSubcell( facePts ,
+                                                  twoDPts ,
+                                                  2 ,
+                                                  face ,
+                                                  this->basisCellTopology_ );
+        Phis_.getValues( phisAtFacePoints , facePts , OPERATOR_VALUE );
+        for (int j=0;j<numPtsPerFace;j++) {
+          for (int k=0;k<scalarBigN;k++) {
+            for (int d=0;d<3;d++) {
+              V2(6*numPtsPerEdge+2*face*numPtsPerFace+2*j,k+scalarBigN*d) =
+                refFaceTanU(d) * phisAtFacePoints(k,j);
+              V2(6*numPtsPerEdge+2*face*numPtsPerFace+2*j+1,k+scalarBigN*d) =
+                refFaceTanV(d) * phisAtFacePoints(k,j);
+            }
+          }
+        }
       }
     }
 
@@ -303,18 +303,18 @@ namespace Intrepid {
     if (n > 2) {
       FieldContainer<Scalar> cellPoints( numPtsPerCell , 3 );
       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( cellPoints ,
-							      this->getBaseCellTopology() , 
-							      n + 1 ,
-							      1 ,
-							      pointType );
+                                                              this->getBaseCellTopology() , 
+                                                              n + 1 ,
+                                                              1 ,
+                                                              pointType );
       FieldContainer<Scalar> phisAtCellPoints( scalarBigN , numPtsPerCell );
       Phis_.getValues( phisAtCellPoints , cellPoints , OPERATOR_VALUE );
       for (int i=0;i<numPtsPerCell;i++) {
-	for (int j=0;j<scalarBigN;j++) {
-	  for (int k=0;k<3;k++) {
-	    V2(6*numPtsPerEdge+8*numPtsPerFace+k*numPtsPerCell+i,k*scalarBigN+j) = phisAtCellPoints(j,i);
-	  }
-	}
+        for (int j=0;j<scalarBigN;j++) {
+          for (int k=0;k<3;k++) {
+            V2(6*numPtsPerEdge+8*numPtsPerFace+k*numPtsPerCell+i,k*scalarBigN+j) = phisAtCellPoints(j,i);
+          }
+        }
       }
     }
 
@@ -365,8 +365,8 @@ namespace Intrepid {
 
 
     const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
-							  deg+1 ,
-							  1 );
+                                                          deg+1 ,
+                                                          1 );
 
     const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
                                                           deg+1 ,
@@ -379,16 +379,16 @@ namespace Intrepid {
     // edge dof first
     for (int e=0;e<6;e++) {
       for (int i=0;i<numPtsPerEdge;i++) {
-	tag_cur[0] = 1;  tag_cur[1] = e;  tag_cur[2] = i;  tag_cur[3] = numPtsPerEdge;
-	tag_cur += tagSize;
+        tag_cur[0] = 1;  tag_cur[1] = e;  tag_cur[2] = i;  tag_cur[3] = numPtsPerEdge;
+        tag_cur += tagSize;
       }
     }
 
     // face dof, 2 * numPtsPerFace dof per face
     for (int f=0;f<4;f++) {
       for (int i=0;i<2*numPtsPerFace;i++) {
-	tag_cur[0] = 2;  tag_cur[1] = f;  tag_cur[2] = i;  tag_cur[3] = 2*numPtsPerFace;
-	tag_cur+= tagSize;
+        tag_cur[0] = 2;  tag_cur[1] = f;  tag_cur[2] = i;  tag_cur[3] = 2*numPtsPerFace;
+        tag_cur+= tagSize;
       }
     }
     
@@ -414,16 +414,16 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar> 
   void Basis_HCURL_TET_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-							      const ArrayScalar &  inputPoints,
-							      const EOperator      operatorType) const {
+                                                              const ArrayScalar &  inputPoints,
+                                                              const EOperator      operatorType) const {
   
     // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
     Intrepid::getValues_HCURL_Args<Scalar, ArrayScalar>(outputValues,
-							inputPoints,
-							operatorType,
-							this -> getBaseCellTopology(),
-							this -> getCardinality() );
+                                                        inputPoints,
+                                                        operatorType,
+                                                        this -> getBaseCellTopology(),
+                                                        this -> getCardinality() );
 #endif
     const int numPts = inputPoints.dimension(0);
     const int deg = this -> getDegree();
@@ -432,60 +432,60 @@ namespace Intrepid {
     try {
       switch (operatorType) {
       case OPERATOR_VALUE:
-	{
-	  FieldContainer<Scalar> phisCur( scalarBigN , numPts );
-	  Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
+        {
+          FieldContainer<Scalar> phisCur( scalarBigN , numPts );
+          Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
-	  for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
-	    for (int j=0;j<outputValues.dimension(1);j++) {  // point
-	      for (int d=0;d<3;d++) {
-		outputValues(i,j,d) = 0.0;
-	      }
-	      for (int k=0;k<scalarBigN;k++) { // Dubiner bf
-		for (int d=0;d<3;d++) {
-		  outputValues(i,j,d) += coeffs_(k+d*scalarBigN,i) * phisCur(k,j);
-		}
-	      }
-	    }
-	  }
-	}
-	break;
+          for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
+            for (int j=0;j<outputValues.dimension(1);j++) {  // point
+              for (int d=0;d<3;d++) {
+                outputValues(i,j,d) = 0.0;
+              }
+              for (int k=0;k<scalarBigN;k++) { // Dubiner bf
+                for (int d=0;d<3;d++) {
+                  outputValues(i,j,d) += coeffs_(k+d*scalarBigN,i) * phisCur(k,j);
+                }
+              }
+            }
+          }
+        }
+        break;
       case OPERATOR_CURL:
-	{
+        {
           FieldContainer<Scalar> phisCur( scalarBigN , numPts , 3 );
           Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
           for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
             for (int j=0;j<outputValues.dimension(1);j++) { // point loop
-	      outputValues(i,j,0) = 0.0;
-	      for (int k=0;k<scalarBigN;k++) {
-		outputValues(i,j,0) += coeffs_(k+2*scalarBigN,i) * phisCur(k,j,1);
-		outputValues(i,j,0) -= coeffs_(k+scalarBigN,i) * phisCur(k,j,2);
-	      }
-	      
-	      outputValues(i,j,1) = 0.0;
-	      for (int k=0;k<scalarBigN;k++) {
-		outputValues(i,j,1) += coeffs_(k,i) * phisCur(k,j,2);
-		outputValues(i,j,1) -= coeffs_(k+2*scalarBigN,i) * phisCur(k,j,0);
-	      }
+              outputValues(i,j,0) = 0.0;
+              for (int k=0;k<scalarBigN;k++) {
+                outputValues(i,j,0) += coeffs_(k+2*scalarBigN,i) * phisCur(k,j,1);
+                outputValues(i,j,0) -= coeffs_(k+scalarBigN,i) * phisCur(k,j,2);
+              }
+              
+              outputValues(i,j,1) = 0.0;
+              for (int k=0;k<scalarBigN;k++) {
+                outputValues(i,j,1) += coeffs_(k,i) * phisCur(k,j,2);
+                outputValues(i,j,1) -= coeffs_(k+2*scalarBigN,i) * phisCur(k,j,0);
+              }
 
-	      outputValues(i,j,2) = 0.0;
-	      for (int k=0;k<scalarBigN;k++) {
-		outputValues(i,j,2) += coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
-		outputValues(i,j,2) -= coeffs_(k,i) * phisCur(k,j,1);
-	      }
-	    }
-	  }
-	}	  
-	break;
+              outputValues(i,j,2) = 0.0;
+              for (int k=0;k<scalarBigN;k++) {
+                outputValues(i,j,2) += coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
+                outputValues(i,j,2) -= coeffs_(k,i) * phisCur(k,j,1);
+              }
+            }
+          }
+        }
+        break;
       default:
-	TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			    ">>> ERROR (Basis_HCURL_TET_In_FEM): Operator type not implemented");    	
-	break;
+        TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                            ">>> ERROR (Basis_HCURL_TET_In_FEM): Operator type not implemented");
+        break;
       }
     }
     catch (std::invalid_argument &exception){
       TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			  ">>> ERROR (Basis_HCURL_TET_In_FEM): Operator type not implemented");    
+                          ">>> ERROR (Basis_HCURL_TET_In_FEM): Operator type not implemented");    
     }
 
   }
@@ -494,11 +494,11 @@ namespace Intrepid {
   
   template<class Scalar, class ArrayScalar>
   void Basis_HCURL_TET_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-							      const ArrayScalar &    inputPoints,
-							      const ArrayScalar &    cellVertices,
-							      const EOperator        operatorType) const {
+                                                              const ArrayScalar &    inputPoints,
+                                                              const ArrayScalar &    cellVertices,
+                                                              const EOperator        operatorType) const {
     TEST_FOR_EXCEPTION( (true), std::logic_error,
-			">>> ERROR (Basis_HCURL_TET_In_FEM): FEM Basis calling an FVD member function");
+                        ">>> ERROR (Basis_HCURL_TET_In_FEM): FEM Basis calling an FVD member function");
   }
 
 

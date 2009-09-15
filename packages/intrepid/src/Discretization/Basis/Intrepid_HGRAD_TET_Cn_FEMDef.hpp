@@ -36,7 +36,7 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_TET_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_TET_Cn_FEM( const int n ,
-								      const EPointType pointType ):
+                                                                      const EPointType pointType ):
     Phis( n ),
     V((n+1)*(n+2)*(n+3)/6,(n+1)*(n+2)*(n+3)/6),
     Vinv((n+1)*(n+2)*(n+3)/6,(n+1)*(n+2)*(n+3)/6),
@@ -53,22 +53,22 @@ namespace Intrepid {
     // construct lattice
 
     PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts ,
-							    this->getBaseCellTopology() ,
-							    n ,
-							    0 ,
-							    pointType );
+                                                            this->getBaseCellTopology() ,
+                                                            n ,
+                                                            0 ,
+                                                            pointType );
 
     
     // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
-   
+  
     Phis.getValues( V , latticePts , OPERATOR_VALUE );
 
     // now I need to copy V into a Teuchos array to do the inversion
     Teuchos::SerialDenseMatrix<int,Scalar> Vsdm(N,N);
     for (int i=0;i<N;i++) {
       for (int j=0;j<N;j++) {
-	Vsdm(i,j) = V(i,j);
+        Vsdm(i,j) = V(i,j);
       }
     }
 
@@ -80,7 +80,7 @@ namespace Intrepid {
     // now I need to copy the inverse into Vinv
     for (int i=0;i<N;i++) {
       for (int j=0;j<N;j++) {
-	Vinv(i,j) = Vsdm(j,i);
+        Vinv(i,j) = Vsdm(j,i);
       }
     }
 
@@ -103,11 +103,11 @@ namespace Intrepid {
     const int degree = this->getDegree();
     const int numEdgeDof = degree - 1;
     const int numFaceDof = PointTools::getLatticeSize( shards::CellTopology( shards::getCellTopologyData<shards::Triangle<3> >() ) ,
-						       degree , 
-						       1);
+                                                      degree , 
+                                                      1);
     const int numCellDof = PointTools::getLatticeSize( this->getBaseCellTopology() ,
-						       degree ,
-						       1 );
+                                                      degree ,
+                                                      1 );
     int edge_dof_cur[] = {0,0,0,0,0,0};
     int face_dof_cur[] = {0,0,0,0};
     int cell_dof_cur = 0;
@@ -142,9 +142,9 @@ namespace Intrepid {
 
       // internal points are on bottom face, which is face 3
       for (int j=1;j<degree-i;j++) {
-	tag_cur[0] = 2;  tag_cur[1] = 3;  tag_cur[2] = face_dof_cur[3];  tag_cur[3] = numFaceDof;
-	face_dof_cur[3]++;
-	tag_cur += tagSize;
+        tag_cur[0] = 2;  tag_cur[1] = 3;  tag_cur[2] = face_dof_cur[3];  tag_cur[3] = numFaceDof;
+        face_dof_cur[3]++;
+        tag_cur += tagSize;
       }
       // end internal points on face 
 
@@ -173,9 +173,9 @@ namespace Intrepid {
       //     end first point
       //     points internal to face of vertices (0,1,3), which is face 0
       for (int j=1;j<degree-i;j++) {
-	tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = face_dof_cur[0];  tag_cur[3] = numFaceDof;
-	face_dof_cur[0]++;
-	tag_cur += tagSize;
+        tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = face_dof_cur[0];  tag_cur[3] = numFaceDof;
+        face_dof_cur[0]++;
+        tag_cur += tagSize;
       }
       //     end points internal to face 0
       //     last point on bottom line is on edge 4
@@ -187,23 +187,23 @@ namespace Intrepid {
 
       //  begin internal lines of internal face
       for (int j=1;j<degree-i;j++) {
-	//    first point on line is on face of vertices (0,3,2), which is face 2
-	tag_cur[0] = 2;  tag_cur[1] = 2;  tag_cur[2] = edge_dof_cur[2];  tag_cur[3] = numFaceDof;
-	edge_dof_cur[2]++;
-	tag_cur += tagSize;
-	//    end first point of line
-	//    begin internal points on the cell
-	for (int k=1;k<degree-i-j;k++) {
-	  tag_cur[0] = 3;  tag_cur[1] = 0;  tag_cur[2] = cell_dof_cur;  tag_cur[3] = numCellDof;
-	  cell_dof_cur++;
-	  tag_cur += tagSize;
-	}
-	//    end internal points on the cell
-	//    last point on the line is on face with vertices (1,2,3) , which is face 1
-	tag_cur[0] = 2;  tag_cur[1] = 1;  tag_cur[2] = face_dof_cur[1];  tag_cur[3] = numFaceDof;
-	face_dof_cur[1]++;
-	tag_cur += tagSize;
-	//    end last point of line
+        //    first point on line is on face of vertices (0,3,2), which is face 2
+        tag_cur[0] = 2;  tag_cur[1] = 2;  tag_cur[2] = edge_dof_cur[2];  tag_cur[3] = numFaceDof;
+        edge_dof_cur[2]++;
+        tag_cur += tagSize;
+        //    end first point of line
+        //    begin internal points on the cell
+        for (int k=1;k<degree-i-j;k++) {
+          tag_cur[0] = 3;  tag_cur[1] = 0;  tag_cur[2] = cell_dof_cur;  tag_cur[3] = numCellDof;
+          cell_dof_cur++;
+          tag_cur += tagSize;
+        }
+        //    end internal points on the cell
+        //    last point on the line is on face with vertices (1,2,3) , which is face 1
+        tag_cur[0] = 2;  tag_cur[1] = 1;  tag_cur[2] = face_dof_cur[1];  tag_cur[3] = numFaceDof;
+        face_dof_cur[1]++;
+        tag_cur += tagSize;
+        //    end last point of line
       }
       //  end internal lines of internal face
       // begin top point on current face slice:  on edge 5
@@ -223,13 +223,13 @@ namespace Intrepid {
 
     
     Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
-				this -> ordinalToTag_,
-				tags,
-				this -> basisCardinality_,
-				tagSize,
-				posScDim,
-				posScOrd,
-				posDfOrd);
+                                this -> ordinalToTag_,
+                                tags,
+                                this -> basisCardinality_,
+                                tagSize,
+                                posScDim,
+                                posScOrd,
+                                posDfOrd);
 
     delete []tags;
   
@@ -239,16 +239,16 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar> 
   void Basis_HGRAD_TET_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-							      const ArrayScalar &  inputPoints,
-							      const EOperator      operatorType) const {
+                                                              const ArrayScalar &  inputPoints,
+                                                              const EOperator      operatorType) const {
   
     // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
     Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-							inputPoints,
-							operatorType,
-							this -> getBaseCellTopology(),
-							this -> getCardinality() );
+                                                        inputPoints,
+                                                        operatorType,
+                                                        this -> getBaseCellTopology(),
+                                                        this -> getCardinality() );
 #endif
     const int numPts = inputPoints.dimension(0);
     const int numBf = this->getCardinality();
@@ -256,19 +256,19 @@ namespace Intrepid {
     try {
       switch (operatorType) {
       case OPERATOR_VALUE:
-	{
-	  FieldContainer<Scalar> phisCur( numBf , numPts );
-	  Phis.getValues( phisCur , inputPoints , operatorType );
-	  for (int i=0;i<outputValues.dimension(0);i++) {
-	    for (int j=0;j<outputValues.dimension(1);j++) {
-	      outputValues(i,j) = 0.0;
-	      for (int k=0;k<this->getCardinality();k++) {
-		outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
-	      }
-	    }
-	  }
-	}
-	break;
+        {
+          FieldContainer<Scalar> phisCur( numBf , numPts );
+          Phis.getValues( phisCur , inputPoints , operatorType );
+          for (int i=0;i<outputValues.dimension(0);i++) {
+            for (int j=0;j<outputValues.dimension(1);j++) {
+              outputValues(i,j) = 0.0;
+              for (int k=0;k<this->getCardinality();k++) {
+                outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
+              }
+            }
+          }
+        }
+        break;
       case OPERATOR_GRAD:
       case OPERATOR_D1:
       case OPERATOR_D2:
@@ -280,35 +280,35 @@ namespace Intrepid {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-	{
-	  const int dkcard = 
-	    (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,3): getDkCardinality(operatorType,3);
-	  
-	  FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
-	  Phis.getValues( phisCur , inputPoints , operatorType );
+        {
+          const int dkcard = 
+            (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,3): getDkCardinality(operatorType,3);
+          
+          FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
+          Phis.getValues( phisCur , inputPoints , operatorType );
 
-	  for (int i=0;i<outputValues.dimension(0);i++) {
-	    for (int j=0;j<outputValues.dimension(1);j++) {
-	      for (int k=0;k<outputValues.dimension(2);k++) {
-		outputValues(i,j,k) = 0.0;
-		for (int l=0;l<this->getCardinality();l++) {
-		  outputValues(i,j,k) += this->Vinv(l,i) * phisCur(l,j,k);
-		}
-	      }
-	    }
-	  }
+          for (int i=0;i<outputValues.dimension(0);i++) {
+            for (int j=0;j<outputValues.dimension(1);j++) {
+              for (int k=0;k<outputValues.dimension(2);k++) {
+                outputValues(i,j,k) = 0.0;
+                for (int l=0;l<this->getCardinality();l++) {
+                  outputValues(i,j,k) += this->Vinv(l,i) * phisCur(l,j,k);
+                }
+              }
+            }
+          }
 
-	}
-	break;
+        }
+        break;
       default:
-	TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			    ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented");    	
-	break;
+        TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                            ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented");
+        break;
       }
     }
     catch (std::invalid_argument &exception){
       TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			  ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented");    
+                          ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): Operator type not implemented");    
     }
 
   }
@@ -317,11 +317,11 @@ namespace Intrepid {
   
   template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_TET_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-							      const ArrayScalar &    inputPoints,
-							      const ArrayScalar &    cellVertices,
-							      const EOperator        operatorType) const {
+                                                              const ArrayScalar &    inputPoints,
+                                                              const ArrayScalar &    cellVertices,
+                                                              const EOperator        operatorType) const {
     TEST_FOR_EXCEPTION( (true), std::logic_error,
-			">>> ERROR (Basis_HGRAD_TET_Cn_FEM): FEM Basis calling an FVD member function");
+                        ">>> ERROR (Basis_HGRAD_TET_Cn_FEM): FEM Basis calling an FVD member function");
   }
 
 

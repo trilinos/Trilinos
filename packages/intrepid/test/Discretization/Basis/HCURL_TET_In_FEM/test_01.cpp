@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " << myBasisValues(i,j,k)
                        << " but correct value: " << fiat_vals[cur] << "\n";
-	    *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) << "\n";
+            *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) << "\n";
           }
           cur++;
         }
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " << myBasisValues(i,j,k)
                        << " but correct value: " << fiat_curls[cur] << "\n";
-	    *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_curls[cur] ) << "\n";
+            *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_curls[cur] ) << "\n";
           }
           cur++;
         }

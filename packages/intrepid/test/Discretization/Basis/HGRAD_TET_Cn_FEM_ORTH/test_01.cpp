@@ -114,11 +114,11 @@ int main(int argc, char *argv[]) {
     for (int j=i;j<polydim;j++) {
       double cur = 0.0;
       for (int k=0;k<myCub.getNumPoints();k++) {
-	cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
+        cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
       }
       if (i != j && fabs( cur ) > 100. * INTREPID_TOL) {
-	std::cout << "not diagonal" << i << " " << j << " " << fabs( cur ) << std::endl;
-	errorFlag++;
+        std::cout << "not diagonal" << i << " " << j << " " << fabs( cur ) << std::endl;
+        errorFlag++;
       }
       if (i == j && fabs( cur ) <= 100. * INTREPID_TOL) {
         std::cout << "zero on diagonal" << i << " " << j << std::endl;
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
                                                           deg , 
                                                           0 , 
                                                           POINTTYPE_EQUISPACED );        
-                                 
+                                
   FieldContainer<double> dBasisAtLattice( polydim , np_lattice , 3 );
   myBasis.getValues( dBasisAtLattice , lattice , OPERATOR_D1 );
 

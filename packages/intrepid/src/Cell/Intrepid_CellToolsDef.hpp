@@ -1404,7 +1404,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoi
   
   // Newton method to solve the equation F(refPoints) - physPoints = 0:
   // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
-  for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter)	{	
+  for(int iter = 0; iter < INTREPID_MAX_NEWTON; ++iter) {
     
     // Jacobians at the old iterates and their inverses. 
     setJacobian(jacobian, xOld, cellWorkset, cellTopo, whichCell);
@@ -1435,7 +1435,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoi
     }
     
     // Stopping criterion:
-    if (totalError < INTREPID_TOL) {		          
+    if (totalError < INTREPID_TOL) {
       break;
     } 
     else if ( iter > INTREPID_MAX_NEWTON) {
@@ -1445,7 +1445,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoi
     }
     
     // initialize next Newton step
-    xOld = refPoints;	
+    xOld = refPoints;
   } // for(iter)
 }
 

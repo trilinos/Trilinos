@@ -657,6 +657,5 @@ void FunctionSpaceTools::evaluate(ArrayOutPointVals     & outPointVals,
   }  // end switch fRank
 
 } // evaluate
-	
 
 } // end namespace Intrepid

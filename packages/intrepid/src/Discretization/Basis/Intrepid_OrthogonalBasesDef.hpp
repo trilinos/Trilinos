@@ -1,9 +1,9 @@
 namespace Intrepid {
   
   template<class Scalar>
-  void OrthogonalBases::jrc( const Scalar &alpha , const Scalar &beta , 
-			     const int &n ,
-			     Scalar &an , Scalar &bn, Scalar &cn )
+  void OrthogonalBases::jrc(const Scalar &alpha , const Scalar &beta , 
+                            const int &n ,
+                            Scalar &an , Scalar &bn, Scalar &cn )
   {
     an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
       / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );
@@ -18,8 +18,8 @@ namespace Intrepid {
   
   template<class Scalar, class ScalarArray1, class ScalarArray2>
   void OrthogonalBases::tabulateTriangle( const ScalarArray1& z ,
-					  const int n ,
-					  ScalarArray2 & poly_val )
+                                          const int n ,
+                                          ScalarArray2 & poly_val )
   {
     const int np = z.dimension( 0 );
 
@@ -59,8 +59,8 @@ namespace Intrepid {
       Scalar b = p / (p+1.0);
 
       for (int i=0;i<np;i++) {
-	poly_val(idx_curp1,i) = a * f1[i] * poly_val(idx_cur,i)
-	  - b * f3[i] * poly_val(idx_curm1,i);
+        poly_val(idx_curp1,i) = a * f1[i] * poly_val(idx_cur,i)
+          - b * f3[i] * poly_val(idx_curm1,i);
       }
     }
     
@@ -69,24 +69,24 @@ namespace Intrepid {
       int idxp0 = OrthogonalBases::idxtri(p,0);
       int idxp1 = OrthogonalBases::idxtri(p,1);
       for (int i=0;i<np;i++) {
-	poly_val(idxp1,i) = poly_val(idxp0,i)
-	  *0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+        poly_val(idxp1,i) = poly_val(idxp0,i)
+          *0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
       }
     }
 
     // recurrence in q
     for (int p=0;p<n-1;p++) {
       for (int q=1;q<n-p;q++) {
-	int idxpqp1=OrthogonalBases::idxtri(p,q+1);
-	int idxpq=OrthogonalBases::idxtri(p,q);
-	int idxpqm1=OrthogonalBases::idxtri(p,q-1);
-	Scalar a,b,c;
-	jrc((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
-	for (int i=0;i<np;i++) {
-	  poly_val(idxpqp1,i)
-	    = (a*(2.0*z(i,1)-1.0)+b)*poly_val(idxpq,i)
-	    - c*poly_val(idxpqm1,i);
-	}
+        int idxpqp1=OrthogonalBases::idxtri(p,q+1);
+        int idxpq=OrthogonalBases::idxtri(p,q);
+        int idxpqm1=OrthogonalBases::idxtri(p,q-1);
+        Scalar a,b,c;
+        jrc((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
+        for (int i=0;i<np;i++) {
+          poly_val(idxpqp1,i)
+            = (a*(2.0*z(i,1)-1.0)+b)*poly_val(idxpq,i)
+            - c*poly_val(idxpqm1,i);
+        }
       }
     }
     
@@ -94,9 +94,9 @@ namespace Intrepid {
   }
 
   template<class Scalar, class ScalarArray1, class ScalarArray2>
-  void OrthogonalBases::tabulateTetrahedron( const ScalarArray1 &z , 
-					     const int n ,
-					     ScalarArray2 &poly_val )
+  void OrthogonalBases::tabulateTetrahedron(const ScalarArray1 &z , 
+                                            const int n ,
+                                            ScalarArray2 &poly_val )
   {
     const int np = z.dimension( 0 );
     int idxcur;
@@ -137,7 +137,7 @@ namespace Intrepid {
       int idxpm1 = idxtet(p-1,0,0);
       //cout << idxpm1 << " " << idxp << " " << idxpp1 << endl;
       for (int i=0;i<np;i++) {
-	poly_val(idxpp1,i) = a1 * f1[i] * poly_val(idxp,i) - a2 * f2[i] * poly_val(idxpm1,i);
+        poly_val(idxpp1,i) = a1 * f1[i] * poly_val(idxp,i) - a2 * f2[i] * poly_val(idxpm1,i);
       }
     }
     // q = 1
@@ -145,49 +145,49 @@ namespace Intrepid {
       int idx0 = idxtet(p,0,0);
       int idx1 = idxtet(p,1,0);
       for (int i=0;i<np;i++) {
-	poly_val(idx1,i) = poly_val(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) + 0.5 * ( 2.0 + 3.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) );
+        poly_val(idx1,i) = poly_val(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) + 0.5 * ( 2.0 + 3.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) );
       }
     }
 
     // q recurrence
     for (int p=0;p<n-1;p++) {
       for (int q=1;q<n-p;q++) {
-	Scalar aq,bq,cq;
-	jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
-	int idxpqp1 = idxtet(p,q+1,0);
-	int idxpq = idxtet(p,q,0);
-	int idxpqm1 = idxtet(p,q-1,0);
-	for (int i=0;i<np;i++) {
-	  poly_val(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * poly_val(idxpq,i) 
-	    - ( cq * f5[i] ) * poly_val(idxpqm1,i);
-	}
+        Scalar aq,bq,cq;
+        jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
+        int idxpqp1 = idxtet(p,q+1,0);
+        int idxpq = idxtet(p,q,0);
+        int idxpqm1 = idxtet(p,q-1,0);
+        for (int i=0;i<np;i++) {
+          poly_val(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * poly_val(idxpq,i) 
+            - ( cq * f5[i] ) * poly_val(idxpqm1,i);
+        }
       }
     }
     
     // r = 1
     for (int p=0;p<n;p++) {
       for (int q=0;q<n-p;q++) {
-	int idxpq1 = idxtet(p,q,1);
-	int idxpq0 = idxtet(p,q,0);
-	for (int i=0;i<np;i++) {
-	  poly_val(idxpq1,i) = poly_val(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + p ) * (2.0*z(i,2)-1.0) );
-	}
+        int idxpq1 = idxtet(p,q,1);
+        int idxpq0 = idxtet(p,q,0);
+        for (int i=0;i<np;i++) {
+          poly_val(idxpq1,i) = poly_val(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + p ) * (2.0*z(i,2)-1.0) );
+        }
       }
     }
     
     // general r recurrence
     for (int p=0;p<n-1;p++) {
       for (int q=0;q<n-p-1;q++) {
-	for (int r=1;r<n-p-q;r++) {
-	  Scalar ar,br,cr;
-	  int idxpqrp1 = idxtet(p,q,r+1);
-	  int idxpqr = idxtet(p,q,r);
-	  int idxpqrm1 = idxtet(p,q,r-1);
-	  jrc(2.0*p+2.0*q+2.0,0.0,r,ar,br,cr);
-	  for (int i=0;i<np;i++) {
-	    poly_val(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * poly_val( idxpqr , i ) - cr * poly_val(idxpqrm1,i);
-	  }
-	}
+        for (int r=1;r<n-p-q;r++) {
+          Scalar ar,br,cr;
+          int idxpqrp1 = idxtet(p,q,r+1);
+          int idxpqr = idxtet(p,q,r);
+          int idxpqrm1 = idxtet(p,q,r-1);
+          jrc(2.0*p+2.0*q+2.0,0.0,r,ar,br,cr);
+          for (int i=0;i<np;i++) {
+            poly_val(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * poly_val( idxpqr , i ) - cr * poly_val(idxpqrm1,i);
+          }
+        }
       }
     }
     

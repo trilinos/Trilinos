@@ -58,12 +58,12 @@ namespace Intrepid {
       where
       \f[
       P^{\alpha,\beta}_0 = 1
-      \f]					       
+      \f]
   */
   template<typename Scalar>
   static void jrc( const Scalar &alpha , const Scalar &beta , 
-		   const int &n ,
-		   Scalar &an , Scalar &bn, Scalar &cn );
+                  const int &n ,
+                  Scalar &an , Scalar &bn, Scalar &cn );
   
   template<class Scalar, class ArrayScalar>
   Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TET_Cn_FEM_ORTH( int degree )
@@ -98,51 +98,51 @@ namespace Intrepid {
 
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
-				this -> ordinalToTag_,
-				tags,
-				this -> basisCardinality_,
-				tagSize,
-				posScDim,
-				posScOrd,
-				posDfOrd);
+                                this -> ordinalToTag_,
+                                tags,
+                                this -> basisCardinality_,
+                                tagSize,
+                                posScDim,
+                                posScOrd,
+                                posDfOrd);
   }  
   
 
 
   template<class Scalar, class ArrayScalar> 
   void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-								   const ArrayScalar &  inputPoints,
-								   const EOperator      operatorType) const {
+                                                                  const ArrayScalar &  inputPoints,
+                                                                  const EOperator      operatorType) const {
   
     // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
     Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-							inputPoints,
-							operatorType,
-							this -> getBaseCellTopology(),
-							this -> getCardinality() );
+                                                        inputPoints,
+                                                        operatorType,
+                                                        this -> getBaseCellTopology(),
+                                                        this -> getCardinality() );
 #endif
     const int deg = this->getDegree();
   
     switch (operatorType) {
     case OPERATOR_VALUE:
       {
-	TabulatorTet<Scalar,ArrayScalar,0>::tabulate( outputValues ,
-						      deg ,
-						      inputPoints );
+        TabulatorTet<Scalar,ArrayScalar,0>::tabulate( outputValues ,
+                                                      deg ,
+                                                      inputPoints );
       }
       break;
     case OPERATOR_GRAD:
     case OPERATOR_D1:
       {
-	TabulatorTet<Scalar,ArrayScalar,1>::tabulate( outputValues ,
-						      deg ,
-						      inputPoints );
+        TabulatorTet<Scalar,ArrayScalar,1>::tabulate( outputValues ,
+                                                      deg ,
+                                                      inputPoints );
       }
       break;
     default:
       TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			  ">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): invalid or unsupported operator" );
+                          ">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): invalid or unsupported operator" );
     }
 
     return;
@@ -150,17 +150,17 @@ namespace Intrepid {
   
   template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-								   const ArrayScalar &    inputPoints,
-								   const ArrayScalar &    cellVertices,
-								   const EOperator        operatorType) const {
+                                                                  const ArrayScalar &    inputPoints,
+                                                                  const ArrayScalar &    cellVertices,
+                                                                  const EOperator        operatorType) const {
     TEST_FOR_EXCEPTION( (true), std::logic_error,
-			">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): FEM Basis calling an FVD member function");
+                        ">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): FEM Basis calling an FVD member function");
   }
 
   template<class Scalar, class ArrayScalar>
   void TabulatorTet<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
-						     const int deg ,
-						     const ArrayScalar &z )
+                                                    const int deg ,
+                                                    const ArrayScalar &z )
   {
     const int np = z.dimension( 0 );
     int idxcur;
@@ -192,84 +192,84 @@ namespace Intrepid {
       // D^{1,0,0}
       idxcur = idx(1,0,0);
       for (int i=0;i<np;i++) {
-	outputValues(idxcur,i) = f1[i];
+        outputValues(idxcur,i) = f1[i];
       }
   
       // p recurrence
       for (int p=1;p<deg;p++) {
-	Scalar a1 = (2.0 * p + 1.0) / ( p + 1.0);
-	Scalar a2 = p / ( p + 1.0 );
-	int idxp = idx(p,0,0);
-	int idxpp1 = idx(p+1,0,0);
-	int idxpm1 = idx(p-1,0,0);
-	for (int i=0;i<np;i++) {
-	  outputValues(idxpp1,i) = a1 * f1[i] * outputValues(idxp,i) - a2 * f2[i] * outputValues(idxpm1,i);
-	}
+        Scalar a1 = (2.0 * p + 1.0) / ( p + 1.0);
+        Scalar a2 = p / ( p + 1.0 );
+        int idxp = idx(p,0,0);
+        int idxpp1 = idx(p+1,0,0);
+        int idxpm1 = idx(p-1,0,0);
+        for (int i=0;i<np;i++) {
+          outputValues(idxpp1,i) = a1 * f1[i] * outputValues(idxp,i) - a2 * f2[i] * outputValues(idxpm1,i);
+        }
       }
       // q = 1
       for (int p=0;p<deg;p++) {
-	int idx0 = idx(p,0,0);
-	int idx1 = idx(p,1,0);
-	for (int i=0;i<np;i++) {
-	  outputValues(idx1,i) = outputValues(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) +
-							  0.5 * ( 2.0 + 3.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) );
-	}
+        int idx0 = idx(p,0,0);
+        int idx1 = idx(p,1,0);
+        for (int i=0;i<np;i++) {
+          outputValues(idx1,i) = outputValues(idx0,i) * ( p * ( 1.0 + (2.0*z(i,1)-1.0) ) +
+                                                          0.5 * ( 2.0 + 3.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) );
+        }
       }
   
       // q recurrence
       for (int p=0;p<deg-1;p++) {
-	for (int q=1;q<deg-p;q++) {
-	  Scalar aq,bq,cq;
+        for (int q=1;q<deg-p;q++) {
+          Scalar aq,bq,cq;
 
-	  jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
-	  int idxpqp1 = idx(p,q+1,0);
-	  int idxpq = idx(p,q,0);
-	  int idxpqm1 = idx(p,q-1,0);
-	  for (int i=0;i<np;i++) {
-	    outputValues(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * outputValues(idxpq,i) 
-	      - ( cq * f5[i] ) * outputValues(idxpqm1,i);
-	  }
-	}
+          jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
+          int idxpqp1 = idx(p,q+1,0);
+          int idxpq = idx(p,q,0);
+          int idxpqm1 = idx(p,q-1,0);
+          for (int i=0;i<np;i++) {
+            outputValues(idxpqp1,i) = ( aq * f3[i] + bq * f4[i] ) * outputValues(idxpq,i) 
+              - ( cq * f5[i] ) * outputValues(idxpqm1,i);
+          }
+        }
       }
   
       // r = 1
       for (int p=0;p<deg;p++) {
-	for (int q=0;q<deg-p;q++) {
-	  int idxpq1 = idx(p,q,1);
-	  int idxpq0 = idx(p,q,0);
-	  for (int i=0;i<np;i++) {
-	    outputValues(idxpq1,i) = outputValues(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + 
-										p ) * (2.0*z(i,2)-1.0) );
-	  }
-	}
+        for (int q=0;q<deg-p;q++) {
+          int idxpq1 = idx(p,q,1);
+          int idxpq0 = idx(p,q,0);
+          for (int i=0;i<np;i++) {
+            outputValues(idxpq1,i) = outputValues(idxpq0,i) * ( 1.0 + p + q + ( 2.0 + q + 
+                                                                                p ) * (2.0*z(i,2)-1.0) );
+          }
+        }
       }
       // general r recurrence
       for (int p=0;p<deg-1;p++) {
-	for (int q=0;q<deg-p-1;q++) {
-	  for (int r=1;r<deg-p-q;r++) {
-	    Scalar ar,br,cr;
-	    int idxpqrp1 = idx(p,q,r+1);
-	    int idxpqr = idx(p,q,r);
-	    int idxpqrm1 = idx(p,q,r-1);
-	    jrc((Scalar)(2.0*p+2.0*q+2.0),(Scalar)(0.0),r,ar,br,cr);
-	    for (int i=0;i<np;i++) {
-	      outputValues(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * outputValues( idxpqr , i ) - cr * outputValues(idxpqrm1,i);
-	    }
-	  }
-	}
+        for (int q=0;q<deg-p-1;q++) {
+          for (int r=1;r<deg-p-q;r++) {
+            Scalar ar,br,cr;
+            int idxpqrp1 = idx(p,q,r+1);
+            int idxpqr = idx(p,q,r);
+            int idxpqrm1 = idx(p,q,r-1);
+            jrc((Scalar)(2.0*p+2.0*q+2.0),(Scalar)(0.0),r,ar,br,cr);
+            for (int i=0;i<np;i++) {
+              outputValues(idxpqrp1,i) = (ar * (2.0*z(i,2)-1.0) + br) * outputValues( idxpqr , i ) - cr * outputValues(idxpqrm1,i);
+            }
+          }
+        }
       }
 
     }  
     // normalize
     for (int p=0;p<=deg;p++) {
       for (int q=0;q<=deg-p;q++) {
-	for (int r=0;r<=deg-p-q;r++) {
-	  int idxcur = idx(p,q,r);
-	  Scalar scal = sqrt( (p+0.5)*(p+q+1.0)*(p+q+r+1.5) );
-	  for (int i=0;i<np;i++) {
-	    outputValues(idxcur,i) *= scal;
-	  }
-	}
+        for (int r=0;r<=deg-p-q;r++) {
+          int idxcur = idx(p,q,r);
+          Scalar scal = sqrt( (p+0.5)*(p+q+1.0)*(p+q+r+1.5) );
+          for (int i=0;i<np;i++) {
+            outputValues(idxcur,i) *= scal;
+          }
+        }
       }
     }
   
@@ -280,29 +280,29 @@ namespace Intrepid {
 
   template<typename Scalar, typename ArrayScalar>
   void TabulatorTet<Scalar,ArrayScalar,1>::tabulate( ArrayScalar &outputValues ,
-						     const int deg ,
-						     const ArrayScalar &z ) 
+                                                    const int deg ,
+                                                    const ArrayScalar &z ) 
   {
     const int np = z.dimension(0);
     const int card = outputValues.dimension(0);
     FieldContainer<Sacado::Fad::DFad<Scalar> > dZ( z.dimension(0) , z.dimension(1) );
     for (int i=0;i<np;i++) {
       for (int j=0;j<3;j++) {
-	dZ(i,j) = Sacado::Fad::DFad<Scalar>( z(i,j) );
-	dZ(i,j).diff(j,3);
+        dZ(i,j) = Sacado::Fad::DFad<Scalar>( z(i,j) );
+        dZ(i,j).diff(j,3);
       }
     }
     FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
 
     TabulatorTet<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,0>::tabulate( dResult ,
-												    deg ,
-												    dZ );
+                                                                                                    deg ,
+                                                                                                    dZ );
 
     for (int i=0;i<card;i++) {
       for (int j=0;j<np;j++) {
-	for (int k=0;k<3;k++) {
-	  outputValues(i,j,k) = dResult(i,j).dx(k);
-	}
+        for (int k=0;k<3;k++) {
+          outputValues(i,j,k) = dResult(i,j).dx(k);
+        }
       }
     }
 
@@ -318,8 +318,8 @@ namespace Intrepid {
 
   template<class Scalar>
   void jrc( const Scalar &alpha , const Scalar &beta , 
-	    const int &n ,
-	    Scalar &an , Scalar &bn, Scalar &cn )
+            const int &n ,
+            Scalar &an , Scalar &bn, Scalar &cn )
   {
     an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
       / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );

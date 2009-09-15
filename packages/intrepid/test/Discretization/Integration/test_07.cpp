@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   // compute and compare integrals
   try {
       *outStream << "\nIntegrals of monomials:\n";
-	
+
       std::ifstream filecompare(&filename[0]);
       // compute integrals
       for (int cubDeg=0; cubDeg <= maxDeg; cubDeg++) {
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
           }
         }
       }
-	
+
       // get analytic values
       if (filecompare.is_open()) {
         getAnalytic(analyticInt, filecompare);

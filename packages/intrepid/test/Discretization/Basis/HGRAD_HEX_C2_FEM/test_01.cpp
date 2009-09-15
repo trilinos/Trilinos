@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
     double temp;
     string line;                            // string for one line of input file
     std::getline(dataFile, line);           // get next line from file
-    stringstream data_line(line);			      // convert to stringstream
+    stringstream data_line(line);           // convert to stringstream
     while(data_line >> temp){               // extract value from line
       basisGrads.push_back(temp);           // push into vector
     }
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
     double temp;
     string line;                            // string for one line of input file
     std::getline(dataFile, line);           // get next line from file
-    stringstream data_line(line);			// convert to stringstream
+    stringstream data_line(line);           // convert to stringstream
     while(data_line >> temp){               // extract value from line
       basisD2.push_back(temp);              // push into vector
     }
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
     double temp;
     string line;                            // string for one line of input file
     std::getline(dataFile, line);           // get next line from file
-    stringstream data_line(line);			// convert to stringstream
+    stringstream data_line(line);           // convert to stringstream
     while(data_line >> temp){               // extract value from line
       basisD3.push_back(temp);              // push into vector
     }
@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
     double temp;
     string line;                            // string for one line of input file
     std::getline(dataFile, line);           // get next line from file
-    stringstream data_line(line);			// convert to stringstream
+    stringstream data_line(line);           // convert to stringstream
     while(data_line >> temp){               // extract value from line
       basisD4.push_back(temp);              // push into vector
     }

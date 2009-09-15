@@ -386,7 +386,7 @@ namespace Intrepid {
 
   inline int isValidPointType( const EPointType pointType ) {
     return ( (pointType == POINTTYPE_EQUISPACED ) ||
-	     (pointType == POINTTYPE_WARPBLEND ) );
+           (pointType == POINTTYPE_WARPBLEND ) );
   }
 
   /** \enum   Intrepid::EBasis
