@@ -1357,7 +1357,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoi
 
   int spaceDim  = (int)cellTopo.getDimension();
   int numPoints;
-  int numCells;
+  int numCells=0;
   
   // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
   FieldContainer<Scalar> xOld;
