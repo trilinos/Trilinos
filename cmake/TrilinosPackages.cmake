@@ -87,7 +87,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Rythmos               rythmos                        PS
   MOOCHO                moocho                         PS
   Sundance              Sundance                       PS
-  CTrilinos             CTrilinos                      EX
+  CTrilinos             CTrilinos                      PS
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   Didasko               didasko                        SS
