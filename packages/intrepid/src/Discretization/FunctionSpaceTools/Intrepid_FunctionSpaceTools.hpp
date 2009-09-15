@@ -839,3 +839,121 @@ class FunctionSpaceTools {
 #include <Intrepid_FunctionSpaceToolsDef.hpp>
 
 #endif
+
+/***************************************************************************************************
+ **                                                                                               **
+ **                           D O C U M E N T A T I O N   P A G E S                               **
+ **                                                                                               **
+ **************************************************************************************************/
+
+/**
+ \page    function_space_tools_page                 Function space tools
+ 
+ \section sec_fst_overview                          Overview
+
+ Intrepid::FunctionSpaceTools is a stateless class of \e expert \e methods for operations on finite
+ element subspaces of \f$H(grad,\Omega)\f$, \f$H(curl,\Omega)\f$, \f$H(div,\Omega)\f$ and \f$L^2(\Omega)\f$.
+ In Intrepid these spaces are referred to as \e HGRAD, \e HCURL, \e HDIV and \e HVOL. There are four 
+ basic groups of methods:
+ 
+ - Transformation methods provide implementation of pullbacks for \e HGRAD, \e HCURL, \e HDIV and \e HVOL 
+   finite element functions. Thease are essentialy the "change of variables rules" needed to transform 
+   values of basis functions and their derivatives defined on a reference element \f$\widehat{\kappa}\f$, 
+   to a physical element \f$\kappa\f$. See Section \ref sec_pullbacks for details
+ - Measure computation methods implement the volume, surface and line measures required for computation
+   of integrals in the physical frame by changing variables to reference frame. See Section \ref sec_measure
+   for details.
+ - Integration methods implement the algebraic operations to compute ubiquitous integrals of finite element 
+   functions: integrals arising in bilinear forms and linear functionals.
+ - Methods for algebraic and vector-algebraic operations on multi-dimensional arrays with finite element
+   function values. These methods are used to prepare multidimensional arrays with data and finite
+   element function values for the integration routines. They also include evaluation methods to compute
+   finite element function values at some given points in physical frame. 
+ 
+ 
+ \section sec_pullbacks                             Pullbacks
+ 
+ Notation in this section follows the standard definition of a finite element space by Ciarlet; see
+ <var> The Finite Element Method for Elliptic Problems, Classics in Applied Mathematics, SIAM, 2002. </var>
+ Given a reference cell \f$\{\widehat{\kappa},\widehat{P},\widehat{\Lambda}\}\f$ with a basis  
+ \f$\{\widehat{u}_i\}\f$, the basis \f$\{{u}_i\}\f$ of  \f$\{\kappa,P,\Lambda\}\f$ is defined by 
+ pullback:
+ \f[
+      u_i = \Phi^*(\widehat{u}_i), \qquad i=1,\ldots,n \,.
+ \f]  
+ The actual form of \f$\Phi^*\f$ depends on which one of the four function spaces \e HGRAD, \e HCURL, 
+ \e HDIV and \e HVOL is being approximated, and is as follows.
+ 
+ Let \f$F_\kappa\f$ denote the reference-to-physical map (see Section \ref sec_cell_topology_ref_map);
+ \f$DF_\kappa\f$ is its Jacobian (see Section \ref sec_cell_topology_ref_map_DF) and \f$J_\kappa = \det(DF_\kappa)\f$.
+ \f[
+    \begin{array}{ll}
+      \Phi^*_G : HGRAD(\widehat{\kappa}) \mapsto HGRAD(\kappa)&
+      \qquad \Phi^*_G(\widehat{u}) = \widehat{u}\circ F^{-1}_\kappa \\[2ex]
+      \Phi^*_C : HCURL(\widehat{\kappa}) \mapsto HCURL(\kappa)&
+      \qquad \Phi^*_C(\widehat{\bf u}) = \left((DF_\kappa)^{-{\sf T}}\cdot\widehat{\bf u}\right)\circ F^{-1}_\kappa \\[2ex]
+      \Phi^*_D : HDIV(\widehat{\kappa}) \mapsto HDIV(\kappa)&
+      \qquad \Phi^*_D(\widehat{\bf u}) = \left(J^{-1}_\kappa DF_\kappa\cdot\widehat{\bf u}\right)\circ F^{-1}_\kappa 
+      \\[2ex]
+      \Phi^*_S : HVOL(\widehat{\kappa}) \mapsto HVOL(\kappa)&
+      \qquad \Phi^*_S(\widehat{u}) = \left(J^{-1}_\kappa \widehat{u}\right) \circ F^{-1}_\kappa \,.
+    \end{array}
+ \f]
+ Intrepid supports pullbacks only for cell topologies that have reference cells; see 
+ \ref cell_topology_ref_cells.
+ 
+ \section sec_measure                             Measure
+ In Intrepid integrals of finite element functions over cells, 2-subcells (faces) and 1-subcells (edges) 
+ are computed by change of variables to reference frame and require three  different kinds of measures. 
+ 
+ -# The integral of a scalar function over a cell \f$\kappa\f$
+      \f[
+          \int_{\kappa} f(x) dx = \int_{\widehat{\kappa}} f(F(\widehat{x})) |J | d\widehat{x}
+      \f]
+      requires the volume measure defined by the determinant of the Jacobian. This measure is computed 
+      by Intrepid::FunctionSpaceTools::computeCellMeasure
+ -# The integral of a scalar function over 2-subcell \f$\mathcal{F}\f$
+      \f[
+          \int_{\mathcal{F}} f(x) dx = \int_{R} f(\Phi(u,v)) 
+          \left\|\frac{\partial\Phi}{\partial u}\times \frac{\partial\Phi}{\partial v}\right\| du\,dv
+      \f]
+      requires the surface measure defined by the norm of the vector product of the surface tangents. This   
+      measure is computed by FunctionSpaceTools::computeFaceMeasure. In this formula \e R is the parametrization 
+      domain for the 2-subcell; see Section \ref sec_cell_topology_subcell_map for details.
+ -# The integral of a scalar function over a 1-subcell \f$\mathcal{E}\f$
+      \f[
+          \int_{\mathcal{E}} f(x) dx = \int_{R} f(\Phi(s)) \|\Phi'\| ds
+      \f]
+      requires the arc measure defined by the norm of the arc tangent vector. This measure is computed 
+      by FunctionSpaceTools::computeEdgeMeasure. In this formula \e R is the parametrization 
+      domain for the 1-subcell; see Section \ref sec_cell_topology_subcell_map for details.
+ 
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

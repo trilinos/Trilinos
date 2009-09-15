@@ -613,11 +613,11 @@ public:
     
     
     
-    /** \brief  Computes constant, non-normalized tangent vectors to edges of 2D or 3D reference cells. 
+    /** \brief  Computes constant tangent vectors to edges of 2D or 3D reference cells. 
       
                 Returns rank-1 array with dimension (D), D=2 or D=3; such that
         \f[
-                {refEdgeTangent}(*) = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
+                {refEdgeTangent}(*) = \hat{\bf t}_i = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
         \f]
                 where \f$\hat{\Phi}_i : R =[-1,1]\mapsto \hat{\mathcal E}_i\f$ is the parametrization map
                 of the specified reference edge \f$\hat{\mathcal E}_i\f$, given by
@@ -626,6 +626,10 @@ public:
                     (\hat{x}(t),\hat{y}(t),\hat{z}(t)) & \mbox{for 3D parent cells} \\[1ex]
                     (\hat{x}(t),\hat{y}(t))            & \mbox{for 2D parent cells} \\[1ex]
                   \end{array}\right.
+        \f]
+                The length of computed edge tangents is one-half the length of their associated edges:
+        \f[
+                |\hat{\bf t}_i | = {1\over 2} |\hat{\mathcal E}_i |\,.
         \f]
                 Because the edges of all reference cells are always affine images of [-1,1],
                 the edge tangent is constant vector field. 
@@ -641,17 +645,17 @@ public:
 
     
     
-    /** \brief  Computes pairs of constant, non-normalized tangent vectors to faces of a 3D reference cells. 
+    /** \brief  Computes pairs of constant tangent vectors to faces of a 3D reference cells. 
       
                 Returns 2 rank-1 arrays with dimension (D), D=3, such that       
         \f[
-                {refFaceTanU}(*) =  {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
+                {refFaceTanU}(*) = \hat{\bf t}_{i,u} = {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
                 \left({\partial\hat{x}(u,v)\over\partial u}, 
                       {\partial\hat{y}(u,v)\over\partial u},
                       {\partial\hat{z}(u,v)\over\partial u} \right) ;
         \f]
         \f[
-                {refFaceTanV}(*) = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
+                {refFaceTanV}(*) = \hat{\bf t}_{i,v} = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
                 \left({\partial\hat{x}(u,v)\over\partial v}, 
                       {\partial\hat{y}(u,v)\over\partial v},
                       {\partial\hat{z}(u,v)\over\partial v} \right)\,;
@@ -685,7 +689,7 @@ public:
     
     
     
-    /** \brief  Computes constant, non-normalized normal vectors to sides of 2D or 3D reference cells. 
+    /** \brief  Computes constant normal vectors to sides of 2D or 3D reference cells. 
       
                 A side is defined as a subcell of dimension one less than that of its parent cell. 
                 Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
@@ -693,7 +697,7 @@ public:
       
                 Returns rank-1 array with dimension (D), D = 2 or 3 such that
         \f[
-                {refSideNormal}(*) = 
+                {refSideNormal}(*) = \hat{\bf n}_i =
                 \left\{\begin{array}{rl} 
                     \displaystyle
                     \left({\partial\hat{\Phi}_i(t)\over\partial t}\right)^{\perp} 
@@ -703,8 +707,8 @@ public:
                     {\partial\hat{\Phi}_{i}\over\partial v}   & \mbox{for 3D parent cells} 
                 \end{array}\right.
         \f]
-                where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ is the parametrization map of 
-                the specified reference side \f$\hat{\mathcal S}_i\f$ given by
+                where \f$ (u_1,u_2)^\perp = (u_2, -u_1)\f$, and \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ 
+                is the parametrization map of the specified reference side \f$\hat{\mathcal S}_i\f$ given by
         \f[
                 \hat{\Phi}_i(u,v) = 
                   \left\{\begin{array}{rl}
@@ -720,6 +724,17 @@ public:
                     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral} \,.
                 \end{array}\right.
         \f]
+                For 3D cells the length of computed side normals is proportional to side area:
+        \f[
+                |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
+                    2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+                      \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
+                \end{array}\right.
+        \f]
+                For 2D cells the length of computed side normals is proportional to side length:
+        \f[
+                |\hat{\bf n}_i | = {1\over 2} |\hat{\mathcal F}_i |\,.
+        \f]
                 Because the sides of all reference cells are always affine images of \e R , 
                 the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization maps 
                 are linear and the side normal is a constant vector.  
@@ -727,7 +742,7 @@ public:
         \remark
               - For 3D cells the reference side normal coincides with the face normal computed by
                 CellTools<Scalar>::getReferenceFaceNormal and these two methods are completely equivalent.
-              - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}=(t_2,-t_1)\f$
+              - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}= \hat{\bf t}^\perp = (t_2,-t_1)\f$
                 where \f$\hat{{\bf t}}=(t_1,t_2)\f$ is the tangent vector computed by 
                 CellTools<Scalar>::getReferenceEdgeTangent. Therefore, the pair 
                 \f$(\hat{{\bf n}},\hat{{\bf t}})\f$ is positively oriented.
@@ -743,11 +758,11 @@ public:
 
     
     
-    /** \brief  Computes constant, non-normalized normal vectors to faces of 3D reference cell. 
+    /** \brief  Computes constant normal vectors to faces of 3D reference cell. 
       
                 Returns rank-1 array with dimension (D), D=3 such that
         \f[
-                {refFaceNormal}(*) = {\partial\hat{\Phi}_{i}\over\partial u} \times 
+                {refFaceNormal}(*) = \hat{\bf n}_i = {\partial\hat{\Phi}_{i}\over\partial u} \times 
                                      {\partial\hat{\Phi}_{i}\over\partial v}
         \f]
                 where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
@@ -760,6 +775,13 @@ public:
                 R = \left\{\begin{array}{rl} 
                     \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
                       [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
+                    \end{array}\right.
+        \f]
+                The length of computed face normals is proportional to face area:
+        \f[
+                |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
+                    2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+                      \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
                     \end{array}\right.
         \f]
                 Because the faces of all reference cells are always affine images of \e R , 
@@ -1225,15 +1247,14 @@ public:
 
 #endif
 
-//============================================================================================//
-//                                                                                            //
-//                            D O C U M E N T A T I O N   P A G E S                           //   
-//                                                                                            //
-//============================================================================================//
+/***************************************************************************************************
+ **                                                                                               **
+ **                           D O C U M E N T A T I O N   P A G E S                               **
+ **                                                                                               **
+ **************************************************************************************************/
 
 /**  
 \page cell_tools_page                 Cell tools
-
 
 
 \section cell_topology_sec            Cell topologies
@@ -1502,30 +1523,5 @@ Therefore, a subcell workset is defined by
   \li <var>c</var> is parent cell ordinal;
   \li <var>i</var> is the local subcell ordinal (relative to the topology of the parent cell) shared
   by all subcells in the workset. 
-
-
-
-
-
-
-  \section sec_pullbacks             Pullbacks
-
-  Pullback is defined for canonical cells that have a standard (reference) cell. It is
-  a function R^n -> R^n, where n=ambient_dimension, that maps the standard cell to
-  a cell of the same type in the physical space. Therefore, to define the chart, 
-  the cell dimension must match the ambient dimension. For example, it is OK to ask
-  for the chart of a TRI cell if ambient_dimension = 2, but we cannot get a chart
-  for a TRI cell if the ambient_dimension = 3. In this case, the TRI cell is a subcell
-  of a higher dimensional cell (e.g. a TET) and its chart can be obtained by restricting
-  the chart of its parent cell. 
-
-  This function computes the standard charts of canonical cells, i.e., the 
-  chart is a polynomial function. Pullback coefficients are stored in a 
-  Pullback struct. Definition of coefficients and the storage convention is
-  as follows (\f$v_{ij}\f$ denotes the \f$j\f$-th coordinate of the \f$i\f$-th vertex, except  
-              in 1D where we simply write \f$v_i\f$):
-
-
-
 
   */
