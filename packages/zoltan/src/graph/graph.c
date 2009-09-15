@@ -163,11 +163,11 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt);
   AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
-  /* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph */
-  ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj,
-			     *adjncy, NULL, NULL,
-			     0, 0,
-			     0, 2, 2);
+/*   /\* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph *\/ */
+/*   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj, */
+/* 			     *adjncy, NULL, NULL, */
+/* 			     0, 0, */
+/* 			     0, 2, 2); */
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
 }
