@@ -164,8 +164,8 @@ On PE 1:
 NumSameIDs      = 0
 
 NumPermuteIDs   = 3
-PermuteToLIDs   = [0, 1, 2]
-PermuteFromLIDs = [1, 2, 3]
+PermuteFromLIDs = [0, 1, 2]
+PermuteToLIDs   = [1, 2, 3]
 
 NumRemoteIDs    = 2
 RemoteLIDs      = [0, 4]
@@ -185,8 +185,8 @@ On PE 2:
 NumSameIDs      = 0
 
 NumPermuteIDs   = 3
-PermuteToLIDs   = [0, 1, 2]
-PermuteFromLIDs = [2, 3, 4]
+PermuteFromLIDs = [0, 1, 2]
+PermuteToLIDs   = [2, 3, 4]
 
 NumRemoteIDs    = 2
 RemoteLIDs      = [0, 1]
