@@ -57,12 +57,11 @@ using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
 using Tpetra::Map;
+using std::endl;
+using std::cout;
 using std::vector;
 
-int main(int argc, char *argv[]) 
-{
-  using std::cout;
-  using std::endl;
+int main(int argc, char *argv[]) {
 
   typedef std::complex<double>                ST;
   typedef ScalarTraits<ST>                   SCT;
@@ -71,9 +70,10 @@ int main(int argc, char *argv[])
   typedef Operator<ST,int>                    OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  const ST ONE  = SCT::one();
 
-  GlobalMPISession mpisess(&argc,&argv,&std::cout);
+  GlobalMPISession mpisess(&argc,&argv,&cout);
+
+  const ST ONE  = SCT::one();
 
   int info = 0;
   int MyPID = 0;

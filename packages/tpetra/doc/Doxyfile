@@ -563,16 +563,11 @@ RECURSIVE              = NO
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = ../src/Tpetra_CrsGraphData.hpp \
-                         ../src/Tpetra_ImportExportData.hpp \
-                         ../src/Tpetra_MapData.hpp \
-                         ../src/Tpetra_MapDataDecl.hpp \
-                         ../src/Tpetra_MultiVectorData.hpp \
-                         ../src/Tpetra_MultiVectorDataDecl.hpp \
+EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
                          ../src/Tpetra_MultiVector.hpp \
+                         ../src/Tpetra_Vector.hpp \
                          ../src/Tpetra_Directory.hpp \
-                         ../src/Tpetra_Map.hpp \
-                         ../src/Tpetra_Vector.hpp
+                         ../src/Tpetra_Map.hpp
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or 
 # directories that are symbolic links (a Unix filesystem feature) are excluded 

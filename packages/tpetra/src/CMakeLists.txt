@@ -34,7 +34,6 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  Tpetra_CombineMode.hpp
   Tpetra_ConfigDefs.hpp
   Tpetra_CrsGraph.hpp
   Tpetra_CrsMatrix.hpp

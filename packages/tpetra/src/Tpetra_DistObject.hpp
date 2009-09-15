@@ -31,7 +31,6 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Distributor.hpp"

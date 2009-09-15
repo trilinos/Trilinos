@@ -14,6 +14,7 @@
 namespace Tpetra
 {
 
+//! A class for wrapping a Tpetra::RowMatrix object in the Epetra_RowMatrix interface.
 template<class TpetraMatrixType>
 class EpetraRowMatrix : public Epetra_BasicRowMatrix {
 public:

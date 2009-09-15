@@ -42,7 +42,6 @@
 
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_CombineMode.hpp"
 
 // TODO: add principal use case instructions for memory management interfaces (view/copy extraction)
 // TODO: expand user-visible documentation 
