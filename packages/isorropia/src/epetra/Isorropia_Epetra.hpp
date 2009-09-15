@@ -120,6 +120,450 @@ createBalancedCopy(const Epetra_LinearProblem & input_problem,
 // Teuchos::RCP<Epetra_Map>
 // create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign unit weight to each row (vertex), and unit weight to each 
+  column (hyperedge).  It will attempt to balance row weights while 
+  minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
+  of nonzeros equal in each partition. I.e., it is equivalent to specifying
+  a weighted rebalance where the weights are the number of nonzeros in
+  each row.
+
+*/
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
+  create_balanced_copy(const Epetra_CrsMatrix& input_matrix);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
+  create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+                       const Epetra_Vector &row_weights);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  It will assign unit weight to
+  each row (vertex), and unit weight to each column (hyperedge).  It will
+  attempt to minimize cuts in the hyperedges.
+*/
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
+  create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+                     const Teuchos::ParameterList& paramlist);
+
+
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.  It ignores the
+  costs object.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.  The weights
+  provided in the CostDescriber object will be supplied to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  
+
+  If an empty CostDescriber is supplied, we will assign unit weight to each 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
+  hypergraph partitioning.  We will assign unit weight to each row (vertex)
+  and each non zero (edge) in the case of graph partitioning.
+*/
+__deprecated Teuchos::RCP<Epetra_CrsMatrix>
+  create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+                     CostDescriber &costs,
+                     const Teuchos::ParameterList& paramlist);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign unit weight to each row (vertex), and unit weight to each 
+  column (hyperedge).  It will attempt to minimize cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
+  of nonzeros equal in each partition. I.e., it is equivalent to specifying
+  a weighted rebalance where the weights are the number of nonzeros in
+  each row.
+
+*/
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
+  create_balanced_copy(const Epetra_RowMatrix& input_matrix);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
+  create_balanced_copy(const Epetra_RowMatrix& input_matrix,
+                       const Epetra_Vector &row_weights);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  It will assign unit weight to
+  each row (vertex), and unit weight to each column (hyperedge).  It will
+  attempt to minimize cuts in the hyperedges.
+*/
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
+  create_balanced_copy(const Epetra_RowMatrix& input_matrix,
+                     const Teuchos::ParameterList& paramlist);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.  The costs
+  object is ignored in this case.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.  The weights
+  provided in the CostDescriber object will be supplied to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  
+
+  If an empty CostDescriber is supplied, we will assign unit weight to each 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
+  hypergraph partitioning.  We will assign unit weight to each row (vertex)
+  and each non zero (edge) in the case of graph partitioning.
+*/
+__deprecated Teuchos::RCP<Epetra_RowMatrix>
+  create_balanced_copy(const Epetra_RowMatrix& input_matrix,
+                     CostDescriber &costs,
+                     const Teuchos::ParameterList& paramlist);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign unit weight to each row (vertex), and unit weight to each 
+  column (hyperedge).  It will attempt to minimize cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
+  of nonzeros equal in each partition. I.e., it is equivalent to specifying
+  a weighted rebalance where the weights are the number of nonzeros in
+  each row.
+
+*/
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
+  create_balanced_copy(const Epetra_CrsGraph& input_graph);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
+  create_balanced_copy(const Epetra_CrsGraph& input_matrix,
+                       const Epetra_Vector &row_weights);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  It will assign unit weight to
+  each row (vertex), and unit weight to each column (hyperedge).  It will
+  attempt to minimize cuts in the hyperedges.
+*/
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
+  create_balanced_copy(const Epetra_CrsGraph& input_graph,
+                     const Teuchos::ParameterList& paramlist);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.  The weights
+  provided in the CostDescriber object will be supplied to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  
+
+  If an empty CostDescriber is supplied, we will assign unit weight to each 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
+  hypergraph partitioning.  We will assign unit weight to each row (vertex)
+  and each non zero (edge) in the case of graph partitioning.
+*/
+__deprecated Teuchos::RCP<Epetra_CrsGraph>
+  create_balanced_copy(const Epetra_CrsGraph& input_graph,
+                     CostDescriber &costs,
+                     const Teuchos::ParameterList& paramlist);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign unit weight to each row (vertex), and unit weight to each 
+  column (hyperedge).  It will attempt to minimize cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is 1-D, row-wise, and attempts to make the number
+  of nonzeros equal in each partition. I.e., it is equivalent to specifying
+  a weighted rebalance where the weights are the number of nonzeros in
+  each row.
+
+*/
+
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
+  create_balanced_copy(const Epetra_LinearProblem & input_problem);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia will use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  The balancing algorithm (Zoltan or non-Zoltan) will use the row
+  weights provided for the matrix rows.
+
+  Zoltan will perform hypergraph partitioning using its own PHG method.  
+  It will assign a unit weight to each column (hyperedge).  It will attempt 
+  to balance row weights while minimizing cuts in the hyperedges.
+
+  The non-Zoltan rebalancing is a quick 1-D, row-wise balancing.
+*/
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
+  create_balanced_copy(const Epetra_LinearProblem& input_matrix,
+                       const Epetra_Vector &row_weights);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  It will assign unit weight to
+  each row (vertex), and unit weight to each column (hyperedge).  It will
+  attempt to minimize cuts in the hyperedges.
+*/
+
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
+  create_balanced_copy(const Epetra_LinearProblem& input_problem,
+                     const Teuchos::ParameterList& paramlist);
+
+/** create_balanced_copy(), which is part of the Isorropia API, is used to
+    create and return a balanced copy of an input Epetra_CrsMatrix.
+
+  Isorropia can use Zoltan to perform partitioning if it has been
+  configured with Zoltan support.  If Zoltan is not available, it will
+  perform its own simple row partitioning.
+
+  In addition, if the parameter "PARTITIONING_METHOD" is set to "SIMPLE_LINEAR",
+  Isorropia will perform its own simple row partitioning, even if Zoltan is
+  available.  This method balances the rows across processes after assigning 
+  each row a weight equal to the number of non zeros it has.  This costs
+  object is ignored in this case.
+
+  If Zoltan is called to do the partitioning, any parameters set in a
+  "Zoltan" sublist of the paramlist are provided to Zoltan.  The weights
+  provided in the CostDescriber object will be supplied to Zoltan.
+
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+  If no Zoltan parameters are provided, Zoltan will perform hypergraph
+  partitioning using its own PHG method.  
+
+  If an empty CostDescriber is supplied, we will assign unit weight to each 
+  row (vertex), and unit weight to each column (hyperedge), in the case of 
+  hypergraph partitioning.  We will assign unit weight to each row (vertex)
+  and each non zero (edge) in the case of graph partitioning.
+*/
+__deprecated Teuchos::RCP<Epetra_LinearProblem>
+  create_balanced_copy(const Epetra_LinearProblem& input_problem,
+                     CostDescriber &costs,
+                     const Teuchos::ParameterList& paramlist);
+
+__deprecated Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords,
+                   const Teuchos::ParameterList& paramlist);
+
+__deprecated Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords,
+                     const Epetra_MultiVector &weights,
+                   const Teuchos::ParameterList& paramlist);
+
+
+__deprecated Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords);
+
+__deprecated Teuchos::RCP<Epetra_MultiVector>
+create_balanced_copy(const Epetra_MultiVector &coords,
+                     const Epetra_MultiVector &weights);
+
 /** redistribute_rows() is an internal Isorropia function, not part
     of the API.
 
