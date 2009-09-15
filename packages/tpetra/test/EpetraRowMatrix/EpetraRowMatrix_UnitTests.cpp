@@ -14,8 +14,6 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_EpetraRowMatrix.hpp"
 
-#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_MPI)
-
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -241,11 +239,3 @@ namespace {
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }
-
-//here's the else/endif for HAVE_TPETRA_EPETRA && HAVE_TPETRA_MPI
-#else
-int main(int /*argc*/,char** /*argv*/) {
-  return 0;
-}
-#endif
-

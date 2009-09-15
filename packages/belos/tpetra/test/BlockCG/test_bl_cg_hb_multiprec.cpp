@@ -46,23 +46,20 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_DiagPrecond.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-// No LAPACK support for Cholesky
-// #ifdef HAVE_TEUCHOS_QD
-// #include <qd/dd_real.h>
-// #include <qd/qd_real.h>
-// #include <qd/fpu.h>
-// #endif
+#ifdef HAVE_TEUCHOS_QD
+  #include <qd/dd_real.h>
+  #include <qd/qd_real.h>
+  #include <qd/fpu.h>
+#endif
 
 using namespace Teuchos;
 using namespace Belos;
+using Tpetra::global_size_t;
 using Tpetra::DefaultPlatform;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
-using Tpetra::DiagPrecond;
 using Tpetra::MultiVector;
 using Tpetra::Vector;
 using Tpetra::Map;
@@ -71,73 +68,62 @@ using std::cout;
 using std::string;
 using std::setw;
 using std::vector;
-using Teuchos::tuple;
+using Teuchos::arrayView;
+
 
 bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
 RCP<MultiVector<float,int> > actX;
 ParameterList mptestpl; 
-int rnnzmax;
+size_t rnnzmax;
 int dim, numrhs; 
-float *fvals;
-int *colptr, *rowind;
+ArrayRCP<float> fvals;
+ArrayRCP<const int> offsets, colinds;
 int mptestmypid = 0;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar> 
-RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem()
-{
+RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem() {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
   typedef Operator<Scalar,int>         OP;
   typedef MultiVector<Scalar,int>      MV;
   typedef OperatorTraits<Scalar,MV,OP> OPT;
   typedef MultiVecTraits<Scalar,MV>    MVT;
-  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(*vmap,rnnzmax));
+  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(vmap,rnnzmax));
+  Array<Scalar> vals(rnnzmax);
   if (mptestmypid == 0) {
-    // HB format is compressed column. CrsMatrix is compressed row.
-    const float *fptr = fvals;
-    const int *rptr = rowind;
-    for (int c=0; c<dim; ++c) {
-      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValues(*rptr-1,tuple(c),tuple<Scalar>(*fptr));
-        A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*fptr));
-        ++rptr;
-        ++fptr;
+    for (size_t row=0; row < dim; ++row) {
+      const size_t nE = offsets[row+1] - offsets[row];
+      if (nE > 0) {
+        // convert row values from double to Scalar
+        std::copy( fvals+offsets[row], fvals+offsets[row]+nE, vals.begin() );
+        // add row to matrix
+        A->insertGlobalValues( row, colinds(offsets[row], nE), vals(0,nE) );
       }
     }
   }
   // distribute matrix data to other nodes
-  A->fillComplete();
+  A->fillComplete(Tpetra::DoOptimizeStorage);
   // Create initial MV and solution MV
   RCP<MV> B, X;
-  X = rcp( new MV(*vmap,numrhs) );
+  X = rcp( new MV(vmap,numrhs) );
+  const size_t myLen = X->getLocalLength();
   // Set LHS to actX
   {
-    typename MultiVector<Scalar,int>::double_pointer Xvals = X->extractView2D();
-    typename MultiVector<float,int>::const_double_pointer actXvals = actX->extractConstView2D();
-    for (Teuchos_Ordinal j=0; j<numrhs; ++j) {
-      std::copy(actXvals[j], actXvals[j]+actX->myLength(), Xvals[j]);
+    ArrayRCP<ArrayRCP<     Scalar> >    Xvals =    X->get2dViewNonConst();
+    ArrayRCP<ArrayRCP<const float> > actXvals = actX->get2dView();
+    for (size_t j=0; j<numrhs; ++j) {
+      std::copy(actXvals[j], actXvals[j] + myLen, Xvals[j]);
     }
   }
-  B = rcp( new MV(*vmap,numrhs) );
+  B = rcp( new MV(vmap,numrhs) );
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );
   // Construct a linear problem instance with zero initial MV
   RCP<LinearProblem<Scalar,MV,OP> > problem = rcp( new LinearProblem<Scalar,MV,OP>(A,X,B) );
   problem->setLabel(Teuchos::typeName(SCT::one()));
-  // diagonal preconditioner
-  if (precond) {
-    Vector<Scalar,int> diags(A->getRowMap());
-    A->getLocalDiagCopy(diags);
-    for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
-      TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
-      diags[i] = SCT::one() / diags[i];
-    }
-    RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
-    problem->setRightPrec(P);
-  }
   TEST_FOR_EXCEPT(problem->setProblem() == false);
   return problem;
 }
@@ -146,8 +132,7 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar>
-bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,int> > &X) 
-{
+bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,int> > &X) {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
   typedef Operator<Scalar,int>         OP;
@@ -157,6 +142,7 @@ bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,
 
   const Scalar ONE  = SCT::one();
   mptestpl.set<MT>( "Convergence Tolerance", ltol );         // Relative convergence tolerance requested
+  mptestpl.set( "Explicit Residual Test", true );
   mptestpl.set( "Timer Label", typeName(ONE) );         // Set timer label to discern between the two solvers.
 
   if (mptestmypid==0) cout << "Testing Scalar == " << typeName(ONE) << endl;
@@ -203,7 +189,7 @@ bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,
     RCP<const MV> B = problem->getRHS();
     std::vector<MT> actual_resids( numrhs );
     std::vector<MT> rhs_norm( numrhs );
-    MV resid(*vmap, numrhs);
+    MV resid(vmap, numrhs);
     OPT::Apply( *A, *X, resid );
     MVT::MvAddMv( -ONE, resid, ONE, *B, resid );
     MVT::MvNorm( resid, actual_resids );
@@ -226,14 +212,12 @@ bool runTest(double ltol, double times[], int &numIters, RCP<MultiVector<Scalar,
 int main(int argc, char *argv[]) 
 {
   GlobalMPISession mpisess(&argc,&argv,&cout);
-  RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
 
   //
   // Get test parameters from command-line processor
   //  
   bool verbose = false, debug = false;
-  bool printX = false;
   int frequency = -1;  // how often residuals are printed by solver
   numrhs = 1;      // total number of right-hand sides to solve for
   int blocksize = 1;   // blocksize used by solver
@@ -253,7 +237,6 @@ int main(int argc, char *argv[])
   cmdp.setOption("reduce-tol","fixed-tol",&reduce_tol,"Require increased accuracy from higher precision scalar types.");
   cmdp.setOption("use-precond","no-precond",&precond,"Use a diagonal preconditioner.");
   cmdp.setOption("dump-data","no-dump-data",&dumpdata,"Dump raw data to data.dat.");
-  cmdp.setOption("print-x","no-print-x",&printX,"Print solution multivectors.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -276,26 +259,73 @@ int main(int argc, char *argv[])
   if (mptestmypid == 0) {
     int dim2;
     double *dvals;
+    int *colptr, *rowind;
     info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
     // truncate data into float
-    fvals = new float[nnz];
-    std::copy( dvals, dvals+nnz, fvals );
-    free(dvals);
-    // find maximum NNZ over all rows
-    vector<int> rnnz(dim,0);
-    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-      ++rnnz[*ri-1];
+    fvals = arcp<float>(nnz);
+    std::copy( dvals, dvals+nnz, fvals.begin() );
+    free(dvals); dvals = NULL;
+    // Find number of non-zeros for each row
+    vector<size_t> rnnz(dim,0);
+    // Move through all row indices, adding the contribution to the appropriate row
+    // Skip the diagonals, we'll catch them below on the column pass.
+    // Remember, the file uses one-based indexing. We'll convert it to zero-based later.
+    int curcol_0 = 0, currow_0;
+    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+      // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
+      // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
+      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
+      // make sure not to count it twice
+      ++rnnz[curcol_0];
+      currow_0 = rowind[curnnz_1-1] - 1;
+      if (curcol_0 != currow_0) {
+        ++rnnz[currow_0];
+      }
     }
-    for (int c=0; c<dim; ++c) {
-      rnnz[c] += colptr[c+1]-colptr[c];
-    }
+    const size_t totalnnz = std::accumulate( rnnz.begin(), rnnz.end(), 0 );
+    // mark the maximum nnz per row, used to allocated data for the crsmatrix
     rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-  }
-  else {
-    // address uninitialized data warnings
-    fvals = NULL;
-    colptr = NULL;
-    rowind = NULL;
+    // allocate row structure and fill it
+    ArrayRCP<float> newfvals = arcp<float>(totalnnz);
+    ArrayRCP<int> newoffs = arcp<int>(dim+1);
+    ArrayRCP<int> newinds = arcp<int>(totalnnz);
+    // set up pointers
+    newoffs[0] = 0;
+    for (size_t row=1; row != dim+1; ++row) {
+      newoffs[row] = newoffs[row-1] + rnnz[row-1];
+    }
+    // reorganize data from column oriented to row oriented, duplicating symmetric part as well
+    // rowind are one-based; account for that, and convert them to zero-based.
+    // use nnz as the number of entries add per row thus far
+    std::fill( rnnz.begin(), rnnz.end(), 0 );
+    curcol_0 = 0;
+    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+      // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
+      // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
+      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
+      // it must be added twice if curcol_0 != rowind[curnnz_1]
+      currow_0 = rowind[curnnz_1-1] - 1;
+      // add (currow_0, curcol_0)
+      const float curval = fvals[curnnz_1-1];
+      size_t newnnz = newoffs[currow_0] + rnnz[currow_0];
+      newfvals[newnnz] = curval;
+      newinds [newnnz] = curcol_0;
+      ++rnnz[currow_0];
+      if (curcol_0 != currow_0) {
+        newnnz = newoffs[curcol_0] + rnnz[curcol_0];
+        newfvals[newnnz] = curval;
+        newinds [newnnz] = currow_0;
+        ++rnnz[curcol_0];
+      }
+    }
+    const size_t totalnnz2 = std::accumulate( rnnz.begin(), rnnz.end(), 0 );
+    TEST_FOR_EXCEPT( totalnnz2 != totalnnz );
+    // free the original data, point to new dada
+    fvals = newfvals;
+    offsets = newoffs;
+    colinds = newinds;
   }
   broadcast(*comm,0,&info);
   broadcast(*comm,0,&nnz);
@@ -310,9 +340,9 @@ int main(int argc, char *argv[])
   }
 
   // create map
-  vmap = rcp(new Map<int>(dim,0,comm));
+  vmap = rcp(new Map<int>(static_cast<global_size_t>(dim),static_cast<int>(0),comm));
   // create a consistent LHS
-  actX = rcp(new MultiVector<float,int>(*vmap,numrhs));
+  actX = rcp(new MultiVector<float,int>(vmap,numrhs));
   MultiVecTraits<float,MultiVector<float,int> >::MvRandom(*actX);
   // create the parameter list
   if (maxiters == -1) {
@@ -356,82 +386,76 @@ int main(int argc, char *argv[])
   double ftime[3]; int fiter; bool fpass = runTest<float>(ltol,ftime,fiter,Xf);
   ltol = (reduce_tol ? ltol*ltol : ltol);
   double dtime[3]; int diter; bool dpass = runTest<double>(ltol,dtime,diter,Xd);
-// #ifdef HAVE_TEUCHOS_QD
-//   unsigned int old_cw; fpu_fix_start(&old_cw); // fix floating point rounding for intel processors; required for proper implementation
-//   ltol = (reduce_tol ? ltol*ltol : ltol);
-//   double ddtime[3]; int dditer; bool ddpass = runTest<dd_real>(ltol,ddtime,dditer);
-//   ltol = (reduce_tol ? ltol*ltol : ltol);
-//   double qdtime[3]; int qditer; bool qdpass = runTest<qd_real>(ltol,qdtime,qditer);
-//   fpu_fix_end(&old_cw);                        // restore previous floating point rounding
-// #endif
-
-  if (printX) {
-    // doesn't compie; fix
-    // RCP<FancyOStream> fos = Teuchos::getFancyOStream(rcp(&std::cout,false));
-    // if (mptestmypid==0) cout << "X (float): " << endl;
-    // Xf->describe(fos,Teuchos::VERB_EXTREME);
-    // if (mptestmypid==0) cout << "X (double): " << endl;
-    // Xd->describe(fos,Teuchos::VERB_EXTREME);
-  }
+#ifdef HAVE_TEUCHOS_QD
+  RCP<MultiVector<dd_real,int> > Xdd;
+  RCP<MultiVector<qd_real,int> > Xqd;
+  unsigned int old_cw; fpu_fix_start(&old_cw); // fix floating point rounding for intel processors; required for proper implementation
+  ltol = (reduce_tol ? ltol*ltol : ltol);
+  double ddtime[3]; int dditer; bool ddpass = runTest<dd_real>(ltol,ddtime,dditer,Xdd);
+  ltol = (reduce_tol ? ltol*ltol : ltol);
+  double qdtime[3]; int qditer; bool qdpass = runTest<qd_real>(ltol,qdtime,qditer,Xqd);
+  fpu_fix_end(&old_cw);                        // restore previous floating point rounding
+#endif
 
   // test the relative error between Xf and Xd
   if (mptestmypid==0) {
     cout << "Relative error |xdi - xfi|/|xdi|" << endl;
     cout << "--------------------------------" << endl;
   }
-  for (int j=0; j<numrhs; ++j) {
-    // compute |xdj-xfj|/|xdj|
-    RCP<Vector<float,int> > xfj = (*Xf)(j);
-    RCP<Vector<double,int> > xdj = (*Xd)(j);
-    double mag = xdj->norm2();
-    ArrayView<double> dval;
-    ArrayView<const float> fval;
-    xdj->extractView1D(dval);
-    xfj->extractConstView1D(fval);
-    for (int i=0; i<xdj->myLength(); ++i) {
-      dval[i] -= (double)fval[i];
-    }
-    double err = xdj->norm2() / mag;
-    if (mptestmypid==0) {
-      cout << err << endl;
+  if (Xd != Teuchos::null && Xf != Teuchos::null) {
+    for (int j=0; j<numrhs; ++j) {
+      // compute |xdj-xfj|/|xdj|
+      const size_t myLen = Xd->getLocalLength();
+      RCP<const Vector<float,int> > xfj = Xf->getVector(j);
+      RCP<Vector<double,int> > xdj = Xd->getVectorNonConst(j);
+      double mag = xdj->norm2();
+      ArrayRCP<double> dval = xdj->get1dViewNonConst();
+      ArrayRCP<const float> fval = xfj->get1dView();
+      for (int i=0; i < myLen; ++i) {
+        dval[i] -= (double)fval[i];
+      }
+      fval = Teuchos::null;
+      dval = Teuchos::null;
+      double err = xdj->norm2() / mag;
+      if (mptestmypid==0) {
+        cout << err << endl;
+      }
     }
   }
   Xf = Teuchos::null;
   Xd = Teuchos::null;
 
   // done with the matrix data now; delete it
-  if (mptestmypid == 0) {
-    free( fvals );
-    free( colptr );
-    free( rowind );
-  }
+  fvals = Teuchos::null;
+  offsets = Teuchos::null;
+  colinds = Teuchos::null;
 
   if (mptestmypid==0) {
     cout << "Scalar field     Build time     Init time     Solve time     Num Iters     Test Passsed" << endl;
     cout << "---------------------------------------------------------------------------------------" << endl;
     cout << setw(12) << "float"   << "     " << setw(10) <<  ftime[0] << "     " << setw(9) <<  ftime[1] << "     " << setw(10) <<  ftime[2] << "     " << setw(9) <<  fiter << "     " << ( fpass ? "pass" : "fail") << endl;
     cout << setw(12) << "double"  << "     " << setw(10) <<  dtime[0] << "     " << setw(9) <<  dtime[1] << "     " << setw(10) <<  dtime[2] << "     " << setw(9) <<  diter << "     " << ( dpass ? "pass" : "fail") << endl;
-// #ifdef HAVE_TEUCHOS_QD
-//     cout << setw(12) << "dd_real" << "     " << setw(10) << ddtime[0] << "     " << setw(9) << ddtime[1] << "     " << setw(10) << ddtime[2] << "     " << setw(9) << dditer << "     " << (ddpass ? "pass" : "fail") << endl;
-//     cout << setw(12) << "qd_real" << "     " << setw(10) << qdtime[0] << "     " << setw(9) << qdtime[1] << "     " << setw(10) << qdtime[2] << "     " << setw(9) << qditer << "     " << (qdpass ? "pass" : "fail") << endl;
-// #endif
+#ifdef HAVE_TEUCHOS_QD
+    cout << setw(12) << "dd_real" << "     " << setw(10) << ddtime[0] << "     " << setw(9) << ddtime[1] << "     " << setw(10) << ddtime[2] << "     " << setw(9) << dditer << "     " << (ddpass ? "pass" : "fail") << endl;
+    cout << setw(12) << "qd_real" << "     " << setw(10) << qdtime[0] << "     " << setw(9) << qdtime[1] << "     " << setw(10) << qdtime[2] << "     " << setw(9) << qditer << "     " << (qdpass ? "pass" : "fail") << endl;
+#endif
   }
 
   if (dumpdata) {
     std::ofstream fout("data.dat",std::ios_base::app | std::ios_base::out);
     fout << setw(14) << nnz << setw(8) << "float"   << setw(12) <<  ftime[0] << setw(12) <<  ftime[1] << setw(12) <<  ftime[2] << setw(12) <<  fiter << endl;
     fout << setw(14) << nnz << setw(8) << "double"  << setw(12) <<  dtime[0] << setw(12) <<  dtime[1] << setw(12) <<  dtime[2] << setw(12) <<  diter << endl;
-// #ifdef HAVE_TEUCHOS_QD
-//     fout << setw(14) << nnz << setw(8) << "dd_real" << setw(12) << ddtime[0] << setw(12) << ddtime[1] << setw(12) << ddtime[2] << setw(12) << dditer << endl;
-//     fout << setw(14) << nnz << setw(8) << "qd_real" << setw(12) << qdtime[0] << setw(12) << qdtime[1] << setw(12) << qdtime[2] << setw(12) << qditer << endl;
-// #endif
+#ifdef HAVE_TEUCHOS_QD
+    fout << setw(14) << nnz << setw(8) << "dd_real" << setw(12) << ddtime[0] << setw(12) << ddtime[1] << setw(12) << ddtime[2] << setw(12) << dditer << endl;
+    fout << setw(14) << nnz << setw(8) << "qd_real" << setw(12) << qdtime[0] << setw(12) << qdtime[1] << setw(12) << qdtime[2] << setw(12) << qditer << endl;
+#endif
     fout.close();
   }
 
   bool allpass = fpass && dpass;
-// #ifdef HAVE_TEUCHOS_QD
-//   allpass = allpass && ddpass && qdpass;
-// #endif
+#ifdef HAVE_TEUCHOS_QD
+  allpass = allpass && ddpass && qdpass;
+#endif
 
   if (!allpass) {
     if (mptestmypid==0) cout << "\nEnd Result: TEST FAILED" << endl;	

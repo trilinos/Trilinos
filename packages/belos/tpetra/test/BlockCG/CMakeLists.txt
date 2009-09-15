@@ -17,12 +17,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     )
 
-  #PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  #  Tpetra_BlockCG_hb_multiprec_test
-  #  SOURCES test_bl_cg_hb_multiprec.cpp 
-  #  ARGS 
-  #  COMM serial mpi
-  #  )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_BlockCG_hb_multiprec_test
+    SOURCES test_bl_cg_hb_multiprec.cpp 
+    ARGS 
+    COMM serial mpi
+    )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_complex_hb_CopyFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/test/MVOPTester

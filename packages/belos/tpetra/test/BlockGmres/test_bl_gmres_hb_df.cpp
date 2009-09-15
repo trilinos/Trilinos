@@ -31,6 +31,8 @@
 // The initial guesses are all set to zero. 
 // The problem is solver for multiple scalar types, and timings are reported.
 //
+// NOTE: No preconditioner is used in this case. 
+//
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
@@ -254,14 +256,6 @@ int main(int argc, char *argv[]) {
     int dim2;
     int *colptr, *rowind;
     info = readHB_newmat_double(filename.c_str(),&mptestdim,&dim2,&nnz,&colptr,&rowind,&dvals);
-#ifdef PRINT_MATRIX
-    std::cout << "\n\nColumn format: " << std::endl;
-    for (int c=0; c < mptestdim; ++c) {
-      for (int o=colptr[c]; o != colptr[c+1]; ++o) {
-        std::cout << rowind[o-1]-1 << ", " << c << ", " << dvals[o-1] << std::endl;
-      }
-    }
-#endif
     // Find number of non-zeros for each row
     vector<size_t> rnnz(mptestdim,0);
     // Move through all row indices, adding the contribution to the appropriate row
@@ -326,14 +320,6 @@ int main(int argc, char *argv[]) {
     delete [] rowind; rowind = NULL;
     offsets = newoffs;
     colinds = newinds;
-#ifdef PRINT_MATRIX
-    std::cout << "\n\nRow format: " << std::endl;
-    for (int r=0; r < mptestdim; ++r) {
-      for (int o=offsets[r]; o != offsets[r+1]; ++o) {
-        std::cout << r << ", " << colinds[o] << ", " << dvals[o] << std::endl;
-      }
-    }
-#endif
   }
   else {
     // address uninitialized data warnings
