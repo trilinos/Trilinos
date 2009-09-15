@@ -12,3 +12,8 @@ ADD_SUBDIRECTORIES(
   CrsGraph
   CrsMatrix
   )
+
+IF(Trilinos_ENABLE_Epetra)
+  ADD_SUBDIRECTORY(EpetraRowMatrix)
+ENDIF()
+
