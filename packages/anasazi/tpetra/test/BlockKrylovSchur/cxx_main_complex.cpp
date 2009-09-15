@@ -53,7 +53,6 @@
 #include <iohb.h>
 
 using namespace Teuchos;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
@@ -72,15 +71,14 @@ int main(int argc, char *argv[])
   typedef Operator<ST,int>                    OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
+  const ST ONE  = SCT::one();
 
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   int info = 0;
   int MyPID = 0;
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   MyPID = rank(*comm);
 
@@ -99,9 +97,9 @@ int main(int argc, char *argv[])
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("herm","nonherm",&herm,"Solve Hermitian or non-Hermitian problem.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix (assumes non-Hermitian unless specified otherwise).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
   cmdp.setOption("tol",&tol,"Tolerance for convergence.");
@@ -126,23 +124,71 @@ int main(int argc, char *argv[])
   // Get the data from the HB file
   int dim,dim2,nnz;
   int rnnzmax;
-  double *dvals;
-  int *colptr,*rowind;
+  ST *cvals;
+  int *offsets,*colinds;
   nnz = -1;
   if (MyPID == 0) {
+    double *dvals;
+    int *colptr, *rowind;
     info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-    // find maximum NNZ over all rows
-    vector<int> rnnz(dim,0);
-    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-      ++rnnz[*ri-1];
+    // Find number of non-zeros for each row
+    vector<size_t> rnnz(dim,0);
+    // Move through all row indices, adding the contribution to the appropriate row.
+    // Remember, the file uses one-based indexing. We'll convert it to zero-based later.
+    int curcol_0 = 0, currow_0;
+    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+      // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
+      // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
+      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
+      // make sure not to count it twice
+      ++rnnz[curcol_0];
     }
+    const size_t totalnnz = std::accumulate( rnnz.begin(), rnnz.end(), 0 );
+    // mark the maximum nnz per row, used to allocated data for the crsmatrix
     rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
+    // allocate row structure and fill it
+    cvals           = new ST[totalnnz];
+    int *newoffs    = new int[dim+1];
+    int *newinds    = new int[totalnnz];
+    const double *curdval = dvals;
+    // set up pointers
+    newoffs[0] = 0;
+    for (size_t row=1; row != dim+1; ++row) {
+      newoffs[row] = newoffs[row-1] + rnnz[row-1];
+    }
+    // reorganize data from column oriented to row oriented, duplicating symmetric part as well
+    // rowind are one-based; account for that, and convert them to zero-based.
+    // use nnz as the number of entries add per row thus far
+    std::fill( rnnz.begin(), rnnz.end(), 0 );
+    curcol_0 = 0;
+    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+      // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
+      // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
+      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      // entry curnnz_1 corresponds to (rowind[curnnz_1], curcol_0)
+      currow_0 = rowind[curnnz_1-1] - 1;
+      // add (currow_0, curcol_0)
+      size_t newnnz = newoffs[currow_0] + rnnz[currow_0];
+      cvals[newnnz] = ST(curdval[0],curdval[1]);
+      curdval += 2;
+      newinds [newnnz] = curcol_0;
+      ++rnnz[currow_0];
+    }
+    const size_t totalnnz2 = std::accumulate( rnnz.begin(), rnnz.end(), 0 );
+    TEST_FOR_EXCEPT( totalnnz2 != totalnnz );
+    // free the original data, point to new dada
+    delete [] dvals;
+    delete [] colptr; colptr = NULL;
+    delete [] rowind; rowind = NULL;
+    offsets = newoffs;
+    colinds = newinds;
   }
   else {
     // address uninitialized data warnings
-    dvals = NULL;
-    colptr = NULL;
-    rowind = NULL;
+    cvals = NULL;
+    offsets = NULL;
+    colinds = NULL;
   }
   Teuchos::broadcast(*comm,0,&info);
   Teuchos::broadcast(*comm,0,&nnz);
@@ -156,32 +202,29 @@ int main(int argc, char *argv[])
     return -1;
   }
   // create map
-  Map<int> map(dim,0,comm);
+  RCP<const Map<int> > map = rcp( new Map<int>(dim,0,comm) );
   RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
   if (MyPID == 0) {
-    // Convert interleaved doubles to complex values
-    // HB format is compressed column. CrsMatrix is compressed row.
-    const double *dptr = dvals;
-    const int *rptr = rowind;
-    for (int c=0; c<dim; ++c) {
-      for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        K->insertGlobalValues(*rptr++ - 1,tuple(c),tuple(ST(dptr[0],dptr[1])));
-        dptr += 2;
+    for (size_t row=0; row < dim; ++row) {
+      const size_t nE = offsets[row+1] - offsets[row];
+      if (nE > 0) {
+        // add row to matrix
+        K->insertGlobalValues( row, arrayView<const int>(colinds+offsets[row], nE), 
+                                    arrayView<const  ST>(  cvals+offsets[row], nE));
       }
     }
   }
   if (MyPID == 0) {
     // Clean up.
-    free( dvals );
-    free( colptr );
-    free( rowind );
+    free( cvals );
+    free( colinds );
+    free( offsets );
   }
-  K->fillComplete();
-  // cout << *K << endl;
+  K->fillComplete(Tpetra::DoOptimizeStorage);
 
   // Create initial vectors
   RCP<MV> ivec = rcp( new MV(map,blockSize) );
-  ivec->random();
+  MVT::MvRandom(*ivec);
 
   // Create eigenproblem
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =

@@ -43,7 +43,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 using namespace Teuchos;
-using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
@@ -68,8 +67,7 @@ int main(int argc, char *argv[])
   int MyPID = 0;
   int NumImages = 1;
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   MyPID = rank(*comm);
   NumImages = size(*comm);
@@ -108,30 +106,26 @@ int main(int argc, char *argv[])
   int dim = ROWS_PER_PROC * NumImages;
 
   // create map
-  Map<int> map(dim,0,comm);
+  RCP<const Map<int> > map = rcp( new Map<int>(dim,0,comm) );
   RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,4));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
-      K->insertGlobalValues(base+i  ,tuple(base+i  ),tuple<ST>( 2));
-      K->insertGlobalValues(base+i  ,tuple(base+i+1),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i  ),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i+1),tuple<ST>( 2));
+      K->insertGlobalValues(base+i  ,tuple(base+i,base+i+1),tuple<ST>(2,-1));
+      K->insertGlobalValues(base+i+1,tuple(base+i,base+i+1),tuple<ST>(-1,2));
     }
   }
   else {
     for (int i=0; i<ROWS_PER_PROC-1; ++i) {
-      K->insertGlobalValues(base+i  ,tuple(base+i  ),tuple<ST>( 2));
-      K->insertGlobalValues(base+i  ,tuple(base+i+1),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i  ),tuple<ST>(-1));
-      K->insertGlobalValues(base+i+1,tuple(base+i+1),tuple<ST>( 2));
+      K->insertGlobalValues(base+i  ,tuple(base+i,base+i+1),tuple<ST>(2,-1));
+      K->insertGlobalValues(base+i+1,tuple(base+i,base+i+1),tuple<ST>(-1,2));
     }
   }
-  K->fillComplete();
+  K->fillComplete(Tpetra::DoOptimizeStorage);
 
   // Create initial vectors
   RCP<MV> ivec = rcp( new MV(map,blockSize) );
-  ivec->random();
+  MVT::MvRandom(*ivec);
 
   // Create eigenproblem
   RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
