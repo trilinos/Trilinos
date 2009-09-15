@@ -30,6 +30,6 @@
 
 std::string Stokhos_Version() 
 { 
-  return("Stokhos Version 2.0d - 10/01/2009"); 
+  return("Stokhos Version 1.0"); 
 }
 
