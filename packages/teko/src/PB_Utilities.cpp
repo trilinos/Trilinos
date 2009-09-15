@@ -391,6 +391,50 @@ bool isZeroOp(const LinearOp op)
    return test!=Teuchos::null;
 }
 
+/** \brief Compute the lumped version of this matrix.
+  *
+  * Compute the lumped version of this matrix. That is
+  * a diagonal operator composed of the row sum.
+  *
+  * \returns A diagonal operator.
+  */
+LinearOp getLumpedMatrix(const LinearOp & op)
+{
+   RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(op->domain());
+   RCP<Thyra::VectorBase<double> > diag = Thyra::createMember(op->range());
+
+   // set to all ones
+   Thyra::assign(ones.ptr(),1.0);
+
+   // compute lumped diagonal
+   Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
+
+   return Thyra::diagonal(diag);
+}
+
+/** \brief Compute the inverse of the lumped version of
+  *        this matrix.
+  *
+  * Compute the inverse of the lumped version of this matrix.
+  * That is a diagonal operator composed of the row sum.
+  *
+  * \returns A diagonal operator.
+  */
+LinearOp getInvLumpedMatrix(const LinearOp & op)
+{
+   RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(op->domain());
+   RCP<Thyra::VectorBase<double> > diag = Thyra::createMember(op->range());
+
+   // set to all ones
+   Thyra::assign(ones.ptr(),1.0);
+
+   // compute lumped diagonal
+   Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
+   Thyra::reciprocal(diag.ptr(),*diag);
+
+   return Thyra::diagonal(diag);
+}
+
 /** \brief Get the diaonal of a linear operator
   *
   * Get the diagonal of a linear operator. Currently

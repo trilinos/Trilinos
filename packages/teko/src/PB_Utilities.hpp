@@ -341,6 +341,25 @@ BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo);
 //! Figure out if this operator is the zero operator (or null!)
 bool isZeroOp(const LinearOp op);
 
+/** \brief Compute the lumped version of this matrix.
+  *
+  * Compute the lumped version of this matrix. That is
+  * a diagonal operator composed of the row sum.
+  *
+  * \returns A diagonal operator.
+  */
+LinearOp getLumpedMatrix(const LinearOp & op);
+
+/** \brief Compute the inverse of the lumped version of
+  *        this matrix.
+  *
+  * Compute the inverse of the lumped version of this matrix.
+  * That is a diagonal operator composed of the row sum.
+  *
+  * \returns A diagonal operator.
+  */
+LinearOp getInvLumpedMatrix(const LinearOp & op);
+
 //@}
 
 //! @name Mathematical functions

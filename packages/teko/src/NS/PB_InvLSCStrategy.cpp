@@ -80,7 +80,7 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
 /////////////////////////////////////////////////////////////////////////////
 InvLSCStrategy::InvLSCStrategy()
    : massMatrix_(Teuchos::null), invFactoryF_(Teuchos::null), invFactoryS_(Teuchos::null), eigSolveParam_(5)
-   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false)
+   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
@@ -92,19 +92,19 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                const Teuchos::RCP<InverseFactory> & invFactS,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                const Teuchos::RCP<InverseFactory> & invFactS,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false)
 { }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -198,7 +198,8 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // if a mass matrix and diagonal op hasn't been setup (don't setup it up more then once)
    if(massMatrix_!=Teuchos::null && state->invMass_==Teuchos::null)
-      state->invMass_ = getInvDiagonalOp(massMatrix_);
+      state->invMass_ = (useLumping_ ? getInvLumpedMatrix(massMatrix_) 
+                                     : getInvDiagonalOp(massMatrix_));
    else if(massMatrix_==Teuchos::null) // otherwise if there is no mass matrix 
       state->invMass_ = getInvDiagonalOp(F);
 
@@ -248,11 +249,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    }
 
    // compute gamma
-   LinearOp iQuF;
-   if(state->invMass_!=Teuchos::null) 
-      iQuF = multiply(state->invMass_,modF);
-   else
-      iQuF = modF;
+   LinearOp iQuF = multiply(state->invMass_,modF);
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
    PB::LinearOp stabMatrix; // this is the pressure stabilization matrix to use
@@ -267,10 +264,10 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    LinearOp invDiagF;
-   if(massMatrix_==Teuchos::null)
-      invDiagF = state->invMass_;
-   else
-      invDiagF = getInvDiagonalOp(F);
+   // if(massMatrix_==Teuchos::null)
+   //    invDiagF = state->invMass_;
+   // else
+   invDiagF = getInvDiagonalOp(F);
    
    // construct B_idF_Bt and save it for refilling later: This could reuse BQBt graph
    PB::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
@@ -397,6 +394,8 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       useLDU = pl.get<bool>("Use LDU");
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");
+   if(pl.isParameter("Use Lumping"))
+      useMass_ = pl.get<bool>("Use Lumping");
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
@@ -406,6 +405,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
+      DEBUG_STREAM << "   use mass    = " << useLumping_ << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    PB_DEBUG_MSG_END()

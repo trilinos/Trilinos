@@ -186,6 +186,7 @@ protected:
    bool rowZeroingNeeded_;
    bool useFullLDU_;
    bool useMass_;
+   bool useLumping_;
 };
 
 } // end namespace NS
