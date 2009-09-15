@@ -30,8 +30,8 @@
 
 
 /** \file
-\brief  Unit test of Nedelec class for tetrahedra.
-\author Created by R. Kirby
+    \brief  Unit test of Nedelec class for tetrahedra.
+    \author Created by R. Kirby
 */
 
 #include "Intrepid_FieldContainer.hpp"
@@ -48,7 +48,7 @@ using namespace Intrepid;
 /** \brief Performs a code-code comparison to FIAT for Nedelec bases on tets (values and curls)
     \param argc [in] - number of command-line arguments
     \param argv [in] - command-line arguments
- */
+*/
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " << myBasisValues(i,j,k)
                        << " but correct value: " << fiat_vals[cur] << "\n";
-          *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) << "\n";
+	    *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) << "\n";
           }
           cur++;
         }
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " << myBasisValues(i,j,k)
                        << " but correct value: " << fiat_curls[cur] << "\n";
-          *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_curls[cur] ) << "\n";
+	    *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_curls[cur] ) << "\n";
           }
           cur++;
         }

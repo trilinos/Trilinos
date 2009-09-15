@@ -29,8 +29,8 @@
 // @HEADER
 
 /** \file test_02.cpp
-	\brief	Patch test for the Intrepid::Basis_HDIV_TET_In_FEM class.
-	\author Created by P. Bochev, R. Kirby, D. Ridzal, K. Peterson.
+    \brief	Patch test for the Intrepid::Basis_HDIV_TET_In_FEM class.
+    \author Created by P. Bochev, R. Kirby, D. Ridzal, K. Peterson.
 */
 
 #include "Intrepid_FieldContainer.hpp"
@@ -57,10 +57,10 @@ void u_exact( FieldContainer<double> &, const FieldContainer<double> &, int, int
 // This is the rhs for (div tau,w) = (f,w),
 // which makes f the negative Laplacian of scalar solution
 void rhsFunc( FieldContainer<double> &result, 
-		  const FieldContainer<double> &points,
-		  int xd,
-		  int yd ,
-		  int zd)
+	      const FieldContainer<double> &points,
+	      int xd,
+	      int yd ,
+	      int zd)
 {
   for (int cell=0;cell<result.dimension(0);cell++) {
     for (int pt=0;pt<result.dimension(1);pt++) {

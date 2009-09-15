@@ -94,21 +94,6 @@ namespace Intrepid {
 
 
     // now do the integration
-
-//     for (int i=0;i<dim_PkH;i++) {
-//       for (int d=0;d<3;d++) {
-// 	for (int j=0;j<scalarBigN;j++) { 	// int (x,y,z) phi_i \cdot (phi_j,0)
-// 	  //std::cout << "\t\t" << j << "\n";
-// 	  V1(j+d*scalarBigN,littleN+i) = 0.0;
-// 	  for (int k=0;k<myCub.getNumPoints();k++) {
-// 	    V1(j+d*scalarBigN,littleN+i) += cubWeights(k) * cubPoints(k,d) 
-// 	      * phisAtCubPoints(start_PkH+i,k) 
-//  	      * phisAtCubPoints(j,k);
-// 	  }
-// 	}
-//       }
-//     }
-  
     for (int i=0;i<dim_PkH;i++) {
       for (int j=0;j<scalarBigN;j++) {  // int (x,y,z) phi_i \cdot (phi_j,0,0)
         V1(j,littleN+i) = 0.0;
@@ -151,8 +136,8 @@ namespace Intrepid {
     // area of face 1 is sqrt(3)/2
 
     Scalar normal[][4] = { {0.0,0.5,-0.5,0.0},
-			    {-0.5,0.5,0.0,0.0},
-			    {0.0,0.5,0.0,-0.5} };
+			   {-0.5,0.5,0.0,0.0},
+			   {0.0,0.5,0.0,-0.5} };
 
     for (int i=0;i<4;i++) {  // loop over faces
       CellTools<Scalar>::mapToReferenceSubcell( facePts ,
@@ -185,10 +170,10 @@ namespace Intrepid {
 
       FieldContainer<Scalar> internalPoints( numInternalPoints , 3 );
       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
-	 						    this->getBaseCellTopology() , 
-							    n + 2 ,
-							    1 ,
-							    pointType );
+							      this->getBaseCellTopology() , 
+							      n + 2 ,
+							      1 ,
+							      pointType );
     
       FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
       Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
@@ -208,9 +193,9 @@ namespace Intrepid {
     // multiply V2 * V1 --> V
     Vsdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , V2 , V1 , 0.0 );
 
-//     std::cout << "Vandermonde:\n";
-//     std::cout << Vsdm << "\n";
-//     std::cout << "End Vandermonde\n";
+    //     std::cout << "Vandermonde:\n";
+    //     std::cout << Vsdm << "\n";
+    //     std::cout << "End Vandermonde\n";
     
     Teuchos::SerialDenseSolver<int,Scalar> solver;
     solver.setMatrix( rcp( &Vsdm , false ) );
@@ -282,16 +267,16 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar> 
   void Basis_HDIV_TET_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-							      const ArrayScalar &  inputPoints,
-							      const EOperator      operatorType) const {
+							     const ArrayScalar &  inputPoints,
+							     const EOperator      operatorType) const {
   
     // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
     Intrepid::getValues_HDIV_Args<Scalar, ArrayScalar>(outputValues,
-							inputPoints,
-							operatorType,
-							this -> getBaseCellTopology(),
-							this -> getCardinality() );
+						       inputPoints,
+						       operatorType,
+						       this -> getBaseCellTopology(),
+						       this -> getCardinality() );
 #endif
     const int numPts = inputPoints.dimension(0);
     const int deg = this -> getDegree();
@@ -351,9 +336,9 @@ namespace Intrepid {
   
   template<class Scalar, class ArrayScalar>
   void Basis_HDIV_TET_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-							      const ArrayScalar &    inputPoints,
-							      const ArrayScalar &    cellVertices,
-							      const EOperator        operatorType) const {
+							     const ArrayScalar &    inputPoints,
+							     const ArrayScalar &    cellVertices,
+							     const EOperator        operatorType) const {
     TEST_FOR_EXCEPTION( (true), std::logic_error,
 			">>> ERROR (Basis_HDIV_TET_In_FEM): FEM Basis calling an FVD member function");
   }
