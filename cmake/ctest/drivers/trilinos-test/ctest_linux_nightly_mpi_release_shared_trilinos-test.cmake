@@ -20,6 +20,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
   "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
+  "-D TPL_ENABLE_Pthread:BOOL=ON"
+  "-D TPL_ENABLE_Boost:BOOL=ON"
+  "-D Boost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
   )
 
 #
