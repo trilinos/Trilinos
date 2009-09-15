@@ -84,8 +84,10 @@ public:
      * \param[in] factories A vector of <code>InverseFactory</code> objects
      *                      which should be the same length as the number of
      *                      diagonal blocks.
+     * \param[in] defaultFact The default factory to use if none is specified.
      */
-   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories);
+   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories,
+                          const Teuchos::RCP<InverseFactory> & defaultFact=Teuchos::null);
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
@@ -100,6 +102,7 @@ public:
 protected:
    // stored inverse operators
    std::vector<Teuchos::RCP<InverseFactory> > invDiagFact_;
+   Teuchos::RCP<InverseFactory> defaultInvFact_;
 
 private:
    InvFactoryDiagStrategy();

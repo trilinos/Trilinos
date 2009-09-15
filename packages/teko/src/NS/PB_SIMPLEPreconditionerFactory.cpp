@@ -5,6 +5,8 @@
 #include "PB_BlockLowerTriInverseOp.hpp"
 #include "PB_BlockUpperTriInverseOp.hpp"
 
+#include "Teuchos_Time.hpp"
+
 using Teuchos::RCP;
 
 namespace PB {
@@ -32,6 +34,9 @@ LinearOp SIMPLEPreconditionerFactory
    ::buildPreconditionerOperator(BlockedLinearOp & blockOp,
                                  BlockPreconditionerState & state) const
 {
+   PB_DEBUG_SCOPE("SIMPLEPreconditionerFactory::buildPreconditionerOperator",10);
+   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+
    int rows = blockRowCount(blockOp);
    int cols = blockColCount(blockOp);
  
@@ -48,10 +53,14 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp H = getInvDiagonalOp(F);
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
+   PB_DEBUG_EXPR(timer.start(true));
    const LinearOp HBt = explicitMultiply(H,Bt);
    const LinearOp hatS = explicitAdd(C,scale(-1.0,explicitMultiply(B,HBt)));
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("SIMPLEPrecFact::buildPO Schur ConstTime = " << timer.totalElapsedTime(),2);
 
    // build the inverse for F 
+   PB_DEBUG_EXPR(timer.start(true));
    InverseLinearOp invF = state.getInverse("invF");
    if(invF==Teuchos::null) {
       invF = buildInverse(*invVelFactory_,F);
@@ -59,9 +68,14 @@ LinearOp SIMPLEPreconditionerFactory
    } else {
       rebuildInverse(*invVelFactory_,F,invF);
    }
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("SIMPLEPrecFact::buildPO GetInvFTime = " << timer.totalElapsedTime(),2);
 
    // build the approximate Schur complement: This is inefficient! FIXME
+   PB_DEBUG_EXPR(timer.start(true));
    const LinearOp invS = buildInverse(*invPrsFactory_,hatS);
+   PB_DEBUG_EXPR(timer.stop());
+   PB_DEBUG_MSG("SIMPLEPrecFact::buildPO GetInvSTime = " << timer.totalElapsedTime(),2);
 
    std::vector<LinearOp> invDiag(2); // vector storing inverses
 

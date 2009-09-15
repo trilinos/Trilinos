@@ -465,6 +465,7 @@ Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() co
 //! For assiting in construction of the preconditioner
 bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
 {
+   PB_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
    bool result = true;
  
    // update requested parameters in solvers

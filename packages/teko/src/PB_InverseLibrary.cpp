@@ -25,7 +25,7 @@ InverseLibrary::InverseLibrary()
 
    // set valid PB preconditioner factory names
    blockValidPrecond_.push_back("Block Jacobi"); 
-   blockValidPrecond_.push_back("Block Gauss Seidel"); 
+   blockValidPrecond_.push_back("Block Gauss-Seidel"); 
    blockValidPrecond_.push_back("Block Add"); 
    blockValidPrecond_.push_back("Block Multiply"); 
    blockValidPrecond_.push_back("NS LSC");
@@ -36,13 +36,13 @@ InverseLibrary::InverseLibrary()
 void InverseLibrary::addInverse(const std::string & label,const Teuchos::ParameterList & pl)
 {
    // strip out the label
-   const std::string type  = pl.get<std::string>("Type");
+   const std::string type = pl.get<std::string>("Type");
 
    // copy the parameter list so we can modify it
    Teuchos::ParameterList settingsList;
    settingsList.set(type,pl);
    settingsList.sublist(type).remove("Type");
-   
+
    // is this a Stratimikos preconditioner or solver
    if(std::find(stratValidPrecond_.begin(),stratValidPrecond_.end(),type)!=stratValidPrecond_.end()) {
       // this is a Stratimikos preconditioner factory
@@ -56,8 +56,12 @@ void InverseLibrary::addInverse(const std::string & label,const Teuchos::Paramet
       // this is a PB preconditioner factory
       addBlockPrecond(label,type,settingsList);
    }
-   else 
+   else {
+      Teuchos::FancyOStream & os = *PB::getOutputStream();
+      os << "ERROR: Could not find inverse type \"" << type 
+         << "\" required by inverse name \"" << label << "\"" << std::endl;
       TEUCHOS_ASSERT(false);
+   }
 }
 
 //! Add a Stratimikos solver with a label to the library

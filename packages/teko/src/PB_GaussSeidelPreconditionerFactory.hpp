@@ -11,6 +11,26 @@ namespace PB {
 
 typedef enum {GS_UseLowerTriangle,GS_UseUpperTriangle} TriSolveType;
 
+/** \brief A factory that creates a block Gauss Seidel preconditioner.
+  *        The user must specify the solvers (or preconditioners) to use
+  *        to approximately invert the diagonal operators.
+  *
+  * A factory that creates a block Gauss Seidel preconditioner.
+  * The user must specify the solvers (or preconditioners) to use
+  * to approximately invert the diagonal operators.
+  * 
+  * To invoke this preconditioner using the XML file a diagonal inverse
+  * needs to be specified. For example the following XML code creates
+  * a Gauss-Seidel preconditioner called "GS-Outer" using Amesos 
+  * (a direct solver) to invert the diagonal blocks.
+  *
+    \verbatim
+    <ParameterList name="GS-Outer">
+       <Parameter name="Type" type="string" value="Block Gauss-Seidel"/>
+       <Parameter name="Inverse Type" type="string" value="Amesos"/>
+    </ParameterList>
+    \endverbatim
+  */
 class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
    public:
   

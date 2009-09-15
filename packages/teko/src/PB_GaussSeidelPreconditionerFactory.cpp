@@ -50,14 +50,50 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLi
 //! Initialize from a parameter list
 void GaussSeidelPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
 {
+   const std::string inverse_type = "Inverse Type";
+   std::vector<RCP<InverseFactory> > inverses;
+
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
-   // get string specifying inverse
-   std::string invStr = pl.get<std::string>("Inverse Type");
+   // get string specifying default inverse
+   std::string invStr = pl.get<std::string>(inverse_type);
    if(invStr=="") invStr = "Amesos";
+   RCP<InverseFactory> defaultInverse = invLib->getInverseFactory(invStr);
+
+   // now check individual solvers
+   Teuchos::ParameterList::ConstIterator itr;
+   for(itr=pl.begin();itr!=pl.end();++itr) {
+      std::string fieldName = itr->first;
+
+      // figure out what the integer is
+      if(fieldName.compare(inverse_type)==0 && fieldName!=inverse_type) {
+         int position = -1;
+         std::string inverse,type;
+
+         // figure out position
+         std::stringstream ss(fieldName);
+         ss >> inverse >> type >> position;
+
+         if(position<=0)
+            PB_DEBUG_MSG("Gauss-Seidel \"Inverse Type\" must be a (strictly) positive integer",1);
+
+         // inserting inverse factory into vector
+         std::string invStr = pl.get<std::string>(fieldName);
+         if(position>inverses.size()) {
+            inverses.resize(position,defaultInverse);
+            inverses[position-1] = invLib->getInverseFactory(invStr);
+         }
+         else
+            inverses[position-1] = invLib->getInverseFactory(invStr);
+      }
+   }
+
+   // use default inverse
+   if(inverses.size()==0) 
+      inverses.push_back(defaultInverse);
 
    // based on parameter type build a strategy
-   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
+   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(inverses));
 }
 
 } // end namspace PB

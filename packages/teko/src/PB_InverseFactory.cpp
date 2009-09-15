@@ -252,8 +252,10 @@ bool PreconditionerInverseFactory::updateRequestedParameters(const Teuchos::Para
 
    // add extra parameters to list
    Teuchos::ParameterList & settingsList = srcPl->sublist(subName);
-   for(itr=pl.begin();itr!=pl.end();++itr)
-      settingsList.setEntry(itr->first,itr->second);
+   for(itr=pl.begin();itr!=pl.end();++itr) {
+      if(extraParams_->isParameter(itr->first))
+         settingsList.setEntry(itr->first,itr->second);
+   }
 
    // set the parameter list
    precFactory_->setParameterList(srcPl);

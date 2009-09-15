@@ -6,11 +6,18 @@ InvFactoryDiagStrategy::InvFactoryDiagStrategy(const Teuchos::RCP<InverseFactory
 {
    // only one factory to use!
    invDiagFact_.resize(1,factory);
+   defaultInvFact_ = factory;
 }
 
-InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories)
+InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories,
+                                               const Teuchos::RCP<InverseFactory> & defaultFact)
 {
    invDiagFact_ = factories;
+
+   if(defaultFact==Teuchos::null)
+      defaultInvFact_ = invDiagFact_[0];
+   else
+      defaultInvFact_ = defaultFact;
 }
 
 /** returns an (approximate) inverse of the diagonal blocks of A
@@ -22,16 +29,16 @@ void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPrecondition
    int diagCnt = A->productRange()->numBlocks();
    int invCnt = invDiagFact_.size();
 
-   // make sure correct number of inverse factories exist
-   TEUCHOS_ASSERT(invCnt==diagCnt || invCnt==1);
-   
-   if(invCnt==1) {
+   if(diagCnt<=invCnt) {
       for(int i=0;i<diagCnt;i++) 
-         invDiag.push_back(buildInverse(*invDiagFact_[0],getBlock(i,i,A)));
+         invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
    }
    else {
       for(int i=0;i<diagCnt;i++) 
          invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
+
+      for(int i=diagCnt;i<invCnt;i++) 
+         invDiag.push_back(buildInverse(*defaultInvFact_,getBlock(i,i,A)));
    }
 }
 
