@@ -192,6 +192,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
     for (i=0; i< NumExportIDs_; i++) {
       if (ExportPIDs_[i] < 0) throw ReportError("TargetMap requested a GID that is not in the SourceMap.", -1);
       ExportLIDs_[i] = SourceMap.LID(ExportLIDs_[i]);
+      NumSend_ += SourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
     }
   }
 

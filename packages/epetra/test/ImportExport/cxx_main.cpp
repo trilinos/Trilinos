@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
   int *PermuteFromLIDs = Importer.PermuteFromLIDs();
   int *ExportLIDs = Importer.ExportLIDs();
   int *ExportPIDs = Importer.ExportPIDs();
+  EPETRA_TEST_ERR(!(Importer.NumExportIDs()==Importer.NumSend()),ierr);
 
   for (i=0; i < NumSameIDs; i++) ExpectedTarget[i] = (double) (MyPID+1);
   for (i=0; i < NumPermuteIDs; i++) ExpectedTarget[PermuteFromLIDs[i]] = 
@@ -316,7 +317,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
-  EPETRA_TEST_ERR((StandardMatrix.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(!(StandardMatrix.StorageOptimized()),ierr);
   EPETRA_TEST_ERR((StandardMatrix.OptimizeStorage()),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.StorageOptimized()),ierr);
   EPETRA_TEST_ERR(StandardMatrix.UpperTriangular(),ierr);
