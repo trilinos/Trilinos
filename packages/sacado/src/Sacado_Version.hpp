@@ -37,7 +37,7 @@
 #include "Sacado_ConfigDefs.h"
 
 inline std::string Sacado_Version() { 
-  return("Sacado Version 10.0"); 
+  return("Sacado Version 10.0-dev"); 
 }
 
 #endif /* SACADO_VERSION_HPP */
