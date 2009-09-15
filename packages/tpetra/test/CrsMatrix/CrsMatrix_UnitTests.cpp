@@ -20,8 +20,6 @@
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
 
-// FINISH: add test of multiply/solve with diagonal matrix and solve with implicit unit-diagonal matrix
-
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -941,6 +939,63 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, EmptyTriSolve, LO, GO, Scalar )
+  {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Operator<Scalar,LO,GO,Node>  OP;
+    typedef InverseOperator<Scalar,LO,GO,Node>  IOP;
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
+    const size_t numLocal = 13, numVecs = 7;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // create a Map
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
+    Scalar SONE = static_cast<Scalar>(1.0);
+
+    /* Create a triangular matrix with no entries, for testing implicit diagonals.
+      We test with Transpose and Non-Transpose application solve (these should be equivalent for the identity matrix)
+    */
+    
+    MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
+    X.setObjectLabel("X");
+    B.setObjectLabel("B");
+    Xhat.setObjectLabel("Xhat");
+    X.randomize();
+    for (size_t tnum=0; tnum < 2; ++tnum) {
+      ETransp trans     = ((tnum & 1) == 1 ? CONJ_TRANS        : NO_TRANS);
+      RCP<IOP> ZeroIOp;
+      {
+        RCP<MAT> ZeroMat;
+        // must explicitly provide the column map for implicit diagonals
+        ZeroMat = rcp(new MAT(map,map,0));
+        ZeroMat->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY_CONST(ZeroMat->isUpperTriangular(), true);
+        TEST_EQUALITY_CONST(ZeroMat->isLowerTriangular(), true);
+        TEST_EQUALITY_CONST(ZeroMat->getGlobalNumDiags(), 0);
+        ZeroIOp = ZeroMat;
+      }
+      X = B;
+      Xhat.randomize();
+      ZeroIOp->applyInverse(B,Xhat,trans);
+      //
+      Xhat.update(-ST::one(),X,ST::one());
+      Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
+      Xhat.norm2(errnrms());
+      B.norm2(normsB());
+      Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
+      TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+    }
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TriSolve, LO, GO, Scalar )
   {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -961,7 +1016,7 @@ namespace {
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
     Scalar SONE = static_cast<Scalar>(1.0);
 
-    /* create one of the following locally triangular matries:
+    /* Create one of the following locally triangular matries:
      
     0  [1 2       ] 
     1  [  1 3     ] 
@@ -992,7 +1047,6 @@ namespace {
       EDiag   diag      = ((tnum & 2) == 2 ? UNIT_DIAG         : NON_UNIT_DIAG);
       OptimizeOption os = ((tnum & 4) == 4 ? DoOptimizeStorage : DoNotOptimizeStorage);
       ETransp trans     = ((tnum & 8) == 8 ? CONJ_TRANS        : NO_TRANS);
-      RCP<OP> AOp;
       RCP<IOP> AIOp;
       {
         RCP<MAT> AMat;
@@ -1053,11 +1107,10 @@ namespace {
         TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
         TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
         TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
-        AOp = AMat;
         AIOp = AMat;
       }
       B.randomize();
-      AOp->apply(X,B,trans);
+      AIOp->apply(X,B,trans);
       if (diag == UNIT_DIAG) {
         // we want (I+A)*X -> B
         // A*X -> B needs to be augmented with X
@@ -1098,7 +1151,7 @@ namespace {
 
     // for debugging: Teuchos::VerboseObjectBase::setDefaultOStream(Teuchos::rcp(&out,false));
     
-    /* create the following matrix:
+    /* Create the following matrix:
     0  [2 1       ]   [2 1]
     1  [1 4 1     ]   [1 2] + [2 1]
     2  [  1 4 1   ]           [1 2] + 
@@ -1556,7 +1609,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR )  \
@@ -1574,6 +1627,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR ) \
       TRIUTILS_USING_TESTS( LO, GO, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \

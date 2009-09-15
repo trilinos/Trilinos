@@ -396,6 +396,7 @@ namespace Kokkos {
     if (isEmpty_ == true) {
       // Y <= alpha * 0 * X + beta * Y 
       //   <= beta * Y
+      // TODO: this neglects NaNs in X, which don't satisfy 0*NaN == 0
       DefaultArithmetic<MultiVector<RangeScalar,Node> >::Scale(Y,beta);
     }
     else if (isPacked_ == true) {

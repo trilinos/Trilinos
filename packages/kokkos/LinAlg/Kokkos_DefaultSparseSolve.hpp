@@ -43,6 +43,18 @@
 
 namespace Kokkos {
 
+  // 
+  // Matrix formatting and mat-vec options
+  // Applies to all four operations below
+  // 
+  // unitDiag indicates whether we neglect the diagonal row entry and scale by it
+  // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
+  // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
+  // 
+  // upper -> diagonal is first entry on row
+  // lower -> diagonal is last entry on row
+  // 
+
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
   struct DefaultSparseSolveOp1 {
     // mat data
@@ -62,54 +74,43 @@ namespace Kokkos {
       const size_t rhs = i;
       DomainScalar      *xj = x + rhs * xstride;
       const RangeScalar *yj = y + rhs * ystride;
-      // unitDiag indictes whether we neglect the diagonal row entry and scale by it
-      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
-      // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
-      // upper -> diagonal is first entry on row
-      // lower -> diagonal is last entry on row
       // 
       // upper triangular requires backwards substition, solving in reverse order
       // must unroll the last iteration, because decrement results in wrap-around
+      // 
       if (upper && unitDiag) {
         // upper + unit
         xj[numRows-1] = yj[numRows-1];
-        for (size_t row=numRows-2; row != 0; --row) {
+        for (size_t r=2; r < numRows+1; ++r) {
+          const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
+          const size_t begin = offsets[row], end = offsets[row+1];
           xj[row] = yj[row];
-          for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
+          for (size_t c=begin; c != end; ++c) {
             xj[row] -= vals[c] * xj[inds[c]];
           }
-        }
-        xj[0] = yj[0];
-        for (size_t c=offsets[0]; c != offsets[1]; ++c) {
-          xj[0] -= vals[c] * xj[inds[c]];
         }
       }
       else if (upper && !unitDiag) {
         // upper + non-unit
         xj[numRows-1] = yj[numRows-1] / vals[offsets[numRows-1]];
-        for (size_t row=numRows-2; row != 0; --row) {
+        for (size_t r=2; r < numRows+1; ++r) {
+          const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
+          const size_t diag = offsets[row], end = offsets[row+1];
+          const Scalar dval = vals[diag];
           xj[row] = yj[row];
-          size_t d = offsets[row], e = offsets[row+1];
-          Scalar dval = vals[d];
-          for (size_t c=d+1; c != e; ++c) {
+          for (size_t c=diag+1; c != end; ++c) {
             xj[row] -= vals[c] * xj[inds[c]];
           }
           xj[row] /= dval;
         }
-        xj[0] = yj[0];
-        size_t d = offsets[0], e = offsets[1];
-        Scalar dval = vals[d];
-        for (size_t c=d+1; c != e; ++c) {
-          xj[0] -= vals[c] * xj[inds[c]];
-        }
-        xj[0] /= dval;
       }
       else if (!upper && unitDiag) {
         // lower + unit
         xj[0] = yj[0];
         for (size_t row=1; row < numRows; ++row) {
+          const size_t begin = offsets[row], end = offsets[row+1];
           xj[row] = yj[row];
-          for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
+          for (size_t c=begin; c != end; ++c) {
             xj[row] -= vals[c] * xj[inds[c]];
           }
         }
@@ -118,12 +119,13 @@ namespace Kokkos {
         // lower + non-unit
         xj[0] = yj[0] / vals[0];
         for (size_t row=1; row < numRows; ++row) {
+          const size_t begin = offsets[row], diag = offsets[row+1]-1;
+          const Scalar dval = vals[diag];
           xj[row] = yj[row];
-          size_t b = offsets[row], d = offsets[row+1]-1;
-          for (size_t c=b; c != d; ++c) {
+          for (size_t c=begin; c != diag; ++c) {
             xj[row] -= vals[c] * xj[inds[c]];
           }
-          xj[row] /= vals[d];
+          xj[row] /= dval;
         }
       }
     }
@@ -153,14 +155,10 @@ namespace Kokkos {
       const Ordinal *rowinds;
       Scalar dval;
       size_t nE;
-      // unitDiag indictes whether we neglect the diagonal row entry and scale by it
-      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
-      // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
-      // upper -> diagonal is first entry on row
-      // lower -> diagonal is last entry on row
       // 
       // upper triangular requires backwards substition, solving in reverse order
       // must unroll the last iteration, because decrement results in wrap-around
+      // 
       if (upper && unitDiag) {
         // upper + unit
         xj[numRows-1] = yj[numRows-1];
@@ -262,11 +260,6 @@ namespace Kokkos {
       const size_t rhs = i;
       DomainScalar      *xj = x + rhs * xstride;
       const RangeScalar *yj = y + rhs * ystride;
-      // unitDiag indictes whether we neglect the diagonal row entry and scale by it
-      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
-      // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
-      // upper -> diagonal is first entry on row
-      // lower -> diagonal is last entry on row
       // 
       // put y into x and solve system in-situ
       // this is copy-safe, in the scenario that x and y point to the same location.
@@ -354,11 +347,6 @@ namespace Kokkos {
       const Ordinal *rowinds;
       Scalar dval;
       size_t nE;
-      // unitDiag indictes whether we neglect the diagonal row entry and scale by it
-      // or utilize all row entries and implicitly scale by a unit diagonal (i.e., don't need to scale)
-      // upper (versus lower) will determine the ordering of the solve and the location of the diagonal
-      // upper -> diagonal is first entry on row
-      // lower -> diagonal is last entry on row
       // 
       // put y into x and solve system in-situ
       // this is copy-safe, in the scenario that x and y point to the same location.
@@ -504,7 +492,7 @@ namespace Kokkos {
     Teuchos::ArrayRCP<size_t>          pbuf_numEntries_;
 
     size_t numRows_;
-    bool indsInit_, valsInit_, isPacked_;
+    bool indsInit_, valsInit_, isPacked_, isEmpty_;
   };
 
   template<class Scalar, class Ordinal, class Node>
@@ -512,7 +500,8 @@ namespace Kokkos {
   : node_(node)
   , indsInit_(false)
   , valsInit_(false)
-  , isPacked_(false) {
+  , isPacked_(false)
+  , isEmpty_(false) {
   }
 
   template<class Scalar, class Ordinal, class Node>
@@ -543,12 +532,17 @@ namespace Kokkos {
     TEST_FOR_EXCEPTION(indsInit_ == true, std::runtime_error, 
         Teuchos::typeName(*this) << "::initializeStructure(): structure already initialized.");
     numRows_ = graph.getNumRows();
+    if (graph.isEmpty() || numRows_ == 0) {
+      isEmpty_ = true;
+    }
     if (graph.isPacked()) {
+      isEmpty_ = false;
       isPacked_ = true;
       pbuf_inds1D_    = graph.get1DIndices();
       pbuf_offsets1D_ = graph.get1DOffsets();
     }
     else {
+      isEmpty_ = false;
       isPacked_ = false;
       pbuf_inds2D_     = node_->template allocBuffer<const Ordinal *>(numRows_);
       pbuf_numEntries_ = node_->template allocBuffer<size_t>(numRows_);
@@ -579,10 +573,15 @@ namespace Kokkos {
         Teuchos::typeName(*this) << "::initializeValues(): values already initialized.");
     TEST_FOR_EXCEPTION(numRows_ != matrix.getNumRows() || isPacked_ != matrix.isPacked(), std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): matrix not compatible with previously supplied graph.");
-    if (matrix.isPacked()) {
+    if (isEmpty_ || matrix.isEmpty() || numRows_ == 0) {
+      isEmpty_ = true;
+    }
+    else if (matrix.isPacked()) {
+      isEmpty_ = false;
       pbuf_vals1D_ = matrix.get1DValues();
     }
     else {
+      isEmpty_ = false;
       pbuf_vals2D_ = node_->template allocBuffer<const Scalar *>(numRows_);
       ArrayRCP<const Scalar *> vals2Dview = node_->template viewBufferNonConst<const Scalar *>(WriteOnly, numRows_, pbuf_vals2D_);
       for (size_t r=0; r < numRows_; ++r) {
@@ -612,6 +611,7 @@ namespace Kokkos {
     indsInit_ = false;
     valsInit_ = false;
     isPacked_ = false;
+    isEmpty_ = false;
   }
 
   template <class Scalar, class Ordinal, class Node>
@@ -628,11 +628,20 @@ namespace Kokkos {
         Teuchos::typeName(*this) << "::solve(): this solve was not fully initialized.");
     TEST_FOR_EXCEPTION(X.getNumCols() != Y.getNumCols(), std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): Left hand side and right hand side multivectors have differing numbers of vectors.");
-    TEST_FOR_EXCEPTION(X.getNumRows() < numRows_ || Y.getNumRows() < numRows_, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): Either left or right hand side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
-         
+    TEST_FOR_EXCEPTION(X.getNumRows() < numRows_, std::runtime_error,
+        Teuchos::typeName(*this) << "::solve(): Left-hand-side multivector does not have enough rows. Likely cause is that the column map was not provided to the Tpetra::CrsMatrix in the case of an implicit unit diagonal.");
+
     ReadyBufferHelper<Node> rbh(node_);
-    if (isPacked_ == true) {
+    if (numRows_ == 0) {
+      // null op
+    }
+    else if (isEmpty_) {
+      TEST_FOR_EXCEPTION(diag != Teuchos::UNIT_DIAG, std::runtime_error,
+          Teuchos::typeName(*this) << "::solve(): solve of empty matrix only valid for an implicit unit diagonal.");
+      // solve I * X = Y for X = Y
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
+    }
+    else if (isPacked_ == true) {
       if (trans == Teuchos::NO_TRANS) {
         Op1D wdp;
         rbh.begin();
