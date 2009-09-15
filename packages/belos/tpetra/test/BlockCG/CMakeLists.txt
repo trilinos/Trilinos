@@ -10,6 +10,15 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     )
 
+  IF (Tpetra_ENABLE_Epetra AND Tpetra_ENABLE_MPI AND Belos_ENABLE_Epetra)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      TpetraEpetra_BlockCG_hb_test
+      SOURCES test_bl_cg_hb_te.cpp 
+      ARGS 
+      COMM mpi
+      )
+  ENDIF()
+
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Tpetra_BlockCG_complex_hb_test
     SOURCES test_bl_cg_complex_hb.cpp 

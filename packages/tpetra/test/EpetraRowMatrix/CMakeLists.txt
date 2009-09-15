@@ -16,7 +16,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     EpetraRowMatrix_UnitTests
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS ${ARGS}
-  COMM serial mpi
+  COMM mpi
   STANDARD_PASS_OUTPUT
   )
 

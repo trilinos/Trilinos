@@ -32,15 +32,6 @@ ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-IF(Trilinos_ENABLE_Epetra)
-ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Epetra
-  HAVE_TPETRA_EPETRA
-  "Enable building with Epetra."
-  ${Trilinos_ENABLE_Epetra}
-  )
-ENDIF()
-
 ADD_OPTION_AND_DEFINE(
   Tpetra_PRINT_Warnings
   HAVE_TPETRA_PRINT_WARNINGS
