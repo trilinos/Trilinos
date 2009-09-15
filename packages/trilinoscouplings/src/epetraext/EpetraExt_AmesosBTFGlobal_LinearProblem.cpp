@@ -214,8 +214,10 @@ operator()( OriginalTypeRef orig )
     Epetra_Vector rowWeights( View, blkGraph->Map(), &weight[0] );
     
     // Call Isorropia to rebalance this graph.
+    //Teuchos::RCP<Epetra_CrsGraph> balancedGraph =
+    //  Teuchos::rcp( Isorropia::Epetra::createBalancedCopy( *blkGraph, rowWeights ) );
     Teuchos::RCP<Epetra_CrsGraph> balancedGraph =
-      Isorropia::Epetra::create_balanced_copy( *blkGraph, rowWeights );
+      Teuchos::rcp( Isorropia::Epetra::createBalancedCopy( *blkGraph ) );
     
     int myNumBlkRows = balancedGraph->NumMyRows();    
     

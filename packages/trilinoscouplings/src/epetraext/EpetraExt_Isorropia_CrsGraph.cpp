@@ -47,11 +47,10 @@ operator()( OriginalTypeRef orig )
   origObj_ = &orig;
 
   try {
-    NewGraph_ =
-      Isorropia::Epetra::create_balanced_copy( orig, partitionList_);
+    NewGraph_ = Teuchos::rcp( Isorropia::Epetra::createBalancedCopy( orig, partitionList_) );
   }
   catch(std::exception& e) {
-    std::cout << "Isorropia::create_balanced_copy threw exception '" << e.what() << "' on proc " << orig.Comm().MyPID() << std::endl;
+    std::cout << "Isorropia::createBalancedCopy threw exception '" << e.what() << "' on proc " << orig.Comm().MyPID() << std::endl;
   }
 
   // Set the raw pointer to the new graph.
