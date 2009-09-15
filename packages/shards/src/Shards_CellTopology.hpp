@@ -280,7 +280,7 @@ public:
   unsigned getFaceCount() const
     {
       SHARDS_REQUIRE( requireCell() );
-      return m_cell->dimension == 3 ? m_cell->edge_count : 0 ;
+      return m_cell->dimension == 3 ? m_cell->side_count : 0 ;
     }
   
         
