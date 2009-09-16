@@ -4,9 +4,14 @@ setlocal
 
 rem CVS needs to know how to use ssh
 set CVS_RSH=C:\Dashboards\Support\Trilinos-ssh\ssh.cmd
+
 rem Set location of CTEST_EXE, and CVS_EXE
 set CVS_EXE=C:\Program Files (x86)\CVSNT\cvs.exe
-set CTEST_EXE=C:\Program Files (x86)\CMake 2.7.20090914\bin\ctest.exe
+
+rem set CTEST_EXE=C:\Program Files (x86)\CMake 2.7.20090914\bin\ctest.exe
+
+rem Just for tonight: tomorrow we'll install the new nightly release
+set CTEST_EXE=C:\zach\CMake_bin_32\bin\Release\ctest.exe
 
 rem Set the base directory which is one above where Trilinos will be 
 rem checked out.
