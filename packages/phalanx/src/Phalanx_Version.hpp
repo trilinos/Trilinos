@@ -36,7 +36,7 @@
 #include "Phalanx_ConfigDefs.hpp"
 
 std::string Phalanx_Version() { 
-  return("Phalanx Version: development"); 
+  return("Phalanx Version: 1.0"); 
 }
 
 #endif
