@@ -240,6 +240,33 @@ partitioner.
 2 = scatter if at least one processor owns no objects; 
 3 = always scatter.&nbsp;</td>
     </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYMMETRIZE</i></td>
+      <td nosave="">How to symmetrize the graph:
+       NONE = graph is symmetric and no symmetrization is needed <br/>
+       TRANSPOSE = graph is symmetrized like M+Mt for his adjency matrix M <br/>
+       BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][Mt 0]]
+</td>
+    </tr>
+
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYM_WEIGHT</i></td>
+      <td nosave="">How edge weights are handled during symmetrization:
+       ADD = weights of each arc are added <br/>
+       MAX = only the heaviest arc weight is kept <br/>
+<!--        ERROR = fail if complementary arcs don't have the same weight. -->
+</td>
+    </tr>
+
+<!--     <tr nosave="" valign="top"> -->
+<!--       <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_BIPARTITE_TYPE</i></td> -->
+<!--       <td nosave=""> In the case of a bipartite symmetrization, -->
+<!--        NONE = graph is symmetric and no symmetrization is needed <br/> -->
+<!--        TRANSPOSE = graph is symmetrized like M+Mt for his adjency matrix M <br/> -->
+<!--        BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][Mt 0]] -->
+<!-- </td> -->
+<!--     </tr> -->
+
     <tr>
       <td valign="top"><b>Default values:</b></td>
       <td><br>
@@ -290,6 +317,19 @@ partitioner.
       </td>
       <td><i>SCATTER_GRAPH </i>= 1</td>
     </tr>
+
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_SYMMETRIZE </i>= NONE</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_SYM_WEIGHT </i>= ADD</td>
+    </tr>
+
+
     <tr>
       <td valign="top"><b>Required Query Functions:</b></td>
       <td><br>
