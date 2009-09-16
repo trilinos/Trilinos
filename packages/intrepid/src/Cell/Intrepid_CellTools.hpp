@@ -350,9 +350,9 @@ public:
       
                 Returns rank-2 or rank-1 array with dimensions (C,P)/(P) such that 
         \f[ 
-                \mbox{jacobianDet}(c,p) = \mbox{jacobian}(c,p,*,*) \quad c=0,\ldots, C 
+                \mbox{jacobianDet}(c,p) = \mbox{det}(\mbox{jacobian}(c,p,*,*)) \quad c=0,\ldots, C 
                 \quad\mbox{or}\quad
-                \mbox{jacobianDet}(p)   = \mbox{jacobian}(p,*,*) 
+                \mbox{jacobianDet}(p)   = \mbox{det}(\mbox{jacobian}(p,*,*)) 
           \f]
       
         \param  jacobianDet       [out] - rank-2/1 array with dimensions (C,P)/(P) with Jacobian determinants
@@ -1482,8 +1482,8 @@ Thus, the parametrization domain for a 2-subcell depends on its topology and is 
 \f]
 \par Summary
 
--    \f$\hat{\Phi} : R \mapsto \hat{\mathcal{S}}_i \f$ requires two steps: 
-  -# Intrepid::CellTools::mapToReferenceSubcell to apply \f$\hat{\Phi}\f$;
+-    \f$ \Phi : R \mapsto {\mathcal{S}}_i \f$ requires two steps: 
+  -# Intrepid::CellTools::mapToReferenceSubcell to apply \f$\hat{\Phi}: R \mapsto \hat{\mathcal{S}}_i\f$;
   -# Intrepid::CellTools::mapToPhysicalFrame to apply \e F
 
 

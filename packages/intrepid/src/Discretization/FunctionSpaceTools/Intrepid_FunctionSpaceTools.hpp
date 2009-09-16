@@ -451,11 +451,25 @@ class FunctionSpaceTools {
                            const bool                sumInto = false);
 
   /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
-               (C,P) used for the for computation of cell integrals, by multiplying the provided
-               cell Jacobian determinants \a <b>inDet</b> with dimensions (C,P) with the
-               provided integration weights \a <b>inWeights</b> with dimensions (C,P).
+               (C,P) used for the for computation of cell integrals, by multiplying absolute values 
+               of the user-provided cell Jacobian determinants \a <b>inDet</b> with dimensions (C,P) 
+               with the user-provided integration weights \a <b>inWeights</b> with dimensions (P).
 
-               Math here ...
+               Returns a rank-2 array (C, P) array such that
+        \f[
+               \mbox{outVals}(c,p)   = |\mbox{det}(DF_{c}(\widehat{x}_p))|\omega_{p} \,,
+        \f]
+               where \f$\{(\widehat{x}_p,\omega_p)\}\f$ is a cubature rule defined on a reference cell
+               (a set of integration points and their associated weights; see
+               Intrepid::Cubature::getCubature for getting cubature rules on reference cells). 
+        \warning 
+               The user is responsible for providing input arrays with consistent data: the determinants
+               in \a <b>inDet</b> should be evaluated at integration points corresponding to the 
+               weights in \a <b>inWeights</b>.
+ 
+        \remark
+               See Intrepid::CellTools::setJacobian for computation of \e DF and 
+               Intrepid::CellTools::setJacobianDet for computation of its determinant.
 
         \code
           C - num. integration domains                     dim0 in all containers
@@ -474,10 +488,35 @@ class FunctionSpaceTools {
   /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
                (C,P) used for the for computation of face integrals, based on the provided
                cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
-               provided integration weights \a <b>inWeights</b> with dimensions (C,P). 
+               provided integration weights \a <b>inWeights</b> with dimensions (P). 
 
-               Math here ...
+               Returns a rank-2 array (C, P) array such that
+      \f[
+               \mbox{outVals}(c,p)   = 
+                \left\|\frac{\partial\Phi_c(\widehat{x}_p)}{\partial u}\times 
+                       \frac{\partial\Phi_c(\widehat{x}_p)}{\partial v}\right\|\omega_{p} \,,
+      \f]
+               where: 
+      \li      \f$\{(\widehat{x}_p,\omega_p)\}\f$ is a cubature rule defined on \b reference 
+               \b face \f$\widehat{\mathcal{F}}\f$, with ordinal \e whichFace relative to the specified parent reference cell;
+      \li      \f$ \Phi_c : R \mapsto \mathcal{F} \f$ is parameterization of the physical face
+               corresponding to \f$\widehat{\mathcal{F}}\f$; see Section \ref sec_cell_topology_subcell_map.
+    
+      \warning 
+               The user is responsible for providing input arrays with consistent data: the Jacobians
+               in \a <b>inJac</b> should be evaluated at the face integration points corresponding to the 
+               weights in \a <b>inWeights</b>.
+    
+      \remark 
+              Cubature rules on reference faces are defined by a two-step process:
+      \li     A cubature rule is defined on the parametrization domain \e R of the face 
+              (\e R is the standard 2-simplex {(0,0),(1,0),(0,1)} or the standard 2-cube [-1,1] X [-1,1]).
+      \li     The points are mapped to a reference face using Intrepid::CellTools::mapToReferenceSubcell
 
+      \remark
+               See Intrepid::CellTools::setJacobian for computation of \e DF and 
+               Intrepid::CellTools::setJacobianDet for computation of its determinant.
+    
         \code
           C - num. integration domains                     dim0 in all input containers
           P - num. integration points                      dim1 in all input containers
@@ -500,9 +539,32 @@ class FunctionSpaceTools {
   /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
                (C,P) used for the for computation of edge integrals, based on the provided
                cell Jacobian array \a <b>inJac</b> with dimensions (C,P,D,D) and the
-               provided integration weights \a <b>inWeights</b> with dimensions (C,P). 
+               provided integration weights \a <b>inWeights</b> with dimensions (P). 
 
-               Math here ...
+               Returns a rank-2 array (C, P) array such that
+      \f[
+               \mbox{outVals}(c,p)   = 
+                    \left\|\frac{d \Phi_c(\widehat{x}_p)}{d s}\right\|\omega_{p} \,,
+      \f]
+               where: 
+      \li      \f$\{(\widehat{x}_p,\omega_p)\}\f$ is a cubature rule defined on \b reference 
+               \b edge \f$\widehat{\mathcal{E}}\f$, with ordinal \e whichEdge relative to the specified parent reference cell;
+      \li      \f$ \Phi_c : R \mapsto \mathcal{E} \f$ is parameterization of the physical edge
+               corresponding to \f$\widehat{\mathcal{E}}\f$; see Section \ref sec_cell_topology_subcell_map.
+    
+      \warning 
+               The user is responsible for providing input arrays with consistent data: the Jacobians
+               in \a <b>inJac</b> should be evaluated at the edge integration points corresponding to the 
+               weights in \a <b>inWeights</b>.
+    
+      \remark 
+               Cubature rules on reference edges are defined by a two-step process:
+      \li      A cubature rule is defined on the parametrization domain \e R = [-1,1] of the edge. 
+      \li      The points are mapped to a reference edge using Intrepid::CellTools::mapToReferenceSubcell
+    
+      \remark
+               See Intrepid::CellTools::setJacobian for computation of \e DF and 
+               Intrepid::CellTools::setJacobianDet for computation of its determinant.
 
         \code
           C - num. integration domains                     dim0 in all input containers
