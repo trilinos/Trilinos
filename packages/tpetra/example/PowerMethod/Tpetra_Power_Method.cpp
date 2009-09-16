@@ -42,8 +42,8 @@
 
 
 // prototype
-template<class Scalar,class Magnitude,class Ordinal>
-void power_method(const Tpetra::CrsMatrix<Scalar,Ordinal> & A, Scalar & lambda, size_t niters, Magnitude tolerance, bool verbose);
+template <class Scalar, class Ordinal>
+Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose);
 
 
 int main(int argc, char *argv[]) {
@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
   }
 
 	// Create a Tpetra::Matrix using the Map, with a static allocation dictated by NumNz
-
-	Tpetra::CrsMatrix<Scalar,Ordinal> A(map, NumNz, Tpetra::StaticProfile);
+  Teuchos::RCP< Tpetra::CrsMatrix<Scalar,Ordinal> > A;
+	A = Teuchos::rcp( new Tpetra::CrsMatrix<Scalar,Ordinal>(map, NumNz, Tpetra::StaticProfile) );
   
   // We are done with NumNZ
   NumNz = Teuchos::null;
@@ -127,25 +127,25 @@ int main(int argc, char *argv[]) {
   const Scalar negOne = static_cast<Scalar>(-1.0);
 	for (size_t i=0; i<numMyElements; i++) {
 		if (myGlobalElements[i] == 0) {
-      A.insertGlobalValues( myGlobalElements[i],
-                            Teuchos::tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
-                            Teuchos::tuple<Scalar> ( two, negOne ) );
+      A->insertGlobalValues( myGlobalElements[i],
+                             Teuchos::tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
+                             Teuchos::tuple<Scalar> ( two, negOne ) );
 		}
 		else if (myGlobalElements[i] == numGlobalElements-1) {
-      A.insertGlobalValues( myGlobalElements[i],
-                            Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
-                            Teuchos::tuple<Scalar> ( negOne, two ) );
+      A->insertGlobalValues( myGlobalElements[i],
+                             Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
+                             Teuchos::tuple<Scalar> ( negOne, two ) );
 		}
 		else {
-      A.insertGlobalValues( myGlobalElements[i],
-                            Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
-                            Teuchos::tuple<Scalar> ( negOne, two, negOne ) );
+      A->insertGlobalValues( myGlobalElements[i],
+                             Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+                             Teuchos::tuple<Scalar> ( negOne, two, negOne ) );
 		}
   }
 
 	// Finish up
-	A.fillComplete(Tpetra::DoOptimizeStorage);
-  if (verbose) std::cout << std::endl << A.description() << std::endl << std::endl;
+	A->fillComplete(Tpetra::DoOptimizeStorage);
+  if (verbose) std::cout << std::endl << A->description() << std::endl << std::endl;
 
 	// Create vectors for Power method
 
@@ -155,8 +155,7 @@ int main(int argc, char *argv[]) {
 	const Scalar tolerance = 1.0e-2;
 
 	// Iterate
-  lambda = 0;
-	power_method<Scalar,Magnitude,Ordinal>(A, lambda, niters, tolerance, verbose);
+	lambda = power_method<Scalar,Ordinal>(A, niters, tolerance, verbose);
 
 	// Increase diagonal dominance
 	if (verbose) {
@@ -164,15 +163,15 @@ int main(int argc, char *argv[]) {
 		          << std::endl;
   }
 
-	if (A.getRowMap()->isNodeGlobalElement(0)) {
+	if (A->getRowMap()->isNodeGlobalElement(0)) {
     // get a copy of the row with with global index 0
     // modify the diagonal entry of that row
     // submit the modified values to the matrix
     const Ordinal ID = 0;
-		size_t numVals = A.getNumEntriesInGlobalRow(ID);
+		size_t numVals = A->getNumEntriesInGlobalRow(ID);
     Teuchos::Array<Scalar>  rowvals(numVals);
     Teuchos::Array<Ordinal> rowinds(numVals);
-		A.getGlobalRowCopy(ID, rowinds, rowvals, numVals);       // Get A(0,:)
+		A->getGlobalRowCopy(ID, rowinds, rowvals, numVals);       // Get A(0,:)
 		for (size_t i=0; i<numVals; i++) {
       if (rowinds[i] == ID) {
         // we have found the diagonal; modify it and break the loop
@@ -180,12 +179,11 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-		A.replaceGlobalValues(ID, rowinds(), rowvals());
+		A->replaceGlobalValues(ID, rowinds(), rowvals());
 	}
 
 	// Iterate (again)
-	lambda = 0.0;
-	power_method<Scalar,Magnitude,Ordinal>(A, lambda, niters, tolerance, verbose);	
+	lambda = power_method<Scalar,Ordinal>(A, niters, tolerance, verbose);	
 
 	/* end main
 	 */
@@ -196,17 +194,19 @@ int main(int argc, char *argv[]) {
 }
 
 
-template<class Scalar,class Magnitude,class Ordinal>
-void power_method(const Tpetra::CrsMatrix<Scalar,Ordinal> &A, Scalar &lambda, size_t niters, Magnitude tolerance, bool verbose) {  
+template <class Scalar, class Ordinal>
+Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
   // create three vectors; do not bother initializing them to zero
-	Tpetra::Vector<Scalar,Ordinal> q(A.getRowMap(), false);
-	Tpetra::Vector<Scalar,Ordinal> z(A.getRowMap(), false);
-	Tpetra::Vector<Scalar,Ordinal> resid(A.getRowMap(), false);
+	Tpetra::Vector<Scalar,Ordinal> q(A->getRangeMap(), false);
+	Tpetra::Vector<Scalar,Ordinal> z(A->getRangeMap(), false);
+	Tpetra::Vector<Scalar,Ordinal> resid(A->getRangeMap(), false);
 
 	// Fill z with random numbers
 	z.randomize();
 
 	// Variables needed for iteration
+  Scalar lambda;
 	Magnitude normz, residual;
 
 	const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
@@ -215,7 +215,7 @@ void power_method(const Tpetra::CrsMatrix<Scalar,Ordinal> &A, Scalar &lambda, si
   for (size_t iter = 0; iter < niters; ++iter) {
     normz = z.norm2();                            // Compute 2-norm of z
     q.scale(one/normz, z);                        // Set q = z / normz
-    A.apply(q, z);                                // Compute z = A*q
+    A->apply(q, z);                               // Compute z = A*q
     lambda = q.dot(z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
     if ( iter % 100 == 0 || iter + 1 == niters ) {
       resid.update(one, z, -lambda, q, zero);     // Compute A*q - lambda*q
@@ -230,5 +230,5 @@ void power_method(const Tpetra::CrsMatrix<Scalar,Ordinal> &A, Scalar &lambda, si
       break;
     }
   }
-  return;
+  return lambda;
 }
