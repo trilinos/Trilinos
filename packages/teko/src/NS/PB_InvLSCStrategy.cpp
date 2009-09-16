@@ -85,7 +85,7 @@ InvLSCStrategy::InvLSCStrategy()
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
@@ -395,7 +395,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");
    if(pl.isParameter("Use Lumping"))
-      useMass_ = pl.get<bool>("Use Lumping");
+      useLumping_ = pl.get<bool>("Use Lumping");
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
@@ -405,7 +405,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-      DEBUG_STREAM << "   use mass    = " << useLumping_ << std::endl;
+      DEBUG_STREAM << "   use lumping    = " << useLumping_ << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    PB_DEBUG_MSG_END()
