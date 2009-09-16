@@ -18,9 +18,9 @@ EXEEXT = .exe
 if BUILD_TRIUTILS
 if BUILD_EPETRAEXT
 if BUILD_IFPACK
-BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile BlockFlexGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile
+BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile BlockFlexGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile BlockGmresPolyEpetraExFile
 endif
-BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile BlockGmresPolyEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
+BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
 endif
 endif
 

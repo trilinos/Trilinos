@@ -37,6 +37,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosGmresPolySolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_Map.h"
@@ -46,6 +47,8 @@
   #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_CrsMatrix.h"
+
+#include "Ifpack.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -74,7 +77,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, debug = false, proc_verbose = false;
+  bool verbose = false, debug = false, proc_verbose = false, strict_conv = false;
   int frequency = -1;        // frequency of status test output.
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
@@ -82,14 +85,19 @@ int main(int argc, char *argv[]) {
   int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
   int maxrestarts = 15;      // number of restarts allowed 
   std::string filename("orsirr1.hb");
+  std::string precond("none");
   MT tol = 1.0e-5;           // relative residual tolerance
+  MT polytol = tol/10;       // relative residual tolerance for polynomial construction 
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nondebug",&debug,"Print debugging information from solver.");
+  cmdp.setOption("strict-conv","not-strict-conv",&strict_conv,"Require solver to strictly adhere to convergence tolerance.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
+  cmdp.setOption("precond",&precond,"Preconditioning type (none, left, right).");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("poly-tol",&polytol,"Relative residual tolerance used to construct the GMRES polynomial.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
@@ -125,6 +133,50 @@ int main(int argc, char *argv[]) {
     B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
   }
   //
+  // ************Construct preconditioner*************
+  //
+  RCP<Belos::EpetraPrecOp> belosPrec;
+
+  if (precond != "none") {
+    ParameterList ifpackList;
+
+    // allocates an IFPACK factory. No data is associated
+    // to this object (only method Create()).
+    Ifpack Factory;
+
+    // create the preconditioner. For valid PrecType values,
+    // please check the documentation
+    std::string PrecType = "ILU"; // incomplete LU
+    int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
+                        // it is ignored.
+
+    RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
+    assert(Prec != Teuchos::null);
+
+    // specify parameters for ILU
+    ifpackList.set("fact: drop tolerance", 1e-9);
+    ifpackList.set("fact: ilut level-of-fill", 1.0);
+    // the combine mode is on the following:
+    // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
+    // Their meaning is as defined in file Epetra_CombineMode.h
+    ifpackList.set("schwarz: combine mode", "Add");
+    // sets the parameters
+    IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
+
+    // initialize the preconditioner. At this point the matrix must
+    // have been FillComplete()'d, but actual values are ignored.
+    IFPACK_CHK_ERR(Prec->Initialize());
+
+    // Builds the preconditioners, by looking for the values of
+    // the matrix.
+    IFPACK_CHK_ERR(Prec->Compute());
+
+    // Create the Belos preconditioned operator from the Ifpack preconditioner.
+    // NOTE:  This is necessary because Belos expects an operator to apply the
+    //        preconditioner with Apply() NOT ApplyInverse().
+    belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
+  }
+  //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
@@ -138,6 +190,8 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Polynomial Tolerance", polytol );      // Polynomial convergence tolerance requested
+  belosList.set( "Strict Convergence", strict_conv );    // Whether solver must strictly reach requested tolerance
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
     verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
@@ -152,6 +206,12 @@ int main(int argc, char *argv[]) {
   // Construct an unpreconditioned linear problem instance.
   //
   Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+  if (precond == "left") {
+    problem.setLeftPrec( belosPrec );
+  }
+  else if (precond == "right") {
+    problem.setRightPrec( belosPrec );
+  }
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -167,6 +227,7 @@ int main(int argc, char *argv[]) {
  
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > newSolver
+    //= rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
     = rcp( new Belos::GmresPolySolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
 
   //
@@ -210,7 +271,7 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  if (ret!=Belos::Converged || badRes) {
+  if ((ret!=Belos::Converged || badRes) && strict_conv) {
     if (proc_verbose)
       std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;	
     return -1;

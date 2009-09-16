@@ -45,6 +45,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       COMM serial mpi
       )
 
+    PACKAGE_ADD_EXECUTABLE(
+      BlockGmresPoly_Epetra_File_Ex
+      SOURCES BlockGmresPolyEpetraExFile.cpp
+      COMM serial mpi
+      )
+
   ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
