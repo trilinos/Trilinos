@@ -56,8 +56,27 @@ class FunctionSpaceTools {
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P).
-
-             Math here ...
+   
+             Computes pullback of \e HGRAD functions \f$\Phi^*(\widehat{u}_f) = \widehat{u}_f\circ F^{-1}_{c} \f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the values of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+             outVals(c,f,p) 
+                = \widehat{u}_f\circ F^{-1}_{c}(x_{c,p}) 
+                = \widehat{u}_f(\widehat{x}_p) =  inVals(f,p) \qquad 0\le c < C \,,
+      \f]
+            i.e., it simply replicates the values in the user-provided container to every cell. 
+            See Section \ref sec_pullbacks for more details about pullbacks. 
+    
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -77,7 +96,26 @@ class FunctionSpaceTools {
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P,D).
 
-             Math here ...
+             Computes pullback of gradients of \e HGRAD functions 
+             \f$\Phi^*(\nabla\widehat{u}_f) = \left((DF_c)^{-{\sf T}}\cdot\nabla\widehat{u}_f\right)\circ F^{-1}_{c}\f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the gradients of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p,*) = \nabla\widehat{u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+             outVals(c,f,p,*) 
+                  = \left((DF_c)^{-{\sf T}}\cdot\nabla\widehat{u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
+                  = (DF_c)^{-{\sf T}}(\widehat{x}_p)\cdot\nabla\widehat{u}_f(\widehat{x}_p) \qquad 0\le c < C \,.
+      \f]
+             See Section \ref sec_pullbacks for more details about pullbacks.
+  
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -100,7 +138,25 @@ class FunctionSpaceTools {
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P,D).
 
-             Math here ...
+             Computes pullback of \e HCURL functions 
+             \f$\Phi^*(\widehat{\bf u}_f) = \left((DF_c)^{-{\sf T}}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c}\f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the values of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+              outVals(c,f,p,*) 
+                = \left((DF_c)^{-{\sf T}}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
+                = (DF_c)^{-{\sf T}}(\widehat{x}_p)\cdot\widehat{\bf u}_f(\widehat{x}_p) \qquad 0\le c < C \,.
+      \f]
+            See Section \ref sec_pullbacks for more details about pullbacks.
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -123,7 +179,27 @@ class FunctionSpaceTools {
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P,D).
 
-             Math here ...
+             Computes pullback of curls of \e HCURL functions 
+             \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c} DF_{c}\cdot\nabla\times\widehat{\bf u}_f\right)\circ F^{-1}_{c}\f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the curls of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p,*) = \nabla\times\widehat{\bf u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+             outVals(c,f,p,*) 
+                = \left(J^{-1}_{c} DF_{c}\cdot\nabla\times\widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
+                = J^{-1}_{c}(\widehat{x}_p) DF_{c}(\widehat{x}_p)\cdot\nabla\times\widehat{\bf u}_f(\widehat{x}_p)
+              \qquad 0\le c < C \,.
+      \f]
+             See Section \ref sec_pullbacks for more details about pullbacks.
+    
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -147,7 +223,27 @@ class FunctionSpaceTools {
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P,D).
 
-             Math here ...
+             Computes pullback of \e HDIV functions 
+             \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c} DF_{c}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c} \f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the values of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+             outVals(c,f,p,*) 
+              = \left(J^{-1}_{c} DF_{c}\cdot \widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p}) 
+              = J^{-1}_{c}(\widehat{x}_p) DF_{c}(\widehat{x}_p)\cdot\widehat{\bf u}_f(\widehat{x}_p)
+              \qquad 0\le c < C \,.
+      \f]
+             See Section \ref sec_pullbacks for more details about pullbacks.
+    
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -171,7 +267,27 @@ class FunctionSpaceTools {
              and indexed by (F,P), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P).
 
-             Math here ...
+             Computes pullback of the divergence of \e HDIV functions 
+             \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c}\nabla\cdot\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} \f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the divergencies of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p) = \nabla\cdot\widehat{\bf u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+             outVals(c,f,p,*) 
+                = \left(J^{-1}_{c}\nabla\cdot\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} (x_{c,p}) 
+                = J^{-1}_{c}(\widehat{x}_p) \nabla\cdot\widehat{\bf u}_{f} (\widehat{x}_p)
+                \qquad 0\le c < C \,.
+      \f]
+             See Section \ref sec_pullbacks for more details about pullbacks.
+    
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -192,7 +308,27 @@ class FunctionSpaceTools {
              and indexed by (F,P), into the output container <var><b>outVals</b></var>,
              defined on cells in physical space and indexed by (C,F,P).
 
-             Math here ...
+             Computes pullback of \e HVOL functions 
+             \f$\Phi^*(\widehat{u}_f) = \left(J^{-1}_{c}\widehat{u}_{f}\right) \circ F^{-1}_{c} \f$ 
+             for points in one or more physical cells that are images of a given set of points in the reference cell:
+      \f[
+             \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+      \f]     
+             In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+             should contain the values of the functions in the set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
+             reference points:
+      \f[
+             inVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+      \f]
+             The method returns   
+      \f[
+             outVals(c,f,p,*) 
+                = \left(J^{-1}_{c}\widehat{u}_{f}\right) \circ F^{-1}_{c} (x_{c,p}) 
+                = J^{-1}_{c}(\widehat{x}_p) \widehat{u}_{f} (\widehat{x}_p)
+                \qquad 0\le c < C \,.
+      \f]
+             See Section \ref sec_pullbacks for more details about pullbacks.
+    
     \code
     |------|----------------------|--------------------------------------------------|
     |      |         Index        |                   Dimension                      |
@@ -918,14 +1054,14 @@ class FunctionSpaceTools {
           \left\|\frac{\partial\Phi}{\partial u}\times \frac{\partial\Phi}{\partial v}\right\| du\,dv
       \f]
       requires the surface measure defined by the norm of the vector product of the surface tangents. This   
-      measure is computed by FunctionSpaceTools::computeFaceMeasure. In this formula \e R is the parametrization 
+      measure is computed by Intrepid::FunctionSpaceTools::computeFaceMeasure. In this formula \e R is the parametrization 
       domain for the 2-subcell; see Section \ref sec_cell_topology_subcell_map for details.
  -# The integral of a scalar function over a 1-subcell \f$\mathcal{E}\f$
       \f[
           \int_{\mathcal{E}} f(x) dx = \int_{R} f(\Phi(s)) \|\Phi'\| ds
       \f]
       requires the arc measure defined by the norm of the arc tangent vector. This measure is computed 
-      by FunctionSpaceTools::computeEdgeMeasure. In this formula \e R is the parametrization 
+      by Intrepid::FunctionSpaceTools::computeEdgeMeasure. In this formula \e R is the parametrization 
       domain for the 1-subcell; see Section \ref sec_cell_topology_subcell_map for details.
  
 */
