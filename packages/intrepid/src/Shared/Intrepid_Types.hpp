@@ -590,6 +590,162 @@ namespace Intrepid {
     return ( (compEngType == COMP_CPP) ||
              (compEngType == COMP_BLAS) );
   }
-  
+
 } //namespace Intrepid
+
+
+/*! \mainpage Intrepid Documentation (ver. Trilinos 10.0)
+ 
+  \image html intrepid.png
+
+  \section intro_sec Introduction
+
+  %Intrepid is a library of interoperable tools for compatible discretizations of
+  Partial Differential Equations (PDEs). Included with the Trilinos 10.0 release
+  is the &quot;<em>expert version</em>&quot; of %Intrepid. This version is intended
+  primarily for application developers who want to reuse large parts of their existing
+  code frameworks such as I/O, data structures, assembly routines, etc. while gaining
+  access to advanced discretization capabilities provided by %Intrepid. In such cases
+  the bulk of the data is owned and managed by the user rather than by %Intrepid.
+  To avoid unnecessary and possibly expensive copying of data to and from %Intrepid,
+  the expert version of the package comprises of mostly stateless classes operating on
+  user-owned data. Virtually all numerical data required by PDE codes can be represented
+  as a multi-dimensional array of scalar values. For this reason, and to enhance
+  interoprability, %Intrepid classes are templated on generic multi-dimensional arrays.
+  The <a href="http://trilinos.sandia.gov/packages/shards/">Shards</a> package provides
+  an implementation of a multi-dimensional array that can be used for that purpose, or
+  users can write their own multi-dimensional arrays as long as a minimal interface
+  is supported.
+ 
+  \section overview_sec Overview
+
+  Current release of %Intrepid includes the following features:
+  \li Default finite element basis functions for <em>H(grad)</em>, <em>H(curl)</em>,
+       <em>H(div)</em> and <em>L2</em> spaces of orders up to 2 on standard cell
+       topologies in 1D, 2D and 3D</li>
+  \li High-order (up to 10) basis functions for <em>H(grad)</em>, <em>H(curl)</em>,
+       <em>H(div)</em> and <em>L2</em> spaces on select cell topologies</li>
+  \li Pullbacks (transformations) from reference coordinate frame of <em>H(grad)</em>,
+       <em>H(curl)</em>, <em>H(div)</em> and <em>L2</em> fields</li>
+  \li Pullbacks of gradient, curl and divergence of <em>H(grad)</em>, <em>H(curl)</em>,
+       <em>H(div)</em> fields</li>
+  \li Cubature rules of orders up to 20 on most standard 1D, 2D and 3D cell topologies</li>
+  \li Implementation of multi-diumensional arrays and algebraic operations on them</li>
+  \li Examples showing solution of basic 2nd order elliptic boundary value problems
+       (Poisson, div-curl, and curl-curl systems) using %Intrepid</li>
+
+  \section quickstart_sec Quick Start
+
+  Familiarity with with the following concepts, objects, and tools is required:
+  \li <a href="http://trilinos.sandia.gov/packages/shards/">Shards</a> cell topologies,
+  \li numerical integration / Intrepid::Cubature,
+  \li discrete (e.g. finite element) bases / Intrepid::Basis / \ref basis_page,
+  \li multi-dimensional arrays / Intrepid::FieldContainer / \ref md_array_page,
+  \li cell mappings and transformations / Intrepid::CellTools / \ref cell_tools_page, and
+  \li function mappings (pullbacks) / Intrepid::FunctionSpaceTools / \ref function_space_tools_page.
+
+  The following example demonstrates, in 7 steps, the computation of finite element
+  stiffness matrices on a set of tetrahedral cells using a piecewise linear basis
+  and an appropriate integration rule.
+
+  \subsection topo_qs_sec Step 1: Select a cell topology
+  
+  \code
+      shards::CellTopology cellType = shards::getCellTopologyData< shards::Tetrahedron<> >(); // cell type: tetrahedron
+      int spaceDim = cellType->getDimension();                                                // retrieve spatial dimension
+      int numNodes = cellType->getNodeCount();                                                // retrieve number of 0-cells (nodes)
+  \endcode
+
+  We additionally set the number of computational cells \c numCells.
+
+
+  \subsection integration_qs_sec Step 2: Select integration (cubature) rule
+
+  \code
+      DefaultCubatureFactory<double> cubFactory;                                              // create cubature factory
+      int cubDegree = 2;                                                                      // set cubature degree, e.g. 2
+      Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);         // create default cubature
+      int numCubPoints = myCub->getNumPoints();                                               // retrieve number of cubature points
+  \endcode
+
+
+  \subsection bases_qs_sec Step 3: Select discrete basis
+  
+  \code
+      Basis_HGRAD_TET_C1_FEM<double, FieldContainer<double> > tetBasis;                       // create tet basis
+      int numFields = tetBasis.getCardinality();                                              // get basis cardinality
+  \endcode
+
+
+  \subsection mdarray_qs_sec Step 4: Format multi-dimensional arrays
+
+  \code
+      FieldContainer<double> cub_points(numCubPoints, spaceDim);
+      FieldContainer<double> cub_weights(numCubPoints);
+
+      FieldContainer<double> cell_nodes(numCells, numNodes, spaceDim);
+
+      FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
+      FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
+      FieldContainer<double> jacobian_det(numCells, numCubPoints);
+      FieldContainer<double> weighted_measure(numCells, numCubPoints);
+
+      FieldContainer<double> grad_at_cub_points(numFields, numCubPoints, spaceDim);
+      FieldContainer<double> transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
+      FieldContainer<double> weighted_transformed_grad_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
+      FieldContainer<double> stiffness_matrices(numCells, numFields, numFields);
+  \endcode
+
+  We assume that the array \c cell_nodes is filled with nodes defining a set of computational (physical) cells.
+
+  \subsection tabulate_qs_sec Step 5: Evaluate differential operator applied to basis at cubature points 
+
+  \code
+      myCub->getCubature(cub_points, cub_weights);                                          // retrieve cubature points and weights
+      tetBasis.getValues(grad_at_cub_points, cub_points, OPERATOR_GRAD);                    // evaluate grad operator at cubature points
+  \endcode
+
+
+  \subsection ct_qs_sec Step 6: Apply cell tools
+
+  \code
+      CellTools<double>::setJacobian(jacobian, cub_points, cell_nodes, cellType);           // compute cell Jacobians
+      CellTools<double>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
+      CellTools<double>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
+  \endcode
+
+
+  \subsection fst_qs_sec Step 7: Apply function space tools
+
+  \code
+      FunctionSpaceTools::computeCellMeasure<double>(weighted_measure,                      // compute weighted cell measure
+                                                     jacobian_det,
+                                                     cub_weights);
+      FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_grad_at_cub_points,        // transform reference gradients into physical space
+                                                     jacobian_inv,
+                                                     grad_at_cub_points);
+      FunctionSpaceTools::multiplyMeasure<double>(weighted_transformed_grad_at_cub_points,  // multiply with weighted measure
+                                                  weighted_measure,
+                                                  transformed_grad_at_cub_points);
+      FunctionSpaceTools::integrate<double>(stiffness_matrices,                             // compute stiffness matrices
+                                            transformed_grad_at_cub_points,
+                                            weighted_transformed_grad_at_cub_points,
+                                            COMP_CPP);
+  \endcode
+
+  The computed (local) stiffness matrices can now be used in the assembly of a (global)
+  discrete differential operator, e.g. a discrete Laplacian.
+
+  \subsection doen_qs_sec Done!
+
+
+  \section devplans_sec Development Plans
+
+  The next release of %Intrepid is expected to support Finite Difference and Finite Volume
+  discretizations on standard and non-standard (polygon and polyhedron) cell topologies.
+  A &quot;<em>user-friendly</em>&quot; version for rapid development of PDE codes is also
+  under development.
+*/
+  
+
 #endif
