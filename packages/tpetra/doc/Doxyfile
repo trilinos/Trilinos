@@ -31,7 +31,7 @@ PROJECT_NAME           = "Tpetra Matrix/Vector Services"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version 1.3"
+PROJECT_NUMBER         = "Version 2.0"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
