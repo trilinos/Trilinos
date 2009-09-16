@@ -19,9 +19,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
-  "-D TPL_ENABLE_Pthread:BOOL=ON"
-  "-D TPL_ENABLE_Boost:BOOL=ON"
-  "-D Boost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
+  "-DTPL_ENABLE_Pthread:BOOL=ON"
+  "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
   )
 
 #
