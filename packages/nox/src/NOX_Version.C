@@ -39,5 +39,5 @@
 #include "NOX_Version.H"
 
 string NOX::version() { 
-  return("NOX Version 4.0-dev - 03/01/2005"); 
+  return("NOX Version 10.0 - 09/16/2009"); 
 }
