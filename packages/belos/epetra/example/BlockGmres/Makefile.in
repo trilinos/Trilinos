@@ -66,12 +66,12 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = BlockGmresEpetraExFile$(EXEEXT) \
-@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	BlockGmresPolyEpetraExFile$(EXEEXT) \
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	PseudoBlockGmresEpetraExFile$(EXEEXT) \
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 @BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = BlockPrecGmresEpetraExFile$(EXEEXT) \
 @BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	BlockFlexGmresEpetraExFile$(EXEEXT) \
-@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	PseudoBlockPrecGmresEpetraExFile$(EXEEXT)
+@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	PseudoBlockPrecGmresEpetraExFile$(EXEEXT) \
+@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	BlockGmresPolyEpetraExFile$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockFlexGmresEpetraExFile_OBJECTS = BlockFlexGmresEpetraExFile-BlockFlexGmresEpetraExFile.$(OBJEXT)
 BlockFlexGmresEpetraExFile_OBJECTS =  \
@@ -261,8 +261,8 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile BlockFlexGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile
-@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile BlockGmresPolyEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
+@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile BlockFlexGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile BlockGmresPolyEpetraExFile
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
 Dummy_SOURCES = Dummy
 BlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/BlockPrecGmresEpetraExFile.cpp 
 BlockFlexGmresEpetraExFile_SOURCES = $(srcdir)/BlockFlexGmresEpetraExFile.cpp 
