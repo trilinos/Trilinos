@@ -36,7 +36,7 @@ SPPR_HEAD 		=
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
-MPI_LIB			= 
+MPI_LIBS			= 
 MPI_LIBPATH		=
 
 #PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m32/ParMETIS3_1

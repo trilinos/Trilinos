@@ -39,7 +39,7 @@ SPPR_HEAD 		= spprinc.most
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
-MPI_LIB			= -lmpich -lpthread
+MPI_LIBS			= -lmpich -lpthread
 MPI_LIBPATH		= -L/usr/local/lib
 MPI_INCPATH		= -L/usr/local/include
 

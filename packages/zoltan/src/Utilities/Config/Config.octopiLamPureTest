@@ -115,12 +115,12 @@ CFLAGS 			= $(DBG_FLAGS)
 F90			= gfortran
 
 MPI_INCPATH	= $(shell /opt/lam714-gcc346-pure/bin/mpicc --showme:compile)
-MPI_LIB		= $(shell /opt/lam714-gcc346-pure/bin/mpicc --showme:link)
+MPI_LIBS		= $(shell /opt/lam714-gcc346-pure/bin/mpicc --showme:link)
 MPI_LIBPATH	= 
 
 # Some users have needed these libraries.  If your linker can't find getarg or
 # iargc, uncomment these paths and try again.
-#MPI_LIB = -lg2c
+#MPI_LIBS = -lg2c
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
 PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/lam/ParMETIS3 

@@ -46,7 +46,7 @@ F90_MODULE_PREFIX       = -M
 FARG                    = farg_typical
 
 MPI_INCPATH		= -I../../siMPI -I../../../siMPI
-MPI_LIB			= -lsiMPI
+MPI_LIBS			= -lsiMPI
 MPI_LIBPATH		= -L../../siMPI -L../../../siMPI
 
 PARMETIS_LIBPATH 	= -L../../ParMETIS3_1

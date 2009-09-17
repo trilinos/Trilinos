@@ -38,7 +38,7 @@ SPPR_HEAD 		= spprinc.most
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
-MPI_LIB			= 
+MPI_LIBS			= 
 MPI_LIBPATH		=
 MPI_INCPATH		=
 

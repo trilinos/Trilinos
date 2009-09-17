@@ -44,7 +44,7 @@ SPPR_HEAD               = spprinc.most
 F90_MODULE_PREFIX       = -M
 FARG                    = farg_typical
 
-MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
+MPI_LIBS			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
                   -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
 

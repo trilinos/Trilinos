@@ -132,7 +132,7 @@ FARG      		= farg_typical
 ##############################################################################
 
 # MPI Libraries (prefix all libraries with -l) 
-MPI_LIB			= 
+MPI_LIBS			= 
 # Paths to the MPI libraries (prefix all paths with -L).
 MPI_LIBPATH		=
 # Paths to the MPI include files (prefix all paths with -I).

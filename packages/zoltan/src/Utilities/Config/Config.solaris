@@ -44,7 +44,7 @@ SPPR_HEAD               = spprinc.most
 F90_MODULE_PREFIX       = -M
 FARG                    = farg_typical
 
-MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lc
+MPI_LIBS			= -lpmpich -lmpich -lsocket -lnsl -laio -lc
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib 
 
 #PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS2

@@ -40,7 +40,7 @@ SPPR_HEAD 		= spprinc.most
 F90_MODULE_PREFIX 	= -M
 FARG      		= farg_typical
 
-MPI_LIB			= -lmpich -lpmpich -lsocket -lnsl -laio -lgcc -lrt
+MPI_LIBS			= -lmpich -lpmpich -lsocket -lnsl -laio -lgcc -lrt
 MPI_LIBPATH		= -L/Net/proj/zoltan/arch/solaris-m64/lib
 #                  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
 
