@@ -22,7 +22,8 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+//                    Denis Ridzal (dridzal@sandia.gov)
+//                    Kara Peterson (kjpeter@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -54,10 +55,12 @@ int main(int argc, char *argv[]) {
   << "|     1) Using shards::CellTopology to get cell types and topology            |\n" \
   << "|     2) Using CellTools to get cell Jacobians and their inverses and dets    |\n" \
   << "|     3) Testing points for inclusion in reference and physical cells         |\n" \
-  << "|     4) Mapping points to and from reference cells                           |\n" \
+  << "|     4) Mapping points to and from reference cells with base and extended    |\n" \
+  << "|        topologies.                                                          |\n" \
   << "|                                                                             |\n" \
   << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+  << "|                      Denis Ridzal (dridzal@sandia.gov)                      |\n" \
+  << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
   << "|                                                                             |\n" \
   << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
   << "|  Shards's website:   http://trilinos.sandia.gov/packages/shards             |\n" \
@@ -153,8 +156,8 @@ int main(int argc, char *argv[]) {
   std::cout <<"\n";
   
   // Finally, get all shards cell topologies and print them!
-  std::cout << "Number of all Shards cell topologies = " << shardsTopologies.size() << "\n\n";
   shards::getTopologies(shardsTopologies);
+  std::cout << "Number of all Shards cell topologies = " << shardsTopologies.size() << "\n\n";
   for(unsigned i = 0; i < shardsTopologies.size(); i++){
     std::cout << shardsTopologies[i] << "\n"; 
   }
@@ -293,8 +296,6 @@ hexNodes(0,4,0) = 1.25;   hexNodes(0,4,1) = 0.75;   hexNodes(0,4,2) = 0.75;
 hexNodes(0,5,0) = 1.75;   hexNodes(0,5,1) = 1.00;   hexNodes(0,5,2) = 1.00;
 hexNodes(0,6,0) = 2.00;   hexNodes(0,6,1) = 2.00;   hexNodes(0,6,2) = 1.25;
 hexNodes(0,7,0) = 1.00;   hexNodes(0,7,1) = 2.00;   hexNodes(0,7,2) = 1.00;
-
-
 
 
 
@@ -510,10 +511,10 @@ for(int i0 = 0; i0 < six3DPoints.dimension(0); i0++){
 
 std::cout << std::setprecision(6) << "\n" \
 << "===============================================================================\n"\
-<< "| EXAMPLE 4-B: Using pointwise inclusion test method for physical cells       |\n"\
+<< "| EXAMPLE 4-B: Pointwise inclusion test for a physical cell in cell workset   |\n"\
 << "===============================================================================\n";
 
-// Rank-2 array for 5 2D physical points and rank-1 array for the test results
+// Rank-2 array for a single set of 5 2D physical points and rank-1 array for the test results
 FieldContainer<double>  fivePoints(5,2);
 FieldContainer<int> testFivePoints(5);
 
@@ -524,7 +525,7 @@ fivePoints(2, 0) = 3.5 ;   fivePoints(2, 1) = 1.9 ;       // out
 fivePoints(3, 0) = 2.5 ;   fivePoints(3, 1) = 1.0 ;       // in
 fivePoints(4, 0) = 2.75;   fivePoints(4, 1) = 2.0 ;       // out
 
-CellTools::checkPointwiseInclusion(testFivePoints, fivePoints, triNodes, 3, triangle_3);
+CellTools::checkPointwiseInclusion(testFivePoints, fivePoints, triNodes, triangle_3,  3);
 
 std::cout << " Vertices of Triangle #3: \n" 
 << "\t(" << triNodes(3, 0, 0) << ", " << triNodes(3, 0, 1) << ")\n"
@@ -544,6 +545,62 @@ for(int i1 = 0; i1 < fivePoints.dimension(0); i1++) {
   }
 }
 std::cout << "\n";
+
+
+
+std::cout << std::setprecision(6) << "\n" \
+<< "===============================================================================\n"\
+<< "| EXAMPLE 4-C: Pointwise inclusion test for all physical cells in cell workset|\n"\
+<< "===============================================================================\n";
+
+// Rank-3 array for 4 sets of 2 2D physical points and rank-2 array for the test results
+FieldContainer<double>  fourPointSets(4, 2, 2);
+FieldContainer<int> testFourSets(4, 2);
+
+// 1st point set - will be tested for inclusion in Triangle #0
+fourPointSets(0, 0, 0) = 0.25;     fourPointSets(0, 0, 1) = 0.75;       // in
+fourPointSets(0, 1, 0) = 0.00;     fourPointSets(0, 1, 1) =-0.01;       // out
+
+// 2nd point set - will be tested for inclusion in Triangle #1
+fourPointSets(1, 0, 0) = 1.50;     fourPointSets(1, 0, 1) = 1.50;       // in
+fourPointSets(1, 1, 0) = 0.99;     fourPointSets(1, 1, 1) = 1.50;       // out
+
+// 3rd point set - will be tested for inclusion in Triangle #2
+fourPointSets(2, 0, 0) =-0.25;     fourPointSets(2, 0, 1) = 0.70;       // in
+fourPointSets(2, 1, 0) = 0.0001;   fourPointSets(2, 1, 1) = 0.50;       // out
+
+// 4th point set - will be tested for inclusion in Triangle #3
+fourPointSets(3, 0, 0) = 3.00;     fourPointSets(3, 0, 1) = 1.00;       // in
+fourPointSets(3, 1, 0) = 3.50;     fourPointSets(3, 1, 1) = 0.50;       // out
+
+CellTools::checkPointwiseInclusion(testFourSets, fourPointSets, triNodes, triangle_3);
+
+for(int cell = 0; cell < triNodes.dimension(0); cell++){
+
+  std::cout << " Testing point set inclusion for Triangle #" << cell << " with vertices \n" 
+  << "\t(" << triNodes(cell, 0, 0) << ", " << triNodes(cell, 0, 1) << ")\n"
+  << "\t(" << triNodes(cell, 1, 0) << ", " << triNodes(cell, 1, 1) << ")\n"
+  << "\t(" << triNodes(cell, 1, 0) << ", " << triNodes(cell, 1, 1) << ")\n"
+  << " Results for physical point set indexed by the cell ordinal  " << cell << " \n\n";
+  
+  for(int i1 = 0; i1 < fourPointSets.dimension(1); i1++) {
+    std::cout << " point(" << i1 << ") = (" 
+    << std::setw(13) << std::right << fourPointSets(cell, i1, 0) << "," 
+    << std::setw(13) << std::right << fourPointSets(cell, i1, 1) << ") ";
+    if( testFourSets(cell, i1) ) {
+      std::cout << " is inside  Triangle #" << cell << " \n";
+    }
+    else{
+      std::cout << " is outside Triangle #" << cell << " \n";
+    }
+  }
+  if(cell < triNodes.dimension(0) - 1) {
+    std::cout << "-------------------------------------------------------------------------------\n";
+  }
+  else{
+    std::cout <<" \n"; 
+  }
+}// cell
 
 
 
@@ -574,7 +631,7 @@ else{
 
 std::cout << std::setprecision(4) << "\n" \
 << "===============================================================================\n"\
-<< "| EXAMPLE 6: mapping to physical cells with base topology                     |\n"\
+<< "| EXAMPLE 6: mapping a single point set to physical cells with base topology  |\n"\
 << "===============================================================================\n";
 
 // Rank-3 array with dimensions (P, D) for points on the reference triangle
@@ -607,55 +664,82 @@ for(int cell = 0; cell < triNodes.dimension(0); cell++){
 
 std::cout << std::setprecision(4) << "\n" \
 << "===============================================================================\n"\
-<< "| EXAMPLE 7: mapping to physical cells with extended topologies               |\n"\
+<< "| EXAMPLE 7: mapping a single point set to physical cells with ext. topology  |\n"\
 << "===============================================================================\n";
 /*
- * This example illustrates the mapping for a triangle with curved sides. This triangle
- * is defined as follows:
- * - edge 0 starts at (0,0), ends at (1, -1/2) and lies on the parabola y = -1/2 x^2
- * - edge 1 is vertical line from(1, -1/2) to (1,1)
- * - edge 2 starts at (1,1), ends at (0,0) and lies on the parabola y = x^2
- * This triangle can be specified using 6 nodes. Therefore, to define mapping to this triangle we
- * need to use Triangle<6> for its topology
+ *  This example illustrates reference-to-physical mapping for a triangle with curved sides. The
+ *  physical curved triangle is defined as follows:
+ *
+ *    - edge 0: starts at (1, -1/2) ends at (1,1)     and is a vertical line segment
+ *    - edge 1: starts at (1,1)     ends at (0,0)     and is parabolic segment lying on y=x^2
+ *    - edge 2: starts at (0,0)     ends at (1,-1/2)  and is parabolic segment lying on y = -1/2 x^2
+ * 
+ *  The triangle is uniquely specified by its 3 vertices and 3 edge points. Therefore, to compute the
+ *  map from reference to physical coordinates we specify Triangle<6> topology.
  */
 
-// Array with the 6 nodes of the physical Triangle<6> in (C,V,D) format
+// A (C,V,D) array with the 6 nodes of the physical Triangle<6>
 FieldContainer<double> tri6Nodes(1,6,2);
-tri6Nodes(0,0,0) = 0.0;    tri6Nodes(0,0,1) =  0.0;
-tri6Nodes(0,1,0) = 1.0;    tri6Nodes(0,1,1) = -0.5;
-tri6Nodes(0,2,0) = 1.0;    tri6Nodes(0,2,1) =  1.0;
+tri6Nodes(0,0,0) = 1.0;    tri6Nodes(0,0,1) = -0.5;
+tri6Nodes(0,1,0) = 1.0;    tri6Nodes(0,1,1) =  1.0;
+tri6Nodes(0,2,0) = 0.0;    tri6Nodes(0,2,1) =  0.0;
 
-tri6Nodes(0,3,0) = 0.5;    tri6Nodes(0,3,1) = -0.125;
-tri6Nodes(0,4,0) = 1.0;    tri6Nodes(0,4,1) =  0.0;
-tri6Nodes(0,5,0) = 0.5;    tri6Nodes(0,5,1) =  0.25;
+tri6Nodes(0,3,0) = 1.0;    tri6Nodes(0,3,1) =  0.0;
+tri6Nodes(0,4,0) = 0.5;    tri6Nodes(0,4,1) =  0.25;
+tri6Nodes(0,5,0) = 0.5;    tri6Nodes(0,5,1) = -0.125;
 
-// Array with the 6 nodes of the reference Triangle<6> plus some extra points
-FieldContainer<double> ref6Points(9,2);
-ref6Points(0,0) = 0.0;    ref6Points(0,1) =  0.0;
-ref6Points(1,0) = 1.0;    ref6Points(1,1) =  0.0;
-ref6Points(2,0) = 0.0;    ref6Points(2,1) =  1.0;
+// A (P, D) array with the 6 nodes of the reference Triangle<6> plus some extra points
+FieldContainer<double> refTri6Points(9,2);
+refTri6Points(0,0) = 0.0;    refTri6Points(0,1) =  0.0;
+refTri6Points(1,0) = 1.0;    refTri6Points(1,1) =  0.0;
+refTri6Points(2,0) = 0.0;    refTri6Points(2,1) =  1.0;
 
-ref6Points(3,0) = 0.5;    ref6Points(3,1) =  0.0;
-ref6Points(4,0) = 0.5;    ref6Points(4,1) =  0.5;
-ref6Points(5,0) = 0.0;    ref6Points(5,1) =  0.5;
+refTri6Points(3,0) = 0.5;    refTri6Points(3,1) =  0.0;
+refTri6Points(4,0) = 0.5;    refTri6Points(4,1) =  0.5;
+refTri6Points(5,0) = 0.0;    refTri6Points(5,1) =  0.5;
 
-ref6Points(6,0) = 0.75;   ref6Points(6,1) =  0.0;      // on ref edge 0
-ref6Points(7,0) = 0.25;   ref6Points(7,1) =  0.75;     // on ref edge 1
-ref6Points(8,0) = 0.00;   ref6Points(8,1) =  0.25;     // on ref edge 2
+refTri6Points(6,0) = 0.75;   refTri6Points(6,1) =  0.0;               // on ref edge 0
+refTri6Points(7,0) = 0.25;   refTri6Points(7,1) =  0.75;              // on ref edge 1
+refTri6Points(8,0) = 0.00;   refTri6Points(8,1) =  0.25;              // on ref edge 2
 
-CellTopology tri_6(shards::getCellTopologyData<Triangle<6> >() );
+// A (C,P,D) array for the images of the reference points in physical frame
+FieldContainer<double> physTri6Points(tri6Nodes.dimension(0),             // cell count
+                                      refTri6Points.dimension(0),         // point count
+                                      refTri6Points.dimension(1));        // point dimension (=2)
 
+// Define the cell topology: use the extended Triangle<6> topology to fit the curved edges
+CellTopology triangle_6(shards::getCellTopologyData<Triangle<6> >() );
 
+// 
+CellTools::mapToPhysicalFrame(physTri6Points, refTri6Points, tri6Nodes, triangle_6);
 
-
+for(int cell = 0; cell < tri6Nodes.dimension(0); cell++){
+  std::cout << "====== Triangle " << cell << " ====== \n";
+  for(int pt = 0; pt < refTri6Points.dimension(0); pt++){
+    std::cout 
+    <<  "(" 
+    << std::setw(13) << std::right << refTri6Points(pt,0) << "," 
+    << std::setw(13) << std::right << refTri6Points(pt,1) << ") -> "
+    <<  "(" 
+    << std::setw(13) << std::right << physTri6Points(cell, pt, 0) << "," 
+    << std::setw(13) << std::right << physTri6Points(cell, pt, 1) << ") \n"; 
+  }
+  std::cout << "\n";
+}
 
 
 
 std::cout << "\n" \
 << "===============================================================================\n"\
-<< "| EXAMPLE 8: mapping to reference cells                                        |\n"\
+<< "| EXAMPLE 8: mapping a single physical point set to reference frame           |\n"\
 << "===============================================================================\n";
-
+/*
+ * This example shows use of mapToReferenceFrame with rank-2 array (P,D) of points in physical frame.
+ * Points are mapped back to reference frame using the mapping for one of the physical cells whose
+ * nodes are passed as an argument. Therefore, this use case requires a valid cell ordinal (relative
+ * to the nodes array) to be specified. The output array for the images of the points is also rank-2 (P,D).
+ *
+ */
 // Rank-2 arrays with dimensions (P, D) for physical points and their preimages
 FieldContainer<double> physPoints(5, triangle_3.getDimension() ); 
 FieldContainer<double> preImages (5, triangle_3.getDimension() ); 
@@ -670,13 +754,14 @@ physPoints(3,0) = 3.0;                    physPoints(3,1) = 1.0;
 physPoints(4,0) = 2.5;                    physPoints(4,1) = 1.1;
 
 
-// Map physical points from triangle 3 to the reference triangle
-CellTools::mapToReferenceFrame(preImages, physPoints, triNodes, triangle_3, 3  );
+// Map physical points from triangle 3 to the reference frame
+int whichCell = 3;
+CellTools::mapToReferenceFrame(preImages, physPoints, triNodes, triangle_3, whichCell  );
 
-std::cout << " Mapping from Triangle #3 with vertices: \n" 
-<< "\t(" << triNodes(3, 0, 0) << ", " << triNodes(3, 0, 1) << ")\n"
-<< "\t(" << triNodes(3, 1, 0) << ", " << triNodes(3, 1, 1) << ")\n"
-<< "\t(" << triNodes(3, 1, 0) << ", " << triNodes(3, 1, 1) << ")\n\n"
+std::cout << " Mapping from Triangle #"<< whichCell << " with vertices: \n" 
+<< "\t(" << triNodes(whichCell, 0, 0) << ", " << triNodes(whichCell, 0, 1) << ")\n"
+<< "\t(" << triNodes(whichCell, 1, 0) << ", " << triNodes(whichCell, 1, 1) << ")\n"
+<< "\t(" << triNodes(whichCell, 1, 0) << ", " << triNodes(whichCell, 1, 1) << ")\n\n"
 << " Physical points and their reference cell preimages: \n";
 
 for(int pt = 0; pt < physPoints.dimension(0); pt++){
@@ -691,7 +776,7 @@ std::cout << "\n";
 
 // As a check, map pre-images back to Triangle #3
 FieldContainer<double> images(5, triangle_3.getDimension() );
-CellTools::mapToPhysicalFrame(images, preImages, triNodes, triangle_3, 3);
+CellTools::mapToPhysicalFrame(images, preImages, triNodes, triangle_3, whichCell);
 
 std::cout << " Check: map preimages back to Triangle #3: \n"; 
 for(int pt = 0; pt < images.dimension(0); pt++){
@@ -705,8 +790,75 @@ for(int pt = 0; pt < images.dimension(0); pt++){
 std::cout << "\n";
 
 
+std::cout << "\n" \
+<< "===============================================================================\n"\
+<< "| EXAMPLE 9: mapping physical point sets on a cell workset to reference frame |\n"\
+<< "===============================================================================\n";
+/*
+ * This example shows use of mapToReferenceFrame with rank-3 array (C,P,D) of points in physical frame.
+ * For each cell ordinal (relative to the nodes array), the associated point set is mapped back to 
+ * reference frame using the mapping corresponding to the physical cell with that ordinal. This use case
+ * requires the default value -1 for the cell ordinal. The output array for the images of the points 
+ * is also rank-3 (C,P,D).
+ *
+ */
+// Rank-3 arrays with dimensions (C, P, D) for physical points and their preimages
+FieldContainer<double> physPointSets(triNodes.dimension(0), 2, triangle_3.getDimension() ); 
+FieldContainer<double> preImageSets (triNodes.dimension(0), 2, triangle_3.getDimension() ); 
+
+// Point set on Triangle #0
+physPointSets(0,0,0) = 0.25; physPointSets(0,0,1) = 0.25; 
+physPointSets(0,1,0) = 0.50; physPointSets(0,1,1) = 0.50; 
+
+// Point set on Triangle #1
+physPointSets(1,0,0) = 1.00; physPointSets(1,0,1) = 1.00; 
+physPointSets(1,1,0) = 1.25; physPointSets(1,1,1) = 1.75; 
+
+// Point set on Triangle #2
+physPointSets(2,0,0) =-0.25; physPointSets(2,0,1) = 0.25; 
+physPointSets(2,1,0) =-0.50; physPointSets(2,1,1) = 0.50; 
+
+// Point set on Triangle #3
+physPointSets(3,0,0) = 3.00; physPointSets(3,0,1) = 1.00; 
+physPointSets(3,1,0) = 2.00; physPointSets(3,1,1) = 1.00; 
 
 
+// Map physical point sets to reference frame: requires default value of cell ordinal (skip last arg)
+CellTools::mapToReferenceFrame(preImageSets, physPointSets, triNodes, triangle_3);
+
+for(int cell = 0; cell < triNodes.dimension(0); cell++){
+  std::cout << "====== Triangle " << cell << " ====== \n";
+  for(int pt = 0; pt < physPointSets.dimension(1); pt++){
+    std::cout 
+    <<  "(" 
+    << std::setw(13) << std::right << physPointSets(cell, pt, 0) << "," 
+    << std::setw(13) << std::right << physPointSets(cell, pt, 1) << ") -> "
+    <<  "(" 
+    << std::setw(13) << std::right << preImageSets(cell, pt, 0) << "," 
+    << std::setw(13) << std::right << preImageSets(cell, pt, 1) << ") \n"; 
+  }
+  std::cout << "\n";
+}
+  
+// As a check, map preImageSets back to physical frame
+FieldContainer<double> postImageSets(triNodes.dimension(0), 2, triangle_3.getDimension() );
+
+CellTools::mapToPhysicalFrame(postImageSets, preImageSets, triNodes, triangle_3);
+
+std::cout << " Check: map preimages back to Triangles: \n"; 
+for(int cell = 0; cell < triNodes.dimension(0); cell++){
+  std::cout << "====== Triangle " << cell << " ====== \n";
+  for(int pt = 0; pt < preImageSets.dimension(1); pt++){
+    std::cout 
+    <<  "(" 
+    << std::setw(13) << std::right << preImageSets(cell, pt, 0) << "," 
+    << std::setw(13) << std::right << preImageSets(cell, pt, 1) << ") -> "
+    <<  "(" 
+    << std::setw(13) << std::right << postImageSets(cell, pt, 0) << "," 
+    << std::setw(13) << std::right << postImageSets(cell, pt, 1) << ") \n"; 
+  }
+  std::cout << "\n";
+}
 
 return 0;
 }

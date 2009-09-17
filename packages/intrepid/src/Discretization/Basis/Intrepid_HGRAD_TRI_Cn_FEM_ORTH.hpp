@@ -46,22 +46,6 @@ namespace Intrepid {
             arbitrary degree on triangle.
   
     \remarks
-     \li DefaultBasisFactory will select this class if the following parameters are specified:
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_HIERARCHICAL           |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
 
     \li   All degrees of freedom are considered to be internal (ie not assembled)
   */
@@ -126,14 +110,14 @@ public:
       of the basis functions at inputPoints into outputValues.
       
       \param      [out] outputValues - rank 2 (if derivOrder == 0) or rank 3
-                                       array holding the result
+                                      array holding the result
       \param      [in]  deg - the degree up to which to tabulate the bases
-      \param	  [in] inputPoints - a rank 2 array containing the
-		                     points at which to evaluate the basis functions.
-   */
+      \param      [in] inputPoints - a rank 2 array containing the
+                                    points at which to evaluate the basis functions.
+  */
   static void tabulate( ArrayScalar & outputValues ,
-			const int deg ,
-			const ArrayScalar &inputPoints );
+                        const int deg ,
+                        const ArrayScalar &inputPoints );
 };
 
 
@@ -149,14 +133,14 @@ public:
   /** \brief basic tabulate mathod evaluates the basis functions at inputPoints into outputValues. 
       
       \param      [out] outputValues - rank 2 array (F,P) holding
-                                       the basis functions at points.
-		  [in]  deg - the degree up to which to tabulate the bases
-		  [in] inputPoints - a rank 2 array containing the
-		                     points at which to evaluate the basis functions.
-   */
+                                      the basis functions at points.
+                  [in]  deg - the degree up to which to tabulate the bases
+                  [in]  inputPoints - a rank 2 array containing the
+                                      points at which to evaluate the basis functions.
+  */
   static void tabulate( ArrayScalar & outputValues ,
-			const int deg ,
-			const ArrayScalar &inputPoints );
+                        const int deg ,
+                        const ArrayScalar &inputPoints );
     
 };
 
@@ -174,14 +158,14 @@ public:
       of the basis functions at inputPoints into outputValues.
       
       \param      [out] outputValues - rank 3 array (F,P,D) holding
-                                       the derivatives of basis functions at points.
-      \param	  [in]  deg - the degree up to which to tabulate the bases
-      \param	  [in] inputPoints - a rank 3 array containing the
-		                     points at which to evaluate the basis functions.
-   */
+                                      the derivatives of basis functions at points.
+      \param      [in]  deg - the degree up to which to tabulate the bases
+      \param      [in]  inputPoints - a rank 3 array containing the
+                                     points at which to evaluate the basis functions.
+  */
   static void tabulate( ArrayScalar & outputValues ,
-			const int deg ,
-			const ArrayScalar &inputPoints );
+                        const int deg ,
+                        const ArrayScalar &inputPoints );
     
 };
 

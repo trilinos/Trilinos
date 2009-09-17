@@ -47,10 +47,10 @@ using namespace Intrepid;
 
 
 /** \brief Tests for Lagrange basis on tets.  Tests Kronecker property of basis and basic execution
-           of differentiation and dof-tab lookup
+          of differentiation and dof-tab lookup
     \param argc [in] - number of command-line arguments
     \param argv [in] - command-line arguments
- */
+*/
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
     const int nbf = myBasis.getCardinality();
     FieldContainer<double> lattice( np_lattice , 3 );
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myBasis.getBaseCellTopology() , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_WARPBLEND );         
+                                                            myBasis.getBaseCellTopology() , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_WARPBLEND );         
     FieldContainer<double> vals( nbf , np_lattice );
 
     myBasis.getValues( vals , lattice , OPERATOR_VALUE );
@@ -109,17 +109,17 @@ int main(int argc, char *argv[]) {
     // test for Kronecker property
     for (int i=0;i<nbf;i++) {
       for (int j=0;j<np_lattice;j++) {
-	if ( i==j && std::abs( vals(i,j) - 1.0 ) > 100.0 * INTREPID_TOL ) {
-	  errorFlag++;
-	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-	  *outStream << " Basis function " << i << " does not have unit value at its node\n";
-	}
-	if ( i!=j && std::abs( vals(i,j) ) > 100.0 * INTREPID_TOL ) {
-	  errorFlag++;
-	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-	  *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
-	  *outStream << " Basis function value is " << vals(i,j) << "\n";
-	}
+        if ( i==j && std::abs( vals(i,j) - 1.0 ) > 100.0 * INTREPID_TOL ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not have unit value at its node\n";
+        }
+        if ( i!=j && std::abs( vals(i,j) ) > 100.0 * INTREPID_TOL ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
+          *outStream << " Basis function value is " << vals(i,j) << "\n";
+        }
       }
     }
   }
@@ -135,13 +135,13 @@ int main(int argc, char *argv[]) {
     for (unsigned d=0;d<dofdata.size();d++) {
       std::cout << "Dimension " << d << "\n";
       for (unsigned f=0;f<dofdata[d].size();f++) {
-	std::cout << "\tFacet number " << f << "\n";
-	std::cout << "\t\tDOFS:\n";
-	for (unsigned n=0;n<dofdata[d][f].size();n++) {
-	  if ( dofdata[d][f][n] >= 0 ) {
-	    std::cout << "\t\t\t" << dofdata[d][f][n] << "\n";
-	  }
-	}
+        std::cout << "\tFacet number " << f << "\n";
+        std::cout << "\t\tDOFS:\n";
+        for (unsigned n=0;n<dofdata[d][f].size();n++) {
+          if ( dofdata[d][f][n] >= 0 ) {
+            std::cout << "\t\t\t" << dofdata[d][f][n] << "\n";
+          }
+        }
       }
     }
   }
@@ -159,10 +159,10 @@ int main(int argc, char *argv[]) {
     const int nbf = myBasis.getCardinality();
     FieldContainer<double> lattice( np_lattice , 3 );
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myBasis.getBaseCellTopology() , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_EQUISPACED );         
+                                                            myBasis.getBaseCellTopology() , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_EQUISPACED );         
     FieldContainer<double> vals( nbf , np_lattice , 3 );
 
     myBasis.getValues( vals , lattice , OPERATOR_GRAD );

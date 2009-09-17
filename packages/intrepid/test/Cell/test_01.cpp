@@ -102,8 +102,9 @@ int main(int argc, char *argv[]) {
     << "|     3) Edge tangents                                                        |\n" \
     << "|     4) Face tangents and normals                                            |\n" \
     << "|                                                                             |\n" \
-    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov)                      |\n" \
+    << "|                      Denis Ridzal (dridzal@sandia.gov), or                  |\n" \
+    << "|                      Kara Peterson (kjpeter@sandia.gov)                     |\n" \
     << "|                                                                             |\n" \
     << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
     << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \

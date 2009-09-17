@@ -21,8 +21,9 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Pavel Bochev (pbboche@sandia.gov) or
-//                    Denis Ridzal (dridzal@sandia.gov).
+// Questions? Contact Pavel Bochev  (pbboche@sandia.gov)
+//                    Denis Ridzal  (dridzal@sandia.gov), or
+//                    Kara Peterson (kjpeter@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -63,30 +64,6 @@
 
 namespace Intrepid {
   
-  //============================================================================================//
-  //                                                                                            //
-  //                                    Forward declarations                                    //
-  //                                                                                            //
-  //============================================================================================//
-  
-  template<class Scalar, class ArrayScalar>
-  class Basis;
-
-  template<class Scalar, class ArrayScalar>
-  class Basis_HGRAD_TRI_C1_FEM;
-  
-  template<class Scalar, class ArrayScalar>
-  class Basis_HGRAD_QUAD_C1_FEM;
-  
-  template<class Scalar, class ArrayScalar>
-  class Basis_HGRAD_TET_C1_FEM;
-  
-  template<class Scalar, class ArrayScalar>
-  class Basis_HGRAD_WEDGE_C1_FEM;
-
-  template<class Scalar, class ArrayScalar>
-  class Basis_HGRAD_HEX_C1_FEM;
-
   
   //============================================================================================//
   //                                                                                            //
@@ -95,10 +72,10 @@ namespace Intrepid {
   //============================================================================================//
   
 /** \class  Intrepid::CellTools
-    \brief  A stateless class for operations on cell data. Provides methods for 
-    \li     computing Jacobians of reference-to-frame mappings, their inverses and determinants    
+    \brief  A stateless class for operations on cell data. Provides methods for:
+    \li     computing Jacobians of reference-to-physical frame mappings, their inverses and determinants    
     \li     application of the reference-to-physical frame mapping and its inverse
-    \li     parametrizations of edges and faces of reference cells needed for edge and face integrals
+    \li     parametrizations of edges and faces of reference cells needed for edge and face integrals,
     \li     computation of edge and face tangents and face normals on both reference and physical frames
     \li     inclusion tests for point sets in reference and physical cells.  
 */
@@ -114,8 +91,10 @@ private:
   
   
   /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
-              of a reference cell topology. See CellTools<Scalar>::setSubcellParametrization and 
-              Section \ref sec_cell_topology_subcell_map more information about parametrization maps.
+              of a reference cell topology. 
+  
+              See CellTools<Scalar>::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map 
+              more information about parametrization maps.
    
       \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
       \param  parentCell        [in]  - topology of the reference cell owning the subcells
@@ -132,8 +111,8 @@ private:
               topologies with reference cells. 
   
               Given an edge {V0, V1} of some reference cell, its parametrization is a mapping from
-              [-1,1] onto the edge. Parametrization of triangular face {V0,V1,V2} is mapping from
-              the standard 2-simplex {(0,0,0), (1,0,0), (0,1,0)}, embedded in 3D onto the face. 
+              [-1,1] onto the edge. Parametrization of a triangular face {V0,V1,V2} is mapping from
+              the standard 2-simplex {(0,0,0), (1,0,0), (0,1,0)}, embedded in 3D onto that face. 
               Parametrization of a quadrilateral face {V0,V1,V2,V3} is mapping from the standard 
               2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)}, embedded in 3D, onto that face.  
   
@@ -143,19 +122,20 @@ private:
               and normal directions implied by the vertex order of the edge or the face relative to
               the reference cell:
   
-      \li     the unit tangent (0,1) on [-1,1] is mapped to a unit tangent in direction of (V0,V1)
-              (the forward direction of the edge determined by its start and end vertices)
+      \li     the tangent on [-1,1] from -1 in the direction of 1 is mapped to a tangent on edge {V0,V1}
+              from V0 in the direction of V1  (the forward direction of the edge determined by its 
+              start and end vertices)
   
-      \li     the unit normal (0,0,1) to the standard 2-simplex {(0,0,0),(1,0,0),(0,1,0)} and 
-              the standard 2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)} is mapped to the unit normal
+      \li     the normal in the direction of (0,0,1) to the standard 2-simplex {(0,0,0),(1,0,0),(0,1,0)} 
+              and the standard 2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)} is mapped to a normal
               on {V0,V1,V2} and {V0,V1,V2,V3}, determined according to the right-hand rule 
               (see http://mathworld.wolfram.com/Right-HandRule.html for definition of right-hand rule
-               and Section \ref Section sec_cell_topology_subcell_map for further details).
+              and Section \ref Section sec_cell_topology_subcell_map for further details).
   
               Because faces of all reference cells supported in Intrepid are affine images of either
               the standard 2-simplex or the standard 2-cube, the coordinate functions of the respective
               parmetrization maps are linear polynomials in the parameter variables (u,v), i.e., they
-              are of the form F_i(u,v) = C_0(i) + C_1(i) + C_2(i)v;  0<= i < 3 (face parametrizations
+              are of the form \c F_i(u,v)=C_0(i)+C_1(i)u+C_2(i)v;  \c 0<=i<3 (face parametrizations
               are supported only for 3D cells, thus parametrization maps have 3 coordinate functions).   
               As a result, application of these maps is independent of the face type which is convenient
               for cells such as Wedge or Pyramid that have both types of faces. Also, coefficients of
@@ -178,17 +158,18 @@ private:
   
   /** \brief  Validates arguments to Intrepid::CellTools::setJacobian
       \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
-      \param  points            [in]  - rank-2 (P,D) array required
-      \param  nodes             [in]  - rank-3 (C,V,D) array required
+      \param  points            [in]  - rank-2 (P,D) or rank-3 (C,P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
       \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
   */
   template<class ArrayScalar>
-  static void setJacobianArgs(const ArrayScalar &          jacobian,
-                              const ArrayScalar &          points,
-                              const ArrayScalar &          nodes,
-                              const int &                  whichCell,
-                              const shards::CellTopology & cellTopo);
+  static void validateArguments_setJacobian(const ArrayScalar &          jacobian,
+                                            const ArrayScalar &          points,
+                                            const ArrayScalar &          cellWorkset,
+                                            const int &                  whichCell,
+                                            const shards::CellTopology & cellTopo);
+  
   
   
   /** \brief  Validates arguments to Intrepid::CellTools::setJacobianInv
@@ -196,8 +177,9 @@ private:
       \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
   */
   template<class ArrayScalar>
-    static void setJacobianInvArgs(const ArrayScalar &  jacobianInv,
-                                   const ArrayScalar &  jacobian);
+  static void validateArguments_setJacobianInv(const ArrayScalar &  jacobianInv,
+                                               const ArrayScalar &  jacobian);
+  
   
   
   /** \brief  Validates arguments to Intrepid::CellTools::setJacobianDet
@@ -205,53 +187,74 @@ private:
       \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
     */
   template<class ArrayScalar>
-    static void setJacobianDetArgs(const ArrayScalar &  jacobianDet,
-                                   const ArrayScalar &  jacobian);
+  static void validateArguments_setJacobianDetArgs(const ArrayScalar &  jacobianDet,
+                                                   const ArrayScalar &  jacobian);
+  
   
   
   /** \brief  Validates arguments to Intrepid::CellTools::mapToPhysicalFrame
       \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-      \param  refPoints         [in]  - rank-2 (P,D) array required
-      \param  nodes             [in]  - rank-3 (C,V,D) array required
+      \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
       \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
   template<class ArrayScalar>
-    static void mapToPhysicalFrameArgs(const ArrayScalar &           physPoints,
-                                       const ArrayScalar &           refPoints,
-                                       const ArrayScalar &           nodes,
-                                       const int &                   whichCell,
-                                       const shards::CellTopology &  cellTopo);
+  static void validateArguments_mapToPhysicalFrame(const ArrayScalar &           physPoints,
+                                                   const ArrayScalar &           refPoints,
+                                                   const ArrayScalar &           cellWorkset,
+                                                   const shards::CellTopology &  cellTopo,
+                                                   const int&                    whichCell);
   
   
-  /** \brief  Validates arguments to Intrepid::CellTools::mapToReferenceFrame
-      \param  refPoints         [in]  - rank-2 (P,D) array required
-      \param  physPoints        [in]  - rank-2 (P,D) array required
-      \param  nodes             [in]  - rank-3 (C,V,D) array required
-      \param  whichCell         [in]  - 0 <= whichCell < C required
+  
+  /** \brief  Validates arguments to Intrepid::CellTools::mapToReferenceFrame with default initial guess.
+      \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+      \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
   template<class ArrayScalar>
-    static void mapToReferenceFrameArgs(const ArrayScalar &           refPoints,
-                                        const ArrayScalar &           physPoints,
-                                        const ArrayScalar &           nodes,
-                                        const int &                   whichCell,
-                                        const shards::CellTopology &  cellTopo);
+  static void validateArguments_mapToReferenceFrame(const ArrayScalar &           refPoints,
+                                                    const ArrayScalar &           physPoints,
+                                                    const ArrayScalar &           cellWorkset,
+                                                    const shards::CellTopology &  cellTopo,
+                                                    const int&                    whichCell);
+
+  
+  
+  /** \brief  Validates arguments to Intrepid::CellTools::mapToReferenceFrame with user-defined initial guess.
+      \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  initGuess         [in]  - rank and dimensions must match those of physPoints
+      \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+      \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+      \param  cellTopo          [in]  - cell topology with a reference cell required
+    */
+  template<class ArrayType1, class ArrayType2>
+  static void validateArguments_mapToReferenceFrame(const ArrayType1 &            refPoints,
+                                                    const ArrayType2 &            initGuess,
+                                                    const ArrayType1 &            physPoints,
+                                                    const ArrayType1 &            cellWorkset,
+                                                    const shards::CellTopology &  cellTopo,
+                                                    const int&                    whichCell);
+  
   
   
   /** \brief  Validates arguments to Intrepid::CellTools::checkPointwiseInclusion
       \param  inCell            [out] - rank-1  (P) array required
       \param  physPoints        [in]  - rank-2  (P,D) array required
-      \param  nodes             [in]  - rank-3  (C,V,D) array required
+      \param  cellWorkset       [in]  - rank-3  (C,N,D) array required
       \param  whichCell         [in]  - 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
   template<class ArrayInt, class ArrayPoint, class ArrayScalar>
-    static void checkPointwiseInclusionArgs(ArrayInt &                    inCell,
-                                            const ArrayPoint &            physPoints,
-                                            const ArrayScalar &           nodes,
-                                            const int &                   whichCell,
-                                            const shards::CellTopology &  cell);
+  static void validateArguments_checkPointwiseInclusion(ArrayInt &                    inCell,
+                                                        const ArrayPoint &            physPoints,
+                                                        const ArrayScalar &           cellWorkset,
+                                                        const int &                   whichCell,
+                                                        const shards::CellTopology &  cell);
 public:
   
     /** \brief  Default constructor.
@@ -269,20 +272,41 @@ public:
     //                                                                                            //
     //============================================================================================//
     
-    /** \brief  Computes Jacobians of the reference-to-physical map corresponding to a single cell 
-                or multiple cells at a set of points. Returns rank-4 or rank-3 array with dimensions 
-                (C,P,D,D) or (P,D,D), respectively, such that 
+    /** \brief  Computes the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
+      
+                There are three use cases:
+        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for a \b specified physical
+                cell \f${\mathcal C}\f$ from a cell workset on a \b single set of reference points stored
+                in a rank-2 (P,D) array;
+        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
+                in a cell workset on a \b single set of reference points stored in a rank-2 (P,D) array;
+        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
+                in a cell workset on \b multiple reference point sets having the same number of points, 
+                indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+      
+                For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
+                relative to \c cellWorkset returns a rank-3 (P,D,D) array such that
         \f[ 
-                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(p))]_{ij} \quad c=0,\ldots, C
-                \quad\mbox{or}\quad
                 \mbox{jacobian}(p,i,j)   = [DF_{c}(\mbox{points}(p))]_{ij} \quad \mbox{for $0\le c < C$ - fixed} 
         \f]
-               Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map_DF 
-               for definition of the Jacobian. 
+                For a single point set in a rank-2 array (P,D) and \c whichCell=-1 (default value) returns
+                a rank-4 (C,P,D,D) array such that
+        \f[
+                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(p))]_{ij} \quad c=0,\ldots, C
+        \f]
+                For multiple sets of reference points in a rank-3 (C,P,D) array returns 
+                rank-4 (C,P,D,D) array such that
+        \f[ 
+                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(c,p))]_{ij} \quad c=0,\ldots, C
+        \f]
+                This setting requires the default value \c whichCell=-1. 
       
-                The default <var>whichCell</var> = -1 forces computation of all cell Jacobians and 
+                Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map_DF 
+                for definition of the Jacobian. 
+      
+                The default \c whichCell = -1 forces computation of all cell Jacobians and 
                 requiers rank-4 output array. Computation of single cell Jacobians is forced by  
-                selecting a valid cell ordinal <var>whichCell</var> and requires rank-3 output array.
+                selecting a valid cell ordinal \c whichCell and requires rank-3 output array.
       
                 \warning
                 The points are not required to be in the reference cell associated with the specified 
@@ -290,29 +314,28 @@ public:
                 or not the points are inside a reference cell.
       
         \param  jacobian          [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
-        \param  points            [in]  - rank-2 array with dimensions (P,D) with the evaluation points 
-        \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
-        \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation)
-      
-        \todo   Implement method for extended and non-standard (shell, beam, etc) topologies.
+        \param  points            [in]  - rank-2/3 array with dimensions (P,D)/(C,P,D) with the evaluation points 
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
      */
     template<class ArrayScalar>
     static void setJacobian(ArrayScalar &                jacobian,
                             const ArrayScalar &          points,
-                            const ArrayScalar &          nodes,
+                            const ArrayScalar &          cellWorkset,
                             const shards::CellTopology & cellTopo,
                             const int &                  whichCell = -1);
     
   
     
-    /** \brief  Inverts the Jacobians in <var>jacobian</var> array.
+    /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
+      
                 Returns rank-4 or rank-3 array with dimensions (C,P,D,D) or (P,D,D) such that 
         \f[ 
                 \mbox{jacobianInv}(c,p,*,*) = \mbox{jacobian}^{-1}(c,p,*,*) \quad c = 0,\ldots, C
                 \quad\mbox{or}\quad
                 \mbox{jacobianInv}(p,*,*)   = \mbox{jacobian}^{-1}(p,*,*) 
-          \f]
+        \f]
         
         \param  jacobianInv       [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the inverse Jacobians
         \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
@@ -323,12 +346,13 @@ public:
     
     
     
-    /** \brief  Computation of Jacobian determinants on a single cell or on multiple cells. 
+    /** \brief  Computes the determinant of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
+      
                 Returns rank-2 or rank-1 array with dimensions (C,P)/(P) such that 
         \f[ 
-                \mbox{jacobianDet}(c,p) = \mbox{jacobian}(c,p,*,*) \quad c=0,\ldots, C 
+                \mbox{jacobianDet}(c,p) = \mbox{det}(\mbox{jacobian}(c,p,*,*)) \quad c=0,\ldots, C 
                 \quad\mbox{or}\quad
-                \mbox{jacobianDet}(p)   = \mbox{jacobian}(p,*,*) 
+                \mbox{jacobianDet}(p)   = \mbox{det}(\mbox{jacobian}(p,*,*)) 
           \f]
       
         \param  jacobianDet       [out] - rank-2/1 array with dimensions (C,P)/(P) with Jacobian determinants
@@ -344,13 +368,33 @@ public:
     //                                                                                            //
     //============================================================================================//
     
-    /** \brief  Applies \f$ F_{c} \f$ for a single physical cell \f${\mathcal C}\f$ or multiple cells to a set of 
-                points. Returns a rank-3 or rank-2 array with dimensions (C,P,D) or (P,D) where
+    /** \brief  Computes \e F, the reference-to-physical frame map.
+      
+                There are 3 use cases:
+        \li     Applies \f$ F_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a cell 
+                workset to a \b single point set stored in a rank-2 (P,D) array;
+        \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to a \b single point set stored 
+                in a rank-2 (P,D) array;
+        \li     Applies \f$ F_{c} \f$ for \b all cells in a cell workset to \b multiple point sets having  
+                the same number of points, indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+      
+                For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
+                relative to \c cellWorkset returns a rank-2 (P,D) array such that
         \f[  
-                \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad c=0,\ldots, C 
-                \quad\mbox{or}\quad
                 \mbox{physPoints}(p,d)   = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad \mbox{for $0\le c < C$ - fixed}    
         \f]
+                For a single point set in a rank-2 array (P,D) and \c whichCell=-1 (default value) returns
+                a rank-3 (C,P,D) array such that
+        \f[
+                \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(p,*)) \Big)_d \quad c=0,\ldots, C 
+        \f]
+                For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that 
+        \f[  
+                \mbox{physPoints}(c,p,d) = \Big(F_c(\mbox{refPoint}(c,p,*)) \Big)_d \quad c=0,\ldots, C 
+        \f]
+                This corresponds to mapping multiple sets of reference points to a matching number of 
+                physical cells and requires the default value \c whichCell=-1.
+      
                 Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
                 for definition of the mapping function. Presently supported cell topologies are
         
@@ -358,14 +402,13 @@ public:
         \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
         \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
       
-                The default <var>whichCell</var> = -1
+                The default \c whichCell = -1 requires rank-3 output array and
                 forces application of all reference-to-physical frame mappings corresponding to the
-                cells stored in <var>nodes</var> and requires rank-3 output array. Application
-                of a single mapping is forced by selecting a valid cell ordinal <var>whichCell</var> 
-                and requires rank-2 output array.  
+                cells stored in \c cellWorkset. Application of a single mapping is forced by selecting 
+                a valid cell ordinal \c whichCell and requires rank-2 input/output point arrays.  
       
-                \warning
-                The array <var>refPoints</var> represents an arbitrary set of points in the reference
+        \warning
+                The array \c refPoints represents an arbitrary set of points in the reference
                 frame that are not required to be in the reference cell corresponding to the
                 specified cell topology. As a result, the images of these points under a given 
                 reference-to-physical map are not necessarily contained in the physical cell that
@@ -373,26 +416,45 @@ public:
                 inclusion tests methods to check whether or not the points are inside a reference cell.
        
         \param  physPoints        [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the ref. points
-        \param  refPoints         [in]  - rank-2 array with dimensions (P,D) with points in reference frame
-        \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
-        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map 
+        \param  refPoints         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1 
       
         \todo   Implement method for non-standard (shell, beam, etc) topologies.
      */
     template<class ArrayScalar>
     static void mapToPhysicalFrame(ArrayScalar &                 physPoints,
                                    const ArrayScalar &           refPoints,
-                                   const ArrayScalar &           nodes,
+                                   const ArrayScalar &           cellWorkset,
                                    const shards::CellTopology &  cellTopo,
                                    const int &                   whichCell = -1);
 
     
-    /** \brief  Applies \f$ F^{-1}_{c} \f$ for a specified physical cell \f${\mathcal C}\f$ to a set of points.       
-                Returns a rank-2 array with dimensions (P,D) where
+    
+    /** \brief  Computes \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
+                using a default initial guess. 
+      
+                There are two use cases: 
+        \li     Applies \f$ F^{-1}_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a 
+                cell workset to a \b single set of points stored in a rank-2 (P,D) array;
+        \li     Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
+                having the same number of points, indexed by cell ordinal, and stored in a rank-3 
+                (C,P,D) array (default mode).
+            
+                For a single point set in a rank-2 array (P,D) returns a rank-2 (P,D) array such that      
         \f[            
                 \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d         
         \f]
+                The \c whichCell argument selects the physical cell and is required to be a valid cell
+                ordinal for \c cellWorkset array.
+       
+                For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that 
+        \f[            
+                \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d         
+        \f]
+                The default value \e whichCell=-1 selects this mode.  
+      
                 Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
                 for definition of the mapping function. Presently supported cell topologies are
       
@@ -400,34 +462,104 @@ public:
         \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
         \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
       
-                \warning 
-                The array <var>physPoints</var> represents an arbitrary set of points in the physical
-                frame that are not required to belong in the physical cell that defines the reference
+        \warning
+                Computation of the inverse map in this method uses default selection of the initial guess
+                based on cell topology:
+        \li     \c Line topologies: line center (0)
+        \li     \c Triangle topologies: the point (1/3, 1/3)
+        \li     \c Quadrilateral topologies: the point (0, 0)
+        \li     \c Tetrahedron topologies: the point (1/6, 1/6, 1/6)
+        \li     \c Hexahedron topologies: the point (0, 0, 0)
+        \li     \c Wedge topologies: the point (1/2, 1/2, 0)
+                For some cells with extended topologies, these initial guesses may not be good enough 
+                for Newton's method to converge in the allotted number of iterations. A version of this 
+                method with user-supplied initial guesses is also available.
+      
+        \warning 
+                The array \c physPoints represents an arbitrary set (or sets) of points in the physical
+                frame that are not required to belong in the physical cell (cells) that define(s) the reference
                 to physical mapping. As a result, the images of these points in the reference frame
                 are not necessarily contained in the reference cell corresponding to the specified
                 cell topology. 
       
-        \param  refPoints         [out] - rank-2 array with dimensions (P,D) with the images of the physical points
-        \param  physPoints        [in]  - rank-2 array with dimensions (P,D) with points in physical frame
-        \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
-        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
+        \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
+        \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset   
       
-        \todo  rename to mapToPhysicalFrameInv ?
+        \todo   Implement method for non-standard (shell, beam, etc) topologies.
     */
     template<class ArrayScalar>
     static void mapToReferenceFrame(ArrayScalar &                 refPoints,
                                     const ArrayScalar &           physPoints,
-                                    const ArrayScalar &           nodes,
+                                    const ArrayScalar &           cellWorkset,
                                     const shards::CellTopology &  cellTopo,
-                                    const int &                   whichCell);
+                                    const int &                   whichCell = -1);
+    
+    
+    
+    /** \brief  Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
+                using user-supplied initial guess. 
+
+                There are two use cases: 
+      \li       Applies \f$ F^{-1}_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a 
+                cell workset to a \b single set of points stored in a rank-2 (P,D) array;
+      \li       Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
+                having the same number of points, indexed by cell ordinal, and stored in a rank-3 
+                (C,P,D) array (default mode).
+    
+                For a single point set in a rank-2 array (P,D) returns a rank-2 (P,D) array such that      
+      \f[            
+                \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d         
+      \f]
+                The \c whichCell argument selects the physical cell and is required to be a valid cell
+                ordinal for \c cellWorkset array.
+      
+                For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that 
+      \f[            
+                \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d         
+      \f]
+                The default value \c whichCell=-1 selects this mode.  
+    
+                Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
+                for definition of the mapping function. Presently supported cell topologies are
+      
+      \li       1D:   \c Line<2>
+      \li       2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
+      \li       3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
+      
+      \warning 
+                The array \c physPoints represents an arbitrary set (or sets) of points in the physical
+                frame that are not required to belong in the physical cell (cells) that define(s) the reference
+                to physical mapping. As a result, the images of these points in the reference frame
+                are not necessarily contained in the reference cell corresponding to the specified
+                cell topology. 
+      
+      \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
+      \param  initGuess         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with the initial guesses for each point
+      \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
+      \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+      \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1
+      \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset      
+      
+      */
+    template<class ArrayType1, class ArrayType2>
+    static void mapToReferenceFrame(ArrayType1 &                  refPoints,
+                                    const ArrayType2 &            initGuess,
+                                    const ArrayType1 &            physPoints,
+                                    const ArrayType1 &            cellWorkset,
+                                    const shards::CellTopology &  cellTopo,
+                                    const int &                   whichCell = -1);
+    
 
     
-    
-    /** \brief  Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$ 
+    /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
+      
+                Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$ 
                 from a given reference cell, to a set of points in the parametrization domain
                 \e R  of \f$\hat{\mathcal{S}}_i\f$. Returns a rank-2 array with dimensions 
-                 (P,D) where for 1-subcells:
+                (P,D) where for 1-subcells:
          \f[
                 {subcellPoints}(p,*) = \hat{\Phi}_i(t_p) \quad\mbox{and}\quad
                 \hat{\Phi}_i(t_p) = \left\{
@@ -452,15 +584,15 @@ public:
         \f]
 
         \remarks 
-        \li     parametrization of 1-subcells is defined for all 2D and 3D cell topologies with reference
+        \li     Parametrization of 1-subcells is defined for all 2D and 3D cell topologies with reference
                 cells, including special 2D and 3D topologies such as shell and beams.
-        \li     parametrization of 2-subcells is defined for all 3D cell topologies with reference cells,
+        \li     Parametrization of 2-subcells is defined for all 3D cell topologies with reference cells,
                 including special 3D topologies such as shells. 
 
                 To map a set of points from a parametrization domain to a physical subcell workset, apply 
                 CellTools<Scalar>::mapToPhysicalFrame to the output of this method.  This will effectively 
                 apply the parametrization map \f$ \Phi_{c,i} =  F_{c}\circ\hat{\Phi}_i \f$ 
-                of each subcell in the workset to <var>paramPoints</var>. Here <var>c</var> is  
+                of each subcell in the workset to \c paramPoints. Here <var>c</var> is  
                 ordinal of a parent cell, relative to subcell workset, and <var>i</var> is subcell
                 ordinal, relative to a reference cell, of the subcell workset. See Section 
                 \ref sec_cell_topology_subcell_wset for definition of subcell workset and Section 
@@ -481,10 +613,11 @@ public:
     
     
     
-    /** \brief  Computes a constant (non-normalized) tangent vector to the specified edge of a 2D or 
-                3D reference cell. Returns rank-1 array with dimension (D), D=2 or D=3; such that
+    /** \brief  Computes constant tangent vectors to edges of 2D or 3D reference cells. 
+      
+                Returns rank-1 array with dimension (D), D=2 or D=3; such that
         \f[
-                {refEdgeTangent}(*) = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
+                {refEdgeTangent}(*) = \hat{\bf t}_i = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
         \f]
                 where \f$\hat{\Phi}_i : R =[-1,1]\mapsto \hat{\mathcal E}_i\f$ is the parametrization map
                 of the specified reference edge \f$\hat{\mathcal E}_i\f$, given by
@@ -493,6 +626,10 @@ public:
                     (\hat{x}(t),\hat{y}(t),\hat{z}(t)) & \mbox{for 3D parent cells} \\[1ex]
                     (\hat{x}(t),\hat{y}(t))            & \mbox{for 2D parent cells} \\[1ex]
                   \end{array}\right.
+        \f]
+                The length of computed edge tangents is one-half the length of their associated edges:
+        \f[
+                |\hat{\bf t}_i | = {1\over 2} |\hat{\mathcal E}_i |\,.
         \f]
                 Because the edges of all reference cells are always affine images of [-1,1],
                 the edge tangent is constant vector field. 
@@ -508,16 +645,17 @@ public:
 
     
     
-    /** \brief  Computes a pair of constant (non-normalized) tangent vectors to the specified face  
-                of a 3D reference cell. Returns 2 rank-1 arrays with dimension (D), D=3, such that       
+    /** \brief  Computes pairs of constant tangent vectors to faces of a 3D reference cells. 
+      
+                Returns 2 rank-1 arrays with dimension (D), D=3, such that       
         \f[
-                {refFaceTanU}(*) =  {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
+                {refFaceTanU}(*) = \hat{\bf t}_{i,u} = {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
                 \left({\partial\hat{x}(u,v)\over\partial u}, 
                       {\partial\hat{y}(u,v)\over\partial u},
                       {\partial\hat{z}(u,v)\over\partial u} \right) ;
         \f]
         \f[
-                {refFaceTanV}(*) = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
+                {refFaceTanV}(*) = \hat{\bf t}_{i,v} = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
                 \left({\partial\hat{x}(u,v)\over\partial v}, 
                       {\partial\hat{y}(u,v)\over\partial v},
                       {\partial\hat{z}(u,v)\over\partial v} \right)\,;
@@ -550,14 +688,16 @@ public:
                                          const shards::CellTopology &  parentCell);
     
     
-    /** \brief  Computes a constant (non-normalized) normal vector to the specified side of a 2D or a  
-                3D reference cell. A side is defined as a subcell of dimension one less than that of its
-                parent cell. Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
+    
+    /** \brief  Computes constant normal vectors to sides of 2D or 3D reference cells. 
+      
+                A side is defined as a subcell of dimension one less than that of its parent cell. 
+                Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
                 are 2-subcells (faces).
       
                 Returns rank-1 array with dimension (D), D = 2 or 3 such that
         \f[
-                {refSideNormal}(*) = 
+                {refSideNormal}(*) = \hat{\bf n}_i =
                 \left\{\begin{array}{rl} 
                     \displaystyle
                     \left({\partial\hat{\Phi}_i(t)\over\partial t}\right)^{\perp} 
@@ -567,8 +707,8 @@ public:
                     {\partial\hat{\Phi}_{i}\over\partial v}   & \mbox{for 3D parent cells} 
                 \end{array}\right.
         \f]
-                where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ is the parametrization map of 
-                the specified reference side \f$\hat{\mathcal S}_i\f$ given by
+                where \f$ (u_1,u_2)^\perp = (u_2, -u_1)\f$, and \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ 
+                is the parametrization map of the specified reference side \f$\hat{\mathcal S}_i\f$ given by
         \f[
                 \hat{\Phi}_i(u,v) = 
                   \left\{\begin{array}{rl}
@@ -584,6 +724,17 @@ public:
                     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral} \,.
                 \end{array}\right.
         \f]
+                For 3D cells the length of computed side normals is proportional to side area:
+        \f[
+                |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
+                    2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+                      \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
+                \end{array}\right.
+        \f]
+                For 2D cells the length of computed side normals is proportional to side length:
+        \f[
+                |\hat{\bf n}_i | = {1\over 2} |\hat{\mathcal F}_i |\,.
+        \f]
                 Because the sides of all reference cells are always affine images of \e R , 
                 the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization maps 
                 are linear and the side normal is a constant vector.  
@@ -591,7 +742,7 @@ public:
         \remark
               - For 3D cells the reference side normal coincides with the face normal computed by
                 CellTools<Scalar>::getReferenceFaceNormal and these two methods are completely equivalent.
-              - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}=(t_2,-t_1)\f$
+              - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}= \hat{\bf t}^\perp = (t_2,-t_1)\f$
                 where \f$\hat{{\bf t}}=(t_1,t_2)\f$ is the tangent vector computed by 
                 CellTools<Scalar>::getReferenceEdgeTangent. Therefore, the pair 
                 \f$(\hat{{\bf n}},\hat{{\bf t}})\f$ is positively oriented.
@@ -607,11 +758,11 @@ public:
 
     
     
-    
-    /** \brief  Computes a constant (non-normalized) normal vector to the specified face of a  
-                3D reference cell. Returns rank-1 array with dimension (D), D=3 such that
+    /** \brief  Computes constant normal vectors to faces of 3D reference cell. 
+      
+                Returns rank-1 array with dimension (D), D=3 such that
         \f[
-                {refFaceNormal}(*) = {\partial\hat{\Phi}_{i}\over\partial u} \times 
+                {refFaceNormal}(*) = \hat{\bf n}_i = {\partial\hat{\Phi}_{i}\over\partial u} \times 
                                      {\partial\hat{\Phi}_{i}\over\partial v}
         \f]
                 where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
@@ -624,6 +775,13 @@ public:
                 R = \left\{\begin{array}{rl} 
                     \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
                       [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
+                    \end{array}\right.
+        \f]
+                The length of computed face normals is proportional to face area:
+        \f[
+                |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
+                    2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+                      \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
                     \end{array}\right.
         \f]
                 Because the faces of all reference cells are always affine images of \e R , 
@@ -645,8 +803,9 @@ public:
     
     
     
-    /** \brief  Computes (non-normalized) tangent vectors to physical edges in an edge workset 
+    /** \brief  Computes non-normalized tangent vectors to physical edges in an edge workset 
                 \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets). 
+                
                 For every edge in the workset the tangents are computed at the points 
                 \f${\bf x}_p = F_c(\hat{\Phi}_i(t_p))\in\mathcal{E}_{c,i}\f$ that are images of points
                 from <var>R=[-1,1]</var> on edge \f$\mathcal{E}_{c,i}\f$. Returns rank-3 array with 
@@ -663,7 +822,7 @@ public:
         \li     \f$ \hat{\Phi}_i R\mapsto\hat{\mathcal E}_i \f$ is parametrization of reference edge \f$\hat{\mathcal E}_i\f$;
 
         \warning
-                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(t_p))\f$, 
+                \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(t_p))\f$, 
                 where \f$ t_p \in R=[-1,1] \f$, i.e., Jacobians of the parent cells evaluated at points 
                 that are located on reference edge \f$\hat{\mathcal E}_i\f$ having the same local ordinal as
                 the edges in the workset.
@@ -681,8 +840,9 @@ public:
     
     
     
-    /** \brief  Computes (non-normalized) tangent vectors to physical faces in a face workset 
+    /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset 
                 \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
+                
                 For every face in the workset the tangents are computed at the points 
                 \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
                 from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$. 
@@ -708,7 +868,7 @@ public:
          \f]
       
         \warning
-                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
+                \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
                 where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
                 that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
                 the faces in the workset.
@@ -728,13 +888,14 @@ public:
     
     
     
-    /** \brief  Computes (non-normalized) normal vectors to physical sides in a side workset 
-                \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. For every side in the workset the normals are 
-                computed at the points \f${\bf x}_p = F_c(\hat{\Phi}_i(P_p))\in\mathcal{S}_{c,i}\f$ 
-                that are images of points from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.   
-                A side is defined as a subcell of dimension one less than that of its
-                parent cell. Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
-                are 2-subcells (faces).
+    /** \brief  Computes non-normalized normal vectors to physical sides in a side workset 
+                \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. 
+      
+                For every side in the workset the normals are computed at the points 
+                \f${\bf x}_p = F_c(\hat{\Phi}_i(P_p))\in\mathcal{S}_{c,i}\f$ that are images of points 
+                from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.   
+                A side is defined as a subcell of dimension one less than that of its  parent cell. 
+                Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells are 2-subcells (faces).
       
                 Returns rank-3 array with dimensions (C,P,D), D = 2 or 3, such that 
         \f[
@@ -777,7 +938,7 @@ public:
 
 
         \warning
-                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(P_p))\f$, 
+                \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(P_p))\f$, 
                 where \f$P_p\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
                 that are located on reference side \f$\hat{\mathcal S}_i\f$ having the same local ordinal as
                 the sides in the workset.
@@ -795,8 +956,9 @@ public:
     
     
     
-    /** \brief  Computes (non-normalized) normal vectors to physical faces in a face workset 
+    /** \brief  Computes non-normalized normal vectors to physical faces in a face workset 
                 \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
+                
                 For every face in the workset the normals are computed at the points 
                 \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
                 from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$.  
@@ -822,7 +984,7 @@ public:
         \f]
 
         \warning
-                <var>worksetJacobians</var> must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
+                \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
                 where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
                 that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
                 the faces in the workset.
@@ -845,12 +1007,13 @@ public:
     //                                                                                            //
     //============================================================================================//
     
-    /** \brief  Checks if a point belongs to a reference cell. Requires cell topology 
-                with a reference cell.
+    /** \brief  Checks if a point belongs to a reference cell. 
+      
+                Requires cell topology with a reference cell.
       
         \param  point             [in]  - spatial coordinates of the point tested for inclusion
         \param  pointDim          [in]  - spatial dimension of that point
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  threshold         [in]  - "tightness" of the inclusion test
         \return 1 if the point is in the closure of the specified reference cell and 0 otherwise.
     */ 
@@ -861,12 +1024,13 @@ public:
     
     
     
-    /** \brief  Checks if a set of points belongs to a reference cell. Requires cell topology   
-                with a reference cell. See Intrepid::CellTools::checkPointsetInclusion for 
-                admissible ranks and dimensions of the input point array
+    /** \brief  Checks if a set of points belongs to a reference cell. 
+      
+                Requires cell topology with a reference cell. See Intrepid::CellTools::checkPointwiseInclusion 
+                for admissible ranks and dimensions of the input point array.
       
         \param  points            [in]  - rank-1, 2 or 3 array (point, vector of points, matrix of points)
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  threshold         [in]  - "tightness" of the inclusion test
         \return 1 if all points are in the closure of the specified reference cell
                 0 if at least one point is outside the closure of the reference cell 
@@ -879,19 +1043,20 @@ public:
     
     
     
-    /** \brief  Checks if every point in a set belongs to a reference cell.  Requires cell topology   
-                with a reference cell. Admissible ranks and dimensions of the input point array and
-                the corresponding rank and dimension of the output array are as follows:
+    /** \brief  Checks every point in a set for inclusion in a reference cell.  
+      
+                Requires cell topology with a reference cell. Admissible ranks and dimensions of the 
+                input point array and the corresponding rank and dimension of the output array are as follows:
                 \verbatim
                 |-------------------|-------------|-------------|-------------|
                 |  rank: (in)/(out) |    1/1      |     2/1     |    3/2      |
                 |-------------------|-------------|-------------|-------------|
-                |  points    (in)   |     (D)     |    (I, D)   |  (I ,J, D)  |
+                |  points    (in)   |     (D)     |    (I, D)   |  (I, J, D)  |
                 |-------------------|-------------|-------------|-------------|
-                |  inRefCell (out)  |     (1)     |    (I)      |  (I ,J)     |
+                |  inRefCell (out)  |     (1)     |    (I)      |  (I, J)     |
                 |------------------ |-------------|-------------|-------------|
                 \endverbatim
-                Example: if <var>points</var> is rank-3 array with dimensions (I, J, D), then
+                Example: if \c points is rank-3 array with dimensions (I, J, D), then
         \f[
                \mbox{inRefCell}(i,j) = 
                  \left\{\begin{array}{rl} 
@@ -901,7 +1066,7 @@ public:
           \f]
         \param  inRefCell         [out] - rank-1 or 2 array with results from the pointwise inclusion test
         \param  refPoints         [in]  - rank-1,2 or 3 array (point, vector of points, matrix of points)
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  threshold         [in]  - "tightness" of the inclusion test
     */
     template<class ArrayInt, class ArrayPoint>
@@ -912,36 +1077,56 @@ public:
     
     
     
-    /** \brief  Checks if every point in a set belongs to the specified physical cell. Implementation
-                limited to rank-2 arrays of points (vectors of points):
+    /** \brief  Checks every point in a set or multiple sets for inclusion in physical cells from a cell workset.
+      
+                There are two use cases:
+        \li     Checks every point from a \b single point set, stored in a rank-2 array (P,D) for inclusion
+                in a \b specified physical cell \f${\mathcal C}\f$ from a cell workset.
+        \li     Checks every point from \b multiple point sets indexed by a cell ordinal, and stored in a rank-3
+                (C,P,D) array, for inclusion in the physical cell having the same cell ordinal, for \b all 
+                cells in a cell workset. 
+      
+                For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
+                relative to \c cellWorkset returns a rank-1 (P) array such that
         \f[
-                \mbox{inCell}(i) = 
+                \mbox{inCell}(p) = 
                   \left\{\begin{array}{rl} 
-                     1 & \mbox{if $points(i,*)\in {\mathcal{C}}$} \\ [2ex]
-                     0 & \mbox{if $points(i,*)\notin {\mathcal{C}}$} 
+                     1 & \mbox{if $points(p,*)\in {\mathcal{C}}$} \\ [2ex]
+                     0 & \mbox{if $points(p,*)\notin {\mathcal{C}}$} 
                   \end{array}\right.
+        \f]
+                For multiple point sets in a rank-3 array (C,P,D) and \c whichCell=-1 (default value)
+                returns a rank-2 (C,P) array such that
+        \f[
+                \mbox{inCell}(c,p) = 
+                  \left\{\begin{array}{rl} 
+                      1 & \mbox{if $points(c,p,*)\in {\mathcal{C}}$} \\ [2ex]
+                      0 & \mbox{if $points(c,p,*)\notin {\mathcal{C}}$} 
+                \end{array}\right.
         \f]
 
         \param  inCell            [out] - rank-1  array with results from the pointwise inclusion test
         \param  points            [in]  - rank-2 array with dimensions (P,D) with the physical points
-        \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  whichCell         [in]  - ordinal of the cell used in the inclusion test
-        \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
         \param  threshold         [in]  - tolerance for inclusion tests on the input points
       */
     template<class ArrayInt, class ArrayPoint, class ArrayScalar>
     static void checkPointwiseInclusion(ArrayInt &                    inCell,
                                         const ArrayPoint &            points,
-                                        const ArrayScalar &           nodes,
-                                        const int &                   whichCell,
-                                        const shards::CellTopology &  cell, 
+                                        const ArrayScalar &           cellWorkset,
+                                        const shards::CellTopology &  cell,
+                                        const int &                   whichCell = -1, 
                                         const double &                threshold = INTREPID_THRESHOLD);
     
     
-    /** \brief  Returns Cartesian coordinates of a reference cell vertex. Requires cell topology 
-                with a reference cell. Vertex coordinates are always returned as an (x,y,z)-triple
-                regardlesss of the actual topological cell dimension. The unused coordinates are
-                set to zero, e.g., vertex 0 of Line<2> is returned as {-1,0,0}.                
+    
+    /** \brief  Retrieves the Cartesian coordinates of a reference cell vertex. 
+      
+                Requires cell topology with a reference cell. Vertex coordinates are always returned 
+                as an (x,y,z)-triple regardlesss of the actual topological cell dimension. The unused 
+                coordinates are set to zero, e.g., vertex 0 of Line<2> is returned as {-1,0,0}.                
                 
         \param  cell              [in]  - cell topology of the cell
         \param  vertexOrd         [in]  - vertex ordinal 
@@ -952,15 +1137,17 @@ public:
     
     
     
-    /** \brief  Returns rank-2 array with the Cartesian coordinates of the vertices of the 
+    /** \brief  Retrieves the Cartesian coordinates of all vertices of a reference subcell.
+      
+                Returns rank-2 array with the Cartesian coordinates of the vertices of the 
                 specified reference cell subcell. Requires cell topology with a reference cell.
       
-        \param  subcellVertices   [out] - array with the Cartesian coordinates of the reference subcell
+        \param  subcellVertices   [out] - rank-2 (V,D) array with the Cartesian coordinates of the reference subcell vertices
         \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
         \param  subcellOrd        [in]  - ordinal of the subcell
         \param  parentCell        [in]  - topology of the cell that owns the subcell
       
-        \remark When \e subcellDim = dimension of the \e parentCell this method returns the Cartesian 
+        \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
                 coordinates of the vertices of the reference cell itself. 
                 Note that this requires \e subcellOrd=0.
       */
@@ -972,7 +1159,48 @@ public:
     
 
     
-    /** \brief  Checks if the cell topology has reference cell
+    /** \brief  Retrieves the Cartesian coordinates of a reference cell node.
+      
+                Returns Cartesian coordinates of a reference cell node. Requires cell topology 
+                with a reference cell. Node coordinates are always returned as an (x,y,z)-triple
+                regardlesss of the actual topological cell dimension. The unused coordinates are
+                set to zero, e.g., node 0 of Line<2> is returned as {-1,0,0}.      
+      
+        \remark
+               Because the nodes of a cell with a base topology coincide with its vertices, for cells
+               with base topology this method is equivalent to CellTools<Scalar>::getReferenceVertex.
+      
+        \param  cell              [in]  - cell topology of the cell
+        \param  vertexOrd         [in]  - node ordinal 
+        \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
+      */
+    static const double* getReferenceNode(const shards::CellTopology& cell,
+                                          const int                   nodeOrd);
+    
+    
+    
+    /** \brief  Retrieves the Cartesian coordinates of all nodes of a reference subcell.
+      
+                Returns rank-2 array with the Cartesian coordinates of the nodes of the 
+                specified reference cell subcell. Requires cell topology with a reference cell.
+      
+        \param  subcellNodes      [out] - rank-2 (N,D) array with the Cartesian coordinates of the reference subcell nodes
+        \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
+        \param  subcellOrd        [in]  - ordinal of the subcell
+        \param  parentCell        [in]  - topology of the cell that owns the subcell
+      
+      \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
+      coordinates of the nodes of the reference cell itself. Note that this requires \c subcellOrd=0.
+      */
+    template<class ArrayOut>
+    static void getReferenceSubcellNodes(ArrayOut&                  subcellNodes,
+                                        const int                   subcellDim,
+                                        const int                   subcellOrd,
+                                        const shards::CellTopology& parentCell);
+    
+    
+    
+    /** \brief  Checks if a cell topology has reference cell
         \param  cell              [in]  - cell topology
         \return 1 if the cell topology has reference cell, 
                 0 oterwise
@@ -999,11 +1227,11 @@ public:
     
     
     
-    /** \brief  Prints nodes of a subcell from a workset 
+    /** \brief  Prints the nodes of a subcell from a cell workset 
       
       */
     template<class ArrayTypeIn>
-    static void printWorksetSubcell(const ArrayTypeIn&            worksetNodes,
+    static void printWorksetSubcell(const ArrayTypeIn&            cellWorkset,
                                     const shards::CellTopology&   parentCell,
                                     const int&                    pCellOrd,
                                     const int&                    subcellDim,
@@ -1019,16 +1247,23 @@ public:
 
 #endif
 
-//============================================================================================//
-//                                                                                            //
-//                            D O C U M E N T A T I O N   P A G E S                           //   
-//                                                                                            //
-//============================================================================================//
+/***************************************************************************************************
+ **                                                                                               **
+ **                           D O C U M E N T A T I O N   P A G E S                               **
+ **                                                                                               **
+ **************************************************************************************************/
 
 /**  
 \page cell_tools_page                 Cell tools
 
+<b>Table of contents </b>
 
+-   \ref cell_topology_sec
+-   \ref cell_topology_ref_cells
+  - \ref sec_cell_topology_ref_map
+  - \ref sec_cell_topology_ref_map_DF
+  - \ref sec_cell_topology_subcell_map
+  - \ref sec_cell_topology_subcell_wset
 
 \section cell_topology_sec            Cell topologies
 
@@ -1255,8 +1490,8 @@ Thus, the parametrization domain for a 2-subcell depends on its topology and is 
 \f]
 \par Summary
 
--    \f$\hat{\Phi} : R \mapsto \hat{\mathcal{S}}_i \f$ requires two steps: 
-  -# Intrepid::CellTools::mapToReferenceSubcell to apply \f$\hat{\Phi}\f$;
+-    \f$ \Phi : R \mapsto {\mathcal{S}}_i \f$ requires two steps: 
+  -# Intrepid::CellTools::mapToReferenceSubcell to apply \f$\hat{\Phi}: R \mapsto \hat{\mathcal{S}}_i\f$;
   -# Intrepid::CellTools::mapToPhysicalFrame to apply \e F
 
 
@@ -1296,30 +1531,5 @@ Therefore, a subcell workset is defined by
   \li <var>c</var> is parent cell ordinal;
   \li <var>i</var> is the local subcell ordinal (relative to the topology of the parent cell) shared
   by all subcells in the workset. 
-
-
-
-
-
-
-  \section sec_pullbacks             Pullbacks
-
-  Pullback is defined for canonical cells that have a standard (reference) cell. It is
-  a function R^n -> R^n, where n=ambient_dimension, that maps the standard cell to
-  a cell of the same type in the physical space. Therefore, to define the chart, 
-  the cell dimension must match the ambient dimension. For example, it is OK to ask
-  for the chart of a TRI cell if ambient_dimension = 2, but we cannot get a chart
-  for a TRI cell if the ambient_dimension = 3. In this case, the TRI cell is a subcell
-  of a higher dimensional cell (e.g. a TET) and its chart can be obtained by restricting
-  the chart of its parent cell. 
-
-  This function computes the standard charts of canonical cells, i.e., the 
-  chart is a polynomial function. Pullback coefficients are stored in a 
-  Pullback struct. Definition of coefficients and the storage convention is
-  as follows (\f$v_{ij}\f$ denotes the \f$j\f$-th coordinate of the \f$i\f$-th vertex, except  
-              in 1D where we simply write \f$v_i\f$):
-
-
-
 
   */

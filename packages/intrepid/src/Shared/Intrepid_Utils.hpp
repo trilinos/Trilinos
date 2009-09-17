@@ -311,32 +311,6 @@ void getAnalytic(Scalar * testMat,
  *                                                                                                 *
  ***************************************************************************************************/
 
-/** \brief  Compares two multi-dimensional arrays.
-
-    \param  left             [in]   - left array argument
-    \param  right            [in]   - right array argument
-    \return  0  if arrays have the same rank and all their dimensions match
-            -1  if arrays have different ranks
-             i  where i>0 is the ordinal of the first non-matching dimension plus one
-  */
-  template<class ArrayScalar>
-  int compareArrays(const ArrayScalar & left,
-                    const ArrayScalar & right);
-
-
-
-/** \brief  Checks the rank of a multi-dimensional array.
-
-    \param  array           [in]  - input array
-    \param  rank            [in]  - expected rank for that array
-    \return  0  if array.rank() != rank
-             1  if array.rank() == rank
- */
-  template<class ArrayScalar>
-  int validateRank(const ArrayScalar & array,
-                   const int &         rank);
-
-
   
 /** \brief  Checks if the rank of the array argument is in the required range.
     
@@ -818,38 +792,6 @@ void getAnalytic(Scalar * testMat,
  *     Utility functions for checking requirements on ranks and dimensions of array arguments      *
  *                                                                                                 *
  ***************************************************************************************************/
-
-template<class ArrayScalar>
-int compareArrays(const ArrayScalar & left,
-                  const ArrayScalar & right){
-  int rankLeft = left.rank();
-  
-  if(rankLeft != right.rank() ) {
-    return -1;
-  }
-  else {
-    for(int i = 0; i < rankLeft; i++) {
-      if(left.dimension(i) != right.dimension(i) ) {
-        return i + 1;
-      }
-    }
-  }
-  return 0;
-}
-
-
-
-template<class ArrayScalar>
-int validateRank(const ArrayScalar & array,
-                 const int &         rank){
-  if(array.rank() == rank){
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
 
 
 template<class Array>

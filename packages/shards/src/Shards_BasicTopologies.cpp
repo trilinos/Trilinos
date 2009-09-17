@@ -510,7 +510,8 @@ template<>
 const CellTopologyData * getCellTopologyData< Beam<3> >()
 {
   static const char name[] = "Beam_3" ;
-  static const Descriptor< Beam<3>::Traits > self( NULL , name );
+  static const Descriptor< Beam<3>::Traits > 
+    self( getCellTopologyData<Beam<2> >() , name );
   return & self.top ;
 }
 

@@ -56,42 +56,24 @@ namespace Intrepid {
             space of degree n. Basis functions are dual to a
             unisolvent set of degrees-of-freedom (DoF) defined and
             enumerated as
-	    
-	    \li The normal component on a lattice of order n+1 and
-	    offset 1 on each edge (see PointTools). This gives one point per edge in
-	    the lowest-order case.  These are the first
-	    3 * n degrees of freedom
+            
+            \li The normal component on a lattice of order n+1 and
+            offset 1 on each edge (see PointTools). This gives one point per edge in
+            the lowest-order case.  These are the first
+            3 * n degrees of freedom
 
-	    \li If n > 1, the x and y components at a lattice of
-	    order n+1 and offset on the triangle.  These are the rest
-	    of the degrees of freedom.
+            \li If n > 1, the x and y components at a lattice of
+            order n+1 and offset on the triangle.  These are the rest
+            of the degrees of freedom.
 
 
-	    If the pointType argument to the constructor specifies equispaced points, then the edge points
-	    will be equispaced on each edge and the interior points equispaced also.  If
-	    the pointType argument specifies warp-blend points, then Gauss-Lobatto points of order n
-	    are chosen on each edge and the interior of warp-blend lattice of order n+1 is chosen for
-	    the interior points.
+            If the pointType argument to the constructor specifies equispaced points, then the edge points
+            will be equispaced on each edge and the interior points equispaced also.  If
+            the pointType argument specifies warp-blend points, then Gauss-Lobatto points of order n
+            are chosen on each edge and the interior of warp-blend lattice of order n+1 is chosen for
+            the interior points.
 
   
-    \remarks
-        DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HDIV              |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_INCOMPLETE        |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_FIAT                   |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
   */
   
 template<class Scalar, class ArrayScalar> 

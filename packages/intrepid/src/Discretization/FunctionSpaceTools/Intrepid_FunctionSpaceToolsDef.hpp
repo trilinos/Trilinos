@@ -216,29 +216,6 @@ void FunctionSpaceTools::dataIntegral(ArrayOutData &            outputData,
 } // dataIntegral
 
 
-template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
-inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
-                                               const ArrayDet       & inDet,
-                                               const ArrayWeights   & inWeights) {
-
-#ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Input determinants container must have rank 2.");
-#endif
-
-  ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
-  // must use absolute value of inDet, so flip sign where needed
-  for (int cell=0; cell<outVals.dimension(0); cell++) {
-    if (inDet(cell,0) < 0.0) {
-      for (int point=0; point<outVals.dimension(1); point++) {
-        outVals(cell, point) *= -1.0;
-      }
-    }
-  }
-
-} // computeMeasure
-
-
 
 template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
 inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVals,
@@ -247,7 +224,7 @@ inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVal
 
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Input determinants container must have rank 2.");
+                      ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Input determinants container must have rank 2.");
 #endif
 
   ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
@@ -271,6 +248,11 @@ void FunctionSpaceTools::computeFaceMeasure(ArrayOut                   & outVals
                                             const int                    whichFace,
                                             const shards::CellTopology & parentCell) {
 
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inJac.rank() != 4), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Input Jacobian container must have rank 4.");
+#endif
+
   // temporary storage for face normals
   FieldContainer<Scalar> faceNormals(inJac.dimension(0), inJac.dimension(1), inJac.dimension(2));
 
@@ -293,6 +275,11 @@ void FunctionSpaceTools::computeEdgeMeasure(ArrayOut                   & outVals
                                             const ArrayWeights         & inWeights,
                                             const int                    whichEdge,
                                             const shards::CellTopology & parentCell) {
+
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inJac.rank() != 4), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Input Jacobian container must have rank 4.");
+#endif
 
   // temporary storage for edge tangents
   FieldContainer<Scalar> edgeTangents(inJac.dimension(0), inJac.dimension(1), inJac.dimension(2));
@@ -463,7 +450,7 @@ void FunctionSpaceTools::applyLeftFieldSigns(ArrayTypeInOut        & inoutOperat
   TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input field signs container must have rank 2.");
   TEST_FOR_EXCEPTION( (inoutOperator.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
+                      ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Zeroth dimensions (number of cells) of the operator and field signs containers must agree!");
   TEST_FOR_EXCEPTION( (inoutOperator.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): First dimensions (number of left fields) of the operator and field signs containers must agree!");
 #endif
@@ -488,7 +475,7 @@ void FunctionSpaceTools::applyRightFieldSigns(ArrayTypeInOut        & inoutOpera
   TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input field signs container must have rank 2.");
   TEST_FOR_EXCEPTION( (inoutOperator.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
+                      ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Zeroth dimensions (number of cells) of the operator and field signs containers must agree!");
   TEST_FOR_EXCEPTION( (inoutOperator.dimension(2) != fieldSigns.dimension(1) ), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Second dimension of the operator container and first dimension of the field signs container (number of right fields) must agree!");
 #endif
@@ -505,26 +492,170 @@ void FunctionSpaceTools::applyRightFieldSigns(ArrayTypeInOut        & inoutOpera
 
 
 template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
-void FunctionSpaceTools::applyFieldSigns(ArrayTypeInOut        & inoutFunctional,
+void FunctionSpaceTools::applyFieldSigns(ArrayTypeInOut        & inoutFunction,
                                          const ArrayTypeSign   & fieldSigns) {
+
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inoutFunctional.rank() != 2), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input functional container must have rank 2.");
+  TEST_FOR_EXCEPTION( ((inoutFunction.rank() < 2) || (inoutFunction.rank() > 5)), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input function container must have rank 2, 3, 4, or 5.");
   TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input field signs container must have rank 2.");
-  TEST_FOR_EXCEPTION( (inoutFunctional.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
-  TEST_FOR_EXCEPTION( (inoutFunctional.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the functional and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutFunction.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the function and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutFunction.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the function and field signs containers must agree!");
 #endif
 
-  for (int cell=0; cell<inoutFunctional.dimension(0); cell++) {
-    for (int bf=0; bf<inoutFunctional.dimension(1); bf++) {
-      inoutFunctional(cell, bf) *= fieldSigns(cell, bf);
+  int numCells  = inoutFunction.dimension(0);
+  int numFields = inoutFunction.dimension(1);
+  int fRank     = inoutFunction.rank();
+
+  switch (fRank) {
+    case 2: {
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          inoutFunction(cell, bf) *= fieldSigns(cell, bf);
+        }
+      }
     }
-  }
+    break;
+  
+    case 3: {
+      int numPoints = inoutFunction.dimension(2);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numPoints; pt++) {
+            inoutFunction(cell, bf, pt) *= fieldSigns(cell, bf);
+          }
+        }
+      }
+    }
+    break;
+  
+    case 4: {
+      int numPoints = inoutFunction.dimension(2);
+      int spaceDim1 = inoutFunction.dimension(3);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numPoints; pt++) {
+            for (int d1=0; d1<spaceDim1; d1++) {
+             inoutFunction(cell, bf, pt, d1) *= fieldSigns(cell, bf);
+            }
+          }
+        }
+      }
+    }
+    break;
+  
+    case 5: {
+      int numPoints = inoutFunction.dimension(2);
+      int spaceDim1 = inoutFunction.dimension(3);
+      int spaceDim2 = inoutFunction.dimension(4);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numPoints; pt++) {
+            for (int d1=0; d1<spaceDim1; d1++) {
+              for (int d2=0; d2<spaceDim2; d2++) {
+                inoutFunction(cell, bf, pt, d1, d2) *= fieldSigns(cell, bf);
+              }
+            }
+          }
+        }
+      }
+    }
+    break;
+
+    default:
+      TEST_FOR_EXCEPTION( !( (fRank == 2) || (fRank == 3) || (fRank == 4) || (fRank == 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Method defined only for rank-2, 3, 4, or 5 input function containers.");
+  
+  }  // end switch fRank
 
 } // applyFieldSigns
 
+
+template<class Scalar, class ArrayOutPointVals, class ArrayInCoeffs, class ArrayInFields>
+void FunctionSpaceTools::evaluate(ArrayOutPointVals     & outPointVals,
+                                  const ArrayInCoeffs   & inCoeffs,
+                                  const ArrayInFields   & inFields) {
+
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( ((inFields.rank() < 3) || (inFields.rank() > 5)), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::evaluate): Input fields container must have rank 3, 4, or 5.");
+  TEST_FOR_EXCEPTION( (inCoeffs.rank() != 2), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::evaluate): Input coefficient container must have rank 2.");
+  TEST_FOR_EXCEPTION( (outPointVals.rank() != inFields.rank()-1), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::evaluate): Output values container must have rank one less than the rank of the input fields container.");
+  TEST_FOR_EXCEPTION( (inCoeffs.dimension(0) != inFields.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the coefficient and fields input containers must agree!");
+  TEST_FOR_EXCEPTION( (inCoeffs.dimension(1) != inFields.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
+  TEST_FOR_EXCEPTION( (outPointVals.dimension(0) != inFields.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
+  for (int i=1; i<outPointVals.rank(); i++) {
+    std::string errmsg  = ">>> ERROR (FunctionSpaceTools::evaluate): Dimensions ";
+    errmsg += (char)(48+i);
+    errmsg += " and ";
+    errmsg += (char)(48+i+1);
+    errmsg += " of the output values and input fields containers must agree!";
+    TEST_FOR_EXCEPTION( (outPointVals.dimension(i) != inFields.dimension(i+1)), std::invalid_argument, errmsg );
+  }
+#endif
+
+  int numCells  = inFields.dimension(0);
+  int numFields = inFields.dimension(1);
+  int numPoints = inFields.dimension(2);
+  int fRank     = inFields.rank();
+
+  switch (fRank) {
+    case 3: {
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int bf=0; bf<numFields; bf++) {
+            outPointVals(cell, pt) += inCoeffs(cell, bf) * inFields(cell, bf, pt);
+          }
+        }
+      }
+    }
+    break;
+  
+    case 4: {
+      int spaceDim1 = inFields.dimension(3);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d1=0; d1<spaceDim1; d1++) {
+            for (int bf=0; bf<numFields; bf++) {
+              outPointVals(cell, pt, d1) += inCoeffs(cell, bf) * inFields(cell, bf, pt, d1);
+            }
+          }
+        }
+      }
+    }
+    break;
+  
+    case 5: {
+      int spaceDim1 = inFields.dimension(3);
+      int spaceDim2 = inFields.dimension(4);
+      for (int cell=0; cell<numCells; cell++) {
+        for (int pt=0; pt<numPoints; pt++) {
+          for (int d1=0; d1<spaceDim1; d1++) {
+            for (int d2=0; d2<spaceDim2; d2++) {
+              for (int bf=0; bf<numFields; bf++) {
+                outPointVals(cell, pt, d1, d2) += inCoeffs(cell, bf) * inFields(cell, bf, pt, d1, d2);
+              }
+            }
+          }
+        }
+      }
+    }
+    break;
+
+    default:
+      TEST_FOR_EXCEPTION( !( (fRank == 3) || (fRank == 4) || (fRank == 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::evaluate): Method defined only for rank-3, 4, or 5 input fields containers.");
+  
+  }  // end switch fRank
+
+} // evaluate
 
 } // end namespace Intrepid

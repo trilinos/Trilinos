@@ -79,6 +79,8 @@ void Basis_HGRAD_LINE_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
       break;
       
     case OPERATOR_GRAD:
+    case OPERATOR_DIV:
+    case OPERATOR_CURL:
     case OPERATOR_D1:
       for (int i0 = 0; i0 < dim0; i0++) {
         x = inputPoints(i0,0);
@@ -122,7 +124,7 @@ void Basis_HGRAD_LINE_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
       
     default:
       TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_QUAD_C1_FEM): Invalid operator type");
+                          ">>> ERROR (Basis_HGRAD_LINE_C1_FEM): Invalid operator type");
   }
 }
 
@@ -130,14 +132,14 @@ template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_LINE_C1_FEM<Scalar, ArrayScalar>::initializeTags() {
   
   // Basis-dependent intializations
-  int tagSize  = 2;        // size of DoF tag, i.e., number of fields in the tag
-  int posScDim = 0;        // poisition in the tag, counting from 0, of the subcell dim 
-  int posScOrd = 1;        // poisition in the tag, counting from 0, of the subcell ordinal
+  int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
   int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
   // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-  int tags[]  = { 0, 0,
-                  0, 1};
+  int tags[]  = { 0, 0, 0, 1,
+                  0, 1, 0, 1};
   
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
   Intrepid::setOrdinalTagData(this -> tagToOrdinal_,

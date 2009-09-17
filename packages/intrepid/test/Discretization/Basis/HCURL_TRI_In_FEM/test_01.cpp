@@ -49,7 +49,7 @@ using namespace Intrepid;
 /** \brief Performs a code-code comparison to FIAT for Nedelec bases on triangles (values and curls)
     \param argc [in] - number of command-line arguments
     \param argv [in] - command-line arguments
- */
+*/
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -101,37 +101,36 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> myBasisValuesDIV( myBasisDIV.getCardinality() , np_lattice , 2 );
     FieldContainer<double> myBasisValuesCURL( myBasisDIV.getCardinality() , np_lattice , 2 );
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myBasisDIV.getBaseCellTopology() , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_EQUISPACED );    
+                                                            myBasisDIV.getBaseCellTopology() , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_EQUISPACED );    
 
     myBasisDIV.getValues( myBasisValuesDIV , lattice , OPERATOR_VALUE );
     myBasisCURL.getValues( myBasisValuesCURL, lattice , OPERATOR_VALUE );
 
-    int cur=0;
     for (int i=0;i<myBasisValuesDIV.dimension(0);i++) {
       for (int j=0;j<myBasisValuesDIV.dimension(1);j++) {
-	if (std::abs( myBasisValuesDIV(i,j,1) + myBasisValuesCURL(i,j,0) ) > INTREPID_TOL ) {
-	  errorFlag++;
-	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";	  
-	  // Output the multi-index of the value where the error is:
-	  *outStream << " At multi-index { ";
-	  *outStream << i << " " << j << " and component 0";
-	  *outStream << "}  computed value: " << myBasisValuesCURL(i,j,0)
-		     << " but correct value: " << -myBasisValuesDIV(i,j,1) << "\n";
+        if (std::abs( myBasisValuesDIV(i,j,1) + myBasisValuesCURL(i,j,0) ) > INTREPID_TOL ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          // Output the multi-index of the value where the error is:
+          *outStream << " At multi-index { ";
+          *outStream << i << " " << j << " and component 0";
+          *outStream << "}  computed value: " << myBasisValuesCURL(i,j,0)
+                    << " but correct value: " << -myBasisValuesDIV(i,j,1) << "\n";
           *outStream << "Difference: " << std::abs( myBasisValuesCURL(i,j,0) + myBasisValuesDIV(i,j,1) ) << "\n";
-	}
-	if (std::abs( myBasisValuesDIV(i,j,0) - myBasisValuesCURL(i,j,1) ) > INTREPID_TOL ) {
-	  errorFlag++;
-	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";	  
-	  // Output the multi-index of the value where the error is:
-	  *outStream << " At multi-index { ";
-	  *outStream << i << " " << j << " and component 1";
-	  *outStream << "}  computed value: " << myBasisValuesCURL(i,j,1)
-		     << " but correct value: " << myBasisValuesDIV(i,j,0) << "\n";
+        }
+        if (std::abs( myBasisValuesDIV(i,j,0) - myBasisValuesCURL(i,j,1) ) > INTREPID_TOL ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          // Output the multi-index of the value where the error is:
+          *outStream << " At multi-index { ";
+          *outStream << i << " " << j << " and component 1";
+          *outStream << "}  computed value: " << myBasisValuesCURL(i,j,1)
+                    << " but correct value: " << myBasisValuesDIV(i,j,0) << "\n";
           *outStream << "Difference: " << std::abs( myBasisValuesCURL(i,j,1) - myBasisValuesDIV(i,j,1) ) << "\n";
-	}
+        }
       }
     }
   }
@@ -147,10 +146,10 @@ int main(int argc, char *argv[]) {
     const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
     FieldContainer<double> lattice( np_lattice , 2 );
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myBasis.getBaseCellTopology() , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_EQUISPACED );        
+                                                            myBasis.getBaseCellTopology() , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_EQUISPACED );        
     FieldContainer<double> myBasisValues( myBasis.getCardinality() , np_lattice , 2 );
 
     
@@ -219,7 +218,7 @@ int main(int argc, char *argv[]) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " << myBasisValues(i,j,k)
-                       << " but correct value: " << fiat_vals[cur] << "\n";
+                      << " but correct value: " << fiat_vals[cur] << "\n";
           *outStream << "Difference: " << std::abs( myBasisValues(i,j,k) - fiat_vals[cur] ) << "\n";
           }
           cur++;
@@ -238,10 +237,10 @@ int main(int argc, char *argv[]) {
     const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
     FieldContainer<double> lattice( np_lattice , 2 );
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myBasis.getBaseCellTopology() , 
-							    deg , 
-							    0 , 
-							    POINTTYPE_EQUISPACED );        
+                                                            myBasis.getBaseCellTopology() , 
+                                                            deg , 
+                                                            0 , 
+                                                            POINTTYPE_EQUISPACED );        
     FieldContainer<double> myBasisValues( myBasis.getCardinality() , np_lattice );
 
     
@@ -301,18 +300,18 @@ int main(int argc, char *argv[]) {
     int cur=0;
     for (int i=0;i<myBasisValues.dimension(0);i++) {
       for (int j=0;j<myBasisValues.dimension(1);j++) {
-	if (std::abs( myBasisValues(i,j) - fiat_curls[cur] ) > INTREPID_TOL ) {
-	  errorFlag++;
-	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-	  
-	  // Output the multi-index of the value where the error is:
-	  *outStream << " At multi-index { ";
-	  *outStream << i << " " << j;
-	  *outStream << "}  computed value: " << myBasisValues(i,j)
-		     << " but correct value: " << fiat_curls[cur] << "\n";
+        if (std::abs( myBasisValues(i,j) - fiat_curls[cur] ) > INTREPID_TOL ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          
+          // Output the multi-index of the value where the error is:
+          *outStream << " At multi-index { ";
+          *outStream << i << " " << j;
+          *outStream << "}  computed value: " << myBasisValues(i,j)
+                    << " but correct value: " << fiat_curls[cur] << "\n";
           *outStream << "Difference: " << std::abs( myBasisValues(i,j) - fiat_curls[cur] ) << "\n";
-	}
-	cur++;
+        }
+        cur++;
       }
     }
   }

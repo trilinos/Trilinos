@@ -49,7 +49,7 @@
 namespace Intrepid {
 
 /** \class Intrepid::CubatureDirectTriDefault
-    \brief Defines Gauss integration rules on a line.
+    \brief Defines direct integration rules on a triangle.
 */
 template<class Scalar, class ArrayType = FieldContainer<Scalar> >
 class CubatureDirectTriDefault : public Intrepid::CubatureDirect<Scalar,ArrayType> {

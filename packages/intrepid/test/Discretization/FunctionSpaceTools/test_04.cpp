@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
       CellTools<double>::setJacobianDet(jacobian_det, jacobian);
 
       // compute weighted measure
-      fst::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
+      fst::computeCellMeasure<double>(weighted_measure, jacobian_det, cub_weights);
 
       // set data to 1.0
       for (int cell=0; cell<data_one.dimension(0); cell++) { 

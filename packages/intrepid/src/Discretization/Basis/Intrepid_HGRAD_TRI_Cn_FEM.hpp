@@ -50,39 +50,20 @@ namespace Intrepid {
   
             Implements Lagrangian basis of degree n on the reference Triangle cell. The basis has
             cardinality (n+1)(n+2)/2 and spans a COMPLETE polynomial space of degree n.
-	    Basis functions are dual 
+            Basis functions are dual 
             to a unisolvent set of degrees-of-freedom (DoF) defined on a lattice of order n (see PointTools).
-	    In particular, the degrees of freedom are point evaluation at
-	    \li the vertices
-	    \li (n-1) points on each edge of the triangle
-	    \li max((n-1)(n-2)/2,0) points on the inside of the triangle.
+            In particular, the degrees of freedom are point evaluation at
+            \li the vertices
+            \li (n-1) points on each edge of the triangle
+            \li max((n-1)(n-2)/2,0) points on the inside of the triangle.
   
-	    The distribution of these points is specified by the pointType argument to the class constructor.
-	    Currently, either equispaced lattice points or Warburton's warp-blend points are available.
+            The distribution of these points is specified by the pointType argument to the class constructor.
+            Currently, either equispaced lattice points or Warburton's warp-blend points are available.
 
-	    The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
-	    dof number 0 is at the bottom left vertex (0,0).  The dof increase
-	    along the lattice with points along the lines of constant
-	    x adjacent in the enumeration. 
-
-    \remarks
-     DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Triangle                         |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_FIAT                   |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
+            The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
+            dof number 0 is at the bottom left vertex (0,0).  The dof increase
+            along the lattice with points along the lines of constant
+            x adjacent in the enumeration. 
   */
   
 template<class Scalar, class ArrayScalar> 

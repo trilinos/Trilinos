@@ -384,7 +384,7 @@ int main(int argc, char *argv[]) {
               CellTools<double>::setJacobianDet(jacobian_det_cell, jacobian_cell);
 
               // compute weighted measure
-              FunctionSpaceTools::computeMeasure<double>(weighted_measure_cell, jacobian_det_cell, cub_weights_cell);
+              FunctionSpaceTools::computeCellMeasure<double>(weighted_measure_cell, jacobian_det_cell, cub_weights_cell);
 
               ///////////////////////////
               // Computing mass matrices:
@@ -501,11 +501,7 @@ int main(int argc, char *argv[]) {
               // transform values of basis functions 
               FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_interp_points_ref,
                                                               value_of_basis_at_interp_points_ref);
-              for (int bf=0; bf<numFields; bf++) {
-                for (int pt=0; pt<numInterpPoints; pt++) {
-                  interpolant(0, pt) += rhs_and_soln_vector(0, bf) * transformed_value_of_basis_at_interp_points_ref(0, bf, pt);
-                }
-              }
+              FunctionSpaceTools::evaluate<double>(interpolant, rhs_and_soln_vector, transformed_value_of_basis_at_interp_points_ref);
               ////////////////////////
 
               /******************* END COMPUTATION ***********************/

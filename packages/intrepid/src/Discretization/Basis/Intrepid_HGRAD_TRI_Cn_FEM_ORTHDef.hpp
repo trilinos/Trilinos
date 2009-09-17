@@ -32,18 +32,19 @@
     \brief  Definition file for FEM orthogonal basis functions of arbitrary degree 
             for H(grad) functions on TRI.
     \author Created by R. Kirby
- */
+*/
 
 namespace Intrepid {
   
-  /** \brief file-scope function for indexing from orthogonal expansion indices into linear space
-      p+q = the degree of the polynomial.
+/** \brief file-scope function for indexing from orthogonal expansion indices into linear space
+           p+q = the degree of the polynomial.
       \param p [in] - the first index
       \param q [in] - the second index
-  */
-  static int idx(int p, int q);
+*/
+static int idx(int p, int q);
 
-  /** \brief file-scope function for computing the Jacobi recurrence coefficients so that
+/** \brief file-scope function for computing the Jacobi recurrence coefficients so that
+      
       \param alpha [in] - the first Jacobi weight
       \param beta  [in] - the second Jacobi weight
       \param n     [n]  - the polynomial degree
@@ -58,12 +59,12 @@ namespace Intrepid {
       where
       \f[
       P^{\alpha,\beta}_0 = 1
-      \f]					       
-  */
-  template<typename Scalar>
-  static void jrc( const Scalar &alpha , const Scalar &beta , 
-		   const int &n ,
-		   Scalar &an , Scalar &bn, Scalar &cn );
+      \f]
+*/
+template<typename Scalar>
+static void jrc(const Scalar &alpha , const Scalar &beta , 
+                const int &n ,
+                Scalar &an , Scalar &bn, Scalar &cn );
 
 
 template<class Scalar, class ArrayScalar>
@@ -84,8 +85,8 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::initializeTags() {
   
   // Basis-dependent initializations
   int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-  int posScDim = 0;        // poisition in the tag, counting from 0, of the subcell dim 
-  int posScOrd = 1;        // poisition in the tag, counting from 0, of the subcell ordinal
+  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
   int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
   // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
@@ -109,16 +110,17 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::initializeTags() {
 }  
 
 
+
 template<class Scalar, class ArrayScalar> 
 void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-								 const ArrayScalar &  inputPoints,
-								 const EOperator      operatorType) const {
+                                                                const ArrayScalar &  inputPoints,
+                                                                const EOperator      operatorType) const {
   
   // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
   Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-						      inputPoints,
-						      operatorType,
+                                                      inputPoints,
+                                                      operatorType,
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
@@ -127,8 +129,8 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
   // add more here and put in appropriate extra case statements below to enable higher derivatives.
   void (*tabulators[])(ArrayScalar &, const int, const ArrayScalar &)
     = { TabulatorTri<Scalar,ArrayScalar,0>::tabulate ,
-	TabulatorTri<Scalar,ArrayScalar,1>::tabulate ,
-	TabulatorTri<Scalar,ArrayScalar,2>::tabulate };
+        TabulatorTri<Scalar,ArrayScalar,1>::tabulate ,
+        TabulatorTri<Scalar,ArrayScalar,2>::tabulate };
 
 
   switch (operatorType) {
@@ -146,18 +148,20 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
     break;
   default:
     TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			">>> ERROR (Basis_HGRAD_TRI_Cn_FEM_ORTH): invalid or unsupported operator" );
+                        ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM_ORTH): invalid or unsupported operator" );
 
   }
 
   return;
 }
 
+
+
 template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-								 const ArrayScalar &    inputPoints,
-								 const ArrayScalar &    cellVertices,
-								 const EOperator        operatorType) const {
+                                                                 const ArrayScalar &    inputPoints,
+                                                                 const ArrayScalar &    cellVertices,
+                                                                 const EOperator        operatorType) const {
   TEST_FOR_EXCEPTION( (true), std::logic_error,
                       ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): FEM Basis calling an FVD member function");
 }
@@ -165,9 +169,9 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar&   
 
 
 template<typename Scalar, typename ArrayScalar>
-void TabulatorTri<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
-						   const int deg ,
-						   const ArrayScalar &z )
+void TabulatorTri<Scalar,ArrayScalar,0>::tabulate(ArrayScalar &outputValues ,
+                                                  const int deg ,
+                                                  const ArrayScalar &z )
 {
   const int np = z.dimension( 0 );
   
@@ -209,8 +213,8 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
       Scalar b = p / (p+1.0);
       
       for (int i=0;i<np;i++) {
-	outputValues(idx_curp1,i) = a * f1[i] * outputValues(idx_cur,i)
-	  - b * f3[i] * outputValues(idx_curm1,i);
+        outputValues(idx_curp1,i) = a * f1[i] * outputValues(idx_cur,i)
+          - b * f3[i] * outputValues(idx_curm1,i);
       }
     }
     
@@ -219,8 +223,8 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
       int idxp0 = idx(p,0);
       int idxp1 = idx(p,1);
       for (int i=0;i<np;i++) {
-	outputValues(idxp1,i) = outputValues(idxp0,i)
-	  *0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+        outputValues(idxp1,i) = outputValues(idxp0,i)
+          *0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
       }
     }
     
@@ -228,16 +232,16 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
     // recurrence in q
     for (int p=0;p<deg-1;p++) {
       for (int q=1;q<deg-p;q++) {
-	int idxpqp1=idx(p,q+1);
-	int idxpq=idx(p,q);
-	int idxpqm1=idx(p,q-1);
-	Scalar a,b,c;
-	jrc<Scalar>((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
-	for (int i=0;i<np;i++) {
-	  outputValues(idxpqp1,i)
-	    = (a*(2.0*z(i,1)-1.0)+b)*outputValues(idxpq,i)
-	    - c*outputValues(idxpqm1,i);
-	}
+        int idxpqp1=idx(p,q+1);
+        int idxpq=idx(p,q);
+        int idxpqm1=idx(p,q-1);
+        Scalar a,b,c;
+        jrc<Scalar>((Scalar)(2*p+1),(Scalar)0,q,a,b,c);
+        for (int i=0;i<np;i++) {
+          outputValues(idxpqp1,i)
+            = (a*(2.0*z(i,1)-1.0)+b)*outputValues(idxpq,i)
+            - c*outputValues(idxpqm1,i);
+        }
       }
     }
   }    
@@ -246,18 +250,20 @@ void TabulatorTri<Scalar,ArrayScalar,0>::tabulate( ArrayScalar &outputValues ,
   for (int p=0;p<=deg;p++) {
     for (int q=0;q<=deg-p;q++) {
       for (int i=0;i<np;i++) {
-	outputValues(idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
+        outputValues(idx(p,q),i) *= sqrt( (p+0.5)*(p+q+1.0));
       }
     }
   }
   
   return;
 }
-  
+ 
+
+ 
 template<typename Scalar, typename ArrayScalar>
-void TabulatorTri<Scalar,ArrayScalar,1>::tabulate( ArrayScalar &outputValues ,
-						   const int deg ,
-						   const ArrayScalar &z ) 
+void TabulatorTri<Scalar,ArrayScalar,1>::tabulate(ArrayScalar &outputValues ,
+                                                  const int deg ,
+                                                  const ArrayScalar &z ) 
 {
   const int np = z.dimension(0);
   const int card = outputValues.dimension(0);
@@ -271,13 +277,13 @@ void TabulatorTri<Scalar,ArrayScalar,1>::tabulate( ArrayScalar &outputValues ,
   FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
 
   TabulatorTri<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,0>::tabulate( dResult ,
-												  deg ,
-												  dZ );
+                                                                                                  deg ,
+                                                                                                  dZ );
 
   for (int i=0;i<card;i++) {
     for (int j=0;j<np;j++) {
       for (int k=0;k<2;k++) {
-	outputValues(i,j,k) = dResult(i,j).dx(k);
+        outputValues(i,j,k) = dResult(i,j).dx(k);
       }
     }
   }
@@ -286,10 +292,12 @@ void TabulatorTri<Scalar,ArrayScalar,1>::tabulate( ArrayScalar &outputValues ,
 
 }
 
+
+
 template<typename Scalar, typename ArrayScalar, unsigned derivOrder>
 void TabulatorTri<Scalar,ArrayScalar,derivOrder>::tabulate( ArrayScalar &outputValues ,
-							    const int deg ,
-							    const ArrayScalar &z ) 
+                                                            const int deg ,
+                                                            const ArrayScalar &z ) 
 {
   const int np = z.dimension(0);
   const int card = outputValues.dimension(0);
@@ -302,15 +310,15 @@ void TabulatorTri<Scalar,ArrayScalar,derivOrder>::tabulate( ArrayScalar &outputV
   }
   FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np,derivOrder+1);
 
-  TabulatorTri<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,derivOrder-1>::tabulate( dResult ,
-													     deg ,
-													     dZ );
+  TabulatorTri<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> >,derivOrder-1>::tabulate(dResult ,
+                                                                                                            deg ,
+                                                                                                            dZ );
 
   for (int i=0;i<card;i++) {
     for (int j=0;j<np;j++) {
       outputValues(i,j,0) = dResult(i,j,0).dx(0);
-      for (int k=0;k<derivOrder;k++) {
-	outputValues(i,j,k+1) = dResult(i,j,k).dx(1);
+      for (unsigned k=0;k<derivOrder;k++) {
+        outputValues(i,j,k+1) = dResult(i,j,k).dx(1);
       }
     }
   }
@@ -321,15 +329,18 @@ void TabulatorTri<Scalar,ArrayScalar,derivOrder>::tabulate( ArrayScalar &outputV
 }
 
 
+
 int idx(int p , int q)
 {
   return (p+q)*(p+q+1)/2+q;
 }
 
+
+
 template<typename Scalar>
 void jrc( const Scalar &alpha , const Scalar &beta , 
-	  const int &n ,
-	  Scalar &an , Scalar &bn, Scalar &cn )
+          const int &n ,
+          Scalar &an , Scalar &bn, Scalar &cn )
 {
   an = (2.0 * n + 1.0 + alpha + beta) * ( 2.0 * n + 2.0 + alpha + beta ) 
     / ( 2.0 * ( n + 1 ) * ( n + 1 + alpha + beta ) );
@@ -340,8 +351,6 @@ void jrc( const Scalar &alpha , const Scalar &beta ,
   
   return;
 }
-
-
 
 
 }// namespace Intrepid

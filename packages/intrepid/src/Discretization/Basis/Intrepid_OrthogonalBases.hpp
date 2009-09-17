@@ -70,59 +70,59 @@ namespace Intrepid {
     ~OrthogonalBases() {;}
 
     /** \brief Calculates triangular orthogonal expansions
-	(e.g. Dubiner basis) at a range	of input points 
-	
-	\param np       [in]    - number of input points
-	\param z        [in]    - 2d array of points z(pt,2)
+        (e.g. Dubiner basis) at a range of input points 
+        
+        \param np       [in]    - number of input points
+        \param z        [in]    - 2d array of points z(pt,2)
         \param n        [in]    - the maximum polynomial degree tabulated
         \param poly_val [out]   - 2d array poly_val((n+1)(n+2)/2,np)
 
-       \li The ScalarArray types must support (i,j) indexing 
-       and a dimension(i) operation.
+      \li The ScalarArray types must support (i,j) indexing 
+      and a dimension(i) operation.
     */
 
     template<class Scalar, class ScalarArray1, class ScalarArray2>
     static void tabulateTriangle( const ScalarArray1& z ,
-				  const int n ,
-				  ScalarArray2 & poly_val );
+                                  const int n ,
+                                  ScalarArray2 & poly_val );
 
     /** \brief Calculates triangular orthogonal expansions
-	(e.g. Dubiner basis) at a range	of input points 
-	
-	\param np       [in]    - number of input points
-	\param z        [in]    - 2d array of points z(pt,3)
+        (e.g. Dubiner basis) at a range of input points 
+        
+        \param np       [in]    - number of input points
+        \param z        [in]    - 2d array of points z(pt,3)
         \param n        [in]    - the maximum polynomial degree tabulated
         \param poly_val [out]   - 2d array poly_val((n+1)(n+2)(n+3)/6,np)
 
-       \li The ScalarArray types must support (i,j) indexing 
-       and a dimension(i) operation.
+      \li The ScalarArray types must support (i,j) indexing 
+      and a dimension(i) operation.
     */
 
     template<class Scalar, class ScalarArray1, class ScalarArray2>
     static void tabulateTetrahedron( const ScalarArray1& z ,
-				     const int n ,
-				     ScalarArray2 & poly_val );
+                                    const int n ,
+                                    ScalarArray2 & poly_val );
     
   private:
     /** \brief computes Jacobi recurrence coefficients of
-	order n with weights a,b so that
+        order n with weights a,b so that
         P^{alpha,beta}_{n+1}(x) 
-	= (an x + bn) P^{alpha,beta}_n(x) - cn P^{alpha,beta}_{n-1}(x)
+        = (an x + bn) P^{alpha,beta}_n(x) - cn P^{alpha,beta}_{n-1}(x)
     */
 
     template<class Scalar>
     static void jrc( const Scalar &alpha , const Scalar &beta , const int &n ,
-		     Scalar &an , Scalar &bn, Scalar &cn );
+                    Scalar &an , Scalar &bn, Scalar &cn );
 
     /** \brief Given indices p,q, computes the linear index of
-	the Dubiner polynomial D^{p,q} */
+        the Dubiner polynomial D^{p,q} */
     static inline int idxtri(int p, int q)
     {
       return (p+q)*(p+q+1)/2+q;
     }
 
     /** \brief Given indices p,q,r, computes the linear index of the
-	tetrahedral polynomial D^{p,q,r} */
+        tetrahedral polynomial D^{p,q,r} */
     static inline int idxtet(int p, int q, int r)
     {
       return (p+q+r)*(p+q+r+1)*(p+q+r+2)/6+(q+r)*(q+r+1)/2+r;

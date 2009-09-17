@@ -49,7 +49,7 @@
 namespace Intrepid {
 
 /** \class Intrepid::CubatureDirectTetDefault
-    \brief Defines Gauss integration rules on a line.
+    \brief Defines direct integration rules on a tetrahedron.
 */
 template<class Scalar, class ArrayType = FieldContainer<Scalar> >
 class CubatureDirectTetDefault : public Intrepid::CubatureDirect<Scalar,ArrayType> {

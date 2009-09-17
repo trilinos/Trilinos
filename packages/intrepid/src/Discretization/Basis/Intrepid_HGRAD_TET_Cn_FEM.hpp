@@ -50,45 +50,25 @@ namespace Intrepid {
   
             Implements Lagrangian basis of degree n on the reference Tetrahedron cell. The basis has
             cardinality (n+1)(n+2)(n+3)/6 and spans a COMPLETE polynomial space of degree n. 
-	    Nodal basis functions are dual to a unisolvent set of
+            Nodal basis functions are dual to a unisolvent set of
             degrees-of-freedom (DoF) defined at a lattice of order n
             (see \ref PointTools).  In particular, the degrees of freedom
             are point evaluation at
-	    \li The vertices
-	    \li (n-1) points on each edge of the tetrahedron
-	    \li max((n-1)(n-2)/2,0) points on each face of the
+            \li The vertices
+            \li (n-1) points on each edge of the tetrahedron
+            \li max((n-1)(n-2)/2,0) points on each face of the
             tetrahedron
-	    \li max((n-1)(n-2)(n-3)/6,0) points in the interior
-	    of the tetrahedron.
+            \li max((n-1)(n-2)(n-3)/6,0) points in the interior
+            of the tetrahedron.
 
-	    The distribution of these points is specified by the pointType argument to the class constructor.
-	    Currently, either equispaced lattice points or Warburton's warp-blend points are available.
+            The distribution of these points is specified by the pointType argument to the class constructor.
+            Currently, either equispaced lattice points or Warburton's warp-blend points are available.
 
-	    The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
-	    dof number 0 is at the vertex (0,0,0).  The dof increase
-	    along the lattice with points along the lines of constant
-	    x adjacent in the enumeration. 
-
-
-\remarks
-  DefaultBasisFactory will select this class if the following parameters are specified:
-  
-  \verbatim
-  |=======================|===================================|
-  |  CellTopology         |  Tetrahedron                      |
-  |-----------------------|-----------------------------------|
-  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
-  |-----------------------|-----------------------------------|
-  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
-  |-----------------------|-----------------------------------|
-  |  degree               |  n                                |
-  |-----------------------|-----------------------------------|
-  |  EBasis               |  BASIS_FEM_FIAT                   |
-  |-----------------------|-----------------------------------|
-  |  ECoordinates         |  COORDINATES_CARTESIAN            |
-  |=======================|===================================|
-  \endverbatim
-  */
+            The dof are enumerated according to the ordering on the lattice (see PointTools).  In particular,
+            dof number 0 is at the vertex (0,0,0).  The dof increase
+            along the lattice with points along the lines of constant
+            x adjacent in the enumeration. 
+*/
   
 template<class Scalar, class ArrayScalar> 
 class Basis_HGRAD_TET_Cn_FEM: public Basis<Scalar, ArrayScalar> {

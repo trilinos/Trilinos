@@ -38,7 +38,7 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar>
   Basis_HCURL_TRI_In_FEM<Scalar,ArrayScalar>::Basis_HCURL_TRI_In_FEM( const int n ,
-								      const EPointType pointType ):
+                                                                      const EPointType pointType ):
     Phis_( n ),
     coeffs_( (n+1)*(n+2) , n*(n+2) )
   {
@@ -89,23 +89,23 @@ namespace Intrepid {
 
     // now do the integration
     for (int i=0;i<n;i++) {
-      for (int j=0;j<scalarBigN;j++) { 	// int (x,y) phi_i \cdot (phi_j,0)
-	V1(j,littleN+i) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(j,littleN+i) -= 
-	    cubWeights(k) * cubPoints(k,1) 
-	    * phisAtCubPoints(scalarSmallestN+i,k) 
-	    * phisAtCubPoints(j,k);
-	}
+      for (int j=0;j<scalarBigN;j++) { // int (x,y) phi_i \cdot (phi_j,0)
+        V1(j,littleN+i) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(j,littleN+i) -= 
+            cubWeights(k) * cubPoints(k,1) 
+            * phisAtCubPoints(scalarSmallestN+i,k) 
+            * phisAtCubPoints(j,k);
+        }
       }
       for (int j=0;j<scalarBigN;j++) {  // int (x,y) phi_i \cdot (0,phi_j)
-	V1(j+scalarBigN,littleN+i) = 0.0;
-	for (int k=0;k<myCub.getNumPoints();k++) {
-	  V1(j+scalarBigN,littleN+i) += 
-	    cubWeights(k) * cubPoints(k,0) 
-	    * phisAtCubPoints(scalarSmallestN+i,k) 
-	    * phisAtCubPoints(j,k);
-	}
+        V1(j+scalarBigN,littleN+i) = 0.0;
+        for (int k=0;k<myCub.getNumPoints();k++) {
+          V1(j+scalarBigN,littleN+i) += 
+            cubWeights(k) * cubPoints(k,0) 
+            * phisAtCubPoints(scalarSmallestN+i,k) 
+            * phisAtCubPoints(j,k);
+        }
       }
     }
 
@@ -127,9 +127,9 @@ namespace Intrepid {
       shards::CellTopology linetop(shards::getCellTopologyData<shards::Line<2> >() );
 
       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( linePts , 
-							      linetop ,
-							      n+1 , 1 ,
-							      POINTTYPE_EQUISPACED );
+                                                              linetop ,
+                                                              n+1 , 1 ,
+                                                              POINTTYPE_EQUISPACED );
     }
 
 
@@ -139,28 +139,28 @@ namespace Intrepid {
     
     for (int i=0;i<3;i++) {  // loop over edges
       CellTools<Scalar>::getReferenceEdgeTangent( edgeTan , 
-						  i , 
-						  this->basisCellTopology_ );
+                                                  i , 
+                                                  this->basisCellTopology_ );
       /* multiply by 2.0 to account for a Jacobian in Pavel's definition */
       for (int j=0;j<2;j++) {
-	edgeTan(j) *= 2.0;
+        edgeTan(j) *= 2.0;
       }
 
       CellTools<Scalar>::mapToReferenceSubcell( edgePts ,
-						linePts ,
-						1 ,
-						i ,
-						this->basisCellTopology_ );
+                                                linePts ,
+                                                1 ,
+                                                i ,
+                                                this->basisCellTopology_ );
 
       Phis_.getValues( phisAtEdgePoints , edgePts , OPERATOR_VALUE );
 
       // loop over points (rows of V2)
       for (int j=0;j<n;j++) {
-	// loop over orthonormal basis functions (columns of V2)
-	for (int k=0;k<scalarBigN;k++) {
-	  V2(n*i+j,k) = edgeTan(0) * phisAtEdgePoints(k,j);
-	  V2(n*i+j,k+scalarBigN) = edgeTan(1) * phisAtEdgePoints(k,j);
-	}
+        // loop over orthonormal basis functions (columns of V2)
+        for (int k=0;k<scalarBigN;k++) {
+          V2(n*i+j,k) = edgeTan(0) * phisAtEdgePoints(k,j);
+          V2(n*i+j,k+scalarBigN) = edgeTan(1) * phisAtEdgePoints(k,j);
+        }
       }
     }
 
@@ -168,28 +168,28 @@ namespace Intrepid {
     // this code is exactly the same as it is for HDIV
 
     const int numInternalPoints = PointTools::getLatticeSize( this->getBaseCellTopology() ,
-							      n + 1 ,
-							      1 );
+                                                              n + 1 ,
+                                                              1 );
 
     if (numInternalPoints > 0) {
       FieldContainer<Scalar> internalPoints( numInternalPoints , 2 );
       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( internalPoints ,
-							      this->getBaseCellTopology() , 
-							      n + 1 ,
-							      1 ,
-							      pointType );
+                                                              this->getBaseCellTopology() , 
+                                                              n + 1 ,
+                                                              1 ,
+                                                              pointType );
       
       FieldContainer<Scalar> phisAtInternalPoints( scalarBigN , numInternalPoints );
       Phis_.getValues( phisAtInternalPoints , internalPoints , OPERATOR_VALUE );
 
       // copy values into right positions of V2
       for (int i=0;i<numInternalPoints;i++) {
-	for (int j=0;j<scalarBigN;j++) {
-	  // x component
-	  V2(3*n+i,j) = phisAtInternalPoints(j,i);
-	  // y component
-	  V2(3*n+numInternalPoints+i,scalarBigN+j) = phisAtInternalPoints(j,i);
-	}
+        for (int j=0;j<scalarBigN;j++) {
+          // x component
+          V2(3*n+i,j) = phisAtInternalPoints(j,i);
+          // y component
+          V2(3*n+numInternalPoints+i,scalarBigN+j) = phisAtInternalPoints(j,i);
+        }
       }
     }
 //     std::cout << "Nodes on big basis\n";
@@ -216,7 +216,7 @@ namespace Intrepid {
 
     for (int i=0;i<bigN;i++) {
       for (int j=0;j<N;j++) {
-	coeffs_(i,j) = Csdm(i,j);
+        coeffs_(i,j) = Csdm(i,j);
       }
     }
   }  
@@ -226,8 +226,8 @@ namespace Intrepid {
   
     // Basis-dependent initializations
     int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // poisition in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // poisition in the tag, counting from 0, of the subcell ordinal
+    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
     int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
     // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
@@ -239,11 +239,11 @@ namespace Intrepid {
     // there are degree internal dofs on each edge -- normals.  Let's do them
     for (int ed=0;ed<3;ed++) {
       for (int i=0;i<degree;i++) {
-	tag_cur[0] = 1;  tag_cur[1] = ed;  tag_cur[2] = i;  tag_cur[3] = degree;
-	tag_cur += tagSize;
+        tag_cur[0] = 1;  tag_cur[1] = ed;  tag_cur[2] = i;  tag_cur[3] = degree;
+        tag_cur += tagSize;
       }
     }
-			   
+                          
     // end edge dofs
 
     // the rest of the dofs are internal
@@ -257,13 +257,13 @@ namespace Intrepid {
     
     
     Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
-				this -> ordinalToTag_,
-				tags,
-				this -> basisCardinality_,
-				tagSize,
-				posScDim,
-				posScOrd,
-				posDfOrd);
+                                this -> ordinalToTag_,
+                                tags,
+                                this -> basisCardinality_,
+                                tagSize,
+                                posScDim,
+                                posScOrd,
+                                posDfOrd);
 
     delete []tags;
   
@@ -273,69 +273,68 @@ namespace Intrepid {
 
   template<class Scalar, class ArrayScalar> 
   void Basis_HCURL_TRI_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-							      const ArrayScalar &  inputPoints,
-							      const EOperator      operatorType) const {
+                                                              const ArrayScalar &  inputPoints,
+                                                              const EOperator      operatorType) const {
   
     // Verify arguments
 #ifdef HAVE_INTREPID_DEBUG
     Intrepid::getValues_HCURL_Args<Scalar, ArrayScalar>(outputValues,
-							inputPoints,
-							operatorType,
-							this -> getBaseCellTopology(),
-							this -> getCardinality() );
+                                                        inputPoints,
+                                                        operatorType,
+                                                        this -> getBaseCellTopology(),
+                                                        this -> getCardinality() );
 #endif
     const int numPts = inputPoints.dimension(0);
-    const int numBf = this->getCardinality();
     const int deg = this -> getDegree();
     const int scalarBigN = (deg+1)*(deg+2)/2;
 
     try {
       switch (operatorType) {
       case OPERATOR_VALUE:
-	{
-	  FieldContainer<Scalar> phisCur( scalarBigN , numPts );
-	  Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
+        {
+          FieldContainer<Scalar> phisCur( scalarBigN , numPts );
+          Phis_.getValues( phisCur , inputPoints , OPERATOR_VALUE );
 
-	  for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
-	    for (int j=0;j<outputValues.dimension(1);j++) {  // point
-	      outputValues(i,j,0) = 0.0;
-	      outputValues(i,j,1) = 0.0;
-	      for (int k=0;k<scalarBigN;k++) { // Dubiner bf
-		outputValues(i,j,0) += coeffs_(k,i) * phisCur(k,j);
-		outputValues(i,j,1) += coeffs_(k+scalarBigN,i) * phisCur(k,j);
-	      }
-	    }
-	  }
-	}
-	break;
+          for (int i=0;i<outputValues.dimension(0);i++) { // RT bf
+            for (int j=0;j<outputValues.dimension(1);j++) {  // point
+              outputValues(i,j,0) = 0.0;
+              outputValues(i,j,1) = 0.0;
+              for (int k=0;k<scalarBigN;k++) { // Dubiner bf
+                outputValues(i,j,0) += coeffs_(k,i) * phisCur(k,j);
+                outputValues(i,j,1) += coeffs_(k+scalarBigN,i) * phisCur(k,j);
+              }
+            }
+          }
+        }
+        break;
       case OPERATOR_CURL:
-	{
-	  FieldContainer<Scalar> phisCur( scalarBigN , numPts , 2 );
-	  Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
-	  for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
-	    for (int j=0;j<outputValues.dimension(1);j++) { // point loop
-	      // dy of x component
-	      outputValues(i,j) = 0.0;
-	      for (int k=0;k<scalarBigN;k++) {
-		outputValues(i,j) += coeffs_(k,i) * phisCur(k,j,1);
-	      }
-	      // -dx of y component
-	      for (int k=0;k<scalarBigN;k++) {
-		outputValues(i,j) -= coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
-	      }
-	    }
-	  }
-	}
-	break;
+        {
+          FieldContainer<Scalar> phisCur( scalarBigN , numPts , 2 );
+          Phis_.getValues( phisCur , inputPoints , OPERATOR_GRAD );
+          for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
+            for (int j=0;j<outputValues.dimension(1);j++) { // point loop
+              // dy of x component
+              outputValues(i,j) = 0.0;
+              for (int k=0;k<scalarBigN;k++) {
+                outputValues(i,j) += coeffs_(k,i) * phisCur(k,j,1);
+              }
+              // -dx of y component
+              for (int k=0;k<scalarBigN;k++) {
+                outputValues(i,j) -= coeffs_(k+scalarBigN,i) * phisCur(k,j,0);
+              }
+            }
+          }
+        }
+        break;
       default:
-	TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			    ">>> ERROR (Basis_HCURL_TRI_In_FEM): Operator type not implemented");    	
-	break;
+        TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                            ">>> ERROR (Basis_HCURL_TRI_In_FEM): Operator type not implemented");
+        break;
       }
     }
     catch (std::invalid_argument &exception){
       TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			  ">>> ERROR (Basis_HCURL_TRI_In_FEM): Operator type not implemented");    
+                          ">>> ERROR (Basis_HCURL_TRI_In_FEM): Operator type not implemented");    
     }
 
   }
@@ -344,11 +343,11 @@ namespace Intrepid {
   
   template<class Scalar, class ArrayScalar>
   void Basis_HCURL_TRI_In_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-							      const ArrayScalar &    inputPoints,
-							      const ArrayScalar &    cellVertices,
-							      const EOperator        operatorType) const {
+                                                              const ArrayScalar &    inputPoints,
+                                                              const ArrayScalar &    cellVertices,
+                                                              const EOperator        operatorType) const {
     TEST_FOR_EXCEPTION( (true), std::logic_error,
-			">>> ERROR (Basis_HCURL_TRI_In_FEM): FEM Basis calling an FVD member function");
+                        ">>> ERROR (Basis_HCURL_TRI_In_FEM): FEM Basis calling an FVD member function");
   }
 
 

@@ -82,7 +82,7 @@ CellTopology::~CellTopology()
 }
 
 CellTopology::CellTopology()
-  : m_cell( getCellTopologyData<Node>() ), m_owned( NULL )
+  : m_cell( NULL ), m_owned( NULL )
 {}
 
 CellTopology::CellTopology( const CellTopology & right )
@@ -550,7 +550,6 @@ std::ostream & operator << ( std::ostream & os, const CellTopology & cell) {
 }
 
 
-
 void getTopologies(std::vector<shards::CellTopology>& topologies,
                    const unsigned cellDim,
                    const ECellType cellType,
@@ -571,7 +570,7 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
   if( (cellDim == 0) || (cellDim == 4) ) {
     if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(getCellTopologyData<Node>() ); 
+        topologies.push_back( CellTopology( shards::getCellTopologyData<Node>() ) ); 
       }
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
         // No such cells exist
@@ -593,15 +592,15 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
     
     if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::Line<2> >() ); 
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Line<2> >() ) ); 
       }
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::Line<3> >() );     
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Line<3> >() ) );
       }
     }    
     if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(getCellTopologyData<Particle>() );     
+        topologies.push_back( CellTopology( shards::getCellTopologyData<Particle>() ) );
       }
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
         // No such cells exist
@@ -614,26 +613,26 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
   if((cellDim == 2) || (cellDim == 4)) {
     if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::Triangle<3> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Quadrilateral<4> >() );      
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Triangle<3> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Quadrilateral<4> >() ) );
       }
       if (topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::Triangle<4> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Triangle<6> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Quadrilateral<8> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Quadrilateral<9> >() );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Triangle<4> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Triangle<6> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Quadrilateral<8> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Quadrilateral<9> >() ) );
       }      
     }
     if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::ShellLine<2> >() );  
-        topologies.push_back(shards::getCellTopologyData<shards::Beam<2> >() );  
-        topologies.push_back(shards::getCellTopologyData<shards::Pentagon<5> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Hexagon<6> >() );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellLine<2> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Beam<2> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Pentagon<5> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Hexagon<6> >() ) );
       }
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::ShellLine<3> >() );  
-        topologies.push_back(shards::getCellTopologyData<shards::Beam<3> >() );  
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellLine<3> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Beam<3> >() ) );  
       }      
     }
   } // dim 2
@@ -642,32 +641,32 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
   if((cellDim == 3) || (cellDim == 4)) {
     if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Hexahedron<8> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Pyramid<5> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Wedge<6> >() );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Tetrahedron<4> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Hexahedron<8> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Pyramid<5> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Wedge<6> >() ) );
       }
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::Tetrahedron<8> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Tetrahedron<10> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Hexahedron<20> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Hexahedron<27> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Pyramid<13> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Pyramid<14> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Wedge<15> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::Wedge<18> >() );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Tetrahedron<8> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Tetrahedron<10> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Hexahedron<20> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Hexahedron<27> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Pyramid<13> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Pyramid<14> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Wedge<15> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::Wedge<18> >() ) );
       }      
     }
     if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
       // Predefined Polyhedrons should  go here
       if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::ShellTriangle<3> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >() );        
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellTriangle<3> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellQuadrilateral<4> >() ) );
       }
       if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
-        topologies.push_back(shards::getCellTopologyData<shards::ShellTriangle<6> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::ShellQuadrilateral<8> >() );
-        topologies.push_back(shards::getCellTopologyData<shards::ShellQuadrilateral<9> >() );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellTriangle<6> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellQuadrilateral<8> >() ) );
+        topologies.push_back( CellTopology( shards::getCellTopologyData<shards::ShellQuadrilateral<9> >() ) );
       }      
     }
   } // dim 3    

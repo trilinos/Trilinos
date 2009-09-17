@@ -2231,7 +2231,7 @@ int main(int argc, char *argv[]) {
    * Test derived from Test 5.d
    */
   {// test 6.d scope
-    int c=5, p=9, f=7, d1=3;
+    int c=5, p=9, d1=3;
     double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_p_d(p, d1);
@@ -2992,7 +2992,7 @@ int main(int argc, char *argv[]) {
    * Test derived from Test 7.b
    */
   {// test 8.b scope
-    int c=5, p=9, f=7, d1=3;
+    int c=5, p=9, d1=3;
     double zero = INTREPID_TOL*10000.0;
     
     FieldContainer<double> in_p_d_d(p, d1, d1);

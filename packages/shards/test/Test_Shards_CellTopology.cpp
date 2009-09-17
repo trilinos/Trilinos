@@ -267,7 +267,7 @@ void test_shards_cell_topology()
   }
   catch( const std::exception & x ) {
     std::cout << method << "\n" << "End Result: TEST FAILED: " << x.what() << std::endl ;
-    throw ;
+    throw x ;
   }
   catch( ... ) {
     std::cout << method << "\n" << "End Result: TEST FAILED: <unknown>" << std::endl ;

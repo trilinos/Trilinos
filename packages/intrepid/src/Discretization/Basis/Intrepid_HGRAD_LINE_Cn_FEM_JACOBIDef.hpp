@@ -151,8 +151,8 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::initializeTags() {
   // Basis-dependent initializations
 
   int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-  int posScDim = 0;        // poisition in the tag, counting from 0, of the subcell dim
-  int posScOrd = 1;        // poisition in the tag, counting from 0, of the subcell ordinal
+  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
+  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
   int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
   FieldContainer<int> tags(this->basisCardinality_, 4);
