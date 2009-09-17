@@ -482,7 +482,11 @@ INPUT                  = \
 ../src/Cell \
 ../src/Shared \
 ../src/Discretization \
+../test/Cell \
+../test/Shared \
 ../test/Discretization \
+../example/CellTools \
+../example/FieldContainer \
 ../example/Drivers
 
 # This tag can be used to specify the character encoding of the source files that 
