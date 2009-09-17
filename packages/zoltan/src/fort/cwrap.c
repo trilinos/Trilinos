@@ -46,12 +46,7 @@ extern "C" {
 /*--------------------------------------------------------------------*/
 /* procedure name mangling                                            */
 
-#define LOWERCASE   1
-#define UPPERCASE   2
-#define UNDERSCORE  3
-#define UNDERSCORE2 4
-
-#if FMANGLE==LOWERCASE
+#if defined(FC_FN_LOWER) && defined(FC_FN_NO_UNDER)
 
 #define Zfw_Initialize                 zfw_initialize
 #define Zfw_Initialize1                zfw_initialize1
@@ -110,65 +105,7 @@ extern "C" {
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim
 #define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order
 
-#elif FMANGLE==UPPERCASE
-
-#define Zfw_Initialize                 ZFW_INITIALIZE
-#define Zfw_Initialize1                ZFW_INITIALIZE1
-#define Zfw_Create                     ZFW_CREATE       
-#define Zfw_Copy                       ZFW_COPY
-#define Zfw_Copy_To                    ZFW_COPY_TO
-#define Zfw_Destroy                    ZFW_DESTROY       
-#define Zfw_Align                      ZFW_ALIGN
-#define Zfw_Memory_Stats               ZFW_MEMORY_STATS  
-#define Zfw_Set_Fn0f                   ZFW_SET_FN0F
-#define Zfw_Set_Fn1f                   ZFW_SET_FN1F
-#define Zfw_Set_Fn2f                   ZFW_SET_FN2F
-#define Zfw_Set_Fn3f                   ZFW_SET_FN3F
-#define Zfw_Set_Fn4f                   ZFW_SET_FN4F
-#define Zfw_Set_Fn5f                   ZFW_SET_FN5F
-#define Zfw_Set_Fn6f                   ZFW_SET_FN6F
-#define Zfw_Set_Fn7f                   ZFW_SET_FN7F
-#define Zfw_Set_Fn8f                   ZFW_SET_FN8F
-#define Zfw_Set_Fn9f                   ZFW_SET_FN9F
-#define Zfw_Set_FnAf                   ZFW_SET_FNAF
-#define Zfw_Set_FnBf                   ZFW_SET_FNBF
-#define Zfw_Set_Fn0s                   ZFW_SET_FN0S
-#define Zfw_Set_Fn1s                   ZFW_SET_FN1S
-#define Zfw_Set_Fn2s                   ZFW_SET_FN2S
-#define Zfw_Set_Fn3s                   ZFW_SET_FN3S
-#define Zfw_Set_Fn4s                   ZFW_SET_FN4S
-#define Zfw_Set_Fn5s                   ZFW_SET_FN5S
-#define Zfw_Set_Fn6s                   ZFW_SET_FN6S
-#define Zfw_Set_Fn7s                   ZFW_SET_FN7S
-#define Zfw_Set_Fn8s                   ZFW_SET_FN8S
-#define Zfw_Set_Fn9s                   ZFW_SET_FN9S
-#define Zfw_Set_FnAs                   ZFW_SET_FNAS
-#define Zfw_Set_FnBs                   ZFW_SET_FNBS
-#define Zfw_Set_Param                  ZFW_SET_PARAM
-#define Zfw_Set_Param_Vec              ZFW_SET_PARAM_VEC
-#define Zfw_LB_Partition               ZFW_LB_PARTITION
-#define Zfw_LB_Eval                    ZFW_LB_EVAL
-#define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES
-#define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
-#define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN
-#define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN
-#define Zfw_LB_Box_PP_Assign           ZFW_LB_BOX_PP_ASSIGN
-#define Zfw_Invert_Lists               ZFW_INVERT_LISTS
-#define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS  
-#define Zfw_Migrate                    ZFW_MIGRATE  
-#define Zfw_Help_Migrate               ZFW_HELP_MIGRATE  
-#define Zfw_Order                      ZFW_ORDER  
-#define Zfw_Color                      ZFW_COLOR  
-#define Zfw_Color_Test                 ZFW_COLOR_TEST  
-#define Zfw_Generate_Files             ZFW_GENERATE_FILES  
-#define Zfw_RCB_Box                    ZFW_RCB_BOX  
-#define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
-#define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
-#define Zfw_Get_Address_struct         ZFW_GET_ADDRESS_STRUCT
-#define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
-#define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER
-
-#elif FMANGLE==UNDERSCORE
+#elif defined(FC_FN_LOWER) && defined(FC_FN_UNDER)
 
 #define Zfw_Initialize                 zfw_initialize_
 #define Zfw_Initialize1                zfw_initialize1_
@@ -227,7 +164,7 @@ extern "C" {
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim_
 #define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order_
 
-#elif FMANGLE==UNDERSCORE2
+#elif defined(FC_FN_LOWER) && defined(FC_FN_SECOND_UNDER)
 
 #define Zfw_Initialize                 zfw_initialize__
 #define Zfw_Initialize1                zfw_initialize1__
@@ -286,7 +223,183 @@ extern "C" {
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim__
 #define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order__
 
-#endif /* FMANGLE */
+#elif defined(FC_FN_UPPER) && defined(FC_FN_NO_UNDER)
+
+#define Zfw_Initialize                 ZFW_INITIALIZE
+#define Zfw_Initialize1                ZFW_INITIALIZE1
+#define Zfw_Create                     ZFW_CREATE       
+#define Zfw_Copy                       ZFW_COPY
+#define Zfw_Copy_To                    ZFW_COPY_TO
+#define Zfw_Destroy                    ZFW_DESTROY       
+#define Zfw_Align                      ZFW_ALIGN
+#define Zfw_Memory_Stats               ZFW_MEMORY_STATS  
+#define Zfw_Set_Fn0f                   ZFW_SET_FN0F
+#define Zfw_Set_Fn1f                   ZFW_SET_FN1F
+#define Zfw_Set_Fn2f                   ZFW_SET_FN2F
+#define Zfw_Set_Fn3f                   ZFW_SET_FN3F
+#define Zfw_Set_Fn4f                   ZFW_SET_FN4F
+#define Zfw_Set_Fn5f                   ZFW_SET_FN5F
+#define Zfw_Set_Fn6f                   ZFW_SET_FN6F
+#define Zfw_Set_Fn7f                   ZFW_SET_FN7F
+#define Zfw_Set_Fn8f                   ZFW_SET_FN8F
+#define Zfw_Set_Fn9f                   ZFW_SET_FN9F
+#define Zfw_Set_FnAf                   ZFW_SET_FNAF
+#define Zfw_Set_FnBf                   ZFW_SET_FNBF
+#define Zfw_Set_Fn0s                   ZFW_SET_FN0S
+#define Zfw_Set_Fn1s                   ZFW_SET_FN1S
+#define Zfw_Set_Fn2s                   ZFW_SET_FN2S
+#define Zfw_Set_Fn3s                   ZFW_SET_FN3S
+#define Zfw_Set_Fn4s                   ZFW_SET_FN4S
+#define Zfw_Set_Fn5s                   ZFW_SET_FN5S
+#define Zfw_Set_Fn6s                   ZFW_SET_FN6S
+#define Zfw_Set_Fn7s                   ZFW_SET_FN7S
+#define Zfw_Set_Fn8s                   ZFW_SET_FN8S
+#define Zfw_Set_Fn9s                   ZFW_SET_FN9S
+#define Zfw_Set_FnAs                   ZFW_SET_FNAS
+#define Zfw_Set_FnBs                   ZFW_SET_FNBS
+#define Zfw_Set_Param                  ZFW_SET_PARAM
+#define Zfw_Set_Param_Vec              ZFW_SET_PARAM_VEC
+#define Zfw_LB_Partition               ZFW_LB_PARTITION
+#define Zfw_LB_Eval                    ZFW_LB_EVAL
+#define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES
+#define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
+#define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN
+#define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN
+#define Zfw_LB_Box_PP_Assign           ZFW_LB_BOX_PP_ASSIGN
+#define Zfw_Invert_Lists               ZFW_INVERT_LISTS
+#define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS  
+#define Zfw_Migrate                    ZFW_MIGRATE  
+#define Zfw_Help_Migrate               ZFW_HELP_MIGRATE  
+#define Zfw_Order                      ZFW_ORDER  
+#define Zfw_Color                      ZFW_COLOR  
+#define Zfw_Color_Test                 ZFW_COLOR_TEST  
+#define Zfw_Generate_Files             ZFW_GENERATE_FILES  
+#define Zfw_RCB_Box                    ZFW_RCB_BOX  
+#define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
+#define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
+#define Zfw_Get_Address_struct         ZFW_GET_ADDRESS_STRUCT
+#define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
+#define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER
+
+#elif defined(FC_FN_UPPER) && defined(FC_FN_UNDER)
+
+#define Zfw_Initialize                 ZFW_INITIALIZE_
+#define Zfw_Initialize1                ZFW_INITIALIZE1_
+#define Zfw_Create                     ZFW_CREATE_
+#define Zfw_Copy                       ZFW_COPY_
+#define Zfw_Copy_To                    ZFW_COPY_TO_
+#define Zfw_Destroy                    ZFW_DESTROY_
+#define Zfw_Align                      ZFW_ALIGN_
+#define Zfw_Memory_Stats               ZFW_MEMORY_STATS_
+#define Zfw_Set_Fn0f                   ZFW_SET_FN0F_
+#define Zfw_Set_Fn1f                   ZFW_SET_FN1F_
+#define Zfw_Set_Fn2f                   ZFW_SET_FN2F_
+#define Zfw_Set_Fn3f                   ZFW_SET_FN3F_
+#define Zfw_Set_Fn4f                   ZFW_SET_FN4F_
+#define Zfw_Set_Fn5f                   ZFW_SET_FN5F_
+#define Zfw_Set_Fn6f                   ZFW_SET_FN6F_
+#define Zfw_Set_Fn7f                   ZFW_SET_FN7F_
+#define Zfw_Set_Fn8f                   ZFW_SET_FN8F_
+#define Zfw_Set_Fn9f                   ZFW_SET_FN9F_
+#define Zfw_Set_FnAf                   ZFW_SET_FNAF_
+#define Zfw_Set_FnBf                   ZFW_SET_FNBF_
+#define Zfw_Set_Fn0s                   ZFW_SET_FN0S_
+#define Zfw_Set_Fn1s                   ZFW_SET_FN1S_
+#define Zfw_Set_Fn2s                   ZFW_SET_FN2S_
+#define Zfw_Set_Fn3s                   ZFW_SET_FN3S_
+#define Zfw_Set_Fn4s                   ZFW_SET_FN4S_
+#define Zfw_Set_Fn5s                   ZFW_SET_FN5S_
+#define Zfw_Set_Fn6s                   ZFW_SET_FN6S_
+#define Zfw_Set_Fn7s                   ZFW_SET_FN7S_
+#define Zfw_Set_Fn8s                   ZFW_SET_FN8S_
+#define Zfw_Set_Fn9s                   ZFW_SET_FN9S_
+#define Zfw_Set_FnAs                   ZFW_SET_FNAS_
+#define Zfw_Set_FnBs                   ZFW_SET_FNBS_
+#define Zfw_Set_Param                  ZFW_SET_PARAM_
+#define Zfw_Set_Param_Vec              ZFW_SET_PARAM_VEC_
+#define Zfw_LB_Partition               ZFW_LB_PARTITION_
+#define Zfw_LB_Eval                    ZFW_LB_EVAL_
+#define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES_
+#define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN_
+#define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN_
+#define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN_
+#define Zfw_LB_Box_PP_Assign           ZFW_LB_BOX_PP_ASSIGN_
+#define Zfw_Invert_Lists               ZFW_INVERT_LISTS_
+#define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS_
+#define Zfw_Migrate                    ZFW_MIGRATE_
+#define Zfw_Help_Migrate               ZFW_HELP_MIGRATE_
+#define Zfw_Order                      ZFW_ORDER_
+#define Zfw_Color                      ZFW_COLOR_
+#define Zfw_Color_Test                 ZFW_COLOR_TEST_
+#define Zfw_Generate_Files             ZFW_GENERATE_FILES_
+#define Zfw_RCB_Box                    ZFW_RCB_BOX_
+#define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC_
+#define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT_
+#define Zfw_Get_Address_struct         ZFW_GET_ADDRESS_STRUCT_
+#define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM_
+#define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER_
+
+#elif defined(FC_FN_UPPER) && defined(FC_FN_SECOND_UNDER)
+
+#define Zfw_Initialize                 ZFW_INITIALIZE__
+#define Zfw_Initialize1                ZFW_INITIALIZE1__
+#define Zfw_Create                     ZFW_CREATE__
+#define Zfw_Copy                       ZFW_COPY__
+#define Zfw_Copy_To                    ZFW_COPY_TO__
+#define Zfw_Destroy                    ZFW_DESTROY__
+#define Zfw_Align                      ZFW_ALIGN__
+#define Zfw_Memory_Stats               ZFW_MEMORY_STATS__
+#define Zfw_Set_Fn0f                   ZFW_SET_FN0F__
+#define Zfw_Set_Fn1f                   ZFW_SET_FN1F__
+#define Zfw_Set_Fn2f                   ZFW_SET_FN2F__
+#define Zfw_Set_Fn3f                   ZFW_SET_FN3F__
+#define Zfw_Set_Fn4f                   ZFW_SET_FN4F__
+#define Zfw_Set_Fn5f                   ZFW_SET_FN5F__
+#define Zfw_Set_Fn6f                   ZFW_SET_FN6F__
+#define Zfw_Set_Fn7f                   ZFW_SET_FN7F__
+#define Zfw_Set_Fn8f                   ZFW_SET_FN8F__
+#define Zfw_Set_Fn9f                   ZFW_SET_FN9F__
+#define Zfw_Set_FnAf                   ZFW_SET_FNAF__
+#define Zfw_Set_FnBf                   ZFW_SET_FNBF__
+#define Zfw_Set_Fn0s                   ZFW_SET_FN0S__
+#define Zfw_Set_Fn1s                   ZFW_SET_FN1S__
+#define Zfw_Set_Fn2s                   ZFW_SET_FN2S__
+#define Zfw_Set_Fn3s                   ZFW_SET_FN3S__
+#define Zfw_Set_Fn4s                   ZFW_SET_FN4S__
+#define Zfw_Set_Fn5s                   ZFW_SET_FN5S__
+#define Zfw_Set_Fn6s                   ZFW_SET_FN6S__
+#define Zfw_Set_Fn7s                   ZFW_SET_FN7S__
+#define Zfw_Set_Fn8s                   ZFW_SET_FN8S__
+#define Zfw_Set_Fn9s                   ZFW_SET_FN9S__
+#define Zfw_Set_FnAs                   ZFW_SET_FNAS__
+#define Zfw_Set_FnBs                   ZFW_SET_FNBS__
+#define Zfw_Set_Param                  ZFW_SET_PARAM__
+#define Zfw_Set_Param_Vec              ZFW_SET_PARAM_VEC__
+#define Zfw_LB_Partition               ZFW_LB_PARTITION__
+#define Zfw_LB_Eval                    ZFW_LB_EVAL__
+#define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES__
+#define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN__
+#define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN__
+#define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN__
+#define Zfw_LB_Box_PP_Assign           ZFW_LB_BOX_PP_ASSIGN__
+#define Zfw_Invert_Lists               ZFW_INVERT_LISTS__
+#define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS__
+#define Zfw_Migrate                    ZFW_MIGRATE__
+#define Zfw_Help_Migrate               ZFW_HELP_MIGRATE__
+#define Zfw_Order                      ZFW_ORDER__
+#define Zfw_Color                      ZFW_COLOR__
+#define Zfw_Color_Test                 ZFW_COLOR_TEST__
+#define Zfw_Generate_Files             ZFW_GENERATE_FILES__
+#define Zfw_RCB_Box                    ZFW_RCB_BOX__
+#define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC__
+#define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT__
+#define Zfw_Get_Address_struct         ZFW_GET_ADDRESS_STRUCT__
+#define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM__
+#define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER__
+
+#else
+#error "Unrecognized Fortran Mangling scheme."
+#endif
 
 /*--------------------------------------------------------------------*/
 /* Variables                                                          */
