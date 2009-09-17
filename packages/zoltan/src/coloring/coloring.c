@@ -251,10 +251,15 @@ int Zoltan_Color(
   if (!color_exp)
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
-  Zoltan_ZG_Build (zz, &graph, 0);
-  Zoltan_ZG_Export (zz, &graph,
+  ierr =  Zoltan_ZG_Build (zz, &graph, 0);
+  if (ierr != ZOLTAN_OK || ierr != ZOLTAN_WARN)
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
+  ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
 		    NULL, NULL, &partialD2);
+  if (ierr != ZOLTAN_OK || ierr != ZOLTAN_WARN)
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
+
 
   /* CREATE THE HASH TABLE */
   /* Determine hash size and allocate hash table */
