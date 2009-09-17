@@ -285,7 +285,6 @@ namespace Intrepid {
                                                         this -> getCardinality() );
 #endif
     const int numPts = inputPoints.dimension(0);
-    const int numBf = this->getCardinality();
     const int deg = this -> getDegree();
     const int scalarBigN = (deg+1)*(deg+2)/2;
 

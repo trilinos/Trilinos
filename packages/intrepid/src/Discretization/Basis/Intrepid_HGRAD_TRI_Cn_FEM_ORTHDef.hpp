@@ -317,7 +317,7 @@ void TabulatorTri<Scalar,ArrayScalar,derivOrder>::tabulate( ArrayScalar &outputV
   for (int i=0;i<card;i++) {
     for (int j=0;j<np;j++) {
       outputValues(i,j,0) = dResult(i,j,0).dx(0);
-      for (int k=0;k<derivOrder;k++) {
+      for (unsigned k=0;k<derivOrder;k++) {
         outputValues(i,j,k+1) = dResult(i,j,k).dx(1);
       }
     }

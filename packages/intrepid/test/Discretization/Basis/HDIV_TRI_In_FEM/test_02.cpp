@@ -271,10 +271,6 @@ int main(int argc, char *argv[]) {
       
       for (int x_order=0;x_order<=basis_order;x_order++) {
         for (int y_order=0;y_order<=basis_order-x_order;y_order++) {
-          *outStream << "Basis order: " << basis_order << "\n";
-          *outStream << "x_order: " << x_order << "\n";
-          *outStream << "y_order: " << y_order << "\n";
-
 
           // reset global matrix since I destroyed it in LU factorization.
           fe_matrix.initialize();
@@ -376,9 +372,6 @@ int main(int argc, char *argv[]) {
                                                 
           }
 
-// *outStream << rhs_and_soln_vec << endl;
-
-
           // solve linear system
           int info = 0;
           Teuchos::LAPACK<int, double> solver;
@@ -403,12 +396,21 @@ int main(int argc, char *argv[]) {
           u_exact( exact_solution , interp_points_ref , x_order, y_order);
           interp_points_ref.resize(numInterpPoints,cellDim);
 
-// *outStream << interpolant << endl;
           RealSpaceTools<double>::add(interpolant,exact_solution);
-// *outStream << interpolant << endl;
 
           double nrm= RealSpaceTools<double>::vectorNorm(&interpolant[0],interpolant.dimension(1), NORM_TWO);
-          *outStream << nrm << "\n";
+
+          *outStream << "\nNorm-2 error between scalar components of exact solution polynomial of order ("
+                     << x_order << ", " << y_order << ") and finite element interpolant of order " << basis_order << ": "
+                     << nrm << "\n";
+
+          if (nrm > zero) {
+            *outStream << "\n\nPatch test failed for solution polynomial order ("
+                       << x_order << ", " << y_order << ") and basis order (scalar / vector)  ("
+                       << basis_order << ", " << basis_order + 1 << ")\n\n";
+            errorFlag++;
+          }
+
         }
       }
     }
