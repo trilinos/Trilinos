@@ -433,45 +433,6 @@ namespace Intrepid {
   }
 
   
-  
-  /** \enum   Intrepid::EIntegrationDomain
-      \brief  Enumeration of integration domains.
-    */
-  enum EIntegrationDomain
-    {
-      INTEGRATION_DOMAIN_CELL = 0,             
-      INTEGRATION_DOMAIN_FACE,                 
-      INTEGRATION_DOMAIN_SIDE,                 
-      INTEGRATION_DOMAIN_EDGE,
-      INTEGRATION_DOMAIN_MAX                     
-    };
-  
-  inline std::string EIntegrationDomainToString(EIntegrationDomain domain) {
-    std::string retString;
-    switch(domain) {
-      case INTEGRATION_DOMAIN_CELL:    retString = "Cell";        break;
-      case INTEGRATION_DOMAIN_FACE:    retString = "Face";        break;
-      case INTEGRATION_DOMAIN_SIDE:    retString = "Side";        break;
-      case INTEGRATION_DOMAIN_EDGE:    retString = "Edge";        break;
-      case INTEGRATION_DOMAIN_MAX:     retString = "Max. Domain"; break;
-      default:                         retString = "INVALID EIntegrationDomain";
-    }
-    return retString;
-  }
-  
-  /** \brief  Verifies validity of an integration domain enum
-    
-      \param  domainType      [in]  - enum of the domain type
-      \return 1 if the argument is valid integration domain; 0 otherwise
-   */
-  inline int isValidIntegrationDomain(EIntegrationDomain domainType){
-    return( (domainType == INTEGRATION_DOMAIN_CELL) ||
-            (domainType == INTEGRATION_DOMAIN_FACE) ||
-            (domainType == INTEGRATION_DOMAIN_SIDE) ||
-            (domainType == INTEGRATION_DOMAIN_EDGE) );
-  }
-  
-  
   /** \struct Intrepid::CubatureTemplate
       \brief  Template for the cubature rules used by Intrepid. Cubature template consists of  
               cubature points and cubature weights. Intrepid provides a collection of cubature  
@@ -593,10 +554,10 @@ namespace Intrepid {
 
 } //namespace Intrepid
 
-
-/*! \mainpage Intrepid Documentation (ver. Trilinos 10.0)
+/*! \mainpage INTREPID Documentation (ver. Trilinos 10.0)
  
   \image html intrepid.png
+  \image latex intrepid.jpg "Reconnaissance balloon ``Intrepid''" width=1in
 
   \section intro_sec Introduction
 
