@@ -205,6 +205,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // compute BQBt
    state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
+   PB_DEBUG_MSG("Computed BQBt",10);
 
    // setup the scaling operator
    LinearOp H = hScaling_;
@@ -225,7 +226,6 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
       state->setInitialized(true);
 
-      PB_DEBUG_MSG("END InvLSCStrategy::reinitiailzeState",10);
       return;
    }
 
@@ -249,11 +249,13 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    }
 
    // compute gamma
+   PB_DEBUG_MSG("Calculating gamma",10);
    LinearOp iQuF = multiply(state->invMass_,modF);
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
    PB::LinearOp stabMatrix; // this is the pressure stabilization matrix to use
    state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
+   PB_DEBUG_MSG("Calculated gamma",10);
    if(userPresStabMat_!=Teuchos::null) {
       PB::LinearOp invDGl = PB::getInvDiagonalOp(userPresStabMat_);
       PB::LinearOp gammaOp = multiply(invDGl,C);
@@ -279,8 +281,10 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    update(-1.0,getDiagonal(C),1.0,vec_D); // vec_D = diag(B*inv(diag(F))*Bt)-diag(C)
    const LinearOp invD = buildInvDiagonal(vec_D,"inv(D)");
 
+   PB_DEBUG_MSG("Calculating alpha",10);
    const LinearOp BidFBtidD = multiply<double>(B_idF_Bt,invD);
    double num = std::fabs(PB::computeSpectralRad(BidFBtidD,5e-2,false,eigSolveParam_));
+   PB_DEBUG_MSG("Calculated alpha",10);
    state->alpha_ = 1.0/num;
    state->aiD_ = Thyra::scale(state->alpha_,invD);
 
@@ -411,7 +415,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    PB_DEBUG_MSG_END()
 
    // set defaults as needed
-   if(invStr=="") invVStr = "Amesos";
+   if(invStr=="") invStr = "Amesos";
    if(invVStr=="") invVStr = invStr;
    if(invPStr=="") invPStr = invStr;
 

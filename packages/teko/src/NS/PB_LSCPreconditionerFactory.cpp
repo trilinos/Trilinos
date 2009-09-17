@@ -53,7 +53,7 @@ LSCPreconditionerFactory::LSCPreconditionerFactory() : useMass_(false)
 // initialize a newly created preconditioner object
 LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blockOp,BlockPreconditionerState & state) const
 {
-   PB_DEBUG_MSG("BEGIN LSCPreconditionerFactory::buildPreconditionerOperator",10);
+   PB_DEBUG_SCOPE("LSCPreconditionerFactory::buildPreconditionerOperator",10);
    PB_DEBUG_EXPR(Teuchos::Time timer(""));
    PB_DEBUG_EXPR(Teuchos::Time totalTimer(""));
    PB_DEBUG_EXPR(totalTimer.start());
@@ -102,7 +102,6 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    if(invOpsStrategy_->useFullLDU()) { 
       PB_DEBUG_EXPR(totalTimer.stop());
       PB_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
-      PB_DEBUG_MSG("END LSCPreconditionerFactory::buildPreconditionerOperator (Full LDU)",10);
 
       // solve using a full LDU decomposition
       return createLU2x2InverseOp(blockOp,invF,invPschur,"LSC-LDU");
@@ -117,7 +116,6 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 
       PB_DEBUG_EXPR(totalTimer.stop());
       PB_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
-      PB_DEBUG_MSG("END LSCPreconditionerFactory::buildPreconditionerOperator (Upper only)",10);
 
       // solve using only one inversion of F
       return createBlockUpperTriInverseOp(U,invDiag,"LSC-Upper");

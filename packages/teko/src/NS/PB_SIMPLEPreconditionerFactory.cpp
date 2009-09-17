@@ -108,7 +108,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
 
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
-   double alpha = 1.0;
+   alpha_ = 1.0;
 
    // "parse" the parameter list
    if(pl.isParameter("Inverse Type"))
@@ -118,10 +118,20 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    if(pl.isParameter("Inverse Pressure Type")) 
      invPStr = pl.get<std::string>("Inverse Pressure Type");
    if(pl.isParameter("Alpha"))
-     alpha = pl.get<double>("Alpha");
+     alpha_ = pl.get<double>("Alpha");
+
+   PB_DEBUG_MSG_BEGIN(5)
+      DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
+      DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
+      DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
+      DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
+      DEBUG_STREAM << "   alpha    = " << alpha_ << std::endl;
+      DEBUG_STREAM << "SIMPLE Parameter list: " << std::endl;
+      pl.print(DEBUG_STREAM);
+   PB_DEBUG_MSG_END()
 
    // set defaults as needed
-   if(invStr=="") invVStr = "Amesos";
+   if(invStr=="") invStr = "Amesos";
    if(invVStr=="") invVStr = invStr;
    if(invPStr=="") invPStr = invStr;
 
@@ -137,7 +147,6 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    // based on parameter type build a strategy
    invVelFactory_ = invVFact; 
    invPrsFactory_ = invPFact;
-   alpha_ = alpha;
 }
 
 } // end namespace NS
