@@ -94,10 +94,6 @@ int main(int argc, char *argv[]) {
 
 
   int errorFlag = 0;
-#ifdef HAVE_INTREPID_DEBUG
-  int beginThrowNumber = TestForException_getThrowNumber();
-  int endThrowNumber = beginThrowNumber + 50;
-#endif
 
   shards::CellTopology myLine_2( shards::getCellTopologyData< shards::Line<2> >() );
   shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );

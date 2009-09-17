@@ -994,7 +994,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<int> inCell;
     
     // 63. Point dimension does not match cell topology
-    double * point;
+    double * point = 0;
     INTREPID_TEST_COMMAND(CellTools::checkPointInclusion(point, (*topo_iterator).getDimension() + 1, (*topo_iterator) ),
                           throwCounter, nException );
     

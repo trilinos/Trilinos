@@ -109,7 +109,6 @@ int main(int argc, char *argv[]) {
     myBasisDIV.getValues( myBasisValuesDIV , lattice , OPERATOR_VALUE );
     myBasisCURL.getValues( myBasisValuesCURL, lattice , OPERATOR_VALUE );
 
-    int cur=0;
     for (int i=0;i<myBasisValuesDIV.dimension(0);i++) {
       for (int j=0;j<myBasisValuesDIV.dimension(1);j++) {
         if (std::abs( myBasisValuesDIV(i,j,1) + myBasisValuesCURL(i,j,0) ) > INTREPID_TOL ) {
