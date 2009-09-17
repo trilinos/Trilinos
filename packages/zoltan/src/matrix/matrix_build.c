@@ -89,7 +89,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
-			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 1);
+			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 0);
   CHECK_IERR;
 
   /* Make our new numbering public */
@@ -214,6 +214,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
  End:
+
   ZOLTAN_FREE(&xLID);
   ZOLTAN_FREE(&xGNO);
   ZOLTAN_FREE(&xGID);

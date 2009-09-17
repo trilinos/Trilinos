@@ -237,6 +237,8 @@ int Zoltan_Color(
   zz->Num_GID = gcomm[0];
   zz->Num_LID = gcomm[1];
 
+  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
+
   if (num_gid_entries != zz->Num_GID)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
 
@@ -252,12 +254,12 @@ int Zoltan_Color(
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
   ierr =  Zoltan_ZG_Build (zz, &graph, 0);
-  if (ierr != ZOLTAN_OK || ierr != ZOLTAN_WARN)
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
 		    NULL, NULL, &partialD2);
-  if (ierr != ZOLTAN_OK || ierr != ZOLTAN_WARN)
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 
 
