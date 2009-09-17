@@ -89,7 +89,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
-			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 0);
+			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 1);
   CHECK_IERR;
 
   /* Make our new numbering public */
@@ -128,8 +128,12 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     matrix->ywgt = (float*)ZOLTAN_MALLOC(matrix->ywgtdim * sizeof(float));
     if (matrix->ywgtdim && matrix->ywgt == NULL)
       MEMORY_ERROR;
-    Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
+    ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
 		    matrix->nY, NULL);
+    if (ierr != ZOLTAN_OK) {
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
   }
 
   matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
@@ -142,8 +146,13 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   else
     proclist = NULL;
   /* Convert pinID to pinGNO using the same translation as x */
-  Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
+  ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
 		  matrix->nPins, proclist);
+  if (ierr != ZOLTAN_OK) {
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
   ZOLTAN_FREE(&pinID);
   Zoltan_DD_Destroy(&dd);
   dd = NULL;

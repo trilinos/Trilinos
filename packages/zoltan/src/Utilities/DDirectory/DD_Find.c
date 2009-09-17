@@ -166,14 +166,16 @@ int Zoltan_DD_Find (
    }
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill return lists");
-   err = ZOLTAN_OK;    
+/*    err = ZOLTAN_OK;     */
+
+   MPI_Allreduce(&errcount, &err, 1, MPI_INT, MPI_SUM, dd->comm);
+   err = (err) ? ZOLTAN_WARN : ZOLTAN_OK;
 
    /* if at least one GID was not found, potentially notify caller of error */
    if (dd->debug_level > 0)  {
       char str[100];      /* diagnostic message string */
       sprintf (str, "Processed %d GIDs, GIDs not found: %d", count, errcount);
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, str);
-      err = (errcount) ? ZOLTAN_WARN : ZOLTAN_OK;
    }
 
 fini:
@@ -185,7 +187,7 @@ fini:
    if (dd->debug_level > 4)
       ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
    return err;
-   }
+}
 
 
 
