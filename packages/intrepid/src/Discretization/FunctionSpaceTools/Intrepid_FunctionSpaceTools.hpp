@@ -943,7 +943,7 @@ class FunctionSpaceTools {
       \f[
              \mathbf{K}^{c} = \mbox{diag}(\sigma^c_0,\ldots,\sigma^c_{L-1}) \mathbf{K}^c 
       \f]
-             where \f$\mathbf{K}^{c} \in \mathbf{R}^{L\times R}$ are matrices, indexed by 
+             where \f$\mathbf{K}^{c} \in \mathbf{R}^{L\times R}\f$ are matrices, indexed by 
              cell number \e c and stored in the rank-3 array \e inoutOperator, and 
              \f$\{\sigma^c_r\}_{r=0}^{L-1}\f$ are left field signs, indexed by cell number \e c;  
              see Section \ref sec_pullback for discussion of field signs. This operation is 
@@ -972,7 +972,7 @@ class FunctionSpaceTools {
       \f[
              \mathbf{K}^{c} = \mathbf{K}^c \mbox{diag}(\sigma^c_0,\ldots,\sigma^c_{R-1})
       \f]
-             where \f$\mathbf{K}^{c} \in \mathbf{R}^{L\times R}$ are matrices, indexed by 
+             where \f$\mathbf{K}^{c} \in \mathbf{R}^{L\times R}\f$ are matrices, indexed by 
              cell number \e c and stored in the rank-3 array \e inoutOperator, and 
              \f$\{\sigma^c_r\}_{r=0}^{R-1}\f$ are the field signs, indexed by cell number \e c;  
              see Section \ref sec_pullback for discussion of field signs. This operation is 
@@ -1080,6 +1080,12 @@ class FunctionSpaceTools {
 /**
  \page    function_space_tools_page                 Function space tools
  
+ <b>Table of contents </b>
+ \li \ref sec_fst_overview 
+ \li \ref sec_pullbacks
+ \li \ref sec_measure
+ \li \ref sec_evaluate
+ 
  \section sec_fst_overview                          Overview
 
  Intrepid::FunctionSpaceTools is a stateless class of \e expert \e methods for operations on finite
@@ -1089,7 +1095,7 @@ class FunctionSpaceTools {
  
  - Transformation methods provide implementation of pullbacks for \e HGRAD, \e HCURL, \e HDIV and \e HVOL 
    finite element functions. Thease are essentialy the "change of variables rules" needed to transform 
-   values of basis functions and their derivatives defined on a reference element \f$\widehat{{\mathcal C}}\f$, 
+   values of basis functions and their derivatives defined on a reference element \f$\widehat{{\mathcal C}}\f$ 
    to a physical element \f${\mathcal C}\f$. See Section \ref sec_pullbacks for details
  - Measure computation methods implement the volume, surface and line measures required for computation
    of integrals in the physical frame by changing variables to reference frame. See Section \ref sec_measure
@@ -1099,7 +1105,7 @@ class FunctionSpaceTools {
  - Methods for algebraic and vector-algebraic operations on multi-dimensional arrays with finite element
    function values. These methods are used to prepare multidimensional arrays with data and finite
    element function values for the integration routines. They also include evaluation methods to compute
-   finite element function values at some given points in physical frame. 
+   finite element function values at some given points in physical frame; see Section \ref sec_evaluate.
  
  
  \section sec_pullbacks                             Pullbacks
@@ -1112,8 +1118,8 @@ class FunctionSpaceTools {
  \f[
       u_i = \sigma_i \Phi^*(\widehat{u}_i), \qquad i=1,\ldots,n \,.
  \f]  
- In this formula \f$\{\sigma_i\}_{i=0}^n\f$, where \f$\sigma_i = \pm 1\f$ are the \e field \e signs, 
- and \f$\Phi^*\f$ is the \e pullback (``change of variables'') transformation. For scalar spaces
+ In this formula \f$\{\sigma_i\}_{i=0}^n\f$, where \f$\sigma_i = \pm 1\f$, are the \e field \e signs, 
+ and \f$\Phi^*\f$ is the \e pullback ("change of variables") transformation. For scalar spaces
  such as \e HGRAD and \e HVOL the field signs are always equal to 1 and can be disregarded. For vector
  field spaces such as \e HCURL or \e HDIV, the field sign of a basis function can be +1 or -1, 
  depending on the orientation of the physical edge or face, associated with the basis function.
@@ -1170,16 +1176,17 @@ class FunctionSpaceTools {
  
  \section sec_evaluate                          Evaluation of finite element fields
  
+ To make this example more specific, assume curl-conforming finite element spaces.
  Suppose that we have a physical cell \f$\{{\mathcal C},P,\Lambda\}\f$ with a basis
- \f$\{{u}_i\}_{i=0}^n\f$. A finite element function on this cell is defined by a set of \e n
+ \f$\{{\bf u}_i\}_{i=0}^n\f$. A finite element function on this cell is defined by a set of \e n
  coefficients \f$\{c_i\}_{i=0}^n\f$:
  \f[
-      u^h(x) = \sum_{i=0}^n c_i u_i(x) \,.
+      {\bf u}^h(x) = \sum_{i=0}^n c_i {\bf u}_i(x) \,.
  \f]
- To make the example more specific, assume that the finite element space is curl-conforming.
+ 
  From Section \ref sec_pullbacks it follows that
  \f[
-      u^h(x) = \sum_{i=0}^n c_i \sigma_i
+      {\bf u}^h(x) = \sum_{i=0}^n c_i \sigma_i
                \left((DF_{\mathcal C})^{-{\sf T}}\cdot\widehat{\bf u}_i\right)\circ 
                      F^{-1}_{\mathcal C}(x) 
              = \sum_{i=0}^n c_i \sigma_i 
@@ -1189,7 +1196,7 @@ class FunctionSpaceTools {
  of \e x in the reference cell. 
  
  Consequently, evaluation of finite element functions at a given set of points 
- \f$\{x_p\}_{p=0}^P\f \subset {\mathcal C}$ comprises of the following four steps:
+ \f$\{x_p\}_{p=0}^P \subset {\mathcal C}\f$ comprises of the following four steps:
  
  -#   Application of the inverse map \f$F^{-1}_{\mathcal C}\f$ to obtain the pre-images
       \f$\{\widehat{x}_p\}_{p=0}^P\f$ of the evaluation points in the reference cell 
@@ -1216,9 +1223,9 @@ class FunctionSpaceTools {
  Assume the same setting as in Section \ref sec_evaluate. A finite element operator defined 
  by the finite element basis on the physical cell \f$\mathcal{C}\f$ is a matrix
  \f[
-      \mathbf{K}^{\mathcal{C}}_{i,j} = \int_{\mathcal C} \Lop_L u_i(x)\, \Lop_R u_j(x) \, dx \,.
+      \mathbf{K}^{\mathcal{C}}_{i,j} = \int_{\mathcal C} {\mathcal L}_L {\bf u}_i(x)\, {\mathcal L}_R {\bf u}_j(x) \, dx \,.
  \f]
- where \f$\Lop_L\f$ and \f$\Lop_R \f$ are \e left and \e right operators acting on the basis
+ where \f${\mathcal L}_L\f$ and \f${\mathcal L}_R \f$ are \e left and \e right operators acting on the basis
  functions. Typically, when the left and the right basis functions are from the same finite
  element basis (as in this example), the left and right operators are the same. If they are set
  to \e VALUE we get a mass matrix; if they are set to an admissible differential operator we get
@@ -1226,8 +1233,8 @@ class FunctionSpaceTools {
  set to \e VALUE. Using the basis definition from Section \ref sec_pullback we have that
  \f[
      \mathbf{K}^{\mathcal{C}}_{i,j} = \int_{\widehat{\mathcal C}} \sigma_i \sigma_j
-     \left[(DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\right]\cdot
-     \left[(DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\right]\,d\widehat{x}
+     (DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\cdot
+     (DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\,d\widehat{x}
  \f]
  It follows that 
  \f[
@@ -1237,8 +1244,8 @@ class FunctionSpaceTools {
 where 
  \f[ 
    \widehat{\mathbf{K}}^{\mathcal{C}}_{i,j} = \int_{\widehat{\mathcal C}}
-   \left[(DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\right]\cdot
-   \left[(DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\right]\,d\widehat{x}
+   (DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\cdot
+   (DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\,d\widehat{x}
  \f]
  is the raw cell operator matrix. The methods Intrepid::FunctionSpaceTools::applyLeftFieldSigns and
  Intrepid::FunctionSpaceTools::applyRightFieldSigns apply the left and right diagonal sign matrices to
@@ -1247,7 +1254,7 @@ where
  
  A finite element operator defined by the finite element basis on the physical cell is a vector
  \f[
-   \mathbf{f}^{\mathcal{C}}_{i} = \int_{\mathcal C} f(x) \Lop_R u_i(x) \, dx \,.
+   \mathbf{f}^{\mathcal{C}}_{i} = \int_{\mathcal C} f(x) {\mathcal L}_R u_i(x) \, dx \,.
  \f]
  Assuming again operator \e VALUE and using the same arguments as above, we see that
  \f[
@@ -1258,7 +1265,7 @@ where
  \f[
    \widehat{\mathbf{f}}^{\mathcal{C}} = \int_{\widehat{\mathcal C}}
          \mathbf{f}\circ F_{\mathcal C}(\widehat{x}) 
-         \left[(DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\right]\,d\widehat{x}
+         (DF_{\mathcal C}(\widehat{x}))^{-{\sf T}}\cdot\widehat{\bf u}_i(\widehat{x})\,d\widehat{x}
  \f]
  is the raw cell functional.
 */
