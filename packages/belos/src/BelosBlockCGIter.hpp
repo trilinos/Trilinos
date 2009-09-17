@@ -56,6 +56,8 @@
   \class Belos::BlockCGIter
   
   \brief This class implements the block, preconditioned Conjugate Gradient (CG) iteration.
+
+  \ingroup belos_solver_framework
  
   \author Teri Barth and Heidi Thornquist
 */

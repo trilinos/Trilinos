@@ -57,6 +57,7 @@
   single-std::vector Krylov subspace is constructed.  The QR decomposition of 
   block, upper Hessenberg matrix is performed each iteration to update
   the least squares system and give the current linear system residuals.
+  \ingroup belos_solver_framework
  
   \author Michael Parks and Heidi Thornquist
 */

@@ -56,6 +56,8 @@
   
   \brief This class implements the pseudo-block CG iteration, where the basic CG
   algorithm is performed on all of the linear systems simultaneously.  
+
+  \ingroup belos_solver_framework
  
   \author Heidi Thornquist
 */

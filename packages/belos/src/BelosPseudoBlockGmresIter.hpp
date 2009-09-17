@@ -58,6 +58,8 @@
   block Krylov subspace is constructed for all of the linear systems simultaneously.  
   The QR decomposition of each block, upper Hessenberg matrix is performed each iteration 
   to update the least squares system and give the current linear system residuals.
+
+  \ingroup belos_solver_framework
  
   \author Heidi Thornquist
 */
