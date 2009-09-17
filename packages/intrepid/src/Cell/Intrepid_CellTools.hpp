@@ -1256,6 +1256,14 @@ public:
 /**  
 \page cell_tools_page                 Cell tools
 
+<b>Table of contents </b>
+
+-   \ref cell_topology_sec
+-   \ref cell_topology_ref_cells
+  - \ref sec_cell_topology_ref_map
+  - \ref sec_cell_topology_ref_map_DF
+  - \ref sec_cell_topology_subcell_map
+  - \ref sec_cell_topology_subcell_wset
 
 \section cell_topology_sec            Cell topologies
 
