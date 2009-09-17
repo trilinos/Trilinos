@@ -53,6 +53,8 @@
   \class Belos::CGIter
   
   \brief This class implements the preconditioned Conjugate Gradient (CG) iteration.
+
+  \ingroup belos_solver_framework
  
   \author Teri Barth and Heidi Thornquist
 */

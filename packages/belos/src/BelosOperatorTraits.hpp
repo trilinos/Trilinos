@@ -42,15 +42,26 @@ namespace Belos {
   struct UndefinedOperatorTraits
   {
     //! This function should not compile if there is an attempt to instantiate!
+    /*! \note Any attempt to compile this function results in a compile time error.  This means
+      that the template specialization of Belos::OperatorTraits class does not exist for type
+      <tt>OP</tt>, or is not complete.
+    */
     static inline void notDefined() { OP::this_type_is_missing_a_specialization(); };
   };
-  
+ 
+  /*!  \brief Virtual base class which defines basic traits for the operator type.
+
+       An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
+       If not, this class will produce a compile-time error.
+
+       \ingroup belos_opvec_interfaces
+  */ 
   template <class ScalarType, class MV, class OP>
   class OperatorTraits 
   {
   public:
     
-    ///
+    //! Application method which performs operation <b>y = Op*x</b>. An OperatorError exception is thrown if there is an error.
     static void Apply ( const OP& Op, 
 			const MV& x, 
 			MV& y, 

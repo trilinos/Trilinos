@@ -68,6 +68,8 @@
 	solving non-Hermitian linear systems of equations Ax = b, where b is the right-hand 
 	side std::vector and x is the corresponding solution.
 
+        \ingroup belos_solver_framework
+
 	\author Heidi Thornquist
 */
 

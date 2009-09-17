@@ -60,6 +60,8 @@
   
   \brief This class implements the RCG iteration, where a
   single-std::vector Krylov subspace is constructed.
+
+  \ingroup belos_solver_framework
  
   \author Michael Parks and Heidi Thornquist
 */
