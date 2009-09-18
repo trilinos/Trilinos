@@ -63,8 +63,9 @@ int main(int argc, char** argv) {
   // "Zoltan" and setting the appropriate values.
   // (See Zoltan documentation for other valid parameters...)
 
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
+  Teuchos::ParameterList& sublist = paramlist.sublist("ZOLTAN");  
+  paramlist.set("PARTITIONING METHOD", "HYPERGRAPH");
+  sublist.set("DEBUG_LEVEL", "1");
 
 #else
   //If Zoltan is not available, we don't need to set any parameters.
