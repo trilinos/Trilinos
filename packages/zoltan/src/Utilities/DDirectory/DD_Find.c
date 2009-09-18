@@ -250,7 +250,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "GID not found");
       return ZOLTAN_WARN;
    }
-   return ZOLTAN_OK;
+   return ZOLTAN_WARN;
    }
 
 #ifdef __cplusplus
