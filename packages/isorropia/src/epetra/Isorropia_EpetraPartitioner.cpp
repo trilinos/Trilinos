@@ -228,6 +228,12 @@ partition(bool force_repartitioning)
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
   // TODO: Add "block" and "random" partitioning.
 
+  if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) {
+    throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
+			       "ZOLTAN/LB_METHOD is no longer supported.\n"
+                               "See readme and release notes for details.");
+  }
+
   if (input_coords_.get() != 0){
     if (partitioning_method == "UNSPECIFIED")
       sublist.set("LB_METHOD", "RCB");
@@ -246,6 +252,8 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }
   }
+
+
 
 
   if (paramlist_.isParameter("NUM PARTS")) {
