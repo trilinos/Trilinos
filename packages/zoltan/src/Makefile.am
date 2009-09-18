@@ -501,10 +501,7 @@ include_HEADERS = $(INCLUDE_H)
 FORTRAN_INTERFACE = \
     $(srcdir)/fort/README \
     $(srcdir)/fort/cwrap.c \
-    $(srcdir)/fort/fwrap.fpp \
     $(srcdir)/fort/lb_user_const.f90 \
-    $(srcdir)/fort/lbfn.fpp \
-    $(srcdir)/fort/lbif.fpp \
     $(srcdir)/fort/makefile \
     $(srcdir)/fort/set_borderobjlist.fn \
     $(srcdir)/fort/set_borderobjlist.fn.lbfn \
@@ -647,14 +644,8 @@ FORTRAN_INTERFACE = \
     $(srcdir)/fort/set_unpackobjmulti.fn \
     $(srcdir)/fort/set_unpackobjmulti.if \
     $(srcdir)/fort/sppr.f90 \
-    $(srcdir)/fort/spprinc.64bit \
-    $(srcdir)/fort/spprinc.absoft \
-    $(srcdir)/fort/spprinc.most \
-    $(srcdir)/fort/spprinc.nas \
-    $(srcdir)/fort/spprinc.sun \
-    $(srcdir)/fort/zoltan_user_data.f90 \
-    $(srcdir)/fort/ztypes.fpp \
-    $(srcdir)/fort/ztypes.lbif
+    $(srcdir)/fort/zoltan_user_data.f90
+
     
 FORTRAN_DRIVER = \
     $(srcdir)/fdriver/Makefile.am \
@@ -677,8 +668,7 @@ FORTRAN_DRIVER = \
     $(srcdir)/fdriver/makefile \
     $(srcdir)/fdriver/mmio.f \
     $(srcdir)/fdriver/mpi_h.f \
-    $(srcdir)/fdriver/mpistring.c \
-    $(srcdir)/fdriver/zoltan_user_data.f90
+    $(srcdir)/fdriver/mpistring.c
 
 ZOLTAN_MATLAB = \
     $(srcdir)/matlab/README \
@@ -710,8 +700,6 @@ NATIVE_ZOLTAN_BUILD =  \
     $(srcdir)/Utilities/makefile_sub \
     $(srcdir)/Utilities/Config/Config.RedStorm \
     $(srcdir)/Utilities/Config/Config.aix \
-    $(srcdir)/Utilities/Config/Config.nistlinux \
-    $(srcdir)/Utilities/Config/Config.nistsun \
     $(srcdir)/Utilities/Config/Config.octopiLamPureTest \
     $(srcdir)/Utilities/Config/Config.octopiLamTest \
     $(srcdir)/Utilities/Config/Config.octopiPureTest \
@@ -719,7 +707,6 @@ NATIVE_ZOLTAN_BUILD =  \
     $(srcdir)/Utilities/Config/Config.octopiTest \
     $(srcdir)/Utilities/Config/Config.odin \
     $(srcdir)/Utilities/Config/Config.osf1 \
-    $(srcdir)/Utilities/Config/Config.dec \
     $(srcdir)/Utilities/Config/Config.pure \
     $(srcdir)/Utilities/Config/Config.pure_siMPI \
     $(srcdir)/Utilities/Config/Config.g++ \
@@ -736,8 +723,6 @@ NATIVE_ZOLTAN_BUILD =  \
     $(srcdir)/Utilities/Config/Config.ibm \
     $(srcdir)/Utilities/Config/Config.sgi64 \
     $(srcdir)/Utilities/Config/Config.solaris \
-    $(srcdir)/Utilities/Config/Config.icc \
-    $(srcdir)/Utilities/Config/Config.icc-valor \
     $(srcdir)/Utilities/Config/Config.sun \
     $(srcdir)/Utilities/Config/Config.linux \
     $(srcdir)/Utilities/Config/Config.linux32 \
@@ -755,7 +740,6 @@ NATIVE_ZOLTAN_BUILD =  \
     $(srcdir)/Utilities/Config/Config.mac32 \
     $(srcdir)/Utilities/Config/Config.x1 \
     $(srcdir)/Utilities/Config/Config.mac64 \
-    $(srcdir)/Utilities/Config/Config.x86_freebsd-mpich \
     $(srcdir)/Utilities/Config/Config.mac64_siMPI \
     $(srcdir)/Utilities/Config/Config.xt4scotch \
     $(srcdir)/Utilities/Config/Config.zscript
