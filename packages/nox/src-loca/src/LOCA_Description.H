@@ -361,18 +361,29 @@ The LOCA::Epetra::Factory provides strategies specific to the NOX::Epetra::Group
 <ul>
 <li> Methods for solving bordered systems of equations (LOCA::BorderedSolver::Factory)
     <ul>
-    <li> "Householder" -- Use the QR (a.k.a. Householder) method (LOCA::BorderedSolver::EpetraHouseholder).
+    <li> <B>"Householder"</B> -- Use the QR (a.k.a. Householder) method (LOCA::BorderedSolver::EpetraHouseholder).
        <ul>
        <li> <B>"Include UV In Preconditioner"</B> -- [bool] (default: false) Flag indicating whether to use the \f$U\f$ and \f$V\f$ terms in the preconditioner for \f$P\f$
        <li> <B>"Use P For Preconditioner"</B> -- [bool] (default: false)  Flag indicating whether to use the representation of \f$P\f$ as a LOCA::Epetra::LowRankUpdateRowMatrix for computing the preconditioner.  This is valid only for preconditioners that accept an Epetra_RowMatrix interface.
        <li> <B>"Transpose Solver Method"</B> -- [string] (default: "Transpose Preconditioner") Method for preconditioning the transpose linear system (LOCA::Epetra::TransposeLinearSystem::Factory).  Available choices are:
-          <ul>
+       <ul>
 	  <li> "Transpose Preconditioner" -- Use the transpose of the preconditioner for the original system.
 	  <li> "Left Preconditioning" -- Use the transpose of the preconditioner, and apply using left preconditioning.
 	  <li> "Explicit Transpose" -- Form the transpose of the matrix and compute the preconditioner.  This method is available only if Trilinos is configured with %EpetraExt support (--enable-epetraext).
-	  </ul>
        </ul>
-    <li> "Augmented" -- Form an augmented linear problem implemented in a pseudo-matrix free mode (LOCA::BorderedSolver::EpetraAugmented).
+       <li> <B>"Preconditioner Method"</B> -- [string] (default: "Jacobian") - 
+           Method for preconditioning the \f$P\f$ operator.  Choices are:
+           <ul>
+           <li> "Jacobian" (default) -- Use the preconditioner for \f$J\f$
+           <li> "SMW" -- Use the Sherman-Morrison-Woodbury formula for the
+                inverse of \f$P\f$, replacing the inverse of \f$J\f$ with
+                the preconditioner for \f$J\f$.
+           </ul>
+       <li> <B>"Scale Augmented Rows"</B> -- [bool] (default: true) -
+           Scale augmented rows to unit 2-norm before computing QR
+           factorization.
+      </ul>
+    <li> <B>"Augmented"</B> -- Form an augmented linear problem implemented in a pseudo-matrix free mode (LOCA::BorderedSolver::EpetraAugmented).
     </ul>
 </ul>
 
@@ -382,11 +393,11 @@ The LOCA::LAPACK::Factory provides strategies specific to the NOX::LAPACK::Group
 <ul>
 <li> Methods for solving bordered systems of equations (LOCA::BorderedSolver::Factory)
     <ul>
-    <li> "LAPACK Direct Solve" -- Form the bordered system as a %LAPACK matrix and solve via %LAPACK.
+    <li> <B>"LAPACK Direct Solve"</B> -- Form the bordered system as a %LAPACK matrix and solve via %LAPACK.
     </ul>
 <li> Eigensolver methods (LOCA::Eigensolver::Factory)
     <ul>
-    <li> "DGGEV" -- Use LAPACK's generalized eigenvalue solver DGGEV
+    <li> <B>"DGGEV"</B> -- Use LAPACK's generalized eigenvalue solver DGGEV
        <ul>
        <li> <B>"Num Eigenvalues"</B> -- [int] (default: 4) Number of eigenvalues to print
        <li> <B>"Sorting Order"</B> -- [string] (default: "LM") Sorting order of printed eigenvalues.  Used by LOCA::EigenvalueSort::Factory.  See Eigensolver sublist above for a list of available options.

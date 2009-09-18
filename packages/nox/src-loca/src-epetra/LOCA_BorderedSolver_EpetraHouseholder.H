@@ -209,8 +209,8 @@ namespace LOCA {
      * operator \f$Q\f$ is generated using the standard Householder QR
      * algorithm (Algorithm 5.2.1, G. Golub and C. Van Loan, "Matrix
      * Computations," 3rd Edition, Johns Hopkins, Baltimore, 1996) and is
-     * stored using the compact WY representation:  \f$Q = I + Y^T T Y\f$
-     * (see R. Schreiver and C. Van Loan, "A Storage-Efficient WY Represntation
+     * stored using the compact WY representation:  \f$Q = I + Y T Y^T\f$
+     * (see R. Schreiber and C. Van Loan, "A Storage-Efficient WY Representation
      * for Products of Householder Transformations," SIAM J. Sci. Stat. 
      * Comput., Vol. 10, No. 1, pp. 53-57, January 1989).  
      * 
