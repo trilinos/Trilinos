@@ -43,8 +43,7 @@ The TriKota build process requires an additional step compared
 to other packages in Trilinos: the Dakota source must be unpacked
 within TriKota. Internal to Sandia, the tarball of dakota can
 be downloaded from:
-https://development.sandia.gov/DAKOTA/licensing/download_votd.html
-
+https://development.sandia.gov/dakota/licensing/download.html
 
 Dakota needs to be untarred within the TriKota directory.
 To verify the paths, make sure that the following file exists: 
