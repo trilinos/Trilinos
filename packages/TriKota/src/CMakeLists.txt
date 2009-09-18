@@ -40,6 +40,7 @@ EXECUTE_PROCESS(
     --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
     --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
     --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
+    --with-boost=${PACKAGE_SOURCE_DIR}/Dakota/packages/boost
     --without-dot
     OUTPUT_FILE ${PACKAGE_BINARY_DIR}/Dakota/configure.out
   )
