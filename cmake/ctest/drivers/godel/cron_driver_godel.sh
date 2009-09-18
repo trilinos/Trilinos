@@ -86,12 +86,12 @@ echo
 time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_optimized_shared_godel.out
 
-echo
-echo "Doing serial optimized implicit instantiation build: `date`"
-echo
-
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
+#echo
+#echo "Doing serial optimized implicit instantiation build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
 
 echo
 echo "Doing mpi debug build: `date`"
