@@ -131,6 +131,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
 		    matrix->nY, NULL);
     if (ierr != ZOLTAN_OK) {
+      ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Hyperedge GIDs don't match.\n");
       ierr = ZOLTAN_FATAL;
       goto End;
     }
@@ -149,6 +150,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
 		  matrix->nPins, proclist);
   if (ierr != ZOLTAN_OK) {
+    ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Undefined GID found.\n");
     ierr = ZOLTAN_FATAL;
     goto End;
   }
