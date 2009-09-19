@@ -124,8 +124,12 @@ ENDIF()
 # Generate sample output
 #
 
+CONFIGURE_FILE(generate-sample-output.pl.stub.in generate-sample-output.pl)
 
-# ToDo: Implement!
+ADD_CUSTOM_TARGET(stratimikos_sample_output
+  COMMENT "Generating sample output for package ${PACKAGE_NAME} ..."
+  COMMAND ${PERL_EXECUTABLE} generate-sample-output.pl
+  )
 
 
 #

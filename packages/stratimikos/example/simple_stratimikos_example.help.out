@@ -2,20 +2,20 @@ Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
-../example/simple_stratimikos_example.exe --echo-command-line --help 
+/home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/SERIAL_DEBUG/packages/stratimikos/example/Stratimikos_simple_stratimikos_example.exe --echo-command-line --help 
 
-Usage: ../example/simple_stratimikos_example.exe [options]
+Usage: /home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/SERIAL_DEBUG/packages/stratimikos/example/Stratimikos_simple_stratimikos_example.exe [options]
   options:
   --help                                     Prints this help message
   --pause-for-debugging                      Pauses for user input to allow attaching a debugger
   --echo-command-line                        Echo the command-line but continue as normal
-  --linear-solver-params-file        std::stringName of an XML file containing parameters for linear solver options to be appended first.
+  --linear-solver-params-file        string  Name of an XML file containing parameters for linear solver options to be appended first.
                                              (default: --linear-solver-params-file="")
-  --extra-linear-solver-params       std::stringAn XML string containing linear solver parameters to be appended second.
+  --extra-linear-solver-params       string  An XML string containing linear solver parameters to be appended second.
                                              (default: --extra-linear-solver-params="")
-  --linear-solver-params-used-file   std::stringName of an XML file that can be written with the parameter list after it has been used on completion of this program.
+  --linear-solver-params-used-file   string  Name of an XML file that can be written with the parameter list after it has been used on completion of this program.
                                              (default: --linear-solver-params-used-file="")
-  --matrix-file                      std::stringDefines the matrix and perhaps the RHS and LHS for a linear system to be solved.
+  --matrix-file                      string  Defines the matrix and perhaps the RHS and LHS for a linear system to be solved.
                                              (default: --matrix-file="")
   --tol                              double  Tolerance to check against the scaled residual norm.
                                              (default: --tol=1e-05)

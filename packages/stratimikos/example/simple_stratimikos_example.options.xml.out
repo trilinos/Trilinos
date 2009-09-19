@@ -1,25 +1,25 @@
 <ParameterList>
-  <Parameter name="Enable Delayed Solver Construction" type="bool" value="0"/>
+  <Parameter name="Enable Delayed Solver Construction" type="bool" value="false"/>
   <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
   <ParameterList name="Linear Solver Types">
     <ParameterList name="Amesos">
       <ParameterList name="Amesos Settings">
         <Parameter name="AddToDiag" type="double" value="0"/>
-        <Parameter name="AddZeroToDiag" type="bool" value="0"/>
-        <Parameter name="ComputeTrueResidual" type="bool" value="0"/>
-        <Parameter name="ComputeVectorNorms" type="bool" value="0"/>
+        <Parameter name="AddZeroToDiag" type="bool" value="false"/>
+        <Parameter name="ComputeTrueResidual" type="bool" value="false"/>
+        <Parameter name="ComputeVectorNorms" type="bool" value="false"/>
         <Parameter name="DebugLevel" type="int" value="0"/>
         <ParameterList name="Lapack">
-          <Parameter name="Equilibrate" type="bool" value="1"/>
+          <Parameter name="Equilibrate" type="bool" value="true"/>
         </ParameterList>
         <Parameter name="MatrixProperty" type="string" value="general"/>
         <Parameter name="MaxProcs" type="int" value="-1"/>
         <ParameterList name="Mumps">
           <Parameter name="ColScaling" type="any" value="0   [unused]"/>
-          <Parameter name="Equilibrate" type="bool" value="1"/>
+          <Parameter name="Equilibrate" type="bool" value="true"/>
           <Parameter name="RowScaling" type="any" value="0   [unused]"/>
         </ParameterList>
-        <Parameter name="NoDestroy" type="bool" value="0"/>
+        <Parameter name="NoDestroy" type="bool" value="false"/>
         <Parameter name="OutputLevel" type="int" value="1"/>
         <ParameterList name="Pardiso">
           <Parameter name="IPARM(1)" type="int" value="0"/>
@@ -34,33 +34,33 @@
           <Parameter name="IPARM(8)" type="int" value="0"/>
           <Parameter name="MSGLVL" type="int" value="0"/>
         </ParameterList>
-        <Parameter name="PrintTiming" type="bool" value="0"/>
+        <Parameter name="PrintTiming" type="bool" value="false"/>
         <Parameter name="RcondThreshold" type="double" value="1e-12"/>
-        <Parameter name="Redistribute" type="bool" value="0"/>
-        <Parameter name="Refactorize" type="bool" value="0"/>
-        <Parameter name="Reindex" type="int" value="0"/>
+        <Parameter name="Redistribute" type="bool" value="false"/>
+        <Parameter name="Refactorize" type="bool" value="false"/>
+        <Parameter name="Reindex" type="bool" value="false"/>
         <ParameterList name="Scalapack">
-          <Parameter name="2D distribution" type="bool" value="1"/>
+          <Parameter name="2D distribution" type="bool" value="true"/>
           <Parameter name="grid_nb" type="int" value="32"/>
         </ParameterList>
         <Parameter name="ScaleMethod" type="int" value="0"/>
         <ParameterList name="Superludist">
           <Parameter name="ColPerm" type="string" value="NOT SET"/>
-          <Parameter name="Equil" type="bool" value="0"/>
+          <Parameter name="Equil" type="bool" value="false"/>
           <Parameter name="Fact" type="string" value="SamePattern"/>
           <Parameter name="IterRefine" type="string" value="NOT SET"/>
-          <Parameter name="PrintNonzeros" type="bool" value="0"/>
-          <Parameter name="ReplaceTinyPivot" type="bool" value="1"/>
-          <Parameter name="ReuseSymbolic" type="bool" value="0"/>
+          <Parameter name="PrintNonzeros" type="bool" value="false"/>
+          <Parameter name="ReplaceTinyPivot" type="bool" value="true"/>
+          <Parameter name="ReuseSymbolic" type="bool" value="false"/>
           <Parameter name="RowPerm" type="string" value="NOT SET"/>
           <Parameter name="perm_c" type="any" value="0   [unused]"/>
           <Parameter name="perm_r" type="any" value="0   [unused]"/>
         </ParameterList>
-        <Parameter name="TrustMe" type="bool" value="0"/>
+        <Parameter name="TrustMe" type="bool" value="false"/>
       </ParameterList>
       <Parameter name="Refactorization Policy" type="string" value="RepivotOnRefactorization"/>
       <Parameter name="Solver Type" type="string" value="Klu"/>
-      <Parameter name="Throw on Preconditioner Input" type="bool" value="1"/>
+      <Parameter name="Throw on Preconditioner Input" type="bool" value="true"/>
       <ParameterList name="VerboseObject">
         <Parameter name="Output File" type="string" value="none"/>
         <Parameter name="Verbosity Level" type="string" value="default"/>
@@ -107,7 +107,7 @@
         <Parameter name="Max Iterations" type="int" value="400"/>
         <Parameter name="Tolerance" type="double" value="1e-06"/>
       </ParameterList>
-      <Parameter name="Output Every RHS" type="bool" value="0"/>
+      <Parameter name="Output Every RHS" type="bool" value="false"/>
       <ParameterList name="VerboseObject">
         <Parameter name="Output File" type="string" value="none"/>
         <Parameter name="Verbosity Level" type="string" value="default"/>
@@ -117,24 +117,25 @@
       <Parameter name="Solver Type" type="string" value="Block GMRES"/>
       <ParameterList name="Solver Types">
         <ParameterList name="Block CG">
-          <Parameter name="Adaptive Block Size" type="bool" value="1"/>
+          <Parameter name="Adaptive Block Size" type="bool" value="true"/>
           <Parameter name="Block Size" type="int" value="1"/>
           <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
           <Parameter name="Maximum Iterations" type="int" value="1000"/>
           <Parameter name="Orthogonalization" type="string" value="DGKS"/>
           <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
           <Parameter name="Output Frequency" type="int" value="-1"/>
-          <Parameter name="Output Stream" type="any" value="RCP&lt;std::ostream>{ptr=0xb76360,node=0xb855a0,count=4}   [unused]"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="0"/>
+          <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544990,count=4}   [unused]"/>
+          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
           <Parameter name="Timer Label" type="string" value="Belos"/>
           <Parameter name="Verbosity" type="int" value="0"/>
         </ParameterList>
         <ParameterList name="Block GMRES">
-          <Parameter name="Adaptive Block Size" type="bool" value="1"/>
+          <Parameter name="Adaptive Block Size" type="bool" value="true"/>
           <Parameter name="Block Size" type="int" value="1"/>
           <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
           <Parameter name="Explicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
-          <Parameter name="Flexible Gmres" type="bool" value="0"/>
+          <Parameter name="Explicit Residual Test" type="bool" value="false"/>
+          <Parameter name="Flexible Gmres" type="bool" value="false"/>
           <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Preconditioned Initial Residual"/>
           <Parameter name="Maximum Iterations" type="int" value="1000"/>
           <Parameter name="Maximum Restarts" type="int" value="20"/>
@@ -142,13 +143,13 @@
           <Parameter name="Orthogonalization" type="string" value="DGKS"/>
           <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
           <Parameter name="Output Frequency" type="int" value="-1"/>
-          <Parameter name="Output Stream" type="any" value="RCP&lt;std::ostream>{ptr=0xb76360,node=0xb85360,count=4}   [unused]"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="0"/>
+          <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544730,count=4}   [unused]"/>
+          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
           <Parameter name="Timer Label" type="string" value="Belos"/>
           <Parameter name="Verbosity" type="int" value="0"/>
         </ParameterList>
         <ParameterList name="Pseudo Block GMRES">
-          <Parameter name="Adaptive Block Size" type="bool" value="1"/>
+          <Parameter name="Adaptive Block Size" type="bool" value="true"/>
           <Parameter name="Block Size" type="int" value="1"/>
           <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
           <Parameter name="Deflation Quorum" type="int" value="1"/>
@@ -160,8 +161,8 @@
           <Parameter name="Orthogonalization" type="string" value="DGKS"/>
           <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
           <Parameter name="Output Frequency" type="int" value="-1"/>
-          <Parameter name="Output Stream" type="any" value="RCP&lt;std::ostream>{ptr=0xb76360,node=0xb85480,count=4}   [unused]"/>
-          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="0"/>
+          <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544860,count=4}   [unused]"/>
+          <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
           <Parameter name="Timer Label" type="string" value="Belos"/>
           <Parameter name="Verbosity" type="int" value="0"/>
         </ParameterList>
@@ -195,15 +196,15 @@
         <Parameter name="partitioner: overlap" type="int" value="0"/>
         <Parameter name="partitioner: print level" type="int" value="0"/>
         <Parameter name="partitioner: type" type="string" value="greedy"/>
-        <Parameter name="partitioner: use symmetric graph" type="bool" value="1"/>
+        <Parameter name="partitioner: use symmetric graph" type="bool" value="true"/>
         <Parameter name="relaxation: damping factor" type="double" value="1"/>
         <Parameter name="relaxation: min diagonal value" type="double" value="1"/>
         <Parameter name="relaxation: sweeps" type="int" value="1"/>
         <Parameter name="relaxation: type" type="string" value="Jacobi"/>
-        <Parameter name="relaxation: zero starting solution" type="bool" value="1"/>
+        <Parameter name="relaxation: zero starting solution" type="bool" value="true"/>
         <Parameter name="schwarz: combine mode" type="string" value="Zero"/>
-        <Parameter name="schwarz: compute condest" type="bool" value="1"/>
-        <Parameter name="schwarz: filter singletons" type="bool" value="0"/>
+        <Parameter name="schwarz: compute condest" type="bool" value="true"/>
+        <Parameter name="schwarz: filter singletons" type="bool" value="false"/>
         <Parameter name="schwarz: reordering type" type="string" value="none"/>
       </ParameterList>
       <Parameter name="Overlap" type="int" value="0"/>
@@ -223,6 +224,8 @@
         <Parameter name="aggregation: nodes per aggregate" type="int" value="512"/>
         <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
         <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: pre or post" type="string" value="post"/>
+        <Parameter name="coarse: sweeps" type="int" value="1"/>
         <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
         <Parameter name="default values" type="string" value="maxwell"/>
         <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
@@ -230,10 +233,10 @@
         <Parameter name="increasing or decreasing" type="string" value="decreasing"/>
         <Parameter name="max levels" type="int" value="10"/>
         <Parameter name="prec type" type="string" value="MGV"/>
-        <Parameter name="smoother: Aztec as solver" type="bool" value="0"/>
-        <Parameter name="smoother: Aztec options" type="any" value="RCP&lt;vector&lt;int>>{ptr=0xb9c4b0,node=0xb9d120,count=2}   [unused]"/>
-        <Parameter name="smoother: Aztec params" type="any" value="RCP&lt;vector&lt;double>>{ptr=0xb9d340,node=0xb9caf0,count=2}   [unused]"/>
-        <Parameter name="smoother: Hiptmair efficient symmetric" type="bool" value="1"/>
+        <Parameter name="smoother: Aztec as solver" type="bool" value="false"/>
+        <Parameter name="smoother: Aztec options" type="any" value="Teuchos::RCP&lt;__gnu_debug_def::vector&lt;int, std::allocator&lt;int> > >{ptr=0x55de40,node=0x55df40,count=2}   [unused]"/>
+        <Parameter name="smoother: Aztec params" type="any" value="Teuchos::RCP&lt;__gnu_debug_def::vector&lt;double, std::allocator&lt;double> > >{ptr=0x55e140,node=0x55e920,count=2}   [unused]"/>
+        <Parameter name="smoother: Hiptmair efficient symmetric" type="bool" value="true"/>
         <Parameter name="smoother: damping factor" type="double" value="1"/>
         <Parameter name="smoother: pre or post" type="string" value="both"/>
         <Parameter name="smoother: sweeps" type="int" value="1"/>
