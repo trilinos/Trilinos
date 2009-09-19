@@ -87,14 +87,14 @@ AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
 #if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
 if test "X$ac_cv_use_fortran" = "Xyes"; then
   ac_cv_use_fortran90=yes
-  AX_F90_MODULE_FLAG
-  if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
-    AC_MSG_ERROR([unable to find f90 modules extension])
-  else
-    FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
-  fi
+#  AX_F90_MODULE_FLAG
+#  if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
+#    AC_MSG_ERROR([unable to find f90 modules extension])
+#  else
+#    FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
+#  fi
 else
-ac_cv_use_fortran90=no
+  ac_cv_use_fortran90=no
 fi
 
 TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLTAN_CPPDRIVER, yes)
@@ -130,9 +130,9 @@ AC_ARG_ENABLE(mpi-recv-limit,
 
 AM_PROG_CC_C_O(cc gcc)
 #Conditional only?
-if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
+#if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 AC_PROG_CXX(CC g++ c++ cxx)
-fi
+#fi
 
 if test "X$ac_cv_use_fortran90" = "Xyes"; then
 AC_PROG_FC(gfortran f90 xlf90 f95)
@@ -256,7 +256,6 @@ fi
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-# A small part of Zoltan appears to need BLAS and LAPACK
 
 TAC_ARG_ENABLE_FEATURE(tests, [Make tests for all Trilinos packages buildable with 'make tests'], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( zoltan, tests, [Make Zoltan tests buildable with 'make tests'], ZOLTAN_TESTS)
@@ -285,16 +284,19 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
-#AC_F77_WRAPPERS
-
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
 
 # Define F77_FUNC that will be used to link with Fortran subroutines.
 if test "X$ac_cv_use_fortran" != "Xno"; then
-AC_F77_WRAPPERS
+  AC_F77_WRAPPERS
+  AX_F90_MODULE_FLAG
+  if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
+    AC_MSG_ERROR([unable to find f90 modules extension])
+  else
+    FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
+  fi
 fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
