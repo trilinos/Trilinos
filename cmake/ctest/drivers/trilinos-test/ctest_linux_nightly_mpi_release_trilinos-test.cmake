@@ -22,6 +22,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
+  "-D TPL_ENABLE_ParMETIS:BOOL=ON"
+  "-D ParMETIS_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/ParMETIS3_1"
   )
 
 #
