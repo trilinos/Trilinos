@@ -40,9 +40,11 @@ int Zoltan_PHG_Gno_To_Proc_Block(
  */
 
 int idx;
+double fidx;
 int maxgno = dist_dim[nProc_dim];
 
-  idx = gno * nProc_dim / maxgno;
+  fidx = (double)gno * (double)nProc_dim / (double)maxgno;
+  idx = (int) fidx;
 
   while (gno < dist_dim[idx]) idx--;
   while (gno >= dist_dim[idx+1]) idx++;
