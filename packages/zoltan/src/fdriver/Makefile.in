@@ -46,7 +46,8 @@ noinst_PROGRAMS = zfdrive$(EXEEXT)
 subdir = src/fdriver
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_flag.m4 \
+	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -69,17 +70,14 @@ CONFIG_HEADER = $(top_builddir)/src/include/Zoltan_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 = farg_typical.$(OBJEXT)
-am_zfdrive_OBJECTS = mpi_h.$(OBJEXT) fdr_migrate.$(OBJEXT) \
-	$(am__objects_1) zfdrive-mpistring.$(OBJEXT) lampmpi.$(OBJEXT) \
-	fdr_sort.$(OBJEXT) fdr_main.$(OBJEXT) fdr_loadbal.$(OBJEXT) \
-	fdr_input.$(OBJEXT) fdr_param_file.$(OBJEXT) \
-	fdr_chaco_io.$(OBJEXT) fdr_mm_io.$(OBJEXT) fdr_const.$(OBJEXT) \
-	mmio.$(OBJEXT)
+am_zfdrive_OBJECTS = mpi_h.$(OBJEXT) zfdrive-mpistring.$(OBJEXT) \
+	$(am__objects_1) lampmpi.$(OBJEXT) mmio.$(OBJEXT) \
+	fdr_const.$(OBJEXT) fdr_input.$(OBJEXT) fdr_chaco_io.$(OBJEXT) \
+	fdr_sort.$(OBJEXT) fdr_param_file.$(OBJEXT) \
+	fdr_mm_io.$(OBJEXT) fdr_migrate.$(OBJEXT) \
+	fdr_loadbal.$(OBJEXT) fdr_main.$(OBJEXT)
 zfdrive_OBJECTS = $(am_zfdrive_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(ZOLTAN_LIBS))
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -125,7 +123,6 @@ EXEEXT = .exe
 F77 = @F77@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
-FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_PERL = @HAVE_PERL@
@@ -146,6 +143,7 @@ MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
 MPI_F90_EXISTS = @MPI_F90_EXISTS@
+MPI_RECV_LIMIT_FLAG = @MPI_RECV_LIMIT_FLAG@
 MPI_TEMP_CXX = @MPI_TEMP_CXX@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
@@ -218,34 +216,46 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(ZOLTAN_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ZOLTAN_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ZOLTAN_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ZOLTAN_INCLUDES))
+
+#if USING_GNUMAKE
+#EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ZOLTAN_LIBS))
+#EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ZOLTAN_INCLUDES))
+#else
+EXPORT_LIBS = $(ZOLTAN_LIBS)
+EXPORT_INC_PATH = $(ZOLTAN_INCLUDES)
+#endif
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 FARG_SRC = $(srcdir)/farg_typical.f
 zfdrive_SOURCES = \
 	$(srcdir)/mpi_h.f \
-	$(srcdir)/fdr_migrate.f90 \
-	$(FARG_SRC) \
 	$(srcdir)/mpistring.c \
+	$(FARG_SRC) \
 	$(srcdir)/lampmpi.f90 \
-	$(srcdir)/fdr_sort.f90 \
-	$(srcdir)/fdr_main.f90 \
-	$(srcdir)/fdr_loadbal.f90 \
-	$(srcdir)/fdr_input.f90 \
-	$(srcdir)/fdr_param_file.f90 \
-	$(srcdir)/fdr_chaco_io.f90 \
-	$(srcdir)/fdr_mm_io.f90 \
+	$(srcdir)/mmio.f \
 	$(srcdir)/fdr_const.f90 \
-	$(srcdir)/mmio.f
+	$(srcdir)/fdr_input.f90 \
+	$(srcdir)/fdr_chaco_io.f90 \
+	$(srcdir)/fdr_sort.f90 \
+	$(srcdir)/fdr_param_file.f90 \
+	$(srcdir)/fdr_mm_io.f90 \
+	$(srcdir)/fdr_migrate.f90 \
+	$(srcdir)/fdr_loadbal.f90 \
+	$(srcdir)/fdr_main.f90 
 
 zfdrive_DEPENDENCIES = \
 			$(ZOLTAN_DEPS)
 
 zfdrive_CPPFLAGS = $(EXPORT_INC_PATH) -I$(srcdir)/ -I$(top_srcdir)/src/ch/
 zfdrive_LDADD = $(EXPORT_LIBS)
-EXTRA_DIST = 
+EXTRA_DIST = $(srcdir)/CMakeLists.txt \
+	$(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in \
+	$(srcdir)/README.mpich \
+	$(srcdir)/farg_nagf90.f \
+	$(srcdir)/farg_nagf95.f \
+	$(srcdir)/makefile \
+	$(srcdir)/zoltan_user_data.f90.old
+
 all: all-am
 
 .SUFFIXES:
@@ -259,9 +269,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/fdriver/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/fdriver/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src/fdriver/Makefile
+	  $(AUTOMAKE) --gnu  src/fdriver/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -352,35 +362,17 @@ mmio.obj: $(srcdir)/mmio.f
 .f90.obj:
 	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-fdr_migrate.o: $(srcdir)/fdr_migrate.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_migrate.o `test -f '$(srcdir)/fdr_migrate.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_migrate.f90
-
-fdr_migrate.obj: $(srcdir)/fdr_migrate.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_migrate.obj `if test -f '$(srcdir)/fdr_migrate.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_migrate.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_migrate.f90'; fi`
-
 lampmpi.o: $(srcdir)/lampmpi.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lampmpi.o `test -f '$(srcdir)/lampmpi.f90' || echo '$(srcdir)/'`$(srcdir)/lampmpi.f90
 
 lampmpi.obj: $(srcdir)/lampmpi.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lampmpi.obj `if test -f '$(srcdir)/lampmpi.f90'; then $(CYGPATH_W) '$(srcdir)/lampmpi.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/lampmpi.f90'; fi`
 
-fdr_sort.o: $(srcdir)/fdr_sort.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_sort.o `test -f '$(srcdir)/fdr_sort.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_sort.f90
+fdr_const.o: $(srcdir)/fdr_const.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.o `test -f '$(srcdir)/fdr_const.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_const.f90
 
-fdr_sort.obj: $(srcdir)/fdr_sort.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_sort.obj `if test -f '$(srcdir)/fdr_sort.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_sort.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_sort.f90'; fi`
-
-fdr_main.o: $(srcdir)/fdr_main.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_main.o `test -f '$(srcdir)/fdr_main.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_main.f90
-
-fdr_main.obj: $(srcdir)/fdr_main.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_main.obj `if test -f '$(srcdir)/fdr_main.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_main.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_main.f90'; fi`
-
-fdr_loadbal.o: $(srcdir)/fdr_loadbal.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_loadbal.o `test -f '$(srcdir)/fdr_loadbal.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_loadbal.f90
-
-fdr_loadbal.obj: $(srcdir)/fdr_loadbal.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_loadbal.obj `if test -f '$(srcdir)/fdr_loadbal.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_loadbal.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_loadbal.f90'; fi`
+fdr_const.obj: $(srcdir)/fdr_const.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.obj `if test -f '$(srcdir)/fdr_const.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_const.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_const.f90'; fi`
 
 fdr_input.o: $(srcdir)/fdr_input.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_input.o `test -f '$(srcdir)/fdr_input.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_input.f90
@@ -388,17 +380,23 @@ fdr_input.o: $(srcdir)/fdr_input.f90
 fdr_input.obj: $(srcdir)/fdr_input.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_input.obj `if test -f '$(srcdir)/fdr_input.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_input.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_input.f90'; fi`
 
-fdr_param_file.o: $(srcdir)/fdr_param_file.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_param_file.o `test -f '$(srcdir)/fdr_param_file.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_param_file.f90
-
-fdr_param_file.obj: $(srcdir)/fdr_param_file.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_param_file.obj `if test -f '$(srcdir)/fdr_param_file.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_param_file.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_param_file.f90'; fi`
-
 fdr_chaco_io.o: $(srcdir)/fdr_chaco_io.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_chaco_io.o `test -f '$(srcdir)/fdr_chaco_io.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_chaco_io.f90
 
 fdr_chaco_io.obj: $(srcdir)/fdr_chaco_io.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_chaco_io.obj `if test -f '$(srcdir)/fdr_chaco_io.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_chaco_io.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_chaco_io.f90'; fi`
+
+fdr_sort.o: $(srcdir)/fdr_sort.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_sort.o `test -f '$(srcdir)/fdr_sort.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_sort.f90
+
+fdr_sort.obj: $(srcdir)/fdr_sort.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_sort.obj `if test -f '$(srcdir)/fdr_sort.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_sort.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_sort.f90'; fi`
+
+fdr_param_file.o: $(srcdir)/fdr_param_file.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_param_file.o `test -f '$(srcdir)/fdr_param_file.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_param_file.f90
+
+fdr_param_file.obj: $(srcdir)/fdr_param_file.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_param_file.obj `if test -f '$(srcdir)/fdr_param_file.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_param_file.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_param_file.f90'; fi`
 
 fdr_mm_io.o: $(srcdir)/fdr_mm_io.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_mm_io.o `test -f '$(srcdir)/fdr_mm_io.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_mm_io.f90
@@ -406,11 +404,23 @@ fdr_mm_io.o: $(srcdir)/fdr_mm_io.f90
 fdr_mm_io.obj: $(srcdir)/fdr_mm_io.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_mm_io.obj `if test -f '$(srcdir)/fdr_mm_io.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_mm_io.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_mm_io.f90'; fi`
 
-fdr_const.o: $(srcdir)/fdr_const.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.o `test -f '$(srcdir)/fdr_const.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_const.f90
+fdr_migrate.o: $(srcdir)/fdr_migrate.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_migrate.o `test -f '$(srcdir)/fdr_migrate.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_migrate.f90
 
-fdr_const.obj: $(srcdir)/fdr_const.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.obj `if test -f '$(srcdir)/fdr_const.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_const.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_const.f90'; fi`
+fdr_migrate.obj: $(srcdir)/fdr_migrate.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_migrate.obj `if test -f '$(srcdir)/fdr_migrate.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_migrate.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_migrate.f90'; fi`
+
+fdr_loadbal.o: $(srcdir)/fdr_loadbal.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_loadbal.o `test -f '$(srcdir)/fdr_loadbal.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_loadbal.f90
+
+fdr_loadbal.obj: $(srcdir)/fdr_loadbal.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_loadbal.obj `if test -f '$(srcdir)/fdr_loadbal.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_loadbal.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_loadbal.f90'; fi`
+
+fdr_main.o: $(srcdir)/fdr_main.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_main.o `test -f '$(srcdir)/fdr_main.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_main.f90
+
+fdr_main.obj: $(srcdir)/fdr_main.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_main.obj `if test -f '$(srcdir)/fdr_main.f90'; then $(CYGPATH_W) '$(srcdir)/fdr_main.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fdr_main.f90'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

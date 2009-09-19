@@ -49,7 +49,8 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_flag.m4 \
+	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -347,6 +348,17 @@ ZOLTAN_SAMPLE = \
        SampleConfigurationScripts/mac_osX_zoltan_only \
        SampleConfigurationScripts/linux_zoltan_only \
        SampleConfigurationScripts/mac_osX_zoltan_thru_trilinos 
+
+ZOLTAN_CMAKE = \
+       CMakeLists.txt \
+       src/CMakeLists.txt \
+       src/driver/CMakeLists.txt \
+       src/fdriver/CMakeLists.txt \
+       test/CMakeLists.txt \
+       test/ch_simple/CMakeLists.txt \
+       test/hg_simple/CMakeLists.txt \
+       cmake/Dependencies.cmake  \
+       cmake/Zoltan_config.h.in
 
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \

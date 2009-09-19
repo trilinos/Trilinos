@@ -152,6 +152,17 @@ ZOLTAN_SAMPLE = \
        SampleConfigurationScripts/linux_zoltan_only \
        SampleConfigurationScripts/mac_osX_zoltan_thru_trilinos 
 
+ZOLTAN_CMAKE = \
+       CMakeLists.txt \
+       src/CMakeLists.txt \
+       src/driver/CMakeLists.txt \
+       src/fdriver/CMakeLists.txt \
+       test/CMakeLists.txt \
+       test/ch_simple/CMakeLists.txt \
+       test/hg_simple/CMakeLists.txt \
+       cmake/Dependencies.cmake  \
+       cmake/Zoltan_config.h.in
+
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \

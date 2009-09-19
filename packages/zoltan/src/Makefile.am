@@ -392,117 +392,10 @@ ZZ = \
 	$(srcdir)/zz/zz_struct.c \
 	$(srcdir)/zz/zz_util.c
 
-# ------------------------------------------------------------------------
-# Zoltan library specifications
-# ------------------------------------------------------------------------
-ZOLTAN_LIB = libzoltan.a
-
-ZOLTAN_H = \
-	$(ALL_H) \
-	$(COLORING_H) \
-	$(GRAPH_H) \
-	$(HA_H) \
-	$(HIER_H) \
-	$(HSFC_H) \
-	$(INCLUDE_H) \
-	$(LB_H) \
-	$(MATRIX_H) \
-	$(OCT_H) \
-	$(ORDER_H) \
-	$(PAR_H) \
-	$(PARAMS_H) \
-	$(PARMETIS_H) \
-	$(PARMETIS_INTERFACE_H) \
-	$(PHG_H) \
-	$(RCB_H) \
-	$(REFTREE_H) \
-	$(SCOTCH_INTERFACE_H) \
-	$(TIMER_H) \
-	$(UTILITIES_H) \
-	$(ZZ_H)
-
-libzoltan_a_SOURCES = \
-	$(ALL) \
-	$(COLORING) \
-	$(GRAPH) \
-	$(HA) \
-	$(HIER) \
-	$(HSFC) \
-	$(LB) \
-	$(MATRIX) \
-	$(OCT) \
-	$(ORDER) \
-	$(PAR) \
-	$(PARAMS) \
-	$(PARMETIS) \
-	$(PARMETIS_INTERFACE) \
-	$(PHG) \
-	$(RCB) \
-	$(REFTREE) \
-	$(SCOTCH_INTERFACE) \
-	$(SIMPLE) \
-	$(TIMER) \
-	$(UTILITIES) \
-	$(ZZ)
-
-EXTRA_libzoltan_a_SOURCES = \
-	$(EXTRA_OCT_H) \
-	$(EXTRA_OCT) \
-	$(EXTRA_PARMETIS_INTERFACE_H) \
-	$(EXTRA_PARMETIS_INTERFACE) \
-	$(EXTRA_SCOTCH_INTERFACE_H) \
-	$(EXTRA_SCOTCH_INTERFACE)
-
-include $(top_builddir)/Makefile.export.zoltan
-
-EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
-
-AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
-
-# ------------------------------------------------------------------------
-# For using a special archiver
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
-# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
-# define it manually.
-
-if USE_ALTERNATE_AR
-libzoltan_a_AR = $(ALTERNATE_AR)
-else
-libzoltan_a_AR = $(AR) cru
-endif
-
-# ------------------------------------------------------------------------
-# Some C++ compilers create extra .o-files for templates. We need to
-# be sure to include these, and this is the hack to do it.
-# ------------------------------------------------------------------------
-
-libzoltan_a_LIBADD = $(XTRALDADD)
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-
-#np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(ZOLTAN_LIB)
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(includedir)
-# ------------------------------------------------------------------------
-
-# Eventually we will try to install fewer headers
-include_HEADERS = $(INCLUDE_H) 
-
-# ------------------------------------------------------------------------
-# Other files we want in the tarball
-# ------------------------------------------------------------------------
-
-FORTRAN_INTERFACE = \
-    $(srcdir)/fort/README \
-    $(srcdir)/fort/cwrap.c \
-    $(srcdir)/fort/lb_user_const.f90 \
-    $(srcdir)/fort/makefile \
+EXTRA_FORTRAN_H = \
+    $(srcdir)/fort/cwrap_fmangle.h \
+    $(srcdir)/fort/lbfn.h \
+    $(srcdir)/fort/lbif.h \
     $(srcdir)/fort/set_borderobjlist.fn \
     $(srcdir)/fort/set_borderobjlist.fn.lbfn \
     $(srcdir)/fort/set_borderobjlist.if \
@@ -642,34 +535,137 @@ FORTRAN_INTERFACE = \
     $(srcdir)/fort/set_unpackobj.if \
     $(srcdir)/fort/set_unpackobj.if.lbif \
     $(srcdir)/fort/set_unpackobjmulti.fn \
-    $(srcdir)/fort/set_unpackobjmulti.if \
-    $(srcdir)/fort/sppr.f90 \
-    $(srcdir)/fort/zoltan_user_data.f90
+    $(srcdir)/fort/set_unpackobjmulti.if 
 
+EXTRA_FORTRAN = \
+    $(srcdir)/fort/ztypes.f90 \
+    $(srcdir)/fort/cwrap.c \
+    $(srcdir)/fort/zoltan_user_data.f90 \
+    $(srcdir)/fort/lb_user_const.f90 \
+    $(srcdir)/fort/fwrap.f90 
+
+if USE_FORTRAN
+FORTRAN_H =$(EXTRA_FORTRAN_H)
+FORTRAN = $(EXTRA_FORTRAN)
+else
+FORTRAN_H =
+FORTRAN =
+endif
+
+# ------------------------------------------------------------------------
+# Zoltan library specifications
+# ------------------------------------------------------------------------
+ZOLTAN_LIB = libzoltan.a
+
+ZOLTAN_H = \
+	$(ALL_H) \
+	$(COLORING_H) \
+	$(GRAPH_H) \
+	$(HA_H) \
+	$(HIER_H) \
+	$(HSFC_H) \
+	$(INCLUDE_H) \
+	$(LB_H) \
+	$(MATRIX_H) \
+	$(OCT_H) \
+	$(ORDER_H) \
+	$(PAR_H) \
+	$(PARAMS_H) \
+	$(PARMETIS_H) \
+	$(PARMETIS_INTERFACE_H) \
+	$(PHG_H) \
+	$(RCB_H) \
+	$(REFTREE_H) \
+	$(SCOTCH_INTERFACE_H) \
+	$(TIMER_H) \
+	$(UTILITIES_H) \
+	$(ZZ_H) \
+	$(FORTRAN_H)
+
+libzoltan_a_SOURCES = \
+	$(ALL) \
+	$(COLORING) \
+	$(GRAPH) \
+	$(HA) \
+	$(HIER) \
+	$(HSFC) \
+	$(LB) \
+	$(MATRIX) \
+	$(OCT) \
+	$(ORDER) \
+	$(PAR) \
+	$(PARAMS) \
+	$(PARMETIS) \
+	$(PARMETIS_INTERFACE) \
+	$(PHG) \
+	$(RCB) \
+	$(REFTREE) \
+	$(SCOTCH_INTERFACE) \
+	$(SIMPLE) \
+	$(TIMER) \
+	$(UTILITIES) \
+	$(ZZ) \
+	$(FORTRAN)
+
+EXTRA_libzoltan_a_SOURCES = \
+	$(EXTRA_OCT_H) \
+	$(EXTRA_OCT) \
+	$(EXTRA_PARMETIS_INTERFACE_H) \
+	$(EXTRA_PARMETIS_INTERFACE) \
+	$(EXTRA_SCOTCH_INTERFACE_H) \
+	$(EXTRA_SCOTCH_INTERFACE) \
+	$(EXTRA_FORTRAN_H) \
+	$(EXTRA_FORTRAN)
+
+include $(top_builddir)/Makefile.export.zoltan
+
+EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+libzoltan_a_AR = $(ALTERNATE_AR)
+else
+libzoltan_a_AR = $(AR) cru
+endif
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+libzoltan_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+lib_LIBRARIES = $(ZOLTAN_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# ------------------------------------------------------------------------
+
+# Eventually we will try to install fewer headers
+include_HEADERS = $(INCLUDE_H) 
+
+# ------------------------------------------------------------------------
+# Other files we want in the tarball
+# ------------------------------------------------------------------------
+
+EXTRA_FORTRAN_INTERFACE = \
+    $(srcdir)/fort/README \
+    $(srcdir)/fort/makefile 
     
-FORTRAN_DRIVER = \
-    $(srcdir)/fdriver/Makefile.am \
-    $(srcdir)/fdriver/Makefile.in \
-    $(srcdir)/fdriver/README.mpich \
-    $(srcdir)/fdriver/farg_nagf90.f \
-    $(srcdir)/fdriver/farg_nagf95.f \
-    $(srcdir)/fdriver/farg_nas.f \
-    $(srcdir)/fdriver/farg_typical.f \
-    $(srcdir)/fdriver/fdr_chaco_io.f90 \
-    $(srcdir)/fdriver/fdr_const.f90 \
-    $(srcdir)/fdriver/fdr_input.f90 \
-    $(srcdir)/fdriver/fdr_loadbal.f90 \
-    $(srcdir)/fdriver/fdr_main.f90 \
-    $(srcdir)/fdriver/fdr_migrate.f90 \
-    $(srcdir)/fdriver/fdr_mm_io.f90 \
-    $(srcdir)/fdriver/fdr_param_file.f90 \
-    $(srcdir)/fdriver/fdr_sort.f90 \
-    $(srcdir)/fdriver/lampmpi.f90 \
-    $(srcdir)/fdriver/makefile \
-    $(srcdir)/fdriver/mmio.f \
-    $(srcdir)/fdriver/mpi_h.f \
-    $(srcdir)/fdriver/mpistring.c
-
 ZOLTAN_MATLAB = \
     $(srcdir)/matlab/README \
     $(srcdir)/matlab/mmread.m \
@@ -751,7 +747,7 @@ EXTRA_DIST = $(ZOLTAN_H) \
     $(srcdir)/Utilities/DDirectory/README \
     $(srcdir)/Utilities/README \
     $(NATIVE_ZOLTAN_BUILD) \
-    $(FORTRAN_INTERFACE) $(FORTRAN_DRIVER) \
+    $(EXTRA_FORTRAN_INTERFACE) \
     $(srcdir)/fdriver_old/README \
     $(srcdir)/fdriver_old/makefile \
     $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)
@@ -771,8 +767,10 @@ execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
-if BUILD_FORTRAN90DRIVER
-FDRIVER_SUBDIR = #fdriver
+if USE_FORTRAN
+FDRIVER_SUBDIR = fdriver
+else
+FDRIVER_SUBDIR =
 endif
 
 SUBDIRS = . driver $(FDRIVER_SUBDIR)

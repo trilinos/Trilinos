@@ -26,7 +26,7 @@ AC_DEFUN([TAC_ARG_CONFIG_MPI],
 AC_ARG_ENABLE(mpi,
 [AC_HELP_STRING([--enable-mpi],[MPI support])],
 [HAVE_PKG_MPI=$enableval],
-[HAVE_PKG_MPI=no]
+[HAVE_PKG_MPI=yes]
 )
 
 AC_ARG_WITH(mpi-compilers,

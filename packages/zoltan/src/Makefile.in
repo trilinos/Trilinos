@@ -49,7 +49,8 @@ subdir = src
 DIST_COMMON = README $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_flag.m4 \
+	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -183,7 +184,9 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/zz/zz_init.c $(srcdir)/zz/zz_obj_list.c \
 	$(srcdir)/zz/zz_rand.c $(srcdir)/zz/zz_set_fn.c \
 	$(srcdir)/zz/zz_sort.c $(srcdir)/zz/zz_struct.c \
-	$(srcdir)/zz/zz_util.c
+	$(srcdir)/zz/zz_util.c $(srcdir)/fort/ztypes.f90 \
+	$(srcdir)/fort/cwrap.c $(srcdir)/fort/zoltan_user_data.f90 \
+	$(srcdir)/fort/lb_user_const.f90 $(srcdir)/fort/fwrap.f90
 am__objects_1 = all_allo.$(OBJEXT)
 am__objects_2 = coloring.$(OBJEXT) color_test.$(OBJEXT) \
 	g2l_hash.$(OBJEXT)
@@ -261,6 +264,10 @@ am__objects_25 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 	zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) \
 	zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) zz_struct.$(OBJEXT) \
 	zz_util.$(OBJEXT)
+am__objects_26 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
+	zoltan_user_data.$(OBJEXT) lb_user_const.$(OBJEXT) \
+	fwrap.$(OBJEXT)
+@USE_FORTRAN_TRUE@am__objects_27 = $(am__objects_26)
 am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
@@ -268,7 +275,7 @@ am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_13) $(am__objects_14) $(am__objects_16) \
 	$(am__objects_17) $(am__objects_18) $(am__objects_19) \
 	$(am__objects_21) $(am__objects_22) $(am__objects_23) \
-	$(am__objects_24) $(am__objects_25)
+	$(am__objects_24) $(am__objects_25) $(am__objects_27)
 libzoltan_a_OBJECTS = $(am_libzoltan_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -277,6 +284,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
+FCLD = $(FC)
+FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+	$@
 SOURCES = $(libzoltan_a_SOURCES) $(EXTRA_libzoltan_a_SOURCES)
 DIST_SOURCES = $(am__libzoltan_a_SOURCES_DIST) \
 	$(EXTRA_libzoltan_a_SOURCES)
@@ -293,7 +304,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = . driver fdriver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -761,108 +772,10 @@ ZZ = \
 	$(srcdir)/zz/zz_struct.c \
 	$(srcdir)/zz/zz_util.c
 
-
-# ------------------------------------------------------------------------
-# Zoltan library specifications
-# ------------------------------------------------------------------------
-ZOLTAN_LIB = libzoltan.a
-ZOLTAN_H = \
-	$(ALL_H) \
-	$(COLORING_H) \
-	$(GRAPH_H) \
-	$(HA_H) \
-	$(HIER_H) \
-	$(HSFC_H) \
-	$(INCLUDE_H) \
-	$(LB_H) \
-	$(MATRIX_H) \
-	$(OCT_H) \
-	$(ORDER_H) \
-	$(PAR_H) \
-	$(PARAMS_H) \
-	$(PARMETIS_H) \
-	$(PARMETIS_INTERFACE_H) \
-	$(PHG_H) \
-	$(RCB_H) \
-	$(REFTREE_H) \
-	$(SCOTCH_INTERFACE_H) \
-	$(TIMER_H) \
-	$(UTILITIES_H) \
-	$(ZZ_H)
-
-libzoltan_a_SOURCES = \
-	$(ALL) \
-	$(COLORING) \
-	$(GRAPH) \
-	$(HA) \
-	$(HIER) \
-	$(HSFC) \
-	$(LB) \
-	$(MATRIX) \
-	$(OCT) \
-	$(ORDER) \
-	$(PAR) \
-	$(PARAMS) \
-	$(PARMETIS) \
-	$(PARMETIS_INTERFACE) \
-	$(PHG) \
-	$(RCB) \
-	$(REFTREE) \
-	$(SCOTCH_INTERFACE) \
-	$(SIMPLE) \
-	$(TIMER) \
-	$(UTILITIES) \
-	$(ZZ)
-
-EXTRA_libzoltan_a_SOURCES = \
-	$(EXTRA_OCT_H) \
-	$(EXTRA_OCT) \
-	$(EXTRA_PARMETIS_INTERFACE_H) \
-	$(EXTRA_PARMETIS_INTERFACE) \
-	$(EXTRA_SCOTCH_INTERFACE_H) \
-	$(EXTRA_SCOTCH_INTERFACE)
-
-EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
-AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
-@USE_ALTERNATE_AR_FALSE@libzoltan_a_AR = $(AR) cru
-
-# ------------------------------------------------------------------------
-# For using a special archiver
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
-# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
-# define it manually.
-@USE_ALTERNATE_AR_TRUE@libzoltan_a_AR = $(ALTERNATE_AR)
-
-# ------------------------------------------------------------------------
-# Some C++ compilers create extra .o-files for templates. We need to
-# be sure to include these, and this is the hack to do it.
-# ------------------------------------------------------------------------
-libzoltan_a_LIBADD = $(XTRALDADD)
-
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-
-#np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(ZOLTAN_LIB)
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(includedir)
-# ------------------------------------------------------------------------
-
-# Eventually we will try to install fewer headers
-include_HEADERS = $(INCLUDE_H) 
-
-# ------------------------------------------------------------------------
-# Other files we want in the tarball
-# ------------------------------------------------------------------------
-FORTRAN_INTERFACE = \
-    $(srcdir)/fort/README \
-    $(srcdir)/fort/cwrap.c \
-    $(srcdir)/fort/lb_user_const.f90 \
-    $(srcdir)/fort/makefile \
+EXTRA_FORTRAN_H = \
+    $(srcdir)/fort/cwrap_fmangle.h \
+    $(srcdir)/fort/lbfn.h \
+    $(srcdir)/fort/lbif.h \
     $(srcdir)/fort/set_borderobjlist.fn \
     $(srcdir)/fort/set_borderobjlist.fn.lbfn \
     $(srcdir)/fort/set_borderobjlist.if \
@@ -1002,32 +915,123 @@ FORTRAN_INTERFACE = \
     $(srcdir)/fort/set_unpackobj.if \
     $(srcdir)/fort/set_unpackobj.if.lbif \
     $(srcdir)/fort/set_unpackobjmulti.fn \
-    $(srcdir)/fort/set_unpackobjmulti.if \
-    $(srcdir)/fort/sppr.f90 \
-    $(srcdir)/fort/zoltan_user_data.f90
+    $(srcdir)/fort/set_unpackobjmulti.if 
 
-FORTRAN_DRIVER = \
-    $(srcdir)/fdriver/Makefile.am \
-    $(srcdir)/fdriver/Makefile.in \
-    $(srcdir)/fdriver/README.mpich \
-    $(srcdir)/fdriver/farg_nagf90.f \
-    $(srcdir)/fdriver/farg_nagf95.f \
-    $(srcdir)/fdriver/farg_nas.f \
-    $(srcdir)/fdriver/farg_typical.f \
-    $(srcdir)/fdriver/fdr_chaco_io.f90 \
-    $(srcdir)/fdriver/fdr_const.f90 \
-    $(srcdir)/fdriver/fdr_input.f90 \
-    $(srcdir)/fdriver/fdr_loadbal.f90 \
-    $(srcdir)/fdriver/fdr_main.f90 \
-    $(srcdir)/fdriver/fdr_migrate.f90 \
-    $(srcdir)/fdriver/fdr_mm_io.f90 \
-    $(srcdir)/fdriver/fdr_param_file.f90 \
-    $(srcdir)/fdriver/fdr_sort.f90 \
-    $(srcdir)/fdriver/lampmpi.f90 \
-    $(srcdir)/fdriver/makefile \
-    $(srcdir)/fdriver/mmio.f \
-    $(srcdir)/fdriver/mpi_h.f \
-    $(srcdir)/fdriver/mpistring.c
+EXTRA_FORTRAN = \
+    $(srcdir)/fort/ztypes.f90 \
+    $(srcdir)/fort/cwrap.c \
+    $(srcdir)/fort/zoltan_user_data.f90 \
+    $(srcdir)/fort/lb_user_const.f90 \
+    $(srcdir)/fort/fwrap.f90 
+
+@USE_FORTRAN_FALSE@FORTRAN_H = 
+@USE_FORTRAN_TRUE@FORTRAN_H = $(EXTRA_FORTRAN_H)
+@USE_FORTRAN_FALSE@FORTRAN = 
+@USE_FORTRAN_TRUE@FORTRAN = $(EXTRA_FORTRAN)
+
+# ------------------------------------------------------------------------
+# Zoltan library specifications
+# ------------------------------------------------------------------------
+ZOLTAN_LIB = libzoltan.a
+ZOLTAN_H = \
+	$(ALL_H) \
+	$(COLORING_H) \
+	$(GRAPH_H) \
+	$(HA_H) \
+	$(HIER_H) \
+	$(HSFC_H) \
+	$(INCLUDE_H) \
+	$(LB_H) \
+	$(MATRIX_H) \
+	$(OCT_H) \
+	$(ORDER_H) \
+	$(PAR_H) \
+	$(PARAMS_H) \
+	$(PARMETIS_H) \
+	$(PARMETIS_INTERFACE_H) \
+	$(PHG_H) \
+	$(RCB_H) \
+	$(REFTREE_H) \
+	$(SCOTCH_INTERFACE_H) \
+	$(TIMER_H) \
+	$(UTILITIES_H) \
+	$(ZZ_H) \
+	$(FORTRAN_H)
+
+libzoltan_a_SOURCES = \
+	$(ALL) \
+	$(COLORING) \
+	$(GRAPH) \
+	$(HA) \
+	$(HIER) \
+	$(HSFC) \
+	$(LB) \
+	$(MATRIX) \
+	$(OCT) \
+	$(ORDER) \
+	$(PAR) \
+	$(PARAMS) \
+	$(PARMETIS) \
+	$(PARMETIS_INTERFACE) \
+	$(PHG) \
+	$(RCB) \
+	$(REFTREE) \
+	$(SCOTCH_INTERFACE) \
+	$(SIMPLE) \
+	$(TIMER) \
+	$(UTILITIES) \
+	$(ZZ) \
+	$(FORTRAN)
+
+EXTRA_libzoltan_a_SOURCES = \
+	$(EXTRA_OCT_H) \
+	$(EXTRA_OCT) \
+	$(EXTRA_PARMETIS_INTERFACE_H) \
+	$(EXTRA_PARMETIS_INTERFACE) \
+	$(EXTRA_SCOTCH_INTERFACE_H) \
+	$(EXTRA_SCOTCH_INTERFACE) \
+	$(EXTRA_FORTRAN_H) \
+	$(EXTRA_FORTRAN)
+
+EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
+@USE_ALTERNATE_AR_FALSE@libzoltan_a_AR = $(AR) cru
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libzoltan_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libzoltan_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+#np# replace new_package with the name of the package being autotool'ed here
+lib_LIBRARIES = $(ZOLTAN_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# ------------------------------------------------------------------------
+
+# Eventually we will try to install fewer headers
+include_HEADERS = $(INCLUDE_H) 
+
+# ------------------------------------------------------------------------
+# Other files we want in the tarball
+# ------------------------------------------------------------------------
+EXTRA_FORTRAN_INTERFACE = \
+    $(srcdir)/fort/README \
+    $(srcdir)/fort/makefile 
 
 ZOLTAN_MATLAB = \
     $(srcdir)/matlab/README \
@@ -1110,7 +1114,7 @@ EXTRA_DIST = $(ZOLTAN_H) \
     $(srcdir)/Utilities/DDirectory/README \
     $(srcdir)/Utilities/README \
     $(NATIVE_ZOLTAN_BUILD) \
-    $(FORTRAN_INTERFACE) $(FORTRAN_DRIVER) \
+    $(EXTRA_FORTRAN_INTERFACE) \
     $(srcdir)/fdriver_old/README \
     $(srcdir)/fdriver_old/makefile \
     $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)
@@ -1128,9 +1132,10 @@ EXTRA_DIST = $(ZOLTAN_H) \
 
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
+@USE_FORTRAN_FALSE@FDRIVER_SUBDIR = 
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
-@BUILD_FORTRAN90DRIVER_TRUE@FDRIVER_SUBDIR = #fdriver
+@USE_FORTRAN_TRUE@FDRIVER_SUBDIR = fdriver
 SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------
@@ -1140,7 +1145,7 @@ MAINTAINERCLEANFILES = Makefile.in
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .f90 .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1244,6 +1249,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_sort_ints.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/costs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create_proc_list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cwrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cyclic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/divide_machine.Po@am__quote@
@@ -3534,6 +3540,50 @@ zz_util.obj: $(srcdir)/zz/zz_util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_util.c' object='zz_util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_util.obj `if test -f '$(srcdir)/zz/zz_util.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_util.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_util.c'; fi`
+
+cwrap.o: $(srcdir)/fort/cwrap.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cwrap.o -MD -MP -MF $(DEPDIR)/cwrap.Tpo -c -o cwrap.o `test -f '$(srcdir)/fort/cwrap.c' || echo '$(srcdir)/'`$(srcdir)/fort/cwrap.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cwrap.Tpo $(DEPDIR)/cwrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/fort/cwrap.c' object='cwrap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cwrap.o `test -f '$(srcdir)/fort/cwrap.c' || echo '$(srcdir)/'`$(srcdir)/fort/cwrap.c
+
+cwrap.obj: $(srcdir)/fort/cwrap.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cwrap.obj -MD -MP -MF $(DEPDIR)/cwrap.Tpo -c -o cwrap.obj `if test -f '$(srcdir)/fort/cwrap.c'; then $(CYGPATH_W) '$(srcdir)/fort/cwrap.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/cwrap.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/cwrap.Tpo $(DEPDIR)/cwrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/fort/cwrap.c' object='cwrap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cwrap.obj `if test -f '$(srcdir)/fort/cwrap.c'; then $(CYGPATH_W) '$(srcdir)/fort/cwrap.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/cwrap.c'; fi`
+
+.f90.o:
+	$(FCCOMPILE) -c -o $@ $<
+
+.f90.obj:
+	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ztypes.o: $(srcdir)/fort/ztypes.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o ztypes.o `test -f '$(srcdir)/fort/ztypes.f90' || echo '$(srcdir)/'`$(srcdir)/fort/ztypes.f90
+
+ztypes.obj: $(srcdir)/fort/ztypes.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o ztypes.obj `if test -f '$(srcdir)/fort/ztypes.f90'; then $(CYGPATH_W) '$(srcdir)/fort/ztypes.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/ztypes.f90'; fi`
+
+zoltan_user_data.o: $(srcdir)/fort/zoltan_user_data.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o zoltan_user_data.o `test -f '$(srcdir)/fort/zoltan_user_data.f90' || echo '$(srcdir)/'`$(srcdir)/fort/zoltan_user_data.f90
+
+zoltan_user_data.obj: $(srcdir)/fort/zoltan_user_data.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o zoltan_user_data.obj `if test -f '$(srcdir)/fort/zoltan_user_data.f90'; then $(CYGPATH_W) '$(srcdir)/fort/zoltan_user_data.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/zoltan_user_data.f90'; fi`
+
+lb_user_const.o: $(srcdir)/fort/lb_user_const.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lb_user_const.o `test -f '$(srcdir)/fort/lb_user_const.f90' || echo '$(srcdir)/'`$(srcdir)/fort/lb_user_const.f90
+
+lb_user_const.obj: $(srcdir)/fort/lb_user_const.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lb_user_const.obj `if test -f '$(srcdir)/fort/lb_user_const.f90'; then $(CYGPATH_W) '$(srcdir)/fort/lb_user_const.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/lb_user_const.f90'; fi`
+
+fwrap.o: $(srcdir)/fort/fwrap.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fwrap.o `test -f '$(srcdir)/fort/fwrap.f90' || echo '$(srcdir)/'`$(srcdir)/fort/fwrap.f90
+
+fwrap.obj: $(srcdir)/fort/fwrap.f90
+	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fwrap.obj `if test -f '$(srcdir)/fort/fwrap.f90'; then $(CYGPATH_W) '$(srcdir)/fort/fwrap.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fort/fwrap.f90'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

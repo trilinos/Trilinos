@@ -1145,7 +1145,7 @@ INCLUDE "set_hiermethod.if"
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.
 
-INCLUDE "lbif.f90"
+INCLUDE "lbif.h"
 INCLUDE "set_numgeom.if.lbif"
 INCLUDE "set_geom.if.lbif"
 INCLUDE "set_numedges.if.lbif"
@@ -2296,7 +2296,7 @@ INCLUDE "set_hiermethod.fn"
 ! Include LB_* interface for backward compatibility.
 !-------------------------------------------------------------------------
 
-INCLUDE "lbfn.f90"
+INCLUDE "lbfn.h"
 INCLUDE "set_numgeom.fn.lbfn"
 INCLUDE "set_geom.fn.lbfn"
 INCLUDE "set_numedges.fn.lbfn"
