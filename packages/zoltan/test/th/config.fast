@@ -72,9 +72,13 @@ Test zoltan-octopi_MAIN_LAMPURE-nightly
 octopi.sandia.gov
 cvs -d software.sandia.gov:/space/CVS -Q checkout -P zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
 
-Test zoltan-octopi_v3_1_LAMPURE-nightly
+#Test zoltan-octopi_v3_1_LAMPURE-nightly
+#octopi.sandia.gov
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
+#
+Test zoltan-octopi_v3_2_LAMPURE-nightly
 octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; export EXACT_DRIVER='/opt/lam714-gcc346-pure/bin/mpirun -np' ; echo \$PATH ;  export PATH=/opt/lam714-gcc346-pure/bin:/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin:\$PATH ; echo \$PATH ; /opt/lam714-gcc346-pure/bin/lamboot ; csh -f ../../zoltan.build octopiLamPureTest $tname zdrive 'test/{ch_*,hg_*}' 
 
 #Test zoltan-octopi_v3_1_OMPIPURE-nightly
 #octopi.sandia.gov
