@@ -6,7 +6,6 @@ setenv CXXFLAGS -m64
 ../configure \
   --prefix=/Users/kddevin/code/zoltan_v3.1/OBJ_MAC64 \
   --enable-mpi --with-mpi-compilers \
-  --enable-zoltan \
   --with-gnumake \
   --with-parmetis \
   --with-parmetis-incdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
