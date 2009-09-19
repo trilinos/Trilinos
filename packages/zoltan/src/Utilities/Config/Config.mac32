@@ -30,7 +30,7 @@ CFLAGS 			= -m32 $(DBG_FLAGS)
 # To use fortran, MUST USE /usr/local/openmpi-1.3.3-32bit/bin/mpif77
 F90			= /usr/local/openmpi-1.3.3-32bit/bin/mpif77 
 LOCAL_F90		= gfortran
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
+F90CFLAGS 		= -DFC_FN_LOWER -DFC_FN_UNDER
 FFLAGS    		= -m32 $(DBG_FLAGS)
 SPPR_HEAD 		= 
 F90_MODULE_PREFIX 	= -I

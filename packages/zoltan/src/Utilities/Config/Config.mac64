@@ -33,7 +33,7 @@ CFLAGS 			= $(OPT_FLAGS)
 # Make sure path to mpif77 points to ~/code/lib-m64/lam-7.1.4/bin/mpif77.
 F90			= mpif77 -m64
 LOCAL_F90		= gfortran -m64
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
+F90CFLAGS 		= -DFC_FN_LOWER -DFC_FN_UNDER
 FFLAGS    		= 
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical

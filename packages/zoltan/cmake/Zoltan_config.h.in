@@ -1,5 +1,22 @@
 /* src/include/Zoltan_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* KDD Copied F77 macros from packages/epetra/cmake/Epetra_config.h.in. */
+/* Define to dummy `main' function (if any) required to link to the Fortran
+   libraries. */
+#cmakedefine F77_DUMMY_MAIN
+
+/* Define to a macro mangling the given C identifier (in lower and upper
+   case), which must not contain underscores, for linking with Fortran. */
+#define F77_FUNC@F77_FUNC@
+
+/* As F77_FUNC, but for C identifiers containing underscores. */
+#define F77_FUNC_@F77_FUNC_@
+
+/* Define if F77 and FC dummy `main' functions are identical. */
+#cmakedefine FC_DUMMY_MAIN_EQ_F77
+
+
+
 /* Define if want to build with drum enabled */
 #cmakedefine HAVE_DRUM
 
