@@ -249,8 +249,8 @@ multiVectorProductVector(
 // functions to wrap already created multi-vectors once needed!
 
 
-/** \brief Nonmember constructor that creates a new product vector represented
- * underneath as a multi-vector.
+/** \brief Nonmember constructor that creates a new uninitialized product
+ * vector represented underneath as a multi-vector.
  *
  * \relates DefaultMultiVectorProductVector
  */

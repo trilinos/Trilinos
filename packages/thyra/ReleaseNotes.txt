@@ -1,0 +1,21 @@
+
+----------------------------------------
+Release Notes for Trilinos Package Thyra
+----------------------------------------
+
+
+Trilinos 10.0:
+--------------
+
+
+(*) MS Windows support with MS Visual C++:
+
+- Thyra complex support and float support are disabled by default.
+The complex-related code just did not work correctly and there was not
+time to track down the problem.
+
+- Several of the tests showed excessive diffs for this platform so their
+tolerance was loosened.
+
+
+(*) Partial refactoring of code to use safe memory management classes

@@ -40,9 +40,9 @@ namespace Teuchos { template<typename Ordinal> class Comm; }
 
 namespace RTOpPack {
 
-#ifdef RTOPPACK_SPMD_APPLY_OP_DUMP
+#ifdef RTOPPACK_DEBUG
 extern bool show_spmd_apply_op_dump;
-#endif // RTOPPACK_SPMD_APPLY_OP_DUMP
+#endif // RTOPPACK_DEBUG
 
 /** \brief Return the size in bytes of an external representation of a
  * <tt>ReductTarget</tt> object.

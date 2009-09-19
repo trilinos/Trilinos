@@ -46,6 +46,10 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
+// For debugging
+#include "RTOpPack_SPMD_apply_op.hpp"
+
+
 /** \brief Main test driver function for testing various composite linear operator classes
  */
 template <class Scalar>
@@ -103,10 +107,12 @@ bool run_composite_linear_ops_tests(
   RCP<Thyra::MultiVectorBase<Scalar> >
     mvOrigA = createMembers(space,n/2,"origA");
   Thyra::seed_randomize<Scalar>(0);
+  //RTOpPack::show_spmd_apply_op_dump = true;
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*mvOrigA );
   RCP<const Thyra::LinearOpBase<Scalar> >
     origA = mvOrigA;
   if(out.get()) *out << "\norigA =\n" << describe(*origA,verbLevel);
+  //RTOpPack::show_spmd_apply_op_dump = false;
 
   if(out.get()) *out << "\nTesting origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -562,7 +568,7 @@ int main( int argc, char* argv[] ) {
     if( !run_composite_linear_ops_tests<float>(comm,n,useSpmd,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_composite_linear_ops_tests<double>(comm,n,useSpmd,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_THYRA_COMPLEX)
 #ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_composite_linear_ops_tests<std::complex<float> >(comm,n,useSpmd,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT

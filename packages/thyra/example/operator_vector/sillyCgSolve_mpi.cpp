@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION( localDim < 2, std::logic_error,
       "Error, localDim=" << localDim << " < 2 is not allowed!" );
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     result = runCgSolveExample<float>(comm, procRank, numProc, localDim, diagScale,
       showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
@@ -237,9 +237,9 @@ int main(int argc, char *argv[])
       showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_THYRA_COMPLEX
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     result = runCgSolveExample<std::complex<float> >(comm, procRank, numProc, localDim,
       diagScale, showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
       diagScale, showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // HAVE_THYRA_COMPLEX
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success)

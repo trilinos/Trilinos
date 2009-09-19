@@ -122,6 +122,7 @@ bool run_scalar_product_tests(
   linearOpTester.adjoint_warning_tol(warning_tol);
   linearOpTester.adjoint_error_tol(error_tol);
   linearOpTester.show_all_tests(true);
+  linearOpTester.dump_all(dumpAll);
 
   if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
   {
@@ -234,7 +235,7 @@ int main( int argc, char* argv[] ) {
     if( !run_scalar_product_tests<float>(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_scalar_product_tests<double>(n,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_THYRA_COMPLEX)
 #ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
     if( !run_scalar_product_tests<std::complex<float> >(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT

@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 
     TEST_FOR_EXCEPTION( N < 0, std::logic_error, "Error, N=" << N << " < 1 is not allowed!" );
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     // Run using float
     result = run1DFFTExample<float>(N,verbose,dumpAll,1e-5,outputPrec);
     if(!result) success = false;

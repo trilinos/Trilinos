@@ -1,37 +1,3 @@
-/* src/RTOp_Config.h.in.  Generated from configure.ac by autoheader.  */
-
-/* Define if want to build examples */
-#cmakedefine HAVE_EXAMPLES
-
-/* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
-
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
-/* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
-/* Define if want to build teuchos-complex */
-#cmakedefine HAVE_TEUCHOS_COMPLEX
-
-/* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#cmakedefine PACKAGE_VERSION
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#cmakedefine inline
-#endif
+#cmakedefine RTOPPACK_DEBUG

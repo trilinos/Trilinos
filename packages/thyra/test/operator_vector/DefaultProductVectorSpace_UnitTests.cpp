@@ -6,8 +6,10 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
+
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Thyra_UnitTestHelpers.hpp"
 
 
 namespace {
@@ -73,7 +75,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, defaultConstruct,
   TEST_EQUALITY(vs->dim(), as<Ordinal>(-1));
   out << "vs = " << *vs;
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   defaultConstruct )
 
 
@@ -182,7 +184,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, dynamicCast,
   out << "cpvs6 = " << *cpvs6;
 
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   dynamicCast )
 
 
@@ -199,7 +201,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, dynamicCast_fail,
   TEST_THROW(productVectorSpaceBase<Scalar>(vs), Teuchos::m_bad_cast);
   TEST_THROW(nonconstProductVectorSpaceBase<Scalar>(vs), Teuchos::m_bad_cast);
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   dynamicCast_fail )
 
 
@@ -265,7 +267,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, singleBlockCompati
     as<ScalarMag>(SMT::eps() / dim_scalar * 1e+2) );
 
 }
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   singleBlockCompatibility )
 
 

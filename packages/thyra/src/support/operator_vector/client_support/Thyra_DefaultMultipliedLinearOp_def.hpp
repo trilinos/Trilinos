@@ -117,7 +117,7 @@ DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
-  return Ops_[k].getConstObj();
+  return Ops_[k];
 }
 
 
@@ -295,8 +295,8 @@ void DefaultMultipliedLinearOp<Scalar>::validateOps()
       if( k < nOps-1 ) {
         THYRA_ASSERT_LINEAR_OP_TIMES_LINEAR_OP_SPACES_NAMES(
           "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
-          ,*Ops_[k].getConstObj(),NOTRANS,("Ops["+toString(k)+"]")
-          ,*Ops_[k+1].getConstObj(),NOTRANS,("Ops["+toString(k+1)+"]")
+          ,*Ops_[k],NOTRANS,("Ops["+toString(k)+"]")
+          ,*Ops_[k+1],NOTRANS,("Ops["+toString(k+1)+"]")
           );
       }
     }
@@ -315,7 +315,7 @@ void DefaultMultipliedLinearOp<Scalar>::setupDefaultObjectLabel()
   std::ostringstream label;
   const int nOps = Ops_.size();
   for( int k = 0; k < nOps; ++k ) {
-    std::string Op_k_label = Ops_[k].getConstObj()->getObjectLabel();
+    std::string Op_k_label = Ops_[k]->getObjectLabel();
     if (Op_k_label.length() == 0)
       Op_k_label = "ANYM";
     if (k > 0)

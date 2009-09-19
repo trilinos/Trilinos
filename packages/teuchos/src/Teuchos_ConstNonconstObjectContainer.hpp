@@ -31,18 +31,232 @@
 
 #include "Teuchos_RCP.hpp"
 
+
 namespace Teuchos {
 
-/** \brief Simple class for containing an object and protecting const with
- * a runtime check which throws an std::exception.
+
+/** \brief Simple class supporting the "runtime protection of const" idiom.
  *
- * This class is simple enough and developers are encouraged to look at the
- * simple inline definition of this class.
+ * This is a foundational class for supporting the "runtime protection of
+ * const" idiom.  The problem this class is designed to help solve is the
+ * general issue of const protection and const handling for "held" objects
+ * inside of "container" objects.  The use case this class is designed to
+ * support involves having the client create the "held" object, give it to the
+ * "container" object, and where the "container" object has functions to give
+ * the "held" object back again.  In this case, there are to specific roles
+ * the "container" object is performing.  One role, the primary role, is the
+ * primary function the "container" object was designed to perform where it
+ * needs functionality of the the "held" object where only the const interface
+ * of the "held" object is required.  If this primary role were the only
+ * consideration, we could just write the "container" class as:
+
+ \code
+
+  // Basic "container" implementation that does not consider general
+  // const/non-const issues.
+  class Container {
+  public:
+    setHeld(const RCP<const Held> &held)
+      { held_ = held; }
+    RCP<const Held> getHeld() const
+      { return held_; }
+    void doSomething() // The primary role!
+      { stuff = held_->computeSomething(...); } // const interface of Held!
+  private:
+    RCP<const Held> held_;
+  };
+
+ \endcode
+
+ * The problem with this design of the "container" class is that it does not
+ * well support the second natural role of any such "container" object, and
+ * that is to act as a general object container that can be used to store and
+ * extract the "held" object.  The difficulty that occurs is when the client
+ * has a non-const reference to the "held" object, gives it to the "container"
+ * object and then needs to get back a non-const reference to the "held"
+ * object later.  With the current design, the client code must do a const
+ * cast such as in:
+
+ \code
+
+  void setUpContainer( const Ptr<Container> &container )
+  {
+
+    // A non-const version of Held
+    RCP<Held> myHeld = createNewHeld(...);
+
+    // Give my non-const RCP to Held as a const RCP to held to container
+    container->setHeld(myHeld);
+
+  }
+
+
+  void updateContainer( const Ptr<Container> &container )
+  {
+
+    // Get back a non-const version of Held (WARNING: const_cast!)
+    RCP<Held> myHeld = rcp_const_cast<Held>(container->getHeld());
+
+    // Change Held
+    myHeld->changeSomething(...);
+
+    // Put back Held
+    container->setHeld(myHeld);
+
+  }
+
+ \endcode
+
+ * Code like shown above if very common and exposes the core problem.  The
+ * client should not have to const cast to get back a non-const verison of the
+ * "held" object that it put in the "container" object in the first place.
+ * The "container" object should know that it was given a non-const version of
+ * "held" object and it should be able to give back a non-const version of the
+ * "held" object.  As much as possible, const casting should be eliminated
+ * from the code, especially user code.  Const casting is a source of defects
+ * in C++ programs and violates the flow of C++ programming (See Item 94
+ * "Avoid casting away const" in the book "C++ Coding Standards").
  *
- * The default copy constructor and assignment operator functions are allowed
- * and result in shallow copied (i.e. just the RCP objects are copied).
+ * The design of the "container" class using this class
+ * ConstNonconstObjectContainer that resolves the problem is:
+
+ \code
+
+  // Implementation of container that uses the "runtime protection of const"
+  // to hold and give up the "held" object.
+  class Container {
+  public:
+    setNonconstHeld(const RCP<Held> &held)
+      { held_ = held; }
+    setHeld(const RCP<const Held> &held)
+      { held_ = held; }
+    RCP<const Held> getNonconstHeld()
+      { return held_.getNonconstObj(); }
+    RCP<const Held> getHeld() const
+      { return held_.getConstObj(); }
+    void doSomething() // The primary role!
+      { stuff = held_->computeSomething(...); } // const interface of Held
+  private:
+    ConstNonconstObjectContainer<Held> held_;
+  };
+
+ \endcode
+
+ * Now the client code can be written with no const casting as:
+
+ \code
+
+  void setUpContainer( const Ptr<Container> &container )
+  {
+
+    // A non-const version of Held
+    RCP<Held> myHeld = createNewHeld(...);
+
+    // Give my non-const RCP to Held now stored as a non-const object
+    container->setNonconstHeld(myHeld);
+
+  }
+
+
+  void updateContainer( const Ptr<Container> &container )
+  {
+
+    // Get back a non-const version of Held (No const cating!)
+    RCP<Held> myHeld = container->getNonconstHeld();
+
+    // Change Held
+    myHeld->changeSomething(...);
+
+    // Put back Held
+    container->setNonconstHeld(myHeld);
+
+  }
+
+ \endcode
+
+ * The "runtime protection of const" idiom allows you to write a single
+ * "container" class that can hold both non-const and const forms of a "held"
+ * object, protects the const of objects being set as const, and can give back
+ * non-const references to objects set as non-const.  The price one pays for
+ * this is that the typical compile-time const protection provided by C++ is
+ * instead replaced with a runtime check.  For example, the following code
+ * with thrown a <tt>NonconstAccessError</tt> exception object:
+
+ \code
+
+  void fooThatThrows(const Ptr<Container> &container)
+  {
+ 
+    // A non-const version of Held
+    RCP<Held> myHeld = createNewHeld(...);
+  
+    // Accidentally set a const version of Held
+    container->setHeld(myHeld);
+    
+    // Try to get back a non-const version of Held
+    RCP<Held> myHeldAgain = container->getNonconstHeld(); // Throws NonconstAccessError!
+
+  }
+
+ \endcode
+
+ * These types of exceptions can be confuing to developers if they don't
+ * understand the idiom.
+ *
+ * The alternative to the "runtime protection of const" idiom is to use
+ * compile-time protection.  However, using compile-time const protection
+ * would require two different versions of a the "container" class: a
+ * "Container" class and a "ConstContainer" class.  I will not go into detail
+ * about what these classes look like but this is ugly, more confusing, and
+ * hard to maintain.
+ *
+ * Note that classes like RCP and boost:shared_ptr provide for compile-time
+ * protection of const with just one (template) class definition.  RCP objects
+ * of type RCP<Held> allow non-const access while RCP objects of type
+ * RCP<const Held> only allow const access and protect const at compile time.
+ * How can one class like RCP protect const at compile-time while a class like
+ * Container shown above can't?  The reason of course is that RCP<Held> and
+ * RCP<const Held> are realy *two* different C++ classes.  The template
+ * mechanism in C++ made it easy to create these two different class types but
+ * they are two seperate types none the less.
+ *
+ * Note that the "runtime protection of const" idiom using this
+ * ConstNonconstObjectContainer is not necessary when the "container" object
+ * needs a non-const "held" object to do its primary work.  In this case, a
+ * client can't give a "container" object a non-const version of the "held"
+ * object because it could not even do its primary role.  In cases where a
+ * non-const version of "held" is needed for the primary role, the "container"
+ * class can be written more simply without ConstNonconstObjectContainer as:
+
+ \code
+
+  // Simpler implementation of "container" where a non-const version of the
+  // "held" object is needed to perform the primary role.
+  class Container {
+  public:
+    setHeld(const RCP<Held> &held)
+      { held_ = held; }
+    RCP<const Held> getNonconstHeld()
+      { return held_; }
+    RCP<const Held> getHeld() const
+      { return held_.; }
+    void doSomething() // The primary role!
+      { held_->changeSomething(...); } // non-const interface of Held
+  private:
+    RCP<Held> held_;
+  };
+
+ \endcode
+
+ * NOTE: The default copy constructor and assignment operator functions are
+ * allowed and result in shallow copy (i.e. just the RCP objects are copied).
  * However, the protection of const will be maintained in the copied/assigned
- * objects as well.
+ * objects correctly.
+ *
+ * NOTE: Assignment for an RCP<const ObjType> is also supported due to the
+ * implicit conversion from RCP<const ObjType> to
+ * ConstNonconstObjectContainer<ObjType> that this class supports through its
+ * constructor.
  */
 template<class ObjType>
 class ConstNonconstObjectContainer {
@@ -59,11 +273,19 @@ public:
   /** \brief. Initialize using a non-const object.
    * Allows both const and non-const access to the contained object. */
   void initialize( const RCP<ObjType> &obj )
-    { TEST_FOR_EXCEPT(!obj.get()); constObj_=obj; isConst_=false; }
+    {
+      TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
+      constObj_ = obj;
+      isConst_ = false;
+    }
   /** \brief. Initialize using a const object.
    * Allows only const access enforced with a runtime check. */
   void initialize( const RCP<const ObjType> &obj )
-    { TEST_FOR_EXCEPT(!obj.get()); constObj_=obj; isConst_=true; }
+    {
+      TEST_FOR_EXCEPTION(is_null(obj), NullReferenceError, "Error!");
+      constObj_ = obj; 
+      isConst_ = true;
+    }
   /** \brief. Uninitialize. */
   void uninitialize()
     { constObj_=null; isConst_=true; }
@@ -75,6 +297,7 @@ public:
    * <b>Preconditions:</b>
    * <ul>
    * <li> [<tt>getConstObj().get()!=NULL</tt>] <tt>isConst()==false</tt>
+   *      (throws <tt>NonconstAccessError</tt>)
    * </ul>
    *
    * <b>Postconditions:</b>
@@ -83,12 +306,12 @@ public:
    * <li>[<tt>getConstObj().get()!=NULL</tt>] <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  RCP<ObjType> getNonconstObj()
+  RCP<ObjType> getNonconstObj() const
     {
       TEST_FOR_EXCEPTION(
-        constObj_.get() && isConst_, std::logic_error
-        ,"Error, the object of reference type \""<<TypeNameTraits<ObjType>::name()<<"\" was given "
-        "as a const-only object and non-const access is not allowed."
+        constObj_.get() && isConst_, NonconstAccessError,
+        "Error, the object of reference type \""<<TypeNameTraits<ObjType>::name()
+        <<"\" was given as a const-only object and non-const access is not allowed."
         );
       return rcp_const_cast<ObjType>(constObj_);
     }
@@ -102,11 +325,49 @@ public:
   /** \brief Perform shorthand for <tt>getConstObj(). */
   RCP<const ObjType> operator()() const
     { return getConstObj(); }
-  
+  /** \brief Pointer (<tt>-></tt>) access to underlying const object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
+   * </ul>
+   */
+  const ObjType* operator->() const
+    { return &*getConstObj(); } // Does assert also!
+  /** \brief Dereference the underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
+   * </ul>
+   */
+  const ObjType& operator*() const
+    { return *getConstObj(); }
+  /** \brief Perform an implicit conversion to an RCP<const ObjType>. */
+  operator RCP<const ObjType>() const
+    { return getConstObj(); }
+
 private:
-  RCP<const ObjType>   constObj_;
-  bool                         isConst_;
+  RCP<const ObjType> constObj_;
+  bool isConst_;
 };
+
+
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
+ *
+ * \relates ConstNonconstObjectContainer
+ */
+template<class T>
+bool is_null( const ConstNonconstObjectContainer<T> &p )
+{ return is_null(p.getConstObj()); }
+
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ *
+ * \relates ConstNonconstObjectContainer
+ */
+template<class T>
+bool nonnull( const ConstNonconstObjectContainer<T> &p )
+{ return nonnull(p.getConstObj()); }
+
 
 } // namespace Teuchos
 

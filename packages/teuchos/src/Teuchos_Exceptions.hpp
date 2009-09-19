@@ -57,6 +57,14 @@ class NullReferenceError : public ExceptionBase
 {public:NullReferenceError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
 
 
+/** \brief Null reference error exception class.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+class NonconstAccessError : public ExceptionBase
+{public:NonconstAccessError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
+
 /** \brief Range error exception class.
  *
  * \ingroup teuchos_mem_mng_grp

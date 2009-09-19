@@ -88,11 +88,11 @@ int main(int argc, char *argv[])
 
       success = runTest<double>(out);
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
       success = runTest<float>(out) && success;
 #endif
 
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_THYRA_COMPLEX)
       success = runTest<std::complex<double> >(out) && success;
 #endif
 

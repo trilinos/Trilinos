@@ -74,7 +74,7 @@ template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::getOp() const
 {
-  return getOpImpl().getConstObj();
+  return getOpImpl();
 }
 
 
@@ -101,7 +101,7 @@ std::string DefaultScaledAdjointLinearOp<Scalar>::description() const
   std::ostringstream oss;
   oss << Teuchos::Describable::description() << "{"
       << overallScalar() << ","<<toString(overallTransp())<<","
-      << origOp_.getConstObj()->description() << "}";
+      << origOp_->description() << "}";
   return oss.str();
 }
 
@@ -150,7 +150,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
           *out << "no-transformation\n";
       }
       tab.incrTab(my_index_+2);
-      *out << "origOp = " << Teuchos::describe(*origOp_.getConstObj(),verbLevel);
+      *out << "origOp = " << Teuchos::describe(*origOp_,verbLevel);
       break;
     }
     default:
@@ -219,7 +219,7 @@ template<class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::getOrigOp() const
 {
-  return origOp_.getConstObj();
+  return origOp_;
 }
 
 

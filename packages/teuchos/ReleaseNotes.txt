@@ -1,5 +1,12 @@
 
-Changes since Trilinos 9.0 release:
+------------------------------------------
+Release Notes for Trilinos Package Teuchos
+------------------------------------------
+
+
+Trilinos 10.0:
+--------------
+
 
 (*) Breaks in backward compatibility:
 

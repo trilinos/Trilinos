@@ -522,6 +522,8 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
     emailBody += "\nExtra CMake Options: " + inOptions.extraCmakeOptions + "\n"
+  if inOptions.makeOptions:
+    emailBody += "\nMake Options: " + inOptions.makeOptions + "\n"
   if inOptions.ctestOptions:
     emailBody += "\nCTest Options: " + inOptions.ctestOptions + "\n"
   emailBody += "\n"
@@ -919,6 +921,8 @@ def checkinTest(inOptions):
 
   timings = Timings()
 
+  subjectLine = None
+
   try:
 
 
@@ -1215,10 +1219,13 @@ def checkinTest(inOptions):
 
     traceback.print_exc()
 
+  # Print the final status at the very end
+  if subjectLine:
+    print \
+      "\n\n" + subjectLine + "\n\n"
+
   return success
 
-
-  return (allKeywords, ' '. join(testDirs))
 
 
 #

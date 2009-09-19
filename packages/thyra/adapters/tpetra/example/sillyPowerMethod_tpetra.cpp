@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
     
     int    maxNumIters  = 10*globalDim;
     
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     // Run using float
     result = runPowerMethodExample<int,float>(globalDim,maxNumIters,verbose,dumpAll);
     if(!result) success = false;
@@ -190,9 +190,9 @@ int main(int argc, char *argv[])
     result = runPowerMethodExample<int,double>(globalDim,maxNumIters,verbose,dumpAll);
     if(!result) success = false;
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_THYRA_COMPLEX
     
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     // Run using std::complex<float>
     result = runPowerMethodExample<int,std::complex<float> >(globalDim,maxNumIters,verbose,dumpAll);
     if(!result) success = false;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
     //result = runPowerMethodExample<mpf_class >(globalDim,maxNumIters,verbose,dumpAll);
     //if(!result) success = false;
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_THYRA_COMPLEX
     
     // Run using std::complex<mpf_class>
     //result = runPowerMethodExample<std::complex<mpf_class> >(globalDim,maxNumIters,verbose,dumpAll);

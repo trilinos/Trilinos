@@ -30,12 +30,6 @@
 #include "Teuchos_OpaqueWrapper.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#ifdef MPIAPI
-#define CALL_API MPIAPI
-#else
-#define CALL_API 
-#endif
-
 //
 // This implementation of handling the reduction operator
 // will work just fine in a single threaded program.
@@ -47,7 +41,8 @@
 //
 
 extern "C" {
-void CALL_API Teuchos_MPI_reduction_op(
+
+void Teuchos_MPI_reduction_op(
   void              *invec
   ,void             *inoutvec
   ,int              *len
@@ -110,7 +105,8 @@ void set_reduct_op( const Teuchos::RCP<const Teuchos::MpiReductionOpBase>& reduc
 } // namespace
 
 extern "C" {
-void CALL_API Teuchos_MPI_reduction_op(
+
+void Teuchos_MPI_reduction_op(
   void              *invec
   ,void             *inoutvec
   ,int              *len

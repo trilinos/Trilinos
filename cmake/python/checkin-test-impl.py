@@ -55,20 +55,22 @@ In order to do a solid checkin, do the following:
   tests passed and if the commit happened or not.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
-  for the commit to happen automatically.
+  for the CVS commits invoked internally to work without you having to type a
+  password.
 
-  NOTE: You can actually finish this commit message file while the
+  NOTE: You can actually finish writing the checkin_message file while the
   checkin-test.py script is running.  Just make sure you finish it in time or
-  don't pass in --commit and do the commit manually later (or run
-  --commit to append the results to the checkin message).
+  don't pass in --commit and do the commit later (with the --commit option).
 
-  NOTE: You can do the commit in a second step with a follow-up --commit.
+  NOTE: You can do the commit in a second step with a follow-up run with
+  --commit replacing --do-all (it will remember the results from the tests
+  just run).
 
   NOTE: For more details on using this script, see below.
 
 
-Documentation:
---------------
+Detailed Documentation:
+-----------------------
 
 There are two basic configurations that are tested: MPI_DEBUG and
 SERIAL_RELEASE.  Several configure options are varied in these two builds to
@@ -87,24 +89,24 @@ to do debugging.
 The following steps are performed by this script:
 
 1) Do a CVS update of the code (and detect the files that have changed
-locally).  (if --update is set.)
+locally).  (if --update or --do-all is set.)
 
-2) Select the list of packages to enable forward based on the directories
-where there are changed files (or from a list passed in by the user).  NOTE:
-This can be overridden with the options --enable-packages, --disable-packages
-and --no-enable-fwd-packages.
+2) Select the list of packages to enable forward based on the package
+directories where there are changed files (or from a list of packages passed
+in by the user).  NOTE: This can be overridden with the options
+--enable-packages, --disable-packages, and --no-enable-fwd-packages.
 
 3) For each build case (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
 
   3.a) Configure a build directory in a standard way for all of the packages
   that have changed and all of the packages that depend on these packages
-  forward. What gets eanbled can be modified (see the enable options above).
-  (if --configure is set.)
+  forward. You can manually select what gets enabled (see the enable options
+  above).  (if --configure or --do-all is set.)
   
   3.b) Build all configured code with 'make' (e.g. with -jN set through
-  --make-options).  (if --build is set.)
+  --make-options).  (if --build or --do-all is set.)
   
-  3.c) Run all tests for enabled packages.  (if --test is set.)
+  3.c) Run all tests for enabled packages.  (if --test or --do-all is set.)
   
   3.d) Analyze the results of the CVS update, configure, build, and tests and
   send email about results.  (emails only sent out if --send-emails-to is not
@@ -133,30 +135,27 @@ a set of CMake variables that will get read in the files:
   SOME_BASE_DIR/CHECKIN/COMMON.config
 
 Actually, skeletons of these files will automatically be written out with
-typical CMake cache variables commented out.  Any CMake cache variables listed
-in these files will be read into and passed on the configure line to 'cmake'.
+typical CMake cache variables that you would need to set commented out.  Any
+CMake cache variables listed in these files will be read into and passed on
+the configure line to 'cmake'.
 
 WARNING: Please do not add any CMake cache variables in the *.config files
-that will alter what packages are built or what tests are run.  The goal of
+that will alter what packages are enabled or what tests are run.  The goal of
 these configuration files is to allow you to specify the minimum environment
 to find MPI, your compilers, and the basic TPLs.  If you need to fudge what
 packages are enabled, please use the script arguments --enable-packages,
 --disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages.
 
 NOTE: Before running this script, you should first do an CVS update and
-examine what files are changed to make sure you want to commit what you have.
-Also, please look out for unknown files that you may need to add to the VC
-repository with 'cvs add'.  Your working directory needs to be 100% ready to
-commit before running this script.
+examine what files are changed to make sure you want to commit what you have
+in your local working directory.  Also, please look out for unknown files that
+you may need to add to the VC repository with 'cvs add'.  Your working
+directory needs to be 100% ready to commit before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
 affect the build or the tests.  For example, if all you have changed are
-document files, then you don't need to run this script before committing.
-
-NOTE: You can directly call the scripts 'do-configure.base' that get created
-by this script in your other build directories in order to match the basic
-configuration options that are used for checkin testing.  You just need to set
-the other various package and TPL enables for your local work.
+documentation files, then you don't need to run this script before committing
+manually.
 
 Common use cases for using this script are as follows:
 
@@ -164,9 +163,16 @@ Common use cases for using this script are as follows:
 
    --do-all
 
+   NOTE: This will result in a set of emails getting sent to your email
+   address for the different configurations and an overall commit readiness
+   status email.
+
 (*) Basic full testing with commit:
 
    --do-all --commit --commit-msg-header-file=<SOME_FILE_NAME>
+
+   NOTE: If the commit criteria is not satisify, no commit will occur and you
+   will get an email telling you that.
 
 (*) Check commit readiness status:
 
@@ -175,7 +181,7 @@ Common use cases for using this script are as follows:
    NOTE: This will examine results for the last testing process and send out
    an email stating if the a commit is ready to perform or not.
 
-(*) Commit after a completed set of tests:
+(*) Commit after a completed set of tests have finished:
 
    --commit --commit-msg-header-file=<SOME_FILE_NAME>
 

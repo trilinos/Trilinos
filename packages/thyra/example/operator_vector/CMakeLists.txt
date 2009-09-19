@@ -20,9 +20,16 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
+IF (WIN32 AND NOT CYGWIN)
+  SET(MAX_ITERS_DIM_FACTOR 20)
+ELSE()
+  SET(MAX_ITERS_DIM_FACTOR 10)
+ENDIF()
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyPowerMethod_serial
   SOURCES sillyPowerMethod_serial.cpp
+  ARGS --max-iters-dim-factor=${MAX_ITERS_DIM_FACTOR}
   COMM serial
   )
 

@@ -170,14 +170,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
     if( !Thyra::run_std_ops_tests<float>(local_dim,float(eps_scale*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
     if( !Thyra::run_std_ops_tests<double>(local_dim,double(eps_scale*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
-#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_COMPLEX) && defined(HAVE_THYRA_FLOAT)
     if( !Thyra::run_std_ops_tests<std::complex<float> >(local_dim,float(eps_scale*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_THYRA_COMPLEX)
     if( !Thyra::run_std_ops_tests<std::complex<double> >(local_dim,double(eps_scale*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP

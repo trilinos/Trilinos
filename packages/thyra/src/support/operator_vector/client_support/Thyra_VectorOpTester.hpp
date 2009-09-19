@@ -205,7 +205,7 @@ inline bool VectorOpTester<Scalar>
 /* specialize the set element test for complex types to a no-op. 
  * This is because minloc and maxloc do not exist for complex vectors 
  */
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_THYRA_COMPLEX
 
 
 template <> 
@@ -218,7 +218,7 @@ inline bool VectorOpTester<std::complex<double> >
 }
 
 
-#if defined(HAVE_TEUCHOS_FLOAT)
+#if defined(HAVE_THYRA_FLOAT)
 template <> 
 inline bool VectorOpTester<std::complex<float> >
 ::setElementUsingBracketTest() const 
@@ -230,7 +230,7 @@ inline bool VectorOpTester<std::complex<float> >
 #endif
 
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif // HAVE_THYRA_COMPLEX
   
 
 template <class Scalar> 

@@ -2,10 +2,10 @@ Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
-../example/simple_stratimikos_example.exe --echo-command-line --matrix-file=../example/FourByFour.mtx --linear-solver-params-file=../example/amesos.klu.xml 
+/home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/SERIAL_DEBUG/packages/stratimikos/example/Stratimikos_simple_stratimikos_example.exe --echo-command-line --matrix-file=FourByFour.mtx --linear-solver-params-file=amesos.klu.xml 
 
 
-Reading linear system in Epetra format from the file '../example/FourByFour.mtx' ...
+Reading linear system in Epetra format from the file 'FourByFour.mtx' ...
 
 Printing statistics of the Epetra linear system ...
 
@@ -14,19 +14,19 @@ Printing statistics of the Epetra linear system ...
   ||epetra_b||2 = 1.52593
   ||epetra_x||2 = 0
 
-Reading parameters from XML file "../example/amesos.klu.xml" ...
-  
-  Solving block system using Amesos solver Amesos_Klu ...
-  
-  
-  Total solve time = 0 sec
+Reading parameters from XML file "amesos.klu.xml" ...
+ 
+ Solving block system using Amesos solver Amesos_Klu ...
+ 
+ 
+ Total solve time = 0 sec
 
 Solve status:
-  solveStatus = SOLVE_STATUS_CONVERGED
-  achievedTol = unknownTolerance()
-  message:
-    Solver Amesos_Klu converged!
-  extraParameters: NONE
+ solveStatus = SOLVE_STATUS_CONVERGED
+ achievedTol = unknownTolerance()
+ message:
+  Solver Amesos_Klu converged!
+ extraParameters: NONE
 
 Solution ||epetra_x||2 = 1.24984
 
