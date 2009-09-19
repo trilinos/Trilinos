@@ -36,7 +36,7 @@ PACKAGE_ADD_TEST_DIRECTORIES(src/driver)
 IF(Trilinos_ENABLE_Fortran)
 # CMAKE is not quite ready for this yet; it tries to use C++ compiler to link
 # fdriver, while fdriver needs F90.
-#PACKAGE_ADD_TEST_DIRECTORIES(src/fdriver)
+PACKAGE_ADD_TEST_DIRECTORIES(src/fdriver)
 ENDIF()
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
