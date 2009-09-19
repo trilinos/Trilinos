@@ -40,8 +40,6 @@
   </ul>
 <li> \ref thyra_software_technicalities_sec
 <li> \ref thyra_dependencies_sec
-<li> \ref thyra_configuration_sec
-<li> \ref thyra_external_projects_sec
 <li> \ref thyra_faq_sec
 <li> \ref thyra_documents_sec
 <li> \ref thyra_contributors_sec
@@ -311,7 +309,7 @@ consistently using these macros it is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
 <tt>TestForException_break()</tt> (e.g. by typing <tt>break
 TestForException_break</tt> in gdb).  If Trilinos is configured with
-<tt>--enable-teuchos-debug</tt> then a lot of runtime error checking is
+<tt>Trilinos_ENABLE_DEBUG=ON</tt> then a lot of runtime error checking is
 performed in %Thyra support software, as well as in many other software
 packages.  Whenever development work is being performed this option should
 always be enabled since a lot of errors will be caught that would be hard to
@@ -344,103 +342,13 @@ affect the code that is built and what code is installed.
 Some of the more important configuration options are:
 
 <ul>
-<li><b><tt>--enable-thyra</tt></b>: Causes the %Thyra package and all of
+
+<li><b><tt>Trilinos_ENABLE_Thyra=ON</tt></b>: Causes the %Thyra package and all of
 its dependent packages to be enabled and built.  Without this option,
 there will be no %Thyra header files or libraries included in the
 installation of Trilinos, i.e., when one runs <tt>make install</tt>.
-<li><b><tt>--enable-export-makefiles</tt></b>: Causes the installation of
-the %Thyra package (an other Trilinos packages) to have the makefile
-fragments <tt>Makefile.export.thyra</tt> and <tt>Makefile.export.thyra.macros</tt>
-installed in the installation directory <tt>$TRILINOS_INSTALL_DIR/include</tt> for
-use by external makefiles (see \ref thyra_external_projects_sec "below").
+
 </ul>
-
-See the output from <tt>./configure --help</tt> (where <tt>./</tt> is the base
-source directory for the <tt>thyra</tt> package) for a complete listing of all
-of the configure options that %Thyra responds to.
-
-The %Thyra package is also affected by configure options passed to
-other packages; some of these options are:
-
-<ul>
-<li><b><tt>--enable-teuchos-debug</tt></b>: Causes a great deal
-of return error checking code to be added to the %Thyra support
-software.
-<li><b><tt>--enable-teuchos-complex</tt></b>: Causes the
-<tt>std::complex<></tt> scalar type to be used in templated examples
-and tests.
-<li><b><tt>--enable-teuchos-gmp</tt></b>: Causes the GNU MP
-extended-precision <tt>mpf_class</tt> scalar type to be used in
-templated examples and tests.
-</ul>
-
-Note that the above options will not be listed by
-<tt>Trilinos/packages/thyra/configure --help</tt> but instead are listed by
-<tt>Trilinos/packages/teuchos/configure --help</tt>.
-
-\section thyra_external_projects_sec Building and Linking Against %Thyra in External Projects
-
-It is recommended that developers external to Trilinos install %Thyra with the
-rest of Trilinos and then compile and link against the installed headers and
-libraries (see the <a
-href="../../../../doc/UserGuide/TrilinosUserGuide.pdf">Trilinos Users
-Guide</a> for a discussion of installing Trilinos).  Remember that in order to
-install the contents of the <tt>thyra</tt> package, one must enable it
-(see the <tt>--enable-thyra</tt> and other <tt>configure</tt> options
-described \ref thyra_configuration_sec "above") before installation.
-
-When  <tt>make install</tt> is run, %Thyra will be installed with the rest of 
-Trilinos in the directory specified by the configure
-option <tt>--prefix=$TRILINOS_INSTALL_DIR</tt>. It is
-important that a client's external makefile system be consistent with the
-environment used to build %Thyra.  To do this, if the option
-<tt>--enable-export-makefiles</tt> was enabled at configure time, then a set
-of makefile fragments is installed in the directory 
-
-Once %Thyra software is installed in the location specified by the configure
-option <tt>--prefix=$TRILINOS_INSTALL_DIR</tt> with the rest of Trilinos
-(where <tt>$TRILINOS_INSTALL_DIR</tt> is the path of the directory that you
-specify where Trilinos will be installed with <tt>make install</tt>), it is
-important that a client's external makefile system be consistent with the
-environment used to build %Thyra.  To do this, if the option
-<tt>--enable-export-makefiles</tt> was enabled at configure time, then a set
-of makefile fragments is installed in the directory
-
-\verbatim
-  $TRILINOS_INSTALL_DIR/include/
-\endverbatim
-
-The installed makefile fragment files <tt>Makefile.export.thyra</tt> and
-<tt>Makefile.export.thyra.macros</tt> can then be included in an external
-makefile to give compiler options, include paths, libraries etc.
-
-\subsection thyra_external_makefile_example_sec An example external makefile
-
-When %Thyra is installed with Trilinos, the directory
-
-\verbatim
-  $TRILINOS_INSTALL_DIR/example/thyra/
-\endverbatim
-
-is created which contains an example of an external project that uses 
-%Thyra.  The example makefile 
-
-\verbatim
-
-  $TRILINOS_INSTALL_DIR/example/thyra/Makefile
-\endverbatim
-
-that builds an external version the <tt>sillyCgSolve_serial.exe</tt> program
-is shown below:
-
-\verbinclude external/Makefile.external.sample
-
-By using the macros starting with <tt>THYRA_</tt> one is guaranteed that the
-same compiler with the same options are used to build the client's code that
-were used to build Trilinos.  Of particular importance are <tt>THYRA_CXX</tt>,
-<tt>THYRA_DEFS</tt>, <tt>THYRA_CPPFLAGS</tt>, and <tt>THYRA_CXXLD</tt> since
-these ensure that the same C++ compiler and the same <tt>-D</tt> macro
-definitions are used.
 
 \section thyra_faq_sec Frequently Asked Questions (FAQ)
 

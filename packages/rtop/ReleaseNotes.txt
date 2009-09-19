@@ -1,0 +1,11 @@
+
+----------------------------------------
+Release Notes for Trilinos Package RTOp
+----------------------------------------
+
+
+Trilinos 10.0:
+--------------
+
+
+No major changes
