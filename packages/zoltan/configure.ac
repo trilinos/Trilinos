@@ -38,7 +38,6 @@ AC_CONFIG_SRCDIR([src/include/zoltan.h])
 AC_CONFIG_AUX_DIR(config)
 
 # Configure should create src/Zoltan_config.h from src/Zoltan_config.h.in
-# Zoltan does not yet make use of this file
 AM_CONFIG_HEADER(src/include/Zoltan_config.h:src/include/Zoltan_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
