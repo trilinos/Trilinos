@@ -1,18 +1,21 @@
 Release notes for Isorropia 3.2 (Trilinos 10.0), Sept. 2009:
+------------------------------------------------------------
 
-Isorropia 3.2 improves upon version 3.0 (Trilinos 9.0)
-in many ways. The most important changes are listed below.
+Isorropia 3.2 (Trilinos 10.0) improves upon version 3.0 (Trilinos 9.0)
+in several ways. The most important changes are listed below.
 
 General:
  - Isorropia now has a set of parameters for common options,
    such that many users do not need to use Zoltan parameters. 
+ - NOTE: The partitioning method *must* now be specified
+   by the new Isorropia parameter 'Partitioning Method'.
  - Zoltan parameters can still be set in a sublist.
 
 Partitioning:
  - Added support for geometric partitioning via Epetra_MultiVector.
  - Added support for variable target part sizes. 
  - createBalancedCopy replaces create_balanced_copy and uses raw pointers
-   instead of RCP.
+   instead of RCP. (The Partitioner class is the preferred API.)
 
 Coloring:
  - Distance-2 coloring for Jacobians is now the default.
@@ -20,6 +23,6 @@ Coloring:
    and Isorropia::Epetra::Colorer::generateColMapColoring.
 
 Prober:
- - New class to construct a sparse matrix from an operator efficiently via
-   coloring.
+ - New class to construct a sparse matrix from an operator efficiently 
+   via coloring.
 
