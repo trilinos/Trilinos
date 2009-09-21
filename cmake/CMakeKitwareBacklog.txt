@@ -36,57 +36,6 @@ if the BLAS finding capability could handle finding library dependencies of
 BLAS (e.g. -lgfortran for static Atlas installations).
 
 
-(*) [CTest] [P3] Add general summary timing to the console summary
-outputting:
-
-- {Done} Print the CPU time for each test (not just the start and end times in
-the log file): The test run time helps to determine what tests are taking too
-long and need to be revised.  This feature should be very easy to add to the
-CTest C++ source code.
-
-- Print intermediate summary times for individual groups of tests (see
-example below): This will allow us to see how long individual Trilinos
-packages are taking to complete their tests.  This could be
-facilitated with an option like --summary-testing-group=REGEX that
-causes test to be grouped together based on REGEX matching.
-
-- {Done} Print the overall testing time at the end of the summary and detailed
-log files (see below):
-
-Example output showing the above items:
-
-=========================================================
-
-Start processing tests
-
-Test project /home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/GCC-4.1.2/SERIAL_DEBUG
-
- 12/119 Testing Teuchos_BLAS_test ..........................................   Passed   5.20 sec
- 13/119 Testing Teuchos_DefaultMpiComm_UnitTests ...........................   Passed   0.48 sec
- 14/119 Testing Teuchos_Comm_test ..........................................   Passed   2.56 sec
- 15/119 Testing Teuchos_Containers_test ....................................   Passed   0.43 sec
- 16/119 Testing Teuchos_UnitTest_UnitTests .................................   Passed   0.31 sec
- 17/119 Testing Teuchos_UnitTest_BadUnitTest_final_results .................   Passed   0.01 sec
- ...
- Subproject summary Teuchos: #passed = 25, #failed = 1, CPU time = 26 sec
-
- 72/119 Testing Epetra_BlockMap_test .......................................   Passed   0.00 sec
- 73/119 Testing Epetra_BasicPerfTest_test ..................................   Passed   0.98 sec
- 74/119 Testing Epetra_Comm_test ...........................................   Passed   7.05 sec
- 75/119 Testing Epetra_CrsGraph_test_unit ..................................   Passed   2.74 sec
- 76/119 Testing Epetra_CrsMatrix_test ......................................   Passed   20.5 sec
- ...
- Subproject summary Epetra: #passed = 48, #failed=0, CPU time = 150 sec
- 
- ...
-
-100% tests passed, 0 tests failed out of 113
-
-Total CPU time = 1050 sec
-
-=========================================================
-
-
 (*) [CTest] [P3] Fully finish the ctest -jN option: The -jN option
 needs to provide good parallel scalability.  It also needs to be able
 to write the needed output files for submitting to the dashboard.  We
@@ -509,4 +458,66 @@ query and limit the builds shown in a 'collapsed' view, when you click
 on a build name collapsed group, you go to a new page that does not
 contain your query fields.  This is not at all what you expect and you
 have to entry the query fields again on the non-collapsed page.
+
+(*) [CTest] [P3] Add general summary timing to the console summary
+outputting:
+
+- Print the CPU time for each test (not just the start and end times in
+the log file): The test run time helps to determine what tests are taking too
+long and need to be revised.  This feature should be very easy to add to the
+CTest C++ source code.
+
+- Print intermediate summary times for individual groups of tests (see
+example below): This will allow us to see how long individual Trilinos
+packages are taking to complete their tests.  This could be
+facilitated with an option like --summary-testing-group=REGEX that
+causes test to be grouped together based on REGEX matching.
+
+- Print the overall testing time at the end of the summary and detailed
+log files (see below):
+
+Example output showing the above items:
+
+=========================================================
+
+Start processing tests
+
+Test project
+/home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/GCC-4.1.2/SERIAL_DEBUG
+
+ 12/119 Testing Teuchos_BLAS_test ..........................................
+Passed   5.20 sec
+ 13/119 Testing Teuchos_DefaultMpiComm_UnitTests ...........................
+Passed   0.48 sec
+ 14/119 Testing Teuchos_Comm_test ..........................................
+Passed   2.56 sec
+ 15/119 Testing Teuchos_Containers_test ....................................
+Passed   0.43 sec
+ 16/119 Testing Teuchos_UnitTest_UnitTests .................................
+Passed   0.31 sec
+ 17/119 Testing Teuchos_UnitTest_BadUnitTest_final_results .................
+Passed   0.01 sec
+ ...
+ Subproject summary Teuchos: #passed = 25, #failed = 1, CPU time = 26 sec
+
+ 72/119 Testing Epetra_BlockMap_test .......................................
+Passed   0.00 sec
+ 73/119 Testing Epetra_BasicPerfTest_test ..................................
+Passed   0.98 sec
+ 74/119 Testing Epetra_Comm_test ...........................................
+Passed   7.05 sec
+ 75/119 Testing Epetra_CrsGraph_test_unit ..................................
+Passed   2.74 sec
+ 76/119 Testing Epetra_CrsMatrix_test ......................................
+Passed   20.5 sec
+ ...
+ Subproject summary Epetra: #passed = 48, #failed=0, CPU time = 150 sec
+
+ ...
+
+100% tests passed, 0 tests failed out of 113
+
+Total CPU time = 1050 sec
+
+=========================================================
 
