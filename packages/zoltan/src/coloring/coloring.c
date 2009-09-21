@@ -471,11 +471,11 @@ static int D1coloring(
 	if (lmaxdeg < xadj[i+1] - xadj[i])
 	    lmaxdeg = xadj[i+1] - xadj[i];
     MPI_Allreduce(&lmaxdeg, &gmaxdeg, 1, MPI_INT, MPI_MAX, zz->Communicator);
-    /* gmaxdeg+1 is the upper bound for #colors */
-    ++gmaxdeg;
+    /* gmaxdeg+1 is the upper bound for #colors and colors start at one */
+    gmaxdeg += 2;
 
     /* Memory allocation */
-    mark = (int *) ZOLTAN_CALLOC(gmaxdeg > 0 ? gmaxdeg : 1, sizeof(int));
+    mark = (int *) ZOLTAN_CALLOC(gmaxdeg, sizeof(int));
     conflicts = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     replies = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     stats = (MPI_Status *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Status));
@@ -822,8 +822,8 @@ static int D2coloring(
 	if (lmaxdeg < xadj[i+1] - xadj[i])
 	    lmaxdeg = xadj[i+1] - xadj[i];
     MPI_Allreduce(&lmaxdeg, &gmaxcolor, 1, MPI_INT, MPI_MAX, zz->Communicator);
-    /* gmaxdeg^2+1 is the upper bound for #colors */
-    gmaxcolor = gmaxcolor*gmaxcolor+1;
+    /* gmaxdeg^2+1 is the upper bound for #colors and colors start at 1*/
+    gmaxcolor = gmaxcolor*gmaxcolor+2;
 
 
     /***** CONSTRUCT PARTIAL ADJ LIST OF NON-LOCAL VERTICES *****/
@@ -1396,12 +1396,14 @@ static int D1ParallelColoring (
 #ifdef RELEVANT_COLORS
 	    for (sreqcnt = j = 0; j<plstcnt; ++j) {
 		p = plst[j];
-		if (Ssize[p] < 2*ss) {
-		    persSbuf[p][Ssize[p]++] = -2;
-		    persSbuf[p][Ssize[p]++] = -2;
-		}
-		MPI_Isend(persSbuf[p], Ssize[p], MPI_INT, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
-		Ssize[p] = 0;
+                if (Ssize[p] || (comm_pattern == 'S')) {
+                    if (Ssize[p] < 2*ss) {
+                        persSbuf[p][Ssize[p]++] = -2;
+                        persSbuf[p][Ssize[p]++] = -2;
+                    }
+                    MPI_Isend(persSbuf[p], Ssize[p], MPI_INT, p, colortag, zz->Communicator, &sreqs[sreqcnt]);
+                    Ssize[p] = 0;
+                    }
 	    }
 #else
 	    for (sreqcnt = p = 0; p < zz->Num_Proc; ++p)
