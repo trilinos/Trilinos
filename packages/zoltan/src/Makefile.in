@@ -1132,10 +1132,15 @@ EXTRA_DIST = $(ZOLTAN_H) \
 
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
-@USE_FORTRAN_FALSE@FDRIVER_SUBDIR = 
+@HAVE_MPI_FALSE@@USE_FORTRAN_TRUE@FDRIVER_SUBDIR = 
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
-@USE_FORTRAN_TRUE@FDRIVER_SUBDIR = fdriver
+
+# Build zfdrive only if HAVE_MPI; I haven't figured out a proper build of
+# siMPI's Fortran interface yet (and serial zfdrive is not an important
+# use case).
+@HAVE_MPI_TRUE@@USE_FORTRAN_TRUE@FDRIVER_SUBDIR = fdriver
+@USE_FORTRAN_FALSE@FDRIVER_SUBDIR = 
 SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------

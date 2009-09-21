@@ -767,8 +767,16 @@ execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
+# Build zfdrive only if HAVE_MPI; I haven't figured out a proper build of
+# siMPI's Fortran interface yet (and serial zfdrive is not an important
+# use case).
+
 if USE_FORTRAN
+if HAVE_MPI
 FDRIVER_SUBDIR = fdriver
+else
+FDRIVER_SUBDIR =
+endif
 else
 FDRIVER_SUBDIR =
 endif
