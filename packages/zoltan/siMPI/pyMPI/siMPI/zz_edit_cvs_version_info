@@ -1,0 +1,21 @@
+#!/bin/csh
+#  K. Devine  9/21/09
+#  Script for preserving Pat Miller's CVS info, rather than overwriting
+#  it with Trilinos CVS info.
+#  Run this script from the siMPI/pyMPI/siMPI directory after updating
+#  files in that directory with the latest from Pat's sourceforge repository.
+
+set files = `find . -name "*.h" -print`
+foreach file ($files)
+        echo $file
+        /bin/mv $file tmpfile
+        sed -e 's/\$Revision/Revision/g' < tmpfile > $file
+        /bin/rm tmpfile
+        /bin/mv $file tmpfile
+        sed -e 's/\$Author/Author/g' < tmpfile > $file
+        /bin/rm tmpfile
+        /bin/mv $file tmpfile
+        sed -e 's/\$Date/Date/g' < tmpfile > $file
+        /bin/rm tmpfile
+end
+
