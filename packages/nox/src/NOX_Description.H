@@ -614,6 +614,14 @@ The following pages are relevant to developers.
 
 /*! \page nox_release_information NOX and LOCA Release Information (Last updated August 28th 2007)
 
+ %NOX/%LOCA version 10.0 will be release as part of Trilinos 10.0 in September 2009.  
+ <ul>
+ <li> NOX has been changed over to use the cmake build system.  The autotools have been deprecated and will be completely removed in the next release.
+ </ul>
+ %NOX/%LOCA version 9.0 will be release as part of Trilinos 9.0 in September 2008.  
+ <ul>
+ <li> No major changes to nox/loca.
+ </ul>
  %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in early September 2007.  Current changes/additions:
 <ul>
   <li> All %Manager classes have been replaced with Factories.  This change clarifies what occurs during reset calls and simplifies object management.  No more handles.  The factories return "Generic" base class objects. 
