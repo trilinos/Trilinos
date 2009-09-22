@@ -617,6 +617,12 @@ EXTRA_libzoltan_a_SOURCES = \
 	$(EXTRA_FORTRAN_H) \
 	$(EXTRA_FORTRAN)
 
+FORTRAN_MODULES = \
+	lb_user_const.mod \
+	zoltan_types.mod \
+	zoltan.mod \
+	zoltan_user_data.mod
+
 include $(top_builddir)/Makefile.export.zoltan
 
 EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
@@ -657,6 +663,13 @@ lib_LIBRARIES = $(ZOLTAN_LIB)
 
 # Eventually we will try to install fewer headers
 include_HEADERS = $(INCLUDE_H) 
+
+# ------------------------------------------------------------------------
+# List of all Fortran Module files to install in $(includedir)
+# ------------------------------------------------------------------------
+if USE_FORTRAN
+include_HEADERS += $(FORTRAN_MODULES)
+endif
 
 # ------------------------------------------------------------------------
 # Other files we want in the tarball
