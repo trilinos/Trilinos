@@ -33,21 +33,23 @@ typedef struct
    int proc;
    } Range_Info;
 
+struct dd_nh2_struct {
+  Range_Info *ptr;
+  int nproc;
+  int low_limit;
+  int high_limit;
+  int debug_level;
+  int count;
+};
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc);
+ unsigned int nproc, struct dd_nh2_struct* data);
 
 static int compare_sort   (const void *a, const void *b);
 static int compare_search (const void *a, const void *b);
 
-static void dd_nh2_cleanup (void);
+static void dd_nh2_cleanup (struct dd_nh2_struct* data);
 
-static Range_Info *ptr;
-static int nproc;
-static int low_limit;
-static int high_limit;
-static int debug_level;
-static int count;
 
 
 /*************  Zoltan_DD_Set_Hash_Fn2()  ***********************/
@@ -71,36 +73,46 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
    {
    int i;
    char *yo = "Zoltan_DD_Set_Hash_Fn2";
+   struct dd_nh2_struct *data;
+
 
    if (dd == NULL || proc == NULL || low == NULL || high == NULL)  {
       ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
       return ZOLTAN_FATAL;
    }
 
+  data = (struct dd_nh2_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh2_struct));
+  if (data == NULL) {
+    ZOLTAN_PRINT_ERROR (0, yo, "Memory error");
+    return ZOLTAN_FATAL;
+  }
+
+
    /* register functions for automatic invocation */
-   dd->hash    = dd_nh2;
-   dd->cleanup = dd_nh2_cleanup;
+   dd->hash    = (DD_Hash_fn*) &dd_nh2;
+   dd->cleanup = (DD_Cleanup_fn*)&dd_nh2_cleanup;
+   dd->data = data;
 
    /* malloc and initialize storage for range information structures */
-   ptr = (Range_Info*)  ZOLTAN_MALLOC (n * sizeof (Range_Info));
-   if (ptr == NULL)  {
+   data->ptr = (Range_Info*)  ZOLTAN_MALLOC (n * sizeof (Range_Info));
+   if (data->ptr == NULL)  {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info");
       return ZOLTAN_MEMERR;
    }
    for (i = 0;  i < n; i++)  {
-      ptr[i].high = high[i] ;
-      ptr[i].low  = low [i] ;
-      ptr[i].proc = (proc[i] < n) ? proc[i] : 0;
+      data->ptr[i].high = high[i] ;
+      data->ptr[i].low  = low [i] ;
+      data->ptr[i].proc = (proc[i] < n) ? proc[i] : 0;
    }
 
    /* do not assume user lists were ordered */
-   qsort (ptr, n, sizeof (Range_Info), compare_sort);
+   qsort (data->ptr, n, sizeof (Range_Info), compare_sort);
 
-   low_limit   = ptr[0].low;
-   high_limit  = ptr[n-1].high;
-   debug_level = dd->debug_level;
-   count       = n;
-   nproc       = dd->nproc;
+   data->low_limit   = data->ptr[0].low;
+   data->high_limit  = data->ptr[n-1].high;
+   data->debug_level = dd->debug_level;
+   data->count       = n;
+   data->nproc       = dd->nproc;
 
    return ZOLTAN_OK;
    }
@@ -108,23 +120,23 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
 
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int junk)
+ unsigned int junk, struct dd_nh2_struct* data)
    {
    Range_Info *p;
    char *yo = "dd_ny2";
    int id = (signed) *gid;
 
    /* check if gid is out of range */
-   if (id > high_limit || id < low_limit)
-      return id % nproc;
+   if (id > data->high_limit || id < data->low_limit)
+      return id % data->nproc;
 
-   p = (Range_Info*) bsearch (gid, ptr, count, sizeof (Range_Info),
+   p = (Range_Info*) bsearch (gid, data->ptr, data->count, sizeof (Range_Info),
     compare_search);
 
    if (p == NULL) {             /* shouldn't happen */
-      if (debug_level > 1)
+      if (data->debug_level > 1)
          ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL.") ;
-      return id % nproc;
+      return id % data->nproc;
    }
 
    return p->proc;
@@ -156,10 +168,12 @@ static int compare_search (const void *a, const void *b)
 
 
 
-static void dd_nh2_cleanup (void)
-   {
-   ZOLTAN_FREE (&ptr);
-   }
+static void dd_nh2_cleanup (struct dd_nh2_struct *data)
+{
+  if (data == NULL) return;
+  ZOLTAN_FREE (&data->ptr);
+  ZOLTAN_FREE (&data);
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

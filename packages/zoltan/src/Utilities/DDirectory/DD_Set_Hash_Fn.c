@@ -27,7 +27,8 @@ extern "C" {
 
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
-
+static unsigned int dd_hash_user (ZOLTAN_ID_PTR, int, unsigned int,
+				  unsigned int (*data) (ZOLTAN_ID_PTR, int, unsigned int));
 
 /*************  Zoltan_DD_Set_Hash_Fn()  ***********************/
 
@@ -44,13 +45,21 @@ int Zoltan_DD_Set_Hash_Fn (
       return ZOLTAN_FATAL ;
    }
 
-   dd->hash = hash;
+   dd->hash = (DD_Hash_fn*)dd_hash_user;
+   dd->data = (void*)hash;
+   dd->cleanup = (DD_Cleanup_fn*) &Zoltan_DD_default_cleanup;
 
    if (dd->debug_level > 0)
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, "Successful");
 
    return ZOLTAN_OK;
    }
+
+static unsigned int dd_hash_user (ZOLTAN_ID_PTR gid, int gid_length, unsigned int nproc,
+				  unsigned int (*data) (ZOLTAN_ID_PTR, int, unsigned int)) {
+  return (*data)(gid, gid_length, nproc);
+}
+
 
 
 #ifdef __cplusplus
