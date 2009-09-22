@@ -31,7 +31,9 @@ Zoltan_Matrix_Free(Zoltan_matrix *m)
   ZOLTAN_FREE(&m->ystart);
   ZOLTAN_FREE(&m->yGNO);
   ZOLTAN_FREE(&m->pinGNO);
+  ZOLTAN_FREE(&m->pinwgt);
   ZOLTAN_FREE(&m->yGID);
+  ZOLTAN_FREE(&m->ywgt);
 
   if (m->ddY != m->ddX && m->ddY != NULL)
     Zoltan_DD_Destroy(&m->ddY);
