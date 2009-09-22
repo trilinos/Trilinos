@@ -90,6 +90,7 @@ int Zoltan_DD_Create (
    (*dd)->table_length     = size;         /* # of linked list heads    */
    (*dd)->user_data_length = user_length;  /* optional user data length */
    (*dd)->hash             = Zoltan_DD_Hash2;/* default hash algorithm   */
+   (*dd)->data             = NULL;         /* no data */
    (*dd)->cleanup          = NULL;         /* user registered cleanup   */
    (*dd)->max_id_length    = (num_gid > num_lid) ? num_gid : num_lid;
 
