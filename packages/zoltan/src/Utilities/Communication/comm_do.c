@@ -257,14 +257,11 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 
 	    if (plan->self_msg) {	/* Copy data to self. */
-                char* lrecv = &plan->recv_buff[self_recv_address];
-                char* lsend = &send_data[plan->starts_to[self_num] * nbytes];
-                int sindex = plan->lengths_to[self_num], idx;
-                for (idx=0; idx<nbytes; idx++) {
-                    memcpy(lrecv, lsend, sindex);
-                    lrecv += sindex;
-                    lsend += sindex;
-                }
+		/* I use array+offset instead of &(array[offset]) because of
+		   a bug with PGI v9 */
+		/* I use memmove because I'm not sure that the pointer are not
+		   overlapped. */
+		memmove(plan->recv_buff+self_recv_address, send_data+plan->starts_to[self_num] * nbytes, plan->lengths_to[self_num]*nbytes);
 	    }
 	}
 
