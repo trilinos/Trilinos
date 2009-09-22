@@ -86,11 +86,6 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  if (getenv("DEBUGME")){
-    std::cerr << localProc << " gdb test_geometric.exe " << getpid() << std::endl;
-    sleep(15);
-  }
-
   // =============================================================
   // get command line options
   // =============================================================

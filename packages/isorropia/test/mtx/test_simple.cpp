@@ -691,11 +691,6 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  if (getenv("DEBUGME")){
-    std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
-    sleep(15);
-  }
-
   Teuchos::CommandLineProcessor clp(false,true);
 
   // --f=fileName provides a different matrix market file for input
