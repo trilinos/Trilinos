@@ -89,11 +89,11 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
-			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 0);
+			   0, nX, 0);
   CHECK_IERR;
 
   /* Make our new numbering public */
-  Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, (ZOLTAN_ID_PTR)xwgt,  NULL, nX);
+  Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
 
   /* I store : xGNO, xGID, xwgt, Input_Part */
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
