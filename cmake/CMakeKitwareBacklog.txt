@@ -25,6 +25,10 @@ looping for continuous integration testing.  Assist in getting
 continuous integration testing set up on trilinos-test.sandia.gov.
 
 
+(*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
+This will allow reliably killing timed-out tests.
+
+
 (*) [CDash] [P2] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.

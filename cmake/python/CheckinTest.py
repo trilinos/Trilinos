@@ -197,7 +197,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
       cmakeOptions_inout.append(line.strip())
 
 
-reModifedFiles = re.compile(r"^M (.+)$")
+reModifedFiles = re.compile(r"^[MA] (.+)$")
 
 
 def isGlobalCmakeBuildFile(modifiedFileFullPathArray):
@@ -1320,7 +1320,8 @@ class testCheckinTest(unittest.TestCase):
 M cmake/TrilinosPackages.cmake
 M cmake/python/checkin-test.py
 M cmake/python/dump-cdash-deps-xml-file.py
-M packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
+P packages/thyra/dummy.blah
+A packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
 """
 
     options = MockOptions()
@@ -1339,7 +1340,8 @@ M packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
 ? packages/triutils/doc/html
 M cmake/python/checkin-test.py
 M cmake/python/dump-cdash-deps-xml-file.py
-M packages/nox/src/dummy.C
+A packages/nox/src/dummy.C
+P packages/stratimikos/dummy.blah
 M packages/thyra/src/Thyra_ConfigDefs.hpp
 M packages/thyra/CMakeLists.txt
 """
