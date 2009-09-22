@@ -92,5 +92,5 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   PyTrilinos            PyTrilinos                     SS
   Didasko               didasko                        SS
   Optika		optika			       SS
-  Mesquite              mesquite                       EX
+  Mesquite              mesquite                       PS
   )
