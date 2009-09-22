@@ -96,10 +96,9 @@ Write scripts and handle everything on our own.  However, CDash would
 not display the list of files without a lot of work.
 
 
-(*) [CMake] [P3] Add support for a 3-state variable that allows for
-"on", "off", and "default" values.  This would be useful specifically
-for enabling packages via a gui or ccmake.  This items has been brought
-up independently by multiple users.
+(*) [CMake] [P3] Add support for drop-down 'ON', 'OFF', '' for the function
+SET_CACHE_ON_OFF_EMPTY(...) in all the GUI interfaces (e.g. curses).  This
+items has been brought up independently by multiple users.
 
 
 (*) [CDash] [P3] Separate out coverage results for library code and
@@ -184,11 +183,6 @@ corallaries to the CMAKE_INCLUDE_PATH and CMAKE_LIBRARY_PATH variables that are
 only used when cross compiling. It would allow us the safety of "ONLY" using the
 target environment for libraries and headers while allowing us to have directory
 structures that do not match what cmake expects.
-
-
-(*) [CMake] Add support for drop-down 'ON', 'OFF', '' for the function
-SET_CACHE_ON_OFF_EMPTY(...) in the Curses interface. (I think that this should
-be for all the user interfaces not just curses. BMP)
 
 
 (*) [CMake] Strong checking for user input misspelling CMake cache
