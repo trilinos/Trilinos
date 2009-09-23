@@ -261,6 +261,8 @@ int Zoltan_Order(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
     } else {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+      Zoltan_Multifree(__FILE__, __LINE__, 3,
+                       &local_gids, &local_rank, &local_iperm);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ierr);
     }

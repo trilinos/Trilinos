@@ -805,6 +805,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	mesh->num_elems, order_gids,
 	order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
+      safe_free((void **)(void *) &order);
+      safe_free((void **)(void *) &order_gids);
+      safe_free((void **)(void *) &order_lids);
       return 0;
     }
 
