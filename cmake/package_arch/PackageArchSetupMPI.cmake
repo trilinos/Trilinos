@@ -67,13 +67,16 @@ FUNCTION(PACKAGE_ARCH_SETUP_MPI)
   ADVANCED_SET( MPI_USE_COMPILER_WRAPPERS ON CACHE BOOL ${DOC} )
   PRINT_VAR(MPI_USE_COMPILER_WRAPPERS)
 
+  FILE(TO_CMAKE_PATH "$ENV{ProgramFiles}" PROGRAM_FILES)
   SET(MPI_BIN_DIR_PATHS
     ${MPI_BIN_DIR}
     /usr/local/mpi/bin
     /usr/local/bin
     /usr/bin
-    "$ENV{ProgramFiles}/MPICH/SDK/Bin"
-    "$ENV{ProgramFiles}/MPICH2/Bin"
+    "${PROGRAM_FILES}/Microsoft HPC Pack 2008 SDK/Bin"
+    "C:/Program Files/Microsoft HPC Pack 2008 SDK/Bin"
+    "${PROGRAM_FILES}/MPICH/SDK/Bin"
+    "${PROGRAM_FILES}/MPICH2/Bin"
     "C:/Program Files/MPICH/SDK/Bin"
     "C:/Program Files/MPICH2/Bin"
     )
