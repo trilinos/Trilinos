@@ -46,17 +46,16 @@
 
 int main(int argc, char *argv[]) {
 
-  int i, ierr=0, returnierr=0;
+  int returnierr=0;
 
 #ifdef EPETRA_MPI
 
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
+  int size; // Number of MPI processes, My process ID
 
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if (size > 1) {
     cout << "This example cannot be run on more than one processor!" << endl;
@@ -64,11 +63,6 @@ int main(int argc, char *argv[]) {
     returnierr = -1;
     return returnierr;
   }
-
-#else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
 
 #endif
 
@@ -85,9 +79,6 @@ int main(int argc, char *argv[]) {
 #endif
   if (!verbose) Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
 
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-
   if (verbose) {
     cout << EpetraExt::EpetraExt_Version() << endl << endl;
     cout << Comm << endl << flush;
@@ -96,8 +87,6 @@ int main(int argc, char *argv[]) {
   Comm.Barrier();
 
   int NumMyElements = 3;
-  int NumGlobalElements = NumMyElements;
-  int IndexBase = 0;
  
   Epetra_Map Map( NumMyElements, 0, Comm );
   
