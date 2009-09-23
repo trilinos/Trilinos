@@ -40,6 +40,7 @@ extern "C" {
  ************/
 
 typedef enum {ADD_WEIGHT=0, MAX_WEIGHT, CMP_WEIGHT} WgtOp;
+typedef enum {MATRIX_FULL_DD=0, MATRIX_FAST, MATRIX_NO_REDIST} SpeedOpt;
 
 /* This structure defines how the matrix will be constructed */
 typedef struct Zoltan_matrix_options_ {
@@ -52,6 +53,7 @@ typedef struct Zoltan_matrix_options_ {
   int final_output;            /* final_output flag, not used yet */
   int symmetrize;              /* What kind of symmetry we have to apply, not used yet */
   int keep_distribution;       /* Conserve the original distribution, cannot work with randomize */
+  SpeedOpt speed;
 } Zoltan_matrix_options;
 
 /* This structure is a CS view of a part of the matrix/hypergraph */

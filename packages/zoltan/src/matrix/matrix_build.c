@@ -72,28 +72,34 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
 
-  if (nX) {
-    xGNO = (int*) ZOLTAN_MALLOC(nX*sizeof(int));
-    if (xGNO == NULL)
-      MEMORY_ERROR;
-  }
   /*******************************************************************/
   /* Assign vertex consecutive numbers (gnos)                        */
   /*******************************************************************/
 
-  ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, xGNO, nX, matrix->opts.randomize, &matrix->globalX);
+  if (matrix->opts.speed == MATRIX_FULL_DD) { /* Zoltan computes a translation */
+    if (nX) {
+      xGNO = (int*) ZOLTAN_MALLOC(nX*sizeof(int));
+      if (xGNO == NULL)
+	MEMORY_ERROR;
+    }
+    ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, xGNO, nX, matrix->opts.randomize, &matrix->globalX);
 
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error assigning global numbers to vertices");
-    goto End;
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error assigning global numbers to vertices");
+      goto End;
+    }
+
+    ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
+			     0, nX, 0);
+    CHECK_IERR;
+
+    /* Make our new numbering public */
+    Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
   }
-
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
-			   0, nX, 0);
-  CHECK_IERR;
-
-  /* Make our new numbering public */
-  Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
+  else { /* We don't want to use the DD */
+    xGNO = xGID;
+    MPI_Allreduce(&nX, &matrix->globalX, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  }
 
   /* I store : xGNO, xGID, xwgt, Input_Part */
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
@@ -104,9 +110,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
   /* Associate all the data with our xGNO */
   Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xwgt, Input_Parts, nX);
-
   ZOLTAN_FREE(&Input_Parts);
-
 
   if (matrix->opts.pinwgt)
     matrix->pinwgtdim = zz->Edge_Weight_Dim;
@@ -146,18 +150,24 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
   else
     proclist = NULL;
-  /* Convert pinID to pinGNO using the same translation as x */
-  ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
-		  matrix->nPins, proclist);
-  if (ierr != ZOLTAN_OK) {
-    ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Undefined GID found.\n");
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
 
-  ZOLTAN_FREE(&pinID);
-  Zoltan_DD_Destroy(&dd);
-  dd = NULL;
+  /* Convert pinID to pinGNO using the same translation as x */
+  if (matrix->opts.speed == MATRIX_FULL_DD) {
+    ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
+			   matrix->nPins, proclist);
+    if (ierr != ZOLTAN_OK) {
+      ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Undefined GID found.\n");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+    ZOLTAN_FREE(&pinID);
+    Zoltan_DD_Destroy(&dd);
+    dd = NULL;
+  }
+  else {
+    matrix->pinGNO = pinID;
+    pinID = NULL;
+  }
 
 /*   if (matrix->opts.local) {  /\* keep only local edges *\/ */
 /*     int *nnz_list; /\* nnz offset to delete *\/ */
@@ -269,7 +279,10 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
   if (hypergraph_callbacks) {
     matrix->redist = 1;
-    ZOLTAN_FREE(xGID);
+    if (matrix->opts.speed == MATRIX_FULL_DD)
+      ZOLTAN_FREE(xGID);
+    else
+      *xGID = NULL;
     ZOLTAN_FREE(xLID);
     ZOLTAN_FREE(xGNO);
 
@@ -335,7 +348,10 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    ZOLTAN_FREE(xGID);
+    if (matrix->opts.speed == MATRIX_FULL_DD)
+      ZOLTAN_FREE(xGID);
+    else
+      *xGID = NULL;
     ZOLTAN_FREE(&nbors_proc);
 
     /* Now construct CSR indexing */
