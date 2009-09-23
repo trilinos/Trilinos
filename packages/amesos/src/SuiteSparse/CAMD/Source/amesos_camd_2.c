@@ -725,7 +725,7 @@ GLOBAL void CAMD_2
     }
     else
     {
-	dense = alpha * sqrt ((double) n) ;
+	dense = (int) ( alpha * sqrt ((double) n) ) ;
     }
     dense = MAX (16, dense) ;
     dense = MIN (n,  dense) ;

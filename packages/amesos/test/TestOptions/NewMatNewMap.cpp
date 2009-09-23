@@ -265,7 +265,7 @@ RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   for (int i=0; i<NumMyRowElements; i++)
     {
 
-      int NumIndicesThisRow;
+      int NumIndicesThisRow = 0;
       assert( In.ExtractMyRowCopy( i, 
 				   In.MaxNumEntries(),
 				   NumIndicesThisRow,

@@ -768,7 +768,7 @@ size_t KLU_kernel   /* final size of LU on output */
 		Common->status = KLU_TOO_LARGE ;
                 return (lusize) ;
             }
-            newlusize = memgrow * lusize + 2*n + 1 ;
+            newlusize = (size_t) ( memgrow * lusize + 2*n + 1 ) ;
 	    /* Future work: retry mechanism in case of malloc failure */
 	    LU = KLU_realloc (newlusize, lusize, sizeof (Unit), LU, Common) ;
 	    Common->nrealloc++ ;
