@@ -54,7 +54,7 @@ void Zoltan_DD_Destroy (
 
    /* execute user registered cleanup function, if needed */
    if ((*dd)->cleanup != NULL)
-       (*dd)->cleanup((*dd)->data);
+       (*dd)->cleanup((*dd)->hashdata);
 
    MPI_Comm_free (&((*dd)->comm));    /* free MPI Comm, ignore errors */
 

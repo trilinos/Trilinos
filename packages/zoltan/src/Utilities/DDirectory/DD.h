@@ -92,7 +92,7 @@ struct Zoltan_DD_Struct {
   int debug_level;        /* Determines actions to multiple updates */
 
   DD_Hash_fn *hash;       /* Hash function used by this DD */
-  void *data;             /* Data useful to compute hash */
+  void *hashdata;         /* Data useful to compute hash */
   DD_Cleanup_fn *cleanup;
 
   MPI_Comm comm;          /* Dup of original MPI Comm (KDD)         */
@@ -152,9 +152,9 @@ typedef struct  {          /* Only used by Zoltan_DD_Remove()      */
 /***********  Distributed Directory Function Prototypes ************/
 
 unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
- unsigned int n, void* data);
+ unsigned int n, void* hashdata);
 
-void Zoltan_DD_default_cleanup(void *data);
+void Zoltan_DD_default_cleanup(void *hashdata);
 
 
 #ifdef __cplusplus

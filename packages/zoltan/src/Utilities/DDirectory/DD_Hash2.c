@@ -59,7 +59,7 @@ extern "C" {
 
 #define ZOLTAN_DD_HASH_CONSTANT 2654435761U   /* consider 516595003U */
 
-unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n, void* data)
+unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n, void* hashdata)
 {
   unsigned int h, rest, *p, bytes, num_bytes;
   char *byteptr;
@@ -89,9 +89,9 @@ unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int
 }
 
 
-void Zoltan_DD_default_cleanup (void *data)
+void Zoltan_DD_default_cleanup (void *hashdata)
 {
-  ZOLTAN_FREE(&data);
+  ZOLTAN_FREE(&hashdata);
 }
 
 #ifdef __cplusplus

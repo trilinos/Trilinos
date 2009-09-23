@@ -43,12 +43,12 @@ struct dd_nh2_struct {
 };
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc, struct dd_nh2_struct* data);
+ unsigned int nproc, struct dd_nh2_struct* hashdata);
 
 static int compare_sort   (const void *a, const void *b);
 static int compare_search (const void *a, const void *b);
 
-static void dd_nh2_cleanup (struct dd_nh2_struct* data);
+static void dd_nh2_cleanup (struct dd_nh2_struct* hashdata);
 
 
 
@@ -73,7 +73,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
    {
    int i;
    char *yo = "Zoltan_DD_Set_Hash_Fn2";
-   struct dd_nh2_struct *data;
+   struct dd_nh2_struct *hashdata;
 
 
    if (dd == NULL || proc == NULL || low == NULL || high == NULL)  {
@@ -81,8 +81,8 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
       return ZOLTAN_FATAL;
    }
 
-  data = (struct dd_nh2_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh2_struct));
-  if (data == NULL) {
+  hashdata = (struct dd_nh2_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh2_struct));
+  if (hashdata == NULL) {
     ZOLTAN_PRINT_ERROR (0, yo, "Memory error");
     return ZOLTAN_FATAL;
   }
@@ -91,28 +91,28 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
    /* register functions for automatic invocation */
    dd->hash    = (DD_Hash_fn*) &dd_nh2;
    dd->cleanup = (DD_Cleanup_fn*)&dd_nh2_cleanup;
-   dd->data = data;
+   dd->hashdata = hashdata;
 
    /* malloc and initialize storage for range information structures */
-   data->ptr = (Range_Info*)  ZOLTAN_MALLOC (n * sizeof (Range_Info));
-   if (data->ptr == NULL)  {
+   hashdata->ptr = (Range_Info*)  ZOLTAN_MALLOC (n * sizeof (Range_Info));
+   if (hashdata->ptr == NULL)  {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info");
       return ZOLTAN_MEMERR;
    }
    for (i = 0;  i < n; i++)  {
-      data->ptr[i].high = high[i] ;
-      data->ptr[i].low  = low [i] ;
-      data->ptr[i].proc = (proc[i] < n) ? proc[i] : 0;
+      hashdata->ptr[i].high = high[i] ;
+      hashdata->ptr[i].low  = low [i] ;
+      hashdata->ptr[i].proc = (proc[i] < n) ? proc[i] : 0;
    }
 
    /* do not assume user lists were ordered */
-   qsort (data->ptr, n, sizeof (Range_Info), compare_sort);
+   qsort (hashdata->ptr, n, sizeof (Range_Info), compare_sort);
 
-   data->low_limit   = data->ptr[0].low;
-   data->high_limit  = data->ptr[n-1].high;
-   data->debug_level = dd->debug_level;
-   data->count       = n;
-   data->nproc       = dd->nproc;
+   hashdata->low_limit   = hashdata->ptr[0].low;
+   hashdata->high_limit  = hashdata->ptr[n-1].high;
+   hashdata->debug_level = dd->debug_level;
+   hashdata->count       = n;
+   hashdata->nproc       = dd->nproc;
 
    return ZOLTAN_OK;
    }
@@ -120,23 +120,23 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
 
 
 static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int junk, struct dd_nh2_struct* data)
+ unsigned int junk, struct dd_nh2_struct* hashdata)
    {
    Range_Info *p;
    char *yo = "dd_ny2";
    int id = (signed) *gid;
 
    /* check if gid is out of range */
-   if (id > data->high_limit || id < data->low_limit)
-      return id % data->nproc;
+   if (id > hashdata->high_limit || id < hashdata->low_limit)
+      return id % hashdata->nproc;
 
-   p = (Range_Info*) bsearch (gid, data->ptr, data->count, sizeof (Range_Info),
+   p = (Range_Info*) bsearch (gid, hashdata->ptr, hashdata->count, sizeof (Range_Info),
     compare_search);
 
    if (p == NULL) {             /* shouldn't happen */
-      if (data->debug_level > 1)
+      if (hashdata->debug_level > 1)
          ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL.") ;
-      return id % data->nproc;
+      return id % hashdata->nproc;
    }
 
    return p->proc;
@@ -168,11 +168,11 @@ static int compare_search (const void *a, const void *b)
 
 
 
-static void dd_nh2_cleanup (struct dd_nh2_struct *data)
+static void dd_nh2_cleanup (struct dd_nh2_struct *hashdata)
 {
-  if (data == NULL) return;
-  ZOLTAN_FREE (&data->ptr);
-  ZOLTAN_FREE (&data);
+  if (hashdata == NULL) return;
+  ZOLTAN_FREE (&hashdata->ptr);
+  ZOLTAN_FREE (&hashdata);
 }
 
 #ifdef __cplusplus
