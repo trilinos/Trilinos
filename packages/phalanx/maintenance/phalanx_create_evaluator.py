@@ -21,12 +21,12 @@ def main():
 
     parser = OptionParser(usage)
 
-    parser.add_option("-c","--copyright",
-                      dest="copyright", default=True,
-                      help="include header keyword to later insert copyright")
+    parser.add_option("-c","--no_copyright", action="store_true",
+                      dest="no_copyright", default=False,
+                      help="disable @HEADER keyword to later insert a copyright notice")
     
     parser.add_option("-i", "--incl_guard", dest="include_guard",
-                      help="name for include guard in header file [default=<uppercased class name>")
+                      help="name for include guard in header file [default=<uppercased class name>]")
 
     parser.add_option("-n","--no_eti", action="store_true",
                       dest="no_eti", default=False,
@@ -35,7 +35,7 @@ def main():
     parser.add_option("-g","--eti_filename",
                       dest="eti_filename",
                       default="ExplicitTemplateInstantiation.hpp",
-                      help="filename for explicit template instantiation")
+                      help="filename for explicit template instantiation [default=%default]")
     
     parser.add_option("-k", "--h_suffix", dest="header_suffix",
                       default="hpp",
@@ -103,7 +103,7 @@ def main():
     # Write out header
     # *******************
 
-    if options.copyright:
+    if not options.no_copyright:
         header_file.write("// @HEADER\n")
         header_file.write("// @HEADER\n\n")
     
@@ -132,7 +132,7 @@ def main():
     # *******************
     def_file = open(definition_file_name, 'w')
 
-    if options.copyright:
+    if not options.no_copyright:
         def_file.write("// @HEADER\n")
         def_file.write("// @HEADER\n\n")
     
@@ -173,7 +173,7 @@ def main():
     if not options.no_eti:
         src_file = open(src_file_name, 'w')
         
-        if options.copyright:
+        if not options.no_copyright:
             src_file.write("// @HEADER\n")
             src_file.write("// @HEADER\n\n")
             

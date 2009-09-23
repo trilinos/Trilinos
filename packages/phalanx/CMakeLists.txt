@@ -40,4 +40,7 @@ PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 # D) Do standard postprocessing
 #
 
+INSTALL(PROGRAMS maintenance/phalanx_create_evaluator.py 
+	DESTINATION bin) 
+
 PACKAGE_POSTPROCESS()
