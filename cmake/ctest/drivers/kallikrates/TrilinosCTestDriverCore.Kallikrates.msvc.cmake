@@ -24,6 +24,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCLAPACK_DIR=C:/trilinos_projects/clapack_build"
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DDART_TESTING_TIMEOUT:STRING=120"
+    "-DTPL_Boost_INCLUDE_DIRS=C:/trilinos_projects/boost_1_40_0"
     )
 
   IF (COMM_TYPE STREQUAL MPI)
