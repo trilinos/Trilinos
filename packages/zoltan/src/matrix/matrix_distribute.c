@@ -310,7 +310,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 				 &outmat->mtx);
   }
   else {
-    Zoltan_Matrix_Construct_CSR (zz, nEdge, (Zoltan_Arc*)nonzeros, tmpwgtarray, &outmat->mtx, offset);
+    Zoltan_Matrix_Construct_CSR (zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray, &outmat->mtx, offset);
   }
 
  End:

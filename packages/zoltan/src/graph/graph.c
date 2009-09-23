@@ -107,8 +107,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   if (!strcasecmp(matrix_build_type, "FAST"))
     opt.speed = MATRIX_FAST;
   else if (!strcasecmp(matrix_build_type, "FAST_NO_DUP"))
-    /*     opt.speed = MATRIX_NO_REDIST; */ /* Not handled properly yet */
-    opt.speed = MATRIX_FAST;
+    opt.speed = MATRIX_NO_REDIST;
   else
     opt.speed = MATRIX_FULL_DD;
 

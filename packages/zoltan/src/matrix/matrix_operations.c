@@ -100,6 +100,44 @@ wgtFctMax(float* current, float* new, int dim)
   return (0);
 }
 
+/* /\* Function that removes locale duplicated nnz *\/ */
+/* /\* TODO: Add an option to deal with disconnected vertices *\/ */
+/* int */
+/* Zoltan_Matrix_Remove_DupArcs_map(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt, */
+/* 				 Zoltan_matrix *outmat) */
+/* { */
+/*   static char *yo = "Zoltan_Matrix_Remove_DupArcs_map"; */
+/*   int ierr = ZOLTAN_OK; */
+/*   WgtFctPtr wgtfct; */
+/*   int nY, nPin; */
+/*   int i; */
+/*   int map_num; */
+
+/*   ZOLTAN_TRACE_ENTER(zz, yo); */
+
+/*   switch (outmat->opts.pinwgtop) { */
+/*   case MAX_WEIGHT: */
+/*     wgtfct = &wgtFctMax; */
+/*     break; */
+/*   case CMP_WEIGHT: */
+/*     wgtfct = &wgtFctCmp; */
+/*     break; */
+/*   case ADD_WEIGHT: */
+/*   default: */
+/*     wgtfct = &wgtFctAdd; */
+/*   } */
+
+/*   map_num = Zoltan_Map_Create(zz, 4*size, 2, 0, size); */
+
+/*  End: */
+/*   if (map_num >= 0) */
+/*     Zoltan_Map_Destroy(zz, map_num); */
+
+/*   ZOLTAN_TRACE_EXIT(zz, yo); */
+/*   return (ierr); */
+/* } */
+
+
 /* Function that removes locale duplicated nnz */
 /* TODO: Add an option to deal with disconnected vertices */
 int
@@ -267,18 +305,28 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   }
 
   outmat->ystart[0] = 0;
+  outmat->yend = outmat->ystart + 1;
   for (i = 0 ; i < outmat->nY ; i++) { /* Assume compact mode */
     outmat->yend[i] = outmat->ystart[i] + tmparray[i] ;
   }
 
   memset(tmparray, 0, sizeof(int)*outmat->nY);
+  outmat->nPins = 0;
   for(i = 0 ; i <size; i++) {
     int lno = arcs[i].yGNO - offset;
     if (arcs[i].pinGNO == -1)
       continue;
     outmat->pinGNO[outmat->ystart[lno] + tmparray[lno]] = arcs[i].pinGNO;
-    tmparray[lno++];
+    tmparray[lno]++;
+    outmat->nPins ++;
   }
+
+
+  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, outmat->nPins * sizeof(int));
+  outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
+			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
+
+
 
  End:
   ZOLTAN_FREE(&tmparray);
