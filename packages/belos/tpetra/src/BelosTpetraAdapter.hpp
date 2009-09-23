@@ -154,7 +154,7 @@ namespace Belos {
       mv.update(alpha,A,beta,B,Teuchos::ScalarTraits<Scalar>::zero());
     }
 
-    static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha )
+    static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const Scalar alpha )
     { mv.scale(alpha); }
 
     static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alpha )
