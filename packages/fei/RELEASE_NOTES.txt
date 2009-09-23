@@ -539,3 +539,8 @@ July 7 2005: version 2.14.00
     rather than an input.
   - changed a few (mostly internal) functions to have void return-type instead
     of int error-code.
+
+ ??? ?? ???? minor version 2.24.02
+  - Made headers in support-Trilinos self-sufficient; i.e., can be included by
+    code that doesn't first include headers like fei_trilinos_macros.hpp.
+

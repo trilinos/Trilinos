@@ -13,6 +13,7 @@
 #include "fei_Pool.hpp"
 #include <cstddef>
 #include <cstdlib>
+#include <limits>
 #include <new>
 #include <stdexcept>
 #include <iostream>
@@ -82,7 +83,7 @@ class fei_Pool_alloc {
   void destroy(pointer p)
   { p->~T(); }
 
-  size_type max_size() const throw() { return n_>0 ? n_ : 1; }
+  size_type max_size() const throw() { return std::numeric_limits<size_type>::max(); }
 
 };
 

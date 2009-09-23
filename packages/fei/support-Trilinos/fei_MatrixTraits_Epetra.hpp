@@ -9,6 +9,8 @@
 #ifndef _fei_MatrixTraits_Epetra_h_
 #define _fei_MatrixTraits_Epetra_h_
 
+#include <fei_trilinos_macros.hpp>
+
 #ifdef HAVE_FEI_EPETRA
 
 //
