@@ -17,7 +17,46 @@
 
 Last Updated: 2009/05/04
 
-
+Section A: Getting Started
+    --  Installing CMake from binary
+    --  Installing CMake from source
+Section B: Getting Help
+    --  CMake website
+    --  Local CMake help
+Section C: Configuring Trilinos
+    --  Setting up a build directory
+    --  Basic configuration
+    --  Selecting packages to enable
+    --  Selecting compiler and linker options.
+    --  Disabling Fortran
+    --  Runtime Debug support
+    --  Configuring MPI support
+    --  Building shared libraries
+    --  Configuring with third party libraries (TPLS)
+    --  Getting verbose output
+    --  Disabling dependency testing
+    --  Enable coverage testing
+    --  Viewing configure options and documentation
+    --  Reconfiguring from scratch
+    --  Viewing configure errors
+Section D: Building
+    --  Building everything
+    --  Building all the libraries for a package
+    --  Building a single object
+Section E: Testing
+    --  Using ctest
+    --  Running tests for a single package
+    --  Running a single test with output
+    --  Running memory testing
+Section F: Installing
+    --  Setting the install prefix
+    --  How to install
+Section G: Packaging
+    --  Creating a tarball package
+Section H: Dashboard testing
+    --  Submitting an experimental build
+    --  Environment variables for controlling the build
+    --  Dashboard submission notes
 
 \section Getting_started A) Getting set up to use CMake
 ------------------------------
