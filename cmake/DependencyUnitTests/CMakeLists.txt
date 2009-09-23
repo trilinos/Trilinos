@@ -181,8 +181,45 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges
-  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON
+  ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 21"
     "Final set of enabled TPLs:  BLAS LAPACK Boost 3"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  EnableStratimikos_EnableAllOptionalPackages_BadSystem1
+  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+    -DTrilinos_HOSTTYPE:STRING=BadSystem1
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly disabled packages on input .+:  Stokhos Ifpack ML 3"
+    "Setting Stratimikos_ENABLE_Ifpack=OFF because Stratimikos has an optional library dependence on disabled package Ifpack"
+    "Setting Stratimikos_ENABLE_ML=OFF because Stratimikos has an optional library dependence on disabled package ML"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra AztecOO Galeri Amesos Stratimikos 11"
+    "Final set of non-enabled packages:  Shards Tpetra Stokhos Sacado Isorropia Intrepid Ifpack ML Belos RBGen Phalanx 11"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  EnableStratimikos_EnableAllOptionalPackages_BadSystem2
+  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+    -DTrilinos_HOSTTYPE:STRING=BadSystem2
+  PASS_REGULAR_EXPRESSION_ALL
+    "Explicitly disabled packages on input .+:  Stokhos Ifpack 2"
+    "Setting Stratimikos_ENABLE_Ifpack=OFF because Stratimikos has an optional library dependence on disabled package Ifpack"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra Isorropia AztecOO Galeri Amesos ML Stratimikos 13"
+    "Final set of non-enabled packages:  Shards Tpetra Stokhos Sacado Intrepid Ifpack Belos RBGen Phalanx 9"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  EnableStratimikos_EnableIfpack_EnableAllOptionalPackages_BadSystem2
+  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_Ifpack=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+    -DTrilinos_HOSTTYPE:STRING=BadSystem2
+  PASS_REGULAR_EXPRESSION_ALL
+    "WARNING: User has set Trilinos_ENABLE_Ifpack=ON but the" 
+    "package Ifpack is not supported on this platform type 'BadSystem2'"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos 14"
   )

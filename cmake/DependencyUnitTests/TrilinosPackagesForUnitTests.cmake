@@ -1,3 +1,5 @@
+INCLUDE(PackageListHelpers)
+
 
 # This list is just used for unit testing the dependency handling
 # CMake code.  The reason that we have a separate list is so that we
@@ -29,4 +31,8 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Phalanx          ../cmake/DependencyUnitTests/packages/phalanx                SS
   )
 
-# NOTE: Sacado is really PS but for testing purpose it is make SS
+# NOTE: Sacado is really PS but for testing purpose it is made SS
+# NOTE: Belos is really PS but for testing purpose it is made SS
+
+PACKAGE_DISABLE_ON_PLATFORMS(ML BadSystem1)
+PACKAGE_DISABLE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)
