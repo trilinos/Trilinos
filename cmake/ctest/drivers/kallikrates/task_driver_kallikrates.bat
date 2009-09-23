@@ -30,4 +30,6 @@ rem Now run ctest on each of the ctest build scripts for this machine
 
 call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_release.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_serial_release_kallikrates.out" 2>&1
 
+rem call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_mpi_release.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_mpi_release_kallikrates.out" 2>&1
+
 endlocal
