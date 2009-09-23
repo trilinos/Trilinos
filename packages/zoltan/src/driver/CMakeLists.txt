@@ -89,6 +89,10 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+SET(ZOLTAN_EXECUTABLES
+    ${CMAKE_CURRENT_BINARY_DIR}/zdrive.exe
+    )
+
 IF (${PACKAGE_NAME}_ENABLE_CPPDRIVER)
   PACKAGE_ADD_EXECUTABLE(
     zCPPdrive
@@ -96,4 +100,12 @@ IF (${PACKAGE_NAME}_ENABLE_CPPDRIVER)
     SOURCES ${COMMON_DRIVER_HDRS} ${ZCPPDRIVE_SOURCES}
     COMM serial mpi
     )
+
+APPEND_SET(ZOLTAN_EXECUTABLES
+    ${CMAKE_CURRENT_BINARY_DIR}/zCPPdrive.exe
+    )
 ENDIF()
+
+#  What is a good location for executables zdrive and zCPPdrive?
+#  When should they be moved there?  During install?  Or build?
+#INSTALL(FILES ${ZOLTAN_EXECUTABLES} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

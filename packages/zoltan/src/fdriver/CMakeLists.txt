@@ -29,4 +29,8 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+#  What is a good location for executables zdrive and zCPPdrive?
+#  When should they be moved there?  During install?  Or build?
+#INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/zfdrive.exe DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 ENDIF()
