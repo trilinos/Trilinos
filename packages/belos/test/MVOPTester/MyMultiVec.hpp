@@ -259,7 +259,7 @@ public:
   }
   
   // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this). 
-  void MvTransMv (ScalarType alpha, const Belos::MultiVec<ScalarType>& A, 
+  void MvTransMv (const ScalarType alpha, const Belos::MultiVec<ScalarType>& A, 
                   Teuchos::SerialDenseMatrix< int, ScalarType >& B) const
   {
     MyMultiVec* MyA;

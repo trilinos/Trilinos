@@ -125,9 +125,9 @@ namespace Belos {
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
-    void MvScale ( double alpha ) { 
+    void MvScale ( const double alpha ) { 
       TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure, 
-			  "Belos::EpetraMultiVec::MvInit() call to Scale() returned a nonzero value."); }
+			  "Belos::EpetraMultiVec::MvScale() call to Scale() returned a nonzero value."); }
 
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
@@ -289,7 +289,7 @@ namespace Belos {
 
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
-    static void MvScale ( Epetra_MultiVector& mv, double alpha )
+    static void MvScale ( Epetra_MultiVector& mv, const double alpha )
     { int ret = mv.Scale( alpha );
       TEST_FOR_EXCEPTION(ret!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvScale call to Scale() returned a nonzero value.");

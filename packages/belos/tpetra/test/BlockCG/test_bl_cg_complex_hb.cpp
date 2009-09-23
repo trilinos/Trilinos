@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     // Move through all row indices, adding the contribution to the appropriate row.
     // Remember, the file uses one-based indexing. We'll convert it to zero-based later.
     int curcol_0 = 0, currow_0;
-    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+    for (int curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
       // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
       // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
       while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     // use nnz as the number of entries add per row thus far
     std::fill( rnnz.begin(), rnnz.end(), 0 );
     curcol_0 = 0;
-    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+    for (int curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
       // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
       // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
       while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
   RCP<const Map<int> > map = rcp(new Map<int>(dim,0,comm));
   RCP<CrsMatrix<ST,int> > A = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
   if (MyPID == 0) {
-    for (size_t row=0; row < dim; ++row) {
+    for (int row=0; row < dim; ++row) {
       const size_t nE = offsets[row+1] - offsets[row];
       if (nE > 0) {
         // add row to matrix
