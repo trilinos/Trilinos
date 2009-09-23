@@ -81,15 +81,12 @@ basicDiscreteAdjointStepperTester(const RCP<ParameterList> &paramList);
           x_dot(t_0) = x_dot_int
 
 
-    d_hat(p) = h(x(t_f,p)) = 0.5 * x^T * d(f)/d(x_dot) * x
+    d_hat(p) = h(x(t_f,p)) = 0.5 * x^T * x
 
  \endverbatim
 
- * This formulation assumes that the mass matrix d(f)/d(x_dot) is symmetric
- * positive definite and represents the discrete form of the inner product
- * matrix.  However, that is not all all required in order to run this test
- * and it will still work even if d(f)/d(x_dot) is unsymmetic and rank
- * deficient.
+ * This formulation assumes that the mass matrix d(f)/d(x_dot) is full rank
+ * which will be needed to compute the adjoint initial condition..
  *
  * The intial condition vectors x_init and x_dot_init are taken from the
  * orginal forward problem's intial condition as is t_0.  The time t_f is
@@ -108,17 +105,16 @@ basicDiscreteAdjointStepperTester(const RCP<ParameterList> &paramList);
                                   S(t_0) = B
                               S_dot(t_0) = 0
 
-   d(d_hat)/d(p)^T = S^T * d(f)/d(x_dot)^T * x, at t = t_f
+   d(d_hat)/d(p)^T = S^T * x, at t = t_f
 
  \endverbatim
 
- * The adjoint equations that are solved with the reduced sensitivity are
- * then:
+ * The adjoint equations that are solved for the reduced sensitivity are then:
 
  \verbatim
 
    d(f)/d(x_dot)^T * lambda_dot - d(f)/d(x)^T * lambda = 0, for t <: [t_0, t_f]
-   d(f)/d(x_dot)^T * lambda = d(f)/d(x_dot)^T * x, at t = t_f
+                              d(f)/d(x_dot)^T * lambda = x, at t = t_f
 
    d(d_hat)/d(p)^T = B^T * d(f)/d(x_dot)^T * lambda, at t = t_0
 
@@ -129,16 +125,16 @@ basicDiscreteAdjointStepperTester(const RCP<ParameterList> &paramList);
 
  \verbatim
 
-   lambda(t_f) = x(t_f)
+   lambda(t_f) = d(f)/d(x_dot)^{-T} * x(t_f)
 
  \endverbatim
 
  * which is the form of the initial condition used in this test (nice and
  * simple).
  *
- * NOTE: However, if this is a general DAE, the adjoint initial value
- * calcuation t_f gets more complicated and this testing class can not handle
- * those cases.
+ * NOTE: However, if this is a general DAE where d(f)/d(x_dot) is rank
+ * deficient, then the adjoint initial value calcuation at t_f gets more
+ * complicated and this testing class can not handle those cases.
  */
 template<class Scalar> 
 class BasicDiscreteAdjointStepperTester

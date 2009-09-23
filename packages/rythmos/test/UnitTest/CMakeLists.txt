@@ -283,13 +283,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#    BasicDiscreteAdjointStepperTester_UnitTest
-#    SOURCES Rythmos_BasicDiscreteAdjointStepperTester_UnitTest.cpp Rythmos_UnitTest.cpp
-#    DEPLIBS rythmos_test_models
-#    NUM_MPI_PROCS 1
-#    STANDARD_PASS_OUTPUT
-#    )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    BasicDiscreteAdjointStepperTester_UnitTest
+    SOURCES Rythmos_BasicDiscreteAdjointStepperTester_UnitTest.cpp Rythmos_UnitTest.cpp
+    DEPLIBS rythmos_test_models
+    HOST None
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     TestModelBuilder_UnitTest

@@ -132,24 +132,6 @@ public:
   /** \brief . */
   ForwardSensitivityExplicitModelEvaluator();
 
-  /** \brief . */
-  RCP<const Thyra::ModelEvaluator<Scalar> >
-  getStateModel() const;
-
-  /** \brief . */
-  RCP<Thyra::ModelEvaluator<Scalar> >
-  getNonconstStateModel() const;
-  
-  /** \brief . */
-  int get_p_index() const;
-
-  /** \brief Initialize full state for a single point in time.
-   */
-  void initializePointState(
-      Ptr<StepperBase<Scalar> > stateStepper,
-      bool forceUpToDateW
-      );
-
   //@}
 
   /** \name Public functions overridden from ForwardSensitivityModelEvaluatorBase. */
@@ -166,9 +148,31 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
     const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     );
+
+  /** \brief . */
+  RCP<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+
+  /** \brief . */
+  RCP<Thyra::ModelEvaluator<Scalar> >
+  getNonconstStateModel() const;
+  
+  /** \brief . */
+  int get_p_index() const;
+  
+  /** \brief . */
+  RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
+  get_s_bar_space() const;
   
   /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
+
+  /** \brief Initialize full state for a single point in time.
+   */
+  void initializePointState(
+      Ptr<StepperBase<Scalar> > stateStepper,
+      bool forceUpToDateW
+      );
 
   //@}
 
@@ -354,6 +358,22 @@ int ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_index() const
 
 
 template<class Scalar>
+RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
+ForwardSensitivityExplicitModelEvaluator<Scalar>::get_s_bar_space() const
+{
+  return s_bar_space_;
+}
+
+
+template<class Scalar>
+RCP<const Thyra::VectorSpaceBase<Scalar> >
+ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_space() const
+{
+  return stateModel_->get_p_space(p_index_);
+}
+
+
+template<class Scalar>
 void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
     Ptr<StepperBase<Scalar> > stateStepper,
     bool forceUpToDateW
@@ -384,15 +404,6 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
 
   wrapNominalValuesAndBounds();
   
-}
-
-
-template<class Scalar>
-RCP<const Thyra::VectorSpaceBase<Scalar> >
-ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_space() const
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
 }
 
 

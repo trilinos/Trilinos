@@ -34,12 +34,25 @@
 #include "Rythmos_AdjointModelEvaluator.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp"
 
 #include "../SinCos/SinCosModel.hpp"
 #include "../VanderPol/VanderPolModel.hpp"
 
 
 namespace Rythmos {
+
+
+Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_MEDIUM;
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::setVerbosityLevelOption(
+    "verb-level", &verbLevel,
+    "Verbosity level for objects.",
+    &Teuchos::UnitTestRepository::getCLP() );
+}
 
 
 TEUCHOS_UNIT_TEST( BasicDiscreteAdjointStepperTester, rawNonlinearAdjoint )
@@ -278,16 +291,11 @@ TEUCHOS_UNIT_TEST( BasicDiscreteAdjointStepperTester, linear )
     basicDiscreteAdjointStepperTester<double>();
 
   adjStepperTester->setOStream(Teuchos::fancyOStream(Teuchos::rcpFromRef(out)));
+  adjStepperTester->setVerbLevel(verbLevel);
 
-  // For now this throws so this is the parital test!
-  TEST_THROW(adjStepperTester->testAdjointStepper( *adjModel, integrator.ptr() ),
-    std::logic_error);
-
-  out << "\nToDo: Get this above test working!  The fact that it runs up to here"
-    " without throwing is a partial test!\n";
-
-  //if (!result)
-  //  success = false;
+  const bool result = adjStepperTester->testAdjointStepper(*adjModel, integrator.ptr());
+  if (!result)
+    success = false;
 
 }
 

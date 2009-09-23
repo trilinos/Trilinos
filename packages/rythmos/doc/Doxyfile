@@ -3,22 +3,7 @@
 #
 @INCLUDE_PATH          = $(TRILINOS_HOME)/packages
 @INCLUDE=common/Doxyfile
-@INCLUDE=thyra/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/EpetraThyra.tag=$(TRILINOS_HOME)/packages/epetra/thyra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/EpetraExtThyra.tag=$(TRILINOS_HOME)/packages/epetraext/thyra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/stratimikos.tag=$(TRILINOS_HOME)/packages/stratimikos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/nox.tag=$(TRILINOS_HOME)/packages/nox/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/MoochoUtilities.tag=$(TRILINOS_HOME)/packages/moocho/src/MoochoUtilities/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/IterationPack.tag=$(TRILINOS_HOME)/packages/moocho/src/IterationPack/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/RTOpPack.tag=$(TRILINOS_HOME)/packages/moocho/src/RTOpPack/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/DenseLinAlgPack.tag=$(TRILINOS_HOME)/packages/moocho/src/DenseLinAlgPack/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/AbstractLinAlgPack.tag=$(TRILINOS_HOME)/packages/moocho/src/AbstractLinAlgPack/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/NLPInterfacePack.tag=$(TRILINOS_HOME)/packages/moocho/src/NLPInterfacePack/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/ConstrainedOptPack.tag=$(TRILINOS_HOME)/packages/moocho/src/ConstrainedOptPack/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/MoochoPack.tag=$(TRILINOS_HOME)/packages/moocho/src/MoochoPack/doc/html
+#@INCLUDE=thyra/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #
@@ -67,9 +52,6 @@ WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
                          ../src \
-                         ../example/basicExample/ExampleApplication.hpp \
-                         ../example/basicExample/ExampleApplication.cpp \
-                         ../example/basicExample/cxx_main.cpp \
                          ../example/diagonalTransient/diagonalTransientMain.cpp \
                          ../../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp \
                          ../../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp

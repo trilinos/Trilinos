@@ -114,6 +114,10 @@ public:
   virtual int get_p_index() const = 0;
   
   /** \brief . */
+  virtual RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
+  get_s_bar_space() const = 0;
+  
+  /** \brief . */
   virtual RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const = 0;
 
   /** \brief . */
@@ -123,6 +127,32 @@ public:
       ) =0;
 
 };
+
+
+/** \brief Create a wrapped non-const s_bar vector object given a non-const S
+ * multi-vector object.
+ */
+template<class Scalar>
+RCP<const Thyra::VectorBase<Scalar> > create_s_bar_given_S(
+  const ForwardSensitivityModelEvaluatorBase<Scalar> &fwdSensModel,
+  const RCP<Thyra::MultiVectorBase<Scalar> > &S
+  )
+{
+  return Thyra::multiVectorProductVector(fwdSensModel.get_s_bar_space(), S); 
+}
+
+
+/** \brief Create a wrapped const s_bar vector object given a const S
+ * multi-vector object.
+ */
+template<class Scalar>
+RCP<const Thyra::VectorBase<Scalar> > create_s_bar_given_S(
+  const ForwardSensitivityModelEvaluatorBase<Scalar> &fwdSensModel,
+  const RCP<const Thyra::MultiVectorBase<Scalar> > &S
+  )
+{
+  return Thyra::multiVectorProductVector(fwdSensModel.get_s_bar_space(), S); 
+}
 
 
 } // namespace Rythmos

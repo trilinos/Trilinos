@@ -661,7 +661,7 @@ int getParameterIndex(
 
 /** \brief Set up default initial conditions for the state and sensitivity
  * stepper with default zero initial conditions for the sensitivity
- * quantities
+ * quantities.
  *
  * \relates ForwardSensitivityStepper
  */
@@ -670,7 +670,9 @@ inline
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 createStateAndSensInitialCondition(
   const ForwardSensitivityStepper<Scalar> &fwdSensStepper,
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_ic
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_ic,
+  const RCP<const Thyra::MultiVectorBase<Scalar> > S_init = Teuchos::null,
+  const RCP<const Thyra::MultiVectorBase<Scalar> > S_dot_init = Teuchos::null
   )
 {
 
@@ -678,12 +680,27 @@ createStateAndSensInitialCondition(
   using Thyra::assign;
   typedef Thyra::ModelEvaluatorBase MEB;
   
-  RCP<Thyra::VectorBase<Scalar> > s_bar_init
-    = createMember(fwdSensStepper.getFwdSensModel()->get_x_space());
-  assign( outArg(*s_bar_init), 0.0 );
-  RCP<Thyra::VectorBase<Scalar> > s_bar_dot_init
-    = createMember(fwdSensStepper.getFwdSensModel()->get_x_space());
-  assign( outArg(*s_bar_dot_init), 0.0 );
+  RCP<const Thyra::VectorBase<Scalar> > s_bar_init;
+  if (nonnull(S_init)) {
+    s_bar_init = create_s_bar_given_S(*fwdSensStepper.getFwdSensModel(), S_init);
+  }
+  else {
+    RCP<Thyra::VectorBase<Scalar> > s_bar_init_loc =
+      createMember(fwdSensStepper.getFwdSensModel()->get_x_space());
+    assign( outArg(*s_bar_init_loc), 0.0 );
+    s_bar_init = s_bar_init_loc;
+  }
+
+  RCP<const Thyra::VectorBase<Scalar> > s_bar_dot_init;
+  if (nonnull(S_dot_init)) {
+    s_bar_dot_init = create_s_bar_given_S(*fwdSensStepper.getFwdSensModel(), S_dot_init);
+  }
+  else {
+    RCP<Thyra::VectorBase<Scalar> > s_bar_dot_init_loc =
+      createMember(fwdSensStepper.getFwdSensModel()->get_x_space());
+    assign( outArg(*s_bar_dot_init_loc), 0.0 );
+    s_bar_dot_init = s_bar_dot_init_loc;
+  }
   
   RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
     stateAndSensModel = fwdSensStepper.getStateAndFwdSensModel();

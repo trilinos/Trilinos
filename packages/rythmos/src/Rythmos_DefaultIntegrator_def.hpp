@@ -249,6 +249,8 @@ template<class Scalar>
 RCP<IntegratorBase<Scalar> >
 DefaultIntegrator<Scalar>::cloneIntegrator() const
 {
+
+  using Teuchos::null;
   RCP<DefaultIntegrator<Scalar> >
     newIntegrator = Teuchos::rcp(new DefaultIntegrator<Scalar>());
   // Only copy control information, not the stepper or the model it contains!
@@ -266,10 +268,16 @@ DefaultIntegrator<Scalar>::cloneIntegrator() const
       integrationObserver_->cloneIntegrationObserver().assert_not_null();
   }
   if (!is_null(trailingInterpBuffer_)) {
-    TEST_FOR_EXCEPT_MSG(true,"ToDo: Clone the trailing interpolation buffer");
+    // ToDo: implement the clone!
+    newIntegrator->trailingInterpBuffer_ = null;
+    //newIntegrator->trailingInterpBuffer_ =
+    //  trailingInterpBuffer_->cloneInterploationBuffer().assert_not_null();
   }
   if (!is_null(interpBufferAppender_)) {
-    TEST_FOR_EXCEPT_MSG(true,"ToDo: Clone the trailing interpolation buffer appender");
+    // ToDo: implement the clone!
+    newIntegrator->interpBufferAppender_ = null;
+    //newIntegrator->interpBufferAppender_ =
+    //  interpBufferAppender_->cloneInterpolationBufferAppender().assert_not_null();
   }
   return newIntegrator;
 }

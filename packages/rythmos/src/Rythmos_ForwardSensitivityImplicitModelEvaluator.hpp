@@ -471,6 +471,10 @@ public:
     );
   
   /** \brief . */
+  RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
+  get_s_bar_space() const;
+  
+  /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
 
   //@}
@@ -788,11 +792,18 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeStructureInitCo
 
 
 template<class Scalar>
+RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
+ForwardSensitivityImplicitModelEvaluator<Scalar>::get_s_bar_space() const
+{
+  return s_bar_space_;
+}
+
+
+template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_space() const
 {
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  return p_space_;
 }
 
 
