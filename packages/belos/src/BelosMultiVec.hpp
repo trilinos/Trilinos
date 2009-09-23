@@ -126,7 +126,7 @@ public:
   /*! \brief Scale each element of the vectors in \c *this with \c alpha.
    */
   
-  virtual void MvScale ( ScalarType alpha ) = 0;
+  virtual void MvScale ( const ScalarType alpha ) = 0;
   
   /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
    */
@@ -225,7 +225,13 @@ public:
     static void MvAddMv( ScalarType alpha, const MultiVec<ScalarType>& A, ScalarType beta, const MultiVec<ScalarType>& B, MultiVec<ScalarType>& mv )
     { mv.MvAddMv(alpha, A, beta, B); }
     ///
-    static void MvTransMv( ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+    static void MvScale ( MultiVec<ScalarType>& mv, const ScalarType alpha )
+    { mv.MvScale( alpha ); } 
+
+    static void MvScale ( MultiVec<ScalarType>& mv, const std::vector<ScalarType>& alpha )
+    { mv.MvScale(alpha); }
+    ///
+    static void MvTransMv( const ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { mv.MvTransMv(alpha, A, B); }
     ///
     static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>& b )
