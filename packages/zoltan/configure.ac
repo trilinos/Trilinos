@@ -77,13 +77,18 @@ AM_INIT_AUTOMAKE(1.9.6 no-define tar-ustar)
 
 AC_PREREQ(2.59)
 
-TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
+#TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
 #This option is not currently available
-#TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
-AM_CONDITIONAL(BUILD_FORTRAN90DRIVER, [test "X$ac_cv_use_fortran90driver" != "Xno"])
-AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
+TAC_ARG_ENABLE_OPTION(f90interface, [enable Fortran 90 interface (automatically enables Fortran support)], F90INTERFACE, no)
+AM_CONDITIONAL(BUILD_ZOLTAN_F90_INTERFACE, [test "X$ac_cv_use_f90interface" != "Xno"])
+#AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
 
-#if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
+if test "X$ac_cv_use_f90interface" = "Xyes"; then
+  ac_cv_use_fortran=yes
+else
+  ac_cv_use_fortran=no
+fi
+
 if test "X$ac_cv_use_fortran" = "Xyes"; then
   ac_cv_use_fortran90=yes
 #  AX_F90_MODULE_FLAG

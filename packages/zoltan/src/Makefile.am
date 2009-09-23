@@ -544,7 +544,7 @@ EXTRA_FORTRAN = \
     $(srcdir)/fort/lb_user_const.f90 \
     $(srcdir)/fort/fwrap.f90 
 
-if USE_FORTRAN
+if BUILD_ZOLTAN_F90_INTERFACE
 FORTRAN_H =$(EXTRA_FORTRAN_H)
 FORTRAN = $(EXTRA_FORTRAN)
 else
@@ -667,7 +667,7 @@ include_HEADERS = $(INCLUDE_H)
 # ------------------------------------------------------------------------
 # List of all Fortran Module files to install in $(includedir)
 # ------------------------------------------------------------------------
-if USE_FORTRAN
+if BUILD_ZOLTAN_F90_INTERFACE
 include_HEADERS += $(FORTRAN_MODULES)
 endif
 
@@ -784,7 +784,7 @@ execincludedir = $(includedir)
 # siMPI's Fortran interface yet (and serial zfdrive is not an important
 # use case).
 
-if USE_FORTRAN
+if BUILD_ZOLTAN_F90_INTERFACE
 if HAVE_MPI
 FDRIVER_SUBDIR = fdriver
 else

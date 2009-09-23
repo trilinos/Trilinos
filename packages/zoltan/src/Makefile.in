@@ -49,7 +49,7 @@ target_triplet = @target@
 # ------------------------------------------------------------------------
 # List of all Fortran Module files to install in $(includedir)
 # ------------------------------------------------------------------------
-@USE_FORTRAN_TRUE@am__append_1 = $(FORTRAN_MODULES)
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__append_1 = $(FORTRAN_MODULES)
 subdir = src
 DIST_COMMON = README $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -272,7 +272,7 @@ am__objects_25 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 am__objects_26 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
 	zoltan_user_data.$(OBJEXT) lb_user_const.$(OBJEXT) \
 	fwrap.$(OBJEXT)
-@USE_FORTRAN_TRUE@am__objects_27 = $(am__objects_26)
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__objects_27 = $(am__objects_26)
 am_libzoltan_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
@@ -941,10 +941,10 @@ EXTRA_FORTRAN = \
     $(srcdir)/fort/lb_user_const.f90 \
     $(srcdir)/fort/fwrap.f90 
 
-@USE_FORTRAN_FALSE@FORTRAN_H = 
-@USE_FORTRAN_TRUE@FORTRAN_H = $(EXTRA_FORTRAN_H)
-@USE_FORTRAN_FALSE@FORTRAN = 
-@USE_FORTRAN_TRUE@FORTRAN = $(EXTRA_FORTRAN)
+@BUILD_ZOLTAN_F90_INTERFACE_FALSE@FORTRAN_H = 
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@FORTRAN_H = $(EXTRA_FORTRAN_H)
+@BUILD_ZOLTAN_F90_INTERFACE_FALSE@FORTRAN = 
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@FORTRAN = $(EXTRA_FORTRAN)
 
 # ------------------------------------------------------------------------
 # Zoltan library specifications
@@ -1155,15 +1155,15 @@ EXTRA_DIST = $(ZOLTAN_H) \
 
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
-@HAVE_MPI_FALSE@@USE_FORTRAN_TRUE@FDRIVER_SUBDIR = 
+@BUILD_ZOLTAN_F90_INTERFACE_FALSE@FDRIVER_SUBDIR = 
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@HAVE_MPI_FALSE@FDRIVER_SUBDIR = 
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
 # Build zfdrive only if HAVE_MPI; I haven't figured out a proper build of
 # siMPI's Fortran interface yet (and serial zfdrive is not an important
 # use case).
-@HAVE_MPI_TRUE@@USE_FORTRAN_TRUE@FDRIVER_SUBDIR = fdriver
-@USE_FORTRAN_FALSE@FDRIVER_SUBDIR = 
+@BUILD_ZOLTAN_F90_INTERFACE_TRUE@@HAVE_MPI_TRUE@FDRIVER_SUBDIR = fdriver
 SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------

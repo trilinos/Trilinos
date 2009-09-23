@@ -23,8 +23,8 @@
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
-/* Define if want to build with fortran enabled */
-#undef HAVE_FORTRAN_SUPPORT
+/* Define if want to build with f90interface enabled */
+#undef HAVE_F90INTERFACE
 
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE

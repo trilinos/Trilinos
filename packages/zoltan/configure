@@ -653,10 +653,8 @@ am__leading_dot
 AMTAR
 am__tar
 am__untar
-BUILD_FORTRAN90DRIVER_TRUE
-BUILD_FORTRAN90DRIVER_FALSE
-USE_FORTRAN_TRUE
-USE_FORTRAN_FALSE
+BUILD_ZOLTAN_F90_INTERFACE_TRUE
+BUILD_ZOLTAN_F90_INTERFACE_FALSE
 HAVE_ZOLTAN_CPPDRIVER_TRUE
 HAVE_ZOLTAN_CPPDRIVER_FALSE
 MPI_TEMP_CXX
@@ -1328,7 +1326,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode  enable make rules and dependencies not useful
 			  (and sometimes confusing) to the casual installer
-  --enable-fortran        enable Fortran support (default is no)
+  --enable-f90interface   enable Fortran 90 interface (automatically enables
+                          Fortran support) (default is no)
   --enable-zoltan-cppdriver
                           Enable Zoltan's C++ driver (default is yes)
   --enable-mpi            MPI support
@@ -2635,24 +2634,26 @@ echo "${ECHO_T}$am_cv_prog_tar_ustar" >&6; }
 
 
 
+#TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
+#This option is not currently available
 
-# Check whether --enable-fortran was given.
-if test "${enable_fortran+set}" = set; then
-  enableval=$enable_fortran; ac_cv_use_fortran=$enableval
+# Check whether --enable-f90interface was given.
+if test "${enable_f90interface+set}" = set; then
+  enableval=$enable_f90interface; ac_cv_use_f90interface=$enableval
 else
-  ac_cv_use_fortran=no
+  ac_cv_use_f90interface=no
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to use fortran" >&5
-echo $ECHO_N "checking whether to use fortran... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to use f90interface" >&5
+echo $ECHO_N "checking whether to use f90interface... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_fortran" != "Xno"; then
+if test "X$ac_cv_use_f90interface" != "Xno"; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_FORTRAN_SUPPORT 1
+#define HAVE_F90INTERFACE 1
 _ACEOF
 
 else
@@ -2660,26 +2661,22 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
-#This option is not currently available
-#TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
- if test "X$ac_cv_use_fortran90driver" != "Xno"; then
-  BUILD_FORTRAN90DRIVER_TRUE=
-  BUILD_FORTRAN90DRIVER_FALSE='#'
+ if test "X$ac_cv_use_f90interface" != "Xno"; then
+  BUILD_ZOLTAN_F90_INTERFACE_TRUE=
+  BUILD_ZOLTAN_F90_INTERFACE_FALSE='#'
 else
-  BUILD_FORTRAN90DRIVER_TRUE='#'
-  BUILD_FORTRAN90DRIVER_FALSE=
+  BUILD_ZOLTAN_F90_INTERFACE_TRUE='#'
+  BUILD_ZOLTAN_F90_INTERFACE_FALSE=
 fi
 
- if test "X$ac_cv_use_fortran" != "Xno"; then
-  USE_FORTRAN_TRUE=
-  USE_FORTRAN_FALSE='#'
+#AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
+
+if test "X$ac_cv_use_f90interface" = "Xyes"; then
+  ac_cv_use_fortran=yes
 else
-  USE_FORTRAN_TRUE='#'
-  USE_FORTRAN_FALSE=
+  ac_cv_use_fortran=no
 fi
 
-
-#if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
 if test "X$ac_cv_use_fortran" = "Xyes"; then
   ac_cv_use_fortran90=yes
 #  AX_F90_MODULE_FLAG
@@ -8219,17 +8216,10 @@ echo "$as_me: error: conditional \"MAINTAINER_MODE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_FORTRAN90DRIVER_TRUE}" && test -z "${BUILD_FORTRAN90DRIVER_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_FORTRAN90DRIVER\" was never defined.
+if test -z "${BUILD_ZOLTAN_F90_INTERFACE_TRUE}" && test -z "${BUILD_ZOLTAN_F90_INTERFACE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_ZOLTAN_F90_INTERFACE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_FORTRAN90DRIVER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USE_FORTRAN_TRUE}" && test -z "${USE_FORTRAN_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USE_FORTRAN\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USE_FORTRAN\" was never defined.
+echo "$as_me: error: conditional \"BUILD_ZOLTAN_F90_INTERFACE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8975,10 +8965,8 @@ am__leading_dot!$am__leading_dot$ac_delim
 AMTAR!$AMTAR$ac_delim
 am__tar!$am__tar$ac_delim
 am__untar!$am__untar$ac_delim
-BUILD_FORTRAN90DRIVER_TRUE!$BUILD_FORTRAN90DRIVER_TRUE$ac_delim
-BUILD_FORTRAN90DRIVER_FALSE!$BUILD_FORTRAN90DRIVER_FALSE$ac_delim
-USE_FORTRAN_TRUE!$USE_FORTRAN_TRUE$ac_delim
-USE_FORTRAN_FALSE!$USE_FORTRAN_FALSE$ac_delim
+BUILD_ZOLTAN_F90_INTERFACE_TRUE!$BUILD_ZOLTAN_F90_INTERFACE_TRUE$ac_delim
+BUILD_ZOLTAN_F90_INTERFACE_FALSE!$BUILD_ZOLTAN_F90_INTERFACE_FALSE$ac_delim
 HAVE_ZOLTAN_CPPDRIVER_TRUE!$HAVE_ZOLTAN_CPPDRIVER_TRUE$ac_delim
 HAVE_ZOLTAN_CPPDRIVER_FALSE!$HAVE_ZOLTAN_CPPDRIVER_FALSE$ac_delim
 MPI_TEMP_CXX!$MPI_TEMP_CXX$ac_delim
@@ -8998,6 +8986,8 @@ ac_ct_CC!$ac_ct_CC$ac_delim
 EXEEXT!$EXEEXT$ac_delim
 OBJEXT!$OBJEXT$ac_delim
 DEPDIR!$DEPDIR$ac_delim
+am__include!$am__include$ac_delim
+am__quote!$am__quote$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -9039,8 +9029,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-am__include!$am__include$ac_delim
-am__quote!$am__quote$ac_delim
 AMDEP_TRUE!$AMDEP_TRUE$ac_delim
 AMDEP_FALSE!$AMDEP_FALSE$ac_delim
 AMDEPBACKSLASH!$AMDEPBACKSLASH$ac_delim
@@ -9094,7 +9082,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
