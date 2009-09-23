@@ -158,19 +158,27 @@ int Zoltan_Color(
   int nvtx = num_obj;               /* number of vertices */
   int gvtx;                         /* number of global vertices */
 
-  int *color=NULL;                       /* array to store colors of local and D1
+  int *color=NULL;                  /* array to store colors of local and D1
 				       neighbor vertices */
-  int i, j;
+  int i, base;
   int lastlno;                      /* total number of local and D1 neighbor vertices */
   G2LHash hash;                     /* hash to map global ids of local and D1 neighbor
 				       vertices to consecutive local ids */
-  int hsize;                        /* hash size */
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2];
-
+#ifdef _DEBUG_TIMES  
+  double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
+  double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
+  char *timenames[6]= {"", "setup", "graph build", "renumber", "color", "clean up"};
+#endif
   int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
   ZG graph;
 
+#ifdef _DEBUG_TIMES    
+  MPI_Barrier(zz->Communicator);
+  times[0] = Zoltan_Time(zz->Timer);
+#endif
+  
   /* PARAMETER SETTINGS */
 
   Zoltan_Bind_Param(Color_params, "COLORING_PROBLEM", (void *) &coloring_problemStr);
@@ -253,6 +261,9 @@ int Zoltan_Color(
   if (!color_exp)
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
+#ifdef _DEBUG_TIMES
+  times[1] = Zoltan_Time(zz->Timer);
+#endif
   ierr =  Zoltan_ZG_Build (zz, &graph, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
@@ -261,35 +272,30 @@ int Zoltan_Color(
 		    NULL, NULL, &partialD2);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
-
+#ifdef _DEBUG_TIMES    
+  times[2] = Zoltan_Time(zz->Timer);
+#endif
 
   /* CREATE THE HASH TABLE */
   /* Determine hash size and allocate hash table */
-  /* UVCUVC: TODO we can allocate smaller hash; check this later */
+  /* UVCUVC: this is improved but it is still a TODO
+     we can allocate smaller hash; check this later */
 
-  i = gvtx > xadj[nvtx] ? 2*xadj[nvtx] : 2*gvtx; /* i is the minimum hash size */
-  i = i > nvtx ? i : 2*nvtx;
-  if (Zoltan_GenPrime(i , &hsize)==ZOLTAN_MEMERR)
+  i = xadj[nvtx]; /* i is the minimum hash size */
+  if (Zoltan_G2LHash_Create(&hash, i, vtxdist[zz->Proc], nvtx)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
-  if (Zoltan_G2LHash_Create(&hash, hsize)==ZOLTAN_MEMERR)
-      MEMORY_ERROR;
-
-  /* Insert the ids of the local vertices into the hash table */
-  /* By inserting local vertices first, it is ensured that the
-     local ids of local vertices start from 0 and are consecutive*/
 
 #if 0
   PrintGraph(zz, "Before Global-2-Local", vtxdist[zz->Proc], nvtx, xadj, adjncy, adjproc);
 #endif
 
-  for (j=0; j<nvtx; j++)
-      Zoltan_G2LHash_Insert(&hash, vtxdist[zz->Proc] + j);
-
+  base = vtxdist[zz->Proc];
   /* Add ids of the d1 neighbors into the hash table*/
-  for (i=0; i<xadj[nvtx]; ++i)
+  for (i=0; i<xadj[nvtx]; ++i) 
       adjncy[i] = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
-  /* lastno is the total number of local and d1 neighbors */
-  lastlno = hash.lastlno;
+/*      adjncy[i] = (adjproc[i]==zz->Proc) ? adjncy[i]-base : Zoltan_G2LHash_Insert_NL(&hash, adjncy[i]);   */
+  /* lastlno is the total number of local and d1 neighbors */
+  lastlno = nvtx+hash.size;
 
 #if 0
   PrintGraph(zz, "After Global-2-Local", vtxdist[zz->Proc], nvtx, xadj, adjncy, adjproc);
@@ -307,12 +313,17 @@ int Zoltan_Color(
 			     1: indicates vertex needs to be colored, 0 means don't color  */
   }
 
+#ifdef _DEBUG_TIMES  
+  times[3] = Zoltan_Time(zz->Timer);
+#endif
   /* Select Coloring algorithm and perform the coloring */
   if (coloring_problem == '1')
       D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
   else if (coloring_problem == '2' || coloring_problem == 'P')
       D2coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color, partialD2);
-
+#ifdef _DEBUG_TIMES    
+  times[4] = Zoltan_Time(zz->Timer);
+#endif
   Zoltan_ZG_Register (zz, &graph, color);
 
 /*   /\* Get object ids and part information *\/ */
@@ -338,6 +349,18 @@ int Zoltan_Color(
 		  printf("Error in coloring! u:%d(%d), v:%d(%d), cu:%d, cv:%d\n", i, Zoltan_G2LHash_L2G(&hash, i), v, Zoltan_G2LHash_L2G(&hash, v), color[i], color[v]);
 	  }
       }
+  }
+#endif
+
+#ifdef _DEBUG_TIMES    
+  MPI_Barrier(zz->Communicator);
+  times[5] = Zoltan_Time(zz->Timer);
+  MPI_Reduce(times, gtimes, 6, MPI_DOUBLE, MPI_MAX, 0, zz->Communicator);
+  if (!zz->Proc) {
+      int i;
+      for (i=1; i<6; ++i)
+          printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", timenames[i], times[i]-times[i-1], gtimes[i]-gtimes[i-1]);
+      printf("Zoltan_Color Total Time in Proc-0: %.2lf    Max: %.2lf\n", times[5]-times[0], gtimes[5]-times[0]);
   }
 #endif
 
@@ -398,7 +421,7 @@ static int D1coloring(
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxdeg = 0;             /* Maximum vertex degree in the graph */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
-    int lastlno = hash->lastlno; /* Total number of local and D1 neighbor vertices */
+    int lastlno = nvtx+hash->size; /* Total number of local and D1 neighbor vertices */
     int *conflicts = NULL;       /* List of vertices to be recolored in the next
 				    round */
     int *replies = NULL;         /* Arrays used for MPI communication */
@@ -577,7 +600,7 @@ static int D1coloring(
 	}
 
 #if 0
-	printf("[%d] #of relevalnt procs are %d and procs are: ", zz->Proc, plstcnt);
+	printf("[%d] #of relevalnt procs is %d and procs are: ", zz->Proc, plstcnt);
 	for (i=0; i<plstcnt; ++i)
 	    printf("%d ", plst[i]);
 	printf("for vertices related procs are:\n");
@@ -599,6 +622,7 @@ static int D1coloring(
 
 	do {
 	    int *tp = visit;
+
 	    memset(mark, 0xff, (1+nColor) * sizeof(int)); /* reset dirty entries */
 #ifdef RELEVANT_COLORS
 	    ierr = D1ParallelColoring(zz, nConflict, visit, xadj, adj, isbound, ss,
@@ -616,7 +640,6 @@ static int D1coloring(
 		ZOLTAN_COLOR_ERROR(ierr, "Error in D1ParallelColoring");
 	    nConflict = D1DetectConflicts(zz, nConflict, visit, xadj, xbadj, adj,
 					  color, conflicts, rand_key, hash);
-
 	    /* swap conflicts list with visit list so that if there are conflicts,
 	       next coloring will color them */
 	    visit = conflicts;
@@ -752,7 +775,7 @@ static int D2coloring(
     int *mark = NULL;            /* Array to mark forbidden colors for a vertex */
     int gmaxcolor = 0;           /* Maximum #colors */
     int lmaxdeg = 0;             /* Maximum vertex degree for the local vertices */
-    int lastlno = hash->lastlno; /* Total number of local and D1 neighbor vertices */
+    int lastlno = nvtx+hash->size; /* Total number of local and D1 neighbor vertices */
     int *conflicts = NULL;       /* List of vertices to be recolored in the next
 				    round */
     /* Arrays used for MPI communication */
