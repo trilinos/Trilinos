@@ -12,7 +12,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
-  SET( CTEST_BUILD_FLAGS "-j6 -i" )
+  SET( CTEST_BUILD_FLAGS "-j5 -i" )
 
   SET( CTEST_COVERAGE_COMMAND /usr/bin/gcov )
   SET( CTEST_MEMORYCHECK_COMMAND /usr/bin/valgrind )
@@ -37,9 +37,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
       "-D MPIEXEC_MAX_NUMPROCS:STRING=2"
+      "-DMPI_BASE_DIR:PATH=/usr/alt/"
       )
-#      "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
-#      )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
         "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_exetazo_openmpi_1.2.7.txt ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
