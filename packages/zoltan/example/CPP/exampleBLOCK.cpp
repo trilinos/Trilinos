@@ -70,12 +70,12 @@ public:
 
 };
 
-static char *fname="objects.txt"; // File containing objects to be partitioned.
+static const char *fname="objects.txt"; // File containing objects to be partitioned.
 
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static void input_file_error(int numProcs, int tag, int startProc);
 static void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
-static void read_input_objects(int myRank, int numProcs, char *fname, objectCollection &myData);
+static void read_input_objects(int myRank, int numProcs, const char *fname, objectCollection &myData);
 
 static void MPIExit()
 {
@@ -343,7 +343,7 @@ int i, j, part;
 // Proc 0 reads the objects in the input file and divides them across processes 
 //
 
-void read_input_objects(int myRank, int numProcs, char *fname, objectCollection &myData)
+void read_input_objects(int myRank, int numProcs, const char *fname, objectCollection &myData)
 {
 int val, nobj, remainingObj;
 int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
