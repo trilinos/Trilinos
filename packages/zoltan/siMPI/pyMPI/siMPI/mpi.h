@@ -4,6 +4,9 @@
  *    Author: rrdrake $
  *    Date: 2009/07/17 15:14:49 $
  *    Revision: 1.4 $
+ *    $Author$
+ *    $Date$
+ *    $Revision$
  ****************************************************************************/
 /******************************************************************/
 /* FILE  ***********        mpi.h              ********************/
@@ -18,6 +21,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdlib.h>
 
 #define MPI_VERSION             1
 #define MPI_SUBVERSION          2
@@ -177,7 +182,7 @@ MPI_DUP_FN
 
 #include "mpi_config.h"
 
-typedef MPI_FORTRAN_INTEGER MPI_Aint;
+typedef size_t MPI_Aint;
 typedef int MPIO_Request;
 typedef int MPI_Errhandler;
 typedef int MPI_Fint;
