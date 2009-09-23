@@ -22,6 +22,8 @@
 
 #cmakedefine HAVE_NOX_SACADO
 
+#cmakedefine HAVE_NOX_STRATIMIKOS
+
 #cmakedefine HAVE_NOX_THYRA
 
 /* template qualifier required for calling template methods from non-template

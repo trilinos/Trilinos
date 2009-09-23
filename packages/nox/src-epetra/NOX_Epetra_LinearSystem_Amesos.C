@@ -1,6 +1,8 @@
 
 #include "NOX_Epetra_LinearSystem_Amesos.H"
 
+#ifdef HAVE_NOX_AMESOS
+
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "NOX_Epetra_Interface_Jacobian.H"
@@ -215,3 +217,4 @@ setPrecOperatorForSolve(const
   return;
 }
 
+#endif //HAVE_NOX_AMESOS

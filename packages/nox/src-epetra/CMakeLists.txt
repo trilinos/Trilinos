@@ -25,6 +25,9 @@ APPEND_SET(HEADERS
   NOX_Epetra_FiniteDifferenceColoring.H
   NOX_Epetra_Scaling.H
   NOX_Epetra_BroydenOperator.H
+  NOX_Epetra_ModelEvaluatorInterface.H
+  NOX_Epetra_LinearSystem_Amesos.H
+  NOX_Epetra_LinearSystem_Stratimikos.H
   )
 
 APPEND_SET(SOURCES
@@ -39,39 +42,10 @@ APPEND_SET(SOURCES
   NOX_Epetra_FiniteDifferenceColoring.C
   NOX_Epetra_Scaling.C
   NOX_Epetra_BroydenOperator.C
+  NOX_Epetra_ModelEvaluatorInterface.C
+  NOX_Epetra_LinearSystem_Amesos.C
+  NOX_Epetra_LinearSystem_Stratimikos.C
   )
-
-# Model Evaluator
-IF (NOX_ENABLE_EpetraExt)
-  APPEND_SET(HEADERS
-    NOX_Epetra_ModelEvaluatorInterface.H
-    )
-  APPEND_SET(SOURCES
-    NOX_Epetra_ModelEvaluatorInterface.C
-    )
-ENDIF()
-     
-# Amesos
-IF (NOX_ENABLE_Amesos)
-  APPEND_SET(HEADERS
-    NOX_Epetra_LinearSystem_Amesos.H
-    )
-  APPEND_SET(SOURCES
-    NOX_Epetra_LinearSystem_Amesos.C
-    )
-ENDIF()
-
-# Stratimikos
-IF (NOX_ENABLE_Stratimikos)
-  APPEND_SET(HEADERS
-    NOX_Epetra_LinearSystem_Stratimikos.H
-    )
-  APPEND_SET(SOURCES
-    NOX_Epetra_LinearSystem_Stratimikos.C
-    )
-ENDIF()
-
-
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
   PACKAGE_ADD_LIBRARY(

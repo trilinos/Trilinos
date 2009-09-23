@@ -1,6 +1,10 @@
 #ifndef NOX_EPETRA_LINEARSYSTEMAMESOS_H
 #define NOX_EPETRA_LINEARSYSTEMAMESOS_H
 
+#include "NOX_Common.H"
+
+#ifdef HAVE_NOX_AMESOS
+
 #include "NOX_Epetra_LinearSystem.H"	// base class
 #include "NOX_Utils.H"                  // class data element
 #include "Epetra_Time.h"                // class data element
@@ -197,4 +201,5 @@ class LinearSystemAmesos : public virtual NOX::Epetra::LinearSystem {
 } // namespace Epetra
 } // namespace NOX
 
+#endif //HAVE_NOX_AMESOS
 #endif

@@ -41,6 +41,8 @@
 
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 
+#ifdef HAVE_NOX_EPETRAEXT
+
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
@@ -143,3 +145,4 @@ inargs_set_p(const Teuchos::RCP<const Epetra_Vector> p_, const int l)
 
 // *****************************************************************
 // *****************************************************************
+#endif //HAVE_NOX_EPETRAEXT

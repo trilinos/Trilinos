@@ -39,10 +39,13 @@
 #ifndef NOX_EPETRA_LINEARSYSTEMSTRATIMIKOS_H
 #define NOX_EPETRA_LINEARSYSTEMSTRATIMIKOS_H
 
+#include "NOX_Common.H" 
+
+#ifdef HAVE_NOX_STRATIMIKOS
+
 #include "NOX_Epetra_LinearSystem.H"	// base class
 #include "NOX_Epetra_Vector.H"	// class data element
 #include "NOX_Utils.H"          // class data element
-#include "NOX_Common.H"         // class data element (string)
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Time.h"        // class data element
 #ifdef HAVE_NOX_ML_EPETRA
@@ -387,4 +390,5 @@ protected:
 
 } // namespace Epetra
 } // namespace NOX
+#endif //HAVE_NOX_STRATIMIKOS
 #endif

@@ -43,6 +43,9 @@
 #define NOX_EPETRA_MODEL_EVALUATOR_INTERFACE_H
 
 #include "NOX_Common.H"
+
+#ifdef HAVE_NOX_EPETRAEXT
+
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
@@ -113,4 +116,5 @@ namespace Epetra {
 } // namespace Epetra
 } // namespace NOX
 
+#endif //HAVE_NOX_EPETRAEXT
 #endif

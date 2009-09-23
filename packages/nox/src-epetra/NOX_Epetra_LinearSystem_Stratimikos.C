@@ -41,6 +41,8 @@
 
 #include "NOX_Epetra_LinearSystem_Stratimikos.H"	// class definition
 
+#ifdef HAVE_NOX_STRATIMIKOS
+
 // NOX includes
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
@@ -820,3 +822,4 @@ precError(int error_code,
 
 //***********************************************************************
 
+#endif //HAVE_NOX_STRATIMIKOS
