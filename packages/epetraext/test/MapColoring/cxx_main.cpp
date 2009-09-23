@@ -177,11 +177,11 @@ int main(int argc, char *argv[]) {
       Indices[NumEntries++] = global_i   + (global_j+1)*nx;
 
     // Insert the global indices
-    assert( A.InsertGlobalIndices( MyGlobalElements[i], NumEntries, &Indices[0] )  == 0 );
+    A.InsertGlobalIndices( MyGlobalElements[i], NumEntries, &Indices[0] );
   } // end i loop
 
   // Finish up graph construction
-  assert(A.FillComplete() == 0);
+  A.FillComplete();
 
   EpetraExt::CrsGraph_MapColoring
     Greedy0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::GREEDY,
