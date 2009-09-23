@@ -1,5 +1,5 @@
 
-IF(Trilinos_ENABLE_Fortran)
+IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
 
 INCLUDE(PackageAddExecutable)
 
