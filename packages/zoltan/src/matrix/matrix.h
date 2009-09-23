@@ -181,6 +181,11 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 int
 Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outmat);
 
+int
+Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
+			    Zoltan_matrix *outmat, int offset);
+
+
 /* This code has to be called just before specializing the matrix into
  * a graph or an hypergraph.
  */

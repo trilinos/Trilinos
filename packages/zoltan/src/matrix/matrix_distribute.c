@@ -214,6 +214,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
   nPins = outmat->mtx.nPins;
 
+
   /*
    * Build comm plan for sending non-zeros to their target processors in
    * 2D data distribution.
@@ -284,14 +285,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   /* Unpack the non-zeros received. */
 
-  /* First, add fake edges for empty vertices */
-  for (i = 0 ; i < nEdge ; ++i) {
-    int offset = dist_y[myProc_y];
-    j=outmat->mtx.nPins + i;
-    nonzeros[j].yGNO = offset + i;
-    nonzeros[j].pinGNO = -1;
-    nonzeros[j].offset = 0;
-  }
   outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, (nEdge + 1)*sizeof(int));
   if (outmat->mtx.ystart == NULL) MEMORY_ERROR;
   outmat->mtx.yend = outmat->mtx.ystart + 1;
@@ -302,9 +295,23 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   if (outmat->mtx.nPins && outmat->mtx.pinwgtdim && outmat->mtx.pinwgt == NULL)
     MEMORY_ERROR;
 
-  /* TODO: Ensure that we don't have empty vertex */
-  Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins + nEdge, (Zoltan_Arc*)nonzeros, tmpwgtarray,
-			       &outmat->mtx);
+  if (inmat.opts.keep_distribution == 0 || inmat.opts.speed != MATRIX_NO_REDIST ||
+      inmat.opts.symmetrize != 0) { /* Check for duplicates */
+    /* First, add fake edges for empty vertices */
+    for (i = 0 ; i < nEdge ; ++i) {
+      int offset = dist_y[myProc_y];
+      j=outmat->mtx.nPins + i;
+      nonzeros[j].yGNO = offset + i;
+      nonzeros[j].pinGNO = -1;
+      nonzeros[j].offset = 0;
+    }
+
+    Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins + nEdge, (Zoltan_Arc*)nonzeros, tmpwgtarray,
+				 &outmat->mtx);
+  }
+  else {
+    Zoltan_Matrix_Construct_CSR (zz, nEdge, (Zoltan_Arc*)nonzeros, tmpwgtarray, &outmat->mtx, offset);
+  }
 
  End:
   if (procptr != NULL) {

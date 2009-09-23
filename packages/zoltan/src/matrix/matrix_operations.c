@@ -28,8 +28,8 @@ extern "C" {
 /* Auxiliary functions declarations */
 /************************************/
 
-static int
-compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2);
+/* static int */
+/* compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2); */
 
 /* static int */
 /* compar_int (const int *e1, const int *e2) { */
@@ -58,7 +58,7 @@ wgtFctMax(float* current, float* new, int dim);
 /* Function definitions are here        */
 /****************************************/
 
-static int
+static  int
 compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2)
 {
   if (e1->yGNO == e2->yGNO)
@@ -112,9 +112,14 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   int nY, nPin;
   int i;
   int prev_pinGNO;
-
+#ifdef CC_TIMERS
+  double time;
+#endif
   ZOLTAN_TRACE_ENTER(zz, yo);
-/*   if (addweight) */
+
+#ifdef CC_TIMERS
+  time = MPI_Wtime();
+#endif
 
   switch (outmat->opts.pinwgtop) {
   case MAX_WEIGHT:
@@ -130,6 +135,10 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   qsort ((void*)arcs, size, sizeof(Zoltan_Arc),
 	 (int (*)(const void*,const void*))compar_arcs);
+
+#ifdef CC_TIMERS
+  fprintf(stderr, "(%d) remove arcs (qsort): %g\n", zz->Proc, MPI_Wtime()-time);
+#endif
 
   prev_pinGNO = -2;
   for (i = 0, nY=-1, nPin=-1; i < size ; ++i) {
@@ -174,6 +183,10 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
   outmat->yend = outmat->ystart + 1;
 
+#ifdef CC_TIMERS
+  fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
+#endif
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
@@ -191,6 +204,8 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
   int i, j, cnt;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+  if (inmat.opts.symmetrize == 0)  /* No symmetrization, we hope no duplicates ...*/
+    goto End;
 
   size = inmat.nPins + inmat.nY; /* We add fake arcs for non connected vertices */
   arcs = (Zoltan_Arc*) ZOLTAN_MALLOC(size*sizeof(Zoltan_Arc));
@@ -227,6 +242,50 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
+}
+
+
+int
+Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
+			     Zoltan_matrix *outmat, int offset)
+{
+  static char *yo = "Zoltan_Matrix_Remove_DupArcs";
+  int *tmparray=NULL;
+  int ierr = ZOLTAN_OK;
+  int nY, nPin;
+  int i;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  tmparray = (int*)ZOLTAN_CALLOC(outmat->nY, sizeof(int));
+
+  /* Count degree for each vertex */
+  for (i = 0 ; i < size ; i++) {
+    int lno = arcs[i].yGNO - offset;
+    if (arcs[i].pinGNO != -1)
+      tmparray[lno] ++;
+  }
+
+  outmat->ystart[0] = 0;
+  for (i = 0 ; i < outmat->nY ; i++) { /* Assume compact mode */
+    outmat->yend[i] = outmat->ystart[i] + tmparray[i] ;
+  }
+
+  memset(tmparray, 0, sizeof(int)*outmat->nY);
+  for(i = 0 ; i <size; i++) {
+    int lno = arcs[i].yGNO - offset;
+    if (arcs[i].pinGNO == -1)
+      continue;
+    outmat->pinGNO[outmat->ystart[lno] + tmparray[lno]] = arcs[i].pinGNO;
+    tmparray[lno++];
+  }
+
+ End:
+  ZOLTAN_FREE(&tmparray);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return (ierr);
+
 }
 
 /* This function compute the indices of the diagonal terms.
