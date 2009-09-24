@@ -1,3 +1,11 @@
+# Run the test driver script through perl.
+IF(PERL_EXECUTABLE)
+  SET(ZOLTAN_TEST_DRIVER CMND ${PERL_EXECUTABLE} ARGS ../ctest_zoltan.pl)
+ELSE()
+  MESSAGE(STATUS "Skipping Zoltan tests because PERL_EXECUTABLE is not found.")
+  RETURN()
+ENDIF()
+
 ADD_SUBDIRECTORY(ch_brack2_3)
 ADD_SUBDIRECTORY(ch_bug)
 ADD_SUBDIRECTORY(ch_degenerate)

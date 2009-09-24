@@ -11,6 +11,7 @@ sub nowhite($) {
   for ($file) {
     s/ //g;
     s/\t//g;
+    s/\r//g;
   }
   return uc($file);
 }
