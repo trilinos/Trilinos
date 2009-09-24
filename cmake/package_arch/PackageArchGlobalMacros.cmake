@@ -102,17 +102,17 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
     CACHE PATH
-    "Location where the headers will be installed.  If given as an absolute path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
+    "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
     )
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR "lib"
     CACHE PATH
-    "Location where the libraries will be installed.  If given as an absolute path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
+    "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
     )
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
     CACHE PATH
-    "Location where the runtime DLLs will be installed.  If given as an absolute path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
+    "Location where the runtime DLLs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
   
   IF(WIN32 AND NOT CYGWIN)
@@ -1306,13 +1306,15 @@ FUNCTION(PACKAGE_ARCH_DUMP_DEPS_XML_FILE)
     PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING(${PACKAGE} TEST_REQUIRED_DEP_TPLS DEPS_XML)
     PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING(${PACKAGE} TEST_OPTIONAL_DEP_TPLS DEPS_XML)
 
-    #STRING(TOLOWER "${PACKAGE}" LPACKAGE)
-    #APPEND_STRING_VAR(DEPS_XML
-    #  "    <EmailAddresses>\n" )
-    #APPEND_STRING_VAR(DEPS_XML
-    #  "      <Email addresss=\"${LPACKAGE}\"/>\n" )
-    #APPEND_STRING_VAR(DEPS_XML
-    #  "    </EmailAddresses>\n" )
+    SET(ADDRESS_URL_BASE "software.sandia.gov")
+
+    STRING(TOLOWER "${PACKAGE}" LPACKAGE)
+    APPEND_STRING_VAR(DEPS_XML
+      "    <EmailAddresses>\n"
+      "      <Checkin address=\"${LPACKAGE}-checkins@${ADDRESS_URL_BASE}\"/>\n"
+      "      <Regression address=\"${LPACKAGE}-regression@${ADDRESS_URL_BASE}\"/>\n"
+      "    </EmailAddresses>\n"
+      )
 
     APPEND_STRING_VAR(DEPS_XML
       "  </Package>\n" )

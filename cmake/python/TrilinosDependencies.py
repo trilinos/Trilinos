@@ -22,11 +22,23 @@ defaultCDashDepsXmlFile = getScriptBaseDir()+"/data/CDashSubprojectDependencies.
 # Store and manipulate the dependencies
 #
 
+
+class PackageEmailAddresses:
+
+  def __init__(self, checkin_in, regression_in):
+    self.checkin = checkin_in
+    self.regression = regression_in
+
+  def __str__(self):
+    return "{checkin="+self.checkin+", regression="+self.regression+"}"
+  
+
 class PackageDependencies:
 
   def __init__(self, packageName_in, packageDir_in,
     libRequiredDepPackages_in, libOptionalDepPackages_in,
-    testRequiredDepPackages_in, testOptionalDepPackages_in
+    testRequiredDepPackages_in, testOptionalDepPackages_in,
+    emailAddresses_in
     ):
     self.packageName = packageName_in
     self.packageDir = packageDir_in
@@ -35,6 +47,7 @@ class PackageDependencies:
     self.libOptionalDepPackages = libOptionalDepPackages_in
     self.testRequiredDepPackages = testRequiredDepPackages_in
     self.testOptionalDepPackages = testOptionalDepPackages_in
+    self.emailAddresses = emailAddresses_in
 
   def __str__(self):
     return "{\n"+\
@@ -45,6 +58,7 @@ class PackageDependencies:
       "  libOptionalDepPackages="+str(self.libOptionalDepPackages)+",\n"+\
       "  testRequiredDepPackages="+str(self.testRequiredDepPackages)+",\n"+\
       "  testOptionalDepPackages="+str(self.testOptionalDepPackages)+" \n"+\
+      "  emailAddresses="+str(self.emailAddresses)+"\n"+\
       "}\n"
 
 
@@ -440,17 +454,10 @@ class TrilinosDependencies:
           xmlText += ("    <Dependency name=\""+depPackageName+"\"" + \
             " type=\""+entry+"\"/>\n" )
 
-      xmlText += ("    <EmailAddresses>\n")
       xmlText += \
-         ("      <Email address=\""+packageName.lower()+"-regression@software.sandia.gov\"/>\n")
-      xmlText += ("    </EmailAddresses>\n")
-      # 2009/02/25: rabartl: ToDo: Above, I really should allow the various packages
-      # to define what lists they will send email.  This would require allowing each
-      # package to overridde its email addresses, embedding this info in the output
-      # XML file written by the CMake code, reading in this XML info into
-      # the python data structure self.__packagesList and then reading it back out
-      # here to writ back into XML.  That is too hard for right now so I am
-      # doing the above hack :-)
+        "    <EmailAddresses>\n"+\
+        "      <Email address=\""+packageDeps.emailAddresses.regression+"\"/>\n"+\
+        "    </EmailAddresses>\n"
 
       xmlText += ("  </SubProject>\n")
 
@@ -482,6 +489,19 @@ def getDependenciesByType(packageEle, typeName):
   return packageDepsStr.split(',')
 
 
+def getSingleEmailAddress(emailEle, emailType):
+  singleEmailEle = emailEle.getElementsByTagName(emailType)[0]
+  singleEmailAddress = singleEmailEle.getAttribute('address');
+  return singleEmailAddress
+
+
+def getPackageEmailAddresses(packageEle):
+  emailEle = packageEle.getElementsByTagName("EmailAddresses")[0]
+  checkinEmail = getSingleEmailAddress(emailEle, "Checkin")
+  regressionEmail = getSingleEmailAddress(emailEle, "Regression")
+  return PackageEmailAddresses(checkinEmail, regressionEmail)
+
+
 def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
   #print "xmlFile =", xmlFile
   packageDepXmlDom = xml.dom.minidom.parse(xmlFile)
@@ -495,7 +515,8 @@ def getTrilinosDependenciesFromXmlFile(xmlFile=defaultTrilinosDepsXmlInFile):
         getDependenciesByType(ele, "LIB_REQUIRED_DEP_PACKAGES"),
         getDependenciesByType(ele, "LIB_OPTIONAL_DEP_PACKAGES"),
         getDependenciesByType(ele, "TEST_REQUIRED_DEP_PACKAGES"),
-        getDependenciesByType(ele, "TEST_OPTIONAL_DEP_PACKAGES")
+        getDependenciesByType(ele, "TEST_OPTIONAL_DEP_PACKAGES"),
+        getPackageEmailAddresses(ele)
         )
       #print "\npackageDeps =", str(packageDeps)
       trilinosDependencies.addPackageDependencies(packageDeps)

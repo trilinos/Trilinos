@@ -2,8 +2,6 @@
 #
 # ToDo:
 #
-#  (*) Keep track of timmings for update, configure, build, and test and
-#      embed these in the email messages ...
 #  (*) Turn off framework tests by default and turn them in checkin
 #      testing ...
 #  (*) Turn off generation of HTML/XML files by default and turn them on in
@@ -18,6 +16,7 @@
 
 from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
 from TrilinosDependencies import defaultTrilinosDepsXmlInFile
+from TrilinosPackageFilePathUtils import *
 from GeneralScriptSupport import *
 import time
 
@@ -200,7 +199,8 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
 reModifedFiles = re.compile(r"^[MA] (.+)$")
 
 
-def isGlobalCmakeBuildFile(modifiedFileFullPathArray):
+def isGlobalCmakeBuildFile(modifiedFileFullPath):
+  modifiedFileFullPathArray = getFilePathArray(modifiedFileFullPath)
   if len(modifiedFileFullPathArray)==1 and modifiedFileFullPathArray[0] == "CMakeLists.txt":
     return True
   if modifiedFileFullPathArray[0] == 'cmake':
@@ -219,47 +219,28 @@ def isGlobalCmakeBuildFile(modifiedFileFullPathArray):
   return False
 
 
-def getPackageNameFromPathArray(trilinosDependencies, modifiedFileFullPathArray):
-  if modifiedFileFullPathArray[0] == "packages":
-    packageDir = modifiedFileFullPathArray[1]
-    packageStruct = trilinosDependencies.getPackageByDir(packageDir)
-    if packageStruct:
-      return packageStruct.packageName
-  return ""
-
-
 def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   enablePackagesList_inout ) \
   :
 
   trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
 
-  for updateLine in updateOutputStr.split('\n'):
-    
-    #print "\nupdateLine =", updateLine
+  modifiedFilesList = extractFilesListMatchingPattern(
+    updateOutputStr.split('\n'), reModifedFiles )
 
-    reModifiedFilesMatch = reModifedFiles.match(updateLine)
+  for modifiedFileFullPath in modifiedFilesList:
 
-    if reModifiedFilesMatch:
+    if isGlobalCmakeBuildFile(modifiedFileFullPath):
+      if inOptions_inout.enableAllPackages == 'default':
+        print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
+          "  => Enabling all Trilinos packages!"
+        inOptions_inout.enableAllPackages = 'on'
 
-      modifedFileFullPath = reModifiedFilesMatch.group(1).strip()
-      #print "\nmodifedFileFullPath =", modifedFileFullPath
-
-      modifiedFileFullPathArray = modifedFileFullPath.split('/')
-      #print "\nmodifiedFileFullPathArray =", modifiedFileFullPathArray
-
-      if isGlobalCmakeBuildFile(modifiedFileFullPathArray):
-
-        if inOptions_inout.enableAllPackages == 'default':
-          print "\nModifed file: '"+modifedFileFullPath+"'\n" \
-            "  => Enabling all Trilinos packages!"
-          inOptions_inout.enableAllPackages = 'on'
-
-      packageName = getPackageNameFromPathArray(trilinosDependencies, modifiedFileFullPathArray)
-      if packageName and findInSequence(enablePackagesList_inout, packageName) == -1:
-        print "\nModified file: '"+modifedFileFullPath+"'\n" \
-          "  => Enabling '"+packageName+"'!"
-        enablePackagesList_inout.append(packageName)
+    packageName = getPackageNameFromPath(trilinosDependencies, modifiedFileFullPath)
+    if packageName and findInSequence(enablePackagesList_inout, packageName) == -1:
+      print "\nModified file: '"+modifiedFileFullPath+"'\n" \
+        "  => Enabling '"+packageName+"'!"
+      enablePackagesList_inout.append(packageName)
 
 
 def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
@@ -1249,65 +1230,50 @@ class testCheckinTest(unittest.TestCase):
 
 
   def test_isGlobalCmakeBuildFile_01(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['CMakeLists.txt'] ), True )
+    self.assertEqual( isGlobalCmakeBuildFile( 'CMakeLists.txt' ), True )
 
 
   def test_isGlobalCmakeBuildFile_02(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TrilinosPackages.cmake' ] ), True )
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TrilinosPackages.cmake' ), True )
 
 
   def test_isGlobalCmakeBuildFile_03(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TrilinosCMakeQuickstart.txt' ] ), False )
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
 
 
   def test_isGlobalCmakeBuildFile_04(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'ctest', 'experimental_build_test.cmake' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/ctest/experimental_build_test.cmake' ),
       False )
 
 
   def test_isGlobalCmakeBuildFile_05(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'DependencyUnitTests', 'blah' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/DependencyUnitTests/blah' ),
       False )
 
 
   def test_isGlobalCmakeBuildFile_06(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLBLAS.cmake' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLBLAS.cmake' ),
       True )
 
 
   def test_isGlobalCmakeBuildFile_07(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLLAPACK.cmake' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
       True )
 
 
   def test_isGlobalCmakeBuildFile_08(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLMPI.cmake' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLMPI.cmake' ),
       True )
 
 
   def test_isGlobalCmakeBuildFile_09(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'TPLs', 'FindTPLDummy.cmake' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLDummy.cmake' ),
       False )
 
 
   def test_isGlobalCmakeBuildFile_10(self):
-    self.assertEqual( isGlobalCmakeBuildFile( ['cmake', 'utils', 'SetNotFound.cmake' ] ),
+    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/utils/SetNotFound.cmake' ),
       True )
-
-
-  def test_getPackageNameFromPathArray_01(self):
-    self.assertEqual(
-      getPackageNameFromPathArray( trilinosDependencies, ['packages', 'teuchos', 'CMakeLists.txt' ] ), 'Teuchos' )
-
-
-  def test_getPackageNameFromPathArray_02(self):
-    self.assertEqual(
-      getPackageNameFromPathArray( trilinosDependencies, ['packages', 'thyra', 'src', 'blob.cpp' ] ), 'Thyra' )
-
-
-  def test_getPackageNameFromPathArray_03(self):
-    self.assertEqual(
-      getPackageNameFromPathArray( trilinosDependencies, ['packages', 'blob', 'blob' ] ), '' )
 
 
   def test_extractPackageEnablesFromChangeStatus_1(self):
