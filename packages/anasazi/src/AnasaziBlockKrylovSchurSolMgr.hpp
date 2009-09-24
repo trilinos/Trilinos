@@ -339,7 +339,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
     if (Teuchos::isParameterType<bool>(pl,"In Situ Restarting")) {
       _inSituRestart = pl.get("In Situ Restarting",_inSituRestart);
     } else {
-      _inSituRestart = (bool)Teuchos::getParameter<int>(pl,"In Situ Restarting");
+      _inSituRestart = ( Teuchos::getParameter<int>(pl,"In Situ Restarting") != 0 );
     }
   }
 

@@ -374,7 +374,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
     if (Teuchos::isParameterType<bool>(pl,"In Situ Restarting")) {
       inSituRestart_ = pl.get("In Situ Restarting",inSituRestart_);
     } else {
-      inSituRestart_ = (bool)Teuchos::getParameter<int>(pl,"In Situ Restarting");
+      inSituRestart_ = ( Teuchos::getParameter<int>(pl,"In Situ Restarting") != 0 );
     }
   }
 
@@ -385,7 +385,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
     if (Teuchos::isParameterType<bool>(pl,"Output on all processors")) {
       allProcs = pl.get("Output on all processors",allProcs);
     } else {
-      allProcs = (bool)Teuchos::getParameter<int>(pl,"Output on all processors");
+      allProcs = ( Teuchos::getParameter<int>(pl,"Output on all processors") != 0 );
     }
   }
   fntemplate = pl.get("Output filename template",fntemplate);

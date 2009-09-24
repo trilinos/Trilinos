@@ -235,14 +235,14 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   // change block size and see the difference
   solver->setBlockSize(blocksize+1);
   TEST_FOR_EXCEPTION(solver->isInitialized(),get_out,"After setBlockSize(), solver should be uninitialized.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim(),get_out,"After setBlocksize(): Uninitialized solver should have getCurSubspaceDim() == 0.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"After setBlocksize(): Uninitialized solver should have getCurSubspaceDim() == 0.");
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize+1,get_out,"After setBlockSize(), new block size was not in effect.");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks,get_out,"After setBlockSize(), num blocks should not have changed.");
   // call setSize and see the difference
   solver->initialize();
   solver->setSize(blocksize,numblocks+1);
   TEST_FOR_EXCEPTION(solver->isInitialized(),get_out,"After setSize(), solver should be uninitialized.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim(),get_out,"After setSize(): Uninitialized solver should have getCurSubspaceDim() == 0.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"After setSize(): Uninitialized solver should have getCurSubspaceDim() == 0.");
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After setSize(), new block size was not in effect.");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks+1,get_out,"After setSize(), new num blocks was not in effect.");
 }

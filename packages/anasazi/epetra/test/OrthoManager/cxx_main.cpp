@@ -371,9 +371,10 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
+  const int sizeX1t = MVT::GetVecLength(*X1);
+  const int sizeX2t = MVT::GetVecLength(*X2);
   int numerr = 0;
   std::ostringstream sout;
-
   //
   // output tests:
   //   <S_out,S_out> = I
@@ -405,6 +406,8 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 
   int numtests;
   numtests = 4;
+  bool useX1 = false;
+  bool useX2 = false;
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
@@ -421,25 +424,33 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
     Array<RCP<const MV> > theX;
     RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
+    if ( (t & 3) == 0 ) {
       // neither <X1,Y1> nor <X2,Y2>
       // C, theX and theY are already empty
+      useX1 = false;
+      useX2 = false;
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = tuple(X1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      useX1 = true;
+      useX2 = false;
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = tuple(X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      useX1 = false;
+      useX2 = true;
     }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      useX1 = true;
+      useX2 = true;
     }
 
     try {
@@ -502,7 +513,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
+      /*if ( (t & 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
@@ -548,7 +559,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         // flip the inputs back
         theX = tuple( theX[1], theX[0] );
       }
-
+      */
 
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
@@ -561,12 +572,17 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           }
           sout << "   || <S,S> - I || after  : " << err << endl;
         }
-        // S_in = X1*C1 + C2*C2 + S_out*B
+        // S_in = X1*C1 + X2*C2 + S_out*B
         {
           RCP<MV> tmp = MVT::Clone(*S,sizeS);
           MVT::MvTimesMatAddMv(ONE,*S_outs[o],*B_outs[o],ZERO,*tmp);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            if (useX1) {
+              MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            }
+            else if (useX2) {
+              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][0],ONE,*tmp);
+            }
             if (C_outs[o].size() > 1) {
               MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
             }
@@ -768,6 +784,8 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
   int numtests;
   numtests = 8;
+  bool useX1 = false;
+  bool useX2 = false;
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
@@ -783,30 +801,38 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
     Array<RCP<const MV> > theX;
     Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
+    if ( (t & 3) == 0 ) {
       // neither X1 nor X2
       // C and theX are already empty
+      useX1 = false;
+      useX2 = false;
     }
-    else if ( (t && 3) == 1 ) {
+    else if ( (t & 3) == 1 ) {
       // X1
       theX = tuple(X1);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      useX1 = true;
+      useX2 = false;
     }
-    else if ( (t && 3) == 2 ) {
+    else if ( (t & 3) == 2 ) {
       // X2
       theX = tuple(X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      useX1 = false;
+      useX2 = true;
     }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
       C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
                  rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      useX1 = true;
+      useX2 = true;
     }
 
     try {
       // call routine
-      // if (t && 3) == 3, {
+      // if (t & 3) == 3, {
       //    call with reversed input: X2 X1
       // }
       // test all outputs for correctness
@@ -837,7 +863,8 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       }
 
       // do we run the reversed input?
-      if ( (t && 3) == 3 ) {
+      /*
+      if ( (t & 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
@@ -860,14 +887,20 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         // flip the inputs back
         theX = tuple( theX[1], theX[0] );
       }
+      */
 
       // test all outputs for correctness
       for (unsigned int o=0; o<S_outs.size(); o++) {
-        // S_in = X1*C1 + C2*C2 + S_out
+        // S_in = X1*C1 + X2*C2 + S_out
         {
           RCP<MV> tmp = MVT::CloneCopy(*S_outs[o]);
           if (C_outs[o].size() > 0) {
-            MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            if (useX1) { 
+              MVT::MvTimesMatAddMv(ONE,*X1,*C_outs[o][0],ONE,*tmp);
+            }
+            else if (useX2) {
+              MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][0],ONE,*tmp);
+            }
             if (C_outs[o].size() > 1) {
               MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
             }
