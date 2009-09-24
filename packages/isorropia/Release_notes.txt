@@ -7,13 +7,13 @@ in several ways. The most important changes are listed below.
 General:
  - Isorropia now has a set of parameters for common options,
    such that many users do not need to use Zoltan parameters. 
- - NOTE: The partitioning method *must* now be specified
-   by the new Isorropia parameter 'Partitioning Method'.
- - Zoltan parameters can still be set in a sublist.
+   The parameters are case insensitive.
+ - Zoltan parameters can still be set in a sublist named "zoltan".
 
 Partitioning:
- - Added support for geometric partitioning via Epetra_MultiVector.
- - Added support for variable target part sizes. 
+ - Automatic symmetrization of graphs.
+ - Geometric partitioning (RCB, RIB, HSFC) available via Epetra_MultiVector.
+ - New support for variable target part sizes. 
  - createBalancedCopy replaces create_balanced_copy and uses raw pointers
    instead of RCP. (The Partitioner class is the preferred API.)
 
@@ -23,6 +23,15 @@ Coloring:
    and Isorropia::Epetra::Colorer::generateColMapColoring.
 
 Prober:
- - New class to construct a sparse matrix from an operator efficiently 
+ - New class to construct a sparse (CRS) matrix from an operator efficiently 
    via coloring.
 
+
+Upgrading to version 3.2 (Trilinos 10.0):
+-----------------------------------------
+ - For partitioning, the partitioning method should now be specified
+   by the new Isorropia parameter 'Partitioning Method', which
+   corresponds to the Zoltan parameter "LB_METHOD".
+ - create_balanced_copy has been deprecated. Please switch to using the
+   Partitioner and Redistributor classes, or createBalancedCopy
+   for quick and simple use.
