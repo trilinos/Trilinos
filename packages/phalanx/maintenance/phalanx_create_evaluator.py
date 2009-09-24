@@ -37,6 +37,11 @@ def main():
                       default="ExplicitTemplateInstantiation.hpp",
                       help="filename for explicit template instantiation [default=%default]")
     
+    parser.add_option("-e","--eti_define",
+                      dest="eti_define",
+                      default="#ifndef PHX_ETI",
+                      help="define guards to enable/disable explicit template instantiation [default=%default]")
+    
     parser.add_option("-k", "--h_suffix", dest="header_suffix",
                       default="hpp",
                       help="suffix for header file [defalt=%default]")
@@ -120,7 +125,7 @@ def main():
     if options.no_eti:
         header_file.write("#include \"" + definition_file_name + "\"\n\n")
     else:
-        header_file.write("#ifndef PHX_ETI\n")
+        header_file.write(options.eti_define + "\n")
         header_file.write("#include \"" + definition_file_name + "\"\n")
         header_file.write("#endif\n\n")
         
