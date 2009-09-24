@@ -59,7 +59,8 @@ if ($debug) {print "DEBUG:  mpiexec $mpiexec $mpiexecargs\n";}
 
 
 ### Assign the executable.
-$zdrive = "../../src/driver/zdrive.exe";
+#$zdrive = "../../src/driver/zdrive.exe";
+$zdrive = "../zdrive.exe";
 
 ### Get current working directory name
 use Cwd;
