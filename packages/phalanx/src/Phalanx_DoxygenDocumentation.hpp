@@ -947,6 +947,12 @@ PHX_EVALUATE_FIELDS(Density,d)
 
 The evaluators for the example problem in "phalanx/example/EnergyFlux" have been rewritten using the macro definitions and can be found in the directory "phalanx/test/Utilities/evaluators".  
 
+Finally, since writing even the above code contains much boilerplate, we have written a python script that will generate the above skeleton files for you.  All you need provide is the class name and the filename.  The script is called phalanx_create_evaluator.py and can be found in the "maintenance" directory.  A "make install" will place the script in the "bin" directory.  To generate a skeleton for the above function, you would execute the following command at the prompt:
+
+\code
+> ./phalanx_create_evaluator.py -c -n Density Evaluator_Density
+\endcode
+
 \section user_guide_step6 Step 6: Implement the FieldManager in your code
   Adding the FieldManager to your code is broken into steps.  You must build each Evaluator for each field type, register the evaluators with the FieldManager, and then call the evaluate routines.  Continuing from our example:
 
