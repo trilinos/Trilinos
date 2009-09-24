@@ -42,6 +42,11 @@ def main():
                       default="#ifndef PHX_ETI",
                       help="define guards to enable/disable explicit template instantiation [default=%default]")
     
+    parser.add_option("-m","--eti_macro",
+                      dest="eti_macro",
+                      default="PHX_INSTANTIATE_TEMPLATE_CLASS",
+                      help="macro used to expand eti objects in src file [default=%default]")
+    
     parser.add_option("-k", "--h_suffix", dest="header_suffix",
                       default="hpp",
                       help="suffix for header file [defalt=%default]")
@@ -55,6 +60,11 @@ def main():
                       default="cpp",
                       help="suffix for source file [defalt=%default]")
 
+    parser.add_option("-b","--namespace",
+                      dest="namespace",
+                      default="None",
+                      help="wrap objects in a namespace [default=<no namespace>]")
+    
     parser.add_option("-p", "--plist_name", dest="plist_name",
                       default="p",
                       help="parameter list name in ctor [defalt=%default]")
@@ -116,12 +126,20 @@ def main():
     header_file.write("#define " + include_guard + "\n\n")
     header_file.write("#include \"Phalanx_Evaluator_Macros.hpp\"\n")
     header_file.write("#include \"Phalanx_MDField.hpp\"\n\n")
+
+    if options.namespace != "None":
+        header_file.write("namespace " + options.namespace + " {\n\n")
+    
     if options.add_pp_methods:
         header_file.write("PHX_EVALUATOR_CLASS_PP(" + class_name + ")\n\n\n\n")
     else:
         header_file.write("PHX_EVALUATOR_CLASS(" + class_name + ")\n\n\n\n")
 
     header_file.write("PHX_EVALUATOR_CLASS_END\n\n")
+
+    if options.namespace != "None":
+        header_file.write("}\n\n")
+        
     if options.no_eti:
         header_file.write("#include \"" + definition_file_name + "\"\n\n")
     else:
@@ -143,6 +161,10 @@ def main():
     
     def_file.write("#include \"Teuchos_TestForException.hpp\"\n")
     def_file.write("#include \"Phalanx_DataLayout.hpp\"\n")
+
+    if options.namespace != "None":
+        def_file.write("\nnamespace " + options.namespace + " {\n")
+    
     def_file.write("\n//****************************************************" \
                    + "******************\n")
     def_file.write("PHX_EVALUATOR_CTOR(" + class_name + "," +
@@ -169,6 +191,9 @@ def main():
                        + "******************\n")
         
 
+    if options.namespace != "None":
+        def_file.write("\n}\n\n")
+        
     
     def_file.close()
 
@@ -181,13 +206,16 @@ def main():
         if not options.no_copyright:
             src_file.write("// @HEADER\n")
             src_file.write("// @HEADER\n\n")
+
+        full_class_name = class_name
+        if options.namespace != "None":
+            full_class_name = options.namespace + "::" + class_name
             
         src_file.write("#include \"" + options.eti_filename + "\"\n\n")
         src_file.write("#include \"" + header_file_name + "\"\n")
         src_file.write("#include \"" + definition_file_name + "\"\n\n")
-        src_file.write("PHX_INSTANTIATE_TEMPLATE_CLASS(" + class_name + \
+        src_file.write(options.eti_macro + "(" + full_class_name + \
                        ")\n\n")
-        src_file.write("#endif\n\n")
         src_file.close()
 
 #############################################################################
