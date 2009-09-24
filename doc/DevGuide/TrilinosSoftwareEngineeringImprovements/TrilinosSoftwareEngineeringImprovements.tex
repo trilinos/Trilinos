@@ -1279,13 +1279,66 @@ out releases as a way to interact with our real customers.  We should
 be interacting with our customers primarily through the development
 version of Trilinos to develop capabilities.
 
+Also, the primary purpose for developing code in Trilinos is to create
+releasable code.  Therefore, the main release process should be geared
+to the assumption that most development will be to create releasable
+code, especially right before creating the release branch.
+
+There are several bad consequences to creating a release branch too
+early:
+
+\begin{itemize}
+
+{}\item Many changes are made on the release branch which are always
+hard or dangerous to merge back with the deveopment branch.  Major
+changes are *always* made on long-lived release branches for the
+following reasons:
+
+  \begin{itemize}
+
+  {}\item Changes needed for porting: While the various APP + Trilinos
+  daily integration efforts minimize the need for last minute porting,
+  other ports like Windows can still cause this to be needed.
+  However, if we have the propery nightly testing set up and if people
+  keep the nightly builds and tests clean, the problem largely goes
+  away.
+
+  {}\item End of fiscal year deliverables: One of the major drivers
+  for lots of last minute changes on the release branch are people who
+  procrastinated on getting their end-of-FY deliverables done and then
+  quickly work on these just before a release.  This type of activity
+  tends to significantly destablize Trilinos like no other time
+  period.  If we release more frequently, then this problem should be
+  reduced somewhat.
+
+  {}\item ``Clean Up'': Just before a release, many people will
+  finally read through their code and documenation and work to clean
+  ut up.  Mostly these types of changes are faily safe but sometimes
+  can cause significant unintended problems.
+
+  \end{itemize}
+
+{}\item As soon a release branch is created, it is cut off from
+extensive APP Trilinos daily integration testing and therefore
+portability testing: Because testing machines and time are always at
+near max capacity, there are not the resources to test APPs on all of
+the platforms against both the dev and release versions of Trilnos.
+Or, if APPs switch over to testing against the release version of
+Trilinos, they often drop testing against the dev version for some
+time.  This increases the risks that when they switch back to testing
+agains the dev version that their APP will be broken.
+
+\end{itemize}
+
 The general philosophy of the process outline below is to spread out
 the work of creating a release throughout the year so that when the
 branch for a release is actually created, we can do the minimal work
-possible to put out the release.  The ``Stable'' code should always be
-in such a close to ``releasable'' state that we should be able to
-decide in a few weeks that we want to put out a release and we should
-be able to get it done.
+and schedule possible to put out the release.  The ``Stable'' code
+should always be in such a close to ``releasable'' state that we
+should be able to decide in a week or so that we want to put out a
+release and we should be able to get it done.  However, modern Agile
+methods suggest that we release on fixed time schedules and adjust
+scope to make sure we meet the release dates.
 
 \begin{itemize}
 
@@ -1302,9 +1355,11 @@ is created:
 
   {}\item Do all code ``clean ups''
 
-  {}\item All non-releasable code should be confined to
-  ``Experimental'' ifdefs so that it will not be included in the next
-  release.
+  {}\item All non-releasable code should be at least partially
+  confined to files that will be excluded from the release tarball.
+  That way, if these files are missing in the release, then users can
+  not possible access these features.  Who cares if they can see that
+  we are working on some crazy feature X.
 
   {}\item The ``Stable'' code for each package should almost always be
   in a releasable state each and every day, regardless of when a
@@ -1314,14 +1369,26 @@ is created:
 
   {}\item The ``Stable'' code in all of the packages to be released
   should produce clean tests on all of the test platforms well before
-  the release date.  In fact, the ``Stable'' code should almost never
-  show any test failures on any day of the year, regardless of when a
-  release will take place.
+  the release branch date.  In fact, the ``Stable'' code should almost
+  never show any test failures on any day of the year, regardless of
+  when a release will take place.
 
   {}\item Perform at least one round of ports and acceptance tests
   with Trilinos Dev against all major customer platforms and
   applications a few weeks before the targeted release branch date.
-  Fix any problems that are encountered.
+  Fix any problems that are encountered.  NOTE: The APP Trilinos daily
+  integration testing with Alegra, SIERRA and other APPs mostly takes
+  care of this.
+
+  {}\item Add all nighltly testing platforms weeks before a planned
+  release branch date.  We should not be adding new testing platforms
+  or build cases just before a release.
+
+  {}\item Create the release branch only a few days (3 days max)
+  before putting out the actual release.  If everything is done as
+  described here, a few days should be more than enough time.  In
+  fact, we should be able to branch and release in a 24 hour time
+  period with little work and little risk.
 
   \end{itemize}
 
@@ -1330,33 +1397,101 @@ created:
 
   \begin{itemize}
 
-  {}\item Run automated scripts to automatically strip out all
-  ``Experimental'' code and tests (This removes a lot of the need for
-  complex tarball logic).
+  {}\item Change the version in Trilnos\_version.h.  All other changes
+  in the build system, tarball creation etc. will key off of this one
+  changed file.
 
-  {}\item No changes are made to the branch except what are absolutely
-  necessary to address serious defects.
+  {}\item No changes are made to the release branch except what are
+  absolutely necessary to address serious defects.  Given the level of
+  testing that is present against the development version, this will
+  almost never happen.
 
   {}\item Do (what should be) a final round of ports and acceptance
-  tests against all major customer platforms and applications.
-  Resolve any new problems that have come up since the previous round
-  of ports and tests conducted a few weeks prior.  (Experience with
-  SIERRA + Trilinos Integration shows that very few new issues come
-  up.)
-
-  {}\item Change the version numbers inside of Trilinos. (NOTE: We
-  need a more automated and uniform way of updating version numbers.)
+  tests against all major customer platforms and applications.  NOTE:
+  Now that SIERRA and Alegra both do daily integration testing of
+  Trilinos Dev on all of their supported platforms this step is not
+  really needed (as long as Trilinos is not being changed in the
+  release branch after the branch is created).
 
   {}\item Create the final tag.
 
-  {}\item Release the code.
+  {}\item Release the code as the autogenerated tarball.
+
+  {}\item Restrict changes in the relese branch to serious defects
+  only.  Any functionality requests or minor usage defects should go
+  into the development branch and future releases should be taken off
+  of the development branch (with the *minimal* release process
+  described here)..
 
   \end{itemize}
 
 \end{itemize}
 
+Several appraoches need to be implemented in Trilinos to make such a
+release process work well with such a short time between branching and
+releaseing.
+
+\begin{itemize}
+
+{}\item Designate which Trilinos packges are targeted for the next
+release in the TrilinosPackages.cmake file.  This would require adding
+an extra field to this table.  The CMake build system would then
+automatically add the list of directories for non-release packages to
+the list of files to exclude from a Trilinos release tarbarll.  There
+is no need to actually strip out non-release packages from the release
+branch.  We don't give away our source repository and there is no
+reason why we should give away our working directory either.  As long
+as we only give away our tarball, this will work fine.
+
+{}\item All non-release code in Trilinos packges can be listed in
+commands like PACKAGE\_EXCLUDE\_FROM\_RELEASE(...).  These will
+automatically get excluded from the release tarball.
+
+{}\item Have all Trilinos packages automatically update their version
+number based on the Trilinos version (e.g. ``<PACKAGE> in Trilinos
+<RELEASE\_VERSION>'').  See Thyra\_Version.cpp for an example.
+
+{}\item The CMake build system is automatically put into release mode
+(i.e. Trilinos\_ENABLE\_DEVELOPMENT\_MODE:BOOL=OFF) by reading in and
+interpreting the Trilinos\_version.h file from within CMake code.
+
+{}\item A automated nightly process will create a release tarball from
+the development sources (automatically excluding all non-release
+files), untar the tarball, and then build and test the release version
+of Trilinos.  In addition, the headers and libraries should be
+installed and the Trilinos tests/examples should be configured against
+these installed headers and libraries and will use the installed
+export makefiles for all compiles and links.  This will ensure that
+the install process works correctly.  This is *exactly* the same
+process that would be performed *after* the release branch was
+created.
+
+{}\item A week or so before the release branch date (i.e. 10 days or
+so before the actual release), Trilinos developers would obstain from
+making sweeping changes to Trilinos on the main development line that
+are not targeted for the release.  If major changes are going to be
+targeted for the release (which people have done plenty in past
+releases), it is better to do these on the main line branch anyway.
+Otherwise, major changes or incompatible changes not targed for
+release that should not go out in the next release should be made on
+temporary local branches (e.g. with Git).  Given that most activity
+just before a release is generally focused on adding capabilities to
+put out for the release, this will be rarely needed.  After the
+release is put out, these temporary local branches can be merged back
+into the main development branch.
+
+{}\item In the few days before the release branch date, nearly all
+checkins should use the checkin-test.py script to fully test changes
+before checking in.
+
+\end{itemize}
+
+{}\textbf{NOTE: The only change required to be made on the release
+branch is to change the version number in the file Trilinos\_version.h
+and that is it, period!}
+
 If the above process is done well, we should be able to do a release
-of Trilinos in a week or less after the branch is created.
+of Trilinos in just a few days after a branch..
 
 
 %
