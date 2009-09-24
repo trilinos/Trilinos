@@ -18,7 +18,7 @@ namespace fei {
     value-type of the class fei::ParameterSet.
 
     Instances of fei::Param are fully defined at construction, and
-    can not be altered later.
+    can not be altered later, except by assignment.
 */
 class Param {
   public:
@@ -52,14 +52,14 @@ class Param {
   Param& operator=(const Param& src);
 
   /** Query for the name of the parameter */
-  std::string getName() const;
+  const std::string& getName() const;
 
   /** Query for the type of the parameter */
   ParamType getType() const;
 
   /** Query for string value. Returned string is empty if
       getType() doesn't return Param::STRING */
-  std::string getStringValue() const;
+  const std::string& getStringValue() const;
 
   /** Query for double value. Returned double is meaningless if
       getType() doesn't return Param::DOUBLE */
@@ -89,7 +89,7 @@ class Param {
 }//namespace fei
 
 inline
-std::string fei::Param::getName() const
+const std::string& fei::Param::getName() const
 {
   return name_;
 }
@@ -101,7 +101,7 @@ fei::Param::ParamType fei::Param::getType() const
 }
 
 inline
-std::string fei::Param::getStringValue() const
+const std::string& fei::Param::getStringValue() const
 {
   return string_value_;
 }
