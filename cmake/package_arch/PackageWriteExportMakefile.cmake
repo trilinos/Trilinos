@@ -56,22 +56,23 @@
 
 
 FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
-# Input arguments:
-#   (*) Proj    -- name of project, e.g., "Trilinos"
-#   (*) PACKAGE -- name of the package calling this function, e.g., "Epetra"
-#   (*) EMFName -- name of export makefile, e.g., "Makefile.export"
-#   (*) CMFName -- name of client makefile, e.g., "Makefile.client" 
+  # Input arguments:
+  #   (*) Proj    -- name of project, e.g., "Trilinos"
+  #   (*) PACKAGE -- name of the package calling this function, e.g., "Epetra"
+  #   (*) EMFName -- name of export makefile, e.g., "Makefile.export"
+  #   (*) CMFName -- name of client makefile, e.g., "Makefile.client" 
 
 
-# Get the list of all packages, assumed to be in order of dependency
-# (most-dependent packages last). The Trilinos cmake system specifies 
-# that the master list of packages be in this order, so this assumption
-# should be valid unless there's an error in the Trilinos package file.
+#  MESSAGE("\n\nWriting export makefile for " ${PACKAGE})
+  # Get the list of all packages, assumed to be in order of dependency
+  # (most-dependent packages last). The Trilinos cmake system specifies 
+  # that the master list of packages be in this order, so this assumption
+  # should be valid unless there's an error in the Trilinos package file.
   SET(PACK_LIST ${${Proj}_PACKAGES})
 
-# Remove from the package list all packages after ${PACKAGE} in the dependency
-# chain. This way each package can create its own minimalist export makefile
-# with no upstream libraries. 
+  # Remove from the package list all packages after ${PACKAGE} in the dependency
+  # chain. This way each package can create its own minimalist export makefile
+  # with no upstream libraries. 
   SET(TMP_PACK_LIST)
   SET(SKIP FALSE)
   FOREACH(PACK_NAME ${PACK_LIST})
@@ -86,24 +87,22 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
   SET(PACK_LIST ${TMP_PACK_LIST})
 
 
-# Reverse the order of the package list, letting us loop 
-# from most-dependent to least-dependent. 
+  # Reverse the order of the package list, letting us loop 
+  # from most-dependent to least-dependent. 
   LIST(REVERSE PACK_LIST)
 
-# Create empty variables for the lists of libraries, TPL libs, and include
-# paths. 
+  # Create empty variables for the lists of libraries and TPLs
   SET(LIB_LIST)
-  SET(TPL_LIB_LIST)
-  SET(TPL_INCLUDE_LIST)
+  SET(TPL_LIST)
 
-# ------------------------------------
-# --------- Main loop over packages. 
-# ------------------------------------
+  # ------------------------------------
+  # --------- Main loop over packages. 
+  # ------------------------------------
   FOREACH(PACK_NAME ${PACK_LIST})
 
     # Skip packages that haven't been enabled. 
     IF(Trilinos_ENABLE_${PACK_NAME})
-  
+      
       # ------- library handling -------------
 
       # Append this package's libraries to the list.
@@ -113,16 +112,7 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
 
       # Get the required TPLs for this package.
       SET(REQ_TPLS ${${PACK_NAME}_LIB_REQUIRED_DEP_TPLS})
-      # The TPL list is in reverse order for some reason. 
-      IF(REQ_TPLS)
-        LIST(REVERSE REQ_TPLS)
-      ENDIF()
-      # Append each required TPL lib to the main TPL lib list. Likewise the
-      # include paths. 
-      FOREACH(TPL_NAME ${REQ_TPLS})
-        LIST(APPEND TPL_LIB_LIST ${TPL_${TPL_NAME}_LIBRARIES})
-        LIST(APPEND TPL_INCLUDE_LIST ${TPL_${TPL_NAME}_INCLUDE_DIRS})
-      ENDFOREACH()
+      LIST(APPEND TPL_LIST ${REQ_TPLS})
 
       # ------ optional TPL handling ---------
 
@@ -138,22 +128,56 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
       FOREACH(TPL_NAME ${OPT_TPLS})
         # Skip TPLs that haven't been anabled.
         IF(TPL_ENABLE_${TPL_NAME}) 
-          LIST(APPEND TPL_LIB_LIST ${TPL_${TPL_NAME}_LIBRARIES})
-          LIST(APPEND TPL_INCLUDE_LIST ${TPL_${TPL_NAME}_INCLUDE_DIRS})
+          LIST(APPEND TPL_LIST ${TPL_NAME})
         ENDIF()
       ENDFOREACH()
     ENDIF()
   ENDFOREACH()
 
-# ------------------------------------
-# --------- End main loop over packages. At this point, we need
-# --------- to set up strings to be written to the command lines
-# --------- in the export makefile
-# ------------------------------------
+  # ------------------------------------
+  # --------- End main loop over packages. At this point, we need
+  # --------- to remove duplicates and sort into dependency order, then
+  # --------- write the library strings
+  # ------------------------------------
 
+  IF(TPL_LIST)
+    LIST(REMOVE_DUPLICATES TPL_LIST)
+  ENDIF()
+
+  #  MESSAGE("Unsorted enabled TPLs")
+  #  PRINT_VAR(TPL_LIST)
+  #  MESSAGE("All Trilinos TPLs")
+  #  PRINT_VAR(${Proj}_TPLS)
+
+  # Here we sort the list of enabled TPLS in the order given by ${Proj}_TPLS}.
+  PACKAGE_SORT_LIST("${${Proj}_TPLS}" TPL_LIST)
+  IF(TPL_LIST)
+    LIST(REVERSE TPL_LIST)
+  ENDIF()
+
+  #  MESSAGE("Sorted enabled TPLs")
+  #  PRINT_VAR(TPL_LIST)
+
+  # Now get the libraries and include paths needed for each TPL
+  SET(TPL_LIB_LIST)
+  SET(TPL_INCLUDE_LIST)
+  FOREACH(TPL ${TPL_LIST})
+    LIST(APPEND TPL_LIB_LIST ${TPL_${TPL}_LIBRARIES})
+    LIST(APPEND TPL_INCLUDE_LIST ${TPL_${TPL}_INCLUDE_DIRS})
+  ENDFOREACH()
+
+  # Remove duplicates from the include list
+  IF (TPL_INCLUDE_LIST)
+    LIST(REMOVE_DUPLICATES TPL_INCLUDE_LIST)
+  ENDIF()
+
+  # PRINT_VAR(TPL_LIB_LIST)
+  # PRINT_VAR(TPL_INCLUDE_LIST)
+  # PRINT_VAR(LIB_LIST)
+  
   # Prepend the library command-line flag (e.g., "-l" on unix systems) to
   # each library.
-  SET(LIB_LIST_COPY)
+  
   FOREACH(LIB ${LIB_LIST})
     LIST(APPEND LIB_LIST_COPY ${CMAKE_LINK_LIBRARY_FLAG}${LIB})
   ENDFOREACH()
@@ -190,6 +214,8 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
   FOREACH(LIB ${TPL_LIB_LIST})
     SET(TPL_LIB_STR "${TPL_LIB_STR} ${LIB}")
   ENDFOREACH()
+
+  #  PRINT_VAR(TPL_LIB_STR)
 
 
   # Gather TPL includes into a single string as would appear on the 
@@ -248,7 +274,7 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
     ${PROJECT_SOURCE_DIR}/cmake/package_arch/${CMFName}.in 
     ${BINARY_CMF}
     )
-    
+  
   # Install the export makefiles where users will actually use them
   INSTALL(
     FILES ${BINARY_EMF} ${BINARY_CMF}
@@ -256,5 +282,7 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
     COMPONENT ${PACKAGE_NAME}
     )
 
+
+#  MESSAGE("Done writing export makefile\n\n\n\n")
 
 ENDFUNCTION()
