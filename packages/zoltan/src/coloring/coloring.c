@@ -160,7 +160,7 @@ int Zoltan_Color(
 
   int *color=NULL;                  /* array to store colors of local and D1
 				       neighbor vertices */
-  int i, base;
+  int i;
   int lastlno;                      /* total number of local and D1 neighbor vertices */
   G2LHash hash;                     /* hash to map global ids of local and D1 neighbor
 				       vertices to consecutive local ids */
@@ -289,11 +289,9 @@ int Zoltan_Color(
   PrintGraph(zz, "Before Global-2-Local", vtxdist[zz->Proc], nvtx, xadj, adjncy, adjproc);
 #endif
 
-  base = vtxdist[zz->Proc];
   /* Add ids of the d1 neighbors into the hash table*/
   for (i=0; i<xadj[nvtx]; ++i) 
       adjncy[i] = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
-/*      adjncy[i] = (adjproc[i]==zz->Proc) ? adjncy[i]-base : Zoltan_G2LHash_Insert_NL(&hash, adjncy[i]);   */
   /* lastlno is the total number of local and d1 neighbors */
   lastlno = nvtx+hash.size;
 
@@ -811,7 +809,7 @@ static int D2coloring(
 
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
-    visit = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
+    visit = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
     if (!isbound || !visit)
 	MEMORY_ERROR;
 
@@ -922,7 +920,7 @@ static int D2coloring(
 
     mark = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     vmark = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int));
-    conflicts = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
+    conflicts = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
     if (!mark || !conflicts || !vmark)
 	MEMORY_ERROR;
     repliesF = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
