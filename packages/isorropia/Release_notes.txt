@@ -1,21 +1,21 @@
 Release notes for Isorropia 3.2 (Trilinos 10.0), Sept. 2009:
 ------------------------------------------------------------
 
-Isorropia 3.2 (Trilinos 10.0) improves upon version 3.0 (Trilinos 9.0)
-in several ways. The most important changes are listed below.
+The most important changes and new features are listed below.
 
 General:
  - Isorropia now has a set of parameters for common options,
    such that many users do not need to use Zoltan parameters. 
    The parameters are case insensitive.
- - Zoltan parameters can still be set in a sublist named "zoltan".
+ - Zoltan parameters can still be set in a sublist named "Zoltan".
 
 Partitioning:
  - Automatic symmetrization of graphs.
  - Geometric partitioning (RCB, RIB, HSFC) available via Epetra_MultiVector.
+ - The internal partitioner ("simple_linear") has been removed.
  - New support for variable target part sizes. 
  - createBalancedCopy replaces create_balanced_copy and uses raw pointers
-   instead of RCP. (The Partitioner class is the preferred API.)
+   instead of Teuchos::RCP. (The Partitioner class is the preferred API.)
 
 Coloring:
  - Distance-2 coloring for Jacobians is now the default.
