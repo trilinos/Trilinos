@@ -111,7 +111,7 @@ refinement). A reasonable strategy is to call PartKway once to obtain a
 good initial balance and&nbsp; later update this balance using
 AdaptiveRepart.
 
-<p>Zoltan is currently compatible with ParMETIS version 3.1.
+<p>Zoltan is currently compatible with ParMETIS version 3.1. (or 3.1.1)
 (Version 2.0 is obsolete and is no longer supported by Zoltan.)
 The ParMETIS source code can be obtained from
 the <a href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS
@@ -254,6 +254,8 @@ partitioner.
       <td nosave="">How edge weights are handled during symmetrization:
        ADD = weights of each arc are added <br/>
        MAX = only the heaviest arc weight is kept <br/>
+       <p>See more informations about graph build options on this <a href="ug_graph_build.html">page</a></p>
+
 <!--        ERROR = fail if complementary arcs don't have the same weight. -->
 </td>
     </tr>
@@ -396,7 +398,6 @@ or
   </tbody>
 </table>
 </p>
-<p></p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
  href="ug_alg_ptscotch.html">Next:&nbsp;
 PT-Scotch</a>&nbsp; |&nbsp; <a href="ug_graph_vs_hg.html">Previous:&nbsp;
