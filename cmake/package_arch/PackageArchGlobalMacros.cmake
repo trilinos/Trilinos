@@ -115,7 +115,14 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Location where the runtime DLLs will be installed.  If given as an absolute path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
   
-  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES ON
+  IF(WIN32 AND NOT CYGWIN)
+    SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
+  ELSE()
+    SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT ON)
+  ENDIF()
+  
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
+    ${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}
     CACHE BOOL
     "Determines if export makefiles will be create and installed."
     )
