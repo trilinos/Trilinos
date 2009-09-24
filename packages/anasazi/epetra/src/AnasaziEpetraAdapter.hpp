@@ -839,7 +839,7 @@ namespace Anasazi {
                           "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale(mv,vector alpha): size of alpha inconsistent with number of vectors in mv.")
 #endif
       for (int i=0; i<numvecs; i++) {
-        TEST_FOR_EXCEPTION( mv(i)->Scale(alpha[i]), EpetraMultiVecFailure,
+        TEST_FOR_EXCEPTION( mv(i)->Scale(alpha[i])!=0, EpetraMultiVecFailure,
             "Anasazi::MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
       }
     }

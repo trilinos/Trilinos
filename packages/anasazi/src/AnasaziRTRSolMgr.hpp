@@ -219,7 +219,7 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
     if (Teuchos::isParameterType<bool>(pl_,"Output on all processors")) {
       allProcs = pl_.get("Output on all processors",allProcs);
     } else {
-      allProcs = (bool)Teuchos::getParameter<int>(pl_,"Output on all processors");
+      allProcs = ( Teuchos::getParameter<int>(pl_,"Output on all processors") != 0 );
     }
   }
   fntemplate = pl_.get("Output filename template",fntemplate);
