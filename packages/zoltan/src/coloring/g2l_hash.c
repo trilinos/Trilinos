@@ -80,8 +80,8 @@ int Zoltan_G2LHash_Create(G2LHash *hash, int maxsize, int base, int nlvtx)
     hash->baseend = base+nlvtx-1;
     hash->nlvtx = nlvtx;
     hash->size = 0;
-    hash->table = (G2LHashNode **) ZOLTAN_CALLOC(maxsize, sizeof(G2LHashNode *));
-    hash->nodes = (G2LHashNode *) ZOLTAN_MALLOC(maxsize * sizeof(G2LHashNode));
+    hash->table = (G2LHashNode **) ZOLTAN_CALLOC(hash->maxsize, sizeof(G2LHashNode *));
+    hash->nodes = (G2LHashNode *) ZOLTAN_MALLOC(hash->maxsize * sizeof(G2LHashNode));
     if (!hash->table || !hash->nodes) {
         Zoltan_G2LHash_Destroy(hash);
         return ZOLTAN_MEMERR;
