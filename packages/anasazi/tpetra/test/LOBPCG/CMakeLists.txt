@@ -31,6 +31,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       SOURCE_FILES bcsstk14.hb
       EXEDEPS Tpetra_LOBPCG_DoubleFloat_test
       )
-  ENDIF()  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ENDIF()  
 ENDIF()
 
