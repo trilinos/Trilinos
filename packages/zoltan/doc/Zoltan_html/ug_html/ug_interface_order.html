@@ -56,7 +56,7 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 
 <td WIDTH="85%">int <b>Zoltan_Order</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
@@ -142,9 +142,10 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<td>An array of global IDs of objects for which we want to know the ordering on this processor.
-<br>Objects may be non-local. Objects IDs may be repeated on several processor.</td>
-</tr>
+<td>An array of global IDs of objects for which we want to know the
+ordering on this processor. Size of this array must be <i>num_obj</i>.
+<br>Objects may be non-local. Objects IDs may be repeated on several
+processor.</td> </tr>
 
 
 <tr>
