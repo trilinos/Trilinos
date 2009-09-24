@@ -141,7 +141,7 @@ def main():
         def_file.write("// @HEADER\n")
         def_file.write("// @HEADER\n\n")
     
-    def_file.write("#include \"Teuchos_TestForException.hpp\"")
+    def_file.write("#include \"Teuchos_TestForException.hpp\"\n")
     def_file.write("#include \"Phalanx_DataLayout.hpp\"\n")
     def_file.write("\n//****************************************************" \
                    + "******************\n")
