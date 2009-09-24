@@ -69,9 +69,9 @@ ReverseMapper::~ReverseMapper()
 {
 }
 
-EqnRecord ReverseMapper::getEqnRecord(int global_eqn)
+EqnRecord ReverseMapper::getEqnRecord(int global_eqn) const
 {
-  std::map<int,EqnRecord>::iterator
+  std::map<int,EqnRecord>::const_iterator
     iter = eqnmap_.find(global_eqn);
 
   if (iter == eqnmap_.end()) {
