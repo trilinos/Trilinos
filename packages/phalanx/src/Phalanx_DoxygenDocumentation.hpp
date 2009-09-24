@@ -526,7 +526,7 @@ The multidimensional array was designed for interoperability between a number of
 
 <ul>
 <li> ScalarT& operator[] - the bracket operator
-<li> ScalarT& operator(1,2,3,...,N) - accessor operators for eack rank N array.
+<li> ScalarT& operator(1,2,3,...,N) - accessor operators for each rank N array.
 <li> size_type rank() - integer number of ordinates
 <li> size_type dimension(size_type ordinate) - size of ordinate
 <li> size_type size() - total size of array
@@ -1307,6 +1307,8 @@ You do not need to use the Field objects to access field data.  You can get the 
 
 \ref faq8
 
+\ref faq9
+
 \section faq1 1. Why name it Phalanx?  
 The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
 
@@ -1327,8 +1329,12 @@ See the section on \ref performance in the Users Guide that gives recomendations
 
 \section faq7 7. Compilation take a long time when minor changes are made to an evaluator.  How can I speed this up?
 Explicit template instantiation can be used to speed up evaluator development builds.  See the section on \ref performance in the Users Guide.  
+
 \section faq8 8. Valgrind gives a memory leak error in all evaluators when using the PHX::ContiguousAllocator with Sacado::DFad based fields.  What is the problem?
 The contiguous allocator is allocating space for all variables in an evaluation type in a single contiguous chunk of memory.  We allow for multiple scalar types in an evaluation type so the array is allocated using the type char and then based on scalar type sizes (using sizeof method) along with proper alignment, pointers to blocks of memory are handed to the fields using a reinterpret_cast.  DFad uses new to allocate the derivative arrays, so this memory is not contiguous.  The problem is that the field array memory is deleted as a char instead of it's various data types, so all DFad derivative arrays are leaked during the destruction.  There are two ways to alleviate this: (1) write a special Allocator to call the destructor of the field type for each field.  (2) Have Sacado implement a version of DFad that allows the user to allocate the DFad array and pass in the pointer during construction.  This will also require a new allocator.  Choice (2) will be handed in Phalanx in a later release.  Our current suggestion is that one should use DFad only if using the PHX::NewAllocator and use SFad if using the PHX::ContiguousAllocator. 
+
+\section faq9 9. The evaluators contain boilerplate.  Is there an easy way to automate creating the evaluators?
+YES!  There is a python script that will automatically generate the skeleton for evaluators.  It is found in the "maintenance" directory of phalanx and is called "phalanx_create_evaluator.py".  It will be install in the "bin" directory when trilinos is installed.  Example use can be found at the end of section \ref user_guide_step5 of the \ref user_guide.
 
 */
 
