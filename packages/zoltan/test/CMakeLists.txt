@@ -22,9 +22,28 @@ ADD_SUBDIRECTORY(hg_nograph)
 ADD_SUBDIRECTORY(hg_simple)
 ADD_SUBDIRECTORY(hg_vwgt)
 
-# Command that copies files to the executable directory.
-PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveMainCopyFiles
-  SOURCE_FILES
-    ctest_zoltan.pl
+# Copy executables to test directory.
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveExeCopyFiles
+  SOURCE_FILES zdrive.exe
+  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/driver
+)
+
+IF (${PACKAGE_NAME}_ENABLE_CPPDRIVER)
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(ZCPPDriveExeCopyFiles
+    SOURCE_FILES zCPPdrive.exe
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/driver
   )
+ENDIF()
+
+IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(ZFDriveExeCopyFiles
+    SOURCE_FILES zfdrive.exe
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/fdriver
+  )
+ENDIF()
+
+# Command that copies test perl script to the test directory.
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveMainCopyFiles
+  SOURCE_FILES ctest_zoltan.pl
+)
 
