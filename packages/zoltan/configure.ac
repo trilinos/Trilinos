@@ -246,6 +246,8 @@ if test "X$ac_cv_use_nemesis_exodus" != "Xno"; then
   LIBS="-lnemIc -lexoIIv2c -lnetcdf ${LIBS}"
 fi
 
+LIBS="${LIBS} -lm"
+
 #TAC_ARG_WITH_PACKAGE(parkway, [Enable Parkway support.], PARKWAY, no)
 #TAC_ARG_WITH_3PL_SUB(parkway, libdir, [Specify where the Parkway library is located.  Ex. /path/to/library])
 #if test "X$tac_with_parkway_libdir" != "Xno"; then
