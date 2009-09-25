@@ -1,4 +1,0 @@
-
-#cmakedefine HAVE_MPI
-
-#cmakedefine HAVE_SHARDS_TEUCHOS

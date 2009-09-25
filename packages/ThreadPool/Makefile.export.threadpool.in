@@ -1,9 +1,0 @@
-_THREADPOOL_INCLUDES = -I@abs_top_srcdir@/include -I@abs_top_builddir@/include
-
-_THREADPOOL_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -ltpi $(LIBS)
-
-@USING_GNUMAKE_TRUE@THREADPOOL_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_THREADPOOL_INCLUDES))
-@USING_GNUMAKE_TRUE@THREADPOOL_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_THREADPOOL_LIBS))
-
-@USING_GNUMAKE_FALSE@THREADPOOL_INCLUDES = $(_THREADPOOL_INCLUDES)
-@USING_GNUMAKE_FALSE@THREADPOOL_LIBS     = $(_THREADPOOL_LIBS)

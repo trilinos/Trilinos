@@ -1,5 +1,0 @@
-#/usr/bin/tcsh
-foreach f (*.hpp *.cpp)
-  echo $f
-  perl /home/rppawlo/Trilinos/packages/phalanx/maintenance/string-replace.pl 'Generic' 'FlatLayout' $f
-end

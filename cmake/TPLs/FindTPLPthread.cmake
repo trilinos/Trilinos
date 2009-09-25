@@ -1,6 +1,0 @@
-INCLUDE(TPLDeclareLibraries)
-
-TPL_DECLARE_LIBRARIES( Pthread
-  REQUIRED_HEADERS pthread.h
-  REQUIRED_LIBS_NAMES pthread
-  )

@@ -1,7 +1,0 @@
-
-SET( ${PROJECT_NAME}_HOSTTYPE_DEFAULT ${CMAKE_HOST_SYSTEM_NAME} )
-
-SET( ${PROJECT_NAME}_HOSTTYPE ${${PROJECT_NAME}_HOSTTYPE_DEFAULT}
-  CACHE STRING
-  "Name used to identify a system system type (defaults to ${CMAKE_HOST_SYSTEM_NAME})"
-   )

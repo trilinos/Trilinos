@@ -1,8 +1,0 @@
-
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(epetra)
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
-  ADD_SUBDIRECTORY(epetraext)
-ENDIF()

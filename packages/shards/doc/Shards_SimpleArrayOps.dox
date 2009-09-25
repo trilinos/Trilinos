@@ -1,8 +1,0 @@
-
-
-/** \ingroup shards_package
- *  \defgroup  shards_package_simple_array_ops  Simple Compile-time Sized Array Operations
-
- *  \brief  Simple operations such as Copy<N>, Sum<N>, Max<N>, etc.
- */
-

@@ -1,7 +1,0 @@
-This is an example of using phalanx with a finite element discretization.  Some important points:
-
-1. We use the evaluator macros to simplify writing evaluators where applicable.
-
-2. We use explicit template instantiation for the evaluators, so that compilation times are fast when recompiling evaluators.  You can enable explicit template instantiation by defining PHX_ETI in your configure script.
-
-3. This is a serial example.

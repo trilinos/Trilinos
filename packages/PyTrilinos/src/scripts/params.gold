@@ -1,5 +1,0 @@
-{ "maxiters" : 100,
-  "tol"      : 1.0e-6,
-  "precon"   : "ILU",
-  "poly"     : {"a":1.0, "b":-0.5}
-}

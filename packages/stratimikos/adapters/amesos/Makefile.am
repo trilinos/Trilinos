@@ -1,6 +1,0 @@
-
-if SUB_TEST 
-TEST_SUBDIR=test
-endif
-
-SUBDIRS = src $(TEST_SUBDIR)

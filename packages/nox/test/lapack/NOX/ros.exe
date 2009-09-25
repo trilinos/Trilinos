@@ -1,1 +1,0 @@
-../../utils/NOX_Test.py ./rosenbrock rosInputParams rosNewOutput rosExpectedOutput

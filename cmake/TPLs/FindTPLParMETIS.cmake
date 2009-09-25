@@ -1,6 +1,0 @@
-INCLUDE(TPLDeclareLibraries)
-
-TPL_DECLARE_LIBRARIES( ParMETIS
-  REQUIRED_HEADERS parmetis.h
-  REQUIRED_LIBS_NAMES "parmetis;metis"
-  )

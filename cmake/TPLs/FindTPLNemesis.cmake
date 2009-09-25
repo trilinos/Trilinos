@@ -1,6 +1,0 @@
-INCLUDE(TPLDeclareLibraries)
-
-TPL_DECLARE_LIBRARIES( Nemesis
-  REQUIRED_HEADERS ne_nemesisI.h
-  REQUIRED_LIBS_NAMES nemIc
-  )

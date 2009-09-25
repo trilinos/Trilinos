@@ -1,3 +1,0 @@
-ADD_SUBDIRECTORY(operator_vector)
-ADD_SUBDIRECTORY(operator_solve)
-ADD_SUBDIRECTORY(nonlinear)

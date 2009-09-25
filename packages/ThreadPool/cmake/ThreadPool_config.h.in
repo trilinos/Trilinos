@@ -1,2 +1,0 @@
-#cmakedefine HAVE_MPI
-#cmakedefine HAVE_PTHREAD

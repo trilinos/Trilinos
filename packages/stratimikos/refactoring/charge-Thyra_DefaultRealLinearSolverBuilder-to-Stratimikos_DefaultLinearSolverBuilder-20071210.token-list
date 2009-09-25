@@ -1,3 +1,0 @@
-Thyra_DefaultRealLinearSolverBuilder  Stratimikos_DefaultLinearSolverBuilder
-Thyra::DefaultRealLinearSolverBuilder  Stratimikos::DefaultLinearSolverBuilder
-DefaultRealLinearSolverBuilder  DefaultLinearSolverBuilder

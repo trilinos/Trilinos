@@ -1,3 +1,0 @@
-@INCLUDE=teuchos/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/rtopBrowser.tag=$(TRILINOS_HOME)/packages/rtop/browser/doc/html

@@ -1,7 +1,0 @@
-FUNCTION(ASSERT_DEFINED VARS)
-  FOREACH(VAR ${VARS})
-    IF(NOT DEFINED ${VAR})
-      MESSAGE(SEND_ERROR "Error, the variable ${VAR} is not defined!")
-    ENDIF()
-  ENDFOREACH()
-ENDFUNCTION()
