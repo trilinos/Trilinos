@@ -31,35 +31,60 @@
 The Zoltan distribution includes a main (top-level) makefile with targets
 for the Zoltan library, the test driver programs, and some graphical tools. 
 When the library is
-<a href="../ug_html/ug_usage.html#Building the Library">compiled for a specific target platform</a>, <i>A</i>, the top-level makefile
-obtains platform-specific values for platform <i>A</i> from the configuration
-file <i>Utilities/Config/Config.A</i>.&nbsp; This file should
-be edited to reflect the environment of the target platform <i>A</i>.&nbsp;
-A subdirectory, <i>Obj_A</i>, is created, and makefile_sub is copied into
-that directory for use by gmake.
+<a href="../ug_html/ug_usage.html#Building the Library">compiled for a specific target platform</a>, <i>A</i>, Autotools and CMake obtain provide
+platform-specific configuration information.
 <p>
-New source code files are added to the Zoltan makefiles in two ways.  
-Files added to
-existing directories are added to the source files listed in the
-"<i>&lt;directory_name&gt;</i>_CSRC" and "<i>&lt;directory_name&gt;</i>_INC" 
-variables in <i>zoltan/src/makefile</i>, where <i>&lt;directory_name&gt;</i> 
-corresponds to the existing Zoltan directory name; the files will then 
-be included in the compilation of Zoltan.  
-For new source code files in new directories, new variables 
-"<i>&lt;directory_name&gt;</i>_CSRC" and "<i>&lt;directory_name&gt;</i>_INC"
-should be added to <i>zoltan/src/makefile</i>.  These variables should also
-be included in the "ZOLTAN_CSRC" variable and in the zscript target.
-The variables "ALL_CSRC" and "ALL_INC" can be used as examples.
+Both the Autotools and CMake build systems must be maintained in Zoltan.
+Thus, new source code files and directories must be added for both systems.
+It is easiest to follow the examples of existing files in the build 
+environments; good examples
+are <i>hsfc.h</i>, <i>hsfc.c</i>, <i>dr_loadbal_const.h</i> and 
+<i>dr_loadbal.c</i>.  
 <p>
-New algorithms can be added as separate libraries with which Zoltan may link.  
+To add new source files or source directories:
+<ul> 
+<li> 
+Autotools: Add new library files or directories to 
+<i>zoltan/src/Makefile.am</i>; add
+new driver files to <i>zoltan/src/driver/Makefile.am</i>.  
+In the main
+zoltan directory, run the <i>bootstrap-local</i> script to rebuild the 
+automated Makefiles.
+</li>
+<li>
+CMake:  Add new library files to <i>zoltan/src/CMakeLists.txt</i>; add
+new driver files to <i>zoltan/src/driver/CMakeLists.txt</i>.
+</li>
+</ul>
+<p>
+Alternatively, new algorithms can be added as separate libraries with which 
+Zoltan may link.  
 The implementation of the <a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a>
-interface in Zoltan can serve as an example.  Within the 
-<i>Utilities/Config</i> files, pathnames for the new libraries and their 
-include files can be specified.  Within <i>zoltan/src/makefile</i>, tests 
-should be added for the definition of these paths.  If they are defined,
-appropriate information should be added to the THIRD_PARTY_LIBS,
-THIRD_PARTY_LIBPATH, and THIRD_PARTY_INCPATH variables in <i>zoltan/src/makefile</i>.
+interface in Zoltan can serve as an example.  
 <p>
+To add new third-party libraries:
+<ul>
+<li>
+Autotools:  Add checks new library paths and include files to 
+<i>zoltan/configure.ac</i>.  Search for the string "parmetis" in 
+<i>zoltan/configure.ac</i>, and follow 
+its example for the new library.  
+Also edit 
+<i>zoltan/src/include/Zoltan_config.h.in</i> to include a macro for
+the new third-party library; follow the example of "HAVE_PARMETIS".
+In the main
+zoltan directory, run the <i>bootstrap-local</i> script to rebuild the 
+automated configure and Makefiles.
+</li>
+<li>
+CMake:
+Follow the instructions in <i>Trilinos/cmake/HOWTO.ADD_TPL</i>
+In <i>zoltan/src/CMakeLists.txt</i> 
+and <i>zoltan/cmake/Zoltan_config.h.in</i>, 
+follow the example of "HAVE_PARMETIS".
+</li>
+</ul>
+
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_lb.html">Next:&nbsp;
 Zoltan Interface and Data Structures</a>&nbsp; |&nbsp; <a href="dev_dist_dir.html">Previous:&nbsp;

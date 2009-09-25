@@ -28,6 +28,41 @@
 
 <h2>
 <a NAME="migration_help"></a>Appendix:&nbsp; Using the test script <i>test_zoltan</i></h2>
+<B> 
+Note:  The script <i>test_zoltan</i> as described below is obsolete.
+It will work in some instances, but is no longer generally supported.  
+<p>
+Automated testing is now supported through CMake.  Build
+<a href="../ug_html/ug_usage.html#CMake">Zoltan
+through CMake</a> with option
+<blockquote>
+"-D Zoltan_ENABLE_Tests:BOOL=ON"
+</blockquote>
+<p>
+Automated tests can be then run with command
+<blockquote>
+make tests
+</blockquote>
+The testing environment uses script <i>zoltan/test/ctest_zoltan.pl</i>.  
+To add new <i>zdrive.inp</i> files to an existing test, add the files to
+the appropriate directory and to the glob commands in <i>ctest_zoltan.pl</i>.
+(Follow the example of <i>zdrive.inp.rcb</i> in <i>ctest_zoltan.pl</i>.
+<p>
+To add new test directories, create the directories and populate them 
+with input files.  Copy file <i>CMakeLists.txt</i> 
+from <i>zoltan/test/ch_simple</i> to the new directories, 
+and edit the test names and numbers of processors in the new files.  
+Also add the new directories to <i>zoltan/test/CMakeLists.txt</i>, following
+the example of <i>ch_simple</i>.  The new tests will now be run in the CMake
+environment.
+<p>
+<a href="http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=Zoltan">Results of automated nightly testing</a> are posted to the CDASH 
+dashboard.
+</B>
+<hr>
+<hr>
+<B>OBSOLETE</B>
+<p>
 The purpose of the Zoltan test script is to run the test driver <i><a href="dev_driver.html">zdrive</a></i> (or 
 <i><a href="dev_driver.html">zfdrive</a></i>)
 on a set of test problems to verify that the Zoltan library works correctly.

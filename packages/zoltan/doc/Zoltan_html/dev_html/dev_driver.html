@@ -39,53 +39,35 @@ distribution. The concept behind the drivers is to read in mesh or graph
 information from files, run Zoltan, and then output the new assignments
 for each processor to another file. The test drivers <i>zdrive</i> 
 and <i>zCPPdrive</i> read ExodusII/NemesisI
-parallel FEM files and <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
-input files. Parallel NemesisI files can be created from ExodusII or Genesis
+parallel FEM files, <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
+input files, or <a href="http://math.nist.gov/MatrixMarket/">general 
+Matrix-Market</a> files. 
+Parallel NemesisI files can be created from ExodusII or Genesis
 file using the NemesisI utilities <i>nem_slice</i> and <i>nem_spread</i>.
-The Fortran90 program <i>zfdrive</i> reads only <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> input files.
+The Fortran90 program <i>zfdrive</i> reads only <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> input files 
+and  <a href="http://math.nist.gov/MatrixMarket/">general Matrix-Market</a>
+ files.
 <p>
-Source code for <i>zdrive</i> is in the <i>driver</i> and <i>ch</i> directories of
-the Zoltan distribution. Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.  The source code for <i>zCPPdrive</i> is also in <i>driver</i>, and uses some
+Source code for <i>zdrive</i> is in 
+the <i>driver</i> and <i>ch</i> directories of
+the Zoltan distribution. 
+The source code for <i>zCPPdrive</i> is also in <i>driver</i>, and uses some
 of the same C source files (in <i>driver</i> and <i>ch</i>) that <i>zdrive</i> uses.
+Source code for <i>zfdrive</i> is in the <i>fdriver</i> directory.  
 <p>
-To compile the C and C++ test drivers,
-use the following commands:
-<ul>gmake [options] zdrive</ul>
-<ul>gmake [options] zCPPdrive</ul>
-where the options are described below.
+The C and C++ test drivers are built automatically in the 
+<a href="../ug_html/ug_usage.html#Autotools">Autotools</a> build system.
+The F90 driver is built when the configure option "--enable-f90interface" is
+provided.  The drivers are placed in <i>BUILD_DIR/src/driver</i> and
+<i>BUILD_DIR/src/fdriver</i>, for build directory <i>BUILD_DIR</i>.
 <p>
-To compile the F90 driver, you must first link to the appropriate
-version of 
-<a href="../ug_html/ug_fortran.html#fortran ug api"><i>zoltan_user_data.f90</i></a>.  (This link needs to be established only once.)  
-<blockquote>
-cd Zoltan/fort<br>
-mv zoltan_user_data.f90 zoltan_user_data.f90.zoltan<br>
-ln -s ../fdriver/zoltan_user_data.f90 .<br>
-cd ..<br>
-</blockquote>
-Then you can compile the F90 driver <i>zfdrive</i>.
-<ul>gmake YES_FORTRAN=1 [options] zfdrive</ul>
-where the options are described below.
-<p>
-<table WIDTH="100%" >
-<tr VALIGN=TOP>
-<td WIDTH="30%"><b>Options to gmake:</b></td>
-
-<td WIDTH="70%">&nbsp;</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td VALIGN=TOP><i>ZOLTAN_ARCH=&lt;platform&gt;</i></td>
-
-<td VALIGN=TOP>Specify the target architecture.&nbsp; A corresponding
-file, <a href="../ug_html/ug_usage.html#Building the Library"><i>Utilities/Config/Config.&lt;platform&gt;</i></a>, containing environment definitions
-for <i>&lt;platform</i>&gt;, must be created in the
-<i>Utilities/Config</i> directory.</td>
-</tr>
-</table>
-<p>
-The drivers
-are placed in the <i>Obj_&lt;platform&gt;</i> directory.
+The C and C++ test drivers are built in the
+<a href="../ug_html/ug_usage.html#CMake">CMake</a> build system when
+option "-D Zoltan_ENABLE_Tests:BOOL=ON" is provided.  The F90 driver is
+built when option "-D Zoltan_ENABLE_F90INTERFACE:BOOL=ON" is also provided.
+The drivers are placed in <i>BUILD_DIR/packages/zoltan/src/driver</i> and
+<i>BUILD_DIR/packages/zoltan/src/fdriver</i>; they are also copied to
+<i>BUILD_DIR/packages/zoltan/test</i>.
 <h3>
 <a NAME="running zdrive"></a>Running the Test Drivers</h3>
 The test drivers are run using an input command file. A fully commented example of
