@@ -436,26 +436,18 @@ the desired relative size of the <i>vwgt_idx[i]</i>'th weight of part
 <td WIDTH="85%">int <b>Zoltan_LB_Eval</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>print_stats</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nobj</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>obj_wgt</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>ncuts</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>cut_wgt</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nboundary</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nadj</i>);&nbsp;</td>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_BALANCE_EVAL *<i>obj_info</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_GRAPH_EVAL *<i>graph_info</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_HG_EVAL *<i>hg_info</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>Zoltan_LB_Eval</b>(<i>zz, print_stats,&nbsp; nobj, obj_wgt,
-ncuts, cut_wgt, nboundary, nadj</i>)&nbsp;
+<td>FUNCTION <b>Zoltan_LB_Eval</b>(<i>zz, print_stats</i>)&nbsp;
 <br>INTEGER(Zoltan_INT) :: Zoltan_LB_Eval
 <br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>LOGICAL, INTENT(IN) :: print_stats&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), OPTIONAL :: nobj, ncuts, nboundary,
-nadj
-<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;
-<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(ewgt_dim), OPTIONAL :: cut_wgt&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -463,24 +455,20 @@ nadj
 
 <td WIDTH="85%">int <b>Zoltan::LB_Eval</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const int &<i>print_stats</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nobj</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float * const <i>obj_wgt</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>ncuts</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float * const <i>cut_wgt</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nboundary</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>nadj</i>);&nbsp;</td>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_BALANCE_EVAL *<i>obj_info</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_GRAPH_EVAL *<i>graph_info</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_HG_EVAL *<i>hg_info</i>);&nbsp;</td>
 </tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Eval </b>evaluates the quality of a decomposition.
-Some quality metrics are available only if the graph query functions have
-been registered. <b>Zoltan_LB_Eval
-</b>may either print a summary of the
-results to <i>stdout</i> or return the results in the output parameters.
-<i>NOTE: </i>The interface to this function may change in future versions
-of Zoltan. Users are discouraged from relying on the output arguments from
-Zoltan_LB_Eval.
-<br>&nbsp;
+The quality metrics of interest differ depending on how you are using Zoltan.
+If you are partitioning points in space using one of Zoltan's geometric methods,
+you will want to know the weighted balance of objects across partitions.  However
+if you are partitioning a graph, you will want to know about edges that have
+vertices in more than one partition.  <b>Zoltan_LB_Eval </b> can write three
+different structures with these differing metrics.
+<p>
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
@@ -497,68 +485,180 @@ Zoltan_LB_Eval.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; print_stats</i></td>
 
-<td>If <i>print_stats</i>>0 (.TRUE. in Fortran), print a summary (max,
-min,&nbsp; and sum) of the quality metrics to <i>stdout.</i></td>
+<td>If <i>print_stats</i>>0 (.TRUE. in Fortran), print the quality metrics to <i>stdout.</i></td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nobj</i></td>
-
-<td>Upon return, the number of objects on this processor.</td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; obj_info</i></td>
+<td>If <i>obj_info</i>is non-NULL, write object balance values to the <a href="ZOLTAN_BALANCE_EVAL">ZOLTAN_BALANCE_EVAL</a> structure.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; obj_wgt</i></td>
-
-<td>Upon return, an array (of dimension <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>)
-containing the sum of object weights on this processor.</td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; graph_info</i></td>
+<td>If <i>graph_info</i>is non-NULL, write graph partition metrics to the <a href="ZOLTAN_GRAPH_EVAL">ZOLTAN_GRAPH_EVAL</a> structure.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ncuts</i></td>
-
-<td>Upon return,&nbsp; the number of (communication) edge cuts&nbsp; for
-this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
-
-<td>Upon return, an array (of dimension <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>)
-of cut weights for this processor.&nbsp;</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nboundary</i></td>
-
-<td>Upon return,&nbsp; the number of boundary objects on this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nadj</i></td>
-
-<td>Upon return,&nbsp; the number of adjacent processors as defined by
-the communication graph.</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; hg_info</i></td>
+<td>If <i>hg_info</i>is non-NULL, write hypergraph partition metrics to the <a href="ZOLTAN_HG_EVAL">ZOLTAN_HG_EVAL</a> structure.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><b>Returned Value:</b></td>
-
 <td></td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
-
 <td><a href="ug_interface.html#Error Codes">Error code.</a></td>
 </tr>
 
+</table>
+
+<p>
+Several of the fields in the EVAL structures are arrays of values.  The arrays contain 
+values for
+<ol>
+<li>the total for the local process
+<li>the total across all partitions
+<li>the minimum across all partitions
+<li>the maximum across all partitions
+<li>the average across all partitions
+</ol>
+<p>
+in that order.  The corresponding macros that refer to these fields are:
+<p>
+<code>
+#define EVAL_LOCAL_SUM  0
+#define EVAL_GLOBAL_SUM 1
+#define EVAL_GLOBAL_MIN 2
+#define EVAL_GLOBAL_MAX 3
+#define EVAL_GLOBAL_AVG 4
+</code>
+
+<p>
+<a NAME="ZOLTAN_BALANCE_EVAL"></a>
+The ZOLTAN_BALANCE_EVAL structure contains the following fields, and
+would be of interest if you are doing geometric parting:
+<p>
+<code>
+struct _eval_balance_struct{
+  float obj_imbalance;          /* vertex number imbalance */
+  float imbalance;              /* vertex weight imbalance */
+  float nobj[EVAL_SIZE];        /* number of part vertices */
+  float obj_wgt[EVAL_SIZE];     /* part vertex weights */
+
+  float xtra_imbalance[EVAL_MAX_XTRA_VWGTS];
+  float xtra_obj_wgt[EVAL_MAX_XTRA_VWGTS][EVAL_SIZE];
+};
+
+typedef struct _eval_balance_struct ZOLTAN_BALANCE_EVAL;
+</code>
+
+<UL>
+<li><strong>obj_imbalance</strong>: imbalance in count of objects across parts, scaled by
+requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+<li><strong>imbalance</strong>: imbalance in weight of objects across parts, scaled by
+requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+<li><strong>nobj</strong>: an array containing the number of objects on the local <em>process</em>, the total number of objects, the minimum number of objects in a <em>part</em>, the maximum number in a partitition, and the average number of objects across the parts.
+<li><strong>obj_wgt</strong>: an array containing the sum of the weight of objects on the local <em>process</em>, the total weight across all processes, the minimum weight in a <em>part</em>, the maximum weight in a partitition, and the average weight of objects across the parts.
+<li><strong>xtra_imbalance</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a> exceeds one, the <strong>obj_imbalance</strong> value for the extra weights is in this array.
+<li><strong>xtra_obj_wgt</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a> exceeds one, the <strong>obj_wgt</strong> array for the extra weights is in this array.
+</UL>
+
+<p>
+<a NAME="ZOLTAN_GRAPH_EVAL"></a>
+The ZOLTAN_GRAPH_EVAL structure contains the following fields, and
+would be of interest if you are doing graph parting:
+<p>
+<code>
+struct _eval_graph_struct{
+  float cutl[EVAL_SIZE];        /* HG ConCut measure */
+  float cutn[EVAL_SIZE];        /* HG NetCut measure */
+  float cuts[EVAL_SIZE];        /* The number of cut edges */
+  float cut_wgt[EVAL_SIZE]  ;   /* The sum of the weights of the cut edges */
+  float nnborparts[EVAL_SIZE];  /* The number of neighboring parts */
+
+  float obj_imbalance;          /* vertex number imbalance */
+  float imbalance;              /* vertex weight imbalance */
+  float nobj[EVAL_SIZE];        /* number of part vertices */
+  float obj_wgt[EVAL_SIZE];     /* part vertex weights */
+  float num_boundary[EVAL_SIZE];/* the number of objects with a remote neighbor */
+
+  float xtra_imbalance[EVAL_MAX_XTRA_VWGTS];
+  float xtra_obj_wgt[EVAL_MAX_XTRA_VWGTS][EVAL_SIZE];
+
+  float xtra_cut_wgt[EVAL_MAX_XTRA_EWGTS][EVAL_SIZE];
+};
+
+typedef struct _eval_graph_struct ZOLTAN_GRAPH_EVAL;
+</code>
+
+<UL>
+<li><strong>cutl</strong>: an array containing what is known at the CUTL or the ConCut measure of the graph, the first element is not set (this is the local process total, which has no meaning), the next is the sum of the CUTL across parts, then the minimum CUTL across parts, then the maximum CUTL across parts, finally the average CUTL across parts.
+<li><strong>cutn</strong>: an array containing what is known at the CUTN or the NetCut measure of the graph, the first element is not set, the next is the sum of the CUTL across parts, then the minimum CUTL across parts, then the maximum CUTL across parts, finally the average CUTL across parts.
+<li><strong>cuts</strong>: an array counting the number of cut edges (the first element again is not set) across all parts, the minimum across parts of cut edges, the maximum, and then the average
+<li><strong>cut_weight</strong>: an array summing the weight of cut edges (the first element again is not set) across all parts, the minimum across parts, the maximum, and then the average
+<li><strong>nnborparts</strong>: an array which counts the number of neighboring parts that each part has,  the first element again is not set, the next is the sum across all parts, the minimum across parts, the maximum, and then the average
+<li><strong>obj_imbalance</strong>: imbalance in count of objects across parts, scaled by
+requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+<li><strong>imbalance</strong>: imbalance in weight of objects across parts, scaled by
+requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+<li><strong>nobj</strong>: an array containing the number of objects on the local <em>process</em>, the total number of objects, the minimum number of objects in a <em>part</em>, the maximum number in a partitition, and the average number of objects across the parts.
+<li><strong>obj_wgt</strong>: an array containing the sum of the weight of objects on the local <em>process</em>, the total weight across all processes, the minimum weight in a <em>part</em>, the maximum weight in a partitition, and the average weight of objects across the parts.
+<li><strong>num_boundary</strong>: an array which counts the number of objects in a part that have at least one remote neighbor, the first element is not set, the next is the sum across parts, the next is the minimum count in any part, the next is the maximum, and then the average for all parts
+<li><strong>xtra_imbalance</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a> exceeds one, the <strong>obj_imbalance</strong> value for the extra weights is in this array.
+<li><strong>xtra_obj_wgt</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a> exceeds one, the <strong>obj_wgt</strong> array for the extra weights is in this array.
+<li><strong>xtra_cut_wgt</strong>: if the <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a> exceeds one, the <strong>cut_wgt</strong> array for the each extra weight is in this array.
+</UL>
+
+<p>
+
+
+
+<p>
+<a NAME="ZOLTAN_HG_EVAL"></a>
+The ZOLTAN_HG_EVAL structure contains the following fields, and
+would be of interest if you are doing hypergraph parting:
+<p>
+<code>
+struct _eval_hg_struct{
+  float obj_imbalance;          /* vertex number imbalance */
+  float imbalance;              /* vertex weight imbalance */
+  float cutl[EVAL_SIZE];        /* ConCut measure */
+  float cutn[EVAL_SIZE];        /* NetCut measure */
+  float nobj[EVAL_SIZE];        /* number of part vertices */
+  float obj_wgt[EVAL_SIZE];     /* part vertex weights */
+  float xtra_imbalance[EVAL_MAX_XTRA_VWGTS];
+  float xtra_obj_wgt[EVAL_MAX_XTRA_VWGTS][EVAL_SIZE];
+};
+
+typedef struct _eval_hg_struct ZOLTAN_HG_EVAL;
+</code>
+
+<UL>
+<UL>
+<li><strong>obj_imbalance</strong>: imbalance in count of objects across parts, scaled by
+requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+<li><strong>imbalance</strong>: imbalance in weight of objects across parts, scaled by
+requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+<li><strong>cutl</strong>: an array containing what is known at the CUTL or the ConCut measure of the hypergraph, the first element is not set (this is the local process total, which has no meaning), the next is the sum of the CUTL across parts, then the minimum CUTL across parts, then the maximum CUTL across parts, finally the average CUTL across parts.
+<li><strong>cutn</strong>: an array containing what is known at the CUTN or the NetCut measure of the hypergraph, the first element is not set, the next is the sum of the CUTL across parts, then the minimum CUTL across parts, then the maximum CUTL across parts, finally the average CUTL across parts.
+<li><strong>nobj</strong>: an array containing the number of objects on the local <em>process</em>, t
+he total number of objects, the minimum number of objects in a <em>part</em>, the maximum number
+ in a partitition, and the average number of objects across the parts.
+<li><strong>obj_wgt</strong>: an array containing the sum of the weight of objects on the local <em>p
+rocess</em>, the total weight across all processes, the minimum weight in a <em>part</em>, the m
+aximum weight in a part, and the average weight of objects across the parts.
+<li><strong>xtra_imbalance</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>
+ exceeds one, the <strong>obj_imbalance</strong> value for the extra weights is in this array.
+<li><strong>xtra_obj_wgt</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a> e
+xceeds one, the <strong>obj_wgt</strong> array for the extra weights is in this array.
+</UL>
+<p>
+
+
+<table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP NOSAVE>
 <td><b>Query functions:</b>
 <br>&nbsp;&nbsp;&nbsp;&nbsp; Required:</td>
@@ -573,22 +673,21 @@ the communication graph.</td>
 <td>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</td>
 
 <td NOSAVE>
-<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_F
-N</a></b> or
-<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<a href="ug_query_lb.html#Graph-based Functions">Graph-Based</a> functions are required 
+for writing the <a href="ZOLTAN_GRAPH_EVAL">ZOLTAN_GRAPH_EVAL</a> structure.
 <br>
-<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_F
-N</a></b> or
-<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+<a href="#Hypergraph-based Functions">Hypergraph-Based</a> functions will be used 
+for writing the <a href="ZOLTAN_HG_EVAL">ZOLTAN_HG_EVAL</a> if they are available,
+otherwise Zoltan will create a hypergraph from the
+<a href="ug_query_lb.html#Graph-based Functions">graph-Based</a> functions.
+<br>
+If defined, the values set by the  <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> 
+will be used in calculating imbalances.
 </td>
 
 </tr>
 </table>
-An output parameter is returned only if the input value of that parameter
-was not NULL. The rationale for this feature is that if one wishes just
-to print the evaluation results, one can simply set all (or some of) the
-output parameters to NULL in the function call. From Fortran, one may omit
-one or more of the optional output parameters.
+
 <p>Note that the sum of <i>ncuts</i> over all processors is actually twice
 the number of edges cut in the graph (because each edge is counted twice).
 The same principle holds for <i>cut_wgt.</i><i></i>
