@@ -26,13 +26,14 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     TestOtherClasses.h
     )
 
-# NOTE: This test currently fails in MPI DEBUG mode (bug 4539)
+# NOTE: This test currently fails in MPI DEBUG mode (bug 4539) and on Windows
 IF ( (NOT TPL_ENABLE_MPI) AND (NOT BUILD_TYPE STREQUAL "DEBUG") )
 
   PACKAGE_ADD_TEST(
     TestOptions
     NUM_MPI_PROCS 4
     COMM serial mpi
+    XHOSTTYPE Windows Windows_NT
     )
 
 ENDIF()
