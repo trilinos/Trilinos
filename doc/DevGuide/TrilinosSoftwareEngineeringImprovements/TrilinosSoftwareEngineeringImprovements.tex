@@ -198,7 +198,7 @@ developed by not putting defects into the software in the first place
 (i.e. code reviews, pair programming etc.).
 
 {}\item High quality software is proceeded by and protected by very
-though, automated tests (i.e. TDD).
+thorough automated tests (i.e. TDD).
 
 {}\item Critical software pieces that must work together in a final
 release should be integrated and tested together early and often
@@ -209,9 +209,9 @@ period of time (i.e. don't introduce defects in working software or
 in new software).  The idea that we develop shaky software and then
 ``harden'' it is not consistent with Lean/Agile best practices.
 
-{}\item Pay down ´technical debt'' when it accumulates and employ
-constant refactoring to pay down this ´debt'' and to avoid its
-accumulation.  This avoids the common increase of software ´entropy''.
+{}\item Pay down ``technical debt'' when it accumulates and employ
+constant refactoring to pay down this ``debt'' and to avoid its
+accumulation.  This avoids the common increase of software ``entropy''.
 
 {}\item Most mistakes that people make are due to a faulty
 process/system (W. Edwards Deming).
@@ -245,7 +245,7 @@ for ``Primary'' development platforms for Trilinos include:
 
   \begin{itemize}
   {}\item Linux + gcc 4.x (high warning levels and warnings as errors)
-  {}\item Mac OSS + gcc 4.x (lesser warning levels)
+  {}\item Mac OS + gcc 4.x (lesser warning levels)
   \end{itemize}
 
 {}\item\textit{``Secondary'' Platforms}: These are platforms where
@@ -289,7 +289,7 @@ criteria:
   customer in a release of Trilinos, or
 
   {}\item Represents a new capability that the authors are willing to
-  stand behind (as defined below) and is being targeted for the next
+  stand behind (as defined below) and/or is being targeted for the next
   release
 
   \end{itemize}
@@ -304,7 +304,7 @@ dependencies:
   
     \begin{itemize}
     {}\item C, and C++ compilers
-    {}\item Fortran 77 compiler
+    {}\item Fortran 77 compiler (Remove this requirement?)
     {}\item BLAS and LAPACK
     {}\item MPI
     \end{itemize}
@@ -313,6 +313,7 @@ dependencies:
   additional dependencies such as:
 
     \begin{itemize}
+    {}\item Boost
     {}\item SWIG/Python (i.e. PyTrilinos)
     {}\item Fortran 2003+ (i.e. ForTrilinos)
     {}\item External direct sparse solvers like UMFPACK, SuperLU,
@@ -694,14 +695,7 @@ to do them all.
 
 {}\item NOTE \#2: A tool (or set of tools) must be available to
 perform all of the above steps in order to help avoid human error.
-This can be built into the Cmake build system run as a single
-command.
-
-A tool that will automatically enable all affected ``Primary
-Stable'' code for a given set of changes will remove the
-guess-work from the ``synchronous continuous integration'' testing
-process => This is already supported in the current Cmake build
-system for Trilinos!
+This tool already exists in the checkin-test.py script!
 
 {}\item NOTE \#3: The code and tests suites many need to be cleaned
 up to allow for faster rebuilds and tests to make this feasible
@@ -1056,9 +1050,9 @@ for different purposes:
 
     \begin{itemize}
 
-    {}\item Tests that are specific to just a single package's
+    {}\item Tests that are specific to just a single package
 
-    {}\item Not designed test the integration with dependent packages
+    {}\item Not designed to test the integration with dependent packages
     but yet will use some features from required dependent packages
     (like Teuchos)
 
@@ -1084,7 +1078,7 @@ for different purposes:
 
     {}\item Should be run before every checkin
 
-    {}\item Run buy the asynchronous continuous integration several
+    {}\item Run by the asynchronous continuous integration server
 
     \end{itemize}
 
@@ -1191,6 +1185,17 @@ for different purposes:
 
   \end{itemize}
 
+{}\item Improve memory correctness and safety
+
+  \begin{itemize}
+
+  {}\item Progressively refactor important interfaces andother
+  software to use the safer Teuchos Memory Management classes: Until
+  we adopt the Teuchos Memory Management classes, we will continue to
+  create fragile numerical software.
+
+  \end{itemize}
+
 {}\item Improve installation testing:
 
   \begin{itemize}
@@ -1203,9 +1208,6 @@ for different purposes:
 
     {}\item In the test/example builds, only enable ``user-like''
     tests and examples (because some headers will be missing)
-
-    {}\item Use autotools to build and install, then use Cmake to
-    configure, build, and run tests/examples
 
     {}\item Use Cmake to build and install, then use Cmake to
     configure, build, and run tests/examples
@@ -1228,15 +1230,19 @@ for different purposes:
 We should seriously consider putting together an offical Trilinos
 Devleoepr Toolset and make it trivially easy to install it on
 resonable Linux and Mac machines.  Here is what such a toolset would
-include:
+include (from highest to lowest priority):
 
 \begin{itemize}
-{}\item gcc (4.2.4) - no fortran
 {}\item CMake
 {}\item eg/git
-{}\item BLAS
-{}\item LAPACK
+{}\item BLAS/LAPACK
+{}\item gcc (4.2.4) - no fortran
 {}\item OpenMPI
+{}\item boost
+{}\item Doxygen/Dot
+{}\item GNU Make
+{}\item SWIG/Python
+{}
 \end{itemize}
 
 With this script, you could just run it as:
@@ -1247,20 +1253,27 @@ With this script, you could just run it as:
 \end{verbatim}
 
 This script would check out everything, configure, and build the
-components in the right order.
+components in the right order (i.e. gcc would be built first, then
+MPI, then CMake etc.).
 
 There are many advantages to having an offical toolset:
 
 \begin{itemize}
 
-\item Make it easier to set up a new machine to do Trilinos
+{}\item Make it easier to set up a new machine to do Trilinos
 development on.
+
+{}\item Allow more packages to be Primary Stable by bringing in
+dependencies such as boost.
 
 {}\item Made development cheaper, easier, and more uniform: Code that
 builds and runs for developer \#1 will more likely work for developer
 \#2 on a different machine.  This will significanly improve the
 development process, avoid waisting peoples time tracking down failing
 builds and tests.
+
+{}\item Related to the last item, allow us to turn on warnings as
+errors before we check in.
 
 \end{itemize}
 
