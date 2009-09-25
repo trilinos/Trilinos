@@ -1461,8 +1461,8 @@ commands like PACKAGE\_EXCLUDE\_FROM\_RELEASE(...).  These will
 automatically get excluded from the release tarball.
 
 {}\item Have all Trilinos packages automatically update their version
-number based on the Trilinos version (e.g. ``<PACKAGE> in Trilinos
-<RELEASE\_VERSION>'').  See Thyra\_Version.cpp for an example.
+number based on the Trilinos version (e.g. ``$<$PACKAGE$>$'' in Trilinos
+``$<$RELEASE\_VERSION$>$'').  See Thyra\_Version.cpp for an example.
 
 {}\item The CMake build system is automatically put into release mode
 (i.e. Trilinos\_ENABLE\_DEVELOPMENT\_MODE:BOOL=OFF) by reading in and
