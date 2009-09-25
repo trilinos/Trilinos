@@ -60,6 +60,20 @@ AC_ARG_WITH(mpi-compilers,
       MPI_F90=${withval}/mpif90
     fi
   fi
+],
+[
+  HAVE_PKG_MPI=yes
+  # Check for mpicxx, if it does not exist, check for mpic++, if it does 
+  # not exist, use mpiCC instead.
+  AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
+  if test X${MPI_TEMP_CXX} = Xno; then
+    AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
+  else 
+    MPI_CXX=${MPI_TEMP_CXX}
+  fi
+  MPI_CC=mpicc
+  MPI_F77=mpif77
+  MPI_F90=mpif90
 ]
 )
 

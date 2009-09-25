@@ -2848,6 +2848,95 @@ fi
     fi
   fi
 
+else
+
+  HAVE_PKG_MPI=yes
+  # Check for mpicxx, if it does not exist, check for mpic++, if it does
+  # not exist, use mpiCC instead.
+  # Extract the first word of "mpicxx", so it can be a program name with args.
+set dummy mpicxx; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_MPI_TEMP_CXX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$MPI_TEMP_CXX"; then
+  ac_cv_prog_MPI_TEMP_CXX="$MPI_TEMP_CXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_MPI_TEMP_CXX="mpicxx"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_MPI_TEMP_CXX" && ac_cv_prog_MPI_TEMP_CXX="no"
+fi
+fi
+MPI_TEMP_CXX=$ac_cv_prog_MPI_TEMP_CXX
+if test -n "$MPI_TEMP_CXX"; then
+  { echo "$as_me:$LINENO: result: $MPI_TEMP_CXX" >&5
+echo "${ECHO_T}$MPI_TEMP_CXX" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  if test X${MPI_TEMP_CXX} = Xno; then
+    # Extract the first word of "mpic++", so it can be a program name with args.
+set dummy mpic++; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_MPI_CXX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$MPI_CXX"; then
+  ac_cv_prog_MPI_CXX="$MPI_CXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_MPI_CXX="mpic++"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_MPI_CXX" && ac_cv_prog_MPI_CXX="mpiCC"
+fi
+fi
+MPI_CXX=$ac_cv_prog_MPI_CXX
+if test -n "$MPI_CXX"; then
+  { echo "$as_me:$LINENO: result: $MPI_CXX" >&5
+echo "${ECHO_T}$MPI_CXX" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  else
+    MPI_CXX=${MPI_TEMP_CXX}
+  fi
+  MPI_CC=mpicc
+  MPI_F77=mpif77
+  MPI_F90=mpif90
+
 
 fi
 
