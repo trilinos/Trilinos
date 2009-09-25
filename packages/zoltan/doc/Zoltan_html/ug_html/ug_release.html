@@ -34,6 +34,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.2">Zoltan Release v3.2</a><br>
   <a href="#Release3.1">Zoltan Release v3.1</a><br>
   <a href="#Release3.0">Zoltan Release v3.0</a><br>
   <a href="#Release2.1">Zoltan Release v2.1</a><br>
@@ -50,6 +51,70 @@ releases of Zoltan:
   <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.2">Zoltan Release Notes v3.2: September 24, 2009</a></h2>
+
+Features:
+<ul>
+<li>
+New <a href="ug_alg_ptscotch.html">interface</a> 
+to <a href="http://www.labri.fr/perso/pelegrin/scotch/">
+Scotch and PT-Scotch</a> parallel graph partitioning 
+algorithms.
+</li>
+<li>
+Simplified interface to graph <a href="ug_interface_order.html">ordering</a> 
+and <a href="ug_interface_color.html">coloring</a> algorithms
+</li>
+<li>
+Automated symmetrization of graphs for graph partitioning, coloring 
+and ordering.
+(See parameters GRAPH_SYMMETRIZE and GRAPH_SYM_WEIGHT in the
+<a href="ug_alg_ptscotch.html">Scotch</a> and 
+<a href="ug_alg_parmetis.html">ParMETIS</a> graph packages.)
+</li>
+<li>
+Improved function 
+<a href="ug_interface_lb.html#Zoltan_LB_Eval"><b>Zoltan_LB_Eval</b></a>
+ returns more information about a decomposition to users.
+</li>
+<li>
+Improved examples showing Zoltan usage in C and C++
+are included in <i>zoltan/example</i>.
+</li>
+<li>
+Improved support for <a href="ug_usage.html#Autotools">builds under autotools</a>,
+including builds of Zoltan's F90 interface.
+</li>
+<li>
+New support for <a href="ug_usage.html#CMake">CMake builds</a> 
+and testing through Trilinos; builds of
+Zoltan's F90 interface are included.
+</li>
+<li>
+Improved integration into 
+<a href="http://trilinos.sandia.gov/packages/isorropia/">Isorropia</a>
+partitioners for Trilinos' Epetra classes.
+</li>
+</ul>
+
+Backward compatibility:
+<ul>
+<li>
+Interfaces to 
+<a href="ug_interface_color.html">Zoltan_Color</a>,
+<a href="ug_interface_order.html">Zoltan_Order</a> and 
+<a href="ug_interface_lb.html#Zoltan_LB_Eval">Zoltan_LB_Eval</a> have changed.
+</li>
+<li>
+The Zoltan native build environment, while still distributed, will no
+longer be supported.  Users should use the
+<a href="ug_usage.html#Building the Library">autotools or CMake</a> systems.
+Builds of the Zoltan F90 interface are supported in both autotools and
+CMake.
+</li>
+</ul>
+
 <hr>
 <h2><a name="Release3.1">Zoltan Release Notes v3.1: September 26, 2008</a></h2>
 Zoltan v3.1 includes the following new features:
