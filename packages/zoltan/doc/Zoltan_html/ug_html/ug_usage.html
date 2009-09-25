@@ -50,7 +50,7 @@ local IDs.
 <h3>
 <a NAME="System Requirements"></a>System Requirements</h3>
 Zoltan was designed to run on parallel computers and clusters of workstations.
-In order to build and use Zoltan, you will need:
+The most common builds and installations of Zoltan use the following:
 <ul>
 <li>
 ANSI C or C++ compiler.</li>
@@ -60,7 +60,7 @@ ANSI C or C++ compiler.</li>
 passing (version 1.1 or higher), such as MPICH, OpenMPI or LAM.</li>
 
 <li>
-A Unix-like operating system (e.g., Linux or Solaris) and
+A Unix-like operating system (e.g., Linux or Mac OS X) and
 <i>gmake</i> (GNU Make) are recommended to build the library.</li>
 
 <li>
@@ -69,11 +69,10 @@ A Fortran90 compatible compiler is required if you wish to
 with Fortran applications</a>.</li>
 </ul>
 
-Zoltan has been tested on a variety of platforms, including Linux, Solaris, Irix, Mac OS X,
-and Sandia's ASC RedStorm</a> machine.
-If you wish to use Zoltan on a non-Unix operating system, for example Windows NT or 2000,
-you will have to port Zoltan yourself.
-
+Zoltan has been tested on a variety of platforms, including Linux, Mac OS X,
+a variety of clusters, and Sandia's ASC RedStorm</a> machine.
+Builds for Windows platforms are available as part of the
+ <a href=#CMake>Trilinos CMake build system</a>.
 
 <hr>
 <h3>
@@ -81,105 +80,43 @@ you will have to port Zoltan yourself.
 The Zoltan library is implemented in ANSI C and can be compiled with any
 ANSI C compiler. 
 In Zoltan, there are two build environments currently supported:
-the <a href="#NativeZoltanBuild">native Zoltan build environment</a> 
-and an 
-<a href="#TrilinosAutotools">Autotools-based build
-environment</a> used with the <a href="http://trilinos.sandia.gov">Trilinos</a>
-framework.  The native Zoltan build environment requires the user to 
-specify paths to the desired compilers and libraries in a text file read
-by gmake.  The Autotools-based environment can be used to build Zoltan
-only or to build Zoltan within Trilinos.  User's can use either environment
-to build the Zoltan library, utilities and test drivers.
+an <a href="#Autotools">Autotools build environment</a> 
+and a <a href=#CMake">CMake build environment</a>
+used with the <a href="http://trilinos.sandia.gov">Trilinos</a>
+framework.  
+The Autotools build environment can be used to build Zoltan in a stand-alone
+installation; the CMake build environment must be used within Trilinos.
 <p>
 
-<h4><a NAME="NativeZoltanBuild"></a>Using the Native Zoltan Build Environment</h4>
-In the native Zoltan build environment, makefiles are distributed 
-with the source code in directory zoltan/src; these
-makefiles require the GNU Make (gmake) utility.  The
-top-level makefile defines targets for the Zoltan library,
-<a href="../dev_html/dev_driver.html">test driver</a> programs 
-in C, C++ and Fortran90, and 
-<a href="../dev_html/dev_view.html">two graphical utilities</a> useful
-for visualization of geometric partitions.  (The test drivers and
-utilities are primarily intended for use
-by developers.)  This makefile need not be
-edited to build Zoltan.  Instead, environment-specific definitions
-are specified in the configuration file, <i>zoltan/src/Utilities/Config/Config.&lt;platform></i>,
-where <i>&lt;platform></i> specifies the particular platform for which
-Zoltan is being built.  Paths to compilers, include files, and libraries
-are defined in this file and are then read by the top-level makefile.
-Examples of configuration files for Solaris, Sandia's ASC RedStorm 
-computer, SGI workstations, Macs running OS X, and PCs running Linux are
-included in the <i>zoltan/src/Utilities/Config</i> subdirectory.  
-A well-commented
-version of the configuration file, <i>zoltan/src/Utilities/Config/Config.generic</i>,
-is also included; this file can be used as a template for new environment-specific
-files.  The variables in these files should be edited to reflect the
-new system's environment.
-<p>The command for building Zoltan is shown below:
-<blockquote>cd zoltan/src<br>
-            gmake [options] zoltan</blockquote>
-where the options that may be specified are listed below.
-<table WIDTH="100%" >
+<h4><a NAME="Autotools"></a>Using Autotools to Build Zoltan</h4>
 
-<tr>
-<td VALIGN=TOP width="25%"><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform></i></td>
-
-<td>Specify the target architecture for the Zoltan library.  A corresponding
-file, <i>zoltan/src/Utilities/Config/Config.&lt;platform></i>, containing environment
-definitions for <i>&lt;platform</i>>, must be created in the
-<i>zoltan/src/Utilities/Config</i>
-directory.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</i></td>
-
-<td>Include Fortran support in the Zoltan library.&nbsp; By default, the
-Zoltan library is built without the interface that allows use from Fortran
-applications.&nbsp; If this option is specified, the
-<a href="ug_fortran.html">Fortran
-interface</a> is compiled and included in the library.&nbsp; Use of this
-option requires that a Fortran 90 (or 95, or later) compiler is available.
-Currently, the Fortran 90 interface can be built only with the native
-Zoltan build environment.
-</td>
-</tr>
-</table>
-As an alternative to typing the options on the gmake command line, they
-may be set as environment variables; e.g., if you are using a C-shell (csh or tcsh),
-type
+Users should not run autotools directly in the main Zoltan directory;
+rather they should create a build-directory (e.g., a subdirectory of
+the main Zoltan directory) in which they configure and build Zoltan.
+Say, for example, a user creates a directory called BUILD_DIR in the 
+Zoltan directory.  Then, to configure and build zoltan, the user would
 <blockquote>
-setenv ZOLTAN_ARCH <i>&lt;platform></i>
+cd zoltan/BUILD_DIR <br>
+../configure {options described below} <br>
+make everything <br>
+make install <br>
 </blockquote>
-or if you are using a Bourne-type shell (e.g., sh or bash), type
-<blockquote>
-ZOLTAN_ARCH = <i>&lt;platform>; </i>export ZOLTAN_ARCH
-</blockquote>
-The resulting library <i>libzoltan.a</i>, object files, and dependency files
-are stored in the directory Obj_&lt;<i>platform</i>>.
+
+Options to the configure command allow paths
+to third-party libraries such as ParMETIS, PT-Scotch and PaToH to be specified.
+Building with MPI compilers (e.g., mpicc) is the default for Autotools builds
+of Zoltan; many options allow specification of particular MPI paths and 
+compilers.  
 <p>
-
-<h4><a NAME="TrilinosAutotools"></a>Using Autotools to Build Zoltan</h4>
-
-To build Zoltan using Autotools, users must first run the auto-configuration 
-tool and then compile the library.  The configuration tool allows paths
-to third-party libraries such as ParMETIS, PT-Scotch and PaToH to be specified
-through arguments to the configure command.  These options can be seen
-with the following command issued in the top-level zoltan directory:
+Users desiring a <a href="ug_fortran.html">Fortran90 interface</a> 
+to Zoltan must 
+specify the "--enable-f90interface" option.
+<p>
+All options can be seen
+with the following command issued in the zoltan/BUILD_DIR directory:
 <blockquote>
-./configure --help
+../configure --help
 </blockquote>
-<b>IMPORTANT!</b>  To comply with Trilinos practices, the default 
-autotools configuration
-produces a <b>serial</b> build of Zoltan -- that is, a version of Zoltan that
-runs on only one processor.  
-In most cases, Zoltan users prefer a <b>parallel</b> build that runs on 
-multiple processors; users must link with MPI and may choose to compile 
-with the MPI compilers. To enable the parallel build, users must use the 
-<i>--enable-mpi</i> option; they can also require that MPI compilers
-(e.g., mpicc, mpic++) be used by specifying the 
-<i>--with-mpi-compiler</i> option.  
 <p>
 The following script is an example of configuration and build commands
 using Autotools.  It specifies that Zoltan should be built with both
@@ -188,16 +125,14 @@ the <a href="ug_alg_parmetis.html">ParMETIS</a> and
 Paths to both ParMETIS and PT-Scotch are given.
 The prefix option states where Zoltan should be installed;
 in this example, Zoltan's include files will be installed in
-/homes/username/zoltan_v3.1/OBJ_LINUX/include, and the libraries
-will be installed in /homes/username/zoltan_v3.1/OBJ_LINUX/lib.
+/homes/username/zoltan/BUILD_DIR/include, and the libraries
+will be installed in /homes/username/zoltan/BUILD_DIR/lib.
 This examples assumes the script is run from 
-/homes/username/zoltan_v3.1/OBJ_LINUX.
+/homes/username/zoltan/BUILD_DIR.
 <blockquote>
 #<br>
 ../configure \<br>
-  --prefix=/homes/username/zoltan_v3.1/OBJ_LINUX \<br>
-  --enable-mpi --with-mpi-compilers \<br>
-  --enable-zoltan \<br>
+  --prefix=/homes/username/zoltan/BUILD_DIR \<br>
   --with-gnumake \<br>
   --with-scotch \<br>
   --with-scotch-incdir="/Net/local/proj/zoltan/arch/all/src/Scotch5" \<br>
@@ -211,39 +146,105 @@ make install
 <p>
 More examples are in the directory zoltan/SampleConfigurationScripts.
 <p>
-Note:  Building Zoltan's Fortran 90 interface is not yet available with
-Autotools; use the 
-<a href="#NativeZoltanBuild">native Zoltan build environment</a> to build the
-Fortran 90 interface.
+<h4><a NAME="CMake"></a>Using CMake to Build Zoltan</h4>
+Zoltan can be built as part of the Trilinos framework using the 
+CMake build system.  CMake builds will succeed only when Zoltan is 
+in the Trilinos directory structure (as when downloaded with Trilinos).
+Users should not run CMake directly in the main Zoltan directory;
+rather they should create a build-directory (e.g., a subdirectory of
+the main Trilinos directory) in which they configure and build Zoltan.
+Say, for example, a user creates a directory called BUILD_DIR in the 
+Trilinos directory.  Then, to configure and build zoltan, the user would
+<blockquote>
+cd Trilinos/BUILD_DIR <br>
+cmake \ <br>
+ -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \ <br>
+ -D Trilinos_ENABLE_Zoltan:BOOL=ON \ <br>
+ {options described below} \ <br>
+  .. <br>
+make <br>
+make install <br>
+</blockquote>
+
+<b>Serial</b> builds are the default in Trilinos; for serial builds, Zoltan
+builds and links with the siMPI library provided by Pat Miller in the Zoltan
+distribution.  More commonly, Zoltan users desire <b>parallel</b> builds with
+MPI libraries such as OpenMPI or MPICH.  For such builds, users must specify
+CMake option
+<blockquote>
+-D TPL_ENABLE_MPI:BOOL=ON 
+</blockquote>
+Trilinos also defaults to using a Fortran compiler, but Fortran is not 
+required to build Zoltan; the option to disable this check is<br>
+-D Trilinos_ENABLE_Fortran:BOOL=OFF
+<p>
+
+Other options to the cmake command allow paths
+to third-party libraries such as ParMETIS, PT-Scotch and PaToH to be specified.
+<p>
+Users desiring a <a href="ug_fortran.html">Fortran90 interface</a>
+to Zoltan must 
+specify the option<br>
+-D Zoltan_ENABLE_F90INTERFACE:BOOL=ON<br>
+<p>
+All options can be seen
+with the following command issued in the Trilinos/BUILD_DIR directory:
+<blockquote>
+rm CMakeCache.txt<br>
+cmake -LAH -D Trilinos_ENABLE_Zoltan:BOOL=ON ..
+</blockquote>
+<p>
+The following script is an example of configuration and build commands
+using CMake.  It specifies that Zoltan should be built with both
+the <a href="ug_alg_parmetis.html">ParMETIS</a> and 
+<a href="ug_alg_ptscotch.html">PT-Scotch</a> interfaces.  
+Paths to both ParMETIS and PT-Scotch are given.
+The prefix option states where Zoltan should be installed;
+in this example, Zoltan's include files will be installed in
+/homes/username/Trilinos/BUILD_DIR/include, and the libraries
+will be installed in /homes/username/Trilinos/BUILD_DIR/lib.
+This examples assumes the script is run from 
+/homes/username/Trilinos/BUILD_DIR.
+<blockquote>
+#<br>
+cmake \ <br>
+-D CMAKE_INSTALL_PREFIX:FILEPATH="/home/username/Trilinos/BUILD_DIR" \ <br>
+-D TPL_ENABLE_MPI:BOOL=ON \ <br>
+-D CMAKE_C_FLAGS:STRING="-m64 -g" \ <br>
+-D CMAKE_CXX_FLAGS:STRING="-m64 -g" \ <br>
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -g" \ <br>
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \ <br>
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \ <br>
+-D Zoltan_ENABLE_EXAMPLES:BOOL=ON \ <br>
+-D Zoltan_ENABLE_TESTS:BOOL=ON \ <br>
+-D Zoltan_ENABLE_ParMETIS:BOOL=ON \ <br>
+-D ParMETIS_INCLUDE_DIRS:FILEPATH="/home/username/code/ParMETIS3_1" \ <br>
+-D ParMETIS_LIBRARY_DIRS:FILEPATH="/home/username/code/ParMETIS3_1" \ <br>
+-D Zoltan_ENABLE_Scotch:BOOL=ON \ <br>
+-D Scotch_INCLUDE_DIRS:FILEPATH="/home/username/code/scotch_5.1/include" \ <br>
+-D Scotch_LIBRARY_DIRS:FILEPATH="/home/username/code/scotch_5.1/lib" \ <br>
+..  <br>
+make <br>
+make install 
+</blockquote>
+<p>
+More examples are in the directory zoltan/SampleCmakeScripts.
+More details of CMake use in Trilinos are 
+in <br>
+Trilinos/cmake/TrilinosCMakeQuickstart.txt.
 <hr>
 <h3>
 <a NAME="Testing the Library"></a>Testing the Zoltan Library</h3>
 The <I>examples</I> directory contains simple C and C++ examples which use
 the Zoltan library.  The makefile in this directory has three targets:
-<DL>
-<DT>gmake ZOLTAN_ARCH=&lt;platform> C_Examples
-<DD>This builds simple C language examples that use the Zoltan library to perform load balancing.
-<DT>gmake ZOLTAN_ARCH=&lt;platform> CPP_Examples
-<DD>This builds simple C++ language examples that use the Zoltan library 
-to perform load balancing.  To build C++ applications, define CPPC to point
-to your C++ compiler in the Config.&lt;platform> file.
-<DT>gmake ZOLTAN_ARCH=&lt;platform> all
-<DD>Build both C and C++ examples.  Don't forget to define CPPC in your 
-Config.&lt;platform> file.
-</DL>
 These examples are built automatically when the 
-<a href="#TrilinosAutotools">Autotools build environment</a> is used.
-<p>
-Some of these examples make use of a small library of support routines found in
-the <I>examples/lib</I> directory.  These routines create simple test
-meshes of varying sizes, perform error checking across the parallel
-application, and define Zoltan call backs.
+<a href="#Autotools">Autotools build environment</a> or 
+<a href="#CMake">CMake build environment</a> is used.
 <p>
 The "right" answer for these tests depends on the number of processes with
 which you run the tests.  In general, if they compile successfully,
 run quickly (in seconds), and produce reasonable looking output, then
-you have been successful in building Zoltan.
-
+Zoltan is built successfully.
 <hr>
 <h3>
 <a NAME="ReportingBugs"></a>Reporting Bugs in Zoltan</h3>
@@ -296,8 +297,7 @@ specify <i>Zoltan/Obj_&lt;platform></i>
 as a directory to be searched for module information files.
 <p>
 The C, C++ or Fortran application should then be linked with the Zoltan library
-(built with Fortran support in the Fortran case)
-and its <a href="../ug_html/ug_util.html">utility libraries</a> by including
+(built with Fortran support in the Fortran case) by including
 <blockquote><i>-lzoltan </i></blockquote>
 in the linking command for the application. 
 Communication within
@@ -305,16 +305,12 @@ Zoltan is performed through MPI, so appropriate MPI libraries must be linked
 with the application. Third-party libraries, such as <a href="ug_alg_parmetis.html">ParMETIS</a>, <a href="ug_alg_ptscotch.html">PT-Scotch</a>
 and <a href="ug_alg_patoh.html">PaToH</a>, must be also be
 linked with the application if they were included in compilation of the
-Zoltan library.&nbsp; (A courtesy copy of <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-is included with the Zoltan distribution. <a href="ug_alg_patoh.html">PaToH</a>
-must be obtained directly from <a href="http://bmi.osu.edu/~umit/software.html">http://bmi.osu.edu/~umit/software.html</a>.
-<a href="ug_alg_ptscotch.html">PT-Scotch</a> is available at <a href="http://www.labri.fr/perso/pelegrin/scotch/">http://www.labri.fr/perso/pelegrin/scotch/</a>.)
-<br>&nbsp;
+Zoltan library.&nbsp; 
 <p>
-For applications that used versions of Zoltan before Zoltan v.1.3, 
-only minor updates to the application build process are
-needed; see the section on <a href="ug_backward.html">backward
-compatibility</a> of Zoltan.
+The installed files <i>include/Makefile.export.zoltan*</i> contain macros that 
+can specify Zoltan paths and libraries in an application's Makefiles.  
+Using these files, applications can be assured they are using the same
+build options that were used when Zoltan was built.
 <hr>
 <h3>
 <a NAME="Data Types for Object IDs"></a>Data Types for Object IDs</h3>
