@@ -244,7 +244,7 @@ partitioner.
       <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYMMETRIZE</i></td>
       <td nosave="">How to symmetrize the graph:
        NONE = graph is symmetric and no symmetrization is needed <br/>
-       TRANSPOSE = graph is symmetrized like M+Mt for his adjency matrix M <br/>
+       TRANSPOSE = if M is adjacency matrix of the input graph, output will be the graph representation of M+M<sup>T</sup> <br/>
        BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][Mt 0]]
 </td>
     </tr>
@@ -264,7 +264,7 @@ partitioner.
 <!--       <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_BIPARTITE_TYPE</i></td> -->
 <!--       <td nosave=""> In the case of a bipartite symmetrization, -->
 <!--        NONE = graph is symmetric and no symmetrization is needed <br/> -->
-<!--        TRANSPOSE = graph is symmetrized like M+Mt for his adjency matrix M <br/> -->
+<!--        TRANSPOSE = if M is adjacency matrix of the input graph, output will be the graph representation of M+M<sup>T</sup> <br/> -->
 <!--        BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][Mt 0]] -->
 <!-- </td> -->
 <!--     </tr> -->
