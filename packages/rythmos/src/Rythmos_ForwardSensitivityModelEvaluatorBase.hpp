@@ -118,7 +118,7 @@ public:
   get_s_bar_space() const = 0;
   
   /** \brief . */
-  virtual RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const = 0;
+  virtual RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_sens_space() const = 0;
 
   /** \brief . */
   virtual void initializePointState(

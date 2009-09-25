@@ -165,7 +165,7 @@ public:
   get_s_bar_space() const;
   
   /** \brief . */
-  RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_sens_space() const;
 
   /** \brief Initialize full state for a single point in time.
    */
@@ -367,7 +367,7 @@ ForwardSensitivityExplicitModelEvaluator<Scalar>::get_s_bar_space() const
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
-ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_space() const
+ForwardSensitivityExplicitModelEvaluator<Scalar>::get_p_sens_space() const
 {
   return stateModel_->get_p_space(p_index_);
 }

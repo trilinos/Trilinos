@@ -475,7 +475,7 @@ public:
   get_s_bar_space() const;
   
   /** \brief . */
-  RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space() const;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_sens_space() const;
 
   //@}
 
@@ -801,7 +801,7 @@ ForwardSensitivityImplicitModelEvaluator<Scalar>::get_s_bar_space() const
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
-ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_space() const
+ForwardSensitivityImplicitModelEvaluator<Scalar>::get_p_sens_space() const
 {
   return p_space_;
 }
