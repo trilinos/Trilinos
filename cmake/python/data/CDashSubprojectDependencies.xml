@@ -542,18 +542,6 @@
       <Email address="ctrilinos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="ForTrilinos">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="ILO"/>
-    <Dependency name="Amesos" type="LO"/>
-    <Dependency name="CTrilinos" type="LR"/>
-    <EmailAddresses>
-      <Email address="fortrilinos-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="PyTrilinos">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
@@ -616,11 +604,6 @@
     <Dependency name="Teuchos" type="LR"/>
     <EmailAddresses>
       <Email address="optika-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Mesquite">
-    <EmailAddresses>
-      <Email address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
 </Project>

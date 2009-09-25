@@ -90,11 +90,9 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   MOOCHO                moocho                         PS
   Sundance              Sundance                       PS
   CTrilinos             CTrilinos                      PS
-  ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   Didasko               didasko                        SS
   Optika		optika			       SS
-  Mesquite              mesquite                       PS
   )
 
 
