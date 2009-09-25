@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 #include <stddef.h>
 
@@ -19,11 +20,9 @@ static void tpi_work_span( TPI_Work * const work , const int n ,
                            int * const iBeg , int * const iEnd )
 {
   const int chunk = ( n + work->count - 1 ) / work->count ;
+  const int i_end = chunk + ( *iBeg = chunk * work->rank );
 
-  *iEnd = chunk * ( work->rank + 1 );
-  *iBeg = chunk * ( work->rank );
-
-  if ( n < *iEnd ) { *iEnd = n ; }
+  *iEnd = n < i_end ? n : i_end ;
 }
 
 /*--------------------------------------------------------------------*/
@@ -131,6 +130,7 @@ void tpi_axpby( int n , double alpha , const double * x ,
   tmp.beta  = beta ;
   tmp.x = x ;
   tmp.w = y ;
+  tmp.n = n ;
 
   if ( 0.0 == alpha ) {
     TPI_Run_threads( tpi_work_scale , & tmp , 0 );
@@ -231,22 +231,30 @@ static void tpi_work_crs_matrix_apply( TPI_Work * work )
   const int   * const A_ia = h->A_ia ;
   const float * const A_a  = h->A_a ;
   const double * const x = h->x ;
-        double * const y = h->y ;
 
   const int nRow  = h->nRow ;
   const int chunk = ( nRow + work->count - 1 ) / work->count ;
 
-  int rowEnd = chunk * ( work->rank + 1 );
   int row    = chunk * work->rank ;
+  int rowEnd = chunk + row ;
 
   if ( nRow < rowEnd ) { rowEnd = nRow ; }
 
-  for ( ; row < rowEnd ; ++row ) {
-    const int jEnd = A_pc[ row + 1 ];
-    int j = A_pc[ row ];
-    double tmp = 0 ;
-    for ( ; j < jEnd ; ++j ) { tmp += A_a[j] * x[ A_ia[j] ]; }
-    y[ row ] = tmp ;
+  {
+    const int * const pc_end = A_pc + rowEnd ;
+    const int *       pc     = A_pc + row ;
+    double    *       y      = h->y + row ;
+
+    for ( ; pc != pc_end ; ++pc , ++y ) {
+      const int   *       ia    = A_ia + *pc ;
+      const float *       a     = A_a  + *pc ;
+      const float * const a_end = A_a  + pc[1] ;
+      double tmp = 0 ;
+      for ( ; a != a_end ; ++a , ++ia ) {
+        tmp += *a * x[ *ia ];
+      }
+      *y = tmp ;
+    }
   }
 }
 

@@ -147,6 +147,8 @@ void cgsolve_set_lhs( const struct cgsolve_data * const data ,
   comm_rhs_vector( data , p );
 
   tpi_crs_matrix_apply( nRow, A_pc, A_ia, A_a, p, b );
+
+  free( p );
 }
 
 /*--------------------------------------------------------------------*/

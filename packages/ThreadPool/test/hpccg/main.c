@@ -139,6 +139,7 @@ int main( int argc , char ** argv )
   int gbox[3][2] = { { 0 , 16 } , { 0 , 16 } , { 0 , 16 } };
   int nt = 0 ;
   int ncube[10] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+  int trials = 1 ;
   int ntest ;
   int np = 1;
   int my_p = 0 ;
@@ -154,6 +155,7 @@ int main( int argc , char ** argv )
     const char arg_cube[] = "cube=" ;
     const char arg_box[] = "box=" ;
     const char arg_max[] = "max_iter=" ;
+    const char arg_trials[] = "trials=" ;
     const char arg_print[] = "print_iter=" ;
     int i ;
     for ( i = 1 ; i < argc ; ++i ) {
@@ -172,6 +174,9 @@ int main( int argc , char ** argv )
       else if ( ! strncmp(argv[i],arg_max,strlen(arg_max)) ) {
         sscanf(argv[i]+strlen(arg_max),"%d",&max_iter);
       }
+      else if ( ! strncmp(argv[i],arg_trials,strlen(arg_trials)) ) {
+        sscanf(argv[i]+strlen(arg_trials),"%d",&trials);
+      }
       else if ( ! strncmp(argv[i],arg_print,strlen(arg_print)) ) {
         sscanf(argv[i]+strlen(arg_print),"%d",&print_iter);
       }
@@ -185,6 +190,7 @@ int main( int argc , char ** argv )
     MPI_Bcast( ncube , 10 , MPI_INT , 0 , MPI_COMM_WORLD );
     MPI_Bcast( & max_iter , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
     MPI_Bcast( & print_iter , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
+    MPI_Bcast( & trials , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
   }
 #endif
 
@@ -209,7 +215,6 @@ int main( int argc , char ** argv )
     cgdata.tolerance  = (float) tolerance ;
 
     {
-      const int ntrial = 1 ;
       double norm_resid = 0.0 ;
       int iter_count = 0 ;
       double dt_mxv = 0 , dt_axpby = 0 , dt_dot = 0 ;
@@ -226,7 +231,7 @@ int main( int argc , char ** argv )
         for ( i = 0 ; i < cgdata.nRow ; ++i ) xexact[i] = value ;
       }
 
-      for ( k = 0 ; k < ntrial ; ++k ) {
+      for ( k = 0 ; k < trials ; ++k ) {
         int i ;
 
         for ( i = 0 ; i < cgdata.nRow ; ++i ) { x[i] = 0.0 ; }
@@ -274,10 +279,10 @@ int main( int argc , char ** argv )
                                  ( gbox[2][1] - gbox[2][0] );
 
           const double mflop_mxv =
-             1.0e-6 * ( ntrial + iter_total ) * 2 * nnzGlobal / dt_mxv ;
+             1.0e-6 * ( trials + iter_total ) * 2 * nnzGlobal / dt_mxv ;
 
           const double mflop_axpby =
-             1.0e-6 * ( ntrial + iter_total * 3 ) * 2 * nRowGlobal / dt_axpby ;
+             1.0e-6 * ( trials + iter_total * 3 ) * 2 * nRowGlobal / dt_axpby ;
 
           const double mflop_dot =
              1.0e-6 * ( iter_total * 2 ) * 2 * nRowGlobal / dt_dot ;

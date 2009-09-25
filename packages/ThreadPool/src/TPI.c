@@ -28,36 +28,51 @@
 
 #include <TPI.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <ThreadPool_config.h>
 
 enum { THREAD_COUNT_MAX = 1024 };
 enum { LOCK_COUNT_MAX   = 256 };
 
-/*--------------------------------------------------------------------*/
-
 #if defined( HAVE_PTHREAD )
+
+/*--------------------------------------------------------------------*/
+/*----------- PTHREAD CONFIGURATION (BEGIN) --------------------------*/
+/*--------------------------------------------------------------------*/
 
 #if	defined( __linux__ ) && defined( __GNUC__ ) && ( 4 <= __GNUC__ )
 
+/*
 #define HAVE_FUTEX
+*/
+#define HAVE_PTHREAD_SPIN
 
 #if	! defined( __INTEL_COMPILER )
 
 #define HAVE_ATOMIC_SYNC
 
-#else
+#define THREADPOOL_CONFIG "PTHREAD SCHED_YIELD SPIN_LOCK ATOMIC_SYNC"
 
-#define HAVE_PTHREAD_SPIN
+#else /* ! defined( __INTEL_COMPILER ) */
 
-#endif /* ! defined( __INTEL_COMPILER ) */
-#endif /* ! ( defined(__linux__) && defined(__GNUC__) && ( 4 <= __GNUC__ ) ) */
+#define THREADPOOL_CONFIG "PTHREAD SCHED_YIELD SPIN_LOCK"
+
+#endif
+
+#else /* ! ( defined(__linux__) && defined(__GNUC__) && ( 4 <= __GNUC__ ) ) */
+
+#define THREADPOOL_CONFIG "PTHREAD SCHED_YIELD"
+
+#endif
 
 /*--------------------------------------------------------------------*/
-/* #define DEBUG_PRINT */
+/*----------- PTHREAD CONFIGURATION (END) ----------------------------*/
+/*--------------------------------------------------------------------*/
 
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sched.h>
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -102,7 +117,7 @@ static
 int atomic_fetch_and_decrement( volatile int * value )
 {
   int result ;
-  while ( pthread_mutex_trylock( & atomic_lock ) );
+  pthread_mutex_lock( & atomic_lock );
   result = ( *value )-- ;
   pthread_mutex_unlock( & atomic_lock );
   return result ;
@@ -122,24 +137,24 @@ static void * local_driver( void * );
 #include <sys/syscall.h>
 #include <linux/futex.h>
  
-/* FUTEX_WAIT = 0 */
-/* FUTEX_WAKE = 1 */
+/* #define FUTEX_WAIT  0 */
+/* #define FUTEX_WAKE  1 */
  
 typedef struct Thread_Data {
   struct TPI_Work_Struct   m_work ;
   struct ThreadPool_Data * m_pool ;
   long                     m_rank ;
   long                     m_cycle ;
-  long                     m_active ;
+  volatile long            m_active ;
 } Thread ;
 
-static void wake_thread( Thread * thread , int val )
+static void wake_thread( Thread * const thread , const int val )
 {
   thread->m_active = val ;
   syscall( SYS_futex, & thread->m_active, FUTEX_WAKE, 1, NULL, NULL, 0 );
 }
 
-static void wait_thread( Thread * thread , int val )
+static void wait_thread( Thread * const thread , const int val )
 {
   syscall( SYS_futex, & thread->m_active, FUTEX_WAIT, val, NULL, NULL, 0 );
 }
@@ -181,30 +196,31 @@ static void destroy_thread( Thread * thread )
 #else /* ! defined( HAVE_FUTEX ) */
 
 typedef struct Thread_Data {
-  pthread_cond_t           m_cond ;
   pthread_mutex_t          m_lock ;
   struct TPI_Work_Struct   m_work ;
   struct ThreadPool_Data * m_pool ;
   long                     m_rank ;
   long                     m_cycle ;
-  long                     m_active ;
+  volatile long            m_active ;
 } Thread ;
 
 static void wake_thread( Thread * thread , int val )
 {
-  pthread_mutex_lock(   & thread->m_lock );
+  pthread_mutex_lock( & thread->m_lock );
   thread->m_active = val ;
   pthread_mutex_unlock( & thread->m_lock );
-  pthread_cond_signal(  & thread->m_cond );
 }
 
 static void wait_thread( Thread * thread , int val )
 {
-  pthread_mutex_lock( & thread->m_lock );
-  if ( thread->m_active == val ) {
-    pthread_cond_wait( & thread->m_cond , & thread->m_lock );
+  for (;;) {
+    int flag ;
+    pthread_mutex_lock( & thread->m_lock );
+    flag = thread->m_active == val ;
+    pthread_mutex_unlock( & thread->m_lock );
+    if ( flag ) { sched_yield(); }
+    else        { return ; }
   }
-  pthread_mutex_unlock( & thread->m_lock );
 }
 
 static int create_thread( pthread_attr_t * attr , Thread * thread )
@@ -220,9 +236,8 @@ static int create_thread( pthread_attr_t * attr , Thread * thread )
 
   thread->m_active          = 1 ;
 
-  if ( thread->m_rank != 0 ) {
+  if ( 0 < thread->m_rank ) {
     if ( pthread_mutex_init( & thread->m_lock , NULL ) ||
-         pthread_cond_init(  & thread->m_cond , NULL ) ||
          pthread_create( & pt, attr, & local_driver, thread ) ) {
       thread->m_active = 0 ;
       result = TPI_ERROR_INTERNAL ;
@@ -236,7 +251,6 @@ static void destroy_thread( Thread * thread )
 {
   if ( 0 < thread->m_rank ) {
     pthread_mutex_destroy( & thread->m_lock );
-    pthread_cond_destroy(  & thread->m_cond );
   }
 
   thread->m_work.info       = NULL ;
@@ -352,7 +366,7 @@ static void local_run_work( Thread * const thread )
 
   int * const claim = & thread_pool->m_work_count_claim ;
 
-  while ( 0 < ( work->rank = atomic_fetch_and_decrement(claim))) {
+  while ( 0 < ( work->rank = atomic_fetch_and_decrement( claim ))) {
 
     work->rank = work->count - work->rank ;
 
@@ -441,9 +455,6 @@ void local_barrier( Thread * const this_thread )
     next_thread->m_work.reduce = NULL ;
     next_thread->m_work.info   = NULL ;
   }
-
-  /* My parent should be waiting for me to finish */
-  wake_thread( this_thread , 0 );
 }
  
 /*--------------------------------------------------------------------*/
@@ -458,6 +469,8 @@ static void * local_driver( void * arg )
   do {
     local_barrier( this_thread );   /*  Wait for my tree threads to block */
 
+    wake_thread( this_thread , 0 ); /*  Notify my parent I am about to block */
+
     wait_thread( this_thread , 0 ); /*  Block until I am activated. */
 
     local_broadcast( this_thread ); /*  Broadcast the activation */
@@ -468,6 +481,8 @@ static void * local_driver( void * arg )
   } while ( thread_pool->m_thread_driver );
 
   local_barrier( this_thread ); /* Termination barrier */
+
+  wake_thread( this_thread , 0 ); /* Notify my parent I am terminating */
 
   return NULL ;
 }
@@ -501,30 +516,32 @@ static int set_lock_count( ThreadPool * const thread_pool ,
 
 int TPI_Run( TPI_work_subprogram work_subprogram  ,
              const void *        work_info ,
-             int                 work_count  ,
-             int                 lock_count  )
+             int                 work_count ,
+             int                 lock_count )
 {
   ThreadPool * const thread_pool = local_thread_pool();
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
     NULL == work_subprogram             ? TPI_ERROR_NULL : (
-    work_count  < 0                     ? TPI_ERROR_SIZE : (
-    lock_count  < 0                     ? TPI_ERROR_SIZE : (
-    0 ) ) ) );
+    work_count  < 0                     ? TPI_ERROR_SIZE : 0 ) );
 
-  if ( ! result && ! ( result = set_lock_count(thread_pool,lock_count) ) ) {
-    Thread * const root_thread = thread_pool->m_thread ;
+  if ( ! result && lock_count ) {
+    result = set_lock_count( thread_pool , lock_count );
+  }
 
-    root_thread->m_work.info       = work_info ;
-    root_thread->m_work.reduce     = NULL ;
-    root_thread->m_work.rank       = -1 ;
-    root_thread->m_work.count      = work_count ;
-    root_thread->m_work.lock_count = lock_count ;
+  if ( ! result ) {
 
     if ( 1 < thread_pool->m_thread_count ) {
-      thread_pool->m_work_routine     = work_subprogram ;
+
+      Thread * const root_thread = thread_pool->m_thread ;
+
+      root_thread->m_work.info       = work_info ;
+      root_thread->m_work.count      = work_count ;
+      root_thread->m_work.lock_count = lock_count ;
+
       thread_pool->m_work_count_claim = work_count ;
+      thread_pool->m_work_routine     = work_subprogram ;
       thread_pool->m_thread_driver    = & local_run_work ;
 
       /* Activate the blocked worker threads */
@@ -537,23 +554,24 @@ int TPI_Run( TPI_work_subprogram work_subprogram  ,
       local_barrier( root_thread );
 
       thread_pool->m_thread_driver    = NULL ;
-      thread_pool->m_work_count_claim = 0 ;
       thread_pool->m_work_routine     = NULL ;
+      thread_pool->m_work_count_claim = 0 ;
+
+      root_thread->m_work.info       = NULL ;
+      root_thread->m_work.count      = 0 ;
+      root_thread->m_work.lock_count = 0 ;
     }
     else {
-      /* No worker threads, can bypass work queue locking */
-      struct TPI_Work_Struct * const work = & root_thread->m_work ;
+      struct TPI_Work_Struct w = { NULL , NULL , 0 , 0 , 0 };
 
-      for ( work->rank = 0 ; work->rank < work->count ; ++( work->rank ) ) {
-        (* work_subprogram)( work );
+      w.info       = work_info ;
+      w.count      = work_count ;
+      w.lock_count = lock_count ;
+
+      for ( w.rank = 0 ; w.rank < w.count ; ++( w.rank ) ) {
+        (* work_subprogram)( & w );
       }
     }
-
-    root_thread->m_work.info       = NULL ;
-    root_thread->m_work.reduce     = NULL ;
-    root_thread->m_work.rank       = -1 ;
-    root_thread->m_work.count      = 0 ;
-    root_thread->m_work.lock_count = 0 ;
   }
 
   return result ;
@@ -606,15 +624,15 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
     0 ) ) ) ) ) ) );
 
   if ( ! result ) {
-    Thread * const root_thread = thread_pool->m_thread ;
-
-    root_thread->m_work.info       = work_info ;
-    root_thread->m_work.reduce     = reduce_data ;
-    root_thread->m_work.rank       = -1 ;
-    root_thread->m_work.count      = work_count ;
-    root_thread->m_work.lock_count = 0 ;
 
     if ( 1 < thread_pool->m_thread_count ) {
+
+      Thread * const root_thread = thread_pool->m_thread ;
+
+      root_thread->m_work.info   = work_info ;
+      root_thread->m_work.reduce = reduce_data ;
+      root_thread->m_work.count  = work_count ;
+
       alloc_reduce( thread_pool, reduce_size );
 
       thread_pool->m_thread_driver    = & local_run_work ;
@@ -639,21 +657,22 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
       thread_pool->m_reduce_init      = NULL ;
       thread_pool->m_reduce_grain     = 0 ;
       thread_pool->m_reduce_size      = 0 ;
+
+      root_thread->m_work.info   = NULL ;
+      root_thread->m_work.reduce = NULL ;
+      root_thread->m_work.count  = 0 ;
     }
     else {
-      /* No worker threads, can bypass work queue locking */
-      struct TPI_Work_Struct * const work = & root_thread->m_work ;
+      struct TPI_Work_Struct w = { NULL , NULL , 0 , 0 , 0 };
 
-      for ( work->rank = 0 ; work->rank < work->count ; ++( work->rank ) ) {
-        (* work_subprogram)( work );
+      w.info   = work_info ;
+      w.reduce = reduce_data ;
+      w.count  = work_count ;
+
+      for ( w.rank = 0 ; w.rank < w.count ; ++( w.rank ) ) {
+        (* work_subprogram)( & w );
       }
     }
-
-    root_thread->m_work.info       = NULL ;
-    root_thread->m_work.reduce     = NULL ;
-    root_thread->m_work.rank       = -1 ;
-    root_thread->m_work.count      = 0 ;
-    root_thread->m_work.lock_count = 0 ;
   }
 
   return result ;
@@ -669,18 +688,21 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
-    NULL == work_subprogram             ? TPI_ERROR_NULL : (
-    0 ) );
+    NULL == work_subprogram             ? TPI_ERROR_NULL : 0 );
 
-  if ( ! result && ! ( result = set_lock_count(thread_pool,lock_count) ) ) {
-    Thread * const root_thread = thread_pool->m_thread ;
+  if ( ! result && lock_count ) {
+    result = set_lock_count( thread_pool , lock_count );
+  }
 
-    root_thread->m_work.info       = work_info ;
-    root_thread->m_work.reduce     = NULL ;
-    root_thread->m_work.rank       = 0 ;
-    root_thread->m_work.lock_count = lock_count ;
+  if ( ! result ) {
 
     if ( 1 < thread_pool->m_thread_count ) {
+
+      Thread * const root_thread = thread_pool->m_thread ;
+
+      root_thread->m_work.info       = work_info ;
+      root_thread->m_work.lock_count = lock_count ;
+
       thread_pool->m_work_routine  = work_subprogram ;
       thread_pool->m_thread_driver = & local_run_thread ;
 
@@ -697,18 +719,19 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
 
       thread_pool->m_thread_driver = NULL ;
       thread_pool->m_work_routine  = NULL ;
+
+      root_thread->m_work.info       = NULL ;
+      root_thread->m_work.lock_count = 0 ;
     }
     else {
-      /* No worker threads */
-      root_thread->m_work.count = 1 ;
-      (* work_subprogram)( & root_thread->m_work );
-    }
+      struct TPI_Work_Struct w = { NULL , NULL , 0 , 0 , 0 };
 
-    root_thread->m_work.info       = NULL ;
-    root_thread->m_work.reduce     = NULL ;
-    root_thread->m_work.rank       = -1 ;
-    root_thread->m_work.count      = 0 ;
-    root_thread->m_work.lock_count = 0 ;
+      w.info       = work_info ;
+      w.lock_count = lock_count ;
+      w.count      = 1 ;
+
+      (* work_subprogram)( & w );
+    }
   }
 
   return result ;
@@ -733,14 +756,13 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
     0 ) ) ) ) ) );
 
   if ( ! result ) {
-    Thread * const root_thread = thread_pool->m_thread ;
-
-    root_thread->m_work.info       = work_info ;
-    root_thread->m_work.reduce     = reduce_data ;
-    root_thread->m_work.rank       = 0 ;
-    root_thread->m_work.lock_count = 0 ;
 
     if ( 1 < thread_pool->m_thread_count ) {
+
+      Thread * const root_thread = thread_pool->m_thread ;
+
+      root_thread->m_work.info   = work_info ;
+      root_thread->m_work.reduce = reduce_data ;
 
       alloc_reduce( thread_pool , reduce_size );
 
@@ -766,17 +788,19 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
       thread_pool->m_reduce_init    = NULL ;
       thread_pool->m_reduce_grain   = 0 ;
       thread_pool->m_reduce_size    = 0 ;
+
+      root_thread->m_work.info   = NULL ;
+      root_thread->m_work.reduce = NULL ;
     }
     else {
-      /* No worker threads */
-      root_thread->m_work.count = 1 ;
-      (* work_subprogram)( & root_thread->m_work );
-    }
+      struct TPI_Work_Struct w = { NULL , NULL , 0 , 0 , 0 };
 
-    root_thread->m_work.info   = NULL ;
-    root_thread->m_work.reduce = NULL ;
-    root_thread->m_work.rank   = -1 ;
-    root_thread->m_work.count  = 0 ;
+      w.info   = work_info ;
+      w.reduce = reduce_data ;
+      w.count  = 1 ;
+
+      (* work_subprogram)( & w );
+    }
   }
 
   return result ;
@@ -787,8 +811,14 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
 
 int TPI_Init( int n )
 {
+  static int first_pass = 1 ;
   ThreadPool * const thread_pool = local_thread_pool();
   int result = thread_pool->m_thread_count ? TPI_ERROR_ACTIVE : 0 ;
+
+  if ( first_pass ) {
+    fprintf(stdout,"TPI CONFIGURATION = %s\n\n",THREADPOOL_CONFIG);
+    first_pass = 0 ;
+  }
 
   if ( ! result && ( n < 1 || THREAD_COUNT_MAX <= n ) ) {
     result = TPI_ERROR_SIZE ;
@@ -856,7 +886,7 @@ int TPI_Init( int n )
 int TPI_Finalize()
 {
   ThreadPool * const thread_pool = local_thread_pool();
-  int result , i ;
+  int result ;
 
   result = NULL != thread_pool->m_thread_driver ? TPI_ERROR_ACTIVE : 0 ;
 
@@ -964,15 +994,13 @@ int TPI_Run( TPI_work_subprogram work_subprogram  ,
     result = set_lock_count( work , lock_count );
 
     if ( ! result ) {
-      struct TPI_Work_Struct w ;
+      struct TPI_Work_Struct w = { NULL , NULL , 0 , 0 , 0 };
 
       work->m_active     = 1 ;
       work->m_lock_count = lock_count ;
 
       w.info       = work_info ;
-      w.reduce     = NULL ;
       w.count      = work_count ;
-      w.rank       = 0 ;
       w.lock_count = lock_count ;
 
       for ( w.rank = 0 ; w.rank < work_count ; ++(w.rank) ) {
@@ -1008,17 +1036,15 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
     0 ) ) ) ) ) ) );
 
   if ( ! result ) {
-    struct TPI_Work_Struct w ;
+    struct TPI_Work_Struct w = { NULL , NULL , 0 , 0 , 0 };
 
     work->m_active = 1 ;
 
-    w.info       = work_info ;
-    w.reduce     = reduce_data ;
-    w.count      = work_count ;
-    w.rank       = 0 ;
-    w.lock_count = 0 ;
+    w.info   = work_info ;
+    w.reduce = reduce_data ;
+    w.count  = work_count ;
 
-    for ( ; w.rank < w.count ; ++( w.rank ) ) {
+    for ( w.rank = 0 ; w.rank < w.count ; ++( w.rank ) ) {
       (* work_subprogram)( & w );
     }
 
