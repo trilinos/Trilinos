@@ -38,15 +38,15 @@ FAST_PROJECT        zoltan
 
 #Test zoltan-octopi_v3_1_OMPI-nightly
 #octopi.sandia.gov
-#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
+#cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zdrive 'test/{ch_*,hg_*}' 
 
-Test zoltan-octopi_CPP_v3_1_OMPI-nightly
+Test zoltan-octopi_CPP_v3_2_OMPI-nightly
 octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zCPPdrive 'test/{ch_hammond,hg_ibm03}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zCPPdrive 'test/{ch_hammond,hg_ibm03}' 
 
-Test zoltan-octopi_F90_v3_1_OMPI-nightly
+Test zoltan-octopi_F90_v3_2_OMPI-nightly
 octopi.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; export EXACT_DRIVER='/usr/local/bin/mpirun --mca mpi_yield_when_idle 1 -np' ;  csh -f ../../zoltan.build octopiTest $tname zfdrive 'test/{ch_hammond,hg_cage10}'
 
 #Test zoltan-octopi_MAIN_OMPI-nightly
 #octopi.sandia.gov
@@ -113,7 +113,7 @@ cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-br
 
 Test zoltan-codecheck
 software.sandia.gov
-cvs -d /space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build --codecheck $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d /space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; csh -f ../../zoltan.build --codecheck $tname zdrive 'test/{ch_*,hg_*}'
 
 ############################################################################
 # Tests on Lee Ann's workstation.
@@ -122,9 +122,9 @@ cvs -d /space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f 
 # (2) different random-number generator gives different ParMETIS result.
 ############################################################################
 
-Test zoltan-lin32_v3_1-nightly
+Test zoltan-lin32_v3_2-nightly
 sadl14088
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; csh -f ../../zoltan.build sadl14088 $tname zdrive 'test/{ch_*,hg_*}'
 
 #Test zoltan-lin32_base-nightly
 #sadl14088
@@ -136,16 +136,16 @@ cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-bra
 # Only ParMETIS tests should differ.
 ############################################################################
 
-Test zoltan-mac64_v3_1-smoke
+Test zoltan-mac64_v3_2-smoke
 joda.srn.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build mac64 $tname zdrive 'test/{ch_*,hg_*}' 
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; csh -f ../../zoltan.build mac64 $tname zdrive 'test/{ch_*,hg_*}' 
 
 ############################################################################
 # bigtests compiles everything, but then runs tests in Zoltan_Tests directory
 ############################################################################
 Test zoltan-lin64_big-nightly
 pill.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; (cd /home/zoltan/Zoltan_Tests ; cvs -d software.sandia.gov:/space/CVS-Zoltan -Q update); csh -f ../../zoltan.build lin64test $tname zdrive '/home/zoltan/Zoltan_Tests/{xyce}' '/home/zoltan/Zoltan_Tests'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; (cd /home/zoltan/Zoltan_Tests ; cvs -d software.sandia.gov:/space/CVS-Zoltan -Q update); csh -f ../../zoltan.build lin64test $tname zdrive '/home/zoltan/Zoltan_Tests/{xyce}' '/home/zoltan/Zoltan_Tests'
 
 ###########################################################################
 # Old tests that we no longer run.
@@ -153,11 +153,11 @@ cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-bra
 
 Test zoltan-lin32-smoke
 bobo.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build linux $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; csh -f ../../zoltan.build linux $tname zdrive 'test/{ch_*,hg_*}'
 
 Test zoltan-lin64-nightly
 disabled-pill.sandia.gov
-cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-9-0-branch zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
+cvs -d software.sandia.gov:/space/CVS -Q checkout -P -r trilinos-release-10-0-branch zoltan ; csh -f ../../zoltan.build lin64test $tname zdrive 'test/{ch_*,hg_*}'
 
 Test zoltan-lin64_base-nightly
 disabled-pill.sandia.gov
