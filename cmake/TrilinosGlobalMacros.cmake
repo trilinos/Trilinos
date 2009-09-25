@@ -54,11 +54,203 @@ ENDMACRO()
 
 
 #
+#  Function for helping set up exclude files only for the packages
+#  that will not be supporting autotools.
+#  Returns a list of the given file name with a path for packages
+#  that are not supporting autotools anymore.
+#
+#  example: PACKAGE_APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure.ac" list)
+#    assuming that the packages epetra and teuchos are not supporting 
+#    autotools anymore then the return value would be:
+#    "epetra/configure.ac;teuchos/configure.ac"
+#
+#
+
+FUNCTION(APPLY_TO_NO_AUTOTOOLS_PACKAGES FILE_NAME LIST_RETURN)
+  SET(NON_AUTOTOOLS_PACKAGES
+    /packages/amesos
+    /packages/anasazi
+    /packages/aztecoo
+    /packages/belos
+    /packages/didasko
+    /packages/epetra
+    /packages/epetraext
+    /packages/fei
+    /packages/galeri
+    /packages/ifpack
+    /packages/intrepid
+    /packages/isorropia
+    /packages/kokkos
+    /packages/komplex
+    /packages/meros
+    /packages/ml
+    /packages/moertel
+    /packages/moocho
+    /packages/nox
+    /packages/pamgen
+    /packages/phalanx
+    /packages/phdmesh
+    /packages/pliris
+    /packages/PyTrilinos
+    /packages/rtop
+    /packages/rythmos
+    /packages/sacado
+    /packages/shards
+    /packages/stratimikos
+    /packages/Sundance
+    /packages/teuchos
+    /packages/ThreadPool
+    /packages/thyra
+    /packages/tpetra
+    /packages/trilinoscouplings
+    /packages/triutils
+  )
+  
+  FOREACH(PACKAGE ${NON_AUTOTOOLS_PACKAGES})
+    SET(LIST_RETURN_TMP ${LIST_RETURN_TMP} ${PACKAGE}/${FILE_NAME} ${PACKAGE}/\(.*/\)*${FILE_NAME})
+  ENDFOREACH()
+  
+  SET(${LIST_RETURN} ${LIST_RETURN_TMP} PARENT_SCOPE)
+ENDFUNCTION()
+
+#
 # Macro that defines Trilinos packaging options:
 #
 
 MACRO(TRILINOS_DEFINE_PACKAGING)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure.ac" CONFIGURE_AC_LIST)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure"    CONFIGURE_LIST)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES("Makefile.am"  MAKEFILE_AM_LIST)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES("Makefile.in"  MAKEFILE_AC_LIST)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES(".*.m4"        M4_LIST)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES("bootstrap"    BOOTSTRAP_LIST)
+  APPLY_TO_NO_AUTOTOOLS_PACKAGES("config/"      CONFIG_LIST)
 
+    
+  SET(CPACK_SOURCE_IGNORE_FILES
+    /CVS/
+    ".cvsignore"
+    classicMakefile
+    /packages/CTrilinos
+    /packages/ForTrilinos
+    /packages/ITAPS
+    /packages/globipack
+    /packages/mesquite
+    /packages/optika
+    /packages/optipack
+    /packages/stokhos
+    /packages/tifpack
+    /packages/TriKota
+    /packages/aristos
+    /packages/claps
+    /packages/external
+    /packages/jpetra
+    /packages/new_package
+    /packages/rbgen
+    /packages/WebTrilinos
+    ${CONFIGURE_AC_LIST}
+    ${CONFIGURE_LIST}
+    ${MAKEFILE_AM_LIST}
+    ${MAKEFILE_AC_LIST}
+    ${M4_LIST}
+    ${BOOTSTRAP_LIST}
+    ${CONFIG_LIST}
+    /packages/configure.ac
+    /packages/configure
+    /packages/Makefile.am
+    /packages/Makefile.in
+    Trilinos/configure.ac
+    Trilinos/configure
+    Trilinos/Makefile.am
+    Trilinos/Makefile.in
+    Trilinos/bootstrap
+    Trilinos/config
+    Trilinos/doc/[^b]
+    ".*.pyc"
+    /SIERRA/
+    /commonTools/test
+    /commonTools/scripts
+    /packages/PyTrilinos/Notes.txt
+    /packages/PyTrilinos/aclocal.m4
+    /packages/PyTrilinos/bootstrap
+    /packages/PyTrilinos/config
+    /packages/PyTrilinos/lib
+    /packages/PyTrilinos/macdist
+    /packages/PyTrilinos/shared
+    /packages/PyTrilinos/src/NOX
+    /packages/PyTrilinos/src/PyTrilinos_config.h.in
+    /packages/PyTrilinos/src/depend
+    /packages/PyTrilinos/src/setup.py
+    /packages/PyTrilinos/src-boost
+    /packages/zoltan/test/ch_brack2_3
+    /packages/zoltan/test/ch_bug
+    /packages/zoltan/test/ch_degenerate
+    /packages/zoltan/test/ch_degenerateAA
+    /packages/zoltan/test/ch_drake
+    /packages/zoltan/test/ch_ewgt
+    /packages/zoltan/test/ch_grid20x19
+    /packages/zoltan/test/ch_hammond
+    /packages/zoltan/test/ch_hammond2
+    /packages/zoltan/test/ch_nograph
+    /packages/zoltan/test/ch_onedbug
+    /packages/zoltan/test/ch_random
+    /packages/zoltan/test/ch_serial
+    /packages/zoltan/test/ch_slac
+    /packages/zoltan/test/ch_vwgt
+    /packages/zoltan/test/ch_vwgt2
+    /packages/zoltan/test/hg_cage10
+    /packages/zoltan/test/hg_diag500_4
+    /packages/zoltan/test/hg_ewgt
+    /packages/zoltan/test/hg_felix
+    /packages/zoltan/test/hg_ibm03
+    /packages/zoltan/test/hg_ml27
+    /packages/zoltan/test/hg_nograph
+    /packages/zoltan/test/hg_vwgt
+    /packages/zoltan/test/nem_ti_20k
+    /packages/zoltan/test/nem_ti_4k
+    /packages/zoltan/test/misc_siefert
+    /packages/zoltan/test/th
+    /packages/zoltan/test/bin
+    /packages/zoltan/doc/Zoltan_html/tu_html
+    /packages/zoltan/src/ZoltanComponent
+    /packages/zoltan/src/driver_old
+    /packages/zoltan/src/fdriver_old
+    /packages/amesos/doc/AmesosOverview
+    /packages/amesos/doc/PARA06
+    /packages/anasazi/doc/TOMS
+    /packages/anasazi/doc/OrthoStudy
+    /packages/anasazi/doc/ThyraPerf
+    /packages/aztecoo/doc/AZ_capture_matrix_howto.txt
+    /packages/aztecoo/doc/Aztec2.0
+    /packages/aztecoo/doc/Aztec2.1
+    /packages/aztecoo/doc/Managing_conditioning_howto.txt
+    /packages/aztecoo/doc/UserGuide
+    /packages/aztecoo/doc/azteclogo.gif
+    /packages/aztecoo/doc/read_captured_matrix.c
+    /packages/aztecoo/example/AztecOO_RecursiveCall
+    /packages/aztecoo/example/Epetra_MsrMatrix_AztecOO
+    /packages/aztecoo/example/Epetra_MsrMatrix_PowerMethod
+    /packages/aztecoo/example/IfpackIctAztecOO
+    /packages/aztecoo/example/IfpackAztecOO
+    /packages/aztecoo/example/IfpackVbrAztecOO
+    /packages/aztecoo/example/MLAztecOO
+    /packages/aztecoo/example/azoo_iterate_hb
+    /packages/aztecoo/example/aztec_app
+    /packages/aztecoo/example/aztec_hb
+    /packages/galeri/src-pfem
+    /packages/galeri/example-pfem
+    /packages/tpetra/doc/CodingGuidelines
+    /packages/tpetra/doc/TpetraDesign
+    /packages/kokkos/doc
+  )
+  
+  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("Exclude files when building source packages")
+    FOREACH(item ${CPACK_SOURCE_IGNORE_FILES})
+      MESSAGE(${item})
+    ENDFOREACH()
+  ENDIF()
+  
   SET(CPACK_PACKAGE_DESCRIPTION "Trilinos provides algorithms and technologies for the solution of large-scale, complex multi-physics engineering and scientific problems.")
   SET(CPACK_PACKAGE_FILE_NAME "trilinos-setup-${Trilinos_VERSION}")
   SET(CPACK_PACKAGE_INSTALL_DIRECTORY "Trilinos ${Trilinos_VERSION}")
