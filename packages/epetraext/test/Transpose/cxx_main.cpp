@@ -232,7 +232,7 @@ int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA,
   Epetra_Vector resid(A->OperatorDomainMap());
 
   resid.Update(1.0, b1, -1.0, b2, 0.0);
-  assert(resid.Norm2(&residual)==0);
+  resid.Norm2(&residual);
   if (verbose) cout << "Norm of b1 - b2 = " << residual << endl;
 
   int ierr = 0;
