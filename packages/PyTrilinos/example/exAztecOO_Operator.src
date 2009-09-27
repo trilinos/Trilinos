@@ -145,6 +145,8 @@ class Laplace1D_Operator(Epetra.Operator):
         operator.
         """
         try:
+            x = Epetra.MultiVector(Epetra.View,x)
+            y = Epetra.MultiVector(Epetra.View,y)
             # Import the off-processor values
             xImp = Epetra.MultiVector(self.__importMap, x.NumVectors())
             xImp.Import(x, self.__importer, Epetra.Insert)

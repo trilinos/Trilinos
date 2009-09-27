@@ -219,6 +219,8 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
     def Multiply(self, UseTranspose, x, y):
         "Required implementation of Epetra.RowMatrix class"
         try:
+            x = Epetra.MultiVector(Epetra.View,x)
+            y = Epetra.MultiVector(Epetra.View,y)
             # Import the off-processor values
             if not x.Map().SameAs(self.__rowMap):
                 print "Vector x must be distributed via the matrix row map"
