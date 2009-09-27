@@ -37,7 +37,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(${PACKAGE_NAME}_VERSION 4.2d)
+SET(${PACKAGE_NAME}_VERSION 4.2)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
