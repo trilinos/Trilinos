@@ -943,8 +943,8 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
     }
     catch (std::exception e) {
     printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration "
-                             << gmres_iter->getNumIters() << endl
-                             << e.what() << endl;
+                             << gmres_iter->getNumIters() << std::endl
+                             << e.what() << std::endl;
     throw;
   }
 

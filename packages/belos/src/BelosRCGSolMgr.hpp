@@ -784,7 +784,7 @@ void RCGSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
       if (ipiv_ == Teuchos::null)
         ipiv_ = Teuchos::rcp( new std::vector<int>(recycleBlocks_) );
       else {
-        if ( ipiv_->size() != recycleBlocks_ ) // if ipiv not correct size, always resize it
+        if ( (int)ipiv_->size() != recycleBlocks_ ) // if ipiv not correct size, always resize it
           ipiv_->resize(recycleBlocks_);
       }
 
@@ -981,8 +981,8 @@ ReturnType RCGSolMgr<ScalarType,MV,OP>::solve() {
     numBlocks_ = dim;
     params_->set("Num Blocks", numBlocks_);
     printer_->stream(Warnings) <<
-      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << endl <<
-      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << endl;
+      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
+      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << std::endl;
   }
 
   // Initialize storage for all state variables

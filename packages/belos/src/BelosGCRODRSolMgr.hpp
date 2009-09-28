@@ -284,7 +284,7 @@ namespace Belos {
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
 
     // Method to convert string to enumerated type for residual.
-    Belos::ScaleType convertStringToScaleType( string& scaleType ) {
+    Belos::ScaleType convertStringToScaleType( std::string& scaleType ) {
       if (scaleType == "Norm of Initial Residual") {
 	return Belos::NormOfInitRes;
       } else if (scaleType == "Norm of Preconditioned Initial Residual") {
@@ -305,7 +305,7 @@ namespace Belos {
     
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<ostream> outputStream_;
+    Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
@@ -334,7 +334,7 @@ namespace Belos {
     static const std::string expResScale_default_; 
     static const std::string label_default_;
     static const std::string orthoType_default_;
-    static const Teuchos::RCP<ostream> outputStream_default_;
+    static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
@@ -426,7 +426,7 @@ template<class ScalarType, class MV, class OP>
 const std::string GCRODRSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<ostream> GCRODRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> GCRODRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
@@ -541,20 +541,20 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
   // Check to see if the timer label changed.
   if (params->isParameter("Timer Label")) {
-    string tempLabel = params->get("Timer Label", label_default_);
+    std::string tempLabel = params->get("Timer Label", label_default_);
 
     // Update parameter in our list and solver timer
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
-      string solveLabel = label_ + ": GCRODRSolMgr total solve time";
+      std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
     }
   }
 
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
-    string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
 			std::invalid_argument,
 			"Belos::GCRODRSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
@@ -608,7 +608,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
   // output stream
   if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RCP<ostream> >(*params,"Output Stream");
+    outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
 
     // Update parameter in our list.
     params_->set("Output Stream", outputStream_);
@@ -651,7 +651,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
  
   // Check for a change in scaling, if so we need to build new residual tests.
   if (params->isParameter("Implicit Residual Scaling")) {
-    string tempImpResScale = Teuchos::getParameter<string>( *params, "Implicit Residual Scaling" );
+    std::string tempImpResScale = Teuchos::getParameter<std::string>( *params, "Implicit Residual Scaling" );
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
@@ -674,7 +674,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
   }
   
   if (params->isParameter("Explicit Residual Scaling")) {
-    string tempExpResScale = Teuchos::getParameter<string>( *params, "Explicit Residual Scaling" );
+    std::string tempExpResScale = Teuchos::getParameter<std::string>( *params, "Explicit Residual Scaling" );
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
@@ -757,7 +757,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
-    string solveLabel = label_ + ": GCRODRSolMgr total solve time";
+    std::string solveLabel = label_ + ": GCRODRSolMgr total solve time";
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
   }
 
@@ -975,8 +975,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   if (numBlocks_ > dim) {
     numBlocks_ = dim;
     printer_->stream(Warnings) << 
-      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << endl <<
-      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << endl;
+      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
+      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << std::endl;
     params_->set("Num Blocks", numBlocks_);
   } 
 
@@ -1131,8 +1131,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	}
 	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration " 
-				   << gcrodr_prime_iter->getNumIters() << endl 
-				   << e.what() << endl;
+				   << gcrodr_prime_iter->getNumIters() << std::endl 
+				   << e.what() << std::endl;
 	  throw;
 	}
         // Record number of iterations in generating initial recycle spacec
@@ -1509,8 +1509,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
         }
         catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration " 
-	                           << gcrodr_iter->getNumIters() << endl 
-				   << e.what() << endl;
+	                           << gcrodr_iter->getNumIters() << std::endl 
+				   << e.what() << std::endl;
           throw;
 	}
       }

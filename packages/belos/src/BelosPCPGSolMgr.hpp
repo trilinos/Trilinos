@@ -454,20 +454,20 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
 
   // Check to see if the timer label changed.
   if (params->isParameter("Timer Label")) {
-    string tempLabel = params->get("Timer Label", label_default_);
+    std::string tempLabel = params->get("Timer Label", label_default_);
 
     // Update parameter in our list and solver timer
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
-      string solveLabel = label_ + ": PCPGSolMgr total solve time";
+      std::string solveLabel = label_ + ": PCPGSolMgr total solve time";
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
     }
   }
 
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
-    string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
 			std::invalid_argument,
 			"Belos::PCPGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
@@ -607,7 +607,7 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
-    string solveLabel = label_ + ": PCPGSolMgr total solve time";
+    std::string solveLabel = label_ + ": PCPGSolMgr total solve time";
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
   }
 
@@ -839,8 +839,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
         }
         catch (const std::exception &e) {
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
-                                   << pcpg_iter->getNumIters() << endl
-                                   << e.what() << endl;
+                                   << pcpg_iter->getNumIters() << std::endl
+                                   << e.what() << std::endl;
           throw;
         }
       } // end of while(1)
