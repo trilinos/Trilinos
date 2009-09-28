@@ -1583,7 +1583,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /*Where data is being exchanged things can become more efficient with an isend though this has risks.  Only works on matrices with one submatrix*/
 void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[], int submatrix)
 {
-   int i, j, k, kk, ii, ll, m;
+   int i, j=0, k, kk, ii, ll, m;
    int jj = 0;
    int blockrows = 0;
    int blockcolumns = 0;

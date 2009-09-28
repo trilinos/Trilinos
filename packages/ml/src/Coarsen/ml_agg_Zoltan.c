@@ -409,7 +409,7 @@ void ML_get_entries(void *data, int num_gid_entries, int num_lid_entries,
 
     ML_get_matrix_row(A, 1, &k, &allocated, &bindx, &val,
                         &row_length, 0);
-    wgt[k] = row_length;
+    wgt[k] = (float) row_length;
     
   }
   ML_free(bindx);

@@ -21,7 +21,7 @@
 int ML_Smoother_Self(ML_Smoother *sm,int inlen,double x[],int outlen,
                      double rhs[])
 {
-  int iter,i;
+  int iter;
   void *Self_Handle = sm->smoother->data;
   ML_Comm *comm = sm->my_level->comm;
   ML_CommInfoOP *getrow_comm = sm->my_level->Amat->getrow->pre_comm;

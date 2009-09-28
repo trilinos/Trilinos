@@ -681,12 +681,12 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
        each subdomain for each balance constraint */
       
     for( i=0 ; i<N_parts ; i++ )
-      tpwgts[i] = 1.0/N_parts;
+      tpwgts[i] = (float) (1.0/N_parts);
       
     /* imbalance tolerance for each vertex weight, 1 is the perfect
        balance and N_parts being perfect imbalance */
       
-    ubvec = 1.05;
+    ubvec = (float) 1.05;
       
   }
 

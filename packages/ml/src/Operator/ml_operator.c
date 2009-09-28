@@ -1449,7 +1449,7 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
   int NRows, NCols, NBlockRows, MaxCols;
   int **AllCols, *ColIndices, *temp, length, nz_ptr;
   int NColsInBlockRow, BlockRow, Row, Col, i, j, kk, *columns = NULL;
-  int NTotalCols, *ColLocation, *newcols = NULL;
+  int *ColLocation, *newcols = NULL;
   int info, one = 1, *newrowptr, allocated = 0, **perms;
   double *vals = NULL, *newvals = NULL, *scratch, **blockdata;
   struct ML_CSR_MSRdata *csr_data = NULL;
@@ -1514,7 +1514,6 @@ int ML_Operator_ExplicitDinvA(int BlockSize, struct MLSthing *Dinv,
     for (kk = 0; kk < NColsInBlockRow; kk++) 
       ColMarker[ColIndices[kk]] = 'o';
     AllCols[BlockRow] = ColIndices;
-    NTotalCols += NColsInBlockRow;
 
     /* For each row, record the new rowptrs (as we now */
     /* know the number of columns in each BlockRow).   */

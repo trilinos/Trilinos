@@ -2920,7 +2920,6 @@ ML_Operator *ML_Operator_BlkMatExtract(ML_Operator *BlkMat, int Row, int Col)
 {
   struct  MLBlkMat  *widget;
   int i;
-  ML_Operator *Entry;
 
   widget = (struct MLBlkMat *) BlkMat->data;
 
@@ -3340,7 +3339,7 @@ int  ML_Operator_BlkMatFinalize(ML_Operator *BlkMat)
 
   ML_Operator_Set_Getrow(BlkMat, widget->outvec, ML_Operator_BlkMatGetrow);
 
-
+  return 0;
 }
 
 

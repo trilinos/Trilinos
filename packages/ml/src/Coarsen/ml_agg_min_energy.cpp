@@ -1893,7 +1893,7 @@ int ML_AGG_Gen_Prolongator_MandelMinEnergy(ML *ml,int level, int clevel, void *d
   // =============================================== //
 
   ML_Operator* P0 = ML_Operator_Create(ml->comm);
-  ML_Operator *Atilde;
+  ML_Operator *Atilde=0;
   int time_steps = 38;
   double tfinal =  70.0;
   double theta = 0.0006;
