@@ -57,6 +57,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h" 
 #include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -144,7 +145,6 @@ LinearSystemStratimikos(
   jacPtr(jacobian),
   precInterfacePtr(iPrec),
   precType(EpetraOperator),
-  precPtr(preconditioner),
   scaling(s),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
@@ -154,9 +154,16 @@ LinearSystemStratimikos(
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
-  // Interface for user-define preconditioning.
-  if (precIsAlreadyInverted) precMatrixSource = UserDefined_;
-  else                       precMatrixSource = SeparateMatrix;
+  // Interface for user-defined preconditioning -- 
+  // requires flipping of the apply and applyInverse methods
+  if (precIsAlreadyInverted) {
+    precMatrixSource = UserDefined_;
+    precPtr = Teuchos::rcp(new Epetra_InvOperator(preconditioner.get()));
+  }
+  else { // User supplies approximate matrix 
+    precMatrixSource = SeparateMatrix;
+    precPtr = preconditioner;
+  }
 
   initializeStratimikos(linearSolverParams);
   tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));

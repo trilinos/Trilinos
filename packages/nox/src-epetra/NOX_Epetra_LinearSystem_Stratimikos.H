@@ -87,30 +87,6 @@ This class handles construction of both the preconditioners
 and solvers.  All options are determined through parameter 
 lists and the basic constructors. 
 
-<B>Constructing a Linear System</B>
-
-
-EDIT THE FOLLOWING FOR STRATIMIKOS
-Ther
-between constructors is based on whether the user supplies a 
-Jacobian, a preconditioner, neither or both.  
-
-If a Jacobian is not supplied then this object can create an
-internally constructed Jacobian based on a Finite Difference or
-Matrif-Free object.  The user can specify which type of object to use
-by setting the parameter "Jacobian Operator" in the parameter list.
-The choices are "Matrix-Free" or "Finite Difference".
-
-The user can supply their own preconditioner as an Epetra_Operator, or they can supply their own matrix (an Epetra_RowMatrix derived object) that can be used by one of the internal preconditioner libraries (currently aztecoo or ifpack).  If they supply their own preconditioner the object must implement the Epetra_Operator::ApplyInverse method.  This is the method called during the linear solve to introduce preconditoning into aztecoo.  If the user supplies a matrix to be used with an internal preconditioner, it must be derived from the Epetra_RowMatrix class and must implement all functionality in the Epetra_RowMatrix.  If a Preconditioner is not supplied, then this object can create an internal preconditioner matrix by finite differencing or it can use the Jacobian operator if the Jacobian derives from the Epetra_RowMatrix class.   The user can specify which type of object to use by setting the parameter "Preconditioner Operator" in the parameter list.  The choices are "Use Jacobian" or "Finite Difference".
-
-The Jacobian and preconditioner each require an interface to update the state of the operator with respect to the solution vector and any other parameters.  There are three interfaces that can be implemented, NOX::Epetra::Interface::Required,   NOX::Epetra::Interface::Jacobian, and NOX::Epetra::Interface::Preconditioner.  
-
-NOX::Epetra::Interface::Required supplies the computeF() function so codes can tell NOX what the nonlinear equations are.  This is the minimum requirement to run nox through the epetra interface.  LinearSolverAztecOO requires this in some constructors so that if a Jacobian or preconditoner is not supplied, it will use computeF from the Required interface to estimate the Jacobian or preconditioner via finite differences or directional derivatives.
-
-NOX::Epetra::Interface::Jacobian is used for updating a user supplied Jacobian opertor with respect to the solution vector and any other parameters.  It is required only in constructors in which a user supplies a Jacobian operator.
-
-NOX::Epetra::Interface::Preconditioner is used for updating a user supplied preconditioner opertor/matrix with respect to the solution vector and any other parameters.  It is required only in constructors in which a user supplies a preconditioner operator.
-
  */
 
 class LinearSystemStratimikos : public virtual NOX::Epetra::LinearSystem {
@@ -135,11 +111,13 @@ public:
   /*! Either there is no preconditioning or the preconditioner will be 
     used/created internally.  The Jacobian (if derived from an 
     Epetra_RowMatrix class can be used with an internal preconditioner. 
+    The stratimikosParams object is sent directly to the Stratimikos
+    package. See Stratimikos for full documentation.
    */
 
   LinearSystemStratimikos(
     Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& linearSolverParams, 
+    Teuchos::ParameterList& stratimikosParams, 
     const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
     const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
     const Teuchos::RCP<Epetra_Operator>& J,
@@ -148,8 +126,17 @@ public:
     Teuchos::null);
 
   //! Constructor with user supplied separate objects for the
-  //! Jacobian (J) and Preconditioner (M).  
-  //! linearSolverParams is the "Linear Solver" sublist of parameter list.
+  //! Jacobian (J) and Preconditioner (M). 
+  /*! If precIsAlreadyInverted=false, then M is considered an
+      approximate Jacobian. Preconditioner algorithms such as
+      ILU are then used to generate an approximate M-inverse.
+      Else, if precIsAlreadyInverted=true, then the M operator
+      is already assumed to approximate J-inverse and it is
+      just applied as-is. 
+  
+      The stratimikosParams object is sent directly to the Stratimikos
+      package. See Stratimikos for full documentation.
+  */
   LinearSystemStratimikos(
     Teuchos::ParameterList& printingParams, 
     Teuchos::ParameterList& linearSolverParams, 
