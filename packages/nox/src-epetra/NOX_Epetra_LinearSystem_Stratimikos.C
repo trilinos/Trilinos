@@ -154,6 +154,13 @@ LinearSystemStratimikos(
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
+  // Create Jac Operator internally, if requested one of 2 ways
+  if (jacPtr == Teuchos::null) 
+    createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
+  else if (linearSolverParams.get("Jacobian Operator", "Have Jacobian")
+           != "Have Jacobian")
+    createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
+
   // Interface for user-defined preconditioning -- 
   // requires flipping of the apply and applyInverse methods
   if (precIsAlreadyInverted) {
@@ -513,19 +520,13 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     // Just set and enforce explicit constuction.
   }
   else if (precMatrixSource == SeparateMatrix) {
-    //Epetra_RowMatrix& precMatrix = dynamic_cast<Epetra_RowMatrix&>(*precPtr);
     precInterfacePtr->computePreconditioner(x.getEpetraVector(), 
 				      *precPtr, &p);
-    //this->setAztecOOJacobian();
-    //aztecSolverPtr->SetPrecMatrix(&precMatrix);
-    //aztecSolverPtr->ConstructPreconditioner(conditionNumberEstimate);
   }
   else if (precMatrixSource == UserDefined_) {
 
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					    *precPtr, &p);
-    //solvePrecOpPtr = precPtr;
-
   }
 
   isPrecConstructed = true; 
@@ -549,7 +550,7 @@ bool NOX::Epetra::LinearSystemStratimikos::
 recomputePreconditioner(const NOX::Epetra::Vector& x, 
 			Teuchos::ParameterList& linearSolverParams) const
 {  
-cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
+cout << " NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner\n"
      << " NOT IMPLEMENTED " << endl;
 return false;
 }
