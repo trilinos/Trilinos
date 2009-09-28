@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   ierr = resid.Update(1.0, RHS, -1.0, RHScomp, 0.0);
   assert(ierr==0);
 
-  double residual;
+  double residual=0.;
   ierr = resid.Norm2(&residual);
   assert(ierr==0);
   if (proc_config[AZ_node] == 0) {

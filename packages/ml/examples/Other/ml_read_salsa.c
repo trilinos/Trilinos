@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	AZ_PRECOND *Pmat = NULL;
 	ML *ml;
 	FILE *fp;
-  int ch,i;
+  int i;
    struct AZ_SCALING *scaling;
 double solve_time, setup_time, start_time;
 ML_Aggregate *ag;

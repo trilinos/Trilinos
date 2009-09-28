@@ -366,9 +366,6 @@ MultiLevelPreconditioner(ML_Operator * Operator,
   // need to wrap an Epetra_RowMatrix around Operator.
   // This is quite not the best approach for small matrices
 
-  int MaxNumNonzeros;
-  double CPUTime;
-  
   if (NBlocks != 0) Comm_ = &(DiagOperators[0]->Comm());
   else Comm_ = NULL;
 

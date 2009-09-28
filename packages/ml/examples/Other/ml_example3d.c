@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
 #ifdef ML_BENCHMARK
   char input[MAX_INPUT_STR_LN];
   FILE *ifp;
-#endif
   char filename[80];
+#endif
 
   /* ----------------------- execution begins --------------------------------*/
 

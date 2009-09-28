@@ -1021,7 +1021,7 @@ int ML_MaxAllocatableSize()
 {
   int* junk = NULL;
   long long int upper, mid, lower;
-  long long int ml_total_mem;
+  size_t ml_total_mem;
 
   ml_total_mem = 10000;
   while ( (junk = (int*) malloc(sizeof(int)*ml_total_mem)) != NULL) {

@@ -139,8 +139,8 @@ int main(int argc, char *argv[])
   AZ_MATRIX   *Amat = NULL;
   ML          *ml   = NULL;
   ML_Aggregate *ml_ag = NULL;
-  char filename[80];
 #ifdef ML_BENCHMARK
+  char filename[80];
   char input[MAX_INPUT_STR_LN];
   FILE *ifp;
 #endif
