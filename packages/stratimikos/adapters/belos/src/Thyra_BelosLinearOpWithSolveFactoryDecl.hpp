@@ -44,6 +44,8 @@ public:
   static const std::string  PseudoBlockGMRES_name;
   /** \brief . */
   static const std::string  BlockCG_name;
+  /** \brief . */
+  static const std::string  GCRODR_name;
 
   //@}
 

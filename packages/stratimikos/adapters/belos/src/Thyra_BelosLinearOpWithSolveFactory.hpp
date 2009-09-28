@@ -8,6 +8,7 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -30,6 +31,8 @@ template<class Scalar>
 const std::string  BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockGMRES_name = "Pseudo Block GMRES";
 template<class Scalar>
 const std::string  BelosLinearOpWithSolveFactory<Scalar>::BlockCG_name = "Block CG";
+template<class Scalar>
+const std::string  BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
 
 // Constructors/initializers/accessors
 
@@ -319,6 +322,12 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         *mgr.getValidParameters()
         );
     }
+    {
+      Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(GCRODR_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
   }
   return validParamList;
 }
@@ -547,7 +556,21 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
     case SOLVER_TYPE_GCRODR:
     {
-      TEST_FOR_EXCEPT("ToDo: Support GCRODR"); 
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &gcrodrPL = solverTypesPL.sublist(GCRODR_name);
+        solverPL = Teuchos::rcp( &gcrodrPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      } 
+      else {
+        iterativeSolver = rcp(new Belos::GCRODRSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
       break;
     }
     default:
