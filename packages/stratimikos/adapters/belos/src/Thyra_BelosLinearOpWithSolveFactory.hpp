@@ -8,6 +8,7 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -22,7 +23,7 @@ namespace Thyra {
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solver Type";
 template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "Block GMRES";
+const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "Pseudo Block GMRES";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverTypes_name = "Solver Types";
 template<class Scalar>
@@ -31,6 +32,8 @@ template<class Scalar>
 const std::string  BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockGMRES_name = "Pseudo Block GMRES";
 template<class Scalar>
 const std::string  BelosLinearOpWithSolveFactory<Scalar>::BlockCG_name = "Block CG";
+template<class Scalar>
+const std::string  BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "Pseudo Block CG";
 template<class Scalar>
 const std::string  BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
 
@@ -279,6 +282,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         "Block GMRES",
         "Pseudo Block GMRES",
         "Block CG",
+        "Pseudo Block CG",
         "GCRODR"
         ),
       tuple<std::string>(
@@ -298,6 +302,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         SOLVER_TYPE_BLOCK_GMRES,
         SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
         SOLVER_TYPE_BLOCK_CG,
+        SOLVER_TYPE_PSEUDO_BLOCK_CG,
         SOLVER_TYPE_GCRODR
         ),
       &*validParamList
@@ -319,6 +324,12 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     {
       Belos::BlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(BlockCG_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(PseudoBlockCG_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -551,6 +562,27 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       else {
         iterativeSolver = rcp(new Belos::BlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
+    case SOLVER_TYPE_PSEUDO_BLOCK_CG:
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &pbcgPL = solverTypesPL.sublist(PseudoBlockCG_name);
+        solverPL = Teuchos::rcp( &pbcgPL, false );
+      }
+      // 
+      // Create the solver
+      // 
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      }
+      else {
+        iterativeSolver = rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
       }
       break;
     }
