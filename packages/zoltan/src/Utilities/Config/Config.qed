@@ -45,7 +45,7 @@ SPPR_HEAD 		= spprinc.most
 FARG      		= farg_typical
 F90_MODULE_PREFIX 	= -M
 
-#MPI_LIB			= -lmpich -lpmpich -lnsl -lgcc
+#MPI_LIBS			= -lmpich -lpmpich -lnsl -lgcc
 #MPI_LIBPATH		= -L/usr/local/mpich-1.2.6-eth/lib
 
 PARMETIS_LIBPATH 	= -L/home/kddevin/ParMETIS3_1/

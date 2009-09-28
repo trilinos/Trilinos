@@ -19,252 +19,30 @@ extern "C" {
 
 #include "zz_const.h"
 #include "all_allo_const.h"
-#include "sppr_header"
+#include "cwrap_fmangle.h"
 
-/*--------------------------------------------------------------------*/
-/* procedure name mangling                                            */
+/* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
+#define ADDR_TO_LB(addr_lb, lb) { \
+   unsigned char *p; \
+   int i; \
+   p = (unsigned char *) &(lb); \
+   for (i=0; i<sizeof(struct Zoltan_Struct *); i++) \
+     {*p = (unsigned char)(addr_lb)[i]; p++;} }
 
-#define LOWERCASE   1
-#define UPPERCASE   2
-#define UNDERSCORE  3
-#define UNDERSCORE2 4
-
-#if FMANGLE==LOWERCASE
-
-#define Zfw_Initialize                 zfw_initialize
-#define Zfw_Initialize1                zfw_initialize1
-#define Zfw_Create                     zfw_create       
-#define Zfw_Copy                       zfw_copy
-#define Zfw_Copy_To                    zfw_copy_to
-#define Zfw_Destroy                    zfw_destroy       
-#define Zfw_Align                      zfw_align       
-#define Zfw_Memory_Stats               zfw_memory_stats       
-#define Zfw_Set_Fn0f                   zfw_set_fn0f
-#define Zfw_Set_Fn1f                   zfw_set_fn1f
-#define Zfw_Set_Fn2f                   zfw_set_fn2f
-#define Zfw_Set_Fn3f                   zfw_set_fn3f
-#define Zfw_Set_Fn4f                   zfw_set_fn4f
-#define Zfw_Set_Fn5f                   zfw_set_fn5f
-#define Zfw_Set_Fn6f                   zfw_set_fn6f
-#define Zfw_Set_Fn7f                   zfw_set_fn7f
-#define Zfw_Set_Fn8f                   zfw_set_fn8f
-#define Zfw_Set_Fn9f                   zfw_set_fn9f
-#define Zfw_Set_FnAf                   zfw_set_fnaf
-#define Zfw_Set_FnBf                   zfw_set_fnbf
-#define Zfw_Set_Fn0s                   zfw_set_fn0s
-#define Zfw_Set_Fn1s                   zfw_set_fn1s
-#define Zfw_Set_Fn2s                   zfw_set_fn2s
-#define Zfw_Set_Fn3s                   zfw_set_fn3s
-#define Zfw_Set_Fn4s                   zfw_set_fn4s
-#define Zfw_Set_Fn5s                   zfw_set_fn5s
-#define Zfw_Set_Fn6s                   zfw_set_fn6s
-#define Zfw_Set_Fn7s                   zfw_set_fn7s
-#define Zfw_Set_Fn8s                   zfw_set_fn8s
-#define Zfw_Set_Fn9s                   zfw_set_fn9s
-#define Zfw_Set_FnAs                   zfw_set_fnas
-#define Zfw_Set_FnBs                   zfw_set_fnbs
-#define Zfw_Set_Param                  zfw_set_param
-#define Zfw_Set_Param_Vec              zfw_set_param_vec
-#define Zfw_LB_Partition               zfw_lb_partition
-#define Zfw_LB_Eval                    zfw_lb_eval
-#define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes
-#define Zfw_LB_Point_Assign            zfw_lb_point_assign
-#define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign
-#define Zfw_LB_Box_Assign              zfw_lb_box_assign
-#define Zfw_LB_Box_PP_Assign           zfw_lb_box_pp_assign
-#define Zfw_Invert_Lists               zfw_invert_lists
-#define Zfw_Compute_Destinations       zfw_compute_destinations
-#define Zfw_Migrate                    zfw_migrate  
-#define Zfw_Help_Migrate               zfw_help_migrate  
-#define Zfw_Order                      zfw_order  
-#define Zfw_Color                      zfw_color  
-#define Zfw_Color_Test                 zfw_color_test  
-#define Zfw_Generate_Files             zfw_generate_files  
-#define Zfw_RCB_Box                    zfw_rcb_box  
-#define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc
-#define Zfw_Get_Address_int            zfw_get_address_int
-#define Zfw_Get_Address_struct         zfw_get_address_struct
-#define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim
-#define Zfw_Get_Comm_Dim               zfw_get_comm_dim
-#define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order
-
-#elif FMANGLE==UPPERCASE
-
-#define Zfw_Initialize                 ZFW_INITIALIZE
-#define Zfw_Initialize1                ZFW_INITIALIZE1
-#define Zfw_Create                     ZFW_CREATE       
-#define Zfw_Copy                       ZFW_COPY
-#define Zfw_Copy_To                    ZFW_COPY_TO
-#define Zfw_Destroy                    ZFW_DESTROY       
-#define Zfw_Align                      ZFW_ALIGN
-#define Zfw_Memory_Stats               ZFW_MEMORY_STATS  
-#define Zfw_Set_Fn0f                   ZFW_SET_FN0F
-#define Zfw_Set_Fn1f                   ZFW_SET_FN1F
-#define Zfw_Set_Fn2f                   ZFW_SET_FN2F
-#define Zfw_Set_Fn3f                   ZFW_SET_FN3F
-#define Zfw_Set_Fn4f                   ZFW_SET_FN4F
-#define Zfw_Set_Fn5f                   ZFW_SET_FN5F
-#define Zfw_Set_Fn6f                   ZFW_SET_FN6F
-#define Zfw_Set_Fn7f                   ZFW_SET_FN7F
-#define Zfw_Set_Fn8f                   ZFW_SET_FN8F
-#define Zfw_Set_Fn9f                   ZFW_SET_FN9F
-#define Zfw_Set_FnAf                   ZFW_SET_FNAF
-#define Zfw_Set_FnBf                   ZFW_SET_FNBF
-#define Zfw_Set_Fn0s                   ZFW_SET_FN0S
-#define Zfw_Set_Fn1s                   ZFW_SET_FN1S
-#define Zfw_Set_Fn2s                   ZFW_SET_FN2S
-#define Zfw_Set_Fn3s                   ZFW_SET_FN3S
-#define Zfw_Set_Fn4s                   ZFW_SET_FN4S
-#define Zfw_Set_Fn5s                   ZFW_SET_FN5S
-#define Zfw_Set_Fn6s                   ZFW_SET_FN6S
-#define Zfw_Set_Fn7s                   ZFW_SET_FN7S
-#define Zfw_Set_Fn8s                   ZFW_SET_FN8S
-#define Zfw_Set_Fn9s                   ZFW_SET_FN9S
-#define Zfw_Set_FnAs                   ZFW_SET_FNAS
-#define Zfw_Set_FnBs                   ZFW_SET_FNBS
-#define Zfw_Set_Param                  ZFW_SET_PARAM
-#define Zfw_Set_Param_Vec              ZFW_SET_PARAM_VEC
-#define Zfw_LB_Partition               ZFW_LB_PARTITION
-#define Zfw_LB_Eval                    ZFW_LB_EVAL
-#define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES
-#define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
-#define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN
-#define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN
-#define Zfw_LB_Box_PP_Assign           ZFW_LB_BOX_PP_ASSIGN
-#define Zfw_Invert_Lists               ZFW_INVERT_LISTS
-#define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS  
-#define Zfw_Migrate                    ZFW_MIGRATE  
-#define Zfw_Help_Migrate               ZFW_HELP_MIGRATE  
-#define Zfw_Order                      ZFW_ORDER  
-#define Zfw_Color                      ZFW_COLOR  
-#define Zfw_Color_Test                 ZFW_COLOR_TEST  
-#define Zfw_Generate_Files             ZFW_GENERATE_FILES  
-#define Zfw_RCB_Box                    ZFW_RCB_BOX  
-#define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
-#define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
-#define Zfw_Get_Address_struct         ZFW_GET_ADDRESS_STRUCT
-#define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
-#define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER
-
-#elif FMANGLE==UNDERSCORE
-
-#define Zfw_Initialize                 zfw_initialize_
-#define Zfw_Initialize1                zfw_initialize1_
-#define Zfw_Create                     zfw_create_
-#define Zfw_Copy                       zfw_copy_
-#define Zfw_Copy_To                    zfw_copy_to_
-#define Zfw_Destroy                    zfw_destroy_
-#define Zfw_Align                      zfw_align_
-#define Zfw_Memory_Stats               zfw_memory_stats_
-#define Zfw_Set_Fn0f                   zfw_set_fn0f_
-#define Zfw_Set_Fn1f                   zfw_set_fn1f_
-#define Zfw_Set_Fn2f                   zfw_set_fn2f_
-#define Zfw_Set_Fn3f                   zfw_set_fn3f_
-#define Zfw_Set_Fn4f                   zfw_set_fn4f_
-#define Zfw_Set_Fn5f                   zfw_set_fn5f_
-#define Zfw_Set_Fn6f                   zfw_set_fn6f_
-#define Zfw_Set_Fn7f                   zfw_set_fn7f_
-#define Zfw_Set_Fn8f                   zfw_set_fn8f_
-#define Zfw_Set_Fn9f                   zfw_set_fn9f_
-#define Zfw_Set_FnAf                   zfw_set_fnaf_
-#define Zfw_Set_FnBf                   zfw_set_fnbf_
-#define Zfw_Set_Fn0s                   zfw_set_fn0s_
-#define Zfw_Set_Fn1s                   zfw_set_fn1s_
-#define Zfw_Set_Fn2s                   zfw_set_fn2s_
-#define Zfw_Set_Fn3s                   zfw_set_fn3s_
-#define Zfw_Set_Fn4s                   zfw_set_fn4s_
-#define Zfw_Set_Fn5s                   zfw_set_fn5s_
-#define Zfw_Set_Fn6s                   zfw_set_fn6s_
-#define Zfw_Set_Fn7s                   zfw_set_fn7s_
-#define Zfw_Set_Fn8s                   zfw_set_fn8s_
-#define Zfw_Set_Fn9s                   zfw_set_fn9s_
-#define Zfw_Set_FnAs                   zfw_set_fnas_
-#define Zfw_Set_FnBs                   zfw_set_fnbs_
-#define Zfw_Set_Param                  zfw_set_param_
-#define Zfw_Set_Param_Vec              zfw_set_param_vec_
-#define Zfw_LB_Partition               zfw_lb_partition_
-#define Zfw_LB_Eval                    zfw_lb_eval_
-#define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes_
-#define Zfw_LB_Point_Assign            zfw_lb_point_assign_
-#define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign_
-#define Zfw_LB_Box_Assign              zfw_lb_box_assign_
-#define Zfw_LB_Box_PP_Assign           zfw_lb_box_pp_assign_
-#define Zfw_Invert_Lists               zfw_invert_lists_
-#define Zfw_Compute_Destinations       zfw_compute_destinations_
-#define Zfw_Migrate                    zfw_migrate_
-#define Zfw_Help_Migrate               zfw_help_migrate_  
-#define Zfw_Order                      zfw_order_  
-#define Zfw_Color                      zfw_color_  
-#define Zfw_Color_Test                 zfw_color_test_  
-#define Zfw_Generate_Files             zfw_generate_files_ 
-#define Zfw_RCB_Box                    zfw_rcb_box_
-#define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc_
-#define Zfw_Get_Address_int            zfw_get_address_int_
-#define Zfw_Get_Address_struct         zfw_get_address_struct_
-#define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim_
-#define Zfw_Get_Comm_Dim               zfw_get_comm_dim_
-#define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order_
-
-#elif FMANGLE==UNDERSCORE2
-
-#define Zfw_Initialize                 zfw_initialize__
-#define Zfw_Initialize1                zfw_initialize1__
-#define Zfw_Create                     zfw_create__
-#define Zfw_Copy                       zfw_copy__
-#define Zfw_Copy_To                    zfw_copy_to__
-#define Zfw_Destroy                    zfw_destroy__
-#define Zfw_Align                      zfw_align__
-#define Zfw_Memory_Stats               zfw_memory_stats__
-#define Zfw_Set_Fn0f                   zfw_set_fn0f__
-#define Zfw_Set_Fn1f                   zfw_set_fn1f__
-#define Zfw_Set_Fn2f                   zfw_set_fn2f__
-#define Zfw_Set_Fn3f                   zfw_set_fn3f__
-#define Zfw_Set_Fn4f                   zfw_set_fn4f__
-#define Zfw_Set_Fn5f                   zfw_set_fn5f__
-#define Zfw_Set_Fn6f                   zfw_set_fn6f__
-#define Zfw_Set_Fn7f                   zfw_set_fn7f__
-#define Zfw_Set_Fn8f                   zfw_set_fn8f__
-#define Zfw_Set_Fn9f                   zfw_set_fn9f__
-#define Zfw_Set_FnAf                   zfw_set_fnaf__
-#define Zfw_Set_FnBf                   zfw_set_fnbf__
-#define Zfw_Set_Fn0s                   zfw_set_fn0s__
-#define Zfw_Set_Fn1s                   zfw_set_fn1s__
-#define Zfw_Set_Fn2s                   zfw_set_fn2s__
-#define Zfw_Set_Fn3s                   zfw_set_fn3s__
-#define Zfw_Set_Fn4s                   zfw_set_fn4s__
-#define Zfw_Set_Fn5s                   zfw_set_fn5s__
-#define Zfw_Set_Fn6s                   zfw_set_fn6s__
-#define Zfw_Set_Fn7s                   zfw_set_fn7s__
-#define Zfw_Set_Fn8s                   zfw_set_fn8s__
-#define Zfw_Set_Fn9s                   zfw_set_fn9s__
-#define Zfw_Set_FnAs                   zfw_set_fnas__
-#define Zfw_Set_FnBs                   zfw_set_fnbs__
-#define Zfw_Set_Param                  zfw_set_param__
-#define Zfw_Set_Param_Vec              zfw_set_param_vec__
-#define Zfw_LB_Partition               zfw_lb_partition__
-#define Zfw_LB_Eval                    zfw_lb_eval__
-#define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes__
-#define Zfw_LB_Point_Assign            zfw_lb_point_assign__
-#define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign__
-#define Zfw_LB_Box_Assign              zfw_lb_box_assign__
-#define Zfw_LB_Box_PP_Assign           zfw_lb_box_pp_assign__
-#define Zfw_Invert_Lists               zfw_invert_lists__
-#define Zfw_Compute_Destinations       zfw_compute_destinations__
-#define Zfw_Migrate                    zfw_migrate__
-#define Zfw_Help_Migrate               zfw_help_migrate__
-#define Zfw_Order                      zfw_order__
-#define Zfw_Color                      zfw_color__
-#define Zfw_Color_Test                 zfw_color_test__
-#define Zfw_Generate_Files             zfw_generate_files__
-#define Zfw_RCB_Box                    zfw_rcb_box__
-#define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc__
-#define Zfw_Get_Address_int            zfw_get_address_int__
-#define Zfw_Get_Address_struct         zfw_get_address_struct__
-#define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim__
-#define Zfw_Get_Comm_Dim               zfw_get_comm_dim__
-#define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order__
-
-#endif /* FMANGLE */
+/* construct the nbyte 1-byte integers from the lb pointer */
+/* Always assuming 64-bit pointers in F90 interface. */
+/* If 32-bit pointers, pad remaining fields with 0.  */
+#define LB_TO_ADDR(lb, addr_lb, nbytes) { \
+   unsigned char *p; \
+   int i; \
+   p = (unsigned char *) &(lb); \
+   for (i = 0; i < sizeof(struct Zoltan_Struct *); i++) { \
+     (addr_lb)[i] = (int) *p;  \
+     p++; \
+   } \
+   for (i = sizeof(struct Zoltan_Struct *); i < (nbytes); i++) \
+     (addr_lb)[i] = 0; \
+ }
 
 /*--------------------------------------------------------------------*/
 /* Variables                                                          */
@@ -294,58 +72,35 @@ MPI_Comm Zoltan_comm_f2c(int *f_comm)
 /*****************************************************************************/
 /* These routines get the address of an array allocated by fortran and
    return it */
-#ifdef PTR_64BIT
 void Zfw_Get_Address_int(int *addr,
                          long *ret_addr)
 {
+   /* Assuming sizeof(long) == pointer size.  True on most linux systems. */
+   /* May not be true in 64-bit Windows, but does anyone use F90 on Windoze? */
    if (sizeof(long) != sizeof(int *)) {
      ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
-       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
+       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.\n Contact Zoltan developers for help.");
    }
    *ret_addr = (long)addr;
 }
-#else
-void Zfw_Get_Address_int(int *addr,
-                         int *ret_addr)
-{
-   if (sizeof(int) != sizeof(int *)) {
-     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
-       "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
-   }
-   *ret_addr = (int)addr;
-}
-#endif  /* PTR_64BIT */
 
-#ifdef PTR_64BIT
 void Zfw_Get_Address_struct(int *addr,
 			    long *ret_addr)
 {
+   /* Assuming sizeof(long) == pointer size.  True on most linux systems. */
+   /* May not be true in 64-bit Windows, but does anyone use F90 on Windoze? */
    if (sizeof(long) != sizeof(int *)) {
      ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_struct", 
-       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
+       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.\n Contact Zoltan developers for help.");
    }
    *ret_addr = (long)addr;
 }
-#else
-void Zfw_Get_Address_struct(int *addr,
-			    int *ret_addr)
-{
-   if (sizeof(int) != sizeof(int *)) {
-     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_struct", 
-       "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
-   }
-   *ret_addr = (int)addr;
-}
-#endif  /* PTR_64BIT */
 
 /*****************************************************************************/
 int Zfw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    return lb->Obj_Weight_Dim;
 }
 
@@ -353,10 +108,7 @@ int Zfw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
 int Zfw_Get_Comm_Dim(int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    return lb->Edge_Weight_Dim;
 }
 
@@ -967,20 +719,10 @@ void Zoltan_Hier_Method_Fort_Wrapper(void *data, int level,
 				     struct Zoltan_Struct *zz, int *ierr)
 {
   int *fort_zz; /* maybe this should be void *? */
-  unsigned char *p;
-  int i, nbytes;
   extern ZOLTAN_FORT_MALLOC_SET_STRUCT_FN fort_malloc_set_struct;
-#ifdef PTR_64BIT
   int zz_addr_bytes[8];
-  nbytes = 8;
-#else
-  int zz_addr_bytes[4];
-  nbytes = 4;
-#endif
-  /* create an integer array containing the address of zz one byte at
-     a time */
-  p = (unsigned char *) &zz;
-  for (i=0; i<nbytes; i++) {zz_addr_bytes[i] = (int)*p; p++;}
+  int nbytes = 8;
+  LB_TO_ADDR(zz, zz_addr_bytes, nbytes);
 
   /* create a Fortran Zoltan_Struct for zz */
   Zoltan_Special_Fort_Malloc_Set_Struct(zz_addr_bytes,&fort_zz);
@@ -1035,42 +777,32 @@ int Zfw_Initialize1(int *argc, int *argv, int *starts, float *ver)
 void Zfw_Create(int *f_communicator, int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
    MPI_Comm c_communicator;
    c_communicator = Zoltan_comm_f2c(f_communicator);
    lb = Zoltan_Create(c_communicator);
    lb->Fortran = 1;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;}
+   LB_TO_ADDR(lb, addr_lb, *nbytes);
 }
 
 /*****************************************************************************/
 void Zfw_Copy(int *addr_lb1, int *addr_lb2, int *nbytes)
 {
    struct Zoltan_Struct *in, *out;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &in;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb1[i]; p++;}
+
+   ADDR_TO_LB(addr_lb1, in);
 
    out = Zoltan_Copy(in);
    out->Fortran = 1;
 
-   p = (unsigned char *) &out;
-   for (i=0; i<(*nbytes); i++) {addr_lb2[i] = (int)*p; p++;}
+   LB_TO_ADDR(out, addr_lb2, *nbytes);
 }
 
 /*****************************************************************************/
 int Zfw_Copy_To(int *addr_lb1, int *addr_lb2, int *nbytes)
 {
    struct Zoltan_Struct *to, *from;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &to;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb1[i]; p++;}
-   p = (unsigned char *) &from;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb2[i]; p++;}
+   ADDR_TO_LB(addr_lb1, to);
+   ADDR_TO_LB(addr_lb2, from);
    return Zoltan_Copy_To(to, from);
 }
 
@@ -1078,10 +810,7 @@ int Zfw_Copy_To(int *addr_lb1, int *addr_lb2, int *nbytes)
 void Zfw_Destroy(int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    Zoltan_Destroy(&lb);
 }
 
@@ -1102,10 +831,7 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                void *data)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    switch(*type) {
    case ZOLTAN_PART_MULTI_FN_TYPE:
       lb->Get_Part_Multi_Fort = (ZOLTAN_PART_MULTI_FORT_FN *) fn;
@@ -1526,12 +1252,10 @@ int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
 {
    struct Zoltan_Struct *lb;
    char *param_name, *new_value;
-   unsigned char *p;
    int i, result;
    param_name = (char *)ZOLTAN_MALLOC(*param_name_len+1);
    new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
    param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
@@ -1549,12 +1273,10 @@ int Zfw_Set_Param_Vec(int *addr_lb, int *nbytes, int *int_param_name,
 {
    struct Zoltan_Struct *lb;
    char *param_name, *new_value;
-   unsigned char *p;
    int i, result;
    param_name = (char *)ZOLTAN_MALLOC(*param_name_len+1);
    new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
    param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
@@ -1593,8 +1315,6 @@ int Zfw_LB_Partition(int *addr_lb, int *nbytes, int *changes,
 )
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
 #if defined (PGI) || defined (FUJITSU)
 #define F90LB_TEMP 3
 #else
@@ -1608,8 +1328,7 @@ int Zfw_LB_Partition(int *addr_lb, int *nbytes, int *changes,
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
 
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    Zoltan_Current = lb;
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
@@ -1648,29 +1367,17 @@ int Zfw_LB_Partition(int *addr_lb, int *nbytes, int *changes,
 }
 
 /*****************************************************************************/
-int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats,
-                int *nobj, float *obj_wgt, int *ncuts, float *cut_wgt,
-                int *nboundary, int *nadj,
-                int *is_nobj, int *is_obj_wgt, int *is_ncuts, int *is_cut_wgt,
-                int *is_nboundary, int *is_nadj)
+int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats)
 {
+/* KDD Note that we are not yet ready to support the return arguments
+ * KDD of Zoltan_LB_Eval in the F90 interface yet.  For now, we'll only
+ * KDD print stats.
+ */
    struct Zoltan_Struct *lb;
-   int *loc_nobj, *loc_ncuts, *loc_nboundary, *loc_nadj;
-   float *loc_obj_wgt, *loc_cut_wgt;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
    Zoltan_Current = lb;
-   if (*is_nobj) {loc_nobj = nobj;} else {loc_nobj = NULL;}
-   if (*is_ncuts) {loc_ncuts = ncuts;} else {loc_ncuts = NULL;}
-   if (*is_obj_wgt) {loc_obj_wgt = obj_wgt;} else {loc_obj_wgt = NULL;}
-   if (*is_cut_wgt) {loc_cut_wgt = cut_wgt;} else {loc_cut_wgt = NULL;}
-   if (*is_nboundary) {loc_nboundary = nboundary;} else {loc_nboundary = NULL;}
-   if (*is_nadj) {loc_nadj = nadj;} else {loc_nadj = NULL;}
 
-   return  Zoltan_LB_Eval(lb, *print_stats, loc_nobj, loc_obj_wgt, loc_ncuts, loc_cut_wgt,
-           loc_nboundary, loc_nadj);
+   return  Zoltan_LB_Eval(lb, *print_stats, NULL, NULL, NULL);
 }
 
 /*****************************************************************************/
@@ -1678,10 +1385,7 @@ int Zfw_LB_Set_Part_Sizes(int *addr_lb, int *nbytes, int *global_part, int *len,
                           int *partids, int *wgtidx, float *partsizes)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Set_Part_Sizes(lb, *global_part, *len, partids, wgtidx,
                                    partsizes);
@@ -1691,10 +1395,7 @@ int Zfw_LB_Set_Part_Sizes(int *addr_lb, int *nbytes, int *global_part, int *len,
 int Zfw_LB_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Point_Assign(lb, coords, proc);
 }
@@ -1704,10 +1405,7 @@ int Zfw_LB_Point_PP_Assign(int *addr_lb, int *nbytes, double *coords, int *proc,
                            int *part)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Point_PP_Assign(lb, coords, proc, part);
 }
@@ -1718,10 +1416,7 @@ int Zfw_LB_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
                      int *procs, int *numprocs)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, 
                                procs, numprocs);
@@ -1733,10 +1428,7 @@ int Zfw_LB_Box_PP_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
                      int *procs, int *numprocs, int *parts, int *numparts)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_LB_Box_PP_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax,
                                   procs, numprocs, parts, numparts);
@@ -1766,8 +1458,6 @@ int Zfw_Invert_Lists(int *addr_lb, int *nbytes,
 )
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
 #if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
@@ -1780,9 +1470,7 @@ int Zfw_Invert_Lists(int *addr_lb, int *nbytes,
 #undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
-
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
    Fortran for allocation.  The address of the allocated space will be
@@ -1832,8 +1520,6 @@ int Zfw_Compute_Destinations(int *addr_lb, int *nbytes,
 )
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
 #if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
@@ -1845,9 +1531,7 @@ int Zfw_Compute_Destinations(int *addr_lb, int *nbytes,
 #undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
-
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
    Fortran for allocation.  The address of the allocated space will be
@@ -1884,10 +1568,8 @@ int Zfw_Migrate(int *addr_lb, int *nbytes,
  int *export_procs, int *export_to_part)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Current = lb;
    return Zoltan_Migrate(lb,
                          *num_import,import_global_ids,import_local_ids,
@@ -1905,10 +1587,8 @@ int Zfw_Help_Migrate(int *addr_lb, int *nbytes,
  int *export_procs)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Current = lb;
    return Zoltan_Help_Migrate(lb,
                           *num_import,import_global_ids,import_local_ids,
@@ -1919,40 +1599,36 @@ int Zfw_Help_Migrate(int *addr_lb, int *nbytes,
 /*****************************************************************************/
 int Zfw_Order(
  int *addr_lb, int *nbytes,
- int *num_gid_entries, int *num_lid_entries,
+ int *num_gid_entries,
  int *num_obj,
- ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ ZOLTAN_ID_PTR gids, 
  int *rank, int *iperm)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
    int ierr;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Current = lb;
-   ierr = Zoltan_Order(lb,num_gid_entries,num_lid_entries,*num_obj,
-                       gids, lids, rank, iperm);
+   ierr = Zoltan_Order(lb,*num_gid_entries,*num_obj,
+                       gids, rank, iperm);
    return ierr;
 }
 
 /*****************************************************************************/
 int Zfw_Color(
  int *addr_lb, int *nbytes,
- int *num_gid_entries, int *num_lid_entries,
+ int *num_gid_entries, 
  int *num_obj,
- ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ ZOLTAN_ID_PTR gids,
  int *color_exp)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
    int ierr;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Current = lb;
-   ierr = Zoltan_Color(lb,num_gid_entries,num_lid_entries,*num_obj,
-                       gids, lids, color_exp);
+   ierr = Zoltan_Color(lb,*num_gid_entries,*num_obj,
+                       gids, color_exp);
    return ierr;
 }
 
@@ -1965,11 +1641,9 @@ int Zfw_Color_Test(
  int *color_exp)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
    int ierr;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Current = lb;
    ierr = Zoltan_Color_Test(lb,num_gid_entries,num_lid_entries,*num_obj,
                        gids, lids, color_exp);
@@ -1983,11 +1657,10 @@ int Zfw_Generate_Files(int *addr_lb, int *nbytes, int *int_filename,
 {
    struct Zoltan_Struct *lb;
    char *filename;
-   unsigned char *p;
    int i, result;
    filename = (char *)ZOLTAN_MALLOC(*filename_len+1);
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Current = lb;
    for (i=0; i<(*filename_len); i++) filename[i] = (char)int_filename[i];
    filename[*filename_len] = '\0';
@@ -2003,10 +1676,7 @@ int Zfw_RCB_Box(int *addr_lb, int *nbytes, int *part, int *ndim,
                 double *xmax, double *ymax, double *zmax)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
 
    return Zoltan_RCB_Box(lb, *part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
 }
@@ -2027,10 +1697,8 @@ void Zfw_Reftree_Get_Child_Order(
   int *ierr)
 {
    struct Zoltan_Struct *lb;
-   unsigned char *p;
-   int i;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   ADDR_TO_LB(addr_lb, lb);
+
    Zoltan_Reftree_Get_Child_Order(lb,order,ierr);
 }
 

@@ -46,11 +46,9 @@ library; their descriptions are included below.
 
 <td WIDTH="85%">int <b>Zoltan_Color</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_gid_entries</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>color_exp</i>); 
 </td>
 </tr>
@@ -63,10 +61,8 @@ library; their descriptions are included below.
 
 <td WIDTH="85%">int <b>Zoltan::Color</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_gid_entries</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_lid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>color_exp</i>);
 </td>
 </tr>
@@ -77,10 +73,10 @@ library; their descriptions are included below.
 the assigned colors of each object are returned in the array
 <i>color_exp</i>. <i>color_exp[i]</i>gives the color of
 <i>global_ids[i] </i>in the computed coloring. The arrays
-<i>global_ids, local_ids,</i>and <i>color_exp</i>
-should all be allocated by the application before <b>Zoltan_Color</b> is
-called. Each array must have space for (at least) <i>num_obj </i>elements,
-where <i>num_obj </i>is the number of objects residing on a processor.
+<i>global_ids </i>and <i>color_exp</i> should all be allocated by the
+application before <b>Zoltan_Color</b> is called. <i>global_ids</i>
+must contain the global ids of the elements for which the current
+processor wants coloring informations.
 
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -100,50 +96,32 @@ to be used in this invocation of the load-balancing routine.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>Upon return, the number of array entries used to describe a single
+<td>Input: the number of array entries used to describe a single
 global ID.&nbsp; This value is the maximum value over all processors of
 the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>Upon return, the number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
 
-<td NOSAVE>Number of objects to color on this processor. <i>num_obj</i>
-should be the total number of objects residing on a processor. &nbsp;</td>
-</tr>
+<td NOSAVE>Number of objects for which we want to know the color on
+this processor. Objects may be non-local or duplicated.</td> </tr>
+
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<td>Upon return, an array of global IDs of objects to be colored on this processor.
-(size = <i>num_obj</i> * <i>num_gid_entries</i>)
-<br>Memory for this array must have been allocated before
-<b>Zoltan_Color </b>is called.</td> 
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
-
-<td>[Optional.] Upon return, an array of local IDs of objects to be colored on this
-processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)
-<br>Memory for this array must have been allocated before
-<b>Zoltan_Color </b>is called.</td> 
-</tr>
+<td>An array of global IDs of objects for which we want to know the
+color on this processor. Size of this array must be
+<i>num_obj</i>. <br>Objects may be non-local. Objects IDs may be
+repeated on several processor.</td> </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; color_exp</i></td>
 
 <td>Upon return, an array of length <i>num_obj</i> containing the
 colors of objects. That is, <i>color_exp[i]</i> gives the color of
-<i>global_ids[i]</i> in the computed coloring. By default, colors are 
+<i>global_ids[i]</i> in the computed coloring. By default, colors are
 positive integers starting at one.
 Memory for this array must have been allocated before <b>Zoltan_Color</b> is
 called.</td>

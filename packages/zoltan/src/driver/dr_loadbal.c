@@ -555,7 +555,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (Proc == 0) printf("\nBEFORE load balancing\n");
       driver_eval(mesh);
 
-      i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+      i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL);
       if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
     }
     if (Test.Gen_Files) {
@@ -719,7 +719,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	if (Proc == 0) printf("\nAFTER load balancing\n");
 	driver_eval(mesh);
 
-	i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+	i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL);
 	if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
       }
       else{
@@ -805,6 +805,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	mesh->num_elems, order_gids,
 	order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
+      safe_free((void **)(void *) &order);
+      safe_free((void **)(void *) &order_gids);
+      safe_free((void **)(void *) &order_lids);
       return 0;
     }
 

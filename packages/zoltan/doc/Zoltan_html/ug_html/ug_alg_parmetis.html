@@ -111,7 +111,7 @@ refinement). A reasonable strategy is to call PartKway once to obtain a
 good initial balance and&nbsp; later update this balance using
 AdaptiveRepart.
 
-<p>Zoltan is currently compatible with ParMETIS version 3.1.
+<p>Zoltan is currently compatible with ParMETIS version 3.1. (or 3.1.1)
 (Version 2.0 is obsolete and is no longer supported by Zoltan.)
 The ParMETIS source code can be obtained from
 the <a href="http://www-users.cs.umn.edu/%7Ekarypis/metis/parmetis/">ParMETIS
@@ -240,6 +240,35 @@ partitioner.
 2 = scatter if at least one processor owns no objects; 
 3 = always scatter.&nbsp;</td>
     </tr>
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYMMETRIZE</i></td>
+      <td nosave="">How to symmetrize the graph:
+       NONE = graph is symmetric and no symmetrization is needed <br/>
+       TRANSPOSE = if M is adjacency matrix of the input graph, output will be the graph representation of M+M<sup>T</sup> <br/>
+       BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][M<sup>t</sup> 0]]
+</td>
+    </tr>
+
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYM_WEIGHT</i></td>
+      <td nosave="">How edge weights are handled during symmetrization:
+       ADD = weights of each arc are added <br/>
+       MAX = only the heaviest arc weight is kept <br/>
+       <p>See more informations about graph build options on this <a href="ug_graph_build.html">page</a></p>
+
+<!--        ERROR = fail if complementary arcs don't have the same weight. -->
+</td>
+    </tr>
+
+<!--     <tr nosave="" valign="top"> -->
+<!--       <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_BIPARTITE_TYPE</i></td> -->
+<!--       <td nosave=""> In the case of a bipartite symmetrization, -->
+<!--        NONE = graph is symmetric and no symmetrization is needed <br/> -->
+<!--        TRANSPOSE = if M is adjacency matrix of the input graph, output will be the graph representation of M+M<sup>T</sup> <br/> -->
+<!--        BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][M<sup>t</sup> 0]] -->
+<!-- </td> -->
+<!--     </tr> -->
+
     <tr>
       <td valign="top"><b>Default values:</b></td>
       <td><br>
@@ -290,6 +319,19 @@ partitioner.
       </td>
       <td><i>SCATTER_GRAPH </i>= 1</td>
     </tr>
+
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_SYMMETRIZE </i>= NONE</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_SYM_WEIGHT </i>= ADD</td>
+    </tr>
+
+
     <tr>
       <td valign="top"><b>Required Query Functions:</b></td>
       <td><br>
@@ -356,7 +398,6 @@ or
   </tbody>
 </table>
 </p>
-<p></p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
  href="ug_alg_ptscotch.html">Next:&nbsp;
 PT-Scotch</a>&nbsp; |&nbsp; <a href="ug_graph_vs_hg.html">Previous:&nbsp;

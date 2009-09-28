@@ -40,6 +40,7 @@ extern "C" {
  ************/
 
 typedef enum {ADD_WEIGHT=0, MAX_WEIGHT, CMP_WEIGHT} WgtOp;
+typedef enum {MATRIX_FULL_DD=0, MATRIX_FAST, MATRIX_NO_REDIST} SpeedOpt;
 
 /* This structure defines how the matrix will be constructed */
 typedef struct Zoltan_matrix_options_ {
@@ -52,6 +53,7 @@ typedef struct Zoltan_matrix_options_ {
   int final_output;            /* final_output flag, not used yet */
   int symmetrize;              /* What kind of symmetry we have to apply, not used yet */
   int keep_distribution;       /* Conserve the original distribution, cannot work with randomize */
+  SpeedOpt speed;
 } Zoltan_matrix_options;
 
 /* This structure is a CS view of a part of the matrix/hypergraph */
@@ -141,7 +143,7 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
  * Zoltan_Matrix2d_Distribute.
  */
 int
-Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y);
+Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y);
 
 /* Distribute the matrix in the 2D layout defined by user in outmat
  * if !copy, inmat is not usable after this call */
@@ -178,6 +180,11 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 /* Function that group duplicate nnz */
 int
 Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outmat);
+
+int
+Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
+			    Zoltan_matrix *outmat, int offset);
+
 
 /* This code has to be called just before specializing the matrix into
  * a graph or an hypergraph.

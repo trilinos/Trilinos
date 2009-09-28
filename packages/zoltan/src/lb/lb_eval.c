@@ -49,10 +49,10 @@ extern int zoltan_lb_eval_sort_increasing(const void *a, const void *b);
 
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
+int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
 {
   /*****************************************************************************/
-  /* Return performance metrics in BALANCE_EVAL structure.                     */ 
+  /* Return performance metrics in ZOLTAN_BALANCE_EVAL structure.                     */ 
   /* Also print them out if print_stats is true.                               */
   /*****************************************************************************/
 
@@ -62,7 +62,7 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
   int i, j, ierr;
   int nparts, nonempty_nparts, req_nparts;
   int num_obj = 0;
-  BALANCE_EVAL localEval;
+  ZOLTAN_BALANCE_EVAL localEval;
 
   int *parts=NULL;
   float *vwgts=NULL;
@@ -77,7 +77,7 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
   if (!eval)
     eval = &localEval;
 
-  memset(eval, 0, sizeof(BALANCE_EVAL));
+  memset(eval, 0, sizeof(ZOLTAN_BALANCE_EVAL));
 
   /* Get requested number of parts.  Actual number may differ  */
 
@@ -214,10 +214,10 @@ End:
 }
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
+int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 {
   /****************************************************************************/
-  /* Return performance metrics in GRAPH_EVAL structure.                      */ 
+  /* Return performance metrics in ZOLTAN_GRAPH_EVAL structure.                      */ 
   /* Also print them out if print_stats is true.                              */
   /****************************************************************************/
 
@@ -255,7 +255,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   int partPair[2], dummyValue[2];
 
-  GRAPH_EVAL localEval;
+  ZOLTAN_GRAPH_EVAL localEval;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -264,7 +264,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   if (!graph)
     graph = &localEval;
 
-  memset(graph, 0, sizeof(GRAPH_EVAL));
+  memset(graph, 0, sizeof(ZOLTAN_GRAPH_EVAL));
 
   if ((zz->Get_Num_Edges == NULL && zz->Get_Num_Edges_Multi == NULL) ||
            (zz->Get_Edge_List == NULL && zz->Get_Edge_List_Multi == NULL)) {
@@ -887,10 +887,10 @@ End:
 }
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
+int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
 {
   /****************************************************************************/
-  /* Return performance metrics in HG_EVAL structure.  Also print them out    */
+  /* Return performance metrics in ZOLTAN_HG_EVAL structure.  Also print them out    */
   /* if print_stats is true.  Results are per part, not per process.      */
   /****************************************************************************/
 
@@ -912,7 +912,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   ZHG* zhg=NULL;
 
-  HG_EVAL localEval;
+  ZOLTAN_HG_EVAL localEval;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -922,7 +922,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
   if (!hg)
     hg = &localEval;
 
-  memset(hg, 0, sizeof(HG_EVAL));
+  memset(hg, 0, sizeof(ZOLTAN_HG_EVAL));
 
   if ((zz->Get_HG_Size_CS==NULL) && (zz->Get_HG_CS==NULL) &&
       (zz->Get_Num_Edges==NULL) && (zz->Get_Num_Edges_Multi==NULL) &&
@@ -1134,65 +1134,34 @@ End:
 /************************************************************************/
 /************************************************************************/
 /************************************************************************/
-/* The old LB_Eval                                                      */
-/************************************************************************/
-int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
-     int *nobj, float *obj_wgt,
-     int *ncuts, float *cut_wgt,
-     int *nboundary, int *nadj)
+int Zoltan_LB_Eval (ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_GRAPH_EVAL *graph, ZOLTAN_HG_EVAL *hg)
 /*
  * Input:
  *   zzin        - pointer to Zoltan structure
- *   print_stats - if > 0, compute and print max, min and sum of the metrics
- *                 if == 0, stay silent but compute output arguments
+ *   print_stats - if > 0, compute and print partition quality metrics
+ *                 if == 0, stay silent but update EVAL structures with metrics
  *
- * Output:
- *   nobj      - number of objects (local for this proc)
- *   obj_wgt   - obj_wgt[0:num_vertex_weights-1] are the object weights
- *               (local for this proc)
- *   ncuts     - number of cuts (average per part)
- *   cut_wgt   - cut_wgt[0:num_vertex_weights-1] are the cut weights
- *               (average per part)
- *   nboundary - number of boundary objects (average per part)
- *   nadj      - the number of adjacent parts (average per part)
+ * Input/Output:
+ *   obj         - pointer to a ZOLTAN_BALANCE_EVAL structure, if non-NULL partitioning
+ *                 metrics will be written to the structure
+ *   graph       - pointer to a ZOLTAN_GRAPH_EVAL structure, if non_null and graph query
+ *                 functions are defined by the application, graph partitioning
+ *                 quality metrics will be written to the structure
+ *   hg          - pointer to an ZOLTAN_HG_EVAL structure, if non_null and graph or
+ *                 hypergraph query functions are defined by the application,
+ *                 hypergraph partitioning quality metrics will be written to the structure
  *
- * Output parameters will only be returned if they are
- * not NULL on entry.
  */
 {
   char *yo = "Zoltan_LB_Eval";
-  int ierr = ZOLTAN_OK, i;
-  ZZ *zz = Zoltan_Copy(zzin);
-  int nwgt = zz->Obj_Weight_Dim;
-  GRAPH_EVAL eval_graph;
-  HG_EVAL eval_hg;
-  BALANCE_EVAL eval_lb;
-  float *object_weight=NULL, *cut_weight=NULL;
-  float (*xtra_object_weight)[EVAL_SIZE]=NULL; 
-  float (*xtra_cut_weight)[EVAL_SIZE]=NULL; 
-  float (*src)[EVAL_SIZE];
-  float *dest=NULL;
-  float *num_objects=NULL, *num_boundary=NULL, *num_adjacency=NULL, *num_cuts=NULL;
-  int graph_callbacks = 0;
+  int ierr = ZOLTAN_OK;
   int hypergraph_callbacks = 0;
-  int num_extra = 0;
+  int graph_callbacks = 0;
+  ZZ *zz = Zoltan_Copy(zzin);
 
-  if (nwgt <= EVAL_MAX_XTRA_VWGTS + 1){
-    num_extra = nwgt - 1;
+  if (!print_stats && !obj && !graph && !hg){
+    return ierr;
   }
-  else{
-    num_extra = EVAL_MAX_XTRA_VWGTS;
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
-      "EVAL_MAX_XTRA_VWGTS is not sufficient to report all object weights");
-    ierr = ZOLTAN_WARN;
-  }
-
-  if (nobj) *nobj = 0;
-  if (obj_wgt) *obj_wgt = 0;
-  if (ncuts) *ncuts = 0;
-  if (cut_wgt) *cut_wgt = 0;
-  if (nboundary) *nboundary = 0;
-  if (nadj) *nadj = 0;
 
   if (zz->Get_HG_Size_CS && zz->Get_HG_CS){
     hypergraph_callbacks = 1;
@@ -1202,74 +1171,31 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
     graph_callbacks = 1;
   }
 
-  ierr = Zoltan_LB_Eval_Balance(zz, print_stats, &eval_lb);
-  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){ 
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+  if (print_stats || obj){
+    ierr = Zoltan_LB_Eval_Balance(zz, print_stats, obj);
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_LB_Eval_Balance");
-    goto End;
-  } 
+      goto End;
+    }
+  }
 
-  num_objects = eval_lb.nobj + EVAL_LOCAL_SUM;
-  object_weight = eval_lb.obj_wgt + EVAL_LOCAL_SUM;
-  xtra_object_weight = eval_lb.xtra_obj_wgt;
-
-  if (graph_callbacks){
-    ierr = Zoltan_LB_Eval_Graph(zz, print_stats, &eval_graph);
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){ 
+  if ((print_stats || graph) && graph_callbacks){
+    ierr = Zoltan_LB_Eval_Graph(zz, print_stats, graph);
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "Error returned from Zoltan_LB_Eval_Graph");
       goto End;
-    } 
-
-    num_objects = eval_graph.nobj + EVAL_LOCAL_SUM;
-    object_weight = eval_graph.obj_wgt + EVAL_LOCAL_SUM;
-    cut_weight = eval_graph.cut_wgt + EVAL_GLOBAL_AVG;
-    xtra_object_weight = eval_graph.xtra_obj_wgt;
-    xtra_cut_weight = eval_graph.xtra_cut_wgt;
-    num_cuts = eval_graph.cuts + EVAL_GLOBAL_AVG;
-    num_boundary = eval_graph.num_boundary + EVAL_GLOBAL_AVG;
-    num_adjacency = eval_graph.nnborparts + EVAL_GLOBAL_AVG;
+    }
   }
 
-  if (graph_callbacks || hypergraph_callbacks){
-    ierr = Zoltan_LB_Eval_HG(zz, print_stats, &eval_hg);
-    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){ 
+  if ((print_stats || hg) && (graph_callbacks || hypergraph_callbacks)){
+    ierr = Zoltan_LB_Eval_HG(zz, print_stats, hg);
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "Error returned from Zoltan_LB_Eval_HG");
       goto End;
-    } 
-
-    num_objects = eval_hg.nobj + EVAL_LOCAL_SUM;
-    object_weight = eval_hg.obj_wgt + EVAL_LOCAL_SUM;
-    cut_weight = eval_hg.cutn + EVAL_GLOBAL_AVG;
-  }
-
-  if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){ 
-    if (nobj){
-      *nobj = (int)num_objects[0];
     }
-    if (nwgt && obj_wgt){
-      *obj_wgt = *object_weight;
-      dest = obj_wgt + 1;
-      src = xtra_object_weight;
-      for (i=1; src && (i <= num_extra); i++){
-        *dest++ = src[i-1][EVAL_LOCAL_SUM];
-      }
-    }
-
-    if (ncuts && num_cuts) *ncuts = (int)num_cuts[0];
-
-    if (nwgt && cut_wgt && cut_weight){
-     *cut_wgt = *cut_weight;
-      dest = cut_wgt + 1;
-      src = xtra_cut_weight;
-      for (i=1; src && (i <= num_extra); i++){
-        *dest++ = src[i-1][EVAL_GLOBAL_AVG];
-      }
-    }
-
-    if (nboundary && num_boundary) *nboundary = (int)num_boundary[0];
-    if (nadj && num_adjacency) *nadj = (int)num_adjacency[0];
   }
 
 End:
@@ -1771,7 +1697,7 @@ int zoltan_lb_eval_sort_increasing(const void *a, const void *b)
 
 /************************************************************************/
 
-void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb)
+void Zoltan_LB_Eval_Print_Balance(ZOLTAN_BALANCE_EVAL *lb)
 {
   int i;
 
@@ -1806,7 +1732,7 @@ void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb)
 }
 /************************************************************************/
 
-void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg)
+void Zoltan_LB_Eval_Print_HG(ZOLTAN_HG_EVAL *hg)
 {
   int i;
 
@@ -1850,7 +1776,7 @@ void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg)
 
 /************************************************************************/
 
-void Zoltan_LB_Eval_Print_Graph(GRAPH_EVAL *graph)
+void Zoltan_LB_Eval_Print_Graph(ZOLTAN_GRAPH_EVAL *graph)
 {
   int i;
 

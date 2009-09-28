@@ -24,15 +24,15 @@ extern "C" {
 #include "graph_const.h"
 #include "params_const.h"
 
+/* #define CC_TIMERS */
+
 /* Parameters for how to build the graph */
 static PARAM_VARS ZG_params[] = {
 	{ "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
 	{ "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
 	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
+	{ "GRAPH_BUILD_TYPE", NULL, "STRING"},
 	{ NULL, NULL, NULL, 0 } };
-
-#define CHECK_IERR do {   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) \
-    goto End;  } while (0)
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
 
@@ -56,7 +56,16 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   char symmetrization[MAX_PARAM_STRING_LEN+1];
   char bipartite_type[MAX_PARAM_STRING_LEN+1];
   char weigth_type[MAX_PARAM_STRING_LEN+1];
+  char matrix_build_type[MAX_PARAM_STRING_LEN+1];
   int bipartite = 0;
+#ifdef CC_TIMERS
+  double times[9]={0.,0.,0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
+  double gtimes[9]={0.,0.,0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
+  char *timenames[9]= {"", "setup", "matrix build", "diag", "symmetrize", "dist lin", "2D dist", "complete", "clean up"};
+
+  MPI_Barrier(zz->Communicator);
+  times[0] = Zoltan_Time(zz->Timer);
+#endif /* CC_TIMERS */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   memset (graph, 0, sizeof(ZG));
@@ -65,17 +74,20 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   Zoltan_Bind_Param(ZG_params, "GRAPH_SYMMETRIZE", (void *) &symmetrization);
   Zoltan_Bind_Param(ZG_params, "GRAPH_SYM_WEIGHT", (void *) &weigth_type);
   Zoltan_Bind_Param(ZG_params, "GRAPH_BIPARTITE_TYPE", (void *) &bipartite_type);
+  Zoltan_Bind_Param(ZG_params, "GRAPH_BUILD_TYPE", (void*) &matrix_build_type);
 
   /* Set default values */
   strncpy(symmetrization, "NONE", MAX_PARAM_STRING_LEN);
   strncpy(bipartite_type, "OBJ", MAX_PARAM_STRING_LEN);
   strncpy(weigth_type, "ADD", MAX_PARAM_STRING_LEN);
+  strncpy(matrix_build_type, "NORMAL", MAX_PARAM_STRING_LEN);
 
   Zoltan_Assign_Param_Vals(zz->Params, ZG_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
   graph->mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (graph->mtx.comm == NULL) MEMORY_ERROR;
+  Zoltan_PHGComm_Init (graph->mtx.comm);
 
   memset(&opt, 0, sizeof(Zoltan_matrix_options));
   opt.enforceSquare = 1;      /* We want a graph: square matrix */
@@ -92,9 +104,24 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   if (strcasecmp(symmetrization, "NONE")) {
     opt.symmetrize = 1;
   }
+  if (!strcasecmp(matrix_build_type, "FAST"))
+    opt.speed = MATRIX_FAST;
+  else if (!strcasecmp(matrix_build_type, "FAST_NO_DUP"))
+    opt.speed = MATRIX_NO_REDIST;
+  else
+    opt.speed = MATRIX_FULL_DD;
+
+#ifdef CC_TIMERS
+  times[1] = Zoltan_Time(zz->Timer);
+#endif
 
   ierr = Zoltan_Matrix_Build(zz, &opt, &graph->mtx.mtx);
   CHECK_IERR;
+
+#ifdef CC_TIMERS
+  times[2] = Zoltan_Time(zz->Timer);
+#endif
+
   ierr = Zoltan_Matrix_Mark_Diag (zz, &graph->mtx.mtx, &diag, &diagarray);
   CHECK_IERR;
   if (diag) { /* Some Diagonal Terms have to be removed */
@@ -103,6 +130,10 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
     CHECK_IERR;
   }
 
+#ifdef CC_TIMERS
+  times[3] = Zoltan_Time(zz->Timer);
+#endif
+
   if (opt.symmetrize) {
     if (!strcasecmp(symmetrization, "BIPARTITE"))
       bipartite = 1;
@@ -110,12 +141,28 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
     CHECK_IERR;
   }
 
+#ifdef CC_TIMERS
+  times[4] = Zoltan_Time(zz->Timer);
+#endif
+
   ierr = Zoltan_Distribute_LinearY(zz, graph->mtx.comm);
   CHECK_IERR;
+
+#ifdef CC_TIMERS
+  times[5] = Zoltan_Time(zz->Timer);
+  MPI_Barrier(zz->Communicator);
+#endif
   ierr = Zoltan_Matrix2d_Distribute (zz, graph->mtx.mtx, &graph->mtx, 0);
   CHECK_IERR;
 
+#ifdef CC_TIMERS
+  times[6] = Zoltan_Time(zz->Timer);
+#endif
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);
+
+#ifdef CC_TIMERS
+  times[7] = Zoltan_Time(zz->Timer);
+#endif
 
   if (bipartite) {
     int vertlno;
@@ -137,6 +184,19 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
       for (vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++ vertlno)
 	graph->fixed_vertices[vertlno] = (vertlno >= offset);
   }
+
+#ifdef CC_TIMERS
+  MPI_Barrier(zz->Communicator);
+  times[8] = Zoltan_Time(zz->Timer);
+
+  MPI_Reduce(times, gtimes, 9, MPI_DOUBLE, MPI_MAX, 0, zz->Communicator);
+  if (!zz->Proc) {
+      int i;
+      printf("Total Build Time in Proc-0: %.2lf    Max: %.2lf\n", times[8]-times[0], gtimes[8]-times[0]);
+      for (i=1; i<9; ++i)
+          printf("%-13s in Proc-0: %8.2lf  Max: %8.2lf\n", timenames[i],  times[i]-times[i-1], gtimes[i]-gtimes[i-1]);
+  }
+#endif
 
  End:
   ZOLTAN_FREE(&diagarray);
@@ -165,11 +225,11 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt);
   AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
-  /* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph */
-  ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj,
-			     *adjncy, NULL, NULL,
-			     0, 0,
-			     0, 2, 2);
+/*   /\* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph *\/ */
+/*   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj, */
+/* 			     *adjncy, NULL, NULL, */
+/* 			     0, 0, */
+/* 			     0, 2, 2); */
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
 }
@@ -246,6 +306,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
     if (graph->mtx.mtx.ddY == NULL) {
       ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
 			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
+      CHECK_IERR;
       /* Hope a linear assignment will help a little */
       Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);
     }
@@ -253,6 +314,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
   }
   /* Make our new numbering public */
   ierr = Zoltan_DD_Update (dd, GID, NULL, NULL, props, size);
+  CHECK_IERR;
 
   End:
   if (graph->bipartite) {

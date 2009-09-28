@@ -28,8 +28,8 @@ extern "C" {
 /* Auxiliary functions declarations */
 /************************************/
 
-static int
-compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2);
+/* static int */
+/* compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2); */
 
 /* static int */
 /* compar_int (const int *e1, const int *e2) { */
@@ -58,7 +58,7 @@ wgtFctMax(float* current, float* new, int dim);
 /* Function definitions are here        */
 /****************************************/
 
-static int
+static  int
 compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2)
 {
   if (e1->yGNO == e2->yGNO)
@@ -100,6 +100,44 @@ wgtFctMax(float* current, float* new, int dim)
   return (0);
 }
 
+/* /\* Function that removes locale duplicated nnz *\/ */
+/* /\* TODO: Add an option to deal with disconnected vertices *\/ */
+/* int */
+/* Zoltan_Matrix_Remove_DupArcs_map(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt, */
+/* 				 Zoltan_matrix *outmat) */
+/* { */
+/*   static char *yo = "Zoltan_Matrix_Remove_DupArcs_map"; */
+/*   int ierr = ZOLTAN_OK; */
+/*   WgtFctPtr wgtfct; */
+/*   int nY, nPin; */
+/*   int i; */
+/*   int map_num; */
+
+/*   ZOLTAN_TRACE_ENTER(zz, yo); */
+
+/*   switch (outmat->opts.pinwgtop) { */
+/*   case MAX_WEIGHT: */
+/*     wgtfct = &wgtFctMax; */
+/*     break; */
+/*   case CMP_WEIGHT: */
+/*     wgtfct = &wgtFctCmp; */
+/*     break; */
+/*   case ADD_WEIGHT: */
+/*   default: */
+/*     wgtfct = &wgtFctAdd; */
+/*   } */
+
+/*   map_num = Zoltan_Map_Create(zz, 4*size, 2, 0, size); */
+
+/*  End: */
+/*   if (map_num >= 0) */
+/*     Zoltan_Map_Destroy(zz, map_num); */
+
+/*   ZOLTAN_TRACE_EXIT(zz, yo); */
+/*   return (ierr); */
+/* } */
+
+
 /* Function that removes locale duplicated nnz */
 /* TODO: Add an option to deal with disconnected vertices */
 int
@@ -111,9 +149,15 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   WgtFctPtr wgtfct;
   int nY, nPin;
   int i;
-
+  int prev_pinGNO;
+#ifdef CC_TIMERS
+  double time;
+#endif
   ZOLTAN_TRACE_ENTER(zz, yo);
-/*   if (addweight) */
+
+#ifdef CC_TIMERS
+  time = MPI_Wtime();
+#endif
 
   switch (outmat->opts.pinwgtop) {
   case MAX_WEIGHT:
@@ -130,6 +174,11 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   qsort ((void*)arcs, size, sizeof(Zoltan_Arc),
 	 (int (*)(const void*,const void*))compar_arcs);
 
+#ifdef CC_TIMERS
+  fprintf(stderr, "(%d) remove arcs (qsort): %g\n", zz->Proc, MPI_Wtime()-time);
+#endif
+
+  prev_pinGNO = -2;
   for (i = 0, nY=-1, nPin=-1; i < size ; ++i) {
     int new = 0;
     int yGNO = arcs[i].yGNO;
@@ -140,10 +189,11 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
       nY++;
       outmat->ystart[nY] = nPin + 1;
       outmat->yGNO[nY] = yGNO;
+      prev_pinGNO = -1;
       if (pinGNO < 0)
 	continue;
     }
-    new = new |((nPin <0) || outmat->pinGNO[nPin] != pinGNO);
+    new = new ||(pinGNO != prev_pinGNO);
     if (new) { /* New edge */
       nPin ++;
       outmat->pinGNO[nPin] = pinGNO;
@@ -154,6 +204,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
       wgtfct(outmat->pinwgt + nPin* outmat->pinwgtdim,
 	     pinwgt + arcs[i].offset*outmat->pinwgtdim, outmat->pinwgtdim);
     }
+    prev_pinGNO = outmat->pinGNO[nPin];
   }
   nY ++;
   outmat->ystart[nY] = nPin+1; /* compact mode */
@@ -169,6 +220,10 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
 			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
   outmat->yend = outmat->ystart + 1;
+
+#ifdef CC_TIMERS
+  fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
+#endif
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
@@ -187,6 +242,8 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
   int i, j, cnt;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+  if (inmat.opts.symmetrize == 0)  /* No symmetrization, we hope no duplicates ...*/
+    goto End;
 
   size = inmat.nPins + inmat.nY; /* We add fake arcs for non connected vertices */
   arcs = (Zoltan_Arc*) ZOLTAN_MALLOC(size*sizeof(Zoltan_Arc));
@@ -223,6 +280,60 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
+}
+
+
+int
+Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
+			     Zoltan_matrix *outmat, int offset)
+{
+  static char *yo = "Zoltan_Matrix_Remove_DupArcs";
+  int *tmparray=NULL;
+  int ierr = ZOLTAN_OK;
+  int nY, nPin;
+  int i;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  tmparray = (int*)ZOLTAN_CALLOC(outmat->nY, sizeof(int));
+
+  /* Count degree for each vertex */
+  for (i = 0 ; i < size ; i++) {
+    int lno = arcs[i].yGNO - offset;
+    if (arcs[i].pinGNO != -1)
+      tmparray[lno] ++;
+  }
+
+  outmat->ystart[0] = 0;
+  outmat->yend = outmat->ystart + 1;
+  for (i = 0 ; i < outmat->nY ; i++) { /* Assume compact mode */
+    outmat->yend[i] = outmat->ystart[i] + tmparray[i] ;
+  }
+
+  memset(tmparray, 0, sizeof(int)*outmat->nY);
+  outmat->nPins = 0;
+  for(i = 0 ; i <size; i++) {
+    int lno = arcs[i].yGNO - offset;
+    if (arcs[i].pinGNO == -1)
+      continue;
+    outmat->pinGNO[outmat->ystart[lno] + tmparray[lno]] = arcs[i].pinGNO;
+    tmparray[lno]++;
+    outmat->nPins ++;
+  }
+
+
+  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, outmat->nPins * sizeof(int));
+  outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
+			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
+
+
+
+ End:
+  ZOLTAN_FREE(&tmparray);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return (ierr);
+
 }
 
 /* This function compute the indices of the diagonal terms.
@@ -329,7 +440,7 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
  * TODO: at this time we only do symmetric permutations (don't know xGNO !).
  */
 int
-Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
+Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
 {
   static char *yo = "Zoltan_Matrix_Permute";
   int ierr = ZOLTAN_OK;
@@ -377,7 +488,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, const int* const perm_y)
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
 
-  Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, perm_y, NULL, NULL, m->nY);
+  Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, (ZOLTAN_ID_PTR)perm_y, NULL, NULL, m->nY);
 
   pinGNO = (int*)ZOLTAN_MALLOC(m->nPins*sizeof(int));
   if (m->nPins && pinGNO == NULL)

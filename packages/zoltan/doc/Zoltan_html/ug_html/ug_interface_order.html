@@ -56,11 +56,9 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 
 <td WIDTH="85%">int <b>Zoltan_Order</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_gid_entries</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>num_lid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>)
 </td>
@@ -85,10 +83,8 @@ global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>)
 
 <td WIDTH="85%">int <b>Zoltan::Order</b> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_gid_entries</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_lid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>local_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>);
 </td>
@@ -106,14 +102,13 @@ gives the rank of <i>global_ids[i] </i>in the computed ordering, which is a numb
 </li>
 <li>
 <i>iperm</i> is the inverse permutation of <i>rank, </i>that is,<i>iperm[rank[i]] = i.</i></li>
-&nbsp; The ordering may be either global or local, depending on
-<i><a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a></i>. The arrays
-<i>global_ids, local_ids, rank,</i> and <i>iperm</i>
+ The arrays
+<i>global_ids, rank,</i> and <i>iperm</i>
 should all be allocated by the application before
 <b>Zoltan_Order</b> is
 called. Each array must have space for (at least)
 <i>num_obj </i>elements,
-where <i>num_obj </i>is the number of objects residing on a processor.
+where <i>num_obj </i>is the number of objects the user want to know informations about.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -132,44 +127,26 @@ to be used in this invocation of the load-balancing routine.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
 
-<td>Upon return, the number of array entries used to describe a single
+<td>Input: the number of array entries used to describe a single
 global ID.&nbsp; This value is the maximum value over all processors of
 the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>Upon return, the number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
-</tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
 
-<td NOSAVE>Number of objects to order on this processor. At present, <i>num_obj</i>
-should be the total number of objects residing on a processor. In future
-releases, ordering only a subset of the objects may be permitted.&nbsp;</td>
+<td NOSAVE>Number of objects for which we want to know the ordering. Objects may be non-local.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<td>An array of global IDs of objects to be ordered on this processor.
-(size = <i>num_obj</i> * <i>num_gid_entries</i>)
-<br>The array may be uninitialized on input (if <i><a href="ug_order.html#REORDER">REORDER</a></i> is false),
-but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
-</tr>
+<td>An array of global IDs of objects for which we want to know the
+ordering on this processor. Size of this array must be <i>num_obj</i>.
+<br>Objects may be non-local. Objects IDs may be repeated on several
+processor.</td> </tr>
 
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
-
-<td>[Optional.] An array of local IDs of objects to be ordered on this
-processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)
-<br>The array may be uninitialized on input (if <i><a href="ug_order.html#REORDER">REORDER</a></i> is false),
-but memory must have been allocated before <b>Zoltan_Order </b>is called.</td>
-</tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; rank</i></td>

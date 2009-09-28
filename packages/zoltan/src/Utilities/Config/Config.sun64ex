@@ -45,7 +45,7 @@ SPPR_HEAD               = spprinc.most
 F90_MODULE_PREFIX       = -M
 FARG                    = farg_typical
 
-MPI_LIB			= -lsocket -lnsl -laio -lgcc
+MPI_LIBS			= -lsocket -lnsl -laio -lgcc
 MPI_LIBPATH             = /lib/dp
 
 PARMETIS_LIBPATH        = \

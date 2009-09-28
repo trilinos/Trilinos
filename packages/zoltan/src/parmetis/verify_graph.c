@@ -21,6 +21,7 @@ extern "C" {
 #include "zz_const.h"
 #include "third_library_const.h"
 #include "third_library_tools.h"
+#include "graph_util.h"
 
 /* comparison routine for bsearch */
 static int Zoltan_Compare_Ints(const void *key, const void *arg);
@@ -482,7 +483,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 }
 
 /* comparison routine for bsearch */
-int Zoltan_Compare_Ints(const void *key, const void *arg)
+static int Zoltan_Compare_Ints(const void *key, const void *arg)
 {
    if ( *(int*) key > (*(int*) arg))  return  1;
    if ( *(int*) key < (*(int*) arg))  return -1;

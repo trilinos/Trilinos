@@ -1,7 +1,7 @@
 
 function Zf90_Set_Next_Coarse_Obj_Fn0f(zz,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn0f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
@@ -24,24 +24,20 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr))
-#else
 Zf90_Set_Next_Coarse_Obj_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn0f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn1f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn1f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
   integer(Zoltan_INT) :: fn_ptr
-  integer(Zoltan_INT) INTENT_IN data(*)
+  integer(Zoltan_INT) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -51,31 +47,27 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-integer(Zoltan_INT) INTENT_IN data(*)
+integer(Zoltan_INT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn1f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn2f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn2f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
   integer(Zoltan_INT) :: fn_ptr
-  real(Zoltan_FLOAT) INTENT_IN data(*)
+  real(Zoltan_FLOAT) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -85,31 +77,27 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-real(Zoltan_FLOAT) INTENT_IN data(*)
+real(Zoltan_FLOAT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn2f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn3f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn3f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
   integer(Zoltan_INT) :: fn_ptr
-  real(Zoltan_DOUBLE) INTENT_IN data(*)
+  real(Zoltan_DOUBLE) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -119,24 +107,20 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-real(Zoltan_DOUBLE) INTENT_IN data(*)
+real(Zoltan_DOUBLE) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn3f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn4f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn4f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
@@ -145,7 +129,7 @@ interface
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(Zoltan_User_Data_1) INTENT_IN data
+  type(Zoltan_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -155,24 +139,20 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(Zoltan_User_Data_1) INTENT_IN data
+type(Zoltan_User_Data_1) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn4f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn5f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn5f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
@@ -181,7 +161,7 @@ interface
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(Zoltan_User_Data_2) INTENT_IN data
+  type(Zoltan_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -191,24 +171,20 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(Zoltan_User_Data_2) INTENT_IN data
+type(Zoltan_User_Data_2) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn5f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn6f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn6f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
@@ -217,7 +193,7 @@ interface
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(Zoltan_User_Data_3) INTENT_IN data
+  type(Zoltan_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -227,24 +203,20 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(Zoltan_User_Data_3) INTENT_IN data
+type(Zoltan_User_Data_3) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn6f
 
 
 function Zf90_Set_Next_Coarse_Obj_Fn7f(zz,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn7f
-type(Zoltan_Struct) INTENT_IN zz
+type(Zoltan_Struct) , intent(in) :: zz
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
@@ -253,7 +225,7 @@ interface
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(Zoltan_User_Data_4) INTENT_IN data
+  type(Zoltan_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(Zoltan_INT), intent(in)  :: global_id(*), local_id(*)
   integer(Zoltan_INT), intent(out) :: next_global_id(*), next_local_id(*)
@@ -263,18 +235,14 @@ interface
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(Zoltan_User_Data_4) INTENT_IN data
+type(Zoltan_User_Data_4) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-Zf90_Set_Next_Coarse_Obj_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 Zf90_Set_Next_Coarse_Obj_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function Zf90_Set_Next_Coarse_Obj_Fn7f
 
 

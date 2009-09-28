@@ -25,12 +25,14 @@
 extern "C" {
 #endif
 
+struct dd_nh1_struct {
+ int max_gid ;
+ int groupsize ;
+};
 
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc) ;
+ unsigned int nproc, struct dd_nh1_struct* hashdata) ;
 
-static int max_gid ;
-static int groupsize ;
 
 
 /*************  Zoltan_DD_Set_Hash_Fn1() ***********************/
@@ -48,16 +50,24 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
  int size)                         /* number of reserved GIDs per CPU */
    {
    char *yo = "Zoltan_DD_Set_Hash_Fn1";
+  struct dd_nh1_struct *hashdata;
 
    if (dd == NULL || size < 1)  {
       ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
       return ZOLTAN_FATAL;
    }
 
-   groupsize   = size;
-   dd->hash    = dd_nh1;
-   dd->cleanup = NULL;                 /* no need to free anything */
-   max_gid     = size * dd->nproc;     /* larger GIDs out of range */
+  hashdata = (struct dd_nh1_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh1_struct));
+  if (hashdata == NULL) {
+    ZOLTAN_PRINT_ERROR (0, yo, "Memory error");
+    return ZOLTAN_FATAL;
+  }
+
+   hashdata->groupsize   = size;
+   dd->hash    = (DD_Hash_fn*) &dd_nh1;
+   dd->cleanup = (DD_Cleanup_fn*) &Zoltan_DD_default_cleanup;
+   dd->hashdata = hashdata;
+   hashdata->max_gid = size * dd->nproc;     /* larger GIDs out of range */
 
    return ZOLTAN_OK;
    }
@@ -65,10 +75,10 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
 
 
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc)
+ unsigned int nproc, struct dd_nh1_struct* hashdata)
    {
    int id = (signed) *gid;
-   return (id < max_gid) ? (id / groupsize) : (id % nproc);
+   return (id < hashdata->max_gid) ? (id / hashdata->groupsize) : (id % nproc);
    }
 
 #ifdef __cplusplus

@@ -114,6 +114,25 @@ partitioner.
 3 = always scatter.&nbsp;</td>
     </tr>
 
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYMMETRIZE</i></td>
+      <td nosave="">How to symmetrize the graph:
+       NONE = graph is symmetric and no symmetrization is needed <br/>
+       TRANSPOSE = if M is adjacency matrix of the input graph, output will be the graph representation of M+M<sup>T</sup> <br/>
+       BIPARTITE = graph is symmetrized in a bipartite way : [[ 0 M ][M<sup>t</sup> 0]]
+</td>
+    </tr>
+
+    <tr nosave="" valign="top">
+      <td>&nbsp;&nbsp;&nbsp; <i>GRAPH_SYM_WEIGHT</i></td>
+      <td nosave="">How edge weights are handled during symmetrization:
+       ADD = weights of each arc are added <br/>
+       MAX = only the heaviest arc weight is kept <br/>
+<!--        ERROR = fail if complementary arcs don't have the same weight. -->
+       <p>See more informations about graph build options on this <a href="ug_graph_build.html">page</a></p>
+</td>
+    </tr>
+
 
     <tr>
       <td valign="top"><b>Default values:</b></td>
@@ -151,6 +170,16 @@ partitioner.
       <td><i>SCATTER_GRAPH </i>= 1</td>
     </tr>
 
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_SYMMETRIZE </i>= NONE</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>GRAPH_SYM_WEIGHT </i>= ADD</td>
+    </tr>
 
 
 <tr>

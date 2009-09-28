@@ -38,7 +38,7 @@ SPPR_HEAD 		= spprinc.most
 F90_MODULE_PREFIX 	= -M
 FARG      		= farg_typical
 
-MPI_LIB			= 
+MPI_LIBS			= 
 MPI_LIBPATH		=
 
 PARMETIS_LIBPATH 	= -L${HOME}/Software/ParMetis-3.1

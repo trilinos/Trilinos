@@ -30,9 +30,9 @@ CC          	= mpicc
 CPPC       	= mpiCC
 
 INCLUDE_PATH	=
-DBG_FLAGS		= -g 
+DBG_FLAGS		= -g -O0
 OPT_FLAGS		= -O
-CFLAGS 			= $(OPT_FLAGS)
+CFLAGS 			= $(DBG_FLAGS)
 
 F90			    = f90
 LOCAL_F90		= f90
@@ -42,11 +42,11 @@ SPPR_HEAD 		= spprinc.most
 FARG      		= farg_typical
 F90_MODULE_PREFIX 	= -M
 
-#MPI_LIB			= -lmpich -lpmpich -lnsl -lgcc
+#MPI_LIBS			= -lmpich -lpmpich -lnsl -lgcc
 #MPI_LIBPATH		= -L/usr/local/mpich-1.2.6-eth/lib
 
-PARMETIS_LIBPATH 	= -L/home/software/ParMETIS/ParMETIS3_1/
-PARMETIS_INCPATH 	= -I/home/software/ParMETIS/ParMETIS3_1/
+PARMETIS_LIBPATH 	= -L/home/kddevin/code/ParMETIS3_1/
+PARMETIS_INCPATH 	= -I/home/kddevin/code/ParMETIS3_1/
 #
 #JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src

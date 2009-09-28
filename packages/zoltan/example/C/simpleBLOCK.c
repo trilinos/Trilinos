@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
 
 static int get_number_of_objects(void *data, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
   OBJECT_DATA *objects = (OBJECT_DATA *)data;
+  *ierr = ZOLTAN_OK;
   return objects->numMyObjects;
 }
 
@@ -182,8 +182,8 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
                   int wgt_dim, float *obj_wgts, int *ierr)
 {
 int i;
-  *ierr = ZOLTAN_OK;
   OBJECT_DATA *objects = (OBJECT_DATA *)data;
+  *ierr = ZOLTAN_OK;
 
   /* In this example, return the IDs of our objects, but no weights.
    * Zoltan will assume equally weighted objects.

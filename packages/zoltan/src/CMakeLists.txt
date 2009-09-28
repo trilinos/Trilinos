@@ -33,6 +33,7 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(NONINSTALLHEADERS "")
 SET(SOURCES "")
+SET(MODULES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -328,6 +329,7 @@ APPEND_SET(NOINSTALLHEADERS
   parmetis/third_library_const.h
   parmetis/third_library.h
   parmetis/third_library_tools.h
+  parmetis/graph_util.h
   )
 
 APPEND_SET(SOURCES
@@ -560,6 +562,176 @@ APPEND_SET(SOURCES
 
 
 #
+# src/fort
+#
+
+IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/fort)
+
+  APPEND_SET(NOINSTALLHEADERS
+    fort/cwrap_fmangle.h
+    fort/lbfn.h
+    fort/lbif.h
+    fort/set_borderobjlist.fn
+    fort/set_borderobjlist.fn.lbfn
+    fort/set_borderobjlist.if
+    fort/set_borderobjlist.if.lbif
+    fort/set_childlist.fn
+    fort/set_childlist.fn.lbfn
+    fort/set_childlist.if
+    fort/set_childlist.if.lbif
+    fort/set_childweight.fn
+    fort/set_childweight.fn.lbfn
+    fort/set_childweight.if
+    fort/set_childweight.if.lbif
+    fort/set_coarseobjlist.fn
+    fort/set_coarseobjlist.fn.lbfn
+    fort/set_coarseobjlist.if
+    fort/set_coarseobjlist.if.lbif
+    fort/set_edgelist.fn
+    fort/set_edgelist.fn.lbfn
+    fort/set_edgelist.if
+    fort/set_edgelist.if.lbif
+    fort/set_edgelistmulti.fn
+    fort/set_edgelistmulti.if
+    fort/set_firstborderobj.fn
+    fort/set_firstborderobj.fn.lbfn
+    fort/set_firstborderobj.if
+    fort/set_firstborderobj.if.lbif
+    fort/set_firstcoarseobj.fn
+    fort/set_firstcoarseobj.fn.lbfn
+    fort/set_firstcoarseobj.if
+    fort/set_firstcoarseobj.if.lbif
+    fort/set_firstobj.fn
+    fort/set_firstobj.fn.lbfn
+    fort/set_firstobj.if
+    fort/set_firstobj.if.lbif
+    fort/set_fixedobjlist.fn
+    fort/set_fixedobjlist.if
+    fort/set_geom.fn
+    fort/set_geom.fn.lbfn
+    fort/set_geom.if
+    fort/set_geom.if.lbif
+    fort/set_geommulti.fn
+    fort/set_geommulti.if
+    fort/set_hgcs.fn
+    fort/set_hgcs.if
+    fort/set_hgedgeweights.fn
+    fort/set_hgedgeweights.if
+    fort/set_hgsizecs.fn
+    fort/set_hgsizecs.if
+    fort/set_hgsizeedgeweights.fn
+    fort/set_hgsizeedgeweights.if
+    fort/set_hiermethod.fn
+    fort/set_hiermethod.if
+    fort/set_hiernumlevels.fn
+    fort/set_hiernumlevels.if
+    fort/set_hierpartition.fn
+    fort/set_hierpartition.if
+    fort/set_midmigrate.fn
+    fort/set_midmigrate.fn.lbfn
+    fort/set_midmigrate.if
+    fort/set_midmigrate.if.lbif
+    fort/set_midmigratepp.fn
+    fort/set_midmigratepp.if
+    fort/set_nextborderobj.fn
+    fort/set_nextborderobj.fn.lbfn
+    fort/set_nextborderobj.if
+    fort/set_nextborderobj.if.lbif
+    fort/set_nextcoarseobj.fn
+    fort/set_nextcoarseobj.fn.lbfn
+    fort/set_nextcoarseobj.if
+    fort/set_nextcoarseobj.if.lbif
+    fort/set_nextobj.fn
+    fort/set_nextobj.fn.lbfn
+    fort/set_nextobj.if
+    fort/set_nextobj.if.lbif
+    fort/set_numborderobj.fn
+    fort/set_numborderobj.fn.lbfn
+    fort/set_numborderobj.if
+    fort/set_numborderobj.if.lbif
+    fort/set_numchild.fn
+    fort/set_numchild.fn.lbfn
+    fort/set_numchild.if
+    fort/set_numchild.if.lbif
+    fort/set_numcoarseobj.fn
+    fort/set_numcoarseobj.fn.lbfn
+    fort/set_numcoarseobj.if
+    fort/set_numcoarseobj.if.lbif
+    fort/set_numedges.fn
+    fort/set_numedges.fn.lbfn
+    fort/set_numedges.if
+    fort/set_numedges.if.lbif
+    fort/set_numedgesmulti.fn
+    fort/set_numedgesmulti.if
+    fort/set_numfixedobj.fn
+    fort/set_numfixedobj.if
+    fort/set_numgeom.fn
+    fort/set_numgeom.fn.lbfn
+    fort/set_numgeom.if
+    fort/set_numgeom.if.lbif
+    fort/set_numobj.fn
+    fort/set_numobj.fn.lbfn
+    fort/set_numobj.if
+    fort/set_numobj.if.lbif
+    fort/set_objlist.fn
+    fort/set_objlist.fn.lbfn
+    fort/set_objlist.if
+    fort/set_objlist.if.lbif
+    fort/set_objsize.fn
+    fort/set_objsize.fn.lbfn
+    fort/set_objsize.if
+    fort/set_objsize.if.lbif
+    fort/set_objsizemulti.fn
+    fort/set_objsizemulti.if
+    fort/set_packobj.fn
+    fort/set_packobj.fn.lbfn
+    fort/set_packobj.if
+    fort/set_packobj.if.lbif
+    fort/set_packobjmulti.fn
+    fort/set_packobjmulti.if
+    fort/set_partition.fn
+    fort/set_partition.if
+    fort/set_partitionmulti.fn
+    fort/set_partitionmulti.if
+    fort/set_postmigrate.fn
+    fort/set_postmigrate.fn.lbfn
+    fort/set_postmigrate.if
+    fort/set_postmigrate.if.lbif
+    fort/set_postmigratepp.fn
+    fort/set_postmigratepp.if
+    fort/set_premigrate.fn
+    fort/set_premigrate.fn.lbfn
+    fort/set_premigrate.if
+    fort/set_premigrate.if.lbif
+    fort/set_premigratepp.fn
+    fort/set_premigratepp.if
+    fort/set_unpackobj.fn
+    fort/set_unpackobj.fn.lbfn
+    fort/set_unpackobj.if
+    fort/set_unpackobj.if.lbif
+    fort/set_unpackobjmulti.fn
+    fort/set_unpackobjmulti.if
+    )
+
+  APPEND_SET(SOURCES 
+    fort/ztypes.f90
+    fort/zoltan_user_data.f90
+    fort/lb_user_const.f90
+    fort/fwrap.f90
+    fort/cwrap.c
+    )
+
+  APPEND_SET(MODULES
+    ${CMAKE_CURRENT_BINARY_DIR}/zoltan.mod
+    ${CMAKE_CURRENT_BINARY_DIR}/zoltan_types.mod
+    ${CMAKE_CURRENT_BINARY_DIR}/lb_user_const.mod
+    ${CMAKE_CURRENT_BINARY_DIR}/zoltan_user_data.mod
+    )
+ENDIF()
+
+
+#
 # C) Define the targets for package's library(s)
 #
 
@@ -574,3 +746,6 @@ PACKAGE_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEPLIBS ${DEPLIBS}
   )
+
+INSTALL(FILES ${MODULES} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+

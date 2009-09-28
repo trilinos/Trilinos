@@ -72,45 +72,53 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
 
-  if (nX) {
-    xGNO = (int*) ZOLTAN_MALLOC(nX*sizeof(int));
-    if (xGNO == NULL)
-      MEMORY_ERROR;
-  }
   /*******************************************************************/
   /* Assign vertex consecutive numbers (gnos)                        */
   /*******************************************************************/
 
-  ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, xGNO, nX, matrix->opts.randomize, &matrix->globalX);
+  if (matrix->opts.speed == MATRIX_FULL_DD) { /* Zoltan computes a translation */
+    if (nX) {
+      xGNO = (int*) ZOLTAN_MALLOC(nX*sizeof(int));
+      if (xGNO == NULL)
+	MEMORY_ERROR;
+    }
+    ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, xGNO, nX, matrix->opts.randomize, &matrix->globalX);
 
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error assigning global numbers to vertices");
-    goto End;
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error assigning global numbers to vertices");
+      goto End;
+    }
+
+    ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
+			     0, nX, 0);
+    CHECK_IERR;
+
+    /* Make our new numbering public */
+    Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
   }
-
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, 1,
-			   sizeof(float)/sizeof(int)*zz->Obj_Weight_Dim, nX, 0);
-
-  /* Make our new numbering public */
-  Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, (ZOLTAN_ID_PTR)xwgt,  NULL, nX);
+  else { /* We don't want to use the DD */
+    xGNO = xGID;
+    MPI_Allreduce(&nX, &matrix->globalX, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  }
 
   /* I store : xGNO, xGID, xwgt, Input_Part */
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
 			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int), matrix->globalX/zz->Num_Proc, 0);
+  CHECK_IERR;
+
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
   /* Associate all the data with our xGNO */
   Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xwgt, Input_Parts, nX);
-
   ZOLTAN_FREE(&Input_Parts);
-
 
   if (matrix->opts.pinwgt)
     matrix->pinwgtdim = zz->Edge_Weight_Dim;
   else
     matrix->pinwgtdim = 0;
 
-  matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
+  ierr = matrix_get_edges(zz, matrix, &yGID, &pinID, nX, &xGID, &xLID, &xGNO, &xwgt);
+  CHECK_IERR;
   matrix->nY_ori = matrix->nY;
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
@@ -124,8 +132,13 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     matrix->ywgt = (float*)ZOLTAN_MALLOC(matrix->ywgtdim * sizeof(float));
     if (matrix->ywgtdim && matrix->ywgt == NULL)
       MEMORY_ERROR;
-    Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
+    ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
 		    matrix->nY, NULL);
+    if (ierr != ZOLTAN_OK) {
+      ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Hyperedge GIDs don't match.\n");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
   }
 
   matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
@@ -137,12 +150,24 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
   else
     proclist = NULL;
+
   /* Convert pinID to pinGNO using the same translation as x */
-  Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
-		  matrix->nPins, proclist);
-  ZOLTAN_FREE(&pinID);
-  Zoltan_DD_Destroy(&dd);
-  dd = NULL;
+  if (matrix->opts.speed == MATRIX_FULL_DD) {
+    ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
+			   matrix->nPins, proclist);
+    if (ierr != ZOLTAN_OK) {
+      ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Undefined GID found.\n");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
+    ZOLTAN_FREE(&pinID);
+    Zoltan_DD_Destroy(&dd);
+    dd = NULL;
+  }
+  else {
+    matrix->pinGNO = pinID;
+    pinID = NULL;
+  }
 
 /*   if (matrix->opts.local) {  /\* keep only local edges *\/ */
 /*     int *nnz_list; /\* nnz offset to delete *\/ */
@@ -167,6 +192,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     /*     int nGlobalEdges = 0; */
     ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, matrix->yGNO, matrix->nY,
 					     matrix->opts.randomize, &matrix->globalY);
+    CHECK_IERR;
 
 /*     /\**************************************************************************************** */
 /*      * If it is desired to remove dense edges, divide the list of edges into */
@@ -200,6 +226,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
  End:
+
   ZOLTAN_FREE(&xLID);
   ZOLTAN_FREE(&xGNO);
   ZOLTAN_FREE(&xGID);
@@ -252,13 +279,17 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
   if (hypergraph_callbacks) {
     matrix->redist = 1;
-    ZOLTAN_FREE(xGID);
+    if (matrix->opts.speed == MATRIX_FULL_DD)
+      ZOLTAN_FREE(xGID);
+    else
+      *xGID = NULL;
     ZOLTAN_FREE(xLID);
     ZOLTAN_FREE(xGNO);
 
     ierr = Zoltan_Hypergraph_Queries(zz, &matrix->nY,
 				     &matrix->nPins, yGID, &matrix->ystart,
 				     pinID);
+    CHECK_IERR;
     matrix->yend = matrix->ystart + 1;
   }
   else if (graph_callbacks) {
@@ -313,9 +344,14 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 	edge += edgeSize[vertex];
       }
     }
+    CHECK_IERR;
+
     /* Not Useful anymore */
     ZOLTAN_FREE(xLID);
-    ZOLTAN_FREE(xGID);
+    if (matrix->opts.speed == MATRIX_FULL_DD)
+      ZOLTAN_FREE(xGID);
+    else
+      *xGID = NULL;
     ZOLTAN_FREE(&nbors_proc);
 
     /* Now construct CSR indexing */

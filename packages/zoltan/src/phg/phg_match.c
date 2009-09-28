@@ -1427,9 +1427,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         || !(candw  = (float*) ZOLTAN_MALLOC (VtxDim * total_nCandidates * sizeof(float))))
       MEMORY_ERROR;
     if (hgc->myProc_y==0) {
-        int hsize;
-        if ((Zoltan_GenPrime(2*(1+hg->nVtx), &hsize)==ZOLTAN_MEMERR)
-            || (Zoltan_KVHash_Create(&hash, hsize)==ZOLTAN_MEMERR))
+        if (Zoltan_KVHash_Create(&hash, 2*(1+hg->nVtx))==ZOLTAN_MEMERR)
             MEMORY_ERROR;
     }
   }

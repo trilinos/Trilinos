@@ -1,9 +1,9 @@
 /*****************************************************************************
  * CVS File Information :
  *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
+ *    Author: rrdrake $
+ *    Date: 2009/07/14 22:54:56 $
+ *    Revision: 1.3 $
  ****************************************************************************/
 /* Profiling */
 int PMPI_Init (int *argc, char **argv[]);

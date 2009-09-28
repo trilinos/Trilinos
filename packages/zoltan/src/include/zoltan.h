@@ -2774,23 +2774,17 @@ int Zoltan_RCB_Box(
  *  Input:
  *    zz                  --  The Zoltan structure containing 
  *                            info for this load-balancing invocation.
- *  Input/output:
- *    gids                --  List of global ids. This array may be empty
- *                            empty on input and filled by the ordering
- *                            method, but memory must be allocated by the
- *                            caller.
- *
- *    lids                --  List of local ids. This array may be empty
- *                            empty on input and filled by the ordering
- *                            method, but memory must be allocated by the
- *                            caller.
- *
- *  Output:
+ *  Input:
  *    num_gid_entries     --  number of entries of type ZOLTAN_ID_TYPE
  *                            in a global ID
- *    num_lid_entries     --  number of entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
  *
+ *    num_obj             --  Number of elements in the global_ids array.
+ *
+ *    global_ids          --  List of global ids. This list contains the
+ *                            global ID for which the user wants to know
+ *                            the corresponding permutation.
+ *
+ *  Output:
  *    rank                --  rank[i] is the rank of gids[i] produced by
  *                            the ordering. This defines a permutation.
  *                            rank is between 0 and N-1.
@@ -3281,36 +3275,6 @@ extern int Zoltan_LB_Box_Assign(
   double zmax,
   int *procs,
   int *numprocs
-);
-
-/*****************************************************************************/
-/* 
- * Routine to compute statistics about the current balance/partitioning.
- *
- * Input:
- *   zz                   -- pointer to Zoltan structure
- *   print_stats          -- if >0, compute and print max and sum of the metrics
- *
- * Output:
- *   nobj                 -- number of objects (for each processor)
- *   obj_wgt              -- obj_wgt[0:vwgt_dim-1] are the object weights 
- *                           (on each processor)
- *   cut_wgt              -- cut size/weight (for each processor)
- *   nboundary            -- number of boundary objects (for each processor)
- *   nadj                 -- the number of adjacent procs (for each processor)
- *
- * Returned value:        -- error code
- */
-
-extern int Zoltan_LB_Eval(
-  struct Zoltan_Struct *zz, 
-  int print_stats, 
-  int *nobj,
-  float *obj_wgt,
-  int *ncuts,
-  float *cut_wgt, 
-  int *nboundary,
-  int *nadj
 );
 
 /*

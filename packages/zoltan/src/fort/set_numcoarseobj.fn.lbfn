@@ -1,7 +1,7 @@
 
 function LBf90_Set_Num_Coarse_Obj_Fn0f(lb,fn_ptr)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_Fn0f
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(dummy, ierr)
   use zoltan_types
@@ -16,201 +16,169 @@ nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_Fn0f = Zfw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr))
-#else
 LBf90_Set_Num_Coarse_Obj_Fn0f = Zfw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_Fn0f
 
 
 function LBf90_Set_Num_Coarse_Obj_Fn1f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_Fn1f
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   integer(Zoltan_INT) :: fn_ptr
-  integer(Zoltan_INT) INTENT_IN data(*)
+  integer(Zoltan_INT) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-integer(Zoltan_INT) INTENT_IN data(*)
+integer(Zoltan_INT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_Fn1f = Zfw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_Fn1f = Zfw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_Fn1f
 
 
 function LBf90_Set_Num_Coarse_Obj_Fn2f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_Fn2f
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   integer(Zoltan_INT) :: fn_ptr
-  real(Zoltan_FLOAT) INTENT_IN data(*)
+  real(Zoltan_FLOAT) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-real(Zoltan_FLOAT) INTENT_IN data(*)
+real(Zoltan_FLOAT) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_Fn2f = Zfw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_Fn2f = Zfw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_Fn2f
 
 
 function LBf90_Set_Num_Coarse_Obj_Fn3f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_Fn3f
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   integer(Zoltan_INT) :: fn_ptr
-  real(Zoltan_DOUBLE) INTENT_IN data(*)
+  real(Zoltan_DOUBLE) , intent(in) :: data(*)
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-real(Zoltan_DOUBLE) INTENT_IN data(*)
+real(Zoltan_DOUBLE) , intent(in) :: data(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_Fn3f = Zfw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_Fn3f = Zfw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_Fn3f
 
 
 function LBf90_Set_Num_Coarse_Obj_Fn8f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_Fn8f
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_1) INTENT_IN data
+  type(LB_User_Data_1) , intent(in) :: data
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_1) INTENT_IN data
+type(LB_User_Data_1) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_Fn8f = Zfw_Set_Fn8f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_Fn8f = Zfw_Set_Fn8f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_Fn8f
 
 
 function LBf90_Set_Num_Coarse_Obj_Fn9f(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_Fn9f
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_2) INTENT_IN data
+  type(LB_User_Data_2) , intent(in) :: data
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_2) INTENT_IN data
+type(LB_User_Data_2) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_Fn9f = Zfw_Set_Fn9f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_Fn9f = Zfw_Set_Fn9f(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_Fn9f
 
 
 function LBf90_Set_Num_Coarse_Obj_FnAf(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_FnAf
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_3) INTENT_IN data
+  type(LB_User_Data_3) , intent(in) :: data
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_3) INTENT_IN data
+type(LB_User_Data_3) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_FnAf = Zfw_Set_FnAf(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_FnAf = Zfw_Set_FnAf(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_FnAf
 
 
 function LBf90_Set_Num_Coarse_Obj_FnBf(lb,fn_ptr,data)
 integer(Zoltan_INT) :: LBf90_Set_Num_Coarse_Obj_FnBf
-type(LB_Struct) INTENT_IN lb
+type(LB_Struct) , intent(in) :: lb
 interface
   function fn_ptr(data,ierr)
   use zoltan_types
   use lb_user_const
   use zoltan_user_data
   integer(Zoltan_INT) :: fn_ptr
-  type(LB_User_Data_4) INTENT_IN data
+  type(LB_User_Data_4) , intent(in) :: data
   integer(Zoltan_INT), intent(out) :: ierr
   end function fn_ptr
 end interface
-type(LB_User_Data_4) INTENT_IN data
+type(LB_User_Data_4) , intent(in) :: data
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-#ifdef NASOFTWARE
-LBf90_Set_Num_Coarse_Obj_FnBf = Zfw_Set_FnBf(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
-#else
 LBf90_Set_Num_Coarse_Obj_FnBf = Zfw_Set_FnBf(lb_addr,nbytes,ZOLTAN_NUM_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
-#endif
 end function LBf90_Set_Num_Coarse_Obj_FnBf
 
 

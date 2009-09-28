@@ -44,7 +44,7 @@ F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
 MPI_LIBPATH		= -L/usr/lpp/ppe.poe/lib
-MPI_LIB			= -lmpi
+MPI_LIBS			= -lmpi
 
 PARMETIS_LIBPATH 	= \
 -L/sierra/Release/ParMetis/3.0/lib/rs6000-ibm-aix4.3.2.0/dp

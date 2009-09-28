@@ -44,6 +44,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   if (matrix->ywgtdim != zz->Obj_Weight_Dim)
       FATAL_ERROR("Cannot form bipartite graph: vertex and edge weights are not consistant");
 
+  matrix->opts.symmetrize = 1;
+
   /* Update the data directories */
   tr_tab = (Zoltan_Arc*) ZOLTAN_MALLOC(sizeof(Zoltan_Arc)*matrix->nPins*2);
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;

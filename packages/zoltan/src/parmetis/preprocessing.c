@@ -101,7 +101,7 @@ int Zoltan_Preprocess_Graph(
   static char *yo = "Zoltan_Preprocess_Graph";
 
   int ierr;
-  float *float_vwgt, *float_ewgts;
+  float *float_vwgt=NULL, *float_ewgts=NULL;
   char msg[256];
   ZG *graph = &(gr->graph);
   int local;
@@ -172,6 +172,7 @@ int Zoltan_Preprocess_Graph(
     int *input_part = NULL;
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
+    CHECK_IERR;
     if (prt) {
       prt->input_part = input_part;
     }
@@ -187,7 +188,9 @@ int Zoltan_Preprocess_Graph(
 
   if (gr->get_data) {
     local = IS_LOCAL_GRAPH(gr->graph_type);
+    ZOLTAN_FREE(&float_vwgt);
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
+    CHECK_IERR;
     ierr = Zoltan_ZG_Export (zz, graph,
 			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,

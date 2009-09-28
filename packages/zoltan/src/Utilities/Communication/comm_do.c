@@ -74,8 +74,8 @@ char *send_data,		/* array of data I currently own */
 int nbytes,			/* multiplier for sizes */
 char *recv_data)		/* array of data I'll own after comm */
 {
-  int status;
-  
+  int status = ZOLTAN_OK;
+
   if (!plan->maxed_recvs){
     status = Zoltan_Comm_Do_Post (plan, tag, send_data, nbytes, recv_data);
     if (status == ZOLTAN_OK)
@@ -116,6 +116,13 @@ char *recv_data)		/* array of data I'll own after comm */
         MPI_Comm_rank(MPI_COMM_WORLD, &my_proc);
 	ZOLTAN_COMM_ERROR("Communication plan = NULL", yo, my_proc);
 	return ZOLTAN_FATAL;
+    }
+
+    /* If not point to point, currently we do synchroneous communications */
+    if (plan->maxed_recvs){
+      int status;
+      status = Zoltan_Comm_Do_AlltoAll(plan, send_data, nbytes, recv_data);
+      return (status);
     }
 
     MPI_Comm_rank(plan->comm, &my_proc);
@@ -250,14 +257,11 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 
 	    if (plan->self_msg) {	/* Copy data to self. */
-                char* lrecv = &plan->recv_buff[self_recv_address];
-                char* lsend = &send_data[plan->starts_to[self_num] * nbytes];
-                int sindex = plan->lengths_to[self_num], idx;
-                for (idx=0; idx<nbytes; idx++) {
-                    memcpy(lrecv, lsend, sindex);
-                    lrecv += sindex;
-                    lsend += sindex;
-                }
+		/* I use array+offset instead of &(array[offset]) because of
+		   a bug with PGI v9 */
+		/* I use memmove because I'm not sure that the pointer are not
+		   overlapped. */
+		memmove(plan->recv_buff+self_recv_address, send_data+plan->starts_to[self_num] * nbytes, plan->lengths_to[self_num]*nbytes);
 	    }
 	}
 
@@ -396,8 +400,14 @@ char *recv_data)		/* array of data I'll own after comm */
     int       self_num;		/* where in send list my_proc appears */
     int       i, j, k, jj;	/* loop counters */
 
-    MPI_Comm_rank(plan->comm, &my_proc);    
-    
+    /* If not point to point, currently we do synchroneous communications */
+    if (plan->maxed_recvs){
+      /* Do nothing */
+      return (ZOLTAN_OK);
+    }
+
+    MPI_Comm_rank(plan->comm, &my_proc);
+
     /* Wait for messages to arrive & unpack them if necessary. */
     /* Note: since request is in plan, could wait in later routine. */
 

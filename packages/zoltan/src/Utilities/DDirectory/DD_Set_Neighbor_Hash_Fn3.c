@@ -25,14 +25,16 @@ extern "C" {
 #endif
 
 
+struct dd_nh3_struct {
+  int remainder;
+  int average;
+  int breakpt;
+  int total_;};
+
 
 static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc);
+ unsigned int nproc, struct dd_nh3_struct* hashdata);
 
-static int remainder;
-static int average;
-static int breakpt;
-static int total_;
 
 
 /*************  Zoltan_DD_Set_Hash_Fn3() ***********************/
@@ -49,38 +51,45 @@ static int total_;
 int Zoltan_DD_Set_Neighbor_Hash_Fn3 (
  Zoltan_DD_Directory *dd,          /* directory state information */
  int total)                        /* total number of GIDS */
-   {
-   char *yo = "Zoltan_DD_Set_Hash_Fn3";
+{
+  char *yo = "Zoltan_DD_Set_Hash_Fn3";
+  struct dd_nh3_struct *hashdata;
 
-   if (dd == NULL || total < 1) {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
-      return ZOLTAN_FATAL;
-   }
+  if (dd == NULL || total < 1) {
+    ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
+    return ZOLTAN_FATAL;
+  }
 
-   total_    = total;
-   average   = total / dd->nproc;
-   remainder = total % dd->nproc;
-   breakpt   = (average+1) * remainder;
+  hashdata = (struct dd_nh3_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh3_struct));
+  if (hashdata == NULL) {
+    ZOLTAN_PRINT_ERROR (0, yo, "Memory error");
+    return ZOLTAN_FATAL;
+  }
 
-   dd->hash    = dd_nh3;
-   dd->cleanup = NULL;                 /* no need to free anything */
+  hashdata->total_    = total;
+  hashdata->average   = total / dd->nproc;
+  hashdata->remainder = total % dd->nproc;
+  hashdata->breakpt   = (hashdata->average+1) * hashdata->remainder;
 
-   return ZOLTAN_OK;
-   }
+  dd->hash    = (DD_Hash_fn*) &dd_nh3;
+  dd->hashdata    = hashdata;
+  dd->cleanup = (DD_Cleanup_fn*)&Zoltan_DD_default_cleanup;
 
+  return ZOLTAN_OK;
+}
 
 
 static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
- unsigned int nproc)
-   {
-   int id = (signed) *gid;
-   if (id < breakpt)
-      return  id/(average+1);
-   if (id < total_)
-      return remainder + (id-breakpt)/average;
+ unsigned int nproc, struct dd_nh3_struct * hashdata)
+{
+  int id = (signed) *gid;
+  if (id < hashdata->breakpt)
+    return  id/(hashdata->average+1);
+  if (id < hashdata->total_)
+    return hashdata->remainder + (id-hashdata->breakpt)/hashdata->average;
 
-   return 0;                    /* error, gid is out of range */
-   }
+  return 0;                    /* error, gid is out of range */
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

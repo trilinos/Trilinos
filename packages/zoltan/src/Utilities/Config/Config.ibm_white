@@ -127,7 +127,7 @@ FARG      		= farg_typical
 
 # MPI Libraries (prefix all libraries with -l) and paths to the 
 # libraries (prefix all paths with -L).
-MPI_LIB			= 
+MPI_LIBS			= 
 MPI_LIBPATH		=
 
 # For graph-partitioning, Zoltan includes an interface to the

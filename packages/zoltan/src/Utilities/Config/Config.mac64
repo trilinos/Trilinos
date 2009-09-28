@@ -33,19 +33,16 @@ CFLAGS 			= $(OPT_FLAGS)
 # Make sure path to mpif77 points to ~/code/lib-m64/lam-7.1.4/bin/mpif77.
 F90			= mpif77 -m64
 LOCAL_F90		= gfortran -m64
-F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
+F90CFLAGS 		= -DFC_FN_LOWER -DFC_FN_UNDER
 FFLAGS    		= 
-SPPR_HEAD 		= spprinc.64bit
 F90_MODULE_PREFIX 	= -I
 FARG      		= farg_typical
 
-MPI_LIB			= 
+MPI_LIBS			= 
 MPI_LIBPATH		=
 
-PARMETIS_LIBPATH 	= -L/Users/kddevin/code/ParMETIS3.1.1
-PARMETIS_INCPATH        = -I/Users/kddevin/code/ParMETIS3.1.1
-#PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
-#PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
 
 #SCOTCH_LIBPATH 		= -L/Users/kddevin/code/lib-m64/scotch_5.1/lib
 #SCOTCH_INCPATH        	= -I/Users/kddevin/code/lib-m64/scotch_5.1/include

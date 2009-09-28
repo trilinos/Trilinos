@@ -38,7 +38,7 @@ SPPR_HEAD 		= spprinc.most
 F90_MODULE_PREFIX 	= -M
 FARG      		= farg_typical
 
-MPI_LIB			= -lsiMPI
+MPI_LIBS			= -lsiMPI
 MPI_LIBPATH		= -L../../siMPI/pyMPI/siMPI/Obj_$(ZOLTAN_ARCH)
 MPI_INCPATH		= -I../../siMPI/pyMPI/siMPI -I../../../siMPI/pyMPI/siMPI
 

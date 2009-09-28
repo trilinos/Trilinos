@@ -20,7 +20,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(Zoltan, 3.1, kddevin@sandia.gov)
+AC_INIT(Zoltan, 3.2, kddevin@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running Zoltan Configure Script"
@@ -38,7 +38,6 @@ AC_CONFIG_SRCDIR([src/include/zoltan.h])
 AC_CONFIG_AUX_DIR(config)
 
 # Configure should create src/Zoltan_config.h from src/Zoltan_config.h.in
-# Zoltan does not yet make use of this file
 AM_CONFIG_HEADER(src/include/Zoltan_config.h:src/include/Zoltan_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
@@ -78,17 +77,29 @@ AM_INIT_AUTOMAKE(1.9.6 no-define tar-ustar)
 
 AC_PREREQ(2.59)
 
-TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
+#TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
 #This option is not currently available
-#TAC_ARG_ENABLE_OPTION(fortran90driver, [enable Fortran 90 driver (automatically enables Fortran support)], FORTRAN90DRIVER, no)
-AM_CONDITIONAL(BUILD_FORTRAN90DRIVER, [test "X$ac_cv_use_fortran90driver" != "Xno"])
-AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
+TAC_ARG_ENABLE_OPTION(f90interface, [enable Fortran 90 interface (automatically enables Fortran support)], F90INTERFACE, no)
+AM_CONDITIONAL(BUILD_ZOLTAN_F90_INTERFACE, [test "X$ac_cv_use_f90interface" != "Xno"])
+#AM_CONDITIONAL(USE_FORTRAN, [test "X$ac_cv_use_fortran" != "Xno"])
 
-#if test "X$ac_cv_use_fortran90driver" = "Xyes"; then
-#ac_cv_use_fortran90=yes
-#else
-ac_cv_use_fortran90=no
-#fi
+if test "X$ac_cv_use_f90interface" = "Xyes"; then
+  ac_cv_use_fortran=yes
+else
+  ac_cv_use_fortran=no
+fi
+
+if test "X$ac_cv_use_fortran" = "Xyes"; then
+  ac_cv_use_fortran90=yes
+#  AX_F90_MODULE_FLAG
+#  if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
+#    AC_MSG_ERROR([unable to find f90 modules extension])
+#  else
+#    FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
+#  fi
+else
+  ac_cv_use_fortran90=no
+fi
 
 TAC_ARG_ENABLE_FEATURE_SUB(zoltan, cppdriver, [Enable Zoltan's C++ driver], ZOLTAN_CPPDRIVER, yes)
 AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "Xno"])
@@ -111,7 +122,7 @@ TAC_ARG_CONFIG_MPI
 #	  cases.
 
 AC_ARG_ENABLE(mpi-recv-limit,
- AS_HELP_STRING([--enable-mpi-recv-limit],[Set to the limit on the number of simultaneous MPI posted receives, if any; default is --enable-mpi-recv-limit=2000]),
+ AS_HELP_STRING([--enable-mpi-recv-limit],[Set to the limit on the number of simultaneous MPI posted receives, if any; default is --enable-mpi-recv-limit=10]),
  [ AC_MSG_NOTICE(Building Zoltan to observe a limit of $enable_mpi_recv_limit simultaneously posted MPI receives)
    AC_SUBST(MPI_RECV_LIMIT_FLAG, "-DMPI_RECV_LIMIT=$enable_mpi_recv_limit")
  ]
@@ -126,6 +137,7 @@ AM_PROG_CC_C_O(cc gcc)
 #if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 AC_PROG_CXX(CC g++ c++ cxx)
 #fi
+
 if test "X$ac_cv_use_fortran90" = "Xyes"; then
 AC_PROG_FC(gfortran f90 xlf90 f95)
 fi
@@ -143,7 +155,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 #fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-#TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
+TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
@@ -234,6 +246,8 @@ if test "X$ac_cv_use_nemesis_exodus" != "Xno"; then
   LIBS="-lnemIc -lexoIIv2c -lnetcdf ${LIBS}"
 fi
 
+LIBS="${LIBS} -lm"
+
 #TAC_ARG_WITH_PACKAGE(parkway, [Enable Parkway support.], PARKWAY, no)
 #TAC_ARG_WITH_3PL_SUB(parkway, libdir, [Specify where the Parkway library is located.  Ex. /path/to/library])
 #if test "X$tac_with_parkway_libdir" != "Xno"; then
@@ -248,7 +262,6 @@ fi
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-# A small part of Zoltan appears to need BLAS and LAPACK
 
 TAC_ARG_ENABLE_FEATURE(tests, [Make tests for all Trilinos packages buildable with 'make tests'], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( zoltan, tests, [Make Zoltan tests buildable with 'make tests'], ZOLTAN_TESTS)
@@ -277,12 +290,20 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
-#AC_F77_WRAPPERS
-
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
+
+# Define F77_FUNC that will be used to link with Fortran subroutines.
+if test "X$ac_cv_use_fortran" != "Xno"; then
+  AC_F77_WRAPPERS
+  AX_F90_MODULE_FLAG
+  if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
+    AC_MSG_ERROR([unable to find f90 modules extension])
+  else
+    FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
+  fi
+fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -330,6 +351,7 @@ AC_CONFIG_FILES([
 		Makefile
 		src/Makefile
 		src/driver/Makefile
+		src/fdriver/Makefile
 		Makefile.export.zoltan
 		example/Makefile
 		example/C/Makefile
@@ -342,8 +364,6 @@ AC_CONFIG_FILES([
 #		example/C/Makefile
 #		example/C/sparse_matrix/Makefile
 #		example/CPP/Makefile
-
-#		src/fdriver/Makefile
 #		Utilities/Makefile
 #		ZoltanComponent/Makefile
 #		ZoltanComponent/CCA_Wrapper/Makefile

@@ -364,7 +364,7 @@ ZDRIVE_CSRC 	= $(DR_C_SRC) $(DR_BOTH_SRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
-		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
+		  $(MPI_LIBPATH) $(MPI_LIBS) -lm 
 #		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 
 ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
@@ -373,7 +373,7 @@ ZCPPDRIVE_CSRC 	= $(DR_CPP_SRC) $(DR_BOTH_SRC) $(CH_CSRC)
 ZCPPDRIVE_OBJ	= $(DR_BOTH_SRC:.c=.O) $(CH_CSRC:.c=.O) $(DR_CPP_SRC:.cpp=.o)
 ZCPPDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
-		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
+		  $(MPI_LIBPATH) $(MPI_LIBS) -lm 
 ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
 
 
@@ -396,7 +396,7 @@ VIEW_LIBS       = -L. $(VTK_LIBPATH) $(MPI_LIBPATH) $(X_LIBPATH) $(GL_LIBPATH) \
    $(GL_LIBS) $(X_LIBS)  \
    -lvtkftgl -lvtkfreetype \
    -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
-   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB) -ldl
+   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIBS) -ldl
 
 OFFSCREEN_VIEW_LIBS = \
    -L. $(VTK_OFFSCREEN_LIBPATH) $(X_LIBPATH) $(MPI_LIBPATH) $(MESA_LIBPATH) \
@@ -404,7 +404,7 @@ OFFSCREEN_VIEW_LIBS = \
    $(MESA_LIBS) $(X_LIBS) -lvtkftgl -lvtkfreetype \
    -lvtkFiltering -lvtkCommon \
    -lvtkpng -lvtktiff -lvtkzlib -lvtkjpeg -lvtkexpat \
-   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIB) -ldl
+   -lpthread -lvtkexoIIc -lvtkNetCDF $(MPI_LIBS) -ldl
 
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)

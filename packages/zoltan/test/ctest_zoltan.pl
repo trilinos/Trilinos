@@ -11,6 +11,7 @@ sub nowhite($) {
   for ($file) {
     s/ //g;
     s/\t//g;
+    s/\r//g;
   }
   return uc($file);
 }
@@ -59,7 +60,16 @@ if ($debug) {print "DEBUG:  mpiexec $mpiexec $mpiexecargs\n";}
 
 
 ### Assign the executable.
-$zdrive = "../../src/driver/zdrive.exe";
+$zdrive = "../zdrive.exe";
+unless (-x $zdrive) {
+# Maybe the copy didn't work; look harder.
+  $zdrive = "../../src/driver/zdrive.exe";
+}
+unless (-x $zdrive) {
+# Maybe you're on a Windows platform; look harder still.
+  $zdrive = "../../src/driver/$ENV{TEST_CONFIG}/zdrive.exe";
+}
+die "zdrive executable not found\n" unless (-x $zdrive);
 
 ### Get current working directory name
 use Cwd;
@@ -108,7 +118,7 @@ if ($package eq "ParMETIS") {
   ### ParMETIS tests
   @oneprocfiles = glob("zdrive.inp.*order-metis-*");
   if ($np > 1) {
-    @inpfiles = glob("zdrive.inp.adp*
+    @inpfiles = glob("zdrive.inp.adap*
                       zdrive.inp.part* 
                       zdrive.inp.*metis*");
   } else {

@@ -27,7 +27,7 @@ FILE(GLOB ANSWERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} answers/simple.*)
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_zoltan_parallel
   # Test Native Zoltan algorithms in parallel
-  TEST_0 CMND ../ctest_zoltan.pl ARGS ${ZOLTANNUMPROCS}  Zoltan 1 ${MPI_EXEC}
+  TEST_0 ${ZOLTAN_TEST_DRIVER} ${ZOLTANNUMPROCS}  Zoltan 1 ${MPI_EXEC}
   COMM mpi
   OVERALL_NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
@@ -37,7 +37,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_parmetis_parallel
   # Test ParMETIS algorithms in parallel
-  TEST_0 CMND ../ctest_zoltan.pl ARGS ${ZOLTANNUMPROCS} ParMETIS 1 ${MPI_EXEC}
+  TEST_0 ${ZOLTAN_TEST_DRIVER} ${ZOLTANNUMPROCS} ParMETIS 1 ${MPI_EXEC}
   COMM mpi
   OVERALL_NUM_MPI_PROCS ${ZOLTANNUMPROCS}
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
@@ -48,7 +48,7 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_scotch_parallel
   # Test Scotch algorithms in parallel
-  TEST_0 CMND ../ctest_zoltan.pl ARGS ${ZOLTANNUMPROCS} Scotch 1 ${MPI_EXEC}
+  TEST_0 ${ZOLTAN_TEST_DRIVER} ${ZOLTANNUMPROCS} Scotch 1 ${MPI_EXEC}
   COMM mpi
   OVERALL_NUM_MPI_PROCS ${ZOLTANNUMPROCS}
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
@@ -58,7 +58,7 @@ ENDIF()
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_zoltan_serial
   # Test Native Zoltan algorithms in serial
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 1 Zoltan 1
+  TEST_0 ${ZOLTAN_TEST_DRIVER} 1 Zoltan 1
   COMM serial
   OVERALL_NUM_MPI_PROCS 1
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_parmetis_serial
   # Test ParMETIS algorithms in serial
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 1 ParMETIS 1
+  TEST_0 ${ZOLTAN_TEST_DRIVER} 1 ParMETIS 1
   COMM serial
   OVERALL_NUM_MPI_PROCS 1
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
@@ -79,7 +79,7 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_scotch_serial
   # Test Scotch algorithms in serial
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 1 Scotch 1
+  TEST_0 ${ZOLTAN_TEST_DRIVER} 1 Scotch 1
   COMM serial
   OVERALL_NUM_MPI_PROCS 1
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
@@ -90,7 +90,7 @@ IF (${PACKAGE_NAME}_ENABLE_PaToH)
 PACKAGE_ADD_ADVANCED_TEST(
   hg_simple_patoh_serial
   # Test PaToH algorithms in serial
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 1 PaToH 1
+  TEST_0 ${ZOLTAN_TEST_DRIVER} 1 PaToH 1
   COMM serial
   OVERALL_NUM_MPI_PROCS 1
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"

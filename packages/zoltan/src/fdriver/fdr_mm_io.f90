@@ -95,6 +95,14 @@ type(PARIO_INFO) :: pio_info
 
 !   read the matrix in on processor 0.
     nullify(mm_ival, mm_cval)
+!KDD  Valgrind reports some errors if mm_ival and mm_cval are not allocated,
+!KDD  but we don't need them.   32-bit runs fail on the Mac if we don't
+!KDD  allocate them.  The error seems to occur in gfortran as it prepares
+!KDD  to call mmread.  So we'll allocate them and then deallocate them below.
+!KDD  It may be possible to allocate them smaller if needed, but these sizes
+!KDD  are OK for our nightly tests.
+    allocate(mm_ival(0:mm_nnz-1), stat=allocstat) !KDD
+    allocate(mm_cval(0:mm_nnz-1), stat=allocstat) !KDD
     allocate(mm_iidx(0:mm_nnz-1), stat=allocstat)
     allocate(mm_jidx(0:mm_nnz-1), stat=allocstat)
     allocate(mm_rval(0:mm_nnz-1), stat=allocstat)
@@ -110,6 +118,8 @@ type(PARIO_INFO) :: pio_info
     call mmread(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz, &
                 mm_max, mm_iidx, mm_jidx, mm_ival, mm_rval, mm_cval)
 
+    if (associated(mm_ival)) deallocate(mm_ival) !KDD
+    if (associated(mm_cval)) deallocate(mm_cval) !KDD
 !   Don't need the numerical values.
     if (associated(mm_rval)) deallocate(mm_rval)
 

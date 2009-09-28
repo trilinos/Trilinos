@@ -81,6 +81,8 @@ int Zoltan_Order(
   ZOLTAN_ID_PTR local_gids=NULL, lids=NULL;
   int local_num_obj;
   int *local_rank = NULL, *local_iperm=NULL;
+  struct Zoltan_DD_Struct *dd = NULL;
+
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -244,23 +246,10 @@ int Zoltan_Order(
     return (ZOLTAN_FATAL);
   }
 
-  if ((num_obj < 0) || (local_num_obj <= num_obj)) { /* Want only local informations */
-    if (num_obj < 0)
-      local_gids = gids; /* We have to keep content here */
-    else
-      local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
-    local_rank = rank;
-    local_iperm = iperm;
-  }
-  else {
-    local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
-    if (rank != NULL || num_obj == 0) {
-      local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
-    }
-    if (iperm != NULL || num_obj == 0) {
-      local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
-    }
-  }
+  local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
+  local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
+  local_iperm = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
+
   lids = ZOLTAN_MALLOC_LID_ARRAY(zz, local_num_obj);
 
   ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, local_iperm, &opt);
@@ -272,6 +261,8 @@ int Zoltan_Order(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
     } else {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+      Zoltan_Multifree(__FILE__, __LINE__, 3,
+                       &local_gids, &local_rank, &local_iperm);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ierr);
     }
@@ -306,36 +297,32 @@ int Zoltan_Order(
 
 
   /* TODO: Use directly the "graph" structure to avoid to duplicate things. */
-  if (num_obj >= 0) { /* We have to use distributed data directory */
-    struct Zoltan_DD_Struct *dd = NULL;
+  /* I store : GNO, rank, iperm */
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0);
+  /* Hope a linear assignment will help a little */
+  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
+  /* Associate all the data with our xGNO */
+  Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, (ZOLTAN_ID_PTR) local_iperm, NULL, local_num_obj);
 
-    /* I store : GNO, rank, iperm */
-    ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0);
-    /* Hope a linear assignment will help a little */
-    Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
-    /* Associate all the data with our xGNO */
-    Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, (ZOLTAN_ID_PTR) local_iperm, NULL, local_num_obj);
+  ZOLTAN_FREE(&local_gids);
+  ZOLTAN_FREE(&local_rank);
+  ZOLTAN_FREE(&local_iperm);
 
-    Zoltan_DD_Find (dd, gids, (ZOLTAN_ID_PTR)rank, (ZOLTAN_ID_PTR)iperm, NULL,
-		    num_obj, NULL);
-    Zoltan_DD_Destroy(&dd);
-  }
+  Zoltan_DD_Find (dd, gids, (ZOLTAN_ID_PTR)rank, (ZOLTAN_ID_PTR)iperm, NULL,
+		  num_obj, NULL);
+  Zoltan_DD_Destroy(&dd);
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done Registering results");
 
-  if (local_gids != gids) ZOLTAN_FREE(&local_gids);
-  if (local_rank != rank) ZOLTAN_FREE(&local_rank);
-  if (local_iperm != iperm) ZOLTAN_FREE(&local_iperm);
 
   end_time = Zoltan_Time(zz->Timer);
   order_time[0] = end_time - start_time;
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST) {
-    int i, nobjs;
-    nobjs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &i);
+    int i;
     Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
     printf("ZOLTAN: rank for ordering on Proc %d\n", zz->Proc);
-    for (i = 0; i < nobjs; i++) {
+    for (i = 0; i < num_obj; i++) {
       printf("GID = ");
       ZOLTAN_PRINT_GID(zz, &(gids[i*(num_gid_entries)]));
       printf(", rank = %3d\n", rank[i]);

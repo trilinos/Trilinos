@@ -619,6 +619,10 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
     goto End; \
   } } while (0)
 
+
+#define CHECK_IERR do {   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) \
+    goto End;  } while (0)
+
 /*
  *  Debugging macro for Tflop architecture.
  *  ZOLTAN_HEAP_INFO(proc_number, string) prints information about the heap,
