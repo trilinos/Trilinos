@@ -326,6 +326,7 @@ namespace Belos {
     static const int maxRestarts_default_;
     static const int maxIters_default_;
     static const int numBlocks_default_;
+    static const int blockSize_default_;
     static const int recycledBlocks_default_;
     static const int verbosity_default_;
     static const int outputFreq_default_;
@@ -399,6 +400,9 @@ const int GCRODRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 5000;
 
 template<class ScalarType, class MV, class OP>
 const int GCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 50;
+
+template<class ScalarType, class MV, class OP>
+const int GCRODRSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
 const int GCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 5;
@@ -778,6 +782,8 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     pl->set("Maximum Iterations", maxIters_default_,
       "The maximum number of iterations allowed for each\n"
       "set of RHS solved.");
+    pl->set("Block Size", blockSize_default_,
+      "Block Size Parameter -- currently must be 1 for GCRODR");
     pl->set("Num Blocks", numBlocks_default_,
       "The maximum number of vectors allowed in the Krylov subspace\n"
       "for each set of RHS solved.");
