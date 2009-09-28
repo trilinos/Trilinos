@@ -54,9 +54,9 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
   int iam = In->Comm().MyPID() ;
 
   int numentries = In->NumGlobalNonzeros();
-  int NumRowEntries;
-  double *RowValues;
-  int *ColIndices;
+  int NumRowEntries = 0;
+  double *RowValues = 0;
+  int *ColIndices = 0;
 
   int numrows = In->NumGlobalRows();
   int numcols = In->NumGlobalCols();

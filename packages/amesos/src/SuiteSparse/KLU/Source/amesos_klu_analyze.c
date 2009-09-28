@@ -155,8 +155,8 @@ static Int analyze_worker	/* returns KLU_OK or < 0 if error */
 	    }
 
 	    /* account for memory usage in AMD */
-	    Common->mempeak = MAX (Common->mempeak,
-		Common->memusage + amd_Info [AMD_MEMORY]) ;
+	    Common->mempeak = ( size_t) ( MAX (Common->mempeak,
+		Common->memusage + amd_Info [AMD_MEMORY]) ) ;
 
 	    /* get the ordering statistics from AMD */
 	    lnz1 = (Int) (amd_Info [AMD_LNZ]) + nk ;
