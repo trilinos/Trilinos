@@ -39,6 +39,7 @@
 #include "Claps_ConfigDefs.hpp"  // for definition of F77_FUNC
 
 #define DSTEV_F77 F77_FUNC(dstev,DSTEV)
+#define EPSZERO 1e-30
 
 extern "C"{
   void metis_partgraphrecursive(int *n, int *xadj, int *adjncy, int *vwgt,
@@ -1578,7 +1579,14 @@ void CLOP_solver::two_steps_CGS(int gmres_iter, Epetra_Vector* r)
   HH[N] = normr;
   int ibeg = M*N;
   double *V = &VV[ibeg];
-  for (i=0; i<M; i++) V[i] = X[i]/normr;
+  if (normr > EPSZERO)
+  {
+    for (i=0; i<M; i++) V[i] = X[i]/normr;
+  }
+  else
+  {
+    for (i=0; i<M; i++) V[i] = 0;
+  }
   for (i=0; i<=N; i++) zz[i] = -HH[i];
   /*  
   TRANS = 'T'; ALPHA = 1; BETA = 0;
