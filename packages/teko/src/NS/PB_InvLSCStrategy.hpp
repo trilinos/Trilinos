@@ -169,6 +169,12 @@ public:
    virtual void setHScaling(const MultiVector & hScaling) 
    { hScaling_ = buildDiagonal(hScaling,"H"); }
 
+   /** Set the \f$W\f$-Scaling vector used in \f$B H B^T\f$. This method
+     * takes a vector.
+     */
+   virtual void setWScaling(const MultiVector & wScaling) 
+   { wScaling_ = wScaling; }
+
 protected:
    // how to invert the matrices
    Teuchos::RCP<InverseFactory> invFactoryF_;
@@ -177,7 +183,8 @@ protected:
    // operators requested, to be filled by user
    LinearOp massMatrix_;
    LinearOp userPresStabMat_;
-   LinearOp hScaling_;
+   mutable LinearOp hScaling_;
+   MultiVector wScaling_;
 
    // number of power iterations when computing spectral radius
    int eigSolveParam_;
@@ -187,6 +194,7 @@ protected:
    bool useFullLDU_;
    bool useMass_;
    bool useLumping_;
+   bool useWScaling_;
 };
 
 } // end namespace NS

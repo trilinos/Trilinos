@@ -45,28 +45,41 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<doubl
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Teuchos::RCP<const Epetra_Vector> & ev,
                                                                    const Epetra_Map & map,const std::string & lbl="ANYM");
 
-/** \brief Build a vector of the dirchlet row indicies. 
+/** \brief Convert an Epetra_Vector into a diagonal linear operator.
   *
-  * Build a vector of the dirchlet row indicies. That is, record the global
+  * Convert an Epetra_Vector into a diagonal linear operator. 
+  *
+  * \param[in] ev  Epetra_Vector to use as the diagonal
+  * \param[in] map Map related to the Epetra_Vector
+  * \param[in] lbl String to easily label the operator
+  *
+  * \returns A diagonal linear operator using the vector
+  */
+const Teuchos::RCP<Thyra::LinearOpBase<double> > thyraDiagOp(const Teuchos::RCP<Epetra_Vector> & ev,
+                                                             const Epetra_Map & map,const std::string & lbl="ANYM");
+
+/** \brief Build a vector of the dirchlet row indices. 
+  *
+  * Build a vector of the dirchlet row indices. That is, record the global
   * index of any row that is all zeros except for $1$ on the diagonal.
   *
-  * \param[in]     rowMap   Map specifying which global indicies this process examines 
+  * \param[in]     rowMap   Map specifying which global indices this process examines 
   * \param[in] mat Matrix to be examined
-  * \param[in,out] outIndicies Output list of indicies corresponding to dirchlet rows.
+  * \param[in,out] outIndices Output list of indices corresponding to dirchlet rows.
   */
-void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies);
+void identityRowIndices(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndices);
 
 /** \brief Zero out the value of a vector on the specified
-  *        set of global indicies.
+  *        set of global indices.
   *
   * Zero out the value of a vector on the specified set of global
-  * indicies. The indicies here are assumed to belong to the calling
-  * process (i.e. zeroIndicies \f$\in\f$ mv.Map()).
+  * indices. The indices here are assumed to belong to the calling
+  * process (i.e. zeroIndices \f$\in\f$ mv.Map()).
   *
   * \param[in,out] mv           Vector whose entries will be zeroed
-  * \param[in]     zeroIndicies Indicies local to this process that need to be zeroed
+  * \param[in]     zeroIndices Indices local to this process that need to be zeroed
   */
-void zeroMultiVectorRowIndicies(Epetra_MultiVector & mv,const std::vector<int> & zeroIndicies);
+void zeroMultiVectorRowIndices(Epetra_MultiVector & mv,const std::vector<int> & zeroIndices);
 
 /** A class that zeros out chosen rows of a matrix-vector
   * product.
@@ -76,13 +89,13 @@ public:
    /** \brief Constructor for a ZeroedOperator.
      *
      * Build a ZeroedOperator based on a particular Epetra_Operator and
-     * a set of indicies to zero out. These indicies must be local to this
+     * a set of indices to zero out. These indices must be local to this
      * processor as specified by RowMap().
      *
-     * \param[in] zeroIndicies Set of indices to zero out (must be local).
+     * \param[in] zeroIndices Set of indices to zero out (must be local).
      * \param[in] op           Underlying epetra operator to use.
      */
-   ZeroedOperator(const std::vector<int> & zeroIndicies,const Teuchos::RCP<const Epetra_Operator> & op);
+   ZeroedOperator(const std::vector<int> & zeroIndices,const Teuchos::RCP<const Epetra_Operator> & op);
 
    //! \name Functions required by Epetra_Operator
    //@{  
@@ -126,7 +139,7 @@ public:
 
 protected:
    const Teuchos::RCP<const Epetra_Operator> epetraOp_;
-   std::vector<int> zeroIndicies_;
+   std::vector<int> zeroIndices_;
 };
 
 } // end namespace Epetra

@@ -348,7 +348,7 @@ bool isZeroOp(const LinearOp op);
   *
   * \returns A diagonal operator.
   */
-LinearOp getLumpedMatrix(const LinearOp & op);
+ModifiableLinearOp getLumpedMatrix(const LinearOp & op);
 
 /** \brief Compute the inverse of the lumped version of
   *        this matrix.
@@ -358,7 +358,7 @@ LinearOp getLumpedMatrix(const LinearOp & op);
   *
   * \returns A diagonal operator.
   */
-LinearOp getInvLumpedMatrix(const LinearOp & op);
+ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op);
 
 //@}
 
@@ -474,7 +474,7 @@ const MultiVector getDiagonal(const LinearOp & op);
   *
   * \returns An diagonal operator.
   */
-const LinearOp getInvDiagonalOp(const LinearOp & op);
+const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op);
 
 /** \brief Multiply three linear operators. 
   *

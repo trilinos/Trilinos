@@ -240,7 +240,7 @@ void BlockPreconditionerFactory::initializePrecFactoryBuilder()
    precFactoryBuilder_.addClone("Block Jacobi",clone);
 
    clone = rcp(new AutoClone<GaussSeidelPreconditionerFactory>());
-   precFactoryBuilder_.addClone("Block Gauss Seidel",clone);
+   precFactoryBuilder_.addClone("Block Gauss-Seidel",clone);
 
    clone = rcp(new AutoClone<AddPreconditionerFactory>());
    precFactoryBuilder_.addClone("Block Add",clone);

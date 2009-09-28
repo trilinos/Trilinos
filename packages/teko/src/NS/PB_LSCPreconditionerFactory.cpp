@@ -125,7 +125,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 //! Initialize from a parameter list
 void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
 {
-   PB_DEBUG_MSG("Begin LSCPreconditionerFactory::initializeFromParameterList",10);
+   PB_DEBUG_SCOPE("LSCPreconditionerFactory::initializeFromParameterList",10);
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
@@ -159,8 +159,6 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
    }
 
    invOpsStrategy_ = strategy;
-
-   PB_DEBUG_MSG("End LSCPreconditionerFactory::initializeFromParameterList",10);
 }
 
 //! For assiting in construction of the preconditioner

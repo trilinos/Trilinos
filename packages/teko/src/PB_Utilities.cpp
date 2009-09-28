@@ -398,7 +398,7 @@ bool isZeroOp(const LinearOp op)
   *
   * \returns A diagonal operator.
   */
-LinearOp getLumpedMatrix(const LinearOp & op)
+ModifiableLinearOp getLumpedMatrix(const LinearOp & op)
 {
    RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(op->domain());
    RCP<Thyra::VectorBase<double> > diag = Thyra::createMember(op->range());
@@ -409,7 +409,7 @@ LinearOp getLumpedMatrix(const LinearOp & op)
    // compute lumped diagonal
    Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
 
-   return Thyra::diagonal(diag);
+   return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
 }
 
 /** \brief Compute the inverse of the lumped version of
@@ -420,7 +420,7 @@ LinearOp getLumpedMatrix(const LinearOp & op)
   *
   * \returns A diagonal operator.
   */
-LinearOp getInvLumpedMatrix(const LinearOp & op)
+ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
 {
    RCP<Thyra::VectorBase<double> > ones = Thyra::createMember(op->domain());
    RCP<Thyra::VectorBase<double> > diag = Thyra::createMember(op->range());
@@ -432,7 +432,7 @@ LinearOp getInvLumpedMatrix(const LinearOp & op)
    Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
    Thyra::reciprocal(diag.ptr(),*diag);
 
-   return Thyra::diagonal(diag);
+   return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
 }
 
 /** \brief Get the diaonal of a linear operator
@@ -524,7 +524,7 @@ const MultiVector getDiagonal(const LinearOp & op)
   *
   * \returns An diagonal operator.
   */
-const LinearOp getInvDiagonalOp(const LinearOp & op)
+const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
 {
    RCP<const Epetra_CrsMatrix> eCrsOp;
 
@@ -554,7 +554,6 @@ const LinearOp getInvDiagonalOp(const LinearOp & op)
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
    TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
    diag->Reciprocal(*diag);
-
 
    // build Thyra diagonal operator
    return PB::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");

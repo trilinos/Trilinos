@@ -17,6 +17,7 @@ GaussSeidelPreconditionerFactory::GaussSeidelPreconditionerFactory(TriSolveType 
 { }
 
 GaussSeidelPreconditionerFactory::GaussSeidelPreconditionerFactory()
+         : solveType_(GS_UseLowerTriangle)
 { }
 
 LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const
@@ -50,23 +51,35 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLi
 //! Initialize from a parameter list
 void GaussSeidelPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
 {
+   PB_DEBUG_SCOPE("GaussSeidelPreconditionerFactory::initializeFromParameterList",10);
+   PB_DEBUG_MSG_BEGIN(9);
+      DEBUG_STREAM << "Parameter list: " << std::endl;
+      pl.print(DEBUG_STREAM);
+   PB_DEBUG_MSG_END();
+
    const std::string inverse_type = "Inverse Type";
    std::vector<RCP<InverseFactory> > inverses;
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
    // get string specifying default inverse
-   std::string invStr = pl.get<std::string>(inverse_type);
-   if(invStr=="") invStr = "Amesos";
+   std::string invStr ="Amesos"; 
+   if(pl.isParameter(inverse_type))
+      invStr = pl.get<std::string>(inverse_type);
+   if(pl.isParameter("Use Upper Triangle"))
+      solveType_ = pl.get<bool>("Use Upper Triangle") ? GS_UseUpperTriangle : GS_UseLowerTriangle;
+  
+   PB_DEBUG_MSG("GSPrecFact: Building default inverse \"" << invStr << "\"",5);
    RCP<InverseFactory> defaultInverse = invLib->getInverseFactory(invStr);
 
    // now check individual solvers
    Teuchos::ParameterList::ConstIterator itr;
    for(itr=pl.begin();itr!=pl.end();++itr) {
       std::string fieldName = itr->first;
+      PB_DEBUG_MSG("GSPrecFact: checking fieldName = \"" << fieldName << "\"",9);
 
       // figure out what the integer is
-      if(fieldName.compare(inverse_type)==0 && fieldName!=inverse_type) {
+      if(fieldName.compare(0,inverse_type.length(),inverse_type)==0 && fieldName!=inverse_type) {
          int position = -1;
          std::string inverse,type;
 
@@ -74,11 +87,13 @@ void GaussSeidelPreconditionerFactory::initializeFromParameterList(const Teuchos
          std::stringstream ss(fieldName);
          ss >> inverse >> type >> position;
 
-         if(position<=0)
+         if(position<=0) {
             PB_DEBUG_MSG("Gauss-Seidel \"Inverse Type\" must be a (strictly) positive integer",1);
+         }
 
          // inserting inverse factory into vector
          std::string invStr = pl.get<std::string>(fieldName);
+         PB_DEBUG_MSG("GSPrecFact: Building inverse " << position << " \"" << invStr << "\"",5);
          if(position>inverses.size()) {
             inverses.resize(position,defaultInverse);
             inverses[position-1] = invLib->getInverseFactory(invStr);

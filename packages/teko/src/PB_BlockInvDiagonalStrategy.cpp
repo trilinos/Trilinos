@@ -25,19 +25,23 @@ InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<In
   */
 void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state,std::vector<LinearOp> & invDiag) const
 { 
+   PB_DEBUG_SCOPE("InvFactoryDiagStrategy::getInvD",10);
+
    // loop over diagonals, build an inverse operator for each
    int diagCnt = A->productRange()->numBlocks();
    int invCnt = invDiagFact_.size();
+
+   PB_DEBUG_MSG("# diags = " << diagCnt << ", # inverses = " << invCnt,6);
 
    if(diagCnt<=invCnt) {
       for(int i=0;i<diagCnt;i++) 
          invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
    }
    else {
-      for(int i=0;i<diagCnt;i++) 
+      for(int i=0;i<invCnt;i++) 
          invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
 
-      for(int i=diagCnt;i<invCnt;i++) 
+      for(int i=invCnt;i<diagCnt;i++) 
          invDiag.push_back(buildInverse(*defaultInvFact_,getBlock(i,i,A)));
    }
 }

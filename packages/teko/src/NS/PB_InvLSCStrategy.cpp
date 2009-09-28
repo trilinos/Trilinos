@@ -10,6 +10,7 @@
 
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_VectorOut.h"
 
 #include "Teuchos_Time.hpp"
 
@@ -80,31 +81,31 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
 /////////////////////////////////////////////////////////////////////////////
 InvLSCStrategy::InvLSCStrategy()
    : massMatrix_(Teuchos::null), invFactoryF_(Teuchos::null), invFactoryS_(Teuchos::null), eigSolveParam_(5)
-   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false)
+   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                const Teuchos::RCP<InverseFactory> & invFactS,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                const Teuchos::RCP<InverseFactory> & invFactS,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
 { }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -207,13 +208,26 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
    PB_DEBUG_MSG("Computed BQBt",10);
 
+   // if there is no H-Scaling
+   if(wScaling_!=Teuchos::null && hScaling_==Teuchos::null) {
+      // from W vector build H operator scaling
+      RCP<const Thyra::VectorBase<double> > w = wScaling_->col(0);
+      RCP<const Thyra::VectorBase<double> > iQu 
+            = rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(state->invMass_)->getDiag();
+      RCP<Thyra::VectorBase<double> > h = Thyra::createMember(iQu->space());
+
+      Thyra::put_scalar(0.0,h.ptr());
+      Thyra::ele_wise_prod(1.0,*w,*iQu,h.ptr());
+      hScaling_ = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(h));
+   } 
+
    // setup the scaling operator
    LinearOp H = hScaling_;
-   if(hScaling_==Teuchos::null)
+   if(H==Teuchos::null)
       state->BHBt_ = state->BQBt_;
    else {
       // compute BHBt
-      state->BHBt_ = explicitMultiply(B,hScaling_,Bt,state->BHBt_);
+      state->BHBt_ = explicitMultiply(B,H,Bt,state->BHBt_);
    }
 
    // if this is a stable discretization...we are done!
@@ -238,13 +252,13 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
       // if it is a CRS matrix get rows that need to be zeroed
       if(crsF!=Teuchos::null) {
-         std::vector<int> zeroIndicies;
+         std::vector<int> zeroIndices;
           
          // get rows in need of zeroing
-         PB::Epetra::identityRowIndicies(crsF->RowMap(), *crsF,zeroIndicies);
+         PB::Epetra::identityRowIndices(crsF->RowMap(), *crsF,zeroIndices);
 
          // build an operator that zeros those rows
-         modF = Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,crsF)));
+         modF = Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndices,crsF)));
       }
    }
 
@@ -265,13 +279,8 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       stabMatrix = C;
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
-   LinearOp invDiagF;
-   // if(massMatrix_==Teuchos::null)
-   //    invDiagF = state->invMass_;
-   // else
-   invDiagF = getInvDiagonalOp(F);
-   
    // construct B_idF_Bt and save it for refilling later: This could reuse BQBt graph
+   LinearOp invDiagF = getInvDiagonalOp(F);
    PB::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
    modB_idF_Bt = explicitMultiply(B,invDiagF,Bt,modB_idF_Bt);
    state->addInverse("BidFBt",modB_idF_Bt);
@@ -295,11 +304,10 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // now build B*H*Bt-gamma*C
    PB::ModifiableLinearOp BHBtmC = state->getInverse("BHBtmC");
-   if(hScaling_==Teuchos::null)
+   if(H==Teuchos::null)
       BHBtmC = BQBtmC;
-   else {
+   else
       BHBtmC = explicitAdd(state->BHBt_,scale(-state->gamma_,stabMatrix),BHBtmC);
-   }
    state->addInverse("BHBtmC",BHBtmC);
 
    PB_DEBUG_MSG_BEGIN(5)
@@ -400,6 +408,8 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       useMass_ = pl.get<bool>("Use Mass Scaling");
    if(pl.isParameter("Use Lumping"))
       useLumping_ = pl.get<bool>("Use Lumping");
+   if(pl.isParameter("Use W-Scaling"))
+      useWScaling_ = pl.get<bool>("Use W-Scaling");
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
@@ -410,6 +420,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
       DEBUG_STREAM << "   use lumping    = " << useLumping_ << std::endl;
+      DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    PB_DEBUG_MSG_END()
@@ -463,6 +474,12 @@ Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() co
       result = pl;
    }
 
+   // use the mass matrix
+   if(useWScaling_) {
+      pl->set<PB::LinearOp>("W-Scaling Vector", Teuchos::null,"W-Scaling Vector");
+      result = pl;
+   }
+
    return result;
 }
 
@@ -485,6 +502,16 @@ bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl
          result &= false;
       else
          setMassMatrix(mass);
+   }
+
+   // use W scaling matrix
+   if(useWScaling_) {
+      PB::MultiVector wScale = pl.get<PB::MultiVector>("W-Scaling Vector");
+
+      if(wScale==Teuchos::null)
+         result &= false;
+      else
+         setWScaling(wScale);
    }
 
    return result;
