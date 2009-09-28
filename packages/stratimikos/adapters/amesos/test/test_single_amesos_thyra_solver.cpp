@@ -46,7 +46,7 @@
 bool Thyra::test_single_amesos_thyra_solver(
   const std::string                       matrixFile
   ,Teuchos::ParameterList                 *amesosLOWSFPL
-  ,const bool                             testTranspose
+  ,const bool                             testTranspose_in
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
   ,const double                           maxError
@@ -74,7 +74,7 @@ bool Thyra::test_single_amesos_thyra_solver(
       << "\n***\n"
       << "\nEchoing input options:"
       << "\n  matrixFile             = " << matrixFile
-      << "\n  testTranspose          = " << testTranspose
+      << "\n  testTranspose          = " << testTranspose_in
       << "\n  numRandomVectors       = " << numRandomVectors
       << "\n  maxFwdError            = " << maxFwdError
       << "\n  maxError               = " << maxError
@@ -121,6 +121,14 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   initializeOp<double>( *lowsFactory, A, &*nsA );
 
+  bool testTranspose = testTranspose_in;
+  if (testTranspose_in && !Thyra::solveSupports(*nsA, Thyra::CONJTRANS)) {
+    if(out.get()) *out
+      << "\nChanging testTranspose=false since "
+      << nsA->description() << " does not support adjoint solves!\n";
+    testTranspose = false;
+  }
+  
   if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 
   Thyra::seed_randomize<double>(0);

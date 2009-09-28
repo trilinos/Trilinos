@@ -232,7 +232,21 @@ void AmesosLinearOpWithSolve::apply(
 
 bool AmesosLinearOpWithSolve::solveSupportsTrans(EOpTransp M_trans) const
 {
-  return true; // ToDo: Determine if the solver supports adjoints or not!
+  if (Thyra::real_trans(M_trans) == Thyra::NOTRANS) {
+    // Assume every amesos solver supports a basic forward solve!
+    return true;
+  }
+  // Query the amesos solver to see if it supports the transpose operation.
+  // NOTE: Amesos_BaseSolver makes you change the state of the object to
+  // determine if the object supports an adjoint solver.  This is a bad design
+  // but I have no control over that.  This is why you see this hacked
+  // oldUseTranspose varible and logic.  NOTE: This function meets the basic
+  // guarantee but if setUseTransplse(...) throws, then the state of
+  // UseTranspose() may be different.
+  const bool oldUseTranspose = amesosSolver_->UseTranspose();
+  const bool supportsAdjoint = (amesosSolver_->SetUseTranspose(true) == 0);
+  amesosSolver_->SetUseTranspose(oldUseTranspose);
+  return supportsAdjoint;
 }
 
 
