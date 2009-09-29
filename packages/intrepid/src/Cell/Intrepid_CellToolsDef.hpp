@@ -967,8 +967,15 @@ namespace Intrepid {
       // refPoints is (P,D): a single or multiple cell jacobians computed for a single set of ref. points
       case 2:
         {
-          // getValues requires rank-2 (P,D) input array, points can be passed directly as argument
-          HGRAD_Basis -> getValues(basisGrads, points, OPERATOR_GRAD);
+          // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
+          FieldContainer<Scalar> tempPoints( points.dimension(0), points.dimension(1) );
+          // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+          for(int pt = 0; pt < points.dimension(0); pt++){
+            for(int dm = 0; dm < points.dimension(1) ; dm++){
+              tempPoints(pt, dm) = points(pt, dm);
+            }//dm
+          }//pt
+          HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
           // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
           // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
@@ -1176,8 +1183,15 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
     // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
     case 2:
       {
-        // getValues requires rank-2 (P,D) input array, refPoints can be passed directly as argument
-        HGRAD_Basis -> getValues(basisVals, refPoints, OPERATOR_VALUE);
+        // getValues requires rank-2 (P,D) input array, but refPoints cannot be passed directly as argument because they are a user type
+        FieldContainer<Scalar> tempPoints( refPoints.dimension(0), refPoints.dimension(1) );
+        // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+        for(int pt = 0; pt < refPoints.dimension(0); pt++){
+          for(int dm = 0; dm < refPoints.dimension(1) ; dm++){
+            tempPoints(pt, dm) = refPoints(pt, dm);
+          }//dm
+        }//pt
+        HGRAD_Basis -> getValues(basisVals, tempPoints, OPERATOR_VALUE);
         
         // If whichCell = -1, ref pt. set is mapped to all cells, otherwise, the set is mapped to one cell only
         int cellLoop = (whichCell == -1) ? numCells : 1 ;
