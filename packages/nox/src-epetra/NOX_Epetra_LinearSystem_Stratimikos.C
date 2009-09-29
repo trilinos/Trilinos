@@ -154,13 +154,6 @@ LinearSystemStratimikos(
   timeCreatePreconditioner(0.0),
   timeApplyJacbianInverse(0.0)
 {
-  // Create Jac Operator internally, if requested one of 2 ways
-  if (jacPtr == Teuchos::null) 
-    createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
-  else if (linearSolverParams.get("Jacobian Operator", "Have Jacobian")
-           != "Have Jacobian")
-    createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
-
   // Interface for user-defined preconditioning -- 
   // requires flipping of the apply and applyInverse methods
   if (precIsAlreadyInverted) {
