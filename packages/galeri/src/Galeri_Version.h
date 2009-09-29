@@ -30,9 +30,10 @@
 #define GALERI_VERSION_H
 
 #include "Galeri_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 string Galeri_Version() { 
-	return("Galeri Version 1.3d - 3-Oct-2008"); 
+	return("Galeri in Trilinos " TRILINOS_VERSION_STRING); 
 };
 
 #endif /* GALERI_VERSION_H */
