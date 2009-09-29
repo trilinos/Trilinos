@@ -30,6 +30,8 @@
 
 #include "Stokhos_MLPrecOp.hpp"
 
+#ifdef HAVE_STOKHOS_ML
+
 //==============================================================================
 // constructor -- it's presumed that the user has constructed the ML
 // object somewhere else.  Uses AMG to invert the mean stiffness matrix.
@@ -158,6 +160,8 @@ int Stokhos::MLPrecOp::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVec
   }
   return 1; 
 }
+
+#endif
 
 
 

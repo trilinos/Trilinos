@@ -61,6 +61,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_Quadrature.hpp
   Stokhos_TensorProductQuadrature.hpp
   Stokhos_TensorProductQuadratureImp.hpp
+  Stokhos_SparseGridQuadrature.hpp
+  Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_OrthogPolyApprox.hpp
@@ -77,6 +79,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
+  Stokhos_MLPrecOp.hpp
   Stokhos_SGModelEvaluator.hpp
   Stokhos_SGQuadModelEvaluator.hpp
   Stokhos_VectorOrthogPoly.hpp
@@ -86,32 +89,14 @@ SET(HEADERS ${HEADERS}
 
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
+  Stokhos_SparseGridQuadrature.cpp
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
+  Stokhos_MLPrecOp.cpp
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp
   )
-
-IF(Stokhos_ENABLE_TriKota)
-  SET(HEADERS ${HEADERS}
-    Stokhos_SparseGridQuadrature.hpp
-    Stokhos_SparseGridQuadratureImp.hpp
-    )
-  SET(SOURCES ${SOURCES}
-    Stokhos_SparseGridQuadrature.cpp
-    )
-ENDIF()
-
-IF(Stokhos_ENABLE_ML)
-  SET(HEADERS ${HEADERS}
-    Stokhos_MLPrecOp.hpp
-    )
-  SET(SOURCES ${SOURCES}
-    Stokhos_MLPrecOp.cpp
-    )
-ENDIF()
-
 
 #
 # C) Define the targets for package's library(s)
