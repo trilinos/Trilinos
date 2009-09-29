@@ -99,7 +99,7 @@ public:
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool IsComputed() const
   {
-    return(MLPrec_->IsPreconditionerComputed());
+    return((bool) MLPrec_->IsPreconditionerComputed());
   }
 
   //! Computes the condition number estimate, returns its value.

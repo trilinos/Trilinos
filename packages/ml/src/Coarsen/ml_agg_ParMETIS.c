@@ -497,8 +497,6 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   MPI_Group orig_group, parmetis_group;
   MPI_Comm orig_comm;
   MPI_Comm ParMETISComm;
-#else
-  int orig_group, parmetis_group, orig_comm, ParMETISComm;
 #endif
   int N_procs_with_parmetis;
   int ok;

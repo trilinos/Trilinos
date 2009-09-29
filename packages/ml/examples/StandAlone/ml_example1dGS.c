@@ -160,11 +160,11 @@ int mysmooth(ML_Smoother *mydata, int leng1, double x[], int leng2, double rhs[]
 }
 double get_boundary(double x[], int size, int *processor_info)
 {
-   int proc_id;
    double ghost;
 #ifdef ML_MPI
-MPI_Status status;
-MPI_Request request;
+   int proc_id;
+   MPI_Status status;
+   MPI_Request request;
 #endif
 
 /*printf("in get_boundary\n");

@@ -2077,7 +2077,9 @@ int ML_DecomposeGraph_BuildOffsets( int N_parts,
 				    USR_COMM comm)
 {
 
+#ifdef ML_MPI
   int i;
+#endif
   
   if( offsets == NULL ) {
     fprintf( stderr,

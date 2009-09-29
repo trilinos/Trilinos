@@ -1020,7 +1020,7 @@ char * ML_memory_check(char *fmt, ... )
 int ML_MaxAllocatableSize()
 {
   int* junk = NULL;
-  long long int upper, mid, lower;
+  size_t upper, mid, lower;
   size_t ml_total_mem;
 
   ml_total_mem = 10000;
