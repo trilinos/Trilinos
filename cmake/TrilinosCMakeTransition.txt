@@ -305,9 +305,14 @@ Package Transition Lead: Jim Willenbring (jmwille@sandia.gov)
 
 Status: Basic libraries and several tests and examples
 
-Final Certification Date: [???]
+Final Certification Date: 9/29/2009 
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All CMakeified tests are passing.  We have
+chosen not to CMakeify all 3pls for now.  If there is demand, we will consider
+CMakeifying more in the future.  We would rather try to provide a little more
+support for a smaller number of 3pls, than support more 3pls with the same
+amount of resources.  3pls to support were chosen after surveying internal
+and external users.
 
 -------------------------------------------------------------------------------
 
@@ -520,9 +525,11 @@ INL, so this package needs to be transitioned.  Though an ideal test suite
 will not result, we probably should look at turning some of Moertel's examples
 into tests.
 
-Final Certification Date: [???]
+Final Certification Date: 9/29/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: This package should be in the same state as it
+was with the autotools system.  The test suite should be improved, but that
+task will have to be prioritized against other issues.
 
 -------------------------------------------------------------------------------
 
