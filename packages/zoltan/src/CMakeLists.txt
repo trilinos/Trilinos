@@ -207,6 +207,7 @@ APPEND_SET(SOURCES
   matrix/matrix_operations.c
   matrix/matrix_sym.c
   matrix/matrix_utils.c
+  matrix/common_sort.c
   )
 
 

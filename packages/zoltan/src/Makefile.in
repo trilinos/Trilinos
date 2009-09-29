@@ -109,16 +109,17 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c $(srcdir)/matrix/matrix_utils.c \
-	$(srcdir)/oct/costs.c $(srcdir)/oct/dfs.c \
-	$(srcdir)/oct/migoct.c $(srcdir)/oct/migreg.c \
-	$(srcdir)/oct/migtags.c $(srcdir)/oct/msg.c \
-	$(srcdir)/oct/octant.c $(srcdir)/oct/oct_plot.c \
-	$(srcdir)/oct/octree.c $(srcdir)/oct/octupdate.c \
-	$(srcdir)/oct/oct_util.c $(srcdir)/oct/output.c \
-	$(srcdir)/oct/rootlist.c $(srcdir)/order/order.c \
-	$(srcdir)/order/order_struct.c $(srcdir)/order/order_tools.c \
-	$(srcdir)/order/perm.c $(srcdir)/par/par_average.c \
-	$(srcdir)/par/par_bisect.c $(srcdir)/par/par_median.c \
+	$(srcdir)/matrix/common_sort.c $(srcdir)/oct/costs.c \
+	$(srcdir)/oct/dfs.c $(srcdir)/oct/migoct.c \
+	$(srcdir)/oct/migreg.c $(srcdir)/oct/migtags.c \
+	$(srcdir)/oct/msg.c $(srcdir)/oct/octant.c \
+	$(srcdir)/oct/oct_plot.c $(srcdir)/oct/octree.c \
+	$(srcdir)/oct/octupdate.c $(srcdir)/oct/oct_util.c \
+	$(srcdir)/oct/output.c $(srcdir)/oct/rootlist.c \
+	$(srcdir)/order/order.c $(srcdir)/order/order_struct.c \
+	$(srcdir)/order/order_tools.c $(srcdir)/order/perm.c \
+	$(srcdir)/par/par_average.c $(srcdir)/par/par_bisect.c \
+	$(srcdir)/par/par_median.c \
 	$(srcdir)/par/par_median_randomized.c \
 	$(srcdir)/par/par_stats.c $(srcdir)/par/par_sync.c \
 	$(srcdir)/par/par_tflops_special.c \
@@ -209,7 +210,7 @@ am__objects_7 = lb_balance.$(OBJEXT) lb_box_assign.$(OBJEXT) \
 	lb_set_part_sizes.$(OBJEXT)
 am__objects_8 = matrix_build.$(OBJEXT) matrix_distribute.$(OBJEXT) \
 	matrix_operations.$(OBJEXT) matrix_sym.$(OBJEXT) \
-	matrix_utils.$(OBJEXT)
+	matrix_utils.$(OBJEXT) common_sort.$(OBJEXT)
 am__objects_9 = costs.$(OBJEXT) dfs.$(OBJEXT) migoct.$(OBJEXT) \
 	migreg.$(OBJEXT) migtags.$(OBJEXT) msg.$(OBJEXT) \
 	octant.$(OBJEXT) oct_plot.$(OBJEXT) octree.$(OBJEXT) \
@@ -537,7 +538,8 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c \
-	$(srcdir)/matrix/matrix_utils.c
+	$(srcdir)/matrix/matrix_utils.c \
+	$(srcdir)/matrix/common_sort.c
 
 EXTRA_OCT_H = \
 	$(srcdir)/oct/costs_const.h \
@@ -1275,6 +1277,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_invert_plan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_resize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_sort_ints.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common_sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/costs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create_proc_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cwrap.Po@am__quote@
@@ -1888,6 +1891,20 @@ matrix_utils.obj: $(srcdir)/matrix/matrix_utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/matrix_utils.c' object='matrix_utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o matrix_utils.obj `if test -f '$(srcdir)/matrix/matrix_utils.c'; then $(CYGPATH_W) '$(srcdir)/matrix/matrix_utils.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/matrix_utils.c'; fi`
+
+common_sort.o: $(srcdir)/matrix/common_sort.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common_sort.o -MD -MP -MF $(DEPDIR)/common_sort.Tpo -c -o common_sort.o `test -f '$(srcdir)/matrix/common_sort.c' || echo '$(srcdir)/'`$(srcdir)/matrix/common_sort.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/common_sort.Tpo $(DEPDIR)/common_sort.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/common_sort.c' object='common_sort.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common_sort.o `test -f '$(srcdir)/matrix/common_sort.c' || echo '$(srcdir)/'`$(srcdir)/matrix/common_sort.c
+
+common_sort.obj: $(srcdir)/matrix/common_sort.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common_sort.obj -MD -MP -MF $(DEPDIR)/common_sort.Tpo -c -o common_sort.obj `if test -f '$(srcdir)/matrix/common_sort.c'; then $(CYGPATH_W) '$(srcdir)/matrix/common_sort.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/common_sort.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/common_sort.Tpo $(DEPDIR)/common_sort.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/matrix/common_sort.c' object='common_sort.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common_sort.obj `if test -f '$(srcdir)/matrix/common_sort.c'; then $(CYGPATH_W) '$(srcdir)/matrix/common_sort.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matrix/common_sort.c'; fi`
 
 costs.o: $(srcdir)/oct/costs.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT costs.o -MD -MP -MF $(DEPDIR)/costs.Tpo -c -o costs.o `test -f '$(srcdir)/oct/costs.c' || echo '$(srcdir)/'`$(srcdir)/oct/costs.c

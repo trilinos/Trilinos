@@ -211,7 +211,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   offset = dist_y[myProc_y];
 
-  ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
+/*   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx); */
   nPins = outmat->mtx.nPins;
 
 

@@ -110,7 +110,8 @@ MATRIX = \
 	$(srcdir)/matrix/matrix_distribute.c \
 	$(srcdir)/matrix/matrix_operations.c \
 	$(srcdir)/matrix/matrix_sym.c \
-	$(srcdir)/matrix/matrix_utils.c
+	$(srcdir)/matrix/matrix_utils.c \
+	$(srcdir)/matrix/common_sort.c
 
 EXTRA_OCT_H = \
 	$(srcdir)/oct/costs_const.h \
