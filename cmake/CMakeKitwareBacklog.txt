@@ -25,11 +25,35 @@ looping for continuous integration testing.  Assist in getting
 continuous integration testing set up on trilinos-test.sandia.gov.
 
 
+(*) [CTest] [P2] Create a robust system to handle the overall testing process
+driving different CTest scripts on a machine that has the following
+properties:
+
+a) Automatically updates all of the scripts and CMake/CDash code needed to
+perform the tests (including upgrading CMake/CTest if necessary)
+
+b) Put a time limit (or max date stamp) on the full set of tests so that they
+will get killed after that point.  For example, you might say that if the full
+set of tests takes longer than 8 hours, then the current CTest script and all
+remaiming scripts should be killed and an email should be sent to some list of
+email addresses list (e.g.  trilinos-framework) stating that the tests where
+killed.
+
+c) Send email to some list of email addresses when the tests finish.
+
+These capabilities are critical for the robustness and maintainability of the
+automated testing system run by CTest.
+
+
 (*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
 This will allow reliably killing timed-out tests.
 
 
-(*) [CDash] [P2] Add general query filters to the test results pages.
+(*) [CDash] [P3] Line wrap all warning and error messages in CDash output.
+Long lines are impossible to read currently.
+
+
+(*) [CDash] [P3] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
 
