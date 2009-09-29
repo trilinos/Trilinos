@@ -29,4 +29,13 @@
 #ifndef RYTHMOS_VERSION_H
 #define RYTHMOS_VERSION_H
 
+#include "Rythmos_ConfigDefs.h"
+
+namespace Rythmos {
+
+/** \brief Print the version of Rythmos. */
+std::string version();
+
+} // namespace Rythmos
+
 #endif /* RYTHMOS_VERSION_H */
