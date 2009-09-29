@@ -129,8 +129,11 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     /* Convert yGID to yGNO using the same translation as x */
     /* Needed for graph : rowID = colID */
     /* y and x may have different distributions */
-    matrix->ywgt = (float*)ZOLTAN_MALLOC(matrix->ywgtdim * sizeof(float));
-    if (matrix->ywgtdim && matrix->ywgt == NULL)
+    matrix->yGNO = (int*)ZOLTAN_MALLOC(matrix->nY * sizeof(int));
+    if (matrix->nY && matrix->yGNO == NULL)
+      MEMORY_ERROR;
+    matrix->ywgt = (float*)ZOLTAN_MALLOC(matrix->ywgtdim * matrix->nY * sizeof(float));
+    if (matrix->ywgtdim && matrix->nY && matrix->ywgt == NULL)
       MEMORY_ERROR;
     ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
 		    matrix->nY, NULL);

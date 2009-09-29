@@ -585,7 +585,7 @@ int hedge_init_dist_type;
       return 0;
     }
     for (h = 0; h < *gnhedges; h++)
-      (*hgid)[h] = h;
+      (*hgid)[h] = h + base;           /* Want the same numbering than for vertices */
     for (h = 0; h < (*hindex)[*gnhedges]; h++)
       (*hvertex_proc)[h] = 0;
     return 1;
@@ -653,7 +653,7 @@ int hedge_init_dist_type;
       send_hindex[0] = 0;
       for (h = 0; h < *gnhedges; h++) {
 	if (send[h]==p) {
-	  send_hgid[hecnt] = h;
+	  send_hgid[hecnt] = h + base; /* Want the same numbering than for vertices */
 	  send_hindex[hecnt+1] = send_hindex[hecnt]
 			       + (old_hindex[h+1] - old_hindex[h]);
 	  for (i = 0; i < *hewgt_dim; i++)
@@ -706,7 +706,7 @@ int hedge_init_dist_type;
 
     for (h = 0; h < *gnhedges; h++) {
       if (send[h]==myproc) {
-	(*hgid)[hecnt] = h;
+	(*hgid)[hecnt] = h + base;  /* Want the same numbering than for vertices */
 	(*hindex)[hecnt+1] = (*hindex)[hecnt]
 			   + (old_hindex[h+1] - old_hindex[h]);
 	for (i = 0; i < *hewgt_dim; i++)
