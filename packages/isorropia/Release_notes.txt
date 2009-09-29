@@ -1,13 +1,40 @@
-Release notes for Isorropia 3.0 (Trilinos 9.0), Sept. 2008:
+Release notes for Isorropia 3.2 (Trilinos 10.0), Sept. 2009:
+------------------------------------------------------------
 
-Isorropia has expanded its scope from partitioning and load-balancing to include other algorithms for combinatorial scientific computing. The primary focus is still on partitioning and load-balancing of matrices and vectors. Version 3.0 includes a significant code refactoring compared to earlier versions to improve efficiency and robustness. 
+The most important changes and new features are listed below.
 
- - Isorropia now depends on Zoltan, which is available as a package in Trilinos 9.0. (Zoltan is automatically enabled by Isorropia.)
- - The default partitioning method for sparse matrices is Zoltan's hypergraph partitioner, which is significantly better than the internal method. 
- - New features: Graph/matrix coloring and graph/matrix ordering (nested dissection).
- - Redesign of the class structure to support new features. An Isorropia::Operator is the parent class of Partitioner, Colorer, and Orderer.
- - Significant improvement in the efficiency (run time and memory usage) of redistributing Epetra matrices due to improved memory allocation.
- - New redistribute_reverse() method in the Redistributor to support moving vectors back and forth between two distributions.
- - When redistributing Epetra matrices, improved default choices for the maps. The call to FillComplete() is now optional, allowing the application to supply its own range and domain maps.
- - Several minor changes in interface to enforce more consistent naming schemes, but version 3.0 is fully backwards compatible.
+General:
+ - New configuration and build system based on CMake. 
+ - Isorropia now has a set of parameters for common options,
+   such that many users do not need to use Zoltan parameters. 
+   The parameters are case insensitive.
+ - Zoltan parameters can still be set in a sublist named "Zoltan".
 
+Partitioning:
+ - Automatic symmetrization of graphs.
+ - Geometric partitioning (RCB, RIB, HSFC) available via Epetra_MultiVector.
+ - The internal partitioner ("simple_linear") has been removed.
+ - New support for variable target part sizes. 
+ - createBalancedCopy replaces create_balanced_copy and uses raw pointers
+   instead of Teuchos::RCP. (The Partitioner class is the preferred API.)
+
+Coloring:
+ - Distance-2 coloring for Jacobians is now the default.
+ - New methods Isorropia::Epetra::Colorer::generateRowMapColoring 
+   and Isorropia::Epetra::Colorer::generateColMapColoring.
+
+Prober:
+ - New class to construct a sparse (CRS) matrix from an operator efficiently 
+   via coloring.
+
+
+Upgrading to version 3.2 (Trilinos 10.0):
+-----------------------------------------
+ - CMake has replaced automake. To enable Isorropia, use
+   the option '-D Trilinos_ENABLE_Isorropia:BOOL=ON'.   
+ - For partitioning, the partitioning method should now be specified
+   by the new Isorropia parameter 'Partitioning Method', which
+   corresponds to the Zoltan parameter "LB_METHOD".
+ - create_balanced_copy has been deprecated. Please switch to using the
+   Partitioner and Redistributor classes, or createBalancedCopy
+   for quick and simple use.

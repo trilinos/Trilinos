@@ -62,13 +62,11 @@ namespace Epetra {
 class Operator : virtual public Isorropia::Operator {
 public:
 
-  /** Constructor that accepts an Epetra_CrsGraph object
-
-     \param input_graph Matrix-graph object for which a new operation
-        is to be computed. 
-    */
-
   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base);
+
+  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base);
+
+  Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
   /** Constructor that accepts an Epetra_CrsGraph object
 
@@ -229,8 +227,8 @@ public:
 
 private:
 
-  void paramsToUpper(Teuchos::ParameterList &, int &changed);
-  void stringToUpper(std::string &s, int &changed);
+  void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
+  void stringToUpper(std::string &s, int &changed, bool rmUnderscore=false);
   int numberOfProperties_;
   int localNumberOfProperties_;
   std::vector<int> numberElemsByProperties_;

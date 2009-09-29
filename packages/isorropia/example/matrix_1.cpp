@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
   //This time, we'll try graph partitioning..
   //Create a parameter sublist for Zoltan parameters.
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
+  paramlist.set("PARTITIONING METHOD", "GRAPH");
 
   //We could also call ParMetis, if Zoltan was built with ParMetis.
   //sublist.set("GRAPH_PACKAGE", "PARMETIS");

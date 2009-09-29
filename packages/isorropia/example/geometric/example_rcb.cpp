@@ -31,10 +31,9 @@
 //
 // --f={filename} will read a different coordinate file
 // --v will print out the partitioning (small coordinate files only)
-// --internal-partitioning will run Isorropia's internal linear partitioner
-//                         instead of Zoltan
+// --rib will use Recursive Inertial Bisection instead of RCB
 //
-// The input ile should be a
+// The input file should be a
 // text file containing 1, 2 or 3-dimensional coordinates, one per line,
 // with white space separating coordinate values.
 //
@@ -95,15 +94,14 @@ int main(int argc, char** argv) {
 
   std::string *inputFile = new std::string("simple.coords");
   bool verbose = false;
-  bool internal = false;
+  bool rib = false;
 
   clp.setOption( "f", inputFile, "Name of coordinate input file");
 
   clp.setOption( "v", "q", &verbose,
                 "Display coordinates and weights before and after partitioning.");
 
-  clp.setOption( "internal-partitioning", "zoltan-partitioning", &internal,
-                "Run Isorropia's simple linear partitioner instead of Zoltan");
+  clp.setOption( "rib", "rcb", &rib, "Run RIB instead of RCB");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
     clp.parse(argc,argv);
@@ -176,18 +174,21 @@ int main(int argc, char** argv) {
 
   Teuchos::ParameterList params;
 
-  if (internal){
+  if (rib){
 
    // This parameter specifies that partitioning should be performed
    // by a simple linear partitioner in Isorropia, rather than calling
    // upon Zoltan.
 
-   params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
+   params.set("Partitioning Method", "RIB");
+   // params.set("PARTITIONING_METHOD", "RIB"); // same as above
   }
   else{
 
-    // To use Zoltan, which is preferable, create a sublist titled "ZOLTAN"
-    // that Zoltan parameters in it.  See the Zoltan Users' Guide for
+   // params.set("Partitioning Method", "RCB"); // default 
+
+    // To set low-level Zoltan parameters, create a sublist titled "ZOLTAN"
+    // with Zoltan parameters in it.  See the Zoltan Users' Guide for
     // Zoltan parameters.  http://www.cs.sandia.gov/Zoltan
 
     Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
@@ -195,9 +196,6 @@ int main(int argc, char** argv) {
     //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
     //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
     //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
-    
-    sublist.set("LB_METHOD", "RCB");
-    sublist.set("OBJ_WEIGHT_DIM", "1");
   }
   // =============================================================
   // Create a partitioner, by default this will perform the partitioning as well

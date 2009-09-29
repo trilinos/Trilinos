@@ -825,11 +825,6 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-   //if (getenv("DEBUGME")){
-   // std::cout << localProc << " gdb test_createBalancedCopy.exe " << getpid() << std::endl;
-   // sleep(15);
-   //}
-
   Teuchos::CommandLineProcessor clp(false,true);
 
   // --f=fileName provides a different matrix market file for input

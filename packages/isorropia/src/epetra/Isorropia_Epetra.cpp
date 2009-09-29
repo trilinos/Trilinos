@@ -27,6 +27,13 @@ USA
 */
 //@HEADER
 
+// We don't want warnings for using deprecated create_balanced_copy.
+// TODO: remove this line when removing support of create_balanced_copy.
+#ifdef __deprecated
+#undef __deprecated
+#endif
+#define __deprecated
+
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Utils.hpp>
 #include <Isorropia_Epetra.hpp>
@@ -59,44 +66,6 @@ namespace Isorropia {
 namespace Epetra {
 
 #ifdef HAVE_EPETRA
-Teuchos::RCP<Partitioner>
-create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-		   const Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RCP<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_graph, paramlist));
-  return(partitioner);
-}
-
-Teuchos::RCP<Partitioner>
-create_partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-		   Teuchos::RCP<CostDescriber> costs,
-		   const Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RCP<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_graph, costs, paramlist));
-  return(partitioner);
-}
-
-Teuchos::RCP<Partitioner>
-create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-		   const Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RCP<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_matrix, paramlist));
-  return(partitioner);
-}
-
-Teuchos::RCP<Partitioner>
-create_partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-		   Teuchos::RCP<CostDescriber> costs,
-		   const Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RCP<Partitioner> partitioner =
-    Teuchos::rcp(new Partitioner(input_matrix, costs, paramlist));
-  return(partitioner);
-}
-
 
 Epetra_MultiVector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
 {
@@ -502,7 +471,7 @@ createBalancedCopy(const Epetra_LinearProblem& input_problem,
   Teuchos::RCP<Epetra_MultiVector> x=
     Teuchos::rcp(new Epetra_MultiVector(*input_problem.GetLHS()));
 
-  // prevent these from being deallocated on return from create_balanced_copy
+  // prevent these from being deallocated on return from createBalancedCopy
   balanced_matrix.release(); 
   balanced_rhs.release();
   x.release();

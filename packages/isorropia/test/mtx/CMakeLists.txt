@@ -23,7 +23,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   ARGS
     "--f=simple.mtx"
-    "--f=simple_25X50.mtx"
     "--f=simple_50X25.mtx"
     "--f=small.mtx"
     "--f=felix.mtx"

@@ -215,14 +215,15 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set("EDGE_WEIGHT_DIM", "0");
   }
   else if (input_type_ == geometric_input_){
-    if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
+    // We always overwrite user choice.
+//     if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
       if (weights_.get()){
         zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
       }
       else{
         zoltanParamList_.set("OBJ_WEIGHT_DIM", "0");
       }
-    }
+//     }
   }
   else {
     if (queryObject_->haveVertexWeights()) 

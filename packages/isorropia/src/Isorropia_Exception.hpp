@@ -41,10 +41,10 @@ namespace Isorropia {
 class Exception : public std::exception {
  public:
   /** constructor that accepts a const char-ptr */
-  Exception(const char* msg) throw();
+  Exception(const char* msg) throw ();
 
   /** constructor that accepts a std::string */
-  Exception(std::string msg) throw();
+  Exception(std::string msg) throw ();
 
   /** destructor */
   virtual ~Exception() throw();

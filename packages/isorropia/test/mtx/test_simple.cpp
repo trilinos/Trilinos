@@ -123,6 +123,7 @@
 #define EPETRA_CRSMATRIX              2
 
 static int tmp=0;
+static int testTwoArgInterface = 1;
 
 #define CHECK_FAILED() {      \
   Comm.SumAll(&fail, &tmp, 1);      \
@@ -198,6 +199,7 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
 static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 	  bool verbose,           // display the graph before & after
 	  bool contract,          // set global number of partitions to 1/2 num procs
+          bool extend,            // set global number of partitions to 2* num procs
 	  int partitioningType,   // hypergraph or graph partitioning, or simple
 	  int vertexWeightType,   // use vertex weights?
 	  int edgeWeightType,     // use edge/hyperedge weights?
@@ -233,13 +235,25 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   double myShareBefore = 1.0 / numProcs;
   double myShare = myShareBefore;
 
-  if (contract){
-    numPartitions = numProcs / 2;
+  if (contract && (numProcs < 2)){
+    contract = 0;
+  }
+
+  if (contract || extend){
+    if (contract){
+      numPartitions = numProcs / 2;
+    }
+    else{
+      numPartitions = numProcs * 2;
+    }
 
     if (numPartitions > numRows)
       numPartitions = numRows;
 
-    if (numPartitions > 0){
+    if (numPartitions < numProcs){
+
+      // Need each proc's share to calculate quality metric
+
       if (localProc < numPartitions){
 	myShare = 1.0 / numPartitions;
       }
@@ -247,11 +261,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 	myShare = 0.0;
       }
     }
-    else{
-      contract = 0;
-    }
   }
-
+  
   // Check that input matrix is valid.  This test constructs an "x"
   // with the matrix->DomainMap() and a "y" with matrix->RangeMap()
   // and then calculates y = Ax.
@@ -467,16 +478,33 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   if ((edgeWeightType == NO_APPLICATION_SUPPLIED_WEIGHTS) &&
       (vertexWeightType == NO_APPLICATION_SUPPLIED_WEIGHTS)){
 
-    if (objectType == EPETRA_CRSGRAPH){
-      // Test the Epetra_CrsGraph interface of Isorropia
-      Teuchos::RCP<const Epetra_CrsGraph> graph =
-	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
-      partitioner = Isorropia::Epetra::create_partitioner(graph, params);
+    if (testTwoArgInterface){              // explicity supply parameters 
+      if (objectType == EPETRA_CRSGRAPH){
+        // Test the Epetra_CrsGraph interface of Isorropia
+        Teuchos::RCP<const Epetra_CrsGraph> graph =
+  	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
+        partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph, params));
+      }
+      else{
+        // Test the Epetra_CrsMatrix interface of Isorropia
+        Teuchos::RCP<const Epetra_RowMatrix> rm = matrix;
+        partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(rm, params));
+      }
+      testTwoArgInterface = 0;
     }
-    else{
-      // Test the Epetra_CrsMatrix interface of Isorropia
-      Teuchos::RCP<const Epetra_RowMatrix> rm = matrix;
-      partitioner = Isorropia::Epetra::create_partitioner(rm, params);
+    else{                                 // let Isorropia choose default parameters 
+      if (objectType == EPETRA_CRSGRAPH){
+        // Test the Epetra_CrsGraph interface of Isorropia
+        Teuchos::RCP<const Epetra_CrsGraph> graph =
+  	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
+        partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph));
+      }
+      else{
+        // Test the Epetra_CrsMatrix interface of Isorropia
+        Teuchos::RCP<const Epetra_RowMatrix> rm = matrix;
+        partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(rm));
+      }
+      testTwoArgInterface = 1;   // alternate these tests
     }
 
   }
@@ -486,12 +514,12 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       // Test the Epetra_CrsGraph interface of Isorropia
       Teuchos::RCP<const Epetra_CrsGraph> graph =
 	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
-      partitioner = Isorropia::Epetra::create_partitioner(graph, costs, params);
+      partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph, costs, params));
     }
     else{
       // Test the Epetra_CrsMatrix interface of Isorropia
       Teuchos::RCP<const Epetra_RowMatrix> rm = matrix;
-      partitioner = Isorropia::Epetra::create_partitioner(rm, costs, params);
+      partitioner = Teuchos::rcp(new Isorropia::Epetra::Partitioner(rm, costs, params));
     }
   }
   // Create a Redistributor based on the partitioning
@@ -499,38 +527,48 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   Isorropia::Epetra::Redistributor rd(partitioner);
 
   // Redistribute the matrix
-
-  Teuchos::RCP<Epetra_CrsMatrix> newMatrix = rd.redistribute(*matrix);
+  Teuchos::RCP<Epetra_CrsMatrix> newMatrix;
+  try {
+    newMatrix = rd.redistribute(*matrix);
+  }
+  catch(...) {
+    if (numPartitions > numProcs) {// Redistribution has to fail
+      if (localProc == 0){
+	std::cout << "Too many parts for too few processors, distribution has to fail" << std::endl ;
+      }
+      return (0);
+    }
+    ERRORRETURN((localProc==0), "Error in computing partitioning metrics after rebalancing")
+  }
 
   // Redistribute the vertex weights
 
-  if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS)){
+    if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS)){
 
-    Teuchos::RCP<Epetra_Vector> newvwgts = rd.redistribute(*vptr);
-    costs->setVertexWeights(newvwgts);
-  }
+      Teuchos::RCP<Epetra_Vector> newvwgts = rd.redistribute(*vptr);
+      costs->setVertexWeights(newvwgts);
+    }
 
   // Redistribute the edge weights
 
-  if (edgeWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS){
+    if (edgeWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS){
 
-    if (partitioningType == GRAPH_PARTITIONING){
-      Teuchos::RCP<Epetra_CrsMatrix> newewgts = rd.redistribute(*eptr);
-      costs->setGraphEdgeWeights(newewgts);
+      if (partitioningType == GRAPH_PARTITIONING){
+	Teuchos::RCP<Epetra_CrsMatrix> newewgts = rd.redistribute(*eptr);
+	costs->setGraphEdgeWeights(newewgts);
+      }
     }
-  }
+    if (partitioningType == HYPERGRAPH_PARTITIONING){
+      rc = ispatest::compute_hypergraph_metrics(newMatrix->Graph(), *costs,
+						myShare, balance2, cutn2, cutl2);
+    }
+    else{
+      rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs,
+					   myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
+    }
 
   // After partitioning, recompute the metrics
 
-  if (partitioningType == HYPERGRAPH_PARTITIONING){
-    rc = ispatest::compute_hypergraph_metrics(newMatrix->Graph(), *costs,
-	     myShare, balance2, cutn2, cutl2);
-  }
-  else{
-    rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs,
-	     myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
-
-  }
   if (rc){
     ERRORRETURN((localProc==0), "Error in computing partitioning metrics after rebalancing")
   }
@@ -544,15 +582,14 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   if (verbose){
     ispatest::show_matrix("Before load balancing", matrix->Graph(), Comm);
+    if (localProc == 0) std::cout << std::endl;
   }
 
-  if (localProc == 0) std::cout << std::endl;
 
   if (verbose){
     ispatest::show_matrix("After load balancing", newMatrix.get()->Graph(), Comm);
+    if (localProc==0) std::cout << std::endl;
   }
-
-  if (localProc==0) std::cout << std::endl;
 
   std::string why;
 
@@ -654,11 +691,6 @@ int main(int argc, char** argv) {
   const Epetra_SerialComm Comm;
 #endif
 
-  if (getenv("DEBUGME")){
-    std::cerr << localProc << " gdb test_simple.exe " << getpid() << std::endl;
-    sleep(15);
-  }
-
   Teuchos::CommandLineProcessor clp(false,true);
 
   // --f=fileName provides a different matrix market file for input
@@ -728,12 +760,24 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     true,                   // make #partitions < #processes
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_UNEQUAL_WEIGHTS,
 	     SUPPLY_EQUAL_WEIGHTS,
 	     EPETRA_CRSMATRIX);
 
     CHECK_FAILED();
+  fail = run_test(testm,
+	     verbose,
+	     false,                   // make #partitions < #processes
+		  true,
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
+
+    CHECK_FAILED();
+
     goto Report;
 #else
 
@@ -742,6 +786,7 @@ int main(int argc, char** argv) {
     fail = run_test(testm,
 	       verbose,            // draw graph before and after partitioning
 	       false,                   // do not make #partitions < #processes
+		    false,
 	       GRAPH_PARTITIONING,      // do graph partitioning
 	       SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
 	       SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
@@ -750,8 +795,21 @@ int main(int argc, char** argv) {
     CHECK_FAILED();
 
     fail = run_test(testm,
+	       verbose,            // draw graph before and after partitioning
+	       false,                   // do not make #partitions < #processes
+		    true,
+	       GRAPH_PARTITIONING,      // do graph partitioning
+	       SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
+	       SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
+	       EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
+
+    CHECK_FAILED();
+
+
+    fail = run_test(testm,
 	       verbose,
 	       false,
+		    false,
 	       GRAPH_PARTITIONING,
 	       SUPPLY_UNEQUAL_WEIGHTS,
 	       SUPPLY_EQUAL_WEIGHTS,
@@ -762,6 +820,18 @@ int main(int argc, char** argv) {
     fail = run_test(testm,
 	       verbose,
 	       true,               // make #partitions < #processes
+		    false,
+	       GRAPH_PARTITIONING,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       EPETRA_CRSGRAPH);
+
+    CHECK_FAILED();
+
+    fail = run_test(testm,
+	       verbose,
+	       false,               // make #partitions < #processes
+		    true,
 	       GRAPH_PARTITIONING,
 	       SUPPLY_EQUAL_WEIGHTS,
 	       SUPPLY_EQUAL_WEIGHTS,
@@ -772,6 +842,7 @@ int main(int argc, char** argv) {
     fail = run_test(testm,
 	       verbose,
 	       false,
+		    false,
 	       GRAPH_PARTITIONING,
 	       NO_APPLICATION_SUPPLIED_WEIGHTS,
 	       NO_APPLICATION_SUPPLIED_WEIGHTS,
@@ -788,6 +859,7 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     false,
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_EQUAL_WEIGHTS,
 	     SUPPLY_EQUAL_WEIGHTS,
@@ -798,6 +870,7 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     false,
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_EQUAL_WEIGHTS,
 	     SUPPLY_UNEQUAL_WEIGHTS,
@@ -808,6 +881,18 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     true,                   // make #partitions < #processes
+		  false,
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
+
+  CHECK_FAILED();
+
+  fail = run_test(testm,
+	     verbose,
+	     false,                   // make #partitions < #processes
+		  true,
 	     HYPERGRAPH_PARTITIONING,
 	     SUPPLY_UNEQUAL_WEIGHTS,
 	     SUPPLY_EQUAL_WEIGHTS,
@@ -818,10 +903,22 @@ int main(int argc, char** argv) {
   fail = run_test(testm,
 	     verbose,
 	     false,
+		  false,
 	     HYPERGRAPH_PARTITIONING,
 	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	     NO_APPLICATION_SUPPLIED_WEIGHTS,
 	     EPETRA_CRSGRAPH);
+
+  CHECK_FAILED();
+
+  fail = run_test(testm,
+	     verbose,
+	     false,
+		  false,
+	     HYPERGRAPH_PARTITIONING,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     EPETRA_CRSMATRIX);
 
   CHECK_FAILED();
 #endif

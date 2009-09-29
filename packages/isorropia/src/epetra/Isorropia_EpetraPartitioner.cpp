@@ -63,6 +63,33 @@ namespace Isorropia {
 namespace Epetra {
 
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 bool compute_partitioning_now):
+  Operator (input_graph, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+			 bool compute_partitioning_now):
+  Operator (coords, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, paramlist, 0),
@@ -201,6 +228,12 @@ partition(bool force_repartitioning)
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
   // TODO: Add "block" and "random" partitioning.
 
+  if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) {
+    throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
+			       "ZOLTAN/LB_METHOD is no longer supported.\n"
+                               "See readme and release notes for details.");
+  }
+
   if (input_coords_.get() != 0){
     if (partitioning_method == "UNSPECIFIED")
       sublist.set("LB_METHOD", "RCB");
@@ -219,6 +252,8 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }
   }
+
+
 
 
   if (paramlist_.isParameter("NUM PARTS")) {
@@ -261,15 +296,21 @@ Partitioner::createNewMap()
   else
     input_map_->MyGlobalElements(NULL);
 
-  std::vector<int> myNewGID (numMyElements - exportsSize_);
-  std::vector<int>::iterator newElemsIter;
-  std::vector<int>::const_iterator elemsIter;
+  int newGIDSize = numMyElements - exportsSize_;
 
-  for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
-       elemsIter != properties_.end() ; elemsIter ++) {
-    if ((*elemsIter) == myPID) {
-      (*newElemsIter) = elementList[elemsIter - properties_.begin()];
-      newElemsIter ++;
+  std::vector<int> myNewGID;
+
+  if (newGIDSize > 0){
+    myNewGID.resize(newGIDSize);
+    std::vector<int>::iterator newElemsIter;
+    std::vector<int>::const_iterator elemsIter;
+
+    for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
+         elemsIter != properties_.end() ; elemsIter ++) {
+      if ((*elemsIter) == myPID) {
+        (*newElemsIter) = elementList[elemsIter - properties_.begin()];
+        newElemsIter ++;
+      }
     }
   }
   //Add imports to end of list

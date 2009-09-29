@@ -82,6 +82,7 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base)
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
 }
 
+
 Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 const Teuchos::ParameterList& paramlist, int base)
@@ -117,6 +118,20 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 }
 
 Operator::
+Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base)
+  : input_graph_(0),
+    input_matrix_(input_matrix),
+    input_coords_(0),
+    costs_(0),
+    weights_(0),
+    operation_already_computed_(false),
+    lib_(0),
+    base_(base)
+{
+  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()), false);
+}
+
+Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	 const Teuchos::ParameterList& paramlist, int base)
   : input_graph_(0),
@@ -147,6 +162,20 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
   setParameters(paramlist);
+}
+
+Operator::
+Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base)
+  : input_graph_(0),
+    input_matrix_(0),
+    input_coords_(input_coords),
+    costs_(0),
+    weights_(0),
+    operation_already_computed_(false),
+    lib_(0),
+    base_(base)
+{
+  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
 }
 
 Operator::
@@ -191,6 +220,15 @@ void Operator::setParameters(const Teuchos::ParameterList& paramlist)
   int changed;
   paramlist_ = paramlist;
   paramsToUpper(paramlist_, changed);
+
+  Teuchos::ParameterList &sublist = paramlist_.sublist("ZOLTAN");
+  std::string str_sym="STRUCTURALLY SYMMETRIC";
+  sublist.set("GRAPH_SYMMETRIZE", "TRANSPOSE");
+  if (paramlist_.isParameter(str_sym)
+      && paramlist_.get<std::string>(str_sym) == "YES") {
+    sublist.set("GRAPH_SYMMETRIZE", "NONE");
+  }
+
 }
 
 const int& Operator::operator[](int myElem) const
@@ -251,7 +289,7 @@ Operator::computeNumberOfProperties()
   localNumberOfProperties_ = max - base_ + 1;
 }
 
-void Operator::stringToUpper(std::string &s, int &changed)
+void Operator::stringToUpper(std::string &s, int &changed, bool rmUnderscore)
 {
   std::string::iterator siter;
   changed = 0;
@@ -262,14 +300,14 @@ void Operator::stringToUpper(std::string &s, int &changed)
       *siter = toupper(*siter);
       changed++;
     }
-    if (*siter == '_') {
+    if (rmUnderscore && (*siter == '_')) {
       *siter = ' ';
       changed ++;
     }
   }
 }
 
-void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
+void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed, bool rmUnderscore)
 {
   changed = 0;
 
@@ -283,7 +321,7 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
   while (1){
     //////////////////////////////////////////////////////////////////////
     // Compiler considered this while statement an error
-    // while ( pIter = plist.begin() ; pIter != plist.end() ; pIter++ ){
+    // for ( pIter = plist.begin() ; pIter != plist.end() ; pIter++ ){
     // }
     //////////////////////////////////////////////////////////////////////
     if (pIter == plist.end()) break;
@@ -298,13 +336,13 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
 
     std::string origName(paramNames[i]);
     int paramNameChanged = 0;
-    stringToUpper(paramNames[i], paramNameChanged);
+    stringToUpper(paramNames[i], paramNameChanged, rmUnderscore);
 
     if (plist.isSublist(origName)){
       Teuchos::ParameterList &sublist = plist.sublist(origName);
 
       int sublistChanged=0;
-      paramsToUpper(sublist, sublistChanged);
+      paramsToUpper(sublist, sublistChanged, false);
 
       if (paramNameChanged){
 
