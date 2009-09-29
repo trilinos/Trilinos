@@ -1,5 +1,233 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.0 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The version 10.0 general release contains 38 packages: Amesos, Anasazi,
+AztecOO, Belos, Didasko, Epetra, EpetraExt, FEI, Galeri, Ifpack, Intrepid*,
+Isorropia, Kokkos, Komplex, LOCA, Meros, ML, Moertel, MOOCHO, NOX, Pamgen,
+Phalanx, PhdMesh, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, Shards*,
+Stratimikos, Sundace, Teuchos, ThreadPool, Thyra, Tpetra*, TrilinosCouplings,
+Triutils, and Zoltan.
+
+(* denotes packages that are being released externally as a part of Trilinos
+for the first time.)
+
+The limited release contains an additional 8 packages that may be available in
+special situations by request. These are: CTrilinos, ITAPS, ForTrilinos,
+Globipack, Optika, Optipack, Stokhos, and TriKota.
+
+CMake Build System:
+
+Trilinos has switched to a CMake build system from an Autotools build system
+for the 10.0 release.  Instructions for building with cmake are available
+from the Trilinos homepage: http://trilinos.sandia.gov.  General information
+about CMake, as well as installation binaries and CMake source code are 
+available from the CMake homepage: http://www.cmake.org.
+
+Windows Support:
+
+Beginning with the 10.0 release, many Trilinos packages now support the
+Windows platform.  Support for additional packages is planned for the near
+future.  Windows binary installers will also be available for Trilinos 10.0.
+A list of packages that do not support the Windows platform is included below
+in the "Known issues" section.
+
+More information:
+
+Trilinos website: http://trilinos.sandia.gov
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+Amesos
+
+Amesos includes the KLU and Paraklete solvers.  Paraklete works only in
+32-bit mode at this time.
+
+Third-party direct solvers accessible via the CMake build system include:
+
+(*) MUMPS
+(*) UMFPACK
+(*) Scalapack
+(*) SuperLU
+(*) SuperLUDist (requires ParMETIS to be enabled as well)
+
+-------------------------------------------------------------------------------
+
+Didasko
+
+Examples have been added for the Tpetra package, as well as for the Hypre
+and Euclid interfaces that were added to Ifpack and EpetraExt.
+
+-------------------------------------------------------------------------------
+
+EpetraExt
+
+EpetraExt now supports the use of the scalable solver package Hypre from
+Lawrence Livermore National Laboratory as a preconditioner with Trilinos
+solvers.  This support includes use of the native Hypre data structures,
+without copying, allowing current Hypre users to seamlessly integrate Trilinos
+and Hypre capabilities.
+
+-------------------------------------------------------------------------------
+
+Ifpack
+
+New interfaces to third party parallel ILU/ILUT solvers in the form of
+Hypre/Euclid and HIPS have been added to IFPACK.  The former provides parallel
+classical ILU and the latter provides a parallel multilevel ILUT capability.
+Unlike IFPACK's existing ILU/ILUT capability, these packages preserve off-core
+entries in the matrix.  This makes them especially useful for multicore
+architectures.
+
+-------------------------------------------------------------------------------
+
+Isorropia
+
+- New support for geometric partitioning (RCB, RIB, HSFC) via
+  Epetra_MultiVector.
+- Improved support for parallel Jacobian matrix coloring.
+- Isorropia now uses its own parameters, separate from Zoltan
+  parameters. Please see the package release notes for details.
+
+-------------------------------------------------------------------------------
+
+MOOCHO
+
+(*) MS Windows support with MS Visual C++: Several tests fail in strange ways
+and therefore MOOCHO must be considered not to work for this platform for this
+release.
+
+-------------------------------------------------------------------------------
+
+Stokhos (internal release only)
+
+Stokhos is a Trilinos package for applying intrusive stochastic Galerkin
+uncertainty quantification methods to nonlinear dynamical systems, primarily
+stochastic partial differential equations.
+
+Stokhos supports generating stochastic residual coefficients using automatic
+differentiation with Sacado and forming and solving stochatic Galerkin linear
+systems and nonlinear systems using Epetra and the EpetraExt::ModelEvaluator.
+
+Stokhos can make use of the Fortran UQ Toolkit of Debusschere et al for
+generating residual coefficients using Taylor series and time integration
+methods, and can leverage Dakota for sparse-grid quadrature.
+
+Stokhos is primarily developed and maintained by Eric Phipps with significant
+contributions by Bert Debusschere, Omar Knio, Chris Miller, and Habib Najm.
+
+-------------------------------------------------------------------------------
+
+Stratimikos
+
+(*) Support for newer Belos solvers has not been added yet.
+
+-------------------------------------------------------------------------------
+
+Teuchos
+
+(*) Breaks in backward compatibility:
+
+- The raw pointer T* argument in Teuchos::set_extra_data(...) has been
+changed to Teuchos::Ptr<T>&.  This requires that you replace:
+
+    Teuchos::set_extra_data(data, dataName, &rcpObj);
+
+with:
+
+    Teuchos::set_extra_data(data, dataName, Teuchos::outArg(rcpObj));
+
+-------------------------------------------------------------------------------
+
+Thyra
+
+(*) MS Windows support with MS Visual C++:
+
+- Thyra complex support and float support are disabled by default.
+The complex-related code just did not work correctly and there was not
+time to track down the problem.
+
+- Several of the tests showed excessive diffs for this platform so their
+tolerance was loosened.
+
+(*) Partial refactoring of code to use safe memory management classes
+
+-------------------------------------------------------------------------------
+
+Zoltan
+
+Features:
+
+* New interface to Scotch and PT-Scotch parallel graph partitioning algorithms.
+
+* Simplified interface to graph ordering and coloring algorithms.
+
+* Automated symmetrization of graphs for graph partitioning, coloring and
+  ordering. (See parameters GRAPH_SYMMETRIZE and GRAPH_SYM_WEIGHT in the Scotch
+  and ParMETIS graph packages.)
+
+* Improved function Zoltan_LB_Eval returns more information about a
+  decomposition to users.
+
+* Improved examples showing Zoltan usage in C and C++ are included in
+  zoltan/example.
+
+* Improved support for builds under autotools, including builds of Zoltan's F90
+  interface.
+
+* New support for CMake builds and testing through Trilinos; builds of Zoltan's
+  F90 interface are included.
+
+* Improved integration into Isorropia partitioners for Trilinos' Epetra
+  classes.
+
+Backward compatibility:
+
+* Interfaces to Zoltan_Color, Zoltan_Order and Zoltan_LB_Eval have changed.
+
+* The Zoltan native build environment, while still distributed, will no longer
+  be supported. Users should use the autotools or CMake systems. Builds of the
+  Zoltan F90 interface are supported in both autotools and CMake.
+
+-------------------------------------------------------------------------------
+
+Known issues in Release 10.0:
+
+* Several packages do not yet support the Windows platform.  Packages that
+  do not yet support the Windows platform will not be enabled with the 
+  Trilinos_ENABLE_ALL_PACKAGES, Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES,
+  Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES, OR
+  Trilinos_ENABLE_SECONDARY_STABLE_CODE options.  Non-supported packages
+  among external release packages currently include: Anasazi, FEI, MOOCHO,
+  Pamgen, Phalanx, Phdmesh, PyTrilinos, Sundance, and Tpetra.
+
+* Building with MPI on Windows is not thoroughly tested.  There are some
+  issues that need to be resolved.  Improved Windows MPI support will 
+  be added to an upcoming minor release.
+
+* g95 0.91 on OSX is known to produce a configure failure.  Consider using
+  gfortran, or disabling Fortran support with Trilinos_ENABLE_Fortran=OFF.
+  Most, not all, Trilinos packages can be built with Fortran support
+  disabled.
+
+-------------------------------------------------------------------------------
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 9.0 Release Notes                                          #
 #                                                                             #
 ###############################################################################
