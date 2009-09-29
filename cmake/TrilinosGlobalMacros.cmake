@@ -148,6 +148,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/new_package
     /packages/rbgen
     /packages/WebTrilinos
+    /packages/cmmlib
     ${CONFIGURE_AC_LIST}
     ${CONFIGURE_LIST}
     ${MAKEFILE_AM_LIST}
@@ -607,6 +608,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/ml/test/Zoltan/cxx_main_simple.cpp
     /packages/ml/test/scripts
     /packages/ml/test/scripts/run-tests.sh
+    /packages/sacado/example/FEApp/experimental
   )
   
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
