@@ -247,7 +247,7 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 MATRIX_INC	= matrix.h
 MATRIX_CSRC	= matrix_build.c matrix_distribute.c matrix_operations.c \
-		  matrix_sym.c matrix_utils.c
+		  matrix_sym.c matrix_utils.c common_sort.c
 
 PHG_CSRC 	= phg.c phg_hypergraph.c phg_build.c phg_build_calls.c \
 		  phg_coarse.c phg_distrib.c phg_gather.c \
