@@ -41,6 +41,7 @@
 
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
+#include "Rythmos_Version.h"
 //#include "ExampleApplicationRythmosInterface.hpp"
 #include "Rythmos_ForwardEulerStepper.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
@@ -146,7 +147,7 @@ int main(int argc, char *argv[])
 
     if (version) // Display version information and exit.
     {
-      *out << Rythmos::Rythmos_Version() << std::endl; 
+      *out << Rythmos::version() << std::endl; 
       *out << "basicExample Version 0.1 - 06/23/05" << std::endl;
       return(0);
     }

@@ -296,6 +296,11 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 
         "CG solver that performs block and single-RHS CG.",
 
+        "CG solver that performs single-RHS CG on multiple RHSs taking\n"
+        "advantage of operator multi-vector multiplication and the amortization\n"
+        "of global communication.  Individual linear systems are deflated out as\n"
+        "they are solved.",
+
         "GMRES solver that performs subspace recycling between RHS and linear systems."
         ),
       tuple<ESolverType>(

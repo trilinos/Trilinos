@@ -46,7 +46,7 @@
 bool Thyra::test_single_amesos_thyra_solver(
   const std::string                       matrixFile
   ,Teuchos::ParameterList                 *amesosLOWSFPL
-  ,const bool                             testTranspose
+  ,const bool                             testTranspose_in
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
   ,const double                           maxError
@@ -74,7 +74,7 @@ bool Thyra::test_single_amesos_thyra_solver(
       << "\n***\n"
       << "\nEchoing input options:"
       << "\n  matrixFile             = " << matrixFile
-      << "\n  testTranspose          = " << testTranspose
+      << "\n  testTranspose          = " << testTranspose_in
       << "\n  numRandomVectors       = " << numRandomVectors
       << "\n  maxFwdError            = " << maxFwdError
       << "\n  maxError               = " << maxError
@@ -121,6 +121,14 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   initializeOp<double>( *lowsFactory, A, &*nsA );
 
+  bool testTranspose = testTranspose_in;
+  if (testTranspose_in && !Thyra::solveSupports(*nsA, Thyra::CONJTRANS)) {
+    if(out.get()) *out
+      << "\nChanging testTranspose=false since "
+      << nsA->description() << " does not support adjoint solves!\n";
+    testTranspose = false;
+  }
+  
   if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 
   Thyra::seed_randomize<double>(0);
@@ -146,18 +154,21 @@ bool Thyra::test_single_amesos_thyra_solver(
   linearOpWithSolveTester.forward_residual_solve_tol(maxResid);
   linearOpWithSolveTester.forward_residual_slack_error_tol(1e-1*maxResid);
   linearOpWithSolveTester.forward_residual_slack_warning_tol(maxResid);
-  if(testTranspose) {
-    linearOpWithSolveTester.check_adjoint_default(true);
-    linearOpWithSolveTester.adjoint_default_residual_error_tol(1.1*maxResid);
-    linearOpWithSolveTester.adjoint_default_residual_warning_tol(2.0*maxResid);
-    linearOpWithSolveTester.check_adjoint_residual(true);
-    linearOpWithSolveTester.adjoint_residual_solve_tol(maxResid);
-    linearOpWithSolveTester.adjoint_residual_slack_error_tol(1e-1*maxResid);
-    linearOpWithSolveTester.adjoint_residual_slack_warning_tol(maxResid);
-  }
+  linearOpWithSolveTester.check_adjoint_default(testTranspose);
+  linearOpWithSolveTester.adjoint_default_residual_error_tol(1.1*maxResid);
+  linearOpWithSolveTester.adjoint_default_residual_warning_tol(2.0*maxResid);
+  linearOpWithSolveTester.check_adjoint_residual(testTranspose);
+  linearOpWithSolveTester.adjoint_residual_solve_tol(maxResid);
+  linearOpWithSolveTester.adjoint_residual_slack_error_tol(1e-1*maxResid);
+  linearOpWithSolveTester.adjoint_residual_slack_warning_tol(maxResid);
   linearOpWithSolveTester.num_random_vectors(numRandomVectors);
   linearOpWithSolveTester.show_all_tests(showAllTests);
   linearOpWithSolveTester.dump_all(dumpAll);
+
+  LinearOpWithSolveTester<double> adjLinearOpWithSolveTester(linearOpWithSolveTester);
+  adjLinearOpWithSolveTester.check_forward_default(testTranspose);
+  adjLinearOpWithSolveTester.check_forward_residual(testTranspose);
+
   result = linearOpWithSolveTester.check(*nsA,out.get());
   if(!result) success = false;
 
@@ -216,7 +227,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
     
-  result = linearOpWithSolveTester.check(*nsA2,out.get());
+  result = adjLinearOpWithSolveTester.check(*nsA2,out.get());
   if(!result) success = false;
   
   if(out.get()) *out << "\nO) Testing that LinearOpBase interfaces of transpose(nsA) == nsA2 ...\n";

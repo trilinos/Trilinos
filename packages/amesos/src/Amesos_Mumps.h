@@ -142,7 +142,13 @@ public:
   //! Destroys all data associated with \sl this object.
   void Destroy();
   
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose_in)
+  {
+    UseTranspose_ = UseTranspose_in;
+    if (UseTranspose_in)
+      return (-1);
+    return (0);
+  };
   
   bool UseTranspose() const {return(UseTranspose_);};
 

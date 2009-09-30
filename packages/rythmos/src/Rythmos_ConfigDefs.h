@@ -76,8 +76,4 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-namespace Rythmos {
-  std::string Rythmos_Version();
-}
-
 #endif /* RYTHMOS_CONFIGDEFS_H */

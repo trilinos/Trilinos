@@ -34,6 +34,7 @@
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
@@ -743,7 +744,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   :defaultParameterName_(defaultParameterName)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( strings.size() != integralValues.size() );
+  TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
@@ -768,8 +769,8 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   :defaultParameterName_(defaultParameterName)
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( strings.size() != stringsDocs.size() );
-  TEST_FOR_EXCEPT( strings.size() != integralValues.size() );
+  TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
+  TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {

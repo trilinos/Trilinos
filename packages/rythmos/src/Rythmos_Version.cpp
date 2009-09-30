@@ -26,13 +26,10 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Rythmos_ConfigDefs.h"
 #include "Rythmos_Version.h"
+#include "Trilinos_version.h"
 
-namespace Rythmos {
-
-	std::string Rythmos_Version() { 
-		return("Rythmos Version 2.0 - September 2007"); 
-	}
-
-} // namespace Rythmos
+std::string Rythmos::version()
+{ 
+  return("Rythmos in Trilinos " TRILINOS_VERSION_STRING); 
+}
