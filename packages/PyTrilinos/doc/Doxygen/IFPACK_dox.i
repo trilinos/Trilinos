@@ -47,7 +47,7 @@ Ifpack_BlockRelaxation.
 \"Amesos\" : returns an instance of
 Ifpack_AdditiveSchwarz<Ifpack_Amesos>.
 
-\"Amesos\" : returns an instance of Ifpack_Amesos.
+\"Amesos stand-alone\" : returns an instance of Ifpack_Amesos.
 
 \"IC\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
 
@@ -1150,6 +1150,16 @@ Returns true if the preconditioner has been successfully computed. ";
 Ifpack_Chebyshev::Compute()
 
 Computes the preconditioners. ";
+
+%feature("docstring")  Ifpack_Chebyshev::GetLambdaMax "virtual double
+Ifpack_Chebyshev::GetLambdaMax()
+
+Returns an approximation to the largest eigenvalue. ";
+
+%feature("docstring")  Ifpack_Chebyshev::GetLambdaMin "virtual double
+Ifpack_Chebyshev::GetLambdaMin()
+
+Contains an approximation to the smallest eigenvalue. ";
 
 %feature("docstring")  Ifpack_Chebyshev::Matrix "virtual const
 Epetra_RowMatrix& Ifpack_Chebyshev::Matrix() const
@@ -8286,6 +8296,12 @@ MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0) ";
 // File: Ifpack__EquationPartitioner_8h.xml
 
 
+// File: Ifpack__Euclid_8cpp.xml
+
+
+// File: Ifpack__Euclid_8h.xml
+
+
 // File: Ifpack__Graph_8h.xml
 
 
@@ -8311,6 +8327,18 @@ MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0) ";
 
 
 // File: Ifpack__HashTable_8h.xml
+
+
+// File: Ifpack__HIPS_8cpp.xml
+
+
+// File: Ifpack__HIPS_8h.xml
+
+
+// File: Ifpack__Hypre_8cpp.xml
+
+
+// File: Ifpack__Hypre_8h.xml
 
 
 // File: Ifpack__IC_8cpp.xml
@@ -8347,8 +8375,8 @@ Ifpack_AIJMatrix *L, double **pdiag) ";
 
 
 // File: Ifpack__IC__Utils_8h.xml
-%feature("docstring")  quicksort "void quicksort(int *const pbase,
-double *const daux, int total_elems) ";
+%feature("docstring")  ifpack_quicksort "void ifpack_quicksort(int
+*const pbase, double *const daux, int total_elems) ";
 
 %feature("docstring")  Ifpack_AIJMatrix_dealloc "void
 Ifpack_AIJMatrix_dealloc(Ifpack_AIJMatrix *a) ";
@@ -8727,13 +8755,14 @@ Ifpack_FrobeniusNorm(const Epetra_RowMatrix &A) ";
 
 %feature("docstring")  print "static void print() ";
 
-%feature("docstring")  print "static void print(char *str, T val) ";
+%feature("docstring")  print "static void print(const char str[], T
+val) ";
 
-%feature("docstring")  print "static void print(char *str, T val,
-double percentage) ";
+%feature("docstring")  print "static void print(const char str[], T
+val, double percentage) ";
 
-%feature("docstring")  print "static void print(char *str, T one, T
-two, T three, bool equal=true) ";
+%feature("docstring")  print "static void print(const char str[], T
+one, T two, T three, bool equal=true) ";
 
 %feature("docstring")  Ifpack_Analyze "int Ifpack_Analyze(const
 Epetra_RowMatrix &A, const bool Cheap, const int NumPDEEqns)
@@ -8909,8 +8938,8 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_8854a7b0da65cc6c1ac55447f65a4567.xml
+// File: dir_3b1a43ac436b604832a4e8037f035f8e.xml
 
 
-// File: dir_e880793e0fae3f15b5813f32a1a6bd45.xml
+// File: dir_4b3a09bd0cb2ee5e63a90d9463e42380.xml
 

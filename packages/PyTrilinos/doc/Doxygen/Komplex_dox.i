@@ -27,27 +27,20 @@ b_r\\\\\\\\ b_i \\\\end{array} \\\\right) \\\\] which is a real-valued
 system of twice the size. If we find xr and xi, we can form the
 solution to the original system as x = xr +i*xi.
 
-KOMPLEX accept user linear systems in three forms with either global
-or local index values.
+KOMPLEX accepts the user linear system as two real-valued matrices
+with no assumption about the structure of the matrices, except that
+they have compatible RowMap, DomainMap and RangeMap distributions.
+Each matrix is multiplied by user-supplied complex constants.
 
-1) The first form is true complex. The user passes in an MSR or VBR
-format matrix where the values are stored like Fortran complex
-numbers. Thus, the values array is of type double that is twice as
-long as the number of complex values. Each complex entry is stored
-with real part followed by imaginary part (as in Fortran).
+Although formally the system is a 2-by-2 block system, we actually
+apply the interleaving at the matrix entry level such that the real
+part of the first complex equation is followed by the imaginary part
+of the first complex equation, and so on. This approach is documented
+in:
 
-2) The second form stores real and imaginary parts separately, but the
-pattern for each is identical. Thus only the values of the imaginary
-part are passed to the creation routines.
-
-3) The third form accepts two real-valued matrices with no assumption
-about the structure of the matrices. Each matrix is multiplied by a
-user-supplied complex constant. This is the most general form.
-
-Each of the above forms supports a global or local index set. By this
-we mean that the index values (stored in bindx) refer to the global
-problem indices, or the local indices (for example after calling
-AZ_transform).
+David Day and Michael A. Heroux. Solving complex-valued linear systems
+via equivalent real formulations. SIAM J. Sci. Comput.,
+23(2):480–498, 2001.
 
 C++ includes: Komplex_LinearProblem.h ";
 
@@ -63,14 +56,6 @@ Constructs the Komplex operator from the user definition of the
 complex-valued matrix C = (c0r+i*c0i)*A0 +(c1r+i*c1i)*A1. Using this
 general expression for the complex matrix allows easy formulation of a
 variety of common complex problems.
-
-The operator will be explicitly constructed as an Epetra_VbrMatrix
-object when the first call to SetKomplexOperator() is made. Subsequent
-calls to this method will attempt to reuse the the existing
-KomplexVbrMatrix object if possible, rather than reconstructing from
-scratch. If this is not possible (typically because the structure has
-changed) then a the previous KomplexVbrMatrix object will be deleted
-and a new one will be constructed.
 
 Parameters:
 -----------
@@ -95,9 +80,7 @@ Xi:  (In) The imag part of the complex valued LHS.
 
 Br:  (In) The real part of the complex valued RHS.
 
-Bi:  (In) The imag part of the complex valued RHS.
-
-Error code, set to 0 if no error. ";
+Bi:  (In) The imag part of the complex valued RHS. ";
 
 %feature("docstring")  Komplex_LinearProblem::~Komplex_LinearProblem "Komplex_LinearProblem::~Komplex_LinearProblem()
 
@@ -157,8 +140,8 @@ any Trilinos preconditioner or solver. ";
 %feature("docstring")  Komplex_Version "string Komplex_Version() ";
 
 
-// File: dir_7c33e1574cd31383e666b98827d697d7.xml
+// File: dir_8a4396516bfb215538b822744d262326.xml
 
 
-// File: dir_f84685b04efc5d362c9b262a426031b6.xml
+// File: dir_83aa165b69eae9fa0cafe1625f2e7bb3.xml
 

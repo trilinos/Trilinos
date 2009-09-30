@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Doxygen XML to SWIG docstring converter.
+"""
+Doxygen XML to SWIG docstring converter.
 
 Usage:
 
@@ -12,8 +13,8 @@ the resulting output.
 
 input.xml is your doxygen generated XML file and output.i is where the
 output will be written (the file will be clobbered).
-
 """
+
 ######################################################################
 #
 # This code is implemented using Mark Pilgrim's code as a guideline:
@@ -49,27 +50,46 @@ def my_open_write(dest):
     else:
         return open(dest, 'w')
 
+def my_str(source):
+    try:
+        result = str(source)
+    except UnicodeEncodeError, e:
+        result = source.encode("utf-8")
+    return result
+
 
 class Doxy2SWIG:    
-    """Converts Doxygen generated XML files into a file containing
+    """
+    Converts Doxygen generated XML files into a file containing
     docstrings that can be used by SWIG-1.3.x that have support for
     feature("docstring").  Once the data is parsed it is stored in
     self.pieces.
-
     """    
 
     def __init__(self, src, include_function_definition=True):
-        """Initialize the instance given a source object.  `src` can
+        """
+        Initialize the instance given a source object.  `src` can
         be a file or filename.  If you do not want to include function
         definitions from doxygen then set
         `include_function_definition` to `False`.  This is handy since
         this allows you to use the swig generated function definition
         using %feature("autodoc", [0,1]).
-
         """
+
         f = my_open_read(src)
         self.my_dir = os.path.dirname(f.name)
-        self.xmldoc = minidom.parse(f).documentElement
+        # The try block here is a hack-tacular fix for a bug in the xml module
+        # that fails to properly parse a URL with multiple options specified for
+        # a CGI script.  This doesn't work in general, just for the specific
+        # string that I know causes a problem.
+        try:
+            self.xmldoc = minidom.parse(f).documentElement
+        except:
+            f.close()
+            f = my_open_read(src)
+            data = f.read()
+            data = data.replace('&module=nox','')
+            self.xmldoc = minidom.parseString(data).documentElement
         f.close()
 
         self.pieces = []
@@ -93,17 +113,17 @@ class Doxy2SWIG:
 
 
     def generate(self):
-        """Parses the file set in the initialization.  The resulting
+        """
+        Parses the file set in the initialization.  The resulting
         data is stored in `self.pieces`.
-
         """
         self.parse(self.xmldoc)
 
     def parse(self, node):
-        """Parse a given node.  This function in turn calls the
+        """
+        Parse a given node.  This function in turn calls the
         `parse_<nodeType>` functions which handle the respective
         nodes.
-
         """
         pm = getattr(self, "parse_%s"%node.__class__.__name__)
         pm(node)
@@ -123,12 +143,13 @@ class Doxy2SWIG:
             self.add_text(textwrap.fill(txt, break_long_words=False))
 
     def parse_Element(self, node):
-        """Parse an `ELEMENT_NODE`.  This calls specific
+        """
+        Parse an `ELEMENT_NODE`.  This calls specific
         `do_<tagName>` handers for different elements.  If no handler
         is available the `generic_parse` method is called.  All
         tagNames specified in `self.ignores` are simply ignored.
-
         """
+
         name = node.tagName
         ignores = self.ignores
         if name in ignores:
@@ -142,21 +163,25 @@ class Doxy2SWIG:
             #if name not in self.generics: self.generics.append(name)
 
     def parse_Comment(self, node):
-        """Parse a `COMMENT_NODE`.  This does nothing for now."""
+        """
+        Parse a `COMMENT_NODE`.  This does nothing for now.
+        """
         return
 
     def add_text(self, value):
-        """Adds text corresponding to `value` into `self.pieces`."""
+        """
+        Adds text corresponding to `value` into `self.pieces`.
+        """
         if type(value) in (types.ListType, types.TupleType):
             self.pieces.extend(value)
         else:
             self.pieces.append(value)
 
     def get_specific_nodes(self, node, names):
-        """Given a node and a sequence of strings in `names`, return a
+        """
+        Given a node and a sequence of strings in `names`, return a
         dictionary containing the names as keys and child
         `ELEMENT_NODEs`, that have a `tagName` equal to the name.
-
         """
         nodes = [(x.tagName, x) for x in node.childNodes \
                  if x.nodeType == x.ELEMENT_NODE and \
@@ -164,7 +189,8 @@ class Doxy2SWIG:
         return dict(nodes)
 
     def generic_parse(self, node, pad=0):
-        """A Generic parser for arbitrary tags in a node.
+        """
+        A Generic parser for arbitrary tags in a node.
 
         Parameters:
 
@@ -175,7 +201,6 @@ class Doxy2SWIG:
            appends a newline after parsing the childNodes.  If 2 it
            pads before and after the nodes are processed.  Defaults to
            0.
-
         """
         npiece = 0
         if pad:
@@ -305,9 +330,11 @@ class Doxy2SWIG:
             self.generic_parse(node)
 
     def do_header(self, node):
-        """For a user defined section def a header field is present
+        """
+        For a user defined section def a header field is present
         which should not be printed as such, so we comment it in the
-        output."""
+        output.
+        """
         data = node.firstChild.data
         self.add_text('\n/*\n %s \n*/\n'%data)
         # If our immediate sibling is a 'description' node then we
@@ -368,14 +395,16 @@ class Doxy2SWIG:
         o.close()
 
     def clean_pieces(self, pieces):
-        """Cleans the list of strings given as `pieces`.  It replaces
+        """
+        Cleans the list of strings given as `pieces`.  It replaces
         multiple newlines by a maximum of 2 and returns a new list.
         It also wraps the paragraphs nicely.
-
         """
         ret = []
         count = 0
         for i in pieces:
+            if isinstance(i, unicode):
+                i = my_str(i)
             if i == '\n':
                 count = count + 1
             else:
