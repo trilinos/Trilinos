@@ -72,6 +72,8 @@ class LSCPrecondState; // forward declaration
   */
 class LSCStrategy {
 public:
+   virtual ~LSCStrategy() {}
+
    /** This informs the strategy object to build the state associated
      * with this operator.
      *
@@ -153,10 +155,10 @@ public:
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) {}
 
    //! For assiting in construction of the preconditioner
-   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const {}
+   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const { return Teuchos::null;}
 
    //! For assiting in construction of the preconditioner
-   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl) {}
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl) { return true; }
 };
 
 } // end namespace NS

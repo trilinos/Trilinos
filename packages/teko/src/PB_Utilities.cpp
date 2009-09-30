@@ -90,8 +90,8 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
                                                        stencil.MaxNumEntries()+1),true);
 
    // allocate an additional value for the diagonal, if neccessary
-   double rowData[stencil.GlobalMaxNumEntries()+1];
-   int rowInd[stencil.GlobalMaxNumEntries()+1];
+   std::vector<double> rowData(stencil.GlobalMaxNumEntries()+1);
+   std::vector<int> rowInd(stencil.GlobalMaxNumEntries()+1);
 
    // loop over all the rows
    for(int j=0;j<gl->NumMyRows();j++) {
@@ -101,7 +101,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
       int rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies
-      stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,rowData,rowInd);
+      stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,&rowData[0],&rowInd[0]);
  
       // loop over elements of row
       for(int i=0;i<rowSz;i++) {
@@ -133,7 +133,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_C
       }
 
       // insert row data into graph Laplacian matrix
-      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,rowData,rowInd));
+      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,&rowData[0],&rowInd[0]));
    }
 
    gl->FillComplete();
@@ -170,8 +170,8 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
                                                        stencil.MaxNumEntries()+1),true);
 
    // allocate an additional value for the diagonal, if neccessary
-   double rowData[stencil.GlobalMaxNumEntries()+1];
-   int rowInd[stencil.GlobalMaxNumEntries()+1];
+   std::vector<double> rowData(stencil.GlobalMaxNumEntries()+1);
+   std::vector<int> rowInd(stencil.GlobalMaxNumEntries()+1);
 
    // loop over all the rows
    for(int j=0;j<gl->NumMyRows();j++) {
@@ -181,7 +181,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
       int rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies
-      stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,rowData,rowInd);
+      stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,&rowData[0],&rowInd[0]);
  
       // loop over elements of row
       for(int i=0;i<rowSz;i++) {
@@ -213,7 +213,7 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
       }
 
       // insert row data into graph Laplacian matrix
-      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,rowData,rowInd));
+      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,&rowData[0],&rowInd[0]));
    }
 
    gl->FillComplete();

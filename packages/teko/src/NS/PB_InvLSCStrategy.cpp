@@ -41,7 +41,7 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
 
    // figure out which zero index (if any) this processor owns
    std::vector<std::pair<int,int> > localIndicies; // local, global indicies
-   for(int i=0;i<zeroIndicies.size();i++) {
+   for(unsigned int i=0;i<zeroIndicies.size();i++) {
       // check if this zero index is owned by this processor
       int local = eCrsOp->LRID(zeroIndicies[i]);
       if(local>=0) 
@@ -49,7 +49,7 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
    }
 
    // set a number of rows to zero
-   for(int i=0;i<localIndicies.size();i++) 
+   for(unsigned int i=0;i<localIndicies.size();i++) 
       TEST_FOR_EXCEPT(scaling.ReplaceGlobalValue(localIndicies[i].second,0,0.0));
 
    // wipe out all but the desired rows and columns
@@ -59,7 +59,7 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
    #if 1
    // so the matrix is still invertable...set the digaonals of the
    // wiped rows to 1
-   for(int i=0;i<localIndicies.size();i++) {
+   for(unsigned int i=0;i<localIndicies.size();i++) {
       double value = 1.0;
       int index = localIndicies[i].second;
 

@@ -20,6 +20,8 @@ namespace PB {
   */
 class InverseFactory {
 public:
+   virtual ~InverseFactory() {}
+
    /** \brief Build an inverse operator
      *
      * Build the inverse operator using this factory.
@@ -111,6 +113,8 @@ public:
    SolveInverseFactory(const SolveInverseFactory & siFactory);
    //@}
 
+   virtual ~SolveInverseFactory() {}
+
    /** \brief Build an inverse operator
      *
      * Build the inverse operator using this factory.
@@ -192,6 +196,8 @@ public:
    //! Copy constructor
    PreconditionerInverseFactory(const PreconditionerInverseFactory & pFactory);
    //@}
+
+   virtual ~PreconditionerInverseFactory() {}
 
    /** \brief Build an inverse operator
      *
@@ -303,6 +309,8 @@ public:
    StaticOpInverseFactory(const StaticOpInverseFactory & saFactory)
       : inverse_(saFactory.inverse_) {}
    //@}
+
+   virtual ~StaticOpInverseFactory() {}
 
    /** \brief Build an inverse operator
      *

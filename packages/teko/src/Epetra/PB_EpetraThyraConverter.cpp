@@ -229,7 +229,7 @@ const RCP<Epetra_Map> thyraVSToEpetraMap(const Thyra::VectorSpaceBase<double> & 
    // call recursive routine that constructs the mapping
    thyraVSToEpetraMap(myGIDs,0,vs,localDim);
 
-   TEUCHOS_ASSERT(myGIDs.size()==localDim);
+   TEUCHOS_ASSERT(myGIDs.size()==(unsigned int) localDim);
 
    // create the map
    return rcp(new Epetra_Map(vs.dim(), myGIDs.size(), &(myGIDs[0]), 0, *comm));

@@ -8,6 +8,8 @@ namespace PB {
 /** Base class for cloneable objects */
 class Cloneable {
 public:
+   virtual ~Cloneable() {}
+
    /** Function that clones this object.  This
      * is not neccessarily a copy, but it is an
      * object of the same dynamic type.
@@ -30,6 +32,8 @@ public:
 template <class BaseType>
 class AutoClone : public Cloneable, public BaseType {
 public:
+   virtual ~AutoClone() {}
+
    /** Simple default constructor, calls the default
      * constructor of BaseType 
      */
@@ -69,6 +73,8 @@ public:
 
    //! Copy constructor
    CloneFactory(const CloneFactory<CloneBaseType> & cf) : parentClones_(cf.parentClones_) {}
+
+   virtual ~CloneFactory() {}
 
    /** Build a clone of the object associated with the string. This
      * object is automatically cast to the desired base type. This will
@@ -113,6 +119,6 @@ protected:
    std::map<std::string,Teuchos::RCP<const Cloneable> > parentClones_;
 };
 
-};
+}
 
 #endif

@@ -19,6 +19,8 @@ namespace Epetra {
   /// Abstract Mapping strategy for an EpetraOperatorWrapper
   class MappingStrategy {
   public:
+     virtual ~MappingStrategy() {}
+
      /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
        *
        * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
@@ -65,6 +67,8 @@ namespace Epetra {
         : forwardStrategy_(forward)
      { }
 
+     virtual ~InverseMappingStrategy() {}
+
      virtual void copyEpetraIntoThyra(const Epetra_MultiVector& epetraX,
                                       const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraX,
                                       const EpetraOperatorWrapper & eow) const
@@ -100,6 +104,8 @@ namespace Epetra {
   public:
      /** */
      DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<double> > & thyraOp, Epetra_Comm & comm);
+
+     virtual ~DefaultMappingStrategy() {}
 
      /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
        *

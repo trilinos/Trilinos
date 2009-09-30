@@ -122,7 +122,6 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
 
    // get size of strided block operator
    int rows = PB::blockRowCount(blockOp);
-   int cols = PB::blockColCount(blockOp);
 
    for(int i=0;i<rows;i++) {
       for(int j=0;j<rows;j++) {

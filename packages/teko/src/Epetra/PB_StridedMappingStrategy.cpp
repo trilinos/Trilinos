@@ -63,7 +63,7 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    Teuchos::Array<RCP<Thyra::MultiVectorBase<double> > > thyra_subX;
    Teuchos::Ptr<Thyra::ProductMultiVectorBase<double> > prod_X
          = Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(thyra_X);
-   for(int i=0;i<blockMaps_.size();i++) {
+   for(unsigned int i=0;i<blockMaps_.size();i++) {
       RCP<Thyra::DefaultSpmdMultiVector<double> > vec 
             = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(prod_X->getNonconstMultiVectorBlock(i)); 
       fillDefaultSpmdMultiVector(vec,subX[i]);
@@ -88,10 +88,8 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
    RCP<const Thyra::DefaultProductMultiVector<double> > prod_Y 
          = rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<double> >(thyra_Y);
 
-   int numBlocks = prod_Y->productSpace()->numBlocks();
-
    // convert thyra product vector to subY
-   for(int i=0;i<blockMaps_.size();i++)
+   for(unsigned int i=0;i<blockMaps_.size();i++)
       subY.push_back(Thyra::get_Epetra_MultiVector(*blockMaps_[i].second,prod_Y->getMultiVectorBlock(i)));
 
    // endow the subVectors with required information about the maps
@@ -115,10 +113,7 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
 //
 void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Map> & baseMap, const Epetra_Comm & comm)
 {
-   int numGlobals = baseMap->NumGlobalElements();
-
    // build maps and exporters/importers
-   // PB::Epetra::buildSubMaps(numGlobals,vars,comm,blockMaps_);
    PB::Epetra::buildSubMaps(*baseMap,vars,comm,blockMaps_);
    PB::Epetra::buildExportImport(*baseMap, blockMaps_, blockExport_,blockImport_);
 }

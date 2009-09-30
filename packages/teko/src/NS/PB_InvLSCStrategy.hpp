@@ -34,6 +34,8 @@ public:
                   LinearOp & mass,bool rzn=false);
    //@}
 
+   virtual ~InvLSCStrategy() {}
+
    //! Functions inherited from LSCStrategy
    //@{
 
@@ -176,12 +178,13 @@ public:
    { wScaling_ = wScaling; }
 
 protected:
+   LinearOp massMatrix_;
+
    // how to invert the matrices
    Teuchos::RCP<InverseFactory> invFactoryF_;
    Teuchos::RCP<InverseFactory> invFactoryS_;
 
    // operators requested, to be filled by user
-   LinearOp massMatrix_;
    LinearOp userPresStabMat_;
    mutable LinearOp hScaling_;
    MultiVector wScaling_;

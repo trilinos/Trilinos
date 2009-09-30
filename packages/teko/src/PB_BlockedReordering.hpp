@@ -74,7 +74,10 @@ public:
    //! Copy constructor
    BlockReorderManager(const BlockReorderManager & bmm)
       : children_(bmm.children_.size()) 
-   { for(int i=0;i<children_.size();i++) children_[i] = bmm.children_[i]->Copy(); }
+   { for(unsigned int i=0;i<children_.size();i++) children_[i] = bmm.children_[i]->Copy(); }
+
+   //! Do nothing destructor
+   virtual ~BlockReorderManager() {}
 
    //@}
 

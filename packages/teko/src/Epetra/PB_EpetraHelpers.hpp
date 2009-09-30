@@ -138,8 +138,8 @@ public:
    //@}
 
 protected:
-   const Teuchos::RCP<const Epetra_Operator> epetraOp_;
    std::vector<int> zeroIndices_;
+   const Teuchos::RCP<const Epetra_Operator> epetraOp_;
 };
 
 } // end namespace Epetra

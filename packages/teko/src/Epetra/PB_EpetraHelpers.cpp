@@ -120,15 +120,15 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<doubl
 void identityRowIndices(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndices)
 {
    int maxSz = mat.GlobalMaxNumEntries();
-   double values[maxSz];
-   int indices[maxSz];
+   std::vector<double> values(maxSz);
+   std::vector<int> indices(maxSz);
 
    // loop over elements owned by this processor
    for(int i=0;i<rowMap.NumMyElements();i++) {
       bool rowIsIdentity = true;
       int sz = 0;
       int rowGID = rowMap.GID(i);
-      mat.ExtractGlobalRowCopy(rowGID,maxSz,sz,values,indices);
+      mat.ExtractGlobalRowCopy(rowGID,maxSz,sz,&values[0],&indices[0]);
 
       // loop over the columns of this row
       for(int j=0;j<sz;j++) {

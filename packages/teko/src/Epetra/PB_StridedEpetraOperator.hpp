@@ -14,10 +14,6 @@
 #include "Epetra/PB_EpetraOperatorWrapper.hpp"
 #include "Epetra/PB_StridedMappingStrategy.hpp"
 
-// NOX includes
-#include "NOX.H"
-#include "NOX_Epetra.H"
-
 namespace PB {
 namespace Epetra {
 
