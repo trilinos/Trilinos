@@ -5053,331 +5053,6 @@ Note: This should only be called if hasPreconditioner() returns true.
 ";
 
 
-// File: classNOX_1_1Epetra_1_1LinearSystemStratimikos.xml
-%feature("docstring") NOX::Epetra::LinearSystemStratimikos "
-
-Concrete implementation of NOX::Epetra::LinearSolver for Stratimikos.
-
-This solver provides the linear algebra services provided by Trilinos
-through the Stratimikos linear solver strategies package.
-
-This class handles construction of both the preconditioners and
-solvers. All options are determined through parameter lists and the
-basic constructors.
-
-Constructing a Linear System
-
-EDIT THE FOLLOWING FOR STRATIMIKOS Ther between constructors is based
-on whether the user supplies a Jacobian, a preconditioner, neither or
-both.
-
-If a Jacobian is not supplied then this object can create an
-internally constructed Jacobian based on a Finite Difference or
-Matrif-Free object. The user can specify which type of object to use
-by setting the parameter \"Jacobian Operator\" in the parameter list.
-The choices are \"Matrix-Free\" or \"Finite Difference\".
-
-The user can supply their own preconditioner as an Epetra_Operator, or
-they can supply their own matrix (an Epetra_RowMatrix derived object)
-that can be used by one of the internal preconditioner libraries
-(currently aztecoo or ifpack). If they supply their own preconditioner
-the object must implement the Epetra_Operator::ApplyInverse method.
-This is the method called during the linear solve to introduce
-preconditoning into aztecoo. If the user supplies a matrix to be used
-with an internal preconditioner, it must be derived from the
-Epetra_RowMatrix class and must implement all functionality in the
-Epetra_RowMatrix. If a Preconditioner is not supplied, then this
-object can create an internal preconditioner matrix by finite
-differencing or it can use the Jacobian operator if the Jacobian
-derives from the Epetra_RowMatrix class. The user can specify which
-type of object to use by setting the parameter \"Preconditioner
-Operator\" in the parameter list. The choices are \"Use Jacobian\" or
-\"Finite Difference\".
-
-The Jacobian and preconditioner each require an interface to update
-the state of the operator with respect to the solution vector and any
-other parameters. There are three interfaces that can be implemented,
-NOX::Epetra::Interface::Required, NOX::Epetra::Interface::Jacobian,
-and NOX::Epetra::Interface::Preconditioner.
-
-NOX::Epetra::Interface::Required supplies the computeF() function so
-codes can tell NOX what the nonlinear equations are. This is the
-minimum requirement to run nox through the epetra interface.
-LinearSolverAztecOO requires this in some constructors so that if a
-Jacobian or preconditoner is not supplied, it will use computeF from
-the Required interface to estimate the Jacobian or preconditioner via
-finite differences or directional derivatives.
-
-NOX::Epetra::Interface::Jacobian is used for updating a user supplied
-Jacobian opertor with respect to the solution vector and any other
-parameters. It is required only in constructors in which a user
-supplies a Jacobian operator.
-
-NOX::Epetra::Interface::Preconditioner is used for updating a user
-supplied preconditioner opertor/matrix with respect to the solution
-vector and any other parameters. It is required only in constructors
-in which a user supplies a preconditioner operator.
-
-C++ includes: NOX_Epetra_LinearSystem_Stratimikos.H ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos "NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos(Teuchos::ParameterList
-&printingParams, Teuchos::ParameterList &linearSolverParams, const
-Teuchos::RCP< NOX::Epetra::Interface::Required > &iReq, const
-Teuchos::RCP< NOX::Epetra::Interface::Jacobian > &iJac, const
-Teuchos::RCP< Epetra_Operator > &J, const NOX::Epetra::Vector
-&cloneVector, const Teuchos::RCP< NOX::Epetra::Scaling >
-scalingObject=Teuchos::null)
-
-Constructor with a user supplied Jacobian Operator.
-
-Either there is no preconditioning or the preconditioner will be
-used/created internally. The Jacobian (if derived from an
-Epetra_RowMatrix class can be used with an internal preconditioner. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos "NOX::Epetra::LinearSystemStratimikos::LinearSystemStratimikos(Teuchos::ParameterList
-&printingParams, Teuchos::ParameterList &linearSolverParams, const
-Teuchos::RCP< NOX::Epetra::Interface::Jacobian > &iJac, const
-Teuchos::RCP< Epetra_Operator > &J, const Teuchos::RCP<
-NOX::Epetra::Interface::Preconditioner > &iPrec, const Teuchos::RCP<
-Epetra_Operator > &M, const NOX::Epetra::Vector &cloneVector, const
-bool &precIsAlreadyInverted=false, const Teuchos::RCP<
-NOX::Epetra::Scaling > scalingObject=Teuchos::null)
-
-Constructor with user supplied separate objects for the Jacobian (J)
-and Preconditioner (M). linearSolverParams is the \"Linear Solver\"
-sublist of parameter list. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos "NOX::Epetra::LinearSystemStratimikos::~LinearSystemStratimikos()
-
-Destructor. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::applyJacobian "bool
-NOX::Epetra::LinearSystemStratimikos::applyJacobian(const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Applies Jacobian to the given input vector and puts the answer in the
-result.
-
-Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
-input vector, and $v$ is the result vector. Returns true if
-successful. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::applyJacobianTranspose "bool
-NOX::Epetra::LinearSystemStratimikos::applyJacobianTranspose(const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Applies Jacobian-Transpose to the given input vector and puts the
-answer in the result.
-
-Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
-input vector, and $v$ is the result vector. Returns true if
-successful. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::applyJacobianInverse "bool
-NOX::Epetra::LinearSystemStratimikos::applyJacobianInverse(Teuchos::ParameterList
-&linearSolverParams, const NOX::Epetra::Vector &input,
-NOX::Epetra::Vector &result)
-
-Applies the inverse of the Jacobian matrix to the given input vector
-and puts the answer in result.
-
-Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
-the input vector, and $v$ is the result vector.
-
-The parameter list contains the linear solver options. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning "bool
-NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning(bool
-useTranspose, Teuchos::ParameterList &linearSolverParams, const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Apply right preconditiong to the given input vector.
-
-Let $M$ be a right preconditioner for the Jacobian $J$; in other
-words, $M$ is a matrix such that \\\\[ JM \\\\approx I. \\\\]
-
-Compute \\\\[ u = M^{-1} v, \\\\] where $u$ is the input vector and
-$v$ is the result vector.
-
-If useTranspose is true, then the transpose of the preconditioner is
-applied: \\\\[ u = {M^{-1}}^T v, \\\\] The transpose preconditioner is
-currently only required for Tensor methods.
-
-The parameter list contains the linear solver options. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::createPreconditioner "bool
-NOX::Epetra::LinearSystemStratimikos::createPreconditioner(const
-NOX::Epetra::Vector &x, Teuchos::ParameterList &linearSolverParams,
-bool recomputeGraph) const
-
-Explicitly constructs a preconditioner based on the solution vector x
-and the parameter list p.
-
-The user has the option of recomputing the graph when a new
-preconditioner is created. The NOX::Epetra::Group controls the isValid
-flag for the preconditioner and will control when to call this. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::destroyPreconditioner "bool
-NOX::Epetra::LinearSystemStratimikos::destroyPreconditioner() const
-
-Deletes all objects associated with the chosen preconditioner. This is
-called during linear solves and when the solution vector changes to
-reset the preconditioner. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner "bool
-NOX::Epetra::LinearSystemStratimikos::recomputePreconditioner(const
-NOX::Epetra::Vector &x, Teuchos::ParameterList &linearSolverParams)
-const
-
-Recalculates the preconditioner using an already allocated graph.
-
-Use this to compute a new preconditioner while using the same graph
-for the preconditioner. This avoids deleting and reallocating the
-memory required for the preconditioner and results in a big speed-up
-for large-scale jobs. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getPreconditionerPolicy "NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
-NOX::Epetra::LinearSystemStratimikos::getPreconditionerPolicy(bool
-advanceReuseCounter=true)
-
-Evaluates the preconditioner policy at the current state.
-
-NOTE: This can change values between nonlienar iterations. It is not a
-static value. ";
-
-%feature("docstring")  NOX::Epetra::LinearSystemStratimikos::reset "void
-NOX::Epetra::LinearSystemStratimikos::reset(Teuchos::ParameterList
-&linearSolverParams)
-
-Reset the linear solver parameters. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getScaling "Teuchos::RCP<
-NOX::Epetra::Scaling >
-NOX::Epetra::LinearSystemStratimikos::getScaling()
-
-Get the scaling object. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::resetScaling "void
-NOX::Epetra::LinearSystemStratimikos::resetScaling(const Teuchos::RCP<
-NOX::Epetra::Scaling > &s)
-
-Sets the diagonal scaling vector(s) used in scaling the linear system.
-See NOX::Epetra::Scaling for details on how to specify scaling of the
-linear system. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::computeJacobian "bool
-NOX::Epetra::LinearSystemStratimikos::computeJacobian(const
-NOX::Epetra::Vector &x)
-
-Compute the Jacobian. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getJacobianInterface "Teuchos::RCP< const NOX::Epetra::Interface::Jacobian >
-NOX::Epetra::LinearSystemStratimikos::getJacobianInterface() const
-
-NOX::Interface::Jacobian accessor. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getPrecInterface "Teuchos::RCP<
-const NOX::Epetra::Interface::Preconditioner >
-NOX::Epetra::LinearSystemStratimikos::getPrecInterface() const
-
-NOX::Interface::Preconditioiner accessor. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::isPreconditionerConstructed "bool
-NOX::Epetra::LinearSystemStratimikos::isPreconditionerConstructed()
-const
-
-Indicates whether a preconditioner has been constructed. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::hasPreconditioner "bool
-NOX::Epetra::LinearSystemStratimikos::hasPreconditioner() const
-
-Indicates whether the linear system has a preconditioner. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getJacobianOperator "Teuchos::RCP< const Epetra_Operator >
-NOX::Epetra::LinearSystemStratimikos::getJacobianOperator() const
-
-Jacobian Epetra_Operator accessor. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getJacobianOperator "Teuchos::RCP< Epetra_Operator >
-NOX::Epetra::LinearSystemStratimikos::getJacobianOperator()
-
-Jacobian Epetra_Operator accessor. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getPrecOperator "Teuchos::RCP<
-const Epetra_Operator >
-NOX::Epetra::LinearSystemStratimikos::getPrecOperator() const
-
-Preconditioner Epetra_Operator accessor (only the base matrix if using
-an internal preconditioner - aztecoo or ifpack). ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator "Teuchos::RCP< const Epetra_Operator >
-NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator() const
-
-Return preconditioner operator generated and stored in AztecOO.
-
-Note: This should only be called if hasPreconditioner() returns true.
-";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator "Teuchos::RCP< Epetra_Operator >
-NOX::Epetra::LinearSystemStratimikos::getGeneratedPrecOperator()
-
-Return preconditioner operator generated and stored in AztecOO. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getTimeCreatePreconditioner "double
-NOX::Epetra::LinearSystemStratimikos::getTimeCreatePreconditioner()
-const
-
-Returns the total time (sec.) spent in createPreconditioner(). ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::getTimeApplyJacobianInverse "double
-NOX::Epetra::LinearSystemStratimikos::getTimeApplyJacobianInverse()
-const
-
-Returns the total time (sec.) spent in applyJacobianInverse(). ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::setJacobianOperatorForSolve "void
-NOX::Epetra::LinearSystemStratimikos::setJacobianOperatorForSolve(const
-Teuchos::RCP< const Epetra_Operator > &solveJacOp)
-
-Set Jacobian operator for solve. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve "void
-NOX::Epetra::LinearSystemStratimikos::setPrecOperatorForSolve(const
-Teuchos::RCP< const Epetra_Operator > &solvePrecOp)
-
-Set preconditioner operator for solve.
-
-Note: This should only be called if hasPreconditioner() returns true.
-";
-
-
 // File: classNOX_1_1Solver_1_1LineSearchBased.xml
 %feature("docstring") NOX::Solver::LineSearchBased "
 
@@ -6107,6 +5782,166 @@ search.
 Return value is true for a successful line search computation. ";
 
 
+// File: classNOX_1_1MultiVector.xml
+%feature("docstring") NOX::MultiVector "
+
+Default implementation for NOX::Abstract::MultiVector using an array
+of NOX::Abstract::MultiVector's.
+
+C++ includes: NOX_MultiVector.H ";
+
+%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
+useSeed=false, int seed=1)
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
+NOX::MultiVector &source, const vector< int > &index) ";
+
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
+NOX::MultiVector &source) ";
+
+%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double gamma=0.0)
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
+const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
+double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::Abstract::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
+
+Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
+is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
+transb, double alpha, const NOX::MultiVector &a, const
+NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
+
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
+type=NOX::DeepCopy) const
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
+const
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::MultiVector::subCopy "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const vector<
+int > &index) const
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::MultiVector::subView "Teuchos::RCP<
+NOX::Abstract::MultiVector > NOX::MultiVector::subView(const vector<
+int > &index) const
+
+Creates a new multi-vector with index.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::MultiVector::norm "void
+NOX::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const
+
+Norm. ";
+
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
+&b) const
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::MultiVector::multiply "void
+NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
+NOX::Abstract::MultiVector::DenseMatrix &b) const ";
+
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
+numVecs=1, NOX::CopyType type=NOX::DeepCopy)
+
+Create MultiVector with numVecs columns out of a single
+NOX::Abstract::Vector. ";
+
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
+int numVecs, NOX::CopyType type=NOX::DeepCopy)
+
+Create MultiVector out of array of NOX::Abstract::Vector's. ";
+
+%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const MultiVector &source, NOX::CopyType
+type=NOX::DeepCopy)
+
+Copy constructor. ";
+
+%feature("docstring")  NOX::MultiVector::~MultiVector "NOX::MultiVector::~MultiVector()
+
+Destructor. ";
+
+%feature("docstring")  NOX::MultiVector::length "int
+NOX::MultiVector::length() const
+
+Return the length of multi-vector. ";
+
+%feature("docstring")  NOX::MultiVector::numVectors "int
+NOX::MultiVector::numVectors() const
+
+Return the number of vectors in the multi-vector. ";
+
+%feature("docstring")  NOX::MultiVector::print "void
+NOX::MultiVector::print(std::ostream &stream) const
+
+Print the vector. This is meant for debugging purposes only. ";
+
+
 // File: classNOX_1_1Epetra_1_1MultiVector.xml
 %feature("docstring") NOX::Epetra::MultiVector "
 
@@ -6288,166 +6123,6 @@ Return the number of vectors in the multi-vector. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::print "void
 NOX::Epetra::MultiVector::print(std::ostream &stream) const
-
-Print the vector. This is meant for debugging purposes only. ";
-
-
-// File: classNOX_1_1MultiVector.xml
-%feature("docstring") NOX::MultiVector "
-
-Default implementation for NOX::Abstract::MultiVector using an array
-of NOX::Abstract::MultiVector's.
-
-C++ includes: NOX_MultiVector.H ";
-
-%feature("docstring")  NOX::MultiVector::init "NOX::Abstract::MultiVector & NOX::MultiVector::init(double gamma)
-
-Initialize every element of this multi-vector with gamma. ";
-
-%feature("docstring")  NOX::MultiVector::random "NOX::Abstract::MultiVector & NOX::MultiVector::random(bool
-useSeed=false, int seed=1)
-
-Initialize each element of this multi-vector with a random value. ";
-
-%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)
-
-Copy the vectors in source to a set of vectors in *this. The
-index.size() vectors in source are copied to a subset of vectors in
-*this indicated by the indices given in index. ";
-
-%feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
-NOX::MultiVector &source, const vector< int > &index) ";
-
-%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
-NOX::Abstract::MultiVector &source)
-
-Append the vectors in source to *this. ";
-
-%feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
-NOX::MultiVector &source) ";
-
-%feature("docstring")  NOX::MultiVector::scale "NOX::Abstract::MultiVector & NOX::MultiVector::scale(double gamma)
-
-Scale each element of this multivector by gamma. ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::Abstract::MultiVector &a, double gamma=0.0)
-
-Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
-= *this. ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::MultiVector &a, double gamma=0.0) ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::Abstract::MultiVector &a, double beta, const
-NOX::Abstract::MultiVector &b, double gamma=0.0)
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
-multi-vectors and x = *this. ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(double alpha,
-const NOX::MultiVector &a, double beta, const NOX::MultiVector &b,
-double gamma=0.0) ";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
-transb, double alpha, const NOX::Abstract::MultiVector &a, const
-NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0)
-
-Compute x = (alpha * a * b) + (gamma * x) where a is a multivector, b
-is a dense matrix, x = *this, and op(b) = b if transb =
-Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
-";
-
-%feature("docstring")  NOX::MultiVector::update "NOX::Abstract::MultiVector & NOX::MultiVector::update(Teuchos::ETransp
-transb, double alpha, const NOX::MultiVector &a, const
-NOX::Abstract::MultiVector::DenseMatrix &b, double gamma=0.0) ";
-
-%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::clone(NOX::CopyType
-type=NOX::DeepCopy) const
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\". Note that there is no assumption that a vector
-created by ShapeCopy is initialized to zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::MultiVector::clone "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::clone(int numvecs)
-const
-
-Creates a new multi-vector with numvecs columns. ";
-
-%feature("docstring")  NOX::MultiVector::subCopy "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const vector<
-int > &index) const
-
-Creates a new multi-vector with index.size() columns whose columns are
-copies of the columns of *this given by index. ";
-
-%feature("docstring")  NOX::MultiVector::subView "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::subView(const vector<
-int > &index) const
-
-Creates a new multi-vector with index.size() columns that shares the
-columns of *this given by index. ";
-
-%feature("docstring")  NOX::MultiVector::norm "void
-NOX::MultiVector::norm(vector< double > &result,
-NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
-const
-
-Norm. ";
-
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const
-NOX::Abstract::MultiVector &y, NOX::Abstract::MultiVector::DenseMatrix
-&b) const
-
-Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
-
-%feature("docstring")  NOX::MultiVector::multiply "void
-NOX::MultiVector::multiply(double alpha, const NOX::MultiVector &y,
-NOX::Abstract::MultiVector::DenseMatrix &b) const ";
-
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector &v, int
-numVecs=1, NOX::CopyType type=NOX::DeepCopy)
-
-Create MultiVector with numVecs columns out of a single
-NOX::Abstract::Vector. ";
-
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const NOX::Abstract::Vector *const *vs,
-int numVecs, NOX::CopyType type=NOX::DeepCopy)
-
-Create MultiVector out of array of NOX::Abstract::Vector's. ";
-
-%feature("docstring")  NOX::MultiVector::MultiVector "NOX::MultiVector::MultiVector(const MultiVector &source, NOX::CopyType
-type=NOX::DeepCopy)
-
-Copy constructor. ";
-
-%feature("docstring")  NOX::MultiVector::~MultiVector "NOX::MultiVector::~MultiVector()
-
-Destructor. ";
-
-%feature("docstring")  NOX::MultiVector::length "int
-NOX::MultiVector::length() const
-
-Return the length of multi-vector. ";
-
-%feature("docstring")  NOX::MultiVector::numVectors "int
-NOX::MultiVector::numVectors() const
-
-Return the number of vectors in the multi-vector. ";
-
-%feature("docstring")  NOX::MultiVector::print "void
-NOX::MultiVector::print(std::ostream &stream) const
 
 Print the vector. This is meant for debugging purposes only. ";
 
@@ -9961,12 +9636,6 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: NOX__Epetra__LinearSystem__AztecOO_8H.xml
 
 
-// File: NOX__Epetra__LinearSystem__Stratimikos_8C.xml
-
-
-// File: NOX__Epetra__LinearSystem__Stratimikos_8H.xml
-
-
 // File: NOX__Epetra__MatrixFree_8C.xml
 
 
@@ -10315,13 +9984,13 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: deprecated.xml
 
 
-// File: dir_158cfa3e80dc919e7a7063bb64852968.xml
+// File: dir_a9d3f64d6c63347af9cd4f0fea68f236.xml
 
 
-// File: dir_9eb76648ff6ecbecf5fe772193fafbbe.xml
+// File: dir_99bee0a6f766fd7187291f2180a0a36c.xml
 
 
-// File: dir_379f5aae3a9aaf0e6d83d598647f16ed.xml
+// File: dir_f746085b285a8510bcd8c947f4a4015d.xml
 
 
 // File: indexpage.xml

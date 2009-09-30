@@ -50,6 +50,13 @@ def my_open_write(dest):
     else:
         return open(dest, 'w')
 
+def my_str(source):
+    try:
+        result = str(source)
+    except UnicodeEncodeError, e:
+        result = source.encode("utf-8")
+    return result
+
 
 class Doxy2SWIG:    
     """
@@ -82,7 +89,6 @@ class Doxy2SWIG:
             f = my_open_read(src)
             data = f.read()
             data = data.replace('&module=nox','')
-            print data
             self.xmldoc = minidom.parseString(data).documentElement
         f.close()
 
@@ -398,7 +404,7 @@ class Doxy2SWIG:
         count = 0
         for i in pieces:
             if isinstance(i, unicode):
-                i = str(i)
+                i = my_str(i)
             if i == '\n':
                 count = count + 1
             else:

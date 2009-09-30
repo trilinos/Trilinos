@@ -8,11 +8,11 @@ Trilinos_Util::CommandLineParser: A class for managing the input
 arguments and variables.
 
 Using Trilinos_Util::CommandLineParser, it is easy to handle input
-line arguments and shell varibles. For instance, the user can write $
+line arguments and shell varibles. For instance, the user can write  $
 ./a.out -nx 10 -tol 1e-6 -solver=cg and then easily retrive the value
 of nx, tol, and solver.
 
-A simple code using this class is as follows: int main(int argc, char
+A simple code using this class is as follows:  int main(int argc, char
 *argv[])   { Trilinos_Util::CommandLineParser CLP(argc,argv);    int
 nx = CLP.GetInt(\"-nx\", 123);    int ny = CLP.GetInt(\"-ny\", 145);
 double tol = CLP.GetDouble(\"-tol\", 1e-12);    string solver =
@@ -32,7 +32,7 @@ Options are indentified with one or more dashes (`-'). Each option
 cannot have more than one value.
 
 Note that the user can specify some values without giving them a name.
-This can be done as follows:  $ ./a.out value1 value2 value 3 -nx 10
+This can be done as follows:   $ ./a.out value1 value2 value 3 -nx 10
 -tol 1e-6 -solver=cg Here, valueX, (X=1,...,9) is stored in the
 database entry ARGV_X.
 
@@ -941,8 +941,8 @@ Trilinos_Util_write_vec(const char *filename, int n_equations, double
 *x) ";
 
 
-// File: dir_a26fd566400729558a414fa6e54cace3.xml
+// File: dir_4de98cb5bf201c29c0aca197ca656c1a.xml
 
 
-// File: dir_06d92e7e2071799722463955d21cb037.xml
+// File: dir_d588499717efddb1eb7e0701ba219eb0.xml
 

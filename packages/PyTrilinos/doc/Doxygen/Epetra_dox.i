@@ -4695,11 +4695,6 @@ None.
 
 Unchanged. ";
 
-%feature("docstring")  Epetra_CrsMatrix::Map "const Epetra_BlockMap&
-Epetra_CrsMatrix::Map() const
-
-Map() method inherited from Epetra_DistObject. ";
-
 %feature("docstring")  Epetra_CrsMatrix::RowMatrixRowMap "const
 Epetra_Map& Epetra_CrsMatrix::RowMatrixRowMap() const
 
@@ -18656,11 +18651,6 @@ Epetra_VbrMatrix::MaxNumEntries() const
 
 Returns the maximum of NumMyRowEntries() over all rows. ";
 
-%feature("docstring")  Epetra_VbrMatrix::Map "const Epetra_BlockMap&
-Epetra_VbrMatrix::Map() const
-
-Map() method inherited from Epetra_DistObject. ";
-
 %feature("docstring")  Epetra_VbrMatrix::RowMatrixRowMap "const
 Epetra_Map& Epetra_VbrMatrix::RowMatrixRowMap() const
 
@@ -20669,8 +20659,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_b714173c22fb5d59f3d2b2658c81709a.xml
+// File: dir_18b2d64510239fed06b88e74196cfd3f.xml
 
 
-// File: dir_c8ee08ac0d0cbce349fc0d265ed8ebcc.xml
+// File: dir_4368af47e412e90c65d06ecb9459c00d.xml
 
