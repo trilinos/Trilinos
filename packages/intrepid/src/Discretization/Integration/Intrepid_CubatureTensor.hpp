@@ -46,8 +46,8 @@ namespace Intrepid {
 /** \class Intrepid::CubatureTensor
     \brief Defines tensor-product cubature (integration) rules in Intrepid.
 */
-template<class Scalar, class ArrayType = FieldContainer<Scalar> >
-class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayType> {
+template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   /** \brief Degree of polynomials that are integrated exactly by
@@ -61,7 +61,7 @@ class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayType> {
 
   /** \brief Array of cubature rules, stored as FieldContainers.
   */
-  std::vector< Teuchos::RCP<Cubature<Scalar,ArrayType> > > cubatures_;
+  std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures_;
   
   public:
 
@@ -72,15 +72,15 @@ class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubatures        [in]     - Array of cubatures that represent the building blocks
                                          of the tensor product.
   */
-  CubatureTensor( std::vector< Teuchos::RCP<Cubature<Scalar,ArrayType> > > cubatures);
+  CubatureTensor( std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures);
 
   /** \brief Constructor.
 
       \param cubature1        [in]     - First direct cubature rule.
       \param cubature2        [in]     - Second direct cubature rule.
   */
-  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature1,
-                 Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature2);
+  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
+                 Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2);
 
   /** \brief Constructor.
 
@@ -88,16 +88,16 @@ class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubature2        [in]     - Second direct cubature rule.
       \param cubature3        [in]     - Third direct cubature rule.
   */
-  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature1,
-                 Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature2,
-                 Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature3);
+  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
+                 Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2,
+                 Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature3);
 
   /** \brief Constructor.
 
       \param cubature         [in]     - Direct cubature rule.
       \param n                [in]     - Number of copies of the cubature rule in the tensor product.
   */
-  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature, int n);
+  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature, int n);
 
   /** \brief Returns cubature points and weights
              (return arrays must be pre-sized/pre-allocated).
@@ -105,8 +105,8 @@ class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubPoints       [out]     - Vector containing the cubature points.
       \param cubWeights      [out]     - Vector of corresponding cubature weights.
   */
-  virtual void getCubature(ArrayType & cubPoints,
-                           ArrayType & cubWeights) const;
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights) const;
 
   /** \brief Returns the number of cubature points.
   */

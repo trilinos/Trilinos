@@ -39,8 +39,8 @@ namespace Intrepid {
 **  Function Definitions for Class CubatureGenSparse
 ***************************************************************************/
 
-template <class Scalar, int dimension_, class ArrayType>
-CubatureGenSparse<Scalar,dimension_,ArrayType>::CubatureGenSparse(const int degree) :
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+CubatureGenSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::CubatureGenSparse(const int degree) :
     degree_(degree) {
 
   SGNodes<int, dimension_> list;
@@ -203,30 +203,30 @@ CubatureGenSparse<Scalar,dimension_,ArrayType>::CubatureGenSparse(const int degr
 
 
 
-template <class Scalar, int dimension_, class ArrayType>
-void CubatureGenSparse<Scalar,dimension_,ArrayType>::getCubature(ArrayType & cubPoints,
-                                                                 ArrayType & cubWeights) const{
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+void CubatureGenSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
+                                                                              ArrayWeight & cubWeights) const{
   grid.copyToArrays(cubPoints, cubWeights);
 } // end getCubature
 
 
 
-template<class Scalar, int dimension_, class ArrayType>
-int CubatureGenSparse<Scalar,dimension_,ArrayType>::getNumPoints() const {
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+int CubatureGenSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getNumPoints() const {
   return numPoints_;
 } // end getNumPoints
 
 
 
-template<class Scalar, int dimension_, class ArrayType>
-int CubatureGenSparse<Scalar,dimension_,ArrayType>::getDimension() const {
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+int CubatureGenSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end dimension
 
 
 
-template <class Scalar, int dimension_, class ArrayType>
-void CubatureGenSparse<Scalar,dimension_,ArrayType>::getAccuracy(std::vector<int> & accuracy) const {
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+void CubatureGenSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & accuracy) const {
   accuracy.assign(1, degree_);
 } //end getAccuracy
 

@@ -56,8 +56,8 @@ namespace Intrepid {
            \li Gauss-Radau-Right - right-most integration point is fixed at +1
            \li Gauss-Lobatto     - left-most and right-most integration points are fixed at -1 and +1, respectively
 */
-template<class Scalar, class ArrayType = FieldContainer<Scalar> >
-class CubaturePolylib : public Intrepid::Cubature<Scalar,ArrayType> {
+template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubaturePolylib : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   /** \brief The degree of polynomials that are integrated
@@ -104,8 +104,8 @@ class CubaturePolylib : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubPoints       [out]     - Array containing the cubature points.
       \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
-  void getCubature(ArrayType & cubPoints,
-                   ArrayType & cubWeights) const;
+  void getCubature(ArrayPoint  & cubPoints,
+                   ArrayWeight & cubWeights) const;
 
   /** \brief Returns the number of cubature points.
   */

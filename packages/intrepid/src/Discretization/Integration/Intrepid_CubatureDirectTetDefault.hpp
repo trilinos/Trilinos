@@ -51,8 +51,8 @@ namespace Intrepid {
 /** \class Intrepid::CubatureDirectTetDefault
     \brief Defines direct integration rules on a tetrahedron.
 */
-template<class Scalar, class ArrayType = FieldContainer<Scalar> >
-class CubatureDirectTetDefault : public Intrepid::CubatureDirect<Scalar,ArrayType> {
+template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubatureDirectTetDefault : public Intrepid::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   /** \brief Complete set of data defining default cubature rules on a tetrahedron.
@@ -93,8 +93,8 @@ class CubatureDirectTetDefault : public Intrepid::CubatureDirect<Scalar,ArrayTyp
 
 }; // end class CubatureDirect 
 
-template<class Scalar, class ArrayType>
-inline const CubatureTemplate (& CubatureDirectTetDefault<Scalar,ArrayType>::exposeCubatureDataStatic())[INTREPID_CUBATURE_TET_DEFAULT_MAX+1] {
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+inline const CubatureTemplate (& CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_TET_DEFAULT_MAX+1] {
   return cubature_data_;
 }
 

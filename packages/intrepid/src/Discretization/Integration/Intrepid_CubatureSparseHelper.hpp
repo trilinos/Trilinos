@@ -30,13 +30,13 @@ public:
 **  Class Definition for class SGNodes
 **  function: Helper Class with constrution of Sparse Grid
 ************************************************************************/
-template<class Scalar, int D, class ArrayType=FieldContainer<Scalar> >
+template<class Scalar, int D, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight=ArrayPoint>
 class SGNodes{
 public:
   Teuchos::Array< SGPoint<Scalar, D> > nodes;
   Teuchos::Array< Scalar > weights;
   bool addNode(Scalar new_node[D], Scalar weight);
-  void copyToArrays(ArrayType & cubPoints, ArrayType & cubWeights) const;
+  void copyToArrays(ArrayPoint & cubPoints, ArrayWeight & cubWeights) const;
   //void copyToTeuchos(Teuchos::Array< Scalar* > & cubPoints, Teuchos::Array<Scalar> & cubWeights) const;
   int size() const {return nodes.size();}
 };
@@ -114,8 +114,8 @@ std::ostream & operator<<(std::ostream & o, SGPoint<Scalar, D> & p)
 **  Function Definitions for Class SGNodes
 ***************************************************************************/
 
-template<class Scalar, int D, class ArrayType>
-bool SGNodes<Scalar,D,ArrayType>::addNode(Scalar new_node[D], Scalar weight)
+template<class Scalar, int D, class ArrayPoint, class ArrayWeight>
+bool SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::addNode(Scalar new_node[D], Scalar weight)
 {
   SGPoint<Scalar, D> new_point(new_node);
   bool new_and_added = true;
@@ -181,8 +181,8 @@ bool SGNodes<Scalar,D,ArrayType>::addNode(Scalar new_node[D], Scalar weight)
   return new_and_added;
 }
 
-template<class Scalar, int D, class ArrayType>
-void SGNodes<Scalar,D,ArrayType>::copyToArrays(ArrayType & cubPoints, ArrayType & cubWeights) const
+template<class Scalar, int D, class ArrayPoint, class ArrayWeight>
+void SGNodes<Scalar,D,ArrayPoint,ArrayWeight>::copyToArrays(ArrayPoint & cubPoints, ArrayWeight & cubWeights) const
 {
   int numPoints = size();
 

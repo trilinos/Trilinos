@@ -34,8 +34,8 @@
 
 namespace Intrepid {
 
-template <class Scalar, class ArrayType>
-CubatureDirectLineGauss<Scalar,ArrayType>::CubatureDirectLineGauss(const int degree) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectLineGauss(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 1;
   TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_LINE_GAUSS_MAX),
@@ -45,29 +45,29 @@ CubatureDirectLineGauss<Scalar,ArrayType>::CubatureDirectLineGauss(const int deg
 
 
 
-template <class Scalar, class ArrayType>
-const CubatureTemplate *  CubatureDirectLineGauss<Scalar,ArrayType>::exposeCubatureData() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const CubatureTemplate *  CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureData() const {
   return cubature_data_;
 }
 
 
 
-template <class Scalar, class ArrayType>
-int CubatureDirectLineGauss<Scalar,ArrayType>::getMaxAccuracy() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
   return INTREPID_CUBATURE_LINE_GAUSS_MAX;
 }
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubatureDirectLineGauss<Scalar,ArrayType>::getName() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::getName() const {
   return cubature_name_;
 } // end getName
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubatureDirectLineGauss<Scalar,ArrayType>::cubature_name_ = "INTREPID_CUBATURE_LINE_GAUSS";
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_LINE_GAUSS";
 
 
 //-------------------------------------------------------------------------------------//
@@ -84,8 +84,8 @@ const char* CubatureDirectLineGauss<Scalar,ArrayType>::cubature_name_ = "INTREPI
    This static const member contains templates for Gauss(-Legendre) rules.
 */
 
-template <class Scalar, class ArrayType>
-const CubatureTemplate CubatureDirectLineGauss<Scalar,ArrayType>::cubature_data_[INTREPID_CUBATURE_LINE_GAUSS_MAX+1] =
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const CubatureTemplate CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_LINE_GAUSS_MAX+1] =
 {
 
   // Collection of Gauss rules on [-1,1]

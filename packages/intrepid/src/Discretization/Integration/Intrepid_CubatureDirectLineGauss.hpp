@@ -51,8 +51,8 @@ namespace Intrepid {
 /** \class Intrepid::CubatureDirectLineGauss
     \brief Defines Gauss integration rules on a line.
 */
-template<class Scalar, class ArrayType = FieldContainer<Scalar> >
-class CubatureDirectLineGauss : public Intrepid::CubatureDirect<Scalar,ArrayType> {
+template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubatureDirectLineGauss : public Intrepid::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   /** \brief Complete set of data defining line Gauss(-Legendre) rules.
@@ -93,8 +93,8 @@ class CubatureDirectLineGauss : public Intrepid::CubatureDirect<Scalar,ArrayType
 
 }; // end class CubatureDirect 
 
-template<class Scalar, class ArrayType>
-inline const CubatureTemplate (& CubatureDirectLineGauss<Scalar,ArrayType>::exposeCubatureDataStatic())[INTREPID_CUBATURE_LINE_GAUSS_MAX+1] {
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+inline const CubatureTemplate (& CubatureDirectLineGauss<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_LINE_GAUSS_MAX+1] {
   return cubature_data_;
 }
 

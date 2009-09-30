@@ -34,8 +34,8 @@
 
 namespace Intrepid {
 
-template <class Scalar, class ArrayType>
-CubatureDirectTetDefault<Scalar,ArrayType>::CubatureDirectTetDefault(const int degree) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectTetDefault(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 3;
   TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TET_DEFAULT_MAX),
@@ -45,29 +45,29 @@ CubatureDirectTetDefault<Scalar,ArrayType>::CubatureDirectTetDefault(const int d
 
 
 
-template <class Scalar, class ArrayType>
-const CubatureTemplate *  CubatureDirectTetDefault<Scalar,ArrayType>::exposeCubatureData() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const CubatureTemplate *  CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureData() const {
   return cubature_data_;
 }
 
 
 
-template <class Scalar, class ArrayType>
-int CubatureDirectTetDefault<Scalar,ArrayType>::getMaxAccuracy() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
   return INTREPID_CUBATURE_TET_DEFAULT_MAX;
 }
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubatureDirectTetDefault<Scalar,ArrayType>::getName() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::getName() const {
   return cubature_name_;
 } // end getName
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubatureDirectTetDefault<Scalar,ArrayType>::cubature_name_ = "INTREPID_CUBATURE_TET_DEFAULT";
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_TET_DEFAULT";
 
 
 //-------------------------------------------------------------------------------------//
@@ -84,8 +84,8 @@ const char* CubatureDirectTetDefault<Scalar,ArrayType>::cubature_name_ = "INTREP
    This static const member contains templates for default tetrahedron rules.
 */
 
-template <class Scalar, class ArrayType>
-const CubatureTemplate CubatureDirectTetDefault<Scalar,ArrayType>::cubature_data_[INTREPID_CUBATURE_TET_DEFAULT_MAX+1] =
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const CubatureTemplate CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_TET_DEFAULT_MAX+1] =
 {
   // Cubature templates for the reference tet {(0,0,0), (1,0,0), (0,1,0), (0,0,1)}
   //

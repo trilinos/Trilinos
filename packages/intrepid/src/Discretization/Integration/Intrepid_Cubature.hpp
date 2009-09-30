@@ -52,7 +52,7 @@ namespace Intrepid {
     For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
     templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
 */
-template<class Scalar, class ArrayType = FieldContainer<Scalar> >
+template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
 class Cubature {
   private:
 
@@ -69,8 +69,8 @@ class Cubature {
       \param cubPoints       [out]     - Array containing the cubature points.
       \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
-  virtual void getCubature(ArrayType & cubPoints,
-                           ArrayType & cubWeights) const = 0;
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights) const = 0;
 
 
   /** \brief Returns the number of cubature points.

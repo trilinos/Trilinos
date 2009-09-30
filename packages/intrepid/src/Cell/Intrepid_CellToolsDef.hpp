@@ -465,8 +465,8 @@ namespace Intrepid {
   
   
   template<class Scalar>
-  template<class ArrayOut>
-  void CellTools<Scalar>::getReferenceSubcellVertices(ArrayOut&                   subcellVertices,
+  template<class ArraySubcellVert>
+  void CellTools<Scalar>::getReferenceSubcellVertices(ArraySubcellVert &          subcellVertices,
                                                       const int                   subcellDim,
                                                       const int                   subcellOrd,
                                                       const shards::CellTopology& parentCell){
@@ -754,8 +754,8 @@ namespace Intrepid {
   
   
   template<class Scalar>
-  template<class ArrayOut>
-  void CellTools<Scalar>::getReferenceSubcellNodes(ArrayOut&                   subcellNodes,
+  template<class ArraySubcellNode>
+  void CellTools<Scalar>::getReferenceSubcellNodes(ArraySubcellNode &          subcellNodes,
                                                    const int                   subcellDim,
                                                    const int                   subcellOrd,
                                                    const shards::CellTopology& parentCell){
@@ -860,10 +860,10 @@ namespace Intrepid {
   //============================================================================================//  
   
   template<class Scalar>
-  template<class ArrayScalar>
-  void CellTools<Scalar>::setJacobian(ArrayScalar &                jacobian,
-                                      const ArrayScalar &          points,
-                                      const ArrayScalar &          cellWorkset,
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  void CellTools<Scalar>::setJacobian(ArrayJac &                   jacobian,
+                                      const ArrayPoint &           points,
+                                      const ArrayCell  &           cellWorkset,
                                       const shards::CellTopology & cellTopo,
                                       const int &                  whichCell) 
   {
@@ -1047,9 +1047,9 @@ namespace Intrepid {
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::setJacobianInv(ArrayScalar &        jacobianInv,
-                                       const ArrayScalar &  jacobian) 
+template<class ArrayJacInv, class ArrayJac>
+void CellTools<Scalar>::setJacobianInv(ArrayJacInv &     jacobianInv,
+                                       const ArrayJac &  jacobian) 
 {
   INTREPID_VALIDATE( validateArguments_setJacobianInv(jacobianInv, jacobian) );
 
@@ -1059,9 +1059,9 @@ void CellTools<Scalar>::setJacobianInv(ArrayScalar &        jacobianInv,
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::setJacobianDet(ArrayScalar &         jacobianDet,
-                                        const ArrayScalar &  jacobian)
+template<class ArrayJacDet, class ArrayJac>
+void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
+                                       const ArrayJac &  jacobian)
 {
   INTREPID_VALIDATE( validateArguments_setJacobianDetArgs(jacobianDet, jacobian) );
 
@@ -1075,12 +1075,12 @@ void CellTools<Scalar>::setJacobianDet(ArrayScalar &         jacobianDet,
 //============================================================================================//
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoints,
-                                          const ArrayScalar &          refPoints,
-                                          const ArrayScalar &          cellWorkset,
-                                          const shards::CellTopology & cellTopo,
-                                          const int &                  whichCell)
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::mapToPhysicalFrame(ArrayPhysPoint      &        physPoints,
+                                           const ArrayRefPoint &        refPoints,
+                                           const ArrayCell     &        cellWorkset,
+                                           const shards::CellTopology & cellTopo,
+                                           const int &                  whichCell)
 {
   INTREPID_VALIDATE(validateArguments_mapToPhysicalFrame( physPoints, refPoints, cellWorkset, cellTopo, whichCell) );
   
@@ -1256,10 +1256,10 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &               physPoint
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                 refPoints,
-                                            const ArrayScalar &           physPoints,
-                                            const ArrayScalar &           cellWorkset,
+template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoints,
+                                            const ArrayPhysPoint &        physPoints,
+                                            const ArrayCell      &        cellWorkset,
                                             const shards::CellTopology &  cellTopo,
                                             const int &                   whichCell)
 {
@@ -1353,19 +1353,19 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayScalar &                 refPoi
   }
   
   // Call method with initial guess
-  mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell);  
+  mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell);  
 }
   
   
 
 template<class Scalar>
-template<class ArrayType1, class ArrayType2>
-void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoints,
-                                            const ArrayType2 &            initGuess,
-                                            const ArrayType1 &            physPoints,
-                                            const ArrayType1 &            cellWorkset,
-                                            const shards::CellTopology &  cellTopo,
-                                            const int &                   whichCell)
+template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
+                                                     const ArrayInitGuess &        initGuess,
+                                                     const ArrayPhysPoint &        physPoints,
+                                                     const ArrayCell      &        cellWorkset,
+                                                     const shards::CellTopology &  cellTopo,
+                                                     const int &                   whichCell)
 {
   INTREPID_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
 
@@ -1453,7 +1453,7 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoi
       break;
     } 
     else if ( iter > INTREPID_MAX_NEWTON) {
-      INTREPID_VALIDATE(std::cout << " Intrepid::CellTools::mapToReferenceFrame failed to converge to desired tolerance within " 
+      INTREPID_VALIDATE(std::cout << " Intrepid::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
                       << INTREPID_MAX_NEWTON  << " iterations\n" );
       break;
     }
@@ -1466,9 +1466,9 @@ void CellTools<Scalar>::mapToReferenceFrame(ArrayType1 &                  refPoi
 
 
 template<class Scalar>
-template<class ArrayTypeOut, class ArrayTypeIn>
-void CellTools<Scalar>::mapToReferenceSubcell(ArrayTypeOut &                refSubcellPoints,
-                                              const ArrayTypeIn &           paramPoints,
+template<class ArraySubcellPoint, class ArrayParamPoint>
+void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refSubcellPoints,
+                                              const ArrayParamPoint &       paramPoints,
                                               const int                     subcellDim,
                                               const int                     subcellOrd,
                                               const shards::CellTopology &  parentCell){
@@ -1533,8 +1533,8 @@ void CellTools<Scalar>::mapToReferenceSubcell(ArrayTypeOut &                refS
 
 
 template<class Scalar>
-template<class ArrayTypeOut>
-void CellTools<Scalar>::getReferenceEdgeTangent(ArrayTypeOut &                refEdgeTangent,
+template<class ArrayEdgeTangent>
+void CellTools<Scalar>::getReferenceEdgeTangent(ArrayEdgeTangent &            refEdgeTangent,
                                                 const int &                   edgeOrd,
                                                 const shards::CellTopology &  parentCell){
   
@@ -1570,9 +1570,9 @@ void CellTools<Scalar>::getReferenceEdgeTangent(ArrayTypeOut &                re
 
 
 template<class Scalar>
-template<class ArrayTypeOut>
-void CellTools<Scalar>::getReferenceFaceTangents(ArrayTypeOut &                uTan,
-                                                 ArrayTypeOut &                vTan,
+template<class ArrayFaceTangentU, class ArrayFaceTangentV>
+void CellTools<Scalar>::getReferenceFaceTangents(ArrayFaceTangentU &           uTan,
+                                                 ArrayFaceTangentV &           vTan,
                                                  const int &                   faceOrd,
                                                  const shards::CellTopology &  parentCell){
   
@@ -1615,8 +1615,8 @@ void CellTools<Scalar>::getReferenceFaceTangents(ArrayTypeOut &                u
 
 
 template<class Scalar>
-template<class ArrayTypeOut>
-void CellTools<Scalar>::getReferenceSideNormal(ArrayTypeOut &                refSideNormal,
+template<class ArraySideNormal>
+void CellTools<Scalar>::getReferenceSideNormal(ArraySideNormal &             refSideNormal,
                                                const int &                   sideOrd,
                                                const shards::CellTopology &  parentCell){
   int spaceDim  = parentCell.getDimension();
@@ -1649,8 +1649,8 @@ void CellTools<Scalar>::getReferenceSideNormal(ArrayTypeOut &                ref
 
 
 template<class Scalar>
-template<class ArrayTypeOut>
-void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                refFaceNormal,
+template<class ArrayFaceNormal>
+void CellTools<Scalar>::getReferenceFaceNormal(ArrayFaceNormal &             refFaceNormal,
                                                const int &                   faceOrd,
                                                const shards::CellTopology &  parentCell){
   int spaceDim  = parentCell.getDimension();
@@ -1682,9 +1682,9 @@ void CellTools<Scalar>::getReferenceFaceNormal(ArrayTypeOut &                ref
 
 
 template<class Scalar>
-template<class ArrayTypeOut, class ArrayTypeIn>
-void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayTypeOut &                edgeTangents,
-                                                const ArrayTypeIn &           worksetJacobians,
+template<class ArrayEdgeTangent, class ArrayJac>
+void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayEdgeTangent &            edgeTangents,
+                                                const ArrayJac &              worksetJacobians,
                                                 const int &                   worksetEdgeOrd,
                                                 const shards::CellTopology &  parentCell){
   int worksetSize = worksetJacobians.dimension(0);
@@ -1733,10 +1733,10 @@ void CellTools<Scalar>::getPhysicalEdgeTangents(ArrayTypeOut &                ed
 
 
 template<class Scalar>
-template<class ArrayTypeOut, class ArrayTypeIn>
-void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                faceTanU,
-                                                ArrayTypeOut &                faceTanV,
-                                                const ArrayTypeIn &           worksetJacobians,
+template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
+void CellTools<Scalar>::getPhysicalFaceTangents(ArrayFaceTangentU &           faceTanU,
+                                                ArrayFaceTangentV &           faceTanV,
+                                                const ArrayJac &              worksetJacobians,
                                                 const int &                   worksetFaceOrd,
                                                 const shards::CellTopology &  parentCell){
   int worksetSize = worksetJacobians.dimension(0);
@@ -1798,9 +1798,9 @@ void CellTools<Scalar>::getPhysicalFaceTangents(ArrayTypeOut &                fa
 
 
 template<class Scalar>
-template<class ArrayTypeOut, class ArrayTypeIn>
-void CellTools<Scalar>::getPhysicalSideNormals(ArrayTypeOut &                sideNormals,
-                                               const ArrayTypeIn &           worksetJacobians,
+template<class ArraySideNormal, class ArrayJac>
+void CellTools<Scalar>::getPhysicalSideNormals(ArraySideNormal &             sideNormals,
+                                               const ArrayJac &              worksetJacobians,
                                                const int &                   worksetSideOrd,
                                                const shards::CellTopology &  parentCell){
   int worksetSize = worksetJacobians.dimension(0);
@@ -1839,9 +1839,9 @@ void CellTools<Scalar>::getPhysicalSideNormals(ArrayTypeOut &                sid
   
   
 template<class Scalar>
-template<class ArrayTypeOut, class ArrayTypeIn>
-void CellTools<Scalar>::getPhysicalFaceNormals(ArrayTypeOut &                faceNormals,
-                                               const ArrayTypeIn &           worksetJacobians,
+template<class ArrayFaceNormal, class ArrayJac>
+void CellTools<Scalar>::getPhysicalFaceNormals(ArrayFaceNormal &             faceNormals,
+                                               const ArrayJac &              worksetJacobians,
                                                const int &                   worksetFaceOrd,
                                                const shards::CellTopology &  parentCell){
   int worksetSize = worksetJacobians.dimension(0);
@@ -2017,8 +2017,8 @@ int CellTools<Scalar>::checkPointsetInclusion(const ArrayPoint&             poin
 
 
 template<class Scalar>
-template<class ArrayInt, class ArrayPoint>
-void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    inRefCell,
+template<class ArrayIncl, class ArrayPoint>
+void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   inRefCell,
                                                 const ArrayPoint &            points,
                                                 const shards::CellTopology &  cellTopo, 
                                                 const double &                threshold) {
@@ -2115,10 +2115,10 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    in
 
 
 template<class Scalar>
-template<class ArrayInt, class ArrayPoint, class ArrayScalar>
-void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    inCell,
+template<class ArrayIncl, class ArrayPoint, class ArrayCell>
+void CellTools<Scalar>::checkPointwiseInclusion(ArrayIncl &                   inCell,
                                                 const ArrayPoint &            points,
-                                                const ArrayScalar &           cellWorkset,
+                                                const ArrayCell &             cellWorkset,
                                                 const shards::CellTopology &  cell,
                                                 const int &                   whichCell, 
                                                 const double &                threshold)
@@ -2168,10 +2168,10 @@ void CellTools<Scalar>::checkPointwiseInclusion(ArrayInt &                    in
 //============================================================================================//
 
 template<class Scalar>
-template<class ArrayScalar> 
-void CellTools<Scalar>::validateArguments_setJacobian(const ArrayScalar &          jacobian,
-                                                      const ArrayScalar &          points,
-                                                      const ArrayScalar &          cellWorkset,
+template<class ArrayJac, class ArrayPoint, class ArrayCell>
+void CellTools<Scalar>::validateArguments_setJacobian(const ArrayJac    &          jacobian,
+                                                      const ArrayPoint  &          points,
+                                                      const ArrayCell   &          cellWorkset,
                                                       const int &                  whichCell,
                                                       const shards::CellTopology & cellTopo){
   
@@ -2189,7 +2189,7 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayScalar &       
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
     
   // validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_setJacobian): whichCell = -1 or a valid cell ordinal is required.");
   
   
@@ -2282,9 +2282,9 @@ void CellTools<Scalar>::validateArguments_setJacobian(const ArrayScalar &       
 
 
 template<class Scalar>
-template<class ArrayScalar> 
-void CellTools<Scalar>::validateArguments_setJacobianInv(const ArrayScalar &  jacobianInv,
-                                                         const ArrayScalar &   jacobian)
+template<class ArrayJacInv, class ArrayJac>
+void CellTools<Scalar>::validateArguments_setJacobianInv(const ArrayJacInv & jacobianInv,
+                                                         const ArrayJac &    jacobian)
 {
   // Validate input jacobian array: admissible ranks & dimensions are: 
   // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
@@ -2310,9 +2310,9 @@ void CellTools<Scalar>::validateArguments_setJacobianInv(const ArrayScalar &  ja
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::validateArguments_setJacobianDetArgs(const ArrayScalar &  jacobianDet,
-                                                             const ArrayScalar &  jacobian)
+template<class ArrayJacDet, class ArrayJac>
+void CellTools<Scalar>::validateArguments_setJacobianDetArgs(const ArrayJacDet &  jacobianDet,
+                                                             const ArrayJac    &  jacobian)
 {
   // Validate input jacobian array: admissible ranks & dimensions are: 
   // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
@@ -2353,10 +2353,10 @@ void CellTools<Scalar>::validateArguments_setJacobianDetArgs(const ArrayScalar &
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayScalar &           physPoints,
-                                                             const ArrayScalar &           refPoints,
-                                                             const ArrayScalar &           cellWorkset,
+template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayPhysPoint &        physPoints,
+                                                             const ArrayRefPoint  &        refPoints,
+                                                             const ArrayCell      &        cellWorkset,
                                                              const shards::CellTopology &  cellTopo,
                                                              const int&                    whichCell)
 {
@@ -2377,7 +2377,7 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayScalar &
   
     
   // validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToPhysicalFrame): whichCell = -1 or a valid cell ordinal is required.");
   
   // Validate refPoints array: can be rank-2 (P,D) or rank-3 (C,P,D) array
@@ -2446,10 +2446,10 @@ void CellTools<Scalar>::validateArguments_mapToPhysicalFrame(const ArrayScalar &
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayScalar &           refPoints,
-                                                              const ArrayScalar &           physPoints,
-                                                              const ArrayScalar &           cellWorkset,
+template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
+                                                              const ArrayPhysPoint &        physPoints,
+                                                              const ArrayCell      &        cellWorkset,
                                                               const shards::CellTopology &  cellTopo,
                                                               const int&                    whichCell)
 {
@@ -2470,7 +2470,7 @@ void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayScalar 
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): dim 2 (spatial dimension) of cellWorkset array  does not match cell dimension");
     
   // Validate whichCell. It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_mapToReferenceFrame): whichCell = -1 or a valid cell ordinal is required.");
   
   // Admissible ranks and dimensions of refPoints and physPoints depend on whichCell value:
@@ -2493,11 +2493,11 @@ void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayScalar 
 
 
 template<class Scalar>
-template<class ArrayType1, class ArrayType2>
-void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayType1 &            refPoints,
-                                                              const ArrayType2 &            initGuess,
-                                                              const ArrayType1 &            physPoints,
-                                                              const ArrayType1 &            cellWorkset,
+template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
+                                                              const ArrayInitGuess &        initGuess,
+                                                              const ArrayPhysPoint &        physPoints,
+                                                              const ArrayCell      &        cellWorkset,
                                                               const shards::CellTopology &  cellTopo,
                                                               const int&                    whichCell)
 {
@@ -2511,10 +2511,10 @@ void CellTools<Scalar>::validateArguments_mapToReferenceFrame(const ArrayType1 &
 
 
 template<class Scalar>
-template<class ArrayInt, class ArrayPoint, class ArrayScalar>
-void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayInt &                    inCell,
+template<class ArrayIncl, class ArrayPoint, class ArrayCell>
+void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayIncl &                   inCell,
                                                                   const ArrayPoint &            physPoints,
-                                                                  const ArrayScalar &           cellWorkset,
+                                                                  const ArrayCell &             cellWorkset,
                                                                   const int &                   whichCell,
                                                                   const shards::CellTopology &  cell)
 {
@@ -2533,7 +2533,7 @@ void CellTools<Scalar>::validateArguments_checkPointwiseInclusion(ArrayInt &    
   
   
   // Validate whichCell It can be either -1 (default value) or a valid cell ordinal.
-  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) || (whichCell == -1) ) ), std::invalid_argument,
+  TEST_FOR_EXCEPTION( !( ( (0 <= whichCell ) && (whichCell < cellWorkset.dimension(0) ) ) || (whichCell == -1) ), std::invalid_argument,
                       ">>> ERROR (Intrepid::CellTools::validateArguments_checkPointwiseInclusion): whichCell = -1 or a valid cell ordinal is required.");
   
   
@@ -2637,9 +2637,9 @@ void CellTools<Scalar>::printSubcellVertices(const int subcellDim,
   
 
 template<class Scalar>
-template<class ArrayTypeIn>
-void CellTools<Scalar>::printWorksetSubcell(const ArrayTypeIn&            cellWorkset,
-                                            const shards::CellTopology&   parentCell,
+template<class ArrayCell>
+void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWorkset,
+                                            const shards::CellTopology &  parentCell,
                                             const int&                    pCellOrd,
                                             const int&                    subcellDim,
                                             const int&                    subcellOrd,

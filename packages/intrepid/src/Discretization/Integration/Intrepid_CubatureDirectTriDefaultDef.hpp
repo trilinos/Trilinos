@@ -34,8 +34,8 @@
 
 namespace Intrepid {
 
-template <class Scalar, class ArrayType>
-CubatureDirectTriDefault<Scalar,ArrayType>::CubatureDirectTriDefault(const int degree) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectTriDefault(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 2;
   TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX),
@@ -45,29 +45,29 @@ CubatureDirectTriDefault<Scalar,ArrayType>::CubatureDirectTriDefault(const int d
 
 
 
-template <class Scalar, class ArrayType>
-const CubatureTemplate *  CubatureDirectTriDefault<Scalar,ArrayType>::exposeCubatureData() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const CubatureTemplate *  CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureData() const {
   return cubature_data_;
 }
 
 
 
-template <class Scalar, class ArrayType>
-int CubatureDirectTriDefault<Scalar,ArrayType>::getMaxAccuracy() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
   return INTREPID_CUBATURE_TRI_DEFAULT_MAX;
 }
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubatureDirectTriDefault<Scalar,ArrayType>::getName() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::getName() const {
   return cubature_name_;
 } // end getName
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubatureDirectTriDefault<Scalar,ArrayType>::cubature_name_ = "INTREPID_CUBATURE_TRI_DEFAULT";
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_TRI_DEFAULT";
 
 
 //-------------------------------------------------------------------------------------//
@@ -84,8 +84,8 @@ const char* CubatureDirectTriDefault<Scalar,ArrayType>::cubature_name_ = "INTREP
    This static const member contains templates for default triangle rules.
 */
 
-template <class Scalar, class ArrayType>
-const CubatureTemplate CubatureDirectTriDefault<Scalar,ArrayType>::cubature_data_[INTREPID_CUBATURE_TRI_DEFAULT_MAX+1] =
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const CubatureTemplate CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_TRI_DEFAULT_MAX+1] =
 {
   // Cubature templates for the reference triangle {(0,0), (1,0), (0,1)}
   //

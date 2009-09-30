@@ -58,8 +58,8 @@ namespace Intrepid {
     All templates are defined on a reference cell and can be mapped to physical space
     cells by the methods available in the MultiCell class.
 */
-template<class Scalar, class ArrayType = FieldContainer<Scalar> >
-class CubatureDirect : public Intrepid::Cubature<Scalar,ArrayType> {
+template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubatureDirect : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   protected:
@@ -87,8 +87,8 @@ class CubatureDirect : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubWeights      [out]     - Array of corresponding cubature weights.
       \param cubData         [in]      - Pointer to raw cubature data.
   */
-  virtual void getCubatureData(ArrayType &              cubPoints,
-                               ArrayType &              cubWeights,
+  virtual void getCubatureData(ArrayPoint  &              cubPoints,
+                               ArrayWeight &              cubWeights,
                                const CubatureTemplate * cubData) const;
 
   /** \brief Returns cubature points and weights
@@ -97,8 +97,8 @@ class CubatureDirect : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubPoints       [out]     - Array containing the cubature points.
       \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
-  virtual void getCubature(ArrayType & cubPoints,
-                           ArrayType & cubWeights) const;
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights) const;
 
   /** \brief Returns the number of cubature points.
   */

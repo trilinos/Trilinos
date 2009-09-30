@@ -56,8 +56,8 @@ void RealSpaceTools<Scalar>::absval(Scalar* inoutAbsArray, const int size) {
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::absval(ArrayScalar & absArray, const ArrayScalar & inArray) {
+template<class ArrayAbs, class ArrayIn>
+void RealSpaceTools<Scalar>::absval(ArrayAbs & absArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( inArray.rank() != absArray.rank() ),
                         std::invalid_argument,
@@ -77,8 +77,8 @@ void RealSpaceTools<Scalar>::absval(ArrayScalar & absArray, const ArrayScalar & 
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::absval(ArrayScalar & inoutAbsArray) {
+template<class ArrayInOut>
+void RealSpaceTools<Scalar>::absval(ArrayInOut & inoutAbsArray) {
   for (int i=0; i<inoutAbsArray.size(); i++) {
     inoutAbsArray[i] = std::abs(inoutAbsArray[i]);
   }
@@ -119,8 +119,8 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const Scalar* inVec, const int dim, co
 
 
 template<class Scalar>
-template<class VecArray>
-Scalar RealSpaceTools<Scalar>::vectorNorm(const VecArray & inVec, const ENorm normType) {
+template<class ArrayIn>
+Scalar RealSpaceTools<Scalar>::vectorNorm(const ArrayIn & inVec, const ENorm normType) {
 
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( inVec.rank() != 1 ),
@@ -161,8 +161,8 @@ Scalar RealSpaceTools<Scalar>::vectorNorm(const VecArray & inVec, const ENorm no
 
 
 template<class Scalar>
-template<class NormArray, class VecArray>
-void RealSpaceTools<Scalar>::vectorNorm(NormArray & normArray, const VecArray & inVecs, const ENorm normType) {
+template<class ArrayNorm, class ArrayIn>
+void RealSpaceTools<Scalar>::vectorNorm(ArrayNorm & normArray, const ArrayIn & inVecs, const ENorm normType) {
 
   int arrayRank = inVecs.rank();
 
@@ -275,8 +275,8 @@ void RealSpaceTools<Scalar>::transpose(Scalar* transposeMat, const Scalar* inMat
 
 
 template<class Scalar>
-template<class MatArray>
-void RealSpaceTools<Scalar>::transpose(MatArray & transposeMats, const MatArray & inMats) {
+template<class ArrayTranspose, class ArrayIn>
+void RealSpaceTools<Scalar>::transpose(ArrayTranspose & transposeMats, const ArrayIn & inMats) {
   int arrayRank = inMats.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
@@ -440,8 +440,8 @@ void RealSpaceTools<Scalar>::inverse(Scalar* inverseMat, const Scalar* inMat, co
 
 
 template<class Scalar>
-template<class MatArray>
-void RealSpaceTools<Scalar>::inverse(MatArray & inverseMats, const MatArray & inMats) {
+template<class ArrayInverse, class ArrayIn>
+void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn & inMats) {
 
   int arrayRank = inMats.rank();
 
@@ -677,8 +677,8 @@ Scalar RealSpaceTools<Scalar>::det(const Scalar* inMat, const int dim) {
 
 
 template<class Scalar>
-template<class ArrayScalar>
-Scalar RealSpaceTools<Scalar>::det(const ArrayScalar & inMat) {
+template<class ArrayIn>
+Scalar RealSpaceTools<Scalar>::det(const ArrayIn & inMat) {
 
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( (inMat.rank() != 2),
@@ -760,8 +760,8 @@ Scalar RealSpaceTools<Scalar>::det(const ArrayScalar & inMat) {
 
 
 template<class Scalar>
-template<class DetArray, class MatArray>
-void RealSpaceTools<Scalar>::det(DetArray & detArray, const MatArray & inMats) {
+template<class ArrayDet, class ArrayIn>
+void RealSpaceTools<Scalar>::det(ArrayDet & detArray, const ArrayIn & inMats) {
 
   int matArrayRank = inMats.rank();
 
@@ -908,8 +908,8 @@ void RealSpaceTools<Scalar>::add(Scalar* inoutSumArray, const Scalar* inArray, c
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::add(ArrayScalar & sumArray, const ArrayScalar & inArray1, const ArrayScalar & inArray2) {
+template<class ArraySum, class ArrayIn1, class ArrayIn2>
+void RealSpaceTools<Scalar>::add(ArraySum & sumArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != sumArray.rank()) ),
                         std::invalid_argument,
@@ -929,8 +929,8 @@ void RealSpaceTools<Scalar>::add(ArrayScalar & sumArray, const ArrayScalar & inA
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::add(ArrayScalar & inoutSumArray, const ArrayScalar & inArray) {
+template<class ArraySum, class ArrayIn>
+void RealSpaceTools<Scalar>::add(ArraySum & inoutSumArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( inArray.rank() != inoutSumArray.rank() ),
                         std::invalid_argument,
@@ -968,8 +968,8 @@ void RealSpaceTools<Scalar>::subtract(Scalar* inoutDiffArray, const Scalar* inAr
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::subtract(ArrayScalar & diffArray, const ArrayScalar & inArray1, const ArrayScalar & inArray2) {
+template<class ArrayDiff, class ArrayIn1, class ArrayIn2>
+void RealSpaceTools<Scalar>::subtract(ArrayDiff & diffArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( (inArray1.rank() != inArray2.rank()) || (inArray1.rank() != diffArray.rank()) ),
                         std::invalid_argument,
@@ -989,8 +989,8 @@ void RealSpaceTools<Scalar>::subtract(ArrayScalar & diffArray, const ArrayScalar
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::subtract(ArrayScalar & inoutDiffArray, const ArrayScalar & inArray) {
+template<class ArrayDiff, class ArrayIn>
+void RealSpaceTools<Scalar>::subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( inArray.rank() != inoutDiffArray.rank() ),
                         std::invalid_argument,
@@ -1029,8 +1029,8 @@ void RealSpaceTools<Scalar>::scale(Scalar* inoutScaledArray, const int size, con
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::scale(ArrayScalar & scaledArray, const ArrayScalar & inArray, const Scalar scalar) {
+template<class ArrayScaled, class ArrayIn>
+void RealSpaceTools<Scalar>::scale(ArrayScaled & scaledArray, const ArrayIn & inArray, const Scalar scalar) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( inArray.rank() != scaledArray.rank() ),
                         std::invalid_argument,
@@ -1050,8 +1050,8 @@ void RealSpaceTools<Scalar>::scale(ArrayScalar & scaledArray, const ArrayScalar 
 
 
 template<class Scalar>
-template<class ArrayScalar>
-void RealSpaceTools<Scalar>::scale(ArrayScalar & inoutScaledArray, const Scalar scalar) {
+template<class ArrayScaled>
+void RealSpaceTools<Scalar>::scale(ArrayScaled & inoutScaledArray, const Scalar scalar) {
   for (int i=0; i<inoutScaledArray.size(); i++) {
     inoutScaledArray[i] *= scalar;
   }
@@ -1072,8 +1072,8 @@ Scalar RealSpaceTools<Scalar>::dot(const Scalar* inArray1, const Scalar* inArray
 
 
 template<class Scalar>
-template<class VecArray>
-Scalar RealSpaceTools<Scalar>::dot(const VecArray & inVec1, const VecArray & inVec2) {
+template<class ArrayVec1, class ArrayVec2>
+Scalar RealSpaceTools<Scalar>::dot(const ArrayVec1 & inVec1, const ArrayVec2 & inVec2) {
 #ifdef HAVE_INTREPID_DEBUG
     TEST_FOR_EXCEPTION( ( (inVec1.rank() != 1) || (inVec2.rank() != 1) ),
                         std::invalid_argument,
@@ -1094,8 +1094,8 @@ Scalar RealSpaceTools<Scalar>::dot(const VecArray & inVec1, const VecArray & inV
 
 
 template<class Scalar>
-template<class DotArray, class VecArray>
-void RealSpaceTools<Scalar>::dot(DotArray & dotArray, const VecArray & inVecs1, const VecArray & inVecs2) {
+template<class ArrayDot, class ArrayVec1, class ArrayVec2>
+void RealSpaceTools<Scalar>::dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1, const ArrayVec2 & inVecs2) {
 
   int arrayRank = inVecs1.rank();
 
@@ -1168,8 +1168,8 @@ void RealSpaceTools<Scalar>::matvec(Scalar* matVec, const Scalar* inMat, const S
 
 
 template<class Scalar>
-template<class MatArray, class VecArray>
-void RealSpaceTools<Scalar>::matvec(VecArray & matVecs, const MatArray & inMats, const VecArray & inVecs) {
+template<class ArrayMatVec, class ArrayMat, class ArrayVec>
+void RealSpaceTools<Scalar>::matvec(ArrayMatVec & matVecs, const ArrayMat & inMats, const ArrayVec & inVecs) {
   int matArrayRank = inMats.rank();
 
 #ifdef HAVE_INTREPID_DEBUG
@@ -1234,10 +1234,8 @@ void RealSpaceTools<Scalar>::matvec(VecArray & matVecs, const MatArray & inMats,
 
 
 template<class Scalar>
-template<class VecArrayOut, class VecArrayIn>
-void RealSpaceTools<Scalar>::vecprod(VecArrayOut &       vecProd, 
-                                     const VecArrayIn &  inLeft, 
-                                     const VecArrayIn &  inRight){
+template<class ArrayVecProd, class ArrayIn1, class ArrayIn2>
+void RealSpaceTools<Scalar>::vecprod(ArrayVecProd & vecProd, const ArrayIn1 & inLeft, const ArrayIn2 & inRight) {
   
 #ifdef HAVE_INTREPID_DEBUG
   /*
@@ -1319,7 +1317,5 @@ void RealSpaceTools<Scalar>::vecprod(VecArrayOut &       vecProd,
   }
   
 }
-
-
 
 } // namespace Intrepid

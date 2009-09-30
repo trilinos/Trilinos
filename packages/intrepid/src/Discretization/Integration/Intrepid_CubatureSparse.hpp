@@ -57,8 +57,8 @@
 
 namespace Intrepid{
 
-template<class Scalar, int dimension_, class ArrayType = FieldContainer<Scalar> >
-class CubatureSparse : public Intrepid::Cubature<Scalar,ArrayType> {
+template<class Scalar, int dimension_, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubatureSparse : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   int level_;
@@ -81,8 +81,8 @@ class CubatureSparse : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubPoints       [out]     - Array containing the cubature points.
       \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
-  virtual void getCubature(ArrayType & cubPoints,
-                           ArrayType & cubWeights) const;
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights) const;
 
   /** \brief Returns the number of cubature points.
   */
@@ -134,12 +134,12 @@ inline double combination(int top, int bot)
 }
 
 inline int iterateThroughDimensionsForNumCalc(int dims_left,
-                                       int level,
-                                       int levels_left,
-                                       int level_so_far,
-                                       Teuchos::Array<int> & nodes,
-                                       int product,
-                                       bool no_uni_quad)
+                                              int level,
+                                              int levels_left,
+                                              int level_so_far,
+                                              Teuchos::Array<int> & nodes,
+                                              int product,
+                                              bool no_uni_quad)
 {
   int numNodes = 0;
   for(int j = 1; j <= levels_left; j++)

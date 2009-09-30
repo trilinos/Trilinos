@@ -163,10 +163,10 @@ private:
       \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
   */
-  template<class ArrayScalar>
-  static void validateArguments_setJacobian(const ArrayScalar &          jacobian,
-                                            const ArrayScalar &          points,
-                                            const ArrayScalar &          cellWorkset,
+  template<class ArrayJac, class ArrayPoint, class ArrayCell>
+  static void validateArguments_setJacobian(const ArrayJac    &          jacobian,
+                                            const ArrayPoint  &          points,
+                                            const ArrayCell   &          cellWorkset,
                                             const int &                  whichCell,
                                             const shards::CellTopology & cellTopo);
   
@@ -176,9 +176,9 @@ private:
       \param  jacobianInv       [in]  - rank and dimensions must match jacobian array
       \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
   */
-  template<class ArrayScalar>
-  static void validateArguments_setJacobianInv(const ArrayScalar &  jacobianInv,
-                                               const ArrayScalar &  jacobian);
+  template<class ArrayJacInv, class ArrayJac>
+  static void validateArguments_setJacobianInv(const ArrayJacInv &  jacobianInv,
+                                               const ArrayJac    &  jacobian);
   
   
   
@@ -186,9 +186,9 @@ private:
       \param  jacobianDet       [in]  - rank = (jacobian rank - 2) required
       \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
     */
-  template<class ArrayScalar>
-  static void validateArguments_setJacobianDetArgs(const ArrayScalar &  jacobianDet,
-                                                   const ArrayScalar &  jacobian);
+  template<class ArrayJacDet, class ArrayJac>
+  static void validateArguments_setJacobianDetArgs(const ArrayJacDet &  jacobianDet,
+                                                   const ArrayJac    &  jacobian);
   
   
   
@@ -199,10 +199,10 @@ private:
       \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
-  template<class ArrayScalar>
-  static void validateArguments_mapToPhysicalFrame(const ArrayScalar &           physPoints,
-                                                   const ArrayScalar &           refPoints,
-                                                   const ArrayScalar &           cellWorkset,
+  template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+  static void validateArguments_mapToPhysicalFrame(const ArrayPhysPoint &        physPoints,
+                                                   const ArrayRefPoint  &        refPoints,
+                                                   const ArrayCell      &        cellWorkset,
                                                    const shards::CellTopology &  cellTopo,
                                                    const int&                    whichCell);
   
@@ -215,10 +215,10 @@ private:
       \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
-  template<class ArrayScalar>
-  static void validateArguments_mapToReferenceFrame(const ArrayScalar &           refPoints,
-                                                    const ArrayScalar &           physPoints,
-                                                    const ArrayScalar &           cellWorkset,
+  template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
+  static void validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
+                                                    const ArrayPhysPoint &        physPoints,
+                                                    const ArrayCell      &        cellWorkset,
                                                     const shards::CellTopology &  cellTopo,
                                                     const int&                    whichCell);
 
@@ -232,11 +232,11 @@ private:
       \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
-  template<class ArrayType1, class ArrayType2>
-  static void validateArguments_mapToReferenceFrame(const ArrayType1 &            refPoints,
-                                                    const ArrayType2 &            initGuess,
-                                                    const ArrayType1 &            physPoints,
-                                                    const ArrayType1 &            cellWorkset,
+  template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+  static void validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
+                                                    const ArrayInitGuess &        initGuess,
+                                                    const ArrayPhysPoint &        physPoints,
+                                                    const ArrayCell      &        cellWorkset,
                                                     const shards::CellTopology &  cellTopo,
                                                     const int&                    whichCell);
   
@@ -249,10 +249,10 @@ private:
       \param  whichCell         [in]  - 0 <= whichCell < C required
       \param  cellTopo          [in]  - cell topology with a reference cell required
     */
-  template<class ArrayInt, class ArrayPoint, class ArrayScalar>
-  static void validateArguments_checkPointwiseInclusion(ArrayInt &                    inCell,
+  template<class ArrayIncl, class ArrayPoint, class ArrayCell>
+  static void validateArguments_checkPointwiseInclusion(ArrayIncl        &            inCell,
                                                         const ArrayPoint &            physPoints,
-                                                        const ArrayScalar &           cellWorkset,
+                                                        const ArrayCell  &            cellWorkset,
                                                         const int &                   whichCell,
                                                         const shards::CellTopology &  cell);
 public:
@@ -319,10 +319,10 @@ public:
         \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
      */
-    template<class ArrayScalar>
-    static void setJacobian(ArrayScalar &                jacobian,
-                            const ArrayScalar &          points,
-                            const ArrayScalar &          cellWorkset,
+    template<class ArrayJac, class ArrayPoint, class ArrayCell>
+    static void setJacobian(ArrayJac &                   jacobian,
+                            const ArrayPoint &           points,
+                            const ArrayCell  &           cellWorkset,
                             const shards::CellTopology & cellTopo,
                             const int &                  whichCell = -1);
     
@@ -340,9 +340,9 @@ public:
         \param  jacobianInv       [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the inverse Jacobians
         \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
     */
-    template<class ArrayScalar>
-    static void setJacobianInv(ArrayScalar &        jacobianInv,
-                               const ArrayScalar &  jacobian);
+    template<class ArrayJacInv, class ArrayJac>
+    static void setJacobianInv(ArrayJacInv &     jacobianInv,
+                               const ArrayJac &  jacobian);
     
     
     
@@ -358,9 +358,9 @@ public:
         \param  jacobianDet       [out] - rank-2/1 array with dimensions (C,P)/(P) with Jacobian determinants
         \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
       */
-    template<class ArrayScalar>
-    static void setJacobianDet(ArrayScalar &        jacobianDet,
-                               const ArrayScalar &  jacobian);
+    template<class ArrayJacDet, class ArrayJac>
+    static void setJacobianDet(ArrayJacDet &     jacobianDet,
+                               const ArrayJac &  jacobian);
     
     //============================================================================================//
     //                                                                                            //
@@ -423,10 +423,10 @@ public:
       
         \todo   Implement method for non-standard (shell, beam, etc) topologies.
      */
-    template<class ArrayScalar>
-    static void mapToPhysicalFrame(ArrayScalar &                 physPoints,
-                                   const ArrayScalar &           refPoints,
-                                   const ArrayScalar &           cellWorkset,
+    template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
+    static void mapToPhysicalFrame(ArrayPhysPoint      &         physPoints,
+                                   const ArrayRefPoint &         refPoints,
+                                   const ArrayCell     &         cellWorkset,
                                    const shards::CellTopology &  cellTopo,
                                    const int &                   whichCell = -1);
 
@@ -490,10 +490,10 @@ public:
       
         \todo   Implement method for non-standard (shell, beam, etc) topologies.
     */
-    template<class ArrayScalar>
-    static void mapToReferenceFrame(ArrayScalar &                 refPoints,
-                                    const ArrayScalar &           physPoints,
-                                    const ArrayScalar &           cellWorkset,
+    template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
+    static void mapToReferenceFrame(ArrayRefPoint        &        refPoints,
+                                    const ArrayPhysPoint &        physPoints,
+                                    const ArrayCell      &        cellWorkset,
                                     const shards::CellTopology &  cellTopo,
                                     const int &                   whichCell = -1);
     
@@ -544,13 +544,13 @@ public:
       \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset      
       
       */
-    template<class ArrayType1, class ArrayType2>
-    static void mapToReferenceFrame(ArrayType1 &                  refPoints,
-                                    const ArrayType2 &            initGuess,
-                                    const ArrayType1 &            physPoints,
-                                    const ArrayType1 &            cellWorkset,
-                                    const shards::CellTopology &  cellTopo,
-                                    const int &                   whichCell = -1);
+    template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+    static void mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
+                                             const ArrayInitGuess &        initGuess,
+                                             const ArrayPhysPoint &        physPoints,
+                                             const ArrayCell      &        cellWorkset,
+                                             const shards::CellTopology &  cellTopo,
+                                             const int &                   whichCell = -1);
     
 
     
@@ -604,9 +604,9 @@ public:
         \param  subcellOrd        [in]  - subcell ordinal
         \param  parentCell        [in]  - cell topology of the parent cell.
     */
-    template<class ArrayTypeOut, class ArrayTypeIn>
-    static void mapToReferenceSubcell(ArrayTypeOut &                refSubcellPoints,
-                                      const ArrayTypeIn &           paramPoints,
+    template<class ArraySubcellPoint, class ArrayParamPoint>
+    static void mapToReferenceSubcell(ArraySubcellPoint     &       refSubcellPoints,
+                                      const ArrayParamPoint &       paramPoints,
                                       const int                     subcellDim,
                                       const int                     subcellOrd,
                                       const shards::CellTopology &  parentCell);
@@ -638,8 +638,8 @@ public:
         \param  edgeOrd           [in]  - ordinal of the edge whose tangent is computed
         \param  parentCell        [in]  - cell topology of the parent reference cell
       */
-    template<class ArrayTypeOut>
-    static void getReferenceEdgeTangent(ArrayTypeOut &                refEdgeTangent,
+    template<class ArrayEdgeTangent>
+    static void getReferenceEdgeTangent(ArrayEdgeTangent &            refEdgeTangent,
                                         const int &                   edgeOrd,
                                         const shards::CellTopology &  parentCell);
 
@@ -681,9 +681,9 @@ public:
         \param  faceOrd           [in]  - ordinal of the face whose tangents are computed
         \param  parentCell        [in]  - cell topology of the parent 3D reference cell
       */
-    template<class ArrayTypeOut>
-    static void getReferenceFaceTangents(ArrayTypeOut &                refFaceTanU,
-                                         ArrayTypeOut &                refFaceTanV,
+    template<class ArrayFaceTangentU, class ArrayFaceTangentV>
+    static void getReferenceFaceTangents(ArrayFaceTangentU &           refFaceTanU,
+                                         ArrayFaceTangentV &           refFaceTanV,
                                          const int &                   faceOrd,
                                          const shards::CellTopology &  parentCell);
     
@@ -751,8 +751,8 @@ public:
         \param  sideOrd           [in]  - ordinal of the side whose normal is computed
         \param  parentCell        [in]  - cell topology of the parent reference cell
 */
-    template<class ArrayTypeOut>
-    static void getReferenceSideNormal(ArrayTypeOut &                refSideNormal,
+    template<class ArraySideNormal>
+    static void getReferenceSideNormal(ArraySideNormal &             refSideNormal,
                                        const int &                   sideOrd,
                                        const shards::CellTopology &  parentCell);
 
@@ -796,8 +796,8 @@ public:
         \param  faceOrd           [in]  - ordinal of the face whose normal is computed
         \param  parentCell        [in]  - cell topology of the parent reference cell
       */
-    template<class ArrayTypeOut>
-    static void getReferenceFaceNormal(ArrayTypeOut &                refFaceNormal,
+    template<class ArrayFaceNormal>
+    static void getReferenceFaceNormal(ArrayFaceNormal &             refFaceNormal,
                                        const int &                   faceOrd,
                                        const shards::CellTopology &  parentCell);
     
@@ -832,9 +832,9 @@ public:
         \param  worksetEdgeOrd    [in]  - edge ordinal, relative to ref. cell, of the edge workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
 */
-    template<class ArrayTypeOut, class ArrayTypeIn>
-    static void getPhysicalEdgeTangents(ArrayTypeOut &                edgeTangents,
-                                        const ArrayTypeIn &           worksetJacobians,
+    template<class ArrayEdgeTangent, class ArrayJac>
+    static void getPhysicalEdgeTangents(ArrayEdgeTangent &            edgeTangents,
+                                        const ArrayJac &              worksetJacobians,
                                         const int &                   worksetEdgeOrd,
                                         const shards::CellTopology &  parentCell);
     
@@ -879,10 +879,10 @@ public:
         \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
       */
-    template<class ArrayTypeOut, class ArrayTypeIn>
-    static void getPhysicalFaceTangents(ArrayTypeOut &                faceTanU,
-                                        ArrayTypeOut &                faceTanV,
-                                        const ArrayTypeIn &           worksetJacobians,
+    template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
+    static void getPhysicalFaceTangents(ArrayFaceTangentU &           faceTanU,
+                                        ArrayFaceTangentV &           faceTanV,
+                                        const ArrayJac &              worksetJacobians,
                                         const int &                   worksetFaceOrd,
                                         const shards::CellTopology &  parentCell);
     
@@ -948,9 +948,9 @@ public:
         \param  worksetSideOrd    [in]  - side ordinal, relative to ref. cell, of the side workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
 */
-    template<class ArrayTypeOut, class ArrayTypeIn>
-    static void getPhysicalSideNormals(ArrayTypeOut &                sideNormals,
-                                       const ArrayTypeIn &           worksetJacobians,
+    template<class ArraySideNormal, class ArrayJac>
+    static void getPhysicalSideNormals(ArraySideNormal &             sideNormals,
+                                       const ArrayJac &              worksetJacobians,
                                        const int &                   worksetSideOrd,
                                        const shards::CellTopology &  parentCell);
     
@@ -994,9 +994,9 @@ public:
         \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
 */
-    template<class ArrayTypeOut, class ArrayTypeIn>
-    static void getPhysicalFaceNormals(ArrayTypeOut &                faceNormals,
-                                       const ArrayTypeIn &           worksetJacobians,
+    template<class ArrayFaceNormal, class ArrayJac>
+    static void getPhysicalFaceNormals(ArrayFaceNormal &             faceNormals,
+                                       const ArrayJac &              worksetJacobians,
                                        const int &                   worksetFaceOrd,
                                        const shards::CellTopology &  parentCell);
     
@@ -1037,7 +1037,7 @@ public:
                 
     */
     template<class ArrayPoint>
-    static int checkPointsetInclusion(const ArrayPoint&             points,
+    static int checkPointsetInclusion(const ArrayPoint &            points,
                                       const shards::CellTopology &  cellTopo, 
                                       const double &                threshold = INTREPID_THRESHOLD);
     
@@ -1069,8 +1069,8 @@ public:
         \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
         \param  threshold         [in]  - "tightness" of the inclusion test
     */
-    template<class ArrayInt, class ArrayPoint>
-    static void checkPointwiseInclusion(ArrayInt &                    inRefCell,
+    template<class ArrayIncl, class ArrayPoint>
+    static void checkPointwiseInclusion(ArrayIncl &                   inRefCell,
                                         const ArrayPoint &            points,
                                         const shards::CellTopology &  cellTopo, 
                                         const double &                threshold = INTREPID_THRESHOLD);
@@ -1112,10 +1112,10 @@ public:
         \param  whichCell         [in]  - ordinal of the cell used in the inclusion test
         \param  threshold         [in]  - tolerance for inclusion tests on the input points
       */
-    template<class ArrayInt, class ArrayPoint, class ArrayScalar>
-    static void checkPointwiseInclusion(ArrayInt &                    inCell,
+    template<class ArrayIncl, class ArrayPoint, class ArrayCell>
+    static void checkPointwiseInclusion(ArrayIncl &                   inCell,
                                         const ArrayPoint &            points,
-                                        const ArrayScalar &           cellWorkset,
+                                        const ArrayCell &             cellWorkset,
                                         const shards::CellTopology &  cell,
                                         const int &                   whichCell = -1, 
                                         const double &                threshold = INTREPID_THRESHOLD);
@@ -1151,8 +1151,8 @@ public:
                 coordinates of the vertices of the reference cell itself. 
                 Note that this requires \e subcellOrd=0.
       */
-    template<class ArrayOut>
-    static void getReferenceSubcellVertices(ArrayOut&                   subcellVertices,
+    template<class ArraySubcellVert>
+    static void getReferenceSubcellVertices(ArraySubcellVert &          subcellVertices,
                                             const int                   subcellDim,
                                             const int                   subcellOrd,
                                             const shards::CellTopology& parentCell);
@@ -1192,8 +1192,8 @@ public:
       \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
       coordinates of the nodes of the reference cell itself. Note that this requires \c subcellOrd=0.
       */
-    template<class ArrayOut>
-    static void getReferenceSubcellNodes(ArrayOut&                  subcellNodes,
+    template<class ArraySubcellNode>
+    static void getReferenceSubcellNodes(ArraySubcellNode&          subcellNodes,
                                         const int                   subcellDim,
                                         const int                   subcellOrd,
                                         const shards::CellTopology& parentCell);
@@ -1230,9 +1230,9 @@ public:
     /** \brief  Prints the nodes of a subcell from a cell workset 
       
       */
-    template<class ArrayTypeIn>
-    static void printWorksetSubcell(const ArrayTypeIn&            cellWorkset,
-                                    const shards::CellTopology&   parentCell,
+    template<class ArrayCell>
+    static void printWorksetSubcell(const ArrayCell &             cellWorkset,
+                                    const shards::CellTopology &  parentCell,
                                     const int&                    pCellOrd,
                                     const int&                    subcellDim,
                                     const int&                    subcellOrd,

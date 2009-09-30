@@ -34,10 +34,10 @@
 
 namespace Intrepid {
 
-template <class Scalar, class ArrayType>
-void CubatureDirect<Scalar,ArrayType>::getCubatureData(ArrayType &                cubPoints,
-                                                       ArrayType &                cubWeights,
-                                                       const CubatureTemplate *   cubData) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubatureData(ArrayPoint  &                cubPoints,
+                                                                    ArrayWeight &                cubWeights,
+                                                                    const CubatureTemplate *     cubData) const {
 
   int numCubPoints = getNumPoints();
   int cellDim      = getDimension();
@@ -56,30 +56,30 @@ void CubatureDirect<Scalar,ArrayType>::getCubatureData(ArrayType &              
 
 
 
-template <class Scalar, class ArrayType>
-void CubatureDirect<Scalar,ArrayType>::getCubature(ArrayType & cubPoints,
-                                                   ArrayType & cubWeights) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
+                                                                ArrayWeight & cubWeights) const {
   getCubatureData( cubPoints, cubWeights, &(exposeCubatureData()[degree_]) );
 } // end getCubature
 
 
 
-template <class Scalar, class ArrayType>
-int CubatureDirect<Scalar,ArrayType>::getNumPoints() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
   return exposeCubatureData()[degree_].numPoints_;
 } // end getNumPoints
 
 
 
-template <class Scalar, class ArrayType>
-int CubatureDirect<Scalar,ArrayType>::getDimension() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end dimension
 
 
 
-template <class Scalar, class ArrayType>
-void CubatureDirect<Scalar,ArrayType>::getAccuracy(std::vector<int> & accuracy) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & accuracy) const {
   accuracy.assign(1, degree_);
 } // end getAccuracy
 

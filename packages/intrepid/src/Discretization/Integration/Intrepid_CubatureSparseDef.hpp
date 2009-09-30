@@ -39,8 +39,8 @@ namespace Intrepid {
 **  Function Definitions for Class CubatureSparse
 ***************************************************************************/
 
-template <class Scalar, int dimension_, class ArrayType>
-CubatureSparse<Scalar,dimension_,ArrayType>::CubatureSparse(const int degree) :
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::CubatureSparse(const int degree) :
   degree_(degree) {
 
   if(dimension_ == 2)
@@ -119,9 +119,9 @@ CubatureSparse<Scalar,dimension_,ArrayType>::CubatureSparse(const int degree) :
 
 
 
-template <class Scalar, int dimension_, class ArrayType>
-void CubatureSparse<Scalar,dimension_,ArrayType>::getCubature(ArrayType & cubPoints,
-                                                              ArrayType & cubWeights) const{
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
+                                                                           ArrayWeight & cubWeights) const{
   Teuchos::Array<Scalar> dummy_point(1);
   dummy_point[0] = 0.0;
   Scalar dummy_weight = 1.0;
@@ -134,22 +134,22 @@ void CubatureSparse<Scalar,dimension_,ArrayType>::getCubature(ArrayType & cubPoi
 
 
 
-template<class Scalar, int dimension_, class ArrayType>
-int CubatureSparse<Scalar,dimension_,ArrayType>::getNumPoints() const {
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+int CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getNumPoints() const {
   return numPoints_;
 } // end getNumPoints
 
 
 
-template<class Scalar, int dimension_, class ArrayType>
-int CubatureSparse<Scalar,dimension_,ArrayType>::getDimension() const {
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+int CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end dimension
 
 
 
-template <class Scalar, int dimension_, class ArrayType>
-void CubatureSparse<Scalar,dimension_,ArrayType>::getAccuracy(std::vector<int> & accuracy) const {
+template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+void CubatureSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & accuracy) const {
   accuracy.assign(1, degree_);
 } //end getAccuracy
 

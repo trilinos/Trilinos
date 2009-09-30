@@ -34,8 +34,8 @@
 
 namespace Intrepid {
 
-template <class Scalar, class ArrayType>
-CubaturePolylib<Scalar,ArrayType>::CubaturePolylib(int degree, EIntrepidPLPoly poly_type, Scalar alpha, Scalar beta) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::CubaturePolylib(int degree, EIntrepidPLPoly poly_type, Scalar alpha, Scalar beta) {
   TEST_FOR_EXCEPTION((degree < 0),
                      std::out_of_range,
                      ">>> ERROR (CubaturePolylib): No cubature rule implemented for the desired polynomial degree.");
@@ -48,22 +48,22 @@ CubaturePolylib<Scalar,ArrayType>::CubaturePolylib(int degree, EIntrepidPLPoly p
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubaturePolylib<Scalar,ArrayType>::getName() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getName() const {
   return cubature_name_;
 } // end getName
 
 
 
-template <class Scalar, class ArrayType>
-int CubaturePolylib<Scalar,ArrayType>::getDimension() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end dimension
 
 
 
-template <class Scalar, class ArrayType>
-int CubaturePolylib<Scalar,ArrayType>::getNumPoints() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
   int np = 0;
   switch (poly_type_) {
     case PL_GAUSS:
@@ -89,20 +89,20 @@ int CubaturePolylib<Scalar,ArrayType>::getNumPoints() const {
 
 
 
-template <class Scalar, class ArrayType>
-void CubaturePolylib<Scalar,ArrayType>::getAccuracy(std::vector<int> & accuracy) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & accuracy) const {
   accuracy.assign(1, degree_);
 } // end getAccuracy
 
 
 
-template <class Scalar, class ArrayType>
-const char* CubaturePolylib<Scalar,ArrayType>::cubature_name_ = "INTREPID_CUBATURE_POLYLIB";
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+const char* CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::cubature_name_ = "INTREPID_CUBATURE_POLYLIB";
 
 
 
-template <class Scalar, class ArrayType>
-void CubaturePolylib<Scalar,ArrayType>::getCubature(ArrayType & cubPoints, ArrayType & cubWeights) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubaturePolylib<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint & cubPoints, ArrayWeight & cubWeights) const {
   int numCubPoints = getNumPoints();
   int cellDim      = getDimension();
   // check size of cubPoints and cubWeights

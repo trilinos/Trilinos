@@ -34,8 +34,8 @@
 
 namespace Intrepid {
 
-template <class Scalar, class ArrayType>
-CubatureTensor<Scalar,ArrayType>::CubatureTensor(std::vector< Teuchos::RCP<Cubature<Scalar,ArrayType> > > cubatures) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures) {
   unsigned numCubs = cubatures.size();
   TEST_FOR_EXCEPTION( (numCubs < 1),
                       std::out_of_range,
@@ -65,9 +65,9 @@ CubatureTensor<Scalar,ArrayType>::CubatureTensor(std::vector< Teuchos::RCP<Cubat
 
 
 
-template <class Scalar, class ArrayType>
-CubatureTensor<Scalar,ArrayType>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature1,
-                                                 Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature2) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
+                                                              Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2) {
   cubatures_.resize(2);
   cubatures_[0] = cubature1;
   cubatures_[1] = cubature2;
@@ -82,10 +82,10 @@ CubatureTensor<Scalar,ArrayType>::CubatureTensor(Teuchos::RCP<CubatureDirect<Sca
 
 
 
-template <class Scalar, class ArrayType>
-CubatureTensor<Scalar,ArrayType>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature1,
-                                                 Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature2,
-                                                 Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature3) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
+                                                              Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2,
+                                                              Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature3) {
   cubatures_.resize(3);
   cubatures_[0] = cubature1;
   cubatures_[1] = cubature2;
@@ -102,8 +102,8 @@ CubatureTensor<Scalar,ArrayType>::CubatureTensor(Teuchos::RCP<CubatureDirect<Sca
 
 
 
-template <class Scalar, class ArrayType>
-CubatureTensor<Scalar,ArrayType>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayType> > cubature, int n) {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature, int n) {
   cubatures_.resize(n);
   for (int i=0; i<n; i++) {
     cubatures_[i] = cubature;
@@ -118,9 +118,9 @@ CubatureTensor<Scalar,ArrayType>::CubatureTensor(Teuchos::RCP<CubatureDirect<Sca
 
 
 
-template <class Scalar, class ArrayType>
-void CubatureTensor<Scalar,ArrayType>::getCubature(ArrayType & cubPoints,
-                                                   ArrayType & cubWeights) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
+                                                                ArrayWeight & cubWeights) const {
   int numCubPoints = getNumPoints();
   int cubDim       = getDimension();
   // check size of cubPoints and cubWeights
@@ -180,8 +180,8 @@ void CubatureTensor<Scalar,ArrayType>::getCubature(ArrayType & cubPoints,
 
 
 
-template <class Scalar, class ArrayType>
-int CubatureTensor<Scalar,ArrayType>::getNumPoints() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {
   unsigned numCubs = cubatures_.size();
   int numCubPoints = 1;
   for (unsigned i=0; i<numCubs; i++) {
@@ -191,15 +191,15 @@ int CubatureTensor<Scalar,ArrayType>::getNumPoints() const {
 } // end getNumPoints
 
 
-template <class Scalar, class ArrayType>
-int CubatureTensor<Scalar,ArrayType>::getDimension() const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+int CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;
 } // end dimension
 
 
 
-template <class Scalar, class ArrayType>
-void CubatureTensor<Scalar,ArrayType>::getAccuracy(std::vector<int> & degree) const {
+template <class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int> & degree) const {
   degree = degree_;
 } // end getAccuracy
 

@@ -55,7 +55,7 @@ namespace Intrepid {
 /** \class Intrepid::DefaultCubatureFactory
     \brief A factory class that generates specific instances of cubatures.
 */
-template<class Scalar, class ArrayType=FieldContainer<Scalar> >
+template<class Scalar, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight=ArrayPoint >
 class DefaultCubatureFactory {
   private:
 
@@ -77,8 +77,8 @@ class DefaultCubatureFactory {
       \return
               - RCP to cubature with given specifications.
   */
-  Teuchos::RCP<Cubature<Scalar,ArrayType> > create(const shards::CellTopology & cellTopology,
-                                                   const std::vector<int> & degree);
+  Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology & cellTopology,
+                                                                const std::vector<int> & degree);
 
   /** \brief Factory method.
 
@@ -88,8 +88,8 @@ class DefaultCubatureFactory {
       \return
               - RCP to cubature with given specifications.
   */
-  Teuchos::RCP<Cubature<Scalar,ArrayType> > create(const shards::CellTopology & cellTopology,
-                                                   int degree);
+  Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology & cellTopology,
+                                                                int   degree);
     
 };
   

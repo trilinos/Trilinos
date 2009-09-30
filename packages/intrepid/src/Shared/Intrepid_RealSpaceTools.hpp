@@ -78,16 +78,16 @@ class RealSpaceTools {
                \li rank(<b><var>absArray</var></b>) == rank(<b><var>inArray</var></b>)
                \li dimensions(<b><var>absArray</var></b>) == dimensions(<b><var>inArray</var></b>)
     */
-    template<class ArrayScalar>
-    static void absval(ArrayScalar & absArray, const ArrayScalar & inArray);
+    template<class ArrayAbs, class ArrayIn>
+    static void absval(ArrayAbs & absArray, const ArrayIn & inArray);
 
 
     /** \brief Computes, in place, absolute value of an array.
 
         \param inoutAbsArray  [in/out]  - input/output array
     */
-    template<class ArrayScalar>
-    static void absval(ArrayScalar & inoutAbsArray);
+    template<class ArrayInOut>
+    static void absval(ArrayInOut & inoutAbsArray);
 
 
     /** \brief Computes norm (1, 2, infinity) of the vector <b><var>inVec</var></b>
@@ -109,8 +109,8 @@ class RealSpaceTools {
         \note  Requirements (checked at runtime, in debug mode): \n
                \li rank(<b><var>inVec</var></b>) == 1
     */
-    template<class VecArray>
-    static Scalar vectorNorm(const VecArray & inVec, const ENorm normType);
+    template<class ArrayIn>
+    static Scalar vectorNorm(const ArrayIn & inVec, const ENorm normType);
 
 
     /** \brief Computes norms (1, 2, infinity) of vectors stored in a
@@ -126,8 +126,8 @@ class RealSpaceTools {
                \li rank(<b><var>inVecs</var></b>) == 2 or 3
                \li dimensions i0, i1 of <b><var>normArray</var></b> and <b><var>inVecs</var></b> must agree
     */
-    template<class NormArray, class VecArray>
-    static void vectorNorm(NormArray & normArray, const VecArray & inVecs, const ENorm normType);
+    template<class ArrayNorm, class ArrayIn>
+    static void vectorNorm(ArrayNorm & normArray, const ArrayIn & inVecs, const ENorm normType);
 
 
     /** \brief Computes transpose of the square matrix <b><var>inMat</var></b>
@@ -154,8 +154,8 @@ class RealSpaceTools {
                \li dimensions(<b><var>transposeMats</var></b>) == dimensions(<b><var>inMats</var></b>)
                \li matrices must be square
     */
-    template<class ArrayScalar>
-    static void transpose(ArrayScalar & transposeMats, const ArrayScalar & inMats);
+    template<class ArrayTranspose, class ArrayIn>
+    static void transpose(ArrayTranspose & transposeMats, const ArrayIn & inMats);
 
 
     /** \brief Computes inverse of the square matrix <b><var>inMat</var></b>
@@ -183,8 +183,8 @@ class RealSpaceTools {
                \li matrices must be square
                \li matrix dimensions are limited to 1, 2, and 3
     */
-    template<class MatArray>
-    static void inverse(MatArray & inverseMats, const MatArray & inMats);
+    template<class ArrayInverse, class ArrayIn>
+    static void inverse(ArrayInverse & inverseMats, const ArrayIn & inMats);
 
 
     /** \brief Computes determinant of the square matrix <b><var>inMat</var></b>
@@ -205,8 +205,8 @@ class RealSpaceTools {
                \li rank(<b><var>inMats</var></b>) == 2
                \li matrix dimension is limited to 1, 2, and 3
     */
-    template<class ArrayScalar>
-    static Scalar det(const ArrayScalar & inMat);
+    template<class ArrayIn>
+    static Scalar det(const ArrayIn & inMat);
 
 
     /** \brief Computes determinants of matrices stored in
@@ -223,8 +223,8 @@ class RealSpaceTools {
                \li dimensions i0, i1 of <b><var>detArray</var></b> and <b><var>inMats</var></b> must agree
                \li matrix dimensions are limited to 1, 2, and 3
     */
-    template<class DetArray, class MatArray>
-    static void det(DetArray & detArray, const MatArray & inMats);
+    template<class ArrayDet, class ArrayIn>
+    static void det(ArrayDet & detArray, const ArrayIn & inMats);
 
 
     /** \brief Adds contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
@@ -261,8 +261,8 @@ class RealSpaceTools {
                \li rank(<b><var>sumArray</var></b>) == rank(<b><var>inArray1</var></b>) == rank(<b><var>inArray2</var></b>)
                \li dimensions(<b><var>sumArray</var></b>) == dimensions(<b><var>inArray1</var></b>) == dimensions(<b><var>inArray2</var></b>)
     */
-    template<class ArrayScalar>
-    static void add(ArrayScalar & sumArray, const ArrayScalar & inArray1, const ArrayScalar & inArray2);
+    template<class ArraySum, class ArrayIn1, class ArrayIn2>
+    static void add(ArraySum & sumArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2);
 
 
     /** \brief Adds, in place, <b><var>inArray</var></b> into <b><var>inoutSumArray</var></b>:\n
@@ -275,8 +275,8 @@ class RealSpaceTools {
                \li rank(<b><var>inoutSumArray</var></b>) == rank(<b><var>inArray</var></b>)
                \li dimensions(<b><var>inoutSumArray</var></b>) == dimensions(<b><var>inArray</var></b>)
     */
-    template<class ArrayScalar>
-    static void add(ArrayScalar & inoutSumArray, const ArrayScalar & inArray);
+    template<class ArraySum, class ArrayIn>
+    static void add(ArraySum & inoutSumArray, const ArrayIn & inArray);
 
 
     /** \brief Subtracts contiguous data <b><var>inArray2</var></b> from <b><var>inArray1</var></b>
@@ -313,8 +313,8 @@ class RealSpaceTools {
                \li rank(<b><var>sumArray</var></b>) == rank(<b><var>inArray1</var></b>) == rank(<b><var>inArray2</var></b>)
                \li dimensions(<b><var>sumArray</var></b>) == dimensions(<b><var>inArray1</var></b>) == dimensions(<b><var>inArray2</var></b>)
     */
-    template<class ArrayScalar>
-    static void subtract(ArrayScalar & diffArray, const ArrayScalar & inArray1, const ArrayScalar & inArray2);
+    template<class ArrayDiff, class ArrayIn1, class ArrayIn2>
+    static void subtract(ArrayDiff & diffArray, const ArrayIn1 & inArray1, const ArrayIn2 & inArray2);
 
 
     /** \brief Subtracts, in place, <b><var>inArray</var></b> from <b><var>inoutDiffArray</var></b>:\n
@@ -327,8 +327,8 @@ class RealSpaceTools {
                \li rank(<b><var>inoutDiffArray</var></b>) == rank(<b><var>inArray</var></b>)
                \li dimensions(<b><var>inoutDiffArray</var></b>) == dimensions(<b><var>inArray</var></b>)
     */
-    template<class ArrayScalar>
-    static void subtract(ArrayScalar & inoutDiffArray, const ArrayScalar & inArray);
+    template<class ArrayDiff, class ArrayIn>
+    static void subtract(ArrayDiff & inoutDiffArray, const ArrayIn & inArray);
 
 
     /** \brief Multiplies contiguous data <b><var>inArray</var></b> of size
@@ -365,8 +365,8 @@ class RealSpaceTools {
                \li rank(<b><var>scaledArray</var></b>) == rank(<b><var>inArray</var></b>)
                \li dimensions(<b><var>scaledArray</var></b>) == dimensions(<b><var>inArray</var></b>)
     */
-    template<class ArrayScalar>
-    static void scale(ArrayScalar & scaledArray, const ArrayScalar & inArray, const Scalar scalar);
+    template<class ArrayScaled, class ArrayIn>
+    static void scale(ArrayScaled & scaledArray, const ArrayIn & inArray, const Scalar scalar);
 
 
     /** \brief Multiplies, in place, array <b><var>inoutScaledArray</var></b> by the scalar <b><var>scalar</var></b> (componentwise):\n
@@ -375,8 +375,8 @@ class RealSpaceTools {
         \param inoutScaledArray  [in/out]  - input/output array
         \param scalar                [in]  - multiplier
     */
-    template<class ArrayScalar>
-    static void scale(ArrayScalar & inoutScaledArray, const Scalar scalar);
+    template<class ArrayScaled>
+    static void scale(ArrayScaled & inoutScaledArray, const Scalar scalar);
 
 
     /** \brief Computes dot product of contiguous data <b><var>inArray1</var></b> and <b><var>inArray2</var></b>
@@ -399,8 +399,8 @@ class RealSpaceTools {
                \li rank(<b><var>inVec1</var></b>) == rank(<b><var>inVec2</var></b>) == 1
                \li <b><var>inVec1</var></b> and <b><var>inVec2</var></b> have same dimension
     */
-    template<class VecArray>
-    static Scalar dot(const VecArray & inVec1, const VecArray & inVec2);
+    template<class ArrayVec1, class ArrayVec2>
+    static Scalar dot(const ArrayVec1 & inVec1, const ArrayVec2 & inVec2);
 
 
     /** \brief Computes dot product of vectors stored in an
@@ -416,8 +416,8 @@ class RealSpaceTools {
                \li rank(<b><var>inVecs1</var></b>) == 2 or 3
                \li dimensions i0, i1 of <b><var>dotArray</var></b> and <b><var>inVecs1</var></b> / <b><var>inVecs2</var></b> must agree
     */
-    template<class DotArray, class VecArray>
-    static void dot(DotArray & dotArray, const VecArray & inVecs1, const VecArray & inVecs2);
+    template<class ArrayDot, class ArrayVec1, class ArrayVec2>
+    static void dot(ArrayDot & dotArray, const ArrayVec1 & inVecs1, const ArrayVec2 & inVecs2);
 
 
     /** \brief Matrix-vector left multiply using contiguous data:\n
@@ -453,8 +453,8 @@ class RealSpaceTools {
                \li matrix and vector dimensions D, i0 and i1 must agree
                \li matrices are square
     */
-    template<class MatArray, class VecArray>
-    static void matvec(VecArray & matVecs, const MatArray & inMats, const VecArray & inVecs);
+    template<class ArrayMatVec, class ArrayMat, class ArrayVec>
+    static void matvec(ArrayMatVec & matVecs, const ArrayMat & inMats, const ArrayVec & inVecs);
 
     
     /** \brief Vector product using multidimensional arrays:\n
@@ -470,10 +470,8 @@ class RealSpaceTools {
         \todo Need to decide on how to handle vecprod in 2D: is the result a vector, i.e., 
       there's dimension D or a scalar?
       */
-    template<class VecArrayOut, class VecArrayIn>
-    static void vecprod(VecArrayOut &       vecProd, 
-                        const VecArrayIn &  inLeft, 
-                        const VecArrayIn &  inRight);
+    template<class ArrayVecProd, class ArrayIn1, class ArrayIn2>
+    static void vecprod(ArrayVecProd & vecProd, const ArrayIn1 & inLeft, const ArrayIn2 & inRight);
     
     
     

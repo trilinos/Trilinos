@@ -60,7 +60,7 @@ namespace Intrepid {
   optimized for faster execution. An overloaded () operator is also provided for such low-rank containers
   to allow element access by multi-index without having to create an auxiliary array for the multi-index.
   */
-  template<class Scalar>
+  template<class Scalar, int ArrayTypeId=0>
   class FieldContainer {
   protected:
     
@@ -498,7 +498,7 @@ namespace Intrepid {
       
       \param anotherContainer[in]          - a FieldContainer
       */
-    void resize(const FieldContainer<Scalar>& anotherContainer);
+    void resize(const FieldContainer<Scalar, ArrayTypeId>& anotherContainer);
     
     
     /** \brief Resizes FieldContainer to a container whose rank depends on the specified field and 
@@ -747,8 +747,8 @@ namespace Intrepid {
   /** \relates FieldContainer
   Outputs a formated stream with FieldContainer data. For debugging purposes.
   */
-  template<class Scalar>
-    std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar>& container);
+  template<class Scalar, int ArrayTypeId>
+    std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar, ArrayTypeId>& container);
  
   
 } // end namespace Intrepid

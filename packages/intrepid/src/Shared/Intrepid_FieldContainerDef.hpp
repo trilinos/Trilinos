@@ -42,8 +42,8 @@ namespace Intrepid {
   //--------------------------------------------------------------------------------------------//
   
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const FieldContainer<Scalar>& right) {
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const FieldContainer<Scalar, ArrayTypeId>& right) {
   
   // Copy dimensions and data values from right
   dimensions_.assign(right.dimensions_.begin(),right.dimensions_.end());  
@@ -62,8 +62,8 @@ FieldContainer<Scalar>::FieldContainer(const FieldContainer<Scalar>& right) {
 //--------------------------------------------------------------------------------------------//
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), dim2_(0), dim3_(0), dim4_(0) 
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), dim2_(0), dim3_(0), dim4_(0) 
 {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
@@ -77,8 +77,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), 
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const int dim0,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim1) : dim0_(dim0), dim1_(dim1), dim2_(0), dim3_(0), dim4_(0)
 {
 #ifdef HAVE_INTREPID_DEBUG
@@ -96,8 +96,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const int dim0,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim1,
                                        const int dim2) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(0), dim4_(0)
 {
@@ -118,8 +118,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const int dim0,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim1,
                                        const int dim2,
                                        const int dim3) : dim0_(dim0), dim1_(dim1), dim2_(dim2), dim3_(dim3), dim4_(0)
@@ -144,8 +144,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const int dim0,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim1,
                                        const int dim2,
                                        const int dim3,
@@ -174,8 +174,8 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {  
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& dimensions) {  
   
 #ifdef HAVE_INTREPID_DEBUG
   for(unsigned int dim = 0; dim < dimensions.size(); dim++) {
@@ -238,8 +238,8 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&         dimensions,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&         dimensions,
                                        const Teuchos::ArrayView<Scalar>&  data) {
  
   // Copy all dimensions
@@ -310,8 +310,8 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&         dimens
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&        dimensions,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&        dimensions,
                                        const Teuchos::ArrayRCP<Scalar>&  data) {
  
   // Copy all dimensions
@@ -382,8 +382,8 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&        dimensi
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&    dimensions,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&    dimensions,
                                        Scalar*                       data,
                                        const bool                    deep_copy,
                                        const bool                    owns_mem) {
@@ -455,8 +455,8 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&    dimensions,
 
 
 
-template<class Scalar>
-FieldContainer<Scalar>::FieldContainer(const shards::Array<Scalar,shards::NaturalOrder>&  data,
+template<class Scalar, int ArrayTypeId>
+FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const shards::Array<Scalar,shards::NaturalOrder>&  data,
                                        const bool                                         deep_copy,
                                        const bool                                         owns_mem) {
  
@@ -551,15 +551,15 @@ FieldContainer<Scalar>::FieldContainer(const shards::Array<Scalar,shards::Natura
 //--------------------------------------------------------------------------------------------//
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::rank() const {
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::rank() const {
   return dimensions_.size();
 }
   
 
 
-template<class Scalar>
-int FieldContainer<Scalar>::size() const {
+template<class Scalar, int ArrayTypeId>
+int FieldContainer<Scalar, ArrayTypeId>::size() const {
   // Important! This method is used by constructors to find out what is the needed size of data_
   // based on the specified dimensions. Therefore, it cannot be implmented by returning data_.size
   // and must be able to compute the size of the container based only on its specified dimensions
@@ -607,16 +607,16 @@ int FieldContainer<Scalar>::size() const {
 
 
 
-template<class Scalar>
+template<class Scalar, int ArrayTypeId>
 template<class Vector>
-inline void FieldContainer<Scalar>::dimensions(Vector& dimensions) const {
+inline void FieldContainer<Scalar, ArrayTypeId>::dimensions(Vector& dimensions) const {
   dimensions.assign(dimensions_.begin(),dimensions_.end());
 }
 
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::dimension(const int whichDim) const {
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::dimension(const int whichDim) const {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > whichDim), std::invalid_argument,
                       ">>> ERROR (FieldContainer): dimension order cannot be negative");
@@ -628,8 +628,8 @@ inline int FieldContainer<Scalar>::dimension(const int whichDim) const {
 
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::getEnumeration(const int i0) const {
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0) const {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): Number of indices does not match rank of the container.");  
@@ -641,8 +641,8 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0) const {
 
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::getEnumeration(const int i0,
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i1) const {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> rank() != 2), std::invalid_argument, 
@@ -657,8 +657,8 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
 
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::getEnumeration(const int i0,
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i1,
                                                   const int i2) const {
 #ifdef HAVE_INTREPID_DEBUG
@@ -676,8 +676,8 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
 
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::getEnumeration(const int i0,
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i1,
                                                   const int i2,
                                                   const int i3) const {
@@ -698,8 +698,8 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
 
 
 
-template<class Scalar>
-inline int FieldContainer<Scalar>::getEnumeration(const int i0,
+template<class Scalar, int ArrayTypeId>
+inline int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const int i0,
                                                   const int i1,
                                                   const int i2,
                                                   const int i3,
@@ -724,8 +724,8 @@ inline int FieldContainer<Scalar>::getEnumeration(const int i0,
 
 
 
-template<class Scalar>
-int FieldContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex) const {
+template<class Scalar, int ArrayTypeId>
+int FieldContainer<Scalar, ArrayTypeId>::getEnumeration(const Teuchos::Array<int>& multiIndex) const {
 
 #ifdef HAVE_INTREPID_DEBUG
   // Check if number of multi-indices matches rank of the FieldContainer object
@@ -820,8 +820,8 @@ int FieldContainer<Scalar>::getEnumeration(const Teuchos::Array<int>& multiIndex
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::getMultiIndex(int & i0,
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            const int valueEnum) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
@@ -836,8 +836,8 @@ void FieldContainer<Scalar>::getMultiIndex(int & i0,
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::getMultiIndex(int & i0,
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            int & i1,
                                            const int valueEnum) const 
 {
@@ -855,8 +855,8 @@ void FieldContainer<Scalar>::getMultiIndex(int & i0,
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::getMultiIndex(int & i0,
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            int & i1,
                                            int & i2,
                                            const int valueEnum) const 
@@ -883,8 +883,8 @@ void FieldContainer<Scalar>::getMultiIndex(int & i0,
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::getMultiIndex(int & i0,
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            int & i1,
                                            int & i2,
                                            int & i3,
@@ -917,8 +917,8 @@ void FieldContainer<Scalar>::getMultiIndex(int & i0,
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::getMultiIndex(int & i0,
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(int & i0,
                                            int & i1,
                                            int & i2,
                                            int & i3,
@@ -955,9 +955,9 @@ void FieldContainer<Scalar>::getMultiIndex(int & i0,
 
 
 
-template<class Scalar>
+template<class Scalar, int ArrayTypeId>
 template<class Vector>
-void FieldContainer<Scalar>::getMultiIndex(Vector &             multiIndex,
+void FieldContainer<Scalar, ArrayTypeId>::getMultiIndex(Vector &             multiIndex,
                                            const int            valueEnum) const 
 {
   
@@ -1003,8 +1003,8 @@ void FieldContainer<Scalar>::getMultiIndex(Vector &             multiIndex,
 //                                                                                            //
 //--------------------------------------------------------------------------------------------//
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::clear() {
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::clear() {
   dimensions_.resize(0);
   
   // Reset first five dimensions:
@@ -1020,8 +1020,8 @@ inline void FieldContainer<Scalar>::clear() {
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::resize(const Teuchos::Array<int>& newDimensions) {
   
   // First handle the trivial case of zero dimensions
   if( newDimensions.size() == 0) {
@@ -1089,8 +1089,8 @@ void FieldContainer<Scalar>::resize(const Teuchos::Array<int>& newDimensions) {
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const int dim0) {
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0) {
   dim0_ = dim0;  
   dim1_ = 0;  
   dim2_ = 0;  
@@ -1103,8 +1103,8 @@ inline void FieldContainer<Scalar>::resize(const int dim0) {
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const int dim0,
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
                                            const int dim1) {
   dim0_ = dim0;  
   dim1_ = dim1;  
@@ -1119,8 +1119,8 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const int dim0,
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
                                            const int dim1,
                                            const int dim2) {
   dim0_ = dim0;
@@ -1137,8 +1137,8 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const int dim0,
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
                                            const int dim1,
                                            const int dim2,
                                            const int dim3) {
@@ -1157,8 +1157,8 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const int dim0,
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
                                            const int dim1,
                                            const int dim2,
                                            const int dim3,
@@ -1179,8 +1179,8 @@ inline void FieldContainer<Scalar>::resize(const int dim0,
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::resize(const FieldContainer<Scalar>& anotherContainer) {
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::resize(const FieldContainer<Scalar, ArrayTypeId>& anotherContainer) {
   
   // Copy dimensions from the specified container
   anotherContainer.dimensions(dimensions_);
@@ -1234,8 +1234,8 @@ inline void FieldContainer<Scalar>::resize(const FieldContainer<Scalar>& another
 }
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::resize(const int             numPoints,
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::resize(const int             numPoints,
                                     const int             numFields,
                                     const EFunctionSpace  spaceType,
                                     const EOperator       operatorType,
@@ -1319,8 +1319,8 @@ void FieldContainer<Scalar>::resize(const int             numPoints,
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::initialize(const Scalar value) {
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::initialize(const Scalar value) {
   for (int i=0; i < this->size(); i++) {
     data_[i] = value;
   } 
@@ -1328,31 +1328,31 @@ inline void FieldContainer<Scalar>::initialize(const Scalar value) {
 
 
 
-template<class Scalar>
-inline Scalar FieldContainer<Scalar>::getValue(const Teuchos::Array<int>& multiIndex) const {
+template<class Scalar, int ArrayTypeId>
+inline Scalar FieldContainer<Scalar, ArrayTypeId>::getValue(const Teuchos::Array<int>& multiIndex) const {
   return data_[this -> getEnumeration(multiIndex)];
 }
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::setValue(const Scalar dataValue, 
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::setValue(const Scalar dataValue, 
                                              const Teuchos::Array<int>& multiIndex) {
   data_[this -> getEnumeration(multiIndex)] = dataValue; 
 }
 
 
 
-template<class Scalar>
-inline void FieldContainer<Scalar>::setValue(const Scalar dataValue, 
+template<class Scalar, int ArrayTypeId>
+inline void FieldContainer<Scalar, ArrayTypeId>::setValue(const Scalar dataValue, 
                                              const int    order) {
   data_[order] = dataValue; 
 }
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::setValues(const Teuchos::ArrayView<Scalar>& dataArray) {
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::setValues(const Teuchos::ArrayView<Scalar>& dataArray) {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (dataArray.size() != (data_.size()) ),
                       std::invalid_argument,
@@ -1363,8 +1363,8 @@ void FieldContainer<Scalar>::setValues(const Teuchos::ArrayView<Scalar>& dataArr
 
 
 
-template<class Scalar>
-void FieldContainer<Scalar>::setValues(const Scalar* dataPtr, 
+template<class Scalar, int ArrayTypeId>
+void FieldContainer<Scalar, ArrayTypeId>::setValues(const Scalar* dataPtr, 
                                        const int numData) 
 {
 #ifdef HAVE_INTREPID_DEBUG
@@ -1377,8 +1377,8 @@ void FieldContainer<Scalar>::setValues(const Scalar* dataPtr,
 
 
 
-template<class Scalar>
-inline const Scalar& FieldContainer<Scalar>::operator () (const int i0) const 
+template<class Scalar, int ArrayTypeId>
+inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
@@ -1390,8 +1390,8 @@ inline const Scalar& FieldContainer<Scalar>::operator () (const int i0) const
 }
 
 
-template<class Scalar>
-inline Scalar& FieldContainer<Scalar>::operator () (const int i0)  
+template<class Scalar, int ArrayTypeId>
+inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0)  
 {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this -> rank() != 1), std::invalid_argument, 
@@ -1404,8 +1404,8 @@ inline Scalar& FieldContainer<Scalar>::operator () (const int i0)
 
 
 
-template<class Scalar>
-inline const Scalar& FieldContainer<Scalar>::operator () (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
                                                           const int i1) const 
 {
 #ifdef HAVE_INTREPID_DEBUG
@@ -1420,8 +1420,8 @@ inline const Scalar& FieldContainer<Scalar>::operator () (const int i0,
 }
 
 
-template<class Scalar>
-inline Scalar& FieldContainer<Scalar>::operator () (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
                                                     const int i1)  
 {
 #ifdef HAVE_INTREPID_DEBUG
@@ -1437,8 +1437,8 @@ inline Scalar& FieldContainer<Scalar>::operator () (const int i0,
 
 
 
-template<class Scalar>
-inline const Scalar& FieldContainer<Scalar>::operator () (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
                                                           const int i1,
                                                           const int i2) const 
 {
@@ -1455,8 +1455,8 @@ inline const Scalar& FieldContainer<Scalar>::operator () (const int i0,
   return data_[(i0*dim1_ + i1)*dim2_ + i2]; 
 }
 
-template<class Scalar>
-inline Scalar& FieldContainer<Scalar>::operator () (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
                                                     const int i1,
                                                     const int i2) 
 {
@@ -1475,8 +1475,8 @@ inline Scalar& FieldContainer<Scalar>::operator () (const int i0,
 
 
 
-template<class Scalar>
-inline const Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
                                                            const int i1,
                                                            const int i2,
                                                            const int i3) const {
@@ -1496,8 +1496,8 @@ inline const Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
 }
 
 
-template<class Scalar>
-inline Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
                                                      const int i1,
                                                      const int i2,
                                                      const int i3) {
@@ -1518,8 +1518,8 @@ inline Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
 
 
 
-template<class Scalar>
-inline const Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
                                                            const int i1,
                                                            const int i2,
                                                            const int i3,
@@ -1541,8 +1541,8 @@ inline const Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
   return data_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
 }
 
-template<class Scalar>
-inline Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
+template<class Scalar, int ArrayTypeId>
+inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
                                                      const int i1,
                                                      const int i2,
                                                      const int i3,
@@ -1566,8 +1566,8 @@ inline Scalar& FieldContainer<Scalar>::operator ()  (const int i0,
 
 
 
-template<class Scalar>
-const Scalar& FieldContainer<Scalar>::operator [] (const int address) const {
+template<class Scalar, int ArrayTypeId>
+const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) const {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
                       std::invalid_argument,
@@ -1578,8 +1578,8 @@ const Scalar& FieldContainer<Scalar>::operator [] (const int address) const {
 
 
 
-template<class Scalar>
-Scalar& FieldContainer<Scalar>::operator [] (const int address) {
+template<class Scalar, int ArrayTypeId>
+Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( (address < 0) || (address >= (int)data_.size() ) ),
                       std::invalid_argument,
@@ -1590,8 +1590,8 @@ Scalar& FieldContainer<Scalar>::operator [] (const int address) {
 
 
 
-template<class Scalar>
-inline FieldContainer<Scalar>& FieldContainer<Scalar>::operator = (const FieldContainer<Scalar>& right)
+template<class Scalar, int ArrayTypeId>
+inline FieldContainer<Scalar, ArrayTypeId>& FieldContainer<Scalar, ArrayTypeId>::operator = (const FieldContainer<Scalar, ArrayTypeId>& right)
 {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( ( this == &right ),
@@ -1616,8 +1616,8 @@ inline FieldContainer<Scalar>& FieldContainer<Scalar>::operator = (const FieldCo
 //===========================================================================//
 
 
-template<class Scalar>
-std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar>& container) {
+template<class Scalar, int ArrayTypeId>
+std::ostream& operator << (std::ostream& os, const FieldContainer<Scalar, ArrayTypeId>& container) {
   
   // Save the format state of the original ostream os.
   Teuchos::oblackholestream oldFormatState;

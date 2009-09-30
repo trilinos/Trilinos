@@ -51,8 +51,8 @@
 namespace Intrepid{
 
 
-template<class Scalar, int dimension_, class ArrayType=FieldContainer<Scalar> >
-class CubatureGenSparse : public Intrepid::Cubature<Scalar,ArrayType> {
+template<class Scalar, int dimension_, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
+class CubatureGenSparse : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight> {
   private:
 
   int numPoints_;
@@ -75,8 +75,8 @@ class CubatureGenSparse : public Intrepid::Cubature<Scalar,ArrayType> {
       \param cubPoints       [out]     - Array containing the cubature points.
       \param cubWeights      [out]     - Array of corresponding cubature weights.
   */
-  virtual void getCubature(ArrayType & cubPoints,
-                           ArrayType & cubWeights) const;
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights) const;
 
   /** \brief Returns the number of cubature points.
   */
