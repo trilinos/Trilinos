@@ -168,6 +168,9 @@ public:
   /** \brief Return a copy of *this. */
   inline const Ptr<T> ptr() const;
 
+  /** \brief Return a Ptr<const T> version of *this. */
+  inline Ptr<const T> getConst() const;
+
 private:
 
   T *ptr_;

@@ -247,7 +247,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   if(out.get()) *out << "\nQ) Creating a DefaultInverseLinearOp object from nsA and testing the LinearOpBase interface ...\n";
 
   RCP<const LinearOpBase<double> >
-    invA = inverse<double>(nsA);
+    invA = inverse<double>(nsA.getConst());
 
   result = linearOpTester.check(*invA,out.get());
   if(!result) success = false;

@@ -1,0 +1,29 @@
+EXTRA_ARGS=$@
+
+# Change this to point to your home dir.
+TRILINOS_HOME=/scratch2/rabartl/PROJECTS/Sierra/Aria_Trilinos/code/Trilinos/dev
+
+COMMON_FLAGS="-g -ftrap=common -xcode=pic32 -erroff=%all -xtarget=native64 -xarch=native64 -DAZ_DONT_UNROLL_LOOPS"
+
+/sierra/Dev/cmake/sun/bin/cmake \
+-D CMAKE_INSTALL_PREFIX:PATH=../install_sun-engsci \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_CXX_COMPILER:FILEPATH=/opt/sunstudio12.1/bin/CC \
+-D CMAKE_C_COMPILER:FILEPATH=/opt/sunstudio12.1/bin/cc \
+-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77 \
+-D CMAKE_CXX_FLAGS:STRING="+d -library=stlport4 $COMMON_FLAGS" \
+-D CMAKE_C_FLAGS:STRING="$COMMON_FLAGS" \
+-D CMAKE_Fortran_FLAGS:STRING="-dalign -errtags=INVOKE -silent -dalign -errtags=INVOKE -silent $COMMON_FLAGS" \
+-D TPL_BLAS_LIBRARIES:STRING="-lsunperf -lsunmath -lfai -lfui -lfsu" \
+-D TPL_LAPACK_LIBRARIES:STRING="-lsunperf -lsunmath" \
+-D Teuchos_ENABLE_FLOAT:BOOL=OFF \
+-D Teuchos_ENABLE_COMPLEX:BOOL=OFF \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_Tpetra:BOOL=OFF \
+-D Trilinos_ENABLE_Zoltan:BOOL=OFF \
+$EXTRA_ARGS \
+$TRILINOS_HOME
+
+#-D Trilinos_ENABLE_TESTS:BOOL=ON \
+#-D Trilinos_ENABLE_Fortran:BOOL=ON \
+#-D CMAKE_LD_FLAGS:STRING="-lsunperf -lsunmath -lnsl -lsocket -lrt" \

@@ -116,7 +116,7 @@ void Thyra::sums( const MultiVectorBase<Scalar>& V, const ArrayView<Scalar> &sum
     rcp_op_targs[kc] = sum_op.reduct_obj_create();
     op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  applyOp<Scalar>(sum_op, tuple(ptrInArg(V)), null, op_targs );
+  applyOp<Scalar>(sum_op, tuple(ptrInArg(V)), null, op_targs);
   for( int kc = 0; kc < m; ++kc ) {
     sums[kc] = sum_op(*op_targs[kc]);
   }

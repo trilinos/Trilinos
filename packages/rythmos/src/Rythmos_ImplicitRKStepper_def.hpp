@@ -457,11 +457,12 @@ void ImplicitRKStepper<Scalar>::getPoints(
   using Teuchos::null;
   TEUCHOS_ASSERT(haveInitialCondition_);
   defaultGetPoints<Scalar>(
-      timeRange_.lower(),constOptInArg(*x_old_),null,
-      timeRange_.upper(),constOptInArg(*x_),null,
-      time_vec,ptr(x_vec),ptr(xdot_vec),ptr(accuracy_vec),
-      null
-      );
+    timeRange_.lower(), constOptInArg(*x_old_), Ptr<const VectorBase<Scalar> >(null), // Sun
+    timeRange_.upper(), constOptInArg(*x_), Ptr<const VectorBase<Scalar> >(null), // Sun
+    time_vec,
+    ptr(x_vec), ptr(xdot_vec), ptr(accuracy_vec),
+    Ptr<InterpolatorBase<Scalar> >(null) // For Sun
+    );
   // 04/17/09 tscoffe:  Currently, we don't have x_dot to pass out (TODO)
 }
 

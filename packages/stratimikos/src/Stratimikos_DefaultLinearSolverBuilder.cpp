@@ -257,6 +257,8 @@ DefaultLinearSolverBuilder::getParameterList() const
 RCP<const Teuchos::ParameterList>
 DefaultLinearSolverBuilder::getValidParameters() const
 {
+  using Teuchos::rcp_implicit_cast;
+  typedef Teuchos::ParameterEntryValidator PEV;
   if(!validParamList_.get()) {
     RCP<Teuchos::ParameterList>
       validParamList = Teuchos::rcp(new Teuchos::ParameterList);
@@ -267,11 +269,11 @@ DefaultLinearSolverBuilder::getValidParameters() const
         )
       );
     validParamList->set(
-      LinearSolverType_name,defaultLOWSF_
-      ,(std::string("Determines the type of linear solver that will be used.\n")
+      LinearSolverType_name, defaultLOWSF_,
+      (std::string("Determines the type of linear solver that will be used.\n")
         + "The parameters for each solver type are specified in the sublist \""
-        + LinearSolverTypes_name + "\"").c_str()
-      ,lowsfValidator
+        + LinearSolverTypes_name + "\"").c_str(),
+      rcp_implicit_cast<const PEV>(lowsfValidator)
       );
     Teuchos::ParameterList &linearSolverTypesSL = validParamList->sublist(
       LinearSolverTypes_name,false,
@@ -295,13 +297,13 @@ DefaultLinearSolverBuilder::getValidParameters() const
         )
       );
     validParamList->set(
-      PreconditionerType_name,defaultPF_
-      ,(std::string("Determines the type of preconditioner that will be used.\n")
+      PreconditionerType_name, defaultPF_,
+      (std::string("Determines the type of preconditioner that will be used.\n")
         + "This option is only meaningful for linear solvers that accept preconditioner"
         + " factory objects!\n"
         + "The parameters for each preconditioner are specified in the sublist \""
-        + PreconditionerTypes_name + "\"").c_str()
-      ,pfValidator
+        + PreconditionerTypes_name + "\"").c_str(),
+      rcp_implicit_cast<const PEV>(pfValidator)
       );
     Teuchos::ParameterList &precTypesSL = validParamList->sublist(
         PreconditionerTypes_name,false,

@@ -1023,11 +1023,14 @@ void Teuchos::setStringToIntegralParameter(
   ParameterList * paramList
   )
 {
+  typedef ParameterEntryValidator PEV;
   TEST_FOR_EXCEPT(0==paramList);
   paramList->set(
     paramName, defaultValue, docString,
-    stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, paramName
+    rcp_implicit_cast<const PEV>(
+      stringToIntegralParameterEntryValidator<IntegralType>(
+        strings, paramName
+        )
       )
     );
 }
@@ -1043,11 +1046,14 @@ void Teuchos::setStringToIntegralParameter(
   ParameterList * paramList
   )
 {
+  typedef ParameterEntryValidator PEV;
   TEST_FOR_EXCEPT(0==paramList);
   paramList->set(
     paramName, defaultValue, docString,
-    stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, integralValues, paramName
+    rcp_implicit_cast<const PEV>(
+      stringToIntegralParameterEntryValidator<IntegralType>(
+        strings, integralValues, paramName
+        )
       )
     );
 }
@@ -1065,11 +1071,14 @@ void Teuchos::setStringToIntegralParameter(
   )
 
 {
+  typedef ParameterEntryValidator PEV;
   TEST_FOR_EXCEPT(0==paramList);
   paramList->set(
     paramName, defaultValue, docString,
-    stringToIntegralParameterEntryValidator<IntegralType>(
-      strings, stringsDocs, integralValues, paramName
+    rcp_implicit_cast<const PEV>(
+      stringToIntegralParameterEntryValidator<IntegralType>(
+        strings, stringsDocs, integralValues, paramName
+        )
       )
     );
 }

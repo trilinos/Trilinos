@@ -53,17 +53,17 @@ VerbosityLevel_validator;
 Teuchos::RCP<const Teuchos::ParameterList>
 Teuchos::getValidVerboseObjectSublist()
 {
+  using Teuchos::rcp_implicit_cast;
   static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
     RCP<ParameterList>
       pl = rcp(new ParameterList(VerboseObject_name));
+    VerbosityLevel_validator = verbosityLevelParameterEntryValidator(VerbosityLevel_name);
     pl->set(
       VerbosityLevel_name, VerbosityLevel_default,
       "The verbosity level to use to override whatever is set in code.\n"
       "The value of \"default\" will allow the level set in code to be used.",
-      VerbosityLevel_validator = verbosityLevelParameterEntryValidator(
-        VerbosityLevel_name
-        )
+      rcp_implicit_cast<const ParameterEntryValidator>(VerbosityLevel_validator)
       );
     pl->set(
       OutputFile_name, OutputFile_default,

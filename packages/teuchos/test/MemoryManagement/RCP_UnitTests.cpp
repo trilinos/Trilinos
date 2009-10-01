@@ -46,9 +46,17 @@ TEUCHOS_UNIT_TEST( RCP, assignSelf )
 }
 
 
+TEUCHOS_UNIT_TEST( RCP, getConst )
+{
+  RCP<A> a_rcp(new A);
+  RCP<const A> ca_rcp = a_rcp.getConst();
+  TEST_EQUALITY(a_rcp.getRawPtr(), ca_rcp.getRawPtr());
+}
+
+
 TEUCHOS_UNIT_TEST( RCP, explicit_null )
 {
-  RCP<A> a_rcp(0, false);
+  RCP<A> a_rcp(0);
   TEST_ASSERT(is_null(a_rcp));
 }
 

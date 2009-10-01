@@ -304,18 +304,20 @@ template<class Scalar>
 RCP<const ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getValidParameters() const
 {
+  using Teuchos::rcp_implicit_cast;
+  typedef Teuchos::ParameterEntryValidator PEV;
   static RCP<ParameterList> pl;
   if(pl.get()==NULL) {
     pl = Teuchos::parameterList();
     pl->set(
-      FDMethod_name,FDMethod_default
-      ,"The method used to compute the finite differences."
-      ,fdMethodValidator
+      FDMethod_name, FDMethod_default,
+      "The method used to compute the finite differences.",
+      rcp_implicit_cast<const PEV>(fdMethodValidator)
       );
     pl->set(
-      FDStepSelectType_name,FDStepSelectType_default
-      ,"Method used to select the finite difference step length."
-      ,fdStepSelectTypeValidator
+      FDStepSelectType_name,FDStepSelectType_default,
+      "Method used to select the finite difference step length.",
+      rcp_implicit_cast<const PEV>(fdStepSelectTypeValidator)
       );
     pl->set(
       FDStepLength_name,FDStepLength_default

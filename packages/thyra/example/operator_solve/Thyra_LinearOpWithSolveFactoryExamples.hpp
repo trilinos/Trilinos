@@ -325,8 +325,8 @@ createUnspecifiedPreconditionedLinearOpWithSolve(
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
     invertibleA = lowsFactory.createOp();
   Thyra::initializePreconditionedOp<Scalar>(
-    lowsFactory,A,Thyra::unspecifiedPrec<Scalar>(P_op)
-    ,&*invertibleA
+    lowsFactory, A, Thyra::unspecifiedPrec<Scalar>(P_op),
+    &*invertibleA
     );
   // Above, the lowsFactory object will decide whether to apply the single
   // preconditioner operator on the left or on the right.
@@ -603,7 +603,7 @@ void externallyPreconditionedLinearSolveUseCases(
   // Create a LOWSB object given the created preconditioner
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
     invertibleA = createGeneralPreconditionedLinearOpWithSolve<Scalar>(
-      Teuchos::rcp(&A,false),P,lowsFactory,out);
+      Teuchos::rcp(&A, false), P.getConst(), lowsFactory, out);
   // Grab a preconditioner operator out of the preconditioner object
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > P_op;
   if((P_op=P->getUnspecifiedPrecOp()).get());

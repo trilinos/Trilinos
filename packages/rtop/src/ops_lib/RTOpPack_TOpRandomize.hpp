@@ -89,7 +89,7 @@ public:
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 0, 1, false,
-        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+        sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
 #endif
       
       const index_type subDim = targ_sub_vecs[0].subDim();

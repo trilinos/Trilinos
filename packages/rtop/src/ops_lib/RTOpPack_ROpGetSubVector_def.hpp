@@ -230,7 +230,7 @@ void ROpGetSubVector<Scalar>::apply_op_impl(
   typedef DefaultReductTarget<SubVectorView<Scalar> > DRTSVV;
 
   validate_apply_op( *this, 1, 0, true,
-    sub_vecs, targ_sub_vecs, reduct_obj );
+    sub_vecs, targ_sub_vecs, reduct_obj.getConst() );
 
   typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
   const index_type subDim  = sub_vecs[0].subDim();

@@ -340,6 +340,8 @@ Teuchos::RCP<const Teuchos::ParameterList>
 IfpackPreconditionerFactory::getValidParameters() const
 {
   using Teuchos::rcp;
+  using Teuchos::rcp_implicit_cast;
+  typedef Teuchos::ParameterEntryValidator PEV;
   static Teuchos::RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList(Ifpack_name));
@@ -348,16 +350,16 @@ IfpackPreconditionerFactory::getValidParameters() const
       Teuchos::Array<std::string>
         precTypeNames;
       precTypeNames.insert(
-        precTypeNames.begin()
-        ,&Ifpack::precTypeNames[0]
-        ,&Ifpack::precTypeNames[0]+Ifpack::numPrecTypes
+        precTypeNames.begin(),
+        &Ifpack::precTypeNames[0],
+        &Ifpack::precTypeNames[0] + Ifpack::numPrecTypes
         );
       Teuchos::Array<Ifpack::EPrecType>
         precTypeValues;
       precTypeValues.insert(
-        precTypeValues.begin()
-        ,&Ifpack::precTypeValues[0]
-        ,&Ifpack::precTypeValues[0]+Ifpack::numPrecTypes
+        precTypeValues.begin(),
+        &Ifpack::precTypeValues[0],
+        &Ifpack::precTypeValues[0] + Ifpack::numPrecTypes
         );
       precTypeValidator = rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<Ifpack::EPrecType>(
@@ -366,18 +368,18 @@ IfpackPreconditionerFactory::getValidParameters() const
         );
     }
     validParamList->set(
-      PrecType_name,PrecTypeName_default
-      ,"Type of Ifpack preconditioner to use."
-      ,precTypeValidator
+      PrecType_name, PrecTypeName_default,
+      "Type of Ifpack preconditioner to use.",
+      rcp_implicit_cast<const PEV>(precTypeValidator)
       );
     validParamList->set(
-      Overlap_name,Overlap_default
-      ,"Number of rows/columns overlapped between subdomains in different"
+      Overlap_name, Overlap_default,
+      "Number of rows/columns overlapped between subdomains in different"
       "\nprocesses in the additive Schwarz-type domain-decomposition preconditioners."
       );
     validParamList->sublist(
-      IfpackSettings_name, false
-      ,"Preconditioner settings that are passed onto the Ifpack preconditioners themselves."
+      IfpackSettings_name, false,
+      "Preconditioner settings that are passed onto the Ifpack preconditioners themselves."
       ).setParameters(Ifpack_GetValidParameters());
     // Note that in the above setParameterList(...) function that we actually
     // validate down into the first level of this sublist.  Really the

@@ -457,7 +457,7 @@ public:
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 1, 0, true,
-        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+        sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
 #endif
 
       DefaultReductTarget<ConcreteReductObj> &reduct_obj =
@@ -681,7 +681,7 @@ public:
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 2, 0, true,
-        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+        sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
 #endif
 
       DefaultReductTarget<Scalar> &reduct_obj =
@@ -789,7 +789,7 @@ public:
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 0, 1, false,
-        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+        sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
 #endif
       
       const RTOpPack::index_type subDim = targ_sub_vecs[0].subDim();
@@ -850,7 +850,7 @@ public:
 
 #ifdef TEUCHOS_DEBUG
       validate_apply_op<Scalar>(*this, 1, 1, false,
-        sub_vecs, targ_sub_vecs, reduct_obj_inout);
+        sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
 #endif
       
       const RTOpPack::index_type subDim = sub_vecs[0].subDim();

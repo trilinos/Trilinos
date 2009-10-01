@@ -373,6 +373,8 @@ MLPreconditionerFactory::getValidParameters() const
   using Teuchos::rcp;
   using Teuchos::tuple;
   using Teuchos::implicit_cast;
+  using Teuchos::rcp_implicit_cast;
+  typedef Teuchos::ParameterEntryValidator PEV;
 
   static RCP<const ParameterList> validPL;
 
@@ -405,7 +407,7 @@ MLPreconditionerFactory::getValidParameters() const
     pl->set(BaseMethodDefaults_name,BaseMethodDefaults_default,
       "Select the default method type which also sets parameter defaults\n"
       "in the sublist \"" + MLSettings_name + "\"!",
-      BaseMethodDefaults_validator
+      rcp_implicit_cast<const PEV>(BaseMethodDefaults_validator)
       );
 
 /* 2007/07/02: rabartl:  The statement below should be the correct way to

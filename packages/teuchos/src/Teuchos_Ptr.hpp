@@ -126,6 +126,13 @@ const Ptr<T> Ptr<T>::ptr() const
 
 
 template<class T> inline
+Ptr<const T> Ptr<T>::getConst() const
+{
+  return ptr_implicit_cast<const T>(*this);
+}
+
+
+template<class T> inline
 void Ptr<T>::debug_assert_valid_ptr() const
 {
 #ifdef TEUCHOS_DEBUG

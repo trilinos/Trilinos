@@ -343,12 +343,11 @@ void Teuchos::setIntParameter(
   )
 {
   TEST_FOR_EXCEPT(0==paramList);
-  paramList->set(
-    paramName,value,docString,
+  const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypes
-      )
-    );
+      );
+  paramList->set(paramName, value, docString, paramEntryValidator);
 }
 
 
@@ -360,12 +359,11 @@ void Teuchos::setDoubleParameter(
   )
 {
   TEST_FOR_EXCEPT(0==paramList);
-  paramList->set(
-    paramName,value,docString,
+  const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_DOUBLE, acceptedTypes
-      )
-    );
+      );
+  paramList->set(paramName, value, docString, paramEntryValidator);
 }
 
 
@@ -377,12 +375,11 @@ void Teuchos::setNumericStringParameter(
   )
 {
   TEST_FOR_EXCEPT(0==paramList);
-  paramList->set(
-    paramName,value,docString,
+  const RCP<const ParameterEntryValidator> paramEntryValidator =  
     anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::PREFER_STRING, acceptedTypes
-      )
-    );
+      );
+  paramList->set(paramName, value, docString, paramEntryValidator);
 }
 
 

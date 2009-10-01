@@ -32,6 +32,15 @@ TEUCHOS_UNIT_TEST( Ptr, nonnull )
 }
 
 
+TEUCHOS_UNIT_TEST( Ptr, getConst )
+{
+  RCP<A> a_rcp(new A);
+  Ptr<A> a_ptr = a_rcp.ptr();
+  Ptr<const A> ca_ptr = a_ptr.getConst();
+  TEST_EQUALITY(a_ptr.getRawPtr(), ca_ptr.getRawPtr());
+}
+
+
 TEUCHOS_UNIT_TEST( Ptr, rcpFromPtr_weakRef )
 {
   ECHO(RCP<A> a_rcp = rcp(new A));

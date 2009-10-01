@@ -667,7 +667,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
         W_factory = this->get_W_factory();
       W_factory->setOStream(this->getOStream());
       W_factory->setVerbLevel(this->getVerbLevel());
-      initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op(), &*W );
+      initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op().getConst(), &*W );
     }
   }
   
@@ -975,6 +975,8 @@ ModelEvaluatorDefaultBase<Scalar>::createDefaultLinearOp(
   const RCP<const VectorSpaceBase<Scalar> > &var_space
   )
 {
+  using Teuchos::rcp_implicit_cast;
+  typedef LinearOpBase<Scalar> LOB;
   typedef ModelEvaluatorBase MEB;
   switch(defaultLinearOpSupport.mvImplOrientation()) {
     case MEB::DERIV_MV_BY_COL:
@@ -983,7 +985,7 @@ ModelEvaluatorDefaultBase<Scalar>::createDefaultLinearOp(
     case MEB::DERIV_TRANS_MV_BY_ROW:
       // We will have to implicitly transpose the underlying MultiVector
       return nonconstAdjoint<Scalar>(
-        createMembers(var_space, fnc_space->dim())
+        rcp_implicit_cast<LOB>(createMembers(var_space, fnc_space->dim()))
         );
 #ifdef TEUCHOS_DEBUG
     default:

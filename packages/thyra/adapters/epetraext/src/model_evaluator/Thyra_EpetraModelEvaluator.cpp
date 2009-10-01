@@ -343,6 +343,8 @@ EpetraModelEvaluator::getValidParameters() const
   using Teuchos::rcp;
   using Teuchos::StringToIntegralParameterEntryValidator;
   using Teuchos::tuple;
+  using Teuchos::rcp_implicit_cast;
+  typedef Teuchos::ParameterEntryValidator PEV;
   static RCP<const Teuchos::ParameterList> validPL;
   if(is_null(validPL)) {
     RCP<Teuchos::ParameterList>
@@ -373,7 +375,7 @@ EpetraModelEvaluator::getValidParameters() const
       "derivatives are scaled.  The scaling is done explicitly so there should\n"
       "be no impact on the meaning of inner products or tolerances for\n"
       "linear solves.",
-      stateFunctionScalingValidator
+      rcp_implicit_cast<const PEV>(stateFunctionScalingValidator)
       );
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;

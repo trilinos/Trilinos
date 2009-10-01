@@ -229,6 +229,14 @@ Ptr<T> RCP<T>::ptr() const
 }
 
 
+template<class T>
+inline
+RCP<const T> RCP<T>::getConst() const
+{
+  return rcp_implicit_cast<const T>(*this);
+}
+
+
 // Reference counting
 
 
