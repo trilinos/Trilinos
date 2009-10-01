@@ -14,11 +14,6 @@ run nightly tests.
 do it ... File a bug report ...
 - [Brent] File bug report for Sundance failure (look for existing bug) ...
 
-(*) [Everyone] Go back over packages and add remaining TPL support and
-configure options.
-
-(*) [Everyone] Go back over packages and add remaining tests and examples.
-
 
 Backlog:
 --------
