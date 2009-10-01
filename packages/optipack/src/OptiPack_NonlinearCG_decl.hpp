@@ -146,8 +146,11 @@ public:
    *
    * \param alpha_init [in] If <tt>!is_null(alpha_init)</tt>, then
    * <tt>*alpha_init</tt> will be the initial line search step length on the
-   * very first nonlinear CG iteration.  Of <tt>is_null(alpha_init)</tt>, the
+   * very first nonlinear CG iteration.  If <tt>is_null(alpha_init)</tt>, the
    * initial step length will be determined automatically.
+   *
+   * \param numIters [out] If <tt>nonnull(numIters)</tt>, then on output
+   * <tt>*numIters</tt> gives the number of iterations taken by the algorithm.
    *
    * \return Returns <tt>true</tt> if the solution was found.  Returns
    * <tt>false</tt> if a line search failure is encountered.
