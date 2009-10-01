@@ -1,12 +1,9 @@
 #!/bin/bash
 
 CTEST_EXE=/home/trilinos/install/bin/ctest
-BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base
+BASEDIR=/home/trilinos/dashboards/developement
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/godel
 
-# Source the 
-cd $HOME
-source .bash_profile
 
 if [ "$_DAYOFWEEK" == "" ] ; then
   _DAYOFWEEK=`date +%A`
@@ -19,9 +16,9 @@ if [ "$_DAYOFWEEK" == "Saturday" ] ; then
   _RUN_COVERAGE_TESTS=1
   _RUN_MEMCHECK_TESTS=0
 elif [ "$_DAYOFWEEK" == "Sunday" ] ; then
-  _RUN_REGULAR_TESTS=0 
+  _RUN_REGULAR_TESTS=1 
   _RUN_COVERAGE_TESTS=0
-  _RUN_MEMCHECK_TESTS=1
+  _RUN_MEMCHECK_TESTS=0
 else
   _RUN_REGULAR_TESTS=1
   _RUN_COVERAGE_TESTS=0
@@ -155,6 +152,7 @@ fi
 # Memcheck tests
 #
 
+#memory testing has been disabled due to hanging
 if [ "$_RUN_MEMCHECK_TESTS" == "1" ] ; then
 
 echo
@@ -183,10 +181,14 @@ killall -s 9 memcheck
 
 fi
 
+#forcing all files/directories to be group accessible
+chgrp -R trilinos-dev *
+chmod -R g+w *
+
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"
 echo
 
 
-/home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos"
+#/home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos"
