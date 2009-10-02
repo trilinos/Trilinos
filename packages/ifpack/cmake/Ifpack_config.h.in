@@ -23,3 +23,6 @@
 
 /* Define if we want to use the euclid preconditioner */
 #cmakedefine HAVE_EUCLID
+
+/* Define if we want to use the HIPS preconditioner */
+#cmakedefine HAVE_IFPACK_HIPS
