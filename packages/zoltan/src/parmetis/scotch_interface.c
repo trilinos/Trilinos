@@ -167,11 +167,11 @@ int Zoltan_Scotch_Order(
   SET_GLOBAL_GRAPH(&gr.graph_type);
   if (order_opt && ((strcmp(order_opt->order_type, "SERIAL") == 0) ||
 		    (strcmp(order_opt->order_type, "LOCAL") == 0))) /* For compatibility reason */
-#else
-  SET_LOCAL_GRAPH(&gr.graph_type);
 #endif
+    SET_LOCAL_GRAPH(&gr.graph_type);
 
-  if (IS_GLOBAL_GRAPH(gr.graph_type) && (zz->Num_Proc > 1)) {
+
+  if (IS_LOCAL_GRAPH(gr.graph_type) && (zz->Num_Proc > 1)) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Serial ordering needs exactly 1 CPU.");
     return(ZOLTAN_FATAL);
   }
@@ -203,6 +203,12 @@ int Zoltan_Scotch_Order(
   }
 
   if (strat != NULL) {
+    int len, pos;
+    len = strlen(strat);
+    for (pos=0 ; pos < len ; ++pos) { /* Scotch arguments are lower case */
+      strat[pos] = (char)tolower(strat[pos]);
+    }
+
     if (
 #ifdef ZOLTAN_PTSCOTCH
 	(IS_GLOBAL_GRAPH(gr.graph_type) && (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
