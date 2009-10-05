@@ -153,7 +153,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Pull Solver Mode, verbosity, matrix output */
   mode=List_.get("refmaxwell: mode","additive");
-  print_hierarchy= List_.get("print hierarchy",false);  
+  print_hierarchy= List_.get("print hierarchy",-2);  
   int vb_level=List_.get("ML output",0);
   if(vb_level >= 15) {very_verbose_=true;verbose_=true;}
   else if (vb_level >= 5) {very_verbose_=false;verbose_=true;}
@@ -240,7 +240,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
 
   /* DEBUG: Output matrices */
-  if(print_hierarchy){
+  if(print_hierarchy == -1 || print_hierarchy == 0){
     if(verbose_ && !Comm_->MyPID()) printf("Dumping Matrices to Disk\n");
     EpetraExt::RowMatrixToMatlabFile("sm_matrix.dat",*SM_Matrix_);
 #ifdef ENABLE_MS_MATRIX
@@ -301,7 +301,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
 #endif
-  if(print_hierarchy) EdgePC->Print();
+  if(print_hierarchy == -1) EdgePC->Print(print_hierarchy);
 
   /* Build the (2,2) Block Preconditioner */
   if(!HasOnlyDirichletNodes){
@@ -312,7 +312,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     if(solver22=="multilevel") NodePC=new MultiLevelPreconditioner(*TMT_Matrix_,List22);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (2,2) block preconditioner\n");return -1;}
     //NTS: Add Adaptive, MatrixFree
-    if(print_hierarchy) NodePC->Print();
+    if(print_hierarchy == -1) NodePC->Print(print_hierarchy);
   }/*end if*/
  
   /* Setup the Edge Smoother */
