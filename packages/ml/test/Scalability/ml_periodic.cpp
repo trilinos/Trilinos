@@ -301,7 +301,8 @@ int main(int argc, char *argv[]) {
   solver.Iterate(500, 1e-8);
  // delete the preconditioner. Do it BEFORE calling MPI_Finalize
   delete MLPrec;
-
+  ML_free(x_coords);
+  ML_free(y_coords);
 
 #ifdef ML_MPI
   MPI_Finalize();
