@@ -86,6 +86,10 @@ ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
   OFF )
 
+ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
+  "Skip the Fortran/C++ compatibility test"
+  OFF )
+
 IF (WIN32 AND NOT CYGWIN)
   SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT "")
 ELSE()

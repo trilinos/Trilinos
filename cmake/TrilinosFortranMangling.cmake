@@ -6,7 +6,7 @@ IF (Trilinos_ENABLE_Fortran)
   FORTRAN_MANGLING()
 
   # Verify the selected combination of Fortran and C++ compilers.
-  IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090824)
+  IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090824 AND NOT Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST)
     INCLUDE(FortranCInterface)
     FortranCInterface_VERIFY(CXX)
   ENDIF()
