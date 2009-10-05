@@ -54,8 +54,8 @@ class Epetra_BlockMap;
 /*! Class Ifpack_NodeFilter enables a light-weight contruction of an
  Epetra_RowMatrix-derived object, containing only the elements of the original, 
  distributed matrix with local row and column ID. The local
- submatrix is based on a communicator containing the local process only. 
- Each process will have its local object, corresponding to the local submatrix.
+ submatrix is based on a communicator containing a user-specified number of processes.
+ Each set of processes will have its local object, corresponding to the local submatrix.
  Submatrices may or may not overlap.
  
  The following instructions can be used to create "localized" matrices:
@@ -68,7 +68,7 @@ class Epetra_BlockMap;
  Ifpack_NodeFilter LocalA(A);
  \endcode
 
- Once created, \c LocalA defined, on each process, the submatrix 
+ Once created, \c LocalA defined, on each set of processes, the submatrix 
  corresponding to local rows and columns only. The creation 
  and use of
  \c LocalA is "cheap", as the elements of the local matrix are
@@ -78,13 +78,11 @@ class Epetra_BlockMap;
 
  A very convenient use of this class is to use Ifpack solvers to
  compute the LU factorizations of local blocks. If applied to
- a localized matrix, several Ifpack objects can operator in the same
- phase in a safe way, without non-required data exchange.
+ a localized matrix, several Ifpack objects can operator independently,
+ with data-exchanges only done in an outer domain-decomposition step.
 
- \author Marzio Sala, SNL 9214
+ \author Jonathan Hu, Chris Siefert
 
- \date Sep-04
- 
  */ 
 class Ifpack_NodeFilter : public virtual Epetra_RowMatrix {
 
