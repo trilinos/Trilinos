@@ -122,9 +122,9 @@ ML_Epetra::RefMaxwellPreconditioner::~RefMaxwellPreconditioner()
 
 // ================================================ ====== ==== ==== == = 
 // Print the individual operators in the multigrid hierarchy.
-void ML_Epetra::RefMaxwellPreconditioner::Print(const char *whichHierarchy){
-  if(IsComputePreconditionerOK_ && EdgePC && !strcmp(whichHierarchy,"11")) EdgePC->Print("main");
-  if(IsComputePreconditionerOK_ && NodePC && !strcmp(whichHierarchy,"22")) NodePC->Print("main");  
+void ML_Epetra::RefMaxwellPreconditioner::Print(int whichHierarchy){
+  if(IsComputePreconditionerOK_ && EdgePC && whichHierarchy==11) EdgePC->Print(-1);
+  if(IsComputePreconditionerOK_ && NodePC && whichHierarchy==22) NodePC->Print(-1);  
 }/*end Print*/
 
 

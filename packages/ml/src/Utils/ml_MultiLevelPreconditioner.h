@@ -435,7 +435,7 @@ public:
   int ReComputePreconditioner();
 
   //! Print the individual operators in the multigrid hierarchy.
-  void Print(const char *whichHierarchy = "main");
+  void Print(int level = -2);
 
   int ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                                     double* TentativeNullSpace);

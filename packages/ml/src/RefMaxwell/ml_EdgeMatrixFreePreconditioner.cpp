@@ -514,7 +514,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 
 // ================================================ ====== ==== ==== == = 
 // Print the individual operators in the multigrid hierarchy.
-void ML_Epetra::EdgeMatrixFreePreconditioner::Print(const char *whichHierarchy)
+void ML_Epetra::EdgeMatrixFreePreconditioner::Print(int whichHierarchy)
 {
   ofstream ofs("Pmat.edge.m");
   if(Prolongator_) Prolongator_->Print(ofs);

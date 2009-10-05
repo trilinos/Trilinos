@@ -126,7 +126,7 @@ namespace ML_Epetra
     int ReComputePreconditioner(){return(-1);}
 
     //! Print the individual operators in the multigrid hierarchy.
-    void Print(const char *whichHierarchy = "11");
+    void Print(int whichHierarchy = 11);
 
     //! Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
     int DestroyPreconditioner();

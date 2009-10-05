@@ -128,7 +128,7 @@ namespace ML_Epetra
     virtual int ReComputePreconditioner()=0;
 
     //! Print the individual operators in the multigrid hierarchy.
-    virtual void Print(const char *whichHierarchy="main")=0;
+    virtual void Print(int whichHierarchy=-2)=0;
 
     //! Queries whether multilevel hierarchy has been computed or not.
     virtual int IsPreconditionerComputed() const

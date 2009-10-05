@@ -100,7 +100,7 @@ namespace ML_Epetra
     int ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
     
     //! Print the individual operators in the multigrid hierarchy.
-    void Print(const char *whichHierarchy = "main");
+    void Print(int whichHierarchy = -2);
     
     //! Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
     int DestroyPreconditioner();

@@ -239,6 +239,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
                                tuple<string>("cg","Anorm","power-method"),PL);
   setIntParameter("eigen-analysis: iterations",10,"# iterations of eigen-anaysis",PL,intParam);
   PL->set("ML label","dummy string");
+  setIntParameter("print hierarchy",-2,"Print hierarchy.  0 or greater prints individual levels.",PL,intParam);
 
   /* Multigrid Cycle Options (Section 6.4.2) */
   setIntParameter("cycle applications",1,"# MG cycles",PL,intParam);
@@ -322,7 +323,6 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("low memory usage",false);
   setDoubleParameter("aggregation: edge prolongator drop threshold",0.0,"Unlisted option",PL,dblParam);
   PL->set("zero starting solution",true);
-  PL->set("print hierarchy",false);  
   PL->set("aggregation: block scaling",false);
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);
   setDoubleParameter("subsmoother: edge alpha",20.0,"alpha for edge Chebyshev polynomial in Hiptmair",PL,dblParam); 
