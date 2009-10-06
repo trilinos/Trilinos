@@ -284,12 +284,6 @@ void ModelEvaluator::OutArgs::_set_M_properties( const DerivativeProperties &M_p
   M_properties_ = M_properties;
 }
 
-void ModelEvaluator::OutArgs::_set_Minv_properties( const DerivativeProperties &Minv_properties )
-{
-  Minv_properties_ = Minv_properties;
-}
-
-
 void ModelEvaluator::OutArgs::_set_DfDp_properties( int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DfDp,l);
@@ -555,10 +549,6 @@ ModelEvaluator::create_M() const
 { return Teuchos::null; }
 
 Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_Minv() const
-{ return Teuchos::null; }
-
-Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DfDp_op(int l) const
 { return Teuchos::null; }
 
@@ -635,8 +625,6 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
       return "OUT_ARG_W";
     case ModelEvaluator::OUT_ARG_M:
       return "OUT_ARG_M";
-    case ModelEvaluator::OUT_ARG_Minv:
-      return "OUT_ARG_Minv";
     case ModelEvaluator::OUT_ARG_f_poly:
       return "OUT_ARG_f_poly";
     case ModelEvaluator::OUT_ARG_f_sg:
