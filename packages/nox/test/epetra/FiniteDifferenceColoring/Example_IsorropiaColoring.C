@@ -233,10 +233,10 @@ int main(int argc, char *argv[])
 
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
   Teuchos::ParameterList isorParamList;
-  Teuchos::ParameterList& zoltanParamList = isorParamList.sublist("ZOLTAN");
-  zoltanParamList.set("DISTANCE","2");
+  // Teuchos::ParameterList& zoltanParamList = isorParamList.sublist("ZOLTAN");
+  // zoltanParamList.set("DISTANCE","2");
   Isorropia::Epetra::Colorer isorColorer(
-          (Teuchos::RCP<const Epetra_CrsGraph>) Problem.getGraph(), isorParamList, false);
+    (Teuchos::RCP<const Epetra_CrsGraph>) Problem.getGraph(), isorParamList, false);
 
   Teuchos::RCP<Epetra_MapColoring> colorMap =  isorColorer.generateColMapColoring();
 
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-	   iReq, ( Teuchos::RCP<NOX::Epetra::Interface::Jacobian>) A, A, noxSoln));
+                                              	      iReq, iJac, A, noxSoln));
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grpPtr = 

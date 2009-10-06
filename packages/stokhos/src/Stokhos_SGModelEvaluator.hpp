@@ -123,6 +123,9 @@ namespace Stokhos {
     //! Create W = alpha*M + beta*J matrix
     Teuchos::RCP<Epetra_Operator> create_W() const;
 
+    //! Create preconditioner operator
+    Teuchos::RCP<Epetra_Operator> create_M() const;
+
     //! Create InArgs
     InArgs createInArgs() const;
 
@@ -133,13 +136,6 @@ namespace Stokhos {
     void evalModel(const InArgs& inArgs, const OutArgs& outArgs) const;
 
     //@}
-
-    //! Create preconditioner operator
-    /*! 
-     * This is NOT a virtual ModelEvaluator method, and is just a convenience
-     * for users of this class.
-     */
-    Teuchos::RCP<Epetra_Operator> create_prec() const;
 
     //! Set initial solution vector
     /*! 

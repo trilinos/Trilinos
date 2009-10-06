@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::RCP<Epetra_Operator> M;
 	std::string jac_method = sgParams->get<std::string>("Jacobian Method");
 	if (jac_method == "Matrix Free")
-	  M = sg_model->create_prec();
+	  M = sg_model->create_M();
 	
 	sg_solver = Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
       }

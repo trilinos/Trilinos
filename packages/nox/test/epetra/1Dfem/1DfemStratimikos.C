@@ -204,7 +204,6 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
   Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams, stratParams,
-                                                      iReq,
                                                       iJac, Analytic, 
                                                       //iPrec, FD, 
 						      *soln));

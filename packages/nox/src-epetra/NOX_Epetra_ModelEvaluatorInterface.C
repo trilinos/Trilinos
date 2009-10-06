@@ -122,12 +122,7 @@ computePreconditioner(const Epetra_Vector& x,
   x_ = Teuchos::rcp(&x, false);
   inargs_.set_x(x_);
 
-  f_ = Teuchos::null;
-  eval_f_.reset(f_, EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV);
-  outargs_.set_f(eval_f_);
-
-  jacobian_ = Teuchos::rcp(&M, false);
-  outargs_.set_W(jacobian_);
+  outargs_.set_M( Teuchos::rcp(&M, false) );
 
   model_->evalModel(inargs_, outargs_);
 

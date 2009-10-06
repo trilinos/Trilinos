@@ -279,6 +279,16 @@ void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_p
   W_properties_ = W_properties;
 }
 
+void ModelEvaluator::OutArgs::_set_M_properties( const DerivativeProperties &M_properties )
+{
+  M_properties_ = M_properties;
+}
+
+void ModelEvaluator::OutArgs::_set_Minv_properties( const DerivativeProperties &Minv_properties )
+{
+  Minv_properties_ = Minv_properties;
+}
+
 
 void ModelEvaluator::OutArgs::_set_DfDp_properties( int l, const DerivativeProperties &properties )
 {
@@ -540,6 +550,13 @@ Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_W() const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_M() const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_Minv() const
+{ return Teuchos::null; }
 
 Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DfDp_op(int l) const
@@ -603,7 +620,7 @@ std::string EpetraExt::toString( ModelEvaluator::EInArgsMembers inArg )
     case ModelEvaluator::IN_ARG_beta:
       return "IN_ARG_beta";
     default:
-      TEST_FOR_EXCEPT("Invalid outArg!");
+      TEST_FOR_EXCEPT("Invalid inArg!");
   }
   return ""; // Will never be executed!
 }
@@ -616,8 +633,16 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
       return "OUT_ARG_f";
     case ModelEvaluator::OUT_ARG_W:
       return "OUT_ARG_W";
+    case ModelEvaluator::OUT_ARG_M:
+      return "OUT_ARG_M";
+    case ModelEvaluator::OUT_ARG_Minv:
+      return "OUT_ARG_Minv";
     case ModelEvaluator::OUT_ARG_f_poly:
       return "OUT_ARG_f_poly";
+    case ModelEvaluator::OUT_ARG_f_sg:
+      return "OUT_ARG_f_sg";
+    case ModelEvaluator::OUT_ARG_W_sg:
+      return "OUT_ARG_W_sg";
     default:
       TEST_FOR_EXCEPT("Invalid outArg!");
   }

@@ -336,7 +336,7 @@ Stokhos::SGModelEvaluator::create_W() const
 }
 
 Teuchos::RCP<Epetra_Operator>
-Stokhos::SGModelEvaluator::create_prec() const
+Stokhos::SGModelEvaluator::create_M() const
 {
   if (supports_x) {
     if (jacobianMethod == MATRIX_FREE)
@@ -385,6 +385,9 @@ Stokhos::SGModelEvaluator::createOutArgs() const
   outArgs.set_Np_Ng_sg(0, 0);
   outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W));
+  // Preconditioner computed for MF mode from W of underlying me
+  if (jacobianMethod == MATRIX_FREE)
+    outArgs.setSupports(OUT_ARG_M, me_outargs.supports(OUT_ARG_W));
   for (int i=0; i<me_outargs.Ng(); i++)
     for (int j=0; j<me_outargs.Np(); j++)
       outArgs.setSupports(OUT_ARG_DgDp, i, j, 
@@ -404,18 +407,20 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   Teuchos::RCP<Epetra_Operator> W_out;
   if (outArgs.supports(OUT_ARG_W))
     W_out = outArgs.get_W();
+  Teuchos::RCP<Epetra_Operator> M_out;
+  if (outArgs.supports(OUT_ARG_M))
+    M_out = outArgs.get_M();
 
   // Check if we are using the "matrix-free" method for W and we are 
   // computing a preconditioner.  
-  bool eval_mean = jacobianMethod == MATRIX_FREE && W_out != Teuchos::null && 
-    f_out.getType() == EVAL_TYPE_VERY_APPROX_DERIV;
+  bool eval_mean = (M_out != Teuchos::null);
 
   // Here we are assuming a full W fill occurred previously which we can use
   // for the preconditioner.  Given the expense of computing the SG W blocks
   // this saves signfifcant computational cost
   if (eval_mean) {
     Teuchos::RCP<Stokhos::MeanEpetraOp> W_mean = 
-      Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(W_out, true);
+      Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(M_out, true);
     Teuchos::RCP<Epetra_Operator> prec = 
       precFactory->compute(W_sg_blocks->getCoeffPtr(0));    
     W_mean->setMeanOperator(prec);

@@ -44,7 +44,6 @@
 #ifdef HAVE_NOX_STRATIMIKOS
 
 // NOX includes
-#include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
 #include "NOX_Epetra_MatrixFree.H"
@@ -90,7 +89,6 @@ NOX::Epetra::LinearSystemStratimikos::
 LinearSystemStratimikos(
  Teuchos::ParameterList& printParams, 
  Teuchos::ParameterList& linearSolverParams,  
- const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
  const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
  const Teuchos::RCP<Epetra_Operator>& jacobian,
  const NOX::Epetra::Vector& cloneVector,
@@ -114,13 +112,6 @@ LinearSystemStratimikos(
   initializeStratimikos(linearSolverParams);
   tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
 
-  // Create Jac Operator internally, if requested one of 2 ways
-  if (jacPtr == Teuchos::null) 
-    createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
-  else if (linearSolverParams.get("Jacobian Operator", "Have Jacobian")
-           != "Have Jacobian")
-    createJacobianOperator(printParams, linearSolverParams, iReq, cloneVector);
-  
   jacType = getOperatorType(*jacPtr);
   precType = jacType;
 
@@ -200,6 +191,9 @@ initializeStratimikos(Teuchos::ParameterList& stratParams)
   lowsFactory->setOStream(out);
   lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
+  // Initialize the LinearOpWithSolve
+  lows = lowsFactory->createOp();
+
 }
 //***********************************************************************
 void NOX::Epetra::LinearSystemStratimikos::
@@ -248,36 +242,6 @@ reset(Teuchos::ParameterList& linearSolverParams)
 }
 
 //***********************************************************************
-bool NOX::Epetra::LinearSystemStratimikos::createJacobianOperator(
-       Teuchos::ParameterList& printParams,
-       Teuchos::ParameterList& lsParams,
-       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-       const NOX::Epetra::Vector& cloneVector)
-{
-  string choice = lsParams.get("Jacobian Operator", "Matrix-Free");
-
-  if (choice == "Matrix-Free") {
-    jacPtr = 
-      Teuchos::rcp(new MatrixFree(printParams, iReq, cloneVector));
-    jacInterfacePtr = 
-      Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(jacPtr);
-    jacType = EpetraOperator;
-  }
-  else if (choice == "Finite Difference") {
-    jacPtr = 
-      Teuchos::rcp(new FiniteDifference(printParams, iReq, cloneVector));
-    jacInterfacePtr = 
-      Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(jacPtr);
-    jacType = EpetraRowMatrix;
-  }
-  else    
-    throwError("createJacobianOperator", 
-       "The specified value for parameter \" Jacobian Operator\" is not valid");
-
-  return true;
-}
-
-//***********************************************************************
 bool NOX::Epetra::LinearSystemStratimikos::
 applyJacobian(const NOX::Epetra::Vector& input, 
 	      NOX::Epetra::Vector& result) const
@@ -323,8 +287,6 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp =
     Thyra::epetraLinearOp(jacPtr);
 
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows;
-
   // Construct preconditioner if given AND if factory supports it
   if (precMatrixSource == SeparateMatrix &&
       lowsFactory->supportsPreconditionerInputType(
@@ -333,7 +295,6 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
        Thyra::epetraLinearOp(precPtr);
 
-    lows = lowsFactory->createOp();
     Thyra::initializeApproxPreconditionedOp<double>(*lowsFactory,linearOp,precOp,&*lows);
    
   }
@@ -343,7 +304,6 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     
     Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
        Thyra::epetraLinearOp(precPtr);
-    lows = lowsFactory->createOp();
 
     Thyra::initializePreconditionedOp<double>(
       *lowsFactory,linearOp,Thyra::rightPrec<double>(precOp) ,&*lows);
@@ -351,9 +311,8 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   else {
     // Default case of using only the Jacobian and no 
     // separate preconditioner object
-    lows = Thyra::linearOpWithSolve(*lowsFactory, linearOp);
+    Thyra::initializeOp(*lowsFactory, linearOp, &*lows);
   }
-  
 
   Teuchos::RCP<Epetra_Vector> resultRCP =
     Teuchos::rcp(&result.getEpetraVector(), false);

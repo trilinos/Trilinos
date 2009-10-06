@@ -61,7 +61,6 @@ namespace NOX {
   namespace Epetra {
     class Scaling;
     namespace Interface {
-      class Required;
       class Jacobian;
       class Preconditioner;
     }
@@ -118,7 +117,6 @@ public:
   LinearSystemStratimikos(
     Teuchos::ParameterList& printingParams, 
     Teuchos::ParameterList& stratimikosParams, 
-    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
     const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
     const Teuchos::RCP<Epetra_Operator>& J,
     const NOX::Epetra::Vector& cloneVector,
@@ -255,13 +253,6 @@ public:
   virtual void setPrecOperatorForSolve(const Teuchos::RCP<const Epetra_Operator>& solvePrecOp);
 
 protected:
-
-  //! Creates an internally owned Epetra_Operator for the Jacobian. 
-  virtual bool createJacobianOperator(
-       Teuchos::ParameterList& printParams,
-       Teuchos::ParameterList& lsParams,
-       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-       const NOX::Epetra::Vector& cloneVector); 
 
   //! Builds the linear op with solve factory
   void initializeStratimikos(Teuchos::ParameterList& stratParams);

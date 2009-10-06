@@ -386,8 +386,10 @@ public:
     ,OUT_ARG_f_poly   ///< Residual vector Taylor polynomial
     ,OUT_ARG_f_sg     ///< Stochastic Galerkin residual vector polynomial
     ,OUT_ARG_W_sg     ///< Stochastic Galerkin "W" operator polyomial
+    ,OUT_ARG_M        ///< Preconditioner operator (approx Jacobian)
+    ,OUT_ARG_Minv     ///< Preconditioner operator (approx Jacobian Inverse)
   };
-  static const int NUM_E_OUT_ARGS_MEMBERS=5;
+  static const int NUM_E_OUT_ARGS_MEMBERS=7;
 
   /** \brief . */
   enum EOutArgsDfDp {
@@ -471,10 +473,16 @@ public:
     sg_vector_t get_g_sg(int j) const;
     /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
+    void set_M( const Teuchos::RefCountPtr<Epetra_Operator> &M );
+    void set_Minv( const Teuchos::RefCountPtr<Epetra_Operator> &Minv );
     /** \brief. */
     Teuchos::RefCountPtr<Epetra_Operator> get_W() const;
+    Teuchos::RefCountPtr<Epetra_Operator> get_M() const;
+    Teuchos::RefCountPtr<Epetra_Operator> get_Minv() const;
     /** \brief . */
     DerivativeProperties get_W_properties() const;
+    DerivativeProperties get_M_properties() const;
+    DerivativeProperties get_Minv_properties() const;
     /** \brief Set stochastic Galerkin W operator polynomial. */
     void set_W_sg( const sg_operator_t& W_sg );
     /** \brief Get stochastic Galerkin W operator polynomial. */
@@ -539,6 +547,8 @@ public:
     void _setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
     void _set_W_properties( const DerivativeProperties &W_properties );
+    void _set_M_properties( const DerivativeProperties &M_properties );
+    void _set_Minv_properties( const DerivativeProperties &Minv_properties );
     /** \brief . */
     void _set_DfDp_properties( int l, const DerivativeProperties &properties );
     /** \brief . */
@@ -568,7 +578,11 @@ public:
     g_t g_;
     g_sg_t g_sg_;
     Teuchos::RefCountPtr<Epetra_Operator> W_;
+    Teuchos::RefCountPtr<Epetra_Operator> M_;
+    Teuchos::RefCountPtr<Epetra_Operator> Minv_;
     DerivativeProperties W_properties_;
+    DerivativeProperties M_properties_;
+    DerivativeProperties Minv_properties_;
     deriv_t DfDp_; // Np
     deriv_properties_t DfDp_properties_; // Np
     deriv_t DgDx_dot_; // Ng
@@ -689,12 +703,14 @@ public:
   //@{
 
   /** \brief If supported, create a <tt>Epetra_Operator</tt> object for
-   * <tt>W</tt> to be evaluated.
+   * <tt>W</tt> to be evaluated. Same for preconditioner <tt>M</tt>
    *
    * The default implementation returns <tt>return.get()==NULL</tt>
    * (i.e. implicit solvers are not supported by default).
    */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_M() const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_Minv() const;
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
@@ -772,6 +788,8 @@ protected:
     void setSupports(EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
     void set_W_properties( const DerivativeProperties &properties );
+    void set_M_properties( const DerivativeProperties &properties );
+    void set_Minv_properties( const DerivativeProperties &properties );
     /** \brief . */
     void set_DfDp_properties( int l, const DerivativeProperties &properties );
     /** \brief . */
@@ -1058,15 +1076,27 @@ ModelEvaluator::OutArgs::get_g_sg(int j) const
 
 inline
 void ModelEvaluator::OutArgs::set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W ) { W_ = W; }
+inline
+void ModelEvaluator::OutArgs::set_M( const Teuchos::RefCountPtr<Epetra_Operator> &M ) { M_ = M; }
+inline
+void ModelEvaluator::OutArgs::set_Minv( const Teuchos::RefCountPtr<Epetra_Operator> &Minv ) { Minv_ = Minv; }
 
 inline
 Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_W() const { return W_; }
+inline
+Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_M() const { return M_; }
+inline
+Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_Minv() const { return Minv_; }
 
 inline
 ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_W_properties() const
-{
-  return W_properties_;
-}
+{ return W_properties_; }
+inline
+ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_M_properties() const
+{ return M_properties_; }
+inline
+ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_Minv_properties() const
+{ return Minv_properties_; }
 
 inline
 void ModelEvaluator::OutArgs::set_DfDp( int l, const Derivative &DfDp_l )
@@ -1274,6 +1304,12 @@ void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp_sg arg, int j, int 
 inline
 void ModelEvaluator::OutArgsSetup::set_W_properties( const DerivativeProperties &properties )
 { this->_set_W_properties(properties); }
+inline
+void ModelEvaluator::OutArgsSetup::set_M_properties( const DerivativeProperties &properties )
+{ this->_set_M_properties(properties); }
+inline
+void ModelEvaluator::OutArgsSetup::set_Minv_properties( const DerivativeProperties &properties )
+{ this->_set_Minv_properties(properties); }
 
 inline
 void ModelEvaluator::OutArgsSetup::set_DfDp_properties( int l, const DerivativeProperties &properties )
