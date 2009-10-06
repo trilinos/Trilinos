@@ -285,6 +285,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
   struct phg_timer_indices *timer = NULL; 
   int do_timing = 0;
 
+#ifdef CEDRIC_2D_PARTITIONS
+  int* rowpart;
+#endif
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Initialization of return arguments. */

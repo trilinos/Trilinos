@@ -840,7 +840,7 @@ long int index;
     if (map_num < 0) goto End;
 
     for (i=0; i < zhg->nObj; i++){
-      indexptr = (int *)(long)(i+1);
+      indexptr = (int *)(i+1);
       ierr = Zoltan_Map_Add(zz, map_num, myObjGNO + i, indexptr);
       if (ierr != ZOLTAN_OK) goto End;
     }

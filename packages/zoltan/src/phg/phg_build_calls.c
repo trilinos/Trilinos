@@ -24,6 +24,7 @@ extern "C" {
 #include "third_library_const.h"
 #include "third_library_tools.h"
 
+#define CEDRIC_PRINT
 
 static int edge_weight_operation(ZZ *zz, float *dest, float *src, int ew_dim, int ew_op, int len);
 
@@ -383,12 +384,35 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     for (i=0; i<nRequests; i++){
       j = phg_lookup_GID(lookup_myHshEdges, gid_buf + (i*gid_size));
       if (j < 0) FATAL_ERROR("Invalid global edge ID received");
-      zhg->Esize[j] += recvIntBuf[i];  
+      zhg->Esize[j] += recvIntBuf[i];
     }
 
     for (j=0; j < zhg->nHedges; j++){
       zhg->nPins += zhg->Esize[j];
     }
+
+#ifdef CEDRIC_2D_PARTITIONS
+    {
+      int offset;
+      int *egno = NULL;
+      MPI_Scan(&zhg->nHedges, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
+      offset -= zhg->nHedges;
+#ifdef CEDRIC_PRINT
+      for (j=0; j < zhg->nHedges; j++){
+	fprintf (stderr, "EDGEGID %d\t%d\n", global_ids[j], offset + j);
+      }
+#endif /* CEDRIC_PRINT */
+      egno = (int*)ZOLTAN_MALLOC(zhg->nHedges*sizeof(int));
+      for (j=0; j < zhg->nHedges; j++){
+	egno[j] = j + offset;
+      }
+      Zoltan_DD_Create (&zhg->ddHedge, zz->Communicator, 1, zz->Num_GID,
+			0, zhg->nHedges, 0);
+      Zoltan_DD_Update (zhg->ddHedge, (ZOLTAN_ID_PTR) egno, global_ids, NULL,
+			NULL, zhg->nHedges);
+      ZOLTAN_FREE(&egno);
+    }
+#endif /* CEDRIC_2D_PARTITIONS */
 
     /* Get edge pins.  */
 
@@ -527,7 +551,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (map1 < 0) goto End;
 
       for (i=0; i < zhg->nObj; i++){
-        indexptr = (int *)(long)(i+1);
+        indexptr = (int *)(i+1);
         ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, indexptr);
         if (ierr != ZOLTAN_OK) goto End;
       }
@@ -790,7 +814,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       for (j=0; j < zhg->Esize[i]; j++, k++){
          gnos[0] = zhg->objGNO[i];
          gnos[1] = zhg->pinGNO[k];
-         indexptr = (int *)(long)(k+1);
+         indexptr = (int *)(k+1);
          ierr = Zoltan_Map_Add(zz, map2, gnos, indexptr);
          if (ierr != ZOLTAN_OK) goto End;
       }

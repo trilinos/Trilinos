@@ -52,5 +52,8 @@
 /* Use to have only filename when debugging memory */
 #define SHORT_FILE
 
-/* Use to have only filename when debugging memory */
-#define SHORT_FILE
+/* HUND support */
+#cmakedefine HAVE_ZOLTAN_HUND
+#ifdef HAVE_ZOLTAN_HUND
+#define CEDRIC_2D_PARTITIONS
+#endif

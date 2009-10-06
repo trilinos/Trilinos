@@ -16,6 +16,10 @@
 
 #include "phg_comm.h"
 
+#ifdef CEDRIC_2D_PARTITIONS
+#include "zoltan_dd.h"
+#endif
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -178,6 +182,9 @@ struct Zoltan_HGraph {
                                with VtxPlan in building return lists. */
   ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
                                within row communicators. */
+#ifdef CEDRIC_2D_PARTITIONS
+  struct Zoltan_DD_Struct *ddHedge;
+#endif /* CEDRIC_2D_PARTITIONS */
 
   HGraph HG;                /* Hypergraph for initial objects.       */
 };
