@@ -569,7 +569,7 @@ int main(int argc, char *argv[]) {
       **********************************************************************************************/
     
     // Use the second cell topology for these tests (Triangle<6>)
-    topo_iterator = ++supportedTopologies.begin();
+    topo_iterator = supportedTopologies.begin() + 1;
     D = (*topo_iterator).getDimension();
     N = (*topo_iterator).getNodeCount();
     V = (*topo_iterator).getVertexCount();
@@ -1137,7 +1137,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, 0, 0, pentagon_5), throwCounter, nException);
 
     // Use last cell topology (Wedge<18>) for these tests
-    topo_iterator = --supportedTopologies.end();
+    topo_iterator = supportedTopologies.end() - 1;
     D = (*topo_iterator).getDimension();
     int subcDim = D - 1;
     int S = (*topo_iterator).getSubcellCount(subcDim);
