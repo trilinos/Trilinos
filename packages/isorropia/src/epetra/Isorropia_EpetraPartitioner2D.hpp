@@ -31,7 +31,7 @@ USA
 #define _Isorropia_EpetraPartitioner2D_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Isorropia_EpetraCostDescriber.hpp>
@@ -84,7 +84,7 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+  Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -114,8 +114,8 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-              Teuchos::RefCountPtr<CostDescriber> costs,
+  Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+              Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -143,7 +143,7 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+  Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
 
@@ -174,30 +174,43 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-              Teuchos::RefCountPtr<CostDescriber> costs,
+  Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+              Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist,
               bool compute_partitioning_now=true);
+
+
+
+  //  MMW: Missing the following constructors that are in Partitioner
+  //
+  //  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+  //            bool compute_partitioning_now=true);
+  //
+  //  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+  //            bool compute_partitioning_now=true);
+  //
+  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+  //            bool compute_partitioning_now=true);
+  //
+  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+  //            const Teuchos::ParameterList& paramlist,
+  //            bool compute_partitioning_now=true);
+  //
+  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+  //            Teuchos::RCP<const Epetra_MultiVector> weights,
+  //            const Teuchos::ParameterList& paramlist,
+  //            bool compute_partitioning_now=true);
+  
+
+
 
   /** Destructor */
   virtual ~Partitioner2D();
 
-  /** setParameters() is an internal Partitioner method which handles
-      the parameters from a Teuchos::ParameterList object. 
 
-      The input
-      ParameterList object is copied into an internal ParameterList
-      attribute, and no reference to the input object is held after
-      this function returns. (Thus, the input paramlist object may be
-      altered or destroyed as soon as this method returns.)<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-   */
+  // MMW: Missing functions that are in EpetraPartioner, might need to implement
+  //void setPartSizes(int len, int *global_part_id, float *part_size);
+  //void clearPartSizes();
 
   /**  partition is a method that computes 
        a rebalanced partitioning for the data in the object
@@ -214,36 +227,39 @@ public:
 
   virtual void compute(bool forceRecomputing=false);
 
-  //  /** An internal method which determines whether the
-  //      method compute_partitioning() has already been
-  //      called on this class instance.
-  //  */
-  //  bool partitioning_already_computed() const __deprecated;
-
-  //  /** An internal method which returns the new partition ID for a given element that
-  //     resided locally in the old partitioning.
-  //  */
-  //  int newPartitionNumber(int myElem) const __deprecated;
 
   /** An internal method which returns the number of elements in a given partition.
 
       (Currently only implemented for the case where 'partition' is local.)
   */
-  int numElemsInPartition(int partition) const;
+  int numElemsInPart(int part) const;
+
 
   /** An internal method which fills caller-allocated list (of length len) with the
       global element ids to be located in the given partition.
 
       (Currently only implemented for the case where 'partition' is local.)
   */
-  void elemsInPartition(int partition, int* elementList, int len) const;
+  void elemsInPart(int part, int* elementList, int len) const;
 
-  Teuchos::RefCountPtr<Epetra_Map> createNewMap();
 
-  int createNewMaps(Teuchos::RefCountPtr<Epetra_Map> domainMap, 
-		    Teuchos::RefCountPtr<Epetra_Map> rangeMap);
+  /** Create a new @c Epetra_Map corresponding to the new partition.
+
+      This method is essentially used by the
+      Isorropia::Epetra::Redistributor object.
+
+      \return @c Epetra_Map that contains the new distribution of elements.
+
+      \pre The number of parts might be the same or lower than the
+      number of processors.
+  */
+  Teuchos::RCP<Epetra_Map> createNewMap();
+
+  int createNewMaps(Teuchos::RCP<Epetra_Map> domainMap, 
+		    Teuchos::RCP<Epetra_Map> rangeMap);
 
   int partitionVectors();
+
 
 
 };//class Partitioner2D

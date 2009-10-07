@@ -33,7 +33,7 @@ USA
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraCostDescriber.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include <Epetra_Comm.h>
@@ -60,7 +60,7 @@ namespace Epetra {
         API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
+        is to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -79,7 +79,7 @@ namespace Epetra {
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, paramlist, 0)
@@ -92,7 +92,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_g
         API function create_partitioner().
 
      \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
+        is to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -114,8 +114,8 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_g
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-			 Teuchos::RefCountPtr<CostDescriber> costs,
+Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, costs, paramlist, 0)
@@ -130,7 +130,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_g
        API function create_partitioner().
 
      \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
+        to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -149,7 +149,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_g
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, paramlist, 0)
@@ -164,7 +164,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_
      CostDescriber, called by API function create_partitioner(). 
 
      \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
+        to be computed. A Teuchos::RCP is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
 
@@ -186,8 +186,8 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-			 Teuchos::RefCountPtr<CostDescriber> costs,
+Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, costs, paramlist, 0)
@@ -304,9 +304,9 @@ compute(bool force_repartitioning)
 
       (Currently only implemented for the case where 'partition' is local.)
   */
-int Partitioner2D::numElemsInPartition(int partition) const
+int Partitioner2D::numElemsInPart(int part) const
 {
-  return (numElemsWithProperty(partition));
+  return (numElemsWithProperty(part));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ int Partitioner2D::numElemsInPartition(int partition) const
       (Currently only implemented for the case where 'partition' is local.)
   */
 ////////////////////////////////////////////////////////////////////////////////
-void Partitioner2D::elemsInPartition(int partition, int* elementList, int len) const 
+void Partitioner2D::elemsInPart(int partition, int* elementList, int len) const 
 {
   //MMW
   std::cout << "MMW::NEED to reimplement" << std::endl;
@@ -328,8 +328,8 @@ void Partitioner2D::elemsInPartition(int partition, int* elementList, int len) c
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int
-Partitioner2D::createNewMaps(Teuchos::RefCountPtr<Epetra_Map> domainMap, 
-			     Teuchos::RefCountPtr<Epetra_Map> rangeMap) 
+Partitioner2D::createNewMaps(Teuchos::RCP<Epetra_Map> domainMap, 
+			     Teuchos::RCP<Epetra_Map> rangeMap) 
 {
   //MMW
   std::cout << "MMW::NEED to reimplement" << std::endl;
@@ -361,7 +361,7 @@ Partitioner2D::createNewMaps(Teuchos::RefCountPtr<Epetra_Map> domainMap,
   //Add imports to end of list
   myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
 
-  Teuchos::RefCountPtr<Epetra_Map> target_map =
+  Teuchos::RCP<Epetra_Map> target_map =
     Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
 
   return(target_map);

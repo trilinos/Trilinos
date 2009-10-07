@@ -69,32 +69,52 @@ public:
         inputs have been changed), then setting this flag to true
         will force a new partitioning to be computed.
    */
-  //  virtual void compute_partitioning(bool force_repartitioning=false) __deprecated 
-  //  {
-  //    return (partition(force_repartitioning));
-  //  }
-
   virtual void partition(bool force_repartitioning=false) = 0;
 
-  /** Query whether compute_partitioning() has already been called.
-   */
-  virtual bool partitioning_already_computed() const = 0;
+
+
+  /** Return the number of LOCAL elements in a given part.  
+
+      \param[in] part the part ID we want to know the number of local
+      elements.
+
+      \return number of local elements that belongs to the
+      given part.
+
+      \sa Isorropia::Operator::numElemsWithProperty()
+  */
+  virtual  int numElemsInPart(int part) const = 0;
+
+
+  /** Fill user-allocated list (of length len) with the
+      local element ids to be located in the given part
+
+      \param[in] part the part ID we consider
+
+      \param[out] elementList array of elements that belongs to this
+      part ID, must be allocated by user with size at least @c len
+
+      \param[in] len maximum number of elements we can put in the
+      array. Usually, may be the result of
+      Isorropia::Partitioner::numElemsInPart().  .
+
+      \sa Isorropia::Operator::elemsWithProperty()
+  */
+  virtual  void elemsInPart(int part,
+                            int* elementList,
+                            int len) const = 0;
+
+
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
+
   virtual int newPartitionNumber(int myElem) const = 0;
 
-  /** Return the number of elements in a given partition.
-  */
-  virtual int numElemsInPartition(int partition) const = 0;
 
-  /** Fill user-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-  */
-  virtual void elemsInPartition(int partition,
-                                int* elementList,
-                                int len) const = 0;
+
+
 
 };//class Partitioner2D
 
