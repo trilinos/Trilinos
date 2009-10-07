@@ -26,8 +26,6 @@ USA
 */
 //@HEADER
 
-#ifdef ISORROPIA_2D
-
 // Assumes we have Epetra and Zoltan support
 #include <Isorropia_EpetraPartitioner2D.hpp>
 #include <Isorropia_Zoltan_Repartition.hpp>
@@ -388,4 +386,3 @@ Partitioner2D::partitionVectors()
 
 }//namespace Isorropia
 
-#endif //ISORROPIA_2D

@@ -34,7 +34,6 @@ SET(HEADERS ${HEADERS}
   Isorropia_CostDescriber.hpp
   Isorropia_Operator.hpp
   Isorropia_Partitioner.hpp
-  Isorropia_Partitioner2D.hpp
   Isorropia_Colorer.hpp
   Isorropia_Orderer.hpp
   Isorropia_Redistributor.hpp
@@ -85,17 +84,36 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra/zoltanLib)
 
 SET(HEADERS ${HEADERS}
   epetra/zoltanLib/QueryObject.hpp
-  epetra/Isorropia_EpetraPartitioner2D.hpp
   epetra/Isorropia_EpetraZoltanLib.hpp
   #epetra/zoltanLib/Isorropia_Zoltan_Repartition.hpp
   )
 
 SET(SOURCES ${SOURCES}
   epetra/zoltanLib/QueryObject.cpp
-  epetra/Isorropia_EpetraPartitioner2D.cpp
   epetra/Isorropia_EpetraZoltanLib.cpp
   #epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
   )
+
+
+
+#
+# 2D partitioning
+#
+
+IF (${PACKAGE_NAME}_ENABLE_2DPARTITION)
+
+  APPEND_SET(HEADERS
+    Isorropia_Partitioner2D.hpp
+    epetra/Isorropia_EpetraPartitioner2D.hpp
+    )
+
+  APPEND_SET(SOURCES
+    epetra/Isorropia_EpetraPartitioner2D.cpp
+    )
+
+ENDIF()
+
+
 
 #
 # C) Define the targets for package's library(s)
