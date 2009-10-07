@@ -65,7 +65,7 @@ Section H: Dashboard testing
 
 (*) Installing a binary release of CMake [Recommended for Trilinos users]:
 
-  Download and install the binary (currently version 2.6.3 is required) from:
+  Download and install the binary (currently version 2.8 is required) from:
 
     http://www.cmake.org/cmake/resources/software.html
 
