@@ -298,6 +298,7 @@ TAC_ARG_WITH_INCDIRS
 if test "X$ac_cv_use_fortran" != "Xno"; then
   AC_F77_WRAPPERS
   AX_F90_MODULE_FLAG
+  FCFLAGS="-I$srcdir/src/fort ${FCFLAGS}"
   if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
     AC_MSG_ERROR([unable to find f90 modules extension])
   else
@@ -310,19 +311,10 @@ fi
 
 #if test "X$ac_cv_use_new_package_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 #if test "X$ac_cv_use_zoltan_tests" != "Xno" || test "X$ac_cv_use_zoltan_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
-
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
-
 #fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
