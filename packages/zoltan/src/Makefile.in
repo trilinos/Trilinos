@@ -1170,6 +1170,7 @@ SUBDIRS = . driver $(FDRIVER_SUBDIR)
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in
+MOSTLYCLEANFILES = *.mod
 all: all-recursive
 
 .SUFFIXES:
@@ -3827,6 +3828,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 

@@ -56,3 +56,5 @@ EXTRA_DIST = $(srcdir)/CMakeLists.txt \
 	$(srcdir)/farg_nagf95.f \
 	$(srcdir)/makefile \
 	$(srcdir)/zoltan_user_data.f90.old
+
+MOSTLYCLEANFILES = *.mod
