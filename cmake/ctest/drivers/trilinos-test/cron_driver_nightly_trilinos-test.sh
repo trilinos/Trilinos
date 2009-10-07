@@ -2,13 +2,13 @@
 
 CTEST_EXE=/home/trilinos/cmake/bin/ctest
 BASEDIR=/home/bmpersc/nightly/Trilinos.base/release_10
+BASEDATADIR=/home/bmpersc/nightly
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
 BRANCH="-r trilinos-release-10-0-branch"
 
-# Source the 
-#this is not the best thing to do, but we'll leave it for now
-cd $HOME
-source .bash_profile
+export CMAKE_LIBRARY_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/lib:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
+export CMAKE_INCLUDE_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/include:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
+export TRILINOSDATADIRECTORY=$BASEDATADIR/TrilinosData
 
 #get the date for use in log files
 DATE=`date "+%m-%d-%Y"`
@@ -21,7 +21,13 @@ echo
 echo "Checking out just the drivers: `date`"
 echo
 
+
+cd $BASEDATADIR
+#checkout the trilinos data directory. Needed for a few tests to run
+cvs -q -d :ext:software:/space/CVS co TrilinosData
+
 cd $BASEDIR
+#checkout the bits of trilinos needed for running the nightly test scripts
 cvs -q -d :ext:software:/space/CVS co $BRANCH Trilinos/cmake Trilinos/CTestConfig.cmake
 
 echo

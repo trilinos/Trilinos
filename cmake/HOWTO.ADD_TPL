@@ -137,7 +137,7 @@ packages/PACKAGE_DIR/cmake/PACKAGE_config.h.in:
 In order to have the source code in PACKAGE respond to a conditional
 TPL enable, you have to add a #cmakedefine macro to the package's:
 
-    PACKAGE_DIR/cmake/PACAKGE_config.h.in
+    PACKAGE_DIR/cmake/PACKAGE_config.h.in
 
 file.
 

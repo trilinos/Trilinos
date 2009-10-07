@@ -92,14 +92,14 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   MOOCHO                moocho                         PS
   Aristos               aristos                        EX
   Sundance              Sundance                       PS
-  CTrilinos             CTrilinos                      EX
+  CTrilinos             CTrilinos                      PS
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   WebTrilinos           WebTrilinos                    EX # Should be SS
   Didasko               didasko                        SS
   NewPackage            new_package                    EX # Should be SS
   Optika		optika			       SS
-  Mesquite              mesquite                       EX
+  Mesquite              mesquite                       SS
   )
 
 
@@ -113,10 +113,13 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 
 PACKAGE_DISABLE_ON_PLATFORMS(MOOCHO Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Phalanx Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Phdmesh Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(PyTrilinos Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Sundance Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Tpetra Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Phdmesh Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(FEI Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
