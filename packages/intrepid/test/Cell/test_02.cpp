@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
         // Forward map:: requires cell ordinal
         CellTools::mapToPhysicalFrame(physPoints, cubPoints, cellWorkset, (*topo_iterator), cellOrd);
         // Inverse map: requires cell ordinal. Use cubPoints as initial guess
-        CellTools::mapToReferenceFrame(controlPoints, cubPoints,  physPoints, cellWorkset, (*topo_iterator), cellOrd);
+        CellTools::mapToReferenceFrameInitGuess(controlPoints, cubPoints,  physPoints, cellWorkset, (*topo_iterator), cellOrd);
         
         // Points in controlPoints should match the originals in cubPoints up to a tolerance
         for(int pt = 0; pt < numPts; pt++){
@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
       // Forward map: do not specify cell ordinal
       CellTools::mapToPhysicalFrame(physPoints, cubPoints, cellWorkset, (*topo_iterator));
       // Inverse map: do not specify cell ordinal
-      CellTools::mapToReferenceFrame(controlPoints, initialGuess, physPoints, cellWorkset, (*topo_iterator));
+      CellTools::mapToReferenceFrameInitGuess(controlPoints, initialGuess, physPoints, cellWorkset, (*topo_iterator));
       
       // Check: points in controlPoints should match the originals in cubPoints up to a tolerance
       for(int cellOrd = 0; cellOrd < numCells; cellOrd++){
@@ -494,7 +494,7 @@ int main(int argc, char *argv[]) {
       // Forward map: do not specify cell ordinal
       CellTools::mapToPhysicalFrame(physPoints, initialGuess, cellWorkset, (*topo_iterator));
       // Inverse map: do not specify cell ordinal
-      CellTools::mapToReferenceFrame(controlPoints, initialGuess, physPoints, cellWorkset, (*topo_iterator));
+      CellTools::mapToReferenceFrameInitGuess(controlPoints, initialGuess, physPoints, cellWorkset, (*topo_iterator));
       
       // Check: points in controlPoints should match the originals in cubPoints up to a tolerance
       for(int cellOrd = 0; cellOrd < numCells; cellOrd++){
@@ -569,7 +569,7 @@ int main(int argc, char *argv[]) {
       **********************************************************************************************/
     
     // Use the second cell topology for these tests (Triangle<6>)
-    topo_iterator = ++supportedTopologies.begin();
+    topo_iterator = supportedTopologies.begin() + 1;
     D = (*topo_iterator).getDimension();
     N = (*topo_iterator).getNodeCount();
     V = (*topo_iterator).getVertexCount();
@@ -765,7 +765,7 @@ int main(int argc, char *argv[]) {
                            throwCounter, nException );
     
     /***********************************************************************************************
-      *          Exception tests for mapToReferenceFrame method with default initial guesses       *
+      *          Exception tests for mapToReferenceFrame method (with default initial guesses)     *
       **********************************************************************************************/
     
     // 30. incompatible ranks
@@ -813,7 +813,7 @@ int main(int argc, char *argv[]) {
                            throwCounter, nException );
     
     /***********************************************************************************************
-      *      Exception tests for mapToReferenceFrame method with user-defined initial guesses      *
+      *   Exception tests for mapToReferenceFrameInitGuess method (initial guess is a parameter)   *
       **********************************************************************************************/
     
     // 37. Incompatible ranks
@@ -821,31 +821,31 @@ int main(int argc, char *argv[]) {
     physPoints.resize(C, P, D);
     initGuess.resize(P, D);
     cellWorkset.resize(C, N, D);
-    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator) ),
+    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator) ),
                            throwCounter, nException );
 
     // 38. Incompatible ranks when whichCell is valid ordinal
     refPoints.resize(P, D);
     physPoints.resize(P, D);
     initGuess.resize(C, P, D);
-    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator), 0),
+    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator), 0),
                            throwCounter, nException );
 
     // 39. Nonmatching dimensions
     refPoints.resize(C, P, D);
     physPoints.resize(C, P, D);
     initGuess.resize(C, P, D - 1);
-    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator)),
+    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator)),
                            throwCounter, nException );
     
     // 40. Nonmatching dimensions
     initGuess.resize(C, P - 1, D);
-    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator)),
+    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator)),
                            throwCounter, nException );
     
     // 41. Nonmatching dimensions
     initGuess.resize(C - 1, P, D);
-    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator)),
+    INTREPID_TEST_COMMAND( CellTools::mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, (*topo_iterator)),
                            throwCounter, nException );
         
     /***********************************************************************************************
@@ -1137,7 +1137,7 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND(CellTools::getReferenceSubcellNodes(subcellNodes, 0, 0, pentagon_5), throwCounter, nException);
 
     // Use last cell topology (Wedge<18>) for these tests
-    topo_iterator = --supportedTopologies.end();
+    topo_iterator = supportedTopologies.end() - 1;
     D = (*topo_iterator).getDimension();
     int subcDim = D - 1;
     int S = (*topo_iterator).getSubcellCount(subcDim);
