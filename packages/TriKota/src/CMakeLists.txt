@@ -95,12 +95,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
 APPEND_SET(HEADERS
     TriKota_ConfigDefs.hpp
     TriKota_DirectApplicInterface.hpp
+    TriKota_ThyraDirectApplicInterface.hpp
     TriKota_Driver.hpp
     TriKota_Version.hpp
   ) 
 
 APPEND_SET(SOURCES
     TriKota_DirectApplicInterface.cpp
+    TriKota_ThyraDirectApplicInterface.cpp
     TriKota_Driver.cpp
     TriKota_Version.cpp
   )
