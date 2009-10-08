@@ -23,33 +23,43 @@ extern "C" {
 #include "phg.h"
 #include <limits.h>
 
+#define CEDRIC_PRINT
 
 #define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
 #define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)
 
 
-int *
+int
 Zoltan_PHG_2ways_hyperedge_partition (
   ZZ *zz,                            /* Input : Zoltan data structure */
   HGraph *hg,
   Partition parts,
-  Zoltan_PHG_Tree *tree
-  )
+  Zoltan_PHG_Tree *tree,
+  struct Zoltan_DD_Struct * gnoToGID,
+  struct Zoltan_DD_Struct **dd,
+  int *numParts,
+  int **sizeParts
+)
 {
+  int ierr = ZOLTAN_OK;
+  char *yo = "Zoltan_PHG_2ways_hyperedge_partition";
   int nEdge, hEdge;
   int *interval;
-  int *partnumber;
+  int *partnumber = NULL;
   int tree_size;
-  int *rowpart;
+  int *rowpart =NULL;
+  int *rowGNO = NULL;
+  ZOLTAN_ID_PTR rowGID=NULL;
   int index;
   int offset;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   nEdge = hg->nEdge;
   fprintf (stderr, "HG (%d %d x %d) : %d %d\n", hg->comm->myProc, hg->comm->myProc_x, hg->comm->myProc_y,  hg->nVtx, nEdge);
 
   interval = (int*)ZOLTAN_MALLOC(nEdge*2*sizeof(int));
-  if ((nEdge > 0 ) && (interval == NULL))
-    return NULL;
+  if ((nEdge > 0 ) && (interval == NULL)) MEMORY_ERROR;
 
   tree_size = get_tree_size(tree) + 1;
   for (index = 0 ; index < nEdge ; ++index){
@@ -86,17 +96,20 @@ Zoltan_PHG_2ways_hyperedge_partition (
   /* First, compute the partition number corresponding to the nodes in the tree */
   partnumber = compute_part_number(tree);
   if (partnumber == NULL) {
-    ZOLTAN_FREE(&interval);
-    return NULL;
+    ierr = ZOLTAN_FATAL;
+    goto End;
   }
 
+  (*numParts) = get_tree_size(tree);
+
   rowpart = (int*) ZOLTAN_MALLOC(nEdge*sizeof(int));
-  if ((nEdge > 0) && (rowpart == NULL)) {
-    partnumber += 1;
-    ZOLTAN_FREE(&partnumber);
-    ZOLTAN_FREE(&interval);
-    return (NULL);
-  }
+  if ((nEdge > 0) && (rowpart == NULL)) MEMORY_ERROR;
+
+  rowGNO = (int*) ZOLTAN_MALLOC(nEdge*sizeof(int));
+  if ((nEdge > 0) && (rowGNO == NULL)) MEMORY_ERROR;
+
+  (*sizeParts) = (int*)ZOLTAN_CALLOC((*numParts), sizeof(int));
+  if (*numParts && (*sizeParts) == NULL) MEMORY_ERROR;
 
   offset = hg->dist_y[hg->comm->myProc_y];
   /* Then we search we is the hyperedge in the tree */
@@ -104,14 +117,51 @@ Zoltan_PHG_2ways_hyperedge_partition (
     int node;
     node = find_interval_in_tree(tree, interval+2*hEdge);
     rowpart[hEdge] = partnumber[node];
-    fprintf (stderr, "%d : %d (%d : %d - %d)\n", EDGE_LNO_TO_GNO(hg, hEdge), rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
+    (*sizeParts)[rowpart[hEdge]] ++;
+    rowGNO[hEdge] = EDGE_LNO_TO_GNO(hg, hEdge);
+#ifdef CEDRIC_PRINT
+    fprintf (stderr, "%d : %d (%d : %d - %d)\n", rowGNO[hEdge], rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
+#endif /* CEDRIC_PRINT */
   }
 
   partnumber += 1;
   ZOLTAN_FREE(&partnumber);
   ZOLTAN_FREE(&interval);
 
-  return (rowpart);
+  /* Compute number of elements per parts */
+  /* TODO: support processor which are not part of the distribution */
+
+  /* Update results to view the complete hyperedges */
+  Zoltan_AllReduceInPlace ((*sizeParts), (*numParts), MPI_INT, MPI_SUM, hg->comm->col_comm);
+
+
+  /* Export results to data directory */
+  /* First, get the GIDs of our edges */
+  rowGID = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdge);
+  if (nEdge && rowGID == NULL) MEMORY_ERROR;
+  ierr = Zoltan_DD_Find (gnoToGID , (ZOLTAN_ID_PTR)rowGNO, rowGID, NULL, NULL,
+			 nEdge, NULL);
+  ZOLTAN_FREE(&rowGNO);
+
+  ierr = Zoltan_DD_Create (dd, zz->Communicator, zz->Num_GID, 1, 0, nEdge, 0);
+  CHECK_IERR;
+
+  /* Make our new numbering public */
+  Zoltan_DD_Update (*dd, (ZOLTAN_ID_PTR)rowGID, (ZOLTAN_ID_PTR) rowpart, NULL,  NULL, nEdge);
+
+ End:
+  ZOLTAN_FREE(&rowGID);
+  ZOLTAN_FREE(&rowGNO);
+  ZOLTAN_FREE(&rowpart);
+
+  if (partnumber != NULL)
+    partnumber += 1;
+  ZOLTAN_FREE(&partnumber);
+  ZOLTAN_FREE(&interval);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
+  return (ierr);
 }
 
 

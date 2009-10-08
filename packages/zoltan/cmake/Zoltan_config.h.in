@@ -54,6 +54,7 @@
 
 /* HUND support */
 #cmakedefine HAVE_ZOLTAN_HUND
+
 #ifdef HAVE_ZOLTAN_HUND
 #define CEDRIC_2D_PARTITIONS
 #endif

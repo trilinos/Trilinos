@@ -234,7 +234,11 @@ extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 extern int Zoltan_PHG_PaToH(ZZ *, HGraph *, int, int *, PHGPartParams*);    
 extern int Zoltan_PHG_ParKway(ZZ *, HGraph *, int, Partition, PHGPartParams* );
 
-extern int * Zoltan_PHG_2ways_hyperedge_partition (ZZ *, HGraph *, Partition, Zoltan_PHG_Tree *);
+extern int Zoltan_PHG_2ways_hyperedge_partition (ZZ *, HGraph *, Partition, Zoltan_PHG_Tree *,
+						 struct Zoltan_DD_Struct *,
+						 struct Zoltan_DD_Struct **,
+						 int *, int **);
+
 
 
 /* Functions that are used in more than one PHG source file, 

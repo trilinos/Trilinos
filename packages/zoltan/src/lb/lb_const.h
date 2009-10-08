@@ -175,11 +175,11 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_COPY_DATA_FN *Copy_Structure;
                                   /*  Pointer to function that copies the
                                       Data_Structure                         */
-  ZOLTAN_LB_POINT_ASSIGN_FN *Point_Assign;  
+  ZOLTAN_LB_POINT_ASSIGN_FN *Point_Assign;
                                   /*  Pointer to the function that performs
                                       Point_Assign; this ptr is set based on 
                                       the method used.                       */
-  ZOLTAN_LB_BOX_ASSIGN_FN *Box_Assign;      
+  ZOLTAN_LB_BOX_ASSIGN_FN *Box_Assign;
                                   /*  Pointer to the function that performs
                                       Box_Assign; this ptr is set based on 
                                       the method used.                       */

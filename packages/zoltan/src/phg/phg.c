@@ -286,7 +286,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
   int do_timing = 0;
 
 #ifdef CEDRIC_2D_PARTITIONS
-  int* rowpart;
+  int* sizeParts=NULL;
+  int  numParts;
+  struct Zoltan_DD_Struct *ddPartEdge=NULL;
 #endif
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -477,10 +479,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
 #ifdef CEDRIC_2D_PARTITIONS
     /* Build a centralized tree */
     Zoltan_PHG_Tree_centralize(zz);
-    rowpart = Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz));
-#endif /* CEDRIC_2D_PARTITIONS */
-
+    Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz), zoltan_hg->ddHedge,
+					  &ddPartEdge, &numParts, &sizeParts);
+#else /* CEDRIC_2D_PARTITIONS */
     Zoltan_PHG_LB_Data_free_tree(zz);
+#endif /* CEDRIC_2D_PARTITIONS */
   }
 
   if (!strcasecmp(hgp.hgraph_method, "REPARTITION")) {
