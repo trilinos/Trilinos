@@ -190,18 +190,30 @@ if test "X$ac_cv_use_gzip" != "Xno"; then
 fi
 AM_CONDITIONAL(BUILD_GZIP, [test "X$ac_cv_use_gzip" != "Xno"])
 
-TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, no)
 AM_CONDITIONAL(BUILD_PARMETIS, [test "X$ac_cv_use_parmetis" != "Xno"])
 TAC_ARG_WITH_3PL_SUB(parmetis, libdir, [Specify where the Parmetis library is located.  Ex. /path/to/library])
 if test "X$tac_with_parmetis_libdir" != "Xno"; then
   LIBS="-L${tac_with_parmetis_libdir} -lparmetis -lmetis ${LIBS}"
 fi
+
 TAC_ARG_WITH_3PL_SUB(parmetis, incdir, [Specify where the Parmetis header files are located.  Ex. /path/to/headers])
 # It was necessary to move the parmetis include directories before the scotch
 # include directories.
 #if test "X$tac_with_parmetis_incdir" != "Xno"; then
 #  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 #fi
+
+
+if test "X$tac_with_parmetis_libdir" != "Xno" || test "X$tac_with_parmetis_incdir" != "Xno" ; then
+  PARMETIS_DEFAULT=yes
+else
+  PARMETIS_DEFAULT=no
+fi
+
+
+TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, [$PARMETIS_DEFAULT])
+
+
 
 TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, no)
 AM_CONDITIONAL(BUILD_SCOTCH, [test "X$ac_cv_use_scotch" != "Xno"])
@@ -336,6 +348,12 @@ dnl Replace `main' with a function in -lm:
 if test "X$ac_cv_use_fortran" = "Xyes"; then
 AC_F77_LIBRARY_LDFLAGS
 fi
+
+# ------------------------------------------------------------------------
+# Zoltan may be built via autotools, cmake, or our native makefile
+# ------------------------------------------------------------------------
+
+CPPFLAGS="-DAUTOTOOLS_BUILD  ${CPPFLAGS}"
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
