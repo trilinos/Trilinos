@@ -147,8 +147,8 @@ public:
                                      part_ids, wgt_idx, part_sizes );
   }
 
-  int Order    ( int &num_gid_entries,
-                 const int &num_objs,
+  int Order    ( int num_gid_entries,
+                 int num_objs,
                  ZOLTAN_ID_PTR global_ids,
                  int * rank,
                  int * iperm )
