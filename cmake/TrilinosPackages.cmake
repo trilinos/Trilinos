@@ -77,8 +77,8 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stratimikos           stratimikos                    PS
   Meros                 meros                          PS
   FEI                   fei                            PS
-  RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
+  RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   Stokhos               stokhos                        SS
   Sacado                sacado                         PS

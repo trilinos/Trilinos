@@ -266,16 +266,6 @@
       <Email address="fei-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="RBGen">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Epetra" type="LO"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="LO"/>
-    <EmailAddresses>
-      <Email address="rbgen-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Anasazi">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
@@ -293,6 +283,22 @@
     <Dependency name="Belos" type="TO"/>
     <EmailAddresses>
       <Email address="anasazi-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="RBGen">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
+    <Dependency name="Anasazi" type="LO"/>
+    <EmailAddresses>
+      <Email address="rbgen-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="TriKota">

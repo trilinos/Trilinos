@@ -377,20 +377,6 @@
       <Regression address="fei-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="RBGen" dir="rbgen">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="rbgen-checkins@software.sandia.gov"/>
-      <Regression address="rbgen-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
   <Package name="Anasazi" dir="anasazi">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,Epetra,Thyra"/>
@@ -403,6 +389,20 @@
     <EmailAddresses>
       <Checkin address="anasazi-checkins@software.sandia.gov"/>
       <Regression address="anasazi-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
+  <Package name="RBGen" dir="rbgen">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Anasazi"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="rbgen-checkins@software.sandia.gov"/>
+      <Regression address="rbgen-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="TriKota" dir="TriKota">
