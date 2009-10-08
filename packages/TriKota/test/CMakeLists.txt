@@ -25,3 +25,22 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TriKotaSimpleCopyDakotaIn
   SOURCE_PREFIX "_"
   EXEDEPS  TriKota_Simple 
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TriKota_ThyraME
+  SOURCES 
+  Main_ThyraME.cpp
+  Simple_ModelEval.cpp
+  Simple_ModelEval.hpp
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  ARGS -v
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(TriKotaThyraMECopyDakotaIn
+  DEST_FILES   dakota.in
+  SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
+  SOURCE_PREFIX "_"
+  EXEDEPS  TriKota_ThyraME
+  )
