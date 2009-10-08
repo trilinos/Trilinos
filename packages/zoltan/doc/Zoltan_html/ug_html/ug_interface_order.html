@@ -67,14 +67,13 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>Zoltan_Order</b>(<i>zz, num_gid_entries, num_lid_entries</i>,
-<i>num_obj,
-global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>)
+<td>FUNCTION <b>Zoltan_Order</b>(<i>zz, num_gid_entries</i>,
+<i>num_obj, global_ids</i>, <i>rank, iperm</i>)
 <br>INTEGER(Zoltan_INT) :: Zoltan_Order
 <br>TYPE(Zoltan_Struct), INTENT(IN) :: zz
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
-<br>INTEGER(Zoltan_INT) :: global_ids(*), local_ids(*)
+<br>INTEGER(Zoltan_INT) :: global_ids(*)
 <br>INTEGER(Zoltan_INT) :: rank(*), iperm(*)
 </tr>
 
@@ -82,8 +81,8 @@ global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>)
 <td VALIGN=TOP NOSAVE>C++:</td>
 
 <td WIDTH="85%">int <b>Zoltan::Order</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int &<i>num_gid_entries</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const int &<i>num_obj</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>);
