@@ -91,16 +91,11 @@ NAME="ORDER_START_INDEX"></a><i>ORDER_START_INDEX</i></td>
 
 <td>The start index for the permutation vectors <i>rank</i> and <i>iperm</i>.
 Valid values are 0 and 1.</td>
-</tr>
+</tr><br><br>
 
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="REORDER"></a><i>&nbsp;&nbsp;&nbsp; REORDER</i></td>
+<tr></tr>
+<tr></tr>
 
-<td>If this value is set to TRUE (non-zero), Zoltan assumes that the lists
-of local and global ids are given as input to <b>Zoltan_Order.</b> Otherwise,
-the id lists will be populated by <b>Zoltan_Order</b>.&nbsp; The permutation
-of the ids will be the one produced by calling the query functions.</td>
-</tr>
 
 <tr VALIGN=TOP>
 <td VALIGN=TOP><a NAME="Default_Parameter_Values"></a><b>Default Values:</b></td>
@@ -117,7 +112,7 @@ of the ids will be the one produced by calling the query functions.</td>
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>ORDER_TYPE </i>= GLOBAL</td>
+<td><i>ORDER_TYPE </i>= DIST</td>
 </tr>
 
 <tr VALIGN=TOP>
@@ -126,11 +121,8 @@ of the ids will be the one produced by calling the query functions.</td>
 <td><i>ORDER_START_INDEX </i>= 0</td>
 </tr>
 
-<tr VALIGN=TOP>
-<td></td>
 
-<td><i>REORDER</i> = FALSE</td>
-</tr>
+
 </table>
 
 <p><!---------------------------------------------------------------------------->
