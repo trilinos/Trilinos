@@ -21,11 +21,11 @@
 #include <string.h>
 #include <strings.h>
 
+#include "zoltan_util.h"
 #include "zoltan.h"
 #include "lb_const.h"
 #include "order_const.h"
 #include "zz_id_const.h"
-#include "zoltan_util.h"
 #include "par_const.h"
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
