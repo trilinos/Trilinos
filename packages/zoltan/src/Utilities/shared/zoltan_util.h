@@ -1,4 +1,4 @@
-/*****************************************************************************
+/*
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
@@ -20,17 +20,10 @@
 extern "C" {
 #endif
 
-/*****************   TRILINOS BUILD ENVIRONMENT  *******************/
 /* This block should be executed only for an Autotools build. */
-#ifndef TRILINOS_NO_CONFIG_H
 
-/*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package 
- * and need to
- * be undef'd here to avoid warnings when this file is included from another 
- * package.
- * KL 11/25/02
- */
+#ifdef AUTOTOOLS_BUILD
+
 #ifdef PACKAGE
 #undef PACKAGE
 #endif
@@ -93,7 +86,7 @@ extern "C" {
 #define ZOLTAN_OCT
 #endif
 
-#else /* TRILINOS_NO_CONFIG_H */
+#else /* !AUTOTOOLS_BUILD */
 
   /* With the manual build system we support only Parallel Version of Scotch */
 
@@ -101,10 +94,7 @@ extern "C" {
 #define ZOLTAN_PTSCOTCH
 #endif
 
-#endif /* TRILINOS_NO_CONFIG_H */
-
-
-
+#endif /* !AUTOTOOLS_BUILD */
 
 #define ZOLTAN_HIER
 /*****************************************************************************/
