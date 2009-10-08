@@ -837,7 +837,7 @@ implicit none
 integer(Zoltan_INT) :: Zfw_Order
 INTEGER(Zoltan_INT), dimension(*), INTENT(IN) :: zz 
 INTEGER(Zoltan_INT), INTENT(IN) :: nbytes
-INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 INTEGER(Zoltan_INT) :: gids(*)
 INTEGER(Zoltan_INT) :: rank(*), iperm(*)
@@ -853,7 +853,7 @@ implicit none
 integer(Zoltan_INT) :: Zfw_Color
 INTEGER(Zoltan_INT), dimension(*), INTENT(IN) :: zz 
 INTEGER(Zoltan_INT), INTENT(IN) :: nbytes
-INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 INTEGER(Zoltan_INT) :: gids(*)
 INTEGER(Zoltan_INT) :: color_exp(*)
@@ -2143,7 +2143,7 @@ end function Zf90_Help_Migrate
 function Zf90_Order(zz,num_gid_entries,num_obj,gids,rank,iperm)
 integer(Zoltan_INT) :: Zf90_Order
 TYPE(Zoltan_Struct), INTENT(IN) :: zz 
-INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 INTEGER(Zoltan_INT) :: gids(*)
 INTEGER(Zoltan_INT) :: rank(*), iperm(*)
@@ -2161,7 +2161,7 @@ end function Zf90_Order
 function Zf90_Color(zz,num_gid_entries,num_obj,gids,color_exp)
 integer(Zoltan_INT) :: Zf90_Color
 TYPE(Zoltan_Struct), INTENT(IN) :: zz 
-INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 INTEGER(Zoltan_INT) :: gids(*)
 INTEGER(Zoltan_INT) :: color_exp(*)
