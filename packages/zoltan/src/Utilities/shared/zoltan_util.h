@@ -20,9 +20,10 @@
 extern "C" {
 #endif
 
-/* This block should be executed only for an Autotools build. */
+/* This block should be executed for Autotools and CMake builds. */
+/* The Zoltan classic build defines TRILINOS_NO_CONFIG_H.        */
 
-#ifdef AUTOTOOLS_BUILD
+#ifndef TRILINOS_NO_CONFIG_H
 
 #ifdef PACKAGE
 #undef PACKAGE
