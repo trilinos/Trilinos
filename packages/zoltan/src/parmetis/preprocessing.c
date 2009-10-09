@@ -325,8 +325,11 @@ int Zoltan_Preprocess_Graph(
 
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       flag = 2; /* Maximum output level */
-    else
+    else if (zz->Debug_Level >= ZOLTAN_DEBUG_TRACE_SINGLE)
       flag = 1; /* Medium output level */
+    else
+      flag = 0; /* No output */
+
     ierr = Zoltan_Verify_Graph(zz->Communicator, gr->vtxdist, gr->xadj, gr->adjncy, gr->vwgt,
 	      gr->ewgts, gr->obj_wgt_dim, gr->edge_wgt_dim, gr->graph_type, gr->check_graph, flag);
 
