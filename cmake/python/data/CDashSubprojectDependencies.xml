@@ -303,20 +303,24 @@
   </SubProject>
   <SubProject name="TriKota">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Thyra" type="LR"/>
     <EmailAddresses>
       <Email address="trikota-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -330,10 +334,12 @@
   </SubProject>
   <SubProject name="Sacado">
     <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -348,11 +354,13 @@
   </SubProject>
   <SubProject name="Intrepid">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
@@ -370,6 +378,7 @@
   <SubProject name="Phalanx">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ITO"/>
+    <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -377,6 +386,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
