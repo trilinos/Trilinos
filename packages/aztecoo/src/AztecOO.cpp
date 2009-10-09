@@ -1575,7 +1575,8 @@ int Epetra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat) {
 		TargetVec->ResetView(vec);
 	}
 
-  assert(TargetVec->Import(*SourceVec, *(A->RowMatrixImporter()),Insert)==0);
+  int retval = TargetVec->Import(*SourceVec, *(A->RowMatrixImporter()),Insert);
+  assert(retval==0);
 
   return(1);
 }
