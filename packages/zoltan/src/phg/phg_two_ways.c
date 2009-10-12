@@ -119,9 +119,9 @@ Zoltan_PHG_2ways_hyperedge_partition (
     rowpart[hEdge] = partnumber[node];
     (*sizeParts)[rowpart[hEdge]] ++;
     rowGNO[hEdge] = EDGE_LNO_TO_GNO(hg, hEdge);
-#ifdef CEDRIC_PRINT
+#if 0
     fprintf (stderr, "%d : %d (%d : %d - %d)\n", rowGNO[hEdge], rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
-#endif /* CEDRIC_PRINT */
+#endif
   }
 
   partnumber += 1;

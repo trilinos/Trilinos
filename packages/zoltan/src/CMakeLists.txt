@@ -289,6 +289,11 @@ APPEND_SET(SOURCES
   order/perm.c
   )
 
+IF (${PACKAGE_NAME}_ENABLE_HUND)
+  APPEND_SET(SOURCES
+    order/hund.c
+    )
+ENDIF()
 #
 # src/par
 #
