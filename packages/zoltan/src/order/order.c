@@ -184,6 +184,10 @@ int Zoltan_Order (
     strcpy(zz->Order.order_type, "GLOBAL");
   }
 #endif /* ZOLTAN_SCOTCH */
+  if (!strcasecmp(opt.method, "HUND")) {
+    ierr = Zoltan_HUND(zz, num_gid_entries, num_obj, gids, rank, iperm);
+    goto End;
+  }
   else {
     fprintf(stderr, "%s\n", opt.method);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");
@@ -292,15 +296,14 @@ int Zoltan_Order (
     if (zz->Proc == zz->Debug_Proc) {
       printf("ZOLTAN Times:  \n");
     }
-    Zoltan_Print_Stats (zz->Communicator, zz->Debug_Proc, order_time[0], 
+    Zoltan_Print_Stats (zz->Communicator, zz->Debug_Proc, order_time[0],
                    "ZOLTAN     Balance:     ");
   }
 
+
+ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
-  if (ierr)
-    return (ierr);
-  else
-    return (ZOLTAN_OK);
+  return (ierr);
 }
 
 

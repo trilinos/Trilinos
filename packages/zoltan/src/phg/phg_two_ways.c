@@ -23,7 +23,7 @@ extern "C" {
 #include "phg.h"
 #include <limits.h>
 
-#define CEDRIC_PRINT
+/* #define CEDRIC_PRINT */
 
 #define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
 #define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)
@@ -148,6 +148,13 @@ Zoltan_PHG_2ways_hyperedge_partition (
 
   /* Make our new numbering public */
   Zoltan_DD_Update (*dd, (ZOLTAN_ID_PTR)rowGID, (ZOLTAN_ID_PTR) rowpart, NULL,  NULL, nEdge);
+
+#ifdef CEDRIC_PRINT
+  for (hEdge = 0 ; hEdge < nEdge ; ++hEdge) {
+    fprintf (stderr, "%d : %d\n", rowGID[hEdge], rowpart[hEdge]);
+  }
+#endif
+
 
  End:
   ZOLTAN_FREE(&rowGID);

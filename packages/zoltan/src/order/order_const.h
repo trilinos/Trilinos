@@ -94,6 +94,18 @@ extern ZOLTAN_ORDER_FN Zoltan_ParMetis_Order;
 extern ZOLTAN_ORDER_FN Zoltan_Scotch_Order;
 #endif /* ZOLTAN_SCOTCH */
 
+#ifdef CEDRIC_2D_PARTITIONS
+int Zoltan_HUND(
+  struct Zoltan_Struct *zz,               /* Zoltan structure */
+  int num_gid_entries, /* # of entries for a global id */
+  int num_obj,		/* Number of objects to order */
+  ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
+                        /* The application must allocate enough space */
+  int *rank,            /* rank[i] is the rank of gids[i] */
+  int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
+  );
+#endif /* CEDRIC_2D_PARTITIONS */
+
 /* Parameter routine */
 extern int Zoltan_Order_Set_Param(char *, char *);
 

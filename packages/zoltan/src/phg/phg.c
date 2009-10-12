@@ -286,6 +286,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
   int do_timing = 0;
 
 #ifdef CEDRIC_2D_PARTITIONS
+  Zoltan_PHG_LB_Data *data;
+
   int* sizeParts=NULL;
   int  numParts;
   struct Zoltan_DD_Struct *ddPartEdge=NULL;
@@ -481,6 +483,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
     Zoltan_PHG_Tree_centralize(zz);
     Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz), zoltan_hg->ddHedge,
 					  &ddPartEdge, &numParts, &sizeParts);
+
+    data = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
+    data->ddHedge = ddPartEdge;
+    data->numParts = numParts;
+    data->sizeParts = sizeParts;
 #else /* CEDRIC_2D_PARTITIONS */
     Zoltan_PHG_LB_Data_free_tree(zz);
 #endif /* CEDRIC_2D_PARTITIONS */
