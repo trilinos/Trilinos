@@ -89,13 +89,13 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
 			int mod = 1,
 			int printStates = Passed)
     : printer_(printer), 
-      iterTest_(iterTest), 
       resTest_(resTest), 
+      iterTest_(iterTest), 
       state_(Undefined), 
       headerPrinted_(false),
       stateTest_(printStates), 
       modTest_(mod), 
-      numCalls_(0),
+      lastNumIters_(-1),
       comboType_(0),
       numResTests_(0),
       blockSize_(1),
@@ -164,8 +164,9 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
       currIdx_ = currProb.getLSIndex();
       currNumRHS_ = currIdx_.size();
     }
-//    if (numCalls_++ % modTest_ == 0) {
-    if ((iterTest_->getNumIters() % modTest_ == 0) || (state_ == Passed)) {
+    // Print out current iteration information if it hasn't already been printed, or the status has changed
+    if (((iterTest_->getNumIters() % modTest_ == 0) && (iterTest_->getNumIters()!=lastNumIters_)) || (state_ == Passed)) {
+      lastNumIters_ = iterTest_->getNumIters();
       if ( (state_ & stateTest_) == state_) {
         if ( printer_->isVerbosity(StatusTestDetails) ) {
           print( printer_->stream(StatusTestDetails) );
@@ -217,12 +218,9 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
   void reset() { 
     state_ = Undefined;
     test_->reset();
-    numCalls_ = 0;
+    lastNumIters_ = -1;
     headerPrinted_ = false;
   }
-
-  //! Informs the outputting status test that it should reset the number of calls to zero.
-  void resetNumCalls() { numCalls_ = 0; }
 
   //! Clears the results of the last status test.
   //! This resets the cached state to an ::Undefined state and calls clearStatus() on the underlying test.
@@ -247,7 +245,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
     os.precision(6);
     
     // Print header if this is the first call to this output status test.
-    if (numCalls_ == 1 || !headerPrinted_) {
+    if (!headerPrinted_) {
       os << std::endl << ind << starLine << std::endl;
       os << ind << starFront << " Belos Iterative Solver: " << solverDesc_ << std::endl;
       if (precondDesc_ != "")
@@ -312,7 +310,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
     StatusType state_;
     mutable bool headerPrinted_;
     int stateTest_, modTest_;
-    int numCalls_, comboType_;
+    int lastNumIters_, comboType_;
     int numResTests_, blockSize_;
     int currNumRHS_, currLSNum_;
 };
