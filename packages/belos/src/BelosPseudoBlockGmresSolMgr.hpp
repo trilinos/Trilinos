@@ -47,7 +47,7 @@
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestImpResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
-#include "BelosStatusTestOutput.hpp"
+#include "BelosStatusTestGeneralOutput.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -795,13 +795,13 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
   if (outputFreq_ > 0) {
-    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_,
+    outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_,
         sTest_,
         outputFreq_,
         Passed+Failed+Undefined ) );
   }
   else {
-    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_,
+    outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_,
         sTest_, 1 ) );
   }
 

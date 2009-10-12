@@ -62,6 +62,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
 
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestMaxIters<ScalarType,MV,OP>  StatusTestMaxIters_t;
 
  public:
   //! @name Constructors/destructors
@@ -84,13 +85,10 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
    *
    */
   StatusTestSimpleOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 
-			Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > iterTest,
-			Teuchos::RCP<StatusTest<ScalarType,MV,OP> > resTest,
+			Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
 			int mod = 1,
 			int printStates = Passed)
     : printer_(printer), 
-      resTest_(resTest), 
-      iterTest_(iterTest), 
       state_(Undefined), 
       headerPrinted_(false),
       stateTest_(printStates), 
@@ -102,29 +100,8 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
       currNumRHS_(0),
       currLSNum_(0)
     {
-      // Create the status test combination of the iteration and residual test.
-      test_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, iterTest_, resTest_ ) );
-
-      // First check if the residual status test is a single test
-      Teuchos::RCP<StatusTestResNorm_t> tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(resTest);
-      // If the residual status test is a single test, put in the vector
-      if (tmpResTest != Teuchos::null) {
-	resTestVec_.push_back( tmpResTest );
-        numResTests_ = 1;
-      } else {
-        // Check if the residual test is a combination of several StatusTestResNorm objects.
-        Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(resTest);
-        TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  resTest must be Belos::StatusTestResNorm or Belos::StatusTestCombo.");
-        std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
-        comboType_ = tmpComboTest->getComboType();
-        numResTests_ = tmpVec.size();
-        resTestVec_.resize( numResTests_ );
-        for (int i=0; i<numResTests_; ++i) {
-	  tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[i]);
-          TEST_FOR_EXCEPTION(tmpResTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  resTest must be a vector of Belos::StatusTestResNorm.");
-          resTestVec_[i] = tmpResTest;
-        }
-      }
+      // Set the input test.
+      setChild(test);
     }
 
   //! Destructor
@@ -198,6 +175,58 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
    */
   void setOutputFrequency(int mod) { modTest_ = mod; }
 
+  /*! \brief Set child test, which must be a combination of a Belos::StatusTestMaxIters AND a single or combination of Belos::StatusTestResNorms
+   *
+   *  \note This also resets the test status to ::Undefined.
+   */
+  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+
+    // First check to see if this test is a combination test
+    Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(test);
+    TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  test must be a Belos::StatusTestCombo.");
+    std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
+    
+    // Get the number of tests.
+    int numTests = tmpVec.size();
+
+    // Find the maximum iteration and residual tests
+    for (int i=0; i<numTests; ++i) {
+      
+      // Check if this is a maximum iteration test.
+      Teuchos::RCP<StatusTestMaxIters_t> tmpItrTest = Teuchos::rcp_dynamic_cast<StatusTestMaxIters_t>(tmpVec[i]);
+      if (tmpItrTest != Teuchos::null) {
+        iterTest = tmpIterTest;
+        continue;
+      }
+
+      // Check if this is a single residual test
+      Teuchos::RCP<StatusTestResNorm_t> tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[i]);
+      // If the residual status test is a single test, put in the vector
+      if (tmpResTest != Teuchos::null) {
+	resTestVec_.push_back( tmpResTest );
+	numResTests_ = 1;
+      }
+	
+      // Check if the residual test is a combination of several StatusTestResNorm objects.
+      Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(tmpVec[i]);
+      TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].");
+      tmpVec = tmpComboTest->getStatusTests();
+      comboType_ = tmpComboTest->getComboType();
+      numResTests_ = tmpVec.size();
+      resTestVec_.resize( numResTests_ );
+      for (int j=0; j<numResTests_; ++j) {
+	tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[j]);
+	TEST_FOR_EXCEPTION(tmpResTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  resTest must be a vector of Belos::StatusTestResNorm.");
+	resTestVec_[j] = tmpResTest;
+      }
+    }
+
+    // Keep the pointer to the new test and reset the state to Undefined.
+    test_ = test;
+    state_ = Undefined;
+
+  }
+
   /*! \brief Set a short solver description for output clarity.
    */
   void setSolverDesc(const std::string& solverDesc) { solverDesc_ = solverDesc; }
@@ -222,13 +251,11 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
     headerPrinted_ = false;
   }
 
-  //! Clears the results of the last status test.
-  //! This resets the cached state to an ::Undefined state and calls clearStatus() on the underlying test.
-  void clearStatus() {
-    state_ = Undefined;
-    test_->clearStatus();
-    headerPrinted_ = false;
-  }
+  //! Informs the outputting status test that it should reset the number of calls to zero.
+  /*! \note This outputting status test relies on the number of iterations performed, not number of times
+      the status test has been called, so this method has no effect.
+  */
+  void resetNumCalls() {}
 
   //@}
 
@@ -238,7 +265,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
   //! Output formatted description of stopping test to output stream.
   void print(std::ostream& os, int indent = 0) const {
     std::string ind(indent,' ');
-    std::string starLine(60,'*');
+    std::string starLine(55,'*');
     std::string starFront(5,'*');
 
     os.setf(std::ios::scientific, std::ios::floatfield);

@@ -63,6 +63,7 @@ APPEND_SET(HEADERS
   BelosStatusTestCombo.hpp
   BelosStatusTestMaxIters.hpp
   BelosStatusTestOutput.hpp
+  BelosStatusTestGeneralOutput.hpp
   BelosStatusTestSimpleOutput.hpp
   BelosStatusTestResNorm.hpp
   BelosStatusTestGenResNorm.hpp

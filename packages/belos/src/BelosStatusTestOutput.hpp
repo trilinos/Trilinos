@@ -32,35 +32,38 @@
 
 /*!
   \file BelosStatusTestOutput.hpp
-  \brief Special StatusTest for printing status tests.
+  \brief Virtual base class for StatusTest that printing status tests.
 */
-
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
 
 #include "BelosStatusTest.hpp"
-
+#include "BelosOutputManager.hpp"
 
 
 namespace Belos {
 
   /*! 
     \class StatusTestOutput
-    \brief A special StatusTest for printing other status tests. 
-    
-    StatusTestOutput is a wrapper around another StatusTest that calls 
-    StatusTest::print() on the underlying object on calls to StatusTestOutput::checkStatus().
-    The frequency and occasion of the printing can be dictated according to some parameters passed to 
+    \brief A virtual base class for StatusTest that print other status tests.     
+
+    StatusTestOutput provides an interface for status tests that wrap another StatusTest.  These
+    printing status tests can be generic, calling StatusTest::print() on the underlying object, or 
+    can specifically require input status tests to be of a certain type. The frequency and occasion 
+    of the printing can be dictated according to some parameters passed to 
     StatusTestOutput::StatusTestOutput().
   */
 template <class ScalarType, class MV, class OP>
-class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
+class StatusTestOutput : public virtual StatusTest<ScalarType,MV,OP> {
 
  public:
   //! @name Constructors/destructors
   //@{ 
+
+  //! \brief Default constructor
+  StatusTestOutput() {}
 
   /*! \brief Constructor
    *
@@ -80,150 +83,51 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
                    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
                    int mod = 1,
                    int printStates = Passed)
-    : printer_(printer), test_(test), state_(Undefined), stateTest_(printStates), modTest_(mod), numCalls_(0) {}
+    {}   
 
   //! Destructor
-  virtual ~StatusTestOutput() {};
+  virtual ~StatusTestOutput() {}
   //@}
-
-  //! @name Status methods
-  //@{ 
-  /*! Check and return status of underlying StatusTest.
-
-    This method calls checkStatus() on the StatusTest object passed in the constructor. If appropriate, the
-    method will follow this call with a call to print() on the underlying object, using the OutputManager passed via the constructor
-    with verbosity level ::StatusTestDetails.
-
-    The internal counter will be incremented during this call, but only after
-    performing the tests to decide whether or not to print the underlying
-    StatusTest. This way, the very first call to checkStatus() following
-    initialization or reset() will enable the underlying StatusTest to be
-    printed, regardless of the mod parameter, as the current number of calls
-    will be zero.
-
-    If the specified Teuchos::RCP for the child class is Teuchos::null, then calling checkStatus() will result in a StatusTestError std::exception being thrown.
-    
-    \return ::StatusType indicating whether the underlying test passed or failed.
-  */
-  StatusType checkStatus( Iteration<ScalarType,MV,OP>* solver ) {
-    TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestOutput::checkStatus(): child pointer is null.");
-    state_ = test_->checkStatus(solver);
-
-    if (numCalls_++ % modTest_ == 0) {
-      if ( (state_ & stateTest_) == state_) {
-        if ( printer_->isVerbosity(StatusTestDetails) ) {
-          print( printer_->stream(StatusTestDetails) );
-        }
-        else if ( printer_->isVerbosity(Debug) ) {
-          print( printer_->stream(Debug) );
-        }
-      }
-    }
-
-    return state_;
-  }
-
-  //! Return the result of the most recent checkStatus call, or undefined if it has not been run.
-  StatusType getStatus() const {
-    return state_;
-  }
-  //@}
-
 
   //! @name Accessor methods
   //@{ 
 
   /*! \brief Set the output manager.
    */ 
-  void setOutputManager(const Teuchos::RCP<OutputManager<ScalarType> > &printer) { printer_ = printer; }
+  virtual void setOutputManager(const Teuchos::RCP<OutputManager<ScalarType> > &printer) = 0;
 
   /*! \brief Set how often the child test is printed.
    */
-  void setOutputFrequency(int mod) { modTest_ = mod; }
+  virtual void setOutputFrequency(int mod) = 0;
 
   /*! \brief Set child test.
    *
    *  \note This also resets the test status to ::Undefined.
    */
-  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
-    test_ = test;
-    state_ = Undefined;
-  }
+  virtual void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) = 0;
 
   //! \brief Get child test.
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const {
-    return test_;
-  }
+  virtual Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const = 0;
+
+  /*! \brief Set a short solver description for output clarity.
+   */
+  virtual void setSolverDesc(const std::string& solverDesc) = 0;
+
+  /*! \brief Set a short preconditioner description for output clarity.
+   */
+  virtual void setPrecondDesc(const std::string& precondDesc) = 0;
 
   //@}
 
 
   //! @name Reset methods
   //@{ 
-  /*! \brief Informs the status test that it should reset its internal configuration to the uninitialized state.
-   *
-   *  This resets the cached state to an ::Undefined state and calls reset() on the underlying test. It also 
-   *  resets the counter for the number of calls to checkStatus().
-   */
-  void reset() { 
-    state_ = Undefined;
-    test_->reset();
-    numCalls_ = 0;
-  }
 
   //! Informs the outputting status test that it should reset the number of calls to zero.
-  void resetNumCalls() { numCalls_ = 0; }
-
-  //! Clears the results of the last status test.
-  //! This resets the cached state to an ::Undefined state and calls clearStatus() on the underlying test.
-  void clearStatus() {
-    state_ = Undefined;
-    test_->clearStatus();
-  }
+  virtual void resetNumCalls() = 0;
 
   //@}
 
-  //! @name Print methods
-  //@{ 
-  
-  //! Output formatted description of stopping test to output stream.
-  void print(std::ostream& os, int indent = 0) const {
-    std::string ind(indent,' ');
-    os << std::endl << ind << "Belos::StatusTestOutput: ";
-    switch (state_) {
-    case Passed:
-      os << "Passed" << std::endl;
-      break;
-    case Failed:
-      os << "Failed" << std::endl;
-      break;
-    case Undefined:
-      os << "Undefined" << std::endl;
-      break;
-    }
-    os << ind << "  (Num calls,Mod test,State test): " << "(" << numCalls_ << ", " << modTest_ << ",";
-    if (stateTest_ == 0) {
-      os << " none)" << std::endl;
-    }
-    else {
-      if ( stateTest_ & Passed ) os << " Passed";
-      if ( stateTest_ & Failed ) os << " Failed";
-      if ( stateTest_ & Undefined ) os << " Undefined";
-      os << ")" << std::endl;
-    }
-    // print child, with extra indention
-    test_->print(os,indent+3);
-  }
- 
-  //@}
-
-  private:
-    Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test_;
-    StatusType state_;
-    int stateTest_;
-    int modTest_;
-    int numCalls_;
 };
 
 } // end of Belos namespace
