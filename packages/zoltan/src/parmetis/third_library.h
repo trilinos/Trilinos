@@ -42,7 +42,6 @@ typedef struct ZOLTAN_Third_Graph_ {
   int check_graph;                      /* We have to check graph consistency */
   int final_output;                     /* Do some output computations */
   int showMoveVol;                      /* How works the final output */
-  int id_known;                         /* Associated gids & lids are already known */
   int scatter;                          /* Graph has been scattered */
   int scatter_min;                      /* Minimum level of scatter */
   int get_data;                         /* Construct edge datas */

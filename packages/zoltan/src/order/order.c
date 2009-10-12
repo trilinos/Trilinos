@@ -39,7 +39,6 @@ static PARAM_VARS Order_params[] = {
         { "ORDER_METHOD", NULL, "STRING", 0 },
         { "ORDER_TYPE", NULL, "STRING", 0 },
         { "ORDER_START_INDEX", NULL, "INT", 0 },
-        { "REORDER", NULL, "INT", 0 },
         { "USE_ORDER_INFO", NULL, "INT", 0 },
         { NULL, NULL, NULL, 0 } };
 
@@ -142,12 +141,10 @@ int Zoltan_Order(
 
   opt.use_order_info = 0;
   opt.start_index = 0;
-  opt.reorder = 0;
 
   Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) opt.method);
   Zoltan_Bind_Param(Order_params, "ORDER_TYPE",   (void *) opt.order_type);
   Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &opt.start_index);
-  Zoltan_Bind_Param(Order_params, "REORDER",      (void *) &opt.reorder);
   Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &opt.use_order_info);
 
   Zoltan_Assign_Param_Vals(zz->Params, Order_params, zz->Debug_Level,

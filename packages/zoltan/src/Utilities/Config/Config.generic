@@ -158,6 +158,10 @@ MPI_INCPATH		=
 #PARMETIS_LIBPATH 	= -L.
 #PARMETIS_INCPATH      = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
 
+SCOTCH_LIBPATH	       =-L/Users/mmwolf/software/scotch/lib
+SCOTCH_INCPATH	       =-I/Users/mmwolf/software/scotch/include
+
+
 # For graph-partitioning, Zoltan includes an interface to the
 # Jostle graph-partitioning library of Chris Walshaw, U. Greenwich.
 # If you wish to exclude Jostle from compilation in Zoltan and 

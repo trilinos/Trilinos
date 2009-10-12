@@ -177,9 +177,6 @@ int Zoltan_Scotch_Order(
   }
   gr.get_data = 1;
 
-  /* If reorder is true, we already have the id lists. Ignore weights. */
-  if ((order_opt && order_opt->reorder))
-    gr.id_known = 1;                        /* We already have global_ids and local_ids */
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 

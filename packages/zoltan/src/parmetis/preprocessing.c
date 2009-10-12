@@ -166,24 +166,23 @@ int Zoltan_Preprocess_Graph(
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
-
-  /* If reorder is true, we already have the id lists. Ignore weights. */
-  if ((*global_ids == NULL) || (!gr->id_known)){
-    int *input_part = NULL;
-    ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
+  int *input_part = NULL;
+  ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
-    CHECK_IERR;
-    if (prt) {
-      prt->input_part = input_part;
-    }
-    else if (input_part) { /* Ordering, dont need part */
-      ZOLTAN_FREE(&input_part);
-    }
-    if (ierr){
-      /* Return error */
-      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
-    }
+  CHECK_IERR;
+  if (prt) {
+    prt->input_part = input_part;
   }
+  else if (input_part) { /* Ordering, dont need part */
+    ZOLTAN_FREE(&input_part);
+  }
+  if (ierr){
+    /* Return error */
+    ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
+  }
+
+    
+
   /* Build Graph for third party library data structures, or just get vtxdist. */
 
   if (gr->get_data) {

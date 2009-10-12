@@ -70,7 +70,6 @@ struct Zoltan_Order_Options {
   char method[MAX_PARAM_STRING_LEN+1];	   /* In: Ordering method. */
   char order_type[MAX_PARAM_STRING_LEN+1]; /* In: Ordering is LOCAL or GLOBAL? */
   int start_index;		/* In: Permutations start at 0 or 1? */
-  int reorder;			/* In: Permute from existing ordering? */
   int use_order_info;		/* In: Put order info into ZOS? */
   int return_args;		/* Out: What return arguments were computed? */
 };
