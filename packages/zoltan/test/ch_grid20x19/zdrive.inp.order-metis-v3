@@ -1,5 +1,5 @@
 Decomposition Method 	= none
-Zoltan Parameters	= order_method=nodend, order_type=local
+Zoltan Parameters	= order_method=metis
 Zoltan Parameters	= order_start_index=1
 File Type		= Chaco
 File Name		= grid20x19
