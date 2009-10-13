@@ -24,6 +24,7 @@
 #ifndef Shards_BasicTopologies_hpp
 #define Shards_BasicTopologies_hpp
 
+#include <iosfwd>
 #include <Shards_CellTopologyTraits.hpp>
 
 namespace shards {
