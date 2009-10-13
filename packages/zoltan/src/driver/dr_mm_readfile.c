@@ -106,15 +106,15 @@ int error = 0;  /* flag to indicate status */
       if (mm_read_banner(f, &matcode) != 0) {
           fprintf(stderr,"%s Could not process Matrix Market banner.\n",yo);
       }
-      else if (mm_is_complex(matcode) && mm_is_matrix(matcode) &&
-              mm_is_sparse(matcode) ) {
-        /*  This is how one can screen matrix types if their application */
-        /*  only supports a subset of the Matrix Market data types.      */
+/*       else if (mm_is_complex(matcode) && mm_is_matrix(matcode) && */
+/*               mm_is_sparse(matcode) ) { */
+/*         /\*  This is how one can screen matrix types if their application *\/ */
+/*         /\*  only supports a subset of the Matrix Market data types.      *\/ */
 
-          fprintf(stderr,"%s Sorry, this application does not support ",yo);
-          fprintf(stderr,"%s Market Market type: [%s]\n",
-                  mm_typecode_to_str(matcode),yo);
-      }
+/*           fprintf(stderr,"%s Sorry, this application does not support ",yo); */
+/*           fprintf(stderr,"%s Market Market type: [%s]\n", */
+/*                   mm_typecode_to_str(matcode),yo); */
+/*       } */
       else if (mm_read_mtx_crd_size(f, &M, &N, &gnz) !=0){
         /* find out size of sparse matrix .... */
           fprintf(stderr,"%s Can't read size of mtx file\n", yo);
