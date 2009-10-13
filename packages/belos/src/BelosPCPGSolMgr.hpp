@@ -47,7 +47,7 @@
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
-#include "BelosStatusTestGeneralOutput.hpp"
+#include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -571,16 +571,11 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
   
-  if (outputFreq_ > 0) {
-    outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_, 
-  								        sTest_, 
-									outputFreq_, 
-									Passed+Failed+Undefined ) ); 
-  }
-  else {
-    outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_, 
-									  sTest_, 1 ) );
-  }
+  // Create the status test output class.
+  // This class manages and formats the output from the status test.
+  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( Belos::General );
+  outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
+
   // Set the solver string for the output test
   std::string solverDesc = " PCPG ";
   outputTest_->setSolverDesc( solverDesc );

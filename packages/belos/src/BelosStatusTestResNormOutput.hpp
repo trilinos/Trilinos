@@ -44,7 +44,7 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestResNorm.hpp"
-
+#include "BelosStatusTestOutput.hpp"
 
 namespace Belos {
 

@@ -49,7 +49,7 @@
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestImpResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
-#include "BelosStatusTestGeneralOutput.hpp"
+#include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -843,16 +843,11 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
 
-  if (outputFreq_ > 0) {
-    outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_,
-        sTest_,
-        outputFreq_,
-        Passed+Failed+Undefined ) );
-  }
-  else {
-    outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_,
-        sTest_, 1 ) );
-  }
+  // Create the status test output class.
+  // This class manages and formats the output from the status test.
+  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( Belos::General );
+  outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
+
   // Set the solver string for the output test
   std::string solverDesc = " Gmres Polynomial ";
   outputTest_->setSolverDesc( solverDesc );

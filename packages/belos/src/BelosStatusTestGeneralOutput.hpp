@@ -40,9 +40,9 @@
 #include "BelosTypes.hpp"
 #include "BelosIteration.hpp"
 
+#include "BelosStatusTest.hpp"
 #include "BelosStatusTestOutput.hpp"
-
-
+#include "BelosOutputManager.hpp"
 
 namespace Belos {
 
