@@ -1,6 +1,5 @@
 Decomposition Method 	= none
 Zoltan Parameters	= order_method=scotch
-Zoltan Parameters = order_type=local
 File Type		= Chaco
 File Name		= hammond
 Parallel Disk Info	= number=0

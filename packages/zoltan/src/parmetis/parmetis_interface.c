@@ -617,8 +617,7 @@ int Zoltan_ParMetis_Order(
       SET_GLOBAL_GRAPH(&gr.graph_type); /* GLOBAL by default */
 
 #ifdef ZOLTAN_PARMETIS
-    if ((strcmp(order_opt->order_type, "SERIAL") == 0) ||
-	(strcmp(order_opt->order_type, "LOCAL") == 0)) /* For compatibility reason */
+      if ((strcmp(order_opt->method, "METIS") == 0))
 #endif /* ZOLTAN_PARMETIS */
       SET_LOCAL_GRAPH(&gr.graph_type);
   }

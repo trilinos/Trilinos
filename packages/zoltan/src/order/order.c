@@ -37,7 +37,6 @@ extern "C" {
 /**********  parameters structure for ordering **********/
 static PARAM_VARS Order_params[] = {
         { "ORDER_METHOD", NULL, "STRING", 0 },
-        { "ORDER_TYPE", NULL, "STRING", 0 },
         { "ORDER_START_INDEX", NULL, "INT", 0 },
         { "USE_ORDER_INFO", NULL, "INT", 0 },
         { NULL, NULL, NULL, 0 } };
@@ -132,18 +131,18 @@ int Zoltan_Order(
    */
 
   /* Set default parameter values */
-  strncpy(opt.method, "PARMETIS", MAX_PARAM_STRING_LEN);
 #ifdef HAVE_MPI
-  strncpy(opt.order_type, "DIST", MAX_PARAM_STRING_LEN);
+  strncpy(opt.method, "PARMETIS", MAX_PARAM_STRING_LEN);
+  strcpy(zz->Order.order_type, "GLOBAL");
 #else
-  strncpy(opt.order_type, "SERIAL", MAX_PARAM_STRING_LEN);
+  strncpy(opt.method, "METIS", MAX_PARAM_STRING_LEN);
+  strcpy(zz->Order.order_type, "LOCAL");
 #endif /* HAVE_MPI */
 
   opt.use_order_info = 0;
   opt.start_index = 0;
 
   Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) opt.method);
-  Zoltan_Bind_Param(Order_params, "ORDER_TYPE",   (void *) opt.order_type);
   Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &opt.start_index);
   Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &opt.use_order_info);
 
@@ -173,28 +172,23 @@ int Zoltan_Order(
     return (ZOLTAN_WARN);
   }
 #ifdef ZOLTAN_PARMETIS
-  else if (!strcmp(opt.method, "NODEND")) {
-    Order_fn = Zoltan_ParMetis_Order;
-  }
   else if (!strcmp(opt.method, "METIS")) {
     Order_fn = Zoltan_ParMetis_Order;
-    /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
-    strcpy(opt.method, "NODEND");
-    strcpy(opt.order_type, "LOCAL");
+    strcpy(zz->Order.order_type, "LOCAL");
   }
   else if (!strcmp(opt.method, "PARMETIS")) {
     Order_fn = Zoltan_ParMetis_Order;
-    /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
-    strcpy(opt.method, "NODEND");
-    strcpy(opt.order_type, "GLOBAL");
+    strcpy(zz->Order.order_type, "GLOBAL");
   }
 #endif /* ZOLTAN_PARMETIS */
 #ifdef ZOLTAN_SCOTCH
   else if (!strcmp(opt.method, "SCOTCH")) {
     Order_fn = Zoltan_Scotch_Order;
-    /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
-    strcpy(opt.method, "NODEND");
-/*     strcpy(opt.order_type, "GLOBAL"); */
+    strcpy(zz->Order.order_type, "LOCAL");
+  }
+  else if (!strcmp(opt.method, "PTSCOTCH")) {
+    Order_fn = Zoltan_Scotch_Order;
+    strcpy(zz->Order.order_type, "GLOBAL");
   }
 #endif /* ZOLTAN_SCOTCH */
   else {
@@ -203,14 +197,6 @@ int Zoltan_Order(
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
   }
-
-  if (!strcmp(opt.order_type, "GLOBAL"))
-    strcpy (opt.order_type, "DIST");
-  if (!strcmp(opt.order_type, "LOCAL"))
-    strcpy (opt.order_type, "SERIAL");
-
-  strcpy(zz->Order.order_type, opt.order_type);
-
 
   /*
    *  Construct the heterogenous machine description.
@@ -280,12 +266,12 @@ int Zoltan_Order(
     if (!(opt.return_args & RETURN_RANK) && (rank != NULL)){
       /* Compute rank from iperm */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, local_iperm, local_rank, vtxdist, opt.order_type, opt.start_index);
+      Zoltan_Inverse_Perm(zz, local_iperm, local_rank, vtxdist, zz->Order.order_type, opt.start_index);
     }
     else if (!(opt.return_args & RETURN_IPERM) && (iperm != NULL)){
     /* Compute iperm from rank */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, local_rank, local_iperm, vtxdist, opt.order_type, opt.start_index);
+      Zoltan_Inverse_Perm(zz, local_rank, local_iperm, vtxdist, zz->Order.order_type, opt.start_index);
     }
     ZOLTAN_FREE(&vtxdist);
   }

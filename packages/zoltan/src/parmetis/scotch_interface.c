@@ -137,7 +137,7 @@ int Zoltan_Scotch_Order(
     /* If for some reason order_opt is NULL, allocate a new ZOOS here. */
     /* This should really never happen. */
     order_opt = (ZOOS *) ZOLTAN_MALLOC(sizeof(ZOOS));
-    strcpy(order_opt->method,"SCOTCH");
+    strcpy(order_opt->method,"PTSCOTCH");
   }
 
   /* Scotch only computes the rank vector */
@@ -165,8 +165,7 @@ int Zoltan_Scotch_Order(
   /* Check what ordering type is requested */
 #ifdef ZOLTAN_PTSCOTCH
   SET_GLOBAL_GRAPH(&gr.graph_type);
-  if (order_opt && ((strcmp(order_opt->order_type, "SERIAL") == 0) ||
-		    (strcmp(order_opt->order_type, "LOCAL") == 0))) /* For compatibility reason */
+  if (order_opt && (strcmp(order_opt->method, "SCOTCH") == 0))
 #endif
     SET_LOCAL_GRAPH(&gr.graph_type);
 

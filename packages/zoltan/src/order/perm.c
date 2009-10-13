@@ -109,12 +109,12 @@ int Zoltan_Inverse_Perm(
       perm[i] -= start_index;
   }
 
-  if (strcmp(order_type, "SERIAL")==0){
+  if (strcmp(order_type, "LOCAL")==0){
     /* Local inverse */
     for (i=0; i<num_obj; i++)
       inv_perm[perm[i]] = i;
   }
-  else if (strcmp(order_type, "DIST")==0){
+  else if (strcmp(order_type, "GLOBAL")==0){
     /* Global inverse; use Zoltan Comm package */
     proclist = (int *) ZOLTAN_MALLOC (5*num_obj*sizeof(int));
     sendlist = &proclist[num_obj];
