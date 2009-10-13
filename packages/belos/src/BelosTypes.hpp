@@ -82,6 +82,13 @@ namespace Belos {
                                    the residual will be divided by. */
   };
  
+  /*!
+   \enum Belos::OutputType 
+   \brief Enumerated list for describing the style of output used to display status test information.
+  */
+  enum OutputType {General,     /*!< Extensive output of status test information. */
+                   Brief        /*!< Simple output of current residual information. */
+  };
 
   /*!	
     \enum Belos::ReturnType

@@ -604,6 +604,9 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
       outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_, 
 									  sTest_, 1 ) );
     }
+    // Set the solver string for the output test
+    std::string solverDesc = " Recycling CG ";
+    outputTest_->setSolverDesc( solverDesc );
   }
 
   // Create the timer if we need to.

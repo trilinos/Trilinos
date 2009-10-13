@@ -581,6 +581,10 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
     outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_, 
 									  sTest_, 1 ) );
   }
+  // Set the solver string for the output test
+  std::string solverDesc = " PCPG ";
+  outputTest_->setSolverDesc( solverDesc );
+
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null) {

@@ -833,6 +833,12 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
         sTest_, 1 ) );
   }
 
+  // Set the solver string for the output test
+  std::string solverDesc = " Block Gmres ";
+  if (isFlexible_)
+    solverDesc = "Flexible" + solverDesc;
+  outputTest_->setSolverDesc( solverDesc );
+
   // The status test is now set.
   isSTSet_ = true;
 

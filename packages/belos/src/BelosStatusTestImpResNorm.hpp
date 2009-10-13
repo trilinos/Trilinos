@@ -186,6 +186,9 @@ class StatusTestImpResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
   //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
   int getQuorum() const { return quorum_; }
 
+  //! Returns whether the only maximum residual norm is displayed when the print() method is called
+  bool getShowMaxResNormOnly() { return showMaxResNormOnly_; }
+
   //! Returns the vector containing the indices of the residuals that passed the test.
   std::vector<int> convIndices() { return ind_; }
   

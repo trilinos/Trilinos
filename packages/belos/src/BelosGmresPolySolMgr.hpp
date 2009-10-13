@@ -853,6 +853,10 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::checkStatusTest() {
     outputTest_ = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer_,
         sTest_, 1 ) );
   }
+  // Set the solver string for the output test
+  std::string solverDesc = " Gmres Polynomial ";
+  outputTest_->setSolverDesc( solverDesc );
+
 
   // The status test is now set.
   isSTSet_ = true;

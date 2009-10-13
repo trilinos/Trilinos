@@ -83,6 +83,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
   virtual int getQuorum() const = 0;
 
+  //! Returns whether the only maximum residual norm is displayed when the print() method is called
+  virtual bool getShowMaxResNormOnly() = 0;
+
   //! Returns the std::vector containing the indices of the residuals that passed the test.
   virtual std::vector<int> convIndices() = 0;
 
