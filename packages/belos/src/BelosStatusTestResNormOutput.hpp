@@ -27,11 +27,11 @@
 // @HEADER
 //
 
-#ifndef BELOS_STATUS_TEST_SIMPLE_OUTPUT_HPP
-#define BELOS_STATUS_TEST_SIMPLE_OUTPUT_HPP
+#ifndef BELOS_STATUS_TEST_RESNORM_OUTPUT_HPP
+#define BELOS_STATUS_TEST_RESNORM_OUTPUT_HPP
 
 /*!
-  \file BelosStatusTestSimpleOutput.hpp
+  \file BelosStatusTestResNormOutput.hpp
   \brief Special StatusTest for printing status tests in simple format for residuals.
 */
 
@@ -49,16 +49,16 @@
 namespace Belos {
 
   /*! 
-    \class StatusTestSimpleOutput
+    \class StatusTestResNormOutput
     \brief A special StatusTest for printing other status tests in a simple format. 
     
-    StatusTestSimpleOutput is a wrapper around an StatusTest that calls 
-    StatusTest::print() on the underlying object on calls to StatusTestSimpleOutput::checkStatus().
+    StatusTestResNormOutput is a wrapper around an StatusTest that calls 
+    StatusTest::print() on the underlying object on calls to StatusTestResNormOutput::checkStatus().
     The frequency and occasion of the printing can be dictated according to some parameters passed to 
-    StatusTestSimpleOutput::StatusTestSimpleOutput().
+    StatusTestResNormOutput::StatusTestResNormOutput().
   */
 template <class ScalarType, class MV, class OP>
-class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
+class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
@@ -70,21 +70,20 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
 
   /*! \brief Constructor
    *
-   * The StatusTestSimpleOutput requires an OutputManager for printing the underlying StatusTest on
+   * The StatusTestResNormOutput requires an OutputManager for printing the underlying StatusTest on
    * calls to checkStatus(), as well as an underlying StatusTest.
    *
    * The last two parameters, described below, in addition to the verbosity level of the OutputManager, control when printing is 
    * called. When both the \c mod criterion and the \c printStates criterion are satisfied, the status test will be printed to the 
    * OutputManager with ::MsgType of ::StatusTestDetails.
    *
-   * @param[in] iterTest A reference-counted pointer to a Belos::StatusTestMaxIters object
-   * @param[in] resTest A reference-counted pointer to a object that derives from Belos::StatusTestResNorm or a combination of Belos::StatusTestResNorm objects
+   * @param[in] test A reference-counted pointer to an object that combines Belos::StatusTestMaxIters and a set of Belos::StatusTestResNorm
    * @param[in] mod A positive number describes how often the output should be printed. On every call to checkStatus(), an internal counter
    *                is incremented. Printing may only occur when this counter is congruent to zero modulo \c mod. Default: 1 (attempt to print on every call to checkStatus())
    * @param[in] printStates A combination of ::StatusType values for which the output may be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
    *
    */
-  StatusTestSimpleOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 
+  StatusTestResNormOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 
 			Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
 			int mod = 1,
 			int printStates = Passed)
@@ -105,7 +104,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
     }
 
   //! Destructor
-  virtual ~StatusTestSimpleOutput() {};
+  virtual ~StatusTestResNormOutput() {};
   //@}
 
   //! @name Status methods
@@ -129,8 +128,8 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
   */
   StatusType checkStatus( Iteration<ScalarType,MV,OP>* solver ) 
   {
-    TEST_FOR_EXCEPTION(iterTest_ == Teuchos::null,StatusTestError,"StatusTestSimpleOutput::checkStatus():  iteration test pointer is null.");
-    TEST_FOR_EXCEPTION(resTest_ == Teuchos::null,StatusTestError,"StatusTestSimpleOutput::checkStatus():  residual test pointer is null.");
+    TEST_FOR_EXCEPTION(iterTest_ == Teuchos::null,StatusTestError,"StatusTestResNormOutput::checkStatus():  iteration test pointer is null.");
+    TEST_FOR_EXCEPTION(resTestVec_.size() == 0,StatusTestError,"StatusTestResNormOutput::checkStatus():  residual test pointer is null.");
     state_ = test_->checkStatus(solver);
 
     // Update some information for the header, if it has not printed or the linear system has changed.
@@ -183,7 +182,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
 
     // First check to see if this test is a combination test
     Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(test);
-    TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  test must be a Belos::StatusTestCombo.");
+    TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a Belos::StatusTestCombo.");
     std::vector<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tmpVec = tmpComboTest->getStatusTests();
     
     // Get the number of tests.
@@ -195,7 +194,7 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
       // Check if this is a maximum iteration test.
       Teuchos::RCP<StatusTestMaxIters_t> tmpItrTest = Teuchos::rcp_dynamic_cast<StatusTestMaxIters_t>(tmpVec[i]);
       if (tmpItrTest != Teuchos::null) {
-        iterTest = tmpIterTest;
+        iterTest_ = tmpItrTest;
         continue;
       }
 
@@ -203,20 +202,22 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
       Teuchos::RCP<StatusTestResNorm_t> tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[i]);
       // If the residual status test is a single test, put in the vector
       if (tmpResTest != Teuchos::null) {
-	resTestVec_.push_back( tmpResTest );
 	numResTests_ = 1;
+        resTestVec_.resize( numResTests_ );
+	resTestVec_[0] = tmpResTest;
+        continue;
       }
 	
       // Check if the residual test is a combination of several StatusTestResNorm objects.
       Teuchos::RCP<StatusTestCombo_t> tmpComboTest = Teuchos::rcp_dynamic_cast<StatusTestCombo_t>(tmpVec[i]);
-      TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].");
+      TEST_FOR_EXCEPTION(tmpComboTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be Belos::StatusTest[MaxIters|ResNorm|Combo].");
       tmpVec = tmpComboTest->getStatusTests();
       comboType_ = tmpComboTest->getComboType();
       numResTests_ = tmpVec.size();
       resTestVec_.resize( numResTests_ );
       for (int j=0; j<numResTests_; ++j) {
 	tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[j]);
-	TEST_FOR_EXCEPTION(tmpResTest == Teuchos::null,StatusTestError,"StatusTestSimpleOutput():  resTest must be a vector of Belos::StatusTestResNorm.");
+	TEST_FOR_EXCEPTION(tmpResTest == Teuchos::null,StatusTestError,"StatusTestResNormOutput():  test must be a vector of Belos::StatusTestResNorm.");
 	resTestVec_[j] = tmpResTest;
       }
     }
@@ -225,6 +226,11 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
     test_ = test;
     state_ = Undefined;
 
+  }
+ 
+  //! \brief Get child test.
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const {
+    return test_;
   }
 
   /*! \brief Set a short solver description for output clarity.
@@ -322,9 +328,6 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
     // Overall status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test_;
 
-    // Residual test (as passed in).
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > resTest_;
-
     // Iteration test (as passed in).
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > iterTest_;
 
@@ -344,4 +347,4 @@ class StatusTestSimpleOutput : public StatusTest<ScalarType,MV,OP> {
 
 } // end of Belos namespace
 
-#endif /* BELOS_STATUS_TEST_OUTPUT_HPP */
+#endif /* BELOS_STATUS_TEST_RESNORM_OUTPUT_HPP */
