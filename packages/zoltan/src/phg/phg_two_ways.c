@@ -23,7 +23,7 @@ extern "C" {
 #include "phg.h"
 #include <limits.h>
 
-#define CEDRIC_PRINT
+/* #define CEDRIC_PRINT */
 
 #define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
 #define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)

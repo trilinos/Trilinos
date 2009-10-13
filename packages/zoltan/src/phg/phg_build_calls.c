@@ -24,7 +24,7 @@ extern "C" {
 #include "third_library_const.h"
 #include "third_library_tools.h"
 
-#define CEDRIC_PRINT
+/* #define CEDRIC_PRINT */
 
 static int edge_weight_operation(ZZ *zz, float *dest, float *src, int ew_dim, int ew_op, int len);
 
