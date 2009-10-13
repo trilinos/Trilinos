@@ -34,7 +34,7 @@ The following graph (sparse matrix) ordering algorithms are currently included i
 <a href="ug_order_parmetis.html">Nested dissection by METIS/ParMETIS </a><br>
 <a href="ug_order_ptscotch.html">Nested dissection by Scotch/PT-Scotch</a>
 </blockquote>
-These methods produce orderings that reduce fill in sparse matrix factorizations (Cholesky).
+These methods produce orderings for various applications (e.g., reducing fill in sparse matrix factorizations).
 Ordering is accessed through calls to 
 <b><a href="ug_interface_order.html#Zoltan_Order">Zoltan_Order</a></b>.
 <p><!---------------------------------------------------------------------------->
@@ -67,22 +67,14 @@ parameters are described below.
 
 <td>The order algorithm used by Zoltan is specified by this parameter.
 Valid values are&nbsp;
-<blockquote>"NODEND" (for <a href="ug_order_parmetis.html">nodal nested
-dissection by ParMETIS or METIS</a>),
-<br>"METIS" (same as NODEND with ORDER_TYPE = local),
-<br>"PARMETIS" (same as NODEND with ORDER_TYPE = global), 
-<br>"SCOTCH", (parallel or sequential depending of the value of ORDER_TYPE) and
+<blockquote>
+"METIS" (sequential <a href="ug_order_parmetis.html">nodal nested dissection by METIS</a>),
+<br>"PARMETIS" (parallel <a href="ug_order_parmetis.html">nodal nested dissection by ParMETIS </a>), 
+<br>"SCOTCH" (sequential ordering using <a href="ug_order_ptscotch.html">Scotch</a>),
+<br>"PTSCOTCH" (parallel ordering using <a href="ug_order_ptscotch.html">PT-Scotch</a>), and
 <br>"NONE" (for no ordering).
 </blockquote>
 </td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="ORDER_TYPE"></a>&nbsp;&nbsp; <i>ORDER_TYPE</i></td>
-
-<td>"SERIAL" or "DIST". If SERIAL is selected, the serial version of
-the ordering routine is used, i.e. Metis for ParMetis or Scotch for
-PT-Scotch. SERIAL can be selected only on non distributed graph.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -106,13 +98,7 @@ Valid values are 0 and 1.</td>
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>ORDER_METHOD</i> = NODEND</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>ORDER_TYPE </i>= DIST</td>
+<td><i>ORDER_METHOD</i> = PARMETIS (METIS if serial)</td>
 </tr>
 
 <tr VALIGN=TOP>
