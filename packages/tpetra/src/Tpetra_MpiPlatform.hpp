@@ -82,15 +82,13 @@ namespace Tpetra {
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node, const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-  : node_(node)
-  {
+  : node_(node) {
     comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
   }
 
   template <class Node>
   MpiPlatform<Node>::MpiPlatform(Teuchos::RCP<Node> node)
-  : node_(node)
-  {
+  : node_(node) {
     comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
   } 
 
@@ -98,15 +96,13 @@ namespace Tpetra {
   MpiPlatform<Node>::~MpiPlatform() {}
 
   template <class Node>
-  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform)
-  {
+  MpiPlatform<Node>::MpiPlatform(const MpiPlatform<Node> &platform) {
     comm_ = platform.comm_;
   }
 
   template <class Node>
   Teuchos::RCP< const Teuchos::Comm<int> > 
-  MpiPlatform<Node>::getComm() const 
-  {
+  MpiPlatform<Node>::getComm() const {
     return comm_;
   }
 

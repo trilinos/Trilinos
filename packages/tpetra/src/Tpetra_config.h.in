@@ -114,7 +114,10 @@
 /* Define if want to build tpetra-throw_warnings */
 #undef HAVE_TPETRA_THROW_WARNINGS
 
-/* Define if want to build with tpetra enabled */
+/* Define if want to build with epetra enabled */
+#undef HAVE_TPETRA_EPETRA
+
+/* Define if want to build with triutils enabled */
 #undef HAVE_TPETRA_TRIUTILS
 
 /* Define to 1 if you have the <unistd.h> header file. */

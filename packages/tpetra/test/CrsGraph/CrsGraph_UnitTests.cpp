@@ -41,14 +41,19 @@ namespace {
   using Teuchos::ArrayView;
   using Tpetra::CrsGraph;
   using Tpetra::RowGraph;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Tpetra::global_size_t;
   using Teuchos::arcp;
   using std::string;
   using std::unique;
   using Teuchos::tuple;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
+  using Tpetra::ProfileType;
+  using Tpetra::StaticProfile;
+  using Tpetra::DynamicProfile;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -109,7 +114,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const GO indexBase = 0;
@@ -140,7 +145,7 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -185,7 +190,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -228,7 +233,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -313,7 +318,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create a Map, one row per processor
@@ -341,7 +346,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc0, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    const size_t STINV = OrdinalTraits<size_t>::invalid();
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
     // create a Map
@@ -353,7 +359,7 @@ namespace {
     {
       // allocate with no space
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
-      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), 0 ); // zero, because none are allocated yet
+      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
       zero_crs->fillComplete(DoOptimizeStorage);
       zero = zero_crs;
     }
@@ -385,7 +391,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyGraphAlloc1, LO, GO )
   {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    const size_t STINV = OrdinalTraits<size_t>::invalid();
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
     // create a Map
@@ -397,7 +404,7 @@ namespace {
     {
       // allocated with space for one entry per row
       RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,1));
-      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), 0 ); // zero, because none are allocated yet
+      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
       zero_crs->fillComplete(DoOptimizeStorage);
       zero = zero_crs;
     }
@@ -429,7 +436,7 @@ namespace {
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map, three rows per processor
@@ -486,7 +493,7 @@ namespace {
     typedef CrsGraph<LO,GO,Node> GRAPH;
     // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm and node
+    // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
@@ -587,6 +594,59 @@ namespace {
   }
 
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, Describable, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const GO INVALID = OrdinalTraits<GO>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    // create Map
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,static_cast<size_t>(3),0,comm) );
+    {
+      GRAPH graph(map,1,StaticProfile);
+      // test labeling
+      const string lbl("graphA");
+      string desc1 = graph.description();
+      out << desc1 << endl;
+      graph.setObjectLabel(lbl);
+      string desc2 = graph.description();
+      out << desc2 << endl;
+      TEST_EQUALITY( graph.getObjectLabel(), lbl );
+    }
+    {
+      GRAPH graph(map,1,StaticProfile);
+      // test describing at different verbosity levels
+      if (myImageID==0) out << "Describing with verbosity VERB_DEFAULT..." << endl;
+      graph.describe(out);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_NONE..." << endl;
+      graph.describe(out,VERB_NONE);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_LOW..." << endl;
+      graph.describe(out,VERB_LOW);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_MEDIUM..." << endl;
+      graph.describe(out,VERB_MEDIUM);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_HIGH..." << endl;
+      graph.describe(out,VERB_HIGH);
+      comm->barrier();
+      comm->barrier();
+      if (myImageID==0) out << "Describing with verbosity VERB_EXTREME..." << endl;
+      graph.describe(out,VERB_EXTREME);
+      comm->barrier();
+      comm->barrier();
+    }
+  }
+
+
+
   // 
   // INSTANTIATIONS
   //
@@ -604,7 +664,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, NonLocals , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
      UNIT_TEST_GROUP_LO_GO(int,int)

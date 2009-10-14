@@ -96,25 +96,36 @@
 namespace Tpetra {
   typedef size_t global_size_t;
 
+  /*! Local versus global allocation of Map elements */
   enum LocalGlobal {
-    LocallyReplicated,
-    GloballyDistributed
+    LocallyReplicated,  /*!< Indicates that map elements are locally replicated across all nodes */
+    GloballyDistributed /*!< Indicates that map elements are globally distributed across all nodes */
   };
 
+  /*! Return status of Map lookup */
   enum LookupStatus {
-    AllIDsPresent,
-    IDNotPresent
+    AllIDsPresent, /*!< Indicates that all queried IDs were present in the Map */
+    IDNotPresent   /*!< Indicates that at least one of the specified IDs was not present in the Map */
   };
 
+  /*! Allocation profile for matrix/graph entries */
   enum ProfileType {
-    StaticProfile,
-    DynamicProfile
+    StaticProfile,  /*!< Indicates a single, static allocation (strict and more efficient) */
+    DynamicProfile  /*!< Indicates multiple, dynamic allocations (flexibile, but less efficient) */
   };
 
+  /*! Optimize storage option */
   enum OptimizeOption {
-    DoOptimizeStorage,
-    DoNotOptimizeStorage
+    DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
+    DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
+
+  /*! Combine mode */
+	enum CombineMode {
+		ADD,    /*!< Existing values will be summed with new values. */
+		INSERT, /*!< Insert new values that don't currently exist. */
+		REPLACE /*!< Existing values will be replaced with new values. */
+	};
 
 }
 

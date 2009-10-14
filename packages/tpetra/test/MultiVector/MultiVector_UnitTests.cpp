@@ -333,10 +333,12 @@ namespace {
         dvA->update(as<Scalar>(-1),*dvC, as<Scalar>(2));
         //   C = 2*A + 2*B - .5*C ->   C == B, A == 0,            update(alpha,mv,beta,mv,gamma)
         dvC->update(as<Scalar>(2),*dvA, as<Scalar>(2), *dvB, as<Scalar>(-.5));
-        //   B.recip(C)           ->   B == 1, A == 0,            reciprocal(mv)
-        dvB->reciprocal(*dvC);
-        //   C = 2*B              ->   A == 0, B == 1, C == 2
-        dvC->scale(as<Mag>(2),*dvB);
+        //   B = 0.5              ->   B = 0.5, A == 0,           putScalar(alpha)
+        dvB->putScalar( as<Scalar>(0.5) );                
+        //   C.recip(B)           ->   C = 2, B == 0.5, A == 0,   reciprocal(mv)
+        dvC->reciprocal(*dvB);
+        //   B = C/2              ->   A == 0, B == 1, C == 2
+        dvB->scale(as<Mag>(0.5),*dvC);
         dvA = Teuchos::null;
         dvB = Teuchos::null;
         dvC = Teuchos::null;
@@ -378,7 +380,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, LabeledObject, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, Describable, LO, GO, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const GO INVALID = OrdinalTraits<GO>::invalid();
@@ -1724,7 +1726,7 @@ namespace {
     mvec.normWeighted(weight1,normsW1());
     {
       Mag vnrm = mvec.getVector(0)->normWeighted(*weight1.getVector(0));
-      TEST_EQUALITY( vnrm, normsW1[0] );
+      TEST_FLOATING_EQUALITY( vnrm, normsW1[0], tol );
     }
     for (size_t j=0; j < numVectors; ++j) {
       Mag ww = ScalarTraits<Scalar>::real( ScalarTraits<Scalar>::conjugate(wvec[j]) * wvec[j] );
@@ -1847,7 +1849,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, NonContigView     , ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Describable       , ORDINAL, ORDINAL, SCALAR )
 
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

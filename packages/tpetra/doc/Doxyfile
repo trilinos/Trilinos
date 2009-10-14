@@ -31,7 +31,7 @@ PROJECT_NAME           = "Tpetra Matrix/Vector Services"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version 1.3"
+PROJECT_NUMBER         = "Version 2.0"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -563,16 +563,11 @@ RECURSIVE              = NO
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = ../src/Tpetra_CrsGraphData.hpp \
-                         ../src/Tpetra_ImportExportData.hpp \
-                         ../src/Tpetra_MapData.hpp \
-                         ../src/Tpetra_MapDataDecl.hpp \
-                         ../src/Tpetra_MultiVectorData.hpp \
-                         ../src/Tpetra_MultiVectorDataDecl.hpp \
+EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
                          ../src/Tpetra_MultiVector.hpp \
+                         ../src/Tpetra_Vector.hpp \
                          ../src/Tpetra_Directory.hpp \
-                         ../src/Tpetra_Map.hpp \
-                         ../src/Tpetra_Vector.hpp
+                         ../src/Tpetra_Map.hpp
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or 
 # directories that are symbolic links (a Unix filesystem feature) are excluded 

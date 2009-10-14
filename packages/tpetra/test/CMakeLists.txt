@@ -10,5 +10,10 @@ ADD_SUBDIRECTORIES(
   #BasicPerfTest
   Utils
   CrsGraph
-  #CrsMatrix
+  CrsMatrix
   )
+
+IF (Tpetra_ENABLE_Epetra AND Tpetra_HAVE_MPI)
+  ADD_SUBDIRECTORY(EpetraRowMatrix)
+ENDIF()
+

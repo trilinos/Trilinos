@@ -34,12 +34,10 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  Tpetra_CombineMode.hpp
   Tpetra_ConfigDefs.hpp
   Tpetra_CrsGraph.hpp
   Tpetra_CrsMatrix.hpp
   Tpetra_DefaultPlatform.hpp
-  Tpetra_DiagPrecond.hpp
   Tpetra_Directory.hpp
   Tpetra_DirectoryDecl.hpp
   Tpetra_DistObject.hpp
@@ -51,6 +49,7 @@ APPEND_SET(HEADERS
   Tpetra_MapDecl.hpp
   Tpetra_MultiVector.hpp
   Tpetra_MultiVectorDecl.hpp
+  Tpetra_NodeOps.hpp
   Tpetra_Operator.hpp 
   Tpetra_RowGraph.hpp
   Tpetra_RowMatrix.hpp
@@ -65,6 +64,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   Tpetra_DefaultPlatform.cpp
+  Tpetra_Distributor.cpp
   Tpetra_Version.cpp
   )
 

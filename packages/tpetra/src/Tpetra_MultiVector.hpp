@@ -61,6 +61,9 @@ namespace Tpetra {
         MVT::Init(lclMV_,0.0);
       }
     }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -84,6 +87,9 @@ namespace Tpetra {
           dstdata += myLen;
         }
       }
+    }
+    else {
+      MVT::initializeValues(lclMV_,0,numVecs,Teuchos::null,0);
     }
   }
 
@@ -117,6 +123,9 @@ namespace Tpetra {
       mydata = Teuchos::null;
       myview = Teuchos::null;
     }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -145,6 +154,9 @@ namespace Tpetra {
       myview = Teuchos::null;
       mydata = Teuchos::null;
     }
+    else {
+      MVT::initializeValues(lclMV_,0,NumVectors,Teuchos::null,0);
+    }
   }
 
 
@@ -169,6 +181,9 @@ namespace Tpetra {
     }
     if (myLen > 0) {
       MVT::initializeValues(lclMV_,myLen,maxVector+1,data,LDA);
+    }
+    else {
+      MVT::initializeValues(lclMV_,0,WhichVectors.size(),Teuchos::null,0);
     }
   }
 
@@ -226,7 +241,8 @@ namespace Tpetra {
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(sourceObj);
     // objects maps have already been checked. simply check the number of vectors.
     packetSize = this->getNumVectors();
-    return (A.getNumVectors() == packetSize);
+    bool compat = (A.getNumVectors() == this->getNumVectors());
+    return compat;
   }
 
 
@@ -340,58 +356,62 @@ namespace Tpetra {
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     Teuchos::ArrayRCP<Scalar> mybuff = MVT::getValuesNonConst(lclMV_);
     // TODO: determine whether this viewBuffer is write-only or not; for now, safe option is not
-    Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,mybuff.size(),mybuff);
-    typename ArrayView<const       Scalar>::iterator impptr;
-    typename ArrayView<const LocalOrdinal>::iterator  idptr;
-    impptr = imports.begin();
-    if (CM == INSERT || CM == REPLACE) {
-      if (isConstantStride()) {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*j + *idptr] = *impptr++;
+    if (numVecs > 0 && importLIDs.size()) {
+      Teuchos::ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,mybuff.size(),mybuff);
+      typename ArrayView<const       Scalar>::iterator impptr;
+      typename ArrayView<const LocalOrdinal>::iterator  idptr;
+      impptr = imports.begin();
+      if (CM == INSERT || CM == REPLACE) {
+        if (isConstantStride()) {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*j + *idptr] = *impptr++;
+            }
+          }
+        }
+        else {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*whichVectors_[j] + *idptr] = *impptr++;
+            }
+          }
+        }
+      }
+      else if (CM == ADD) {
+        if (isConstantStride()) {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*j + *idptr] += *impptr++;
+            }
+          }
+        }
+        else {
+          for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
+            for (size_t j = 0; j < numVecs; ++j) {
+              myview[myStride*whichVectors_[j] + *idptr] += *impptr++;
+            }
           }
         }
       }
       else {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*whichVectors_[j] + *idptr] = *impptr++;
-          }
-        }
+        TEST_FOR_EXCEPTION(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
+            "Tpetra::MultiVector::unpackAndCombine(): Invalid CombineMode: " << CM);
       }
+      myview = Teuchos::null;
     }
-    else if (CM == ADD) {
-      if (isConstantStride()) {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*j + *idptr] += *impptr++;
-          }
-        }
-      }
-      else {
-        for (idptr = importLIDs.begin(); idptr != importLIDs.end(); ++idptr) {
-          for (size_t j = 0; j < numVecs; ++j) {
-            myview[myStride*whichVectors_[j] + *idptr] += *impptr++;
-          }
-        }
-      }
-    }
-    else {
-      TEST_FOR_EXCEPTION(CM != ADD && CM != REPLACE && CM != INSERT, std::invalid_argument,
-          "Tpetra::MultiVector::unpackAndCombine(): Invalid CombineMode: " << CM);
-    }
-    myview = Teuchos::null;
   }
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   inline size_t MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumVectors() const {
+    size_t ret;
     if (isConstantStride()) {
-      return MVT::getNumCols(lclMV_);
+      ret = MVT::getNumCols(lclMV_);
     }
     else {
-      return whichVectors_.size();
+      ret = whichVectors_.size();
     }
+    return ret;
   }
 
 
@@ -759,7 +779,7 @@ namespace Tpetra {
     const size_t myLen = getLocalLength();
     try {
       if (isConstantStride() && A.isConstantStride()) {
-        MVT::Divide(lclMV_,(const KMV&)A.lclMV_);
+        MVT::Recip(lclMV_,(const KMV&)A.lclMV_);
       }
       else {
         KMV v(MVT::getNode(lclMV_)), a(MVT::getNode(lclMV_));
@@ -770,7 +790,7 @@ namespace Tpetra {
                           avj = A.getSubArrayRCP(avptr,j);
           MVT::initializeValues(a,myLen, 1, avj, myLen);
           MVT::initializeValues(v,myLen, 1,  vj, myLen);
-          MVT::Divide(v,(const KMV &)a);
+          MVT::Recip(v,(const KMV &)a);
         }
       }
     }
@@ -1543,6 +1563,18 @@ namespace Tpetra {
       ret = arr.persistingView(whichVectors_[j]*stride,myLen);
     }
     return ret;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  const Kokkos::MultiVector<Scalar,Node> & 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMV() const {
+    return lclMV_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Kokkos::MultiVector<Scalar,Node> & 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMVNonConst() {
+    return lclMV_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

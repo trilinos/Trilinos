@@ -42,7 +42,6 @@
 
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_CombineMode.hpp"
 
 // TODO: add principal use case instructions for memory management interfaces (view/copy extraction)
 // TODO: expand user-visible documentation 
@@ -181,6 +180,12 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
 
+    //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
+    const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const;
+
+    //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
+    Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst();
+
     //@}
 
     //! @name Mathematical methods
@@ -198,7 +203,7 @@ namespace Tpetra {
     //! Scale the current values of a multi-vector, this = alpha*this.
     void scale(const Scalar &alpha);
 
-    //! Scale the current values of a multi-vector, this = alpha*this.
+    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
     void scale(Teuchos::ArrayView<const Scalar> alpha);
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
@@ -227,12 +232,6 @@ namespace Tpetra {
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
-
-    //! Multiply a MultiVector with another, element-by-element: this(i,j) = beta*this(i,j) + alpha*A(i,j)*B(i,j)
-    void multiply(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
-
-    //! Multiply a MultiVector by the reciprocal of another, element-by-element. this(i,j) = beta*this(i,j) + alpha*B(i,j)/A(i,j)
-    void reciprocalMultiply(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
 
     //@} 
 

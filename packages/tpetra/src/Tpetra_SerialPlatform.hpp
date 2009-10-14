@@ -62,10 +62,10 @@ namespace Tpetra {
     //@{ 
 
     //! Comm Instance
-    const Teuchos::RCP< const Teuchos::SerialComm<int> > & getComm() const;
+    const Teuchos::RCP< const Teuchos::SerialComm<int> > getComm() const;
 
     //! Get Get a node for parallel computation.
-    const Teuchos::RCP<Node> & getNode() const;
+    const Teuchos::RCP<Node> getNode() const;
 
     //@}
     private:
@@ -86,13 +86,13 @@ namespace Tpetra {
   SerialPlatform<Node>::~SerialPlatform() {}
 
   template<class Node>
-  const Teuchos::RCP< const Teuchos::SerialComm<int> > &
+  const Teuchos::RCP< const Teuchos::SerialComm<int> >
   SerialPlatform<Node>::getComm() const {
     return comm_;
   }
 
   template<class Node>
-  const Teuchos::RCP< Node > &
+  const Teuchos::RCP< Node >
   SerialPlatform<Node>::getNode() const { 
     return node_; 
   }

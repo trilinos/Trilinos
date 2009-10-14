@@ -31,7 +31,7 @@
 namespace Tpetra {
 
 	std::string version() {
-		return("Tpetra Version 1.3 - 05/01/2008"); 
+		return("Tpetra Version 2.1 - 10/14/2009"); 
 	}
 
 } // namespace Tpetra

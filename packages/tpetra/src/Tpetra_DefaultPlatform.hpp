@@ -38,16 +38,13 @@
 
 namespace Tpetra {
 
-/** \brief Returns a default platform appropriate for the
- * enviroment.
- *
- * If HAVE_MPI is defined, then an instance of <tt>MpiPlatform</tt> will be
- * created.  Otherwise, a <tt>SerialPlatform</tt>
- * is returned.
- *
- * This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
- * The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
- * type, if omitted, defaults to the \c LocalOrdinal type.
+/** \brief Returns a default platform appropriate for the enviroment.
+
+  The DefaultPlatform mechanism is useful for easily accessing default 
+  Comm and Node types on a particular system.
+
+  If HAVE_MPI is defined, then an instance of <tt>MpiPlatform</tt> will be
+  created.  Otherwise, a <tt>SerialPlatform</tt> is returned.
  */
 class DefaultPlatform {
 public:

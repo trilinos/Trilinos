@@ -51,26 +51,34 @@ namespace Tpetra {
    
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-	class Operator : public Teuchos::Describable {
+	class Operator : virtual public Teuchos::Describable {
 	public:
 
 		/** \name Pure virtual functions to be overridden by subclasses. */
     //@{
 
 		//! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getOperatorDomainMap() const = 0;
+		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
 
 		//! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getOperatorRangeMap() const = 0;
+		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
     //! Computes the operator-multivector multiplication \f$Y = A X\f$.
 		virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
 						   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
 						   Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
+    //! Indicates whether this operator supports applying the adjoint operator.
+    virtual bool hasTransposeApply() const;
+
     //@}
 
 	};
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
+    return false;
+  }
 
 } // Tpetra namespace
 
