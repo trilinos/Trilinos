@@ -204,7 +204,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = size(*comm);
+    const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -266,7 +266,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = size(*comm);
+    const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -314,7 +314,7 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = size(*comm);
+    const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 1; // change to 10
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -336,7 +336,7 @@ namespace {
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
       // now there is room for more
-      for (LO r=0; r<numLocal; ++r) 
+      for (LO r=0; r<static_cast<LO>(numLocal); ++r) 
       {
         TEST_NOTHROW( matrix.insertLocalValues(r,tuple(r),tuple(ST::one())) );
       }
@@ -348,7 +348,7 @@ namespace {
       TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
       TEST_EQUALITY( matrix.getGlobalNumEntries(), numLocal*numImages );
       TEST_EQUALITY( matrix.getNodeNumEntries(), numLocal );
-      for (LO r=0; r<numLocal; ++r) {
+      for (LO r=0; r<static_cast<LO>(numLocal); ++r) {
         ArrayRCP<const LO> inds;
         ArrayRCP<const Scalar> vals;
         TEST_NOTHROW( matrix.getLocalRowView(r,inds,vals) );
@@ -374,8 +374,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = size(*comm);
-    const int myImageID = rank(*comm);
+    const size_t numImages = size(*comm);
+    const size_t myImageID = rank(*comm);
     if (numImages < 2) return;
     // create a Map, one row per processor
     const GO indexBase = 0;
@@ -465,8 +465,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
@@ -478,7 +478,7 @@ namespace {
     RCP<RowMatrix<Scalar,LO,GO> > eye;
     {
       RCP<MAT> eye_crs = rcp(new MAT(map,1));
-      for (int i=0; i<numLocal; ++i) {
+      for (size_t i=0; i<numLocal; ++i) {
         eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
       }
       TEST_EQUALITY_CONST( eye_crs->getProfileType() == DynamicProfile, true );
@@ -522,8 +522,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t M = 3;
     const size_t P = 5;
-    const int N = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t N = comm->getSize();
+    const size_t myImageID = comm->getRank();
     // create Maps
     // matrix is M*N-by-P
     //                  col
@@ -562,8 +562,8 @@ namespace {
     lclmap->setObjectLabel("Local Map");
     // create the matrix
     MAT A(rowmap,P,DynamicProfile);
-    for (GO i=0; i<M; ++i) {
-      for (GO j=0; j<P; ++j) {
+    for (GO i=0; i<static_cast<GO>(M); ++i) {
+      for (GO j=0; j<static_cast<GO>(P); ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
@@ -572,15 +572,15 @@ namespace {
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
     MV X(lclmap,numVecs);
-    for (GO i=0; i<P; ++i) {
-      for (GO j=0; j<numVecs; ++j) {
+    for (GO i=0; i<static_cast<GO>(P); ++i) {
+      for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
         X.replaceGlobalValue(i,j,static_cast<Scalar>(i+j*P));
       }
     }
     // build the expected output multivector B
     MV Bexp(rowmap,numVecs), Bout(rowmap,numVecs);
-    for (GO i=myImageID*M; i<myImageID*M+M; ++i) {
-      for (GO j=0; j<numVecs; ++j) {
+    for (GO i=static_cast<GO>(myImageID*M); i<static_cast<GO>(myImageID*M+M); ++i) {
+      for (GO j=0; j<static_cast<GO>(numVecs); ++j) {
         Bexp.replaceGlobalValue(i,j,static_cast<Scalar>(j*i*P*P + (i+j*M*N*P)*(P*P-P)/2 + M*N*P*(P-1)*(2*P-1)/6));
       }
     }
@@ -608,8 +608,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t M = 3;
     const size_t P = 5;
-    const int N = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t N = comm->getSize();
+    const size_t myImageID = comm->getRank();
     // create Maps
     // matrix is M*N-by-P
     //                  col
@@ -655,8 +655,8 @@ namespace {
     RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,static_cast<GO>(0),comm,LocallyReplicated) );
     // create the matrix
     MAT A(rowmap,P);
-    for (int i=0; i<M; ++i) {
-      for (int j=0; j<P; ++j) {
+    for (size_t i=0; i<M; ++i) {
+      for (size_t j=0; j<P; ++j) {
         A.insertGlobalValues( static_cast<GO>(M*myImageID+i), tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
@@ -666,15 +666,15 @@ namespace {
     out << "A: " << endl << A << endl;
     // build the input multivector X
     MV X(rowmap,numVecs);
-    for (int i=myImageID*M; i<myImageID*M+M; ++i) {
-      for (int j=0; j<numVecs; ++j) {
+    for (size_t i=myImageID*M; i<myImageID*M+M; ++i) {
+      for (size_t j=0; j<numVecs; ++j) {
         X.replaceGlobalValue(i,j,static_cast<Scalar>( i + j*M*N ) );
       }
     }
     // build the expected output multivector B
     MV Bexp(lclmap,numVecs), Bout(lclmap,numVecs);
-    for (int i=0; i<P; ++i) {
-      for (int j=0; j<numVecs; ++j) {
+    for (size_t i=0; i<P; ++i) {
+      for (size_t j=0; j<numVecs; ++j) {
         Bexp.replaceGlobalValue(i,j,static_cast<Scalar>( (i+j)*(M*N)*(M*N)*(M*N-1)/2 + i*j*(M*N)*(M*N)*(M*N) + (M*N)*(M*N-1)*(2*M*N-1)/6 ));
       }
     }
@@ -699,8 +699,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
     if (numImages == 1) return;
     // create Maps
     // matrix is:
@@ -763,12 +763,12 @@ namespace {
       tri = tri_crs;
     }
     // test the properties
-    TEST_EQUALITY(tri->getGlobalNumEntries()  , 6*numImages-2);          
+    TEST_EQUALITY(tri->getGlobalNumEntries()  , static_cast<size_t>(6*numImages-2));          
     TEST_EQUALITY(tri->getNodeNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
-    TEST_EQUALITY(tri->getGlobalNumRows()      , 2*numImages);
+    TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getNodeNumRows()          , 2);
     TEST_EQUALITY(tri->getNodeNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
-    TEST_EQUALITY(tri->getGlobalNumDiags() , 2*numImages);
+    TEST_EQUALITY(tri->getGlobalNumDiags() , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getNodeNumDiags()     , 2);
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
     TEST_EQUALITY(tri->getNodeMaxNumRowEntries()    , 3);
@@ -778,7 +778,7 @@ namespace {
     TEST_EQUALITY_CONST(tri->getDomainMap()->isSameAs(*rowmap), true);
     // build the input and corresponding output multivectors
     MV mvin(rowmap,numVecs), mvout(rngmap,numVecs), mvexp(rngmap,numVecs);
-    for (int j=0; j<numVecs; ++j) {
+    for (size_t j=0; j<numVecs; ++j) {
       mvin.replaceLocalValue(0,j,static_cast<Scalar>(j*2*numImages+2*myImageID  )); // entry (2*myImageID  ,j)
       mvin.replaceLocalValue(1,j,static_cast<Scalar>(j*2*numImages+2*myImageID+1)); // entry (2*myImageID+1,j)
       // entry (myImageID,j)
@@ -817,8 +817,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
@@ -873,8 +873,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm) );
@@ -914,12 +914,12 @@ namespace {
     }
     A.fillComplete();
     // test the properties
-    TEST_EQUALITY(A.getGlobalNumEntries()   , 3*numImages-2);
+    TEST_EQUALITY(A.getGlobalNumEntries()   , static_cast<size_t>(3*numImages-2));
     TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumRows()       , numImages);
+    TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
     TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumDiags()  , numImages);
+    TEST_EQUALITY(A.getGlobalNumDiags()  , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , (numImages > 2 ? 3 : 2));
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
@@ -948,16 +948,12 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
     const size_t numLocal = 13, numVecs = 7;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
     // create a Map
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
-    Scalar SONE = static_cast<Scalar>(1.0);
 
     /* Create a triangular matrix with no entries, for testing implicit diagonals.
       We test with Transpose and Non-Transpose application solve (these should be equivalent for the identity matrix)
@@ -1005,13 +1001,10 @@ namespace {
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
     const size_t numLocal = 13, numVecs = 7;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
     // create a Map
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
     Scalar SONE = static_cast<Scalar>(1.0);
@@ -1143,8 +1136,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm) );
@@ -1188,12 +1181,12 @@ namespace {
     }
     A.fillComplete();
     // test the properties
-    TEST_EQUALITY(A.getGlobalNumEntries()   , 3*numImages-2);
+    TEST_EQUALITY(A.getGlobalNumEntries()     , static_cast<size_t>(3*numImages-2));
     TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumRows()       , numImages);
+    TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
     TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
-    TEST_EQUALITY(A.getGlobalNumDiags()  , numImages);
+    TEST_EQUALITY(A.getGlobalNumDiags()  , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getNodeNumDiags(), ONE);
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
     TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
@@ -1223,7 +1216,7 @@ namespace {
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
+    const size_t myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
     int rnnzmax;
@@ -1322,7 +1315,7 @@ namespace {
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
+    const size_t myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
     int rnnzmax;
@@ -1421,7 +1414,7 @@ namespace {
     if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
+    const size_t myImageID = comm->getRank();
 
     int dim,dim2,nnz,info;
     int rnnzmax;
@@ -1520,8 +1513,8 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
+    const size_t numImages = comm->getSize();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );

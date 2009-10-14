@@ -969,7 +969,7 @@ namespace Tpetra
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && indices.size() != sizeInfo.allocSize, std::logic_error, err);
+    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && static_cast<size_t>(indices.size()) != sizeInfo.allocSize, std::logic_error, err);
 #endif
     return sizeInfo;
   }
@@ -1001,7 +1001,7 @@ namespace Tpetra
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && indices.size() != sizeInfo.allocSize, std::logic_error, err);
+    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && static_cast<size_t>(indices.size()) != sizeInfo.allocSize, std::logic_error, err);
 #endif
     return sizeInfo;
   }
@@ -1032,7 +1032,7 @@ namespace Tpetra
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && indices.size() != sizeInfo.allocSize, std::logic_error, err);
+    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && static_cast<size_t>(indices.size()) != sizeInfo.allocSize, std::logic_error, err);
 #endif
     return sizeInfo;
   }
@@ -1064,7 +1064,7 @@ namespace Tpetra
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && indices.size() != sizeInfo.allocSize, std::logic_error, err);
+    TEST_FOR_EXCEPTION(indicesAreAllocated_ == true && indices != Teuchos::null && static_cast<size_t>(indices.size()) != sizeInfo.allocSize, std::logic_error, err);
 #endif
     return sizeInfo;
   }

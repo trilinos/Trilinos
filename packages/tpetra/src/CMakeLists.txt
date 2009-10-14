@@ -64,6 +64,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   Tpetra_DefaultPlatform.cpp
+  Tpetra_Distributor.cpp
   Tpetra_Version.cpp
   )
 

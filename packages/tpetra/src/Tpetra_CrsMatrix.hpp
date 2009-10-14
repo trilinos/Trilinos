@@ -876,7 +876,6 @@ namespace Tpetra
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::checkInternalState() const {
 #ifdef HAVE_TPETRA_DEBUG
     Teuchos::RCP<Node> node = getNode();
-    const global_size_t gsti = Teuchos::OrdinalTraits<global_size_t>::invalid();
     using Teuchos::null;
     std::string err = Teuchos::typeName(*this) + "::checkInternalState(): Likely internal logic error. Please contact Tpetra team.";
     // check the internal state of this data structure
@@ -958,7 +957,7 @@ namespace Tpetra
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(valuesAreAllocated_ == true && values != Teuchos::null && values.size() != sizeInfo.allocSize, std::logic_error, err);
+    TEST_FOR_EXCEPTION(valuesAreAllocated_ == true && values != Teuchos::null && static_cast<size_t>(values.size()) != sizeInfo.allocSize, std::logic_error, err);
 #endif
     return values;
   }
@@ -987,7 +986,7 @@ namespace Tpetra
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(valuesAreAllocated_ == true && values != Teuchos::null && values.size() != sizeInfo.allocSize, std::logic_error, err);
+    TEST_FOR_EXCEPTION(valuesAreAllocated_ == true && values != Teuchos::null && static_cast<size_t>(values.size()) != sizeInfo.allocSize, std::logic_error, err);
 #endif
     return values;
   }
@@ -1005,7 +1004,7 @@ namespace Tpetra
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPT( getRowMap()->isNodeLocalElement(lrow) == false );
-    TEST_FOR_EXCEPT( pbuf_values2D_[lrow] != Teuchos::null && allocSize < pbuf_values2D_[lrow].size() );
+    TEST_FOR_EXCEPT( pbuf_values2D_[lrow] != Teuchos::null && allocSize < static_cast<size_t>(pbuf_values2D_[lrow].size()) );
     TEST_FOR_EXCEPT( allocSize == 0 );
 #endif
     ArrayRCP<Scalar> old_row, new_row;
@@ -1104,7 +1103,7 @@ namespace Tpetra
     fvals.reserve(values.size());
     // use column map to filter the entries:
     const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *getColMap();
-    for (size_t i=0; i < indices.size(); ++i) {
+    for (size_t i=0; i < static_cast<size_t>(indices.size()); ++i) {
       if (cmap.isNodeLocalElement(indices[i])) {
         finds.push_back(indices[i]);
         fvals.push_back(values[i]);
@@ -1185,7 +1184,7 @@ namespace Tpetra
         finds_is_temporary.reserve(indices.size());
         fvals_is_temporary.reserve(values.size());
         const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *getColMap();
-        for (size_t i=0; i<indices.size(); ++i) {
+        for (size_t i=0; i< static_cast<size_t>(indices.size()); ++i) {
           if (cmap.isNodeGlobalElement(indices[i])) {
             finds_is_temporary.push_back(indices[i]);
             fvals_is_temporary.push_back(values[i]);
@@ -1412,7 +1411,7 @@ namespace Tpetra
       RowInfo sizeInfo = graph_->getFullLocalView(LocalRow, indrowview);
       valrowview = getFullView(LocalRow, sizeInfo);
       numEntries = sizeInfo.numEntries;
-      TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
+      TEST_FOR_EXCEPTION(static_cast<size_t>(indices.size()) < numEntries || static_cast<size_t>(values.size()) < numEntries, std::runtime_error, 
           Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
       if (numEntries > 0) {
         std::copy( indrowview.begin(), indrowview.begin() + numEntries, indices.begin() );
@@ -1427,7 +1426,7 @@ namespace Tpetra
       RowInfo sizeInfo = graph_->getFullGlobalView(LocalRow, indrowview);
       valrowview = getFullView(LocalRow, sizeInfo);
       numEntries = sizeInfo.numEntries;
-      TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
+      TEST_FOR_EXCEPTION(static_cast<size_t>(indices.size()) < numEntries || static_cast<size_t>(values.size()) < numEntries, std::runtime_error, 
           Teuchos::typeName(*this) << "::getLocalRowCopy(LocalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
       if (numEntries > 0) {
         std::copy( valrowview.begin(), valrowview.begin() + numEntries, values.begin() );
@@ -1459,7 +1458,7 @@ namespace Tpetra
                                 size_t &numEntries) const {
     using Teuchos::ArrayRCP;
     // Only locally owned rows can be queried, otherwise complain
-    size_t myRow = getRowMap()->getLocalElement(globalRow);
+    LocalOrdinal myRow = getRowMap()->getLocalElement(globalRow);
     TEST_FOR_EXCEPTION(myRow == LOT::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::getGlobalRowCopy(globalRow,...): globalRow does not belong to this node.");
     if (graph_->isGloballyIndexed()) {
@@ -1468,7 +1467,7 @@ namespace Tpetra
       RowInfo sizeInfo = graph_->getFullGlobalView(myRow, indrowview);
       valrowview = getFullView(myRow, sizeInfo);
       numEntries = sizeInfo.numEntries;
-      TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
+      TEST_FOR_EXCEPTION(static_cast<size_t>(indices.size()) < numEntries || static_cast<size_t>(values.size()) < numEntries, std::runtime_error, 
           Teuchos::typeName(*this) << "::getGlobalRowCopy(GlobalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
       if (numEntries > 0) {
         std::copy( indrowview.begin(), indrowview.begin() + numEntries, indices.begin() );
@@ -1483,7 +1482,7 @@ namespace Tpetra
       RowInfo sizeInfo = graph_->getFullLocalView(myRow, indrowview);
       valrowview = getFullView(myRow, sizeInfo);
       numEntries = sizeInfo.numEntries;
-      TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
+      TEST_FOR_EXCEPTION(static_cast<size_t>(indices.size()) < numEntries || static_cast<size_t>(values.size()) < numEntries, std::runtime_error, 
           Teuchos::typeName(*this) << "::getGlobalRowCopy(GlobalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
       if (numEntries > 0) {
         std::copy( valrowview.begin(), valrowview.begin() + numEntries, values.begin() );
@@ -1657,7 +1656,7 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::getLocalDiagCopy(dvec): dvec must have the same map as the CrsMatrix.");
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
 #ifdef HAVE_TPETRA_DEBUG
-    int numDiagFound = 0;
+    size_t numDiagFound = 0;
 #endif
     const size_t nlrs = getNodeNumRows();
     Teuchos::ArrayRCP<Scalar> vecView = dvec.get1dViewNonConst();
@@ -1829,14 +1828,14 @@ namespace Tpetra
     ////////////////////////////////////////////////////////////////////////////////////// 
     // perform non-blocking sends: send sizes to our recipients
     Array<Teuchos::RCP<Teuchos::CommRequest> > sendRequests;
-    for (int s=0; s < numSends ; ++s) {
+    for (size_t s=0; s < numSends ; ++s) {
       // we'll fake the memory management, because all communication will be local to this method and the scope of our data
       sendRequests.push_back( Teuchos::isend<int,size_t>(*getComm(),Teuchos::rcpFromRef(sendSizes[s]),sendIDs[s]) );
     }
     // perform non-blocking receives: receive sizes from our senders
     Array<Teuchos::RCP<Teuchos::CommRequest> > recvRequests;
     Array<size_t> recvSizes(numRecvs);
-    for (int r=0; r < numRecvs; ++r) {
+    for (size_t r=0; r < numRecvs; ++r) {
       // we'll fake the memory management, because all communication will be local to this method and the scope of our data
       recvRequests.push_back( Teuchos::ireceive(*getComm(),rcp(&recvSizes[r],false),recvIDs[r]) );
     }

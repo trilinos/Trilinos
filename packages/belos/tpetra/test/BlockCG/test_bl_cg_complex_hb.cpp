@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     const double *curdval = dvals;
     // set up pointers
     newoffs[0] = 0;
-    for (size_t row=1; row != dim+1; ++row) {
+    for (size_t row=1; row != static_cast<size_t>(dim+1); ++row) {
       newoffs[row] = newoffs[row-1] + rnnz[row-1];
     }
     // reorganize data from column oriented to row oriented, duplicating symmetric part as well

@@ -91,7 +91,7 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(vmap,rnnzmax));
   Array<Scalar> vals(rnnzmax);
   if (mptestmypid == 0) {
-    for (size_t row=0; row < mptestdim; ++row) {
+    for (size_t row=0; row < static_cast<size_t>(mptestdim); ++row) {
       const size_t nE = offsets[row+1] - offsets[row];
       if (nE > 0) {
         // convert row values from double to Scalar
@@ -262,10 +262,10 @@ int main(int argc, char *argv[]) {
     // Skip the diagonals, we'll catch them below on the column pass.
     // Remember, the file uses one-based indexing. We'll convert it to zero-based later.
     int curcol_0 = 0, currow_0;
-    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+    for (size_t curnnz_1=1; curnnz_1 <= static_cast<size_t>(nnz); ++curnnz_1) {
       // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
       // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
-      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      while (static_cast<size_t>(colptr[curcol_0+1]) <= curnnz_1) ++curcol_0;
       // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
       // make sure not to count it twice
       ++rnnz[curcol_0];
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     int *newinds    = new int[totalnnz];
     // set up pointers
     newoffs[0] = 0;
-    for (size_t row=1; row != mptestdim+1; ++row) {
+    for (size_t row=1; row != static_cast<size_t>(mptestdim+1); ++row) {
       newoffs[row] = newoffs[row-1] + rnnz[row-1];
     }
     // reorganize data from column oriented to row oriented, duplicating symmetric part as well
@@ -291,10 +291,10 @@ int main(int argc, char *argv[]) {
     // use nnz as the number of entries add per row thus far
     std::fill( rnnz.begin(), rnnz.end(), 0 );
     curcol_0 = 0;
-    for (size_t curnnz_1=1; curnnz_1 <= nnz; ++curnnz_1) {
+    for (size_t curnnz_1=1; curnnz_1 <= static_cast<size_t>(nnz); ++curnnz_1) {
       // if colptr[c] <= curnnz_1 < colptr[c+1], then curnnz_1 belongs to column c
       // invariant: curcol_0 is the column for curnnz_1, i.e., curcol_0 is smallest number such that colptr[curcol_0+1] > curnnz_1
-      while (colptr[curcol_0+1] <= curnnz_1) ++curcol_0;
+      while (static_cast<size_t>(colptr[curcol_0+1]) <= curnnz_1) ++curcol_0;
       // entry curnnz_1 corresponds to (curcol_0, rowind[curnnz_1]) and (rowind[curnnz_1], curcol_0)
       // it must be added twice if curcol_0 != rowind[curnnz_1]
       currow_0 = rowind[curnnz_1-1] - 1;
