@@ -54,7 +54,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Kokkos" type="LR"/>
-    <Dependency name="Epetra" type="ITO"/>
+    <Dependency name="Epetra" type="LO"/>
     <Dependency name="Triutils" type="TO"/>
     <EmailAddresses>
       <Email address="tpetra-regression@software.sandia.gov"/>

@@ -3,7 +3,7 @@
 namespace Kokkos {
 
   std::string Kokkos_Version() { 
-		return("Kokkos Version 2.1d - 10/14/2009"); 
-	}
+    return("Kokkos Version 2.0d - 10/14/2009"); 
+  }
 
 } // namespace Kokkos 
