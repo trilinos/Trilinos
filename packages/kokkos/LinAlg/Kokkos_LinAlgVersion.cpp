@@ -2,6 +2,6 @@
 
 namespace Kokkos {
   std::string LinAlgVersion() { 
-		return("Kokkos Linear Algebra Version 0.1d - 6/16/2009"); 
+		return("Kokkos Linear Algebra Version 1.0 (Trilinos 10.0) - 09/16/2009"); 
 	}
 }

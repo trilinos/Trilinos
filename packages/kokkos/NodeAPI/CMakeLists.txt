@@ -30,18 +30,6 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# CUDA-specific source and headers
-APPEND_SET(CUDA_HEADERS
-    Kokkos_CUDA_util_inline_runtime.h
-    Kokkos_CUDANode.cuh
-    Kokkos_CUDANode.hpp
-    Kokkos_CUDANodeImpl.hpp
-    Kokkos_CUDA_util_sharedmem.cuh
-)
-APPEND_SET(CUDA_SOURCES
-    Kokkos_CUDANode.cpp
-)
-
 # TBB-specific source and headers
 APPEND_SET(TBB_HEADERS
     Kokkos_TBBNode.hpp
@@ -68,12 +56,6 @@ APPEND_SET(SOURCES
     Kokkos_DefaultNode.cpp
     Kokkos_NodeAPIVersion.cpp
   )
-
-# ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
-# IF (Kokkos_ENABLE_CUDA)
-#   APPEND_SET(HEADERS ${CUDA_HEADERS})
-#   APPEND_SET(SOURCES ${CUDA_SOURCES})
-# ENDIF()
 
 ASSERT_DEFINED(Kokkos_ENABLE_TBB)
 IF (Kokkos_ENABLE_TBB)
