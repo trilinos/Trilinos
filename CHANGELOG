@@ -1,0 +1,35 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.0 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 10.0.1 October 14, 2009
+
+Change number.  Package(s) affected - description
+
+1. Tpetra - Bug 4609. Moved implementation of non-templated Tpetra::Distributor
+            method to a cpp file. 
+
+1. Shards - Added a header for compliance with pgi compilers.
+
+2. AztecOO - Bug 4607. Fix a bug where initialization was being done in an
+             assert. This was leaving memory uninitialized in non-debug
+             builds.
+
+3. Zoltan - Bug 4599. Make Fortran and C++ versions of Zoltan_Order
+            consistent with with C.
+
+4. Zoltan - Changed intent of num_gid_entries in Zoltan_Order and
+            Zoltan_Color from out to in.
+
+5. Tpetra - Bug 4598. Fixed element acces functions in Tpetra::Vector
+
+6. Zoltan - Bug 4515. Added Fortran module files to clean target
+
+7. Zoltan - Bug 4515. Changes to Autotols configuration to include
+            $srcdir/src/fort as an include path for F90 builds.
+
+8. Framework level - Bug Fix an issue with the Fortran/C interface check
+
+9. Zoltan - Fix handling of serial scotch ordering parameters
