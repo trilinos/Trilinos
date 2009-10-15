@@ -11,6 +11,8 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_VbrMatrix.h"
 
+using namespace std;
+
 namespace MLAPI {
 namespace SAMIS {
 
@@ -28,7 +30,6 @@ namespace SAMIS {
 #include <iostream>
 #include <fstream>
 
-using namespace std;
 
 #define  KER_FILE        "ker.dat" 
 #define  MTX_FILE        "mtx.dat" 
