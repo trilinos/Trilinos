@@ -8,6 +8,13 @@
 
 #include "ml_include.h"
 
+typedef struct Ifpack_Handle_Struct Ifpack_Handle_Type;
+
+struct Ifpack_Handle_Struct {
+  void  *A_Base;        /* really Ifpack_Preconditioner pointer */
+  int   freeMpiComm;  /*0 = false, 1 = true */
+};
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {

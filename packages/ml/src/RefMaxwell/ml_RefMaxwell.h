@@ -270,7 +270,7 @@ namespace ML_Epetra
     bool very_verbose_;    
 
     //! Print hierarchy flag
-    bool print_hierarchy;
+    int print_hierarchy;
     //@}
 
 

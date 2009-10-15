@@ -33,7 +33,7 @@ static map<void*, bool> MemoryManager;
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
                   const Epetra_Comm& Comm, 
-                  void ** Ifpack_Handle);
+                  Ifpack_Handle_Type ** Ifpack_Handle);
 
 // ====================================================================== 
 // MS // This does not work yet with ML_ALL_LEVELS
@@ -46,7 +46,8 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    int (*fun)(ML_Smoother *, int, double *, int, double *);
    int status = 1;
    char str[80];
-   void *Ifpack_Handle ;
+   Ifpack_Handle_Type *Ifpack_Handle;
+   
    Teuchos::ParameterList List = *((Teuchos::ParameterList *) iList);
    Epetra_Comm *Comm = (Epetra_Comm *) iComm;
 #ifdef ML_TIMING
@@ -57,7 +58,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    fun = ML_Smoother_Ifpack;
 
    /* Creates IFPACK objects */
-
+   Ifpack_Handle = (Ifpack_Handle_Type *) ML_allocate(sizeof(Ifpack_Handle_Type));
    status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle) ; 
    assert (status == 0); 
 
@@ -114,15 +115,24 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
                   const Epetra_Comm& Comm, 
-                  void ** Ifpack_Handle)
+                  Ifpack_Handle_Type ** Ifpack_Handle)
 {
+# ifdef ML_MPI
+  MPI_Comm  ifpackComm;
+# else
+  int ifpackComm=1;
+# endif
   ML_Operator *Ke = &(ml->Amat[curr_level]);
+  int hasRows=1;
+
 
   Epetra_RowMatrix* Ifpack_Matrix;
 # ifdef IFPACK_NODE_AWARE_CODE
   Epetra_CrsMatrix* Ifpack_CrsMatrix;
   Epetra_Map*       Ifpack_RowMap;
 # endif
+
+  (*Ifpack_Handle)->freeMpiComm = 0;
 
   if (Ke->type == ML_TYPE_ROW_MATRIX)
   {
@@ -141,27 +151,37 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
     Ifpack_Matrix = (Epetra_VbrMatrix*) Ke->data;
     // I have to remember not to delete this guy
     MemoryManager[(void*)Ifpack_Matrix] = false;
-  }
-  else
-  {
+
+  } else {
+
     // creates the wrapper from ML_Operator to Epetra_RowMatrix
     // (ML_Epetra::RowMatrix). This is a cheap conversion
-#   ifndef IFPACK_NODE_AWARE_CODE
-    Ifpack_Matrix = new RowMatrix(Ke, &Comm);
-    assert (Ifpack_Matrix != 0);
-#   else
-    //enables efficient use of Ifpack on coarser levels
-    Ifpack_RowMap = new Epetra_Map(-1,Ke->outvec_leng,0,Comm);
-    Epetra_CrsMatrix_Wrap_ML_Operator(Ke, Comm, *Ifpack_RowMap, &Ifpack_CrsMatrix,View,0);
-    assert (Ifpack_CrsMatrix != 0);
-    Ifpack_Matrix = Ifpack_CrsMatrix;
-    delete Ifpack_RowMap;
-#   endif
-    // this guy has to be deleted
-    MemoryManager[(void*)Ifpack_Matrix] = true;
-  }
+#   ifdef ML_MPI
+    hasRows = MPI_UNDEFINED;
+    if (Ke->invec_leng > 0 || Ke->outvec_leng > 0) hasRows = 1;
+    MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&ifpackComm);
+    if (hasRows == 1) (*Ifpack_Handle)->freeMpiComm = 1;
+#   endif //ifdef ML_MPI
+    if (hasRows == 1) {
+#     ifndef IFPACK_NODE_AWARE_CODE
+      Ifpack_Matrix = new RowMatrix(Ke, 0, false, ifpackComm );
+      assert (Ifpack_Matrix != 0);
+#     else
+      //enables efficient use of Ifpack on coarser levels
+      Epetra_MpiComm ifpackEpetraComm(ifpackComm);
+      Ifpack_RowMap = new Epetra_Map(-1,Ke->outvec_leng,0,ifpackEpetraComm);
+      Epetra_CrsMatrix_Wrap_ML_Operator(Ke, Ifpack_RowMap->Comm(), *Ifpack_RowMap, &Ifpack_CrsMatrix,View,0);
+      assert (Ifpack_CrsMatrix != 0);
+      Ifpack_Matrix = Ifpack_CrsMatrix;
+      delete Ifpack_RowMap;
+#     endif
+      // this guy has to be deleted
+      MemoryManager[(void*)Ifpack_Matrix] = true;
+    } //if (hasRows == 1)
+  } //if (Ke->type == ML_TYPE_ROW_MATRIX) ... else ...
 
   // we enter the IFPACK world through the factory only
+  if (hasRows == 1) {
   Ifpack Factory;
   Ifpack_Preconditioner* Prec;
 
@@ -170,7 +190,7 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   Prec->SetParameters(List);
   ML_CHK_ERR(Prec->Compute());
   
-  *Ifpack_Handle = (void *)Prec;
+  (*Ifpack_Handle)->A_Base = (void *)Prec;
 
   // Grab the lambda's if needed
   if(!strcmp(Type,"Chebyshev")){
@@ -179,6 +199,10 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
     ml->Amat[curr_level].lambda_min=C->GetLambdaMin();
     ml->Amat[curr_level].lambda_max=C->GetLambdaMax();
   }
+
+  } //if (hasRows==1)
+  else
+    (*Ifpack_Handle)->A_Base = 0;
   
   return 0;
   
@@ -196,13 +220,16 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
+int ML_Ifpack_Solve(void * data, double * x, double * rhs )
 {
 #ifdef rst_dump
    static int stupid_count = 0;
 #endif
 
-  Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
+  Ifpack_Handle_Type *Ifpack_Handle = (Ifpack_Handle_Type *) data;
+  if (Ifpack_Handle->A_Base == 0) return 0;
+
+  Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle->A_Base;
 
 
 #ifdef ML_DUMP_IFPACK_FACTORS
@@ -228,7 +255,7 @@ int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
 #ifdef rst_dump
     stupid_count++;
     if ((L.RowMatrixRowMap().Comm().MyPID() == 0) && (stupid_count < 6)) {
-        Ifpack_ML* MLAndIfpack = (Ifpack_ML *)Ifpack_Handle;
+        Ifpack_ML* MLAndIfpack = (Ifpack_ML *) (Ifpack_Handle->A_Base);
         printf("ILU factors: Nnz(ILU) = %d, Nnz(ILU)/Nnz(A) = %f\n",
                L.NumGlobalNonzeros()+U.NumGlobalNonzeros()-L.NumGlobalRows(),
                ((double)(L.NumGlobalNonzeros()+U.NumGlobalNonzeros()-L.NumGlobalRows()))/
@@ -270,13 +297,29 @@ int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Ifpack_Destroy(void * Ifpack_Handle)
+void ML_Ifpack_Destroy(void * data)
 {
 
-  Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
+  Ifpack_Handle_Type *Ifpack_Handle = (Ifpack_Handle_Type*) data;
+  if (Ifpack_Handle->A_Base == 0) {
+    ML_free(Ifpack_Handle);
+    return;
+  }
+  //Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
+  Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner*) (Ifpack_Handle->A_Base);
+
   // a bit nasty, but I don't like the extensive output any more...
   if (ML_Get_PrintLevel() > 10)
     cout << *Prec;
+
+# ifdef ML_MPI
+  const Epetra_MpiComm *comm = dynamic_cast<const Epetra_MpiComm*>(&(Prec->Matrix().Comm()));
+  if (comm == 0) {
+    printf("ML_Ifpack_Destroy: error getting MPI_Comm object\n");
+    exit(EXIT_FAILURE);
+  }
+  MPI_Comm subcomm = comm->GetMpiComm();
+# endif
 
   if (MemoryManager[(void*)(&(Prec->Matrix()))])
   {
@@ -284,6 +327,11 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
     MemoryManager[(void*)(&(Prec->Matrix()))] = false;
   }
   delete Prec;
+
+# ifdef ML_MPI
+  if (Ifpack_Handle->freeMpiComm == 1) MPI_Comm_free(&subcomm);
+# endif
+  ML_free(Ifpack_Handle);
 
 } /* ML_Ifpack_Destroy */
 

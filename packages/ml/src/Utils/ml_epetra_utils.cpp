@@ -798,20 +798,15 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 
 
 /* This should (correctly) build the epetra maps from the ML_Operator object*/
-void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map **rangemap, Epetra_Map **colmap,int base){
+void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map **rangemap,
+                          Epetra_Map **colmap,int base, const Epetra_Comm &EpetraComm )
+{
   
   int    isize_offset, osize_offset;
   int Nghost;
   ML_Comm *comm;
 
   comm = Amat->comm;
-#ifdef ML_MPI
-  MPI_Comm mpi_comm ;
-  mpi_comm = comm->USR_comm; 
-  Epetra_MpiComm EpetraComm( mpi_comm ) ; 
-#else
-  Epetra_SerialComm EpetraComm ; 
-#endif  
 
   Epetra_Time Time(EpetraComm);
 
@@ -855,8 +850,10 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
   if(domainmap) *domainmap=new Epetra_Map( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
 
 
-  /* Build the column map first to make sure we get communication patterns
-     correct */
+  /* Build the column map first to make sure we get communication patterns correct.  This uses
+     the ML_Operator comm, which could be (much) bigger than EpetraComm.  This should be ok,
+     however, since only 'active' processors in the ML comm participate.
+  */
   ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
  		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
 
@@ -937,7 +934,7 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 
   /* Build the Column Map */
   Epetra_Map *DomainMap,*ColMap;
-  ML_Build_Epetra_Maps(A,&DomainMap,NULL,&ColMap,base);
+  ML_Build_Epetra_Maps(A,&DomainMap,NULL,&ColMap,base,Comm);
   
   /* Allocate the Epetra_CrsMatrix Object */
   *Result=new Epetra_CrsMatrix(CV,RowMap,*ColMap,base);
