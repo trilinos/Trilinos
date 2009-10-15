@@ -131,6 +131,7 @@ namespace Belos {
      *                                    determine whether another step of classical Gram-Schmidt 
      *                                    is necessary.  Default: -1 (use DGKS default)
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
+     *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Output Stream" - a reference-counted pointer to the output stream where all
      *                       solver output is sent.  Default: Teuchos::rcp(&std::cout,false)
      *   - "Output Frequency" - an \c int specifying how often convergence information should be 
@@ -263,6 +264,7 @@ namespace Belos {
     static const bool showMaxResNormOnly_default_;
     static const int blockSize_default_;
     static const int verbosity_default_;
+    static const int outputStyle_default_;
     static const int outputFreq_default_;
     static const std::string label_default_;
     static const std::string orthoType_default_;
@@ -271,7 +273,7 @@ namespace Belos {
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
     int maxIters_, numIters_;
-    int blockSize_, verbosity_, outputFreq_;
+    int blockSize_, verbosity_, outputStyle_, outputFreq_;
     bool adaptiveBlockSize_, showMaxResNormOnly_;
     std::string orthoType_; 
     
@@ -307,6 +309,9 @@ template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
+const int BlockCGSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+
+template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
@@ -328,6 +333,7 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr() :
   maxIters_(maxIters_default_),
   blockSize_(blockSize_default_),
   verbosity_(verbosity_default_),
+  outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
@@ -349,6 +355,7 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr(
   maxIters_(maxIters_default_),
   blockSize_(blockSize_default_),
   verbosity_(verbosity_default_),
+  outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
@@ -470,6 +477,19 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
       printer_->setVerbosity(verbosity_);
   }
 
+  // Check for a change in output style
+  if (params->isParameter("Output Style")) {
+    if (Teuchos::isParameterType<int>(*params,"Output Style")) {
+      outputStyle_ = params->get("Output Style", outputStyle_default_);
+    } else {
+      outputStyle_ = (int)Teuchos::getParameter<Belos::OutputType>(*params,"Output Style");
+    }
+
+    // Update parameter in our list.
+    params_->set("Output Style", outputStyle_);
+    outputTest_ == Teuchos::null;
+  }
+
   // output stream
   if (params->isParameter("Output Stream")) {
     outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
@@ -537,7 +557,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( Belos::General );
+    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
     // Set the solver string for the output test
@@ -602,6 +622,9 @@ BlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "based on the number of RHS to solve.");
     pl->set("Verbosity", verbosity_default_,
       "What type(s) of solver information should be outputted\n"
+      "to the output stream.");
+    pl->set("Output Style", outputStyle_default_,
+      "What style is used for the solver information outputted\n"
       "to the output stream.");
     pl->set("Output Frequency", outputFreq_default_,
       "How often convergence information should be outputted\n"

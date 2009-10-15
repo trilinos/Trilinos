@@ -116,6 +116,7 @@ namespace Belos {
      * to a parameter list of options for the solver manager. These options include the following:
      *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. 
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
+     *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
     PseudoBlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
@@ -254,6 +255,7 @@ namespace Belos {
     static const int maxIters_default_;
     static const bool showMaxResNormOnly_default_;
     static const int verbosity_default_;
+    static const int outputStyle_default_;
     static const int outputFreq_default_;
     static const int defQuorum_default_;
     static const std::string resScale_default_; 
@@ -263,7 +265,7 @@ namespace Belos {
     // Current solver values.
     MagnitudeType convtol_;
     int maxIters_, numIters_;
-    int verbosity_, outputFreq_, defQuorum_;
+    int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool showMaxResNormOnly_;
     std::string resScale_;       
  
@@ -272,7 +274,7 @@ namespace Belos {
     Teuchos::RCP<Teuchos::Time> timerSolve_;
 
     // Internal state variables.
-    bool isSet_, isSTSet_;
+    bool isSet_;
   };
   
   
@@ -288,6 +290,9 @@ const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = 
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
@@ -312,13 +317,13 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
   verbosity_(verbosity_default_),
+  outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
   label_(label_default_),
-  isSet_(false),
-  isSTSet_(false)
+  isSet_(false)
 {}
 
 // Basic Constructor
@@ -331,13 +336,13 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
   verbosity_(verbosity_default_),
+  outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
   label_(label_default_),
-  isSet_(false),
-  isSTSet_(false)
+  isSet_(false)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
@@ -394,6 +399,19 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
     params_->set("Verbosity", verbosity_);
     if (printer_ != Teuchos::null)
       printer_->setVerbosity(verbosity_);
+  }
+
+  // Check for a change in output style
+  if (params->isParameter("Output Style")) {
+    if (Teuchos::isParameterType<int>(*params,"Output Style")) {
+      outputStyle_ = params->get("Output Style", outputStyle_default_);
+    } else {
+      outputStyle_ = (int)Teuchos::getParameter<Belos::OutputType>(*params,"Output Style");
+    }
+
+    // Reconstruct the convergence test if the explicit residual test is not being used.
+    params_->set("Output Style", outputStyle_);
+    outputTest_ = Teuchos::null;
   }
 
   // output stream
@@ -497,7 +515,7 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( Belos::General );
+    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
     // Set the solver string for the output test
@@ -534,6 +552,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "set of RHS solved.");
     pl->set("Verbosity", verbosity_default_,
       "What type(s) of solver information should be outputted\n"
+      "to the output stream.");
+    pl->set("Output Style", outputStyle_default_,
+      "What style is used for the solver information outputted\n"
       "to the output stream.");
     pl->set("Output Frequency", outputFreq_default_,
       "How often convergence information should be outputted\n"

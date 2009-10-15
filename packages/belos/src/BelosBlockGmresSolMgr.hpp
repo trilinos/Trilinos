@@ -130,6 +130,7 @@ public:
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "DGKS"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
+   *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8
    */
   BlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
@@ -281,6 +282,7 @@ private:
   static const int blockSize_default_;
   static const int numBlocks_default_;
   static const int verbosity_default_;
+  static const int outputStyle_default_;
   static const int outputFreq_default_;
   static const std::string impResScale_default_; 
   static const std::string expResScale_default_; 
@@ -291,7 +293,7 @@ private:
   // Current solver values.
   MagnitudeType convtol_, orthoKappa_;
   int maxRestarts_, maxIters_, numIters_;
-  int blockSize_, numBlocks_, verbosity_, outputFreq_;
+  int blockSize_, numBlocks_, verbosity_, outputStyle_, outputFreq_;
   bool adaptiveBlockSize_, showMaxResNormOnly_, isFlexible_, expResTest_;
   std::string orthoType_; 
   std::string impResScale_, expResScale_;
@@ -341,6 +343,9 @@ template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
+const int BlockGmresSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+
+template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
@@ -370,6 +375,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
+  outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
@@ -399,6 +405,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   blockSize_(blockSize_default_),
   numBlocks_(numBlocks_default_),
   verbosity_(verbosity_default_),
+  outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
@@ -451,6 +458,9 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "based on the number of RHS to solve.");
     pl->set("Verbosity", verbosity_default_,
       "What type(s) of solver information should be outputted\n"
+      "to the output stream.");
+    pl->set("Output Style", outputStyle_default_,
+      "What style is used for the solver information outputted\n"
       "to the output stream.");
     pl->set("Output Frequency", outputFreq_default_,
       "How often convergence information should be outputted\n"
@@ -618,6 +628,21 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     params_->set("Verbosity", verbosity_);
     if (printer_ != Teuchos::null)
       printer_->setVerbosity(verbosity_);
+  }
+
+  // Check for a change in output style
+  if (params->isParameter("Output Style")) {
+    if (Teuchos::isParameterType<int>(*params,"Output Style")) {
+      outputStyle_ = params->get("Output Style", outputStyle_default_);
+    } else {
+      outputStyle_ = (int)Teuchos::getParameter<Belos::OutputType>(*params,"Output Style");
+    }
+
+    // Reconstruct the convergence test if the explicit residual test is not being used.
+    params_->set("Output Style", outputStyle_);
+    if (outputTest_ != Teuchos::null) {
+      isSTSet_ = false;
+    }
   }
 
   // output stream
@@ -826,7 +851,7 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( Belos::General );
+  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test

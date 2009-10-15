@@ -128,6 +128,7 @@ namespace Belos {
      *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the 
      *                            underlying solver is allowed to perform. Default: 1000
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
+     *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
      *   - "Output Stream" - a reference-counted pointer to the output stream where all
      *                       solver output is sent.  Default: Teuchos::rcp(&std::cout,false)
@@ -275,6 +276,7 @@ namespace Belos {
     static const int recycleBlocks_default_;
     static const bool showMaxResNormOnly_default_;
     static const int verbosity_default_;
+    static const int outputStyle_default_;
     static const int outputFreq_default_;
     static const std::string label_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
@@ -284,7 +286,7 @@ namespace Belos {
     int maxIters_, numIters_;
     int numBlocks_, recycleBlocks_;
     bool showMaxResNormOnly_;
-    int verbosity_, outputFreq_;
+    int verbosity_, outputStyle_, outputFreq_;
 
     /////////////////////////////////////////////////////////////////////////
     // Solver State Storage
@@ -378,6 +380,9 @@ template<class ScalarType, class MV, class OP>
 const int RCGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
+const int RCGSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+
+template<class ScalarType, class MV, class OP>
 const int RCGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
@@ -418,6 +423,7 @@ void RCGSolMgr<ScalarType,MV,OP>::init()
   numBlocks_ = numBlocks_default_;
   recycleBlocks_ = recycleBlocks_default_;
   verbosity_ = verbosity_default_;
+  outputStyle_= outputStyle_default_;
   outputFreq_= outputFreq_default_;
   showMaxResNormOnly_ = showMaxResNormOnly_default_;
   label_ = label_default_;
@@ -530,6 +536,19 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
       printer_->setVerbosity(verbosity_);
   }
 
+  // Check for a change in output style
+  if (params->isParameter("Output Style")) {
+    if (Teuchos::isParameterType<int>(*params,"Output Style")) {
+      outputStyle_ = params->get("Output Style", outputStyle_default_);
+    } else {
+      outputStyle_ = (int)Teuchos::getParameter<Belos::OutputType>(*params,"Output Style");
+    }
+
+    // Reconstruct the convergence test if the explicit residual test is not being used.
+    params_->set("Output Style", outputStyle_);
+    outputTest_ = Teuchos::null;
+  }
+
   // output stream
   if (params->isParameter("Output Stream")) {
     outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
@@ -597,7 +616,7 @@ void RCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Par
 
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( Belos::General );
+    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
     outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
     
     // Set the solver string for the output test
@@ -637,6 +656,9 @@ RCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The number of vectors in the recycle subspace.");
     pl->set("Verbosity", verbosity_default_,
       "What type(s) of solver information should be outputted\n"
+      "to the output stream.");
+    pl->set("Output Style", outputStyle_default_,
+      "What style is used for the solver information outputted\n"
       "to the output stream.");
     pl->set("Output Frequency", outputFreq_default_,
       "How often convergence information should be outputted\n"
