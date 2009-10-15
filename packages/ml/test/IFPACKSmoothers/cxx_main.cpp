@@ -249,6 +249,7 @@ int main(int argc, char *argv[]) {
     RHS.PutScalar(1.0);
 
     solver.Iterate(1550, 1e-12);
+    delete MLPrec;
 
     IFPACKCheby = solver.NumIters();
 
