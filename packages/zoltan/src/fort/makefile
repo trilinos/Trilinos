@@ -11,7 +11,7 @@
 ##############################################################################
 
 ZOD = ../$(ZOLTAN_OBJ_DIR)
-ZOM = $(F90_MODULE_PREFIX)$(ZOD)
+ZOM = $(F90_MODULE_PREFIX)$(ZOD) -I../fort
 
 all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
 			$(ZOD)/zoltan_user_data.o  $(ZOD)/lb_user_const.o \
