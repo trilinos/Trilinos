@@ -194,7 +194,11 @@ int main( int argc , char ** argv )
   }
 #endif
 
-  if ( nt ) { TPI_Init( nt ); }
+  if ( nt ) {
+    TPI_Init( nt );
+    TPI_Block();
+    TPI_Unblock();
+  }
 
   if ( ! my_p ) {
     fprintf(stdout,"\"PROC\" , \"THREAD\" , \"EQUATION\" , \"NON-ZERO\" , \"MXV\"    , \"AXPBY\"  , \"DOT\" , \"Xerror\" , \"Iter\"\n");

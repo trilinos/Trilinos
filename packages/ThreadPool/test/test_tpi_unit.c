@@ -13,7 +13,7 @@ static void test_reduce_join( TPI_Work * , void * );
 int test_c_tpi_unit( const int nthread , const int nwork )
 {
   int * const flags = (int *) malloc( nwork * sizeof(int) );
-  const int ntrial = 10 ;
+  const int ntrial = 100 ;
 
   const int result = TPI_Init( nthread );
 
@@ -104,6 +104,20 @@ int test_c_tpi_unit( const int nthread , const int nwork )
     }
     dt /= ntrial ;
     printf("\"  TPI_Run_reduce(test_reduce,NULL,%d,...) passed: mean time = %g\"\n",nwork,dt);
+  }
+
+  /* Test blocking */
+  {
+    int i ;
+    double t = 0 , dt = 0 ;
+    for ( i = 0 ; i < ntrial ; ++i ) {
+      TPI_Block();
+      t = TPI_Walltime();
+      TPI_Unblock();
+      dt += TPI_Walltime() - t ;
+    }
+    dt /= ntrial ;
+    printf("\"  TPI_Block() & TPI_Unblock() passed: mean time = %g\"\n",dt);
   }
 
   TPI_Finalize();

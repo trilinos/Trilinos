@@ -28,17 +28,18 @@
  *  A simple and miminalistic interface for executing subprograms
  *  in a thread parallel, shared memory mode.
  *
- *  States: the underlying thread pool has three states.
+ *  States: the underlying thread pool has four states.
  *    1) Uninitialized: no extra threads exist, this is the initial state.
- *    2) Paused: extra threads exist and are blocked.
+ *    2) Ready:  extra threads exist and are ready to run a subprogram.
  *    3) Active: extra threads are calling the subprogram.
+ *    4) Blocked: extra threads blocked.
  *
- *  Threads are created and blocked ready-for-use so that the thread
- *  creation cost is paid only at initialization.
- *  The extra threads are blocked, as opposed to spinning, in the paused
- *  state so that they do not compete for compute cycles with other threads
- *  created external to the TPI interface.  For example, threads created
- *  by OpenMP.
+ *  Threads are created on initialization and placed in the 'Ready' state.
+ *  While in the 'Ready' state the threads are spin-waiting to minimize
+ *  the cost of activating blocked threads.
+ *  Threads can be blocked so that they do not compete for computatational
+ *  resources with other threads created external to the TPI interface.
+ *  For example, threads created by OpenMP or TBB.
  */
 
 #ifndef ThreadPoolInterface_h
@@ -49,6 +50,19 @@ extern "C" {
 #endif
 
 /*--------------------------------------------------------------------*/
+/** \brief  Version string. */
+const char TPI_Version();
+
+/** Start up the requested number of threads, less the calling thread.
+ *  Return the actual number of threads, including the calling thread,
+ *  otherwise return an error.
+ */
+int TPI_Init( int thread_count );
+
+/** Shut down all started threads. */
+int TPI_Finalize();
+
+/*--------------------------------------------------------------------*/
 /** \brief  A utility to measure wall-clock time, which is frequently
  *          needed when performance testing HPC algorithms.
  */
@@ -57,7 +71,6 @@ double TPI_Walltime();
 /*--------------------------------------------------------------------*/
 /* All functions return zero for success. */
 
-#define TPI_LOCK_BUSY      ((int)  1)  /**<  trylock or unlock failed */
 #define TPI_ERROR_NULL     ((int) -1)  /**<  NULL input */
 #define TPI_ERROR_SIZE     ((int) -2)  /**<  BAD input: size or index */
 #define TPI_ERROR_LOCK     ((int) -3)  /**<  BAD lock or unlock */
@@ -70,8 +83,8 @@ double TPI_Walltime();
 struct TPI_Work_Struct {
   const void * info ;       /**<  Shared info input to TPI_Run */
   void       * reduce ;     /**<  Data for reduce operation, if any */
-  int          count ;      /**<  Count of work  requested via TPI_Run */
-  int          rank ;       /**<  Rank of work fot the current call */
+  int          count ;      /**<  Count of work requested via TPI_Run */
+  int          rank ;       /**<  Rank  of work for the current call */
   int          lock_count ; /**<  Count of locks requested via TPI_Run */
 };
 
@@ -95,7 +108,7 @@ void (*TPI_reduce_init)( TPI_Work * work );
 typedef
 void (*TPI_reduce_join)( TPI_Work * work , void * reduce );
 
-/** Run a work subprogram in thread parallel.
+/** \brief Run a work subprogram in thread parallel.
  *
  *  The thread pool must be in the 'paused' state when this
  *  function is called.  Thus a recursive call to TPI_Run is illegal.
@@ -105,7 +118,8 @@ int TPI_Run( TPI_work_subprogram work_subprogram  ,
              int                 work_count  ,
              int                 lock_count );
 
-/** Run a work and reduction subprograms in thread parallel.
+/** \brief Run a work and reduction subprograms in thread parallel.
+ *
  *  Each call to the work_subprogram has exclusive (thread safe)
  *  access to its work->reduce data.
  *  The reduce_init and reduce_join subprograms have
@@ -119,8 +133,7 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
                     int                   reduce_size ,
                     void *                reduce_data );
 
-/** Run a work subprogram in thread parallel;
- *  run it exactly once on each thread.
+/** \brief  Run a work subprogram exactly once on each thread.
  *
  *  The thread pool must be in the 'paused' state when this
  *  function is called.  Thus a recursive call to TPI_Run is illegal.
@@ -136,31 +149,21 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram ,
                             int                   reduce_size ,
                             void *                reduce_data );
 
+/**
+int TPI_Block();
+int TPI_Unblock();
+int TPI_Isblocked();
+
 /*--------------------------------------------------------------------*/
 /** \brief  Blocks until lock lock_rank is obtained.
  *          The thread pool must be in the 'active' state.
  */
 int TPI_Lock( int lock_rank );
 
-/** \brief  Tries to lock lock_rank, returns 0 if successful. 
- *          The thread pool must be in the 'active' state.
- */
-int TPI_Trylock( int lock_rank );
-
 /** \brief  Unlocks lock lock_rank.
  *          The thread pool must be in the 'active' state.
  */
 int TPI_Unlock( int lock_rank );
-
-/*--------------------------------------------------------------------*/
-/** Start up the requested number of threads, less the calling thread.
- *  Return the actual number of threads, including the calling thread,
- *  otherwise return an error.
- */
-int TPI_Init( int thread_count );
-
-/** Shut down all started threads. */
-int TPI_Finalize();
 
 /*--------------------------------------------------------------------*/
 
