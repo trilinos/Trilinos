@@ -27,7 +27,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     ADD_DIR_TO_NAME
     )
   PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
-  SOURCE_FILES PoissonMesh.in
+  SOURCE_FILES Poisson.xml
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
                DivLSFEMin.xml

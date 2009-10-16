@@ -56,7 +56,7 @@
     \remark Usage:
     \code   ./TrilinosCouplings_examples_scaling_example_Poisson.exe \endcode
 
-    \remark Example requires Pamgen formatted mesh input file named PoissonMesh.in.
+    \remark Example requires Pamgen formatted mesh input file named Poisson.xml.
 */
 
 //#define DUMP_DATA
@@ -88,6 +88,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -144,6 +145,16 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
 
+   //Check number of arguments
+  if (argc > 3) {
+      std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
+      std::cout <<"Usage:\n\n";
+      std::cout <<"  ./TrilinosCouplings_examples_scaling_Example_Poisson.exe [meshfile.xml] [solver.xml]\n\n";
+      std::cout <<"   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
+      std::cout <<"   solver.xml(optional) - xml file with ML solver options\n\n";
+      exit(1);
+   }
+
  if (MyPID == 0){
   std::cout \
     << "===============================================================================\n" \
@@ -178,6 +189,43 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+// ************************************ GET INPUTS **************************************
+
+  // Command line for xml file, otherwise use default
+    std::string   xmlMeshInFileName, xmlSolverInFileName;
+    if(argc>=2) xmlMeshInFileName=string(argv[1]);
+    else xmlMeshInFileName="Poisson.xml";
+    if(argc>=3) xmlSolverInFileName=string(argv[2]);
+
+  // Read xml file into parameter list
+    Teuchos::ParameterList inputMeshList;
+    Teuchos::ParameterList inputSolverList;
+
+   if(xmlMeshInFileName.length()) {
+     if (MyPID == 0) {
+      std::cout << "\nReading parameter list from the XML file \""<<xmlMeshInFileName<<"\" ...\n\n";
+     }
+      Teuchos::updateParametersFromXmlFile(xmlMeshInFileName,&inputMeshList);
+     if (MyPID == 0) {
+      inputMeshList.print(std::cout,2,true,true);
+      std::cout << "\n";
+     }
+    }
+    else
+    {
+      std::cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
+      return 0;
+    }
+
+   if(xmlSolverInFileName.length()) {
+     if (MyPID == 0)
+        std::cout << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n\n";
+     Teuchos::updateParametersFromXmlFile(xmlSolverInFileName,&inputSolverList);
+   } else if (MyPID == 0) std::cout << "Using default solver values ..." << std::endl;
+
+  // Get pamgen mesh definition
+    std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,"meshInput");
+
 
 // *********************************** CELL TOPOLOGY **********************************
 
@@ -195,28 +243,6 @@ int main(int argc, char *argv[]) {
   if (MyPID == 0) {
     std::cout << "Generating mesh ... \n\n";
   }
-
-  // Read in Pamgen mesh file
-    string  meshInput;
-    string  tmp;
-
-    ifstream finput;
-    finput.open("PoissonMesh.in");
-    if (finput.is_open()){
-      while(getline(finput,tmp)){
-        meshInput += tmp;
-        meshInput += "\n";
-      }
-    }
-    else {
-       std::cout << "Cannot open mesh file: PoissonMesh.in" <<"\n";
-       return 0;
-    }
-    finput.close();
-
-    if (MyPID == 0) {
-      std::cout << meshInput <<"\n";
-    }
 
    // Generate mesh with Pamgen
     long long maxInt = 9223372036854775807LL;
@@ -648,8 +674,8 @@ int main(int argc, char *argv[]) {
 
 
    // Run the solver
-   Teuchos::ParameterList MLList;
-   ML_Epetra::SetDefaults("SA",MLList);
+   Teuchos::ParameterList MLList = inputSolverList;
+   ML_Epetra::SetDefaults("SA",MLList,0,0,false);
    Epetra_FEVector xexact(globalMapG);
    Epetra_FEVector uh(globalMapG);
    double TotalErrorResidual=0, TotalErrorExactSol=0;
@@ -940,7 +966,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 32);
+  solver.SetAztecOption(AZ_output, 1);
 
   solver.Iterate(200, 1e-10);
   
