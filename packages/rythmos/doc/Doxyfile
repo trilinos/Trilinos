@@ -67,9 +67,6 @@ WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
                          ../src \
-                         ../example/basicExample/ExampleApplication.hpp \
-                         ../example/basicExample/ExampleApplication.cpp \
-                         ../example/basicExample/cxx_main.cpp \
                          ../example/diagonalTransient/diagonalTransientMain.cpp \
                          ../../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp \
                          ../../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp
