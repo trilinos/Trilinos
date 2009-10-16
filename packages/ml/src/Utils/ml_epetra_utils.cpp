@@ -1290,8 +1290,6 @@ void ML_Epetra::Apply_BCsToGradient(
       }
     }
   }
-  printf("Picking up %d Dirichlet rows\n",numBCEdges);
-
   
   // -------------------------
   // now zero out the rows
