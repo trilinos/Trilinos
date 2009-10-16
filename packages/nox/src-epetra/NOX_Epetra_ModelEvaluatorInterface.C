@@ -55,7 +55,6 @@ ModelEvaluatorInterface(const
   model_(m)
 {
   inargs_ = model_->createInArgs();
-  outargs_ = model_->createOutArgs();
 }
 
 // *****************************************************************
@@ -70,24 +69,22 @@ NOX::Epetra::ModelEvaluatorInterface::~ModelEvaluatorInterface()
 bool NOX::Epetra::ModelEvaluatorInterface::
 computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 {
-  x_ = Teuchos::rcp(&x, false);
-  inargs_.set_x(x_);
+  EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
-  jacobian_ = Teuchos::null;
-  outargs_.set_W(jacobian_);
+  inargs_.set_x( Teuchos::rcp(&x, false) );
 
-  f_ = Teuchos::rcp(&F, false);
+  Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(&F, false);
 
   if (fillFlag == NOX::Epetra::Interface::Required::Residual)
-    eval_f_.reset(f_, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT); 
+    eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT); 
   else if (fillFlag == NOX::Epetra::Interface::Required::Jac)
-    eval_f_.reset(f_, EpetraExt::ModelEvaluator::EVAL_TYPE_APPROX_DERIV);
+    eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_APPROX_DERIV);
   else
-    eval_f_.reset(f_, EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV);
+    eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV);
      
-  outargs_.set_f(eval_f_);
+  outargs.set_f(eval_f_);
 
-  model_->evalModel(inargs_, outargs_);
+  model_->evalModel(inargs_, outargs);
 
   return true;
 }
@@ -97,17 +94,12 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 bool NOX::Epetra::ModelEvaluatorInterface::
 computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jaco)
 {
-  x_ = Teuchos::rcp(&x, false);
-  inargs_.set_x(x_);
+  EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
-  f_ = Teuchos::null;
-  eval_f_.reset(f_, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT);
-  outargs_.set_f(eval_f_);
+  inargs_.set_x( Teuchos::rcp(&x, false) );
+  outargs.set_W( Teuchos::rcp(&Jaco, false) );
 
-  jacobian_ = Teuchos::rcp(&Jaco, false);
-  outargs_.set_W(jacobian_);
-
-  model_->evalModel(inargs_, outargs_);
+  model_->evalModel(inargs_, outargs);
 
   return true;
 }
@@ -119,12 +111,12 @@ computePreconditioner(const Epetra_Vector& x,
 		      Epetra_Operator& M,
 		      Teuchos::ParameterList* precParams)
 {
-  x_ = Teuchos::rcp(&x, false);
-  inargs_.set_x(x_);
+  EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
-  outargs_.set_M( Teuchos::rcp(&M, false) );
+  inargs_.set_x( Teuchos::rcp(&x, false) );
+  outargs.set_M( Teuchos::rcp(&M, false) );
 
-  model_->evalModel(inargs_, outargs_);
+  model_->evalModel(inargs_, outargs);
 
   return true;
 }

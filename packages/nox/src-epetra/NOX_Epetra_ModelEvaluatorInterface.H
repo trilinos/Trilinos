@@ -94,19 +94,6 @@ namespace Epetra {
     
     //! Inargs object.
     EpetraExt::ModelEvaluator::InArgs inargs_;
-    
-    //! Outargs object.
-    EpetraExt::ModelEvaluator::OutArgs outargs_;
-    
-
-    //! RCP for the solution vector.
-    Teuchos::RCP<const Epetra_Vector> x_;
-
-    //! RCP for the residual vector.
-    Teuchos::RCP<Epetra_Vector> f_;
-
-    //! RCP for the Jacobian operator.
-    Teuchos::RCP<Epetra_Operator> jacobian_;
 
     //! RCP for the residual vector wrapper.
     EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f_;
