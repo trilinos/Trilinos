@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
   int error = 0;
 #ifdef HAVE_MPI
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   int rank=mpiSession.getRank();
   int numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
