@@ -31,18 +31,11 @@
 #include <stdio.h>
 #include <ThreadPool_config.h>
 
-enum { THREAD_COUNT_MAX = 256 };
-enum { LOCK_COUNT_MAX   = 32 };
-
-#if defined( HAVE_PTHREAD )
-
-#include <errno.h>
-#include <pthread.h>
-#include <sched.h>
-
 /*--------------------------------------------------------------------*/
 /*----------- PTHREAD CONFIGURATION (BEGIN) --------------------------*/
 /*--------------------------------------------------------------------*/
+
+#if	defined( HAVE_PTHREAD )
 
 #if	defined( __linux__ ) && \
 	defined( __GNUC__ ) && \
@@ -59,9 +52,33 @@ enum { LOCK_COUNT_MAX   = 32 };
 
 #endif
 
+#else /* ! defined( HAVE_PTHREAD ) */
+
+#define THREADPOOL_CONFIG "NO THREADING"
+
+#endif
+
+const char * TPI_Version()
+{
+  static const char version_string[] =
+    "TPI Version 1.1 , October 2009 , Configuration = " THREADPOOL_CONFIG ;
+
+  return version_string ;
+}
+
 /*--------------------------------------------------------------------*/
 /*----------- PTHREAD CONFIGURATION (END) ----------------------------*/
 /*--------------------------------------------------------------------*/
+
+enum { THREAD_COUNT_MAX = 256 };
+enum { LOCK_COUNT_MAX   = 32 };
+
+#if defined( HAVE_PTHREAD )
+
+#include <errno.h>
+#include <pthread.h>
+#include <sched.h>
+
 /*  Performance is heavily impacted by an
  *  atomic decrement of the work counter.
  *  Optimize this if at all possible.
@@ -583,7 +600,7 @@ int TPI_Init( int n )
   int result = thread_pool.m_thread_count ? TPI_ERROR_ACTIVE : 0 ;
 
   if ( first_pass ) {
-    fprintf(stdout,"TPI CONFIGURATION = %s\n\n",THREADPOOL_CONFIG);
+    fprintf( stdout , TPI_Version() );
     first_pass = 0 ;
   }
 

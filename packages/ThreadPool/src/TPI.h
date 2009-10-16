@@ -51,7 +51,7 @@ extern "C" {
 
 /*--------------------------------------------------------------------*/
 /** \brief  Version string. */
-const char TPI_Version();
+const char * TPI_Version();
 
 /** Start up the requested number of threads, less the calling thread.
  *  Return the actual number of threads, including the calling thread,
@@ -149,9 +149,19 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram ,
                             int                   reduce_size ,
                             void *                reduce_data );
 
-/**
+/** \brief  Block threads within the operating system.
+ *
+ *  Normally the worker threads are unblocked and spinning for
+ *  minimal start up overhead when running work subprograms.
+ *  If no TPI work is to be performed for a long period of time
+ *  then an application can block the worker threads.
+ */
 int TPI_Block();
+
+/** \brief  Unblock blocked threads within the operating system */
 int TPI_Unblock();
+
+/** \brief  Query if threads are blocked */
 int TPI_Isblocked();
 
 /*--------------------------------------------------------------------*/
