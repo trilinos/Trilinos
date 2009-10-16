@@ -1258,23 +1258,29 @@ int main(int argc, char *argv[]) {
    MLList2.set("y-coordinates",nodeCoordy);
    MLList2.set("z-coordinates",nodeCoordz);   
    MLList2.set("ML output",10);
-   MLList2.set("smoother: sweeps (level 0)",2);
-   MLList2.set("smoother: sweeps",2);
+   MLList2.set("smoother: sweeps (level 0)",3);
+   MLList2.set("smoother: sweeps",3);
    MLList2.set("smoother: type","Chebyshev");
    //   MLList2.set("eigen-analysis: max iters", 20);
    MLList2.set("eigen-analysis: type", "power-method");
    MLList2.get("edge matrix free: coarse",dummy);
+   ML_Epetra::SetDefaults("SA",dummy,0,0,false);
    dummy.set("PDE equations",3);
    dummy.set("ML output",10);
-   dummy.set("smoother: sweeps",2);
-   dummy.set("smoother: type","symmetric Gauss-Seidel");
+   dummy.set("smoother: sweeps",3);
+   dummy.set("smoother: type","Chebyshev");
+   dummy.set("aggregation: type","Uncoupled");
+   dummy.set("smoother: pre or post","both");
    dummy.set("max levels",10);
    dummy.set("coarse: type","Amesos-KLU");
+   dummy.set("repartition: enable",1);
+   dummy.set("repartition: min per proc",1000);
+   dummy.set("repartition: max min ratio",1.4);
+   dummy.set("repartition: Zoltan dimensions",3);
+   dummy.set("x-coordinates",nodeCoordx);
+   dummy.set("y-coordinates",nodeCoordy);
+   dummy.set("z-coordinates",nodeCoordz);   
    MLList2.set("edge matrix free: coarse",dummy);
-
-
-   //   MLList2.set("refmaxwell: disable addon",false);
-   //   MLList2.set("print hierarchy",true);
    
   if (MyPID == 0) {
    cout<<MLList2<<endl;
@@ -1623,7 +1629,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   /* Get the BC edges*/
   int numBCedges;  
   int* BCedges=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(CurlCurl,numBCedges);  
-  printf("# BC edges = %d\n",numBCedges);
+  //  printf("# BC edges = %d\n",numBCedges);
   ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
 
   /* Build the (1,1) Block Operator */
