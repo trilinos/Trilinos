@@ -88,6 +88,7 @@ struct ML_Struct {
    int            PutOnSingleProc_repartition;
    double         LargestMinMaxRatio_repartition; 
    int            use_repartitioning; /* turn repartitioning [off]/on */
+   int            repartitionStartLevel; /* used to suppress repartitioning until a certain level*/
    ML_Partitioner partitioner; /*which partitioner to use: zoltan,parmetis,jostle */
    double         tolerance;
    int            max_iterations;
@@ -387,6 +388,8 @@ extern ML_Partitioner ML_Repartition_Get_Partitioner(ML* ml);
 extern void ML_Repartition_Activate(ML* ml);
 extern void ML_Repartition_Deactivate(ML* ml);
 extern int ML_Repartition_Status(ML* ml);
+extern void ML_Repartition_Set_StartLevel(ML*, int);
+extern int  ML_Repartition_Get_StartLevel(ML* ml);
 extern int ML_Use_LowMemory();
 extern void ML_Enable_LowMemory();
 extern void ML_Disable_LowMemory();

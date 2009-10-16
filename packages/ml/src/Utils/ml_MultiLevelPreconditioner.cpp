@@ -1324,6 +1324,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Repartition_Set_MinPerProc(ml_,minperproc);                           //
     ML_Repartition_Set_PutOnSingleProc(ml_,                                  //
                     List_.get("repartition: put on single proc", 5000));     //
+    int startLevel = List_.get("repartition: start level", 1);               //
+    ML_Repartition_Set_StartLevel(ml_,startLevel);                           //
                                                                              //
     std::string Repartitioner=List_.get("repartition: partitioner","Zoltan");//
     if (Repartitioner == "Zoltan") {                                         //

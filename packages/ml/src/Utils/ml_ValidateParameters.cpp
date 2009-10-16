@@ -280,6 +280,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal heirarchy (Maxwell)",PL,dblParam);
   setIntParameter("repartition: node min per proc",170,"Specifies minimum number of nodes per proc (Maxwell)",PL,intParam);
   setIntParameter("repartition: Zoltan dimensions",0,"Dimension of problem",PL,intParam);
+  setIntParameter("repartition: start level",1,"Suppress repartitioning until this level",PL,intParam);
 
   /* Analysis Options (Section 6.4.7) */
   PL->set("analyze memory",false);

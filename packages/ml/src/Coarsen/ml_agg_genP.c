@@ -2640,7 +2640,10 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          energy minimization isn't checked for here, as it only runs in serial (as of 8/4/09). */
       if (ag->minimizing_energy == 1 || ag->minimizing_energy == 2 || ag->minimizing_energy == 3)
         R_is_Ptranspose = ML_FALSE;
-      ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, R_is_Ptranspose, ML_FALSE);
+      if (ML_Repartition_Get_StartLevel(ml) <= k)
+        ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, R_is_Ptranspose, ML_FALSE);
+      else if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
+        printf("ML_Gen_MultilevelHierarchy (level %d): repartitioning suppressed until level %d\n",next,ML_Repartition_Get_StartLevel(ml));
 
       if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"after_repartition");
@@ -2671,9 +2674,6 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       if (grid_info) {
         if (grid_info->x != NULL || grid_info->y != NULL || 
             grid_info->z != NULL) {
-          if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
-            printf("ML_Gen_MultiLevelHierarchy: Projecting node coordinates from level %d to level %d\n",
-                    level,next);
           ML_Project_Coordinates(Amat, Ptent, &(ml->Amat[next]));
         }
       }

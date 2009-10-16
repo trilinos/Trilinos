@@ -72,6 +72,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->PutOnSingleProc_repartition = -1;
    (*ml_ptr)->LargestMinMaxRatio_repartition = -1.;
    (*ml_ptr)->use_repartitioning = 0;
+   (*ml_ptr)->repartitionStartLevel = -1;
 
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
@@ -6892,6 +6893,16 @@ void ML_Repartition_Deactivate(ML* ml)
 int ML_Repartition_Status(ML* ml)
 {
   return ml->use_repartitioning;
+}
+
+void ML_Repartition_Set_StartLevel(ML* ml, int startLevel)
+{
+  ml->repartitionStartLevel = startLevel;
+}
+
+int ML_Repartition_Get_StartLevel(ML* ml)
+{
+  return ml->repartitionStartLevel;
 }
 
 /* by default this is the standard ML */
