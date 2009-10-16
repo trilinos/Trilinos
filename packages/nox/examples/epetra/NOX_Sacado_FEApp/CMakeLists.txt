@@ -15,7 +15,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
     PASS_REGULAR_EXPRESSION "Test Passed"
     )
 
-  IF(Sacado_ENABLE_Stokhos AND Stokhos_ENABLE_Quadrature)
+  IF(Sacado_ENABLE_Stokhos)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       NOX_Sacado_FEApp_PCE_Example
       SOURCES pce.C ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
