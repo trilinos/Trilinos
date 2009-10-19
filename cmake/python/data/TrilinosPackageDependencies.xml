@@ -617,9 +617,9 @@
   </Package>
   <Package name="ForTrilinos" dir="ForTrilinos">
     <LIB_REQUIRED_DEP_PACKAGES value="CTrilinos,Epetra,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO"/>
     <TEST_REQUIRED_DEP_PACKAGES value="CTrilinos,Epetra,Teuchos"/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

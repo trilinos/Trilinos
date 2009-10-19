@@ -605,7 +605,7 @@
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
-    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="CTrilinos" type="LR"/>
     <EmailAddresses>
