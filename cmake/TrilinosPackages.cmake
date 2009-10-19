@@ -81,6 +81,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   Stokhos               stokhos                        SS
+  STK                   stk                            EX # Depends on boost
   Sacado                sacado                         PS
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
@@ -120,6 +121,7 @@ PACKAGE_DISABLE_ON_PLATFORMS(Tpetra Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(FEI Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)

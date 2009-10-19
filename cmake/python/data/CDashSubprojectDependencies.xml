@@ -332,6 +332,13 @@
       <Email address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="STK">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Shards" type="LR"/>
+    <EmailAddresses>
+      <Email address="stk-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Sacado">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="RTOp" type="ILO"/>

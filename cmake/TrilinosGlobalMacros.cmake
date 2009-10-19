@@ -97,6 +97,7 @@ FUNCTION(APPLY_TO_NO_AUTOTOOLS_PACKAGES FILE_NAME LIST_RETURN)
     /packages/sacado
     /packages/shards
     /packages/stratimikos
+    /packages/stk
     /packages/Sundance
     /packages/teuchos
     /packages/ThreadPool
