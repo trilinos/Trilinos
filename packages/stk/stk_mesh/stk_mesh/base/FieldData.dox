@@ -1,0 +1,62 @@
+namespace stk {
+namespace mesh {
+
+/** \addtogroup stk_mesh_field_data
+ *
+ *  \section  stk_mesh_field_introduction  Introduction
+ *
+ *  The data for a given
+ *  \ref stk::mesh::Field "field" is allocated in one or more
+ *  \ref shards::Array "multi-dimensional arrays".
+ *  The contiguous memory for each array resides within a
+ *  \ref stk::mesh::Bucket "bucket".
+ *
+ *  \section  mdarray  Multi-dimensional Array View
+ *
+ *  Contiguous array field data may be accessed as an
+ *  \ref shards::Array "multidimensional array" through the
+ *  \ref stk::mesh::EntityArray "EntityArray" or
+ *  \ref stk::mesh::BucketArray "BucketArray" wrappers to the
+ *  \ref shards::Array "multidimensional array" class.
+ *
+ *  For example, given a reference to an application-defined
+ *  \ref stk::mesh::Field "field" these arrays are obtained as follows.
+ *  <PRE>
+ *  typedef Field<...> MyFieldType ;
+ *  const MyFieldType & my_field = ... ; // obtained from somewhere
+ *  const Entity & entity = ... ;        // obtained from somewhere
+ *  const Bucket & bucket = ... ;        // obtained from somewhere
+ *
+ *  EntityArray< MyFieldType > entity_data( my_field , entity );
+ *  BucketArray< MyFieldType > bucket_data( my_field , bucket );
+ *  </PRE>
+ *  In this example the <b> entity_data </b> and <b> bucket_data </b> are
+ *  \ref shards::Array "multidimensional array" objects conforming to the
+ *  scalar type and dimensions specified by <b> MyFieldType </b>.
+ *  As such the dimensions and members of the arrays can be accessed
+ *  through the \ref shards::Array "multidimensional array" interface.
+ *
+ *  A \ref stk::mesh::Bucket "bucket" provides field data for a
+ *  homogeneous collection of entities.
+ *  As such when an application defines a multi-dimensional array field
+ *  with variable dimensions then these dimensions will be
+ *  constant for a given bucket; but may vary with different buckets.
+ *
+ *  \section  raw_pointer  Raw Data View
+ *
+ *  The <b> field_data </b> functions return a pointer to the
+ *  field data for a given field and entity or bucket.
+ *  For example, if the scalar type of MyFieldType is "double" then
+ *  a raw pointer to the field data is obtained as follows.
+ *  <PRE>
+ *  double * entity_data_ptr = field_data( my_field , entity );
+ *  double * bucket_data_ptr = field_data( my_field , bucket );
+ *  </PRE>
+ *  When this "raw" interface is used and the field data is a
+ *  multi-dimensional array then the application is on its own
+ *  to obtain the array dimensions.
+ */
+
+} // namespace mesh
+} // namespace stk
+

@@ -1,0 +1,5 @@
+
+ADD_SUBDIRECTORY(stk_mesh)
+
+PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+

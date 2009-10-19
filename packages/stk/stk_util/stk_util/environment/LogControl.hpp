@@ -1,0 +1,179 @@
+#ifndef STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP
+#define STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP
+
+#include <ostream>
+#include <sstream>
+#include <string>
+
+namespace stk {
+
+/**
+ * @brief Interface <code>LogControlRule</code> describes the interface to a log control rule.
+ *
+ */
+struct LogControlRule
+{
+  /**
+   * @brief Member function <code>clone</code> creates a clone of the rule.
+   *
+   * @return			a <code>LogControlRule</code> pointer to newly created duplicate.
+   */
+  virtual LogControlRule *clone() const = 0;
+  
+  /**
+   * @brief Member function <code>next</code> returns true if the log stream should write to the log
+   * file, and false if the log stream should write to the cache.
+   *
+   * @return			a <code>bool</code> value of true if the log stream should write to
+   *                            the log file, and false if the log stream should write to the cache.
+   */
+  virtual bool next() = 0;
+};
+
+
+/**
+ * @brief Class <code>LogControlRuleAlways</code> is a log control rule that always wants to write to the log
+ * file. 
+ *
+ */
+struct LogControlRuleAlways : public LogControlRule
+{
+  /**
+   * Creates a new <code>LogControlRuleAlways</code> instance.
+   *
+   */
+  LogControlRuleAlways()
+  {}
+
+  /**
+   * @brief Member function <code>clone</code> creates a duplicate LogControlRuleAlways object.
+   *
+   * @return			a <code>LogControlRule</code> pointer to the new duplicated always object.
+   */
+  virtual LogControlRule *clone() const {
+    return new LogControlRuleAlways(*this);
+  }
+
+  /**
+   * @brief Member function <code>next</code> returns true to indicate that the log stream should
+   * write to the log file.
+   *
+   * @return			a <code>bool</code> returns true to indicate that the log stream
+   *                            should write to the log file.
+   */
+  virtual bool next() {
+    return true;
+  }
+};
+
+
+struct LogControlRuleInterval : public LogControlRule
+{
+  LogControlRuleInterval(int interval);
+
+  virtual LogControlRule *clone() const {
+    return new LogControlRuleInterval(*this);
+  }
+
+  virtual bool next();
+  
+private:
+  int           m_interval;
+  int           m_count;
+};
+
+
+/**
+ * @brief Enumeration <code>State</code> describes the current state of the caching for this
+ * controller. 
+ *
+ */
+enum State {
+  ON,           ///< Output is to be written to the log stream
+  CACHE         ///< Output is to be written to the cache stream
+};
+
+/**
+ * @brief Class <code>LogControl</code> provides a mechanism for reducing excessive output.  The
+ * output is redirected to a cache where it can be written to the log stream where and error
+ * condition arises.
+ *
+ * The controlling of the log stream is handled by creating a sentry which controls the stream
+ * buffer of the specified stream using the specified rule.  The next() function executes the rule
+ * and redirects the output to the log stream when the rule is true and to the cache when the rule
+ * is false.
+ *
+ * LogControl sentries can be nested.  When nested, the current rule is if the parent is caching,
+ * then child is forced to cache.  This behavior could change by passing parent state to next().
+ *
+ * It's important to note that LogControl sentries nearly always shared the same output stream.  So
+ * the parent's original output stream buffer 
+ */
+class LogControl
+{
+public:
+  /**
+   * Creates a new <code>LogControl</code> instance.
+   *
+   * @param log_stream		a <code>std::ostream</code> reference to the log stream to control.
+   *
+   * @param rule		a <code>LogControlRule</code> reference to the rule used to control the log
+   *                            stream.
+   *
+   */
+  LogControl(std::ostream &log_stream, const LogControlRule &rule);
+
+  /**
+   * Creates a new <code>LogControl</code> instance.
+   *
+   * @param log_stream		a <code>std::ostream</code> reference to the log stream to control.
+   *
+   * @param rule_name		a <code>std::string</code> constant reference to rule name used to
+   *                            control the log stream.
+   */
+  LogControl(std::ostream &log_stream,const std::string &rule_name);
+  
+  /**
+   * Destroys a <code>LogControl</code> instance.
+   *
+   */
+  ~LogControl();
+
+  /**
+   * @brief Member function <code>next</code> executes the rule and sets the log stream to write to
+   * the log file if true and to the cache if false.
+   *
+   */
+  void next();
+
+  /**
+   * @brief Member function <code>fail</code> writes the cached output to the log stream due to an
+   * error. 
+   *
+   */
+  void fail();
+
+private:
+  LogControl *          m_parent;               ///< Parent stream
+  LogControlRule *      m_rule;                 ///< Rule to evaluate log destination
+
+  State                 m_state;                ///< Current caching state
+
+  std::ostream &        m_logStream;            ///< Log stream under control
+  std::streambuf *      m_logStreambuf;         ///< Log stream original stream buffer
+  std::ostringstream    m_cacheStream;          ///< Cache stream
+};
+
+/**
+ * @brief Function <code>addLogControlRule</code> add a named rule to log control's rule set.
+ *
+ * @param name			a <code>std::string</code> constant variable...
+ *
+ * @param rule			a <code>LogControlRule</code> constant variable...
+ *
+ */
+void addLogControlRule(const std::string &name, const LogControlRule &rule);
+
+} // namespace stk
+
+#endif //  STK_UTIL_ENVIRONMENT_LOGCONTROL_HPP

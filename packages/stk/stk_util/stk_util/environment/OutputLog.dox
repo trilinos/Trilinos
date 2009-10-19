@@ -1,0 +1,443 @@
+///
+/// \addtogroup stk_util_output_log_detail
+/// @{
+///
+/// @brief Output logging is responsible for connecting program's output streams (sierra::out(),
+/// sierra::pout(), any std::ostream) to output log files (a disk file, stdout, etc).
+///
+/// Output streams are std::ostream's that the developer's write logging information to within the
+/// source code.  Developers register the program's output stream using the register_ostream()
+/// functions. Log streams are files or streams which are the destinations of those output streams.
+///
+/// Log files each have a name and an std::ostream, and optionally a file path and std::ofstream.
+/// Developers create log files using the create_log_file() or register_log_ostream() functions.
+/// The create_log_file() function opens an std::ofstream to a file with the specified path and
+/// inserts it into the log stream map using the name as the key.  The register_log_ostream()
+/// function registers a log stream using the the name as the key.
+/// 
+/// The output streams are bound to log files passing a description string to the
+/// bind_output_streams() function or by getting the streambuf's using the
+/// get_ostream_tee_streambuf() function and adding and removing streams.  By binding output streams
+/// to log streams, the developer can control the destination of the data written to by any output
+/// stream.  Multiple log files may be bound to the same output stream and may be bound to multiple
+/// output streams.  Other registered output streams may also be destinations.
+/// 
+/// This binding feature provides the developer with a great deal of output logging control with very
+/// little programming effort.
+/// 
+/// For example, if the developer creates a normal output stream, a diagnostic output stream and a
+/// single log file, he can configure the normal output stream to go to the log file and the
+/// diagnostic output stream to go to the bit bucket.  If dire circumstances should arise, the
+/// diagnostic output stream could be bound to the output stream, and from that point forward, the
+/// diagnostic data would be properly interleaved with the normal output log.
+/// 
+/// Another example for use with parallel systems, is to create a normal log file and a
+/// per-processor log file.  Processor zero's (0) normal output stream writes to the normal log file
+/// and to its per-processor log file.  The remaining processors each write to there per-processor
+/// log file and diagnostic streams write to the per-processor log file.  This provides detailed,
+/// interleaved diagnostic for each processor for the developer to examine and normal looking output
+/// for the analyst to view.
+/// 
+/// This output logging scheme in tandem with the diagnostic writer selectable output provides the
+/// developer with significant detailed output control with minimal coding and processing overhead.
+///
+/// \anchor stk_util_output_log_howto_register_streams
+/// \section stk_util_output_log_stream_registration Register Application Output Streams
+///
+/// The program's output streams must be named and registered to participate in the output log
+/// binding.  For general parallel use, three streams are created, a regular output stream, out; a
+/// per-processor output stream, pout; and a diagnostic output stream, dout.  These can be static
+/// objects as long as they are not written to prior to main().  These three streams are registered
+/// with the output logging system at the start of the program execution.
+///
+/// For example, the output streams header which would be included wherever output logging is desired.
+///
+/// \code
+///     #ifndef SIERRA_Slib_Output_Log_h
+///     #define SIERRA_Slib_Output_Log_h
+///     
+///     #include <iosfwd>
+///     
+///     namespace sierra {
+///     
+///     std::ostream &out();                ///< Normal output stream
+///     std::ostream &dout();               ///< Diagnostic output stream
+///     std::ostream &pout();               ///< Per-processor output stream (See RuntimeDeferredx)
+///     std::ostream &tout();               ///< Regression test textual output stream
+///     
+///     std::ostream &dwout();              ///< Diagnostic writer stream
+///     
+///     } // namespace sierra
+///     
+///     #endif // SIERRA_Slib_Output_Log_h
+/// \endcode
+///
+/// The corresponding implementation file.
+///
+/// \code
+///     #include <iostream>
+///     
+///     namespace sierra {
+///     
+///     std::ostream &
+///     out() {
+///       static std::ostream s_out(std::cout.rdbuf());
+///     
+///       return s_out;
+///     }
+///     
+///     std::ostream &
+///     pout() {
+///       static std::ostream s_pout(std::cout.rdbuf());
+///     
+///       return s_pout;
+///     }
+///     
+///     std::ostream &
+///     dout() {
+///       static std::ostream s_dout(std::cout.rdbuf());
+///     
+///       return s_dout;
+///     }
+///     
+///     std::ostream &
+///     tout() {
+///       static std::ostream s_tout(std::cout.rdbuf());
+///     
+///       return s_tout;
+///     }
+///     
+///     } // namespace sierra
+/// \endcode
+///
+/// And the registration in main().
+///
+/// \code
+///     #include <iostream>
+///
+///     #include <OutputStreams.hpp>
+///
+///     main()
+///     {
+///       stk::register_log_ostream(std::cout, "cout"); // Make standard out available
+///       stk::register_log_ostream(std::cerr, "cerr"); // Make standard error available
+///     
+///       stk::register_ostream(out(), "out");
+///       stk::register_ostream(pout(), "pout");
+///       stk::register_ostream(dout(), "dout", true);
+///       stk::register_ostream(tout(), "tout");
+///
+///       . . .
+///    
+///       stk::unregister_ostream(out());
+///       stk::unregister_ostream(pout());
+///       stk::unregister_ostream(dout());
+///       stk::unregister_ostream(tout());
+///
+///       stk::unregister_log_ostream(std::cout);
+///       stk::unregister_log_ostream(std::cerr);
+///     }
+///    
+/// \endcode
+///
+/// \anchor stk_util_output_log_howto_bind_streams
+/// \section stk_util_output_log_binding Binding Output Logs
+///
+/// The output description is defined as a white space separated string of command phrases.  There
+/// are two types of command phrases, log file creation and output stream direction.
+///
+/// The log file creation phrase consists of a name, and equal sign (=) and a file path.  The file
+/// path is opened and the log file stream is registered with the log streams.
+///
+/// The output stream phrase consists of a name, a greater than sign (>) and a output stream
+/// selector.  The selector is a list of log streams or output streams which may be prefixed with a
+/// plus sign (+) or a minus sign (-).  No prefix removes all current log and output streams from
+/// the named output stream before adding the new log or output stream. A plus prefix adds the new
+/// log or output stream to the named output stream and a minus prefix removes the log or output
+/// stream from the named output stream.  Note that quotes must be used when meta-characters are
+/// included as part of a file path.
+///
+/// The following are examples of output stream descriptions:
+///
+///   - To write output and diagnostic output to the sierra.log file (Normal for the root processor)<br>
+///     <tt><b>logfile="sierra.log" out>logfile+pout pout>null dout>out"</b></tt>
+///
+///   - To throw output and diagnostic output away (Normal for the non-root processors)<br>
+///     <tt><b>out>pout pout>null dout>out"</b></tt>
+///
+///   - To write output and diagnostic output to the sierra.log file and to write to the per-processor
+///     log file.  (Normal for per-processor debugging output on the root processor)<br>
+///     <tt><b>logfile="sierra.log" plogfile="debug.log.4.0" out>logfile+pout pout>plogfile dout>out"</b></tt>
+///
+///   - To write output and diagnostic output to the per-processor log file.  (Normal for
+///     per-processor debugging output on the non-root processors)<br>
+///     <tt><b>plogfile="debug.log.4.1" out>pout pout>plogfile dout>out"</b></tt>
+///
+///   - To write test output to testoutput.txt file.<br>
+///     <tt><b>tlogfile="testoutput.txt" tout>tlogfile</b></tt>
+///
+///   - Using these examples, to disengage the per-processor output at a later time<br>
+///     <tt><b>pout>-plogfile</b></tt>
+///
+///   - Using these examples, to engage the per-processor output at a later time<br>
+///     <tt><b>pout>+plogfile</b></tt>
+///
+/// The following is an example of a regular output log file when running on multiple processors:
+///
+/// \code
+///
+///     // On the root processor, create the regular log file sierra.log, send regular output to the
+///     // regular log file and to the per-processor output stream, throw per-processor output away and
+///     // send diagnostic output to the output stream.
+///
+///     stk::bind_output_streams("logfile=\"sierra.log\" "      // Create sierra.log
+///                              "out>logfile+pout "            // Send output to the log file and to the per-processor stream
+///                              "pout>null "                   // Throw per-processor output away
+///                              "dout>out");                   // Send diagnostic output to the regular output stream
+///
+///     // On other processors, send regular output to the per-processor output stream, throw
+///     // per-processor output away, and send diagnostic output to the log file.
+///
+///     stk::bind_output_streams("out>pout "                    // Send output to the per-processor stream
+///                              "pout>null "                   // Throw per-processor output away
+///                              "dout>out");                   // Send diagnostic output to the regular output stream
+/// \endcode
+///
+/// The following is an example of a regular output log file and a per-processor log file when
+/// running on multiple processors: 
+///
+/// \code
+///
+///     // On the root processor, send regular output to the file sierra.log and the per-processor
+///     // output stream, send the per-processor output to the per-processor log file, and send
+///     // diagnostic output to the log file.
+///
+///     stk::bind_output_streams("logfile=\"sierra.log\" "      // Create sierra.log
+///                              "plogfile=\"debug.log.3.0\" "  // Create per-processor debug.log
+///                              "out>logfile+pout "            // Send output to the log file and to the per-processor stream
+///                              "pout>plogfile "               // Send per-processor output to the per-processor log file
+///                              "dout>out");                   // Send diagnostic output to the regular output stream
+///
+///     // On the other processors, send regular output to the per-processor output stream, send the
+///     // per-processor output to the per-processor log file, and send diagnostic output to the
+///     // output stream.
+///
+///     stk::bind_output_streams("debug.log.3.1\" "             // Create per-processor debug.log
+///                              "out>pout "                    // Send output to the per-processor stream
+///                              "pout>plogfile "               // Send per-processor output to the per-processor log file
+///                              "dout>out");                   // Send diagnostic output to the regular output stream
+/// \endcode
+///
+/// \anchor stk_util_output_log_howto_use_in_sierra_app
+/// \section stk_util_output_log_use_in_sierra_app Usage in Sierra Application
+///
+/// This section describes how to control the output logging for a sierra application and how to
+/// enable diagnostic and timer output.  It also describes the use of log control to remove excess
+/// output caused by many time steps.
+///
+/// To get the latest command line options for a sierra application, type
+///
+/// \code
+///    sierra <it>application</it> -O -h
+/// \endcode
+///
+/// The sierra applications have three command line arguments which control the log output:
+///
+/// \code
+///    Runtime environment options:
+///      -o [ --output-log ] arg (=sierra.log) Output log file path, one of : 'cout', 'cerr', or a file path
+///      --pout [=arg(=-)]                     Per-processor log file path
+///      --dout [=arg(=out)]                   Diagnostic output stream one of: 'cout', 'cerr', 'out' or a file path
+/// \endcode
+///
+/// The -o option defines the location and filename of the log file.  The --pout option directs
+/// per-processor output to a specified set of files or standard output stream.  And the --dout
+/// option directs the diagnostic writer output to a specified set of files or standard output
+/// stream.
+///
+/// Common options are:
+///
+///   - sierra -o sierra.log<br>
+///     This creates the normal output file.  The per-processor output is not written.  The
+///     diagnostic output is written to this file.
+///
+///   - sierra -o sierra.log -O "--pout=pp.log"<br>
+///     This creates the normal output file.  The per-processor output is written to
+///     pp.log.<it>n</it>.<it>r</it> for each rank, <it>r</it>, of <it>n</it> processors.
+///     The diagnostic output is written to this file.
+///
+///   - sierra -o sierra.log -O "--dout=dd.log"<br>
+///     With the incorporation of diagnostic controlled normal output, the separation of the
+///     diagnostic output stream from the output and per-processor output stream is not useful.
+///
+/// \subsection stk_util_output_log_use_in_sierra_app_diag_writer Diagnostic Writer Output
+///
+/// Complementary to the output log is the diagnostic writer output.  This output is enabled by a
+/// variety of command line options.  The diagnostic writers allow more detailed information to be
+/// displayed during the execution.  This extended log information is written to the diagnostic
+/// stream which is defined by the --dout command line option.
+///
+/// The diagnostic writer output can also be controlled from the input deck using:
+///
+/// \code
+///    Begin Diagnostic Control name
+///      Enable option-list
+///    End
+/// \endcode
+///
+/// Where <it>option-list</it> is a command separated list of options specific for that diagnostic
+/// writer.
+///
+/// It is also possible to control the output of diagnostics based on time step or simulation time.
+/// When the simulation is within the specified interval, the diagnostic writer has the specified
+/// options enabled.  Note that the definition of step and time is based on the regions current step
+/// and time which may not be consistent across all regions.
+///
+/// \code
+///    Begin Diagnostic Control name
+///      From Step n To m Enable option-list
+///      From Time s To t Enable option-list
+///      Enable option-list
+///    End
+/// \endcode
+///
+/// Where <it>n</it> and <it>m</it> are steps values, <it>s</it> and <it>t</it> are simulation
+/// times, and <it>option-list</it> is a command separated list of options specific for that
+/// diagnostic writer.  Here is an example list of options available to the adagio application:
+///
+/// \code
+///    Diagnostic writers:
+///      --fmwkout arg         Diagnostic writer fmwkout
+///                            Specify a comma separated list of:
+///                              comm                Display mpi communication diagnostic information
+///                              contact             Display contact diagnostic information
+///                              coverage            Collect and display traceable function usage coverage
+///                              dump-load           Dump domain atfer mesh load
+///                              dump-setup          Dump domain after setup
+///                              event               Display event information
+///                              field               Display field registeration information
+///                              geometry            Display geometry diagnostic information
+///                              input-check         Check input deck and mesh load, does not execute
+///                              material            Display material diagnostic information
+///                              members             Display data structure members messages
+///                              mesh-mod            Display mesh modification diagnostic information
+///                              parameters          Display parameter diagnostic information
+///                              pretty-print        Pretty print input deck and mesh data
+///                              relation            Display connectivy, orientation and relation information
+///                              search              Display search diagnostic information
+///                              solver              Display linear and non-linear solver diagnostic information
+///                              syntax-check        Check syntax of input deck, does not load mesh or execute
+///                              trace               Display execution trace
+///                              trace-down          Display subsequent calls after tracing is enabled
+///                              trace-stats         Display execution time and memory usage during trace
+///                              transfer            Display transfer diagnostic information
+///                              user-func           Display user input function information
+///                              verbose             Dump domain after setup, does not load mesh or execute
+///                            
+///      --prsrout arg         Diagnostic writer prsrout
+///                            Specify a comma separated list of:
+///                              command-spec        Display command specs
+///                              coverage            Collect and display traceable function usage coverage
+///                              enumeration         Display enumerations
+///                              members             Display data structure members messages
+///                              parse               Display parser diagnostic information
+///                              tag-lists           Display command specs
+///                              trace               Display execution trace
+///                              trace-down          Display subsequent calls after tracing is enabled
+///                              trace-stats         Display execution time and memory usage during trace
+///                            
+///      --sctlout arg         Diagnostic writer sctlout
+///                            Specify a comma separated list of:
+///                              actions             Display solution control actions
+///                              construction        Display construction information
+///                              coverage            Collect and display traceable function usage coverage
+///                              execution           Display execution information
+///                              members             Display data structure members messages
+///                              parameters          Display solution control block parameters
+///                              time                Display time calculation information
+///                              trace               Display execution trace
+///                              trace-down          Display subsequent calls after tracing is enabled
+///                              trace-stats         Display execution time and memory usage during trace
+///                              validation          Display validation settings
+///                            
+///      --slibout arg         Diagnostic writer slibout
+///                            Specify a comma separated list of:
+///                              coverage            Collect and display traceable function usage coverage
+///                              global-variables    Display global variable operations
+///                              members             Display data structure members messages
+///                              memory              Display platform specific memory usage information
+///                              plugins             Display plugin information
+///                              resources           Display resource assignments
+///                              trace               Display execution trace
+///                              trace-down          Display subsequent calls after tracing is enabled
+///                              trace-stats         Display execution time and memory usage during trace
+/// \endcode
+///
+/// \subsection stk_util_output_log_use_in_sierra_app_timers Timer Output
+///
+/// There are many timers embedded within the application to assist in determining application
+/// performance.  The --timer command line option activates these timers.
+///
+/// The input deck may also use the Enable Timer line command in the Sierra command block can be
+/// used to enable timers.  Also, the Print Timer Information line command causes the timers to be
+/// printed at the specified step interval.
+///
+/// \code
+///    Enable Timer timer-list
+///    Print Timer Information Every interval Steps {Checkpointed|Accumulated}
+/// \endcode
+///
+/// Where <it>timer-list</it> is a command separated list of timers.
+///
+/// Accumulated displays the values since that start of the application and Checkpointed displays
+/// the values since the last interval.
+///
+/// Sample timers are listed below:
+///
+/// \code
+///    Runtime environment options:
+///      --timer arg           Wall and CPU time options
+///                            Specify a comma separated list of:
+///                              adaptivity          Enable metrics on adaptivity
+///                              algorithm           Enable metrics on algorithms
+///                              all                 Enable all metrics
+///                              app1                Enable app defined metrics
+///                              app2                Enable app defined metrics
+///                              app3                Enable app defined metrics
+///                              app4                Enable app defined metrics
+///                              contact             Enable metrics on contact
+///                              cpu                 Display CPU times
+///                              domain              Enable metrics on the domain
+///                              hms                 Display times in HH:MM:SS format
+///                              material            Enable metrics on materials
+///                              mechanics           Enable metrics on mechanics
+///                              none                Disable all timers
+///                              procedure           Enable metrics on procedures
+///                              profile1            Enable app defined profiling metrics
+///                              profile2            Enable app defined profiling metrics
+///                              profile3            Enable app defined profiling metrics
+///                              profile4            Enable app defined profiling metrics
+///                              recovery            Enable metrics on encore recovery
+///                              region              Enable metrics on regions
+///                              search              Enable metrics on searches
+///                              seconds             Display times in seconds
+///                              solver              Enable metrics on solvers
+///                              transfer            Enable metrics on user functions
+///                              wall                Display wall times
+/// \endcode
+///
+/// \subsection stk_util_output_log_use_in_sierra_app_log_control Log Control
+///
+/// Since explicit codes run many time steps, only occasional output to the log file is necessary.
+/// The log control feature allows the output to appear in the log file on specified intervals or on
+/// error.  The Log line command in the Sierra command block is used to specify the output interval.
+///
+/// \code
+///    Log name Every n
+/// \endcode
+///
+/// When the last interval is reached or an error condition arises the output is written to the log
+/// file. 
+///
+/// @}
+///

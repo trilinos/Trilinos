@@ -1,0 +1,62 @@
+///
+/// \addtogroup stk_util_bootstrap_detail
+/// @{
+///
+/// @brief Allows object modules included in the application to perform various registration
+/// operations after main() has been called.
+///
+/// Most products need to register with other products to provide information such as product
+/// version, command line option, and diagnostic writers.  The Bootstrap class provides a safe
+/// mechanism for these registrations to occur.
+///
+/// Bootstrapping occurs in two steps and requires two components, a callback function and a static
+/// bootstrap object.  The construction of the static bootstrap object registers the callback
+/// function for later execution by main() and the callback function performs registrations such as
+/// registering product information, command line options and diagnostics writers.
+///
+/// By utilizing this mechanism, any modules which need to be bootstrapped can do so by being linked
+/// into the executable.
+///
+/// \anchor stk_util_bootstrap_howto_bootstrap
+/// For example:
+///
+/// \code
+/// #include <stk_util/util/Bootstrap.hpp>
+/// 
+/// namespace {
+/// 
+/// void bootstrap()
+/// {
+///   boost::program_options::options_description desc("Use case options");
+///   desc.add_options()
+///     ("performance", "run performance test")
+///     ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
+/// 
+///   stk::env::get_options_description().add(desc);
+/// }
+/// 
+/// stk::Bootstrap x(&bootstrap);
+/// 
+/// } // namespace <empty>
+///
+/// \endcode
+///
+/// Main contains the following function which executes the registered bootstrap functions.
+///
+/// \code
+///
+/// int
+/// main()
+/// {
+///   stk::Boostrap::bootstrap();
+///
+/// }
+///
+/// \endcode
+///
+///
+/// The applications main executes the bootstrap functions causing the command line
+/// description to be fully populated.
+///
+/// @}
+///
