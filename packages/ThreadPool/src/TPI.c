@@ -776,9 +776,23 @@ static int set_lock_count( LocalWork * const work , const int lock_count )
   return result ; 
 }
 
-int TPI_Block()     { work->m_active ? TPI_ERROR_ACTIVE : 0 ; }
-int TPI_Unblock()   { work->m_active ? TPI_ERROR_ACTIVE : 0 ; }
-int TPI_Isblocked() { work->m_active ? TPI_ERROR_ACTIVE : 0 ; }
+int TPI_Block()
+{
+  LocalWork * const work = local_work();
+  work->m_active ? TPI_ERROR_ACTIVE : 0 ;
+}
+
+int TPI_Unblock()
+{
+  LocalWork * const work = local_work();
+  work->m_active ? TPI_ERROR_ACTIVE : 0 ;
+}
+
+int TPI_Isblocked()
+{
+  LocalWork * const work = local_work();
+  work->m_active ? TPI_ERROR_ACTIVE : 0 ;
+}
 
 int TPI_Run( TPI_work_subprogram work_subprogram  ,
              const void *        work_info ,
