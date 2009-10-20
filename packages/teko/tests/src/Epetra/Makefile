@@ -9,7 +9,8 @@ CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 OBJS = tEpetraOperatorWrapper.o \
        tStridedEpetraOperator.o \
        tEpetraThyraConverter.o \
-       tInterlacedEpetra.o
+       tInterlacedEpetra.o \
+       tBlockingEpetra.o
 
 # tEpetraLSCIntegrationTest.o \
 

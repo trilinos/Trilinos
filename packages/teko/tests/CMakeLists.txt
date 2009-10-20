@@ -12,6 +12,8 @@ PACKAGE_ADD_EXECUTABLE(
       ./src/Epetra/tEpetraThyraConverter.hpp
       ./src/Epetra/tInterlacedEpetra.cpp
       ./src/Epetra/tInterlacedEpetra.hpp
+      ./src/Epetra/tBlockingEpetra.cpp
+      ./src/Epetra/tBlockingEpetra.hpp
       ./src/Epetra/tStridedEpetraOperator.cpp
       ./src/Epetra/tStridedEpetraOperator.hpp
       ./src/tBlockJacobiPreconditionerFactory.cpp

@@ -33,6 +33,7 @@
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
 #include "src/Epetra/tInterlacedEpetra.hpp"
+#include "src/Epetra/tBlockingEpetra.hpp"
 #include "src/Epetra/tEpetraThyraConverter.hpp"
 
 
@@ -86,6 +87,7 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
    PB_ADD_UNIT_TEST(PB::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
    PB_ADD_UNIT_TEST(PB::Test::tInterlacedEpetra,InterlacedEpetra);
+   PB_ADD_UNIT_TEST(PB::Test::tBlockingEpetra,BlockingEpetra);
    PB_ADD_UNIT_TEST(PB::Test::tEpetraThyraConverter,EpetraThyraConverter);
    PB_ADD_UNIT_TEST(PB::Test::tGraphLaplacian,tGraphLaplacian);
    PB_ADD_UNIT_TEST(PB::Test::tParallelInverse,tParallelInverse);

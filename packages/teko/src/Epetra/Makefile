@@ -11,6 +11,7 @@ OBJS = PB_EpetraHelpers.o \
        PB_EpetraOperatorWrapper.o \
        PB_EpetraThyraConverter.o \
        PB_InterlacedEpetra.o \
+       PB_BlockingEpetra.o \
        PB_StridedMappingStrategy.o \
        PB_StridedEpetraOperator.o \
        PB_ReorderedMappingStrategy.o \
