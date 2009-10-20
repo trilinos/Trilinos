@@ -60,6 +60,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   GlobiPack             globipack                      PS
   Triutils              triutils                       PS
   Tpetra                tpetra                         PS
+  Tifpack               tifpack                        EX # early development stage
   EpetraExt             epetraext                      PS
   Thyra                 thyra                          PS
   OptiPack              optipack                       PS

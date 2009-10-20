@@ -60,6 +60,16 @@
       <Email address="tpetra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Tifpack">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="LR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Tpetra" type="LR"/>
+    <EmailAddresses>
+      <Email address="tifpack-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="EpetraExt">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>

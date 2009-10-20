@@ -103,6 +103,7 @@ FUNCTION(APPLY_TO_NO_AUTOTOOLS_PACKAGES FILE_NAME LIST_RETURN)
     /packages/ThreadPool
     /packages/thyra
     /packages/tpetra
+    /packages/tifpack
     /packages/trilinoscouplings
     /packages/triutils
   )
