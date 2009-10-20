@@ -1,8 +1,8 @@
-/*@HEADER
+// @HEADER
 // ***********************************************************************
 // 
-//       Tifpack: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//      Tifpack: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -24,12 +24,29 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+// @HEADER
+
+
+/*! \file Tifpack_UnitTestMain.cpp
+
+\brief Tifpack Unit testing main program.
+
+This file is the main for the unit test executable.
+
+NOTE: This file should *not* be built and included as part of the Tifpack
+library.  It is instead to be directly included in the build files for
+specific unit test suites.
+
 */
 
-#include "Tifpack_ConfigDefs.hpp"
 
-string Tifpack_Version() { 
-  return("Tifpack Version 1.0d -- 20-Oct-2009"); 
+#include <Tifpack_ConfigDefs.hpp>
+#include <Teuchos_UnitTestRepository.hpp>
+#include <Teuchos_GlobalMPISession.hpp>
+
+
+int main( int argc, char* argv[] )
+{
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
-

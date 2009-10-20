@@ -1,8 +1,7 @@
-/*@HEADER
 // ***********************************************************************
 // 
-//       Tifpack: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//      Tifpack: Tempated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -24,12 +23,39 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
-//@HEADER
+
+
+/*! \file Tifpack_UnitTestTemplate.cpp
+
+\brief Tifpack Unit testing template.
+
+This file demonstrates how you create a unit test for template code.
+
 */
 
-#include "Tifpack_ConfigDefs.hpp"
 
-string Tifpack_Version() { 
-  return("Tifpack Version 1.0d -- 20-Oct-2009"); 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Tifpack_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <iostream>
+
+template<class T>
+T my_trivial_function(T in)
+{
+  T out = in*in;
+  return out;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(TifpackGroup0, TifpackTest0, T)
+{
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
+  T input = 5;
+  T result = my_trivial_function(input);
+  T expected_result = input*input;
+
+  TEUCHOS_TEST_EQUALITY(result, expected_result, out, success)
 }
 

@@ -1,0 +1,8 @@
+/* Tifpack_config.h.in. This file is preprocessed by cmake to create Tifpack_config.h. */
+
+/* Define if want to build teuchos-debug */
+#cmakedefine HAVE_TIFPACK_DEBUG
+
+/* Define if we have MPI */
+#cmakedefine HAVE_TIFPACK_MPI
+

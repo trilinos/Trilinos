@@ -30,90 +30,11 @@
 #ifndef _TIFPACK_CONFIGDEFS_HPP_
 #define _TIFPACK_CONFIGDEFS_HPP_
 
-/*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
- * be undef'd here to avoid warnings when this file is included from another package.
- * KL 11/25/02
- */
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
+#include <Tifpack_config.h>
 
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#include <Tifpack_config.hpp>
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#ifdef HAVE_MPI
-
-#ifndef EPETRA_MPI
-#define EPETRA_MPI
-#endif
+#ifdef HAVE_TIFPACK_MPI
 
 #endif
-
-#include <cstdio>
-#include <string>
-#include <iostream>
-#include <algorithm>
-#include <vector>
-using std::string;
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-using namespace std;
-/* 2008/11/20: rabartl: ToDo: Above: Get rid of using namespace std! */
 
 // prints out an error message if variable is not zero,
 // and returns this value.
