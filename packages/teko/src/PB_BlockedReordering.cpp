@@ -22,7 +22,7 @@ namespace PB {
 
 void BlockReorderManager::SetBlock(int blockIndex,int reorder)
 { 
-   TEUCHOS_ASSERT(blockIndex<children_.size());
+   TEUCHOS_ASSERT(blockIndex<(int) children_.size());
 
    RCP<BlockReorderManager> child = rcp(new BlockReorderLeaf(reorder));
 
@@ -43,14 +43,14 @@ void BlockReorderManager::SetBlock(int blockIndex,int reorder)
   */
 void BlockReorderManager::SetBlock(int blockIndex,const RCP<BlockReorderManager> & reorder)
 {
-   TEUCHOS_ASSERT(blockIndex<children_.size());
+   TEUCHOS_ASSERT(blockIndex<(int) children_.size());
 
    children_[blockIndex] = reorder;
 }
 
 const Teuchos::RCP<BlockReorderManager> BlockReorderManager::GetBlock(int blockIndex)
 {
-   TEUCHOS_ASSERT(blockIndex<children_.size());
+   TEUCHOS_ASSERT(blockIndex<(int) children_.size());
 
    if(children_[blockIndex]==Teuchos::null)
       children_[blockIndex] = rcp(new BlockReorderManager());
@@ -60,7 +60,7 @@ const Teuchos::RCP<BlockReorderManager> BlockReorderManager::GetBlock(int blockI
 
 const Teuchos::RCP<const BlockReorderManager> BlockReorderManager::GetBlock(int blockIndex) const
 {
-   TEUCHOS_ASSERT(blockIndex<children_.size());
+   TEUCHOS_ASSERT(blockIndex<(int) children_.size());
 
    return children_[blockIndex];
 }
@@ -70,7 +70,7 @@ std::string BlockReorderManager::toString() const
    // build the string by recursively calling each child
    std::stringstream ss;
    ss << "[";
-   for(int i=0;i<children_.size();i++) {
+   for(unsigned int i=0;i<children_.size();i++) {
       if(children_[i]==Teuchos::null) 
          ss << " <NULL> ";
       else
@@ -84,7 +84,7 @@ std::string BlockReorderManager::toString() const
 int BlockReorderManager::LargestIndex() const
 {
    int max = 0;
-   for(int i=0;i<children_.size();i++) {
+   for(unsigned int i=0;i<children_.size();i++) {
       // see if current child is larger 
       if(children_[i]!=Teuchos::null) {
          int subMax = children_[i]->LargestIndex();
@@ -122,9 +122,6 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       return linOp;
    }
    else if(rowSz==0) {
-      // only row is a leaf node
-      const BlockReorderLeaf & rowLeaf = dynamic_cast<const BlockReorderLeaf &>(rowMgr);
-
       PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
 
       // operator will be rowSz by colSz
@@ -143,9 +140,6 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       return reBlkOp;
    }
    else if(colSz==0) {
-      // only row is a leaf node
-      const BlockReorderLeaf & colLeaf = dynamic_cast<const BlockReorderLeaf &>(colMgr);
-
       PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
 
       // operator will be rowSz by colSz
@@ -407,7 +401,7 @@ static void tokenize(std::string srcInput,std::string whitespace,std::string pre
       wsTokens.push_back(s);
    }
 
-   for(int i=0;i<wsTokens.size();i++) {
+   for(unsigned int i=0;i<wsTokens.size();i++) {
       // get string to break up
       input = wsTokens[i];
 
@@ -493,7 +487,7 @@ static RCP<BlockReorderManager> blockedReorderFromTokens(const std::vector<std::
 
    // build the parent reorder manager
    RCP<PB::BlockReorderManager> rMgr = rcp(new PB::BlockReorderManager(vecRMgr.size()));
-   for(int i=0;i<vecRMgr.size();i++)
+   for(unsigned int i=0;i<vecRMgr.size();i++)
       rMgr->SetBlock(i,vecRMgr[i]);
 
    return rMgr;

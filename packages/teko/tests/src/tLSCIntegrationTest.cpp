@@ -240,7 +240,7 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
    bool status = false;
    bool allPassed = true;
 
-   int vcycles = 8;
+   // int vcycles = 8;
 
    // load everything
    loadStableSystem();

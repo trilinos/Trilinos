@@ -51,7 +51,7 @@ const RCP<const Thyra::VectorSpaceBase<double> > buildCompositeSpace(const Epetr
 
    // get process information
    int numProc = Comm.NumProc();
-   int myPID   = Comm.MyPID();
+   // int myPID   = Comm.MyPID();
 
    // how big is this vector
    int uElmts = 4;
@@ -152,7 +152,7 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
    TEST_MSG("      compareEpetraMVToThyra - recurse (" << indexStart << ", " << indexEnd << " )");
 
    // loop over each subblock, comparing the thyra to epetra
-   bool result = true;
+   // bool result = true;
    for(int i=0;i<prodVS->numBlocks();i++) {
       int size = prodVS->getBlock(i)->dim();
 
@@ -230,7 +230,7 @@ bool tEpetraThyraConverter::test_blockThyraToEpetra(int verbosity,std::ostream &
 
    // get process information
    int numProc = Comm.NumProc();
-   int myPID   = Comm.MyPID();
+   // int myPID   = Comm.MyPID();
 
    // how big is this vector
    int myElmts = 1000;
@@ -278,7 +278,7 @@ bool tEpetraThyraConverter::test_single_blockThyraToEpetra(int verbosity,std::os
 
    // get process information
    int numProc = Comm.NumProc();
-   int myPID   = Comm.MyPID();
+   // int myPID   = Comm.MyPID();
 
    // how big is this vector
    int myElmts = 1000;
@@ -320,7 +320,7 @@ bool tEpetraThyraConverter::test_blockEpetraToThyra(int verbosity,std::ostream &
  
    // get process information
    int numProc = Comm.NumProc();
-   int myPID   = Comm.MyPID();
+   // int myPID   = Comm.MyPID();
 
    // how big is this vector
    int myElmts = 1000;
@@ -360,7 +360,7 @@ bool tEpetraThyraConverter::test_single_blockEpetraToThyra(int verbosity, std::o
  
    // get process information
    int numProc = Comm.NumProc();
-   int myPID   = Comm.MyPID();
+   // int myPID   = Comm.MyPID();
 
    // how big is this vector
    int myElmts = 1000;

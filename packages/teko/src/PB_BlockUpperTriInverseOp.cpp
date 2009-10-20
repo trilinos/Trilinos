@@ -25,7 +25,7 @@ BlockUpperTriInverseOp::BlockUpperTriInverseOp(BlockedLinearOp & U,const std::ve
    int blocks = blockRowCount(U_);
    TEUCHOS_ASSERT(blocks>0);
    TEUCHOS_ASSERT(blocks==blockColCount(U_));
-   TEUCHOS_ASSERT(blocks==invDiag_.size());
+   TEUCHOS_ASSERT(blocks==(int) invDiag_.size());
 
    // create the range and product space
    ///////////////////////////////////////////////////

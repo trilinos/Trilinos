@@ -237,7 +237,7 @@ bool UnitTest::CheckParallelBools(bool myBool,int & failPID)
    failPID = -1;
 
    bool result = true;
-   for(int i=0;i<bools.size();i++) {
+   for(unsigned int i=0;i<bools.size();i++) {
       result &= bools[i]==1 ? true : false;
       if(bools[i]!=1) failPID = i; 
    }

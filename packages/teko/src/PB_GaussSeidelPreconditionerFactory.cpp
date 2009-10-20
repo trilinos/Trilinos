@@ -30,7 +30,7 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLi
    // get diagonal blocks
    std::vector<LinearOp> invDiag;
    invOpsStrategy_->getInvD(blo,state,invDiag);
-   TEUCHOS_ASSERT(rows==invDiag.size());
+   TEUCHOS_ASSERT(rows==(int) invDiag.size());
 
    if(solveType_==GS_UseUpperTriangle) {
       // create a blocked linear operator
@@ -94,7 +94,7 @@ void GaussSeidelPreconditionerFactory::initializeFromParameterList(const Teuchos
          // inserting inverse factory into vector
          std::string invStr = pl.get<std::string>(fieldName);
          PB_DEBUG_MSG("GSPrecFact: Building inverse " << position << " \"" << invStr << "\"",5);
-         if(position>inverses.size()) {
+         if(position>(int) inverses.size()) {
             inverses.resize(position,defaultInverse);
             inverses[position-1] = invLib->getInverseFactory(invStr);
          }

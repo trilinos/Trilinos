@@ -108,7 +108,7 @@ void BlockPreconditionerFactory::uninitializePrec(PreconditionerBase<double> * p
                       RCP<const LinearOpSourceBase<double> > * fwdOpSrc,
                       ESupportSolveUse *supportSolveUse) const
 {
-   BlockPreconditioner * blkPrec = dynamic_cast<BlockPreconditioner *>(prec);
+   // BlockPreconditioner * blkPrec = dynamic_cast<BlockPreconditioner *>(prec);
 
    // what do I do here?
    TEST_FOR_EXCEPT_MSG(true,"\"BlockPreconditionerFactory::uninitializePrec not implemented\"");

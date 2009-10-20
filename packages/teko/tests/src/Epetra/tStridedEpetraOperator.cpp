@@ -140,8 +140,8 @@ bool tStridedEpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
    double max = 0.0;
    double min = 1.0;
    for(int i=0;i<numtests;i++) {
-      double norm[width];
-      double rel[width];
+      std::vector<double> norm(width);
+      std::vector<double> rel(width);
       x.Random();
 
       shell.Apply(x,y);
@@ -149,10 +149,10 @@ bool tStridedEpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
 
       Epetra_MultiVector e(y);
       e.Update(-1.0,ys,1.0);
-      e.Norm2(norm);
+      e.Norm2(&norm[0]);
 
       // compute relative error
-      ys.Norm2(rel);
+      ys.Norm2(&rel[0]);
       for(int j=0;j<width;j++) {
          max = max>norm[j]/rel[j] ? max : norm[j]/rel[j];
          min = min<norm[j]/rel[j] ? min : norm[j]/rel[j];
@@ -184,8 +184,8 @@ bool tStridedEpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
    max = 0.0;
    min = 1.0;
    for(int i=0;i<numtests;i++) {
-      double norm[width];
-      double rel[width];
+      std::vector<double> norm(width);
+      std::vector<double> rel(width);
       x.Random();
 
       shell.Apply(x,y);
@@ -193,10 +193,10 @@ bool tStridedEpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
 
       Epetra_MultiVector e(y);
       e.Update(-1.0,ys,1.0);
-      e.Norm2(norm);
+      e.Norm2(&norm[0]);
 
       // compute relative error
-      ys.Norm2(rel);
+      ys.Norm2(&rel[0]);
       for(int j=0;j<width;j++) {
          max = max>norm[j]/rel[j] ? max : norm[j]/rel[j];
          min = min<norm[j]/rel[j] ? min : norm[j]/rel[j];
@@ -254,8 +254,8 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    double max = 0.0;
    double min = 1.0;
    for(int i=0;i<numtests;i++) {
-      double norm[width];
-      double rel[width];
+      std::vector<double> norm(width);
+      std::vector<double> rel(width);
       x.Random();
 
       shell.Apply(x,y);
@@ -263,10 +263,10 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
 
       Epetra_MultiVector e(y);
       e.Update(-1.0,ys,1.0);
-      e.Norm2(norm);
+      e.Norm2(&norm[0]);
 
       // compute relative error
-      ys.Norm2(rel);
+      ys.Norm2(&rel[0]);
       for(int j=0;j<width;j++) {
          max = max>norm[j]/rel[j] ? max : norm[j]/rel[j];
          min = min<norm[j]/rel[j] ? min : norm[j]/rel[j];
@@ -298,8 +298,8 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    max = 0.0;
    min = 1.0;
    for(int i=0;i<numtests;i++) {
-      double norm[width];
-      double rel[width];
+      std::vector<double> norm(width);
+      std::vector<double> rel(width);
       x.Random();
 
       shell.Apply(x,y);
@@ -307,10 +307,10 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
 
       Epetra_MultiVector e(y);
       e.Update(-1.0,ys,1.0);
-      e.Norm2(norm);
+      e.Norm2(&norm[0]);
 
       // compute relative error
-      ys.Norm2(rel);
+      ys.Norm2(&rel[0]);
       for(int j=0;j<width;j++) {
          max = max>norm[j]/rel[j] ? max : norm[j]/rel[j];
          min = min<norm[j]/rel[j] ? min : norm[j]/rel[j];
@@ -395,8 +395,8 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    double max = 0.0;
    double min = 1.0;
    for(int i=0;i<numtests;i++) {
-      double norm[width];
-      double rel[width];
+      std::vector<double> norm(width);
+      std::vector<double> rel(width);
       x.Random();
 
       flatShell.Apply(x,yf);
@@ -404,10 +404,10 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
 
       Epetra_MultiVector e(yf);
       e.Update(-1.0,yr,1.0);
-      e.Norm2(norm);
+      e.Norm2(&norm[0]);
 
       // compute relative error
-      yf.Norm2(rel);
+      yf.Norm2(&rel[0]);
       for(int j=0;j<width;j++) {
          max = max>norm[j]/rel[j] ? max : norm[j]/rel[j];
          min = min<norm[j]/rel[j] ? min : norm[j]/rel[j];

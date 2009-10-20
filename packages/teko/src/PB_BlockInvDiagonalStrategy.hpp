@@ -32,6 +32,8 @@ namespace PB {
   */
 class BlockInvDiagonalStrategy {
 public:
+   virtual ~BlockInvDiagonalStrategy() {}
+
    //! returns an (approximate) inverse of the diagonal blocks of A
    virtual void getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state,
                         std::vector<LinearOp> & invDiag) const = 0;
@@ -53,6 +55,8 @@ public:
    StaticInvDiagStrategy(const std::vector<LinearOp> & invD)
       : invDiag_(invD)
    { }
+
+   virtual ~StaticInvDiagStrategy() {}
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
@@ -88,6 +92,8 @@ public:
      */
    InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<InverseFactory> > & factories,
                           const Teuchos::RCP<InverseFactory> & defaultFact=Teuchos::null);
+
+   virtual ~InvFactoryDiagStrategy() {}
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1

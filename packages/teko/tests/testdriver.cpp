@@ -99,5 +99,8 @@ int main(int argc,char * argv[])
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);
 
+
+   if(not status)
+      *termout << "Teko tests failed" << std::endl; 
    return status ? 0 : -1;
 }

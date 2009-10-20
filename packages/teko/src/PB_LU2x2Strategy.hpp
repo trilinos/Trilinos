@@ -56,6 +56,8 @@ namespace PB {
  */
 class LU2x2Strategy {
 public:
+   virtual ~LU2x2Strategy() {}
+
    /** returns the first (approximate) inverse of \f$A_{00}\f$ */
    // virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
    virtual const PB::LinearOp
@@ -109,6 +111,8 @@ public:
                        const PB::LinearOp & invS)
       : hatInvA00_(hInvA00), tildeInvA00_(tInvA00), invS_(invS)
    {}
+
+   virtual ~StaticLU2x2Strategy() {}
  
    /** @name Methods inherited from LU2x2Strategy. */
    //@{

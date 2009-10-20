@@ -54,6 +54,7 @@ const Teuchos::RCP<const Thyra::VectorBase<double> > BlockVector(const Epetra_Ve
 
 class UnitTest {
 public:
+   virtual ~UnitTest() {}
    virtual void initializeTest() = 0;
    virtual int runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun) = 0;
    virtual bool isParallel() const = 0;

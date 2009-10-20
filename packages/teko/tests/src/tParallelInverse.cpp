@@ -90,7 +90,7 @@ int tParallelInverse::runTest(int verbosity,std::ostream & stdstrm,std::ostream 
 
 bool tParallelInverse::test_inverse(int verbosity,std::ostream & os)
 {
-   bool status = false;
+   // bool status = false;
    bool allPassed = true;
 
    loadMatrix();
@@ -108,7 +108,7 @@ bool tParallelInverse::test_inverse(int verbosity,std::ostream & os)
 
 bool tParallelInverse::test_stridedInverse(int verbosity,std::ostream & os)
 {
-   bool status = false;
+   // bool status = false;
    bool allPassed = true;
 
    loadStridedMatrix();

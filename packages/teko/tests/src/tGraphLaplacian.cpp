@@ -77,7 +77,7 @@ void coords(std::vector<double> & vec)
 void coords(std::vector<double> & x, std::vector<double> & y, std::vector<double> & z)
 {
    int count = 5;
-   int dim = 3;
+   // int dim = 3;
 
    x.clear(); x.resize(count);
    y.clear(); y.resize(count);
@@ -155,7 +155,7 @@ bool tGraphLaplacian::test_single_array(int verbosity,std::ostream & os)
 {
    bool status = false;
    bool allPassed = true;
-   double diff;
+   // double diff;
    std::vector<double> points;
 
    // build coordinates and the stencil
@@ -176,7 +176,7 @@ bool tGraphLaplacian::test_multi_array(int verbosity,std::ostream & os)
 {
    bool status = false;
    bool allPassed = true;
-   double diff;
+   // double diff;
    std::vector<double> x,y,z;
    std::vector<double> points;
 

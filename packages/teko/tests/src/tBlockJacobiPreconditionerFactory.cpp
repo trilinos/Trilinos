@@ -261,7 +261,7 @@ bool tBlockJacobiPreconditionerFactory::test_uninitializePrec(int verbosity,std:
 
 bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ostream & os)
 {
-   bool status = false;
+  // bool status = false;
    bool allPassed = true;
 
    // with the "new" PreconditionerFactory this test is now meaningless.
