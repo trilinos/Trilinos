@@ -21,6 +21,7 @@
 
 namespace PB {
 namespace Epetra {
+namespace Strided {
 
 /** Build maps to make other conversions. This functions build maps assuming
   * that there are number of variables and you want to break them all up
@@ -145,6 +146,7 @@ void many2one(Epetra_MultiVector & one, const std::vector<Teuchos::RCP<const Epe
 void one2many(std::vector<Teuchos::RCP<Epetra_MultiVector> > & many,const Epetra_MultiVector & single,
               const std::vector<Teuchos::RCP<Epetra_Import> > & subImport);
 
+}
 } // end namespace Epetra
 } // end namespace PB
 

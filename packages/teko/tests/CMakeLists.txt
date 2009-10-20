@@ -48,14 +48,14 @@ PACKAGE_ADD_EXECUTABLE(
 
 PACKAGE_ADD_TEST(
    testdriver
-   ARGS --fast
+   ARGS
    NUM_MPI_PROCS 4
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
 PACKAGE_ADD_TEST(
    testdriver
-   ARGS --fast
+   ARGS
    NUM_MPI_PROCS 1
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )

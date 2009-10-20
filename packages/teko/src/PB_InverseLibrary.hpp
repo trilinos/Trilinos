@@ -39,6 +39,9 @@ public:
    //! Get the inverse factory associated with a particular label
    Teuchos::RCP<InverseFactory> getInverseFactory(const std::string & label) const;
 
+   //! Print the inverses and parameter lists available for use
+   void PrintAvailableInverses(std::ostream & os) const;
+
 protected:
 
    // stratimikos type Inverse objects: mapping the label to a parameter list

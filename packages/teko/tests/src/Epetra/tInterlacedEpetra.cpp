@@ -34,6 +34,7 @@
 
 #include "Epetra/PB_InterlacedEpetra.hpp"
 
+using namespace PB::Epetra;
 
 namespace PB {
 namespace Test {
@@ -114,7 +115,7 @@ bool tInterlacedEpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
       int numVars = 3;
 
       // build a set of submaps: this should fail
-      PB::Epetra::buildSubMaps(globals,numVars,comm,subMaps); 
+      Strided::buildSubMaps(globals,numVars,comm,subMaps); 
 
       TEST_ASSERT(false,
             "\n   tInerlacedEpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -133,7 +134,7 @@ bool tInterlacedEpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
       int numVars = 3;
 
       // build a set of submaps: this should fail
-      PB::Epetra::buildSubMaps(globals,numVars,comm,subMaps); 
+      Strided::buildSubMaps(globals,numVars,comm,subMaps); 
 
       TEST_EQUALITY(subMaps.size(),3,
             "\n   tInerlacedEpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -208,7 +209,7 @@ bool tInterlacedEpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
       vars[2] = 3;    
 
       // build a set of submaps: this should fail
-      PB::Epetra::buildSubMaps(globals,vars,comm,subMaps); 
+      Strided::buildSubMaps(globals,vars,comm,subMaps); 
 
       TEST_ASSERT(false,
             "\n   tInerlacedEpetra::test_buildSubMaps_vec: " << toString(status) << ": "
@@ -231,7 +232,7 @@ bool tInterlacedEpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
       vars[2] = 3;    
 
       // build a set of submaps: this should fail
-      PB::Epetra::buildSubMaps(globals,vars,comm,subMaps); 
+      Strided::buildSubMaps(globals,vars,comm,subMaps); 
 
       TEST_EQUALITY(subMaps.size(),3,
             "\n   tInerlacedEpetra::test_buildSubMaps_vec: " << toString(status) << ": "
@@ -306,7 +307,7 @@ bool tInterlacedEpetra::test_buildMaps(int verbosity,std::ostream & os)
    TEST_MSG("\n   Building sub maps");
    std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > subMaps;
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   PB::Epetra::buildSubMaps(size,vec,*GetComm(),subMaps);
+   Strided::buildSubMaps(size,vec,*GetComm(),subMaps);
 
    TEST_ASSERT(subMaps[0].first==vec[0],
          "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
@@ -405,16 +406,16 @@ bool tInterlacedEpetra::test_one2many(int verbosity,std::ostream & os)
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub maps");
    std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > subMaps;
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   PB::Epetra::buildSubMaps(size,vec,*GetComm(),subMaps);
+   Strided::buildSubMaps(size,vec,*GetComm(),subMaps);
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building Export/Import");
    std::vector<RCP<Epetra_Export> > subExport;
    std::vector<RCP<Epetra_Import> > subImport;
-   PB::Epetra::buildExportImport(*map,subMaps,subExport,subImport);
+   Strided::buildExportImport(*map,subMaps,subExport,subImport);
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub vectors");
    std::vector<RCP<Epetra_MultiVector> > subVectors;
-   PB::Epetra::buildSubVectors(subMaps,subVectors,1);
+   Strided::buildSubVectors(subMaps,subVectors,1);
 
    std::vector<RCP<Epetra_MultiVector> >::const_iterator itr;
    for(itr=subVectors.begin();itr!=subVectors.end();++itr) {
@@ -425,7 +426,7 @@ bool tInterlacedEpetra::test_one2many(int verbosity,std::ostream & os)
    }
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Performing data copy");
-   PB::Epetra::one2many(subVectors,*v,subImport);
+   Strided::one2many(subVectors,*v,subImport);
    
    // just assume it works! :)
 
@@ -446,16 +447,16 @@ bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub maps");
    std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > subMaps;
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   PB::Epetra::buildSubMaps(size,vec,*GetComm(),subMaps);
+   Strided::buildSubMaps(size,vec,*GetComm(),subMaps);
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building Export/Import");
    std::vector<RCP<Epetra_Export> > subExport;
    std::vector<RCP<Epetra_Import> > subImport;
-   PB::Epetra::buildExportImport(*map,subMaps,subExport,subImport);
+   Strided::buildExportImport(*map,subMaps,subExport,subImport);
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub vectors");
    std::vector<RCP<Epetra_MultiVector> > subVectors;
-   PB::Epetra::buildSubVectors(subMaps,subVectors,4);
+   Strided::buildSubVectors(subMaps,subVectors,4);
 
    std::vector<RCP<Epetra_MultiVector> >::const_iterator itr;
    for(itr=subVectors.begin();itr!=subVectors.end();++itr) {
@@ -466,7 +467,7 @@ bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
    }
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Performing one2many");
-   PB::Epetra::one2many(subVectors,*v,subImport);
+   Strided::one2many(subVectors,*v,subImport);
 
    std::vector<RCP<const Epetra_MultiVector> > cSubVectors;
    for(itr=subVectors.begin();itr!=subVectors.end();++itr)
@@ -474,7 +475,7 @@ bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
 
    TEST_MSG("\n   tInterlacedEpetra::test_one2many: Performing many2one");
    RCP<Epetra_MultiVector> one = rcp(new Epetra_MultiVector(*map,1));
-   PB::Epetra::many2one(*one,cSubVectors,subExport);
+   Strided::many2one(*one,cSubVectors,subExport);
 
    one->Update(1.0,*v,-1.0);
  

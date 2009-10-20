@@ -7,6 +7,7 @@ using Teuchos::rcp;
 
 namespace PB {
 namespace Epetra {
+namespace Strided {
 
 // this assumes that there are numGlobals with numVars each interlaced
 // i.e. for numVars = 2 (u,v) then the vector is
@@ -391,5 +392,6 @@ void one2many(std::vector<RCP<Epetra_MultiVector> > & many,const Epetra_MultiVec
    }
 }
 
+}
 } // end namespace Epetra 
 } // end namespace PB

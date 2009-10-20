@@ -244,6 +244,36 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
    TEUCHOS_ASSERT(false);
 }
 
+//! Print the inverses and parameter lists available for use
+void InverseLibrary::PrintAvailableInverses(std::ostream & os) const
+{
+   std::map<std::string,Teuchos::RCP<const Teuchos::ParameterList> >::const_iterator itr; 
+
+   os << "Stratimikos Solvers: " << std::endl;
+   os << "********************************" << std::endl;
+   for(itr=stratSolver_.begin();itr!=stratSolver_.end();++itr) {
+      os << "name = \"" << itr->first << "\"" << std::endl;
+      itr->second->print(os);
+      os << std::endl;
+   }
+
+   os << "Stratimikos Preconditioners: " << std::endl;
+   os << "********************************" << std::endl;
+   for(itr=stratPrecond_.begin();itr!=stratPrecond_.end();++itr) {
+      os << "name = \"" << itr->first << "\"" << std::endl;
+      itr->second->print(os);
+      os << std::endl;
+   }
+
+   os << "Block Preconditioners: " << std::endl;
+   os << "********************************" << std::endl;
+   for(itr=blockPrecond_.begin();itr!=blockPrecond_.end();++itr) {
+      os << "name = \"" << itr->first << "\"" << std::endl;
+      itr->second->print(os);
+      os << std::endl;
+   }
+}
+
 /** \brief Build an inverse library from a parameter list.
   * 
   * Build an inverse library from a parameter list. This will
