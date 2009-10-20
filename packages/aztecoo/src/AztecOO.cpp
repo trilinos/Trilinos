@@ -391,6 +391,11 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob,
 
   Problem_ = (Epetra_LinearProblem *) &prob; // Record this object for later access if needed
 
+  // Clean up the context from the old problem (if any)
+  if(Prec_ && Prec_->Pmat){
+    AZ_rm_context(options_,params_,Prec_->Pmat->data_org);
+  }
+
   // Try to cast operator to matrix 
   Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());
   if (UserMatrix!=0) 
@@ -555,11 +560,12 @@ int AztecOO::SetPrecOperator(Epetra_Operator * PrecOperator) {
     Prec_ = 0;
   }
   if (Pmat_ != 0) {
+    AZ_rm_context(options_,params_,Pmat_->data_org);
     AZ_matrix_destroy(&Pmat_);
     Pmat_ = 0;
   }
 
-	if (PrecOperatorData_!=0) delete PrecOperatorData_;
+  if (PrecOperatorData_!=0) delete PrecOperatorData_;
   PrecOperatorData_ = new OperatorData(PrecOperator); // Initialize preconditioner operator data
   SetProcConfig(PrecOperator->Comm());
 
