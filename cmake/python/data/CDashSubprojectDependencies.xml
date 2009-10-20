@@ -617,7 +617,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
-    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="CTrilinos" type="LR"/>
     <EmailAddresses>
