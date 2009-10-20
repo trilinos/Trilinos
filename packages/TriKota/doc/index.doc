@@ -51,7 +51,14 @@ To verify the paths, make sure that the following file exists:
 trilinos-dir/packages/TriKota/Dakota/src/DakotaOptimizer.H
 
 After that, just enable TriKota in the cmake build system for
-Trilinos and do the usual "./cmake-script; make; make install;".
+Trilinos with
+
+<pre>
+    -D Trilinos_ENABLE_TriKota:BOOL=ON \
+    -D TriKota_ENABLE_TESTS:BOOL=ON \
+</pre>
+
+and do the usual "./cmake-script; make; make install;".
 
 \section trikota_adapters Using TriKota
 
