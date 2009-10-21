@@ -620,7 +620,7 @@
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
-    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="Ifpack" type="LO"/>
     <Dependency name="CTrilinos" type="LR"/>
     <EmailAddresses>
       <Email address="fortrilinos-regression@software.sandia.gov"/>
