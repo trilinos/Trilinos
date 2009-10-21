@@ -554,7 +554,7 @@ namespace Intrepid {
 
 } //namespace Intrepid
 
-/*! \mainpage INTREPID Documentation (ver. Trilinos 10.0)
+/*! \mainpage INTREPID Documentation (Development Version)
  
   \image html intrepid.png
   \image latex intrepid.jpg "Reconnaissance balloon ``Intrepid''" width=1in
