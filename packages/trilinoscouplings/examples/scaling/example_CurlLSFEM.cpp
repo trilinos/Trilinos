@@ -110,6 +110,7 @@
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_VectorOut.h"
 
 // AztecOO includes
 #include "AztecOO.h"
@@ -668,6 +669,18 @@ int main(int argc, char *argv[]) {
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
     Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
 
+    
+   // Build the coordinate vectors for ML solver (including owned nodes only)
+    Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
+    for(int i=0,nlid=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) {
+	Nx[nlid]=nodeCoordx[i];
+	Ny[nlid]=nodeCoordy[i];
+	Nz[nlid]=nodeCoordz[i];
+	nlid++;
+      }
+    
+
  // Print mesh size information
   if (MyPID == 0) {
     std::cout << " Number of Elements: " << numElemsGlobal << " \n";
@@ -759,19 +772,6 @@ int main(int argc, char *argv[]) {
      }   
     
 
-#ifdef DUMP_DATA
-   // Print coords
-    std::stringstream fname;
-      fname << "coords";
-      fname << MyPID << ".dat";
-    FILE *f=fopen(fname.str().c_str(),"w");
-    for (int i=0; i<numNodes; i++) {
-      if (nodeIsOwned[i]) {
-       fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(i,0),nodeCoord(i,1),nodeCoord(i,2));
-      }
-    }
-    fclose(f);
-#endif
 
 // **************************** INCIDENCE MATRIX **************************************
 
@@ -782,17 +782,29 @@ int main(int argc, char *argv[]) {
 
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
 
+    // Grab edge coordinates (for dumping to disk)
+    Epetra_Vector EDGE_X(globalMapC);
+    Epetra_Vector EDGE_Y(globalMapC);
+    Epetra_Vector EDGE_Z(globalMapC);
+
     double vals[2];
-     vals[0]=-1.0; vals[1]=1.0;
-    for (int j=0; j<numEdges; j++){
+    vals[0]=-1.0; vals[1]=1.0;
+    for (int j=0, elid=0; j<numEdges; j++){
       if (edgeIsOwned[j]){
         int rowNum = globalEdgeIds[j];
         int colNum[2];
         colNum[0] = globalNodeIds[edgeToNode(j,0)];
         colNum[1] = globalNodeIds[edgeToNode(j,1)];
         DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, vals);
+	EDGE_X[elid] = (nodeCoordx[edgeToNode(j,0)] + nodeCoordx[edgeToNode(j,1)])/2.0;
+	EDGE_Y[elid] = (nodeCoordy[edgeToNode(j,0)] + nodeCoordy[edgeToNode(j,1)])/2.0;
+	EDGE_Z[elid] = (nodeCoordz[edgeToNode(j,0)] + nodeCoordz[edgeToNode(j,1)])/2.0;
+	elid++;
       }
     }
+
+
+
 
 
 // ************************************ CUBATURE **************************************
@@ -919,7 +931,7 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix StiffC(Copy, globalMapC, numFieldsC);
     Epetra_FEVector rhsC(globalMapC);
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATAE
     std::stringstream eSignfname;
       eSignfname << "edgeSigns";
       eSignfname << MyPID << ".dat";
@@ -965,7 +977,7 @@ int main(int argc, char *argv[]) {
         }
 
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATAE
      for (int j=0; j<numEdgesPerElem; j++) {
         fSignsout << hexEdgeSigns(0,j) << "  ";
       } 
@@ -1202,7 +1214,21 @@ int main(int argc, char *argv[]) {
     rhsC.GlobalAssemble();
 
     DGrad.GlobalAssemble(globalMapG,globalMapC); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap()); 
-    //DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());     
+
+#ifdef DUMP_DATA
+    // Node Coordinates
+    EpetraExt::VectorToMatrixMarketFile("coords.y.dat",Ny);
+    EpetraExt::VectorToMatrixMarketFile("coords.z.dat",Nz);
+    
+    // Edge Coordinates
+    EpetraExt::VectorToMatrixMarketFile("ecoords.x.dat",EDGE_X);
+    EpetraExt::VectorToMatrixMarketFile("ecoords.y.dat",EDGE_Y);
+    EpetraExt::VectorToMatrixMarketFile("ecoords.z.dat",EDGE_Z);     
+#endif
+
+
+
+
 
    // Adjust matrix due to Dirichlet boundary conditions
     int numBCEdges=0;
@@ -1254,9 +1280,10 @@ int main(int argc, char *argv[]) {
    double TotalErrorResidual=0, TotalErrorExactSol=0;   
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
-   MLList2.set("x-coordinates",nodeCoordx);
-   MLList2.set("y-coordinates",nodeCoordy);
-   MLList2.set("z-coordinates",nodeCoordz);   
+   MLList2.set("aggregation: type","Uncoupled-MIS");
+   MLList2.set("x-coordinates",&Nx[0]);
+   MLList2.set("y-coordinates",&Ny[0]);
+   MLList2.set("z-coordinates",&Nz[0]);   
    MLList2.set("ML output",10);
    MLList2.set("smoother: sweeps (level 0)",3);
    MLList2.set("smoother: sweeps",3);
@@ -1277,9 +1304,9 @@ int main(int argc, char *argv[]) {
    dummy.set("repartition: min per proc",1000);
    dummy.set("repartition: max min ratio",1.4);
    dummy.set("repartition: Zoltan dimensions",3);
-   dummy.set("x-coordinates",nodeCoordx);
-   dummy.set("y-coordinates",nodeCoordy);
-   dummy.set("z-coordinates",nodeCoordz);   
+   dummy.set("x-coordinates",&Nx[0]);
+   dummy.set("y-coordinates",&Ny[0]);
+   dummy.set("z-coordinates",&Nz[0]);   
    MLList2.set("edge matrix free: coarse",dummy);
    
   if (MyPID == 0) {
@@ -1471,7 +1498,7 @@ int main(int argc, char *argv[]) {
   }
 
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATAE
    fSignsout.close();
 #endif
  // delete mesh
@@ -1522,7 +1549,7 @@ int main(int argc, char *argv[]) {
 /*************************************************************************************/
 /*************************************************************************************/
 /*************************************************************************************/
-// Multiplies Ax = y, where all non-zero entries of A are replaces with the value 1.0
+// Multiplies Ax = y, where all non-zero entries of A are replaced with the value 1.0
 int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
   if(!A.Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
@@ -1632,6 +1659,9 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   //  printf("# BC edges = %d\n",numBCedges);
   ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
 
+  if(!CurlCurl.Comm().MyPID())
+    cout<<"Total number of rows = "<<CurlCurl.NumGlobalRows()<<endl;
+
   /* Build the (1,1) Block Operator */
   ML_Epetra::ML_RefMaxwell_11_Operator Operator11(CurlCurl,D0,M0inv,M1);
   
@@ -1664,7 +1694,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 
   for(int i=0;i<CurlCurl.NumMyRows();i++) {
     Diagonal[i]=Diagonal[i]*(EdgeDiagonal[i]*EdgeDiagonal[i]) + CurlDiagonal[i];
-    if(ABS(Diagonal[i]-1.0)<1e-12) Diagonal[i]=2.0;
+    if(ABS(Diagonal[i])<1e-12) Diagonal[i]=1.0;
   }
 
   /* Build the EMFP Preconditioner */  
@@ -1698,6 +1728,9 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 
     xh = *lhs;
 
+    // Cleanup
+    delete TMT_Agg_Matrix;
+    delete [] BCedges;
 }
 
 // Calculates value of exact solution u
