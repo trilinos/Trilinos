@@ -417,7 +417,7 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob,
   inConstructor_ = prevInConstructor;  // Revert to previous value
 
   return(0);
-
+  
 }
 
 
@@ -428,6 +428,8 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   if (UserOperator == 0) EPETRA_CHK_ERR(-1);
 
   if (Amat_ != 0) {
+    if(Prec_ && Prec_->Pmat && Prec_->Pmat==Amat_)
+      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);       
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;
   }
@@ -512,8 +514,6 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
   if (PrecMatrix == 0 && inConstructor_ == true) return(0);
   if (PrecMatrix == 0) EPETRA_CHK_ERR(-1);
   if (Prec_!=0) {
-    if(Prec_->Pmat)
-      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);   
     AZ_precond_destroy(&Prec_); 
     Prec_ = 0;
   }
@@ -542,9 +542,7 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
     
 
-    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
-
-
+  Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
   return(0);
 }
 
