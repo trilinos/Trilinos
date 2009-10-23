@@ -185,11 +185,7 @@ void AztecOO::DeleteMemory() {
 		    proc_config_, Scaling_);
   }  
   
-  if (Prec_!=0) {
-    if(Prec_->Pmat)
-      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);   
-    AZ_precond_destroy(&Prec_); Prec_ = 0;
-  }
+  if (Prec_!=0) {AZ_precond_destroy(&Prec_); Prec_ = 0;}
   if (Pmat_ != 0) {
     AZ_rm_context(options_,params_,Pmat_->data_org);
     AZ_matrix_destroy(&Pmat_); Pmat_ = 0;
@@ -417,7 +413,7 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob,
   inConstructor_ = prevInConstructor;  // Revert to previous value
 
   return(0);
-  
+
 }
 
 
@@ -428,8 +424,6 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   if (UserOperator == 0) EPETRA_CHK_ERR(-1);
 
   if (Amat_ != 0) {
-    if(Prec_ && Prec_->Pmat && Prec_->Pmat==Amat_)
-      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);       
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;
   }
@@ -542,7 +536,9 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
     
 
-  Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
+    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
+
+
   return(0);
 }
 
@@ -555,18 +551,15 @@ int AztecOO::SetPrecOperator(Epetra_Operator * PrecOperator) {
 
   // Get rid of any other preconditioner
   if (Prec_!=0) {
-    if(Prec_->Pmat)
-      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);   
     AZ_precond_destroy(&Prec_); 
     Prec_ = 0;
   }
   if (Pmat_ != 0) {
-    AZ_rm_context(options_,params_,Pmat_->data_org);
     AZ_matrix_destroy(&Pmat_);
     Pmat_ = 0;
   }
 
-  if (PrecOperatorData_!=0) delete PrecOperatorData_;
+	if (PrecOperatorData_!=0) delete PrecOperatorData_;
   PrecOperatorData_ = new OperatorData(PrecOperator); // Initialize preconditioner operator data
   SetProcConfig(PrecOperator->Comm());
 
@@ -773,8 +766,6 @@ int AztecOO::ConstructPreconditioner(double & condest)
 int AztecOO::DestroyPreconditioner() {
 
   if (Prec_!=0) {
-    if(Prec_->Pmat)
-      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);   
     AZ_precond_destroy(&Prec_);
     Prec_ = 0;
     options_[AZ_pre_calc] = AZ_calc;
@@ -891,7 +882,7 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
   SetAztecOption(AZ_max_iter, MaxIters);
   SetAztecParam(AZ_tol, Tolerance);
 
-
+  
   int prec_allocated = 0;
   if (Prec_ == 0) {
     if (options_[AZ_precond] == AZ_user_precond) EPETRA_CHK_ERR(-10); // Cannot have user prec==0
@@ -911,8 +902,6 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
 	     Amat_, Prec_, Scaling_);
 
   if (prec_allocated == 1) {
-    if(Prec_->Pmat)
-      AZ_rm_context(options_,params_,Prec_->Pmat->data_org);   
     AZ_precond_destroy(&Prec_);
     Prec_ = 0;
     prec_allocated = 0;
