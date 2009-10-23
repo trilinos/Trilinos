@@ -32,6 +32,46 @@
 #include <stdio.h>
 #include <TPI.h>
 
+#if defined( HAVE_MPI )
+#include <mpi.h>
+#endif
+
+int test_c_tpi_dnax( int , int );
+
+int main( int argc , char ** argv )
+{
+  int num_thread[] = { 1 , 2 , 4 , 6 , 8 , 12 , 16 };
+  int num_test = sizeof(num_thread) / sizeof(int);
+ 
+  const int ntrial = 1 < argc ? atoi( argv[1] ) : 2 ;
+  int i ;
+
+#if defined( HAVE_MPI )
+  int rank ;
+ 
+  MPI_Init( & argc , & argv );
+  MPI_Comm_rank( MPI_COMM_WORLD , & rank );
+  if ( 0 == rank ) {
+#endif
+
+
+  fprintf( stdcout , "\"TESTING Multiarray 'axpby' with: %s\"\n" ,
+           TPI_Version() );
+ 
+  for ( i = 0 ; i < num_test ; ++i ) {
+    test_c_tpi_dnax( num_thread[i] , ntrial );
+  }
+
+#if defined( HAVE_MPI )
+  }
+  MPI_Finalize();
+#endif
+ 
+  return 0 ;
+}
+
+/*------------------------------------------------------------------------*/
+
 typedef double SCALAR ;
 
 /*------------------------------------------------------------------------*/

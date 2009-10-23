@@ -34,15 +34,22 @@
 /*--------------------------------------------------------------------*/
 /*----------- PTHREAD CONFIGURATION (BEGIN) --------------------------*/
 /*--------------------------------------------------------------------*/
+/*  Performance is heavily impacted by an
+ *  atomic decrement of the work counter.
+ *  Optimize this if at all possible.
+ */
 
 #if	defined( HAVE_PTHREAD )
 
-#if	defined( __linux__ ) && \
-	defined( __GNUC__ ) && \
-	( 4 <= __GNUC__ ) && \
-	! defined( __INTEL_COMPILER )
+#if	defined( __INTEL_COMPILER )
 
-#define HAVE_ATOMIC_SYNC
+#define THREADPOOL_CONFIG "PTHREAD SCHED_YIELD"
+
+#elif	defined( __linux__ ) && \
+	defined( __GNUC__ ) && ( 4 <= __GNUC__ )
+
+#define atomic_fetch_and_decrement( VALUE_PTR )	\
+	__sync_fetch_and_sub( VALUE_PTR , 1 )
 
 #define THREADPOOL_CONFIG "PTHREAD SCHED_YIELD ATOMIC_SYNC"
 
@@ -79,17 +86,7 @@ enum { LOCK_COUNT_MAX   = 32 };
 #include <pthread.h>
 #include <sched.h>
 
-/*  Performance is heavily impacted by an
- *  atomic decrement of the work counter.
- *  Optimize this if at all possible.
- */
-
-#if defined( HAVE_ATOMIC_SYNC )
-
-#define atomic_fetch_and_decrement( VALUE_PTR )	\
-	__sync_fetch_and_sub( VALUE_PTR , 1 )
-
-#else
+#if ! defined( atomic_fetch_and_decrement )
 
 static int atomic_fetch_and_decrement( volatile int * value )
 {
@@ -454,10 +451,13 @@ int TPI_Run( TPI_work_subprogram work_subprogram  ,
       w.info       = work_info ;
       w.count      = work_count ;
       w.lock_count = lock_count ;
+      thread_pool.m_lock_count = lock_count ;
 
       for ( w.rank = 0 ; w.rank < w.count ; ++( w.rank ) ) {
         (* work_subprogram)( & w );
       }
+
+      thread_pool.m_lock_count = 0 ;
     }
   }
 
@@ -596,13 +596,7 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
 
 int TPI_Init( int n )
 {
-  static int first_pass = 1 ;
   int result = thread_pool.m_thread_count ? TPI_ERROR_ACTIVE : 0 ;
-
-  if ( first_pass ) {
-    fprintf( stdout , TPI_Version() );
-    first_pass = 0 ;
-  }
 
   if ( ! result && ( n < 1 || THREAD_COUNT_MAX + 1 <= n ) ) {
     result = TPI_ERROR_SIZE ;

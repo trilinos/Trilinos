@@ -106,7 +106,7 @@ void (*TPI_reduce_init)( TPI_Work * work );
  *   once as the 'reduce' argument of a call to the join function.
  */
 typedef
-void (*TPI_reduce_join)( TPI_Work * work , void * reduce );
+void (*TPI_reduce_join)( TPI_Work * work , const void * reduce );
 
 /** \brief Run a work subprogram in thread parallel.
  *

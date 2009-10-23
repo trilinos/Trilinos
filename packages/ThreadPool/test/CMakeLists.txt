@@ -2,9 +2,16 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE(
-  test_tpi_c
+  test_tpi_unit
+  COMM serial mpi
+  SOURCES test_tpi_unit.c
+  DIRECTORY .
+  )
+
+PACKAGE_ADD_EXECUTABLE(
+  test_c_dnax
   COMM serial
-  SOURCES test_main.c test_c_dnax.c test_tpi_unit.c
+  SOURCES test_c_dnax.c
   DIRECTORY .
   )
 
@@ -23,9 +30,17 @@ PACKAGE_ADD_EXECUTABLE(
   )
 
 PACKAGE_ADD_TEST(
-  test_tpi_c
-  NAME test_tpi_c
+  test_tpi_unit
+  NAME test_tpi_unit_serial
   COMM serial
+  DIRECTORY .
+  )
+
+PACKAGE_ADD_TEST(
+  test_tpi_unit
+  NAME test_tpi_unit_mpi
+  COMM mpi
+  NUM_MPI_PROCS 1
   DIRECTORY .
   )
 
