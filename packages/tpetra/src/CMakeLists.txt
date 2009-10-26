@@ -45,6 +45,7 @@ APPEND_SET(HEADERS
   Tpetra_Export.hpp
   Tpetra_Import.hpp
   Tpetra_ImportExportData.hpp
+  Tpetra_InverseOperator.hpp
   Tpetra_Map.hpp
   Tpetra_MapDecl.hpp
   Tpetra_MultiVector.hpp
