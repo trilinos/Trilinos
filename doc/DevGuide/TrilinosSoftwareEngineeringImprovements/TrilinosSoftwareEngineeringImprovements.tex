@@ -34,8 +34,8 @@ Sandia National Laboratories, Albuquerque NM 87185-1318 USA \\ }
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2008-xxx}
-\SANDprintDate{October 2008}
+\SANDnum{SAND2009-xxx}
+\SANDprintDate{October 2009}
 \SANDauthor{Roscoe A. Bartlett and Jim M. Willenbring}
 
 % ---------------------------------------------------------------------------- %
@@ -1538,41 +1538,7 @@ packages ...
 % Appendices should be stand-alone for SAND reports. If there is only
 % one appendix, put \setcounter{secnumdepth}{0} after \appendix
 %
-\appendix
-
-%
-{}\section{Problems with the current Trilinos build system and test
-harness}
-%
-
-\begin{itemize}
-
-{}\item The perl runtests script does not allow not differentiate
-tests with the same test name but different argument lists.
-
-  \begin{itemize}
-
-  {}\item This makes it very hard to figure out exactly what the test
-  is testing from looking at the results output.
-
-  {}\item It makes it hard to track down exactly what test output to
-  look at locally (i.e. you have to count 0, 1, 2, 3, ...).
-
-  {}\item This can result in a significant under reporting of errors
-  in the emails for instance (e.g. it says that only the
-  {}\texttt{Rythmos\_ConvergenceTest.exe} is failing on exetazo when
-  in actuality, all 5 runs with different input arguments are failing.
-
-  \end{itemize}
-
-{}\item The build failure detection and disabling feature is very
-fragile and requires specific modifications in each and every package
-to work.
-
-NOTE:We need a system that will automatically handle that does not
-require any changes to specific packages ...
-
-\end{itemize}
+%\appendix
 
 
 \begin{SANDdistribution}[NM]
