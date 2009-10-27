@@ -630,6 +630,9 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       cmakeBaseOptions.append("-DTPL_ENABLE_MPI:BOOL=ON")
   
     cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
+
+    if inOptions.ctestTimeOut:
+      cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
   
     cmakeBaseOptions.extend(extraCMakeOptions)
 

@@ -288,6 +288,10 @@ clp.add_option(
   help="Extra options to pass to 'ctest'." )
 
 clp.add_option(
+  "--ctest-time-out", dest="ctestTimeOut", type="float", default=None,
+  help="Time-out (in seconds) for each single 'ctest' test." )
+
+clp.add_option(
   "--show-all-tests", dest="showAllTests", action="store_true",
   help="Show all of the tests in the summary email." )
 clp.add_option(
@@ -418,6 +422,8 @@ else:
 print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
 print "  --make-options='"+options.makeOptions+"' \\"
 print "  --ctest-options='"+options.ctestOptions+"' \\"
+if options.ctestTimeOut:
+  print "  --ctest-time-out="+str(options.ctestTimeOut)+" \\"
 if options.showAllTests:
   print "  --show-all-tests \\"
 else:

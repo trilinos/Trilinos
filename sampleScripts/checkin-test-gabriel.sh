@@ -30,6 +30,7 @@ echo "-DTrilinos_ENABLE_Sundance:BOOL=OFF" > SERIAL_RELEASE.config
 /home/rabartl/PROJECTS/Trilinos.base/Trilinos/cmake/python/checkin-test.py \
 --make-options="-j4" \
 --ctest-options="-j4" \
+--ctest-time-out=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
 
