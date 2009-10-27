@@ -51,6 +51,9 @@ private:
     Teuchos::RCP<Epetra_MultiVector> model_dgdp;
     int numParameters;
     int numResponses;
+    bool supportsSensitivities;
+    EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation orientation;
+
 };
 
 } // namespace TriKota

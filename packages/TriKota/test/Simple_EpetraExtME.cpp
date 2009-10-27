@@ -1,4 +1,4 @@
-#include "Simple_ModelEval.hpp"
+#include "Simple_EpetraExtME.hpp"
 
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
@@ -117,13 +117,16 @@ void Simple_ModelEval::evalModel( const InArgs& inArgs,
   if (!is_null(g_out)) {
     (*g_out)[0] = 1.0 - (*p_in)[0];
     (*g_out)[1] = 1.2 - (*p_in)[1];
-    (*g_out)[2] = 4.0 - (*p_in)[2];
+    (*g_out)[2] = 4.0 - (*p_in)[2] - 0.5* (1.0 - (*p_in)[0]);
   }
 
   if (dgdp_out != Teuchos::null) {
+     // Must initialize since Thyra will init with NaN
+     dgdp_out->PutScalar(0.0);
+     // Set gradient of above g equations (derived by hand)
      for (int i=0; i<numParameters; i++) {
        (*dgdp_out)[i][i] = -1.0;
      }
+     (*dgdp_out)[0][2] = 0.5; //DERIV_BY_COL: [p][g]
    }
-
 } 

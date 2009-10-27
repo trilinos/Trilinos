@@ -5,14 +5,16 @@
 
 
 using namespace Dakota;
+typedef Thyra::ModelEvaluatorBase MEB;
+
 
 // Define interface class
 TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
               ProblemDescDB& problem_db_,
               const Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > App_)
-              //const Teuchos::RCP<Thyra::ModelEvaluator<double> > App_)
   : Dakota::DirectApplicInterface(problem_db_),
-    App(App_)
+    App(App_),
+    orientation(MEB::DERIV_MV_BY_COL)
 {
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -21,20 +23,38 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
     model_p = Thyra::createMember<double>(App->get_p_space(0));
     model_g = Thyra::createMember<double>(App->get_g_space(0));
 
-    Thyra::DetachedSpmdVectorView<double> my_p(model_p);
-    Thyra::DetachedSpmdVectorView<double> my_g(model_g);
+    Thyra::DetachedVectorView<double> my_p(model_p);
+    Thyra::DetachedVectorView<double> my_g(model_g);
     
     numParameters = my_p.subDim();
     numResponses  = my_g.subDim();
 
-    // Create the MultiVector
-    model_dgdp = Thyra::createMembers<double>(App->get_p_space(0), numResponses);
-
     *out << "TriKota:: ModeEval has " << numParameters <<
             " parameters and " << numResponses << " responses." << std::endl;
 
+    MEB::DerivativeSupport supportDgDp = App->createOutArgs().supports(MEB::OUT_ARG_DgDp, 0, 0);
+    supportsSensitivities = !(supportDgDp.none());
+
+    // Create the MultiVector, then the Derivative object
+    if (supportsSensitivities) {
+      *out << "TriKota:: ModeEval supports gradients calculation." << std::endl;
+
+      if (supportDgDp.supports(MEB::DERIV_TRANS_MV_BY_ROW)) {
+        orientation = MEB::DERIV_TRANS_MV_BY_ROW;
+        model_dgdp = Thyra::createMembers<double>(App->get_p_space(0), numResponses);
+      }
+      else if (supportDgDp.supports(MEB::DERIV_MV_BY_COL)) {
+        orientation = MEB::DERIV_MV_BY_COL;
+        model_dgdp = Thyra::createMembers<double>(App->get_g_space(0), numParameters);
+      }
+      else {
+        TEST_FOR_EXCEPTION(!supportDgDp.none(), std::logic_error,
+              "TriKota Adapter Error: DgDp data type not implemented");
+      }
+    }
+
     *out << "TriKota:: Setting initial guess from Model Evaluator to Dakota " << std::endl;
-    const Thyra::ConstDetachedSpmdVectorView<double> my_pinit(App->getNominalValues().get_p(0));
+    const Thyra::ConstDetachedVectorView<double> my_pinit(App->getNominalValues().get_p(0));
     for (int i=0; i<numParameters; i++) my_p[i] = my_pinit[i];
 
     Model& first_model = *(problem_db_.model_list().begin());
@@ -62,7 +82,7 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
 
   if (App != Teuchos::null) {
 
-    // test for consistency of problem definition between ModelEval and Dakota
+    // Test for consistency of problem definition between ModelEval and Dakota
     TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
     TEST_FOR_EXCEPTION(numADV != 0, std::logic_error,
@@ -72,56 +92,49 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgs = App->createInArgs();
-    Thyra::ModelEvaluatorBase::OutArgs<double> outArgs = App->createOutArgs();
-
-    bool supportsSensitivities = 
-      !outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, 0, 0).none();
-    //   false;
+    MEB::InArgs<double> inArgs = App->createInArgs();
+    MEB::OutArgs<double> outArgs = App->createOutArgs();
 
     TEST_FOR_EXCEPTION(gradFlag && !supportsSensitivities, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
 
-//    TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
-//                       != App->MyMPIComm(), std::logic_error,
-//     "TriKota Parallelism Error: derived_map_ac called with different MPI_comm");
- 
-
     // Load parameters from Dakota to ModelEval data structure
-    Thyra::DetachedSpmdVectorView<double> my_p(model_p);
-    Thyra::DetachedSpmdVectorView<double> my_g(model_g);
-    for (int i=0; i<numVars; i++) my_p[i]=xC[i];
-
-    if (gradFlag) {
-      for (int j=0; j<numFns; j++) {
-        Thyra::DetachedSpmdVectorView<double> my_dgdp_j(model_dgdp->col(j));
-        for (int i=0; i<numVars; i++) {
-           my_dgdp_j[i] = 0.0;
-        }
-      }
+    {
+      Thyra::DetachedVectorView<double> my_p(model_p);
+      for (int i=0; i<numVars; i++) my_p[i]=xC[i];
     }
 
     // Evaluate model
     inArgs.set_p(0,model_p);
     outArgs.set_g(0,model_g);
-    if (gradFlag) outArgs.set_DgDp(0,0,model_dgdp);
+    if (gradFlag) outArgs.set_DgDp(0,0,
+          MEB::DerivativeMultiVector(model_dgdp,orientation));
     App->evalModel(inArgs, outArgs);
 
+    Thyra::DetachedVectorView<double> my_g(model_g);
     for (int j=0; j<numFns; j++) fnVals[j]= my_g[j];
 
     if (gradFlag) {
-      for (int j=0; j<numFns; j++) {
-        Thyra::DetachedSpmdVectorView<double> my_dgdp_j(model_dgdp->col(j));
-        for (int i=0; i<numVars; i++) {
-          fnGrads[j][i]= my_dgdp_j[i];
+      if (orientation == MEB::DERIV_MV_BY_COL) {
+        for (int j=0; j<numVars; j++) {
+          Thyra::DetachedVectorView<double>
+             my_dgdp_j(model_dgdp->col(j));
+          for (int i=0; i<numFns; i++)  fnGrads[i][j]= my_dgdp_j[i];
+        }
+      }
+      else {
+        for (int j=0; j<numFns; j++) {
+          Thyra::DetachedVectorView<double>
+             my_dgdp_j(model_dgdp->col(j));
+          for (int i=0; i<numVars; i++) fnGrads[j][i]= my_dgdp_j[i]; 
         }
       }
     }
   }
   else {
     TEST_FOR_EXCEPTION(parallelLib.parallel_configuration().ea_parallel_level().server_intra_communicator()
-                       != MPI_COMM_NULL, std::logic_error,
-                      "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");
+               != MPI_COMM_NULL, std::logic_error,
+              "\nTriKota Parallelism Error: ModelEvaluator=null, but analysis_comm != MPI_COMMM_NULL");
   }
 
   return 0;
@@ -134,11 +147,5 @@ int TriKota::ThyraDirectApplicInterface::derived_map_of(const Dakota::String& ac
 
   // WARNING:: For some reason, this method is not being called!
   *out << "Finished Dakota NLS Fitting!: " << std::setprecision(5) << std::endl;
-/*
-  model_p->Print(*out << "\nParameters!\n");
-  model_g->Print(*out << "\nResponses!\n");
-  model_dgdp->Print(*out << "\nSensitivities!\n");
-*/
-
   return 0;
 }

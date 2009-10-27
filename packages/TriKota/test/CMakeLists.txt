@@ -8,11 +8,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  TriKota_Simple
+  SimpleEpetraExtME
   SOURCES 
-  Simple_Main.cpp
-  Simple_ModelEval.cpp
-  Simple_ModelEval.hpp
+  Main_SimpleEpetraExtME.cpp
+  Simple_EpetraExtME.cpp
+  Simple_EpetraExtME.hpp
   COMM serial mpi
   NUM_MPI_PROCS 2
   ARGS -v
@@ -23,15 +23,15 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TriKotaSimpleCopyDakotaIn
   DEST_FILES   dakota.in
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"
-  EXEDEPS  TriKota_Simple 
+  EXEDEPS  SimpleEpetraExtME
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  TriKota_ThyraME
+  SimpleThyraME
   SOURCES 
-  Main_ThyraME.cpp
-  Simple_ModelEval.cpp
-  Simple_ModelEval.hpp
+  Main_SimpleThyraME.cpp
+  Simple_EpetraExtME.cpp
+  Simple_EpetraExtME.hpp
   COMM serial mpi
   NUM_MPI_PROCS 2
   ARGS -v
@@ -42,5 +42,24 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TriKotaThyraMECopyDakotaIn
   DEST_FILES   dakota.in
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"
-  EXEDEPS  TriKota_ThyraME
+  EXEDEPS  SimpleThyraME
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ParallelDiagonalThyraME 
+  SOURCES 
+  Main_ParallelDiagonalThyraME.cpp
+  Diagonal_ThyraROME_def.hpp
+  Diagonal_ThyraROME.hpp
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  ARGS -v
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(TriKotaParallelDiagonalThyraMECopyDakotaIn
+  DEST_FILES   dakota_conmin.in
+  SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
+  SOURCE_PREFIX "_"
+  EXEDEPS ParallelDiagonalThyraME
   )

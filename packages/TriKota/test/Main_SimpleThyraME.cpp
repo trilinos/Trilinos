@@ -1,5 +1,5 @@
 
-#include "Simple_ModelEval.hpp"
+#include "Simple_EpetraExtME.hpp"
 
 #include "TriKota_Driver.hpp"
 #include "TriKota_ThyraDirectApplicInterface.hpp"
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     
     // Construct a ModelEvaluator for your application with the
     // MPI_Comm chosen by Dakota. This example ModelEvaluator 
-    // only takes an input file name and MPI_Comm to construct.
+    // only takes an MPI_Comm to construct.
     
     Teuchos::RCP<EpetraExt::ModelEvaluator> 
       App = Teuchos::rcp(new Simple_ModelEval(dakota.getAnalysisComm()));
