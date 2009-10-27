@@ -13,6 +13,7 @@ PACKAGE_ADD_LIBRARY(
   thyra_nonlinear_test_models
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS thyra
   TESTONLY
   )
 

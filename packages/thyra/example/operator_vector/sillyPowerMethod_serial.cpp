@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 
     TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
 
-    int maxNumIters = as<int>(maxItersDimFactor*dim);
+    int maxNumIters = static_cast<int>(maxItersDimFactor*dim);
     
 #if defined(HAVE_THYRA_FLOAT)
     // Run using float
