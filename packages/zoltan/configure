@@ -2886,6 +2886,24 @@ else
 fi
 
 
+HAVE_MPI_CC="no"
+HAVE_MPI_CXX="no"
+HAVE_MPI_F77="no"
+HAVE_MPI_F90="no"
+
+if test "X${MPI_CC}" != "X" ; then
+  HAVE_MPI_CC="yes"
+fi
+if test "X${MPI_CXX}" != "X" ; then
+  HAVE_MPI_CXX="yes"
+fi
+if test "X${MPI_F77}" != "X" ; then
+  HAVE_MPI_F77="yes"
+fi
+if test "X${MPI_F90}" != "X" ; then
+  HAVE_MPI_F90="yes"
+fi
+
 
 # Check whether --with-mpi-compilers was given.
 if test "${with_mpi_compilers+set}" = set; then
@@ -2893,9 +2911,11 @@ if test "${with_mpi_compilers+set}" = set; then
   if test X${withval} != Xno; then
     HAVE_PKG_MPI=yes
     if test X${withval} = Xyes; then
-      # Check for mpicxx, if it does not exist, check for mpic++, if it does
-      # not exist, use mpiCC instead.
-      # Extract the first word of "mpicxx", so it can be a program name with args.
+
+      if test $HAVE_MPI_CXX == "no" ; then
+        # Check for mpicxx, if it does not exist, check for mpic++, if it does
+        # not exist, use mpiCC instead.
+        # Extract the first word of "mpicxx", so it can be a program name with args.
 set dummy mpicxx; ac_word=$2
 { $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -2933,8 +2953,8 @@ $as_echo "no" >&6; }
 fi
 
 
-      if test X${MPI_TEMP_CXX} = Xno; then
-	# Extract the first word of "mpic++", so it can be a program name with args.
+        if test X${MPI_TEMP_CXX} = Xno; then
+    	  # Extract the first word of "mpic++", so it can be a program name with args.
 set dummy mpic++; ac_word=$2
 { $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -2972,32 +2992,66 @@ $as_echo "no" >&6; }
 fi
 
 
-      else
-	MPI_CXX=${MPI_TEMP_CXX}
+        else
+  	  MPI_CXX=${MPI_TEMP_CXX}
+        fi
       fi
-      MPI_CC=mpicc
-      MPI_F77=mpif77
-      MPI_F90=mpif90
+
+      if test $HAVE_MPI_CC == "no" ; then
+        MPI_CC=mpicc
+      fi
+      if test $HAVE_MPI_F77 == "no" ; then
+        MPI_F77=mpif77
+      fi
+      if test $HAVE_MPI_F90 == "no" ; then
+        MPI_F90=mpif90
+      fi
+
     else
-      if test -f ${withval}/mpicxx; then
-        MPI_CXX=${withval}/mpicxx
-      elif test -f ${withval}/mpic++; then
-	MPI_CXX=${withval}/mpic++
+      if test $HAVE_MPI_CXX == "no" ; then
+        if test -f ${withval}/mpicxx; then
+          MPI_CXX=${withval}/mpicxx
+        elif test -f ${withval}/mpic++; then
+  	MPI_CXX=${withval}/mpic++
+        else
+          MPI_CXX=${withval}/mpiCC
+        fi
       else
-        MPI_CXX=${withval}/mpiCC
+        if test -f ${withval}/${MPI_CXX}; then
+          MPI_CXX=${withval}/${MPI_CXX}
+        fi
       fi
-      MPI_CC=${withval}/mpicc
-      MPI_F77=${withval}/mpif77
-      MPI_F90=${withval}/mpif90
+      if test $HAVE_MPI_CC == "no" ; then
+        MPI_CC=${withval}/mpicc
+      else
+        if test -f ${withval}/${MPI_CC}; then
+          MPI_CC=${withval}/${MPI_CC}
+        fi
+      fi
+      if test $HAVE_MPI_F77 == "no" ; then
+        MPI_F77=${withval}/mpif77
+      else
+        if test -f ${withval}/${MPI_F77}; then
+          MPI_F77=${withval}/${MPI_F77}
+        fi
+      fi
+      if test $HAVE_MPI_F90 == "no" ; then
+        MPI_F90=${withval}/mpif90
+      else
+        if test -f ${withval}/${MPI_F90}; then
+          MPI_F90=${withval}/${MPI_F90}
+        fi
+      fi
     fi
   fi
 
 else
 
   HAVE_PKG_MPI=yes
-  # Check for mpicxx, if it does not exist, check for mpic++, if it does
-  # not exist, use mpiCC instead.
-  # Extract the first word of "mpicxx", so it can be a program name with args.
+  if test $HAVE_MPI_CXX == "no" ; then
+    # Check for mpicxx, if it does not exist, check for mpic++, if it does
+    # not exist, use mpiCC instead.
+    # Extract the first word of "mpicxx", so it can be a program name with args.
 set dummy mpicxx; ac_word=$2
 { $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -3035,8 +3089,8 @@ $as_echo "no" >&6; }
 fi
 
 
-  if test X${MPI_TEMP_CXX} = Xno; then
-    # Extract the first word of "mpic++", so it can be a program name with args.
+    if test X${MPI_TEMP_CXX} = Xno; then
+      # Extract the first word of "mpic++", so it can be a program name with args.
 set dummy mpic++; ac_word=$2
 { $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -3074,12 +3128,19 @@ $as_echo "no" >&6; }
 fi
 
 
-  else
-    MPI_CXX=${MPI_TEMP_CXX}
+    else
+      MPI_CXX=${MPI_TEMP_CXX}
+    fi
   fi
-  MPI_CC=mpicc
-  MPI_F77=mpif77
-  MPI_F90=mpif90
+  if test $HAVE_MPI_CC == "no" ; then
+    MPI_CC=mpicc
+  fi
+  if test $HAVE_MPI_F77 == "no" ; then
+    MPI_F77=mpif77
+  fi
+  if test $HAVE_MPI_F90 == "no" ; then
+    MPI_F90=mpif90
+  fi
 
 
 fi
@@ -6300,7 +6361,6 @@ rm -f conftest.err conftest.$ac_ext
 #   [AC_MSG_RESULT(no)
 #    echo "-----"
 #    echo "Cannot link simple MPI program."
-#    echo "Try --with-mpi-cxx to specify MPI C++ compile script."
 #    echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
 #    echo "to specify all the specific MPI compile options."
 #    echo "-----"

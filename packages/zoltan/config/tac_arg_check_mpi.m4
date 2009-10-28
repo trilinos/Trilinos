@@ -57,7 +57,6 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
 #   [AC_MSG_RESULT(no)  
 #    echo "-----"
 #    echo "Cannot link simple MPI program."
-#    echo "Try --with-mpi-cxx to specify MPI C++ compile script."
 #    echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
 #    echo "to specify all the specific MPI compile options."
 #    echo "-----"

@@ -29,6 +29,24 @@ AC_ARG_ENABLE(mpi,
 [HAVE_PKG_MPI=yes]
 )
 
+HAVE_MPI_CC="no"
+HAVE_MPI_CXX="no"
+HAVE_MPI_F77="no"
+HAVE_MPI_F90="no"
+
+if test "X${MPI_CC}" != "X" ; then
+  HAVE_MPI_CC="yes"
+fi
+if test "X${MPI_CXX}" != "X" ; then
+  HAVE_MPI_CXX="yes"
+fi
+if test "X${MPI_F77}" != "X" ; then
+  HAVE_MPI_F77="yes"
+fi
+if test "X${MPI_F90}" != "X" ; then
+  HAVE_MPI_F90="yes"
+fi
+
 AC_ARG_WITH(mpi-compilers,
 [AC_HELP_STRING([--with-mpi-compilers=PATH],
 [use MPI compilers mpicc, mpif77, and mpicxx, mpic++ or mpiCC in the specified path or in the default path if no path is specified. Enables MPI])],
@@ -36,44 +54,87 @@ AC_ARG_WITH(mpi-compilers,
   if test X${withval} != Xno; then
     HAVE_PKG_MPI=yes
     if test X${withval} = Xyes; then
-      # Check for mpicxx, if it does not exist, check for mpic++, if it does 
-      # not exist, use mpiCC instead.
-      AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
-      if test X${MPI_TEMP_CXX} = Xno; then
-	AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
-      else 
-	MPI_CXX=${MPI_TEMP_CXX}
+
+      if test $HAVE_MPI_CXX == "no" ; then
+        # Check for mpicxx, if it does not exist, check for mpic++, if it does 
+        # not exist, use mpiCC instead.
+        AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
+        if test X${MPI_TEMP_CXX} = Xno; then
+    	  AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
+        else 
+  	  MPI_CXX=${MPI_TEMP_CXX}
+        fi
       fi
-      MPI_CC=mpicc
-      MPI_F77=mpif77
-      MPI_F90=mpif90
+
+      if test $HAVE_MPI_CC == "no" ; then
+        MPI_CC=mpicc
+      fi
+      if test $HAVE_MPI_F77 == "no" ; then
+        MPI_F77=mpif77
+      fi
+      if test $HAVE_MPI_F90 == "no" ; then
+        MPI_F90=mpif90
+      fi
+
     else
-      if test -f ${withval}/mpicxx; then
-        MPI_CXX=${withval}/mpicxx
-      elif test -f ${withval}/mpic++; then
-	MPI_CXX=${withval}/mpic++
+      if test $HAVE_MPI_CXX == "no" ; then
+        if test -f ${withval}/mpicxx; then
+          MPI_CXX=${withval}/mpicxx
+        elif test -f ${withval}/mpic++; then
+  	MPI_CXX=${withval}/mpic++
+        else
+          MPI_CXX=${withval}/mpiCC
+        fi
       else
-        MPI_CXX=${withval}/mpiCC
+        if test -f ${withval}/${MPI_CXX}; then
+          MPI_CXX=${withval}/${MPI_CXX}
+        fi
       fi
-      MPI_CC=${withval}/mpicc
-      MPI_F77=${withval}/mpif77
-      MPI_F90=${withval}/mpif90
+      if test $HAVE_MPI_CC == "no" ; then
+        MPI_CC=${withval}/mpicc
+      else
+        if test -f ${withval}/${MPI_CC}; then
+          MPI_CC=${withval}/${MPI_CC}
+        fi
+      fi
+      if test $HAVE_MPI_F77 == "no" ; then
+        MPI_F77=${withval}/mpif77
+      else
+        if test -f ${withval}/${MPI_F77}; then
+          MPI_F77=${withval}/${MPI_F77}
+        fi
+      fi
+      if test $HAVE_MPI_F90 == "no" ; then
+        MPI_F90=${withval}/mpif90
+      else
+        if test -f ${withval}/${MPI_F90}; then
+          MPI_F90=${withval}/${MPI_F90}
+        fi
+      fi
     fi
   fi
 ],
 [
   HAVE_PKG_MPI=yes
-  # Check for mpicxx, if it does not exist, check for mpic++, if it does 
-  # not exist, use mpiCC instead.
-  AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
-  if test X${MPI_TEMP_CXX} = Xno; then
-    AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
-  else 
-    MPI_CXX=${MPI_TEMP_CXX}
+  if test $HAVE_MPI_CXX == "no" ; then
+    # Check for mpicxx, if it does not exist, check for mpic++, if it does 
+    # not exist, use mpiCC instead.
+    AC_CHECK_PROG(MPI_TEMP_CXX, mpicxx, mpicxx, no)
+    if test X${MPI_TEMP_CXX} = Xno; then
+      AC_CHECK_PROG(MPI_CXX, mpic++, mpic++, mpiCC)
+    else 
+      MPI_CXX=${MPI_TEMP_CXX}
+    fi
   fi
-  MPI_CC=mpicc
-  MPI_F77=mpif77
-  MPI_F90=mpif90
+  if test $HAVE_MPI_CC == "no" ; then
+    MPI_CC=mpicc
+  fi
+  if test $HAVE_MPI_F77 == "no" ; then
+    MPI_F77=mpif77
+  fi
+  if test $HAVE_MPI_F90 == "no" ; then
+    MPI_F90=mpif90
+  fi
 ]
 )
 
