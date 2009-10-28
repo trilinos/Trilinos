@@ -48,7 +48,6 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI	
   // Initialize MPI	
   MPI_Init(&argc,&argv); 	
-  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif
   //
   using Teuchos::RCP;
@@ -183,6 +182,10 @@ int main(int argc, char *argv[]) {
       if (actRes > tol) badRes = true;
     }
   }
+
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
 
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
