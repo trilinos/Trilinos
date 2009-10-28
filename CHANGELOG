@@ -4,6 +4,17 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.0.2 October 28, 2009
+
+1. Framework level - Fixed an issue with over excluding PyTrilinos files from
+                     the release package
+
+2. Tpetra - Added a missing file to the CMakeLists.txt file.
+
+3. Zoltan - Fix to get FAST/EXACT builds working with F90
+
+-------------------------------------------------------------------------------
+
 Release update 10.0.1 October 14, 2009
 
 Change number.  Package(s) affected - description
