@@ -108,7 +108,7 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     inArgs.set_p(0,model_p);
     outArgs.set_g(0,model_g);
     if (gradFlag) outArgs.set_DgDp(0,0,
-          MEB::DerivativeMultiVector(model_dgdp,orientation));
+      MEB::DerivativeMultiVector<double>(model_dgdp,orientation));
     App->evalModel(inArgs, outArgs);
 
     Thyra::DetachedVectorView<double> my_g(model_g);
