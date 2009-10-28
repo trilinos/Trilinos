@@ -64,7 +64,7 @@ namespace Tpetra {
     </ul>
   */
 
-  template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+  template <class Packet, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class DistObject : public Teuchos::Describable {
 
   public:
@@ -76,7 +76,7 @@ namespace Tpetra {
     explicit DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
     //! copy constructor
-    DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+    DistObject(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source);
 
     //! destructor
     virtual ~DistObject();
@@ -87,19 +87,19 @@ namespace Tpetra {
     //@{ 
 
     //! Import
-    void doImport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source, 
+    void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
                   const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM);
 
     //! Export
-    void doExport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest, 
+    void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest, 
                   const Export<LocalOrdinal,GlobalOrdinal,Node> &exporter, CombineMode CM);
 
     //! Import (using an Exporter)
-    void doImport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source,
+    void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
                   const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
 
     //! Export (using an Importer)
-    void doExport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+    void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest,
                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM);
 
     //@}
@@ -132,7 +132,7 @@ namespace Tpetra {
     };
 
     //! Perform transfer (redistribution) of data across memory images.
-    virtual void doTransfer(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source,
+    virtual void doTransfer(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source,
                             CombineMode CM,
                             size_t numSameIDs,
                             const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
@@ -145,8 +145,8 @@ namespace Tpetra {
     // The following four methods must be implemented by the derived class
 
     //! Allows the source and target (\e this) objects to be compared for compatibility.
-    /*! Return true if they are compatible, return false if they aren't. Also return the number of Scalar variables representing an entry. */ 
-    virtual bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & source, size_t &packetSize) = 0;
+    /*! Return true if they are compatible, return false if they aren't. */ 
+    virtual bool checkSizes(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source) = 0;
 
     //! Perform copies and permutations that are local to this image.
     /*!
@@ -165,7 +165,7 @@ namespace Tpetra {
              On entry, contains a list of the elements that are permuted. (Listed by their LID in the
          source DistObject.)
     */
-    virtual void copyAndPermute(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & source,
+    virtual void copyAndPermute(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source,
                                 size_t numSameIDs,
                                 const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
                                 const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs) = 0;
@@ -179,12 +179,21 @@ namespace Tpetra {
              (Listed by their LID in the source DistObject.)
       \param exports Out
              On exit, buffer for data we will be sending out.
+      \param numPacketsPerLID Out
+             On exit, numPacketsPerLID[i] contains the number of packets to be exported for
+             exportLIDs[i].
+      \param constantNumPackets Out
+             On exit, 0 if numPacketsPerLID has variable contents (different size for each LID).
+             If nonzero, then it is expected that num-packets-per-LID is constant, and
+             constantNumPackets holds that value.
       \param distor In
              On entry, contains the Distributor object we are using.         
     */
-    virtual void packAndPrepare(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & source,
+    virtual void packAndPrepare(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source,
                                 const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-                                const Teuchos::ArrayView<Scalar> &exports,
+                                Teuchos::Array<Packet> &exports,
+                                const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+                                size_t& constantNumPackets,
                                 Distributor &distor) = 0;
 
     //! Perform any unpacking and combining after communication.
@@ -194,13 +203,21 @@ namespace Tpetra {
              (Listed by their LID in the target DistObject.)
       \param imports In
              Buffer containing data we received.
+      \param numPacketsPerLID In
+             numPacketsPerLID[i] contains the number of packets imported for
+             importLIDs[i].
+      \param constantNumPackets In
+             If nonzero, then numPacketsPerLID is constant (same value in all entries)
+             and constantNumPackets is that value.
       \param distor In
              The Distributor object we are using.
       \param CM In
              The Tpetra::CombineMode to use when combining the imported entries with existing entries.
     */
     virtual void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                                  const Teuchos::ArrayView<const Scalar> &imports,
+                                  const Teuchos::ArrayView<const Packet> &imports,
+                                  const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                                  size_t constantNumPackets,
                                   Distributor &distor,
                                   CombineMode CM) = 0;
 
@@ -208,28 +225,30 @@ namespace Tpetra {
 
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
     // buffers into which packed data is imported
-    Teuchos::Array<Scalar> imports_;
+    Teuchos::Array<Packet> imports_;
+    Teuchos::Array<size_t> numImportPacketsPerLID_;
     // buffers from which packed data is exported
-    Teuchos::Array<Scalar> exports_;
+    Teuchos::Array<Packet> exports_;
+    Teuchos::Array<size_t> numExportPacketsPerLID_;
 
   }; // class DistObject
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map)
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & map)
   : map_(map)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & source)
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::DistObject(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source)
   : map_(source.map_)
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~DistObject() 
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::~DistObject() 
   {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, 
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
                                             const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != importer.getTargetMap(), std::runtime_error, "Target Maps don't match.");
@@ -243,8 +262,8 @@ namespace Tpetra {
                      importer.getDistributor(), DoForward);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, 
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A, 
                                             const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, CombineMode CM) 
   {
     TEST_FOR_EXCEPTION( getMap() != exporter.getTargetMap(), std::runtime_error, "Target Maps don't match.");
@@ -258,9 +277,9 @@ namespace Tpetra {
                exporter.getDistributor(), DoForward);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doImport(
-                                                const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A,
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doImport(
+                                                const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
                                                 const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter, 
                                                 CombineMode CM) {
     TEST_FOR_EXCEPTION( getMap() != exporter.getSourceMap(), std::runtime_error, "Target Maps don't match.");
@@ -274,9 +293,9 @@ namespace Tpetra {
                exporter.getDistributor(), DoReverse);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doExport(
-                                                const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A,
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doExport(
+                                                const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & A,
                                                 const Import<LocalOrdinal,GlobalOrdinal,Node> & importer, CombineMode CM) {
     TEST_FOR_EXCEPTION( getMap() != importer.getSourceMap(), std::runtime_error, "Target Maps don't match.");
     TEST_FOR_EXCEPTION( A.getMap() != importer.getTargetMap(), std::runtime_error, "Source Maps don't match.");
@@ -289,20 +308,20 @@ namespace Tpetra {
                importer.getDistributor(), DoReverse);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
     return map_->isDistributed();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
-  DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getMap() const {
+  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::getMap() const {
     return map_;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::doTransfer(
-      const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & source,
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::doTransfer(
+      const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> & source,
       CombineMode CM,
       size_t numSameIDs, 
       const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs, 
@@ -311,32 +330,60 @@ namespace Tpetra {
       const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
       Distributor &distor, ReverseOption revOp) 
   {
-    size_t packetSize;
-    TEST_FOR_EXCEPTION( checkSizes(source,packetSize) == false, std::runtime_error, 
+    TEST_FOR_EXCEPTION( checkSizes(source) == false, std::runtime_error, 
         "Tpetra::DistObject::doTransfer(): checkSizes() indicates that DistOjbects are not size-compatible.");
-    size_t sbufLen = exportLIDs.size()*packetSize;
-    size_t rbufLen = remoteLIDs.size()*packetSize;
-    exports_.resize(sbufLen);
-    imports_.resize(rbufLen);
     if (numSameIDs + permuteToLIDs.size()) {
       copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
     }
-    packAndPrepare(source,exportLIDs,exports_(),distor);
+    size_t constantNumPackets = 0;
+    numExportPacketsPerLID_.resize(exportLIDs.size());
+    numImportPacketsPerLID_.resize(remoteLIDs.size());
+    packAndPrepare(source,exportLIDs,exports_,numExportPacketsPerLID_(),constantNumPackets,distor);
+    if (constantNumPackets != 0) {
+      size_t rbufLen = remoteLIDs.size()*constantNumPackets;
+      imports_.resize(rbufLen);
+    }
     if ((isDistributed() && revOp == DoReverse) || (source.isDistributed() && revOp == DoForward)) 
     {
       // call one of the doPostsAndWaits functions
       if (revOp == DoReverse) {
-        distor.doReversePostsAndWaits(exports_().getConst(),packetSize,imports_());
+        if (constantNumPackets == 0) { //variable num-packets-per-LID:
+          distor.doReversePostsAndWaits(numExportPacketsPerLID_().getConst(), 1,
+                                        numImportPacketsPerLID_());
+          size_t totalImportPackets = 0;
+          for(size_t i=0; i<numImportPacketsPerLID_.size(); ++i) {
+            totalImportPackets += numImportPacketsPerLID_[i];
+          }
+          imports_.resize(totalImportPackets);
+          distor.doReversePostsAndWaits(exports_().getConst(),numExportPacketsPerLID_(),
+                                        imports_(), numImportPacketsPerLID_());
+        }
+        else {
+          distor.doReversePostsAndWaits(exports_().getConst(),constantNumPackets,imports_());
+        }
       }
       else {
-        distor.doPostsAndWaits(exports_().getConst(),packetSize,imports_());
+        if (constantNumPackets == 0) { //variable num-packets-per-LID:
+          distor.doPostsAndWaits(numExportPacketsPerLID_().getConst(), 1,
+                                 numImportPacketsPerLID_());
+          size_t totalImportPackets = 0;
+          for(size_t i=0; i<numImportPacketsPerLID_.size(); ++i) {
+            totalImportPackets += numImportPacketsPerLID_[i];
+          }
+          imports_.resize(totalImportPackets);
+          distor.doPostsAndWaits(exports_().getConst(),numExportPacketsPerLID_(),
+                                 imports_(), numImportPacketsPerLID_());
+        }
+        else {
+          distor.doPostsAndWaits(exports_().getConst(),constantNumPackets,imports_());
+        }
       }
-      unpackAndCombine(remoteLIDs,imports_(),distor,CM);
+      unpackAndCombine(remoteLIDs,imports_(),numImportPacketsPerLID_(), constantNumPackets, distor,CM);
     }
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node>::print(std::ostream &os) const
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::print(std::ostream &os) const
   {
     using std::endl;
     os << "Tpetra::DistObject" << endl

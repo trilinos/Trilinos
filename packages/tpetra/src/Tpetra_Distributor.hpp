@@ -188,6 +188,24 @@ namespace Tpetra {
                          size_t numPackets,
                          const Teuchos::ArrayView<Packet> &imports);
 
+    //! \brief Execute a plan specified by the distributor object.
+    /*! 
+      \param exports [in]
+             Contains the values we're exporting.
+
+      \param numPackets [in]
+             Specifies the number of values per export/import.
+
+      \param imports [out]
+             On entry, buffer must be large enough to accomodate the data exported to us.
+             On exit, contains the values exported to us.
+    */
+    template <class Packet>
+    void doPostsAndWaits(const Teuchos::ArrayView<const Packet> &exports,
+                         const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+                         const Teuchos::ArrayView<Packet> &imports,
+                         const Teuchos::ArrayView<size_t> &numImportPacketsPerLID);
+
     //! \brief Post the data for a distributor plan, but do not execute the waits yet.
     /*! 
       \param exports [in]
@@ -204,6 +222,24 @@ namespace Tpetra {
     void doPosts(const Teuchos::ArrayView<const Packet> &exports,
                  size_t numPackets,
                  const Teuchos::ArrayRCP<Packet> &imports);
+
+    //! \brief Post the data for a distributor plan, but do not execute the waits yet.
+    /*! 
+      \param exports [in]
+             Contains the values to be sent by this node. 
+
+      \param numPackets [in]
+             Specifies the number of scalars per export/import.
+
+      \param imports [out]
+             Buffer must be large enough to accomodate the data exported to us. 
+             The buffer is not guaranteed to be filled until doWaits() is executed.
+    */
+    template <class Packet>
+    void doPosts(const Teuchos::ArrayView<const Packet> &exports,
+                 const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+                 const Teuchos::ArrayRCP<Packet> &imports,
+                 const Teuchos::ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding posts to complete.
     void doWaits();
@@ -225,6 +261,24 @@ namespace Tpetra {
                                 size_t numPackets,
                                 const Teuchos::ArrayView<Packet> &imports);
 
+    //! \brief Execute a reverse plan specified by the distributor object.
+    /*! 
+      \param exports [in]
+             Contains the values to be sent by this node.
+
+      \param numPackets [in]
+             Specifies the number of scalars per export/import.
+
+      \param imports [out]
+             On entry, buffer must be large enough to accomodate the data exported to us.
+             On exit, contains the values exported to us.
+    */
+    template <class Packet>
+    void doReversePostsAndWaits(const Teuchos::ArrayView<const Packet> &exports,
+                                const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+                                const Teuchos::ArrayView<Packet> &imports,
+                                const Teuchos::ArrayView<size_t> &numImportPacketsPerLID);
+
     //! \brief Post the data for a reverse plan, but do not execute the waits yet.
     /*!
       \param exports [in]
@@ -241,6 +295,24 @@ namespace Tpetra {
     void doReversePosts(const Teuchos::ArrayView<const Packet> &exports,
                         size_t numPackets,
                         const Teuchos::ArrayRCP<Packet> &imports);
+
+    //! \brief Post the data for a reverse plan, but do not execute the waits yet.
+    /*!
+      \param exports [in]
+             Contains the values we're exporting.
+
+      \param numPackets [in]
+             Specifies the number of scalars per export/import.
+
+      \param imports [out]
+             Buffer must be large enough to accomodate the data exported to us. 
+             The buffer is not guaranteed to be filled until doWaits() is executed.
+    */
+    template <class Packet>
+    void doReversePosts(const Teuchos::ArrayView<const Packet> &exports,
+                        const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+                        const Teuchos::ArrayRCP<Packet> &imports,
+                        const Teuchos::ArrayView<size_t> &numImportPacketsPerLID);
 
     //! Wait on any outstanding reverse waits to complete.
     void doReverseWaits();
@@ -326,6 +398,22 @@ namespace Tpetra {
     // however, it need only persist until doWaits is called, so it is safe for us to 
     // use a non-persisting reference in this case
     doPosts(exports, numPackets, Teuchos::arcp<Packet>(imports.getRawPtr(),0,imports.size(),false));
+    doWaits();
+  }
+
+  template <class Packet>
+  void Distributor::doPostsAndWaits(
+      const Teuchos::ArrayView<const Packet>& exports,
+      const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+      const Teuchos::ArrayView<Packet> &imports,
+      const Teuchos::ArrayView<size_t> &numImportPacketsPerLID)
+  {
+    TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+        Teuchos::typeName(*this) << "::doPostsAndWaits(): Cannot call with outstanding posts.");
+    // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
+    // however, it need only persist until doWaits is called, so it is safe for us to 
+    // use a non-persisting reference in this case
+    doPosts(exports, numExportPacketsPerLID, Teuchos::arcp<Packet>(imports.getRawPtr(),0,imports.size(),false), numImportPacketsPerLID);
     doWaits();
   }
 
@@ -451,6 +539,162 @@ namespace Tpetra {
     }
   }
 
+  template <class Packet>
+  void Distributor::doPosts(const Teuchos::ArrayView<const Packet>& exports,
+                            const Teuchos::ArrayView<size_t>& numExportPacketsPerLID,
+                            const Teuchos::ArrayRCP<Packet>& imports,
+                            const Teuchos::ArrayView<size_t>& numImportPacketsPerLID) {
+    using Teuchos::ArrayRCP;
+    // start of actual doPosts function
+    const int myImageID = comm_->getRank();
+    size_t selfReceiveOffset = 0;
+
+#ifdef HAVE_TEUCHOS_DEBUG
+    size_t totalNumPackets = 0;
+    for(int ii=0; ii<numImportPacketsPerLID.size(); ++ii) {
+      totalNumPackets += numImportPacketsPerLID[ii];
+    }
+    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != totalNumPackets, std::runtime_error,
+        Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
+#endif
+
+    // allocate space in requests
+    requests_.resize(0);
+    requests_.reserve(numReceives_);
+
+    // start up the Irecv's
+    {
+      size_t curBufferOffset = 0;
+      size_t curLIDoffset = 0;
+      for (size_t i = 0; i < numReceives_ + (selfMessage_ ? 1 : 0); ++i) {
+        size_t totalPacketsFrom_i = 0;
+        for(size_t j=0; j<lengthsFrom_[i]; ++j) {
+          totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+        }
+        curLIDoffset += lengthsFrom_[i];
+        if (imagesFrom_[i] != myImageID) { 
+          // receiving this one from another image
+          // setup reference into imports of the appropriate size and at the appropriate place
+          ArrayRCP<Packet> impptr = imports.persistingView(curBufferOffset,totalPacketsFrom_i);
+          requests_.push_back( Teuchos::ireceive<int,Packet>(*comm_,impptr,imagesFrom_[i]) );
+        }
+        else {
+          // receiving this one from myself 
+          // note that offset
+          selfReceiveOffset = curBufferOffset;
+        }
+        curBufferOffset += totalPacketsFrom_i;
+      }
+    }
+
+    // wait for everyone else before posting ready-sends below to ensure that 
+    // all non-blocking receives above have been posted
+    Teuchos::barrier(*comm_);
+
+    //setup arrays containing starting-offsets into exports for each send,
+    //and num-packets-to-send for each send.
+    Teuchos::Array<size_t> sendPacketOffsets(numSends_,0), packetsPerSend(numSends_,0);
+    size_t maxNumPackets = 0;
+    size_t curPKToffset = 0;
+    for(size_t pp=0; pp<numSends_; ++pp) {
+      sendPacketOffsets[pp] = curPKToffset;
+      size_t numPackets = 0;
+      for(size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
+        numPackets += numExportPacketsPerLID[j];
+      }
+      if (numPackets > maxNumPackets) maxNumPackets = numPackets;
+      packetsPerSend[pp] = numPackets;
+      curPKToffset += numPackets;
+    }
+
+    // setup scan through imagesTo_ list starting with higher numbered images
+    // (should help balance message traffic)
+    size_t numBlocks = numSends_+ selfMessage_;
+    size_t imageIndex = 0;
+    while ((imageIndex < numBlocks) && (imagesTo_[imageIndex] < myImageID)) {
+      ++imageIndex;
+    }
+    if (imageIndex == numBlocks) {
+      imageIndex = 0;
+    }
+
+    size_t selfNum = 0;
+    size_t selfIndex = 0;
+
+    if (indicesTo_.empty()) { // data is already blocked by processor
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) {
+          // sending it to another image
+          Teuchos::ArrayView<const Packet> tmpSend(&exports[sendPacketOffsets[p]],packetsPerSend[p]);
+          Teuchos::readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+        }
+        else {
+          // sending it to ourself
+          selfNum = p;
+        }
+      }
+
+      if (selfMessage_) {
+        std::copy(exports.begin()+sendPacketOffsets[selfNum], exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum], 
+                  imports.begin()+selfReceiveOffset);
+      }
+    }
+    else { // data is not blocked by image, use send buffer
+      // allocate sendArray buffer
+      Teuchos::Array<Packet> sendArray(maxNumPackets); 
+      Teuchos::Array<size_t> indicesOffsets(numExportPacketsPerLID.size(),0);
+      size_t ioffset = 0;
+      for(int j=0; j<numExportPacketsPerLID.size(); ++j) {
+        indicesOffsets[j] = ioffset;
+        ioffset += numExportPacketsPerLID[j];
+      }
+
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + imageIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
+        }
+
+        if (imagesTo_[p] != myImageID) { 
+          // sending it to another image
+          typename Teuchos::ArrayView<const Packet>::iterator srcBegin, srcEnd;
+          size_t sendArrayOffset = 0;
+          size_t j = startsTo_[p];
+          size_t numPacketsTo_p = 0;
+          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
+            srcBegin = exports.begin() + indicesOffsets[j];
+            srcEnd   = srcBegin + numExportPacketsPerLID[j];
+            numPacketsTo_p += numExportPacketsPerLID[j];
+            std::copy( srcBegin, srcEnd, sendArray.begin()+sendArrayOffset );
+            sendArrayOffset += numExportPacketsPerLID[j];
+          }
+          Teuchos::ArrayView<const Packet> tmpSend = sendArray(0,numPacketsTo_p);
+          Teuchos::readySend<int,Packet>(*comm_,tmpSend,imagesTo_[p]);
+        }
+        else { 
+          // sending it to myself
+          selfNum = p;
+          selfIndex = startsTo_[p];
+        }
+      }
+
+      if (selfMessage_) {
+        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
+          std::copy( exports.begin()+indicesOffsets[selfIndex],
+                     exports.begin()+indicesOffsets[selfIndex]+numExportPacketsPerLID[selfIndex],
+                     imports.begin() + selfReceiveOffset );
+          selfReceiveOffset += numExportPacketsPerLID[selfIndex];
+          ++selfIndex;
+        }
+      }
+    }
+  }
+
 
   template <class Packet>
   void Distributor::doReversePostsAndWaits(
@@ -462,6 +706,20 @@ namespace Tpetra {
     // however, it need only persist until doWaits is called, so it is safe for us to 
     // use a non-persisting reference in this case
     doReversePosts(exports, numPackets, Teuchos::arcp<Packet>(imports.getRawPtr(),0,imports.size(),false));
+    doReverseWaits();
+  }
+
+  template <class Packet>
+  void Distributor::doReversePostsAndWaits(
+      const Teuchos::ArrayView<const Packet>& exports,
+       const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+       const Teuchos::ArrayView<Packet> &imports,
+       const Teuchos::ArrayView<size_t> &numImportPacketsPerLID)
+  {
+    // doPosts takes imports as an ArrayRCP, requiring that the memory location is persisting
+    // however, it need only persist until doWaits is called, so it is safe for us to 
+    // use a non-persisting reference in this case
+    doReversePosts(exports, numExportPacketsPerLID, Teuchos::arcp<Packet>(imports.getRawPtr(),0,imports.size(),false),numImportPacketsPerLID);
     doReverseWaits();
   }
 
@@ -478,6 +736,21 @@ namespace Tpetra {
       createReverseDistributor();
     }
     reverseDistributor_->doPosts(exports,numPackets,imports);
+  }
+
+  template <class Packet>
+  void Distributor::doReversePosts(
+      const Teuchos::ArrayView<const Packet>& exports,
+      const Teuchos::ArrayView<size_t>& numExportPacketsPerLID,
+      const Teuchos::ArrayRCP<Packet>& imports,
+      const Teuchos::ArrayView<size_t>& numImportPacketsPerLID) 
+  {
+    TEST_FOR_EXCEPTION(!indicesTo_.empty(),std::runtime_error,
+        Teuchos::typeName(*this) << "::doReversePosts(): Can only do reverse comm when original data is blocked by image.");
+    if (reverseDistributor_ == Teuchos::null) {
+      createReverseDistributor();
+    }
+    reverseDistributor_->doPosts(exports,numExportPacketsPerLID,imports,numImportPacketsPerLID);
   }
 
 

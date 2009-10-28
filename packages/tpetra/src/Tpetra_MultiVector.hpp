@@ -236,11 +236,10 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj, size_t &packetSize) 
+  bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj) 
   {
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(sourceObj);
     // objects maps have already been checked. simply check the number of vectors.
-    packetSize = this->getNumVectors();
     bool compat = (A.getNumVectors() == this->getNumVectors());
     return compat;
   }
@@ -291,23 +290,26 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::packAndPrepare(
           const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> & sourceObj,
           const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-          const Teuchos::ArrayView<Scalar> &exports,
-          Distributor &distor) {
+          Teuchos::Array<Scalar> &exports,
+          const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+          size_t& constantNumPackets,
+          Distributor & /* distor */ ) {
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceMV = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &>(sourceObj);
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
-    (void)distor;    // we don't use these, but we don't want unused parameter warnings
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ; 
                    ....
                    all of the data from row exportLIDs.back() }
       this doesn't have the best locality, but is necessary because the data for a Packet
       (all data associated with an LID) is required to be contiguous */
-    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(exports.size()) != getNumVectors()*exportLIDs.size(), std::runtime_error,
-        "Tpetra::MultiVector::packAndPrepare(): sizing of exports buffer should be appropriate for the amount of data to be exported.");
+    TEST_FOR_EXCEPTION(Teuchos::as<int>(numExportPacketsPerLID.size()) != exportLIDs.size(), std::runtime_error,
+        "Tpetra::MultiVector::packAndPrepare(): size of numExportPacketsPerLID buffer should be the same as exportLIDs.");
     const KMV &srcData = sourceMV.lclMV_;
     const size_t numCols = sourceMV.getNumVectors(),
                   stride = MVT::getStride(srcData);
+    constantNumPackets = numCols;
+    exports.resize(numCols*exportLIDs.size());
     typename ArrayView<const LocalOrdinal>::iterator idptr;
     typename ArrayView<Scalar>::iterator expptr;
     expptr = exports.begin();
@@ -315,17 +317,24 @@ namespace Tpetra {
     ArrayRCP<const Scalar> srcbuff = MVT::getValues(srcData);
     ArrayRCP<const Scalar> srcview = node->template viewBuffer<Scalar>(srcbuff.size(), srcbuff);
     if (sourceMV.isConstantStride()) {
-      for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr) {
+      size_t i = 0;
+      for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr, ++i) {
         for (size_t j = 0; j < numCols; ++j) {
           *expptr++ = srcview[j*stride + (*idptr)];
         }
+        //we shouldn't need to set numExportPacketsPerLID[i] since we have set
+        //constantNumPackets to a nonzero value. But we'll set it anyway, since
+        //I'm not sure if the API will remain the way it is.
+        numExportPacketsPerLID[i] = numCols;
       }
     }
     else {
-      for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr) {
+      size_t i = 0;
+      for (idptr = exportLIDs.begin(); idptr != exportLIDs.end(); ++idptr, ++i) {
         for (size_t j = 0; j < numCols; ++j) {
           *expptr++ = srcview[sourceMV.whichVectors_[j]*stride + (*idptr)];
         }
+        numExportPacketsPerLID[i] = numCols;
       }
     }
     srcview = Teuchos::null;
@@ -336,9 +345,10 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::unpackAndCombine(
                   const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                   const Teuchos::ArrayView<const Scalar> &imports,
-                  Distributor &distor,
+                  const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                  size_t constantNumPackets,
+                  Distributor & /* distor */,
                   CombineMode CM) {
-    (void)distor; // we don't use this, but we don't want unused parameter warnings
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     /* The layout in the export for MultiVectors is as follows:
@@ -351,8 +361,16 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(Teuchos::as<size_t>(imports.size()) != getNumVectors()*importLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::unpackAndCombine(): sizing of imports buffer should be appropriate for the amount of data to be exported.");
 #endif
+    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(constantNumPackets) == 0u, std::runtime_error,
+        "Tpetra::MultiVector::unpackAndCombine(): 'constantNumPackets' input argument should be nonzero.");
+
     const size_t myStride = MVT::getStride(lclMV_),
                  numVecs  = getNumVectors();
+    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(numPacketsPerLID.size()) != Teuchos::as<size_t>(importLIDs.size()), std::runtime_error,
+        "Tpetra::MultiVector::unpackAndCombine(): 'numPacketsPerLID' must have same length as importLIDs.");
+    TEST_FOR_EXCEPTION(Teuchos::as<size_t>(numVecs) != Teuchos::as<size_t>(constantNumPackets), std::runtime_error,
+        "Tpetra::MultiVector::unpackAndCombine(): 'constantNumPackets' must equal numVecs.");
+
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
     Teuchos::ArrayRCP<Scalar> mybuff = MVT::getValuesNonConst(lclMV_);
     // TODO: determine whether this viewBuffer is write-only or not; for now, safe option is not

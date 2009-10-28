@@ -6,6 +6,7 @@ ADD_SUBDIRECTORIES(
   Distributor
   Directory
   ImportExport
+  ImportExport2
   MultiVector
   #BasicPerfTest
   Utils

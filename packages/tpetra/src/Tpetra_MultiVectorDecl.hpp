@@ -287,7 +287,7 @@ namespace Tpetra {
                 Teuchos::ArrayRCP<Scalar> data, size_t LDA, size_t NumVectors);
 
     // four functions needed for DistObject derivation
-    bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj, size_t &packetSize);
+    bool checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj);
 
     void copyAndPermute(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj,
                         size_t numSameIDs,
@@ -296,11 +296,15 @@ namespace Tpetra {
 
     void packAndPrepare(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> &sourceObj,
                         const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
-                        const Teuchos::ArrayView<Scalar> &exports,
+                        Teuchos::Array<Scalar> &exports,
+                        const Teuchos::ArrayView<size_t> &numExportPacketsPerLID,
+                        size_t& constantNumPackets,
                         Distributor &distor);
 
     void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                           const Teuchos::ArrayView<const Scalar> &imports,
+                          const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                          size_t constantNumPackets,
                           Distributor &distor,
                           CombineMode CM);
 
