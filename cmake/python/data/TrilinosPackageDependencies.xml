@@ -230,7 +230,7 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Stratimikos" dir="stratimikos">
-    <LIB_REQUIRED_DEP_PACKAGES value="Thyra"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Thyra,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Belos,Ifpack,ML"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt"/>
