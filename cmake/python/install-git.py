@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""
+
+gitVersion = "1.6.5.2"
+egVersion = "sierra-20091029"
 
 #
 # General scripting support
@@ -53,10 +57,6 @@ in order to remove the source and build files.
 
 Good luck with git/eg!
 
-"""
-
-gitVersion = "1.6.5.2"
-egVersion = "66"
 
 from optparse import OptionParser
 
