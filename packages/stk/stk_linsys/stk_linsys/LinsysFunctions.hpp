@@ -1,0 +1,75 @@
+#ifndef stk_linsys_LinsysFunctions_hpp
+#define stk_linsys_LinsysFunctions_hpp
+
+#include <stk_linsys/LinearSystem.hpp>
+
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+
+#include <Teuchos_ParameterList.hpp>
+
+
+namespace stk {
+namespace linsys {
+
+/** Add connectivities (matrix-graph sparsity contributions) to the
+    fei::MatrixGraph object in the specified LinearSystem object.
+*/
+void add_connectivities(stk::linsys::LinearSystem& ls,
+                        stk::mesh::EntityType from_type,
+                        stk::mesh::EntityType to_connected_type,
+                        const stk::mesh::FieldBase& field,
+                        const stk::mesh::PartVector& part_intersection,
+                        const stk::mesh::BulkData& mesh_bulk);
+
+/** Apply a Dirichlet boundary-condition for the specified field, on
+ * entities of the specified entity-type which are members of the
+ * specified Part.
+ * Obtains the list of entity-ids and passes that along with
+ * the prescribed value, etc., to the fei::LinearSystem object.
+ * The corresponding modifications to the matrix and vector will be made
+ * when LinearSystem::finalize_assembly() is called.
+ */
+void dirichlet_bc(stk::linsys::LinearSystem& ls,
+                  const stk::mesh::BulkData& mesh,
+                  const stk::mesh::Part& bcpart,
+                  stk::mesh::EntityType entity_type,
+                  const stk::mesh::FieldBase& field,
+                  unsigned field_component,
+                  double prescribed_value);
+
+
+/** Create an fei::Solver instance and perform a linear-solve on the
+ * matrix and vectors contained in the given fei::LinearSystem instance.
+ *
+ * @param status Output flag indicating the termination condition of the
+ *  underlying linear-solver. Values are solver-specific. In general, 0
+ *  indicates that the solver achieved a solution that satisfied the
+ *  stopping test, within the iteration limit, etc. If an iterative solver
+ *  fails to converge, this status value will generally be non-zero, but
+ *  the actual value can vary by solver-library.
+ *
+ * @return error-code 0 if successful. Note that a 0 error-return does not
+ *  necessarily mean that the underlying solver achieved a solution. It
+ *  simply means that no fatal errors were encountered, such as allocation
+ *  failures, etc.
+ */
+int fei_solve(int & status, fei::LinearSystem &fei_ls, const Teuchos::ParameterList & params);
+
+
+/** Copy the contents of an fei::Vector to the corresponding field-data
+ * locations in a stk::mesh::BulkData instance.
+ * This function first calls vec.scatterToOverlap() to ensure that coefficients
+ * for shared-entities are available on all sharing processors.
+ */
+void copy_vector_to_mesh( fei::Vector & vec,
+                          const DofMapper & dof,
+                          stk::mesh::BulkData & mesh_bulk_data
+                        );
+
+}//namespace linsys
+}//namespace stk
+
+#endif
+

@@ -1,0 +1,5 @@
+
+ADD_SUBDIRECTORY(stk_linsys)
+
+PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+

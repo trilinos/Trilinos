@@ -1,0 +1,31 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../stk_util)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../teuchos/src)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
+
+PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+
+SET(SOURCES "")
+
+APPEND_SET(SOURCES
+UnitTest_helpers.cpp
+UnitTestLinearSystem.cpp
+UnitTestMain.cpp
+UnitTestDofMapper.cpp
+UnitTestImpl.cpp
+UnitTestLinsysFunctions.cpp
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    linsys_unit_tests
+    SOURCES ${SOURCES}
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
