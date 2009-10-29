@@ -143,10 +143,43 @@ public:
      * \note The default implementation does nothing.
      */
    virtual void initializeFromParameterList(const Teuchos::ParameterList & settings);
+
+   /** \brief Determine the type of inverse operator to build. 
+     *
+     * Determine the type of inverse operator to build. If true
+     * use the full LDU decomposition. If false only the upper
+     * triangular solve should be used. Motivation for doing this
+     * can be found in Murphy, Golub and Wathen, SISC 2000.
+     *
+     * \returns A boolean indicating the type of inverse operator
+     *          to use.
+     *
+     * \note Default behavior for this class is to return true.
+     */
+   virtual bool useFullLDU() const { return useFullLDU_; }
+
+   /** \brief Set the type of inverse operation to use.
+     *
+     * Set the type of inverse operator to use. If true
+     * use the full LDU decomposition. If false only the upper
+     * triangular solve should be used. Motivation for doing this
+     * can be found in Murphy, Golub and Wathen, SISC 2000.
+     *
+     * \param[in] value Boolean indicating type of inverse operator
+     *                  to build.
+     */
+   virtual void setFullLDU(bool value)
+   { useFullLDU_ = value; }
  
 protected: 
    //! some members
    Teuchos::RCP<const LU2x2Strategy> invOpsStrategy_;
+
+   /** If true, use full LDU decomposition, otherwise
+     * use the Golub & Wathen style upper block. This is
+     * true by default.
+     */
+   bool useFullLDU_;
 
 public:
    /** \brief Builder function for creating strategies.

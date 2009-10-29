@@ -24,6 +24,7 @@ InverseLibrary::InverseLibrary()
    stratValidPrecond_.push_back("Ifpack"); 
 
    // set valid PB preconditioner factory names
+   blockValidPrecond_.push_back("Block LU2x2"); 
    blockValidPrecond_.push_back("Block Jacobi"); 
    blockValidPrecond_.push_back("Block Gauss-Seidel"); 
    blockValidPrecond_.push_back("Block Add"); 

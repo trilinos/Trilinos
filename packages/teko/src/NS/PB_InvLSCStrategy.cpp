@@ -430,9 +430,6 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    if(invVStr=="") invVStr = invStr;
    if(invPStr=="") invPStr = invStr;
 
-   //  two inverse factory objects
-   RCP<InverseFactory> invVFact, invPFact;
-
    // build velocity inverse factory
    invFactoryF_ = invLib.getInverseFactory(invVStr);
    invFactoryS_ = invFactoryF_; // by default these are the same

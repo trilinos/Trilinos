@@ -59,12 +59,10 @@ public:
    virtual ~LU2x2Strategy() {}
 
    /** returns the first (approximate) inverse of \f$A_{00}\f$ */
-   // virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
    virtual const PB::LinearOp
    getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    /** returns the scond (approximate) inverse of \f$A_{00}\f$ */
-   // virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
    virtual const PB::LinearOp
    getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 

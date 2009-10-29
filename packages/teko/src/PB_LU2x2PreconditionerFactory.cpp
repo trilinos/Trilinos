@@ -2,6 +2,10 @@
 
 // PB includes
 #include "PB_LU2x2InverseOp.hpp"
+#include "PB_BlockUpperTriInverseOp.hpp"
+
+// default strategies
+#include "PB_LU2x2DiagonalStrategy.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -10,16 +14,20 @@ namespace PB {
 
 // construct a PreconditionerFactory
 LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(LinearOp & invA00, LinearOp & invS)
-      : invOpsStrategy_(rcp(new StaticLU2x2Strategy(invA00,invA00,invS)))
+      : invOpsStrategy_(rcp(new StaticLU2x2Strategy(invA00,invA00,invS))), useFullLDU_(true)
 { }
 
 /** @brief Build a simple static LU2x2 preconditioner */
 LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS)
-      : invOpsStrategy_(rcp(new StaticLU2x2Strategy(hatInvA00,tildeInvA00,invS)))
+      : invOpsStrategy_(rcp(new StaticLU2x2Strategy(hatInvA00,tildeInvA00,invS))), useFullLDU_(true)
 { }
 
 LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(const RCP<const LU2x2Strategy> & strategy)
-   : invOpsStrategy_(strategy)
+   : invOpsStrategy_(strategy), useFullLDU_(true)
+{ }
+
+LU2x2PreconditionerFactory::LU2x2PreconditionerFactory()
+   : invOpsStrategy_(Teuchos::null), useFullLDU_(true)
 { }
 
 // for PreconditionerFactoryBase
@@ -33,7 +41,14 @@ LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp
    LinearOp invS        = invOpsStrategy_->getInvS(A,state);
 
    // build the SchurSolve LinearOp
-   return createLU2x2InverseOp(A,hatInvA00,tildeInvA00,invS);
+   if(useFullLDU())
+      return createLU2x2InverseOp(A,hatInvA00,tildeInvA00,invS,"LU2x2-Full");
+   else  {
+      std::vector<LinearOp> invDiag(2);
+      invDiag[0] = hatInvA00;
+      invDiag[1] = scale(-1.0,invS);
+      return createBlockUpperTriInverseOp(A,invDiag,"LU2x2-Upper");
+   }
 }
 
 /** \brief This function builds the internals of the preconditioner factory
@@ -50,10 +65,17 @@ LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp
   */
 void LU2x2PreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
 {
-   std::string stratName = settings.get<std::string>("Strategy Name");
-   const Teuchos::ParameterList & pl = settings.sublist("Strategy Settings");
+   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::initializeFromParameterList",10);
+
+   // use Golub & Wathen type or full LDU decomposition for inverse solve?
+   bool useLDU = true; 
+   if(settings.isParameter("Use LDU"))
+      useLDU = settings.get<bool>("Use LDU");
+   setFullLDU(useLDU);
    
    // build strategy object
+   std::string stratName = settings.get<std::string>("Strategy Name");
+   const Teuchos::ParameterList & pl = settings.sublist("Strategy Settings");
    invOpsStrategy_ = buildStrategy(stratName,pl,getInverseLibrary());
 }
 
@@ -80,7 +102,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
                                                              const Teuchos::ParameterList & settings,
                                                              const RCP<const InverseLibrary> & invLib)
 {
-   PB_DEBUG_MSG("Begin LU2x2PreconditionerFactory::buildStrategy",10);
+   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildStrategy",10);
 
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
@@ -94,8 +116,6 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
    // now that inverse library has been set,
    // pass in the parameter list
    strategy->initializeFromParameterList(settings,*invLib);
-
-   PB_DEBUG_MSG("End LU2x2PreconditionerFactory::buildStrategy",10);
 
    return strategy;
 }
@@ -125,6 +145,13 @@ void LU2x2PreconditionerFactory::addStrategy(const std::string & name,const RCP<
 //! This is where the default objects are put into the strategyBuilder_
 void LU2x2PreconditionerFactory::initializeStrategyBuilder()
 {
+   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::initializeStrategyBuilder",10);
+
+   RCP<Cloneable> clone;
+
+   // add various strategies to the factory
+   clone = rcp(new AutoClone<LU2x2DiagonalStrategy>());
+   strategyBuilder_.addClone("Diagonal Strategy",clone);
 }
 
 } // end namespace PB

@@ -12,7 +12,7 @@ OBJS = PB_Utilities.o PB_BlockPreconditionerFactory.o \
        PB_BlockUpperTriInverseOp.o PB_GaussSeidelPreconditionerFactory.o \
        PB_BlockLowerTriInverseOp.o PB_BlockedReordering.o \
        PB_InverseFactory.o PB_AddPreconditionerFactory.o PB_MultPreconditionerFactory.o \
-       PB_InverseLibrary.o
+       PB_InverseLibrary.o PB_LU2x2DiagonalStrategy.o
 
 all: $(OBJS)
 	make -C ./NS

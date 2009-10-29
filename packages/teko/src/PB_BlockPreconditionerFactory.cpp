@@ -5,6 +5,7 @@
 #include "PB_GaussSeidelPreconditionerFactory.hpp"
 #include "PB_AddPreconditionerFactory.hpp"
 #include "PB_MultPreconditionerFactory.hpp"
+#include "PB_LU2x2PreconditionerFactory.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 #include "NS/PB_SIMPLEPreconditionerFactory.hpp"
 
@@ -236,6 +237,9 @@ void BlockPreconditionerFactory::initializePrecFactoryBuilder()
    RCP<Cloneable> clone;
 
    // add various preconditioners to factory
+   clone = rcp(new AutoClone<LU2x2PreconditionerFactory>());
+   precFactoryBuilder_.addClone("Block LU2x2",clone);
+
    clone = rcp(new AutoClone<JacobiPreconditionerFactory>());
    precFactoryBuilder_.addClone("Block Jacobi",clone);
 
