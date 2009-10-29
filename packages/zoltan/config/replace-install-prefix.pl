@@ -3,7 +3,7 @@ use strict;
 use Getopt::Long;
 #
 # This script is called to do a set of text replacements for installing
-# a Mafile.export.package file so that external clients can use it.
+# a Makefile.export.package file so that external clients can use it.
 #
 # Read in commandline arguments
 #

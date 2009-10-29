@@ -7822,7 +7822,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 fi
 { echo "$as_me:$LINENO: result: $ax_cv_f90_modflag" >&5
 echo "${ECHO_T}$ax_cv_f90_modflag" >&6; }
-  FCFLAGS="-I$srcdir/src/fort ${FCFLAGS}"
   if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
     { { echo "$as_me:$LINENO: error: unable to find f90 modules extension" >&5
 echo "$as_me: error: unable to find f90 modules extension" >&2;}

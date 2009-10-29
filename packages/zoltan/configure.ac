@@ -298,7 +298,6 @@ TAC_ARG_WITH_INCDIRS
 if test "X$ac_cv_use_fortran" != "Xno"; then
   AC_F77_WRAPPERS
   AX_F90_MODULE_FLAG
-  FCFLAGS="-I$srcdir/src/fort ${FCFLAGS}"
   if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
     AC_MSG_ERROR([unable to find f90 modules extension])
   else

@@ -780,6 +780,13 @@ execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
 #nodist_execinclude_HEADERS = Zoltan_config.h
 
+# Add the absolute path to src/fort to F90 build line, so F90 can find
+# the files included in fwrap.f90.  
+# Also add FFLAGS arguments to the F90 build line, in case some uses FFLAGS
+# instead of FCFLAGS.  (We currently have no need to distinguish between 
+# FCFLAGS and FFLAGS.)
+AM_FCFLAGS = -I@abs_top_srcdir@/src/fort @FFLAGS@
+AM_FFLAGS = -I@abs_top_srcdir@/src/fort 
 # Build zfdrive only if HAVE_MPI; I haven't figured out a proper build of
 # siMPI's Fortran interface yet (and serial zfdrive is not an important
 # use case).
