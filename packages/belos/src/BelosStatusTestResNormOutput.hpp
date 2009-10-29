@@ -60,6 +60,7 @@ namespace Belos {
 template <class ScalarType, class MV, class OP>
 class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
+  typedef MultiVecTraits<ScalarType,MV> MVT;
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
   typedef Belos::StatusTestMaxIters<ScalarType,MV,OP>  StatusTestMaxIters_t;
@@ -97,7 +98,9 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
       numResTests_(0),
       blockSize_(1),
       currNumRHS_(0),
-      currLSNum_(0)
+      currLSNum_(0),
+      numLSDgts_(1), 
+      numIterDgts_(1)
     {
       // Set the input test.
       setChild(test);
@@ -134,11 +137,14 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
     // Update some information for the header, if it has not printed or the linear system has changed.
     LinearProblem<ScalarType,MV,OP> currProb = solver->getProblem();
-    if (!headerPrinted_ || currLSNum_ != currProb.getLSNumber()) {
+    //if (!headerPrinted_ || currLSNum_ != currProb.getLSNumber()) {
+    if (currLSNum_ != currProb.getLSNumber()) {
       currLSNum_ = currProb.getLSNumber();
       blockSize_ = solver->getBlockSize();
       currIdx_ = currProb.getLSIndex();
       currNumRHS_ = currIdx_.size();
+      numLSDgts_ = (int)std::floor(std::log10(MVT::GetNumberVecs(*(currProb.getRHS()))))+1;
+      numIterDgts_ = (int)std::floor(std::log10(iterTest_->getMaxIters()))+1;
     }
     // Print out current iteration information if it hasn't already been printed, or the status has changed
     if (((iterTest_->getNumIters() % modTest_ == 0) && (iterTest_->getNumIters()!=lastNumIters_)) || (state_ == Passed)) {
@@ -301,15 +307,16 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
 
     // Print out residuals for each residual test.
     os.setf(std::ios_base::right, std::ios_base::adjustfield);
-    std::string ind2(12,' ');
-    os << ind << "Iter " << std::setw(5) << iterTest_->getNumIters() << " :";
+    std::string ind2( 7 + numIterDgts_, ' ' );
+    os << ind << "Iter " << std::setw(numIterDgts_) << iterTest_->getNumIters() << ", ";
     for (int i=0; i<currNumRHS_; ++i) {
-      if ( i > 0 ) {
+      if ( i > 0 && currIdx_[i]!=-1 ) {
         // Put in space where 'Iter :' is in the previous lines
         os << ind << ind2;
       }
+      os << "[" << std::setw(numLSDgts_) << currIdx_[i]+1 << "] : ";
       for (int j=0; j<numResTests_; ++j) {
-        if ( resTestVec_[j]->getStatus() != Undefined ) {
+        if ( resTestVec_[j]->getStatus() != Undefined && currIdx_[i]!=-1 ) {
           os << std::setw(15) << (*resTestVec_[j]->getTestValue())[currIdx_[i]];
         } else {
           os << std::setw(15) << "---"; 
@@ -343,6 +350,7 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
     int lastNumIters_, comboType_;
     int numResTests_, blockSize_;
     int currNumRHS_, currLSNum_;
+    int numLSDgts_, numIterDgts_;
 };
 
 } // end of Belos namespace
