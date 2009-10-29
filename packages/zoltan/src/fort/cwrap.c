@@ -1436,7 +1436,7 @@ int Zfw_LB_Box_PP_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
 
 /*****************************************************************************/
 int Zfw_Invert_Lists(int *addr_lb, int *nbytes, 
-  int *num_gid_entries, int *num_lid_entries, int *num_input,
+  int *num_input,
   ZOLTAN_ID_PTR input_global_ids, ZOLTAN_ID_PTR input_local_ids,
   int *input_procs, int *input_to_part, int *num_output,
   ZOLTAN_ID_PTR *output_global_ids, ZOLTAN_ID_PTR *output_local_ids,
@@ -1447,7 +1447,6 @@ int Zfw_Invert_Lists(int *addr_lb, int *nbytes,
 #endif
 #ifdef FUJITSU
  ,int *addr_lb_hide, int *nbytes_hide,
-  int *num_gid_entries_hide, int *num_lid_entries_hide,
   int *num_input_hide,
   int *input_global_ids_hide, int *input_local_ids_hide,
   int *input_procs_hide, int *input_to_part_hide,
@@ -1501,7 +1500,7 @@ int Zfw_Invert_Lists(int *addr_lb, int *nbytes,
 
 /*****************************************************************************/
 int Zfw_Compute_Destinations(int *addr_lb, int *nbytes, 
-  int *num_gid_entries, int *num_lid_entries, int *num_input,
+  int *num_input,
   ZOLTAN_ID_PTR input_global_ids, ZOLTAN_ID_PTR input_local_ids,
   int *input_procs, int *num_output,
   ZOLTAN_ID_PTR *output_global_ids, ZOLTAN_ID_PTR *output_local_ids,
@@ -1511,7 +1510,6 @@ int Zfw_Compute_Destinations(int *addr_lb, int *nbytes,
 #endif
 #ifdef FUJITSU
  ,int *addr_lb_hide, int *nbytes_hide,
-  int *num_gid_entries_hide, int *num_lid_entries_hide,
   int *num_input_hide,
   int *input_global_ids_hide, int *input_local_ids_hide,
   int *input_procs_hide, int *num_output_hide,
