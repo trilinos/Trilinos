@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-"""
 
 gitVersion = "1.6.5.2"
 egVersion = "sierra-20091029"
@@ -56,6 +55,8 @@ After you have done a successful install, you might want to do:
 in order to remove the source and build files.
 
 Good luck with git/eg!
+
+"""
 
 
 from optparse import OptionParser
