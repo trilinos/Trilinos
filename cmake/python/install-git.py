@@ -69,7 +69,7 @@ clp.add_option(
 clp.add_option(
   "--cvs-command", dest="cvsCommand", type="string",
   default="cvs -d :ext:software.sandia.gov:/space/CVS co -d Git.base Trilinos3PL/Git.base",
-  help="Command used to check out CMake tarball." )
+  help="Command used to check out git tarball." )
 
 clp.add_option(
   "--untar", dest="untar", action="store_true", default=False,
@@ -82,7 +82,7 @@ clp.add_option(
 clp.add_option(
   "--install-dir", dest="installDir", type="string",
   default="/usr/local",
-  help="The install directory for CMake (default = /usr/local)." )
+  help="The install directory for git (default = /usr/local)." )
 
 clp.add_option(
   "--build", dest="build", action="store_true", default=False,
