@@ -7,6 +7,25 @@ IF (NOT EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/configure)
  be untarred into the Trikota Directory before running cmake!")
 ENDIF()
 
+# Dakota requires on Boost. Check if the user set a
+# path first, otherwise point into Dakota's boost.
+IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/boost/type.hpp)
+
+#  Explain what is going on with Boost paths: (too verbose)
+##    MESSAGE("   TriKota: Boost headers not found in Boost_INCLUDE_DIRS
+##    path <${Boost_INCLUDE_DIRS}>. Resetting path to Boost version distributed
+##    within Dakota: ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost")
+
+  IF (EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost/boost/type.hpp)
+    SET(Boost_INCLUDE_DIRS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost)
+  ELSE()
+    MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota requires
+     Boost, and the headers were not found in ${Boost_INCLUDE_DIRS}
+     nor inside of Dakota at ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost. ")
+  ENDIF()
+
+ENDIF()
+
 #
 # Configure Dakota libraries
 #   Skip configuring if dakota_config.h already exists,
@@ -40,7 +59,7 @@ EXECUTE_PROCESS(
     --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
     --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
     --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
-    --with-boost=${PACKAGE_SOURCE_DIR}/Dakota/packages/boost
+    --with-boost=${Boost_INCLUDE_DIRS}
     --with-plugin --without-dot
     OUTPUT_FILE ${PACKAGE_BINARY_DIR}/Dakota/configure.out
   )
