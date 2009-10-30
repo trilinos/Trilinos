@@ -44,7 +44,7 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
   int N_local;
   int j, row, have_xexact = 0 ;
   int *rpntr1, *bindx1, *bpntr1, *indx1;
-  double *val1, *b1, *x1, *xexact1;
+  double *val1, *b1, *x1, *xexact1=0;
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 

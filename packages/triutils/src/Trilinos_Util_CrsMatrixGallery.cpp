@@ -1311,9 +1311,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void)
     } else {
       // off-diagonal for internal row
       Indices[0] = MyGlobalElements_[i]-1;
-      Values[1] = b_;
+      Values[0] = b_;
       Indices[1] = MyGlobalElements_[i]+1;
-      Values[0] = c_;
+      Values[1] = c_;
       NumEntries = 2;
     }
     matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);

@@ -47,7 +47,7 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 
 
   int i;
-  int blocksize, N_blk_equations, N_block_entries, n_vbr_nonzeros, n_msr_nonzeros;
+  int blocksize=0, N_blk_equations, N_block_entries, n_vbr_nonzeros, n_msr_nonzeros;
   int total_msr_storage, total_vbr_storage;
   int variable_block_size, blk_type;
   int cur_blk_ptr=0, prev_blk_ptr;

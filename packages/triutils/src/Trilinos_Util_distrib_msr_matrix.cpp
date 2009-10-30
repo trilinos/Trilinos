@@ -40,7 +40,7 @@ void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm, int *N_global,
   int i, n_global_nonzeros;
   int j, row, have_xexact = 0 ;
   int *bindx1;
-  double *val1, *b1, *x1, *xexact1;
+  double *val1, *b1, *x1, *xexact1=0;
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
