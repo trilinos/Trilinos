@@ -123,13 +123,17 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
   IsComputed_ = false;
   NumMyRows_ = Graph.NumMyRows();
   
-  if (NumMyRows_ == 0)
-    IFPACK_CHK_ERR(-1); // strange graph this one
-  
   if ((RootNode_ < 0) || (RootNode_ >= NumMyRows_))
     RootNode_ = 0;
     
   Reorder_.resize(NumMyRows_);
+
+  // the case where one processor holds no chunk of the graph happens...
+  if (!NumMyRows_) {
+    InvReorder_.resize(NumMyRows_);
+    IsComputed_ = true;
+    return(0);
+  }
 
   for (int i = 0 ; i < NumMyRows_ ; ++i)
     Reorder_[i] = -1;
