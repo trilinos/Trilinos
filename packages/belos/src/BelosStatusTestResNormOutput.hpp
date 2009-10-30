@@ -143,8 +143,8 @@ class StatusTestResNormOutput : public StatusTestOutput<ScalarType,MV,OP> {
       blockSize_ = solver->getBlockSize();
       currIdx_ = currProb.getLSIndex();
       currNumRHS_ = currIdx_.size();
-      numLSDgts_ = (int)std::floor(std::log10(MVT::GetNumberVecs(*(currProb.getRHS()))))+1;
-      numIterDgts_ = (int)std::floor(std::log10(iterTest_->getMaxIters()))+1;
+      numLSDgts_ = (int)std::floor((double)MVT::GetNumberVecs(*(currProb.getRHS())))+1;
+      numIterDgts_ = (int)std::floor(std::log10((double)iterTest_->getMaxIters()))+1;
     }
     // Print out current iteration information if it hasn't already been printed, or the status has changed
     if (((iterTest_->getNumIters() % modTest_ == 0) && (iterTest_->getNumIters()!=lastNumIters_)) || (state_ == Passed)) {
