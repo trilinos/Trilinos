@@ -267,6 +267,7 @@ APPEND_SET(NOINSTALLHEADERS
   )
 
 APPEND_SET(SOURCES
+  order/hsfcOrder.c
   order/order.c
   order/order_struct.c
   order/order_tools.c

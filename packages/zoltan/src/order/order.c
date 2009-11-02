@@ -22,6 +22,7 @@ extern "C" {
 #include "params_const.h"
 #include "ha_const.h"
 #include "order_const.h"
+#include "hsfcOrder.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -171,6 +172,11 @@ int Zoltan_Order(
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);
   }
+  else if (!strcmp(opt.method, "LOCAL_HSFC")) 
+  {
+    Order_fn = Zoltan_LocalHSFC_Order;
+    strcpy(zz->Order.order_type, "LOCAL"); /*MMW, not sure about this*/
+  }
 #ifdef ZOLTAN_PARMETIS
   else if (!strcmp(opt.method, "METIS")) {
     Order_fn = Zoltan_ParMetis_Order;
@@ -211,12 +217,10 @@ int Zoltan_Order(
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
 
-  /*
-   * Call the actual ordering function.
-   * Compute gid according to the local graph.
-   */
 
-
+  /************************************ 
+   *  Check for required query function
+   ************************************/
   if (zz->Get_Num_Obj != NULL) {
     local_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -229,11 +233,17 @@ int Zoltan_Order(
     return (ZOLTAN_FATAL);
   }
 
+
   local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
   local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
   local_iperm = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
 
   lids = ZOLTAN_MALLOC_LID_ARRAY(zz, local_num_obj);
+
+  /*
+   * Call the actual ordering function.
+   * Compute gid according to the local graph.
+   */
 
   ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, local_iperm, &opt);
   ZOLTAN_FREE(&lids);
@@ -281,6 +291,7 @@ int Zoltan_Order(
 
   /* TODO: Use directly the "graph" structure to avoid to duplicate things. */
   /* I store : GNO, rank, iperm */
+  /* MMW: perhaps don't ever use graph here since we need to support geometric orderings, otherwise need if/else */
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0);
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
