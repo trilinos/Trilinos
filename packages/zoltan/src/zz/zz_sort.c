@@ -62,9 +62,48 @@ int  equal, smaller;
      }
 }
 
-
 /****************************************************************************/
 
+/****************************************************************************/
+/* Sorting pointers in decreasing order. Criteria (key) is double. */
+static void quickpart_pointer_dec_double (
+  int *sorted, double *val, int start, int end, int* equal, int* smaller
+)
+{
+int   i, next;
+double key = (val ? val[sorted[(end+start)/2]] : 1.0);
+
+  *equal = *smaller = start;
+  for (i = start; i <= end; i++) {
+     next = sorted[i];
+     if ((val ? val[next] : 1.0) > key) {
+        sorted[i]            = sorted[*smaller];
+        sorted[(*smaller)++] = sorted[*equal];
+        sorted[(*equal)++]   = next;
+        }
+     else if ((val ? val[next] : 1.0) == key) {
+        sorted[i]            = sorted[*smaller];
+        sorted[(*smaller)++] = next;
+        }
+     }
+}
+
+
+void Zoltan_quicksort_pointer_dec_double (
+  int *sorted, double* val, int start, int end
+)
+{
+int  equal, smaller;
+
+  if (start < end) {
+     quickpart_pointer_dec_double (sorted, val, start, end, &equal, &smaller);
+     Zoltan_quicksort_pointer_dec_double (sorted, val, start,   equal-1);
+     Zoltan_quicksort_pointer_dec_double (sorted, val, smaller, end);
+     }
+}
+/****************************************************************************/
+
+/****************************************************************************/
 /* Sort in increasing order by first calling the decreasing sort,
    then reverse the order in linear time. */
 void Zoltan_quicksort_pointer_inc_float (
