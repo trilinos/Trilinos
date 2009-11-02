@@ -62,26 +62,26 @@ echo
 time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_performance_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_performance_godel.out
 
-echo
-echo "Doing mpi optimized build: `date`"
-echo
-
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_godel.out
-
-echo
-echo "Doing serial debug build: `date`"
-echo
-
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_serial_debug_godel.out
-
-echo
-echo "Doing mpi optimized shared library build: `date`"
-echo
-
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_shared_godel.out
+#echo
+#echo "Doing mpi optimized build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_godel.out
+#
+#echo
+#echo "Doing serial debug build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_serial_debug_godel.out
+#
+#echo
+#echo "Doing mpi optimized shared library build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_shared_godel.out
 
 #echo
 #echo "Doing serial optimized implicit instantiation build: `date`"
@@ -90,12 +90,12 @@ time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_shared
 #time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
 #  &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
 
-echo
-echo "Doing mpi debug build: `date`"
-echo
-
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_mpi_debug_godel.out
+#echo
+#echo "Doing mpi debug build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_mpi_debug_godel.out
 
 echo
 echo "Doing mpi optimized zoltan c-only build: `date`"

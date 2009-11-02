@@ -344,7 +344,18 @@
   </SubProject>
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="ILO"/>
+    <Dependency name="FEI" type="LR"/>
     <EmailAddresses>
       <Email address="stk-regression@software.sandia.gov"/>
     </EmailAddresses>
