@@ -212,13 +212,14 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Allocate List for Smoothing Options */
 # ifdef HAVE_PETSC
-  const int num_smoothers=27;
+  const int num_smoothers=29;
 # else
-  const int num_smoothers=26;
+  const int num_smoothers=28;
 # endif
   const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi",
    "ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel",
-   "Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
+   "Gauss-Seidel","block Gauss-Seidel","symmetric block Gauss-Seidel",
+   "Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
    "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT",
    "Block Chebyshev","IFPACK-Block Chebyshev"
