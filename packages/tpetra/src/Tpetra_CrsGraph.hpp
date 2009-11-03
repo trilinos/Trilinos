@@ -2696,22 +2696,41 @@ namespace Tpetra
                           const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
   {
     const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& src_graph = dynamic_cast<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&>(source);
-    TEST_FOR_EXCEPTION(src_graph.isFillComplete() == true, std::runtime_error,
-         Teuchos::typeName(*this) << "::copyAndPermute: import/export operations are not allowed on CrsGraph after fillComplete has been called.");
     TEST_FOR_EXCEPTION(permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
          Teuchos::typeName(*this) << "::copyAndPermute: permuteToLIDs and permuteFromLIDs must have the same size.");
+    bool src_filled = src_graph.isFillComplete();
+
+    Teuchos::Array<GlobalOrdinal> row_copy;
     LocalOrdinal myid = 0;
     for(size_t i=0; i<numSameIDs; ++i, ++myid) {
       GlobalOrdinal gid = src_graph.getMap()->getGlobalElement(myid);
-      Teuchos::ArrayRCP<const GlobalOrdinal> row = src_graph.getGlobalRowView(gid);
-      insertGlobalIndices( gid, row() );
+      if (src_filled) {
+        size_t row_length = src_graph.getNumEntriesInGlobalRow(gid);
+        row_copy.resize(row_length);
+        size_t check_row_length = 0;
+        src_graph.getGlobalRowCopy(gid, row_copy(), check_row_length);
+        insertGlobalIndices( gid, row_copy() );
+      }
+      else {
+        Teuchos::ArrayRCP<const GlobalOrdinal> row = src_graph.getGlobalRowView(gid);
+        insertGlobalIndices( gid, row() );
+      }
     }
 
     for(LocalOrdinal i=0; i<permuteToLIDs.size(); ++i) {
       GlobalOrdinal mygid = this->getMap()->getGlobalElement(permuteToLIDs[i]);
       GlobalOrdinal srcgid= src_graph.getMap()->getGlobalElement(permuteFromLIDs[i]);
-      Teuchos::ArrayRCP<const GlobalOrdinal> row = src_graph.getGlobalRowView(srcgid);
-      insertGlobalIndices( mygid, row() );
+      if (src_filled) {
+        size_t row_length = src_graph.getNumEntriesInGlobalRow(srcgid);
+        row_copy.resize(row_length);
+        size_t check_row_length = 0;
+        src_graph.getGlobalRowCopy(srcgid, row_copy(), check_row_length);
+        insertGlobalIndices( mygid, row_copy() );
+      }
+      else {
+        Teuchos::ArrayRCP<const GlobalOrdinal> row = src_graph.getGlobalRowView(srcgid);
+        insertGlobalIndices( mygid, row() );
+      }
     }
   }
 
@@ -2726,16 +2745,19 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
                     Teuchos::typeName(*this) << "::packAndPrepare: exportLIDs and numPacketsPerLID must have the same size.");
     const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& src_graph = dynamic_cast<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&>(source);
-    TEST_FOR_EXCEPTION(src_graph.isFillComplete() == true, std::runtime_error,
-         Teuchos::typeName(*this) << "::packAndPrepare: import/export operations are not allowed on CrsGraph after fillComplete has been called.");
+    //We don't check whether src_graph has had fillComplete called, because it doesn't matter whether the
+    //*source* graph has been fillComplete'd. The target graph can not be fillComplete'd yet.
+    TEST_FOR_EXCEPTION(this->isFillComplete() == true, std::runtime_error,
+         Teuchos::typeName(*this) << "::copyAndPermute: import/export operations are not allowed on destination CrsGraph after fillComplete has been called.");
     constantNumPackets = 0;
     //first set the contents of numPacketsPerLID, and accumulate a total-num-packets:
     size_t totalNumPackets = 0;
+    Teuchos::Array<GlobalOrdinal> row;
     for(LocalOrdinal i=0; i<exportLIDs.size(); ++i) {
       GlobalOrdinal GID = src_graph.getMap()->getGlobalElement(exportLIDs[i]);
-      Teuchos::ArrayRCP<const GlobalOrdinal> row = src_graph.getGlobalRowView(GID);
-      numPacketsPerLID[i] = row.size();
-      totalNumPackets += row.size();
+      size_t row_length = src_graph.getNumEntriesInGlobalRow(GID);
+      numPacketsPerLID[i] = row_length;
+      totalNumPackets += row_length;
     }
 
     exports.resize(totalNumPackets);
@@ -2744,8 +2766,11 @@ namespace Tpetra
     size_t exportsOffset = 0;
     for(LocalOrdinal i=0; i<exportLIDs.size(); ++i) {
       GlobalOrdinal GID = src_graph.getMap()->getGlobalElement(exportLIDs[i]);
-      Teuchos::ArrayRCP<const GlobalOrdinal> row = src_graph.getGlobalRowView(GID);
-      typename Teuchos::ArrayRCP<const GlobalOrdinal>::const_iterator
+      size_t row_length = src_graph.getNumEntriesInGlobalRow(GID);
+      row.resize(row_length);
+      size_t check_row_length = 0;
+      src_graph.getGlobalRowCopy(GID, row(), check_row_length);
+      typename Teuchos::Array<GlobalOrdinal>::const_iterator
         row_iter = row.begin(), row_end = row.end();
       size_t j = 0;
       for(; row_iter != row_end; ++row_iter, ++j) {
@@ -2772,7 +2797,7 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
                     Teuchos::typeName(*this) << "::unpackAndCombine: importLIDs and numPacketsPerLID must have the same size.");
     TEST_FOR_EXCEPTION(this->isFillComplete() == true, std::runtime_error,
-         Teuchos::typeName(*this) << "::unpackAndCombine: import/export operations are not allowed on CrsGraph after fillComplete has been called.");
+         Teuchos::typeName(*this) << "::unpackAndCombine: import/export operations are not allowed on destination CrsGraph after fillComplete has been called.");
     size_t importsOffset = 0;
     typename Teuchos::ArrayView<const LocalOrdinal>::iterator
       impLIDiter = importLIDs.begin(), impLIDend = importLIDs.end();
