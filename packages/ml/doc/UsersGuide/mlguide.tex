@@ -1180,7 +1180,7 @@ Requires {\tt --with-ml\_metis}.\\
 %\end{table}
 \begin{table}[tbh]
 \begin{center}
-\begin{tabular}{ | p{4.5cm} | p{10cm} | }
+\begin{tabular}{ | p{5.0cm} | p{10cm} | }
 \hline
 \verb!Jacobi!                    & Point-Jacobi.
 Specify damping factor with {\tt smoother: damping factor}.\\
@@ -1189,6 +1189,12 @@ Specify damping factor with {\tt smoother: damping factor}.\\
 Specify damping factor with {\tt smoother: damping factor}.\\
 %
 \verb!symmetric Gauss-Seidel!    & Point symmetric Gauss-Seidel.
+Specify damping factor with {\tt smoother: damping factor}.\\
+%
+\verb!block Gauss-Seidel!    & Block Gauss-Seidel.  Blocks correspond to DOFs at a nodes.
+Specify damping factor with {\tt smoother: damping factor}.\\
+%
+\verb!symmetric block Gauss-Seidel!    & Block symmetric Gauss-Seidel.  Blocks correspond to DOFs at a nodes.
 Specify damping factor with {\tt smoother: damping factor}.\\
 %
 \verb!Chebyshev!                 & Use Chebyshev smoother. Specify polynomial order
