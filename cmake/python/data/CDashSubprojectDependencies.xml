@@ -344,6 +344,7 @@
   </SubProject>
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="LR"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>

@@ -31,6 +31,8 @@ ADD_SUBDIRECTORY(stk_mesh)
 
 ADD_SUBDIRECTORY(stk_linsys)
 
+ADD_SUBDIRECTORY(stk_transfer)
+
 #
 # D) Do standard postprocessing
 #
