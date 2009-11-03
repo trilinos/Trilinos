@@ -31,10 +31,10 @@
 #define TIFPACK_OVERLAPGRAPH_HPP
 
 #include "Tifpack_ConfigDefs.hpp"
-#include "Tpetra_Object.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Import.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Tifpack_CreateOverlapGraph.hpp"
 
 class Tpetra_Comm;
 class Tpetra_BlockMap;
@@ -44,9 +44,12 @@ namespace Teuchos {
   class ParameterList;
 }
 
+namespace Tifpack {
+
 //! Tifpack_OverlapGraph: Constructs a graph for use with Tifpack preconditioners.
 
-class Tifpack_OverlapGraph: public Tpetra_Object {
+template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+class OverlapGraph : public Teuchos::Describable {
 
  public:
   //@{ \name Constructors/Destructor
@@ -55,7 +58,7 @@ class Tifpack_OverlapGraph: public Tpetra_Object {
     \param In
            UserMatrixGraph_in - Graph from user matrix.
   */
-  Tifpack_OverlapGraph(const Teuchos::RefCountPtr<const Tpetra_CrsGraph>& UserMatrixGraph_in, int OverlapLevel_in);
+  OverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in);
 
   //! Constructor using Tpetra_RowMatrix.
   /*! Creates an Tifpack_OverlapGraph object from the user graph implicitly defined by the
@@ -63,13 +66,13 @@ class Tifpack_OverlapGraph: public Tpetra_Object {
     \param In
             RowMatrix - An object that has implemented the Tpetra_RowMatrix interface.
   */
-  Tifpack_OverlapGraph(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& UserMatrix_in, int OverlapLevel_in);
+//  Tifpack_OverlapGraph(const Teuchos::RCP<const Tpetra_RowMatrix>& UserMatrix_in, int OverlapLevel_in);
   
   //! Copy constructor.
-  Tifpack_OverlapGraph(const Tifpack_OverlapGraph & Source);
+  OverlapGraph(const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node> & Source);
 
   //! Tifpack_CrsIlut Destructor
-  virtual ~Tifpack_OverlapGraph() {};
+  virtual ~OverlapGraph() {};
   //@}
 
   //@{ \name Atribute access methods.
@@ -84,13 +87,13 @@ class Tifpack_OverlapGraph: public Tpetra_Object {
                     bool cerr_warning_if_unused=false);
 
   //! Returns the overlap graph object.
-  const Tpetra_CrsGraph & OverlapGraph() const {return(*OverlapGraph_);}
+  const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & getOverlapGraph() const {return(*OverlapGraph_);}
     
   //! Returns the RowMap associated with the overlap graph.
-  const Tpetra_BlockMap & OverlapRowMap() const {return(*OverlapRowMap_);}
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & getOverlapRowMap() const {return(*OverlapRowMap_);}
     
   //! Returns the overlap graph object.
-  const Tpetra_Import & OverlapImporter() const {return(*OverlapImporter_);}
+  const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> & getOverlapImporter() const {return(*OverlapImporter_);}
     
   //! Returns the level of overlap used to create this graph.
   /*! The graph created by this class uses a recursive definition 0f overlap.
@@ -103,28 +106,53 @@ class Tifpack_OverlapGraph: public Tpetra_Object {
 
   //@{ \name Tpetra_Object print method (allows use of << operator with this class).
 
-  void Print(ostream& os) const {
-    os << endl;
-    if (UserMatrix_!=Teuchos::null) 
-      os << "Overlap Graph created using the user's Tpetra_RowMatrix object" << endl;
-    else
-      os << "Overlap Graph created using the user's Tpetra_CrsGraph object" << endl;
-    
-    os << " Level of Overlap = " << OverlapLevel_ << endl;
-    OverlapGraph_->Print(os);
-    return;
-  }
+//  void Print(ostream& os) const {
+//    os << endl;
+//    if (UserMatrix_!=Teuchos::null) 
+//      os << "Overlap Graph created using the user's Tpetra_RowMatrix object" << endl;
+//    else
+//      os << "Overlap Graph created using the user's Tpetra_CrsGraph object" << endl;
+//    
+//    os << " Level of Overlap = " << OverlapLevel_ << endl;
+//    OverlapGraph_->Print(os);
+//    return;
+//  }
   //@}
 
  protected:
 
-  int ConstructOverlapGraph(const Teuchos::RefCountPtr<const Tpetra_CrsGraph>& UserMatrixGraph);
-  Teuchos::RefCountPtr<Tpetra_CrsGraph> OverlapGraph_;
-  Teuchos::RefCountPtr<const Tpetra_CrsGraph> UserMatrixGraph_;
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> UserMatrix_;
-  Teuchos::RefCountPtr<Tpetra_BlockMap> OverlapRowMap_;
-  Teuchos::RefCountPtr<Tpetra_Import> OverlapImporter_;
+  int ConstructOverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph);
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > OverlapGraph_;
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > UserMatrixGraph_;
+//  Teuchos::RCP<const Tpetra_RowMatrix> UserMatrix_;
+  Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > OverlapRowMap_;
+  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > OverlapImporter_;
   int OverlapLevel_;
   bool IsOverlapped_;
 };
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::OverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in)
+ : UserMatrixGraph_(UserMatrixGraph_in),
+   OverlapLevel_(OverlapLevel_in),
+   IsOverlapped_(OverlapLevel_in>0 && UserMatrixGraph_in->getDomainMap()->isDistributed())
+{
+  OverlapGraph_ = CreateOverlapGraph(UserMatrixGraph_, OverlapLevel_);
+}
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::OverlapGraph(const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>& Source)
+ : UserMatrixGraph_(Source.UserMatrixGraph_),
+   OverlapRowMap_(Source.OverlapRowMap_),
+   OverlapLevel_(Source.OverlapLevel_),
+   IsOverlapped_(Source.IsOverlapped_)
+{
+  if (IsOverlapped_) {
+    if (OverlapGraph_!=Teuchos::null) OverlapGraph_ = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*OverlapGraph_));
+    if (OverlapRowMap_!=Teuchos::null) OverlapRowMap_ = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(*OverlapRowMap_));
+  }
+}
+
+}//namespace Tifpack
+
 #endif // TIFPACK_OVERLAPGRAPH_HPP

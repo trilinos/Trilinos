@@ -46,6 +46,7 @@ T my_trivial_function(T in)
   return out;
 }
 
+//this macro declares the test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(TifpackGroup0, TifpackTest0, T)
 {
 //we are now in a class method declared by the above macro, and
@@ -58,4 +59,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(TifpackGroup0, TifpackTest0, T)
 
   TEUCHOS_TEST_EQUALITY(result, expected_result, out, success)
 }
+
+//this macro instantiates and registers the test:
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(TifpackGroup0, TifpackTest0)
 
