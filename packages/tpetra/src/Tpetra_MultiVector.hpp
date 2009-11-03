@@ -311,8 +311,9 @@ namespace Tpetra {
     constantNumPackets = numCols;
     exports.resize(numCols*exportLIDs.size());
     typename ArrayView<const LocalOrdinal>::iterator idptr;
-    typename ArrayView<Scalar>::iterator expptr;
+    typename Teuchos::Array<Scalar>::iterator expptr;
     expptr = exports.begin();
+
     Teuchos::RCP<Node> node = MVT::getNode(srcData);
     ArrayRCP<const Scalar> srcbuff = MVT::getValues(srcData);
     ArrayRCP<const Scalar> srcview = node->template viewBuffer<Scalar>(srcbuff.size(), srcbuff);
