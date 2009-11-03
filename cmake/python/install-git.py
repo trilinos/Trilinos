@@ -44,7 +44,8 @@ you choose to install git/eg in.
 NOTE: If you need to use sudo to install in /usr/local/bin or some other place
 that needs root privileges, do:
 
-  $ sudo SOME_DIR/install-git.py --install-dir=$HOME --do-all
+  $ SOME_DIR/install-git.py --install-dir=$HOME --checkout --untar --configure --build
+  $ sudo SOME_DIR/install-git.py --install-dir=$HOME --install
 
 This appears to work on some systems.
 
