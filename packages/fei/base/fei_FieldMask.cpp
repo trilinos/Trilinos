@@ -12,7 +12,7 @@
 #include <exception>
 #include <stdexcept>
 
-#include "snl_fei_ArrayUtils.hpp"
+#include "fei_ArrayUtils.hpp"
 #include "fei_FieldMask.hpp"
 
 
@@ -61,7 +61,7 @@ fei::FieldMask::~FieldMask()
 bool fei::FieldMask::hasFieldID(int fieldID) const
 {
   return(
-    snl_fei::binarySearch(fieldID,
+    fei::binarySearch(fieldID,
       fieldIDs_.size() ? &fieldIDs_[0] : 0,
       fieldIDs_.size())
     >= 0
@@ -84,7 +84,7 @@ void fei::FieldMask::getFieldEqnOffset(int fieldID,
       throw std::runtime_error("fei::FieldMask::getFieldEqnOffset: fieldID not found");
     }
   }
-  else idindex = snl_fei::binarySearch(fieldID, &fieldIDs_[0], fieldIDs_.size());
+  else idindex = fei::binarySearch(fieldID, &fieldIDs_[0], fieldIDs_.size());
 
   if (idindex < 0) {
      throw std::runtime_error("fei::FieldMask::getFieldEqnOffset: fieldID not found");
@@ -101,7 +101,7 @@ void fei::FieldMask::addField(int fieldID, int fieldSize, int numInstances)
   }
 
   int insertPoint = -1;
-  int idindex = snl_fei::binarySearch(fieldID, fieldIDs_, insertPoint);
+  int idindex = fei::binarySearch(fieldID, fieldIDs_, insertPoint);
   if (idindex >= 0) {
     fieldInstances_[idindex] += numInstances;
     for(unsigned i=idindex+1; i<fieldEqnOffsets_.size(); ++i) {

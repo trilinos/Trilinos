@@ -223,7 +223,7 @@ int fei::Vector_core::copyOut(int numValues,
       int proc = eqnComm_->getOwnerProc(ind);
 
       int insertPoint = -1;
-      int idx = snl_fei::binarySearch(ind, remote[proc]->indices(), insertPoint);
+      int idx = fei::binarySearch(ind, remote[proc]->indices(), insertPoint);
       if (idx < 0) {
 	FEI_CERR << "fei::Vector_core::copyOut: proc " << fei::localProc(comm_)
 	     << ", index " << ind << " not in remotelyOwned_ vec object for proc "

@@ -134,7 +134,7 @@ void ProcEqns::setProcEqnLengths(int* eqnNumbers, int* eqnLengths, int len)
       for(int j=0; j<eqnsPerProc_[i]; j++) {
          int eqn_j = (*(procEqnNumbers_[i]))[j];
          int ins = -1;
-	 int index = snl_fei::binarySearch( eqn_j,
+	 int index = fei::binarySearch( eqn_j,
 					    eqnNumbers, len, ins);
 
          if (index < 0) {

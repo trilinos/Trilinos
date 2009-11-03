@@ -67,7 +67,7 @@ NodeCommMgr::~NodeCommMgr() {
 //------------------------------------------------------------------------------
 int NodeCommMgr::getSharedNodeIndex(GlobalID nodeID)
 {
-  return( snl_fei::binarySearch(nodeID, &sharedNodeIDs[0], sharedNodeIDs.size()) );
+  return( fei::binarySearch(nodeID, &sharedNodeIDs[0], sharedNodeIDs.size()) );
 }
 
 //------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ int NodeCommMgr::informLocal(const NodeDescriptor& node) {
    //Since this node is present as a shared node, let's put nodeID in the
    //localNodeIDs list if it isn't already there.
 
-   int index = snl_fei::sortedListInsert(nodeID, localNodeIDs);
+   int index = fei::sortedListInsert(nodeID, localNodeIDs);
 
    //if index is -2, it means the localNodeIDs array had an allocation failure.
    if (index == -2) return(-2);
@@ -231,14 +231,14 @@ int NodeCommMgr::getSendMessage(int destProc, std::vector<int>& message)
 //------------------------------------------------------------------------------
 int NodeCommMgr::processRecvMessage(int srcProc, std::vector<int>& message)
 {
-  int idx = snl_fei::binarySearch(srcProc, &remoteOwnerProcs_[0],
+  int idx = fei::binarySearch(srcProc, &remoteOwnerProcs_[0],
                                   remoteOwnerProcs_.size());
   int numNodes = nodesPerOwnerProc_[idx];
   int* msgPtr = &message[0];
   int offset = 0;
 
   for(int j=0; j<numNodes; j++) {
-    int nIndex = snl_fei::binarySearch(msgPtr[j], &sharedNodeIDs[0], sharedNodeIDs.size());
+    int nIndex = fei::binarySearch(msgPtr[j], &sharedNodeIDs[0], sharedNodeIDs.size());
     if (nIndex < 0) return(-1);
     NodeDescriptor* node = sharedNodes_[nIndex];
 
@@ -344,7 +344,7 @@ void NodeCommMgr::packLocalNodesAndData(int* data,
       //is this local node associated with processor 'proc'?
 
       std::vector<int>& sProcs = *(sharingProcs_[i]);
-      int index = snl_fei::binarySearch(proc, &sProcs[0], sProcs.size());
+      int index = fei::binarySearch(proc, &sProcs[0], sProcs.size());
 
       //if not, skip to the next iteration...
       if (index < 0) continue;
@@ -439,7 +439,7 @@ void NodeCommMgr::packRemoteNodesAndData(GlobalID* data,
       const int* fieldIDsPtr = node->getFieldIDList();
 
       const GlobalID* nodeBlocks = node->getBlockList();
-      int lindex = snl_fei::binarySearch(sharedNodeIDs[i], &localNodeIDs[0], localNodeIDs.size());
+      int lindex = fei::binarySearch(sharedNodeIDs[i], &localNodeIDs[0], localNodeIDs.size());
 
       data[numNodes+offset++] = (lindex >= 0) ? 1 : 0;
       data[numNodes+offset++] = (GlobalID)numFields;
@@ -519,7 +519,7 @@ int NodeCommMgr::addSharedNodes( const GlobalID* nodeIDs,
 
   for(int i=0; i<numNodes; i++) {
     int insertPoint = -1;
-    int index = snl_fei::binarySearch(nodeIDs[i], sharedNodeIDs, insertPoint);
+    int index = fei::binarySearch(nodeIDs[i], sharedNodeIDs, insertPoint);
     if (index < 0) {
       sharingProcs_.insert(sharingProcs_.begin()+insertPoint, new std::vector<int>);
 
@@ -620,7 +620,7 @@ int NodeCommMgr::initComplete(NodeDatabase& nodeDB, bool safetyCheck)
   //now add the local processor to the sharedNodeSubdomains for each node that
   //appears in our localNodeIDs list.
   for(unsigned i=0; i<sharedNodeIDs.size(); i++) {
-    int index = snl_fei::binarySearch(sharedNodeIDs[i], &localNodeIDs[0], localNodeIDs.size());
+    int index = fei::binarySearch(sharedNodeIDs[i], &localNodeIDs[0], localNodeIDs.size());
     if (index >= 0) {
       sharedNodeSubdomains[i].push_back(localProc_);
     }
@@ -731,7 +731,7 @@ int NodeCommMgr::checkCommArrays(const char* whichCheck,
 	//proc i says that we (localProc_) own nodes that it shares.
 	int numShared = globalNodesPerRemoteProc[offset+j];
 
-	int index = snl_fei::binarySearch(i, &remoteProcs[0], remoteProcs.size());
+	int index = fei::binarySearch(i, &remoteProcs[0], remoteProcs.size());
 	if (index < 0) {
 	  //we don't think proc i shares any nodes that we own.
 	  FEI_CERR << "FEI NodeCommMgr::checkSharedNodeInfo "<<whichCheck
@@ -780,13 +780,13 @@ int NodeCommMgr::adjustSharedOwnership()
 
     std::vector<int>& shProcs = *(sharingProcs_[i]);
 
-    if (snl_fei::binarySearch(nodeID, &localNodeIDs[0], localNodeIDs.size()) >= 0) continue;
+    if (fei::binarySearch(nodeID, &localNodeIDs[0], localNodeIDs.size()) >= 0) continue;
 
     int proc = shProcs[0];
 
     if (proc == localProc_) {
       sharedNodes_[i]->setOwnerProc(shProcs[1]);
-      err = snl_fei::sortedListInsert(nodeID, remoteNodeIDs);
+      err = fei::sortedListInsert(nodeID, remoteNodeIDs);
       if (err == -2) return(err);
     }
   }
@@ -824,8 +824,8 @@ int NodeCommMgr::adjustSharedOwnership()
       //if it's not even one of our shared nodes, then continue.
       if (index < 0) continue;
 
-      if (snl_fei::binarySearch(nodeID, &localNodeIDs[0], localNodeIDs.size()) >= 0) {
-        snl_fei::sortedListInsert(nodeID, remoteNodeIDs);
+      if (fei::binarySearch(nodeID, &localNodeIDs[0], localNodeIDs.size()) >= 0) {
+        fei::sortedListInsert(nodeID, remoteNodeIDs);
       }
     }
   }
@@ -992,7 +992,7 @@ int NodeCommMgr::exchangeSharedRemoteFieldsBlks()
     int numNodes = nodesPerSharingProc_[index];
 
     for(int j=0; j<numNodes; j++) {
-      int nIndex = snl_fei::binarySearch(recvData[index][j], &sharedNodeIDs[0], sharedNodeIDs.size());
+      int nIndex = fei::binarySearch(recvData[index][j], &sharedNodeIDs[0], sharedNodeIDs.size());
       if (nIndex < 0) {
 	FEI_CERR << "NodeCommMgr::exchangeSharedRemote...: error, unknown nodeID "
 	     << (int)recvData[index][j] << ", " << j

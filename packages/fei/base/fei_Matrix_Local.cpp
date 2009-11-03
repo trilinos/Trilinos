@@ -80,7 +80,7 @@ Matrix_Local::getRowIndex(int rowNumber) const
 {
   int* rows = &(sparseRowGraph_->rowNumbers[0]);
   int numRows = getLocalNumRows();
-  return( snl_fei::binarySearch(rowNumber, rows, numRows) );
+  return( fei::binarySearch(rowNumber, rows, numRows) );
 }
 
 int
@@ -155,7 +155,7 @@ Matrix_Local::giveToMatrix(int numRows, const int* rows,
     double* coefs   = &(coefs_[offset]);
 
     for(int j=0; j<numCols; ++j) {
-      int idx2 = snl_fei::binarySearch(cols[j], colInds, len);
+      int idx2 = fei::binarySearch(cols[j], colInds, len);
       if (idx2 < 0) {
         throw std::runtime_error("fei::Matrix_Local::sumIn ERROR, col not found.");
       }

@@ -341,7 +341,7 @@ bool snl_fei::LinearSystem_General::eqnIsEssentialBC(int globalEqnIndex) const
   if (essBCvalues_ == NULL) return(false);
 
   std::vector<int>& indices = essBCvalues_->indices();
-  int offset = snl_fei::binarySearch(globalEqnIndex, indices);
+  int offset = fei::binarySearch(globalEqnIndex, indices);
   return( offset < 0 ? false : true);
 }
 
@@ -770,7 +770,7 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(fei::CSVec& essBCs
     double* coefsPtr = &coefs[0];
     bool modifiedCoef = false;
 
-    snl_fei::insertion_sort_with_companions(numIndices, indicesPtr, coefsPtr);
+    fei::insertion_sort_with_companions(numIndices, indicesPtr, coefsPtr);
 
     if (indicesPtr[0] > lastBCeqn || indicesPtr[numIndices-1] < firstBCeqn) {
       continue;
@@ -781,7 +781,7 @@ void snl_fei::LinearSystem_General::enforceEssentialBC_step_2(fei::CSVec& essBCs
 
     for(int j=0; j<numIndices; ++j) {
       int idx = indicesPtr[j];
-      offset = snl_fei::binarySearch(idx, bcEqns, numBCeqns,
+      offset = fei::binarySearch(idx, bcEqns, numBCeqns,
 				     insertPoint);
       if (offset > -1) {
 	value -= bcCoefs[offset]*coefsPtr[j];

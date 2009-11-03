@@ -260,7 +260,7 @@ int test_misc::serialtest1()
 
 int test_misc::serialtest2()
 {
-  FEI_COUT << "testing snl_fei::lowerBound...";
+  FEI_COUT << "testing fei::lowerBound...";
   std::vector<int> list(5);
 
   list[0] = 1;
@@ -270,55 +270,55 @@ int test_misc::serialtest2()
   list[4] = 11;
 
   int item = 0;
-  int lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  int lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 0) {
     throw std::runtime_error("failed test 1");
   }
 
   item = 1;
-  lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 0) {
     throw std::runtime_error("failed test 2");
   }
 
   item = 2;
-  lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 1) {
     throw std::runtime_error("failed test 3");
   }
 
   item = 7;
-  lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 3) {
     throw std::runtime_error("failed test 4");
   }
 
   item = 9;
-  lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 4) {
     throw std::runtime_error("failed test 5");
   }
 
   item = 11;
-  lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 4) {
     throw std::runtime_error("failed test6");
   }
 
   item = 12;
-  lowerbound = snl_fei::lowerBound<int>(item, &list[0], list.size());
+  lowerbound = fei::lowerBound<int>(item, &list[0], list.size());
 
   if (lowerbound != 5) {
     throw std::runtime_error("failed test 7");
   }
 
-  lowerbound = snl_fei::lowerBound<int>(item, (int*)0, (int)0);
+  lowerbound = fei::lowerBound<int>(item, (int*)0, (int)0);
 
   if (lowerbound != 0) {
     throw std::runtime_error("failed test 8");
@@ -328,14 +328,14 @@ int test_misc::serialtest2()
   list2.push_back(2);
 
   item = 2;
-  lowerbound = snl_fei::lowerBound<int>(item, &list2[0], list2.size());
+  lowerbound = fei::lowerBound<int>(item, &list2[0], list2.size());
 
   if (lowerbound != 0) {
     throw std::runtime_error("failed test 9");
   }
 
   item = 5;
-  lowerbound = snl_fei::lowerBound<int>(item, &list2[0], list2.size());
+  lowerbound = fei::lowerBound<int>(item, &list2[0], list2.size());
 
   if (lowerbound != 1) {
     throw std::runtime_error("failed test 10");

@@ -164,7 +164,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::VectorSpace> vecSpace,
     else {
       localSize = vecSpace->getNumIndices_Owned();
       indices.resize(localSize);
-      err = vecSpace->getIndices_Owned(localSize, &indices[0], localSize);
+      err = vecSpace->getIndices_Owned(indices);
     }
   }
   if (err != 0) {
@@ -251,7 +251,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   else {
     localSize = vecSpace->getNumIndices_Owned();
     indices.resize(localSize);
-    err = vecSpace->getIndices_Owned(localSize, &indices[0], localSize);
+    err = vecSpace->getIndices_Owned(indices);
   }
   if (err != 0) {
     throw std::runtime_error("error in vecSpace->getIndices_Owned");

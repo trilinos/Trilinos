@@ -11,7 +11,7 @@
 #include <test_utils/snl_fei_tester.hpp>
 
 #include <fei_LinearSystemCore.hpp>
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 #include <test_utils/LibraryFactory.hpp>
 
 #include <fei_base.hpp>
@@ -455,7 +455,7 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
   std::vector<int> flatFieldIDsArray;
   for(i=0; i<eb.numNodesPerElement_; ++i) {
     for(j=0; j<eb.numFieldsPerNode_[i]; ++j) {
-      snl_fei::sortedListInsert(eb.nodalFieldIDs_[i][j], nodalFieldIDs);
+      fei::sortedListInsert(eb.nodalFieldIDs_[i][j], nodalFieldIDs);
       flatFieldIDsArray.push_back(eb.nodalFieldIDs_[i][j]);
     }
   }

@@ -438,7 +438,7 @@ int SNL_FEI_Structure::initElemBlock(GlobalID elemBlockID,
 
       countDOF = 0;
       for(int k = 0; k < numFieldsPerNode[j]; k++) {
-        snl_fei::sortedListInsert(nodalFieldIDs[j][k], distinctFields);
+        fei::sortedListInsert(nodalFieldIDs[j][k], distinctFields);
 
          int fieldSize = getFieldSize(nodalFieldIDs[j][k]);
          if (fieldSize < 0) {
@@ -809,7 +809,7 @@ bool SNL_FEI_Structure::isInLocalElement(int nodeNumber)
   //If we reach this line, then the node is a shared node. Let's now ask if
   //it appears locally...
   std::vector<GlobalID>& localNodes = nodeCommMgr_->getLocalNodeIDs();
-  int index = snl_fei::binarySearch(nodeID, &localNodes[0], localNodes.size());
+  int index = fei::binarySearch(nodeID, &localNodes[0], localNodes.size());
   if (index >= 0) return(true);
 
   //If we reach this line, then the node is shared, but doesn't appear in the
@@ -1314,7 +1314,7 @@ bool SNL_FEI_Structure::nodalEqnsAllSlaves(const NodeDescriptor* node,
     int fieldSize = getFieldSize(fieldIDs[i]);
     for(int eqn=0; eqn<fieldSize; ++eqn) {
       int thisEqn = fieldEqns[i] + eqn;
-      if (snl_fei::binarySearch(thisEqn, slaveEqns) < 0) {
+      if (fei::binarySearch(thisEqn, slaveEqns) < 0) {
 	//found a nodal eqn that's not a slave eqn, so return false.
 	return(false);
       }
@@ -2763,7 +2763,7 @@ int SNL_FEI_Structure::addBlock(GlobalID blockID) {
 //already present, and a ConnectivityTable to go with it.
 //
   int insertPoint = -1;
-  int found = snl_fei::binarySearch(blockID, blockIDs_, insertPoint);
+  int found = fei::binarySearch(blockID, blockIDs_, insertPoint);
 
    if (found<0) {
       blockIDs_.insert(blockIDs_.begin()+insertPoint, blockID);
@@ -2784,7 +2784,7 @@ int SNL_FEI_Structure::addBlock(GlobalID blockID) {
 int SNL_FEI_Structure::getBlockDescriptor(GlobalID blockID,
                                          BlockDescriptor*& block)
 {
-  int index = snl_fei::binarySearch(blockID, blockIDs_);
+  int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
       FEI_CERR << "SNL_FEI_Structure::getBlockDescriptor: ERROR, blockID "
@@ -2800,7 +2800,7 @@ int SNL_FEI_Structure::getBlockDescriptor(GlobalID blockID,
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::getIndexOfBlock(GlobalID blockID)
 {
-  int index = snl_fei::binarySearch(blockID, blockIDs_);
+  int index = fei::binarySearch(blockID, blockIDs_);
   return(index);
 }
 
@@ -2818,7 +2818,7 @@ int SNL_FEI_Structure::getBlockDescriptor_index(int index,
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::allocateBlockConnectivity(GlobalID blockID) {
 
-   int index = snl_fei::binarySearch(blockID, blockIDs_);
+   int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
       FEI_CERR << "SNL_FEI_Structure::allocateConnectivityTable: ERROR, blockID "
@@ -2849,7 +2849,7 @@ int SNL_FEI_Structure::allocateBlockConnectivity(GlobalID blockID) {
 //------------------------------------------------------------------------------
 ConnectivityTable& SNL_FEI_Structure::getBlockConnectivity(GlobalID blockID) {
 
-   int index = snl_fei::binarySearch(blockID, blockIDs_);
+   int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
       FEI_CERR << "SNL_FEI_Structure::getBlockConnectivity: ERROR, blockID "
@@ -3241,7 +3241,7 @@ int SNL_FEI_Structure::translateToReducedNodeNumber(int nodeNumber, int proc)
 
   int insertPoint = -1;
   int index =
-    snl_fei::binarySearch(nodeNumber, localVanishedNodeNumbers_, insertPoint);
+    fei::binarySearch(nodeNumber, localVanishedNodeNumbers_, insertPoint);
 
   int localAdjustment = index < 0 ? insertPoint : index + 1;
 
@@ -3390,7 +3390,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
           node->getOwnerProc() == localProc_) {
         if (nodalEqnsAllSlaves(node, slvEqns)) {
           numLocalNodesVanished++;
-          if (snl_fei::sortedListInsert(node->getNodeNumber(), localVanishedNodeNumbers_)
+          if (fei::sortedListInsert(node->getNodeNumber(), localVanishedNodeNumbers_)
               == -2) {
             ERReturn(-1);
           }
@@ -3593,7 +3593,7 @@ bool SNL_FEI_Structure::isSlaveEqn(int eqn)
 
   std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int insertPoint = -1;
-  int foundOffset = snl_fei::binarySearch(eqn, slvEqns, insertPoint);
+  int foundOffset = fei::binarySearch(eqn, slvEqns, insertPoint);
 
   if (foundOffset >= 0) return(true);
   else return(false);
@@ -3608,7 +3608,7 @@ bool SNL_FEI_Structure::translateToReducedEqn(int eqn, int& reducedEqn)
   if (eqn > highestSlv_) {reducedEqn = eqn - numSlvs_; return(false); }
 
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(eqn, *slvEqnNumbers_, index);
+  int foundOffset = fei::binarySearch(eqn, *slvEqnNumbers_, index);
 
   bool isSlave = false;
 
@@ -3654,7 +3654,7 @@ int SNL_FEI_Structure::getMasterEqnNumbers(int slaveEqn,
 
   std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns, index);
+  int foundOffset = fei::binarySearch(slaveEqn, slvEqns, index);
 
   if (foundOffset >= 0) {
     masterEqns = &(slaveEqns_->eqns()[foundOffset]->indices());
@@ -3677,7 +3677,7 @@ int SNL_FEI_Structure::getMasterEqnCoefs(int slaveEqn,
 
   std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns, index);
+  int foundOffset = fei::binarySearch(slaveEqn, slvEqns, index);
 
   if (foundOffset >= 0) {
     masterCoefs = &(slaveEqns_->eqns()[foundOffset]->coefs());
@@ -3699,7 +3699,7 @@ int SNL_FEI_Structure::getMasterEqnRHS(int slaveEqn,
 
   std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns, index);
+  int foundOffset = fei::binarySearch(slaveEqn, slvEqns, index);
 
   if (foundOffset >= 0) {
     std::vector<double>* rhsCoefsPtr = (*(slaveEqns_->rhsCoefsPtr()))[foundOffset];
@@ -3714,7 +3714,7 @@ void SNL_FEI_Structure::getScatterIndices_ID(GlobalID blockID, GlobalID elemID,
                                             int interleaveStrategy,
                                             int* scatterIndices)
 {
-   int index = snl_fei::binarySearch(blockID, blockIDs_);
+   int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
       FEI_CERR << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID "
@@ -3747,7 +3747,7 @@ void SNL_FEI_Structure::getScatterIndices_ID(GlobalID blockID, GlobalID elemID,
 					     int* blkScatterIndices,
 					     int* blkSizes)
 {
-   int index = snl_fei::binarySearch(blockID, blockIDs_);
+   int index = fei::binarySearch(blockID, blockIDs_);
 
    if (index < 0) {
       FEI_CERR << "SNL_FEI_Structure::getScatterIndices_ID: ERROR, blockID "
@@ -4017,7 +4017,7 @@ int SNL_FEI_Structure::getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
          assert(numEqns >= 0);
 
          int insert = -1;
-         int nind = snl_fei::binarySearch(fieldID_ind[j], nodeFieldIDList,
+         int nind = fei::binarySearch(fieldID_ind[j], nodeFieldIDList,
                                              numFields, insert);
 
          if (nind >= 0) {
@@ -4087,7 +4087,7 @@ int SNL_FEI_Structure::getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
          assert(numEqns >= 0);
 
          int insert = -1;
-         int nind = snl_fei::binarySearch(fieldID_ind[j], nodeFieldIDList,
+         int nind = fei::binarySearch(fieldID_ind[j], nodeFieldIDList,
                                              numFields, insert);
 
          if (nind >= 0) {
@@ -4141,7 +4141,7 @@ int SNL_FEI_Structure::getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
          assert(numEqns >= 0);
 
          int insert = -1;
-         int nind = snl_fei::binarySearch(fieldID_ind[j], nodeFieldIDList,
+         int nind = fei::binarySearch(fieldID_ind[j], nodeFieldIDList,
                                              numFields, insert);
 
          if (nind >= 0) {
@@ -4205,7 +4205,7 @@ int SNL_FEI_Structure::getFieldMajorIndices(NodeDescriptor** nodes, int numNodes
     int field = fieldsPtr[i];
 
     for(int nodeIndex = 0; nodeIndex < numNodes; ++nodeIndex) {
-      int fidx = snl_fei::searchList(field, fieldIDs[nodeIndex],
+      int fidx = fei::searchList(field, fieldIDs[nodeIndex],
 				    fieldsPerNode[nodeIndex]);
       if (fidx < 0) {
 	continue;
@@ -4221,7 +4221,7 @@ int SNL_FEI_Structure::getFieldMajorIndices(NodeDescriptor** nodes, int numNodes
       assert(numEqns >= 0);
 
       int insert = -1;
-      int nind = snl_fei::binarySearch(field, nodeFieldIDList,
+      int nind = fei::binarySearch(field, nodeFieldIDList,
 					  numFields, insert);
 
       if (nind > -1) {
@@ -4277,7 +4277,7 @@ int SNL_FEI_Structure::getFieldMajorIndices(NodeDescriptor** nodes, int numNodes
          assert(numEqns >= 0);
 
          int insert = -1;
-         int nind = snl_fei::binarySearch(fields[i], nodeFieldIDList,
+         int nind = fei::binarySearch(fields[i], nodeFieldIDList,
                                              numFields, insert);
 
          if (nind >= 0) {

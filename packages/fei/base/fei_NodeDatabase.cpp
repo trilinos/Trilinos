@@ -97,7 +97,7 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, const NodeDescriptor*& node)
 int NodeDatabase::getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) const
 {
   int insertPoint = -1;
-  int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
+  int index = fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
 
   if (index >= 0) {
     node = nodePtrs_[eqnNodeIndices_[index]];
@@ -283,7 +283,7 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
       node->setNodeNumber(nodeNumber++);
       numLocalNodes_++;
 
-      int insertPoint = snl_fei::sortedListInsert(firstEqnNumber, eqnNumbers_);
+      int insertPoint = fei::sortedListInsert(firstEqnNumber, eqnNumbers_);
       if (insertPoint == -2) ERReturn(-2);
       if (insertPoint >= 0) eqnNodeIndices_.insert(eqnNodeIndices_.begin()+insertPoint, i);
     }
@@ -318,7 +318,7 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
       ERReturn(-1);
     }
     int firstEqn = node.getFieldEqnNumbers()[0];
-    int insertPoint = snl_fei::sortedListInsert(firstEqn, eqnNumbers_);
+    int insertPoint = fei::sortedListInsert(firstEqn, eqnNumbers_);
     if (insertPoint == -2) ERReturn(-2);
     if (insertPoint >= 0) eqnNodeIndices_.insert(eqnNodeIndices_.begin()+insertPoint, index);
 
@@ -336,7 +336,7 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
 int NodeDatabase::getAssociatedNodeNumber(int eqnNumber)
 {
   int insertPoint = -1;
-  int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
+  int index = fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
 
   if (index >= 0) {
     return( nodePtrs_[eqnNodeIndices_[index]]->getNodeNumber() );
@@ -372,7 +372,7 @@ int NodeDatabase::getAssociatedNodeNumber(int eqnNumber)
 int NodeDatabase::getAssociatedFieldID(int eqnNumber)
 {
   int insertPoint = -1;
-  int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
+  int index = fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
 
   int index2 = index;
   if (index2 < 0) index2 = insertPoint-1;

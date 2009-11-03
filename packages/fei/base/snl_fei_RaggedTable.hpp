@@ -161,8 +161,8 @@ inline void RaggedTable<MAP_TYPE,SET_TYPE>::addIndices(int numRows,
     if (m_iter != m_end) {
       const typename MAP_TYPE::value_type& m_pair = *m_iter;
       if (m_pair.first == row) {
-	mapped_indices = m_pair.second;
-	found_row = true;
+        mapped_indices = m_pair.second;
+        found_row = true;
       }
     }
 

@@ -571,9 +571,8 @@ namespace fei {
         than 'lenIndices', then globalIndices will contain
         'min(lenIndices, numIndices)' of the local processor's indices.
     */
-    int getIndices_Owned(int lenIndices,
-                         int* globalIndices,
-                         int& numIndices) const;
+    int getIndices_Owned(std::vector<int>& globalIndices) const;
+    int getIndices_Owned(int lenIndices, int* globalIndices, int& numIndices) const;
 
     /** Query number of block indices owned by local processor.
     */

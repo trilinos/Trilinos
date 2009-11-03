@@ -1428,9 +1428,8 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
   if (reducer_.get() == NULL) {
     reducer_.reset(new fei::Reducer(D_, g_, comm_));
 
-    int localSize = rowSpace_->getNumIndices_Owned();
-    std::vector<int> indices(localSize);
-    rowSpace_->getIndices_Owned(localSize, &indices[0], localSize);
+    std::vector<int> indices;
+    rowSpace_->getIndices_Owned(indices);
 
     reducer_->setLocalUnreducedEqns(indices);
   }

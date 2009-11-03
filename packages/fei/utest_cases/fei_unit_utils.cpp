@@ -1,6 +1,6 @@
 
 #include <fei_iostream.hpp>
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 
 #include <fei_unit_utils.hpp>
 
@@ -9,7 +9,7 @@
 
 void test_insertion_sort_with_companions()
 {
-  FEI_COUT << "testing snl_fei::insertion_sort_with_companions...";
+  FEI_COUT << "testing fei::insertion_sort_with_companions...";
 
   int len = 5;
   std::vector<int> array(len);
@@ -27,7 +27,7 @@ void test_insertion_sort_with_companions()
   darray[3] = 4.0;
   darray[4] = 1.0;
 
-  snl_fei::insertion_sort_with_companions(len, &array[0], &darray[0]);
+  fei::insertion_sort_with_companions(len, &array[0], &darray[0]);
 
   for(int i=0; i<len; ++i) {
     if (array[i] != i) {
@@ -48,7 +48,7 @@ void test_insertion_sort_with_companions()
   array[12] = 214;
   array[13] = 3;
 
-  snl_fei::insertion_sort_with_companions(len, &array[10], &darray[0]);
+  fei::insertion_sort_with_companions(len, &array[10], &darray[0]);
 
   FEI_COUT << "ok"<<FEI_ENDL;
 

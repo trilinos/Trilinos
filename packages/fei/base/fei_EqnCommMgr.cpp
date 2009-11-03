@@ -156,7 +156,7 @@ void EqnCommMgr::addSolnValues(int* eqnNumbers, double* values, int num)
 
   double* solnValuesPtr = &solnValues_[0];
   for(int i=0; i<num; i++) {
-    int index = snl_fei::binarySearch(eqnNumbers[i], recvEqnNumbers);
+    int index = fei::binarySearch(eqnNumbers[i], recvEqnNumbers);
 
     if (index < 0) continue;
 
@@ -989,7 +989,7 @@ int EqnCommMgr::gatherSharedBCs(EqnBuffer& bcEqns)
   for(i=0; i<numBCeqns; i++) {
     int eqn = bcEqnNumbers[i];
 
-    int index = snl_fei::binarySearch(eqn, sendEqnNumbers);
+    int index = fei::binarySearch(eqn, sendEqnNumbers);
     if (index<0) continue;
 
     std::vector<double>& coefs = bcEqns.eqns()[i]->coefs();
@@ -1056,7 +1056,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 
     std::vector<int>& indices = _sendEqns[j]->indices();
 
-    snl_fei::binarySearch(numEssEqns, essEqns, offsetsPtr,
+    fei::binarySearch(numEssEqns, essEqns, offsetsPtr,
 			  &indices[0], indices.size());
 
     int sendEqn_j = _sendEqnNumbers[j];

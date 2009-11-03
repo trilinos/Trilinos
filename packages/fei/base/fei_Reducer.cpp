@@ -13,7 +13,7 @@
 #include <fei_Matrix_core.hpp>
 #include <fei_Vector.hpp>
 #include <fei_Graph_Impl.hpp>
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_SparseRowGraph.hpp>
 #include <fei_Vector.hpp>
@@ -187,9 +187,8 @@ Reducer::Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
   comm_ = vecSpace->getCommunicator();
   initialize();
 
-  int num = vecSpace->getNumIndices_Owned();
-  std::vector<int> indices(num);
-  vecSpace->getIndices_Owned(num, &indices[0], num);
+  std::vector<int> indices;
+  vecSpace->getIndices_Owned(indices);
   setLocalUnreducedEqns(indices);
 }
 
@@ -226,7 +225,7 @@ Reducer::setLocalUnreducedEqns(const std::vector<int>& localUnreducedEqns)
   numLocalSlaves_ = 0;
 
   for(size_t i=0; i<localUnreducedEqns_.size(); ++i) {
-    int idx = snl_fei::binarySearch(localUnreducedEqns_[i],
+    int idx = fei::binarySearch(localUnreducedEqns_[i],
                                     slavesPtr_, numGlobalSlaves_);
     if (idx < 0) {
       isSlaveEqn_[i] = false;
@@ -638,7 +637,7 @@ Reducer::getSlaveMasterEqns(int slaveEqn, std::vector<int>& masterEqns)
 bool
 Reducer::isSlaveCol(int unreducedEqn) const
 {
-  int idx = snl_fei::binarySearch(unreducedEqn,
+  int idx = fei::binarySearch(unreducedEqn,
                                   slavesPtr_, numGlobalSlaves_);
   
   return(idx>=0);
@@ -656,7 +655,7 @@ Reducer::translateToReducedEqn(int eqn) const
   }
 
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(eqn, slavesPtr_, numGlobalSlaves_,
+  int foundOffset = fei::binarySearch(eqn, slavesPtr_, numGlobalSlaves_,
                                           index);
 
   if (foundOffset >= 0) {
@@ -670,7 +669,7 @@ int
 Reducer::translateFromReducedEqn(int reduced_eqn) const
 {
   int index = -1;
-  int offset = snl_fei::binarySearch(reduced_eqn, &reverse_[0],
+  int offset = fei::binarySearch(reduced_eqn, &reverse_[0],
                                      reverse_.size(), index);
   if (offset >= 0) {
     return(nonslaves_[offset]);
@@ -963,7 +962,7 @@ Reducer::copyOutVectorValues(int numValues,
 
     for(unsigned ii=0; ii<offsets.size(); ++ii) {
       int index = globalIndices[offsets[ii]];
-      int idx = snl_fei::binarySearch(index, indices, len);
+      int idx = fei::binarySearch(index, indices, len);
       if (idx < 0) {
         continue;
       }

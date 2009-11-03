@@ -207,7 +207,7 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
       int fSize = DBFieldSize;
 
       if (numDBFields > 1) {
-	fIndex = snl_fei::binarySearch(fieldIDList[j], fieldIDs, numFields);
+	fIndex = fei::binarySearch(fieldIDList[j], fieldIDs, numFields);
 	if (fIndex < 0) return(-1);
 	fSize = problemStructure_->getFieldSize(fieldIDList[j]);
 	if (fSize < 0) return(-1);

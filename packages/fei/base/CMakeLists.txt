@@ -34,6 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
 ../fei_fwd.hpp
 ../fei_base.hpp
+fei_ArrayUtils.hpp
 fei_BlockDescriptor.hpp
 fei_BlockLinearProblemManager.hpp
 fei_bool.h
@@ -130,7 +131,6 @@ fei_VectorTraits.hpp
 fei_VectorTraits_LinProbMgr.hpp
 fei_VectorTraits_LinSysCore.hpp
 fei_version.h
-snl_fei_ArrayUtils.hpp
 snl_fei_BlkSizeMsgHandler.hpp
 snl_fei_BlockMatrixTraits.hpp
 snl_fei_Broker_FEData.hpp

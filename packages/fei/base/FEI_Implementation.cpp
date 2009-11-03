@@ -243,7 +243,7 @@ int FEI_Implementation::setCurrentRHS(int rhsID)
   bool found = false;
 
   for(int j=0; j<numInternalFEIs_; j++){
-    int index = snl_fei::searchList(rhsID, rhsIDs_[j], numRHSIDs_[j]);
+    int index = fei::searchList(rhsID, rhsIDs_[j], numRHSIDs_[j]);
     if (index >= 0) {
       index_current_rhs_row_ = j;
       CHK_ERR( filter_[index_current_rhs_row_]->setCurrentRHS(rhsID) )
@@ -785,7 +785,7 @@ int FEI_Implementation::setRHSScalars(int numScalars,
      bool found = false;
 
      for(int j=0; j<numInternalFEIs_; j++){
-         int index = snl_fei::searchList(IDs[i], rhsIDs_[j], numRHSIDs_[j]);
+         int index = fei::searchList(IDs[i], rhsIDs_[j], numRHSIDs_[j]);
          if (index>=0) {
              rhsScalars_[j][index] = scalars[i];
              found = true;

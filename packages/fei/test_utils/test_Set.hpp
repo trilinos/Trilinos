@@ -25,7 +25,7 @@ class test_Set : public tester {
   const char* getName()
     {
       static const char name[] =
-	"fei::ctg_set<int>, snl_fei::binarySearch, etc.";
+	"fei::ctg_set<int>, fei::binarySearch, etc.";
       return((const char*)name);
     }
 

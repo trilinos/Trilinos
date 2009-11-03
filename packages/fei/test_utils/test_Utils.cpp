@@ -10,7 +10,7 @@
 
 #include <test_utils/test_Utils.hpp>
 
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 #include <fei_utils.hpp>
 #include <fei_CommUtils.hpp>
 #include <snl_fei_Utils.hpp>
@@ -44,48 +44,48 @@ void test_Utils_binarySearch()
   int offset = 0;
   int insertPoint = -1;
 
-  FEI_COUT << "testing correctness of snl_fei::binarySearch(int,int*,int,int)...";
+  FEI_COUT << "testing correctness of fei::binarySearch(int,int*,int,int)...";
 
-  offset = snl_fei::binarySearch(0, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(0, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 0) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 1.");
+    throw std::runtime_error("fei::binarySearch test failed 1.");
   }
 
-  offset = snl_fei::binarySearch(2, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(2, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != 1) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 2.");
+    throw std::runtime_error("fei::binarySearch test failed 2.");
   }
 
-  offset = snl_fei::binarySearch(3, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(3, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 2) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 3.");
+    throw std::runtime_error("fei::binarySearch test failed 3.");
   }
 
-  offset = snl_fei::binarySearch(4, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(4, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 2) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 4.");
+    throw std::runtime_error("fei::binarySearch test failed 4.");
   }
 
-  offset = snl_fei::binarySearch(9, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(9, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != 4) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 5.");
+    throw std::runtime_error("fei::binarySearch test failed 5.");
   }
 
-  offset = snl_fei::binarySearch(8, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(8, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 4) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 6.");
+    throw std::runtime_error("fei::binarySearch test failed 6.");
   }
 
-  offset = snl_fei::binarySearch(10, &intarray[0], intarray.size(),
+  offset = fei::binarySearch(10, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 5) {
-    throw std::runtime_error("snl_fei::binarySearch test failed 7.");
+    throw std::runtime_error("fei::binarySearch test failed 7.");
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;

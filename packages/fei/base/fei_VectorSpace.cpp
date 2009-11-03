@@ -291,7 +291,7 @@ void fei::VectorSpace::defineIDTypes(int numIDTypes,
 
   int localProc = fei::localProc(comm_);
   for (int i=0; i<numIDTypes; ++i) {
-    int offset = snl_fei::sortedListInsert(idTypes[i], idTypes_);
+    int offset = fei::sortedListInsert(idTypes[i], idTypes_);
 
     if (offset >= 0) {
       recordCollections_.insert(recordCollections_.begin()+offset, new snl_fei::RecordCollection(localProc));
@@ -320,7 +320,7 @@ int fei::VectorSpace::addDOFs(int fieldID,
 
   if (numIDs <= 0) return(0);
 
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
   unsigned fieldSize = getFieldSize(fieldID);
@@ -356,7 +356,7 @@ int fei::VectorSpace::addDOFs(int fieldID,
 
   if (numIDs <= 0) return(0);
 
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::VectorSpace::addDOFs: error, idType " << idType
@@ -394,7 +394,7 @@ int fei::VectorSpace::addDOFs(int idType,
 
   if (numIDs <= 0) return(0);
 
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
   recordCollections_[idx]->initRecords(numIDs, IDs, fieldMasks_);
@@ -423,7 +423,7 @@ int fei::VectorSpace::addDOFs(int idType,
 
   if (numIDs <= 0) return(0);
 
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
   recordCollections_[idx]->initRecords(numIDs, IDs,
@@ -458,7 +458,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
 
   if (numShared == 0) return(0);
 
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
   fei::SharedIDs* shIDs = NULL;
@@ -507,7 +507,7 @@ int fei::VectorSpace::initSharedIDs(int numShared,
   fei::SharedIDs* shIDs = NULL;
   getSharedIDs_private(idType, shIDs);
 
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
   for(int i=0; i<numShared; ++i) {
@@ -573,7 +573,7 @@ void fei::VectorSpace::getSharedIDs_private(int idType,
                                            fei::SharedIDs*& shIDs)
 {
   int insertPoint = -1;
-  int idx = snl_fei::binarySearch(idType, sharedIDTypes_, insertPoint);
+  int idx = fei::binarySearch(idType, sharedIDTypes_, insertPoint);
   if (idx < 0) {
     sharedIDTypes_.insert(sharedIDTypes_.begin()+insertPoint, idType);
 
@@ -636,7 +636,7 @@ int fei::VectorSpace::getGlobalIndex(int idType,
                                      int whichComponentOfField,
                                      int& globalIndex)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(-1);
 
   unsigned fieldSize = 0;
@@ -676,7 +676,7 @@ int fei::VectorSpace::getGlobalBlkIndex(int idType,
                                         int ID,
                                         int& globalBlkIndex)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(-1);
 
   CHK_ERR(recordCollections_[idindex]->getGlobalBlkIndex(ID, globalBlkIndex));
@@ -691,7 +691,7 @@ int fei::VectorSpace::getGlobalIndices(int numIDs,
                                        int fieldID,
                                        int* globalIndices)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(-1);
 
   unsigned fieldSize = getFieldSize(fieldID);
@@ -731,7 +731,7 @@ int fei::VectorSpace::getGlobalBlkIndices(int numIDs,
                                           int* globalBlkIndices)
 {
   int err;
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(-1);
 
   int offset = 0;
@@ -947,7 +947,7 @@ int fei::VectorSpace::getGlobalIndex(int idType,
                                      int ID,
                                      int& globalIndex)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(-1);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
@@ -966,7 +966,7 @@ int fei::VectorSpace::getGlobalIndex(int idType,
 int fei::VectorSpace::getNumDegreesOfFreedom(int idType,
                                              int ID)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(0);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
@@ -1012,7 +1012,7 @@ void fei::VectorSpace::getIDTypes(std::vector<int>& idTypes) const
 int fei::VectorSpace::getNumFields(int idType,
                                    int ID)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(0);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
@@ -1026,7 +1026,7 @@ int fei::VectorSpace::getNumFields(int idType,
 //----------------------------------------------------------------------------
 bool fei::VectorSpace::isLocal(int idType, int ID)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(false);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
@@ -1040,7 +1040,7 @@ bool fei::VectorSpace::isLocal(int idType, int ID)
 //----------------------------------------------------------------------------
 bool fei::VectorSpace::isLocallyOwned(int idType, int ID)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(false);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
@@ -1076,7 +1076,7 @@ unsigned fei::VectorSpace::getFieldSize(int fieldID)
 //----------------------------------------------------------------------------
 void fei::VectorSpace::getFields(int idType, int ID, std::vector<int>& fieldIDs)
 {
-  int idindex = snl_fei::binarySearch(idType, idTypes_);
+  int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) {
     fieldIDs.resize(0);
     return;
@@ -1141,7 +1141,7 @@ int fei::VectorSpace::getOwnerProcBlkIndex(int globalIndex)
 //----------------------------------------------------------------------------
 int fei::VectorSpace::getNumOwnedAndSharedIDs(int idType)
 {
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) return(0);
 
   return( recordCollections_[idx]->getNumRecords() );
@@ -1150,7 +1150,7 @@ int fei::VectorSpace::getNumOwnedAndSharedIDs(int idType)
 //----------------------------------------------------------------------------
 int fei::VectorSpace::getNumOwnedIDs(int idType)
 {
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) return(0);
 
   fei::RecordAttributeCounter attrCounter(fei::localProc(comm_));
@@ -1163,7 +1163,7 @@ int fei::VectorSpace::getNumOwnedIDs(int idType)
 int fei::VectorSpace::getNumSharedIDs(int idType,
                                           int& numShared)
 {
-  int idx = snl_fei::binarySearch(idType, sharedIDTypes_);
+  int idx = fei::binarySearch(idType, sharedIDTypes_);
   if (idx < 0) {
     numShared = 0;
     return(0);
@@ -1182,7 +1182,7 @@ int fei::VectorSpace::getOwnedAndSharedIDs(int idType,
                                       int* IDs,
                                       int& numLocalIDs)
 {
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
@@ -1202,7 +1202,7 @@ int fei::VectorSpace::getOwnedIDs(int idType,
                                          int* IDs,
                                          int& numLocalIDs)
 {
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) return(-1);
 
   snl_fei::RecordCollection* records = recordCollections_[idx];
@@ -1306,9 +1306,28 @@ int fei::VectorSpace::getNumIndices_Owned() const
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getIndices_Owned(int lenIndices,
-                                       int* globalIndices,
-                                       int& numIndices) const
+int fei::VectorSpace::getIndices_Owned(std::vector<int>& globalIndices) const
+{
+  if (!sharedRecordsSynchronized_) {
+    globalIndices.clear();
+    return(-1);
+  }
+
+  int localProc = fei::localProc(comm_);
+  int numIndices = globalOffsets_[localProc+1]-globalOffsets_[localProc];
+
+  globalIndices.resize(numIndices);
+
+  int firstOffset = globalOffsets_[localProc];
+  for(int i=0; i<numIndices; ++i) {
+    globalIndices[i] = firstOffset+i;
+  }
+
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int fei::VectorSpace::getIndices_Owned(int lenIndices, int* globalIndices, int& numIndices) const
 {
   if (!sharedRecordsSynchronized_) {
     numIndices = 0;
@@ -1378,7 +1397,7 @@ int fei::VectorSpace::getBlkIndices_Owned(int lenBlkIndices,
 int fei::VectorSpace::getRecordCollection(int idType,
                                           snl_fei::RecordCollection*& records)
 {
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) return(-1);
 
   records = recordCollections_[idx];
@@ -1389,7 +1408,7 @@ int fei::VectorSpace::getRecordCollection(int idType,
 int fei::VectorSpace::getRecordCollection(int idType,
                                           const snl_fei::RecordCollection*& records) const
 {
-  int idx = snl_fei::binarySearch(idType, idTypes_);
+  int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) return(-1);
 
   records = recordCollections_[idx];
@@ -1438,7 +1457,7 @@ int fei::VectorSpace::setOwners_lowestSharing()
       owningProcs[j] = lowest;
     }
     
-    int idx = snl_fei::binarySearch(sharedIDTypes_[i], idTypes_);
+    int idx = fei::binarySearch(sharedIDTypes_[i], idTypes_);
     if (idx < 0) ERReturn(-1);
 
     if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
@@ -1670,7 +1689,7 @@ int fei::VectorSpace::synchronizeSharedRecords()
       }
     }
 
-    int idx = snl_fei::binarySearch(sharedIDTypes_[i], idTypes_);
+    int idx = fei::binarySearch(sharedIDTypes_[i], idTypes_);
     if (idx < 0) ERReturn(-1);
 
     local_err += exchangeFieldInfo(ownerPattern, sharerPattern,
@@ -1694,7 +1713,7 @@ int fei::VectorSpace::exchangeGlobalIndices()
 {
   size_t numShTables = sharedIDTypes_.size();
   for(size_t i=0; i<numShTables; ++i) {
-    int idx = snl_fei::binarySearch(sharedIDTypes_[i], idTypes_);
+    int idx = fei::binarySearch(sharedIDTypes_[i], idTypes_);
     if (idx < 0) ERReturn(-1);
 
     snl_fei::RecordMsgHandler recmsghndlr(fei::localProc(comm_),

@@ -267,7 +267,7 @@ create_from_LPM_EpetraBasic(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     else {
       localSize = vecSpace->getNumIndices_Owned();
       indices.resize(localSize);
-      err = vecSpace->getIndices_Owned(localSize, &indices[0], chkNum);
+      err = vecSpace->getIndices_Owned(indices);
     }
     if (err != 0) {
       throw std::runtime_error("Factory_Trilinos: createMatrix: error in vecSpace->getIndices_Owned");

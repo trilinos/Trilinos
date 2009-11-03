@@ -277,7 +277,7 @@ int test_Set::test4()
 
 int test_Set::test5()
 {
-  FEI_COUT << "testing snl_fei::binarySearch(...,start,end,...)...";
+  FEI_COUT << "testing fei::binarySearch(...,start,end,...)...";
 
   std::vector<int> array;
   for(int i=0; i<10; ++i) array.push_back(i);
@@ -285,13 +285,13 @@ int test_Set::test5()
   int start = 2;
   int end = 6;
   int insertPoint = -1;
-  int offset = snl_fei::binarySearch(9, &array[0], array.size(),
+  int offset = fei::binarySearch(9, &array[0], array.size(),
 				     start, end, insertPoint);
   if (offset >= 0) {
     return(-1);
   }
 
-  offset = snl_fei::binarySearch(4, &array[0], array.size(),
+  offset = fei::binarySearch(4, &array[0], array.size(),
 				 start, end, insertPoint);
 
   if (offset < 0) {

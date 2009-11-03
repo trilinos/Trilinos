@@ -26,7 +26,6 @@ namespace fei {
       displacement) and some nodes have 1 field, some have the other, and some
       have both, then there would be a total of 3 field-masks.
    */
-
   class FieldMask {
   public:
     /** Default Constructor */
@@ -108,15 +107,15 @@ namespace fei {
       { return( maskID_ != fm.maskID_ ); }
 
     /** Query whether 'this' is a subset of the input argument. i.e., query
-	whether all of the fields in 'this' field-mask occur in the input
-	field-mask.
-    */
+     * whether all of the fields in 'this' field-mask occur in the input
+     * field-mask.
+     */
     bool isSubSetOf(const FieldMask& fm) const
       {
-	for(unsigned i=0; i<fieldIDs_.size(); ++i) {
-	  if (!fm.hasFieldID(fieldIDs_[i])) return(false);
-	}
-	return(true);
+        for(unsigned i=0; i<fieldIDs_.size(); ++i) {
+          if (!fm.hasFieldID(fieldIDs_[i])) return(false);
+        }
+        return(true);
       }
 
   private:

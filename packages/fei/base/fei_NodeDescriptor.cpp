@@ -49,7 +49,7 @@ void NodeDescriptor::addField(int fieldID) {
 
    int tmp = numFields_;
    int allocLen = numFields_;
-   int index = snl_fei::sortedListInsert(fieldID, fieldIDList_, numFields_,
+   int index = fei::sortedListInsert(fieldID, fieldIDList_, numFields_,
                                          allocLen);
 
    //index is the position at which fieldID was inserted, or found
@@ -65,7 +65,7 @@ void NodeDescriptor::addField(int fieldID) {
       //
 
       allocLen = numFields_ - 1;
-      snl_fei::listInsert(-99, index, fieldEqnNumbers_, tmp, allocLen);
+      fei::listInsert(-99, index, fieldEqnNumbers_, tmp, allocLen);
    }
 }
 
@@ -78,7 +78,7 @@ void NodeDescriptor::setFieldEqnNumber(int fieldID, int eqn) {
 //appropriately, with an empty spot left for this eqn number.
 //
    int insert = -1;
-   int index = snl_fei::binarySearch(fieldID, fieldIDList_,
+   int index = fei::binarySearch(fieldID, fieldIDList_,
 					    numFields_, insert);
 
    if (index < 0) {
@@ -92,7 +92,7 @@ void NodeDescriptor::setFieldEqnNumber(int fieldID, int eqn) {
 bool NodeDescriptor::getFieldEqnNumber(int fieldID, int& eqnNumber) const
 {
    int insert = -1;
-   int index = snl_fei::binarySearch(fieldID, fieldIDList_,
+   int index = fei::binarySearch(fieldID, fieldIDList_,
 					    numFields_, insert);
 
    if (index < 0) {
@@ -109,7 +109,7 @@ bool NodeDescriptor::containedInBlock(GlobalID blk) const
   //return true if this node is contained in element-block 'blk'.
 
    int insert;
-   int index = snl_fei::binarySearch(blk, blockList_, numBlocks_, insert);
+   int index = fei::binarySearch(blk, blockList_, numBlocks_, insert);
    if (index >= 0) return(true);
    else return(false);
 }

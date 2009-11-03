@@ -15,7 +15,7 @@
 
 #include <cstring>
 #include <vector>
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 
 namespace fei {
 
@@ -209,7 +209,7 @@ class ctg_set {
       return(std::pair<const_iterator,bool>(const_iterator(this, item, 0),true));
     }
 
-    int insertPoint = snl_fei::lowerBound(item, dataptr_, len_);
+    int insertPoint = fei::lowerBound(item, dataptr_, len_);
 
     if (insertPoint < len_) {
 
@@ -334,7 +334,7 @@ class ctg_set {
       return;
     }
 
-    int insertPoint = snl_fei::lowerBound(item, dataptr_, len_);
+    int insertPoint = fei::lowerBound(item, dataptr_, len_);
 
     if (insertPoint < len_) {
 
@@ -441,7 +441,7 @@ class ctg_set {
       }
 
       int insertPoint = -1;
-      int index = snl_fei::binarySearch(item, dataptr_, len_, insertPoint);
+      int index = fei::binarySearch(item, dataptr_, len_, insertPoint);
 
       if (index < 0) {
 	if (insertPoint%2==0) {

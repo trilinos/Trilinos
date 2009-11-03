@@ -1427,7 +1427,7 @@ int LinSysCoreFilter::resolveConflictingCRs(EqnBuffer& bcEqns)
           node->getFieldEqnNumber(CRFieldPtr[j], eqn);
           eqn += k;
 
-          if (snl_fei::binarySearch(eqn, bcEqnNumbers) >= 0) {
+          if (fei::binarySearch(eqn, bcEqnNumbers) >= 0) {
             coefs[0] = 1.0;
             coefs[1] = 0.0;
             coefs[2] = 1.0;
@@ -2468,7 +2468,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
   for(int i=0; i<numPtRows; i++) {
     int row = ptRows[i];
 
-    int eqnIndex = snl_fei::binarySearch(row, remEqnNumbers);
+    int eqnIndex = fei::binarySearch(row, remEqnNumbers);
 
     //if eqnIndex < 0, this is a local equation, so skip to the next loop iter.
     if (eqnIndex < 0) continue;
@@ -2485,7 +2485,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
 
     for(int j=0; j<numColsPerRow; j++) {
       int offset = rowColOffsets[i] + j;
-      int colIndex = snl_fei::binarySearch(ptCols[offset], remEqns[eqnIndex]->indices());
+      int colIndex = fei::binarySearch(ptCols[offset], remEqns[eqnIndex]->indices());
       if (colIndex < 0) ERReturn(-1);
 
       values[i][j] = remEqns[eqnIndex]->coefs()[colIndex];
@@ -2555,7 +2555,7 @@ int LinSysCoreFilter::getEqnsFromMatrix(ProcEqns& procEqns, EqnBuffer& eqnData)
 
       //if this equation is already in eqnData, then don't put it in again...
       std::vector<int>& eqnDataEqns = eqnData.eqnNumbers();
-      if (snl_fei::binarySearch(eqn, eqnDataEqns) >= 0) continue;
+      if (fei::binarySearch(eqn, eqnDataEqns) >= 0) continue;
 
       int len = 0;
       CHK_ERR( lsc_->getMatrixRowLength(eqn, len) );
@@ -2600,7 +2600,7 @@ int LinSysCoreFilter::getEqnsFromRHS(ProcEqns& procEqns, EqnBuffer& eqnData)
 
       //if this equation is already in eqnData, then don't put it in again...
       std::vector<int>& eqnDataEqns = eqnData.eqnNumbers();
-      if (snl_fei::binarySearch(reducedEqn, eqnDataEqns) >= 0) continue;
+      if (fei::binarySearch(reducedEqn, eqnDataEqns) >= 0) continue;
 
       double rhsValue;
 
@@ -2754,7 +2754,7 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
   for(int i=0; i<num; i++) {
     int row = indices[i];
 
-    int eqnIndex = snl_fei::binarySearch(row, remEqnNumbers);
+    int eqnIndex = fei::binarySearch(row, remEqnNumbers);
     if (eqnIndex < 0) continue;
 
     values[i] = (*(remRhsCoefs[eqnIndex]))[0];
@@ -2852,7 +2852,7 @@ int LinSysCoreFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
   std::vector<int>& remoteEqnNumbers = eqnCommMgr_->sendEqnNumbersPtr();
   double* remoteSoln = eqnCommMgr_->sendEqnSolnPtr();
 
-  int index = snl_fei::binarySearch(eqnNumber, remoteEqnNumbers);
+  int index = fei::binarySearch(eqnNumber, remoteEqnNumbers);
   if (index < 0) {
     FEI_CERR << "LinSysCoreFilter::getSharedRemoteSolnEntry: ERROR, eqn "
          << eqnNumber << " not found." << FEI_ENDL;
@@ -3678,7 +3678,7 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
           int rowi = rowNumbers[ii];
           if (rSlave_[ii] == 1) continue;
 
-          int index = snl_fei::binarySearch(row, ii_indicesPtr, numPtCols);
+          int index = fei::binarySearch(row, ii_indicesPtr, numPtCols);
           if (index < 0) continue;
 
           const double* coefs_ii = coefs[ii];

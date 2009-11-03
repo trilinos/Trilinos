@@ -411,7 +411,7 @@ int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
       if (std::abs(weightsPtr[j] + 1.0) > fei_eps) continue;
 
       int eqn = cr_indPtr[j];
-      if (snl_fei::binarySearch(eqn, bcEqnNumbers) > -1) {
+      if (fei::binarySearch(eqn, bcEqnNumbers) > -1) {
 	int cr_eqn = cr->getEqnNumber();
 
 	CHK_ERR( bcEqns.copyIn(1, &cr_eqn, 3, indicesPtr,
@@ -450,7 +450,7 @@ int snl_fei::gatherRemoteEssBCs(fei::CSVec& essBCs,
           int len = rowOffsPtr[i+1]-rowOffsPtr[i];
           int* colsPtr = &(rcolsPtr[rowOffsPtr[i]]);
 
-          if (snl_fei::binarySearch(eqn, colsPtr, len) > -1) {
+          if (fei::binarySearch(eqn, colsPtr, len) > -1) {
             double coef = coefs[j];
             double* coefPtr = &coef;
 

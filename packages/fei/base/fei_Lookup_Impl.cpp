@@ -190,7 +190,7 @@ int fei::Lookup_Impl::buildDatabases()
 
     snl_fei::SubdMsgHandler subdmsghndlr(collection, sharedIDs, subdomainIDs);
 
-    int idx = snl_fei::binarySearch(nodeIDType_, vspace_->sharedIDTypes_);
+    int idx = fei::binarySearch(nodeIDType_, vspace_->sharedIDTypes_);
     if (idx < 0) ERReturn(-1);
 
     if ((int)vspace_->ownerPatterns_.size() > idx &&
@@ -236,7 +236,7 @@ int fei::Lookup_Impl::buildDatabases()
     }
 
     if (node->isInLocalSubdomain_) {
-      snl_fei::sortedListInsert(local_proc, *newarray);
+      fei::sortedListInsert(local_proc, *newarray);
     }
 
     nodenumSubdomainDB_.insert(std::pair<int,std::vector<int>*>(node->getNumber(), newarray));

@@ -372,7 +372,7 @@ int FEDataFilter::initLinSysCore()
     int nNodes = cr.getMasters().size();
 
     int insertPoint = -1;
-    int offset = snl_fei::binarySearch(nNodes, constraintBlocks_, insertPoint);
+    int offset = fei::binarySearch(nNodes, constraintBlocks_, insertPoint);
 
     int nodeOffset = 0;
     if (offset < 0) {
@@ -476,7 +476,7 @@ int FEDataFilter::initLinSysCore()
     std::vector<GlobalID>& nodeIDsvec = cr.getMasters();
     GlobalID* nodeIDs = &nodeIDsvec[0];
     int nNodes = cr.getMasters().size();
-    int index = snl_fei::binarySearch(nNodes, constraintBlocks_);
+    int index = fei::binarySearch(nNodes, constraintBlocks_);
     if (index < 0) {
       ERReturn(-1);
     }
@@ -1169,9 +1169,9 @@ int FEDataFilter::loadFEDataPenCR(int CRID,
     rhsCoefs[i] = weights[i]*penValue*CRValue;
   }
 
-  int crIndex = snl_fei::binarySearch(CRID, penCRIDs_);
+  int crIndex = fei::binarySearch(CRID, penCRIDs_);
 
-  int index = snl_fei::binarySearch(numCRNodes, constraintBlocks_);
+  int index = fei::binarySearch(numCRNodes, constraintBlocks_);
 
   int blockNum = problemStructure_->getNumElemBlocks() + index;
   int elemNum = numRegularElems_ + crIndex;
@@ -1677,7 +1677,7 @@ int FEDataFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
   std::vector<int>& remoteEqnNumbers = eqnCommMgr_->sendEqnNumbersPtr();
   double* remoteSoln = eqnCommMgr_->sendEqnSolnPtr();
 
-  int index = snl_fei::binarySearch(eqnNumber, remoteEqnNumbers);
+  int index = fei::binarySearch(eqnNumber, remoteEqnNumbers);
   if (index < 0) {
     FEI_CERR << "FEDataFilter::getSharedRemoteSolnEntry: ERROR, eqn "
          << eqnNumber << " not found." << FEI_ENDL;
@@ -1714,7 +1714,7 @@ int FEDataFilter::getReducedSolnEntry(int eqnNumber, double& solnValue)
   GlobalID nodeID = node->getGlobalNodeID();
   NodeCommMgr& nodeCommMgr = problemStructure_->getNodeCommMgr();
   std::vector<GlobalID>& shNodeIDs = nodeCommMgr.getSharedNodeIDs();
-  int shIndex = snl_fei::binarySearch(nodeID, shNodeIDs);
+  int shIndex = fei::binarySearch(nodeID, shNodeIDs);
   if (shIndex >= 0) {
     if (!(problemStructure_->isInLocalElement(nodeNumber)) ) fetiHasNode = false;
   }
@@ -2071,7 +2071,7 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
     if (!hasField) continue;
 
     std::vector<GlobalID>& shNodeIDs = nodeCommMgr.getSharedNodeIDs();
-    int shIndex = snl_fei::binarySearch(nodeID, &shNodeIDs[0], shNodeIDs.size());
+    int shIndex = fei::binarySearch(nodeID, &shNodeIDs[0], shNodeIDs.size());
     if (shIndex > -1) {
       if (!(problemStructure_->isInLocalElement(nodeNumber))) continue;
     }

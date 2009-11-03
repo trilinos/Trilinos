@@ -11,7 +11,7 @@
 
 #include <fei_macros.hpp>
 
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 
 /**
   The NodeDescriptor class holds the information that the FEI implementation
@@ -91,7 +91,7 @@ class NodeDescriptor {
    void addBlock(GlobalID blk)
      {
        int allocLen = numBlocks_;
-       snl_fei::sortedListInsert(blk, blockList_, numBlocks_, allocLen);
+       fei::sortedListInsert(blk, blockList_, numBlocks_, allocLen);
      }
 
    int getNumBlocks() const {return(numBlocks_);};

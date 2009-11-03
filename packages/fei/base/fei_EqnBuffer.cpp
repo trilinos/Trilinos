@@ -105,7 +105,7 @@ void EqnBuffer::deleteMemory() {
 //==============================================================================
 int EqnBuffer::getEqnIndex(int eqn) {
 
-   return(snl_fei::binarySearch(eqn, eqnNumbers_));
+   return(fei::binarySearch(eqn, eqnNumbers_));
 }
 
 //==============================================================================
@@ -127,7 +127,7 @@ void EqnBuffer::setNumRHSs(int n) {
 int EqnBuffer::addRHS(int eqnNumber, int rhsIndex, double value,
 		      bool accumulate)
 {
-   int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_);
+   int index = fei::binarySearch(eqnNumber, eqnNumbers_);
 
    if (index < 0) {
       FEI_CERR << "(deep in FEI) EqnBuffer::addRHS: ERROR, eqnNumber " << eqnNumber
@@ -153,7 +153,7 @@ int EqnBuffer::isInIndices(int eqn)
   //-1 is return otherwise.
   //
   if (indices_union_.size() > 0) {
-    int index = snl_fei::binarySearch(eqn, &indices_union_[0], indices_union_.size());
+    int index = fei::binarySearch(eqn, &indices_union_[0], indices_union_.size());
     if (index < 0) return(-1);
   }
 
@@ -161,7 +161,7 @@ int EqnBuffer::isInIndices(int eqn)
   fei::CSVec** eqnsPtr = &eqns_[0];
   for(int i=0; i<numEqns; i++) {
     std::vector<int>& indices = eqnsPtr[i]->indices();
-    index = snl_fei::binarySearch(eqn, &indices[0], indices.size());
+    index = fei::binarySearch(eqn, &indices[0], indices.size());
     if (index > -1) return(i);
   }
 
@@ -175,7 +175,7 @@ int EqnBuffer::addEqn(int eqnNumber, const double* coefs, const int* indices,
   if (len <= 0) return(0);
 
   int err, insertPoint = -1;
-  int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
+  int index = fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
 
   if (index < 0) {
     //if eqnNumber isn't already present, insert a new entry into the
@@ -190,7 +190,7 @@ int EqnBuffer::addEqn(int eqnNumber, const double* coefs, const int* indices,
 
   if (create_indices_union) {
     for(int i=0; i<len; ++i) {
-      snl_fei::sortedListInsert(indices[i], indices_union_);
+      fei::sortedListInsert(indices[i], indices_union_);
     }
   }
 
@@ -200,10 +200,10 @@ int EqnBuffer::addEqn(int eqnNumber, const double* coefs, const int* indices,
 //==============================================================================
 int EqnBuffer::getCoef(int eqnNumber, int colIndex, double& coef)
 {
-  int eqnLoc = snl_fei::binarySearch(eqnNumber, eqnNumbers_);
+  int eqnLoc = fei::binarySearch(eqnNumber, eqnNumbers_);
   if (eqnLoc < 0) return(-1);
 
-  int colLoc = snl_fei::binarySearch(colIndex, eqns_[eqnLoc]->indices());
+  int colLoc = fei::binarySearch(colIndex, eqns_[eqnLoc]->indices());
   if (colLoc < 0) return(-1);
 
   coef = eqns_[eqnLoc]->coefs()[colLoc];
@@ -213,10 +213,10 @@ int EqnBuffer::getCoef(int eqnNumber, int colIndex, double& coef)
 //==============================================================================
 int EqnBuffer::removeIndex(int eqnNumber, int colIndex)
 {
-  int eqnLoc = snl_fei::binarySearch(eqnNumber, eqnNumbers_);
+  int eqnLoc = fei::binarySearch(eqnNumber, eqnNumbers_);
   if (eqnLoc < 0) return(-1);
 
-  int colLoc = snl_fei::binarySearch(colIndex, eqns_[eqnLoc]->indices());
+  int colLoc = fei::binarySearch(colIndex, eqns_[eqnLoc]->indices());
   if (colLoc < 0) return(0);
 
   std::vector<int>& indices = eqns_[eqnLoc]->indices();
@@ -241,10 +241,10 @@ int EqnBuffer::removeIndex(int eqnNumber, int colIndex)
 //==============================================================================
 int EqnBuffer::getCoefAndRemoveIndex(int eqnNumber, int colIndex, double& coef)
 {
-  int eqnLoc = snl_fei::binarySearch(eqnNumber, eqnNumbers_);
+  int eqnLoc = fei::binarySearch(eqnNumber, eqnNumbers_);
   if (eqnLoc < 0) return(-1);
 
-  int colLoc = snl_fei::binarySearch(colIndex, eqns_[eqnLoc]->indices());
+  int colLoc = fei::binarySearch(colIndex, eqns_[eqnLoc]->indices());
   if (colLoc < 0) return(-1);
 
   std::vector<int>& indices = eqns_[eqnLoc]->indices();
@@ -359,7 +359,7 @@ void EqnBuffer::resetCoefs() {
 int EqnBuffer::addIndices(int eqnNumber, const int* indices, int len)
 {
    int err = 0, insertPoint = -1;
-   int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
+   int index = fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
 
    //(we're adding dummy coefs as well, even though there are no
    //incoming coefs at this point).

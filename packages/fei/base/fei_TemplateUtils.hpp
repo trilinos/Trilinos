@@ -35,10 +35,10 @@ namespace fei {
       int len = setsize > lenList ? lenList : setsize;
 
       typename SET_TYPE::const_iterator
-	s_iter = set_obj.begin(),
-	s_end = set_obj.end();
+        s_iter = set_obj.begin(),
+               s_end = set_obj.end();
       for(int i=0; i<len; ++i, ++s_iter) {
-	list[i] = *s_iter;
+        list[i] = *s_iter;
       }
     }
 
@@ -52,12 +52,12 @@ namespace fei {
     {
       unsigned i = 0;
       typename MAP_TYPE::iterator
-	iter = map_obj.begin(),
-	iter_end = map_obj.end();
+        iter = map_obj.begin(),
+             iter_end = map_obj.end();
 
       for(; iter != iter_end; ++iter) {
-	if (i == lenList) break;
-	list[i++] = (*iter).first;
+        if (i == lenList) break;
+        list[i++] = (*iter).first;
       }
     }
 
@@ -85,13 +85,13 @@ namespace fei {
     {
       int i = 0;
       typename MAP_TYPE::iterator
-	iter = map_obj.begin(),
-	iter_end = map_obj.end();
+        iter = map_obj.begin(),
+             iter_end = map_obj.end();
 
       for(; iter != iter_end; ++iter) {
-	if (i == lenList) break;
-	keylist[i] = (*iter).first;
-	vallist[i++] = (*iter).second;
+        if (i == lenList) break;
+        keylist[i] = (*iter).first;
+        vallist[i++] = (*iter).second;
       }
     }
 
@@ -100,11 +100,11 @@ namespace fei {
     void destroyValues(MAP_TYPE& map_obj)
     {
       typename MAP_TYPE::iterator
-	m_iter = map_obj.begin(),
-	m_end  = map_obj.end();
+        m_iter = map_obj.begin(),
+      m_end  = map_obj.end();
 
       for(; m_iter != m_end; ++m_iter) {
-	delete (*m_iter).second;
+        delete (*m_iter).second;
       }
     }
 
@@ -121,17 +121,17 @@ namespace fei {
 
     for(; m_iter != m_end; ++m_iter) {
       if (lineprefix != NULL) {
-	os << lineprefix;
+        os << lineprefix;
       }
 
       os << " row "<<(*m_iter).first<<": ";
 
       typename SET_TYPE::const_iterator
-	s_iter = (*m_iter).second->begin(),
-	s_end = (*m_iter).second->end();
+        s_iter = (*m_iter).second->begin(),
+               s_end = (*m_iter).second->end();
 
       for(; s_iter != s_end; ++s_iter) {
-	os << *s_iter << " ";
+        os << *s_iter << " ";
       }
 
       os << FEI_ENDL;
@@ -139,7 +139,7 @@ namespace fei {
   }
 
   template<typename MAP_TYPE, typename SET_TYPE>
-  void packRaggedTable(snl_fei::RaggedTable<MAP_TYPE,SET_TYPE>& table,
+    void packRaggedTable(snl_fei::RaggedTable<MAP_TYPE,SET_TYPE>& table,
                        std::vector<int>& intdata)
     {
       MAP_TYPE& map_obj = table.getMap();
@@ -273,8 +273,8 @@ namespace fei {
       }
     }
 
-  /** create fei::SparseRowGraph object from a ragged-table. user is
-    responsible for destroying the fei::SparseRowGraph */
+  /** create fei::SparseRowGraph object from a ragged-table.
+    */
   template<typename MAP_TYPE, typename SET_TYPE>
   fei::SharedPtr<fei::SparseRowGraph>
     createSparseRowGraph(snl_fei::RaggedTable<MAP_TYPE,SET_TYPE>& table)
@@ -293,11 +293,11 @@ namespace fei {
       int nnz = 0;
       MAP_TYPE& map_obj = table.getMap();
       typename MAP_TYPE::iterator
-	m_iter = map_obj.begin(),
-	m_end = map_obj.end();
+        m_iter = map_obj.begin(),
+               m_end = map_obj.end();
 
       for(; m_iter != m_end; ++m_iter) {
-	nnz += (*m_iter).second->size();
+        nnz += (*m_iter).second->size();
       }
 
       return(nnz);

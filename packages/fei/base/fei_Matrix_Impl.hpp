@@ -15,7 +15,7 @@
 #include "fei_iostream.hpp"
 #include "fei_fstream.hpp"
 #include "fei_sstream.hpp"
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 #include <fei_MatrixTraits.hpp>
 #include <fei_MatrixTraits_LinProbMgr.hpp>
 #include <fei_MatrixTraits_LinSysCore.hpp>
@@ -970,8 +970,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
     std::vector<int> blockRows, blockRowSizes;
     std::vector<int> blockCols, blockColSizes;
-    for(int i=0; i<numRows; ++i) snl_fei::sortedListInsert(blkRows[i], blockRows);
-    for(int i=0; i<numCols; ++i) snl_fei::sortedListInsert(blkCols[i], blockCols);
+    for(int i=0; i<numRows; ++i) fei::sortedListInsert(blkRows[i], blockRows);
+    for(int i=0; i<numCols; ++i) fei::sortedListInsert(blkCols[i], blockCols);
 
     int rowSizeTotal = 0, colSizeTotal = 0;
 
@@ -1000,11 +1000,11 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     }
 
     for(int i=0; i<numRows; ++i) {
-      int rowind = snl_fei::binarySearch(blkRows[i], blockRows);
+      int rowind = fei::binarySearch(blkRows[i], blockRows);
       int rowsize = blockRowSizes[rowind];
 
       for(int j=0; j<numCols; ++j) {
-        int colind = snl_fei::binarySearch(blkCols[j], blockCols);
+        int colind = fei::binarySearch(blkCols[j], blockCols);
         int pos = blkColOffsets[j]*rowsize + blkRowOffsets[i];
 
         coefs2dPtr[rowind*blockCols.size()+colind][pos] += values[i][j];
@@ -1146,9 +1146,9 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
     globalNumCols = cspace->getGlobalNumIndices();
   }
 
-  std::vector<int> indices_owned(localNumRows);
-  int chkNum, localNNZ = 0;
-  CHK_ERR( vspace->getIndices_Owned(localNumRows, &indices_owned[0], chkNum));
+  std::vector<int> indices_owned;
+  int localNNZ = 0;
+  CHK_ERR( vspace->getIndices_Owned(indices_owned) );
   int* rowsPtr = &indices_owned[0];
   for(int i=0; i<localNumRows; ++i) {
     int len;
@@ -1193,7 +1193,7 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
 
       CHK_ERR( copyOutRow(i, rowLength, coefPtr, indPtr) );
 
-      snl_fei::insertion_sort_with_companions<double>(rowLength,
+      fei::insertion_sort_with_companions<double>(rowLength,
                                             indPtr, coefPtr);
 
       for(int j=0; j<rowLength; ++j) {
@@ -1236,9 +1236,9 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
 
   int globalNNZ = 0;
   int localNumRows = vspace->getNumIndices_Owned();
-  std::vector<int> indices_owned(localNumRows);
-  int chkNum, localNNZ = 0;
-  CHK_ERR( vspace->getIndices_Owned(localNumRows, &indices_owned[0], chkNum));
+  std::vector<int> indices_owned;
+  int localNNZ = 0;
+  CHK_ERR( vspace->getIndices_Owned(indices_owned));
   int* rowsPtr = &indices_owned[0];
   for(int i=0; i<localNumRows; ++i) {
     int len;

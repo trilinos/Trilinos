@@ -217,7 +217,7 @@ int fei::FEI_Impl::setIDLists(int numMatrices,
   matrixIDs_.resize(0);
   A_.resize(numMatrices);
   for(int i=0; i<numMatrices; ++i) {
-    snl_fei::sortedListInsert(matrixIDs[i], matrixIDs_);
+    fei::sortedListInsert(matrixIDs[i], matrixIDs_);
   }
   if ((int)matrixIDs_.size() != numMatrices) {
     FEI_CERR << "fei::FEI_Impl::setIDLists ERROR creating matrixIDs_ list."<<FEI_ENDL;
@@ -227,7 +227,7 @@ int fei::FEI_Impl::setIDLists(int numMatrices,
   rhsIDs_.resize(0);
   b_.resize(numRHSs);
   for(int i=0; i<numRHSs; ++i) {
-    snl_fei::sortedListInsert(rhsIDs[i], rhsIDs_);
+    fei::sortedListInsert(rhsIDs[i], rhsIDs_);
   }
   if ((int)rhsIDs_.size() != numRHSs) {
     FEI_CERR << "fei::FEI_Impl::setIDLists ERROR creating rhsIDs_ list."<<FEI_ENDL;

@@ -13,7 +13,7 @@
 
 #include <test_utils/test_AztecWrappers.hpp>
 
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 #include <test_utils/LibraryFactory.hpp>
 
 #ifdef HAVE_FEI_AZTECOO
@@ -235,7 +235,7 @@ int compare_DMSR_contents(fei_trilinos::AztecDMSR_Matrix& matrix, int localOffse
     if (tmpLen != rowLen) ERReturn(-1);
 
     for(int j=0; j<tmpLen; j++) {
-      int offset = snl_fei::sortedListInsert(tempInd[j], sortedInd);
+      int offset = fei::sortedListInsert(tempInd[j], sortedInd);
       if (offset < 0) ERReturn(-1);
       sortedVal.insert(sortedVal.begin()+offset, tempVal[j]);
     }

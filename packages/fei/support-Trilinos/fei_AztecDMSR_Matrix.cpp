@@ -29,7 +29,7 @@
 
 #include <az_aztec.h>
 
-#include <snl_fei_ArrayUtils.hpp>
+#include <fei_ArrayUtils.hpp>
 
 #include <fei_Aztec_Map.hpp>
 #include <fei_Aztec_Vector.hpp>
@@ -503,7 +503,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
       //first, look for colInd[i] in the row
       int col = colInd[i];
       int insertPoint = -1;
-      int index = snl_fei::binarySearch<int>(col, colInds, offDiagRowLen, insertPoint);
+      int index = fei::binarySearch<int>(col, colInds, offDiagRowLen, insertPoint);
 
       if (index >= offDiagRowAllocLen){ //bad index
 	FEI_CERR << "AztecDMSR_Matrix::putRow, ERROR: " 
@@ -581,7 +581,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     indirect[jj] = jj;
   }
 
-  snl_fei::insertion_sort_with_companions<int>(numCols, incols, indirect);
+  fei::insertion_sort_with_companions<int>(numCols, incols, indirect);
 
   int row, localRow;
 
@@ -617,7 +617,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
     //rowOffset is the offset into the row at which incol appears.
 
-    int rowOffset = snl_fei::binarySearch<int>(incol, tmp_array_, rowLen);
+    int rowOffset = fei::binarySearch<int>(incol, tmp_array_, rowLen);
     if (rowOffset < 0) {
        FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
              << "row " << row << ", col not found: "
@@ -699,10 +699,10 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
         dtmp_array_[doffs++] = coefs[jj];
       }
     }
-    snl_fei::insertion_sort_with_companions<double>(doffs, incols, dtmp_array_);
+    fei::insertion_sort_with_companions<double>(doffs, incols, dtmp_array_);
 
     int ioffset = 0;
-    int offset = snl_fei::binarySearch<int>(incols[ioffset], tmp_array_, jLen);
+    int offset = fei::binarySearch<int>(incols[ioffset], tmp_array_, jLen);
     if (offset < 0) {
       FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
              << "row " << row << ", col not found: "
@@ -746,7 +746,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
     //find the right col index in the row, or an empty spot
     int col = colInd[i];
     int insertPoint = -1;
-    int index = snl_fei::binarySearch<int>(col, colInds, offDiagRowLen, insertPoint);
+    int index = fei::binarySearch<int>(col, colInds, offDiagRowLen, insertPoint);
 
     if (index >= 0) {
       rowCoefs[index] += coefs[i];

@@ -21,7 +21,7 @@
 #include "fei_Lookup.hpp"
 #include "fei_LinearSystemCore.hpp"
 #include "snl_fei_Utils.hpp"
-#include "snl_fei_ArrayUtils.hpp"
+#include "fei_ArrayUtils.hpp"
 
 #undef fei_file
 #define fei_file "fei_Aztec_LinSysCore.cpp"
@@ -507,7 +507,7 @@ int Aztec_LinSysCore::allocateMatrix(int** ptColIndices,
   int* row_lengths = numLocalEqns_ > 0 ? new int[numLocalEqns_] : NULL;
 
   for (int i = 0; i < numLocalEqns_; i++) {
-    if (snl_fei::searchList(localOffset_+i,
+    if (fei::searchList(localOffset_+i,
                             ptColIndices[i], ptRowLengths[i]) >= 0) {
       row_lengths[i] = ptRowLengths[i] - 1;
     }
@@ -866,7 +866,7 @@ int Aztec_LinSysCore::getBlockSize(int blkInd) {
       int* remoteSizes = blkA_ptr_->getRemoteBlockSizes();
 
       int ins;
-      int index = snl_fei::binarySearch(blkInd, remoteInds, numRemoteBlocks, ins);
+      int index = fei::binarySearch(blkInd, remoteInds, numRemoteBlocks, ins);
       if (index < 0)
          messageAbort("getBlockSize: can't find blkInd.");
 
@@ -1231,7 +1231,7 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
     indirect[i] = i;
   }
 
-  snl_fei::insertion_sort_with_companions<int>(len, &bcEqns[0], &indirect[0]);
+  fei::insertion_sort_with_companions<int>(len, &bcEqns[0], &indirect[0]);
 
   if (debugOutput_) {
     fprintf(debugFile_,"numEssBCs: %d\n", len);
@@ -1320,7 +1320,7 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
   for(int row=localOffset_; row<=localEnd; row++) {
 
     int insertPoint = -1;
-    int index = snl_fei::binarySearch(row, &bcEqns[0], len, insertPoint);
+    int index = fei::binarySearch(row, &bcEqns[0], len, insertPoint);
     if (index >= 0) continue;
 
     int* offDiagIndices2 = NULL;
@@ -1336,7 +1336,7 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
 
       int col_index = A_ptr_->getTransformedEqn(offDiagIndices2[j]);
 
-      int idx = snl_fei::binarySearch(col_index, &bcEqns[0], len, insertPoint);
+      int idx = fei::binarySearch(col_index, &bcEqns[0], len, insertPoint);
       if (idx < 0) continue;
 
       double bc_term = gamma[indirect[idx]]/alpha[indirect[idx]];

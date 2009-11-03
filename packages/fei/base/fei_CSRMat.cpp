@@ -9,7 +9,7 @@
 
 #include "fei_CSRMat.hpp"
 #include <fei_impl_utils.hpp>
-#include "snl_fei_ArrayUtils.hpp"
+#include "fei_ArrayUtils.hpp"
 #include <limits>
 #include <cmath>
 
@@ -131,7 +131,7 @@ void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 
     double sum = 0.0;
     while(jbeg<jend) {
-      int xoff = snl_fei::binarySearch(colinds[jbeg], xind_ptr, xlen);
+      int xoff = fei::binarySearch(colinds[jbeg], xind_ptr, xlen);
 
       if (xoff > -1) {
         sum += Acoef[jbeg]*xcoef_ptr[xoff];
@@ -226,7 +226,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
       int Acol = *Acols++;
       double Acoef = *Acoefs++;
 
-      int Brow_offset = snl_fei::binarySearch(Acol, &Brows[0], Brows.size());
+      int Brow_offset = fei::binarySearch(Acol, &Brows[0], Brows.size());
 
       if (Brow_offset < 0) {
         continue;
