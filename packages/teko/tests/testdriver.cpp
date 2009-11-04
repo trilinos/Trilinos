@@ -34,6 +34,7 @@
 #include "src/Epetra/tStridedEpetraOperator.hpp"
 #include "src/Epetra/tInterlacedEpetra.hpp"
 #include "src/Epetra/tBlockingEpetra.hpp"
+#include "src/Epetra/tBlockedEpetraOperator.hpp"
 #include "src/Epetra/tEpetraThyraConverter.hpp"
 
 
@@ -97,6 +98,7 @@ int main(int argc,char * argv[])
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
+      PB_ADD_UNIT_TEST(PB::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
    }
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);

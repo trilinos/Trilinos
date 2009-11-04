@@ -50,7 +50,7 @@ const ImExPair buildExportImport(const Epetra_Map & baseMap,const MapPair & maps
   * \param[in,out] vectors Vector objects created using the Contiguous maps
   * \param[in] count Number of multivectors to build.
   */
-void buildSubVectors(std::vector<MapPair> & maps,
+void buildSubVectors(const std::vector<MapPair> & maps,
                      std::vector<RCP<Epetra_MultiVector> > & vectors,int count)
 {
    std::vector<MapPair>::const_iterator mapItr;

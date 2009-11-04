@@ -75,7 +75,7 @@ void one2many(std::vector<Teuchos::RCP<Epetra_MultiVector> > & many, const Epetr
   * \param[in,out] vectors Vector objects created using the Contiguous maps
   * \param[in] count Number of multivectors to build.
   */
-void buildSubVectors(std::vector<MapPair> & maps,
+void buildSubVectors(const std::vector<MapPair> & maps,
                      std::vector<Teuchos::RCP<Epetra_MultiVector> > & vectors,int count);
 
 Teuchos::RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<MapPair> & subMaps);

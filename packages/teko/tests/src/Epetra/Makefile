@@ -10,7 +10,8 @@ OBJS = tEpetraOperatorWrapper.o \
        tStridedEpetraOperator.o \
        tEpetraThyraConverter.o \
        tInterlacedEpetra.o \
-       tBlockingEpetra.o
+       tBlockingEpetra.o \
+       tBlockedEpetraOperator.o
 
 # tEpetraLSCIntegrationTest.o \
 

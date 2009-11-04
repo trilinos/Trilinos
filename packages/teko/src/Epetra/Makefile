@@ -15,9 +15,9 @@ OBJS = PB_EpetraHelpers.o \
        PB_StridedMappingStrategy.o \
        PB_StridedEpetraOperator.o \
        PB_ReorderedMappingStrategy.o \
-       PB_EpetraBlockPreconditioner.o
-
-#       PB_EpetraLSCHelpers.o \
+       PB_EpetraBlockPreconditioner.o \
+       PB_BlockedMappingStrategy.o \
+       PB_BlockedEpetraOperator.o
 
 all: $(OBJS)
 
