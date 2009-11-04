@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CTEST_EXE=/home/trilinos/cmake-2.8-rc4/bin
+CTEST_EXE=/home/trilinos/cmake-2.8-rc4/bin/ctest
 BASEDIR=/home/bmpersc/nightly/Trilinos.base/release_10
 BASEDATADIR=/home/bmpersc/nightly
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
