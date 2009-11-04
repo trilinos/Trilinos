@@ -5,11 +5,11 @@ rem save state before changing anything
 setlocal
 
 rem CVS needs to know how to use ssh
-set CVS_RSH=C:\T10\davcole\ssh.cmd
+set CVS_RSH=C:\Users\bmpersc\Documents\plink_wrap.bat
 
 rem Set location of CTEST_EXE, and CVS_EXE
 set CVS_EXE=C:\Program Files (x86)\CVSNT\cvs.exe
-set CTEST_EXE=C:\T10\cmake-2.7.20090918-win32-x86\bin\ctest.exe
+set CTEST_EXE=C:\Program Files (x86)\CMake 2.8.0 rc5\bin\ctest.exe
 
 rem Set the base directory which is one above where Trilinos will be 
 rem checked out.
