@@ -248,6 +248,8 @@ int Zoltan_Order(
   ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, local_iperm, &opt);
   ZOLTAN_FREE(&lids);
 
+  ierr=0;
+
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
     if (ierr == ZOLTAN_WARN){

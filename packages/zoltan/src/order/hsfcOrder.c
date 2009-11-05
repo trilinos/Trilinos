@@ -61,6 +61,8 @@ int Zoltan_LocalHSFC_Order(
 
   int offset=0;
 
+  int myrank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -125,8 +127,8 @@ int Zoltan_LocalHSFC_Order(
 
   for(dimNum=0; dimNum<numGeomDims; dimNum++)
   {
-    minValInDim[dimNum] = -HUGE_VAL;
-    maxValInDim[dimNum] = HUGE_VAL;
+    minValInDim[dimNum] = HUGE_VAL;
+    maxValInDim[dimNum] = -HUGE_VAL;
   }
 
   /*************************************************************/
@@ -211,6 +213,7 @@ int Zoltan_LocalHSFC_Order(
   Zoltan_quicksort_pointer_dec_double (coordIndx, hsfcKey, 0, n-1);
   /******************************************************************/
 
+
   /******************************************************************/
   /* get ranks                                                      */
   /******************************************************************/
@@ -226,17 +229,13 @@ int Zoltan_LocalHSFC_Order(
   {
     rank[coordIndx[objNum]] = objNum + offset;
   }
-  /******************************************************************/
 
+  /******************************************************************/
 
   /* iperm is to be deprecated so not calculated*/
 
   free(hsfcKey);
   free(coordIndx);
-
-
-
-
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
