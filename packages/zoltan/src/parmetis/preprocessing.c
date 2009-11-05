@@ -26,6 +26,7 @@ extern "C" {
 #include "order_const.h"
 #include "third_library.h"
 #include "graph.h"
+#include "graph_util.h"
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
@@ -37,13 +38,6 @@ static PARAM_VARS Graph_params[] = {
 	{ NULL, NULL, NULL, 0 } };
 
 /* Extern function prototypes. Should be in a separate header file? */
-extern int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
-       indextype *adjncy, indextype *vwgt, indextype *adjwgt,
-       int vwgt_dim, int ewgt_dim, int graph_type, int check_graph,
-       int debug_level);
-extern int Zoltan_Scatter_Graph(indextype **vtxdist, indextype **xadj,
-       indextype **adjncy, indextype **vwgt, indextype **vsize, indextype **adjwgt,
-       float **xyz, int ndims, int, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
 extern int Zoltan_Compare_Ints(const void *key, const void *arg);
 
 
