@@ -23,6 +23,7 @@ extern "C" {
 #include "graph.h"
 #include "graph_const.h"
 #include "params_const.h"
+#include "graph_util.h"
 
 /* #define CC_TIMERS */
 
@@ -36,13 +37,6 @@ static PARAM_VARS ZG_params[] = {
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
 
-
-/* At this time function is in parmetis directory but it will change soon */
-extern int
-Zoltan_Verify_Graph(MPI_Comm comm, int *vtxdist, int *xadj,
-		    int *adjncy, int *vwgt, int *adjwgt,
-		    int vwgt_dim, int ewgt_dim,
-		    int graph_type, int check_graph, int output_level);
 
 /* This function needs a distribution : rows then cols to work properly */
 int
