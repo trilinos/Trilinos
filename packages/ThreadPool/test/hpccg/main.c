@@ -55,7 +55,7 @@ void hpccg_alloc_and_fill( const int np ,
     const int nnz = 27 * n ; /* Upper bound */
     int    * const pc = (int *)   malloc( sizeof(int) * ( n + 1 ) );
     int    * const ia = (int *)   malloc( sizeof(int) * nnz );
-    float  * const a  = (float *) malloc( sizeof(float) * nnz );
+    MATRIX_SCALAR  * const a  = (MATRIX_SCALAR *) malloc( sizeof(MATRIX_SCALAR) * nnz );
 
     int irow = 0 ;
     int ipc  = 0 ;
@@ -67,7 +67,7 @@ void hpccg_alloc_and_fill( const int np ,
     for ( ix = 0 ; ix < nx ; ++ix , ++irow ) {
 
       if ( irow != box_map_local( my_box, ghost, map_local_ord,ix,iy,iz) ) {
-        fprintf(stdout,"P%d:  irow[%d] != box_map_local(%d,%d,%d) = %d\n",
+        fprintf(stderr,"P%d:  irow[%d] != box_map_local(%d,%d,%d) = %d\n",
                 my_p,irow,ix,iy,iz,
                 box_map_local( my_box, ghost, map_local_ord, ix, iy, iz) );
       }
@@ -133,13 +133,19 @@ void hpccg_alloc_and_fill( const int np ,
 int main( int argc , char ** argv )
 {
   const int ghost = 1 ;
-  int max_iter = 400 ;
+  const int max_cube = 20 ;
+  int ncube[20] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
+                    0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+
+  FILE * print_file = stdout ;
   int print_iter = 500 ;
-  double tolerance = 0.0 ; /* Force max iterations */
+  int max_iter = 50 ;
+
+  VECTOR_SCALAR tolerance = 0.0 ; /* Force max iterations */
+
   int gbox[3][2] = { { 0 , 16 } , { 0 , 16 } , { 0 , 16 } };
   int nt = 0 ;
-  int ncube[10] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-  int trials = 1 ;
+  int trials = 5 ;
   int ntest ;
   int np = 1;
   int my_p = 0 ;
@@ -157,6 +163,7 @@ int main( int argc , char ** argv )
     const char arg_max[] = "max_iter=" ;
     const char arg_trials[] = "trials=" ;
     const char arg_print[] = "print_iter=" ;
+    const char arg_file[] = "print_file=" ;
     int i ;
     for ( i = 1 ; i < argc ; ++i ) {
       if ( ! strncmp(argv[i],arg_threads,strlen(arg_threads)) ) {
@@ -167,9 +174,12 @@ int main( int argc , char ** argv )
                & gbox[0][1] , & gbox[1][1] , & gbox[2][1] );
       }
       else if ( ! strncmp(argv[i],arg_cube,strlen(arg_cube)) ) {
-        sscanf(argv[i]+strlen(arg_cube),"%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-               ncube, ncube+1, ncube+2, ncube+3, ncube+4,
-               ncube+5, ncube+6, ncube+7, ncube+8, ncube+9);
+        sscanf(argv[i]+strlen(arg_cube),
+               "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+               ncube+0, ncube+1, ncube+2, ncube+3, ncube+4,
+               ncube+5, ncube+6, ncube+7, ncube+8, ncube+9,
+               ncube+10, ncube+11, ncube+12, ncube+13, ncube+14,
+               ncube+15, ncube+16, ncube+17, ncube+18, ncube+19);
       }
       else if ( ! strncmp(argv[i],arg_max,strlen(arg_max)) ) {
         sscanf(argv[i]+strlen(arg_max),"%d",&max_iter);
@@ -180,6 +190,11 @@ int main( int argc , char ** argv )
       else if ( ! strncmp(argv[i],arg_print,strlen(arg_print)) ) {
         sscanf(argv[i]+strlen(arg_print),"%d",&print_iter);
       }
+      else if ( ! strncmp(argv[i],arg_file,strlen(arg_file)) ) {
+        char buffer[256] ;
+        sscanf(argv[i]+strlen(arg_file),"%s",buffer);
+        print_file = fopen(buffer,"a");
+      }
     }
   }
 
@@ -187,7 +202,7 @@ int main( int argc , char ** argv )
   {
     MPI_Bcast( & nt , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
     MPI_Bcast( & gbox[0][0] , 6 , MPI_INT , 0 , MPI_COMM_WORLD );
-    MPI_Bcast( ncube , 10 , MPI_INT , 0 , MPI_COMM_WORLD );
+    MPI_Bcast( ncube , max_cube , MPI_INT , 0 , MPI_COMM_WORLD );
     MPI_Bcast( & max_iter , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
     MPI_Bcast( & print_iter , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
     MPI_Bcast( & trials , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
@@ -201,11 +216,11 @@ int main( int argc , char ** argv )
   }
 
   if ( ! my_p ) {
-    fprintf(stdout,"\"PROC\" , \"THREAD\" , \"EQUATION\" , \"NON-ZERO\" , \"MXV\"    , \"AXPBY\"  , \"DOT\" , \"Xerror\" , \"Iter\"\n");
-    fprintf(stdout,"\"COUNT\" , \"COUNT\"  , \"COUNT\"    , \"COUNT\"    , \"Mflops\" , \"Mflops\" , \"Mflops\" , \"L2norm\" , \"COUNT\"\n");
+    fprintf(print_file,"\"PROC\" , \"THREAD\" , \"EQUATION\" , \"NON-ZERO\" , \"MXV\"    , \"AXPBY\"  , \"DOT\" , \"Xerror\" , \"Iter\"\n");
+    fprintf(print_file,"\"COUNT\" , \"COUNT\"  , \"COUNT\"    , \"COUNT\"    , \"Mflops\" , \"Mflops\" , \"Mflops\" , \"L2norm\" , \"COUNT\"\n");
   }
 
-  for ( ntest = 0 ; ! ntest || ( ntest < 10 && ncube[ntest] ) ; ++ntest ) {
+  for ( ntest = 0 ; ! ntest || ( ntest < max_cube && ncube[ntest] ) ; ++ntest ) {
     struct cgsolve_data cgdata ;
 
     if ( ncube[ntest] ) {
@@ -216,21 +231,23 @@ int main( int argc , char ** argv )
 
     cgdata.max_iter   = max_iter ;
     cgdata.print_iter = print_iter ;
-    cgdata.tolerance  = (float) tolerance ;
+    cgdata.tolerance  = tolerance ;
 
     {
-      double norm_resid = 0.0 ;
+      double dt_mxv[2] = { 0 , 0 };
+      double dt_axpby[2] = { 0 , 0 };
+      double dt_dot[2] = { 0 , 0 };
+      VECTOR_SCALAR norm_resid = 0.0 ;
       int iter_count = 0 ;
-      double dt_mxv = 0 , dt_axpby = 0 , dt_dot = 0 ;
       int iter_total = 0 ;
       int k ;
 
-      double * const b      = (double *) malloc( sizeof(double) * cgdata.nRow );
-      double * const x      = (double *) malloc( sizeof(double) * cgdata.nRow );
-      double * const xexact = (double *) malloc( sizeof(double) * cgdata.nRow );
+      VECTOR_SCALAR * const b      = (VECTOR_SCALAR *) malloc( sizeof(VECTOR_SCALAR) * cgdata.nRow );
+      VECTOR_SCALAR * const x      = (VECTOR_SCALAR *) malloc( sizeof(VECTOR_SCALAR) * cgdata.nRow );
+      VECTOR_SCALAR * const xexact = (VECTOR_SCALAR *) malloc( sizeof(VECTOR_SCALAR) * cgdata.nRow );
 
       {
-        const double value = 1.0 /* 1.0 / 3.0 */ ;
+        const VECTOR_SCALAR value = 1.0 /* 1.0 / 3.0 */ ;
         int i ;
         for ( i = 0 ; i < cgdata.nRow ; ++i ) xexact[i] = value ;
       }
@@ -244,7 +261,7 @@ int main( int argc , char ** argv )
 
         cgsolve( & cgdata, b, x,
                  & iter_count, & norm_resid,
-                 & dt_mxv , & dt_axpby , & dt_dot );
+                 dt_mxv , dt_axpby , dt_dot );
 
         iter_total += iter_count ;
       }
@@ -283,18 +300,19 @@ int main( int argc , char ** argv )
                                  ( gbox[2][1] - gbox[2][0] );
 
           const double mflop_mxv =
-             1.0e-6 * ( trials + iter_total ) * 2 * nnzGlobal / dt_mxv ;
+             1.0e-6 * ( iter_total ) * 2 * nnzGlobal / dt_mxv[0] ;
 
           const double mflop_axpby =
-             1.0e-6 * ( trials + iter_total * 3 ) * 2 * nRowGlobal / dt_axpby ;
+             1.0e-6 * ( iter_total * 3 ) * 3 * nRowGlobal / dt_axpby[0] ;
 
           const double mflop_dot =
-             1.0e-6 * ( iter_total * 2 ) * 2 * nRowGlobal / dt_dot ;
+             1.0e-6 * ( iter_total * 2 ) * 2 * nRowGlobal / dt_dot[0] ;
 
-          fprintf(stdout,"%8d , %8d , %8d , %8d , %10g , %10g , %10g , %g , %d\n",
+          fprintf(print_file,"%8d , %8d , %8d , %8d , %10g , %10g , %10g , %g , %d\n",
                   np , nt , nRowGlobal , nnzGlobal ,
                   mflop_mxv , mflop_axpby , mflop_dot ,
                   error[0] / error[1] , iter_total );
+          fflush(print_file);
         }
       }
 

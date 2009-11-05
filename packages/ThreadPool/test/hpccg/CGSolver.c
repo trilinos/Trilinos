@@ -17,29 +17,38 @@
 #ifdef HAVE_MPI
 
 #define TIMER( DT , F )	\
-  { double tb , te , tbg , teg ; \
+  { double tb , te , tbg , teg , dt ; \
     tb = TPI_Walltime(); \
     F ; \
     te = TPI_Walltime(); \
     MPI_Allreduce(&tb, &tbg, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD); \
     MPI_Allreduce(&te, &teg, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD); \
-    DT += teg - tbg ; }
+    DT[0] += dt = teg - tbg ; \
+    DT[1] += dt * dt ; }
 
 #else
 
 #define TIMER( DT , F )	\
-  { const double t = TPI_Walltime(); F ; DT += TPI_Walltime() - t ; }
+  { const double tb = TPI_Walltime(); double dt ; \
+    F ; \
+    DT[0] += dt = TPI_Walltime() - tb ; \
+    DT[1] += dt * dt ; }
 
 #endif
 
 /*--------------------------------------------------------------------*/
 
 static
-double comm_sum( double v )
+VECTOR_SCALAR comm_sum( VECTOR_SCALAR v )
 {
 #ifdef HAVE_MPI
-  double result = 0 ;
-  MPI_Allreduce( & v , & result , 1 , MPI_DOUBLE , MPI_SUM , MPI_COMM_WORLD );
+  VECTOR_SCALAR result = 0 ;
+  if ( sizeof(VECTOR_SCALAR) == sizeof(double) ) {
+    MPI_Allreduce( & v , & result , 1 , MPI_DOUBLE , MPI_SUM , MPI_COMM_WORLD );
+  }
+  else {
+    MPI_Allreduce( & v , & result , 1 , MPI_FLOAT , MPI_SUM , MPI_COMM_WORLD );
+  }
   return result ;
 #else
   return v ;
@@ -49,7 +58,7 @@ double comm_sum( double v )
 #ifdef HAVE_MPI
 static
 void comm_rhs_vector( const struct cgsolve_data * const data ,
-                      double * const vec )
+                      VECTOR_SCALAR * const vec )
 {
   const int np = data->np ;
   const int my_p = data->ip ;
@@ -69,8 +78,8 @@ void comm_rhs_vector( const struct cgsolve_data * const data ,
 #endif
 
   {
-    double * const send_buf =
-      (double *) malloc( sizeof(double) * send_pc[np] );
+    VECTOR_SCALAR * const send_buf =
+      (VECTOR_SCALAR *) malloc( sizeof(VECTOR_SCALAR) * send_pc[np] );
 
     MPI_Request * const recv_request =
       (MPI_Request *) malloc( sizeof(MPI_Request) * irecv );
@@ -88,7 +97,8 @@ void comm_rhs_vector( const struct cgsolve_data * const data ,
                        my_p, ip, recv_length );
         fflush(stdout);
 #endif
-        MPI_Irecv( vec + recv_beg , recv_length , MPI_DOUBLE ,
+        MPI_Irecv( vec + recv_beg ,
+                   recv_length * sizeof(VECTOR_SCALAR), MPI_BYTE ,
                    ip , 0 , MPI_COMM_WORLD , recv_request + irecv );
         ++irecv ;
       }
@@ -112,7 +122,8 @@ void comm_rhs_vector( const struct cgsolve_data * const data ,
                        my_p, ip, send_length );
         fflush(stdout);
 #endif
-        MPI_Rsend( send_buf + send_beg , send_length , MPI_DOUBLE ,
+        MPI_Rsend( send_buf + send_beg ,
+                   send_length * sizeof(VECTOR_SCALAR), MPI_BYTE ,
                    ip , 0 , MPI_COMM_WORLD );
       }
     }
@@ -131,16 +142,16 @@ void comm_rhs_vector( const struct cgsolve_data * const data ,
 /*--------------------------------------------------------------------*/
 
 void cgsolve_set_lhs( const struct cgsolve_data * const data ,
-                      const double * const x ,
-                            double * const b )
+                      const VECTOR_SCALAR * const x ,
+                            VECTOR_SCALAR * const b )
 {
   const int nRow = data->nRow ;
   const int nVec = data->recv_pc[ data->np ] ;
   const int   * const A_pc = data->A_pc ;
   const int   * const A_ia = data->A_ia ;
-  const float * const A_a  = data->A_a ;
+  const MATRIX_SCALAR * const A_a  = data->A_a ;
 
-  double * const p = (double *) malloc( nVec * sizeof(double) );
+  VECTOR_SCALAR * const p = (VECTOR_SCALAR *) malloc( nVec * sizeof(VECTOR_SCALAR) );
 
   tpi_copy( nRow , x , p );
 
@@ -154,10 +165,10 @@ void cgsolve_set_lhs( const struct cgsolve_data * const data ,
 /*--------------------------------------------------------------------*/
 
 void cgsolve( const struct cgsolve_data * const data ,
-              const double * const b ,
-                    double * const x ,
+              const VECTOR_SCALAR * const b ,
+                    VECTOR_SCALAR * const x ,
                     int    * const iter_count ,
-                    double * const norm_resid ,
+                    VECTOR_SCALAR * const norm_resid ,
                     double * const dt_mxv ,  
                     double * const dt_axpby ,
                     double * const dt_dot )
@@ -168,54 +179,60 @@ void cgsolve( const struct cgsolve_data * const data ,
   const int print_iter = data->print_iter ;
   const int   * const A_pc = data->A_pc ;
   const int   * const A_ia = data->A_ia ;
-  const float * const A_a  = data->A_a ;
-  const double tolerance = data->tolerance ;
+  const MATRIX_SCALAR * const A_a  = data->A_a ;
+  const VECTOR_SCALAR tolerance = data->tolerance ;
 
-  const double tol_2 = tolerance * tolerance ;
+  const VECTOR_SCALAR tol_2 = tolerance * tolerance ;
 
-  double * const r  = (double *) malloc( nRow * sizeof(double) );
-  double * const p  = (double *) malloc( nVec * sizeof(double) );
-  double * const Ap = (double *) malloc( nRow * sizeof(double) );
+  VECTOR_SCALAR * const r  = (VECTOR_SCALAR *) malloc( nRow * sizeof(VECTOR_SCALAR) );
+  VECTOR_SCALAR * const p  = (VECTOR_SCALAR *) malloc( nVec * sizeof(VECTOR_SCALAR) );
+  VECTOR_SCALAR * const Ap = (VECTOR_SCALAR *) malloc( nRow * sizeof(VECTOR_SCALAR) );
 
-  double rtrans = 0.0 ;
+  VECTOR_SCALAR rtrans = 0.0 ;
 
   int k ;
 
   tpi_copy( nRow , b , r );
   tpi_copy( nRow , x , p );
 
-  TIMER( *dt_mxv , comm_rhs_vector( data , p ); tpi_crs_matrix_apply( nRow, A_pc, A_ia, A_a, p, Ap ) );
+  comm_rhs_vector( data , p ); tpi_crs_matrix_apply( nRow, A_pc, A_ia, A_a, p, Ap );
 
-  TIMER( *dt_axpby , tpi_axpby( nRow , -1.0, Ap, 1.0 , r ) );
+  tpi_axpby( nRow , -1.0, Ap, 1.0 , r );
 
-  TIMER( *dt_dot , rtrans = comm_sum( tpi_dot( nRow , r , r ) ) );
+  /* Include timing dot product for 2 * #iter dot products */
+  TIMER( dt_dot , rtrans = comm_sum( tpi_dot( nRow , r , r ) ) );
 
   for ( k = 0 ; k < max_iter && tol_2 < rtrans ; ++k ) {
-    double alpha ;
-    double beta = 0.0 ;
-    double pAp = 0.0 ;
+    VECTOR_SCALAR alpha ;
+    VECTOR_SCALAR beta = 0.0 ;
+    VECTOR_SCALAR pAp = 0.0 ;
 
     if ( k ) {
-      const double oldrtrans = rtrans ;
-      TIMER( *dt_dot , rtrans = comm_sum( tpi_dot( nRow , r , r ) ) );
-      beta = 0 < rtrans ? rtrans / oldrtrans : 0.0 ;
+      const VECTOR_SCALAR oldrtrans = rtrans ;
+      TIMER( dt_dot , rtrans = comm_sum( tpi_dot( nRow , r , r ) ) );
+      beta = rtrans / oldrtrans ;
     }
 
-    TIMER( *dt_axpby , tpi_axpby( nRow, 1.0, r, beta, p ) );
+    TIMER( dt_axpby , tpi_axpby( nRow, 1.0, r, beta, p ) );
 
-    TIMER( *dt_mxv , comm_rhs_vector( data , p ); tpi_crs_matrix_apply( nRow, A_pc, A_ia, A_a, p, Ap ) );
+    TIMER( dt_mxv , comm_rhs_vector( data , p ); tpi_crs_matrix_apply( nRow, A_pc, A_ia, A_a, p, Ap ) );
 
-    TIMER( *dt_dot , pAp = comm_sum( tpi_dot( nRow , p , Ap ) ) );
+    TIMER( dt_dot , pAp = comm_sum( tpi_dot( nRow , p , Ap ) ) );
 
-    alpha = 0 < rtrans ? rtrans / pAp : 0.0 ;
+    if ( 0 < fabs( pAp ) ) {
+      alpha = rtrans / pAp ;
+    }
+    else {
+      alpha = rtrans = 0.0 ; /* Orthogonal, cannot continue */
+    }
 
     if ( ! ( ( k + 1 ) % print_iter ) ) {
       fprintf(stdout,"  cgsolve | r(%d) | = %g\n",k,sqrt(rtrans));
       fflush(stdout);
     }
   
-    TIMER( *dt_axpby , tpi_axpby( nRow , alpha,  p,  1.0, x) );
-    TIMER( *dt_axpby , tpi_axpby( nRow , -alpha, Ap, 1.0, r) );
+    TIMER( dt_axpby , tpi_axpby( nRow , alpha,  p,  1.0, x) );
+    TIMER( dt_axpby , tpi_axpby( nRow , -alpha, Ap, 1.0, r) );
   }
 
   *norm_resid = sqrt( rtrans );

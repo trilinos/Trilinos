@@ -133,7 +133,7 @@ void reduce_init( TPI_Work * work )
 }
 
 static
-void reduce_join( TPI_Work * work , void * arg_src )
+void reduce_join( TPI_Work * work , const void * arg_src )
 {
   struct TaskXY * const info = (struct TaskXY *) work->info ;
   double        * const dst  = (double *)        work->reduce ;

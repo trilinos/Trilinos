@@ -1,12 +1,14 @@
 
+#include <tpi_vector.h>
+
 struct cgsolve_data {
-  int     nRow ; 
-  int   * A_pc ; 
-  int   * A_ia ; 
-  float * A_a ; 
-  int     max_iter ; 
-  int     print_iter ; 
-  float   tolerance ; 
+  int             nRow ; 
+  int           * A_pc ; 
+  int           * A_ia ; 
+  MATRIX_SCALAR * A_a ; 
+  int             max_iter ; 
+  int             print_iter ; 
+  VECTOR_SCALAR   tolerance ; 
 
   int     np ; 
   int     ip ; 
@@ -16,14 +18,14 @@ struct cgsolve_data {
 }; 
 
 void cgsolve_set_lhs( const struct cgsolve_data * data ,
-                      const double * const x ,
-                            double * const b );
+                      const VECTOR_SCALAR * const x ,
+                            VECTOR_SCALAR * const b );
 
 void cgsolve( const struct cgsolve_data * data ,
-              const double * const b ,
-                    double * const x ,
+              const VECTOR_SCALAR * const b ,
+                    VECTOR_SCALAR * const x ,
                     int    * const iter_count ,
-                    double * const norm_resid ,
+                    VECTOR_SCALAR * const norm_resid ,
                     double * const dt_mxv ,
                     double * const dt_axpby ,
                     double * const dt_dot );

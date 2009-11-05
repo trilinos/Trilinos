@@ -8,11 +8,11 @@
 /*--------------------------------------------------------------------*/
 
 struct tpi_work_vector {
-        double alpha ;
-        double beta ;
-  const double * x ;
-  const double * y ;
-        double * w ; 
+        VECTOR_SCALAR alpha ;
+        VECTOR_SCALAR beta ;
+  const VECTOR_SCALAR * x ;
+  const VECTOR_SCALAR * y ;
+        VECTOR_SCALAR * w ; 
         int  n ;
 };
 
@@ -32,8 +32,8 @@ static void tpi_work_fill( TPI_Work * work )
   const struct tpi_work_vector * const h =
     (struct tpi_work_vector *) work->info ;
 
-  const double alpha = h->alpha ;
-  double * const w = h->w ;
+  const VECTOR_SCALAR alpha = h->alpha ;
+  VECTOR_SCALAR * const w = h->w ;
 
   int i , iEnd ;
 
@@ -42,7 +42,7 @@ static void tpi_work_fill( TPI_Work * work )
   for ( ; i < iEnd ; ++i ) { w[i] = alpha ; }
 }
 
-void tpi_fill( int n , double alpha , double * x )
+void tpi_fill( int n , VECTOR_SCALAR alpha , VECTOR_SCALAR * x )
 {
   struct tpi_work_vector tmp = { 0.0 , 0.0 , NULL , NULL , NULL , 0 };
   tmp.alpha = alpha ;
@@ -58,8 +58,8 @@ static void tpi_work_scale( TPI_Work * work )
   const struct tpi_work_vector * const h =
     (struct tpi_work_vector *) work->info ;
 
-  const double beta = h->beta ;
-  double * const w = h->w ;
+  const VECTOR_SCALAR beta = h->beta ;
+  VECTOR_SCALAR * const w = h->w ;
 
   int i , iEnd ;
 
@@ -68,7 +68,7 @@ static void tpi_work_scale( TPI_Work * work )
   for ( ; i < iEnd ; ++i ) { w[i] *= beta ; }
 }
 
-void tpi_scale( int n , const double alpha , double * x )
+void tpi_scale( int n , const VECTOR_SCALAR alpha , VECTOR_SCALAR * x )
 {
   struct tpi_work_vector tmp = { 0.0 , 0.0 , NULL , NULL , NULL , 0 };
   tmp.alpha = alpha ;
@@ -84,8 +84,8 @@ static void tpi_work_copy( TPI_Work * work )
   const struct tpi_work_vector * const h =
     (struct tpi_work_vector *) work->info ;
 
-  const double * const x = h->x ;
-  double * const w = h->w ;
+  const VECTOR_SCALAR * const x = h->x ;
+  VECTOR_SCALAR * const w = h->w ;
 
   int i , iEnd ;
 
@@ -94,7 +94,7 @@ static void tpi_work_copy( TPI_Work * work )
   for ( ; i < iEnd ; ++i ) { w[i] = x[i] ; }
 }
 
-void tpi_copy( int n , const double * x , double * y )
+void tpi_copy( int n , const VECTOR_SCALAR * x , VECTOR_SCALAR * y )
 {
   struct tpi_work_vector tmp = { 0.0 , 0.0 , NULL , NULL , NULL , 0 };
   tmp.x = x ;
@@ -110,10 +110,10 @@ static void tpi_work_axpby( TPI_Work * work )
   const struct tpi_work_vector * const h =
     (struct tpi_work_vector *) work->info ;
 
-  const double alpha = h->alpha ;
-  const double beta  = h->beta ;
-  const double * const x = h->x ;
-  double * const w = h->w ;
+  const VECTOR_SCALAR alpha = h->alpha ;
+  const VECTOR_SCALAR beta  = h->beta ;
+  const VECTOR_SCALAR * const x = h->x ;
+  VECTOR_SCALAR * const w = h->w ;
 
   int i , iEnd ;
 
@@ -122,8 +122,8 @@ static void tpi_work_axpby( TPI_Work * work )
   for ( ; i < iEnd ; ++i ) { w[i] = alpha * x[i] + beta * w[i] ; }
 }
 
-void tpi_axpby( int n , double alpha , const double * x ,
-                        double beta  ,       double * y )
+void tpi_axpby( int n , VECTOR_SCALAR alpha , const VECTOR_SCALAR * x ,
+                        VECTOR_SCALAR beta  ,       VECTOR_SCALAR * y )
 {
   struct tpi_work_vector tmp = { 0.0 , 0.0 , NULL , NULL , NULL , 0 };
   tmp.alpha = alpha ;
@@ -132,15 +132,7 @@ void tpi_axpby( int n , double alpha , const double * x ,
   tmp.w = y ;
   tmp.n = n ;
 
-  if ( 0.0 == alpha ) {
-    TPI_Run_threads( tpi_work_scale , & tmp , 0 );
-  }
-  else if ( 0.0 == beta && 1.0 == alpha ) {
-    TPI_Run_threads( tpi_work_copy , & tmp , 0 );
-  }
-  else {
-    TPI_Run_threads( tpi_work_axpby , & tmp , 0 );
-  }
+  TPI_Run_threads( tpi_work_axpby , & tmp , 0 );
 }
 
 /*--------------------------------------------------------------------*/
@@ -150,10 +142,10 @@ static void tpi_work_dot_partial( TPI_Work * work )
   const struct tpi_work_vector * const h =
     (struct tpi_work_vector *) work->info ;
 
-  double * const s = (double *) work->reduce ;
-  const double * const x = h->x ;
-  const double * const y = h->y ;
-  double tmp = *s ;
+  VECTOR_SCALAR * const s = (VECTOR_SCALAR *) work->reduce ;
+  const VECTOR_SCALAR * const x = h->x ;
+  const VECTOR_SCALAR * const y = h->y ;
+  VECTOR_SCALAR tmp = *s ;
   int i , iEnd ;
 
   tpi_work_span( work , h->n , & i , & iEnd );
@@ -168,33 +160,33 @@ static void tpi_work_dot_partial_self( TPI_Work * work )
   const struct tpi_work_vector * const h =
     (struct tpi_work_vector *) work->info ;
 
-  double * const s = (double *) work->reduce ;
-  const double * const x = h->x ;
-  double tmp = *s ;
+  VECTOR_SCALAR * const s = (VECTOR_SCALAR *) work->reduce ;
+  const VECTOR_SCALAR * const x = h->x ;
+  VECTOR_SCALAR tmp = *s ;
 
   int i , iEnd ;
 
   tpi_work_span( work , h->n , & i , & iEnd );
 
-  for ( ; i < iEnd ; ++i ) { const double d = x[i] ; tmp += d * d ; }
+  for ( ; i < iEnd ; ++i ) { const VECTOR_SCALAR d = x[i] ; tmp += d * d ; }
 
   *s = tmp ;
 }
 
-static void tpi_work_dot_join( TPI_Work * work , void * src  )
+static void tpi_work_dot_join( TPI_Work * work , const void * src  )
 {
-  *((double *) ( work->reduce) ) += *((const double *) src);
+  *((VECTOR_SCALAR *) ( work->reduce) ) += *((const VECTOR_SCALAR *) src);
 }
 
 static void tpi_work_dot_init( TPI_Work * work )
 {
-  *((double *) ( work->reduce) ) = 0 ;
+  *((VECTOR_SCALAR *) ( work->reduce) ) = 0 ;
 }
 
-double tpi_dot( int n , const double * x , const double * y )
+VECTOR_SCALAR tpi_dot( int n , const VECTOR_SCALAR * x , const VECTOR_SCALAR * y )
 {
   struct tpi_work_vector tmp = { 0.0 , 0.0 , NULL , NULL , NULL , 0 };
-  double result = 0.0 ;
+  VECTOR_SCALAR result = 0.0 ;
   tmp.x = x ;
   tmp.y = y ;
   tmp.n = n ;
@@ -217,9 +209,9 @@ struct tpi_crs_matrix {
         int      nRow ;
   const int    * A_pc ;
   const int    * A_ia ;
-  const float  * A_a ;
-  const double * x ;
-        double * y ;
+  const MATRIX_SCALAR * A_a ;
+  const VECTOR_SCALAR * x ;
+        VECTOR_SCALAR * y ;
 };
 
 static void tpi_work_crs_matrix_apply( TPI_Work * work )
@@ -229,8 +221,8 @@ static void tpi_work_crs_matrix_apply( TPI_Work * work )
 
   const int   * const A_pc = h->A_pc ;
   const int   * const A_ia = h->A_ia ;
-  const float * const A_a  = h->A_a ;
-  const double * const x = h->x ;
+  const MATRIX_SCALAR * const A_a  = h->A_a ;
+  const VECTOR_SCALAR * const x = h->x ;
 
   const int nRow  = h->nRow ;
   const int chunk = ( nRow + work->count - 1 ) / work->count ;
@@ -243,13 +235,13 @@ static void tpi_work_crs_matrix_apply( TPI_Work * work )
   {
     const int * const pc_end = A_pc + rowEnd ;
     const int *       pc     = A_pc + row ;
-    double    *       y      = h->y + row ;
+    VECTOR_SCALAR *   y      = h->y + row ;
 
     for ( ; pc != pc_end ; ++pc , ++y ) {
       const int   *       ia    = A_ia + *pc ;
-      const float *       a     = A_a  + *pc ;
-      const float * const a_end = A_a  + pc[1] ;
-      double tmp = 0 ;
+      const MATRIX_SCALAR *       a     = A_a  + *pc ;
+      const MATRIX_SCALAR * const a_end = A_a  + pc[1] ;
+      VECTOR_SCALAR tmp = 0 ;
       for ( ; a != a_end ; ++a , ++ia ) {
         tmp += *a * x[ *ia ];
       }
@@ -264,9 +256,9 @@ void tpi_crs_matrix_apply(
   const int      nRow ,
   const int    * A_pc ,
   const int    * A_ia ,
-  const float  * A_a ,
-  const double * x ,
-        double * y )
+  const MATRIX_SCALAR * A_a ,
+  const VECTOR_SCALAR * x ,
+        VECTOR_SCALAR * y )
 {
   struct tpi_crs_matrix h = { 0 , NULL , NULL , NULL , NULL , NULL };
   h.nRow = nRow ;

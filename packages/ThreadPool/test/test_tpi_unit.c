@@ -46,7 +46,9 @@ void test_tpi_init(   const int ntest, const int nthread[], const int ntrial);
 void test_tpi_block(  const int ntest, const int nthread[], const int ntrial);
 void test_tpi_reduce( const int ntest, const int nthread[], const int ntrial);
 void test_tpi_work(   const int ntest, const int nthread[],
-                        const int nwork , const int ntrial );
+                      const int nwork , const int ntrial );
+void test_tpi_work_async(
+  const int ntest , const int nthread[] , const int nwork , const int ntrial );
 
 int main( int argc , char ** argv )
 {
@@ -72,6 +74,7 @@ int main( int argc , char ** argv )
   test_tpi_block(  num_test , num_thread , ntrial );
   test_tpi_reduce( num_test , num_thread , ntrial );
   test_tpi_work(   num_test , num_thread , nwork , ntrial );
+  test_tpi_work_async( num_test , num_thread , nwork , ntrial );
  
 #if defined( HAVE_MPI )
   }
@@ -329,6 +332,94 @@ void test_tpi_work( const int ntest , const int nthread[] , const int nwork ,
       TPI_Run_reduce( test_reduce_work , & flags , nwork ,
                       test_reduce_join , test_reduce_init ,
                       sizeof(value) , & value );
+  
+      dt = TPI_Walltime() - t ;
+      dt_reduce_total += dt ;
+      dt_reduce_total_2 += dt * dt ;
+
+      for ( k = 0 ; k < nwork && flags[k] ; ++k );
+
+      if ( value != nwork || k < nwork ) {
+        fprintf(stderr, "TPI_Run_reduce(...) : FAILED at trial %d\n", i );
+        abort();
+      }
+    }
+
+    TPI_Finalize();
+
+    if ( 1 < ntrial ) {
+      const double work_mean = 1.0e6 * dt_work_total / ntrial ;
+      const double work_sdev = 1.0e6 * sqrt( ( ntrial * dt_work_total_2 -
+                                       dt_work_total * dt_work_total ) /
+                                     ( ntrial * ( ntrial - 1 ) ) );
+
+      const double reduce_mean = 1.0e6 * dt_reduce_total / ntrial ;
+      const double reduce_sdev = 1.0e6 * sqrt( ( ntrial * dt_reduce_total_2 -
+                                         dt_reduce_total * dt_reduce_total) /
+                                       ( ntrial * ( ntrial - 1 ) ) );
+      
+      fprintf(stdout,"%d , %d , %d , %10g , %10g , %10g , %10g\n",
+              nth, ntrial, nwork, work_mean, work_sdev, reduce_mean, reduce_sdev);
+    }
+  }
+
+  free( flags );
+}
+
+/*--------------------------------------------------------------------*/
+
+void test_tpi_work_async(
+  const int ntest , const int nthread[] , const int nwork , const int ntrial )
+{
+  int * const flags = (int *) malloc( sizeof(int) * nwork );
+  int j ;
+
+  fprintf( stdout , "\n\"TEST TPI_Start / TPI_Start_reduce\"\n" );
+  fprintf( stdout , "\"#Thread\" , \"#Work\" , \"#Trial\" , \"TPI_Start(avg-msec)\" , \"TPI_Start(stddev-msec)\" , \"TPI_Start_reduce(avg-msec)\" , \"TPI_Start_reduce(stddev-msec)\"\n");
+
+  for ( j = 0 ; j < ntest ; ++j ) {
+    const int nth = nthread[j];
+
+    double dt_work_total   = 0.0 ;
+    double dt_work_total_2 = 0.0 ;
+    double dt_reduce_total    = 0.0 ;
+    double dt_reduce_total_2  = 0.0 ;
+    int i , k ;
+
+    int result = TPI_Init( nth );
+
+    if ( result != nth ) {
+      fprintf(stderr,"%d != TPI_Init(%d) : FAILED\n", result , nth );
+    }
+
+    for ( i = 0 ; i < ntrial ; ++i ) {
+      double t , dt ;
+      int value = 0 ;
+
+      for ( k = 0 ; k < nwork ; ++k ) { flags[k] = 0 ; }
+
+      t = TPI_Walltime();
+      TPI_Start( test_work , & flags , nwork , 0 );
+      TPI_Wait();
+      dt = TPI_Walltime() - t ;
+      dt_work_total += dt ;
+      dt_work_total_2 += dt * dt ;
+
+      for ( k = 0 ; k < nwork && flags[k] ; ++k );
+
+      if ( k < nwork ) {
+        fprintf(stderr, "TPI_Run(...) : FAILED at trial %d\n", i );
+        abort();
+      }
+
+      for ( k = 0 ; k < nwork ; ++k ) { flags[k] = 0 ; }
+
+      t = TPI_Walltime();
+
+      TPI_Start_reduce( test_reduce_work , & flags , nwork ,
+                        test_reduce_join , test_reduce_init ,
+                        sizeof(value) , & value );
+      TPI_Wait();
   
       dt = TPI_Walltime() - t ;
       dt_reduce_total += dt ;

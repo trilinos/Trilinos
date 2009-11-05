@@ -78,7 +78,6 @@ double TPI_Walltime();
 #define TPI_ERROR_INTERNAL ((int) -5)  /**< internal resource error */
 
 /*--------------------------------------------------------------------*/
-
 /** \brief  Work information passed to a work subprogram. */
 struct TPI_Work_Struct {
   const void * info ;       /**<  Shared info input to TPI_Run */
@@ -108,6 +107,7 @@ void (*TPI_reduce_init)( TPI_Work * work );
 typedef
 void (*TPI_reduce_join)( TPI_Work * work , const void * reduce );
 
+/*--------------------------------------------------------------------*/
 /** \brief Run a work subprogram in thread parallel.
  *
  *  The thread pool must be in the 'paused' state when this
@@ -142,6 +142,13 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram ,
                      const void *        work_info ,
                      int                 lock_count );
 
+/** \brief Run a work and reduction subprograms in thread parallel.
+ *
+ *  Each call to the work_subprogram has exclusive (thread safe)
+ *  access to its work->reduce data.
+ *  The reduce_init and reduce_join subprograms have
+ *  exclusive access to their arguments.
+ */
 int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram ,
                             const void *          work_info ,
                             TPI_reduce_join       reduce_join ,
@@ -149,6 +156,67 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram ,
                             int                   reduce_size ,
                             void *                reduce_data );
 
+/*--------------------------------------------------------------------*/
+/** \brief  Start a work subprogram in thread parallel
+ *          running on all but the 'main' calling thread;
+ *          the 'main' calling thread returns immediately.
+ *
+ *  The thread pool must be in the 'paused' state when this
+ *  function is called.  Thus a recursive call to TPI_Start is illegal.
+ */
+int TPI_Start( TPI_work_subprogram work_subprogram  ,
+               const void *        work_info ,
+               int                 work_count  ,
+               int                 lock_count );
+
+/** \brief  Start a work and reduction subprograms in thread parallel
+ *          running on all but the 'main' calling thread;
+ *          the 'main' calling thread returns immediately.
+ *
+ *  Each call to the work_subprogram has exclusive (thread safe)
+ *  access to its work->reduce data.
+ *  The reduce_init and reduce_join subprograms have
+ *  exclusive access to their arguments.
+ */
+int TPI_Start_reduce( TPI_work_subprogram   work_subprogram  ,
+                      const void *          work_info ,
+                      int                   work_count  ,
+                      TPI_reduce_join       reduce_join ,
+                      TPI_reduce_init       reduce_init ,
+                      int                   reduce_size ,
+                      void *                reduce_data );
+
+/** \brief  Run a work subprogram on each thread
+ *          that is not the 'main' calling thread.
+ *          The 'main' calling thread returns immediately.
+ *
+ *  The thread pool must be in the 'paused' state when this
+ *  function is called.  Thus a recursive call to TPI_Start_threads is illegal.
+ */
+int TPI_Start_threads( TPI_work_subprogram work_subprogram ,
+                       const void *        work_info ,
+                       int                 lock_count );
+
+/** \brief  Start a work / reduction subprogram 
+ *          on each thread that is not the 'main' calling thread.
+ *          The 'main' calling thread returns immediately.
+ *
+ *  Each call to the work_subprogram has exclusive (thread safe)
+ *  access to its work->reduce data.
+ *  The reduce_init and reduce_join subprograms have
+ *  exclusive access to their arguments.
+ */
+int TPI_Start_threads_reduce( TPI_work_subprogram   work_subprogram ,
+                              const void *          work_info ,
+                              TPI_reduce_join       reduce_join ,
+                              TPI_reduce_init       reduce_init ,
+                              int                   reduce_size ,
+                              void *                reduce_data );
+
+/** \brief  Wait for a started work subprogram to complete. */
+int TPI_Wait();
+
+/*--------------------------------------------------------------------*/
 /** \brief  Block threads within the operating system.
  *
  *  Normally the worker threads are unblocked and spinning for
