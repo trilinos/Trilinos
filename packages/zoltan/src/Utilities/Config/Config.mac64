@@ -20,7 +20,7 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc -m64 -Wall 
+CC			= mpicc -m64 -Wall  -Wno-long-long -ansi -pedantic -DCOLORING_NEW_GRAPH
 # Needed on Mac 10.5 with LAM/MPI.
 #LDFLAGS			= -Wl,-search_paths_first
 CPPC			= mpic++ -m64 -bind_at_load  
@@ -41,8 +41,12 @@ FARG      		= farg_typical
 MPI_LIBS			= 
 MPI_LIBPATH		=
 
-PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
-PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+#PARMETIS_LIBPATH 	= -L/Users/kddevin/code/ParMETIS3.1.1
+#PARMETIS_INCPATH        = -I/Users/kddevin/code/ParMETIS3.1.1
+PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1
+PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1
+#PARMETIS_LIBPATH 	= -L/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
+#PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m64/ParMETIS3_1_debug
 
 #SCOTCH_LIBPATH 		= -L/Users/kddevin/code/lib-m64/scotch_5.1/lib
 #SCOTCH_INCPATH        	= -I/Users/kddevin/code/lib-m64/scotch_5.1/include
