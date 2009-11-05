@@ -161,12 +161,14 @@ OCT =
 endif
 
 ORDER_H = \
-	$(srcdir)/order/order_const.h
+	$(srcdir)/order/order_const.h \
+	$(srcdir)/order/hsfcOrder.h 
 
 ORDER = \
 	$(srcdir)/order/order.c \
 	$(srcdir)/order/order_struct.c \
 	$(srcdir)/order/order_tools.c \
+	$(srcdir)/order/hsfcOrder.c \
 	$(srcdir)/order/perm.c
 
 PAR_H = \
