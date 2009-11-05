@@ -403,9 +403,9 @@ end subroutine ztnPrm_hier_use_params
 !}
 
 function get_num_levels(data, ierr)
-integer(Zoltan_INT) :: data(*)
-integer :: ierr
-integer :: get_num_levels
+integer(Zoltan_INT), intent(in) :: data(*)
+integer(Zoltan_INT), intent(out) :: ierr
+integer(Zoltan_INT) :: get_num_levels
 
   ierr = ZOLTAN_OK
   get_num_levels = ztnPrm_hier_get_num_levels()
@@ -419,9 +419,10 @@ end function get_num_levels
 !}
 
 function get_part(data, level, ierr)
-integer(Zoltan_INT) :: data(*)
-integer :: level, ierr
-integer :: get_part
+integer(Zoltan_INT), intent(in) :: data(*)
+integer(Zoltan_INT), intent(in) :: level
+integer(Zoltan_INT), intent(out) :: ierr
+integer(Zoltan_INT) :: get_part
 
   ierr = ZOLTAN_OK
 
@@ -435,13 +436,13 @@ end function get_part
 !}
 
 subroutine get_method(data,level,azz,ierr)
-integer(Zoltan_INT) :: data(*)
-integer :: level
+integer(Zoltan_INT), intent(in) :: data(*)
+integer(Zoltan_INT), intent(in) :: level
 type(Zoltan_Struct), target :: azz
-integer :: ierr
+integer(Zoltan_INT), intent(out) :: ierr
 type(Zoltan_Struct), pointer :: zz
 
-zz => azz
+  zz => azz
 
   call ztnPrm_hier_use_params(level, zz, ierr)
 end subroutine get_method
