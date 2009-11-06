@@ -33,6 +33,8 @@ ADD_SUBDIRECTORY(stk_linsys)
 
 ADD_SUBDIRECTORY(stk_transfer)
 
+ADD_SUBDIRECTORY(stk_search)
+
 #
 # D) Do standard postprocessing
 #

@@ -28,32 +28,32 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-ci_string.hpp
-ci_traits.hpp
-CSet.hpp
-FormatTime.hpp
-Identifier.hpp
-IndentStreambuf.hpp
-IndexList.hpp
-Marshal.hpp
-PairIter.hpp
-PrintTable.hpp
-SameType.hpp
-SimpleArrayOps.hpp
-StaticAssert.hpp
-string_case_compare.hpp
-TeeStreambuf.hpp
-TypeList.hpp
+CPUTime.hpp
+Demangle.hpp
+LogControl.hpp
+OutputLog.hpp
+ProductRegistry.hpp
+ProgramOptions.hpp
+ReportHandler.hpp
+RuntimeDoomed.hpp
+RuntimeMessage.hpp
+RuntimeWarning.hpp
+sierra_version.hpp
+WallTime.hpp
   )
 
 APPEND_SET(SOURCES
-ci_string.cpp
-ci_traits.cpp
-CSet.cpp
-FormatTime.cpp
-Identifier.cpp
-Marshal.cpp
-PrintTable.cpp
+CPUTime.cpp
+Demangle.cpp
+LogControl.cpp
+OutputLog.cpp
+ProductRegistry.cpp
+ProgramOptions.cpp
+ReportHandler.cpp
+RuntimeDoomed.cpp
+RuntimeMessage.cpp
+RuntimeWarning.cpp
+WallTime.cpp
   )
 
 IF (TPL_ENABLE_MPI)
@@ -64,7 +64,7 @@ ENDIF()
 #
 
 PACKAGE_ADD_LIBRARY(
-  stk_util_util
+  stk_util_env
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

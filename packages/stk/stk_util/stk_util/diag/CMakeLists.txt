@@ -20,8 +20,6 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/detail/)
 
 #
 # Core headers
@@ -30,34 +28,23 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/detail/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-Bootstrap.hpp
-ci_string.hpp
-ci_traits.hpp
-CSet.hpp
-FormatTime.hpp
-Identifier.hpp
-IndentStreambuf.hpp
-IndexList.hpp
-Marshal.hpp
-PairIter.hpp
-PrintTable.hpp
-SameType.hpp
-SimpleArrayOps.hpp
-StaticAssert.hpp
-string_case_compare.hpp
-TeeStreambuf.hpp
-TypeList.hpp
+PrintTimer.hpp
+Timer.hpp
+TimerMetricTraits.hpp
+WriterExt.hpp
+Writer_fwd.hpp
+Writer.hpp
+WriterManip.hpp
+WriterOStream.hpp
   )
 
 APPEND_SET(SOURCES
-Bootstrap.cpp
-ci_string.cpp
-ci_traits.cpp
-CSet.cpp
-FormatTime.cpp
-Identifier.cpp
-Marshal.cpp
-PrintTable.cpp
+PrintTimer.cpp
+Timer.cpp
+TimerMetricTraits.cpp
+Writer.cpp
+WriterExt.cpp
+WriterManip.cpp
   )
 
 IF (TPL_ENABLE_MPI)
@@ -68,7 +55,7 @@ ENDIF()
 #
 
 PACKAGE_ADD_LIBRARY(
-  stk_util_util
+  stk_util_diag
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
