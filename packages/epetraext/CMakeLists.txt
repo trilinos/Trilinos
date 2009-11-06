@@ -93,10 +93,16 @@ ADD_OPTION_AND_DEFINE(TPL_ENABLE_HYPRE
   "Enable EpetraExt/Hypre adapters"
   OFF )
 
+IF(${PACKAGE_NAME}_ENABLE_HDF5)
+  SET(${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT ON)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT OFF)
+ENDIF()
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HDF5
   HAVE_EPETRAEXT_HDF5
   "Enable EpetraExt interface support for HDF5. This interface requires an already installed HDF5 library\; the include, the library path and the library name must be specified as well."
-  OFF )
+  ${${PACKAGE_NAME}_ENABLE_HDF5_DEFAULT} )
 
 ADD_OPTION_AND_DEFINE(Trilinos_ENABLE_PyTrilinos
   HAVE_PYTRILINOS
