@@ -24,6 +24,7 @@ namespace Teuchos {
 #endif
 
 class AztecOO;
+class Epetra_CrsMatrix;
 
 #ifdef HAVE_FEI_ML
 #include <ml_include.h>
