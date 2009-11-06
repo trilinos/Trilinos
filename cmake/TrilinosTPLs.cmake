@@ -80,6 +80,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   TAUCS          SS
   ForUQTK	 EX
   Dakota	 EX
+  HDF5           EX
   )
 
 # NOTES:
