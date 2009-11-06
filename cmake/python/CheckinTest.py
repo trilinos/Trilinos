@@ -2,8 +2,13 @@
 #
 # ToDo:
 #
+#  (*) Put in checks for the names of Trilinos packages from --enable-packages
+#  and --disable-packages arguments.  Right now a mispelled package name would
+#  just be ignored.  Also, put in unit tests for this.
+#
 #  (*) Turn off framework tests by default and turn them in checkin
 #      testing ...
+#
 #  (*) Turn off generation of HTML/XML files by default and turn them on in
 #      checkin testing ...
 #

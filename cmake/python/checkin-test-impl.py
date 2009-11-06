@@ -16,7 +16,8 @@ do the checkin itself in a safe way.
 Quickstart:
 -----------
 
-In order to do a solid checkin, do the following:
+In order to do a solid checkin, perform the following recommended workflow
+(other workflows are described below):
 
 1) Do a 'cvs -nq update -dP' to review the changes that you have made:
 
@@ -38,13 +39,27 @@ In order to do a solid checkin, do the following:
   NOTE: Fill out this checkin message listing what you have changed.  Please
   use the Trilinos template for this file.
 
-3) Do the checkin test (and commit) with:
+3) Set up the checkin base build directory (one time only):
 
   $ cd SOME_BASE_DIR
   $ mkdir CHECKIN
   $ cd CHECKIN
+
+  NOTE: You may need to set up some configuration files if CMake can not find
+  the right compilers, MPI, and TPLs by default (see below).
+
+  NOTE: You might want to set up a simple shell driver script.  See some
+  examples at:
+
+    Trilinos/sampmleScripts/checkin-test-*
+
+4) Do the checkin test (and commit) with:
+
+  $ cd SOME_BASE_DIR/CHECKIN
   $ $TRILINOS_HOME/cmake/python/checkin-test.py \
-      --do-all --commit --commit-msg-header-file=checkin_message
+      --make-options="-j4" --ctest-options="-j2" --ctest-time-out=180 \
+      --commit-msg-header-file=checkin_message \
+      --do-all --commit
 
   NOTE: The above will automatically enable the correct packages and then
   build the code, run the tests, send you emails about what happened, and then
@@ -89,30 +104,31 @@ to do debugging.
 The following steps are performed by this script:
 
 1) Do a CVS update of the code (and detect the files that have changed
-locally).  (if --update or --do-all is set.)
+locally).  (done if --update or --do-all is set.)
 
 2) Select the list of packages to enable forward based on the package
 directories where there are changed files (or from a list of packages passed
 in by the user).  NOTE: This can be overridden with the options
 --enable-packages, --disable-packages, and --no-enable-fwd-packages.
 
-3) For each build case (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
+3) For each build case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
 
-  3.a) Configure a build directory in a standard way for all of the packages
-  that have changed and all of the packages that depend on these packages
-  forward. You can manually select what gets enabled (see the enable options
-  above).  (if --configure or --do-all is set.)
+  3.a) Configure a build directory <BUILD_NAME> in a standard way for all of
+  the packages that have changed and all of the packages that depend on these
+  packages forward. You can manually select which gets enabled (see the enable
+  options above).  (done if --configure or --do-all is set.)
   
   3.b) Build all configured code with 'make' (e.g. with -jN set through
-  --make-options).  (if --build or --do-all is set.)
+  --make-options).  (done if --build or --do-all is set.)
   
-  3.c) Run all tests for enabled packages.  (if --test or --do-all is set.)
+  3.c) Run all tests for enabled packages.  (done if --test or --do-all is
+  set.)
   
-  3.d) Analyze the results of the CVS update, configure, build, and tests and
-  send email about results.  (emails only sent out if --send-emails-to is not
-  set to ''.)
+  3.d) Analyze the results of the update, configure, build, and tests and send
+  email about results.  (emails only sent out if --send-emails-to is not set
+  to ''.)
 
-4) Commit the code given a commit message.  (if --commit is set.)
+4) Commit the code given a commit message.  (done if --commit is set.)
 
 The recommended way to use this script is to create a new base directory apart
 from your standard build directories such as:
@@ -123,16 +139,16 @@ from your standard build directories such as:
 The most basic way to do the checkin test is:
 
   $ cd SOME_BASE_DIR/CHECKIN
-  $ $TRILINOS_HOME/cmake/python/checkin-test.py --do-all
+  $ $TRILINOS_HOME/cmake/python/checkin-test.py --do-all [other options]
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
 LAPACK) can be found automatically, then this is all you will need to do.
 However, if the setup can not be determined automatically, then you can append
 a set of CMake variables that will get read in the files:
 
-  SOME_BASE_DIR/CHECKIN/SERIAL_RELEASE.config
-  SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
   SOME_BASE_DIR/CHECKIN/COMMON.config
+  SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
+  SOME_BASE_DIR/CHECKIN/SERIAL_RELEASE.config
 
 Actually, skeletons of these files will automatically be written out with
 typical CMake cache variables that you would need to set commented out.  Any
@@ -167,19 +183,15 @@ Common use cases for using this script are as follows:
    address for the different configurations and an overall commit readiness
    status email.
 
+   NOTE: If everything passed, you can follow this up with a commit (see
+   below).
+
 (*) Basic full testing with commit:
 
    --do-all --commit --commit-msg-header-file=<SOME_FILE_NAME>
 
-   NOTE: If the commit criteria is not satisify, no commit will occur and you
+   NOTE: If the commit criteria is not satisfied, no commit will occur and you
    will get an email telling you that.
-
-(*) Check commit readiness status:
-
-   [no arguments]
-
-   NOTE: This will examine results for the last testing process and send out
-   an email stating if the a commit is ready to perform or not.
 
 (*) Commit after a completed set of tests have finished:
 
@@ -203,12 +215,12 @@ Common use cases for using this script are as follows:
 
   --do-all --without-serial-release
 
-(*) The minimum acceptable testing where code has been changed:
+(*) The minimum acceptable testing when code has been changed:
 
   --do-all --no-enable-fwd-packages --without-serial-release
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
-  tests for the packages that have directly been changed and not forward
+  tests for the packages that have directly been changed and not any forward
   packages.
 
 (*) Test only a specific set of packages and no others:
@@ -222,11 +234,23 @@ Common use cases for using this script are as follows:
   NOTE: Using this option is greatly preferred to not running this script at
   all!
 
+(*) Check commit readiness status:
+
+   [no arguments]
+
+   NOTE: This will examine results for the last testing process and send out
+   an email stating if the a commit is ready to perform or not.
+
 (*) See the default option values without doing anything:
 
   --show-defaults
 
-  NOTE: This is the easiest to figure out what all of the default options are.
+  NOTE: This is the easiest way to figure out what all of the default options
+  are.
+
+Hopefully the above documentation, the documentation of the command-line
+arguments below, and some basic experimentation will be enough to get you
+going using this script for all of the pre-checkin testing and global commits.
 
 """
 
@@ -268,7 +292,7 @@ addOptionParserChoiceOption(
 
 clp.add_option(
   "--enable-fwd-packages", dest="enableFwdPackages", action="store_true",
-  help="Enable forward Trilinos packages." )
+  help="Enable forward Trilinos packages. [default]" )
 clp.add_option(
   "--no-enable-fwd-packages", dest="enableFwdPackages", action="store_false",
   help="Do not enable forward Trilinos packages.", default=True )
@@ -276,7 +300,7 @@ clp.add_option(
 clp.add_option(
   "--extra-cmake-options", dest="extraCmakeOptions", type="string", default="",
   help="Extra options to pass to 'cmake' after all other options." \
-  +" This should be used only as a last result.  To disable packages, instead use" \
+  +" This should be used only as a last resort.  To disable packages, instead use" \
   +" --disable-packages." )
 
 clp.add_option(
@@ -285,18 +309,18 @@ clp.add_option(
 
 clp.add_option(
   "--ctest-options", dest="ctestOptions", type="string", default="",
-  help="Extra options to pass to 'ctest'." )
+  help="Extra options to pass to 'ctest' (e.g. -j2)." )
 
 clp.add_option(
   "--ctest-time-out", dest="ctestTimeOut", type="float", default=None,
-  help="Time-out (in seconds) for each single 'ctest' test." )
+  help="Time-out (in seconds) for each single 'ctest' test (e.g. 180)." )
 
 clp.add_option(
   "--show-all-tests", dest="showAllTests", action="store_true",
   help="Show all of the tests in the summary email." )
 clp.add_option(
   "--no-show-all-tests", dest="showAllTests", action="store_false",
-  help="Don't show all of the test results in the summary email.",
+  help="Don't show all of the test results in the summary email. [default]",
   default=False )
 
 clp.add_option(
@@ -308,24 +332,24 @@ clp.add_option(
 
 clp.add_option(
   "--with-mpi-debug", dest="withMpiDebug", action="store_true",
-  help="Do the mpi debug build." )
+  help="Do the mpi debug build. [default]" )
 clp.add_option(
   "--without-mpi-debug", dest="withMpiDebug", action="store_false",
   help="Skip the mpi debug build.", default=True )
 
 clp.add_option(
   "--with-serial-release", dest="withSerialRelease", action="store_true",
-  help="Do the serial release build." )
+  help="Do the serial release build. [default]" )
 clp.add_option(
   "--without-serial-release", dest="withSerialRelease", action="store_false",
   help="Skip the serial release build.", default=True )
 
 clp.add_option(
   "--rebuild", dest="rebuild", action="store_true",
-  help="Keep and existing build tree and simply rebuild on top of it." )
+  help="Keep an existing build tree and simply rebuild on top of it. [default]" )
 clp.add_option(
   "--from-scratch", dest="rebuild", action="store_false", default=True,
-  help="Blow everything away and rebuild from scratch." )
+  help="Blow existing build directories rebuild from scratch." )
 
 clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
@@ -363,7 +387,7 @@ clp.add_option(
   + " type your password." )
 clp.add_option(
   "--skip-commit", dest="doCommit", action="store_false", default=False,
-  help="Skip the commit." )
+  help="Skip the commit at the end. [default]" )
 
 clp.add_option(
   "--force-commit", dest="forceCommit", action="store_true",
@@ -372,12 +396,12 @@ clp.add_option(
   +" changes." )
 clp.add_option(
   "--no-force-commit", dest="forceCommit", action="store_false", default=False,
-  help="Do not force a commit." )
+  help="Do not force a commit. [default]" )
 
 clp.add_option(
   "--final-update", dest="doFinalUpdate", action="store_true",
   help="Do a final update just before committing to make sure there are"
-  +" no conflicits (default)" )
+  +" no conflicits. [default]" )
 clp.add_option(
   "--skip-final-update", dest="doFinalUpdate", action="store_false", default=True,
   help="Do not do a final update before committing." )
@@ -385,7 +409,7 @@ clp.add_option(
 clp.add_option(
   "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
   help="Check the commit status at the end and send email if not actually" \
-  +" committing (default)." )
+  +" committing. [default]" )
 clp.add_option(
   "--skip-commit-readiness-check", dest="doCommitReadinessCheck", action="store_false",
   default=True,
