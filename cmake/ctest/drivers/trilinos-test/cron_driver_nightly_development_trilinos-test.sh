@@ -51,9 +51,7 @@ echo
 echo "Doing serial debug build: `date`"
 echo
 
-export CTEST_TEST_TYPE=Experimental
 time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_development_debug_trilinos-test.cmake -VV &> "SERIAL_DEBUG_DEV_$DATE.log"
-unset CTEST_TEST_TYPE
 
 echo
 echo "Ending nightly Trilinos testing on trilinos-test: `date`"
