@@ -12,6 +12,7 @@
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
+#include "Epetra_Vector.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -138,6 +139,38 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
       }
    }
 }
+
+#ifndef PB_DEBUG_OFF
+bool StridedEpetraOperator::testAgainstFullOperator(int count,double tol) const
+{
+   Epetra_Vector xf(OperatorRangeMap());
+   Epetra_Vector xs(OperatorRangeMap());
+   Epetra_Vector y(OperatorDomainMap());
+
+   // test operator many times
+   bool result = true;
+   double diffNorm=0.0,trueNorm=0.0;
+   for(int i=0;i<count;i++) {
+      xf.PutScalar(0.0);
+      xs.PutScalar(0.0);
+      y.Random();
+
+      // apply operator
+      Apply(y,xs); // xs = A*y
+      fullContent_->Apply(y,xf); // xf = A*y
+
+      // compute norms
+      xs.Update(-1.0,xf,1.0);
+      xs.Norm2(&diffNorm);
+      xf.Norm2(&trueNorm);
+
+      // check result
+      result &= (diffNorm/trueNorm < tol);
+   }
+
+   return result;
+}
+#endif
 
 } // end namespace Epetra
 } // end namespace PB

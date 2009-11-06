@@ -72,6 +72,12 @@ public:
    virtual bool HasNormInf() const { return false; }
    virtual const Epetra_Comm & Comm() const { return fullContent_->Comm(); }
 
+   
+   #ifndef PB_DEBUG_OFF
+   //! Helps perform sanity checks
+   bool testAgainstFullOperator(int count,double tol) const;
+   #endif
+
 protected:
    // gooey center of this shell
    Teuchos::RCP<Epetra_Operator> fullContent_;
