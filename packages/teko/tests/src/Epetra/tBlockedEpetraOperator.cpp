@@ -34,6 +34,7 @@
 
 #include "Epetra/PB_BlockedEpetraOperator.hpp"
 
+#include "EpetraExt_RowMatrixOut.h"
 
 namespace PB {
 namespace Test {
@@ -50,26 +51,46 @@ using Thyra::LinearOpTester;
 void tBlockedEpetraOperator::buildBlockGIDs(std::vector<std::vector<int> > & blocks,
                                             const Epetra_Map & map) const
 {
+   int pid = map.Comm().MyPID();
+
    blocks.resize(3);
 
    // grab blocks
    std::vector<int> & blk0 = blocks[0];
    std::vector<int> & blk1 = blocks[1];
    std::vector<int> & blk2 = blocks[2];
+   std::vector<int> gids;
 
    int numLocalElements = map.NumMyElements();
    int nleD2 = numLocalElements/2;
 
    // build first block: strided variables
    int firstBlock = (nleD2 % 2==0) ?  nleD2 : nleD2+1;
+   int gid;
    for(int i=0;i<firstBlock;i+=2) {
-      blk0.push_back(map.GID(i));
-      blk1.push_back(map.GID(i+1));
+      gid = map.GID(i);
+      blk0.push_back(gid);
+      gids.push_back(gid);
+
+      gid = map.GID(i+1);
+      blk1.push_back(gid);
+      gids.push_back(gid);
    }
 
    // build second block
-   for(int i=firstBlock;i<numLocalElements;i++)
-      blk2.push_back(map.GID(i));
+   for(int i=firstBlock;i<numLocalElements;i++) {
+      gid = map.GID(i);
+      blk2.push_back(gid);
+      gids.push_back(gid);
+   }
+
+/*
+   std::stringstream ss;
+   ss << 
+   std::ifstream file(ss.str().c_str());
+   for(int i=0;i<gids.size();i++) {
+   }
+*/
 }
 
 void tBlockedEpetraOperator::initializeTest() 
@@ -152,7 +173,7 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    Epetra_MultiVector ys(A->OperatorRangeMap(),width);
    Epetra_MultiVector y(A->OperatorRangeMap(),width);
 
-   EpetraExt::CrsMatrixToMatrixMarketFile("fullop.mm",*A);
+   EpetraExt::RowMatrixToMatrixMarketFile("fullop.mm",*A);
 
    std::vector<std::vector<int> > vars;
    buildBlockGIDs(vars,A->RowMap());
