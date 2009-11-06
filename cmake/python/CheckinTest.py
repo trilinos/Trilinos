@@ -204,10 +204,13 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
 reModifedFiles = re.compile(r"^[MA] (.+)$")
 
 
-def isGlobalCmakeBuildFile(modifiedFileFullPath):
+def isGlobalBuildFile(modifiedFileFullPath):
   modifiedFileFullPathArray = getFilePathArray(modifiedFileFullPath)
-  if len(modifiedFileFullPathArray)==1 and modifiedFileFullPathArray[0] == "CMakeLists.txt":
-    return True
+  if len(modifiedFileFullPathArray)==1:
+    if modifiedFileFullPathArray[0] == "CMakeLists.txt":
+      return True
+    if modifiedFileFullPathArray[0] == "Trilinos_version.h":
+      return True
   if modifiedFileFullPathArray[0] == 'cmake':
     if modifiedFileFullPathArray[1] == 'ctest':
       return False
@@ -235,7 +238,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
 
   for modifiedFileFullPath in modifiedFilesList:
 
-    if isGlobalCmakeBuildFile(modifiedFileFullPath):
+    if isGlobalBuildFile(modifiedFileFullPath):
       if inOptions_inout.enableAllPackages == 'default':
         print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
           "  => Enabling all Trilinos packages!"
@@ -1237,50 +1240,54 @@ trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXml
 class testCheckinTest(unittest.TestCase):
 
 
-  def test_isGlobalCmakeBuildFile_01(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'CMakeLists.txt' ), True )
+  def test_isGlobalBuildFile_00(self):
+    self.assertEqual( isGlobalBuildFile( 'Trilinos_version.h' ), True )
 
 
-  def test_isGlobalCmakeBuildFile_02(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TrilinosPackages.cmake' ), True )
+  def test_isGlobalBuildFile_01(self):
+    self.assertEqual( isGlobalBuildFile( 'CMakeLists.txt' ), True )
 
 
-  def test_isGlobalCmakeBuildFile_03(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
+  def test_isGlobalBuildFile_02(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosPackages.cmake' ), True )
 
 
-  def test_isGlobalCmakeBuildFile_04(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/ctest/experimental_build_test.cmake' ),
+  def test_isGlobalBuildFile_03(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
+
+
+  def test_isGlobalBuildFile_04(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/ctest/experimental_build_test.cmake' ),
       False )
 
 
-  def test_isGlobalCmakeBuildFile_05(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/DependencyUnitTests/blah' ),
+  def test_isGlobalBuildFile_05(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/DependencyUnitTests/blah' ),
       False )
 
 
-  def test_isGlobalCmakeBuildFile_06(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLBLAS.cmake' ),
+  def test_isGlobalBuildFile_06(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLBLAS.cmake' ),
       True )
 
 
-  def test_isGlobalCmakeBuildFile_07(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
+  def test_isGlobalBuildFile_07(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
       True )
 
 
-  def test_isGlobalCmakeBuildFile_08(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLMPI.cmake' ),
+  def test_isGlobalBuildFile_08(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLMPI.cmake' ),
       True )
 
 
-  def test_isGlobalCmakeBuildFile_09(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/TPLs/FindTPLDummy.cmake' ),
+  def test_isGlobalBuildFile_09(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLDummy.cmake' ),
       False )
 
 
-  def test_isGlobalCmakeBuildFile_10(self):
-    self.assertEqual( isGlobalCmakeBuildFile( 'cmake/utils/SetNotFound.cmake' ),
+  def test_isGlobalBuildFile_10(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/utils/SetNotFound.cmake' ),
       True )
 
 

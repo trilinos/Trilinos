@@ -30,11 +30,12 @@
 #define TEUCHOS_VERSION_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
+#include "Trilinos_version.h"
 
 namespace Teuchos {
 
 	std::string Teuchos_Version() { 
-		return("Teuchos Version 1.6d - 9/17/2008"); 
+		return ("Teuchos in Trilinos " TRILINOS_VERSION_STRING); 
 	}
 
 } // namespace Teuchos
