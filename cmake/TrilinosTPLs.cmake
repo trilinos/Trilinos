@@ -81,6 +81,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   ForUQTK	 EX
   Dakota	 EX
   HIPS           EX
+  HDF5           EX
   )
 
 # NOTES:

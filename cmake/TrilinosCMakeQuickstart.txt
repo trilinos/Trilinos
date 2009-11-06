@@ -425,7 +425,7 @@ Section H: Dashboard testing
 
     To turn off the MPI compiler wrappers, set:
 
-      -D MPI_USE_COMPILER_WRAPPERS:BOOL=ON
+      -D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF
 
     You will then need to manually pass in the compile and link lines needed
     to compile and link MP programs.  The compile flags can be set through:
