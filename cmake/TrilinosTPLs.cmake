@@ -45,6 +45,7 @@
 #
 
 SET(Trilinos_TPLS_AND_CLASSIFICATIONS
+  CUDA           EX
   TBB            EX
   Pthread        SS
   ARPREC         SS

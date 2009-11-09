@@ -1,183 +1,122 @@
 #ifndef KOKKOS_CUDANODE_HPP_
 #define KOKKOS_CUDANODE_HPP_
 
-#include <map>
+#include <cstring>
+#include "Kokkos_NodeAPIConfigDefs.hpp"
 
-// forward declaration
-class CUDANode;
+// forward declarations of Teuchos classes
+namespace Teuchos {
+  class ParameterList;
+  template <typename T> class ArrayRCP;
+  template <typename T> class ArrayView;
+}
 
-template <class T>
-struct CUDABuffer;
+namespace Kokkos {
 
-#define CONVERT_TO_CUDABUFFER_VOID \
-    operator CUDABuffer<void>() const { \
-      return CUDABuffer<void>(length_,flags_,devc_ptr_,host_ptr_); \
-    }
+  class CUDANode {
+    public:
 
-#define CONVERT_TO_CUDABUFFER_CONSTVOID \
-    operator CUDABuffer<const void>() const { \
-      return CUDABuffer<const void>(length_,flags_,devc_ptr_,host_ptr_);  \
-    }
+      CUDANode(Teuchos::ParameterList &pl);
 
+      ~CUDANode();
 
-template <>
-struct CUDABuffer<const void> {
-  friend class CUDANode;
-  template <class T2>
-  friend class CUDABuffer;
-  public:
-    CUDABuffer() { length_ = 0; flags_ = 0; devc_ptr_ = 0; host_ptr_ = 0; }
-  private:
-    CUDABuffer(int length, char *flags, const void *dptr, const void *hptr)
-    {
-      length_ = length;
-      flags_ = flags;
-      devc_ptr_ = dptr;
-      host_ptr_ = hptr;
-    }
-    int length_;
-    char *flags_;
-    const void *devc_ptr_, *host_ptr_;
-};
+      //@{ Computational methods
 
-template <>
-struct CUDABuffer<void> {
-  friend class CUDANode;
-  template <class T2>
-  friend class CUDABuffer;
-  public:
-    CUDABuffer() { length_ = 0; flags_ = 0; devc_ptr_ = 0; host_ptr_ = 0; }
-    CONVERT_TO_CUDABUFFER_CONSTVOID
-  private:
-    CUDABuffer(int length, char *flags, const void *dptr, const void *hptr)
-    {
-      length_ = length;
-      flags_ = flags;
-      devc_ptr_ = dptr;
-      host_ptr_ = hptr;
-    }
-    int length_;
-    char *flags_;
-    const void *devc_ptr_, *host_ptr_;
-};
+      template <class WDP>
+      static void parallel_for(int begin, int end, WDP wdp);
 
-template <class T>
-struct CUDABuffer<const T> {
-  friend class CUDANode;
-  template <class T2>
-  friend class CUDABuffer;
-  public:
-    CUDABuffer() { length_ = 0; flags_  = 0; devc_ptr_ = 0; host_ptr_ = 0; }
-    CONVERT_TO_CUDABUFFER_VOID
-    CONVERT_TO_CUDABUFFER_CONSTVOID
-    const T & operator[](int i) const {return devc_ptr_[i];}
-  private:
-    CUDABuffer(int length, char *flags, const T *dptr, const T *hptr)
-    {
-      length_ = length;
-      flags_ = flags;
-      devc_ptr_ = dptr;
-      host_ptr_ = hptr;
-    }
-    int length_;
-    char *flags_;
-    const T *devc_ptr_, *host_ptr_;
-};
+      template <class WDP>
+      static typename WDP::ReductionType
+      parallel_reduce(int begin, int end, WDP wd);
 
-template <class T>
-struct CUDABuffer {
-  friend class CUDANode;
-  public:
-    CUDABuffer() { length_ = 0; flags_  = 0; devc_ptr_ = 0; host_ptr_ = 0; }
-    CONVERT_TO_CUDABUFFER_VOID
-    CONVERT_TO_CUDABUFFER_CONSTVOID
-    operator CUDABuffer<const T>() const {
-      return CUDABuffer<const T>(length_,flags_,devc_ptr_,host_ptr_); 
-    }
-    T & operator[](int i) const {return devc_ptr_[i];}
-  private:
-    CUDABuffer(int length, char *flags, T *dptr, T *hptr)
-    {
-      length_ = length;
-      flags_ = flags;
-      devc_ptr_ = dptr;
-      host_ptr_ = hptr;
-    }
-    int length_;
-    char *flags_;
-    T *devc_ptr_, *host_ptr_;
-};
+      //@} 
 
-class CUDANode {
-  public:
-    template <class T>
-    struct buffer {
-      typedef CUDABuffer<T> buffer_t;
-    };
+      //@{ Memory methods
 
-    CUDANode(int device = 0, int numBlocks = -1, int numThreads = 256, int verbose = 1);
+      /*! \brief Allocate a parallel buffer, returning it as a pointer ecnapsulated in an ArrayRCP.
 
-    ~CUDANode();
+        Dereferencing the returned ArrayRCP or its underlying pointer in general results in undefined 
+        behavior outside of parallel computations.
 
-    //@{ Computational methods
+        The buffer will be automatically freed by the Node when no more references remain.
 
-    template <class WDP>
-    void execute1D(int length, WDP wdp);
+        @tparam T The data type of the allocate buffer. This is used to perform alignment and determine the number of bytes to allocate.
+        @param[in] size The size requested for the parallel buffer, greater than zero.
 
-    template <class WDP>
-    void reduce1D(int length, WDP &wd);
+        \post The method will return an ArrayRCP encapsulating a pointer. The underlying pointer may be used in parallel computation routines, 
+        and is guaranteed to have size large enough to reference \c size number of entries of type \c T.
+       */
+      template <class T> inline
+      Teuchos::ArrayRCP<T> allocBuffer(size_t size);
 
-    //@} 
+      /*! \brief Copy data to host memory from a parallel buffer.
 
-    //@{ Memory methods
+        @param[in] size       The number of entries to copy from \c buffSrc to \c hostDest.
+        @param[in] buffSrc    The parallel buffer from which to copy.
+        @param[out] hostDest  The location in host memory where the data from \c buffSrc is copied to.
 
-    template <class T>
-    CUDABuffer<T> allocBuffer(unsigned int size);
+        \pre  \c size is non-negative.
+        \pre  \c buffSrc has length at least <tt>size</tt>.
+        \pre  \c hostDest has length equal to \c size.
+        \post On return, entries in the range <tt>[0 , size)</tt> of \c buffSrc have been copied to \c hostDest entries in the range <tt>[0 , size)</tt>.
+       */
+      template <class T> inline
+      void copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest);
 
-    template <class T>
-    void freeBuffer(CUDABuffer<T> buff);
+      /*! \brief Copy data to host memory from a parallel buffer.
 
-    template <class T>
-    void copyFromBuffer(unsigned int size, typename buffer<const T>::buffer_t buff, unsigned int offset, T *ptr);
+        @param[in]  size        The number of entries to copy from \c hostSrc to \c buffDest.
+        @param[in]  hostSrc     The location in host memory from where the data is copied.
+        @param[out] buffDest    The parallel buffer to which the data is copied.
 
-    template <class T>
-    void copyToBuffer(unsigned int size, const T *ptr, typename buffer<T>::buffer_t buff, unsigned int offset);
+        \pre  \c size is non-negative.
+        \pre  \c hostSrc has length equal to \c size.
+        \pre  \c buffSrc has length at least <tt>size</tt>.
+        \post On return, entries in the range <tt>[0 , size)</tt> of \c hostSrc are allowed to be written to. The data is guaranteed to be present in \c buffDest before it is used in a parallel computation.
+       */
+      template <class T> inline
+      void copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest);
 
-    template <class T>
-    void copyBuffers(unsigned int size, typename buffer<const T>::buffer_t src , unsigned int  src_offset, 
-                                        typename buffer<      T>::buffer_t dest, unsigned int dest_offset);
+      /*! \brief Copy data between buffers.
 
-    template <class T>
-    const T * viewBufferConst(unsigned int size, typename buffer<const T>::buffer_t buff, unsigned int offset);
+        @param[in]     size     The size of the copy, greater than zero.
+        @param[in]     buffSrc  The source buffer, with length at least as large as \c size.
+        @param[in,out] buffDest The destination buffer, with length at least as large as \c size.
 
-    template <class T>
-    T * viewBuffer(bool writeOnly, unsigned int size, typename buffer<T>::buffer_t buff, unsigned int offset);
+        \post The data is guaranteed to have been copied before any other usage of buffSrc or buffDest occurs.
+       */
+      template <class T> inline
+      void copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest);
 
-    template <class T>
-    void releaseView(const T * view_ptr);
+      template <class T> inline
+      Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff);
 
-    void readyBuffers(CUDABuffer<const void> * const cBuffers,  unsigned int numConstBuffers,
-                      CUDABuffer<      void> * const ncBuffers, unsigned int numNonConstBuffers);
+      template <class T> inline
+      Teuchos::ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff);
 
-    //@} 
+      void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers);
 
-  private:
-    static std::map<const void *, CUDABuffer<const void> > out_views_;
-    static const char CLEAN      = 0,
-                      DIRTY_DEVC = 1,
-                      DIRTY_HOST = 2;
-    template <class WDP, int FirstLevel>
-    void call_reduce(int length, WDP wd, int threads, int blocks, void *d_blkpart);
-    // numBlocks_ is 
-    // - the number of blocks launched in a call to execute1D()
-    // - not used by reduce1D()
-    int numBlocks_;
-    // numThreads_ is required to be a power-of-two (our requirement) between 1 and 512 (CUDA's requirement). It is:
-    // - the maximum number of threads used by reduce1D()
-    // - the number of threads per block in a call to execute1D()
-    int numThreads_;
-    // total global device memory, in bytes
-    int totalMem_;
-};
+      //@} 
+
+    private:
+      template <class WDP, int FirstLevel>
+      void call_reduce(int length, WDP wd, int threads, int blocks, void *d_blkpart);
+      // numBlocks_ is 
+      // - the number of blocks launched in a call to parallel_for()
+      // - not used by reduce1D()
+      int numBlocks_;
+      // numThreads_ is required to be a power-of-two (our requirement) between 1 and 512 (CUDA's requirement). It is:
+      // - the maximum number of threads used by reduce1D()
+      // - the number of threads per block in a call to parallel_for()
+      int numThreads_;
+      // total global device memory, in bytes
+      int totalMem_;
+  };
+
+}
+
+#ifndef KOKKOS_CUDANODE_NO_IMPL
+#include "Kokkos_CUDANodeImpl.hpp"
+#endif
 
 #endif

@@ -1,7 +1,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//          Tpetra: Templated Linear Algebra Services Package
+//          Kokkos: Node API and Parallel Node Kernels
 //                 Copyright (2008) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -29,10 +29,6 @@
 #ifndef KOKKOS_NODEAPICONFIGDEFS_HPP
 #define KOKKOS_NODEAPICONFIGDEFS_HPP
 
-#ifndef __cplusplus
-#define __cplusplus
-#endif // ifndef __cplusplus
-
 #include <Kokkos_ConfigDefs.hpp>
 
 namespace Kokkos {
@@ -45,4 +41,3 @@ namespace Kokkos {
 }
 
 #endif // KOKKOS_NODEAPICONFIGDEFS_HPP
-

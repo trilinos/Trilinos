@@ -8,6 +8,7 @@
 // must define this before including any kernels
 #define KERNEL_PREFIX __device__ __host__
 
+#define KOKKOS_CUDANODE_NO_IMPL
 #include <Kokkos_CUDANode.hpp>
 
 // The code for the reduction was taken from Mark Harris's reduction demo in the the CUDA SDK.
@@ -17,13 +18,14 @@
 // We also use the sharedmem.cuh functionality provided by that example and the cutil macro collection.
 
 
-#ifdef CUDANODE_INCLUDE_EXECUTE1D
+#ifdef CUDANODE_INCLUDE_PFOR
 template <class WDP>
 __global__ void
 Tkern1D(int length, WDP wd, int h)
 {
   unsigned int b = h*(blockIdx.x*blockDim.x + threadIdx.x);
   unsigned int t = b+h;
+  
   if (t < length) 
     wd(b,t);
   else 
@@ -31,17 +33,19 @@ Tkern1D(int length, WDP wd, int h)
 }
 
 template <class WDP>
-void CUDANode::execute1D(int length, WDP wd) {
+void CUDANode::parallel_for(int begin, int end, WDP wd) {
+  int length = end - begin;
   if (length == 0) return;
+  if (
   unsigned int h = length / (numThreads_ * numBlocks_);
   if ((length % (numThreads_*numBlocks_)) != 0) {
     h = h + 1;
   }
-  Tkern1D<WDP> <<< numBlocks_, numThreads_ >>>(length,wd,h);
+  Tkern1D<WDP> <<< numBlocks_, numThreads_ >>>(begin,wd,h);
 }
-#endif // execute1D
+#endif // parallel_for
 
-#ifdef CUDANODE_INCLUDE_REDUCE1D
+#ifdef CUDANODE_INCLUDE_PREDUCE
 template <class WDP, int FirstLevel, int blockSize>
 __global__ void
 Treduce1D(int length, WDP wd, void *d_blkpart)

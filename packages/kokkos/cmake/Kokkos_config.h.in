@@ -1,19 +1,5 @@
 /* src/Kokkos_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to dummy `main' function (if any) required to link to the Fortran
-   libraries. */
-#cmakedefine F77_DUMMY_MAIN@F77_DUMMY_MAIN@
-
-/* Define to a macro mangling the given C identifier (in lower and upper
-   case), which must not contain underscores, for linking with Fortran. */
-#cmakedefine F77_FUNC@F77_FUNC@
-
-/* As F77_FUNC, but for C identifiers containing underscores. */
-#cmakedefine F77_FUNC_@F77_FUNC_@
-
-/* Define if F77 and FC dummy `main' functions are identical. */
-#cmakedefine FC_DUMMY_MAIN_EQ_F77@FC_DUMMY_MAIN_EQ_F77@
-
 /* Define if want to build examples */
 #cmakedefine HAVE_EXAMPLES
 
@@ -26,40 +12,16 @@
 /* Define if want to build kokkos-tests */
 #cmakedefine HAVE_KOKKOS_TESTS
 
-/* Define if want to build libcheck */
-#cmakedefine HAVE_LIBCHECK
-
-/* define if we want to use MPI */
-#cmakedefine HAVE_MPI
-
-/* Define to 1 if you have the <string> header file. */
-#cmakedefine HAVE_STRING
-
-/* Define to 1 if you have the <time.h> header file. */
-#cmakedefine HAVE_TIME_H
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_IOSTREAM
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_CASSERT
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_STRING
-
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
-
+/* Other package dependencies */
 #cmakedefine HAVE_KOKKOS_TEUCHOS
-
-/* #cmakedefine HAVE_KOKKOS_NodeAPI */
-#cmakedefine HAVE_KOKKOS_TBB
 #cmakedefine HAVE_KOKKOS_THREADPOOL
-#cmakedefine HAVE_KOKKOS_CUDA
 
+/* TPL Dependencies */
+#cmakedefine HAVE_KOKKOS_TBB
+#cmakedefine HAVE_KOKKOS_CUDA
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

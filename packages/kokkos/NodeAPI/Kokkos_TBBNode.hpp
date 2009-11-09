@@ -7,7 +7,7 @@
 #include <tbb/task_scheduler_init.h>
 #include <stdlib.h>
 
-#include <Kokkos_StandardNodeMemoryModel.hpp>
+#include "Kokkos_StandardNodeMemoryModel.hpp"
 
 #include <iostream> // debug
 

@@ -78,14 +78,15 @@ namespace {
 #ifdef HAVE_KOKKOS_CUDA
   using Kokkos::CUDANode;
   int cuda_dev = 0;
-  int cuda_nT  = 64;
-  int cuda_nB  = 64;
   int cuda_verb = 0;
   RCP<CUDANode> cudanode;
   template <>
   RCP<CUDANode> getNode<CUDANode>() {
     if (cudanode == null) {
-      cudanode = rcp(new CUDANode());
+      Teuchos::ParameterList pl; 
+      pl.set("Device Number",cuda_dev);
+      pl.set("Verbosity",cuda_verb);
+      cudanode = rcp(new CUDANode(pl));
     }
     return cudanode;
   }
@@ -111,8 +112,6 @@ namespace {
 #ifdef HAVE_KOKKOS_CUDA
     {
       clp.setOption("cuda-device",&cuda_dev,"CUDA device used for testing.");
-      clp.setOption("cuda-num-threads",&cuda_nT,"Number of CUDA threads.");
-      clp.setOption("cuda-num-blocks",&cuda_nB,"Number of CUDA blocks.");
       clp.setOption("cuda-verbose",&cuda_verb,"CUDA verbosity level.");
     }
 #endif
@@ -133,9 +132,8 @@ namespace {
     getNode<TPINode>()->init(tpi_nT);
 #endif
 #ifdef HAVE_KOKKOS_CUDA
-    out << "Initializing CUDA device " << cuda_dev 
-        << " with " << cuda_nB << " blocks and " << cuda_nT << " threads." << std::endl;
-    getNode<CUDANode>()->init(cuda_dev,cuda_nB,cuda_nT,cuda_verb);
+    out << "Initializing CUDA device " << cuda_dev << std::endl;
+    getNode<CUDANode>();
 #endif
     TEST_EQUALITY(0,0);
   }

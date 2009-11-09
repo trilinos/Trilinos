@@ -1,9 +1,9 @@
 #ifndef KOKKOS_CUDA_UTIL_INLINE_FUNCTIONS_RUNTIME_H_
 #define KOKKOS_CUDA_UTIL_INLINE_FUNCTIONS_RUNTIME_H_
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cuda_runtime.h>
 
 // We define these calls here, so the user doesn't need to include __FILE__ and __LINE__
 // The advantage is the developers gets to use the inline function so they can debug

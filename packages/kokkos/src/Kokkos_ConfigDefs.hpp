@@ -1,8 +1,8 @@
 //@HEADER
 // ************************************************************************
 // 
-//          Kokkos: A Fast Kernel Package
-//              Copyright (2004) Sandia Corporation
+//          Kokkos: Node API and Parallel Node Kernels
+//              Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -29,78 +29,6 @@
 #ifndef KOKKOS_CONFIGDEFS_H
 #define KOKKOS_CONFIGDEFS_H
 
-#ifndef TRILINOS_NO_CONFIG_H
-                                                                                
-/*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
- * be undef'd here to avoid warnings when this file is included from another package.
- * KL 11/25/02
- */
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-                                                                                
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-                                                                                
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-                                                                                
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-                                                                                
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-                                                                                
-#ifdef VERSION
-#undef VERSION
-#endif
-                                                                                
 #include <Kokkos_config.h>
-#include <Teuchos_ConfigDefs.hpp>
-
-#ifdef HAVE_STRING
-# include <string>
-#else
-# include <string.h>
-#endif
-
-#ifdef HAVE_CASSERT
-# include <cassert>
-#else
-# include <assert.h>
-#endif
-
-#ifdef HAVE_IOSTREAM
-# include <iostream>
-#else
-# include <iostream.h>
-#endif
-
-#else /*TRILINOS_NO_CONFIG_H is defined*/
-
-#include <string>
-#ifdef ICL
-# include <time.h>
-#else
-# include <sys/time.h>
-# ifndef MINGW
-#   include <sys/resource.h>
-# endif
-#endif
-#include <cassert>
-#include <iostream>
-
-#endif /*ndef TRILINOS_NO_CONFIG_H */
-
-#include <cstddef> 
 
 #endif /* KOKKOS_CONFIGDEFS_H */

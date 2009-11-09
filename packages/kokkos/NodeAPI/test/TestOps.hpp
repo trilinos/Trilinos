@@ -5,7 +5,7 @@
   #define KERNEL_PREFIX
 #endif
 
-template <class Scalar>
+template <typename Scalar>
 struct InitOp {
   Scalar *x;
   inline KERNEL_PREFIX void execute(int i) {

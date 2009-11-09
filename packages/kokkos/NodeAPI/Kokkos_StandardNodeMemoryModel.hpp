@@ -96,10 +96,11 @@ namespace Kokkos {
         return buff.persistingView(0,size);
       }
 
-      void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
+      inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
         (void)buffers;
         (void)ncBuffers;
       }
+
 
       //@}
   };
