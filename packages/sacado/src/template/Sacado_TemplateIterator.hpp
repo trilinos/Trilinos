@@ -35,8 +35,6 @@
 #include <vector>
 #include <iterator>
 
-#include "Sacado_TemplateManager.hpp"
-
 namespace Sacado {
 
   /*! 
@@ -47,16 +45,15 @@ namespace Sacado {
    * This class implements a standard forward iterator for the 
    * TemplateManager.
    */
-  template <typename TypeSeq, typename BaseT, typename ObjectT>
+  template <typename BaseT>
   class TemplateIterator : public std::iterator<std::input_iterator_tag,
                                                 BaseT> {
   public:
 
     //! Constructor
     TemplateIterator(
-	    Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>& m,
 	    typename std::vector< Teuchos::RCP<BaseT> >::iterator p) :
-      manager(&m), object_iterator(p) {}
+      object_iterator(p) {}
     
     // No default constructor
     // Use default copy constructor and copy assignment
@@ -72,13 +69,13 @@ namespace Sacado {
     }
 
     //! Dereference operator
-    typename Sacado::TemplateIterator<TypeSeq, BaseT, ObjectT>::reference 
+    typename Sacado::TemplateIterator<BaseT>::reference 
     operator*() const {
       return *(*object_iterator);
     }
 
     //! -> operator
-    typename Sacado::TemplateIterator<TypeSeq, BaseT, ObjectT>::pointer 
+    typename Sacado::TemplateIterator<BaseT>::pointer 
     operator->() const {
       return &(*(*object_iterator));
     }
@@ -103,9 +100,6 @@ namespace Sacado {
 
   private:
 
-    //! Underlying template manager
-    Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>* manager;
-
     //! Underlying object iterator
     typename std::vector< Teuchos::RCP<BaseT> >::iterator object_iterator;
     
@@ -119,16 +113,15 @@ namespace Sacado {
    * This class implements a standard forward iterator for the 
    * TemplateManager.
    */
-  template <typename TypeSeq, typename BaseT, typename ObjectT>
+  template <typename BaseT>
   class ConstTemplateIterator : public std::iterator<std::input_iterator_tag,
                                                      BaseT> {
   public:
 
     //! Constructor
     ConstTemplateIterator(
-       const Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>& m,
        typename std::vector< Teuchos::RCP<BaseT> >::const_iterator p) :
-      manager(&m), object_iterator(p) {}
+      object_iterator(p) {}
     
     // No default constructor
     // Use default copy constructor and copy assignment
@@ -144,13 +137,13 @@ namespace Sacado {
     }
 
     //! Dereference operator
-    const typename Sacado::ConstTemplateIterator<TypeSeq, BaseT, ObjectT>::reference 
+    const typename Sacado::ConstTemplateIterator<BaseT>::reference 
     operator*() const {
       return *(*object_iterator);
     }
 
     //! -> operator
-    const typename Sacado::ConstTemplateIterator<TypeSeq, BaseT, ObjectT>::pointer 
+    const typename Sacado::ConstTemplateIterator<BaseT>::pointer 
     operator->() const {
       return &(*(*object_iterator));
     }
@@ -174,9 +167,6 @@ namespace Sacado {
     }
 
   private:
-
-    //! Underlying template manager
-    const Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>* manager;
 
     //! Underlying object iterator
     typename std::vector< Teuchos::RCP<BaseT> >::const_iterator object_iterator;

@@ -106,8 +106,7 @@ typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 begin()
 {
-  return Sacado::TemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
-                                                         objects.begin());
+  return Sacado::TemplateIterator<BaseT>(objects.begin());
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -115,8 +114,7 @@ typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 begin() const
 {
-  return Sacado::ConstTemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
-                                                              objects.begin());
+  return Sacado::ConstTemplateIterator<BaseT>(objects.begin());
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -124,8 +122,7 @@ typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 end()
 {
-  return Sacado::TemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
-                                                         objects.end());
+  return Sacado::TemplateIterator<BaseT>(objects.end());
 }
 
 template <typename TypeSeq, typename BaseT, typename ObjectT>
@@ -133,6 +130,5 @@ typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 end() const
 {
-  return Sacado::ConstTemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
-                                                              objects.end());
+  return Sacado::ConstTemplateIterator<BaseT>(objects.end());
 }

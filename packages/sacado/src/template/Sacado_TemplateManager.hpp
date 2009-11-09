@@ -42,13 +42,9 @@
 #include "Sacado_mpl_for_each.hpp"
 #include "Sacado_mpl_apply.hpp"
 
-namespace Sacado {
+#include "Sacado_TemplateIterator.hpp"
 
-  // Forward declaration
-  template <typename TypeSeq, typename BaseT, typename ObjectT>
-  class TemplateIterator;
-  template <typename TypeSeq, typename BaseT, typename ObjectT>
-  class ConstTemplateIterator;
+namespace Sacado {
 
   //! Container class to manager template instantiations of a template class
   /*!
@@ -94,16 +90,13 @@ namespace Sacado {
       }
     };
 
-    //! Declare TemplateIterator as a friend class
-    friend class TemplateIterator<TypeSeq,BaseT,ObjectT>;
-
   public:
 
     //! Typedef for iterator
-    typedef TemplateIterator<TypeSeq,BaseT,ObjectT> iterator;
+    typedef TemplateIterator<BaseT> iterator;
 
     //! Typedef for const_iterator
-    typedef ConstTemplateIterator<TypeSeq,BaseT,ObjectT> const_iterator;
+    typedef ConstTemplateIterator<BaseT> const_iterator;
 
     //! The default builder class for building objects for each ScalarT
     struct DefaultBuilderOp {
@@ -171,8 +164,5 @@ namespace Sacado {
 
 // Include template definitions
 #include "Sacado_TemplateManagerImp.hpp"
-
-// Include template iterator definition
-#include "Sacado_TemplateIterator.hpp"
 
 #endif
