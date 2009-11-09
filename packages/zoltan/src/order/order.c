@@ -70,6 +70,7 @@ int Zoltan_Order(
 
   char *yo = "Zoltan_Order";
   int ierr;
+  int counti,myrank;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
   char msg[256];
@@ -81,6 +82,7 @@ int Zoltan_Order(
   int local_num_obj;
   int *local_rank = NULL, *local_iperm=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
+
 
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -248,8 +250,7 @@ int Zoltan_Order(
   ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, local_iperm, &opt);
   ZOLTAN_FREE(&lids);
 
-  ierr=0;
-
+  
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
     if (ierr == ZOLTAN_WARN){
@@ -265,6 +266,7 @@ int Zoltan_Order(
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 
+
 /*   Compute inverse permutation if necessary */
   if ((!(opt.return_args & RETURN_RANK) && (rank != NULL))
       || (!(opt.return_args & RETURN_IPERM) && (iperm != NULL))) {
@@ -278,12 +280,12 @@ int Zoltan_Order(
     if (!(opt.return_args & RETURN_RANK) && (rank != NULL)){
       /* Compute rank from iperm */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, local_iperm, local_rank, vtxdist, zz->Order.order_type, opt.start_index);
+      Zoltan_Inverse_Perm(zz, local_iperm, local_rank, vtxdist, zz->Order.order_type, opt.start_index); 
     }
     else if (!(opt.return_args & RETURN_IPERM) && (iperm != NULL)){
     /* Compute iperm from rank */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, local_rank, local_iperm, vtxdist, zz->Order.order_type, opt.start_index);
+      Zoltan_Inverse_Perm(zz, local_rank, local_iperm, vtxdist, zz->Order.order_type, opt.start_index); 
     }
     ZOLTAN_FREE(&vtxdist);
   }
@@ -294,10 +296,11 @@ int Zoltan_Order(
   /* TODO: Use directly the "graph" structure to avoid to duplicate things. */
   /* I store : GNO, rank, iperm */
   /* MMW: perhaps don't ever use graph here since we need to support geometric orderings, otherwise need if/else */
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0);
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0); 
   /* Hope a linear assignment will help a little */
-  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
+  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj); 
   /* Associate all the data with our xGNO */
+
   Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, (ZOLTAN_ID_PTR) local_iperm, NULL, local_num_obj);
 
   ZOLTAN_FREE(&local_gids);
@@ -326,7 +329,6 @@ int Zoltan_Order(
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);
   }
-
 
   /* Print timing info */
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ZTIME) {

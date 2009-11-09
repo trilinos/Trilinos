@@ -77,6 +77,10 @@ int Zoltan_LocalHSFC_Order(
   }
   /******************************************************************/
 
+  /* local HSFC only computes the rank vector */
+  order_opt->return_args = RETURN_RANK; 
+
+
   /******************************************************************/
   /* Check that num_obj equals the number of objects on this proc. */
   /* This constraint may be removed in the future. */
