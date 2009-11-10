@@ -455,12 +455,19 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
 #endif
       advanceStepperToTimeSucceeded= advanceStepperToTime(t);
     }
-    TEST_FOR_EXCEPTION(
-      !advanceStepperToTimeSucceeded, Exceptions::GetFwdPointsFailed,
-      this->description() << "\n\n"
-      "Error:  The integration failed to get to time " << t << " and only achieved\n"
-      "getting to " << stepper_->getTimeRange().upper() << "!"
-      );
+    if (!advanceStepperToTimeSucceeded) {
+      bool reachedMaxNumTimeSteps = (currTimeStepIndex_ >= maxNumTimeSteps_);
+      if (reachedMaxNumTimeSteps) {
+        // Break out of the while loop and attempt to exit gracefully.
+        break;
+      }
+      TEST_FOR_EXCEPTION(
+          !advanceStepperToTimeSucceeded, Exceptions::GetFwdPointsFailed,
+          this->description() << "\n\n"
+          "Error:  The integration failed to get to time " << t << " and only achieved\n"
+          "getting to " << stepper_->getTimeRange().upper() << "!"
+          );
+    }
     
     // Extract the next set of points (perhaps just one) from the stepper
     {

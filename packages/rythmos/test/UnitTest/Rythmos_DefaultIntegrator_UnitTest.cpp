@@ -39,6 +39,8 @@
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
+#include "Rythmos_IntegratorBuilder.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 
@@ -103,6 +105,30 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
     exact_x1 -= dt*x0;
   }
 }
+
+
+TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, maxNumTimeSteps ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(true);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Integrator Settings").sublist("Integrator Selection").set("Integrator Type","Default Integrator");
+  pl->sublist("Integrator Settings").sublist("Integrator Selection").sublist("Default Integrator").set("Max Number Time Steps",10);
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+  pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.01);
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  TEST_NOTHROW(
+    integrator->getFwdPoints(time_vec,NULL,NULL,NULL)
+    );
+}
+
 
 /*
 TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, momento ) {

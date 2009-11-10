@@ -416,6 +416,7 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalExplicitModel ) {
   const double x1prime_ex = -2*cos(t)+eps*(-0.75*sin(t)+3.0*0.75*sin(3.0*t));
   const double forcing_term = x1prime_ex - eps*(1.0-x0_ex*x0_ex)*x1_ex+x0_ex;
 
+  double tol = 1.0e-10;
   { // Explicit model, just load f.
     RCP<VanderPolModel> explicit_model = vanderPolModel();
     explicit_model->setParameterList(pl);
@@ -435,8 +436,8 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalExplicitModel ) {
 
     explicit_model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), x1);
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (eps*(1.0-x0*x0)*x1-x0) + forcing_term);
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), x1, tol);
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), (eps*(1.0-x0*x0)*x1-x0) + forcing_term, tol);
   }
   { // Explicit model, load f and W_op
     RCP<VanderPolModel> explicit_model = vanderPolModel();
@@ -460,15 +461,15 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalExplicitModel ) {
 
     explicit_model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), x1 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (eps*(1.0-x0*x0)*x1-x0) + forcing_term );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), x1, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), (eps*(1.0-x0*x0)*x1-x0) + forcing_term, tol );
 
     RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op);
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
     TEST_EQUALITY_CONST( matrix_view(0,0), 0.0 );
     TEST_EQUALITY_CONST( matrix_view(0,1), 1.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,0), eps*(-2.0*x0)*x1-1.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,1), eps*(1.0-x0*x0) );
+    TEST_FLOATING_EQUALITY( matrix_view(1,0), eps*(-2.0*x0)*x1-1.0, tol );
+    TEST_FLOATING_EQUALITY( matrix_view(1,1), eps*(1.0-x0*x0), tol );
   }
   { // Explicit model, just load W_op
     RCP<VanderPolModel> explicit_model = vanderPolModel();
@@ -494,8 +495,8 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalExplicitModel ) {
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
     TEST_EQUALITY_CONST( matrix_view(0,0), 0.0 );
     TEST_EQUALITY_CONST( matrix_view(0,1), 1.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,0), eps*(-2.0*x0)*x1-1.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,1), eps*(1.0-x0*x0) );
+    TEST_FLOATING_EQUALITY( matrix_view(1,0), eps*(-2.0*x0)*x1-1.0, tol );
+    TEST_FLOATING_EQUALITY( matrix_view(1,1), eps*(1.0-x0*x0), tol );
   }
 }
 
@@ -518,6 +519,7 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalImplicitModel ) {
   const double x1prime_ex = -2*cos(t)+eps*(-0.75*sin(t)+3.0*0.75*sin(3.0*t));
   const double forcing_term = x1prime_ex - eps*(1.0-x0_ex*x0_ex)*x1_ex+x0_ex;
 
+  double tol = 1.0e-10;
   { // Implicit model, just load f.
     RCP<VanderPolModel> implicit_model = vanderPolModel();
     implicit_model->setParameterList(pl);
@@ -544,8 +546,8 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalImplicitModel ) {
 
     implicit_model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), x_dot0 - x1 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), x_dot1 - (eps*(1.0-x0*x0)*x1-x0) - forcing_term );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), x_dot0 - x1, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), x_dot1 - (eps*(1.0-x0*x0)*x1-x0) - forcing_term, tol );
   }
   { // Implicit model, load f and W_op
     RCP<VanderPolModel> implicit_model = vanderPolModel();
@@ -577,15 +579,15 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalImplicitModel ) {
 
     implicit_model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), x_dot0 - x1 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), x_dot1 - (eps*(1.0-x0*x0)*x1-x0) - forcing_term );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), x_dot0 - x1, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), x_dot1 - (eps*(1.0-x0*x0)*x1-x0) - forcing_term, tol );
 
     RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op);
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
-    TEST_EQUALITY_CONST( matrix_view(0,0), alpha );
-    TEST_EQUALITY_CONST( matrix_view(0,1), -beta );
-    TEST_EQUALITY_CONST( matrix_view(1,0), - beta*(eps*(-2.0*x0)*x1-1.0) );
-    TEST_EQUALITY_CONST( matrix_view(1,1), alpha - beta*eps*(1.0-x0*x0) );
+    TEST_FLOATING_EQUALITY( matrix_view(0,0), alpha, tol );
+    TEST_FLOATING_EQUALITY( matrix_view(0,1), -beta, tol );
+    TEST_FLOATING_EQUALITY( matrix_view(1,0), - beta*(eps*(-2.0*x0)*x1-1.0), tol );
+    TEST_FLOATING_EQUALITY( matrix_view(1,1), alpha - beta*eps*(1.0-x0*x0), tol );
   }
   { // Implicit model, just load W_op
     RCP<VanderPolModel> implicit_model = vanderPolModel();
@@ -617,10 +619,10 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalImplicitModel ) {
 
     RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op);
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
-    TEST_EQUALITY_CONST( matrix_view(0,0), alpha );
-    TEST_EQUALITY_CONST( matrix_view(0,1), -beta );
-    TEST_EQUALITY_CONST( matrix_view(1,0), - beta*(eps*(-2.0*x0)*x1-1.0) );
-    TEST_EQUALITY_CONST( matrix_view(1,1), alpha - beta*eps*(1.0-x0*x0) );
+    TEST_FLOATING_EQUALITY( matrix_view(0,0), alpha, tol );
+    TEST_FLOATING_EQUALITY( matrix_view(0,1), -beta, tol );
+    TEST_FLOATING_EQUALITY( matrix_view(1,0), - beta*(eps*(-2.0*x0)*x1-1.0), tol );
+    TEST_FLOATING_EQUALITY( matrix_view(1,1), alpha - beta*eps*(1.0-x0*x0), tol );
   }
 
 }
@@ -723,6 +725,8 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, DfDp ) {
   const double forcing_term = x1prime_ex - eps*(1.0-x0_ex*x0_ex)*x1_ex+x0_ex;
   //const double forcing_term_d_eps = - (1.0-x0_ex*x0_ex)*x1_ex;
 
+  double tol = 1.0e-10;
+
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Accept model parameters", true);
   pl->set("Coeff epsilon", eps);
@@ -758,8 +762,8 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, DfDp ) {
 
     model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), x1 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (eps*(1.0-x0*x0)*x1-x0) + forcing_term );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), x1, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), (eps*(1.0-x0*x0)*x1-x0) + forcing_term, tol );
 
     // ToDo: Fix this
 //    // Check that DfDp is correct
@@ -806,8 +810,8 @@ TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, DfDp ) {
 
     model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), x_dot0 - x1 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), x_dot1 - (eps*(1.0-x0*x0)*x1-x0) - forcing_term );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), x_dot0 - x1, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), x_dot1 - (eps*(1.0-x0*x0)*x1-x0) - forcing_term, tol );
 
     // ToDo: Fix this check!
 //
