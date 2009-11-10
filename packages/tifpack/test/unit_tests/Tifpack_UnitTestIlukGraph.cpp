@@ -40,14 +40,14 @@ This file demonstrates how you create a unit test for template code.
 #include <iostream>
 
 #include <Tifpack_UnitTestHelpers.hpp>
-#include <Tifpack_CreateOverlapGraph.hpp>
+#include <Tifpack_IlukGraph.hpp>
 
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
 
 //this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackCreateOverlapGraph, OverlapGraphTest0, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackIlukGraph, IlukGraphTest0, LocalOrdinal, GlobalOrdinal)
 {
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
@@ -55,46 +55,60 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackCreateOverlapGraph, OverlapGraphTest0, 
 
   global_size_t num_rows_per_proc = 5;
 
-//Create a Tpetra::CrsGraph:
-
-  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_tridiag_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
   TEUCHOS_TEST_EQUALITY( crsgraph->getMap()->getNodeNumElements(), num_rows_per_proc, out, success)
 
   LocalOrdinal overlap_levels = 2;
 
-  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > overlapgraph =
-    Tifpack::CreateOverlapGraph<LocalOrdinal,GlobalOrdinal,Node>(crsgraph, overlap_levels);
+  LocalOrdinal fill_levels = 0;
 
-  const int numProcs = overlapgraph->getMap()->getComm()->getSize();
-  const int myProc   = overlapgraph->getMap()->getComm()->getRank();
+  Tifpack::IlukGraph<int,int> iluk0_graph(crsgraph, fill_levels, overlap_levels);
 
-  //Now test how many local rows there are in the overlapped-graph.
-  //For a tri-diagonal input-graph with 5 local rows on each proc:
-  //'end' procs (procs 0 and numProcs-1) should have an extra row in the
-  //overlapped graph for each level of overlap. Other procs should
-  //have an extra 2 rows for each level of overlap.
+  iluk0_graph.ConstructFilledGraph();
 
-  //Special case: if numProcs==1 then overlapgraph should have the same
-  //number of rows as the input-graph.
+  int num_procs = crsgraph->getMap()->getComm()->getSize();
+  size_t num_global_elements = num_rows_per_proc * num_procs;
 
-  if (numProcs == 1) {
-    TEUCHOS_TEST_EQUALITY(overlapgraph->getMap()->getNodeNumElements(), num_rows_per_proc, out, success)
-  }
-  else {
-    if (myProc == 0 || myProc == numProcs-1) {
-      TEUCHOS_TEST_EQUALITY(overlapgraph->getMap()->getNodeNumElements(), num_rows_per_proc+overlap_levels, out, success)
-    }
-    else {
-      TEUCHOS_TEST_EQUALITY(overlapgraph->getMap()->getNodeNumElements(), num_rows_per_proc+overlap_levels*2, out, success)
-    }
-  }
+  size_t num_global_rows = iluk0_graph.getL_Graph().getGlobalNumRows();
+
+  TEUCHOS_TEST_EQUALITY( num_global_rows, num_global_elements, out, success)
+
+  //The number of nonzeros in an ILU(0) graph should be the same as the
+  //number of nonzeros in the input graph:
+
+  size_t nnz0 = iluk0_graph.getL_Graph().getGlobalNumEntries() +
+                iluk0_graph.getU_Graph().getGlobalNumEntries() +
+                iluk0_graph.getNumGlobalDiagonals();
+
+  size_t nnz_input = crsgraph->getGlobalNumEntries();
+
+  TEUCHOS_TEST_EQUALITY( nnz0, nnz_input, out, success)
+
+  fill_levels = 2;
+
+  Tifpack::IlukGraph<int,int> iluk2_graph(crsgraph, fill_levels, overlap_levels);
+
+  iluk2_graph.ConstructFilledGraph();
+
+  TEUCHOS_TEST_EQUALITY( num_global_rows, num_global_elements, out, success)
+
+  //The number of nonzeros in an ILU(2) graph should be greater than the
+  //number of nonzeros in the ILU(0) graph:
+
+  size_t nnz2 = iluk2_graph.getL_Graph().getGlobalNumEntries() +
+                iluk2_graph.getU_Graph().getGlobalNumEntries() +
+                iluk2_graph.getNumGlobalDiagonals();
+
+  bool nnz2_greater_than_nnz0 = nnz2 > nnz0;
+  TEUCHOS_TEST_EQUALITY( nnz2_greater_than_nnz0, true, out, success)
 }
 
 #define UNIT_TEST_GROUP_ORDINAL(LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( TifpackCreateOverlapGraph, OverlapGraphTest0, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( TifpackIlukGraph, IlukGraphTest0, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_ORDINAL(int, int)
 
 }//namespace <anonymous>
+
 

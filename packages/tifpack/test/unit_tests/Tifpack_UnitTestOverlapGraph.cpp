@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackOverlapGraph, OverlapGraphTest0, LocalO
 
 //Create a Tpetra::CrsGraph:
 
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_tridiag_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_tridiag_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
   TEUCHOS_TEST_EQUALITY( crsgraph->getMap()->getNodeNumElements(), num_rows_per_proc, out, success)
 

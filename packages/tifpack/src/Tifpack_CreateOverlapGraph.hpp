@@ -43,7 +43,7 @@ namespace Tifpack {
   If OverlapLevel is 0, then the overlapped graph is the input_graph.
  */
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& input_graph, int OverlapLevel)
+Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOverlapGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& input_graph, int OverlapLevel)
 {
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> GraphType;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MapType;
@@ -51,14 +51,14 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > CreateOverlapGr
 
   TEST_FOR_EXCEPTION(OverlapLevel < 0, std::runtime_error, "Tifpack::CreateOverlapGraph: OverlapLevel must be >= 0.");
 
-  Teuchos::RCP<GraphType> OverlapGraph = input_graph;
+  Teuchos::RCP<GraphType> OverlapGraph;
 
   const int numProcs = input_graph->getMap()->getComm()->getSize();
-  if (OverlapLevel == 0 || numProcs < 2) return OverlapGraph;
+  if (OverlapLevel == 0 || numProcs < 2) return input_graph;
 
   Teuchos::RCP<const MapType> OverlapRowMap = input_graph->getRowMap();
 
-  Teuchos::RCP<GraphType> OldGraph;
+  Teuchos::RCP<const GraphType> OldGraph;
   Teuchos::RCP<const MapType> OldRowMap;
   const Teuchos::RCP<const MapType> DomainMap = input_graph->getDomainMap();
   const Teuchos::RCP<const MapType> RangeMap = input_graph->getRangeMap();

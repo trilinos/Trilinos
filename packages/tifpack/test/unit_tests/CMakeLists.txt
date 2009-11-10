@@ -23,6 +23,7 @@ Tifpack_UnitTestMain.cpp
 Tifpack_UnitTestTemplate.cpp
 Tifpack_UnitTestCreateOverlapGraph.cpp
 Tifpack_UnitTestOverlapGraph.cpp
+Tifpack_UnitTestIlukGraph.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

@@ -58,7 +58,7 @@ class OverlapGraph : public Teuchos::Describable {
     \param In
            UserMatrixGraph_in - Graph from user matrix.
   */
-  OverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in);
+  OverlapGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in);
 
   //! Constructor using Tpetra_RowMatrix.
   /*! Creates an Tifpack_OverlapGraph object from the user graph implicitly defined by the
@@ -122,8 +122,8 @@ class OverlapGraph : public Teuchos::Describable {
  protected:
 
   int ConstructOverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph);
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > OverlapGraph_;
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > UserMatrixGraph_;
+  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > OverlapGraph_;
+  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > UserMatrixGraph_;
 //  Teuchos::RCP<const Tpetra_RowMatrix> UserMatrix_;
   Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > OverlapRowMap_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > OverlapImporter_;
@@ -132,7 +132,7 @@ class OverlapGraph : public Teuchos::Describable {
 };
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::OverlapGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in)
+OverlapGraph<LocalOrdinal,GlobalOrdinal,Node>::OverlapGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& UserMatrixGraph_in, int OverlapLevel_in)
  : UserMatrixGraph_(UserMatrixGraph_in),
    OverlapLevel_(OverlapLevel_in),
    IsOverlapped_(OverlapLevel_in>0 && UserMatrixGraph_in->getDomainMap()->isDistributed())
