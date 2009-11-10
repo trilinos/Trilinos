@@ -226,6 +226,39 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, insert_remove_LIDs, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    // create a Map
+    const GO indexBase = 0;
+    const size_t numLocal = 10;
+    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    {
+      Array<LO> lids(1);
+      lids[0] = myImageID;
+      {
+        GRAPH diaggraph(map,map,1);
+        TEST_EQUALITY(diaggraph.hasColMap(), true);
+        // insert
+        LO row = myImageID*numLocal;
+        //insert a column-index:
+        diaggraph.insertLocalIndices(row, lids());
+        TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), lids.size())
+        //remove the column-index:
+        diaggraph.removeLocalIndices(row);
+        TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), 0)
+        //now inserting the index again, should make the row-length be 1 again...
+        diaggraph.insertLocalIndices(row, lids());
+        TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), lids.size())
+      }
+    }
+  }
+
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, CopiesAndViews, LO, GO )
@@ -661,6 +694,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadConst  , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadGIDs   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadLIDs   , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, NonLocals , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \

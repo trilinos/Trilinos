@@ -102,6 +102,9 @@ namespace Tpetra
       //! Submit graph indices, using local IDs.
       void insertLocalIndices(LocalOrdinal row, const Teuchos::ArrayView<const LocalOrdinal> &indices);
 
+      //! Remove graph indices from local row.
+      void removeLocalIndices(LocalOrdinal row);
+
       //@}
 
       //! @name Transformational Methods
@@ -1752,6 +1755,32 @@ namespace Tpetra
     rowptr = Teuchos::null;
     rowview = Teuchos::null;
     // checkInternalState();
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::removeLocalIndices(LocalOrdinal lrow) {
+    TEST_FOR_EXCEPTION(isStorageOptimized() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::removeLocalIndices(): cannot remove indices after optimizeStorage() has been called.");
+    TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::removeLocalIndices(): graph indices are global; use removeGlobalIndices().");
+    TEST_FOR_EXCEPTION(rowMap_->isNodeLocalElement(lrow) == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::removeLocalIndices(): row does not belong to this node.");
+    if (indicesAreAllocated() == false) {
+      allocateIndices(AllocateLocal);
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(indicesAreAllocated() == false, std::logic_error, 
+          Teuchos::typeName(*this) << "::removeLocalIndices(): Internal logic error. Please contact Tpetra team.");
+#endif
+    }
+    //
+    clearGlobalConstants();
+    //
+    RowInfo sizeInfo = getRowInfo(lrow);
+    if (sizeInfo.allocSize > 0 && numEntriesPerRow_ != Teuchos::null) {
+      numEntriesPerRow_[lrow] = 0;
+    }
   }
 
 
