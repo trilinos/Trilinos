@@ -83,6 +83,8 @@ int Zoltan_Order(
   int *local_rank = NULL, *local_iperm=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
 
+  /* MMW: needed to temporarily support (ignore) iperm for local hsfc */
+  int *tmpIperm;
 
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -178,6 +180,10 @@ int Zoltan_Order(
   {
     Order_fn = Zoltan_LocalHSFC_Order;
     strcpy(zz->Order.order_type, "LOCAL"); /*MMW, not sure about this*/
+
+    /*MMW: tmp code to ignore iperm */
+    tmpIperm = iperm;
+    iperm = NULL;
   }
 #ifdef ZOLTAN_PARMETIS
   else if (!strcmp(opt.method, "METIS")) {
@@ -312,6 +318,13 @@ int Zoltan_Order(
   Zoltan_DD_Destroy(&dd);
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done Registering results");
+
+
+  if (!strcmp(opt.method, "LOCAL_HSFC")) 
+  {
+    /*MMW: tmp code to reset iperm pointer*/
+    iperm = tmpIperm;
+  }
 
 
   end_time = Zoltan_Time(zz->Timer);
