@@ -36,6 +36,7 @@ LU2x2PreconditionerFactory::LU2x2PreconditionerFactory()
 // initialize a newly created preconditioner object
 LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildPreconditionerOperator",10);
    LinearOp hatInvA00   = invOpsStrategy_->getHatInvA00(A,state);
    LinearOp tildeInvA00 = invOpsStrategy_->getTildeInvA00(A,state);
    LinearOp invS        = invOpsStrategy_->getInvS(A,state);
@@ -110,8 +111,11 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
    // request the preconditioner factory from the CloneFactory
    RCP<LU2x2Strategy> strategy = strategyBuilder_.build(name);
 
-   if(strategy==Teuchos::null)  
+   if(strategy==Teuchos::null) {
+      PB_DEBUG_MSG("Warning: Could not build LU2x2Strategy named \"" 
+                 << name << "\"...pressing on, failure expected",0)
       return Teuchos::null;
+   }
 
    // now that inverse library has been set,
    // pass in the parameter list
@@ -135,6 +139,8 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
   */
 void LU2x2PreconditionerFactory::addStrategy(const std::string & name,const RCP<Cloneable> & clone)
 {
+   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::addStrategy",10);
+
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
 
