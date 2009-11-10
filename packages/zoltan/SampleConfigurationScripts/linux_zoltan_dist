@@ -7,7 +7,7 @@ set path=(/usr/local/bin $path)
 setenv CFLAGS -m64
 setenv CXXFLAGS -m64
 setenv CPPFLAGS -m64
-setenv FFLAGS -m64
+setenv FCFLAGS -m64
 
 ../configure -C \
   --prefix=/Net/local/homes/kddevin/code/zoltan_v3.1/OBJ_DIST \
