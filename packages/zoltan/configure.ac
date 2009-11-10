@@ -145,7 +145,7 @@ AC_PROG_FC(gfortran f90 xlf90 f95)
 fi
 
 if test "X$ac_cv_use_fortran" = "Xyes"; then
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+AC_PROG_FC(gfortran f90 xlf90 f95)
 fi
 
 AC_PROG_RANLIB
@@ -158,7 +158,7 @@ TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 #fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -298,7 +298,9 @@ TAC_ARG_WITH_INCDIRS
 
 # Define F77_FUNC that will be used to link with Fortran subroutines.
 if test "X$ac_cv_use_fortran" != "Xno"; then
-  AC_F77_WRAPPERS
+  AC_FC_WRAPPERS
+  AC_FC_SRCEXT(f)
+  AC_FC_SRCEXT(f90)
   AX_F90_MODULE_FLAG
   if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
     AC_MSG_ERROR([unable to find f90 modules extension])
@@ -327,7 +329,7 @@ dnl Replace `main' with a function in -lm:
 # Determine libraries needed for linking with Fortran
 #AC_FC_LIBRARY_LDFLAGS
 if test "X$ac_cv_use_fortran" = "Xyes"; then
-AC_F77_LIBRARY_LDFLAGS
+AC_FC_LIBRARY_LDFLAGS
 fi
 
 # ------------------------------------------------------------------------
