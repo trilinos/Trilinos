@@ -1,9 +1,10 @@
 #!/bin/bash
 
-TRILINOS_PATH=/home/users/rouson/Trilinos
+TRILINOS_PATH=/home/rouson/Trilinos
 EXTRA_ARGS=$@
 
-/home/users/rouson/CMake/bin/cmake \
+cmake \
+          -D ForTrilinos_ENABLE_EXTENDED:BOOL=ON \
           -D CMAKE_BUILD_TYPE:STRING=DEBUG \
           -D CMAKE_CXX_COMPILER:FILEPATH=/usr/vacpp/bin/xlc++ \
           -D CMAKE_C_COMPILER:FILEPATH=/usr/vac/bin/xlc \
@@ -18,11 +19,13 @@ EXTRA_ARGS=$@
           -D TPL_ENABLE_MPI:BOOL=OFF \
           -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE       \
           -D Trilinos_VERBOSE_CONFIGURE:BOOL=TRUE   \
-          -D BLAS_LIBRARY_DIRS:FILEPATH="/home/users/rouson/lapack-3.2.1" \
-          -D BLAS_LIBRARY_NAMES:STRING="blas_LINUX.a" \
+          -D BLAS_LIBRARY_DIRS:FILEPATH="/home/rouson/lapack-3.2.1" \
+          -D BLAS_LIBRARY_NAMES:STRING="blas_AIX.a" \
           -D TPL_ENABLE_LAPACK:STRING=ON \
-          -D LAPACK_LIBRARY_DIRS:FILEPATH="/home/users/rouson/lapack-3.2.1" \
-          -D LAPACK_LIBRARY_NAMES:STRING="lapack_LINUX.a" \
-          -D CMAKE_CXX_FLAGS:STRING="-qrtti=all -lxlf90" \
+          -D TPL_BLAS_LIBRARIES:FILEPATH="/home/knmorri/lapack-3.2.1/blas_AIX.a;/usr/lpp/xlf/lib/libxlf90.a" \
+          -D TPL_LAPACK_LIBRARIES:FILEPATH="/home/knmorri/lapack-3.2.1/lapack_AIX.a;/usr/lpp/xlf/lib/libxlf90.a" \
+          -D LAPACK_LIBRARY_DIRS:FILEPATH="/home/rouson/lapack-3.2.1" \
+          -D LAPACK_LIBRARY_NAMES:STRING="lapack_AIX.a" \
+          -D CMAKE_CXX_FLAGS:STRING="-qrtti=all" \
           ${EXTRA_ARGS} \
           ${TRILINOS_PATH}
