@@ -66,6 +66,10 @@
 
 #define THREADPOOL_CONFIG "PTHREAD SCHED_YIELD"
 
+#endif
+
+#if ! defined( atomic_fetch_and_decrement )
+
 static int atomic_fetch_and_decrement( volatile int * value )
 {
   static pthread_mutex_t atomic_lock = PTHREAD_MUTEX_INITIALIZER ;
@@ -308,7 +312,7 @@ static void local_barrier( Thread * const this_thread )
 
     /* Initialize reduction value for non-root thread */
 
-    if ( work.rank ) { (*thread_pool.m_reduce_init)( & work ); }
+    if ( this_thread->m_rank ) { (*thread_pool.m_reduce_init)( & work ); }
 
     /* Run the work routine with barrier blocking */
 
