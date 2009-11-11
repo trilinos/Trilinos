@@ -69,6 +69,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_flag.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_package.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
+	$(top_srcdir)/config/wk_fc_get_vendor.m4 \
 	$(top_srcdir)/config/zac_arg_config_mpi.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -350,6 +351,12 @@ FCFLAGS = @FCFLAGS@
 FCFLAGS_f = @FCFLAGS_f@
 FCFLAGS_f90 = @FCFLAGS_f90@
 FCLIBS = @FCLIBS@
+FC_MAJOR_VERSION = @FC_MAJOR_VERSION@
+FC_MODNAME = @FC_MODNAME@
+FC_MODNAME_Q = @FC_MODNAME_Q@
+FC_VENDOR = @FC_VENDOR@
+FC_VERSION = @FC_VERSION@
+FC_VERSION_STRING = @FC_VERSION_STRING@
 HAVE_PERL = @HAVE_PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
