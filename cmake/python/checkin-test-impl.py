@@ -217,7 +217,8 @@ Common use cases for using this script are as follows:
 
 (*) The minimum acceptable testing when code has been changed:
 
-  --do-all --no-enable-fwd-packages --without-serial-release
+  --do-all --enable-all-packages=off --no-enable-fwd-packages \
+    --without-serial-release
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
@@ -225,8 +226,8 @@ Common use cases for using this script are as follows:
 
 (*) Test only a specific set of packages and no others:
 
-  --do-all --enable-all-packages=off \
-  --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> --no-enable-fwd-packages
+  --do-all --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> \
+    --no-enable-fwd-packages
   
   NOTE: This will override all logic in the script about which packages will
   be enabled and only the given packages will be enabled.
@@ -287,7 +288,8 @@ addOptionParserChoiceOption(
   +" other logic decide 'default'.  Setting to 'off' is appropriate when" \
   +" the logic in this script determines that a global build file has changed" \
   +" but you know that you don't need to rebuild every Trilinos package for" \
-  +" a reasonable test.",
+  +" a reasonable test.  Setting --enable-packages effectively disables this" \
+  +" option.",
   clp )
 
 clp.add_option(

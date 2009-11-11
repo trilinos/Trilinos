@@ -660,7 +660,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     enablePackagesList = []
   
     if inOptions.enablePackages:
-      print "\nEnabling the specified packages '"+inOptions.enablePackages+"' ...\n"
+      print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
       enablePackagesList = inOptions.enablePackages.split(',')
     else:
       print "\nDetermining the set of packages to enable by examining update.out ...\n"
