@@ -3,7 +3,8 @@
 
 #include <TPI.h>
 
-#include <Kokkos_StandardNodeMemoryModel.hpp>
+#include "Kokkos_StandardNodeMemoryModel.hpp"
+#include <Teuchos_ParameterList.hpp>
 
 #include <iostream> // debug
 
@@ -87,10 +88,9 @@ void tpi_reduction_init(TPI_Work * work)
 class TPINode : public StandardNodeMemoryModel {
   public:
 
-    TPINode(int numThreads=0)
-     : numThreads_(numThreads)
-    {
-      init(numThreads);
+    TPINode(Teuchos::ParameterList &plist) {
+      numThreads_ = plist.get<int>("Num Threads", 0);
+      init(numThreads_);
     }
 
     void init(int numThreads) {

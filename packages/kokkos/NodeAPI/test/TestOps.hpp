@@ -30,8 +30,7 @@ struct SumOp {
     return (Scalar)0;
   }
 
-  static inline KERNEL_PREFIX ReductionType reduce(ReductionType x, ReductionType y) 
-  {
+  static inline KERNEL_PREFIX ReductionType reduce(ReductionType x, ReductionType y) {
     return x+y;
   }
 

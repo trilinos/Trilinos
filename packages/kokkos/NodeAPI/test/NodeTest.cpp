@@ -69,7 +69,9 @@ namespace {
   template <>
   RCP<TPINode> getNode<TPINode>() {
     if (tpinode == null) {
-      tpinode = rcp(new TPINode());
+      Teuchos::ParameterList pl;
+      pl.set("Num Threads",1);
+      tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
   }
