@@ -131,6 +131,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /CVS/
     ".cvsignore"
     classicMakefile
+    /cmake/CMakeKitwareBacklog.txt
+    /cmake/TODO
     /packages/CTrilinos
     /packages/ForTrilinos
     /packages/ITAPS
