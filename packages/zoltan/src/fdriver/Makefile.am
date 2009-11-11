@@ -10,6 +10,7 @@
 include $(top_builddir)/Makefile.export.zoltan
 
 F77=$(FC)
+AM_FFLAGS=$(FCFLAGS)
 
 #if USING_GNUMAKE
 #EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(ZOLTAN_LIBS))

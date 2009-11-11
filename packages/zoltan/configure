@@ -660,7 +660,7 @@ HAVE_ZOLTAN_CPPDRIVER_FALSE
 MPI_CC
 MPI_CXX
 MPI_F77
-MPI_F90
+MPI_FC
 HAVE_MPI_TRUE
 HAVE_MPI_FALSE
 MPI_RECV_LIMIT_FLAG
@@ -3004,27 +3004,27 @@ echo "$as_me: error: MPI C compiler not found." >&2;}
 
   if test "X$ac_cv_use_fortran90" = "Xyes"; then
 
-    if test -z "${MPI_F90}"; then
-      MPI_F90_CANDIDATE=mpif90
+    if test -z "${MPI_FC}"; then
+      MPI_FC_CANDIDATE=mpif90
 
       if test -n "${F90}"; then
-        MPI_F90_CANDIDATE=${F90}
+        MPI_FC_CANDIDATE=${F90}
       elif test -n "${FTN}"; then
-        MPI_F90_CANDIDATE=${FTN}
+        MPI_FC_CANDIDATE=${FTN}
       elif test -n "${FC}"; then
-        MPI_F90_CANDIDATE=${FC}
+        MPI_FC_CANDIDATE=${FC}
       fi
 
-      # Extract the first word of "${MPI_F90_CANDIDATE}", so it can be a program name with args.
-set dummy ${MPI_F90_CANDIDATE}; ac_word=$2
+      # Extract the first word of "${MPI_FC_CANDIDATE}", so it can be a program name with args.
+set dummy ${MPI_FC_CANDIDATE}; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_MPI_F90+set}" = set; then
+if test "${ac_cv_path_MPI_FC+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  case $MPI_F90 in
+  case $MPI_FC in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_MPI_F90="$MPI_F90" # Let the user override the test with a path.
+  ac_cv_path_MPI_FC="$MPI_FC" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
@@ -3034,7 +3034,7 @@ do
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_MPI_F90="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_MPI_FC="$as_dir/$ac_word$ac_exec_ext"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -3042,14 +3042,14 @@ done
 done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_MPI_F90" && ac_cv_path_MPI_F90="notFound"
+  test -z "$ac_cv_path_MPI_FC" && ac_cv_path_MPI_FC="notFound"
   ;;
 esac
 fi
-MPI_F90=$ac_cv_path_MPI_F90
-if test -n "$MPI_F90"; then
-  { echo "$as_me:$LINENO: result: $MPI_F90" >&5
-echo "${ECHO_T}$MPI_F90" >&6; }
+MPI_FC=$ac_cv_path_MPI_FC
+if test -n "$MPI_FC"; then
+  { echo "$as_me:$LINENO: result: $MPI_FC" >&5
+echo "${ECHO_T}$MPI_FC" >&6; }
 else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
@@ -3057,14 +3057,14 @@ fi
 
 
 
-      if test "${MPI_F90}" != "notFound" ; then
-        F90=${MPI_F90}
+      if test "${MPI_FC}" != "notFound" ; then
+        FC=${MPI_FC}
       else
         echo "-----"
         echo "Cannot find MPI Fortan 90 compiler."
         echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
         echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
-        echo "or specify a fortran 90 compiler using F90=<compiler>"
+        echo "or specify a fortran 90 compiler using FC=<compiler>"
         echo "-----"
         { { echo "$as_me:$LINENO: error: MPI C compiler not found." >&5
 echo "$as_me: error: MPI C compiler not found." >&2;}
@@ -9061,7 +9061,7 @@ HAVE_ZOLTAN_CPPDRIVER_FALSE!$HAVE_ZOLTAN_CPPDRIVER_FALSE$ac_delim
 MPI_CC!$MPI_CC$ac_delim
 MPI_CXX!$MPI_CXX$ac_delim
 MPI_F77!$MPI_F77$ac_delim
-MPI_F90!$MPI_F90$ac_delim
+MPI_FC!$MPI_FC$ac_delim
 HAVE_MPI_TRUE!$HAVE_MPI_TRUE$ac_delim
 HAVE_MPI_FALSE!$HAVE_MPI_FALSE$ac_delim
 MPI_RECV_LIMIT_FLAG!$MPI_RECV_LIMIT_FLAG$ac_delim
