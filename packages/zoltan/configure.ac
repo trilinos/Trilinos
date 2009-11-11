@@ -307,6 +307,16 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
   else
     FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
   fi
+  # Provide some information about the compiler; add flags if PGI or LAHEY.
+  _AC_EVAL([${FC} --version </dev/null >KDDKDD])
+  _AC_EVAL([${FC} -v </dev/null >>KDDKDD])
+  _AC_EVAL([${FC} -V </dev/null >>KDDKDD])
+  _AC_EVAL([grep pgf90 KDDKDD > KDDKDD1])
+  if test -s KDDKDD1; then
+    echo "KDDKDD" ${FC} "-DPGI"
+    FCFLAGS="-DPGI ${FCFLAGS}"
+  fi
+
 fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
