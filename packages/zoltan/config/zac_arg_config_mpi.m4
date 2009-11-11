@@ -96,23 +96,32 @@ if test X${SEEK_MPI_COMPILERS} = Xyes; then
   dnl Find C MPI compiler if MPI_CC is not already defined
 
   if test -z "${MPI_CC}"; then
-    MPI_CC_CANDIDATE=mpicc
-    if test -n "${CC}"; then
-      MPI_CC_CANDIDATE=${CC}
-    fi
+    if test -f "${CC}"; then
 
-    AC_PATH_PROG(MPI_CC, ${MPI_CC_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
+      MPI_CC=${CC}
 
-    if test "${MPI_CC}" != "notFound" ; then
-      CC=${MPI_CC}
     else
-      echo "-----"
-      echo "Cannot find MPI C compiler."
-      echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
-      echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
-      echo "or specify a C compiler using CC=<compiler>"
-      echo "-----"
-      AC_MSG_ERROR([MPI C compiler not found.])
+
+      if test -n "${CC}" ; then
+        MPI_CC_CANDIDATE=${CC}
+      else
+        MPI_CC_CANDIDATE=mpicc
+      fi
+
+      AC_PATH_PROG(MPI_CC, ${MPI_CC_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
+  
+      if test "${MPI_CC}" != "notFound" ; then
+        CC=${MPI_CC}
+      else
+        echo "-----"
+        echo "Cannot find MPI C compiler."
+        echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
+        echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
+        echo "or specify a C compiler using CC=<compiler>"
+        echo "or --disable-mpi"
+        echo "-----"
+        AC_MSG_ERROR([MPI C compiler not found.])
+      fi
     fi
   fi
 
@@ -120,24 +129,33 @@ if test X${SEEK_MPI_COMPILERS} = Xyes; then
     dnl Find C++ MPI compiler if MPI_CXX is not already defined
   
     if test -z "${MPI_CXX}"; then
+
+      if test -f "${CXX}"; then
   
-      MPI_CXX_CANDIDATES="[mpicxx mpic++ mpiCC]"
-      if test -n "${CXX}"; then
-        MPI_CXX_CANDIDATES=${CXX}
-      fi
+        MPI_CXX=${CXX}
   
-      AC_PATH_PROGS(MPI_CXX, ${MPI_CXX_CANDIDATES}, [notFound], [PATH = ${MPI_SEEK_PATH}])
-  
-      if test "${MPI_CXX}" != "notFound" ; then
-        CXX=${MPI_CXX}
       else
-        echo "-----"
-        echo "Cannot find MPI C++ compiler."
-        echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
-        echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
-        echo "or specify a C++ compiler using CXX=<compiler>"
-        echo "-----"
-        AC_MSG_ERROR([MPI C++ compiler not found.])
+  
+        if test -n "${CXX}" ; then
+          MPI_CXX_CANDIDATES=${CXX}
+        else
+          MPI_CXX_CANDIDATES="[mpicxx mpic++ mpiCC]"
+        fi
+  
+        AC_PATH_PROGS(MPI_CXX, ${MPI_CXX_CANDIDATES}, [notFound], [PATH = ${MPI_SEEK_PATH}])
+    
+        if test "${MPI_CXX}" != "notFound" ; then
+          CXX=${MPI_CXX}
+        else
+          echo "-----"
+          echo "Cannot find MPI C++ compiler."
+          echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
+          echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
+          echo "or specify a C++ compiler using CXX=<compiler>"
+          echo "or --disable-mpi"
+          echo "-----"
+          AC_MSG_ERROR([MPI C++ compiler not found.])
+        fi
       fi
     fi
   fi
@@ -171,7 +189,8 @@ if test X${SEEK_MPI_COMPILERS} = Xyes; then
     dnl Find a Fortran 90 MPI compiler if MPI_F90 is not already defined
   
     if test -z "${MPI_FC}"; then
-      MPI_FC_CANDIDATE=mpif90
+
+      MPI_FC_CANDIDATE=""
     
       if test -n "${F90}"; then
         MPI_FC_CANDIDATE=${F90}
@@ -180,19 +199,27 @@ if test X${SEEK_MPI_COMPILERS} = Xyes; then
       elif test -n "${FC}"; then
         MPI_FC_CANDIDATE=${FC}
       fi
-  
-      AC_PATH_PROG(MPI_FC, ${MPI_FC_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
-  
-      if test "${MPI_FC}" != "notFound" ; then
-        FC=${MPI_FC}
+
+      if test -n "${MPI_FC_CANDIDATE}" && test -f ${MPI_FC_CANDIDATE} ; then
+        MPI_FC=${MPI_FC_CANDIDATE}
       else
-        echo "-----"
-        echo "Cannot find MPI Fortan 90 compiler."
-        echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
-        echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
-        echo "or specify a fortran 90 compiler using FC=<compiler>"
-        echo "-----"
-        AC_MSG_ERROR([MPI C compiler not found.])
+        if test -z "${MPI_FC_CANDIDATE}"; then
+          MPI_FC_CANDIDATE=mpif90
+        fi
+
+        AC_PATH_PROG(MPI_FC, ${MPI_FC_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
+
+        if test "${MPI_FC}" != "notFound" ; then
+          FC=${MPI_FC}
+        else
+          echo "-----"
+          echo "Cannot find MPI Fortan 90 compiler."
+          echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
+          echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
+          echo "or specify a fortran 90 compiler using FC=<compiler>"
+          echo "-----"
+          AC_MSG_ERROR([MPI C compiler not found.])
+        fi
       fi
     fi
   fi
