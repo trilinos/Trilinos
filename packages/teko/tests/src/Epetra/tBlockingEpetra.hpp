@@ -22,11 +22,12 @@ public:
 
    virtual void initializeTest();
    virtual int runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun);
-   virtual bool isParallel() const { return false; }
+   virtual bool isParallel() const { return true; }
 
    bool test_buildMaps(int verbosity,std::ostream & os);
    bool test_one2many(int verbosity,std::ostream & os);
    bool test_many2one(int verbosity,std::ostream & os);
+   bool test_buildSubBlock(int verbosity,std::ostream & os);
 
 protected:
    double tolerance_;

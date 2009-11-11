@@ -53,6 +53,36 @@ void tBlockingEpetra::initializeTest()
    tolerance_ = 1e-14;
 }
 
+void buildGIDs(std::vector<std::vector<int> > & gids,const Epetra_Map & map)
+{
+   int numLocal = map.NumMyElements();
+   int numHalf = numLocal/2;
+   numHalf += ((numHalf % 2 == 0) ? 0 : 1); 
+
+   gids.clear();
+   gids.resize(3);
+
+   std::vector<int> & blk0 = gids[0];
+   std::vector<int> & blk1 = gids[1];
+   std::vector<int> & blk2 = gids[2];
+   
+   // loop over global IDs: treat first block as strided
+   int gid = -1;
+   for(int i=0;i<numHalf;i+=2) {
+      gid = map.GID(i);
+      blk0.push_back(gid);
+
+      gid = map.GID(i+1);
+      blk1.push_back(gid);
+   }
+
+   // loop over global IDs: treat remainder as contiguous
+   for(int i=numHalf;i<numLocal;i++) {
+      gid = map.GID(i);
+      blk2.push_back(gid);
+   }
+}
+
 int tBlockingEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
 {
    bool allTests = true;
@@ -79,9 +109,15 @@ int tBlockingEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
    failcount += status ? 0 : 1;
    totalrun++;
 
+   status = test_buildSubBlock(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"buildSubBlock\" ... PASSED","   \"buildSubBlock\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tBlockingEpetra...PASSED","tInterlacedEpetra...FAILED");
+      PB_TEST_MSG(failstrm,0,"tBlockingEpetra...PASSED","tBlockingEpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
       PB_TEST_MSG(failstrm,0,"...PASSED","tBlockingEpetra...FAILED");
@@ -95,22 +131,30 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
    bool status = false;
    bool allPassed = true;
 
-   int size = 3*1000;
+   int size = 30;
 
    TEST_MSG("\n   Builing Epetra_Map");
    RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
 
-   TEST_MSG("\n   Building sub maps");
-   std::vector<int> gid0(1200);
-   std::vector<int> gid1(1200);
-   for(int i=0;i<1200;i++) {
-      gid0[i] = 2*i;
-      gid1[i] = 2*i+1;
-   }   
-   std::vector<int> gid2(600);
-   for(int i=0;i<600;i++)
-      gid2[i] = 2400+i;
+   // build gids
+   std::vector<std::vector<int> > gids;
+   buildGIDs(gids,*map);
 
+   std::vector<int> & gid0 = gids[0];
+   std::vector<int> & gid1 = gids[1];
+   std::vector<int> & gid2 = gids[2];
+
+/*
+   std::stringstream ss;
+   ss << "indices_" << GetComm()->MyPID();
+   std::ofstream file;
+   file.open(ss.str().c_str());
+   file << "GID_0\n"; for(int i=0;i<gids[0].size();i++) file << gids[0][i] << std::endl;
+   file << "GID_1\n"; for(int i=0;i<gids[1].size();i++) file << gids[1][i] << std::endl;
+   file << "GID_2\n"; for(int i=0;i<gids[2].size();i++) file << gids[2][i] << std::endl;
+*/
+
+   TEST_MSG("\n   Building sub maps");
    Blocking::MapPair map0 = Blocking::buildSubMap(gid0,*GetComm());
    Blocking::MapPair map1 = Blocking::buildSubMap(gid1,*GetComm());
    Blocking::MapPair map2 = Blocking::buildSubMap(gid2,*GetComm());
@@ -161,7 +205,7 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
       int cid = contigMaps[0]->GID(i); 
  
       test &= gid==gid0[i];
-      test &= cid==i;
+      test &= cid== (i+contigMaps[0]->MinMyGID());
    }
    TEST_ASSERT(test, 
          "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
@@ -173,7 +217,7 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
       int cid = contigMaps[1]->GID(i); 
  
       test &= gid==gid1[i];
-      test &= cid==i;
+      test &= cid== (i+contigMaps[1]->MinMyGID());
    }
    TEST_ASSERT(test, 
          "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
@@ -185,7 +229,7 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
       int cid = contigMaps[2]->GID(i); 
  
       test &= gid==gid2[i];
-      test &= cid==i;
+      test &= cid== (i+contigMaps[2]->MinMyGID());
    }
    TEST_ASSERT(test, 
          "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
@@ -199,27 +243,25 @@ bool tBlockingEpetra::test_one2many(int verbosity,std::ostream & os)
    bool status = false;
    bool allPassed = true;
 
-   TEST_MSG("\n   Building sub maps");
-   std::vector<int> gid0(1200);
-   std::vector<int> gid1(1200);
-   for(int i=0;i<1200;i++) {
-      gid0[i] = 2*i;
-      gid1[i] = 2*i+1;
-   }   
-   std::vector<int> gid2(600);
-   for(int i=0;i<600;i++)
-      gid2[i] = 2400+i;
-
-   std::vector<Blocking::MapPair> maps(3);
-   maps[0] = Blocking::buildSubMap(gid0,*GetComm());
-   maps[1] = Blocking::buildSubMap(gid1,*GetComm());
-   maps[2] = Blocking::buildSubMap(gid2,*GetComm());
-
    int size = 3*1000;
    TEST_MSG("\n   tBlockingEpetra::test_one2many: Builing Epetra_Map and source vector");
    RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
    RCP<Epetra_MultiVector> v = rcp(new Epetra_MultiVector(*map,1));
    v->Random();
+
+   TEST_MSG("\n   Building sub maps");
+   // build gids
+   std::vector<std::vector<int> > gids;
+   buildGIDs(gids,*map);
+
+   std::vector<int> & gid0 = gids[0];
+   std::vector<int> & gid1 = gids[1];
+   std::vector<int> & gid2 = gids[2];
+
+   std::vector<Blocking::MapPair> maps(3);
+   maps[0] = Blocking::buildSubMap(gid0,*GetComm());
+   maps[1] = Blocking::buildSubMap(gid1,*GetComm());
+   maps[2] = Blocking::buildSubMap(gid2,*GetComm());
 
    TEST_MSG("\n   tBlockingEpetra::test_one2many: Building Export/Import");
    std::vector<RCP<Epetra_Import> > subImport(3);
@@ -229,7 +271,6 @@ bool tBlockingEpetra::test_one2many(int verbosity,std::ostream & os)
       subImport[i] = imex.first; 
       subExport[i] = imex.second; 
    }
-
 
    TEST_MSG("\n   tBlockingEpetra::test_one2many: Building sub vectors");
    std::vector<RCP<Epetra_MultiVector> > subVectors;
@@ -247,29 +288,28 @@ bool tBlockingEpetra::test_many2one(int verbosity,std::ostream & os)
 {
    bool status = false;
    bool allPassed = true;
+
+   int size = 3*1000;
+   TEST_MSG("\n   tBlockingEpetra::test_many2one: Builing Epetra_Map and source vector");
+   RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
+   RCP<Epetra_MultiVector> v = rcp(new Epetra_MultiVector(*map,4));
+   v->Random();
+
    TEST_MSG("\n   Building sub maps");
-   std::vector<int> gid0(1200);
-   std::vector<int> gid1(1200);
-   for(int i=0;i<1200;i++) {
-      gid0[i] = 2*i;
-      gid1[i] = 2*i+1;
-   }   
-   std::vector<int> gid2(600);
-   for(int i=0;i<600;i++)
-      gid2[i] = 2400+i;
+   // build gids
+   std::vector<std::vector<int> > gids;
+   buildGIDs(gids,*map);
+
+   std::vector<int> & gid0 = gids[0];
+   std::vector<int> & gid1 = gids[1];
+   std::vector<int> & gid2 = gids[2];
 
    std::vector<Blocking::MapPair> maps(3);
    maps[0] = Blocking::buildSubMap(gid0,*GetComm());
    maps[1] = Blocking::buildSubMap(gid1,*GetComm());
    maps[2] = Blocking::buildSubMap(gid2,*GetComm());
 
-   int size = 3*1000;
-   TEST_MSG("\n   tBlockingEpetra::test_one2many: Builing Epetra_Map and source vector");
-   RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
-   RCP<Epetra_MultiVector> v = rcp(new Epetra_MultiVector(*map,4));
-   v->Random();
-
-   TEST_MSG("\n   tBlockingEpetra::test_one2many: Building Export/Import");
+   TEST_MSG("\n   tBlockingEpetra::test_many2one: Building Export/Import");
    std::vector<RCP<Epetra_Import> > subImport(3);
    std::vector<RCP<Epetra_Export> > subExport(3);
    for(int i=0;i<3;i++) {
@@ -278,11 +318,11 @@ bool tBlockingEpetra::test_many2one(int verbosity,std::ostream & os)
       subExport[i] = imex.second; 
    }
 
-   TEST_MSG("\n   tBlockingEpetra::test_one2many: Building sub vectors");
+   TEST_MSG("\n   tBlockingEpetra::test_many2one: Building sub vectors");
    std::vector<RCP<Epetra_MultiVector> > subVectors;
    Blocking::buildSubVectors(maps,subVectors,4);
 
-   TEST_MSG("\n   tBlockingEpetra::test_one2many: Performing one2many");
+   TEST_MSG("\n   tBlockingEpetra::test_many2one: Performing one2many");
    Blocking::one2many(subVectors,*v,subImport);
 
    std::vector<RCP<const Epetra_MultiVector> > cSubVectors;
@@ -290,25 +330,95 @@ bool tBlockingEpetra::test_many2one(int verbosity,std::ostream & os)
    for(itr=subVectors.begin();itr!=subVectors.end();++itr)
       cSubVectors.push_back(*itr);
 
-   TEST_MSG("\n   tBlockingEpetra::test_one2many: Performing many2one");
-   RCP<Epetra_MultiVector> one = rcp(new Epetra_MultiVector(*map,1));
+   TEST_MSG("\n   tBlockingEpetra::test_many2one: Performing many2one");
+   RCP<Epetra_MultiVector> one = rcp(new Epetra_MultiVector(*map,4));
+   one->PutScalar(0.0);
    Blocking::many2one(*one,cSubVectors,subExport);
+   double norm2[4] = {0,0,0,0};
+   one->Norm2(norm2);
 
    one->Update(1.0,*v,-1.0);
  
    double diff[4] = {0,0,0,0};
-   double max=0.0,maxn=0;
+   double max=-1.0,maxn=-1,maxn2=-1;
    double norm[4] = {0,0,0,0};
    one->Norm2(diff);
    v->Norm2(norm);
    for(int i=0;i<4;i++) {
       max = max>diff[i]/norm[i] ? max : diff[i]/norm[i];
       maxn = maxn>norm[i] ? maxn : norm[i];
+      maxn2 = maxn2>norm2[i] ? maxn2 : norm2[i];
    }
+   TEST_ASSERT(maxn>0.0,"   tBlockingEpetra::test_many2one maxn>0? maxn = " << maxn);
    TEST_ASSERT(max<=tolerance_,
-            "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
-         << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ << " maxn = " << maxn << " )");
+            "   tBlockingEpetra::test_many2one (" << PB::Test::toString(status) << "): "
+         << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ 
+         << " maxn = " << maxn << ", maxn2 = " << maxn2 << " )");
    
+   return allPassed;
+}
+
+bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   int numProc = GetComm()->NumProc();
+   int mypid = GetComm()->MyPID();
+   int myElmts[2] = { 2*mypid+0,2*mypid+1 };
+   int grid = -1;
+
+   // build epetra operator
+   /////////////////////////////////////////
+   Epetra_Map map(-1,2,myElmts,0,*GetComm());
+   std::vector<int> indices(numProc*2);
+   std::vector<double> values(numProc*2);
+   Epetra_CrsMatrix A(Copy,map,numProc*2,false);
+   for(int i=0;i<indices.size();i++) indices[i] = i;
+ 
+   // build local row 0
+   for(int i=0;i<indices.size()/2;i++) {
+      values[2*i+0] = (mypid+1.0)*1.0+i;
+      values[2*i+1] = (mypid+1.0)*2.0+i;
+   }
+   grid = A.GRID(0); 
+   A.InsertGlobalValues(grid,values.size(),&values[0],&indices[0]);
+
+   // build local row 1
+   for(int i=0;i<indices.size()/2;i++) {
+      values[2*i+0] = (mypid+1.0)*3.0+i;
+      values[2*i+1] = (mypid+1.0)*4.0+i;
+   }
+   grid = A.GRID(1); 
+   A.InsertGlobalValues(grid,values.size(),&values[0],&indices[0]);
+   A.FillComplete();
+
+   // build sub maps
+   /////////////////////////////////////////
+   std::vector<std::vector<int> > v;
+   v.resize(2);
+   v[0].push_back(myElmts[0]);
+   v[1].push_back(myElmts[1]);
+   std::vector<Blocking::MapPair> mapPairs;
+   mapPairs.push_back(Blocking::buildSubMap(v[0],*GetComm()));
+   mapPairs.push_back(Blocking::buildSubMap(v[1],*GetComm()));
+
+   std::cout << "A Matrix = \n";
+   // A.Print(std::cout);
+
+   GetComm()->Barrier();
+
+   std::cout << "A_00 Matrix = \n";
+   PB::Epetra::Blocking::buildSubBlock(0,0,A,mapPairs)->Print(std::cout);
+/*
+   std::cout << "A_01 Matrix = \n";
+   PB::Epetra::Blocking::buildSubBlock(0,1,A,mapPairs)->Print(std::cout);
+   std::cout << "A_10 Matrix = \n";
+   PB::Epetra::Blocking::buildSubBlock(1,0,A,mapPairs)->Print(std::cout);
+   std::cout << "A_11 Matrix = \n";
+   PB::Epetra::Blocking::buildSubBlock(1,1,A,mapPairs)->Print(std::cout);
+*/
+
    return allPassed;
 }
 
