@@ -49,13 +49,13 @@ automated testing system run by CTest.
 This will allow reliably killing timed-out tests.
 
 
-(*) [CDash] [P3] Line wrap all warning and error messages in CDash output.
-Long lines are impossible to read currently.
-
-
 (*) [CDash] [P3] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
+
+
+(*) [CDash] [P3] Line wrap all warning and error messages in CDash output.
+Long lines are impossible to read currently.
 
 
 (*) [CMake] [P3] Improve BLAS library detection.  Brad said there is a
