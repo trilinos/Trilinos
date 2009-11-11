@@ -20,6 +20,12 @@ Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
 
 
+(*) [CMake] [P2] Need to pass compile options to configure time tests. We made
+an effort to do this for the Trilinos created configure time tests, but not all
+of the CMake given ones allow us to to that right now. Most promenently is the
+verify CXX test. Being able to pass in the options to use or using the
+CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
+
 (*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
 looping for continuous integration testing.  Assist in getting 
 continuous integration testing set up on trilinos-test.sandia.gov.
