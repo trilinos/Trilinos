@@ -64,7 +64,7 @@ void tpi_reduction_work(TPI_Work * work)
 }
 
 template<class WDP>
-void tpi_reduction_join(TPI_Work * work, void* src)
+void tpi_reduction_join(TPI_Work * work, const void* src)
 {
   typedef typename WDP::ReductionType ReductionType;
 
@@ -72,7 +72,7 @@ void tpi_reduction_join(TPI_Work * work, void* src)
   WDP wdp = wdp_wrapper->wdp;
 
   ReductionType& work_reduce = *(static_cast<ReductionType*>(work->reduce));
-  ReductionType& src_reduce  = *(static_cast<ReductionType*>(src));
+  const ReductionType& src_reduce  = *(static_cast<const ReductionType*>(src));
 
   work_reduce = wdp.reduce(work_reduce, src_reduce);
 }
