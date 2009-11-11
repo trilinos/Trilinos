@@ -312,20 +312,12 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
   echo "KDDKDD " $FC_VENDOR
   if test "$FC_VENDOR" = "PGI"; then
     FCFLAGS="-DPGI ${FCFLAGS}"
+    CFLAGS="-DPGI ${CFLAGS}"
   fi
   if test "$FC_VENDOR" = "Lahey"; then
     FCFLAGS="-DFUJITSU ${FCFLAGS}"
+    CFLAGS="-DFUJITSU ${CFLAGS}"
   fi
-# Provide some information about the compiler; add flags if PGI or LAHEY.
-#  _AC_EVAL([${FC} --version </dev/null >KDDKDD])
-#  _AC_EVAL([${FC} -v </dev/null >>KDDKDD])
-#  _AC_EVAL([${FC} -V </dev/null >>KDDKDD])
-#  _AC_EVAL([grep pgf90 KDDKDD > KDDKDD1])
-#  if test -s KDDKDD1; then
-#    echo "KDDKDD" ${FC} "-DPGI"
-#    FCFLAGS="-DPGI ${FCFLAGS}"
-#  fi
-
 fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
