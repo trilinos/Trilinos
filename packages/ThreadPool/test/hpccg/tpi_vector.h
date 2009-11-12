@@ -1,4 +1,6 @@
 
+#include <ThreadPool_config.h>
+
 #ifndef tpi_vector_h
 #define tpi_vector_h
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include <ThreadPool_config.h>
 #include <TPI.h>
 #include <tpi_vector.h>
 
