@@ -7902,7 +7902,7 @@ fi
 fi
 { echo "$as_me:$LINENO: result: $ax_cv_f90_modulecase" >&5
 echo "${ECHO_T}$ax_cv_f90_modulecase" >&6; }
-   if test "X$ac_cv_f90_modulecase" != "Xupper"; then
+   if test "X$ax_cv_f90_modulecase" != "Xupper"; then
   F90_MODULE_LOWERCASE_TRUE=
   F90_MODULE_LOWERCASE_FALSE='#'
 else

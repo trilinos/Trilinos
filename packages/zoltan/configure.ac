@@ -310,7 +310,7 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
   fi
   # Determine case (upper or lower) of F90 module files. 
   AX_F90_MODULE_CASE
-  AM_CONDITIONAL(F90_MODULE_LOWERCASE, [test "X$ac_cv_f90_modulecase" != "Xupper"])
+  AM_CONDITIONAL(F90_MODULE_LOWERCASE, [test "X$ax_cv_f90_modulecase" != "Xupper"])
 
   echo "KDDKDD " $ax_cv_f90_modulecase 
 
