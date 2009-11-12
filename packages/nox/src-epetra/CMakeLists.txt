@@ -23,8 +23,11 @@ APPEND_SET(HEADERS
   NOX_Epetra_MatrixFree.H
   NOX_Epetra_FiniteDifference.H
   NOX_Epetra_FiniteDifferenceColoring.H
+  NOX_Epetra_FiniteDifferenceColoringWithUpdate.H
   NOX_Epetra_Scaling.H
   NOX_Epetra_BroydenOperator.H
+  ENAT_NOXSolver.hpp
+  NOXEpetra_Observer.hpp
   NOX_Epetra_ModelEvaluatorInterface.H
   NOX_Epetra_LinearSystem_Amesos.H
   NOX_Epetra_LinearSystem_Stratimikos.H
@@ -40,8 +43,11 @@ APPEND_SET(SOURCES
   NOX_Epetra_MatrixFree.C
   NOX_Epetra_FiniteDifference.C
   NOX_Epetra_FiniteDifferenceColoring.C
+  NOX_Epetra_FiniteDifferenceColoringWithUpdate.C
   NOX_Epetra_Scaling.C
   NOX_Epetra_BroydenOperator.C
+  ENAT_NOXSolver.cpp
+  NOXEpetra_Observer.cpp
   NOX_Epetra_ModelEvaluatorInterface.C
   NOX_Epetra_LinearSystem_Amesos.C
   NOX_Epetra_LinearSystem_Stratimikos.C
