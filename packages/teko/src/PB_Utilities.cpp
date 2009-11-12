@@ -862,6 +862,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    std::string which("LM"); // largest magnitude
 
    // Create the parameter list for the eigensolver
+   verbosity+=Anasazi::TimingDetails;
    Teuchos::ParameterList MyPL;
    MyPL.set( "Verbosity", verbosity );
    MyPL.set( "Which", which );
@@ -871,8 +872,8 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    MyPL.set( "Convergence Tolerance", tol );
 
    // build status test manager
-   RCP<Anasazi::StatusTestMaxIters<double,MV,OP> > statTest
-         = rcp(new Anasazi::StatusTestMaxIters<double,MV,OP>(10));
+   // RCP<Anasazi::StatusTestMaxIters<double,MV,OP> > statTest
+   //       = rcp(new Anasazi::StatusTestMaxIters<double,MV,OP>(numBlocks*(restart+1)));
 
    // Create the Block Krylov Schur solver
    // This takes as inputs the eigenvalue problem and the solver parameters
@@ -950,8 +951,8 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
    MyPL.set( "Convergence Tolerance", tol );
 
    // build status test manager
-   RCP<Anasazi::StatusTestMaxIters<double,MV,OP> > statTest
-         = rcp(new Anasazi::StatusTestMaxIters<double,MV,OP>(10));
+   // RCP<Anasazi::StatusTestMaxIters<double,MV,OP> > statTest
+   //       = rcp(new Anasazi::StatusTestMaxIters<double,MV,OP>(10));
 
    // Create the Block Krylov Schur solver
    // This takes as inputs the eigenvalue problem and the solver parameters
