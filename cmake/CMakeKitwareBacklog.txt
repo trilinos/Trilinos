@@ -20,11 +20,21 @@ Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
 
 
+(*) [CTest] [P1] Implement timeouts of tests when CTest will be run on the
+commandline and not in dashbaord mode.  Currently, if you set the option CMake
+configure DART_TESTING_TIMEOUT, this will only affect timeouts when CTest is
+run in dasbhaord mode, not when it is run in regular command-line mode.  This
+is very bad because it will not timeout tests in our checkin-test.py script
+(or when run manually by Trilinos developers).  We just need some way to set a
+timeout when running ctest like 'ctest -jN'.
+
+
 (*) [CMake] [P2] Need to pass compile options to configure time tests. We made
 an effort to do this for the Trilinos created configure time tests, but not all
 of the CMake given ones allow us to to that right now. Most promenently is the
 verify CXX test. Being able to pass in the options to use or using the
 CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
+
 
 (*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
 looping for continuous integration testing.  Assist in getting 
