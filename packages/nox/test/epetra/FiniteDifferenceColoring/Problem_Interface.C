@@ -39,7 +39,8 @@
 // ----------   Includes   ----------
 #include <iostream>
 #include "Problem_Interface.H"
-
+#include "NOX_Epetra_FiniteDifferenceColoringWithUpdate.H"
+#include "EpetraExt_RowMatrixOut.h"
 // ----------   User Defined Includes   ----------
 #include "FiniteElementProblem.H"
 
@@ -59,16 +60,25 @@ bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, Fi
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
   NOX::Epetra::FiniteDifferenceColoring* fdcJac = 0;
+  NOX::Epetra::FiniteDifferenceColoringWithUpdate* fdcJac2 = 0;
+
   fdcJac = dynamic_cast<NOX::Epetra::FiniteDifferenceColoring*>(&Jac);
-
   if (fdcJac == 0) {
-    cout << "Error: Problem_Interface::computeJacobian() - "
-	 << "Jacobian operator is not a NOX::Epetra::FiniteDifferenceColoring "
-	 << "object!" << endl;
-    throw "Problem_Interface Error";
+    fdcJac2 = dynamic_cast<NOX::Epetra::FiniteDifferenceColoringWithUpdate*>(&Jac);
+    if(fdcJac2==0){
+      cout << "Error: Problem_Interface::computeJacobian() - "
+	   << "Jacobian operator is not a NOX::Epetra::FiniteDifferenceColoring "
+	   << "or NOX::Epetra::FiniteDifferenceColoringWithUpdate "
+	   << "object!" << endl;
+      throw "Problem_Interface Error";
+    }
+    else{
+      fdcJac2->computeJacobian(x);
+    }
   }
-
-  fdcJac->computeJacobian(x);
+  else{
+    fdcJac->computeJacobian(x);
+  }
 
   return true;
 }

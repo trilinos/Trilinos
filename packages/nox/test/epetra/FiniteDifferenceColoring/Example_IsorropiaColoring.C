@@ -40,13 +40,20 @@
 /* Solves the nonlinear equation:
  *
  * d2u 
- * --- - k * u**2 = 0
+ * --- - k * u    = 0   on      x=[0.0 to 0.5)
+ * dx2
+ *
+ * d2u 
+ * --- - k * u**2 = 0   on      x=[0.5 to 1.0] 
  * dx2
  *
  * subject to @ x=0, u=1
  */
 
 #include "NOX_Common.H" // needed to determine HAVE_NOX_EPETRAEXT
+#include "NOX_Epetra_FiniteDifferenceColoringWithUpdate.H"
+
+#include <fstream>
 
 // Ensure we have the required EpetraExt library built
 
@@ -105,10 +112,12 @@ int main(int argc, char *argv[])
 #include "Epetra_MapColoring.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_IntVector.h"
 #include "AztecOO.h"
 
 #include <vector>
@@ -121,9 +130,24 @@ int main(int argc, char *argv[])
 
 using namespace std;
 
+
+
+
+
+/*************************************/
+Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> coloring_using_fdc(Teuchos::ParameterList & printParams, Teuchos::ParameterList & lsParams,Teuchos::RCP<Problem_Interface> &interface, NOX::Epetra::Vector &noxSoln,FiniteElementProblem& Problem,Teuchos::RCP<Epetra_MapColoring>&colorMap);
+/**************************************/
+Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> coloring_using_fdcwu(Teuchos::ParameterList & printParams, Teuchos::ParameterList & lsParams,Teuchos::RCP<Problem_Interface> &interface, NOX::Epetra::Vector &noxSoln,FiniteElementProblem& Problem,Teuchos::RCP<Epetra_MapColoring>&colorMap,Teuchos::RCP<Epetra_MapColoring>&updateColorMap
+);
+/**************************************/
+int solve_system(char * fpref,Epetra_Comm & Comm,Teuchos::ParameterList & printParams, Teuchos::RCP<Teuchos::ParameterList>&nlParamsPtr,Teuchos::RCP<NOX::Epetra::Interface::Required> &iReq,NOX::Epetra::Vector &noxSoln,FiniteElementProblem& Problem,Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys,bool verbose);
+/**************************************/
+Teuchos::RCP<Epetra_CrsGraph> ExtractSubGraph(Teuchos::RCP<Epetra_CrsGraph> graph, int Nlid,const int* lids);
+/**************************************/
+
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr = 0;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -231,6 +255,8 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
 
+  const Epetra_CrsGraph & G=*Problem.getGraph();
+
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
   Teuchos::ParameterList isorParamList;
   // Teuchos::ParameterList& zoltanParamList = isorParamList.sublist("ZOLTAN");
@@ -240,10 +266,37 @@ int main(int argc, char *argv[])
 
   Teuchos::RCP<Epetra_MapColoring> colorMap =  isorColorer.generateColMapColoring();
 
-  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
+  // Build the update coloring
+  Teuchos::RCP<Epetra_CrsGraph> subgraph=ExtractSubGraph(Problem.getGraph(),Problem.NumLocalNonLinearUnknowns(),Problem.getNonLinearUnknowns());
+  Isorropia::Epetra::Colorer updateIsorColorer((Teuchos::RCP<const Epetra_CrsGraph>)subgraph, isorParamList, false);
 
-  Teuchos::RCP< vector<Epetra_IntVector> > columns = 
-    Teuchos::rcp(&colorMapIndex(*(Problem.getGraph())));
+  //  Teuchos::RCP<Epetra_MapColoring> updateColorMap_limited=updateIsorColorer.generateColMapColoring();
+  Teuchos::RCP<Epetra_MapColoring> updateColorMap=updateIsorColorer.generateColMapColoring();
+
+  // Explictly recolor dummies to color zero
+  int Nlid=Problem.NumLocalNonLinearUnknowns();
+  const int *lids=Problem.getNonLinearUnknowns();
+  Epetra_IntVector rIDX(G.RowMap());
+  for(int i=0;i<Nlid;i++)
+    rIDX[lids[i]]=1;
+  Epetra_IntVector *cIDX;
+  if(G.RowMap().SameAs(G.ColMap()))
+    cIDX=&rIDX;
+  else{
+    cIDX=new Epetra_IntVector(G.ColMap(),true);
+    cIDX->Import(rIDX,*G.Importer(),Insert); 
+  }
+
+  for(int i=0;i<G.NumMyCols();i++)
+    if((*cIDX)[i]==0) (*updateColorMap)[i]=0;
+
+ if(!G.RowMap().SameAs(G.ColMap()))
+   delete cIDX;
+
+  int base_colors=colorMap->MaxNumColors(),update_colors=updateColorMap->MaxNumColors();
+  if(!MyPID)
+    cout<<"First time colors = "<<base_colors<<" Update colors = "<<update_colors-1<<endl;
+
 
   // Use this constructor to create the graph numerically as a means of timing
   // the old way of looping without colors :
@@ -253,6 +306,82 @@ int main(int argc, char *argv[])
   // where the application is responsible for creating the matrix graph 
   // beforehand, ie as is done in Problem.
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+
+  NOX::Epetra::Vector noxSoln2(noxSoln);
+
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+      coloring_using_fdc(printParams,lsParams,interface,noxSoln,Problem,colorMap);
+  ierr=solve_system("fdc",Comm,printParams,nlParamsPtr,iReq,noxSoln,Problem,linSys,verbose);
+
+
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys2 = 
+      coloring_using_fdcwu(printParams,lsParams,interface,noxSoln2,Problem,colorMap,updateColorMap);
+  ierr=solve_system("fdcwu",Comm,printParams,nlParamsPtr,iReq,noxSoln2,Problem,linSys2,verbose);
+
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
+
+  // Final return value (0 = successfull, non-zero = failure)
+  return ierr;
+}
+
+
+
+/*************************************/
+Teuchos::RCP<Epetra_CrsGraph> ExtractSubGraph(Teuchos::RCP<Epetra_CrsGraph> graph, int Nlid,const int* lids){
+  Epetra_CrsGraph &G=*graph;
+  int N=G.NumMyRows();
+  int *indices,NumIndices;
+
+  // Build index vectors for rows
+  Epetra_IntVector rIDX(G.RowMap());
+  for(int i=0;i<Nlid;i++)
+    rIDX[lids[i]]=1;
+
+  // Import/export to get column vector if needed
+  Epetra_IntVector *cIDX;
+  if(G.RowMap().SameAs(G.ColMap()))
+    cIDX=&rIDX;
+  else{
+    cIDX=new Epetra_IntVector(G.ColMap(),true);
+    cIDX->Import(rIDX,*G.Importer(),Insert);
+  }
+
+  // Allocate new matrix
+  Epetra_CrsGraph *Sub=new Epetra_CrsGraph(Copy,G.RowMap(),G.ColMap(),0,false);
+  
+  // Do extraction 
+  for(int i=0;i<N;i++){    
+    int rgid=G.GRID(i);
+    if(rIDX[i]!=1) continue;    
+    G.ExtractMyRowView(i,NumIndices,indices);
+    for(int k=0;k<NumIndices;k++){
+      if((*cIDX)[indices[k]]==1){
+	int cgid=G.GCID(indices[k]);
+	Sub->InsertGlobalIndices(rgid,1,&cgid);
+      }
+    }
+  }
+  Sub->FillComplete();
+  Sub->OptimizeStorage();
+
+  if(!G.RowMap().SameAs(G.ColMap()))
+    delete cIDX;
+
+  return Teuchos::RCP<Epetra_CrsGraph>(Sub);
+}
+
+/*************************************/
+Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> coloring_using_fdc(Teuchos::ParameterList & printParams, Teuchos::ParameterList & lsParams,Teuchos::RCP<Problem_Interface> &interface, NOX::Epetra::Vector &noxSoln,FiniteElementProblem& Problem,Teuchos::RCP<Epetra_MapColoring>&colorMap){
+
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+
+  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
+  Teuchos::RCP< vector<Epetra_IntVector> > columns = 
+    Teuchos::rcp(&colorMapIndex(*(Problem.getGraph())));
+  
   Teuchos::RCP<NOX::Epetra::FiniteDifferenceColoring> A = 
     Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoring(printParams,
 							   iReq, noxSoln, 
@@ -260,12 +389,40 @@ int main(int argc, char *argv[])
 							   colorMap, 
 							   columns,
 							   true));
-
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
                                               	      iReq, iJac, A, noxSoln));
+  return linSys;
+}
+
+/**************************************/
+Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> coloring_using_fdcwu(Teuchos::ParameterList & printParams, Teuchos::ParameterList & lsParams,Teuchos::RCP<Problem_Interface> &interface, NOX::Epetra::Vector &noxSoln,FiniteElementProblem& Problem,Teuchos::RCP<Epetra_MapColoring>&colorMap,Teuchos::RCP<Epetra_MapColoring>&updateColorMap){
+
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  // Use constructor w/ update
+  Teuchos::RCP<NOX::Epetra::FiniteDifferenceColoringWithUpdate> A = 
+      Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoringWithUpdate(printParams,
+								     iReq, noxSoln, 
+								     Problem.getGraph(),
+								     colorMap,updateColorMap));
+
+								    							
+  // Create the linear system
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+                                              	      iReq, iJac, A, noxSoln));
+  return linSys;
+}
+
+
+
+/*************************************/
+int solve_system(char *fpref,Epetra_Comm & Comm,Teuchos::ParameterList & printParams, Teuchos::RCP<Teuchos::ParameterList>&nlParamsPtr,Teuchos::RCP<NOX::Epetra::Interface::Required> &iReq,NOX::Epetra::Vector &noxSoln,FiniteElementProblem& Problem,Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys,bool verbose){
+  int MyPID=Comm.MyPID();
+  int i;
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
@@ -276,6 +433,7 @@ int main(int argc, char *argv[])
   NOX::Epetra::Group& grp = *(grpPtr.get()); 
 
   // ATOL vector if using NOX::StatusTest::WRMS
+  Teuchos::RCP<Epetra_Vector> soln = Problem.getSolution();
   NOX::Epetra::Vector weights(soln);
   weights.scale(1.0e-8);
 
@@ -333,28 +491,22 @@ int main(int argc, char *argv[])
   }
 
   // Print solution
-  char file_name[25];
+  char file_name[80];
   FILE *ifp;
   int NumMyElements = soln->Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d",MyPID);
+  (void) sprintf(file_name, "%s.output.%d",fpref,MyPID);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyElements; i++)
-    fprintf(ifp, "%d  %E\n", soln->Map().MinMyGID()+i, finalSolution[i]);
+    fprintf(ifp, "%d  %22.16e\n", soln->Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
   // Summarize test results
   if (Comm.MyPID() == 0) {  
     if (status == NOX::StatusTest::Converged)
-      cout << "Test passed!" << endl;
+      cout << "Test passed!" << endl;    
     else 
       cout << "Test failed!" << endl;
   }
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-
-  // Final return value (0 = successfull, non-zero = failure)
-  return ierr ;
+  return 0;
 }
 #endif

@@ -107,6 +107,26 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   // is called.
   A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
   A->FillComplete();
+
+  // Do setup for linear unknown info
+  int NumMyElements = StandardMap->NumMyElements();
+  int MinMyGID;
+  if (MyPID==0) MinMyGID = StandardMap->MinMyGID();
+  else MinMyGID = StandardMap->MinMyGID();
+
+  double dx=1.0/((double) NumGlobalElements-1);
+  int lid=0;
+  N_nonlinearUnknowns=0;
+  for(i=0; i < NumMyElements; i++) 
+    if(dx*((double) MinMyGID+i) >= 0.4)
+      N_nonlinearUnknowns++;
+
+  nonlinearUnknowns=new int[N_nonlinearUnknowns];
+  for(i=0; i < NumMyElements; i++) 
+    if(dx*((double) MinMyGID+i) >= 0.4)
+      nonlinearUnknowns[lid++]=i;  
+
+  // Use .4 to include enough of the non-linear zone in non-linear list to avoid missing entries
 }
 
 // Destructor
@@ -173,6 +193,19 @@ evaluate(FillType f,
   if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
   if ((flag == F_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
 
+
+/* Solves the nonlinear equation:
+ *
+ * d2u 
+ * --- - k * u    = 0   on      x=[0.0 to 0.5)
+ * dx2
+ *
+ * d2u 
+ * --- - k * u**2 = 0   on      x=[0.5 to 1.0] 
+ * dx2
+ *
+ */
+	
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
     
@@ -189,27 +222,57 @@ evaluate(FillType f,
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
 	row=OverlapMap->GID(ne+i);
-	if (StandardMap->MyGID(row)) {
-	  if ((flag == F_ONLY)    || (flag == ALL)) {
-	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-	      +basis.wt*basis.dx
-	      *((1.0/(basis.dx*basis.dx))*basis.duu*
-		basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
+
+	if(xx[i]<.5) {
+	  /* 1st half of PDE */
+	  if (StandardMap->MyGID(row)) {
+	    if ((flag == F_ONLY)    || (flag == ALL)) {
+	      (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
+		+basis.wt*basis.dx
+		*((1.0/(basis.dx*basis.dx))*basis.duu*
+		  basis.dphide[i]+factor*basis.uu*basis.phi[i]);
+	    }
 	  }
-	}
-	// Loop over Trial Functions
-	if ((flag == MATRIX_ONLY) || (flag == ALL)) {
-	  for(j=0;j < 2; j++) {
-	    if (StandardMap->MyGID(row)) {
-	      column=OverlapMap->GID(ne+j);
-	      jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
-				     basis.dphide[j]*basis.dphide[i]
-				     +2.0*factor*basis.uu*basis.phi[j]*
-				     basis.phi[i]);  
-	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+	  // Loop over Trial Functions
+	  if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+	    for(j=0;j < 2; j++) {
+	      if (StandardMap->MyGID(row)) {
+		column=OverlapMap->GID(ne+j);
+		jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
+				       basis.dphide[j]*basis.dphide[i]
+				       +factor*basis.phi[j]*
+				       basis.phi[i]);  
+		ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+	      }	  
 	    }
 	  }
 	}
+	else{
+	  /* 2nd half of PDE */
+	  if (StandardMap->MyGID(row)) {
+	    if ((flag == F_ONLY)    || (flag == ALL)) {
+	      (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
+		+basis.wt*basis.dx
+		*((1.0/(basis.dx*basis.dx))*basis.duu*
+		  basis.dphide[i]+factor*basis.uu*basis.uu*basis.phi[i]);
+	    }
+	  }
+	  // Loop over Trial Functions
+	  if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+	    for(j=0;j < 2; j++) {
+	      if (StandardMap->MyGID(row)) {
+		column=OverlapMap->GID(ne+j);
+		jac=basis.wt*basis.dx*((1.0/(basis.dx*basis.dx))*
+				       basis.dphide[j]*basis.dphide[i]
+				       +2.0*factor*basis.uu*basis.phi[j]*
+				       basis.phi[i]);  
+		ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+	      }	  
+	    }
+	  }
+	}
+
+
       }
     }
   } 

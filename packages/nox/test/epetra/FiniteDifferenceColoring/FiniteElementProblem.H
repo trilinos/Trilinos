@@ -57,6 +57,7 @@
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map; 
+class Epetra_IntVector;
 class Epetra_Vector;
 class Epetra_Import;
 class Epetra_CrsGraph;
@@ -96,6 +97,13 @@ public:
   // the FiniteElementProblem class.
   Teuchos::RCP<Epetra_CrsGraph> getGraph();
 
+  // Return a list of the local ids of non-linear unknowns
+  const int* getNonLinearUnknowns() const{return nonlinearUnknowns;}
+
+  // Return the number of local of non-linear unknowns
+  int NumLocalNonLinearUnknowns() const{return N_nonlinearUnknowns;}
+
+
 private:
 
   // inserts the global column indices into the Graph
@@ -113,6 +121,8 @@ private:
   Teuchos::RCP<Epetra_CrsGraph> AA;
   Teuchos::RCP<Epetra_CrsMatrix> A;
   Epetra_Comm *Comm;
+  int N_nonlinearUnknowns;
+  int* nonlinearUnknowns;
 
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
