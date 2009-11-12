@@ -49,7 +49,8 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_flag.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_case.m4 \
+	$(top_srcdir)/config/ax_f90_module_flag.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \

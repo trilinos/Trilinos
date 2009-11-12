@@ -720,6 +720,8 @@ SUB_EXAMPLE_FALSE
 FCLIBS
 FCFLAGS_f
 FCFLAGS_f90
+F90_MODULE_LOWERCASE_TRUE
+F90_MODULE_LOWERCASE_FALSE
 FC_VERSION_STRING
 FC_VENDOR
 FC_VERSION
@@ -7708,6 +7710,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+  # Determine compile-line flag for F90 modules (e.g., -M).
 
 { echo "$as_me:$LINENO: checking fortran 90 modules inclusion flag" >&5
 echo $ECHO_N "checking fortran 90 modules inclusion flag... $ECHO_C" >&6; }
@@ -7829,6 +7832,75 @@ echo "$as_me: error: unable to find f90 modules extension" >&2;}
   else
     FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
   fi
+  # Determine case (upper or lower) of F90 module files.
+
+{ echo "$as_me:$LINENO: checking fortran 90 module file case" >&5
+echo $ECHO_N "checking fortran 90 module file case... $ECHO_C" >&6; }
+if test "${ax_cv_f90_modulecase+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+rm -f conftest*
+cat >conftest.f <<EOF
+	module conftest
+        integer n
+        parameter (n=1)
+        end module conftest
+EOF
+# SGI and absoft compilers generates module name in upper case!
+testname="conftest"
+modcase="lower"
+if $F90 -c conftest.f > conftest.out 2>&1 ; then
+    FCMODSUFFIX=`ls conftest* | grep -v conftest.f | grep -v conftest.o`
+    FCMODSUFFIX=`echo "$FCMODSUFFIX" | sed -e 's/conftest\.//g'`
+    if test -z "$FCMODSUFFIX" ; then
+	FCMODSUFFIX=`ls CONFTEST* 2>/dev/null \
+		| grep -v CONFTEST.f | grep -v CONFTEST.o`
+        FCMODSUFFIX=`echo "$FCMODSUFFIX" | sed -e 's/CONFTEST\.//g'`
+	if test -n "$FCMODSUFFIX" ; then
+	    testname="CONFTEST"
+	    modcase="upper"
+	fi
+    fi
+    if test -z "$FCMODSUFFIX" ; then
+        { echo "$as_me:$LINENO: result: unknown" >&5
+echo "${ECHO_T}unknown" >&6; }
+	# Use mod if we can't figure it out
+	FCMODSUFFIX="mod"
+    else
+        { echo "$as_me:$LINENO: result: $FCMODSUFFIX" >&5
+echo "${ECHO_T}$FCMODSUFFIX" >&6; }
+    fi
+else
+    { echo "$as_me:$LINENO: result: unknown" >&5
+echo "${ECHO_T}unknown" >&6; }
+fi
+#AC_SUBST(FCMODSUFFIX)
+{ echo "$as_me:$LINENO: checking for case of module names" >&5
+echo $ECHO_N "checking for case of module names... $ECHO_C" >&6; }
+if test "$modcase" = "lower" ; then
+    { echo "$as_me:$LINENO: result: lower" >&5
+echo "${ECHO_T}lower" >&6; }
+    ax_cv_f90_modulecase="lower"
+else
+    { echo "$as_me:$LINENO: result: upper" >&5
+echo "${ECHO_T}upper" >&6; }
+    ax_cv_f90_modulecase="upper"
+fi
+
+fi
+{ echo "$as_me:$LINENO: result: $ax_cv_f90_modulecase" >&5
+echo "${ECHO_T}$ax_cv_f90_modulecase" >&6; }
+   if test "X$ac_cv_f90_modulecase" != "Xupper"; then
+  F90_MODULE_LOWERCASE_TRUE=
+  F90_MODULE_LOWERCASE_FALSE='#'
+else
+  F90_MODULE_LOWERCASE_TRUE='#'
+  F90_MODULE_LOWERCASE_FALSE=
+fi
+
+
+  echo "KDDKDD " $ax_cv_f90_modulecase
 
   { echo "$as_me:$LINENO: checking the compiler ID" >&5
 echo $ECHO_N "checking the compiler ID... $ECHO_C" >&6; }
@@ -8560,6 +8632,13 @@ echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${F90_MODULE_LOWERCASE_TRUE}" && test -z "${F90_MODULE_LOWERCASE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"F90_MODULE_LOWERCASE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"F90_MODULE_LOWERCASE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -9284,6 +9363,8 @@ SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 FCLIBS!$FCLIBS$ac_delim
 FCFLAGS_f!$FCFLAGS_f$ac_delim
 FCFLAGS_f90!$FCFLAGS_f90$ac_delim
+F90_MODULE_LOWERCASE_TRUE!$F90_MODULE_LOWERCASE_TRUE$ac_delim
+F90_MODULE_LOWERCASE_FALSE!$F90_MODULE_LOWERCASE_FALSE$ac_delim
 FC_VERSION_STRING!$FC_VERSION_STRING$ac_delim
 FC_VENDOR!$FC_VENDOR$ac_delim
 FC_VERSION!$FC_VERSION$ac_delim
@@ -9295,7 +9376,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 53; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

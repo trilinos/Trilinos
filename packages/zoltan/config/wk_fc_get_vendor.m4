@@ -1,4 +1,4 @@
-dnl Determine vendor and version string.
+dnl Determine F90 vendor and version string.
 AC_DEFUN([WK_FC_GET_VENDOR],
 [AC_CACHE_CHECK([the compiler ID],
 [wk_cv_prog_f90_version_string],
