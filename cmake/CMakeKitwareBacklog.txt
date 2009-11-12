@@ -14,12 +14,6 @@ Prioritized Backlog Items:
 -------------------------
 
 
-(*) [General] [P1] MS Windows port and installer: We would like
-Kitware to set up our MS Windows HPC Server 2008 machine and get the
-Trilinos CMake build going with nightly testing.  We would also like
-some help porting Trilinos packages.
-
-
 (*) [CTest] [P1] Implement timeouts of tests when CTest will be run on the
 commandline and not in dashbaord mode.  Currently, if you set the option CMake
 configure DART_TESTING_TIMEOUT, this will only affect timeouts when CTest is
@@ -27,6 +21,10 @@ run in dasbhaord mode, not when it is run in regular command-line mode.  This
 is very bad because it will not timeout tests in our checkin-test.py script
 (or when run manually by Trilinos developers).  We just need some way to set a
 timeout when running ctest like 'ctest -jN'.
+
+
+(*) [CTest] [P2] Not all Zoltan tests are being run nightly.  See Bugzilla bug
+4511.
 
 
 (*) [CMake] [P2] Need to pass compile options to configure time tests. We made
@@ -59,6 +57,20 @@ c) Send email to some list of email addresses when the tests finish.
 
 These capabilities are critical for the robustness and maintainability of the
 automated testing system run by CTest.
+
+
+(*) [CTest] [P2] Take over administration of Sandia nightly test machines
+where possible.  (See 2010 contract SOW.)
+
+
+(*) [CMake] [P2] Establish an official current version of the CMake suite of
+tools for Trilinos developers.  Provide a simple and automatic delivery 
+vehicle to get updated versions to Trilinos developers (see Trilinos Developer
+toolset item).
+
+(*) [General] [P2] Help set up an Official Trilinos Development Toolset that
+provides a standard development environment for Trilinos developers.  This
+may look similar to the CSE that was set up for another Kitware customer.
 
 
 (*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
@@ -480,6 +492,11 @@ remaining compilers that need to be found.  In our experience, mixing compiler
 vendors, or even versions within the same vendor tends not to work.  After
 finding all compilers, if any mixed language linking is to take place, the
 compilers should be tested for compatibility.
+
+(*) [General] [P1] MS Windows port and installer: We would like
+Kitware to set up our MS Windows HPC Server 2008 machine and get the
+Trilinos CMake build going with nightly testing.  We would also like
+some help porting Trilinos packages.
 
 (*) [CTest] [P2] By default, automatically widen the main summary
 output to show the full test names: Currently, only the first 30
