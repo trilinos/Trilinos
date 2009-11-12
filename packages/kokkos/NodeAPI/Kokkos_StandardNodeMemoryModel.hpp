@@ -1,9 +1,11 @@
 #ifndef KOKKOS_STANDARD_NODE_MEMORY_MODEL_HPP_
 #define KOKKOS_STANDARD_NODE_MEMORY_MODEL_HPP_
 
+#include "Kokkos_NodeAPIConfigDefs.hpp"
+#include "Kokkos_BufferMacros.hpp"
+
 #include <stdlib.h>
 #include <algorithm>
-#include <Kokkos_NodeAPIConfigDefs.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
 
@@ -30,11 +32,12 @@ namespace Kokkos {
       */
       template <class T> inline
       Teuchos::ArrayRCP<T> allocBuffer(size_t size) {
-        Teuchos::ArrayRCP<T> ptr;
+        Teuchos::ArrayRCP<T> buff;
         if (size > 0) {
-          ptr = Teuchos::arcp<T>(size);
+          buff = Teuchos::arcp<T>(size);
         }
-        return ptr;
+        MARK_COMPUTE_BUFFER(buff);
+        return buff;
       }
 
       /*! \brief Copy data to host memory from a parallel buffer.
@@ -50,6 +53,7 @@ namespace Kokkos {
       */
       template <class T> inline
       void copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest) {
+        CHECK_COMPUTE_BUFFER(buffSrc);
         Teuchos::ArrayRCP<T> buffDest = Teuchos::arcpFromArrayView(hostDest);
         copyBuffers(size,buffSrc,buffDest);
       }
@@ -67,6 +71,7 @@ namespace Kokkos {
       */
       template <class T> inline
       void copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest) {
+        CHECK_COMPUTE_BUFFER(buffDest);
         Teuchos::ArrayRCP<const T> buffSrc = Teuchos::arcpFromArrayView(hostSrc);
         copyBuffers<T>(size,buffSrc,buffDest);
       }
@@ -81,6 +86,8 @@ namespace Kokkos {
       */
       template <class T> inline
       void copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest) {
+        CHECK_COMPUTE_BUFFER(buffSrc);
+        CHECK_COMPUTE_BUFFER(buffDest);
         Teuchos::ArrayView<const T> av_src = buffSrc(0,size);
         Teuchos::ArrayView<T>       av_dst = buffDest(0,size);
         std::copy(av_src.begin(),av_src.end(),av_dst.begin());
@@ -88,15 +95,25 @@ namespace Kokkos {
 
       template <class T> inline
       Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
+        CHECK_COMPUTE_BUFFER(buff);
         return buff.persistingView(0,size);
       }
 
       template <class T> inline
       Teuchos::ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
+        CHECK_COMPUTE_BUFFER(buff);
         return buff.persistingView(0,size);
       }
 
       inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
+#ifdef HAVE_KOKKOS_DEBUG
+        for (size_t i=0; i < buffers.size(); ++i) {
+          CHECK_COMPUTE_BUFFER(buffers[i]);
+        }
+        for (size_t i=0; i < ncBuffers.size(); ++i) {
+          CHECK_COMPUTE_BUFFER(ncBuffers[i]);
+        }
+#endif
         (void)buffers;
         (void)ncBuffers;
       }

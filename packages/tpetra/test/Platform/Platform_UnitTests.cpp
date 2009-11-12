@@ -31,7 +31,8 @@ namespace {
   template <>
   RCP<SerialPlatform<SerialNode> > getPlatform() {
     if (snode == Teuchos::null) {
-      snode = rcp(new SerialNode());
+      Teuchos::ParameterList pl;
+      snode = rcp(new SerialNode(pl));
     }
     return rcp(new SerialPlatform<SerialNode>(snode));
   }
@@ -40,7 +41,8 @@ namespace {
   template <>
   RCP<MpiPlatform<SerialNode> > getPlatform() {
     if (snode == Teuchos::null) {
-      snode = rcp(new SerialNode());
+      Teuchos::ParameterList pl;
+      snode = rcp(new SerialNode(pl));
     }
     return rcp(new MpiPlatform<SerialNode>(snode));
   }

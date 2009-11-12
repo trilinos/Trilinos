@@ -23,6 +23,7 @@
 
 namespace {
 
+  using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
@@ -43,8 +44,9 @@ namespace {
   RCP<SerialNode> serialnode;
   template <>
   RCP<SerialNode> getNode<SerialNode>() {
+    ParameterList pl;
     if (serialnode == null) {
-      serialnode = rcp(new SerialNode());
+      serialnode = rcp(new SerialNode(pl));
     }
     return serialnode;
   }
@@ -56,7 +58,8 @@ namespace {
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
     if (tbbnode == null) {
-      tbbnode = rcp(new TBBNode());
+      ParameterList pl;
+      tbbnode = rcp(new TBBNode(pl));
     }
     return tbbnode;
   }
@@ -69,7 +72,7 @@ namespace {
   template <>
   RCP<TPINode> getNode<TPINode>() {
     if (tpinode == null) {
-      Teuchos::ParameterList pl;
+      ParameterList pl;
       pl.set("Num Threads",1);
       tpinode = rcp(new TPINode(pl));
     }
@@ -85,7 +88,7 @@ namespace {
   template <>
   RCP<CUDANode> getNode<CUDANode>() {
     if (cudanode == null) {
-      Teuchos::ParameterList pl; 
+      ParameterList pl; 
       pl.set("Device Number",cuda_dev);
       pl.set("Verbosity",cuda_verb);
       cudanode = rcp(new CUDANode(pl));

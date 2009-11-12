@@ -1,12 +1,10 @@
 #ifndef KOKKOS_TPINODE_HPP_
 #define KOKKOS_TPINODE_HPP_
 
-#include <TPI.h>
-
 #include "Kokkos_StandardNodeMemoryModel.hpp"
-#include <Teuchos_ParameterList.hpp>
 
-#include <iostream> // debug
+#include <Teuchos_ParameterList.hpp>
+#include <TPI.h>
 
 namespace Kokkos {
 
@@ -89,23 +87,23 @@ class TPINode : public StandardNodeMemoryModel {
   public:
 
     TPINode(Teuchos::ParameterList &plist) {
-      numThreads_ = plist.get<int>("Num Threads", 0);
-      init(numThreads_);
+      curNumThreads_ = plist.get<int>("Num Threads", 0);
+      init(curNumThreads_);
     }
 
     void init(int numThreads) {
-      if (numThreads_ >= 1) {
+      if (curNumThreads_ >= 1) {
         TPI_Finalize();
       }
-      numThreads_ = numThreads;
-      if (numThreads_ >= 1) {
-        TPI_Init(numThreads_);
+      curNumThreads_ = numThreads;
+      if (curNumThreads_ >= 1) {
+        TPI_Init(curNumThreads_);
       }
     }
 
     ~TPINode()
     {
-      if (numThreads_ >= 1) {
+      if (curNumThreads_ >= 1) {
         TPI_Finalize();
       }
     }
@@ -129,7 +127,7 @@ class TPINode : public StandardNodeMemoryModel {
     }
 
   private:
-    int numThreads_;
+    int curNumThreads_;
 };
 
 } // end namespace Kokkos

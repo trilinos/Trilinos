@@ -1,15 +1,16 @@
 #ifndef KOKKOS_TBBNODE_HPP_
 #define KOKKOS_TBBNODE_HPP_
 
+#include "Kokkos_StandardNodeMemoryModel.hpp"
+
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/task_scheduler_init.h>
+
+#include <Teuchos_ParameterList.hpp>
+
 #include <stdlib.h>
-
-#include "Kokkos_StandardNodeMemoryModel.hpp"
-
-#include <iostream> // debug
 
 namespace Kokkos {
 
@@ -45,8 +46,11 @@ struct BlockedRangeWDPReducer {
 class TBBNode : public StandardNodeMemoryModel {
   public:
 
-    TBBNode(int numThreads=-1) : alreadyInit_(false), tsi_(tbb::task_scheduler_init::deferred) {
-      if (numThreads >= 0) init(numThreads);
+    TBBNode(Teuchos::ParameterList &pl) : alreadyInit_(false), tsi_(tbb::task_scheduler_init::deferred) {
+      int numThreads = pl.get<int>("Num Threads",-1);
+      if (numThreads >= 0) {
+        init(numThreads);
+      }
     }
 
     void init(int numThreads) {

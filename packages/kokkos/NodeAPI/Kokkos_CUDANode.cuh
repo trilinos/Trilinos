@@ -17,6 +17,9 @@
 // At some point in the future, the kernel needs to be updated to a more efficient version.
 // We also use the sharedmem.cuh functionality provided by that example and the cutil macro collection.
 
+// Consider replacing these implementations by Thrust generate() and Thrust transform_reduce()
+// http://code.google.com/p/thrust/
+
 
 #ifdef CUDANODE_INCLUDE_PFOR
 template <class WDP>

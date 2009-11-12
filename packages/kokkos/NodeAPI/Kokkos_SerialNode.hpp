@@ -1,13 +1,15 @@
 #ifndef KOKKOS_SERIALNODE_HPP_
 #define KOKKOS_SERIALNODE_HPP_
 
+#include <Teuchos_ParameterList.hpp>
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 
 namespace Kokkos {
 
 class SerialNode : public StandardNodeMemoryModel {
   public:
-    SerialNode() {}
+    SerialNode(Teuchos::ParameterList &pl) {}
+
     template <class WDP>
     static void parallel_for(int beg, int end, WDP wd) {
       for (int i=beg; i != end; ++i) {

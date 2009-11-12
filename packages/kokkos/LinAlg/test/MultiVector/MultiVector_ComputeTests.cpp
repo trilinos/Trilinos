@@ -75,7 +75,8 @@ namespace {
   template <>
   RCP<SerialNode> getNode<SerialNode>() {
     if (snode == null) {
-      snode = rcp(new SerialNode());
+      Teuchos::ParameterList pl;
+      snode = rcp(new SerialNode(pl));
     }
     return snode;
   }
@@ -84,7 +85,9 @@ namespace {
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
     if (tnode == null) {
-      tnode = rcp(new TBBNode(0));
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tnode = rcp(new TBBNode(pl));
     }
     return tnode;
   }

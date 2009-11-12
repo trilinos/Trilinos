@@ -32,14 +32,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # CUDA-specific source and headers
 APPEND_SET(CUDA_HEADERS
-    Kokkos_CUDANode.cpp
-    Kokkos_CUDANodeUtils.cpp
-)
-APPEND_SET(CUDA_SOURCES
+    Kokkos_CUDA_util_inline_runtime.h
+    Kokkos_CUDA_util_sharedmem.cuh
+    Kokkos_CUDANode.cuh
     Kokkos_CUDANode.hpp
     Kokkos_CUDANodeImpl.hpp
     Kokkos_CUDANodeUtils.hpp
-    Kokkos_CUDA_util_inline_runtime.h
+)
+APPEND_SET(CUDA_SOURCES
+    Kokkos_CUDANode.cpp
+    Kokkos_CUDANodeUtils.cpp
 )
 
 # TBB-specific source and headers
@@ -57,6 +59,7 @@ APPEND_SET(TPI_HEADERS
 
 # general headers, sources
 APPEND_SET(HEADERS
+    Kokkos_BufferMacros.hpp
     Kokkos_DefaultNode.hpp
     Kokkos_NodeHelpers.hpp
     Kokkos_NodeAPIConfigDefs.hpp

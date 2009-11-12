@@ -9,12 +9,14 @@ namespace Kokkos {
     if (node_ == Teuchos::null) {
       Teuchos::ParameterList pl;
 #ifdef HAVE_KOKKOS_THREADPOOL
+      pl.set<int>("Num Threads",1);
       node_ = Teuchos::rcp<TPINode>(new TPINode(pl));
 #else
 #  ifdef HAVE_KOKKOS_TBB
-      node_ = Teuchos::rcp<TBBNode>(new TBBNode(0));
+      pl.set<int>("Num Threads",0);
+      node_ = Teuchos::rcp<TBBNode>(new TBBNode(pl));
 #  else
-      node_ = Teuchos::rcp<SerialNode>(new SerialNode());
+      node_ = Teuchos::rcp<SerialNode>(new SerialNode(pl));
 #  endif
 #endif
     }
