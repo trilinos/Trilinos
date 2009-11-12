@@ -26,3 +26,8 @@
       call getarg(i,s,lenarg,ierr)
       return
       end
+
+      subroutine flush(unit)
+      integer unit
+      return
+      end

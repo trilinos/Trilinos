@@ -324,6 +324,7 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
     FCFLAGS="-DFUJITSU ${FCFLAGS}"
     CFLAGS="-DFUJITSU ${CFLAGS}"
   fi
+  AM_CONDITIONAL(NAG_F90_COMPILER, [test "X$FC_VENDOR" == "XNAG"])
 fi
 
 # If tests, examples and libcheck are disabled, we don't have to check

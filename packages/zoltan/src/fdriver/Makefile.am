@@ -26,13 +26,16 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = zfdrive
 
+if NAG_F90_COMPILER
+FARG_SRC = $(srcdir)/farg_nagf95.f
+else
 FARG_SRC = $(srcdir)/farg_typical.f
+endif
 
 zfdrive_SOURCES = \
 	$(srcdir)/mpi_h.f \
 	$(srcdir)/mpistring.c \
 	$(FARG_SRC) \
-	$(srcdir)/lampmpi.f90 \
 	$(srcdir)/mmio.f \
 	$(srcdir)/fdr_const.f90 \
 	$(srcdir)/fdr_input.f90 \
@@ -55,8 +58,8 @@ EXTRA_DIST = $(srcdir)/CMakeLists.txt \
 	$(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in \
 	$(srcdir)/README.mpich \
-	$(srcdir)/farg_nagf90.f \
 	$(srcdir)/farg_nagf95.f \
+	$(srcdir)/farg_typical.f \
 	$(srcdir)/makefile \
 	$(srcdir)/zoltan_user_data.f90.old
 

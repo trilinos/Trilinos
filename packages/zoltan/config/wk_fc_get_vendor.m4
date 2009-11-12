@@ -16,6 +16,7 @@ wk_grep_f90_Lahey=`grep 'Lahey' conftest.log | head -1`
 wk_grep_f90_PGI=`grep 'pgf' conftest.log | head -1`
 wk_grep_f90_G95=`grep -i 'g95' conftest.log | grep -i 'gcc' | head -1`
 wk_grep_f90_GFORTRAN=`grep -i 'GNU Fortran' conftest.log | head -1`
+wk_grep_f90_Absoft=`grep -i 'Absoft' conftest.log | head -1`
  
 if test -n "$wk_grep_f90_NAG"; then
   wk_cv_prog_f90_type="NAG"
@@ -55,6 +56,9 @@ elif test -n "$wk_grep_f90_GFORTRAN"; then
   wk_cv_prog_f90_version_string=$wk_grep_f90_GFORTRAN
   wk_cv_prog_f90_version=[`echo $wk_cv_prog_f90_version_string | sed -e 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/'`]
   wk_cv_prog_f90_major_version=[`echo $wk_cv_prog_f90_version | sed -e 's/\([0-9][0-9]*\)\..*/\1/'`]
+elif test -n "$wk_grep_f90_Absoft"; then
+  wk_cv_prog_f90_type="Absoft"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Absoft
 else
   wk_cv_prog_f90_type="unknown"
   wk_cv_prog_f90_version_string="unknown"

@@ -728,6 +728,8 @@ FC_VERSION
 FC_MAJOR_VERSION
 FC_MODNAME
 FC_MODNAME_Q
+NAG_F90_COMPILER_TRUE
+NAG_F90_COMPILER_FALSE
 ac_aux_dir
 LIBOBJS
 LTLIBOBJS'
@@ -2800,9 +2802,11 @@ fi
 if test X${SEEK_MPI_COMPILERS} = Xyes; then
 
   if test X${MPI_COMPILER_PATH} != Xunset ; then
-    MPI_SEEK_PATH=$MPI_COMPILER_PATH$PATH_SEPARATOR$PATH
+#    MPI_SEEK_PATH=$MPI_COMPILER_PATH$PATH_SEPARATOR$PATH
+    MPI_SEEK_PATH=$MPI_COMPILER_PATH
   elif test -n "${MPI_DIR}" ; then
-    MPI_SEEK_PATH=$MPI_DIR/bin$PATH_SEPARATOR$PATH
+#    MPI_SEEK_PATH=$MPI_DIR/bin$PATH_SEPARATOR$PATH
+    MPI_SEEK_PATH=$MPI_DIR/bin
   else
     MPI_SEEK_PATH=$PATH
   fi
@@ -2867,7 +2871,7 @@ fi
         CC=${MPI_CC}
       else
         echo "-----"
-        echo "Cannot find MPI C compiler."
+        echo "Cannot find MPI C compiler in " ${MPI_SEEK_PATH}
         echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
         echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
         echo "or specify a C compiler using CC=<compiler>"
@@ -2947,7 +2951,7 @@ test -n "$MPI_CXX" || MPI_CXX="notFound"
           CXX=${MPI_CXX}
         else
           echo "-----"
-          echo "Cannot find MPI C++ compiler."
+          echo "Cannot find MPI C++ compiler in " ${MPI_SEEK_PATH}
           echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
           echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
           echo "or specify a C++ compiler using CXX=<compiler>"
@@ -2995,25 +2999,27 @@ echo "$as_me: error: MPI C++ compiler not found." >&2;}
         MPI_FC=${FC}
 
       else
-        MPI_FC_CANDIDATE=""
+        MPI_FC_CANDIDATES=""
 
         if test -n "${FC}"; then
-          MPI_FC_CANDIDATE=${FC}
+          MPI_FC_CANDIDATES=${FC}
         elif test -n "${FTN}"; then
-          MPI_FC_CANDIDATE=${FTN}
+          MPI_FC_CANDIDATES=${FTN}
         elif test -n "${F90}"; then
-          MPI_FC_CANDIDATE=${F90}
+          MPI_FC_CANDIDATES=${F90}
         fi
 
-        if test -n "${MPI_FC_CANDIDATE}" && test -f ${MPI_FC_CANDIDATE} ; then
-          MPI_FC=${MPI_FC_CANDIDATE}
+        if test -n "${MPI_FC_CANDIDATES}" && test -f ${MPI_FC_CANDIDATES} ; then
+          MPI_FC=${MPI_FC_CANDIDATES}
         else
-          if test -z "${MPI_FC_CANDIDATE}"; then
-            MPI_FC_CANDIDATE=mpif90
+          if test -z "${MPI_FC_CANDIDATES}"; then
+            MPI_FC_CANDIDATES="mpif90 mpif77"
           fi
 
-          # Extract the first word of "${MPI_FC_CANDIDATE}", so it can be a program name with args.
-set dummy ${MPI_FC_CANDIDATE}; ac_word=$2
+          for ac_prog in ${MPI_FC_CANDIDATES}
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
 if test "${ac_cv_path_MPI_FC+set}" = set; then
@@ -3039,7 +3045,6 @@ done
 done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_MPI_FC" && ac_cv_path_MPI_FC="notFound"
   ;;
 esac
 fi
@@ -3053,12 +3058,16 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+  test -n "$MPI_FC" && break
+done
+test -n "$MPI_FC" || MPI_FC="notFound"
+
 
           if test "${MPI_FC}" != "notFound" ; then
             FC=${MPI_FC}
           else
             echo "-----"
-            echo "Cannot find MPI Fortan 90 compiler."
+            echo "Cannot find MPI Fortran 90 compiler in " ${MPI_SEEK_PATH}
             echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
             echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
             echo "or specify a fortran 90 compiler using FC=<compiler>"
@@ -7834,8 +7843,8 @@ echo "$as_me: error: unable to find f90 modules extension" >&2;}
   fi
   # Determine case (upper or lower) of F90 module files.
 
-{ echo "$as_me:$LINENO: checking fortran 90 module file case" >&5
-echo $ECHO_N "checking fortran 90 module file case... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking fortran 90 module file suffix and case" >&5
+echo $ECHO_N "checking fortran 90 module file suffix and case... $ECHO_C" >&6; }
 if test "${ax_cv_f90_modulecase+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7850,26 +7859,28 @@ EOF
 # SGI and absoft compilers generates module name in upper case!
 testname="conftest"
 modcase="lower"
-if $F90 -c conftest.f > conftest.out 2>&1 ; then
+echo "KDDKDD CASE 1" ${FC}
+if ${FC} -c conftest.f > conftest.out 2>&1 ; then
     FCMODSUFFIX=`ls conftest* | grep -v conftest.f | grep -v conftest.o`
-    FCMODSUFFIX=`echo "$FCMODSUFFIX" | sed -e 's/conftest\.//g'`
-    if test -z "$FCMODSUFFIX" ; then
+    echo "KDDKDD CASE 2" ${FCMODSUFFIX}
+    FCMODSUFFIX=`echo "${FCMODSUFFIX}" | sed -e 's/conftest\.//g'`
+    if test -z "${FCMODSUFFIX}" ; then
 	FCMODSUFFIX=`ls CONFTEST* 2>/dev/null \
 		| grep -v CONFTEST.f | grep -v CONFTEST.o`
-        FCMODSUFFIX=`echo "$FCMODSUFFIX" | sed -e 's/CONFTEST\.//g'`
-	if test -n "$FCMODSUFFIX" ; then
+        FCMODSUFFIX=`echo "${FCMODSUFFIX}" | sed -e 's/CONFTEST\.//g'`
+	if test -n "${FCMODSUFFIX}" ; then
 	    testname="CONFTEST"
 	    modcase="upper"
 	fi
     fi
-    if test -z "$FCMODSUFFIX" ; then
+    if test -z "${FCMODSUFFIX}" ; then
         { echo "$as_me:$LINENO: result: unknown" >&5
 echo "${ECHO_T}unknown" >&6; }
 	# Use mod if we can't figure it out
 	FCMODSUFFIX="mod"
     else
-        { echo "$as_me:$LINENO: result: $FCMODSUFFIX" >&5
-echo "${ECHO_T}$FCMODSUFFIX" >&6; }
+        { echo "$as_me:$LINENO: result: ${FCMODSUFFIX}" >&5
+echo "${ECHO_T}${FCMODSUFFIX}" >&6; }
     fi
 else
     { echo "$as_me:$LINENO: result: unknown" >&5
@@ -7878,7 +7889,7 @@ fi
 #AC_SUBST(FCMODSUFFIX)
 { echo "$as_me:$LINENO: checking for case of module names" >&5
 echo $ECHO_N "checking for case of module names... $ECHO_C" >&6; }
-if test "$modcase" = "lower" ; then
+if test "${modcase}" = "lower" ; then
     { echo "$as_me:$LINENO: result: lower" >&5
 echo "${ECHO_T}lower" >&6; }
     ax_cv_f90_modulecase="lower"
@@ -7921,6 +7932,7 @@ wk_grep_f90_Lahey=`grep 'Lahey' conftest.log | head -1`
 wk_grep_f90_PGI=`grep 'pgf' conftest.log | head -1`
 wk_grep_f90_G95=`grep -i 'g95' conftest.log | grep -i 'gcc' | head -1`
 wk_grep_f90_GFORTRAN=`grep -i 'GNU Fortran' conftest.log | head -1`
+wk_grep_f90_Absoft=`grep -i 'Absoft' conftest.log | head -1`
 
 if test -n "$wk_grep_f90_NAG"; then
   wk_cv_prog_f90_type="NAG"
@@ -7960,6 +7972,9 @@ elif test -n "$wk_grep_f90_GFORTRAN"; then
   wk_cv_prog_f90_version_string=$wk_grep_f90_GFORTRAN
   wk_cv_prog_f90_version=`echo $wk_cv_prog_f90_version_string | sed -e 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/'`
   wk_cv_prog_f90_major_version=`echo $wk_cv_prog_f90_version | sed -e 's/\([0-9][0-9]*\)\..*/\1/'`
+elif test -n "$wk_grep_f90_Absoft"; then
+  wk_cv_prog_f90_type="Absoft"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Absoft
 else
   wk_cv_prog_f90_type="unknown"
   wk_cv_prog_f90_version_string="unknown"
@@ -8027,6 +8042,14 @@ FC_MODNAME_Q='\$(1:.o=.mod)'
     FCFLAGS="-DFUJITSU ${FCFLAGS}"
     CFLAGS="-DFUJITSU ${CFLAGS}"
   fi
+   if test "X$FC_VENDOR" == "XNAG"; then
+  NAG_F90_COMPILER_TRUE=
+  NAG_F90_COMPILER_FALSE='#'
+else
+  NAG_F90_COMPILER_TRUE='#'
+  NAG_F90_COMPILER_FALSE=
+fi
+
 fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
@@ -8636,6 +8659,13 @@ if test -z "${F90_MODULE_LOWERCASE_TRUE}" && test -z "${F90_MODULE_LOWERCASE_FAL
   { { echo "$as_me:$LINENO: error: conditional \"F90_MODULE_LOWERCASE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"F90_MODULE_LOWERCASE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NAG_F90_COMPILER_TRUE}" && test -z "${NAG_F90_COMPILER_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NAG_F90_COMPILER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NAG_F90_COMPILER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9371,12 +9401,14 @@ FC_VERSION!$FC_VERSION$ac_delim
 FC_MAJOR_VERSION!$FC_MAJOR_VERSION$ac_delim
 FC_MODNAME!$FC_MODNAME$ac_delim
 FC_MODNAME_Q!$FC_MODNAME_Q$ac_delim
+NAG_F90_COMPILER_TRUE!$NAG_F90_COMPILER_TRUE$ac_delim
+NAG_F90_COMPILER_FALSE!$NAG_F90_COMPILER_FALSE$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
