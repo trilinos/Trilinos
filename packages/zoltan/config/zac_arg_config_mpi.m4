@@ -160,70 +160,75 @@ if test X${SEEK_MPI_COMPILERS} = Xyes; then
     fi
   fi
 
-  if test "X$ac_cv_use_fortran" = "Xyes"; then
-    dnl Find a Fortran 77 MPI compiler if MPI_F77 is not already defined
-  
-    if test -z "${MPI_F77}"; then
-      MPI_F77_CANDIDATE=mpif77
-      if test -n "${F77}"; then
-        MPI_F77_CANDIDATE=${F77}
-      fi
-  
-      AC_PATH_PROG(MPI_F77, ${MPI_F77_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
-  
-      if test "${MPI_F77}" != "notFound" ; then
-        F77=${MPI_F77}
-      else
-        echo "-----"
-        echo "Cannot find MPI Fortan 77 compiler."
-        echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
-        echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
-        echo "or specify a fortran 77 compiler using F77=<compiler>"
-        echo "-----"
-        AC_MSG_ERROR([MPI C compiler not found.])
-      fi
-    fi
-  fi
+#  if test "X$ac_cv_use_fortran" = "Xyes"; then
+#    dnl Find a Fortran 77 MPI compiler if MPI_F77 is not already defined
+#  
+#    if test -z "${MPI_F77}"; then
+#      MPI_F77_CANDIDATE=mpif77
+#      if test -n "${F77}"; then
+#        MPI_F77_CANDIDATE=${F77}
+#      fi
+#  
+#      AC_PATH_PROG(MPI_F77, ${MPI_F77_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
+#  
+#      if test "${MPI_F77}" != "notFound" ; then
+#        F77=${MPI_F77}
+#      else
+#        echo "-----"
+#        echo "Cannot find MPI Fortan 77 compiler."
+#        echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
+#        echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
+#        echo "or specify a fortran 77 compiler using F77=<compiler>"
+#        echo "-----"
+#        AC_MSG_ERROR([MPI C compiler not found.])
+#      fi
+#    fi
+#  fi
 
   if test "X$ac_cv_use_fortran90" = "Xyes"; then
     dnl Find a Fortran 90 MPI compiler if MPI_F90 is not already defined
   
     if test -z "${MPI_FC}"; then
 
-      MPI_FC_CANDIDATE=""
-    
-      if test -n "${F90}"; then
-        MPI_FC_CANDIDATE=${F90}
-      elif test -n "${FTN}"; then
-        MPI_FC_CANDIDATE=${FTN}
-      elif test -n "${FC}"; then
-        MPI_FC_CANDIDATE=${FC}
-      fi
+      if test -f "${FC}"; then
 
-      if test -n "${MPI_FC_CANDIDATE}" && test -f ${MPI_FC_CANDIDATE} ; then
-        MPI_FC=${MPI_FC_CANDIDATE}
+        MPI_FC=${FC}
+
       else
-        if test -z "${MPI_FC_CANDIDATE}"; then
-          MPI_FC_CANDIDATE=mpif90
+        MPI_FC_CANDIDATE=""
+    
+        if test -n "${FC}"; then
+          MPI_FC_CANDIDATE=${FC}
+        elif test -n "${FTN}"; then
+          MPI_FC_CANDIDATE=${FTN}
+        elif test -n "${F90}"; then
+          MPI_FC_CANDIDATE=${F90}
         fi
 
-        AC_PATH_PROG(MPI_FC, ${MPI_FC_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
-
-        if test "${MPI_FC}" != "notFound" ; then
-          FC=${MPI_FC}
+        if test -n "${MPI_FC_CANDIDATE}" && test -f ${MPI_FC_CANDIDATE} ; then
+          MPI_FC=${MPI_FC_CANDIDATE}
         else
-          echo "-----"
-          echo "Cannot find MPI Fortan 90 compiler."
-          echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
-          echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
-          echo "or specify a fortran 90 compiler using FC=<compiler>"
-          echo "-----"
-          AC_MSG_ERROR([MPI C compiler not found.])
+          if test -z "${MPI_FC_CANDIDATE}"; then
+            MPI_FC_CANDIDATE=mpif90
+          fi
+
+          AC_PATH_PROG(MPI_FC, ${MPI_FC_CANDIDATE}, [notFound], [PATH = ${MPI_SEEK_PATH}])
+
+          if test "${MPI_FC}" != "notFound" ; then
+            FC=${MPI_FC}
+          else
+            echo "-----"
+            echo "Cannot find MPI Fortan 90 compiler."
+            echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
+            echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
+            echo "or specify a fortran 90 compiler using FC=<compiler>"
+            echo "-----"
+            AC_MSG_ERROR([MPI C compiler not found.])
+          fi
         fi
       fi
     fi
   fi
-
 fi
 
 #AC_ARG_WITH(mpi-include,
