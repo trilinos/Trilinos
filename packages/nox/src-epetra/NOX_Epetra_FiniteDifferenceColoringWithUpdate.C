@@ -20,6 +20,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
+  use_update(false),
   colorMap_(colorMap),
   updateColorMap_(Teuchos::null)
 {
@@ -35,6 +36,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
+  use_update(false),
   colorMap_(colorMap),
   updateColorMap_(Teuchos::null)
 {
@@ -50,6 +52,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
+  use_update(false),
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -61,11 +64,11 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       const NOX::Epetra::Vector& initialGuess_, 
       const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
       const Teuchos::RCP<Epetra_MapColoring>& colorMap,
-      //      const Teuchos::RCP<Epetra_CrsGraph>& updaterawGraph,
       const Teuchos::RCP<Epetra_MapColoring>& updatecolorMap,
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
+  use_update(false),
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -93,12 +96,13 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
     throw "NOX Error";
   }
 
-  if(jacobianComputed && updateColorMap_!=Teuchos::null){
-    //if(!x.Comm().MyPID()) printf("CMS: Using Update Color Map...\n");
+  if(jacobianComputed && use_update){
+    //    if(!x.Comm().MyPID()) printf("CMS: Using Update Color Map\n");
+
     rv=differenceProbe(x,*testMatrix->jacobian,*updateColorMap_);
   }
   else{
-    //if(!x.Comm().MyPID()) printf("CMS: Using Full Color Map...\n");
+    //    if(!x.Comm().MyPID()) printf("CMS: Using Full Color Map...\n");
     rv=differenceProbe(x,*testMatrix->jacobian,*colorMap_);
     jacobianComputed=rv;
   }

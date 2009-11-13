@@ -138,6 +138,7 @@ protected:
   bool differenceProbe(const Epetra_Vector& x, Epetra_CrsMatrix& Jac,const Epetra_MapColoring &colors);
 
   bool jacobianComputed;
+  bool use_update;
 
   // These should be COLUMN colorings, ergo, no import should be needed
   const Teuchos::RCP<Epetra_MapColoring>& colorMap_;
