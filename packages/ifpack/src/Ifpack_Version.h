@@ -30,6 +30,6 @@
 #include "Ifpack_ConfigDefs.h"
 
 string Ifpack_Version() { 
-  return("Ifpack Version 3.3d -- 06-Sept-2007"); 
+  return("Ifpack Version 3.5d -- 13-Oct-2009"); 
 }
 
