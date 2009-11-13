@@ -124,6 +124,7 @@
           <Parameter name="Orthogonalization" type="string" value="DGKS"/>
           <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
           <Parameter name="Output Frequency" type="int" value="-1"/>
+          <Parameter name="Output Style" type="int" value="0"/>
           <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544990,count=4}   [unused]"/>
           <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
           <Parameter name="Timer Label" type="string" value="Belos"/>
@@ -143,6 +144,7 @@
           <Parameter name="Orthogonalization" type="string" value="DGKS"/>
           <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
           <Parameter name="Output Frequency" type="int" value="-1"/>
+          <Parameter name="Output Style" type="int" value="0"/>
           <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544730,count=4}   [unused]"/>
           <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
           <Parameter name="Timer Label" type="string" value="Belos"/>
@@ -161,6 +163,7 @@
           <Parameter name="Orthogonalization" type="string" value="DGKS"/>
           <Parameter name="Orthogonalization Constant" type="double" value="-1"/>
           <Parameter name="Output Frequency" type="int" value="-1"/>
+          <Parameter name="Output Style" type="int" value="0"/>
           <Parameter name="Output Stream" type="any" value="Teuchos::RCP&lt;std::ostream>{ptr=0x53b820,node=0x544860,count=4}   [unused]"/>
           <Parameter name="Show Maximum Residual Norm Only" type="bool" value="false"/>
           <Parameter name="Timer Label" type="string" value="Belos"/>

@@ -110,6 +110,7 @@
       Orthogonalization : string = DGKS
       Orthogonalization Constant : double = -1
       Output Frequency : int = -1
+      Output Style : int = 0
       Output Stream : Teuchos::RCP<std::ostream> = Teuchos::RCP<std::ostream>{ptr=0x53b820,node=0x544990,count=4}
       Show Maximum Residual Norm Only : bool = 0
       Timer Label : string = Belos
@@ -128,6 +129,7 @@
       Orthogonalization : string = DGKS
       Orthogonalization Constant : double = -1
       Output Frequency : int = -1
+      Output Style : int = 0
       Output Stream : Teuchos::RCP<std::ostream> = Teuchos::RCP<std::ostream>{ptr=0x53b820,node=0x544730,count=4}
       Show Maximum Residual Norm Only : bool = 0
       Timer Label : string = Belos
@@ -145,6 +147,7 @@
       Orthogonalization : string = DGKS
       Orthogonalization Constant : double = -1
       Output Frequency : int = -1
+      Output Style : int = 0
       Output Stream : Teuchos::RCP<std::ostream> = Teuchos::RCP<std::ostream>{ptr=0x53b820,node=0x544860,count=4}
       Show Maximum Residual Norm Only : bool = 0
       Timer Label : string = Belos

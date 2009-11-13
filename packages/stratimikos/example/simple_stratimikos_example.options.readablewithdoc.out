@@ -366,6 +366,8 @@
       Output Frequency : int = -1
        # How often convergence information should be outputted
        # to the output stream.
+      Output Style : int = 0
+       # Option of General (0) or Brief (1) style of output
       Output Stream : Teuchos::RCP<std::ostream> = Teuchos::RCP<std::ostream>{ptr=0x53b820,node=0x544990,count=4}
        # A reference-counted pointer to the output stream where all
        # solver output is sent.
@@ -413,6 +415,8 @@
       Output Frequency : int = -1
        # How often convergence information should be outputted
        # to the output stream.
+      Output Style : int = 0
+       # Option of General (0) or Brief (1) style of output
       Output Stream : Teuchos::RCP<std::ostream> = Teuchos::RCP<std::ostream>{ptr=0x53b820,node=0x544730,count=4}
        # A reference-counted pointer to the output stream where all
        # solver output is sent.
@@ -457,6 +461,8 @@
       Output Frequency : int = -1
        # How often convergence information should be outputted
        # to the output stream.
+      Output Style : int = 0
+       # Option of General (0) or Brief (1) style of output
       Output Stream : Teuchos::RCP<std::ostream> = Teuchos::RCP<std::ostream>{ptr=0x53b820,node=0x544860,count=4}
        # A reference-counted pointer to the output stream where all
        # solver output is sent.
