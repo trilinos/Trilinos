@@ -32,7 +32,7 @@
 #include "Trilinos_Util.h"
 
 	string Triutils_Version() { 
-		return("Triutils Version 1.4d - 09/06/2007"); 
+		return("Triutils Version 1.5d - 11/13/2009"); 
 	}
 
 #endif // TRILINOS_UTIL_VERSION_H
