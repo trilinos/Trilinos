@@ -49,6 +49,17 @@
 #include "NOX_Solver_Generic.H"	       // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
+#include "LOCA_StatusTest_Abstract.H"  // for LOCA::StatusTest::Abstract
+
+// taken fron /packages/isorropia/src/
+#ifndef __deprecated
+#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+#define __deprecated  __attribute__((__deprecated__))
+#else
+#define __deprecated
+#endif /* __GNUC__ */
+#endif /* __deprecated */
+
 
 // forward declarations
 namespace LOCA {
@@ -91,21 +102,42 @@ namespace LOCA {
 
   public:
 
-    //! Constructor
+    //! Constructor with LOCA::StatusTest
     Stepper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	    const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+            const Teuchos::RCP<LOCA::StatusTest::Abstract>& lt,
+	    const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
 	    const Teuchos::RCP<Teuchos::ParameterList>& p);
+
+    //! Obsolete constructor without LOCA::StatusTest.
+    //! @deprecated Use the constructor with LOCA::StatusTest instead.
+//    __deprecated // TODO mark as deprecated as soon as all tests are implemented
+    Stepper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+            const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+            const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Destructor
     virtual ~Stepper();
 
-    //! Reset the Stepper to start a new continuation run
+    //! Reset the Stepper to start a new continuation run.
+    //! Version with LOCA::StatusTest
     virtual bool 
     reset(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	  const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+          const Teuchos::RCP<LOCA::StatusTest::Abstract>& lt,
+	  const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
 	  const Teuchos::RCP<Teuchos::ParameterList>& p);
+
+    //! Reset the Stepper to start a new continuation run.
+    //! Obsolete version without LOCA::StatusTest.
+    //! @deprecated Use reset() with LOCA::StatusTest instead.
+//    __deprecated // TODO mark as deprecated as soon as all tests are implemented
+    virtual bool
+    reset(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+          const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+          const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Return the current solution group.
     virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
@@ -133,7 +165,7 @@ namespace LOCA {
 
   protected:
 
-    //! Intialize iterator
+    //! Initialize iterator
     virtual LOCA::Abstract::Iterator::IteratorStatus start();
 
     //! Finalize iterator
@@ -152,9 +184,18 @@ namespace LOCA {
     virtual LOCA::Abstract::Iterator::StepStatus
     postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
-    //! Check stopping criteria
+    //! Wrapper method for stopping criteria checks
     virtual LOCA::Abstract::Iterator::IteratorStatus
     stop(LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+    //! Check stopping criteria using LOCA::StatusTest.
+    LOCA::Abstract::Iterator::IteratorStatus
+    stopLocaStatus(LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+    //! Check stopping criteria.
+    //! Deprecated in Nov 2009 by the introduction of LOCA::StatusTest.
+    LOCA::Abstract::Iterator::IteratorStatus
+    stopDeprecated(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Builds a constrained group is specified through parameter lists
     Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
@@ -189,6 +230,15 @@ namespace LOCA {
     //! Private to prohibit copying
     Stepper& operator = (const Stepper&);
 
+    //! The old reset method without LOCA::StatusTest.
+    //! Can be incorporated into the newer reset() method when the old
+    //! reset() method does not have to be provided anymore.
+    virtual bool
+    resetExceptLocaStatusTest(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+                              const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+                              const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+                              const Teuchos::RCP<Teuchos::ParameterList>& p);
+
   protected:
 
     //! Global data
@@ -215,8 +265,11 @@ namespace LOCA {
     //! Pointer to bifurcation group
     Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> bifGroupPtr;
 
-    //! Pointer to the status test.
-    Teuchos::RCP<NOX::StatusTest::Generic> statusTestPtr;
+    //! Pointer to the NOX status test.
+    Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTestPtr;
+
+    //! Pointer to the LOCA status test.
+    Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
     Teuchos::RCP<Teuchos::ParameterList> paramListPtr;
@@ -254,7 +307,7 @@ namespace LOCA {
     //! Current step size (change in the continuation parameter), \f$\Delta \lambda_i \f$.
     double stepSize;
 
-    //! Maximum number of newton iterations per continuation step,\f$ N_{max} \f$. Defaults to 15.
+    //! Maximum number of Newton iterations per continuation step,\f$ N_{max} \f$. Defaults to 15.
     int maxNonlinearSteps;
 
     //! Target parameter value for last step (either maxValue or minValue)

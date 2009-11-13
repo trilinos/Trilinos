@@ -265,7 +265,7 @@ APPEND_SET(SOURCES
   LOCA_Stepper.C
   )
 
-# Status test
+# Nonlinear solver status test
 APPEND_SET(HEADERS
   LOCA_Solver_Wrapper.H
   LOCA_StatusTest_Wrapper.H
@@ -273,6 +273,20 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   LOCA_Solver_Wrapper.C
   LOCA_StatusTest_Wrapper.C
+  )
+  
+# Continuation status test
+APPEND_SET(HEADERS
+  LOCA_StatusTest_Abstract.H
+  LOCA_StatusTest_Factory.H
+  LOCA_StatusTest_Combo.H
+  LOCA_StatusTest_MaxIters.H
+  )
+APPEND_SET(SOURCES
+  LOCA_StatusTest_Abstract.C
+  LOCA_StatusTest_Factory.C
+  LOCA_StatusTest_Combo.C
+  LOCA_StatusTest_MaxIters.C
   )
 
 # Factory

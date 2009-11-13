@@ -63,8 +63,9 @@
 LOCA::Stepper::Stepper(
                      const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-		     const Teuchos::RCP<Teuchos::ParameterList>& p) :
+	             const Teuchos::RCP<LOCA::StatusTest::Abstract>& lt,
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+		     const Teuchos::RCP<Teuchos::ParameterList>& p ) :
   LOCA::Abstract::Iterator(),
   globalData(),
   parsedParams(),
@@ -74,7 +75,8 @@ LOCA::Stepper::Stepper(
   eigensolver(),
   saveEigenData(),
   bifGroupPtr(),
-  statusTestPtr(),
+  noxStatusTestPtr(),
+  locaStatusTestPtr(),
   paramListPtr(),
   stepperList(),
   solverPtr(),
@@ -97,7 +99,49 @@ LOCA::Stepper::Stepper(
   calcEigenvalues(false),
   return_failed_on_max_steps(true)
 {
-  reset(global_data, initialGuess, t, p);
+  reset(global_data, initialGuess, lt, nt, p );
+}
+
+// Deprecated since Nov 2009
+LOCA::Stepper::Stepper(
+                     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+                     const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+                     const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+                     const Teuchos::RCP<Teuchos::ParameterList>& p) :
+  LOCA::Abstract::Iterator(),
+  globalData(),
+  parsedParams(),
+  predictor(),
+  curGroupPtr(),
+  prevGroupPtr(),
+  eigensolver(),
+  saveEigenData(),
+  bifGroupPtr(),
+  noxStatusTestPtr(),
+  locaStatusTestPtr(),
+  paramListPtr(),
+  stepperList(),
+  solverPtr(),
+  curPredictorPtr(),
+  prevPredictorPtr(),
+  stepSizeStrategyPtr(),
+  conParamName(),
+  conParamIDs(1),
+  startValue(0.0),
+  maxValue(0.0),
+  minValue(0.0),
+  stepSize(0.0),
+  maxNonlinearSteps(15),
+  targetValue(0.0),
+  isTargetStep(false),
+  doTangentFactorScaling(false),
+  tangentFactor(1.0),
+  minTangentFactor(0.1),
+  tangentFactorExponent(1.0),
+  calcEigenvalues(false),
+  return_failed_on_max_steps(true)
+{
+  reset(global_data, initialGuess, nt, p );
 }
 
 LOCA::Stepper::~Stepper()
@@ -106,14 +150,39 @@ LOCA::Stepper::~Stepper()
 
 bool
 LOCA::Stepper::reset(
+                    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+                    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+                    const Teuchos::RCP<LOCA::StatusTest::Abstract>& lt,
+                    const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+                    const Teuchos::RCP<Teuchos::ParameterList>& p )
+{
+  locaStatusTestPtr = lt;
+  // reset the rest
+  return resetExceptLocaStatusTest( global_data, initialGuess, nt, p );
+}
+
+// Deprecated since Nov 2009
+bool
+LOCA::Stepper::reset(
+                    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+                    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+                    const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+                    const Teuchos::RCP<Teuchos::ParameterList>& p )
+{
+  return resetExceptLocaStatusTest( global_data, initialGuess, nt, p );
+}
+
+
+bool
+LOCA::Stepper::resetExceptLocaStatusTest(
 		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-		    const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-		    const Teuchos::RCP<Teuchos::ParameterList>& p)
+		    const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+		    const Teuchos::RCP<Teuchos::ParameterList>& p )
 {
   globalData = global_data;
   paramListPtr = p;
-  statusTestPtr = t;
+  noxStatusTestPtr = nt;
 
   // Parse parameter list
   parsedParams = Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
@@ -242,7 +311,7 @@ LOCA::Stepper::reset(
   curGroupPtr->setPrevX(curGroupPtr->getX());
 
   // Create solver using initial conditions
-  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 				       parsedParams->getSublist("NOX"));
 
   printInitializationInfo();
@@ -332,7 +401,7 @@ LOCA::Stepper::start() {
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(curGroupPtr->getPredictorTangent()[0].clone(NOX::ShapeCopy));
 
   // Create new solver using new continuation groups and combo status test
-  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 				       parsedParams->getSublist("NOX"));
 
   return LOCA::Abstract::Iterator::NotFinished;
@@ -420,7 +489,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     printStartStep();
 
     // Create new solver
-    solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+    solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 					 parsedParams->getSublist("NOX"));
 
     // Solve step
@@ -479,7 +548,7 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   curGroupPtr->preProcessContinuationStep(stepStatus);
 
   // Reset solver to compute new solution
-  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 				       parsedParams->getSublist("NOX"));
 
   return stepStatus;
@@ -572,14 +641,59 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
+  if ( locaStatusTestPtr.is_valid_ptr() && !locaStatusTestPtr.is_null() ) {
+    return stopLocaStatus( stepStatus );
+  } else
+    return stopDeprecated( stepStatus );
+}
 
+LOCA::Abstract::Iterator::IteratorStatus
+LOCA::Stepper::stopLocaStatus(LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  // FIXME Remove this.
+  LOCA::StatusTest::CheckType checkType = LOCA::StatusTest::Complete;
+
+  // check the LOCA stepper test
+  LOCA::StatusTest::StatusType status = locaStatusTestPtr->checkStatus(*this,checkType);
+
+  if ( status == LOCA::StatusTest::NotFinished &&
+       globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration) ) {
+    globalData->locaUtils->out() << NOX::Utils::fill(72) << "\n";
+    globalData->locaUtils->out() << "-- LOCA Status Test Results --\n";
+    locaStatusTestPtr->print(globalData->locaUtils->out());
+    globalData->locaUtils->out() << NOX::Utils::fill(72) << "\n";
+  }
+
+  if ( status != LOCA::StatusTest::NotFinished ) { // Finished or Failed
+    globalData->locaUtils->out() << NOX::Utils::fill(72) << "\n";
+    globalData->locaUtils->out() << "-- Final LOCA Status Test Results --\n";
+    locaStatusTestPtr->print(globalData->locaUtils->out());
+    globalData->locaUtils->out() << NOX::Utils::fill(72) << "\n";
+  }
+
+  // translate LOCA::StatusTest::StatusType to LOCA::Abstract::Iterator::IteratorStatus
+  switch (status) {
+  case( LOCA::StatusTest::Finished ):
+      return LOCA::Abstract::Iterator::Finished;
+  case( LOCA::StatusTest::Failed ):
+      return LOCA::Abstract::Iterator::Failed;
+  case( LOCA::StatusTest::NotFinished ):
+  case( LOCA::StatusTest::Unevaluated ): // TODO This setting may be debatable.
+  default:
+    return LOCA::Abstract::Iterator::NotFinished;
+  }
+}
+
+LOCA::Abstract::Iterator::IteratorStatus
+LOCA::Stepper::stopDeprecated(LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
   // Check to see if max number of steps has been reached
   if (LOCA::Abstract::Iterator::numTotalSteps
         >= LOCA::Abstract::Iterator::maxSteps) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
       globalData->locaUtils->out() 
-	<< "\n\tContinuation run stopping: reached maximum number of steps " 
-	<< LOCA::Abstract::Iterator::maxSteps << std::endl;
+        << "\n\tContinuation run stopping: reached maximum number of steps "
+        << LOCA::Abstract::Iterator::maxSteps << std::endl;
     }
     if (return_failed_on_max_steps)
       return LOCA::Abstract::Iterator::Failed;
@@ -596,18 +710,18 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
     // See if we went past bounds for parameter
     if ( value >= maxValue*(1.0 - 1.0e-15) && paramStep > 0 ) {
       if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-	 globalData->locaUtils->out() 
-	   << "\n\tContinuation run stopping: parameter reached bound of " 
-	   << globalData->locaUtils->sciformat(maxValue) << std::endl;
+         globalData->locaUtils->out()
+           << "\n\tContinuation run stopping: parameter reached bound of "
+           << globalData->locaUtils->sciformat(maxValue) << std::endl;
       }
       targetValue = maxValue;
       return LOCA::Abstract::Iterator::Finished;
     }
     if ( value <= minValue*(1.0 + 1.0e-15) && paramStep < 0 ) {
       if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-	globalData->locaUtils->out() 
-	  << "\n\tContinuation run stopping: parameter reached bound of " 
-	  << globalData->locaUtils->sciformat(minValue) << std::endl;
+        globalData->locaUtils->out()
+          << "\n\tContinuation run stopping: parameter reached bound of "
+          << globalData->locaUtils->sciformat(minValue) << std::endl;
       }
       targetValue = minValue;
       return LOCA::Abstract::Iterator::Finished;
@@ -618,15 +732,15 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
       // Check to see if continuation parameter is within threshold of bound
       if (withinThreshold()) {
-	if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
-	  globalData->locaUtils->out() 
-	    << "\n\tContinuation run stopping: parameter stepped to bound" 
-	    << std::endl;
-	}
-	return LOCA::Abstract::Iterator::Finished;
+        if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
+          globalData->locaUtils->out()
+            << "\n\tContinuation run stopping: parameter stepped to bound"
+            << std::endl;
+        }
+        return LOCA::Abstract::Iterator::Finished;
       }
       else
-	return LOCA::Abstract::Iterator::NotFinished;
+        return LOCA::Abstract::Iterator::NotFinished;
     }
   }
   else if (isLastIteration())  // Failed step did not reach bounds as predicted
