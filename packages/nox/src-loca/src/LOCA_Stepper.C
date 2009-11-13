@@ -276,7 +276,9 @@ LOCA::Stepper::resetExceptLocaStatusTest(
   tangentFactorExponent =
     stepperList->get("Tangent Factor Exponent",1.0);
   calcEigenvalues = stepperList->get("Compute Eigenvalues",false);
-  return_failed_on_max_steps = 
+
+  // TODO Deprecated as moved to LOCA::StatusTest::MaxIters
+  return_failed_on_max_steps =
     stepperList->get("Return Failed on Reaching Max Steps", true);
 
   // Make a copy of the parameter list, change continuation method to
@@ -320,6 +322,17 @@ LOCA::Stepper::resetExceptLocaStatusTest(
     paramListPtr->print(globalData->locaUtils->out());
 
   return true;
+}
+
+bool
+LOCA::Stepper::eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigensolverList ) {
+   // overwrite the eigensolver parameter list
+   const Teuchos::RCP<Teuchos::ParameterList> & eigenParams = parsedParams->getSublist("Eigensolver");
+   *eigenParams = *newEigensolverList;
+   // recreate the eigensolver
+   eigensolver = globalData->locaFactory->createEigensolverStrategy( parsedParams,
+                                                                     eigenParams  );
+   return true;
 }
 
 LOCA::Abstract::Iterator::IteratorStatus

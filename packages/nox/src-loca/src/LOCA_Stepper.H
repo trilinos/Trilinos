@@ -139,6 +139,10 @@ namespace LOCA {
           const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
           const Teuchos::RCP<Teuchos::ParameterList>& p);
 
+    //! Replaces the eigensolver parameter list.
+    bool
+    eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigensolverList );
+
     //! Return the current solution group.
     virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
     getSolutionGroup() const;
