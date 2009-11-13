@@ -34,13 +34,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(CUDA_HEADERS
     Kokkos_CUDA_util_inline_runtime.h
     Kokkos_CUDA_util_sharedmem.cuh
-    Kokkos_CUDANode.cuh
-    Kokkos_CUDANode.hpp
-    Kokkos_CUDANodeImpl.hpp
+    Kokkos_ThrustGPUNode.cuh
+    Kokkos_ThrustGPUNode.hpp
     Kokkos_CUDANodeUtils.hpp
 )
 APPEND_SET(CUDA_SOURCES
-    Kokkos_CUDANode.cpp
+    Kokkos_ThrustGPUNode.cpp
     Kokkos_CUDANodeUtils.cpp
 )
 
@@ -72,8 +71,8 @@ APPEND_SET(SOURCES
     Kokkos_NodeAPIVersion.cpp
   )
 
-ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
-IF (Kokkos_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
+IF (Kokkos_ENABLE_Thrust)
   APPEND_SET(HEADERS ${CUDA_HEADERS})
   APPEND_SET(SOURCES ${CUDA_SOURCES})
 ENDIF()

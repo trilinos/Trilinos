@@ -1,7 +1,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 
-ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
-IF (Kokkos_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
+IF (Kokkos_ENABLE_Thrust)
   set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
   set(source_files TestOps.cu)
   CUDA_COMPILE(CUDA_FILES TestOps.cu)

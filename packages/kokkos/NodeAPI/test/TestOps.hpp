@@ -20,7 +20,7 @@ struct NullOp {
   static inline KERNEL_PREFIX int generate(int i) {return 0;}
 };
 
-template <class Scalar>
+template <typename Scalar>
 struct SumOp {
   typedef Scalar ReductionType;
 

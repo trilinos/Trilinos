@@ -115,8 +115,4 @@ class CUDANode {
 
 } // namespace Kokkos
 
-#ifndef KOKKOS_CUDANODE_NO_IMPL
-#include "Kokkos_CUDANodeImpl.hpp"
-#endif
-
 #endif

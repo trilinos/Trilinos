@@ -14,8 +14,8 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#ifdef HAVE_KOKKOS_CUDA
-#include "Kokkos_CUDANode.hpp"
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA)
+#include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
 #define TOCBUF(arr) Teuchos::arcp_reinterpret_cast<const char>(arr)
@@ -80,20 +80,20 @@ namespace {
   }
 #endif
 
-#ifdef HAVE_KOKKOS_CUDA
-  using Kokkos::CUDANode;
+#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA)
+  using Kokkos::ThrustGPUNode;
   int cuda_dev = 0;
   int cuda_verb = 0;
-  RCP<CUDANode> cudanode;
+  RCP<ThrustGPUNode> thrustnode;
   template <>
-  RCP<CUDANode> getNode<CUDANode>() {
-    if (cudanode == null) {
+  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+    if (thrustnode == null) {
       ParameterList pl; 
       pl.set("Device Number",cuda_dev);
       pl.set("Verbosity",cuda_verb);
-      cudanode = rcp(new CUDANode(pl));
+      thrustnode = rcp(new ThrustGPUNode(pl));
     }
-    return cudanode;
+    return thrustnode;
   }
 #endif
 
@@ -138,7 +138,7 @@ namespace {
 #endif
 #ifdef HAVE_KOKKOS_CUDA
     out << "Initializing CUDA device " << cuda_dev << std::endl;
-    getNode<CUDANode>();
+    getNode<ThrustGPUNode>();
 #endif
     TEST_EQUALITY(0,0);
   }
@@ -240,7 +240,7 @@ namespace {
 
 #ifdef HAVE_KOKKOS_CUDA
 #define CUDA_INSTANT(SCALAR) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( NodeAPI, SumTest, SCALAR, CUDANode )
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( NodeAPI, SumTest, SCALAR, ThrustGPUNode )
 #else
 #define CUDA_INSTANT(SCALAR) 
 #endif
@@ -261,7 +261,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TPINode )
 #endif
 #ifdef HAVE_KOKKOS_CUDA
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, CUDANode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, ThrustGPUNode )
 #endif
 
 }

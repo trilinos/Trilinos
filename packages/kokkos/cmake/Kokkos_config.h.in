@@ -22,6 +22,7 @@
 /* TPL Dependencies */
 #cmakedefine HAVE_KOKKOS_TBB
 #cmakedefine HAVE_KOKKOS_CUDA
+#cmakedefine HAVE_KOKKOS_THRUST
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
