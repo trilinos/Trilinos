@@ -2,9 +2,10 @@
 #define TRILINOSCOUPLINGS_VERSION_H
 
 #include "TrilinosCouplings_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 string TrilinosCouplings_Version() { 
-  return("TrilinosCouplings Version 1.0 - 06/21/2007"); 
+  return("TrilinosCouplings in Trilinos " TRILINOS_VERSION_STRING); 
 }
 
 #endif /* TRILINOSCOUPLINGS_VERSION_H */
