@@ -52,7 +52,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
-  use_update(false),
+  use_update(true),
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -68,7 +68,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
       double beta_, double alpha_):
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
-  use_update(false),
+  use_update(true),
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -97,12 +97,11 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
   }
 
   if(jacobianComputed && use_update){
-    //    if(!x.Comm().MyPID()) printf("CMS: Using Update Color Map\n");
-
+    if(!x.Comm().MyPID()) printf("CMS: Using Update Color Map\n");
     rv=differenceProbe(x,*testMatrix->jacobian,*updateColorMap_);
   }
   else{
-    //    if(!x.Comm().MyPID()) printf("CMS: Using Full Color Map...\n");
+    if(!x.Comm().MyPID()) printf("CMS: Using Full Color Map...\n");
     rv=differenceProbe(x,*testMatrix->jacobian,*colorMap_);
     jacobianComputed=rv;
   }
