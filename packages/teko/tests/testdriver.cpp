@@ -30,6 +30,7 @@
 #include "src/tGraphLaplacian.hpp"
 #include "src/tParallelInverse.hpp"
 #include "src/tExplicitOps.hpp"
+#include "src/tLumping.hpp"
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
 #include "src/Epetra/tInterlacedEpetra.hpp"
@@ -51,7 +52,6 @@ int main(int argc,char * argv[])
    #endif
 
    PB::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm));
-
 
    Teuchos::CommandLineProcessor clp;
 
@@ -95,10 +95,11 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tExplicitOps,tExplicitOps);
    PB_ADD_UNIT_TEST(PB::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
+   PB_ADD_UNIT_TEST(PB::Test::tLumping,Lumping);
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
-      PB_ADD_UNIT_TEST(PB::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
+      // PB_ADD_UNIT_TEST(PB::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
    }
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);

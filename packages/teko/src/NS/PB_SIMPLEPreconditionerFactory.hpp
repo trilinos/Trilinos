@@ -31,6 +31,7 @@ protected:
    Teuchos::RCP<InverseFactory> invVelFactory_;
    Teuchos::RCP<InverseFactory> invPrsFactory_;
    double alpha_;
+   enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
    
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);

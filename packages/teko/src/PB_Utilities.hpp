@@ -341,6 +341,26 @@ BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo);
 //! Figure out if this operator is the zero operator (or null!)
 bool isZeroOp(const LinearOp op);
 
+/** \brief Compute absolute row sum matrix.
+  *
+  * Compute the absolute row sum matrix. That is
+  * a diagonal operator composed of the absolute value of the
+  * row sum.
+  *
+  * \returns A diagonal operator.
+  */
+ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op);
+
+/** \brief Compute inverse of the absolute row sum matrix.
+  *
+  * Compute the inverse of the absolute row sum matrix. That is
+  * a diagonal operator composed of the inverse of the absolute value
+  * of the row sum.
+  *
+  * \returns A diagonal operator.
+  */
+ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op);
+
 /** \brief Compute the lumped version of this matrix.
   *
   * Compute the lumped version of this matrix. That is

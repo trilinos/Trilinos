@@ -16,17 +16,18 @@ namespace NS {
 SIMPLEPreconditionerFactory
    ::SIMPLEPreconditionerFactory(const RCP<InverseFactory> & inverse,
                                  double alpha)
-   : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha)
+   : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha), fInverseType_(Diagonal)
 { }
 
 SIMPLEPreconditionerFactory
    ::SIMPLEPreconditionerFactory(const RCP<InverseFactory> & invVFact,
                                  const RCP<InverseFactory> & invPFact,
                                  double alpha)
-   : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha)
+   : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha), fInverseType_(Diagonal)
 { }
 
 SIMPLEPreconditionerFactory::SIMPLEPreconditionerFactory()
+   : alpha_(1.0), fInverseType_(Diagonal)
 { }
 
 // Use the factory to build the preconditioner (this is where the work goes)
@@ -49,18 +50,20 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp B  = getBlock(1,0,blockOp);
    const LinearOp C  = getBlock(1,1,blockOp);
 
-   // get inverse of diag(F)
-   const LinearOp H = getInvDiagonalOp(F);
+   // get approximation of inv(F) name H
+   LinearOp H = getInvDiagonalOp(F);
+   if(fInverseType_==Diagonal)
+      H = getInvDiagonalOp(F);
+   else if(fInverseType_==Lumped)
+      H = getInvLumpedMatrix(F);
+   else if(fInverseType_==AbsRowSum)
+      H = getAbsRowSumInvMatrix(F);
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
-   PB_DEBUG_EXPR(timer.start(true));
    const LinearOp HBt = explicitMultiply(H,Bt);
    const LinearOp hatS = explicitAdd(C,scale(-1.0,explicitMultiply(B,HBt)));
-   PB_DEBUG_EXPR(timer.stop());
-   PB_DEBUG_MSG("SIMPLEPrecFact::buildPO Schur ConstTime = " << timer.totalElapsedTime(),2);
 
    // build the inverse for F 
-   PB_DEBUG_EXPR(timer.start(true));
    InverseLinearOp invF = state.getInverse("invF");
    if(invF==Teuchos::null) {
       invF = buildInverse(*invVelFactory_,F);
@@ -68,14 +71,9 @@ LinearOp SIMPLEPreconditionerFactory
    } else {
       rebuildInverse(*invVelFactory_,F,invF);
    }
-   PB_DEBUG_EXPR(timer.stop());
-   PB_DEBUG_MSG("SIMPLEPrecFact::buildPO GetInvFTime = " << timer.totalElapsedTime(),2);
 
    // build the approximate Schur complement: This is inefficient! FIXME
-   PB_DEBUG_EXPR(timer.start(true));
    const LinearOp invS = buildInverse(*invPrsFactory_,hatS);
-   PB_DEBUG_EXPR(timer.stop());
-   PB_DEBUG_MSG("SIMPLEPrecFact::buildPO GetInvSTime = " << timer.totalElapsedTime(),2);
 
    std::vector<LinearOp> invDiag(2); // vector storing inverses
 
@@ -119,6 +117,19 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
      invPStr = pl.get<std::string>("Inverse Pressure Type");
    if(pl.isParameter("Alpha"))
      alpha_ = pl.get<double>("Alpha");
+   if(pl.isParameter("Explicit Velocity Inverse Type")) {
+     std::string fInverseStr = pl.get<std::string>("Explicit Velocity Inverse Type");
+     if(fInverseStr=="Diagonal")
+        fInverseType_ = Diagonal;
+     else if(fInverseStr=="Lumped")
+        fInverseType_ = Lumped;
+     else if(fInverseStr=="AbsRowSum")
+        fInverseType_ = AbsRowSum;
+     else if(fInverseStr=="Custom")
+     { TEST_FOR_EXCEPT(true); }
+     else 
+     { TEST_FOR_EXCEPT(true); }
+   }
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;

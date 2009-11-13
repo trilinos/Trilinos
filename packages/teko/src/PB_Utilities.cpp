@@ -391,6 +391,115 @@ bool isZeroOp(const LinearOp op)
    return test!=Teuchos::null;
 }
 
+/** \brief Compute absolute row sum matrix.
+  *
+  * Compute the absolute row sum matrix. That is
+  * a diagonal operator composed of the absolute value of the
+  * row sum.
+  *
+  * \returns A diagonal operator.
+  */
+ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
+{
+   RCP<const Epetra_CrsMatrix> eCrsOp;
+
+   try {
+      // get Epetra_Operator
+      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+
+      // cast it to a CrsMatrix
+      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+   }
+   catch (std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "           OR\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+
+   // extract diagonal
+   const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+   Epetra_Vector & diag = *ptrDiag;
+   
+   // compute absolute value row sum
+   diag.PutScalar(0.0);
+   for(int i=0;i<eCrsOp->NumMyRows();i++) {
+      double * values = 0;
+      int numEntries;
+      eCrsOp->ExtractMyRowView(i,numEntries,values);
+
+      // build abs value row sum
+      for(int j=0;j<numEntries;j++)
+         diag[i] += std::abs(values[j]);
+   }
+
+   // build Thyra diagonal operator
+   return PB::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
+}
+
+/** \brief Compute inverse of the absolute row sum matrix.
+  *
+  * Compute the inverse of the absolute row sum matrix. That is
+  * a diagonal operator composed of the inverse of the absolute value
+  * of the row sum.
+  *
+  * \returns A diagonal operator.
+  */
+ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
+{
+   RCP<const Epetra_CrsMatrix> eCrsOp;
+
+   try {
+      // get Epetra_Operator
+      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+
+      // cast it to a CrsMatrix
+      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+   }
+   catch (std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "           OR\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+
+   // extract diagonal
+   const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+   Epetra_Vector & diag = *ptrDiag;
+   
+   // compute absolute value row sum
+   diag.PutScalar(0.0);
+   for(int i=0;i<eCrsOp->NumMyRows();i++) {
+      double * values = 0;
+      int numEntries;
+      eCrsOp->ExtractMyRowView(i,numEntries,values);
+
+      // build abs value row sum
+      for(int j=0;j<numEntries;j++)
+         diag[i] += std::abs(values[j]);
+   }
+   diag.Reciprocal(diag); // invert entries
+
+   // build Thyra diagonal operator
+   return PB::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSumInv( " + op->getObjectLabel() + " )");
+}
+
 /** \brief Compute the lumped version of this matrix.
   *
   * Compute the lumped version of this matrix. That is
@@ -862,7 +971,7 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    std::string which("LM"); // largest magnitude
 
    // Create the parameter list for the eigensolver
-   verbosity+=Anasazi::TimingDetails;
+   // verbosity+=Anasazi::TimingDetails;
    Teuchos::ParameterList MyPL;
    MyPL.set( "Verbosity", verbosity );
    MyPL.set( "Which", which );
