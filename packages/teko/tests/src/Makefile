@@ -19,7 +19,8 @@ OBJS = tLSCStablePreconditionerFactory.o \
        tParallelInverse.o \
        tSIMPLEPreconditionerFactory.o \
        tExplicitOps.o \
-       tLumping.o
+       tLumping.o \
+       tAbsRowSum.o
 
 PREC = $(OBJS:%.o=%._tmp)
 
