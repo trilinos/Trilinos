@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 gitVersion = "1.6.5.2"
-egVersion = "sierra-20091029"
+egVersion = "0.997"
 
 #
 # General scripting support
@@ -172,6 +172,8 @@ if options.install:
   echoChDir(gitSrcBuildDir)
   echoRunSysCmnd("make install")
   egInstallFile = options.installDir+"/bin/eg"
+  echoRunSysCmnd("cd "+options.installDir+"/share/man" \
+    +" && tar -xzvf "+getBaseDir+"/git-manpages-"+gitVersion+".tar.gz")
   echoRunSysCmnd("cp ../eg."+egVersion+".pl "+egInstallFile)
   echoRunSysCmnd("chmod a+rx "+egInstallFile)
 else:
