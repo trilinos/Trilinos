@@ -37,12 +37,24 @@ template<class T>
 Teuchos::RCP<T>
 Teuchos::rcp( const boost::shared_ptr<T> &sptr )
 {
-  if(sptr.get()) {
+  if (sptr.get()) {
+    // First, see if the RCP is in the shared_ptr deleter object
     const RCPDeleter<T>
       *rcpd = boost::get_deleter<RCPDeleter<T> >(sptr);
-    if(rcpd)
+    if (rcpd) {
       return rcpd->ptr();
-    return rcp(sptr.get(),DeallocBoostSharedPtr<T>(sptr),true);
+    }
+#ifdef TEUCHOS_DEBUG
+    // Second, see if the an RCP node pointing to this type already exists
+    // from being wrapped already from a prior call to this function where the
+    // add_new_RCPNode(...) function could have been called already!.
+    RCPNode* existing_RCPNode = get_existing_RCPNode(sptr.get());
+    if (existing_RCPNode) {
+      return RCP<T>(sptr.get(), RCPNodeHandle(existing_RCPNode, RCP_STRONG, false));
+    }
+#endif
+    // Lastly, we just create a new RCP and RCPNode ...
+    return rcp(sptr.get(), DeallocBoostSharedPtr<T>(sptr), true);
   }
   return null;
 }
@@ -52,12 +64,12 @@ template<class T>
 boost::shared_ptr<T>
 Teuchos::shared_pointer( const RCP<T> &rcp )
 {
-  if(rcp.get()) {
-    const DeallocBoostSharedPtr<T>
-      *dbsp = &*get_optional_dealloc<DeallocBoostSharedPtr<T> >(rcp);
-    if(dbsp)
+  if (nonnull(rcp)) {
+    Ptr<const DeallocBoostSharedPtr<T> >
+      dbsp = get_optional_dealloc<DeallocBoostSharedPtr<T> >(rcp);
+    if (nonnull(dbsp))
       return dbsp->ptr();
-    return boost::shared_ptr<T>(rcp.get(),RCPDeleter<T>(rcp));
+    return boost::shared_ptr<T>(rcp.get(), RCPDeleter<T>(rcp));
   }
   return boost::shared_ptr<T>();
 }

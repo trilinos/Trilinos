@@ -39,8 +39,9 @@ void Teuchos_exit_helper(
 {
   std::ostringstream omsg;
   omsg << file << ":" << line << ": error code = " << error_code;
-  if(msg)
+  if (msg) {
     omsg << ": " << msg;
+  }
   const std::string &omsgstr = omsg.str();
   TestForException_break(omsgstr); // Allows us to set a breakpoint!
 #ifdef HAVE_TEUCHOS_C_EXCEPTIONS

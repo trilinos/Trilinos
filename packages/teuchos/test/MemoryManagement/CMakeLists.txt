@@ -1,10 +1,46 @@
 
 INCLUDE(PackageAddExecutableAndTest)
 
+#
+# The following tests are expressed in this order in order to catch compunding
+# errors.  That is, if the ealier test executables fail, the other test
+# executables are also likely to fail as well.
+#
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
+IF (${PACKAGE_NAME}_ENABLE_Boost)
+  ASSERT_DEFINED(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
+  IF (HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      GetBaseObjVoidPtr_UnitTests
+      SOURCES GetBaseObjVoidPtr_UnitTests.cpp
+        TestClasses.cpp
+        ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+      NUM_MPI_PROCS 1
+      ARGS --teuchos-suppress-startup-banner
+      STANDARD_PASS_OUTPUT
+      )
+  ENDIF()
+ENDIF()
+
+# These RCPNodeHandle tests are pulled out to run first in order to catch
+# problems before running the other memory management tests.
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  RCPNodeHandle_UnitTests
+  SOURCES
+    RCPNodeHandle_UnitTests.cpp
+    TestClasses.cpp
+    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   MemoryManagement_UnitTests
   SOURCES
-    RCPNodeHandle_UnitTests.cpp
     RCP_UnitTests.cpp
     RCP_ForwardDeclUnitTests.cpp
     Ptr_UnitTests.cpp

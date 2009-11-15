@@ -49,6 +49,14 @@ class ExceptionBase : public std::logic_error
 // compile.  STOP DOING USING NAMESPACE BLAH!!!!!!
 
 
+/** \brief Thrown if a duplicate owning RCP is creatd the the same object.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+class DuplicateOwningRCPError : public ExceptionBase
+{public:DuplicateOwningRCPError(const std::string& what_arg) : ExceptionBase(what_arg) {}};
+
+
 /** \brief Null reference error exception class.
  *
  * \ingroup teuchos_mem_mng_grp

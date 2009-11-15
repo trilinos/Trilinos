@@ -59,6 +59,11 @@ namespace Teuchos {
 template<class T> class Ptr;
 
 
+enum ERCPWeakNoDealloc { RCP_WEAK_NO_DEALLOC };
+enum ERCPUndefinedWeakNoDealloc { RCP_UNDEFINED_WEAK_NO_DEALLOC };
+enum ERCPUndefinedWithDealloc { RCP_UNDEFINED_WITH_DEALLOC };
+
+
 /** \brief Smart reference counting pointer class for automatic garbage
   collection.
   
@@ -439,23 +444,6 @@ public:
    */
   RCP( ENull null_arg = null );
 
-  /** \brief Construct from a raw pointer without ownership statically.
-   *
-   * <b>Postconditons:</b><ul>
-   * <li> <tt>this->get() == p</tt>
-   * <li> <tt>this->strength() == RCP_STRONG</tt>
-   * <li> <tt>this->is_vali_ptr() == true</tt>
-   * <li> <tt>this->strong_count() == 1</tt>
-   * <li> <tt>this->weak_count() == 0</tt>
-   * <li> <tt>this->has_ownership() == false</tt>
-   * </ul>
-   *
-   * NOTE: It is recommended that this constructor never be called directly
-   * but only through a type-specific non-member constructor function or at
-   * least through the general non-member <tt>rcp()</tt> function.
-   */
-  explicit RCP( T* p, ENull null_arg );
-
   /** \brief Construct from a raw pointer.
    *
    * Note that this constructor is declared explicit so there is no implicit
@@ -479,7 +467,6 @@ public:
   explicit RCP( T* p, bool has_ownership = true );
 
   /** \brief Construct from a raw pointer and a custom deallocator.
-   * occur.
    *
    * \param p [in] Pointer to the reference-counted object to be wrapped
    *
@@ -841,6 +828,43 @@ private:
 
 public: // Bad bad bad
 
+  // These constructors are put here because we don't want to confuse users
+  // who would otherwise see them.
+
+  /** \brief Construct a non-owning RCP from a raw pointer to a type that *is*
+   * defined.
+   *
+   * This version avoids adding a deallocator but still requires the type to
+   * be defined since it looks up the base object's address when doing RCPNode
+   * tracing.
+   *
+   * NOTE: It is recommended that this constructor never be called directly
+   * but only through a type-specific non-member constructor function or at
+   * least through the general non-member <tt>rcpFromRef()</tt> function.
+   */
+  explicit RCP( T* p, ERCPWeakNoDealloc );
+
+  /** \brief Construct a non-owning RCP from a raw pointer to a type that is
+   * *not* defined.
+   *
+   * This version avoids any type of compile-time queries of the type that
+   * would fail due to the type being undefined.
+   *
+   * NOTE: It is recommended that this constructor never be called directly
+   * but only through a type-specific non-member constructor function or at
+   * least through the general non-member <tt>rcpFromUndefRef()</tt> function.
+   */
+  explicit RCP( T* p, ERCPUndefinedWeakNoDealloc );
+
+  /** \brief Construct from a raw pointer and a custom deallocator for an
+   * undefined type.
+   *
+   * This version avoids any type of compile-time queries of the type that
+   * would fail due to the type being undefined.
+   */
+  template<class Dealloc_T>
+  RCP( T* p, Dealloc_T dealloc, ERCPUndefinedWithDealloc, bool has_ownership = true );
+
 #ifndef DOXYGEN_COMPILE
 
   // WARNING: A general user should *never* call these functions!
@@ -1030,7 +1054,7 @@ private:
 };
 
 
-/** \brief Create a dealocator with an embedded object.
+/** \brief Create a dealocator with an embedded object using delete.
  *
  * \relates EmbeddedObjDealloc
  */
@@ -1040,6 +1064,19 @@ embeddedObjDeallocDelete(const Embedded &embedded, EPrePostDestruction prePostDe
 {
   return EmbeddedObjDealloc<T,Embedded,DeallocDelete<T> >(
     embedded, prePostDestroy,DeallocDelete<T>());
+}
+
+
+/** \brief Create a dealocator with an embedded object using delete [].
+ *
+ * \relates EmbeddedObjDealloc
+ */
+template<class T, class Embedded >
+EmbeddedObjDealloc<T,Embedded,DeallocArrayDelete<T> >
+embeddedObjDeallocArrayDelete(const Embedded &embedded, EPrePostDestruction prePostDestroy)
+{
+  return EmbeddedObjDealloc<T,Embedded,DeallocArrayDelete<T> >(
+    embedded, prePostDestroy,DeallocArrayDelete<T>());
 }
 
 
@@ -1113,15 +1150,56 @@ RCP<T> rcp( T* p, bool owns_mem = true );
  * \relates RCP
  */
 template<class T, class Dealloc_T>
-RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+RCP<T> rcpWithDealloc( T* p, Dealloc_T dealloc, bool owns_mem = true );
 
 
-/** \brief Return a non-owning RCP object from a raw object reference.
+/** \brief Deprecated. */
+template<class T, class Dealloc_T>
+RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem )
+{
+  return rcpWithDealloc(p, dealloc, owns_mem);
+}
+
+
+/** \brief Initialize from a raw pointer with a deallocation policy for an
+ * undefined type.
+ *
+ * \param p [in] Raw C++ pointer that \c this will represent.
+ *
+ * \param dealloc [in] Deallocator policy object (copied by value) that
+ * defines a function <tt>void Dealloc_T::free(T* p)</tt> that will free the
+ * underlying object.
+ *
+ * \relates RCP
+ */
+template<class T, class Dealloc_T>
+RCP<T> rcpWithDeallocUndef( T* p, Dealloc_T dealloc, bool owns_mem = true );
+
+
+/** \brief Return a non-owning weak RCP object from a raw object reference for
+ * a defined type.
+ *
+ * NOTE: When debug mode is turned on, in general, the type must be defined.
+ * If the type is undefined, then the function <tt>rcpFromUndefRef()</tt>
+ * should be called instead.
  *
  * \relates RCP
  */
 template<class T>
 Teuchos::RCP<T> rcpFromRef( T& r );
+
+
+/** \brief Return a non-owning weak RCP object from a raw object reference for
+ * an undefined type.
+ *
+ * NOTE: This version will not be able to use RCPNode tracing to create a weak
+ * reference to an existing RCPNode.  Therefore, you should only use this
+ * version with an undefined type.
+ *
+ * \relates RCP
+ */
+template<class T>
+Teuchos::RCP<T> rcpFromUndefRef( T& r );
 
 
 /* \brief Create an RCP with and also put in an embedded object.

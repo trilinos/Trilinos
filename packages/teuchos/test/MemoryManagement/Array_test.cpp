@@ -281,7 +281,6 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
   }
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-
   {
     out << "\nTest reverse iterators dereferenced out of bounds ...\n";
     TEST_THROW( *(a.rbegin()-1), Teuchos::RangeError );
@@ -289,6 +288,7 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     TEST_THROW( *(getConst(a).rbegin()-1), Teuchos::RangeError );
     TEST_THROW( *getConst(a).rend(), Teuchos::RangeError );
   }
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
   {
     out << "\nTest that an iterator reference set to null does not throw ...\n";
@@ -302,10 +302,15 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     out << "\nTest that a dangling iterator reference throws exception ...\n";
     typedef typename Array<T>::iterator iter_t;
     iter_t iter = NullIteratorTraits<iter_t>::getNull();
-    TEST_THROW( { Array<T> a2(n); iter = a2.begin(); }, Teuchos::DanglingReferenceError );
+    {
+      Array<T> a2(n);
+      iter = a2.begin();
+    }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+    TEST_THROW(*iter=0, Teuchos::DanglingReferenceError );
+#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   }
 
-#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
   //
   out << "\nE) Test insertion and deletion functions ...\n";
@@ -338,8 +343,8 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
     Array<T> a2;
     for ( int i = 0; i < n; ++i ) {
       const typename Array<T>::iterator
-        iter = a2.insert(a2.end(),as<T>(i));
-      TEST_EQUALITY(*iter,as<T>(i));
+        iter = a2.insert(a2.end(), as<T>(i));
+      TEST_EQUALITY(*iter, as<T>(i));
     }
     TEST_COMPARE_ARRAYS( a2, a );
   }
@@ -489,13 +494,13 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 
   {
     out << "\nTest full const subview ...\n";
-    const ArrayView<const T> cav2 = getConst(a)(0,n);
+    const ArrayView<const T> cav2 = getConst(a)(0, n);
     TEST_COMPARE_ARRAYS( cav2, a );
   }
 
   {
     out << "\nTest full non-const to const subview ...\n";
-    const ArrayView<const T> cav2 = a(0,n);
+    const ArrayView<const T> cav2 = a(0, n);
     TEST_COMPARE_ARRAYS( cav2, a );
   }
 

@@ -66,7 +66,7 @@ RCP<T>::RCP( ENull )
 
 template<class T>
 inline
-RCP<T>::RCP( T* p, ENull null_arg )
+RCP<T>::RCP( T* p, ERCPWeakNoDealloc )
   : ptr_(p)
 #ifndef TEUCHOS_DEBUG
   , node_(RCP_createNewRCPNodeRawPtrNonowned(p))
@@ -74,14 +74,30 @@ RCP<T>::RCP( T* p, ENull null_arg )
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
-    node_ = RCPNodeHandle(
-      RCP_createNewRCPNodeRawPtrNonowned(p),
-      p, typeName(*p), concreteTypeName(*p),
-      false
-      );
+    RCPNode* existing_RCPNode = get_existing_RCPNode(p);
+    if (existing_RCPNode) {
+      // Will not call add_new_RCPNode(...)
+      node_ = RCPNodeHandle(existing_RCPNode, RCP_WEAK, false);
+    }
+    else {
+      // Will call add_new_RCPNode(...)
+      node_ = RCPNodeHandle(
+        RCP_createNewRCPNodeRawPtrNonowned(p),
+        p, typeName(*p), concreteTypeName(*p),
+        false
+        );
+    }
   }
 #endif // TEUCHOS_DEBUG
 }
+
+
+template<class T>
+inline
+RCP<T>::RCP( T* p, ERCPUndefinedWeakNoDealloc )
+  : ptr_(p),
+    node_(RCP_createNewRCPNodeRawPtrNonownedUndefined(p))
+{}
 
 
 template<class T>
@@ -94,11 +110,24 @@ RCP<T>::RCP( T* p, bool has_ownership_in )
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
-    node_ = RCPNodeHandle(
-      RCP_createNewRCPNodeRawPtr(p, has_ownership_in),
-      p, typeName(*p), concreteTypeName(*p),
-      has_ownership_in
-      );
+    RCPNode* existing_RCPNode = 0;
+    if (!has_ownership_in) {
+      existing_RCPNode = get_existing_RCPNode(p);
+    }
+    if (existing_RCPNode) {
+      // Will not call add_new_RCPNode(...)
+      node_ = RCPNodeHandle(existing_RCPNode, RCP_WEAK, false);
+    }
+    else {
+      // Will call add_new_RCPNode(...)
+      RCPNodeThrowDeleter nodeDeleter(RCP_createNewRCPNodeRawPtr(p, has_ownership_in));
+      node_ = RCPNodeHandle(
+        nodeDeleter.get(),
+        p, typeName(*p), concreteTypeName(*p),
+        has_ownership_in
+        );
+      nodeDeleter.release();
+    }
   }
 #endif // TEUCHOS_DEBUG
 }
@@ -115,11 +144,44 @@ RCP<T>::RCP( T* p, Dealloc_T dealloc, bool has_ownership_in )
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
+    // Here we are assuming that if the user passed in a custom deallocator
+    // then they will want to have ownership (otherwise it will throw if it is
+    // the same object).
+    RCPNodeThrowDeleter nodeDeleter(RCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in));
     node_ = RCPNodeHandle(
-      RCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
+      nodeDeleter.get(),
       p, typeName(*p), concreteTypeName(*p),
       has_ownership_in
       );
+    nodeDeleter.release();
+  }
+#endif // TEUCHOS_DEBUG
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+template<class Dealloc_T>
+RCP<T>::RCP( T* p, Dealloc_T dealloc, ERCPUndefinedWithDealloc, bool has_ownership_in )
+  : ptr_(p)
+#ifndef TEUCHOS_DEBUG
+  , node_(RCP_createNewDeallocRCPNodeRawPtrUndefined(p, dealloc, has_ownership_in))
+#endif // TEUCHOS_DEBUG
+{
+#ifdef TEUCHOS_DEBUG
+  if (p) {
+    // Here we are assuming that if the user passed in a custom deallocator
+    // then they will want to have ownership (otherwise it will throw if it is
+    // the same object).
+    // Use auto_ptr to ensure we don't leak if a throw occurs
+    RCPNodeThrowDeleter nodeDeleter(RCP_createNewDeallocRCPNodeRawPtrUndefined(
+      p, dealloc, has_ownership_in));
+    node_ = RCPNodeHandle(
+      nodeDeleter.get(),
+      p, typeName(*p), concreteTypeName(*p),
+      has_ownership_in
+      );
+    nodeDeleter.release();
   }
 #endif // TEUCHOS_DEBUG
 }
@@ -379,9 +441,15 @@ template<class T>
 inline
 RCPNode* RCP_createNewRCPNodeRawPtrNonowned( T* p )
 {
-  return new RCPNodeTmpl<T,DeallocNull<T> >(
-    p, DeallocNull<T>(), false
-    );
+  return new RCPNodeTmpl<T,DeallocNull<T> >(p, DeallocNull<T>(), false);
+}
+
+
+template<class T>
+inline
+RCPNode* RCP_createNewRCPNodeRawPtrNonownedUndefined( T* p )
+{
+  return new RCPNodeTmpl<T,DeallocNull<T> >(p, DeallocNull<T>(), false, null);
 }
 
 
@@ -389,9 +457,7 @@ template<class T>
 inline
 RCPNode* RCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
 {
-  return new RCPNodeTmpl<T,DeallocDelete<T> >(
-    p, DeallocDelete<T>(), has_ownership_in
-    );
+  return new RCPNodeTmpl<T,DeallocDelete<T> >(p, DeallocDelete<T>(), has_ownership_in);
 }
 
 
@@ -402,6 +468,16 @@ RCPNode* RCP_createNewDeallocRCPNodeRawPtr(
   )
 {
   return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
+}
+
+
+template<class T, class Dealloc_T>
+inline
+RCPNode* RCP_createNewDeallocRCPNodeRawPtrUndefined(
+  T* p, Dealloc_T dealloc, bool has_ownership_in
+  )
+{
+  return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in, null);
 }
 
 
@@ -449,9 +525,18 @@ Teuchos::rcp( T* p, bool owns_mem )
 template<class T, class Dealloc_T>
 inline
 Teuchos::RCP<T>
-Teuchos::rcp( T* p, Dealloc_T dealloc, bool owns_mem )
+Teuchos::rcpWithDealloc( T* p, Dealloc_T dealloc, bool owns_mem )
 {
   return RCP<T>(p, dealloc, owns_mem);
+}
+
+
+template<class T, class Dealloc_T>
+inline
+Teuchos::RCP<T>
+Teuchos::rcpWithDeallocUndef( T* p, Dealloc_T dealloc, bool owns_mem )
+{
+  return RCP<T>(p, dealloc, RCP_UNDEFINED_WITH_DEALLOC, owns_mem);
 }
 
 
@@ -459,7 +544,15 @@ template<class T>
 Teuchos::RCP<T>
 Teuchos::rcpFromRef( T& r )
 {
-  return RCP<T>(&r, null);
+  return RCP<T>(&r, RCP_WEAK_NO_DEALLOC);
+}
+
+
+template<class T>
+Teuchos::RCP<T>
+Teuchos::rcpFromUndefRef( T& r )
+{
+  return RCP<T>(&r, RCP_UNDEFINED_WEAK_NO_DEALLOC);
 }
 
 

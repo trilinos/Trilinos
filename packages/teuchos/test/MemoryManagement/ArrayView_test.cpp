@@ -142,11 +142,12 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
   }
 
   std::vector<T> v(n);
-  const ArrayView<T> av = arrayViewFromVector(v);
-  const ArrayView<const T> cav = arrayViewFromVector(getConst(v));
 
+  const ArrayView<T> av = arrayViewFromVector(v);
   TEST_EQUALITY_CONST(is_null(av), false);
   TEST_EQUALITY( as<int>(av.size()), n );
+
+  const ArrayView<const T> cav = av;
  
   {
     out << "\nInitializing data for std::vector v through view av ...\n";
@@ -156,7 +157,7 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
 
   {
     out << "\nTest that v[i] == i through ArrayView<const T> ...\n";
-    const ArrayView<const T> cav2 = arrayViewFromVector(getConst(v));
+    const ArrayView<const T> cav2 = cav;
     bool local_success = true;
     for( int i = 0; i < n; ++i ) {
       TEST_ARRAY_ELE_EQUALITY( cav2, i, as<T>(i) );

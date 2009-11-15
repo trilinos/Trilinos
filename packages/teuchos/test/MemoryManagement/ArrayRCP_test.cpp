@@ -583,24 +583,21 @@ int main( int argc, char* argv[] )
       result = test_ArrayRCP(vchar_ptr1,*out);
       if (!result) success = false;
       
-      ArrayRCP<const char> vchar_ptr2 =
-        arcp(
-          Teuchos::rcp_implicit_cast<const std::vector<char> >(
-            Teuchos::get_std_vector(vchar_ptr1)
-            )
-          );
+      ArrayRCP<const char> vchar_ptr2 = vchar_ptr1;
  
       *out << "\nvchar_ptr2 = " << vchar_ptr2 << "\n";
       
-      result = test_ArrayRCP_iterators(vchar_ptr2,*out);
+      result = test_ArrayRCP_iterators(vchar_ptr2, *out);
       if (!result) success = false;
       
 #ifndef __sun
       // RAB: 2006/07/12: The sun compiler declares this call to
       // get_std_vector(...) to be ambiguous (which is nonsense based on
       // everything I know about C++)!
-      TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr2)->size() != static_cast<size_t>(total_bytes) );
+      TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr1)->size() != static_cast<size_t>(total_bytes) );
 #endif
+      TEST_FOR_EXCEPT( vchar_ptr1.size() != static_cast<Teuchos_Ordinal>(total_bytes) );
+      TEST_FOR_EXCEPT( vchar_ptr2.size() != static_cast<Teuchos_Ordinal>(total_bytes) );
       
     }
 

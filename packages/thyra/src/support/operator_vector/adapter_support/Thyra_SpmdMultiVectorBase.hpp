@@ -297,7 +297,7 @@ void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
   // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   Scalar *localValues = NULL;
   int leadingDim = 0;
-  this->getLocalData(&localValues,&leadingDim);
+  this->getLocalData(&localValues, &leadingDim);
   nonconstLocalValuesViewPtr_ = localValues;
   sub_mv->initialize(
     rowRng.lbound() // globalOffset

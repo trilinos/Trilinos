@@ -65,6 +65,18 @@ public:
    */
   static int runUnitTestsFromMain( int argc, char* argv[] );
 
+  /** \brief Order the unit tests within each group.
+   *
+   * Calling this function with 'true' will result in a unique identifier
+   * being added that will order the tests within a group according to how
+   * they are defined.
+   *
+   * NOTE: Calling this will reset the counter to 0.  Also, you should turn
+   * this on and off within a given unit test source file in order to reset it
+   * for other files.
+   */
+  static void setTestOrdering(bool testOrdering);
+
   /** \brief . */
   static void addUnitTest( UnitTestBase *unitTest, const std::string groupName,
     const std::string testName );

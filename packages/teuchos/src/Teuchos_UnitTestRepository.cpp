@@ -158,12 +158,16 @@ public:
   std::string groupName;
   std::string testName;
   std::string notUnitTestName;
+  bool testOrdering;
+  int testCounter;
 
   InstanceData()
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
      showSrcLocation(false),
-     noOp(false)
+     noOp(false),
+     testOrdering(false),
+     testCounter(0)
     {}
 
 };
@@ -194,6 +198,8 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
   int testCounter = 0;
   int numTestsRun = 0;
   int numTestsFailed = 0;
+
+  Array<std::string> failedTests;
 
   try {
     
@@ -233,7 +239,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
           out <<"\n";
 
         if (showTestNames)
-          out <<testHeader;
+          out <<testHeader<<std::flush;
 
         {
 
@@ -255,9 +261,11 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
             const bool result = utd.unitTest->runUnitTest(*localOut);
 
             if (!result) {
+
+              failedTests.push_back(testHeader);
               
               if (!showTestNames)
-                out <<testHeader<<"\n";
+                out <<testHeader<<"\n"<<std::flush;
               else if (!showAll)
                 out <<"\n";
               
@@ -265,7 +273,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
                 out << oss->str();
               
               out
-                << "[FAILED]\n"
+                << "[FAILED] " << unitTestName << "\n"
                 << "Location: "<<utd.unitTest->unitTestFile()<<":"
                 <<utd.unitTest->unitTestFileLineNumber()<<"\n";
               
@@ -307,6 +315,12 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, out, success);
+
+  if (failedTests.size()) {
+    out << "\nThe following tests FAILED:\n";
+    for (size_t i = 0; i < failedTests.size(); ++i)
+      out << "    " << failedTests[i] << "\n";
+  }
 
   out
     << "\nSummary: total = " << testCounter
@@ -355,10 +369,27 @@ int UnitTestRepository::runUnitTestsFromMain( int argc, char* argv[] )
 }
 
 
-void UnitTestRepository::addUnitTest( UnitTestBase *unitTest,
-  const std::string groupName, const std::string testName )
+void UnitTestRepository::setTestOrdering(bool testOrdering)
 {
-  getData().unitTests.push_back(UnitTestData(unitTest, groupName, testName));
+  getData().testOrdering = testOrdering;
+  if (testOrdering) {
+    getData().testCounter = 0;
+  }
+}
+
+
+void UnitTestRepository::addUnitTest( UnitTestBase *unitTest,
+  const std::string groupName, const std::string testName_in )
+{
+  InstanceData &data = getData();
+  std::string testName = testName_in;
+  if (data.testOrdering) {
+    std::ostringstream oss;
+    oss << std::setw(4) << std::setfill('0') << std::right << data.testCounter << testName_in;
+    testName = oss.str();
+    ++data.testCounter;
+  }
+  data.unitTests.push_back(UnitTestData(unitTest, groupName, testName));
 }
 
 

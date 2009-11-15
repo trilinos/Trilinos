@@ -662,7 +662,7 @@ Array<T>::Array(Ordinal n, const value_type& value) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   vec_(rcp(new std::vector<T>(n,value)))
 #else
-  vec_(n,value)
+  vec_(n, value)
 #endif
 {}
 
@@ -680,28 +680,16 @@ Array<T>::Array(const Array<T>& x) :
 template<typename T> template<typename InputIterator> inline
 Array<T>::Array(InputIterator first, InputIterator last) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  vec_(rcp(new std::vector<T>(first,last)))
+  vec_(rcp(new std::vector<T>(first, last)))
 #else
-  vec_(first,last)
+  vec_(first, last)
 #endif
 {}
 
 
 template<typename T> inline
 Array<T>::~Array()
-{
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  const std::string errorMsg = 
-    "Error, there must be some client with a dangling reference to this array "
-    "object!  This could be a dangling iterator or a dangling view of something "
-    "else.";
-  TEST_FOR_EXCEPTION( extern_arcp_.count() > 1, DanglingReferenceError, errorMsg );
-  extern_arcp_ = null;
-  TEST_FOR_EXCEPTION( extern_carcp_.count() > 1, DanglingReferenceError, errorMsg );
-  extern_carcp_ = null;
-  TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError, errorMsg );
-#endif
-}
+{}
 
 
 template<typename T> inline
@@ -710,7 +698,7 @@ Array<T>::Array(const ArrayView<const T>& a)
   : vec_(rcp(new std::vector<T>()))
 #endif
 {
-  insert(begin(),a.begin(),a.end());
+  insert(begin(), a.begin(), a.end());
 }
 
 
@@ -722,7 +710,7 @@ Array<T>::Array(const Tuple<T,N>& t)
   : vec_(rcp(new std::vector<T>()))
 #endif
 {
-  insert(begin(),t.begin(),t.end());
+  insert(begin(), t.begin(), t.end());
 }
 
 
@@ -756,9 +744,13 @@ typename Array<T>::iterator
 Array<T>::begin()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  if (is_null(extern_arcp_))
-    extern_arcp_ = arcp(vec_);
-  return extern_arcp_;
+  if (is_null(extern_arcp_)) {
+    // Here we must use the same RCP to avoid creating two unrelated RCPNodes!
+    extern_arcp_ = arcp(vec_); // Will be null if vec_ is sized!
+  }
+  // Returning a weak pointer will help to catch dangling references but still
+  // keep the same behavior as optimized code.
+  return extern_arcp_.create_weak();
 #else
   return vec().begin();
 #endif
@@ -782,9 +774,12 @@ typename Array<T>::const_iterator
 Array<T>::begin() const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  if (is_null(extern_carcp_))
-    extern_carcp_ = arcp(rcp_const_cast<const std::vector<T> >(vec_));
-  return extern_carcp_;
+  if (is_null(extern_carcp_)) {
+    extern_carcp_ = const_cast<Array<T>*>(this)->begin();
+  }
+  // Returning a weak pointer will help to catch dangling references but still
+  // keep the same behavior as optimized code.
+  return extern_carcp_.create_weak();
 #else
   return vec().begin();
 #endif
@@ -1002,12 +997,16 @@ void Array<T>::pop_back()
 }
 
 
-// 2007/11/20: rabartl: Note: In the below insertion and deletion functions,
-// you have to grab the raw iterator first before you call vec(true,true)
-// which will invalidate the iterator.  I had it that raw_position(...) was
-// called in the same statement at vec(true,true) and some compilers migh call
-// vec(true,true) before they call raw_position(...) which results in an
-// exception being thrown.
+// 2009/11/13:: rabartl: After moving to a full RCPNode tracing and lookup
+// model, I had to how modifying functions like insert(...) and erase(...) 
+// work which have active iterators controled by the client and yet need to
+// allow the structure of the container change.  The way these troublesome
+// functions work is that first the raw std::vector iterator is extracted.
+// The function vec(true, true) then deletes the strong iterators but there is
+// still a weak ArrayRCP object that is owned by the client which is being
+// passed into this function.  The issue is that the design of ArrayRCP is
+// such that the RCPNode object is not removed but instead remains in order to
+// perform runtime checking.
 
 
 template<typename T> inline
@@ -1018,10 +1017,10 @@ Array<T>::insert(iterator position, const value_type& x)
   // Assert a valid iterator and get vector iterator
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
   const difference_type i = position - begin();
-  vec(true,true).insert(raw_poss,x);
+  vec(true, true).insert(raw_poss, x);
   return begin() + i;
 #else
-  return vec_.insert(position,x);
+  return vec_.insert(position, x);
 #endif
 }
 
@@ -1031,9 +1030,9 @@ void Array<T>::insert(iterator position, Ordinal n, const value_type& x)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
-  vec(true,true).insert(raw_poss,n,x);
+  vec(true, true).insert(raw_poss, n, x);
 #else
-  return vec_.insert(position,n,x);
+  return vec_.insert(position, n, x);
 #endif
 }
 
@@ -1043,9 +1042,9 @@ void Array<T>::insert(iterator position, InputIterator first, InputIterator last
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
-  vec(true,true).insert(raw_poss,first,last);
+  vec(true, true).insert(raw_poss, first, last);
 #else
-  return vec_.insert(position,first,last);
+  return vec_.insert(position, first, last);
 #endif
 }
 
@@ -1059,7 +1058,7 @@ Array<T>::erase(iterator position)
   // Assert a valid iterator and get vector iterator
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
   const difference_type i = position - begin();
-  vec(true,true).erase(raw_poss);
+  vec(true, true).erase(raw_poss);
   return begin() + i;
 #else
   return vec_.erase(position);
@@ -1279,30 +1278,13 @@ std::vector<T>&
 Array<T>::vec( bool isStructureBeingModified, bool activeIter )
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  (void)activeIter;
   if (isStructureBeingModified) {
     // Give up my ArrayRCPs used for iterator access since the array we be
-    // getting modifed!
+    // getting modifed!  Any clients that have views through weak pointers
+    // better not touch them!
     extern_arcp_ = null;
     extern_carcp_ = null;
-    if (activeIter) {
-      // If there is an active iterator in this call, then we need to allow
-      // for the existance of one or more other iterators!  We can't know for
-      // sure how many other iterators there will be since some copy
-      // constructors etc., might be called!  This leaves a dangerous
-      // situration in place where the client might access the iterator after
-      // this call!
-      
-      // 2007/11/08: rabartl: ToDo: I need to add a bool field to RCPNode that
-      // stores if the underlying object is valid or not.  I can then put in a
-      // debug-enabled check that any use of that object will be invalid and
-      // throw!  The WEAK RCP pointer approach might be able to handle this!
-    }
-    else {
-      // If there is no active iterator, then we don't allow any other
-      // dangling references or we will thrown an exception!
-      TEST_FOR_EXCEPTION( vec_.count() > 1, DanglingReferenceError,
-        "Error, Array is being modified while a dangling reference exists!");
-    }
   }
   return *vec_;
 #else

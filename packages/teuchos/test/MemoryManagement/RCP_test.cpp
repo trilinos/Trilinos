@@ -91,7 +91,8 @@ int main( int argc, char* argv[] ) {
   using Teuchos::getConst;
   using Teuchos::CommandLineProcessor;
   
-  bool success = true, verbose = true;
+  bool success = true;
+  bool createCircRefs = false; // Don't create memory leak by default!
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   const int procRank = Teuchos::GlobalMPISession::getRank();
@@ -103,7 +104,8 @@ int main( int argc, char* argv[] ) {
 
     // Read options from the commandline
     CommandLineProcessor clp(false); // Don't throw exceptions
-    clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
+    clp.setOption( "create-circ-refs", "no-create-circ-refs", &createCircRefs,
+      "Set if output is printed or not." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
       out << "\nEnd Result: TEST FAILED" << std::endl;
@@ -112,17 +114,14 @@ int main( int argc, char* argv[] ) {
 
     blackhole << "\nThis should not print anywhere.\n";
 
-    if(verbose)
-      out << std::endl << Teuchos::Teuchos_Version() << std::endl;
+    out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
-    if(verbose)
-      out << "\nTesting basic RCP functionality ...\n";
+    out << "\nTesting basic RCP functionality ...\n";
 
     // Create some smart pointers
 
     RCP<A> a_ptr1 = rcp(new C);
-    if(verbose)
-      out << "\na_ptr1 = " << a_ptr1 << "\n";
+    out << "\na_ptr1 = " << a_ptr1 << "\n";
 #ifndef __sun
     // RAB: 2003/11/24: The Sun compiler ("Forte Developer 7 C++
     // 5.4 2002/03/09" returned from CC -V) does not seem to be
@@ -148,13 +147,6 @@ int main( int argc, char* argv[] ) {
 #endif
     TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
     TEST_FOR_EXCEPT( d_ptr1.getRawPtr() == NULL);
-
-    {
-      // Create a weak RCP
-      RCP<A> weak_a_ptr1 = rcpFromRef(*a_ptr1);
-      TEUCHOS_ASSERT( weak_a_ptr1.ptr() == a_ptr1.ptr() );
-      TEUCHOS_ASSERT( weak_a_ptr1.has_ownership() == false );
-    }
 
     {
 
@@ -349,14 +341,12 @@ int main( int argc, char* argv[] ) {
     C *c_ptr5 = new C; // Okay, no type info lost and address should be same as returned from malloc(...)
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
     const void *c_ptr5_base = dynamic_cast<void*>(c_ptr5);
-    if(verbose) {
-      out << "\nSize of C = " << sizeof(C) << std::endl;
-      out << "Base address of object of type C = " << dynamic_cast<void*>(c_ptr5) << std::endl;
-      out << "Offset to address of object of type C = " << ((long int)c_ptr5 - (long int)c_ptr5_base) << std::endl;
-      out << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-      out << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-      out << "Offset of A object in object of type C = " << ((long int)static_cast<A*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
-    }
+    out << "\nSize of C = " << sizeof(C) << std::endl;
+    out << "Base address of object of type C = " << dynamic_cast<void*>(c_ptr5) << std::endl;
+    out << "Offset to address of object of type C = " << ((long int)c_ptr5 - (long int)c_ptr5_base) << std::endl;
+    out << "Offset of B1 object in object of type C = " << ((long int)static_cast<B1*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+    out << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
+    out << "Offset of A object in object of type C = " << ((long int)static_cast<A*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
 #endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
     A *a_rptr5 = c_ptr5; // Here the address has changed and is no longer the same as the base address
     a_ptr1 = rcp(a_rptr5); // This is a no-no and could cause trouble!
@@ -442,10 +432,12 @@ int main( int argc, char* argv[] ) {
 
 #ifdef TEUCHOS_DEBUG
  
-    if(verbose)
+    if (createCircRefs) {
       out << "\nCreate a circular reference that will cause a memory leak! ...\n";
-    {
+#  if !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+      // Only trun on tracing if you have to
       Teuchos::setTracingActiveRCPNodes(true);
+#  endif
       RCP<A> a = rcp(new A());
       RCP<C> c2 = rcp(new C());
       a->set_C(c2);
@@ -456,8 +448,7 @@ int main( int argc, char* argv[] ) {
 
 #ifndef TEUCHOS_DEBUG 
 
-    if(verbose)
-      out << "\nTesting using RCP to wrap an undefined opaque object (no TNT) ...\n";
+    out << "\nTesting using RCP to wrap an undefined opaque object (no TNT) ...\n";
     {
       RCP<UndefinedType> op_ptr = rcp( createOpaque(),
         deallocFunctorHandleDelete<UndefinedType>(destroyOpaque), true );
@@ -471,11 +462,10 @@ int main( int argc, char* argv[] ) {
 
 #endif // not TEUCHOS_DEBUG
 
-    if(verbose)
-      out << "\nTesting using RCP to wrap an undefined opaque object (with TNT) ...\n";
+    out << "\nTesting using RCP to wrap an undefined opaque object (with TNT) ...\n";
     {
-      RCP<UndefinedType2> op_ptr = rcp( createOpaque2(),
-        deallocFunctorHandleDelete<UndefinedType2>(destroyOpaque2), true );
+      RCP<UndefinedType2> op_ptr = rcpWithDeallocUndef( createOpaque2(),
+        deallocFunctorHandleDelete<UndefinedType2>(destroyOpaque2) );
       TEUCHOS_ASSERT_EQUALITY( getOpaque2Value(&*op_ptr), getOpaque2Value_return );
     }
     // 2008/08/01: rabartl: Above, we can wrap an undefined type in debug mode
@@ -484,8 +474,7 @@ int main( int argc, char* argv[] ) {
 
 #ifdef HAVE_TEUCHOS_BOOST
 
-    if(verbose)
-      out << "\nTesting basic RCP compatibility with boost::shared_ptr ...\n";
+    out << "\nTesting basic RCP compatibility with boost::shared_ptr ...\n";
 
     boost::shared_ptr<A> a_sptr1(new C());
     RCP<A> a_rsptr1 = rcp(a_sptr1);
@@ -493,30 +482,34 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( a_rsptr1.getRawPtr() != a_sptr1.get() );
     TEST_FOR_EXCEPT( a_rsptr1.get() != a_rsptr1.getRawPtr() );
     boost::shared_ptr<A> a_sptr2 = shared_pointer(a_rsptr1);
-    TEST_FOR_EXCEPT( a_sptr2.get() != a_sptr1.get() );
+    TEST_FOR_EXCEPT( a_sptr2._internal_equiv(a_sptr1) != true );
     RCP<A> a_rsptr2 = rcp(a_sptr2);
     TEST_FOR_EXCEPT( a_rsptr2.ptr() != a_rsptr1.ptr() );
     //TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 ); // This should work if boost::get_deleter() works correctly!
     boost::shared_ptr<A> a_sptr3 = shared_pointer(a_rsptr2);
     TEST_FOR_EXCEPT( a_sptr3.get() != a_rsptr2.get() );
 
+    out << "\nCompatibility with boost::shared_ptr passed ...\n";
+
 #endif // HAVE_TEUCHOS_BOOST
 
-    if(verbose)
-      out << "\nAll tests for RCP seem to check out!\n";
+    out << "\nAll tests for RCP seem to check out!\n";
 
   } // end try
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
  
   try {
     // In debug mode, this should show that the A and C RCP objects are still
     // around!
-    Teuchos::printActiveRCPNodes(out);
-#ifdef TEUCHOS_DEBUG
-    TEUCHOS_ASSERT_EQUALITY( 2, Teuchos::numActiveRCPNodes() );
+    if (createCircRefs) {
+      out << "\nPrinting the active nodes just to see them!\n";
+      Teuchos::printActiveRCPNodes(out);
+#if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+      TEUCHOS_ASSERT_EQUALITY( 2, Teuchos::numActiveRCPNodes() );
 #endif
+    }
   } // end try
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
  
   if(success)
     out << "\nEnd Result: TEST PASSED" << std::endl;

@@ -1,24 +1,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_getConst.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include "TestClasses.hpp"
 
 
-namespace {
-
-
-using Teuchos::null;
-using Teuchos::RCPNode;
-using Teuchos::RCPNodeHandle;
-using Teuchos::getConst;
-using Teuchos::NullReferenceError;
-using Teuchos::DanglingReferenceError;
-using Teuchos::any;
-using Teuchos::any_cast;
-using Teuchos::DeallocDelete;
-using Teuchos::RCPNodeTmpl;
-using Teuchos::RCP_WEAK;
-using Teuchos::RCP_STRONG;
+namespace Teuchos {
 
 
 template<class T>
@@ -32,12 +19,64 @@ public:
 
 
 template<class T>
-RCPNodeHandle basicRCPNodeHandle(const bool has_ownership)
+RCPNode* basicRCPNodeNoAlloc(T* p, const bool has_ownership)
 {
-  return RCPNodeHandle(
-    new RCPNodeTmpl<T,DeallocDelete<T> >(new T, DeallocDelete<T>(), has_ownership)
-    );
+  RCPNodeTmpl<T,DeallocDelete<T> > *rcpNode = 
+    new RCPNodeTmpl<T,DeallocDelete<T> >(p, DeallocDelete<T>(), has_ownership);
+  return rcpNode;
 }
+
+
+template<class T>
+RCPNode* basicRCPNode(const bool has_ownership, T **p_out = 0)
+{
+  T *p = new T;
+  if (p_out)
+    *p_out = p;
+  RCPNode *rcpNode = basicRCPNodeNoAlloc<T>(p, has_ownership);
+  return rcpNode;
+}
+
+
+void deleteRCPNode( RCPNode **node )
+{
+  TEUCHOS_ASSERT(node);
+  TEUCHOS_ASSERT(*node);
+  (*node)->delete_obj();
+  delete (*node);
+  *node = 0;
+}
+
+
+template<class T>
+RCPNodeHandle basicRCPNodeHandle(const bool has_ownership, T **p_out = 0)
+{
+  using Teuchos::typeName;
+  using Teuchos::concreteTypeName;
+  T *p = 0;
+  RCPNode *rcpNode = basicRCPNode(has_ownership, &p);
+  if (p_out)
+    *p_out = p;
+#ifdef TEUCHOS_DEBUG
+  return RCPNodeHandle(rcpNode, p, typeName(*p), concreteTypeName(*p), has_ownership);
+#else
+  return RCPNodeHandle(rcpNode);
+#endif
+}
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  // Set the ordering of the tests to make sure the run in the specified order.
+  // This is important because we want to build up tests from basic to more
+  // advanced in order to catch errors.
+  UnitTestRepository::setTestOrdering(true);
+}
+
+
+//
+// Non-templated tests
+//
 
 
 TEUCHOS_UNIT_TEST( RCPNodeHandle, assignSelf )
@@ -47,7 +86,7 @@ TEUCHOS_UNIT_TEST( RCPNodeHandle, assignSelf )
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, defaultConstruct, T )
+TEUCHOS_UNIT_TEST( RCPNodeHandle, defaultConstruct)
 {
   RCPNodeHandle nodeRef;
   TEST_EQUALITY_CONST( nodeRef.count(), 0 );
@@ -55,6 +94,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, defaultConstruct, T )
   nodeRef.has_ownership(true);
   TEST_EQUALITY_CONST( nodeRef.has_ownership(), false );
 #ifdef TEUCHOS_DEBUG
+  TEST_EQUALITY_CONST( nodeRef.get_base_obj_map_key_void_ptr(), static_cast<void*>(0) );
   TEST_THROW({nodeRef.set_extra_data(any(),"", Teuchos::PRE_DESTROY, true);},
     NullReferenceError);
   TEST_THROW({any &a = nodeRef.get_extra_data("int","blob"); (void)a;},
@@ -69,14 +109,93 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, defaultConstruct, T )
 }
 
 
+#ifdef TEUCHOS_DEBUG
+
+
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_basic )
+{
+  SET_RCPNODE_TRACING();
+  RCPNode *node = basicRCPNode<A>(true);
+  const int numActiveNodesBase = numActiveRCPNodes();
+  ECHO(add_new_RCPNode(node, "dummy"));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
+  ECHO(remove_RCPNode(node));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase);
+  deleteRCPNode(&node);
+}
+
+
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_twice_error )
+{
+  SET_RCPNODE_TRACING();
+  RCPNode *node = basicRCPNode<A>(true);
+  const int numActiveNodesBase = numActiveRCPNodes();
+  ECHO(add_new_RCPNode(node, "dummy"));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
+  TEST_THROW(add_new_RCPNode(node, "dummy"), DuplicateOwningRCPError);
+  ECHO(remove_RCPNode(node));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase);
+  deleteRCPNode(&node);
+}
+
+
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_two_nodes_same_obj )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(C *c_ptr = new C);
+  ECHO(RCPNode *node_c = basicRCPNodeNoAlloc<C>(c_ptr, true));
+  ECHO(RCPNode *node_b1 = basicRCPNodeNoAlloc<B1>(c_ptr, true));
+  ECHO(const int numActiveNodesBase = numActiveRCPNodes());
+  ECHO(add_new_RCPNode(node_c, "dummy"));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
+#ifdef HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR
+  // We can detect that these are the same object!
+  TEST_THROW(add_new_RCPNode(node_b1, "dummy"), DuplicateOwningRCPError);
+#else
+  // We can not detect if these are the same object!
+  ECHO(add_new_RCPNode(node_b1, "dummy"));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+2);
+  ECHO(remove_RCPNode(node_b1));
+#endif
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
+  ECHO(remove_RCPNode(node_c));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase);
+  ECHO(node_b1->has_ownership(false));
+  ECHO(deleteRCPNode(&node_b1));
+  ECHO(deleteRCPNode(&node_c));
+}
+
+
+#ifdef HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
+TEUCHOS_UNIT_TEST( RCPNodeHandle, remove_RCPNode_missing_node )
+{
+  SET_RCPNODE_TRACING();
+  RCPNode *node = basicRCPNode<A>(true);
+  TEST_THROW(remove_RCPNode(node), std::logic_error);
+  deleteRCPNode(&node);
+}
+#endif // HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
+
+
+#endif // TEUCHOS_DEBUG
+
+
+//
+// Templated tests
+//
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, basicConstruct_owns_mem, T )
 {
-  RCPNodeHandle nodeRef(basicRCPNodeHandle<T>(true));
+  T *p = 0;
+  RCPNodeHandle nodeRef(basicRCPNodeHandle<T>(true, &p));
   TEST_EQUALITY_CONST( nodeRef.count(), 1 );
   TEST_EQUALITY_CONST( nodeRef.has_ownership(), true );
   nodeRef.has_ownership(false);
   TEST_EQUALITY_CONST( nodeRef.has_ownership(), false );
 #ifdef TEUCHOS_DEBUG
+  TEST_INEQUALITY_CONST( nodeRef.get_base_obj_map_key_void_ptr(), static_cast<void*>(0) );
+  TEST_EQUALITY( nodeRef.get_base_obj_map_key_void_ptr(), static_cast<void*>(p) );
   TEST_THROW({any &a = nodeRef.get_extra_data("int","blob"); (void)a;},
     std::invalid_argument);
   TEST_THROW({const any &a = getConst(nodeRef).get_extra_data("int","blob"); (void)a;},
@@ -176,11 +295,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, weakPtr_basic_2, T )
 
 }
 
+//
+// Test behavior of RCP node tracing but only if it is off by default
+//
+// NOTE: If node tracing is on by default then we can't control how many nodes
+// get created in other code not in the unit test.
+//
 
-#ifdef TEUCHOS_DEBUG
+#if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+#  define DO_RCPNODE_TRACING_TESTS 1
+#endif
 
 
-int debugWithNodeTracing_call_number = 0;
+#ifdef DO_RCPNODE_TRACING_TESTS
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracing, T )
@@ -205,6 +332,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracing, T )
 
     out << "\nMake sure output is printed when there is an active node with tracing ...\n";
 
+    const void* rcpNodeKey = getRCPNodeBaseObjMapKeyVoidPtr(p);
+
     std::ostringstream expendedOutput_oss;
     expendedOutput_oss
         << "\n***"
@@ -213,9 +342,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracing, T )
         << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
         << "\n*** that these objects are not destroyed correctly."
         << "\n***\n"
-        << "\n  RCPNode address = \'"<<node<<"\',"
-        << " information = {T=\'"<<T_name<<"\',Concrete T=\'"<<concreateT_name<<"\',p="<<p<<",has_ownership="<<has_ownership<<"},"
-        << " call number = "<<debugWithNodeTracing_call_number
+        << "\n"
+        << "  0: RCPNode (map_key_void_ptr=" << rcpNodeKey << ")\n"
+        << "       Information = {T="<<T_name<<", ConcreteT="<<concreateT_name<<", p="<<p<<", has_ownership="<<has_ownership<<"}\n"
+        << "       RCPNode address = " << node << "\n"
+        << "       Call number = " << get_add_new_RCPNode_call_number()
         << "\n";
 
     std::ostringstream printActiveRCPNodes_out;
@@ -241,8 +372,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracing, T )
   std::ostringstream printActiveRCPNodes_out;
   Teuchos::printActiveRCPNodes(printActiveRCPNodes_out);
   TEST_EQUALITY( printActiveRCPNodes_out.str(), expendedOutput );
-  
-  ++debugWithNodeTracing_call_number;
 
   Teuchos::setTracingActiveRCPNodes(false);;
   TEST_EQUALITY_CONST(Teuchos::isTracingActiveRCPNodes(), false);
@@ -277,7 +406,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithoutNodeTracing, T )
 }
 
 
-#endif // TEUCHOS_DEBUG
+#endif // DO_RCPNODE_TRACING_TESTS
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, copyConstruct, T )
@@ -422,7 +551,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed_const, T )
 //
 
 
-#ifdef TEUCHOS_DEBUG
+#ifdef DO_RCPNODE_TRACING_TESTS
 
 #  define DEBUG_UNIT_TEST_GROUP( T ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, debugWithNodeTracing, T ) \
@@ -436,7 +565,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed_const, T )
 
 
 #define UNIT_TEST_GROUP( T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, defaultConstruct, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, basicConstruct_owns_mem, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, basicConstruct_no_owns_mem, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, weakPtr_basic_1, T ) \
@@ -461,4 +589,4 @@ UNIT_TEST_GROUP(E)
 // in order to test this functionality.
 
 
-} // namespace
+} // namespace Teuchos 

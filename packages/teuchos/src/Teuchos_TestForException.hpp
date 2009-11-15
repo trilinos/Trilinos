@@ -74,8 +74,8 @@ void TestForException_break( const std::string &msg );
  * for instance):
  \verbatim
 
- TEST_FOR_EXCEPTION( n > 100, std::out_of_range
-    , "Error, n = " << n << is bad" );
+ TEST_FOR_EXCEPTION( n > 100, std::out_of_range,
+    "Error, n = " << n << is bad" );
  \endverbatim
  * When the program runs and with <tt>n = 125 > 100</tt> for instance,
  * the <tt>std::out_of_range</tt> exception would be thrown with the
@@ -139,7 +139,7 @@ void TestForException_break( const std::string &msg );
  * This macro is equivalent to the <tt>TEST_FOR_EXCEPTION()</tt> macro except
  * the file name, line number, and test condition are not printed.
  */
-#define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test,Exception,msg) \
+#define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
 { \
     const bool throw_exception = (throw_exception_test); \
     if(throw_exception) { \
@@ -178,7 +178,7 @@ void TestForException_break( const std::string &msg );
  *
  * \note The exception thrown is <tt>std::logic_error</tt>.
  */
-#define TEST_FOR_EXCEPT_MSG(throw_exception_test,msg) \
+#define TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
   TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,msg)
 
 /** \brief This macro is the same as <tt>TEST_FOR_EXCEPTION()</tt> except that the
@@ -194,7 +194,7 @@ void TestForException_break( const std::string &msg );
  * receive a printout of a line of output that gives the exception type and
  * the error message that is generated.
  */
-#define TEST_FOR_EXCEPTION_PRINT(throw_exception_test,Exception,msg,out_ptr) \
+#define TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
 try { \
   TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
 } \
@@ -217,7 +217,7 @@ catch(const std::exception &except) { \
  * receive a printout of a line of output that gives the exception type and
  * the error message that is generated.
  */
-#define TEST_FOR_EXCEPT_PRINT(throw_exception_test,out_ptr) \
+#define TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
   TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
 
 

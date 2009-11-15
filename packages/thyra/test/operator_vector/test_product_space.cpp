@@ -86,26 +86,27 @@ bool run_product_space_tests(
 
   if(out.get()) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
-  Thyra::DefaultProductVectorSpace<Scalar> ps(numBlocks,&vecSpaces[0]);
+  RCP<Thyra::DefaultProductVectorSpace<Scalar> > ps =
+    rcp(new Thyra::DefaultProductVectorSpace<Scalar>(numBlocks,&vecSpaces[0]));
 
-  if(out.get()) *out << "\nps.numBlocks()=";
-  result = ps.numBlocks() == numBlocks;
+  if(out.get()) *out << "\nps->numBlocks()=";
+  result = ps->numBlocks() == numBlocks;
   if(!result) success = false;
   if(out.get()) *out
-    << ps.numBlocks() << " == numBlocks=" << numBlocks
+    << ps->numBlocks() << " == numBlocks=" << numBlocks
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
 
   if(out.get()) *out << "\nTesting the product space ps ...\n";
 
-  if(out.get()) *out << "\nps.dim()=";
-  result = ps.dim() == numProcs*n*numBlocks;
+  if(out.get()) *out << "\nps->dim()=";
+  result = ps->dim() == numProcs*n*numBlocks;
   if(!result) success = false;
   if(out.get()) *out
-    << ps.dim() << " == numProcs*n*numBlocks=" << numProcs*n*numBlocks
+    << ps->dim() << " == numProcs*n*numBlocks=" << numProcs*n*numBlocks
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
   
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
-  result = vectorSpaceTester.check(ps,out.get());
+  result = vectorSpaceTester.check(*ps, out.get());
   if(!result) success = false;
   
   if(out.get()) *out << "\nB) Testing a nested product space of product vector spaces called pps ...\n";
@@ -113,12 +114,13 @@ bool run_product_space_tests(
   Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > >
     blockVecSpaces(numBlocks);
   for( int i = 0; i < numBlocks; ++i )
-    blockVecSpaces[i] = Teuchos::rcp(&ps,false);
+    blockVecSpaces[i] = ps;
 
-  Thyra::DefaultProductVectorSpace<Scalar> pps(numBlocks,&blockVecSpaces[0]);
+  RCP<Thyra::DefaultProductVectorSpace<Scalar> > pps =
+    rcp(new Thyra::DefaultProductVectorSpace<Scalar> (numBlocks,&blockVecSpaces[0]));
   
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of pps ...\n";
-  result = vectorSpaceTester.check(pps,out.get());
+  result = vectorSpaceTester.check(*pps, out.get());
   if(!result) success = false;
 
   if(numProcs==1) {
@@ -143,8 +145,8 @@ bool run_product_space_tests(
     
     if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
     RCP<Thyra::VectorBase<Scalar> >
-      pv1 = createMember(ps),
-      pv2 = createMember(ps);
+      pv1 = createMember(*ps),
+      pv2 = createMember(*ps);
     
     if(out.get()) *out << "\nassign(&pv1,2.0) ...\n";
     Thyra::assign( &*pv1, two );
@@ -162,12 +164,12 @@ bool run_product_space_tests(
     
     if(out.get()) *out << "\nsum(sv1)=";
     sresult1 = Thyra::sum(*sv1);
-    sresult2 = two*Scalar(ps.dim());
+    sresult2 = two*Scalar(ps->dim());
     result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
                < ST::magnitude( tol ) );
     if(!result) success = false;
     if(out.get()) *out
-      << sresult1 << " == 2*ps.dim()=" << sresult2
+      << sresult1 << " == 2*ps->dim()=" << sresult2
       << " : " << ( result ? "passed" : "failed" ) << std::endl;
     
     if(out.get() && dumpAll) *out
@@ -178,12 +180,12 @@ bool run_product_space_tests(
     
     if(out.get()) *out << "\nsum(pv2)=";
     sresult1 = Thyra::sum(*pv2);
-    sresult2 = two*Scalar(ps.dim());
+    sresult2 = two*Scalar(ps->dim());
     result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
                < ST::magnitude( tol ) );
     if(!result) success = false;
     if(out.get()) *out
-      << sresult1 << " == 2*ps.dim()=" << sresult2
+      << sresult1 << " == 2*ps->dim()=" << sresult2
       << " : " << ( result ? "passed" : "failed" ) << std::endl;
     
     if(out.get() && dumpAll) *out

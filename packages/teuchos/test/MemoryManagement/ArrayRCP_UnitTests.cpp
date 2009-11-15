@@ -23,6 +23,7 @@ using Teuchos::arcp;
 using Teuchos::arcp_reinterpret_cast;
 using Teuchos::ArrayView;
 using Teuchos::getConst;
+using Teuchos::DuplicateOwningRCPError;
 using Teuchos::NullReferenceError;
 using Teuchos::DanglingReferenceError;
 using Teuchos::RangeError;
@@ -31,6 +32,282 @@ using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
 using Teuchos::implicit_ptr_cast;
 using Teuchos::getRawPtr;
+
+
+//
+// Non templated unit tests
+//
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, memberPointer )
+{
+  ArrayRCP<A> a_arcp = arcp<A>(1);
+  TEST_EQUALITY_CONST( a_arcp->A_f(), A_f_return );
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, getConst_null )
+{
+  const ArrayRCP<A> a1_arcp;
+  const ArrayRCP<const A> a2_arcp = a1_arcp.getConst();
+  TEST_ASSERT(is_null(a2_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_null )
+{
+  const ArrayRCP<A> a_arcp;
+  const ArrayView<A> av = a_arcp();
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_const_null )
+{
+  const ArrayRCP<const A> a_arcp;
+  const ArrayView<const A> av = a_arcp();
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
+{
+  const ArrayRCP<A> a_arcp;
+  const ArrayRCP<const A> ac_arcp = a_arcp;
+  TEST_ASSERT(is_null(ac_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, release )
+{
+  ArrayRCP<A> a_arcp = arcp<A>(1);
+  delete [] a_arcp.release();
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_null )
+{
+  ArrayRCP<A> a_arcp = arcp<A>(0, 0, -1, false);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_dealloc_null )
+{
+  ArrayRCP<A> a_arcp = arcp<A, Teuchos::DeallocNull<A> >(0, 0, -1,
+    Teuchos::DeallocNull<A>(), false);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_null )
+{
+  const RCP<std::vector<int> > v_rcp;
+  const ArrayRCP<int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_null )
+{
+  const RCP<const std::vector<int> > v_rcp;
+  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_unsized )
+{
+  const RCP<std::vector<int> > v_rcp = rcp(new std::vector<int>);
+  const ArrayRCP<int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_unsized )
+{
+  const RCP<const std::vector<int> > v_rcp = rcp(new std::vector<int>);
+  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcpWithEmbeddedObj )
+{
+  const ArrayRCP<const int> a_arcp =
+    Teuchos::arcpWithEmbeddedObj<int>(new int[1], 0, 1, as<int>(1), true);
+  const int embeddedObj = Teuchos::getEmbeddedObj<int,int>(a_arcp); 
+  TEST_EQUALITY_CONST( embeddedObj, as<int>(1) );
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, nonnull )
+{
+  ECHO(ArrayRCP<int> a_arcp = arcp<int>(10));
+  TEST_EQUALITY_CONST(is_null(a_arcp), false);
+  TEST_EQUALITY_CONST(nonnull(a_arcp), true);
+  ECHO(a_arcp = null);
+  TEST_EQUALITY_CONST(is_null(a_arcp), true);
+  TEST_EQUALITY_CONST(nonnull(a_arcp), false);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, weak_strong )
+{
+
+  ECHO(ArrayRCP<int> arcp1 = arcp<int>(10));
+  TEST_EQUALITY_CONST( arcp1.strength(), RCP_STRONG );
+
+  ECHO(ArrayRCP<int> arcp2 = arcp1.create_weak());
+
+  TEST_EQUALITY_CONST( arcp2.strength(), RCP_WEAK );
+  TEST_EQUALITY_CONST( arcp1.strong_count(), 1 );
+  TEST_EQUALITY_CONST( arcp1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( arcp2.strong_count(), 1 );
+  TEST_EQUALITY_CONST( arcp2.weak_count(), 1 );
+
+  ECHO(ArrayRCP<int> arcp3 = arcp2.create_strong());
+
+  TEST_EQUALITY_CONST( arcp3.strength(), RCP_STRONG );
+  TEST_EQUALITY_CONST( arcp1.strong_count(), 2 );
+  TEST_EQUALITY_CONST( arcp1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( arcp2.strong_count(), 2 );
+  TEST_EQUALITY_CONST( arcp2.weak_count(), 1 );
+
+  // This will make the underlying object A gets deleted!
+  ECHO(arcp1 = null);
+  ECHO(arcp3 = null);
+
+  ECHO(arcp2 = null); // Should make the underlying node go away
+
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_null )
+{
+  ECHO(ArrayRCP<char> arcp_char = null);
+  ECHO(ArrayRCP<int> arcp_int = arcp_reinterpret_cast<int>(arcp_char));
+  TEST_EQUALITY_CONST(arcp_int, null);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_char_to_int )
+{
+
+  const int sizeOfInt = sizeof(int);
+  const int sizeOfChar = sizeof(char);
+  const int num_ints = n;
+  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
+  out << "num_ints = " << num_ints << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ECHO(ArrayRCP<char> arcp_char = arcp<char>(num_chars));
+  ECHO(ArrayRCP<int> arcp_int = arcp_reinterpret_cast<int>(arcp_char));
+  TEST_EQUALITY(arcp_int.size(), num_ints);
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
+    implicit_ptr_cast<void>(&arcp_char[0]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+
+  ECHO(arcp_char+=sizeOfInt);
+  ECHO(arcp_int = arcp_reinterpret_cast<int>(arcp_char));
+  TEST_EQUALITY(arcp_int.size(), num_ints);
+  TEST_EQUALITY_CONST( arcp_int.lowerOffset(), -1);
+  TEST_EQUALITY( arcp_int.upperOffset(), num_ints-2);
+  TEST_EQUALITY( implicit_ptr_cast<void>(&arcp_int[-1]),
+    implicit_ptr_cast<void>(&arcp_char[-sizeOfInt])
+    );
+  TEST_EQUALITY( implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeOfInt])+1));
+
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_int_to_char )
+{
+
+  const int sizeOfInt = sizeof(int);
+  const int sizeOfChar = sizeof(char);
+  const int num_ints = n;
+  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
+  out << "num_ints = " << num_ints << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ECHO(ArrayRCP<int> arcp_int = arcp<int>(num_ints));
+  ECHO(ArrayRCP<char> arcp_char = arcp_reinterpret_cast<char>(arcp_int));
+  TEST_EQUALITY(arcp_char.size(), num_chars);
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
+    implicit_ptr_cast<void>(&arcp_char[0]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+
+  ECHO(++arcp_int);
+  ECHO(arcp_char = arcp_reinterpret_cast<char>(arcp_int));
+  TEST_EQUALITY(as<int>(arcp_char.lowerOffset()), as<int>(-sizeOfInt));
+  TEST_EQUALITY(as<int>(arcp_char.upperOffset()), as<int>(num_chars-1-sizeOfInt));
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[-1]),
+    implicit_ptr_cast<void>(&arcp_char[-sizeOfInt]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeOfInt])+1));
+
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, evil_reinterpret_cast )
+{
+  ECHO(ArrayRCP<ArrayRCP<int> > arcp1 = arcp<ArrayRCP<int> >(n));
+  ECHO(ArrayRCP<ArrayRCP<const int> > arcp2 =
+    arcp_reinterpret_cast<ArrayRCP<const int> >(arcp1));
+  TEST_EQUALITY(arcp2.size(), arcp1.size());
+  TEST_EQUALITY(implicit_ptr_cast<const void>(&arcp1[0]),
+    implicit_ptr_cast<const void>(&arcp2[0]));
+  ECHO(ArrayRCP<const ArrayRCP<const int> > arcp3 = arcp2);
+  TEST_EQUALITY(arcp3.size(), arcp1.size());
+  TEST_EQUALITY(implicit_ptr_cast<const void>(&arcp1[0]),
+    implicit_ptr_cast<const void>(&arcp3[0]));
+  out << "arcp3 = " << arcp3 << "\n";
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, duplicate_arcp_owning )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(A *a_ptr = new A[n]);
+  ECHO(ArrayRCP<A> a_arcp1 = arcp(a_ptr, 0, n)); // Okay
+#if defined(TEUCHOS_DEBUG)
+  // With node tracing turned on, the implementation knows that an RCPNode
+  // already exists pointing to this same underlying array and will therefore
+  // throw.
+  TEST_THROW(ArrayRCP<A> a_arcp2 = arcp(a_ptr, 0, n), DuplicateOwningRCPError);
+#else
+  // Will not determine they are point to the same object!
+  ECHO(ArrayRCP<A> a_arcp2 = arcp(a_ptr, 0, n));
+  TEST_EQUALITY(a_arcp2.getRawPtr(), a_ptr);
+  ECHO(a_arcp2.release()); // Better or we will get a segfault!
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, dangling_nonowning )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(A *a_ptr = new A[n]);
+  ECHO(ArrayRCP<A> a_arcp1 = arcp(a_ptr, 0, n)); // Okay
+  ECHO(ArrayRCP<A> a_arcp2 = arcp(a_ptr, 0, n, false)); // Okay
+  a_arcp1 = null;
+#if defined(TEUCHOS_DEBUG)
+  // With node tracing turned on, the implementation knows that the original
+  // array is deleted and this is a dangling reference!
+  TEST_THROW(a_arcp2.getRawPtr(), DanglingReferenceError);
+#else
+  // With node tracing turned off, the implemetation does not know the
+  // original array is deleted and therefore it will return a now invalid
+  // pointer.
+  TEST_NOTHROW(a_arcp2.getRawPtr());
+#endif
+}
 
 
 //
@@ -427,243 +704,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 UNIT_TEST_GROUP(int)
 UNIT_TEST_GROUP(double)
 UNIT_TEST_GROUP(float)
-
-
-//
-// Non templated unit tests
-//
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, memberPointer )
-{
-  ArrayRCP<A> a_arcp = arcp<A>(1);
-  TEST_EQUALITY_CONST( a_arcp->A_f(), A_f_return );
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, getConst_null )
-{
-  const ArrayRCP<A> a1_arcp;
-  const ArrayRCP<const A> a2_arcp = a1_arcp.getConst();
-  TEST_ASSERT(is_null(a2_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_null )
-{
-  const ArrayRCP<A> a_arcp;
-  const ArrayView<A> av = a_arcp();
-  TEST_ASSERT(is_null(av));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_const_null )
-{
-  const ArrayRCP<const A> a_arcp;
-  const ArrayView<const A> av = a_arcp();
-  TEST_ASSERT(is_null(av));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
-{
-  const ArrayRCP<A> a_arcp;
-  const ArrayRCP<const A> ac_arcp = a_arcp;
-  TEST_ASSERT(is_null(ac_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, release )
-{
-  ArrayRCP<A> a_arcp = arcp<A>(1);
-  delete [] a_arcp.release();
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_null )
-{
-  ArrayRCP<A> a_arcp = arcp<A>(0, 0, -1, false);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_dealloc_null )
-{
-  ArrayRCP<A> a_arcp = arcp<A, Teuchos::DeallocNull<A> >(0, 0, -1,
-    Teuchos::DeallocNull<A>(), false);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_null )
-{
-  const RCP<std::vector<int> > v_rcp;
-  const ArrayRCP<int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_null )
-{
-  const RCP<const std::vector<int> > v_rcp;
-  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_unsized )
-{
-  const RCP<std::vector<int> > v_rcp = rcp(new std::vector<int>);
-  const ArrayRCP<int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_unsized )
-{
-  const RCP<const std::vector<int> > v_rcp = rcp(new std::vector<int>);
-  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcpWithEmbeddedObj )
-{
-  const ArrayRCP<const int> a_arcp =
-    Teuchos::arcpWithEmbeddedObj<int>(new int[1], 0, 1, as<int>(1), true);
-  const int embeddedObj = Teuchos::getEmbeddedObj<int,int>(a_arcp); 
-  TEST_EQUALITY_CONST( embeddedObj, as<int>(1) );
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, nonnull )
-{
-  ECHO(ArrayRCP<int> a_arcp = arcp<int>(10));
-  TEST_EQUALITY_CONST(is_null(a_arcp), false);
-  TEST_EQUALITY_CONST(nonnull(a_arcp), true);
-  ECHO(a_arcp = null);
-  TEST_EQUALITY_CONST(is_null(a_arcp), true);
-  TEST_EQUALITY_CONST(nonnull(a_arcp), false);
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, weak_strong )
-{
-
-  ECHO(ArrayRCP<int> arcp1 = arcp<int>(10));
-  TEST_EQUALITY_CONST( arcp1.strength(), RCP_STRONG );
-
-  ECHO(ArrayRCP<int> arcp2 = arcp1.create_weak());
-
-  TEST_EQUALITY_CONST( arcp2.strength(), RCP_WEAK );
-  TEST_EQUALITY_CONST( arcp1.strong_count(), 1 );
-  TEST_EQUALITY_CONST( arcp1.weak_count(), 1 );
-  TEST_EQUALITY_CONST( arcp2.strong_count(), 1 );
-  TEST_EQUALITY_CONST( arcp2.weak_count(), 1 );
-
-  ECHO(ArrayRCP<int> arcp3 = arcp2.create_strong());
-
-  TEST_EQUALITY_CONST( arcp3.strength(), RCP_STRONG );
-  TEST_EQUALITY_CONST( arcp1.strong_count(), 2 );
-  TEST_EQUALITY_CONST( arcp1.weak_count(), 1 );
-  TEST_EQUALITY_CONST( arcp2.strong_count(), 2 );
-  TEST_EQUALITY_CONST( arcp2.weak_count(), 1 );
-
-  // This will make the underlying object A gets deleted!
-  ECHO(arcp1 = null);
-  ECHO(arcp3 = null);
-
-  ECHO(arcp2 = null); // Should make the underlying node go away
-
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_null )
-{
-  ECHO(ArrayRCP<char> arcp_char = null);
-  ECHO(ArrayRCP<int> arcp_int = arcp_reinterpret_cast<int>(arcp_char));
-  TEST_EQUALITY_CONST(arcp_int, null);
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_char_to_int )
-{
-
-  const int sizeOfInt = sizeof(int);
-  const int sizeOfChar = sizeof(char);
-  const int num_ints = n;
-  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
-  out << "num_ints = " << num_ints << "\n";
-  out << "num_chars = " << num_chars << "\n";
-
-  ECHO(ArrayRCP<char> arcp_char = arcp<char>(num_chars));
-  ECHO(ArrayRCP<int> arcp_int = arcp_reinterpret_cast<int>(arcp_char));
-  TEST_EQUALITY(arcp_int.size(), num_ints);
-  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
-    implicit_ptr_cast<void>(&arcp_char[0]));
-  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
-
-  ECHO(arcp_char+=sizeOfInt);
-  ECHO(arcp_int = arcp_reinterpret_cast<int>(arcp_char));
-  TEST_EQUALITY(arcp_int.size(), num_ints);
-  TEST_EQUALITY_CONST( arcp_int.lowerOffset(), -1);
-  TEST_EQUALITY( arcp_int.upperOffset(), num_ints-2);
-  TEST_EQUALITY( implicit_ptr_cast<void>(&arcp_int[-1]),
-    implicit_ptr_cast<void>(&arcp_char[-sizeOfInt])
-    );
-  TEST_EQUALITY( implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeOfInt])+1));
-
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_int_to_char )
-{
-
-  const int sizeOfInt = sizeof(int);
-  const int sizeOfChar = sizeof(char);
-  const int num_ints = n;
-  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
-  out << "num_ints = " << num_ints << "\n";
-  out << "num_chars = " << num_chars << "\n";
-
-  ECHO(ArrayRCP<int> arcp_int = arcp<int>(num_ints));
-  ECHO(ArrayRCP<char> arcp_char = arcp_reinterpret_cast<char>(arcp_int));
-  TEST_EQUALITY(arcp_char.size(), num_chars);
-  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
-    implicit_ptr_cast<void>(&arcp_char[0]));
-  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
-  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
-
-  ECHO(++arcp_int);
-  ECHO(arcp_char = arcp_reinterpret_cast<char>(arcp_int));
-  TEST_EQUALITY(as<int>(arcp_char.lowerOffset()), as<int>(-sizeOfInt));
-  TEST_EQUALITY(as<int>(arcp_char.upperOffset()), as<int>(num_chars-1-sizeOfInt));
-  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[-1]),
-    implicit_ptr_cast<void>(&arcp_char[-sizeOfInt]));
-  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeOfInt])+1));
-
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, evil_reinterpret_cast )
-{
-  ECHO(ArrayRCP<ArrayRCP<int> > arcp1 = arcp<ArrayRCP<int> >(n));
-  ECHO(ArrayRCP<ArrayRCP<const int> > arcp2 =
-    arcp_reinterpret_cast<ArrayRCP<const int> >(arcp1));
-  TEST_EQUALITY(arcp2.size(), arcp1.size());
-  TEST_EQUALITY(implicit_ptr_cast<const void>(&arcp1[0]),
-    implicit_ptr_cast<const void>(&arcp2[0]));
-  ECHO(ArrayRCP<const ArrayRCP<const int> > arcp3 = arcp2);
-  TEST_EQUALITY(arcp3.size(), arcp1.size());
-  TEST_EQUALITY(implicit_ptr_cast<const void>(&arcp1[0]),
-    implicit_ptr_cast<const void>(&arcp3[0]));
-  out << "arcp3 = " << arcp3 << "\n";
-}
 
 
 } // namespace

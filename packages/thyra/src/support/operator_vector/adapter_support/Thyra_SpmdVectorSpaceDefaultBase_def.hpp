@@ -183,8 +183,7 @@ void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
     defaultLocalOffset_ = -1;
     defaultGlobalDim_ = -1;
   }
-  smallVecSpcFcty_
-    = Teuchos::rcp(new DefaultSpmdVectorSpaceFactory<Scalar>(comm));
+  smallVecSpcFcty_ = defaultSpmdVectorSpaceFactory<Scalar>(comm);
 }
 
  

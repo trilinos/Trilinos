@@ -362,6 +362,10 @@ Section H: Dashboard testing
   
     NOTE: Setting -DCMAKE_BUILD_TYPE:STRING=DEBUG will automatically set the
     default Trilinos_ENABLE_DEBUG=ON.
+
+    NOTE: In order to turn on the maximum testing on for the Teuchos memory
+    management classes (like Teuchos::RCP), then you need to configure with
+    -DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON
   
   b) Enabling checked STL implementation:
   

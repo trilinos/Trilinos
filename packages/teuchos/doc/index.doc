@@ -101,19 +101,15 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   <li> Teuchos::RCP: Reference-counted smart pointer class for managing
   dynamically allocated memory to single object that is safe under multiple
-  inheritance.  This is only for persisting relationships.  See <a
-  href="RefCountPtrBeginnersGuideSAND.pdf">this
-  report</a>
+  inheritance.  This is only for persisting relationships.  See
+  <a href="RefCountPtrBeginnersGuideSAND.pdf">this report</a>
 
   <li> Teuchos::ArrayRCP:  Reference-counted pointer for managing dynamically
   allocated array memory.  This is a general replacement for a raw C++ pointer
   to handle an array.  This is only for persisting relationships.
 
   <li> Teuchos::Array: is a templated array class similar to the STL vector,
-  but with optional boundschecking. Boundschecking is useful for debugging,
-  and can be turned on at compile time with the
-  <tt>--enable-teuchos-debug</tt> or <tt>--enable-teuchos-abc</tt>
-  configure flags.
+  but with optional very strong debug-mode runtime checking.
 
   <li> Teuchos::ArrayView: A light-weight replacement for raw pointers for passing
   arrays into functions.  This is only for non-persisting relationships.
@@ -122,6 +118,15 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   implementing the "runtime protection of const" idiom.
 
   </ul>
+
+  Runtime debug checking of the above classes can be turned on by setting
+  <tt>-DTeuchos_ENABLE_DEBUG:BOOL=ON</tt> when configuring.  Also, strong runtime
+  checking of reference counting including detection of circular RCPs,
+  detection of duplicate owning RCPs, and detection of dangling non-owning RCPs
+  can be turned on by also configuring with
+  <tt>-DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON</tt>.  Without these
+  configure options, all of these classes are configured by default to
+  be as efficient as possible.
 
 <li> <b> Low-Level Language Support: </b>
 
@@ -145,10 +150,10 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   templated functions for generating inline array arguments for
   function calls.
 
-	<li><tt>Teuchos::getConst()</tt> is a silly little templated function that returns a
-	constant reference given any constant object.  This function allows a piece of code
-	to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
-	to an object.
+  <li><tt>Teuchos::getConst()</tt> is a silly little templated function that returns a
+  constant reference given any constant object.  This function allows a piece of code
+  to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
+  to an object.
 
   </ul>
 
@@ -170,19 +175,19 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   overrides but to be useful the class object must use the embedded ostream
   and verbosity level to print its activities.
 
-	<li><tt>Teuchos::oblackholestream</tt> is a concrete subclass of <tt>std::ostream</tt>
-	that ignores all output.  This class is very useful in writing SPMD parallel programs
-	and controlling which processor(s) produce output.  Generally only the the root process
-	uses a real <tt>std::ostream</tt> object while all of the slave processors use
-	a <tt>Teuchos::oblackholestream</tt> for console output.
+  <li><tt>Teuchos::oblackholestream</tt> is a concrete subclass of <tt>std::ostream</tt>
+  that ignores all output.  This class is very useful in writing SPMD parallel programs
+  and controlling which processor(s) produce output.  Generally only the the root process
+  uses a real <tt>std::ostream</tt> object while all of the slave processors use
+  a <tt>Teuchos::oblackholestream</tt> for console output.
 
   <li> <tt>Teuchos::Describable</tt> defines an interface that
-	subclasses can override that allows the creation of formated
-	output of an object's state complete with indentation control.
-	This class has default definitions for all of its virtual member
-	functions and therefore can be inherited by existing C++ classes
-	without requiring any additional implementation support to get
-	started.
+  subclasses can override that allows the creation of formated
+  output of an object's state complete with indentation control.
+  This class has default definitions for all of its virtual member
+  functions and therefore can be inherited by existing C++ classes
+  without requiring any additional implementation support to get
+  started.
 
   </ul>
 

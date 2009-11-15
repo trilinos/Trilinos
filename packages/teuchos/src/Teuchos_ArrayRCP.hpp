@@ -97,11 +97,24 @@ ArrayRCP<T>::ArrayRCP(
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
-    node_ = RCPNodeHandle(
-      ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in),
-      p, typeName(*p), concreteTypeName(*p),
-      has_ownership_in
-      );
+    RCPNode* existing_RCPNode = 0;
+    if (!has_ownership_in) {
+      existing_RCPNode = get_existing_RCPNode(p);
+    }
+    if (existing_RCPNode) {
+      // Will not call add_new_RCPNode(...)
+      node_ = RCPNodeHandle(existing_RCPNode, RCP_WEAK, false);
+    }
+    else {
+      // Will call add_new_RCPNode(...)
+      RCPNodeThrowDeleter nodeDeleter(ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in));
+      node_ = RCPNodeHandle(
+        nodeDeleter.get(),
+        p, typeName(*p), concreteTypeName(*p),
+        has_ownership_in
+        );
+      nodeDeleter.release();
+    }
   }
 #endif // TEUCHOS_DEBUG
 }
@@ -127,6 +140,7 @@ ArrayRCP<T>::ArrayRCP(
       ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
       p, typeName(*p), concreteTypeName(*p),
       has_ownership_in
+      //, RCP_STRONG, false
       );
   }
 #endif // TEUCHOS_DEBUG
@@ -775,7 +789,7 @@ T* p, typename ArrayRCP<T>::Ordinal lowerOffset
   ,bool owns_mem
   )
 {
-  return ArrayRCP<T>(p,lowerOffset,lowerOffset+size_in-1,owns_mem);
+  return ArrayRCP<T>(p, lowerOffset, lowerOffset+size_in-1, owns_mem);
 }
 
 
@@ -788,7 +802,7 @@ T* p, typename ArrayRCP<T>::Ordinal lowerOffset
   ,Dealloc_T dealloc, bool owns_mem
   )
 {
-  return ArrayRCP<T>(p,lowerOffset,lowerOffset+size_in-1,dealloc,owns_mem);
+  return ArrayRCP<T>(p, lowerOffset, lowerOffset+size_in-1, dealloc, owns_mem);
 }
 
 
@@ -829,7 +843,7 @@ Teuchos::arcpWithEmbeddedObjPreDestroy(
 {
   return arcp(
     p, lowerOffset, size,
-    embeddedObjDeallocDelete<T>(embedded,PRE_DESTROY),
+    embeddedObjDeallocArrayDelete<T>(embedded, PRE_DESTROY),
     owns_mem
     );
 }
@@ -847,7 +861,7 @@ Teuchos::arcpWithEmbeddedObjPostDestroy(
 {
   return arcp(
     p, lowerOffset, size,
-    embeddedObjDeallocDelete<T>(embedded,POST_DESTROY),
+    embeddedObjDeallocArrayDelete<T>(embedded, POST_DESTROY),
     owns_mem
     );
 }
@@ -914,7 +928,7 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<std::vector<T> >
 Teuchos::get_std_vector( const ArrayRCP<T> &ptr )
 {
-  return getEmbeddedObj<T,RCP<std::vector<T> > >(ptr);
+  return getEmbeddedObj<T, RCP<std::vector<T> > >(ptr);
 }
 
 
@@ -923,7 +937,7 @@ REFCOUNTPTR_INLINE
 Teuchos::RCP<const std::vector<T> >
 Teuchos::get_std_vector( const ArrayRCP<const T> &ptr )
 {
-  return getEmbeddedObj<const T,RCP<const std::vector<T> > >(ptr);
+  return getEmbeddedObj<const T, RCP<const std::vector<T> > >(ptr);
 }
 
 
@@ -1190,7 +1204,7 @@ Teuchos::get_optional_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 template<class TOrig, class Embedded, class T>
 const Embedded& Teuchos::getEmbeddedObj( const ArrayRCP<T>& p )
 {
-  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocArrayDelete<TOrig> > Dealloc_t;
   return get_dealloc<Dealloc_t>(p).getObj();
 }
 
@@ -1198,7 +1212,7 @@ const Embedded& Teuchos::getEmbeddedObj( const ArrayRCP<T>& p )
 template<class TOrig, class Embedded, class T>
 Embedded& Teuchos::getNonconstEmbeddedObj( const ArrayRCP<T>& p )
 {
-  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocDelete<TOrig> > Dealloc_t;
+  typedef EmbeddedObjDealloc<TOrig,Embedded,DeallocArrayDelete<TOrig> > Dealloc_t;
   return get_nonconst_dealloc<Dealloc_t>(p).getNonconstObj();
 }
 

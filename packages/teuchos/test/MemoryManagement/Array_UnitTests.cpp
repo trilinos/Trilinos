@@ -205,56 +205,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, implicit_to_ArrayView_const_empty, T )
 }
 
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_implicit, T )
 {
   ArrayView<T> av;
-  TEST_THROW( { Array<T> a(n); av = a; },
-    DanglingReferenceError );
+  { Array<T> a(n); av = a; }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0] = 0, DanglingReferenceError );
+#endif
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_implicit_const, T )
 {
   ArrayView<const T> av;
-  TEST_THROW( { Array<T> a(n); av = getConst(a); },
-    DanglingReferenceError );
+  { Array<T> a(n); av = getConst(a); }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0], DanglingReferenceError );
+#endif
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_explicit, T )
 {
   ArrayView<T> av;
-  TEST_THROW( { Array<T> a(n); av = a(); },
-    DanglingReferenceError );
+  { Array<T> a(n); av = a(); }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0] = 0, DanglingReferenceError );
+#endif
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_explicit_const, T )
 {
   ArrayView<const T> av;
-  TEST_THROW( { Array<T> a(n); av = getConst(a)(); },
-    DanglingReferenceError );
+  { Array<T> a(n); av = getConst(a)(); }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0], DanglingReferenceError );
+#endif
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_subview, T )
 {
   ArrayView<T> av;
-  TEST_THROW( { Array<T> a(n); av = a(0,1); },
-    DanglingReferenceError );
+  { Array<T> a(n); av = a(0,1); }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0] = 0, DanglingReferenceError );
+#endif
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayView_subview_const, T )
 {
   ArrayView<const T> av;
-  TEST_THROW( { Array<T> a(n); av = getConst(a)(0,1); },
-    DanglingReferenceError );
+  { Array<T> a(n); av = getConst(a)(0,1); }
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0], DanglingReferenceError );
+#endif
 }
-
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter, T )
 {
@@ -263,23 +271,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter, T )
   ECHO(ArrayView<T> av = a);
   ECHO(iter_t iter = av.begin());
   ECHO(av = null);
-  TEST_THROW( a.resize(0), DanglingReferenceError );
-  // The way that Array::resize() is able to detect that there is still a
-  // dangling iterator comes from the way in which all of this is implemented.
-  // The reason that this throws is that the RCP<std::vector<T> > object
-  // embedded in the Array object gets embedded inside of the dealloc object
-  // which is attached to the node.  Therefore, even though the weak
-  // ArrayRCP<T> object that was created and embedded in the ArrayView<T>
-  // object has gone away, this same weak ArrayRCP<T> object was used to
-  // create another weak ArrayRCP<T> object which *is* the iterator object
-  // iter above.  What this means is that any reference counted object that
-  // gets created for whatever reason based on the underlying
-  // RCP<std::vector<T> > object will result in all the Array functions that
-  // alter the underlying array memory to throw an exception right away.  I
-  // think I really like this "early warning" behavior.  The only disadvantage
-  // is that we don't get a very good error message.  It would be nice to find
-  // a way so that it was the dangling reference object itself that threw the
-  // exception message and was able to provide better debug feedback.
+  ECHO(a.resize(0));
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( *iter = 0, DanglingReferenceError );
+#else
+  (void)iter;
+#endif
 }
 
 
@@ -290,8 +287,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_const, T )
   ECHO(ArrayView<T> av = a);
   ECHO(iter_t iter = av.begin());
   ECHO(av = null);
-  TEST_THROW( a.resize(0), DanglingReferenceError );
-  // See comments above.
+  ECHO(a.resize(0));
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( *iter, DanglingReferenceError );
+#else
+  (void)iter;
+#endif
 }
 
 
@@ -299,8 +300,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView, T )
 {
   Array<T> a = generateArray<T>(n);
   ArrayView<T> av = a;
-  TEST_THROW( a.push_back(a[0]), 
-    DanglingReferenceError );
+  a.push_back(a[0]);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0] = 0, DanglingReferenceError );
+#endif
 }
 
 
@@ -308,12 +311,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
 {
   Array<T> a = generateArray<T>(n);
   ArrayView<const T> av = getConst(a);
-  TEST_THROW( a.push_back(a[0]), 
-    DanglingReferenceError );
+  a.push_back(a[0]);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  TEST_THROW( av[0], DanglingReferenceError );
+#endif
 }
-
-#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-
 
 
 //
@@ -322,17 +324,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
-#  define DEBUG_UNIT_TEST_GROUP( T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit_const, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_explicit, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_explicit_const, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview_const, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_const, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T )
+#  define DEBUG_UNIT_TEST_GROUP( T )
 
 #else // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
@@ -354,6 +346,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_const_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, implicit_to_ArrayView_empty, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_implicit_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_explicit, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_explicit_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayView_subview_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_const, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T )
   DEBUG_UNIT_TEST_GROUP( T )
 
 UNIT_TEST_GROUP(int)

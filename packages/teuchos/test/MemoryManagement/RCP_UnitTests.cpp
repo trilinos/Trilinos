@@ -17,6 +17,8 @@ using Teuchos::null;
 using Teuchos::Ptr;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcpFromRef;
+using Teuchos::rcpFromUndefRef;
 using Teuchos::outArg;
 using Teuchos::rcpWithEmbeddedObj;
 using Teuchos::getOptionalEmbeddedObj;
@@ -26,6 +28,7 @@ using Teuchos::get_optional_nonconst_extra_data;
 using Teuchos::getConst;
 using Teuchos::NullReferenceError;
 using Teuchos::DanglingReferenceError;
+using Teuchos::DuplicateOwningRCPError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
@@ -82,6 +85,232 @@ TEUCHOS_UNIT_TEST( RCP, explicit_null_nonnull )
   TEST_ASSERT(nonnull(a_rcp));
   delete a;
 }
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromRef_raw_ref )
+{
+  A a;
+  RCP<A> a_rcp = rcpFromRef(a);
+  TEST_EQUALITY(a_rcp.getRawPtr(), &a);
+  TEST_ASSERT(nonnull(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromRef_from_rcp )
+{
+  RCP<A> a_rcp1 = rcp<A>(new A);
+  RCP<A> a_rcp2 = rcpFromRef(*a_rcp1);
+  TEST_EQUALITY(a_rcp2.getRawPtr(), a_rcp1.getRawPtr());
+  if (Teuchos::isTracingActiveRCPNodes())
+  {
+    TEST_EQUALITY_CONST(a_rcp2.strong_count(), 1);
+    TEST_EQUALITY_CONST(a_rcp2.weak_count(), 1);
+    TEST_EQUALITY_CONST(a_rcp2.has_ownership(), true);
+  }
+  else {
+    TEST_EQUALITY_CONST(a_rcp2.strong_count(), 1);
+    TEST_EQUALITY_CONST(a_rcp2.weak_count(), 0);
+    TEST_EQUALITY_CONST(a_rcp2.has_ownership(), false);
+  }
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromUndefRef )
+{
+  A a;
+  RCP<A> a_rcp = rcpFromUndefRef(a);
+  TEST_ASSERT(nonnull(a_rcp));
+}
+
+
+// Test that shows that we can detect trying to create two owning RCPs
+// pointing to the same polymorphic object but having different interfaces
+// with different addresses.  This happens due to virtual base classes. Only
+// works when we have a working getBaseObjVoidPtr(...) function.
+TEUCHOS_UNIT_TEST( RCP, duplicate_rcp_owning_polymorphic )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(C *c_ptr = new C);
+  ECHO(A *a_ptr = c_ptr);
+  ECHO(RCP<C> c_rcp = rcp(c_ptr)); // Okay
+#if defined(TEUCHOS_DEBUG) && defined(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
+  // With determine they are pointed to the same object!
+  TEST_THROW(RCP<A> a_rcp = rcp(a_ptr), DuplicateOwningRCPError);
+#else
+  // Will not determine they are point to the same object!
+  ECHO(RCP<A> a_rcp = rcp(a_ptr));
+  TEST_EQUALITY(a_rcp.getRawPtr(), a_ptr);
+  ECHO(a_rcp.release()); // Better or we will get a segfault!
+#endif
+}
+
+
+// Test that shows that we can detect trying to create two owning RCPs
+// pointing to the same polymorphic object with the same type and therefore
+// the same address.  This works even if these use virtual base classes.  This
+// works even without a working getBaseObjVoidPtr(...) function.
+TEUCHOS_UNIT_TEST( RCP, duplicate_rcp_owning_polymorphic_different_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(A *a_ptr1 = new C);
+  ECHO(A *a_ptr2 = a_ptr1);
+  ECHO(RCP<A> a_rcp1 = rcp(a_ptr1)); // Okay
+#if defined(TEUCHOS_DEBUG)
+  // With determine they are pointed to the same object!
+  TEST_THROW(RCP<A> a_rcp2 = rcp(a_ptr2), DuplicateOwningRCPError);
+#else
+  // Will not determine they are point to the same object!
+  ECHO(RCP<A> a_rcp2 = rcp(a_ptr2));
+  TEST_EQUALITY(a_rcp2.getRawPtr(), a_ptr2);
+  ECHO(a_rcp2.release()); // Better or we will get a segfault!
+#endif
+}
+
+
+// Test that shows that we can always detect trying to create two owning RCPs
+// pointing to the same nonpolymorphic object having different interfaces but
+// the same address (single non-virtual inheritance).  Works just fine without
+// a working getBaseObjVoidPtr(...) function.
+TEUCHOS_UNIT_TEST( RCP, duplicate_rcp_owning_nonpolymorphic_same_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(E *e_ptr = new E);
+  ECHO(E *d_ptr = e_ptr);
+  ECHO(RCP<E> e_rcp = rcp(e_ptr)); // Okay
+#if defined(TEUCHOS_DEBUG)
+  // With determine they are pointed to the same object even without support
+  // for getBaseObjVoidPtr(...) because no dynamic_cast is needed.
+  TEST_THROW(RCP<D> d_rcp = rcp(d_ptr), DuplicateOwningRCPError);
+#else
+  // Will not determine they are point to the same object!
+  ECHO(RCP<D> d_rcp = rcp(d_ptr));
+  TEST_EQUALITY(d_rcp.getRawPtr(), d_ptr);
+  ECHO(d_rcp.release()); // Better or we will get a segfault!
+#endif
+}
+
+
+//
+// These next tests shows that we can detect when two RCPs are create to the same
+// object, one owning and the other non-owning.  When we have a working
+// getBaseObjVoidPtr(...) function, the new non-owning RCP will actually be a
+// weak RCP that can be used to detect circular dependencies.
+//
+
+
+// rcp
+
+
+TEUCHOS_UNIT_TEST( RCP, rcp_duplicate_rcp_nonowning_polymorphic_different_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<C> c_rcp(new C));
+  ECHO(A &a_ref = *c_rcp);
+  ECHO(RCP<A> a_rcp = rcp(&a_ref, false));
+  ECHO(c_rcp = null);
+#if defined(TEUCHOS_DEBUG) && defined(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
+  TEST_THROW(a_rcp->A_g(), DanglingReferenceError);
+#else
+  TEST_NOTHROW(a_rcp.getRawPtr());
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcp_duplicate_rcp_nonowning_polymorphic_same_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<A> a_rcp1(new C));
+  ECHO(A &a_ref = *a_rcp1);
+  ECHO(RCP<A> a_rcp2 = rcp(&a_ref, false));
+  ECHO(a_rcp1 = null);
+#if defined(TEUCHOS_DEBUG)
+  TEST_THROW(a_rcp2->A_g(), DanglingReferenceError);
+#else
+  TEST_NOTHROW(a_rcp2.getRawPtr());
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcp_duplicate_rcp_nonowning_nonpolymorphic )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<E> e_rcp(new E));
+  ECHO(D &d_ref = *e_rcp);
+  ECHO(RCP<D> d_rcp = rcp(&d_ref, false));
+  ECHO(e_rcp = null);
+#if defined(TEUCHOS_DEBUG)
+  TEST_THROW(d_rcp->D_g(), DanglingReferenceError);
+#else
+  TEST_NOTHROW(d_rcp.getRawPtr());
+#endif
+}
+
+
+// rcpFromRef
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromRef_duplicate_rcp_nonowning_polymorphic_different_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<C> c_rcp(new C));
+  ECHO(A &a_ref = *c_rcp);
+  ECHO(RCP<A> a_rcp = rcpFromRef(a_ref));
+  ECHO(c_rcp = null);
+#if defined(TEUCHOS_DEBUG) && defined(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
+  TEST_THROW(a_rcp->A_g(), DanglingReferenceError);
+#else
+  TEST_NOTHROW(a_rcp.getRawPtr());
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromRef_duplicate_rcp_nonowning_polymorphic_same_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<A> a_rcp1(new C));
+  ECHO(A &a_ref = *a_rcp1);
+  ECHO(RCP<A> a_rcp2 = rcpFromRef(a_ref));
+  ECHO(a_rcp1 = null);
+#if defined(TEUCHOS_DEBUG)
+  TEST_THROW(a_rcp2->A_g(), DanglingReferenceError);
+#else
+  TEST_NOTHROW(a_rcp2.getRawPtr());
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromRef_duplicate_rcp_nonowning_nonpolymorphic )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<E> e_rcp(new E));
+  ECHO(D &d_ref = *e_rcp);
+  ECHO(RCP<D> d_rcp = rcpFromRef(d_ref));
+  ECHO(e_rcp = null);
+#if defined(TEUCHOS_DEBUG)
+  TEST_THROW(d_rcp->D_g(), DanglingReferenceError);
+#else
+  TEST_NOTHROW(d_rcp.getRawPtr());
+#endif
+}
+
+
+// rcpFromUndefRef (Can never detect dangling references)
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpFromUndefRef_duplicate_rcp_nonowning_polymorphic_same_addr )
+{
+  SET_RCPNODE_TRACING();
+  ECHO(RCP<A> a_rcp1(new C));
+  ECHO(A &a_ref = *a_rcp1);
+  ECHO(RCP<A> a_rcp2 = rcpFromUndefRef(a_ref));
+  ECHO(a_rcp1 = null);
+  TEST_NOTHROW(a_rcp2.getRawPtr());
+}
+
+
+//
+// extra data and embedded objects tests
+//
 
 
 TEUCHOS_UNIT_TEST( RCP, get_optional_nonconst_extra_data )
@@ -430,23 +659,14 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_c_then_a )
 
 TEUCHOS_UNIT_TEST( RCP, circularReference_self )
 {
-
   {
-
     // Create one 'c' object
-
     ECHO(RCP<C> c = rcp(new C));
-
     // Create a weak circular reference where 'c' points back to itself
-
     ECHO(c->set_A(c.create_weak()));
-
     // Now, try to set 'c' to null.
-
     ECHO(c = null); // All memory should be cleaned up here!
-
   }
-
 }
 
 
@@ -463,6 +683,35 @@ TEUCHOS_UNIT_TEST( RCP, danglingPtr )
   TEST_EQUALITY( a_ptr.getRawPtr(), badPtr );
 #endif
 }
+
+
+#ifdef TEUCHOS_DEBUG
+
+/* ToDo: Comment this back in once I have everything working
+
+// Test that the RCPNode tracing machinary can detect if an owning RCPNode is
+// being created that would result in a double delete.
+TEUCHOS_UNIT_TEST( RCP, multiRcpCreateError )
+{
+  C *c_ptr = new C;
+#if !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+  Teuchos::setTracingActiveRCPNodes(true);
+#endif
+  RCP<C> c_rcp = rcp(c_ptr); // Okay
+  RCP<C> c_rcp2;
+  TEST_THROW(c_rcp2 = rcp(c_ptr), DuplicateOwningRCPError);
+#if !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+  Teuchos::setTracingActiveRCPNodes(false);
+#endif
+  // Clean up memory so no leaks and not double deletes no matter what.
+  c_rcp.release();
+  c_rcp2.release();
+  delete c_ptr;
+}
+
+*/
+
+#endif // TEUCHOS_DEBUG
 
 
 //

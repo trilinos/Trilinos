@@ -47,6 +47,10 @@ def getScriptBaseDir():
   return os.path.abspath(os.path.dirname(sys.argv[0]))
 
 
+def getScriptName():
+  return os.path.basename(os.path.dirname(sys.argv[0]))
+
+
 def findInSequence(seq, item):
  for i in range(0, len(seq)):
    if seq[i] == item:

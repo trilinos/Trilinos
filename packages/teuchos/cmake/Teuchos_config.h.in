@@ -1,7 +1,3 @@
-/* $Header: */
-
-/* Copy of the following file, edited to be used with CMake */
-/* src/Teuchos_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define the Fortran name mangling to be used for the BLAS */
 #define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
@@ -77,6 +73,10 @@
 
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TEUCHOS_DEBUG
+
+#cmakedefine HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
+
+#cmakedefine HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
 
 /* Define if want to build teuchos-demangle */
 #cmakedefine HAVE_TEUCHOS_DEMANGLE

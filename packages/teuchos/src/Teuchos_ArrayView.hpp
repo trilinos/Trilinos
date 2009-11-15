@@ -195,7 +195,10 @@ ArrayView<T> ArrayView<T>::view(Ordinal offset, Ordinal size_in) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(offset, size_in);
-  return ArrayView<T>(ptr_+offset,size_in);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return arcp_(offset, size_in);
+#endif
+  return ArrayView<T>(ptr_+offset, size_in);
   // WARNING: The above code had better be correct since we are using raw
   // pointer arithmetic!
 }
@@ -220,7 +223,10 @@ template<class T> inline
 ArrayView<const T> ArrayView<T>::getConst() const
 {
   debug_assert_valid_ptr();
-  return ArrayView<const T>(ptr_,size_);
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  return arcp_.getConst()();
+#endif
+  return ArrayView<const T>(ptr_, size_);
 }
 
 
@@ -332,10 +338,9 @@ template<class T>
 void ArrayView<T>::setUpIterators()
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  if (ptr_)
+  if (ptr_ && arcp_.is_null()) {
     arcp_ = arcp(ptr_, 0, size_, false);
-  // 2008/09/16: rabartl: Above, this will catch improper usage of the array
-  // for out-of-bounds errors but it will not catch dangling references.
+  }
 #endif
 }
 
@@ -352,7 +357,7 @@ template<class T> inline
 Teuchos::ArrayView<T>
 Teuchos::arrayView( T* p, typename ArrayView<T>::Ordinal size )
 {
-  return ArrayView<T>(p,size);
+  return ArrayView<T>(p, size);
 }
 
 

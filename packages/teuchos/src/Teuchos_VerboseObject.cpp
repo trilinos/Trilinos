@@ -39,8 +39,8 @@ namespace Teuchos {
 RCP<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
 {
   static RCP<FancyOStream> defaultOStream;
-  if(defaultOStream.get()==NULL) {
-    defaultOStream = rcp(new FancyOStream(rcp(&std::cout,false)));
+  if (defaultOStream.get()==NULL) {
+    defaultOStream = fancyOStream(rcpFromRef(std::cout));
     defaultOStream->setOutputToRootOnly(0);
 //    if(GlobalMPISession::getNProc()>1)
 //      defaultOStream->setShowProcRank(true);

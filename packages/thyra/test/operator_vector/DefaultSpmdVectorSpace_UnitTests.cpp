@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, deprecatedSerialConst
 {
 
   ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    rcp( new DefaultSpmdVectorSpace<Scalar>(g_localDim)));
+    Thyra::defaultSpmdVectorSpace<Scalar>(g_localDim));
   TEST_EQUALITY(vs->getComm(), null);
   TEST_EQUALITY(vs->localOffset(), as<Ordinal>(0));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
@@ -225,7 +225,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, deprecatedParallelCon
   ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
     Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
   ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    rcp(new DefaultSpmdVectorSpace<Scalar>(comm, g_localDim, -1)));
+    Thyra::defaultSpmdVectorSpace<Scalar>(comm, g_localDim, -1));
   TEST_EQUALITY(vs->getComm(), comm);
   TEST_EQUALITY(vs->localOffset(), as<Ordinal>(comm->getRank()*g_localDim));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));

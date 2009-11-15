@@ -498,7 +498,7 @@ getFancyOStream( const RCP<std::basic_ostream<char> > &out )
     return Teuchos::null;
   RCP<basic_FancyOStream<char> >
     fancyOut = rcp_dynamic_cast<basic_FancyOStream<char> >(out);
-  if(fancyOut.get())
+  if(nonnull(fancyOut))
     return fancyOut;
   return rcp(new basic_FancyOStream<char>(out));
 }
@@ -564,7 +564,7 @@ public:
     ,const int tabs = 1
     ,const std::basic_string<CharT,Traits> linePrefix = ""
     )
-    :fancyOStream_(getFancyOStream(rcp(&oStream,false)))
+    :fancyOStream_(getFancyOStream(rcp(&oStream, false)))
     ,tabs_(tabs)
     ,linePrefix_(linePrefix)
     {
@@ -655,21 +655,20 @@ private:
 template <typename CharT, typename Traits>
 RCP<basic_FancyOStream<CharT,Traits> >
 tab(
-  const RCP<basic_FancyOStream<CharT,Traits> > &out
-  ,const int tabs = 1
-  ,const std::basic_string<CharT,Traits> linePrefix = ""
+  const RCP<basic_FancyOStream<CharT,Traits> > &out,
+  const int tabs = 1,
+  const std::basic_string<CharT,Traits> linePrefix = ""
   )
 {
   if(out.get()==NULL)
     return Teuchos::null;
-  RCP<basic_FancyOStream<CharT,Traits> >
-    fancyOut = rcp(&*out,false);
-  set_extra_data( out, "out", inOutArg(fancyOut) );
+  RCP<basic_FancyOStream<CharT,Traits> > fancyOut = out;
   set_extra_data(
     rcp(new basic_OSTab<CharT,Traits>(out,tabs,linePrefix)),
     "OSTab",
     inOutArg(fancyOut),
-    PRE_DESTROY
+    PRE_DESTROY,
+    false
     );
   return fancyOut;
 }
