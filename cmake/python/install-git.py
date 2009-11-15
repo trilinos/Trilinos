@@ -137,6 +137,7 @@ print ""
 if options.untar:
   echoChDir(getBaseDir)
   echoRunSysCmnd("tar -xzvf git-"+gitVersion+".tar.gz")
+  echoRunSysCmnd("tar -xzvf git-subtree.tar.gz")
 else:
   print "Skipping on request ..."
 
@@ -171,10 +172,14 @@ print ""
 if options.install:
   echoChDir(gitSrcBuildDir)
   echoRunSysCmnd("make install")
-  egInstallFile = options.installDir+"/bin/eg"
   echoRunSysCmnd("cd "+options.installDir+"/share/man" \
     +" && tar -xzvf "+getBaseDir+"/git-manpages-"+gitVersion+".tar.gz")
-  echoRunSysCmnd("cp ../eg."+egVersion+".pl "+egInstallFile)
+  echoChDir(getBaseDir)
+  gitSubtreeInstallFile = options.installDir+"/bin/git-subtree"
+  echoRunSysCmnd("cp git-subtree/git-subtree.sh "+gitSubtreeInstallFile)
+  echoRunSysCmnd("chmod a+rx "+gitSubtreeInstallFile)
+  egInstallFile = options.installDir+"/bin/eg"
+  echoRunSysCmnd("cp eg."+egVersion+".pl "+egInstallFile)
   echoRunSysCmnd("chmod a+rx "+egInstallFile)
 else:
   print "Skipping on request ..."
