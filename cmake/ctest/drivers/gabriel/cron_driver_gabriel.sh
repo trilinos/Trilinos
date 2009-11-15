@@ -50,6 +50,14 @@ time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_release_gabri
 
 
 echo
+echo "Doing serial debug boost tracing build: `date`"
+echo
+
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_boost_tracing_gabriel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_debug_boost_tracing_gabriel.out
+
+
+echo
 echo "Ending nightly Trilinos testing on gabriel: `date`"
 echo
 
