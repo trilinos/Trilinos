@@ -147,6 +147,21 @@ MACRO(SELECT_DEFAULT_TRILINOS_PACKAGES)
 ENDMACRO()
 
 
+MACRO(SELECT_DEFAULT_GENERATOR)
+  # Select a default generator.  When the build tree is known and
+  # exists, use its generator.
+  SET(DEFAULT_GENERATOR "Unix Makefiles")
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
+    FOREACH(line ${CACHE_CONTENTS})
+      IF("${line}" MATCHES "CMAKE_GENERATOR")
+        STRING(REGEX REPLACE "(.*)=(.*)" "\\2" DEFAULT_GENERATOR "${line}")
+      ENDIF()
+    ENDFOREACH(line)
+  ENDIF()
+ENDMACRO()
+
+
 #
 # This is the core extended ctest driver script code that is platform
 # independent.  This script drives the testing process by doing an update and
@@ -191,18 +206,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Remove an existing CMakeCache.txt file or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
 
-  # Select a default generator.  When the build tree is known and
-  # exists, use its generator.
-  SET(DEFAULT_GENERATOR "Unix Makefiles")
-  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
-    FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
-    FOREACH(line ${CACHE_CONTENTS})
-      IF("${line}" MATCHES "CMAKE_GENERATOR")
-        STRING(REGEX REPLACE "(.*)=(.*)" "\\2" DEFAULT_GENERATOR "${line}")
-      ENDIF()
-    ENDFOREACH(line)
-  ENDIF()
-      
+  # Select a default generator.
+  SELECT_DEFAULT_GENERATOR()
   SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
 
   # Do the CVS updates or not
