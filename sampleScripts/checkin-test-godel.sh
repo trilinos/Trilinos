@@ -26,7 +26,7 @@ echo "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77" >> SERIAL_RELEASE.config
 
 
 /home/rabartl/PROJECTS/Trilinos.base/Trilinos/cmake/python/checkin-test.py \
---make-options="-j6" \
---ctest-options="-j6" \
+--make-options="-j4" \
+--ctest-options="-j" \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  

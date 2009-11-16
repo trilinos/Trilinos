@@ -157,6 +157,7 @@ APPEND_SET(HEADERS
   Teuchos_basic_oblackholestream.hpp
   Teuchos_dyn_cast.hpp
   Teuchos_exit.h
+  Teuchos_getBaseObjVoidPtr.hpp
   Teuchos_getConst.hpp
   Teuchos_implicit_cast.hpp
   Teuchos_map.hpp
