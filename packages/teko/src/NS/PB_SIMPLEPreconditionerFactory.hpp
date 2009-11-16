@@ -28,6 +28,7 @@ public:
     
 protected:
    // class members
+   Teuchos::RCP<InverseFactory> customHFactory_;
    Teuchos::RCP<InverseFactory> invVelFactory_;
    Teuchos::RCP<InverseFactory> invPrsFactory_;
    double alpha_;

@@ -44,6 +44,8 @@ LinearOp SIMPLEPreconditionerFactory
    TEUCHOS_ASSERT(rows==2); // sanity checks
    TEUCHOS_ASSERT(cols==2);
 
+   bool buildExplicitSchurComplement = true;
+
    // extract subblocks
    const LinearOp F  = getBlock(0,0,blockOp);
    const LinearOp Bt = getBlock(0,1,blockOp);
@@ -65,10 +67,26 @@ LinearOp SIMPLEPreconditionerFactory
       H = getAbsRowSumInvMatrix(F);
       fApproxStr = "AbsRowSum";
    }
+   else if(fInverseType_==Custom) {
+      H = buildInverse(*customHFactory_,F);
+      fApproxStr = customHFactory_->toString();
+
+      // since H is now implicit, we must build an implicit Schur complement
+      buildExplicitSchurComplement = false;
+   }
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
-   const LinearOp HBt = explicitMultiply(H,Bt);
-   const LinearOp hatS = explicitAdd(C,scale(-1.0,explicitMultiply(B,HBt)));
+   LinearOp HBt, hatS;
+
+   if(buildExplicitSchurComplement) {
+      HBt = explicitMultiply(H,Bt);
+      hatS = explicitAdd(C,scale(-1.0,explicitMultiply(B,HBt)));
+   }
+   else {
+      // build an implicit Schur complement
+      HBt = multiply(H,Bt);
+      hatS = add(C,scale(-1.0,multiply(B,HBt)));
+   }
 
    // build the inverse for F 
    InverseLinearOp invF = state.getInverse("invF");
@@ -132,10 +150,10 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
         fInverseType_ = Lumped;
      else if(fInverseStr=="AbsRowSum")
         fInverseType_ = AbsRowSum;
-     else if(fInverseStr=="Custom")
-     { TEST_FOR_EXCEPT(true); }
-     else 
-     { TEST_FOR_EXCEPT(true); }
+     else {
+        fInverseType_ = Custom;
+        customHFactory_ = invLib->getInverseFactory(fInverseStr);
+     } 
    }
 
    PB_DEBUG_MSG_BEGIN(5)
