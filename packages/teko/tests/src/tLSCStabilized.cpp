@@ -244,20 +244,9 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
    paramList.set("Linear Solver Type","Amesos");
    RCP<PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"Amesos");
 
-   // build F matrix
-   const RCP<Epetra_CrsMatrix> ptrMass  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   row0[0] = 3.0; row0[1] = 9.0; indicies[0] = 0; indicies[1] = 2;
-   ptrMass->InsertGlobalValues(0,2,&row0[0],&indicies[0]);
-   row0[0] = 1.0; row0[1] = 4.0; indicies[0] = 0; indicies[1] = 1;
-   ptrMass->InsertGlobalValues(1,2,&row0[0],&indicies[0]);
-   row0[0] = 5.0; row0[1] = 7.0; indicies[0] = 2; indicies[1] = 3;
-   ptrMass->InsertGlobalValues(2,2,&row0[0],&indicies[0]);
-   row0[0] = 1.0; row0[1] = 6.0; indicies[0] = 2; indicies[1] = 3;
-   ptrMass->InsertGlobalValues(3,2,&row0[0],&indicies[0]);
-   row0[0] = 7.0; row0[1] = 6.0; indicies[0] = 4; indicies[1] = 1;
-   ptrMass->InsertGlobalValues(4,2,&row0[0],&indicies[0]);
-   ptrMass->FillComplete();
-   LinearOp mass = Thyra::epetraLinearOp(ptrMass,"mass");
+   // build Mass matrix
+   vec[0] = 3.0; vec[1] = 4.0; vec[2] = 5.0; vec[3] = 6.0; vec[4] = 7.0;
+   LinearOp mass = PB::Test::DiagMatrix(sz,vec);
 
    vec[0] = 1.0/3.0; vec[1] = 1.0/4.0; vec[2] = 1.0/5.0; vec[3] = 1.0/6.0; vec[4] = 1.0/7.0;
    LinearOp invMass = PB::Test::DiagMatrix(sz,vec);
@@ -291,12 +280,16 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
    vec[4] = -0.115405114603879;
    LinearOp p11 = PB::Test::DiagMatrix(sz,vec);
    LinearOp P = Thyra::block2x2(p00,p01,p10,p11);
-
+  
+   // Kluge to get around problem with Anasazi
+   PB::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
+   PB::computeSpectralRad(Thyra::multiply(invMass,F),5e-2,false,3)/3.0;
+             
    // build inverse strategy
    { 
       bool result;
       PB::NS::LSCPrecondState state;
-      PB::NS::InvLSCStrategy iStrat(invFact,mass);
+      PB::NS::InvLSCStrategy iStrat(invFact,mass,false);
       iStrat.setEigSolveParam(3);
       PB::NS::LSCPreconditionerFactory factory(Teuchos::rcpFromRef(iStrat));
       LinearOp prec = factory.buildPreconditionerOperator(blkA,state);
@@ -346,8 +339,6 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
       if(not result || verbosity>=10) 
          os << ss.str(); 
    }
-
-   
 
    return allPassed;
 }
