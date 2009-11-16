@@ -112,7 +112,7 @@ defaultSpmdVectorSpaceFactory(
   const Teuchos::RCP<const Teuchos::Comm<Index> > &comm = Teuchos::null
   )
 {
-  return rcp(new DefaultSpmdVectorSpaceFactory<Scalar>(comm));
+  return Teuchos::rcp(new DefaultSpmdVectorSpaceFactory<Scalar>(comm));
 }
 
 
