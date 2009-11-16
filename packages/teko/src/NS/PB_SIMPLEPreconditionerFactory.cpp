@@ -51,13 +51,20 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp C  = getBlock(1,1,blockOp);
 
    // get approximation of inv(F) name H
+   std::string fApproxStr = "<error>";
    LinearOp H = getInvDiagonalOp(F);
-   if(fInverseType_==Diagonal)
+   if(fInverseType_==Diagonal) {
       H = getInvDiagonalOp(F);
-   else if(fInverseType_==Lumped)
+      fApproxStr = "Diagonal";
+   }
+   else if(fInverseType_==Lumped) {
       H = getInvLumpedMatrix(F);
-   else if(fInverseType_==AbsRowSum)
+      fApproxStr = "Lumped";
+   }
+   else if(fInverseType_==AbsRowSum) {
       H = getAbsRowSumInvMatrix(F);
+      fApproxStr = "AbsRowSum";
+   }
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
    const LinearOp HBt = explicitMultiply(H,Bt);
@@ -96,7 +103,7 @@ LinearOp SIMPLEPreconditionerFactory
    LinearOp invU = createBlockUpperTriInverseOp(U,invDiag);
 
    // return implicit product operator
-   return multiply(invU,invL,"SIMPLE");
+   return multiply(invU,invL,"SIMPLE_"+fApproxStr);
 }
 
 //! Initialize from a parameter list
