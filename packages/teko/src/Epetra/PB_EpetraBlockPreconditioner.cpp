@@ -193,5 +193,43 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
 }
 
+/** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method
+  * attempts to cast its internal representation of a preconditioner 
+  * object to a <code>Teko::BlockPreconditioner</code> object.  If it suceeds a 
+  * state object is returned.  Otherwise, <code>Teuchos::null</code> is returned.
+  *
+  * \returns Get the state object associated with this preconditioner.
+  *          If it doesn't exist for this type of preconditioner factory
+  *          this method returns null.
+  */
+Teuchos::RCP<BlockPreconditionerState> EpetraBlockPreconditioner::getPreconditionerState()
+{
+   Teuchos::RCP<BlockPreconditioner> bp = rcp_dynamic_cast<BlockPreconditioner>(preconObj_);
+
+   if(bp!=Teuchos::null)
+      return bp->getStateObject();
+ 
+   return Teuchos::null;
+}
+
+/** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method
+  * attempts to cast its internal representation of a preconditioner 
+  * object to a <code>Teko::BlockPreconditioner</code> object.  If it suceeds a 
+  * state object is returned.  Otherwise, <code>Teuchos::null</code> is returned.
+  *
+  * \returns Get the state object associated with this preconditioner.
+  *          If it doesn't exist for this type of preconditioner factory
+  *          this method returns null.
+  */
+Teuchos::RCP<const BlockPreconditionerState> EpetraBlockPreconditioner::getPreconditionerState() const
+{
+   Teuchos::RCP<const BlockPreconditioner> bp = rcp_dynamic_cast<const BlockPreconditioner>(preconObj_);
+
+   if(bp!=Teuchos::null)
+      return bp->getStateObject();
+ 
+   return Teuchos::null;
+}
+
 } // end namespace Epetra
 } // end namespace PB
