@@ -13,10 +13,10 @@ struct distributed_crs_matrix {
   int * p_send_id ; /* [send_pc[np]], indices of sent elements */
 
   /* Local and local parallel */
-  int   n_local_row ;     /* Number of local rows */
-  int   n_internal_row ;  /* Number of local rows with internal columns */
-  int * A_row_partition ; /* Partition of rows with internal first */
-  int * A_pc ;            /* Offsets into A_ia array for column indices */
+  int   n_local_column ; /* Number of local columns */
+  int   n_local_row ;    /* Number of local rows */
+  int   n_internal_row ; /* Number of local rows with internal columns */
+  int * A_pc ;           /* Offsets into A_ia array for column indices */
   int * A_ia ;
   MATRIX_SCALAR * A_a ;
 };

@@ -111,17 +111,15 @@ static void dcrs_apply_and_dot_span(
         VECTOR_SCALAR * const y ,
         double        * const result )
 {
-  const int           * const A_row = matrix->A_row_partition ;
   const int           * const A_pc  = matrix->A_pc ;
   const int           * const A_ia  = matrix->A_ia ;
   const MATRIX_SCALAR * const A_a   = matrix->A_a ;
 
   double dot_x_y = *result ;
 
-  int j = span_begin ;
+  int row = span_begin ;
 
-  for ( ; j < span_end ; ++j ) {
-    const int row   = A_row[ j ] ;
+  for ( ; row < span_end ; ++row ) {
     const int pcBeg = A_pc[ row ];
     const int pcEnd = A_pc[ row + 1 ];
 
@@ -147,15 +145,13 @@ static void dcrs_apply_span(
   const VECTOR_SCALAR * const x ,
         VECTOR_SCALAR * const y )
 {
-  const int           * const A_row = matrix->A_row_partition ;
   const int           * const A_pc  = matrix->A_pc ;
   const int           * const A_ia  = matrix->A_ia ;
   const MATRIX_SCALAR * const A_a   = matrix->A_a ;
 
-  int j = span_begin ;
+  int row = span_begin ;
 
-  for ( ; j < span_end ; ++j ) {
-    const int row   = A_row[ j ] ;
+  for ( ; row < span_end ; ++row ) {
     const int pcBeg = A_pc[ row ];
     const int pcEnd = A_pc[ row + 1 ];
 

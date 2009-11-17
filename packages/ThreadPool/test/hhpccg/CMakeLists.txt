@@ -28,7 +28,7 @@ APPEND_SET(HEADERS
 PACKAGE_ADD_EXECUTABLE(
   test_tpi_hhpccg
   COMM serial mpi
-  SOURCES main.c CGSolver.c BoxPartition.c tpi_vector.c dcrs_matrix.c
+  SOURCES main.c CGSolver.c BoxPartitionIB.c tpi_vector.c dcrs_matrix.c
   DEPLIBS pthread m
   DIRECTORY .
   )

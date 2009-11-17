@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <ThreadPool_config.h>
 #include <TPI.h>
 #include <BoxPartition.h>
 #include <CGSolver.h>

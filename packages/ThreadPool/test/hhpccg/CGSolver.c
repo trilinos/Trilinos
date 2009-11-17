@@ -142,6 +142,7 @@ void cgsolve_blas( const struct distributed_crs_matrix * matrix ,
 void cgsolve( const struct distributed_crs_matrix * matrix ,
               const VECTOR_SCALAR * const b ,
                     VECTOR_SCALAR * const x ,
+              const int overlap_comm ,
               const VECTOR_SCALAR tolerance ,
               const int max_iter ,
               const int print_iter ,
@@ -149,7 +150,6 @@ void cgsolve( const struct distributed_crs_matrix * matrix ,
                     VECTOR_SCALAR * const norm_resid ,
                     double * const solve_dt )
 {
-  const int overlap_comm = 0 ;
   const int nRow = matrix->n_local_row ;
   const int nVec = matrix->p_recv_pc[ matrix->p_size ] ;
 
