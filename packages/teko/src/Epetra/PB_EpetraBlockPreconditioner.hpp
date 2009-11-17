@@ -26,6 +26,22 @@ public:
      */
    EpetraBlockPreconditioner(const Teuchos::RCP<const BlockPreconditionerFactory> & bfp); 
 
+   /** \brief Build the underlying data structure for the preconditioner.
+     *        
+     * Build the underlying data structure for the preconditioner. This
+     * permits the manipulation of the state object for a preconditioner.
+     * and is useful in that case some extra data needs to fill the
+     * preconditioner state.
+     *
+     * \param[in] clearOld If true any previously constructed
+     *                     preconditioner will be wiped out and
+     *                     a new one created. If false, a preconditioner
+     *                     will be create only if the current one is
+     *                     empty (i.e. <code>initPreconditioner</code>
+     *                     had not been called).
+     */
+   virtual void initPreconditioner(bool clearOld=false);
+
    /** \brief Build this preconditioner from an Epetra_Operator 
      * passed in to this object.
      *
@@ -35,8 +51,10 @@ public:
      * can be easily extracted.
      *
      * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+     * \param[in] clear If true, than any previous state saved by the preconditioner
+     *                  is discarded.
      */
-   virtual void buildPreconditioner(const Epetra_Operator & A);
+   virtual void buildPreconditioner(const Epetra_Operator & A,bool clear=true);
 
    /** \brief Build this preconditioner from an Epetra_Operator 
      * passed in to this object. It is assumed that this Epetra_Operator
@@ -48,8 +66,10 @@ public:
      *
      * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
      * \param[in] mv A vector that was used to build the source operator.
+     * \param[in] clear If true, than any previous state saved by the preconditioner
+     *                  is discarded.
      */
-   virtual void buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv);
+   virtual void buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv,bool clear=true);
 
    /** \brief Rebuild this preconditioner from an Epetra_Operator passed
      * in this to object. 
@@ -108,6 +128,7 @@ protected:
 
    Teuchos::RCP<const BlockPreconditionerFactory> preconFactory_;
    Teuchos::RCP<Thyra::PreconditionerBase<double> > preconObj_;
+   bool firstBuildComplete_;
 };
 
 } // end namespace Epetra

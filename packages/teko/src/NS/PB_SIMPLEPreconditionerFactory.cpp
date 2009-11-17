@@ -16,18 +16,18 @@ namespace NS {
 SIMPLEPreconditionerFactory
    ::SIMPLEPreconditionerFactory(const RCP<InverseFactory> & inverse,
                                  double alpha)
-   : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha), fInverseType_(Diagonal)
+   : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha), fInverseType_(Diagonal), useMass_(false)
 { }
 
 SIMPLEPreconditionerFactory
    ::SIMPLEPreconditionerFactory(const RCP<InverseFactory> & invVFact,
                                  const RCP<InverseFactory> & invPFact,
                                  double alpha)
-   : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha), fInverseType_(Diagonal)
+   : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha), fInverseType_(Diagonal), useMass_(false)
 { }
 
 SIMPLEPreconditionerFactory::SIMPLEPreconditionerFactory()
-   : alpha_(1.0), fInverseType_(Diagonal)
+   : alpha_(1.0), fInverseType_(Diagonal), useMass_(false)
 { }
 
 // Use the factory to build the preconditioner (this is where the work goes)
@@ -52,27 +52,50 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp B  = getBlock(1,0,blockOp);
    const LinearOp C  = getBlock(1,1,blockOp);
 
+   LinearOp matF = F;
+   if(useMass_) {
+      TEUCHOS_ASSERT(massMatrix_!=Teuchos::null);
+      matF = massMatrix_;
+   }
+
    // get approximation of inv(F) name H
    std::string fApproxStr = "<error>";
-   LinearOp H = getInvDiagonalOp(F);
+   LinearOp H;
    if(fInverseType_==Diagonal) {
-      H = getInvDiagonalOp(F);
+      H = getInvDiagonalOp(matF);
       fApproxStr = "Diagonal";
    }
    else if(fInverseType_==Lumped) {
-      H = getInvLumpedMatrix(F);
+      H = getInvLumpedMatrix(matF);
       fApproxStr = "Lumped";
    }
    else if(fInverseType_==AbsRowSum) {
-      H = getAbsRowSumInvMatrix(F);
+      H = getAbsRowSumInvMatrix(matF);
       fApproxStr = "AbsRowSum";
    }
    else if(fInverseType_==Custom) {
-      H = buildInverse(*customHFactory_,F);
+      H = buildInverse(*customHFactory_,matF);
       fApproxStr = customHFactory_->toString();
 
       // since H is now implicit, we must build an implicit Schur complement
       buildExplicitSchurComplement = false;
+   }
+   else {
+      TEUCHOS_ASSERT(false);
+   }
+
+   // adjust H for time scaling if it is a mass matrix
+   if(useMass_) {
+      RCP<const Teuchos::ParameterList> pl = state.getParameterList();
+
+      if(pl->isParameter("stepsize")) {
+         // get the step size
+         double stepsize = pl->get<double>("stepsize");
+
+         // scale by stepsize only if it is larger than 0
+         if(stepsize>0.0)
+            H = scale(stepsize,H);
+      }
    }
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
@@ -129,6 +152,10 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
 {
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
+   // default conditions
+   useMass_ = false;
+   customHFactory_ = Teuchos::null;
+  
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
    alpha_ = 1.0;
@@ -143,25 +170,28 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    if(pl.isParameter("Alpha"))
      alpha_ = pl.get<double>("Alpha");
    if(pl.isParameter("Explicit Velocity Inverse Type")) {
-     std::string fInverseStr = pl.get<std::string>("Explicit Velocity Inverse Type");
-     if(fInverseStr=="Diagonal")
-        fInverseType_ = Diagonal;
-     else if(fInverseStr=="Lumped")
-        fInverseType_ = Lumped;
-     else if(fInverseStr=="AbsRowSum")
-        fInverseType_ = AbsRowSum;
-     else {
-        fInverseType_ = Custom;
-        customHFactory_ = invLib->getInverseFactory(fInverseStr);
-     } 
+      std::string fInverseStr = pl.get<std::string>("Explicit Velocity Inverse Type");
+      if(fInverseStr=="Diagonal")
+         fInverseType_ = Diagonal;
+      else if(fInverseStr=="Lumped")
+         fInverseType_ = Lumped;
+      else if(fInverseStr=="AbsRowSum")
+         fInverseType_ = AbsRowSum;
+      else {
+         fInverseType_ = Custom;
+         customHFactory_ = invLib->getInverseFactory(fInverseStr);
+      } 
    }
+   if(pl.isParameter("Use Mass Scaling"))
+      useMass_ = pl.get<bool>("Use Mass Scaling");
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
       DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
       DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
       DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
-      DEBUG_STREAM << "   alpha    = " << alpha_ << std::endl;
+      DEBUG_STREAM << "   alpha      = " << alpha_ << std::endl;
+      DEBUG_STREAM << "   use mass   = " << useMass_ << std::endl;
       DEBUG_STREAM << "SIMPLE Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    PB_DEBUG_MSG_END()
@@ -183,6 +213,76 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    // based on parameter type build a strategy
    invVelFactory_ = invVFact; 
    invPrsFactory_ = invPFact;
+}
+
+//! For assiting in construction of the preconditioner
+Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedParameters() const 
+{
+   Teuchos::RCP<Teuchos::ParameterList> result;
+   Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
+
+   // grab parameters from F solver
+   RCP<Teuchos::ParameterList> vList = invVelFactory_->getRequestedParameters();
+   if(vList!=Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for(itr=vList->begin();itr!=vList->end();++itr)
+         pl->setEntry(itr->first,itr->second);
+      result = pl;
+   }
+
+   // grab parameters from S solver
+   RCP<Teuchos::ParameterList> pList = invPrsFactory_->getRequestedParameters();
+   if(pList!=Teuchos::null) {
+      Teuchos::ParameterList::ConstIterator itr;
+      for(itr=pList->begin();itr!=pList->end();++itr)
+         pl->setEntry(itr->first,itr->second);
+      result = pl;
+   }
+
+   // grab parameters from S solver
+   if(customHFactory_!=Teuchos::null) {
+      RCP<Teuchos::ParameterList> hList = customHFactory_->getRequestedParameters();
+      if(hList!=Teuchos::null) {
+         Teuchos::ParameterList::ConstIterator itr;
+         for(itr=hList->begin();itr!=hList->end();++itr)
+            pl->setEntry(itr->first,itr->second);
+         result = pl;
+      }
+   }
+
+   // use the mass matrix
+   if(useMass_) {
+      pl->set<PB::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
+      result = pl;
+   }
+
+   return result;
+}
+
+//! For assiting in construction of the preconditioner
+bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl) 
+{
+   PB_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
+   bool result = true;
+ 
+   // update requested parameters in solvers
+   result &= invVelFactory_->updateRequestedParameters(pl);
+   result &= invPrsFactory_->updateRequestedParameters(pl);
+   if(customHFactory_!=Teuchos::null)
+      result &= customHFactory_->updateRequestedParameters(pl);
+
+   // set the mass matrix: throw if the strategy is not the right type
+   if(useMass_) {
+      PB::LinearOp mass = pl.get<PB::LinearOp>("Velocity Mass Matrix");
+
+      // we must have a mass matrix
+      if(mass==Teuchos::null)
+         result &= false;
+      else
+         setMassMatrix(mass);
+   }
+
+   return result;
 }
 
 } // end namespace NS

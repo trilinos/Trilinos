@@ -21,8 +21,16 @@ using Teuchos::rcp_dynamic_cast;
   * build the preconditioner.
   */
 EpetraBlockPreconditioner::EpetraBlockPreconditioner(const Teuchos::RCP<const BlockPreconditionerFactory> & bfp)
-   : preconFactory_(bfp)
-{ }
+   : preconFactory_(bfp), firstBuildComplete_(false)
+{ 
+}
+
+void EpetraBlockPreconditioner::initPreconditioner(bool clearOld)
+{
+   if((not clearOld) && preconObj_!=Teuchos::null)
+      return;
+   preconObj_ = preconFactory_->createPrec();
+}
 
 /** \brief Build this preconditioner from an Epetra_Operator 
   * passed in to this object. It is assume that this Epetra_Operator
@@ -33,8 +41,10 @@ EpetraBlockPreconditioner::EpetraBlockPreconditioner(const Teuchos::RCP<const Bl
   * can be easily extracted.
   *
   * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+  * 
+  * \note This will clear any internal state stored by the state object
   */
-void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
+void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,bool clear)
 {
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
    const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
@@ -42,9 +52,11 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
 
    // set the mapping strategy
    SetMapStrategy(rcp(new InverseMappingStrategy(eow->getMapStrategy())));
+
+   // build preconObj_ 
+   initPreconditioner(clear);
    
    // actually build the preconditioner
-   preconObj_ = preconFactory_->createPrec();
    RCP<const Thyra::LinearOpSourceBase<double> > lOpSrc = Thyra::defaultLinearOpSource(thyraA);
    preconFactory_->initializePrec(lOpSrc,&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
 
@@ -53,9 +65,12 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
 
    SetOperator(preconditioner,false);
 
+   firstBuildComplete_ = true;
+
    TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
    TEUCHOS_ASSERT(getMapStrategy()!=Teuchos::null);
+   TEUCHOS_ASSERT(firstBuildComplete_==true);
 }
 
 /** \brief Build this preconditioner from an Epetra_Operator 
@@ -68,8 +83,10 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
   *
   * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
   * \param[in] src A vector that was used to build the source operator.
+  *
+  * \note This will clear any internal state stored by the state object
   */
-void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & epetra_mv)
+void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & epetra_mv,bool clear)
 {
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
    const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
@@ -84,16 +101,21 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,co
    RCP<Thyra::MultiVectorBase<double> > thyra_mv = Thyra::createMembers(thyraA->range(),epetra_mv.NumVectors());
    getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*eow);
 
+   // build preconObj_ 
+   initPreconditioner(clear);
+
    // actually build the preconditioner
-   preconObj_ = preconFactory_->createPrec();
    preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),thyra_mv,&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
    RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
 
    SetOperator(preconditioner,false);
 
+   firstBuildComplete_ = true;
+
    TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
    TEUCHOS_ASSERT(getMapStrategy()!=Teuchos::null);
+   TEUCHOS_ASSERT(firstBuildComplete_==true);
 }
 
 /** \brief Rebuild this preconditioner from an Epetra_Operator passed
@@ -112,8 +134,8 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,co
 void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
 {
    // if the preconditioner hasn't been built yet, rebuild from scratch
-   if(preconObj_==Teuchos::null) {
-      buildPreconditioner(A);
+   if(not firstBuildComplete_) {
+      buildPreconditioner(A,false);
       return;
    }
    PB_DEBUG_EXPR(Teuchos::Time timer(""));
@@ -139,6 +161,7 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
 
    TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
+   TEUCHOS_ASSERT(firstBuildComplete_==true);
 }
 
 /** \brief Rebuild this preconditioner from an Epetra_Operator passed
@@ -157,8 +180,8 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
 void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & epetra_mv)
 {
    // if the preconditioner hasn't been built yet, rebuild from scratch
-   if(preconObj_==Teuchos::null) {
-      buildPreconditioner(A);
+   if(not firstBuildComplete_) {
+      buildPreconditioner(A,epetra_mv,false);
       return;
    }
    PB_DEBUG_EXPR(Teuchos::Time timer(""));
@@ -191,6 +214,7 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,
 
    TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
+   TEUCHOS_ASSERT(firstBuildComplete_==true);
 }
 
 /** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method

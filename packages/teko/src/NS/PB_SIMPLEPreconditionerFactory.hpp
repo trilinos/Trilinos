@@ -25,6 +25,16 @@ public:
    // Function inherited from BlockPreconditionerFactory
    LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,
                                         BlockPreconditionerState & state) const;
+
+   //! Set the mass matrix for this factory
+   virtual void setMassMatrix(PB::LinearOp & mass)
+   { massMatrix_ = mass; }
+
+   //! For assisting in construction of the preconditioner
+   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
+
+   //! For assisting in construction of the preconditioner
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
     
 protected:
    // class members
@@ -33,6 +43,9 @@ protected:
    Teuchos::RCP<InverseFactory> invPrsFactory_;
    double alpha_;
    enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
+
+   bool useMass_;
+   PB::LinearOp massMatrix_;
    
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);

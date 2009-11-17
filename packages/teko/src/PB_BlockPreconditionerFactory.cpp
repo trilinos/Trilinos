@@ -25,6 +25,9 @@ void BlockPreconditionerState::setParameterList(const RCP<ParameterList> & param
 //! Get the parameter list that was set using setParameterList().
 RCP<ParameterList> BlockPreconditionerState::getNonconstParameterList()
 {
+   if(paramList_==Teuchos::null)
+      paramList_ = Teuchos::rcp(new Teuchos::ParameterList());
+
    return paramList_;
 }
 
