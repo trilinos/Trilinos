@@ -172,6 +172,8 @@ ENDMACRO()
 
 FUNCTION(TRILINOS_CTEST_DRIVER)
 
+  SET( CTEST_SOURCE_NAME Trilinos )
+  
   #
   # Variables that can be set by the platform-specific code and reset
   # from the environment
@@ -217,10 +219,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
 
   # Flags used on cvs when doing a CVS update
-  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "")
 
   # Flags used on update when doing a CVS update
-  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "${Trilinos_BRANCH}")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
 
   # Flags passed to 'make' assume gnumake with unix makefiles
   IF("${CTEST_CMAKE_GENERATOR}" MATCHES "Unix Makefiles")
@@ -258,6 +260,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
 
   SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
+  
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_BRANCH "" )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/${CTEST_SOURCE_NAME}" )
 
   SELECT_DEFAULT_TRILINOS_PACKAGES()
 
@@ -270,8 +276,6 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # testing mode.
   #
 
-  SET( CTEST_SOURCE_NAME Trilinos )
-  
   IF (CTEST_DASHBOARD_ROOT)
     SET( CTEST_BINARY_NAME BUILD )
     SET( CTEST_SOURCE_DIRECTORY "${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}")
@@ -283,7 +287,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   ENDIF()
   
   #
-  # Some platform-independnet setup
+  # Some platform-independent setup
   #
   
   INCLUDE("${TRILINOS_CMAKE_DIR}/../CTestConfig.cmake")
@@ -292,17 +296,26 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET(CTEST_USE_LAUNCHERS 1)
   
   #
-  # Setup for the CVS update
+  # Setup for the VC update
   #
 
   IF (CTEST_DO_UPDATES)
-    FIND_PACKAGE(CVS)
-    #SET(CTEST_UPDATE_COMMAND "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS}")
-    SET(CTEST_UPDATE_COMMAND "${CVS_EXECUTABLE}")
+    FIND_PROGRAM(GIT_EXECUTABLE NAMES eg)
+    MESSAGE("GIT_EXECUTABLE=${GIT_EXECUTABLE}")
+
+    SET(UPDATE_TYPE "git")
+    MESSAGE("UPDATE_TYPE = '${UPDATE_TYPE}'")
+    
+    SET(CTEST_UPDATE_COMMAND "${GIT_EXECUTABLE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
-    SET( CTEST_CHECKOUT_COMMAND
-      "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS} -d :ext:software.sandia.gov:/space/CVS co ${Trilinos_BRANCH} ${CTEST_SOURCE_NAME}" )
-    MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
+    IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
+      MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
+      SET( CTEST_CHECKOUT_COMMAND
+        "${GIT_EXECUTABLE} clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
+      MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
+    ELSE()
+      MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
+    ENDIF()
   ENDIF() 
   
   #
@@ -335,13 +348,30 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   #
 
   IF (CTEST_DO_UPDATES)
-    MESSAGE("Doing CVS update of '${CTEST_SOURCE_DIRECTORY}' ...")
+    MESSAGE("Doing GIT update of '${CTEST_SOURCE_DIRECTORY}' ...")
     CTEST_UPDATE( SOURCE "${CTEST_SOURCE_DIRECTORY}"
       RETURN_VALUE  UPDATE_RETURN_VAL)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
+    
+    #setting branch switch to success incase we are not doing a switch to a different branch.
+    SET(BRANCH_SUCCEEDED "0")
+    IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0")
+      MESSAGE("Doing switch to branch ${Trilinos_BRANCH}")
+      EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} switch ${Trilinos_BRANCH}
+        WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
+        RESULT_VARIABLE BRANCH_SUCCEEDED
+        OUTPUT_VARIABLE BRANCH_OUTPUT
+        ERROR_VARIABLE  BRANCH_ERROR
+      )
+      IF(NOT "${BRANCH_SUCCEEDED}" EQUAL "0")
+        MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${BRANCH_SUCCEEDED}")
+      ENDIF()
+      #Apparently the successful branch switch is also written to stderr.
+      MESSAGE("${BRANCH_ERROR}")
+    ENDIF()
   ENDIF()
 
-  IF ("${UPDATE_RETURN_VAL}" LESS "0")
+  IF ("${UPDATE_RETURN_VAL}" LESS "0" OR NOT "${BRANCH_SUCCEEDED}" EQUAL "0")
     MESSAGE("The VC update failed so submitting update and stopping ...") 
     IF (CTEST_DO_SUBMIT)
       CTEST_SUBMIT( PARTS update notes )
