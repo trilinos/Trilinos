@@ -57,7 +57,7 @@
 //#include <algorithm>           //getPermThatSorts
 
 
-/** \example PCPG/PCPGEpetraExFile.cpp
+/** \example epetra/example/PCPG/PCPGEpetraExFile.cpp
     uses Belos::PCPGSolMgr and a ML preconditioner.
 */
 

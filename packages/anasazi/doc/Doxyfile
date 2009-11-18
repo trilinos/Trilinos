@@ -48,19 +48,19 @@ INPUT                  = index.doc groups.doc ../src ../thyra/src ../epetra/src 
 RECURSIVE              = YES
 EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp ../src/AnasaziDirectSolver.hpp
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = ../example/LOBPCG/LOBPCGEpetraEx.cpp                     \
-                         ../example/LOBPCG/LOBPCGEpetraExSimple.cpp               \
-                         ../example/LOBPCG/LOBPCGEpetraExGen.cpp                  \
-                         ../example/LOBPCG/LOBPCGEpetraExGenPrecIfpack.cpp        \
-                         ../example/BlockDavidson/BlockDavidsonEpetraEx.cpp       \
-                         ../example/BlockDavidson/BlockDavidsonEpetraExGen.cpp    \
-                         ../example/BlockDavidson/BlockDavidsonEpetraExGenPrecIfpack.cpp        \
-                         ../example/BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp               \
-                         ../example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp      \
-                         ../example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp     \
-                         ../example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp       \
-                         ../example/BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp            \
-                         ../example/MVOPTester/MVOPTesterEx.cpp              
+EXAMPLE_PATH           = ../epetra/example/LOBPCG/LOBPCGEpetraEx.cpp                     \
+                         ../epetra/example/LOBPCG/LOBPCGEpetraExSimple.cpp               \
+                         ../epetra/example/LOBPCG/LOBPCGEpetraExGen.cpp                  \
+                         ../epetra/example/LOBPCG/LOBPCGEpetraExGenPrecIfpack.cpp        \
+                         ../epetra/example/BlockDavidson/BlockDavidsonEpetraEx.cpp       \
+                         ../epetra/example/BlockDavidson/BlockDavidsonEpetraExGen.cpp    \
+                         ../epetra/example/BlockDavidson/BlockDavidsonEpetraExGenPrecIfpack.cpp        \
+                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp               \
+                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp      \
+                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp     \
+                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp       \
+                         ../epetra/example/BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp            \
+                         ../epetra/example/MVOPTester/MVOPTesterEx.cpp              
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = ./images
 ALPHABETICAL_INDEX     = YES

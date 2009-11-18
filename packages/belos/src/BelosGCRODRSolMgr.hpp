@@ -53,9 +53,10 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/** \example GCRODR/GCRODREpetraEx.cpp
+/** \example epetra/example/GCRODR/GCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager.
-    \example GCRODR/GCRODRPrecEpetraEx.cpp
+*/
+/** \example epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager with an Ifpack preconditioner.
 */
 

@@ -35,10 +35,6 @@
 // * I do not assume that an operator is deterministic; I do assume that the
 //   operator, applied to 0, will return 0.
 
-/** \example MVOPTester/MVOPTesterEx.cpp 
-    This is an example of how to use the Belos::TestMultiVecTraits() and Belos::TestOperatorTraits() methods.
- */
-
 /*! \file BelosMVOPTester.hpp
   \brief Test routines for MultiVecTraits and OperatorTraits conformity.
 */
@@ -51,10 +47,6 @@
 #include "BelosOutputManager.hpp"
 
 #include "Teuchos_RCP.hpp"
-
-/** \example MVOPTester/MVOPTesterEx.cpp
-    This is an example of how to use the Belos::TestMultiVecTraits() and Belos::TestOperatorTraits() methods.
-*/
 
 namespace Belos {
 

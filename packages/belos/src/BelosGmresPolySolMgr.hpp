@@ -55,10 +55,8 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/** \example BlockGmres/GmresPolyEpetraEx.cpp
+/** \example epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp
     This is an example of how to use the Belos::GmresPolySolMgr solver manager.
-    \example BlockGmres/HybridBlockPrecGmresEpetraEx.cpp
-    This is an example of how to use the Belos::GmresPolySolMgr solver manager with an Ifpack preconditioner.
 */
 
 /*! \class Belos::GmresPolySolMgr

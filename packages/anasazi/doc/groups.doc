@@ -69,7 +69,7 @@ Additional specializations of Anasazi::MultiVecTraits and Anasazi::OperatorTrait
     %Anasazi is a framework for developing large-scale iterative eigensolvers. When developing such a framework, or even a %collection of different solvers, one will notice a large amount of overlap 
     among different implementations. For example, two separate eigensolvers may utilize the same orthogonalization methods, whereas two different implementations of
     a particular eigensolver may utilize different orthogonalization routines. Dividing the different tasks associated with an iterative eigensolver into multiple routines 
-    enables increased code reuse and eases code maintenance. The question arises: how does one distil the essence of a particular eigensolver, with the end goal of separating
+    enables increased code reuse and eases code maintenance. The question arises: how does one distill the essence of a particular eigensolver, with the end goal of separating
     this code from the supporting code?
 
     To illustrate this dilemma, consider the block Davidson iteration.  The essence of the algorithm can be distilled as follows: a  preconditioner is applied to the current
