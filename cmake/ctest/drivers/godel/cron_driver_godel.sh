@@ -1,8 +1,10 @@
 #!/bin/bash
 
 CTEST_EXE=/home/trilinos/install/bin/ctest
+EG_EXE=/Users/bmpersc/bin/eg
 BASEDIR=/home/trilinos/dashboards/development
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/godel
+TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
 
 if [ "$_DAYOFWEEK" == "" ] ; then
@@ -42,7 +44,15 @@ echo "Checking out just the skeleton cmake/ctest code: `date`"
 echo
 
 cd $BASEDIR
-cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
+if [ -d Trilinos ]; then
+  echo Doing an update of existing directory
+  cd Trilinos
+  $EG_EXE pull
+  cd ..
+else
+  echo Cloning the repository because none exists yets
+  $EG_EXE clone $TRILINOS_REPOSITORY_LOCATION
+fi
 
 
 #
