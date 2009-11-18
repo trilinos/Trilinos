@@ -319,29 +319,26 @@ void hpccg_alloc_and_fill( const int np ,
                      & matrix->p_send_id );
 
   {
-    const int n   = matrix->n_local_row ;
-    const int nnz = 27 * n ; /* Upper bound */
-    int    * const pc = (int *)   malloc( sizeof(int) * ( n + 1 ) );
-    int    * const ia = (int *)   malloc( sizeof(int) * nnz );
-    MATRIX_SCALAR  * const a =
-      (MATRIX_SCALAR *) malloc( sizeof(MATRIX_SCALAR) * nnz );
+    const int nrow = matrix->n_local_row ;
+    int * const pc = (int *) malloc( sizeof(int) * ( nrow + 1 ) );
+    int * ia = NULL ;
+    MATRIX_SCALAR * a = NULL ;
 
-    int ipc  = 0 ;
     int ix , iy , iz ;
     int sx , sy , sz ;
 
+    /* Number of non zeros in each matrix row,
+     * then prefix the array for offsets.
+     */
     pc[0] = 0 ;
 
     for ( iz = my_box[2][0] ; iz < my_box[2][1] ; ++iz ) {
     for ( iy = my_box[1][0] ; iy < my_box[1][1] ; ++iy ) {
     for ( ix = my_box[0][0] ; ix < my_box[0][1] ; ++ix ) {
-      const int irow =
-        box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+      const int irow = box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+      int count = 1 ; /* Count the diagonal */
 
-      pc[ irow + 1 ] = ipc ;   /* Row coefficient count */
-      ++ipc ;
-
-      /* Off-diagonal terms to follow */
+      /* Count the off-diagonal terms to follow */
       for ( sz = -1 ; sz <= 1 ; ++sz ) {
       for ( sy = -1 ; sy <= 1 ; ++sy ) {
       for ( sx = -1 ; sx <= 1 ; ++sx ) {
@@ -353,27 +350,28 @@ void hpccg_alloc_and_fill( const int np ,
              my_uses_box[1][0] <= g_iy && g_iy < my_uses_box[1][1] &&
              my_uses_box[2][0] <= g_iz && g_iz < my_uses_box[2][1] &&
              ! ( sz == 0 && sy == 0 && sx == 0 ) ) {
-          /* Column is within global bounds and is not a diagonal */
-          /* 'icol' is mapped for communication */
-          ++ipc ;
+          /* This column is within global bounds and is not a diagonal */
+          ++count ;
         }
       }
       }
       }
-      pc[ irow + 1 ] = ipc - pc[ irow + 1 ];
+      pc[ irow + 1 ] = count ;
     }
     }
     }
 
-    for ( ipc = 1 ; ipc <= n ; ++ipc ) { pc[ipc] += pc[ipc-1] ; }
+    for ( ix = 0 ; ix < nrow ; ++ix ) { pc[ix+1] += pc[ix] ; }
+
+    ia = (int *)           malloc( sizeof(int)           * pc[ nrow ]  );
+    a  = (MATRIX_SCALAR *) malloc( sizeof(MATRIX_SCALAR) * pc[ nrow ]  );
 
     for ( iz = my_box[2][0] ; iz < my_box[2][1] ; ++iz ) {
     for ( iy = my_box[1][0] ; iy < my_box[1][1] ; ++iy ) {
     for ( ix = my_box[0][0] ; ix < my_box[0][1] ; ++ix ) {
-      const int irow =
-        box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+      const int irow = box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+      int ipc = pc[ irow ];
 
-      ipc = pc[ irow ];
       /* Diagonal term first */
       ia[ ipc ] = irow ;
       a[  ipc ] = 27.0f ;
