@@ -80,8 +80,6 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
     // test for consistency of problem definition between ModelEval and Dakota
     TEST_FOR_EXCEPTION(numVars > numParameters, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
-    TEST_FOR_EXCEPTION(numADV != 0, std::logic_error,
-                       "TriKota_Dakota Adapter Error: ");
     TEST_FOR_EXCEPTION(numFns > numResponses, std::logic_error,
                        "TriKota_Dakota Adapter Error: ");
     TEST_FOR_EXCEPTION(hessFlag, std::logic_error,
