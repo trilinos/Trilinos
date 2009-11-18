@@ -403,14 +403,13 @@ bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
    mapPairs.push_back(Blocking::buildSubMap(v[0],*GetComm()));
    mapPairs.push_back(Blocking::buildSubMap(v[1],*GetComm()));
 
-   std::cout << "A Matrix = \n";
-   // A.Print(std::cout);
+/*
+   std::cout << "A Matrix = \n"; A.Print(std::cout);
 
    GetComm()->Barrier();
 
    std::cout << "A_00 Matrix = \n";
    PB::Epetra::Blocking::buildSubBlock(0,0,A,mapPairs)->Print(std::cout);
-/*
    std::cout << "A_01 Matrix = \n";
    PB::Epetra::Blocking::buildSubBlock(0,1,A,mapPairs)->Print(std::cout);
    std::cout << "A_10 Matrix = \n";

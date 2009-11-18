@@ -11,6 +11,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
+#include "Epetra_IntVector.h"
 
 #include <vector>
 
@@ -78,7 +79,41 @@ void one2many(std::vector<Teuchos::RCP<Epetra_MultiVector> > & many, const Epetr
 void buildSubVectors(const std::vector<MapPair> & maps,
                      std::vector<Teuchos::RCP<Epetra_MultiVector> > & vectors,int count);
 
+/** This function will return an IntVector that is constructed with a column map.
+  * The vector will be filled with -1 if there is not a corresponding entry in the
+  * sub-block row map. The other columns will be filled with the contiguous row map
+  * values.
+  */
+Teuchos::RCP<Epetra_IntVector> getSubBlockColumnGIDs(const Epetra_CrsMatrix & A,const MapPair & mapPair);
+
+/** Extract the (i,j) sub block described by a vector of map pair objects from
+  * a CRS matrix. The first of map in the ith pair describes the rows to be extracted,
+  * while the second pair defines GID numbering of the new block. Similarly with the
+  * jth pair (except for columns).
+  *
+  * \param[in] i Index of the map to use to define the row space
+  * \param[in] j Index of the map to use to define the columns space
+  * \param[in] A Source CRS matrix
+  * \param[in] subMaps Vector of maps created by the <code>buildSubMap</code> routine.
+  *
+  * \returns A CRS matrix containing a subset of the rows and columns as described
+  *          by the vector of maps.
+  */
 Teuchos::RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<MapPair> & subMaps);
+
+/** Extract the (i,j) sub block described by a vector of map pair objects from
+  * a CRS matrix. The first of map in the ith pair describes the rows to be extracted,
+  * while the second pair defines GID numbering of the new block. Similarly with the
+  * jth pair (except for columns). This "refills" an operator already created by 
+  * <code>buildSubBlock</code>. This only replaces the sparsity pattern of the matrix.
+  *
+  * \param[in] i Index of the map to use to define the row space
+  * \param[in] j Index of the map to use to define the columns space
+  * \param[in] A Source CRS matrix
+  * \param[in] subMaps Vector of maps created by the <code>buildSubMap</code> routine.
+  * \param[in,out] mat Destination matrix with a fixed nonzero pattern. Most likely
+  *                    this operator would come from the <code>buildSubBlock</code> routine.
+  */
 void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<MapPair> & subMaps,Epetra_CrsMatrix & mat);
 
 } // end Blocking

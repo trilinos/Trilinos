@@ -1,5 +1,8 @@
 #include "PB_BlockingEpetra.hpp"
 
+#include "Epetra_IntVector.h"
+#include "Epetra_LocalMap.h"
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 
@@ -125,6 +128,35 @@ void many2one(Epetra_MultiVector & one, const std::vector<RCP<const Epetra_Multi
    }
 }
 
+/** This function will return an IntVector that is constructed with a column map.
+  * The vector will be filled with -1 if there is not a corresponding entry in the
+  * sub-block row map. The other columns will be filled with the contiguous row map
+  * values.
+  */
+RCP<Epetra_IntVector> getSubBlockColumnGIDs(const Epetra_CrsMatrix & A,const MapPair & mapPair)
+{
+   RCP<const Epetra_Map> blkGIDMap = mapPair.first;
+   RCP<const Epetra_Map> blkContigMap = mapPair.second;
+
+   // fill index vector for rows
+   Epetra_IntVector rIndex(A.RowMap(),true);
+   for(int i=0;i<A.NumMyRows();i++) {
+      // LID is need to get to contiguous map
+      int lid = blkGIDMap->LID(A.GRID(i)); // this LID makes me nervous
+      if(lid>-1)
+         rIndex[i] = blkContigMap->GID(lid);
+      else
+         rIndex[i] = -1;
+   }
+
+   // get relavant column indices
+   Epetra_Import import(A.ColMap(),A.RowMap());
+   RCP<Epetra_IntVector> cIndex = rcp(new Epetra_IntVector(A.ColMap(),true));
+   cIndex->Import(rIndex,import,Insert);
+
+   return cIndex;
+}
+
 // build a single subblock Epetra_CrsMatrix
 RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<MapPair> & subMaps)
 {
@@ -134,16 +166,19 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    TEUCHOS_ASSERT(i>=0 && i<numVarFamily);
    TEUCHOS_ASSERT(j>=0 && j<numVarFamily);
 
-   const Epetra_Map & gRowMap = *subMaps[i].first;
+   const Epetra_Map & gRowMap = *subMaps[i].first; // new GIDs
    const Epetra_Map & gColMap = *subMaps[j].first;
-   const Epetra_Map & rowMap = *subMaps[i].second;
+   const Epetra_Map & rowMap = *subMaps[i].second; // contiguous GIDs
    const Epetra_Map & colMap = *subMaps[j].second;
+
+   const RCP<Epetra_IntVector> plocal2ContigGIDs = getSubBlockColumnGIDs(A,subMaps[j]);
+   Epetra_IntVector & local2ContigGIDs = *plocal2ContigGIDs;
 
    RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy,rowMap,0));
 
    // get entry information
    int numMyRows = rowMap.NumMyElements();
-   int maxNumEntries = A.GlobalMaxNumEntries();
+   int maxNumEntries = A.MaxNumEntries();
 
    // for extraction
    std::vector<int> indices(maxNumEntries);
@@ -158,23 +193,22 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    for(int localRow=0;localRow<numMyRows;localRow++) {
       int numEntries = -1;
       int globalRow = gRowMap.GID(localRow);
+      int lid = A.RowMap().LID(globalRow);
       int contigRow = rowMap.GID(localRow);
+      TEUCHOS_ASSERT(lid>-1);
 
-      // extract a global row copy
-      int err = A.ExtractGlobalRowCopy(globalRow, maxNumEntries, numEntries, &values[0], &indices[0]);
+      int err = A.ExtractMyRowCopy(lid, maxNumEntries, numEntries, &values[0], &indices[0]);
       TEUCHOS_ASSERT(err==0);
 
       int numOwnedCols = 0;
       for(int localCol=0;localCol<numEntries;localCol++) {
+         TEUCHOS_ASSERT(indices[localCol]>-1);
+         
          // if global id is not owned by this column
-         int gLID = gColMap.LID(indices[localCol]);
-         if(gLID==-1) continue;
+         int gid = local2ContigGIDs[indices[localCol]];
+         if(gid==-1) continue; // in contiguous row
 
-         // get the contiguous column ID
-         int contigCol = colMap.GID(gLID);
-         TEUCHOS_ASSERT(contigCol>=0);
-
-         colIndices[numOwnedCols] = contigCol;
+         colIndices[numOwnedCols] = gid;
          colValues[numOwnedCols] = values[localCol];
          numOwnedCols++;
       }
@@ -197,18 +231,20 @@ void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<Ma
 
    TEUCHOS_ASSERT(i>=0 && i<numVarFamily);
    TEUCHOS_ASSERT(j>=0 && j<numVarFamily);
-   TEUCHOS_ASSERT(mat.Filled());
 
-   const Epetra_Map & gRowMap = *subMaps[i].first;
+   const Epetra_Map & gRowMap = *subMaps[i].first; // new GIDs
    const Epetra_Map & gColMap = *subMaps[j].first;
-   const Epetra_Map & rowMap = *subMaps[i].second;
+   const Epetra_Map & rowMap = *subMaps[i].second; // contiguous GIDs
    const Epetra_Map & colMap = *subMaps[j].second;
+
+   const RCP<Epetra_IntVector> plocal2ContigGIDs = getSubBlockColumnGIDs(A,subMaps[j]);
+   Epetra_IntVector & local2ContigGIDs = *plocal2ContigGIDs;
 
    mat.PutScalar(0.0);
 
    // get entry information
    int numMyRows = rowMap.NumMyElements();
-   int maxNumEntries = A.GlobalMaxNumEntries();
+   int maxNumEntries = A.MaxNumEntries();
 
    // for extraction
    std::vector<int> indices(maxNumEntries);
@@ -223,23 +259,22 @@ void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<Ma
    for(int localRow=0;localRow<numMyRows;localRow++) {
       int numEntries = -1;
       int globalRow = gRowMap.GID(localRow);
+      int lid = A.RowMap().LID(globalRow);
       int contigRow = rowMap.GID(localRow);
+      TEUCHOS_ASSERT(lid>-1);
 
-      // extract a global row copy
-      int err = A.ExtractGlobalRowCopy(globalRow, maxNumEntries, numEntries, &values[0], &indices[0]);
+      int err = A.ExtractMyRowCopy(lid, maxNumEntries, numEntries, &values[0], &indices[0]);
       TEUCHOS_ASSERT(err==0);
 
       int numOwnedCols = 0;
       for(int localCol=0;localCol<numEntries;localCol++) {
+         TEUCHOS_ASSERT(indices[localCol]>-1);
+         
          // if global id is not owned by this column
-         int gLID = gColMap.LID(indices[localCol]);
-         if(gLID==-1) continue;
+         int gid = local2ContigGIDs[indices[localCol]];
+         if(gid==-1) continue; // in contiguous row
 
-         // get the contiguous column ID
-         int contigCol = colMap.GID(gLID);
-         TEUCHOS_ASSERT(contigCol>=0);
-
-         colIndices[numOwnedCols] = contigCol;
+         colIndices[numOwnedCols] = gid;
          colValues[numOwnedCols] = values[localCol];
          numOwnedCols++;
       }

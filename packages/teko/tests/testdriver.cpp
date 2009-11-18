@@ -101,7 +101,7 @@ int main(int argc,char * argv[])
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
-      // PB_ADD_UNIT_TEST(PB::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
+      PB_ADD_UNIT_TEST(PB::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
    }
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);

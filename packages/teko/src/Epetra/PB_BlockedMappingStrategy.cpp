@@ -150,7 +150,8 @@ BlockedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
          ss << label << "_" << i << "," << j;
 
          // build the blocks and place it the right location
-         A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(Blocking::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
+         RCP<Epetra_CrsMatrix> blk = Blocking::buildSubBlock(i,j,*crsContent,blockMaps_);
+         A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(blk,ss.str()));
       }
    } // end for i
    A->endBlockFill();

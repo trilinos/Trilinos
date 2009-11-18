@@ -48,49 +48,37 @@ using Thyra::LinearOpBase;
 using Thyra::createMember;
 using Thyra::LinearOpTester;
 
-void tBlockedEpetraOperator::buildBlockGIDs(std::vector<std::vector<int> > & blocks,
+void tBlockedEpetraOperator::buildBlockGIDs(std::vector<std::vector<int> > & gids,
                                             const Epetra_Map & map) const
 {
-   int pid = map.Comm().MyPID();
+   int numLocal = map.NumMyElements();
+   int numHalf = numLocal/2;
+   numHalf += ((numHalf % 2 == 0) ? 0 : 1); 
 
-   blocks.resize(3);
+   gids.clear();
+   gids.resize(3);
 
-   // grab blocks
-   std::vector<int> & blk0 = blocks[0];
-   std::vector<int> & blk1 = blocks[1];
-   std::vector<int> & blk2 = blocks[2];
-   std::vector<int> gids;
-
-   int numLocalElements = map.NumMyElements();
-   int nleD2 = numLocalElements/2;
-
-   // build first block: strided variables
-   int firstBlock = (nleD2 % 2==0) ?  nleD2 : nleD2+1;
-   int gid;
-   for(int i=0;i<firstBlock;i+=2) {
+   std::vector<int> & blk0 = gids[0];
+   std::vector<int> & blk1 = gids[1];
+   std::vector<int> & blk2 = gids[2];
+   
+   // loop over global IDs: treat first block as strided
+   int gid = -1;
+   for(int i=0;i<numHalf;i+=2) {
       gid = map.GID(i);
       blk0.push_back(gid);
-      gids.push_back(gid);
 
       gid = map.GID(i+1);
       blk1.push_back(gid);
-      gids.push_back(gid);
    }
 
-   // build second block
-   for(int i=firstBlock;i<numLocalElements;i++) {
+   // loop over global IDs: treat remainder as contiguous
+   for(int i=numHalf;i<numLocal;i++) {
       gid = map.GID(i);
       blk2.push_back(gid);
-      gids.push_back(gid);
    }
 
-/*
-   std::stringstream ss;
-   ss << 
-   std::ifstream file(ss.str().c_str());
-   for(int i=0;i<gids.size();i++) {
-   }
-*/
+   TEUCHOS_ASSERT(blk0.size()+blk1.size()+blk2.size()==numLocal);
 }
 
 void tBlockedEpetraOperator::initializeTest() 
@@ -154,8 +142,8 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
          << "Running on " << comm.NumProc() << " processors");
 
    // pick 
-   int nx = 3 * 25 * comm.NumProc();
-   int ny = 3 * 50 * comm.NumProc();
+   int nx = 5; // * comm.NumProc();
+   int ny = 5; // * comm.NumProc();
 
    // create a big matrix to play with
    // note: this matrix is not really strided
@@ -165,7 +153,6 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    FGallery.Set("nx",nx);
    FGallery.Set("ny",ny);
    RCP<Epetra_CrsMatrix> A = rcp(FGallery.GetMatrix(),false);
-
    double beforeNorm = A->NormOne();
 
    int width = 3;
@@ -173,13 +160,12 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    Epetra_MultiVector ys(A->OperatorRangeMap(),width);
    Epetra_MultiVector y(A->OperatorRangeMap(),width);
 
-   EpetraExt::RowMatrixToMatrixMarketFile("fullop.mm",*A);
+   // EpetraExt::RowMatrixToMatrixMarketFile("fullop.mm",*A);
 
    std::vector<std::vector<int> > vars;
    buildBlockGIDs(vars,A->RowMap());
-   PB::Epetra::BlockedEpetraOperator shell(vars,A);
 
-   shell.WriteBlocks("blocks");
+   PB::Epetra::BlockedEpetraOperator shell(vars,A);
 
    // test the operator against a lot of random vectors
    int numtests = 50;
@@ -255,7 +241,6 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
          "\n   tBlockedEpetraOperator::test_vector_constr (rebuild): " << toString(status) << ": "
       << "testing tolerance over many matrix vector multiplies ( " << max << " <= "
       << tolerance_ << " )");
-
 
    return allPassed;
 }

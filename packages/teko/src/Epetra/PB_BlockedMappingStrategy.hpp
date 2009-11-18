@@ -38,7 +38,7 @@ public:
      * implimentation only supports a fixed number of variables
      *
      * \param[in]      vars   Vector describing the blocking of variables
-     * \param[in]      map    original Epetra_Map to be broken up
+     * \param[in]      baseMap    original Epetra_Map to be broken up
      * \param[in]      comm   Epetra_Comm object related to the map
      */
    BlockedMappingStrategy(const std::vector<std::vector<int> > & vars,
