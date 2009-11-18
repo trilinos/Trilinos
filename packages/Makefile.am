@@ -170,10 +170,6 @@ if BUILD_NOX
 NOX_SUBDIR = nox
 endif
 
-if BUILD_PHALANX
-PHALANX_SUBDIR = phalanx
-endif
-
 if BUILD_PHDMESH
 PHDMESH_SUBDIR = phdmesh
 endif
@@ -301,7 +297,6 @@ PACKAGE_NAMES = \
 	$(SACADO_SUBDIR)       \
 	$(SHARDS_SUBDIR)       \
 	$(NOX_SUBDIR)          \
-	$(PHALANX_SUBDIR)      \
 	$(RYTHMOS_SUBDIR)      \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \

@@ -84,9 +84,6 @@
 /* Define if want to build pamgen */
 #undef HAVE_PAMGEN
 
-/* Define if want to build phalanx */
-#undef HAVE_PHALANX
-
 /* Define if want to build phdmesh */
 #undef HAVE_PHDMESH
 
