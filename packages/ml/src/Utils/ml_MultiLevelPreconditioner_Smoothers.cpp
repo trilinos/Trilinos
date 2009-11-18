@@ -593,6 +593,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       double MyIfpackRT = smList.get("smoother: ifpack relative threshold", IfpackRelThreshold);
       double MyIfpackAT = smList.get("smoother: ifpack absolute threshold", IfpackAbsThreshold);
 
+/*
       if( verbose_ ) {
         cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
              << msg << MyPreOrPostSmoother
@@ -606,6 +607,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                << ",abs. threshold=" << MyIfpackAT << endl;
         }
       }
+*/
 
       Teuchos::ParameterList& IfpackList=List_.sublist("smoother: ifpack list");
       int NumAggr = ML_Aggregate_Get_AggrCount(agg_,level);
@@ -626,6 +628,24 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       }
       IfpackList.set("fact: relative threshold", MyIfpackRT);
       IfpackList.set("fact: absolute threshold", MyIfpackAT);
+
+      if( verbose_ ) {
+        cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
+             << msg << MyPreOrPostSmoother
+             << ",overlap=" << MyIfpackOverlap << endl;
+        if (MyIfpackType != "Amesos") {
+          if (MyIfpackType == "ILU" || MyIfpackType == "IC") {
+            int myLof = IfpackList.get("fact: level-of-fill", (int) lof);
+            cout << msg << "level-of-fill=" << myLof;
+          }
+          else {
+            double myLof = IfpackList.get("fact: level-of-fill", (int) lof);
+            cout << msg << "level-of-fill=" << myLof;
+          }
+          cout << ",rel. threshold=" << MyIfpackRT
+               << ",abs. threshold=" << MyIfpackAT << endl;
+        }
+      }
                        
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, currentLevel, pre_or_post,
