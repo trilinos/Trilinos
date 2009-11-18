@@ -330,13 +330,50 @@ void hpccg_alloc_and_fill( const int np ,
     int ix , iy , iz ;
     int sx , sy , sz ;
 
+    pc[0] = 0 ;
+
     for ( iz = my_box[2][0] ; iz < my_box[2][1] ; ++iz ) {
     for ( iy = my_box[1][0] ; iy < my_box[1][1] ; ++iy ) {
     for ( ix = my_box[0][0] ; ix < my_box[0][1] ; ++ix ) {
       const int irow =
         box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
 
-      pc[ irow ] = ipc ;   /* Beginning of row coefficients */
+      pc[ irow + 1 ] = ipc ;   /* Row coefficient count */
+      ++ipc ;
+
+      /* Off-diagonal terms to follow */
+      for ( sz = -1 ; sz <= 1 ; ++sz ) {
+      for ( sy = -1 ; sy <= 1 ; ++sy ) {
+      for ( sx = -1 ; sx <= 1 ; ++sx ) {
+        const int g_ix = ix + sx ;
+        const int g_iy = iy + sy ;
+        const int g_iz = iz + sz ;
+
+        if ( my_uses_box[0][0] <= g_ix && g_ix < my_uses_box[0][1] &&
+             my_uses_box[1][0] <= g_iy && g_iy < my_uses_box[1][1] &&
+             my_uses_box[2][0] <= g_iz && g_iz < my_uses_box[2][1] &&
+             ! ( sz == 0 && sy == 0 && sx == 0 ) ) {
+          /* Column is within global bounds and is not a diagonal */
+          /* 'icol' is mapped for communication */
+          ++ipc ;
+        }
+      }
+      }
+      }
+      pc[ irow + 1 ] = ipc - pc[ irow + 1 ];
+    }
+    }
+    }
+
+    for ( ipc = 1 ; ipc <= n ; ++ipc ) { pc[ipc] += pc[ipc-1] ; }
+
+    for ( iz = my_box[2][0] ; iz < my_box[2][1] ; ++iz ) {
+    for ( iy = my_box[1][0] ; iy < my_box[1][1] ; ++iy ) {
+    for ( ix = my_box[0][0] ; ix < my_box[0][1] ; ++ix ) {
+      const int irow =
+        box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+
+      ipc = pc[ irow ];
       /* Diagonal term first */
       ia[ ipc ] = irow ;
       a[  ipc ] = 27.0f ;
@@ -369,11 +406,10 @@ void hpccg_alloc_and_fill( const int np ,
       }
       }
       }
+      if ( ipc != pc[ irow + 1 ] ) { abort(); }
     }
     }
     }
-
-    pc[n] = ipc ;
 
     matrix->A_pc = pc ;
     matrix->A_ia = ia ;

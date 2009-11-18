@@ -272,11 +272,11 @@ void box_partition_map(
 
   /* Fill in off-process received portion: { ( i + my_p ) % np } */
 
-  iSend = 0 ;
   recv_pc[0] = count_parallel ;
   recv_pc[1] = count_parallel ;
   send_pc[0] = 0 ;
   send_pc[1] = 0 ;
+  iSend = 0 ;
 
   for ( i = 1 ; i < np ; ++i ) {
     const int ip = ( i + my_p ) % np ;
