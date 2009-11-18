@@ -34,25 +34,22 @@
 #include "Tifpack_CondestType.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_Time.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_RefCountPtr.hpp"
-
-class Tpetra_RowMatrix;
-class Tpetra_SerialComm;
-class Tpetra_Comm;
-class Tpetra_Map;
-class Tpetra_MultiVector;
 
 namespace Teuchos {
   class ParameterList;
 }
 
-//! Tifpack_ILUT: A class for constructing and using an incomplete Cholesky factorization of a given Tpetra_RowMatrix.
+namespace Tifpack {
 
-/*! The Tifpack_ILUT class computes a "Relaxed" ILUT factorization with level k fill 
-    of a given Tpetra_RowMatrix. 
+//! Tifpack::ILUT: A class for constructing and using an ILUT factorization
+// of a given Tpetra_RowMatrix.
+
+/*! The Tifpack::ILUT class computes a "Relaxed" ILUT factorization with level k fill 
+    of a given Tpetra::RowMatrix. 
 
     <P> Please refer to \ref ifp_ilu for a general description of the ILU algorithm.
 
@@ -62,15 +59,15 @@ namespace Teuchos {
 
     \date Last modified on 22-Jan-05.
 */    
-class Tifpack_ILUT: public Tifpack_Preconditioner {
+class ILUT: public Tifpack::Preconditioner {
       
 public:
   // @{ Constructors and Destructors
-  //! Tifpack_ILUT constuctor with variable number of indices per row.
-  Tifpack_ILUT(const Tpetra_RowMatrix* A);
+  //! ILUT constuctor with variable number of indices per row.
+  ILUT(const Tpetra_RowMatrix* A);
   
-  //! Tifpack_ILUT Destructor
-  virtual ~Tifpack_ILUT();
+  //! ILUT Destructor
+  virtual ~ILUT();
 
   // @}
   // @{ Construction methods
@@ -358,12 +355,14 @@ private:
   double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
   mutable double ApplyInverseFlops_;
-  //! Used for timing purposed
-  mutable Tpetra_Time Time_;
+  //! Used for timing purposes
+  mutable Teuchos::Time Time_;
   //! Global number of nonzeros in L and U factors
   int GlobalNonzeros_;
   Teuchos::RefCountPtr<Tpetra_SerialComm> SerialComm_;
   Teuchos::RefCountPtr<Tpetra_Map> SerialMap_;
 }; // Tifpack_ILUT
+
+}//namespace Tifpack
 
 #endif /* TIFPACK_ILUT_HPP */

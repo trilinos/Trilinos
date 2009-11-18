@@ -24,6 +24,7 @@ ADD_OPTION_AND_DEFINE(
 # C) Add the libraries, tests, and examples
 #
 
+ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(test)
 
 #

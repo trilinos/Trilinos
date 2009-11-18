@@ -27,13 +27,31 @@
 //@HEADER
 */
 
-#ifndef TIFPACK_VALIDPARAMETERS_HPP
-#define TIFPACK_VALIDPARAMETERS_HPP
+#ifndef TIFPACK_PARAMETERS_HPP
+#define TIFPACK_PARAMETERS_HPP
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-//! Returns a list which contains all the parameters possibly used by TIFPACK.
-Teuchos::ParameterList Tifpack_GetValidParameters();
+namespace Tifpack {
+
+//! Fills a list which contains all the parameters possibly used by Tifpack.
+void GetValidParameters(Teuchos::ParameterList& params);
+
+//! Set a value from a ParameterList if a parameter with the specified name exists.
+/** If the specified name does not name a parameter in the list, then 'value' is
+  not referenced.
+*/
+template<typename T>
+void GetParameter(const Teuchos::ParameterList& params, const std::string& name, T& value)
+{
+  if (params.isParameter(name)) {
+    if (params.isType<T>(name)) {
+      value = params.get<T>(name);
+    }
+  }
+}
+
+}//namespace Tifpack
 
 #endif

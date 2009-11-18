@@ -41,6 +41,7 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tifpack_CreateOverlapGraph.hpp>
+#include <Tifpack_Parameters.hpp>
 
 namespace Tifpack {
 
@@ -193,19 +194,8 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::SetParameters(const Teuchos::ParameterList& parameterlist,
                                                                bool cerr_warning_if_unused)
 {
-  std::string paramname("LEVEL_FILL");
-  if (parameterlist.isParameter(paramname)) {
-    if (parameterlist.isType<int>(paramname)) {
-      LevelFill_ = parameterlist.get<int>(paramname);
-    }
-  }
-
-  paramname = "LEVEL_OVERLAP";
-  if (parameterlist.isParameter(paramname)) {
-    if (parameterlist.isType<int>(paramname)) {
-      LevelOverlap_ = parameterlist.get<int>(paramname);
-    }
-  }
+  GetParameter(parameterlist, "LEVEL_FILL", LevelFill_);
+  GetParameter(parameterlist, "LEVEL_OVERLAP", LevelOverlap_);
 }
 
 //==============================================================================

@@ -30,14 +30,24 @@
 #ifndef _TIFPACK_SCALINGTYPE_HPP_
 #define _TIFPACK_SCALINGTYPE_HPP_
 /*! \file Tifpack_ScalingType.hpp
-    \brief Tifpack_ScalingType enumerable type
+    \brief Tifpack::ScalingType enumerable type
  */
+
+namespace Tifpack {
 
 //! Tifpack scaling type selector.
 /*! Selects the type of scaling used (if any) for Tifpack preconditioners.
 */
-enum Tifpack_ScalingType {None, LeftDiagonal, RightDiagonal, 
-                     SymmetricDiagonal, RowSum, ColSum, 
-		           RowAndColSum};
+enum ScalingType {
+  None,
+  LeftDiagonal,
+  RightDiagonal, 
+  SymmetricDiagonal,
+  RowSum,
+  ColSum, 
+  RowAndColSum
+};
+
+}//namespace Tifpack
 
 #endif /* _TIFPACK_SCALINGTYPE_HPP_ */

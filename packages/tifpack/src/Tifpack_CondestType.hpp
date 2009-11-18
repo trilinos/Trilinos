@@ -30,12 +30,16 @@
 #ifndef TIFPACK_CONDESTTYPE_HPP
 #define TIFPACK_CONDESTTYPE_HPP
 
-//! Tifpack_CondestType: enum to define the type of condition number estimate.
+namespace Tifpack {
 
-enum Tifpack_CondestType {
-  Tifpack_Cheap,  //!< cheap estimate
-  Tifpack_CG,     //!< Uses AztecOO's CG
-  Tifpack_GMRES   //!< Uses AztecOO's GMRES
+//! Tifpack::CondestType: enum to define the type of condition number estimate.
+
+enum CondestType {
+  Cheap,  //!< cheap estimate
+  CG,     //!< Uses AztecOO's CG
+  GMRES   //!< Uses AztecOO's GMRES
 };
+
+}//namespace Tifpack
 
 #endif
