@@ -1,4 +1,0 @@
-# ADD_SUBDIRECTORY(BaseSparseMultiply)
-# ADD_SUBDIRECTORY(BaseSparseSolve)
-# ADD_SUBDIRECTORY(HbMatrix)
-# ADD_SUBDIRECTORY(Permutation)

@@ -1,5 +1,5 @@
 // include for ThrustGPUNode method implementations
-#include <Kokkos_ThrustGPUNode.cuh>
+#include "Kokkos_ThrustGPUNode.cuh"
 
 // includes for all operators
 #include "TestOps.hpp"

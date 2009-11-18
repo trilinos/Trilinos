@@ -30,10 +30,12 @@
 #define KOKKOS_CRSMATRIX_H
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_TestForException.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
-#include "Kokkos_CrsGraph.hpp"
 
 namespace Kokkos {
 
@@ -43,6 +45,7 @@ namespace Kokkos {
   class CrsMatrix {
   public:
 
+    typedef typename Node::size_t size_t;
     typedef Scalar  ScalarType;
     typedef Node    NodeType;
 
@@ -75,18 +78,18 @@ namespace Kokkos {
     void set2DValues(size_t row, const Teuchos::ArrayRCP<const Scalar> &rowvals);
 
     //! Retrieve the values for a 1D storage.
-    Teuchos::ArrayRCP<const Scalar> get1DValues() const;
+    Teuchos::ArrayRCP<const Scalar> getPackedValues() const;
 
     //! Retrieve the values for one row of 2D storage.
     Teuchos::ArrayRCP<const Scalar> get2DValues(size_t row) const;
 
-    //! Indicates whether or not the graph entries are packed.
+    //! Indicates whether or not the matrix entries are packed.
     bool isPacked() const;
   
     //! Indicates that the matrix is initialized, but empty.
     bool isEmpty() const;
 
-    //! Return the number of rows in the graph.
+    //! Return the number of rows in the matrix.
     size_t getNumRows() const;
 
     //! Release data associated with this matrix.
@@ -109,7 +112,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Node>
-  CrsMatrix<Scalar,Node>::CrsMatrix(size_t numRows, const Teuchos::RCP<Node> &node)
+  CrsMatrix<Scalar,Node>::CrsMatrix(typename Node::size_t numRows, const Teuchos::RCP<Node> &node)
   : node_(node)
   , numRows_(numRows)
   , isInitialized_(false)
@@ -135,13 +138,14 @@ namespace Kokkos {
     pbuf_values2D_ = Teuchos::null;
     isInitialized_ = false;
     isEmpty_       = true;
+    isPacked_      = false;
   }
 
   //==============================================================================
   template <class Scalar, class Node>
   void CrsMatrix<Scalar,Node>::setPackedValues(
                         const Teuchos::ArrayRCP<const Scalar> &allvals) {
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::setPackedValues(): matrix is already initialized. Call clear() before reinitializing.");
 #endif
@@ -154,9 +158,9 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Node>
   void CrsMatrix<Scalar,Node>::set2DValues(
-                              size_t row,
+                              typename Node::size_t row,
                               const Teuchos::ArrayRCP<const Scalar> &rowvals) {
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isPacked_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::set2DValues(): matrix is already initialized with 1D structure. Call clear() before reinitializing.");
 #endif
@@ -164,7 +168,7 @@ namespace Kokkos {
       pbuf_values2D_ = Teuchos::arcp<Teuchos::ArrayRCP<const Scalar> >(numRows_);
       isInitialized_ = true;
     }
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
         Teuchos::typeName(*this) << ":;set2DValues(): specified row is invalid.");
 #endif
@@ -175,10 +179,10 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Node>
   Teuchos::ArrayRCP<const Scalar> 
-  CrsMatrix<Scalar,Node>::get1DValues() const {
-#ifdef HAVE_TPETRA_DEBUG
+  CrsMatrix<Scalar,Node>::getPackedValues() const {
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::get1DValues(): matrix is uninitialized or not packed.");
+        Teuchos::typeName(*this) << "::getPackedValues(): matrix is uninitialized or not packed.");
 #endif
     return pbuf_values1D_;
   }
@@ -186,8 +190,8 @@ namespace Kokkos {
   //==============================================================================
   template <class Scalar, class Node>
   Teuchos::ArrayRCP<const Scalar>
-  CrsMatrix<Scalar,Node>::get2DValues(size_t row) const {
-#ifdef HAVE_TPETRA_DEBUG
+  CrsMatrix<Scalar,Node>::get2DValues(typename Node::size_t row) const {
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isInitialized_ == false || isPacked_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::get2DValues(): matrix is uninitialized or initialized packed.");
     TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
@@ -210,7 +214,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Node>
-  size_t CrsMatrix<Scalar,Node>::getNumRows() const {
+  typename Node::size_t CrsMatrix<Scalar,Node>::getNumRows() const {
     return numRows_;
   }
 

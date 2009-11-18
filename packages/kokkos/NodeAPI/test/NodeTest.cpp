@@ -3,6 +3,9 @@
 #include <Teuchos_Time.hpp>
 #include <Teuchos_Tuple.hpp>
 
+#include <functional>
+#include <algorithm>
+
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "TestOps.hpp"
@@ -14,7 +17,7 @@
 #ifdef HAVE_KOKKOS_THREADPOOL
 #include "Kokkos_TPINode.hpp"
 #endif
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA)
+#ifdef HAVE_KOKKOS_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
@@ -27,6 +30,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
+  using Teuchos::Array;
   using Teuchos::Time;
   using Teuchos::null;
   using Teuchos::TimeMonitor;
@@ -80,7 +84,7 @@ namespace {
   }
 #endif
 
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA)
+#ifdef HAVE_KOKKOS_THRUST
   using Kokkos::ThrustGPUNode;
   int cuda_dev = 0;
   int cuda_verb = 0;
@@ -144,10 +148,77 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NodeAPI, MemoryInitTest, NODE )
+  {
+    out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
+    Teuchos::ArrayRCP<int> x, y;
+    RCP<NODE> node = getNode<NODE>();
+    ReadyBufferHelper<NODE> rbh(node);
+    const unsigned int N = 4096;
+    // const unsigned int N = 1000000;
+    const unsigned int Xoff  = 1024;
+    const unsigned int Xsize = N + 2*Xoff;  // 6144
+    const unsigned int Yoffs[5] = {0, N, 2*N, 3*N, 4*N};
+    // allocate two compute buffers: 
+    x = node->template allocBuffer<int>(Xsize);
+    y = node->template allocBuffer<int>(Yoffs[4]);
+    // set x = {?  fours  ?} using copyTo
+    {
+      Array<int> fours(N);
+      std::fill(fours.begin(), fours.end(), 4);
+      node->template copyToBuffer<int>(N,fours(),x+Xoff);
+    }
+    // set y = {? ? ? fours} using copyBuffers
+    node->template copyBuffers<int>(N,x+Xoff,y+Yoffs[3]);
+    // set y = {? ? threes fours} using local viewBuffer(WriteOnly)
+    {
+      ArrayRCP<int> view = node->viewBufferNonConst(Kokkos::WriteOnly, N, y+Yoffs[2]);
+      TEST_EQUALITY_CONST( view.size(), N );
+      std::fill(view.begin(), view.end(), 3);
+    }
+    // set y = {ones ones threes fours} using init
+    {
+      InitOp<int> iop;
+      rbh.begin();
+      iop.x = rbh.template addNonConstBuffer<int>(y);
+      rbh.end();
+      const int beg = Yoffs[0],
+                end = Yoffs[2];
+      node->parallel_for(beg,end,iop);
+    }
+    // set y = {ones twos threes fours} using viewBuffer(ReadWrite) and local arithmetic
+    // over-size the view, to ensure that we don't affect any more changes than necessary
+    {
+      ArrayRCP<int> view = node->viewBufferNonConst(Kokkos::ReadWrite, 2*N, y+Yoffs[1]);
+      // add 1 to all elements of view
+      std::transform(view.begin(), view.begin()+N, view.begin(), std::bind2nd(std::plus<int>(), 1));
+    }
+    // check the result
+    { 
+      Array<int> expected(N);
+      ArrayRCP<const int> yview = node->template viewBuffer<int>(4*N,y);
+      // y should be {ones  twos  threes  fours}
+      // check ones
+      std::fill(expected.begin(), expected.end(), 1);
+      TEST_COMPARE_ARRAYS( expected(), yview(Yoffs[0],N) ); 
+      // check twos
+      std::fill(expected.begin(), expected.end(), 2);
+      TEST_COMPARE_ARRAYS( expected(), yview(Yoffs[1],N) ); 
+      // check threes
+      std::fill(expected.begin(), expected.end(), 3);
+      TEST_COMPARE_ARRAYS( expected(), yview(Yoffs[2],N) ); 
+      // check fours
+      std::fill(expected.begin(), expected.end(), 4);
+      TEST_COMPARE_ARRAYS( expected(), yview(Yoffs[3],N) ); 
+    }
+    // free the allocations
+    x = Teuchos::null;
+    y = Teuchos::null;
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( NodeAPI, SumTest, SCALAR, NODE )
   {
-    typedef ArrayRCP<const char>  cbuf;
-    typedef ArrayRCP<      char> ncbuf;
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     Teuchos::ArrayRCP<SCALAR> x;
@@ -254,14 +325,18 @@ namespace {
   UNIT_TEST_GROUP_SCALAR(int)
   UNIT_TEST_GROUP_SCALAR(float)
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, SerialNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, SerialNode )
 #ifdef HAVE_KOKKOS_TBB
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TBBNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, TBBNode )
 #endif
 #ifdef HAVE_KOKKOS_THREADPOOL
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TPINode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, TPINode )
 #endif
 #ifdef HAVE_KOKKOS_CUDA
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, ThrustGPUNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, ThrustGPUNode )
 #endif
 
 }

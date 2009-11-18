@@ -29,7 +29,8 @@ namespace Kokkos {
       cutilSafeCallNoSync( cudaMalloc( (void**)&devptr, sizeof(T)*size ) );
     }
     CUDANodeDeallocator dealloc;
-    Teuchos::ArrayRCP<T> buff(devptr,0,size,dealloc,true);
+    const bool OwnsMem = true;
+    Teuchos::ArrayRCP<T> buff(devptr,0,size,dealloc,OwnsMem);
     MARK_COMPUTE_BUFFER(buff);
     return buff;
   }
@@ -63,14 +64,25 @@ namespace Kokkos {
   Teuchos::ArrayRCP<const T> 
   CUDANodeMemoryModel::viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
     CHECK_COMPUTE_BUFFER(buff);
-    TEST_FOR_EXCEPT(true);
+    Teuchos::ArrayRCP<T> hostBuff;
+    if (size != 0) {
+      hostBuff = Teuchos::arcp<T>(size);
+      this->template copyFromBuffer<T>(size,buff,hostBuff);
+    }
+    return hostBuff;
   }
 
   template <class T> inline
   Teuchos::ArrayRCP<T> 
   CUDANodeMemoryModel::viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
     CHECK_COMPUTE_BUFFER(buff);
-    TEST_FOR_EXCEPT(true);
+    CUDANodeCopyBackDeallocator<T> dealloc(buff.getRawPtr(), size);
+    Teuchos::ArrayRCP<T> hostBuff = dealloc.alloc();
+    if (rw == ReadWrite) {
+      this->template copyFromBuffer<T>(size, buff, hostBuff);
+    }  
+    // else rw == WriteOnly, and we need no copy
+    return hostBuff;
   }
 
   inline void CUDANodeMemoryModel::readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {

@@ -37,6 +37,7 @@
 #include <stdexcept>
 
 #include "Kokkos_MultiVector.hpp"
+#include "Kokkos_MultiVectorKernelOps.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #ifdef HAVE_KOKKOS_TBB
 #include "Kokkos_TBBNode.hpp"
@@ -47,185 +48,19 @@
 #include "Kokkos_SerialNode.hpp"
 #include <Teuchos_BLAS.hpp>
 
-#ifndef KERNEL_PREFIX 
-  #define KERNEL_PREFIX
-#endif
-
 namespace Kokkos {
 
-  template <class Scalar>
-  struct InitOp {
-    Scalar *x;
-    Scalar alpha;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      x[i] = alpha;
-    }
-  };
-
-  template <class Scalar>
-  struct AssignOp {
-    Scalar *x;
-    const Scalar *y;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      x[i] = y[i];
-    }
-  };
-
-  template <class Scalar>
-  struct SingleScaleOp {
-    Scalar alpha;
-    Scalar *x;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      Scalar tmp = x[i];
-      x[i] = alpha*tmp;
-    }
-  };
-
-  template <class Scalar>
-  struct MVScaleOp {
-    Scalar alpha;
-    const Scalar *y;
-    Scalar *x;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      x[i] = alpha*y[i];
-    }
-  };
-
-  template <class Scalar>
-  struct AbsOp {
-    const Scalar *y;
-    Scalar *x;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      x[i] = Teuchos::ScalarTraits<Scalar>::magnitude(y[i]);
-    }
-  };
-
-  template <class Scalar>
-  struct RecipOp {
-    const Scalar *scale;
-    Scalar *x;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      x[i] = Teuchos::ScalarTraits<Scalar>::one() / scale[i];
-    }
-  };
-
-  template <class Scalar>
-  struct GESUMOp {
-    const Scalar *x;
-    Scalar *y;
-    Scalar alpha, beta;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      Scalar tmp = y[i];
-      y[i] = alpha * x[i] + beta * tmp;
-    }
-  };
-
-  template <class Scalar>
-  struct GESUMOp3 {
-    const Scalar *x, *y;
-    Scalar *z;
-    Scalar alpha, beta, gamma;
-    inline KERNEL_PREFIX void execute(size_t i) const
-    {
-      Scalar tmp = z[i];
-      z[i] = alpha * x[i] + beta * y[i] + gamma * tmp;
-    }
-  };
-
-  template <class Scalar>
-  struct SumAbsOp {
-    typedef  Teuchos::ScalarTraits<Scalar> SCT;
-    typedef  typename SCT::magnitudeType   Magnitude;
-    const Scalar *x;
-    typedef  Magnitude ReductionType;
-    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
-    Magnitude generate(size_t i) {
-      return SCT::magnitude(x[i]);
-    }
-  };
-
-  template <class Scalar>
-  struct WeightNormOp {
-    typedef  Teuchos::ScalarTraits<Scalar> SCT;
-    typedef  typename SCT::magnitudeType   Magnitude;
-    const Scalar *x, *w;
-    typedef  Magnitude ReductionType;
-    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
-    Magnitude generate(size_t i) {
-      Scalar tmp = x[i] / w[i];
-      return SCT::real( SCT::conjugate(tmp)*tmp );
-    }
-  };
-
-  template <class Scalar>
-  struct SumOp {
-    const Scalar *x;
-    typedef  Scalar ReductionType;
-    inline static Scalar identity() {return Teuchos::ScalarTraits<Scalar>::zero();}
-    Scalar reduce(Scalar x, Scalar y) {return x+y;}
-    Scalar generate(size_t i) { return x[i]; }
-  };
-
-  template <class Scalar>
-  struct MaxAbsOp {
-    typedef  Teuchos::ScalarTraits<Scalar> SCT;
-    typedef  typename SCT::magnitudeType   Magnitude;
-    const Scalar *x;
-    typedef  Magnitude ReductionType;
-    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return std::max(x,y);}
-    Magnitude generate(size_t i) {
-      return SCT::magnitude(x[i]);
-    }
-  };
-
-  template <class Scalar>
-  struct DotOp1 {
-    typedef  Teuchos::ScalarTraits<Scalar> SCT;
-    typedef  typename SCT::magnitudeType   Magnitude;
-    const Scalar *x;
-    typedef  Magnitude ReductionType;
-    inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
-    Magnitude generate(size_t i) {
-      Scalar xi = x[i]; 
-      return SCT::real( SCT::conjugate(xi)*xi );
-    }
-  };
-
-  template <class Scalar>
-  struct DotOp2 {
-    typedef Teuchos::ScalarTraits<Scalar> SCT;
-    const Scalar *x, *y;
-    typedef  Scalar ReductionType;
-    inline static Scalar identity() {return SCT::zero();}
-    Scalar reduce(Scalar x, Scalar y) {return x+y;}
-    Scalar generate(size_t i) {
-      Scalar xi = x[i]; Scalar yi = y[i];
-      return SCT::real( SCT::conjugate(xi)*yi );
-    }
-  };
-
   //! Class for providing GEMM for a particular Node
-  template <class Scalar, class Node> 
-  class NodeGEMM {
+  template <typename Scalar, typename Node> 
+  struct NodeGEMM {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B, Scalar beta, MultiVector<Scalar,Node> &C) {
         TEST_FOR_EXCEPT(true);
       }
   };
 
-  template <class Scalar> 
-  class NodeGEMM<Scalar,SerialNode> {
+  template <typename Scalar> 
+  struct NodeGEMM<Scalar,SerialNode> {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,SerialNode> &A, const MultiVector<Scalar,SerialNode> &B, Scalar beta, MultiVector<Scalar,SerialNode> &C) {
         Teuchos::BLAS<int,Scalar> blas;
@@ -240,8 +75,8 @@ namespace Kokkos {
   };
 
 #ifdef HAVE_KOKKOS_TBB
-  template <class Scalar> 
-  class NodeGEMM<Scalar,TBBNode> {
+  template <typename Scalar> 
+  struct NodeGEMM<Scalar,TBBNode> {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TBBNode> &A, const MultiVector<Scalar,TBBNode> &B, Scalar beta, MultiVector<Scalar,TBBNode> &C) {
         Teuchos::BLAS<int,Scalar> blas;
@@ -257,8 +92,8 @@ namespace Kokkos {
 #endif
 
 #ifdef HAVE_KOKKOS_THREADPOOL
-  template <class Scalar> 
-  class NodeGEMM<Scalar,TPINode> {
+  template <typename Scalar> 
+  struct NodeGEMM<Scalar,TPINode> {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TPINode> &A, const MultiVector<Scalar,TPINode> &B, Scalar beta, MultiVector<Scalar,TPINode> &C) {
         Teuchos::BLAS<int,Scalar> blas;

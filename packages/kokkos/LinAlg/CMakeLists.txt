@@ -39,6 +39,7 @@ APPEND_SET(HEADERS
     Kokkos_CrsMatrix.hpp
     Kokkos_MultiVector.hpp
     # computation
+    Kokkos_MultiVectorKernelOps.hpp
     Kokkos_DefaultArithmetic.hpp
     Kokkos_DefaultSparseMultiply.hpp
     Kokkos_DefaultSparseSolve.hpp
@@ -48,6 +49,13 @@ APPEND_SET(SOURCES
     Kokkos_LinAlgVersion.cpp
   )
 
+ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
+IF (Kokkos_ENABLE_Thrust)
+  # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
+  include_directories(${Kokkos_INCLUDE_DIRS})
+  CUDA_ADD_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu)
+ENDIF()
+
 #
 # C) Define the targets for package's library(s)
 #
@@ -56,7 +64,7 @@ PACKAGE_ADD_LIBRARY(
   kokkoslinalg
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkos kokkosnodeapi
+  DEPLIBS kokkos kokkosnodeapi kokkoslinalg_cuda
   )
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)

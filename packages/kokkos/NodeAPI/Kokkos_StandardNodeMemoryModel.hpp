@@ -4,7 +4,7 @@
 #include "Kokkos_NodeAPIConfigDefs.hpp"
 #include "Kokkos_BufferMacros.hpp"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <algorithm>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -14,6 +14,7 @@ namespace Kokkos {
   /*! A default implementation of the Node memory architecture for Node with a single memory space. */
   class StandardNodeMemoryModel {
     public:
+      typedef std::size_t size_t;
 
       //@{ Memory management
 

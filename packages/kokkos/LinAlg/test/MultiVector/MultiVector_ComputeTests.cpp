@@ -38,8 +38,12 @@
 #ifdef HAVE_KOKKOS_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-
-#include <errno.h> // FINISH: remove
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+#include "Kokkos_ThrustGPUNode.hpp"
+#endif
 
 namespace {
 
@@ -55,7 +59,15 @@ namespace {
   RCP<SerialNode> snode;
 #ifdef HAVE_KOKKOS_TBB
   using Kokkos::TBBNode;
-  RCP<TBBNode> tnode;
+  RCP<TBBNode> tbbnode;
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  using Kokkos::TPINode;
+  RCP<TPINode> tpinode;
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+  using Kokkos::ThrustGPUNode;
+  RCP<ThrustGPUNode> thrustnode;
 #endif
 
   int N = 1000;
@@ -84,12 +96,36 @@ namespace {
 #ifdef HAVE_KOKKOS_TBB
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
-    if (tnode == null) {
+    if (tbbnode == null) {
       Teuchos::ParameterList pl;
       pl.set<int>("Num Threads",0);
-      tnode = rcp(new TBBNode(pl));
+      tbbnode = rcp(new TBBNode(pl));
     }
-    return tnode;
+    return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_THREADPOOL
+  template <>
+  RCP<TPINode> getNode<TPINode>() {
+    if (tpinode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tpinode = rcp(new TPINode(pl));
+    }
+    return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_THRUST
+  template <>
+  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+    if (thrustnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      thrustnode = rcp(new ThrustGPUNode(pl));
+    }
+    return thrustnode;
   }
 #endif
 
@@ -127,13 +163,28 @@ namespace {
 #define UNIT_TEST_TBBNODE(SCALAR, ORDINAL)
 #endif
 
+#ifdef HAVE_KOKKOS_THREADPOOL
+#define UNIT_TEST_TPINODE(SCALAR, ORDINAL) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Scale, SCALAR, ORDINAL, TPINode )
+#else
+#define UNIT_TEST_TPINODE(SCALAR, ORDINAL)
+#endif
+
+#ifdef HAVE_KOKKOS_THRUST
+#define UNIT_TEST_THRUSTGPUNODE(SCALAR, ORDINAL) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Scale, SCALAR, ORDINAL, ThrustGPUNode )
+#else
+#define UNIT_TEST_THRUSTGPUNODE(SCALAR, ORDINAL)
+#endif
+
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       UNIT_TEST_SERIALNODE( SCALAR, ORDINAL ) \
-      UNIT_TEST_TBBNODE( SCALAR, ORDINAL )
+      UNIT_TEST_TBBNODE( SCALAR, ORDINAL ) \
+      UNIT_TEST_TPINODE( SCALAR, ORDINAL ) \
+      UNIT_TEST_THRUSTGPUNODE( SCALAR, ORDINAL )
 
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
      UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
 

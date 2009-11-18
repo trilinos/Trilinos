@@ -45,8 +45,9 @@ namespace Kokkos {
   class CrsGraph {
   public:
 
-  typedef Ordinal OrdinalType;
-  typedef Node    NodeType;
+    typedef typename Node::size_t size_t;
+    typedef Ordinal OrdinalType;
+    typedef Node    NodeType;
 
     //! @name Constructors/Destructor
     //@{
@@ -74,15 +75,14 @@ namespace Kokkos {
     void setPackedStructure(const Teuchos::ArrayRCP<const size_t> &offsets,
                             const Teuchos::ArrayRCP<const Ordinal> &allinds);
 
-    //! Submit the indices and offset for 1D storage.
     //! Submit the indices for one row of 2D storage.
-    void set2DStructure(size_t row, const Teuchos::ArrayRCP<const Ordinal> &rowinds);
+    void set2DIndices(size_t row, const Teuchos::ArrayRCP<const Ordinal> &rowinds);
 
     //! Retrieve the offsets for 1D storage.
-    Teuchos::ArrayRCP<const size_t> get1DOffsets() const;
+    Teuchos::ArrayRCP<const size_t> getPackedOffsets() const;
 
     //! Retrieve the indices for 1D storage.
-    Teuchos::ArrayRCP<const Ordinal> get1DIndices() const;
+    Teuchos::ArrayRCP<const Ordinal> getPackedIndices() const;
 
     //! Retrieve the indices for one row of 2D storage.
     Teuchos::ArrayRCP<const Ordinal> get2DIndices(size_t row) const;
@@ -117,7 +117,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Ordinal, class Node>
-  CrsGraph<Ordinal,Node>::CrsGraph(size_t numRows, const Teuchos::RCP<Node> &node) 
+  CrsGraph<Ordinal,Node>::CrsGraph(typename Node::size_t numRows, const Teuchos::RCP<Node> &node) 
   : node_(node)
   , numRows_(numRows)
   , isInitialized_(false)
@@ -144,14 +144,15 @@ namespace Kokkos {
     pbuf_offsets_   = Teuchos::null;
     isInitialized_ = false;
     isEmpty_       = true;
+    isPacked_      = false;
   }
 
   //==============================================================================
   template <class Ordinal, class Node>
   void CrsGraph<Ordinal,Node>::setPackedStructure(
-                        const Teuchos::ArrayRCP<const size_t> &offsets,
+                        const Teuchos::ArrayRCP<const typename Node::size_t> &offsets,
                         const Teuchos::ArrayRCP<const Ordinal> &allinds) {
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::setPackedStructure(): graph is already initialized. Call clear() before reinitializing.");
 #endif
@@ -164,20 +165,20 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Ordinal, class Node>
-  void CrsGraph<Ordinal,Node>::set2DStructure(
-                              size_t row, 
+  void CrsGraph<Ordinal,Node>::set2DIndices(
+                              typename Node::size_t row, 
                               const Teuchos::ArrayRCP<const Ordinal> &rowinds) {
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isPacked_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::set2DStructure(): graph is already initialized with 1D structure. Call clear() before reinitializing.");
+        Teuchos::typeName(*this) << "::set2DIndices(): graph is already initialized with 1D structure. Call clear() before reinitializing.");
 #endif
     if (isInitialized_ == false) {
       pbuf_indices2D_ = Teuchos::arcp<Teuchos::ArrayRCP<const Ordinal> >(numRows_);
       isInitialized_ = true;
     }
-#ifdef HAVE_TPETRA_DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
-        Teuchos::typeName(*this) << ":;set2DStructure(): specified row is invalid.");
+        Teuchos::typeName(*this) << ":;set2DIndices(): specified row is invalid.");
 #endif
     isEmpty_ = isEmpty_ && (rowinds == Teuchos::null);
     pbuf_indices2D_[row] = rowinds;
@@ -186,10 +187,10 @@ namespace Kokkos {
   //==============================================================================
   template <class Ordinal, class Node>
   Teuchos::ArrayRCP<const Ordinal> 
-  CrsGraph<Ordinal,Node>::get1DIndices() const {
-#ifdef HAVE_TPETRA_DEBUG
+  CrsGraph<Ordinal,Node>::getPackedIndices() const {
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::get1DIndices(): graph is uninitialized or not packed.");
+        Teuchos::typeName(*this) << "::getPackedIndices(): graph is uninitialized or not packed.");
 #endif
     return pbuf_indices1D_;
   }
@@ -197,8 +198,8 @@ namespace Kokkos {
   //==============================================================================
   template <class Ordinal, class Node>
   Teuchos::ArrayRCP<const Ordinal> 
-  CrsGraph<Ordinal,Node>::get2DIndices(size_t row) const {
-#ifdef HAVE_TPETRA_DEBUG
+  CrsGraph<Ordinal,Node>::get2DIndices(typename Node::size_t row) const {
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isInitialized_ == false || isPacked_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::get2DIndices(): graph is uninitialized or initialized packed.");
     TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
@@ -221,18 +222,18 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Ordinal, class Node>
-  Teuchos::ArrayRCP<const size_t> 
-  CrsGraph<Ordinal,Node>::get1DOffsets() const {
-#ifdef HAVE_TPETRA_DEBUG
+  Teuchos::ArrayRCP<const typename Node::size_t> 
+  CrsGraph<Ordinal,Node>::getPackedOffsets() const {
+#ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::get1DOffsets(): graph is uninitialized or not packed.");
+        Teuchos::typeName(*this) << "::getPackedOffsets(): graph is uninitialized or not packed.");
 #endif
     return pbuf_offsets_;
   }
 
   //==============================================================================
   template <class Ordinal, class Node>
-  size_t CrsGraph<Ordinal,Node>::getNumRows() const {
+  typename Node::size_t CrsGraph<Ordinal,Node>::getNumRows() const {
     return numRows_;
   }
 

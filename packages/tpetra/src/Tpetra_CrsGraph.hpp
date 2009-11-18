@@ -1486,7 +1486,7 @@ namespace Tpetra
           Teuchos::ArrayRCP<const LocalOrdinal> rowinds;
           if (sizeInfo.numEntries > 0) {
             rowinds = pbuf_lclInds1D_.persistingView(sizeInfo.offset1D, sizeInfo.numEntries);
-            lclGraph_.set2DStructure(r,rowinds);
+            lclGraph_.set2DIndices(r,rowinds);
           }
         }
       }
@@ -1499,7 +1499,7 @@ namespace Tpetra
           Teuchos::ArrayRCP<const LocalOrdinal> rowinds = pbuf_lclInds2D_[r];
           if (sizeInfo.numEntries > 0) {
             rowinds = rowinds.persistingView(0,sizeInfo.numEntries);
-            lclGraph_.set2DStructure(r,rowinds);
+            lclGraph_.set2DIndices(r,rowinds);
           }
         }
       }

@@ -14,8 +14,8 @@ namespace Kokkos {
 
   /*! A default implementation of the Node memory architecture for Node with a single memory space. */
   class CUDANodeMemoryModel {
-    typedef unsigned long int size_t;
     public:
+      typedef unsigned long int size_t;
 
       //@{ Memory management
 

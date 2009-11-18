@@ -538,8 +538,8 @@ namespace Kokkos {
     if (graph.isPacked()) {
       isEmpty_ = false;
       isPacked_ = true;
-      pbuf_inds1D_    = graph.get1DIndices();
-      pbuf_offsets1D_ = graph.get1DOffsets();
+      pbuf_inds1D_    = graph.getPackedIndices();
+      pbuf_offsets1D_ = graph.getPackedOffsets();
     }
     else {
       isEmpty_ = false;
@@ -578,7 +578,7 @@ namespace Kokkos {
     }
     else if (matrix.isPacked()) {
       isEmpty_ = false;
-      pbuf_vals1D_ = matrix.get1DValues();
+      pbuf_vals1D_ = matrix.getPackedValues();
     }
     else {
       isEmpty_ = false;
