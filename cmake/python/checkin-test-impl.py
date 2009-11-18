@@ -175,7 +175,7 @@ manually.
 
 Common use cases for using this script are as follows:
 
-(*) Basic full testing without commit:
+(*) Basic full testing without push:
 
    --do-all
 
@@ -186,16 +186,16 @@ Common use cases for using this script are as follows:
    NOTE: If everything passed, you can follow this up with a commit (see
    below).
 
-(*) Basic full testing with commit:
+(*) Basic full testing with commit and push:
 
-   --do-all --commit --commit-msg-header-file=<SOME_FILE_NAME>
+   --do-all --push --commit-msg-header-file=<SOME_FILE_NAME>
 
    NOTE: If the commit criteria is not satisfied, no commit will occur and you
    will get an email telling you that.
 
-(*) Commit after a completed set of tests have finished:
+(*) Push to global repo after a completed set of tests have finished:
 
-   --commit --commit-msg-header-file=<SOME_FILE_NAME>
+   --push --commit-msg-header-file=<SOME_FILE_NAME>
 
    NOTE: This will pick up the results for the last completed test runs and
    append the results of those tests to the checkin-message.
@@ -235,6 +235,19 @@ Common use cases for using this script are as follows:
   NOTE: Using this option is greatly preferred to not running this script at
   all!
 
+(*) Test changes locally without pulling updates:
+
+  --skip-pull --configure --build --test [--commit]
+
+  NOTE: This will just configure, build, test, and send and email
+  notificatioin without changing the status of the local git repo at all and
+  without any communication with the global repo.
+
+  NOTE: This is not a sufficient level of testing in order to commit and push
+  the changes to the global repo.  However, this would be a sufficient level
+  of testing in order to do a local commit and then pull and a remote testing
+  and commit/push.
+
 (*) Check commit readiness status:
 
    [no arguments]
@@ -258,12 +271,10 @@ going using this script for all of the pre-checkin testing and global commits.
 from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
-
-
 clp.add_option(
-  "--update-command", dest="updateCommand", type="string",
-  default="cvs -q update -dP",
-  help="Command used to update the working copy of Trilinos." )
+  "--trilinos-src-dir", dest="trilinosSrcDir", type="string",
+  default='/'.join(getScriptBaseDir().split("/")[0:-2]),
+  help="The Trilinos source base directory for code to be tested." )
 
 clp.add_option(
   "--enable-packages", dest="enablePackages", type="string", default="",
@@ -319,7 +330,8 @@ clp.add_option(
 
 clp.add_option(
   "--show-all-tests", dest="showAllTests", action="store_true",
-  help="Show all of the tests in the summary email." )
+  help="Show all of the tests in the summary email and in the commit message" \
+  +" summary (see --append-test-results)." )
 clp.add_option(
   "--no-show-all-tests", dest="showAllTests", action="store_false",
   help="Don't show all of the test results in the summary email. [default]",
@@ -361,8 +373,52 @@ clp.add_option(
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
-  "--update", dest="doUpdate", action="store_true",
-  help="Do the CVS update of Trilinos.", default=False )
+  "--commit", dest="doCommit", action="store_true",
+  help="Do the local commit of all the staged changes before the initial pull." \
+  +" The commit message used in specified by the --commit-msg-header-file argument." \
+  +"  If you have not already committed your changes, then you will want to" \
+  +" use this option.  The commit is peformed before the initial pull and" \
+  +" before any testing is performed in order to allow for rebasing and for" \
+  +" allowing the pull to be backed out.  If the build/test fails and --no-force-commit" \
+  +" is specified, then the commit will be backed out." \
+  +"  Note: By default, unknown files will result in the commit to fail." \
+  +"  In this case, you will need to deal with the unknown files in some way" \
+  +" or just commit manually and then not pass in this option when running" \
+  +" the script again.  WARNING: Committing alone does *not* push changes to" \
+  +" the global repo 'origin', you have to use a --push for that." )
+clp.add_option(
+  "--skip-commit", dest="doCommit", action="store_false", default=False,
+  help="Skip the commit at the end. [default]" )
+
+clp.add_option(
+  "--force-commit", dest="forceCommit", action="store_true",
+  help="Force the local commit to stay even if there are build/test errors." \
+  +" WARNING: Only do this when you are 100% certain that the errors are not" \
+  +" caused by your code changes.  This only applies when --commit is specified" \
+  +" and this script is doing the commit.  When you commit yourself and don't" \
+  +" specify --commmit (i.e. --no-commit), then the commit will not be backed out" \
+  +" and it is up to you to back-out the commit or deal with it in some other way.")
+clp.add_option(
+  "--no-force-commit", dest="forceCommit", action="store_false", default=False,
+  help="Do not force a local commit. [default]" )
+
+clp.add_option(
+  "--pull", dest="doPull", action="store_true",
+  help="Do the pull from the default (origin) repository and optionally also" \
+    +" merge in changes from the repo pointed to by --extra-pull-from.",
+  default=False )
+
+clp.add_option(
+  "--extra-pull-from", dest="extraPullFrom", type="string", default="",
+  help="Optional extra git repository to pull and merge in changes from after" \
+    +" pulling in changes from 'origin'." )
+
+clp.add_option(
+  "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
+  help="Skipping the pull and not requiring any pull at all to have been performed." \
+    +"  This option is useful for testing against local changes without having to" \
+    +" get the updates from the global repo.  However, if you don't pull, you can't" \
+    +" push your changes to the global repo." )
 
 clp.add_option(
   "--configure", dest="doConfigure", action="store_true",
@@ -378,35 +434,8 @@ clp.add_option(
 
 clp.add_option(
   "--do-all", dest="doAll", action="store_true",
-  help="Do update, configure, build, and test (same as --update --configure" \
+  help="Do update, configure, build, and test (same as --pull --configure" \
   +" --build --test)", default=False )
-
-clp.add_option(
-  "--commit", dest="doCommit", action="store_true",
-  help="Do the commit at the end if everything works out." \
-  + "  Note: You must have SSH public/private keys set up with" \
-  + " software.sandia.gov for the commit to happen without having to" \
-  + " type your password." )
-clp.add_option(
-  "--skip-commit", dest="doCommit", action="store_false", default=False,
-  help="Skip the commit at the end. [default]" )
-
-clp.add_option(
-  "--force-commit", dest="forceCommit", action="store_true",
-  help="Force the commit even if there are errors.  WARNING: Only do this" \
-  +" when you are 100% certain that the errors are not caused by your code" \
-  +" changes." )
-clp.add_option(
-  "--no-force-commit", dest="forceCommit", action="store_false", default=False,
-  help="Do not force a commit. [default]" )
-
-clp.add_option(
-  "--final-update", dest="doFinalUpdate", action="store_true",
-  help="Do a final update just before committing to make sure there are"
-  +" no conflicits. [default]" )
-clp.add_option(
-  "--skip-final-update", dest="doFinalUpdate", action="store_false", default=True,
-  help="Do not do a final update before committing." )
 
 clp.add_option(
   "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
@@ -416,6 +445,30 @@ clp.add_option(
   "--skip-commit-readiness-check", dest="doCommitReadinessCheck", action="store_false",
   default=True,
   help="Skip commit status check." )
+
+clp.add_option(
+  "--append-test-results", dest="appendTestResults", action="store_true",
+  help="After the testing is finished, ammend the most recent local commit" \
+  +" by appending a summary of the test results.  This provides a record of what builds" \
+  +" and tests were performed in order to test the local changes.  NOTE: If the same" \
+  +" local commit is ammeded more than once, the prior test summary sections will be" \
+  +" overwirtten with the most recent test results from the current run. [default]" )
+clp.add_option(
+  "--no-append-test-results", dest="appendTestResults", action="store_false",
+  default=True,
+  help="Do not ammend the last local commit with test results." )
+
+clp.add_option(
+  "--push", dest="doPush", action="store_true",
+  help="Push the committed changes in the local repo into to global repo" \
+    +" 'origin'.  Note: If you have uncommitted changes this command will fail." \
+    +"  You would usually use the --commit option as well to do these together." \
+    +"  Note: You must have SSH public/private keys set up with" \
+    +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
+    +" having to type your password." )
+clp.add_option(
+  "--skip-push", dest="doPush", action="store_false", default=False,
+  help="Skip the push at the end. [default]" )
 
 clp.add_option(
   "--show-defaults", dest="showDefaults", action="store_true",
@@ -437,7 +490,7 @@ if options.doCommit and not options.commitMsgHeaderFile:
 print ""
 print "**************************************************************************"
 print "Script: checkin-test.py \\"
-print "  --update-command='"+options.updateCommand+"' \\"
+print "  --trilinos-src-dir='"+options.trilinosSrcDir+"' \\"
 print "  --enable-packages='"+options.enablePackages+"' \\"
 print "  --disable-packages='"+options.disablePackages+"' \\"
 print "  --enable-all-packages='"+options.enableAllPackages+"'\\"
@@ -468,16 +521,6 @@ if options.rebuild:
 else:
   print "  --from-scratch \\"
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
-if options.doUpdate:
-  print "  --update \\"
-if options.doConfigure:
-  print "  --configure \\"
-if options.doBuild:
-  print "  --build \\"
-if options.doTest:
-  print "  --test \\"
-if options.doAll:
-  print "  --do-all \\"
 if options.doCommit:
   print "  --commit \\"
 else:
@@ -486,14 +529,32 @@ if options.forceCommit:
   print "  --force-commit \\"
 else:
   print "  --no-force-commit \\"
-if options.doFinalUpdate:
-  print "  --final-update \\"
-else:
-  print "  --skip-final-update \\"
+if options.doPull:
+  print "  --pull \\"
+if options.extraPullFrom:
+  print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
+if options.allowNoPull:
+  print "  --allow-no-pull \\"
+if options.doConfigure:
+  print "  --configure \\"
+if options.doBuild:
+  print "  --build \\"
+if options.doTest:
+  print "  --test \\"
+if options.doAll:
+  print "  --do-all \\"
 if options.doCommitReadinessCheck:
   print "  --do-commit-readiness-check \\"
 else:
   print "  --skip-commit-readiness-check \\"
+if options.appendTestResults:
+  print "  --append-test-results \\"
+else:
+  print "  --no-append-test-results \\"
+if options.doPush:
+  print "  --push \\"
+else:
+  print "  --skip-push \\"
 
 
 #

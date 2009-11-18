@@ -2,6 +2,18 @@
 #
 # ToDo:
 #
+#
+#  (*) Document that you need to check 'eg status' to make sure that there is
+#  not mix of staged and unstaged files prior to running the commit.  Note
+#  that backing out a commit can result in a mix of staged/unstaged files
+#  after you make changes.
+#
+#  (*) If --commit is specified but the test failed, back out the commit if
+#  --no-force-commit is given.
+#
+#  (*) When ammending current commit, strip off any existing test summary
+#  section before creating the new ammended commit.
+#
 #  (*) Put in checks for the names of Trilinos packages from --enable-packages
 #  and --disable-packages arguments.  Right now a mispelled package name would
 #  just be ignored.  Also, put in unit tests for this.
@@ -30,32 +42,44 @@ def getCommonConfigFileName():
   return "COMMON.config"
 
 
-def getTestCaseNamee(serialOrMpi, buildType):
+def getTestCaseName(serialOrMpi, buildType):
   return serialOrMpi + "_" + buildType
 
 
 def getBuildSpecificConfigFileName(serialOrMpi, buildType):
-  return getTestCaseNamee(serialOrMpi, buildType) + ".config"
+  return getTestCaseName(serialOrMpi, buildType) + ".config"
 
 
-def getUpdateOutputFileName():
-  return "update.out"
+def getStatusOutputFileName():
+  return "status.out"
 
 
-def getUpdateSuccessFileName():
-  return "update.success"
+def getInitialPullOutputFileName():
+  return "pullInitial.out"
 
 
-def getUpdateOutput2FileName():
-  return "update2.out"
+def getInitialExtraPullOutputFileName():
+  return "pullInitialExtra.out"
+
+
+def getInitialPullSuccessFileName():
+  return "pullInitial.success"
+
+
+def getModifiedFilesOutputFileName():
+  return "modifiedFiles.out"
+
+
+def getFinalPullOutputFileName():
+  return "pullFinal.out"
 
 
 def getConfigureOutputFileName():
-  return "do-configure.out"
+  return "configure.out"
 
 
 def getConfigureSuccessFileName():
-  return "do-configure.success"
+  return "configure.success"
 
 
 def getBuildOutputFileName():
@@ -82,16 +106,28 @@ def getEmailSuccessFileName():
   return "email.success"
 
 
-def getCommitEmailBodyFileName():
-  return "commitEmailBody.out"
+def getInitialCommitEmailBodyFileName():
+  return "commitInitialEmailBody.out"
+
+
+def getInitialCommitOutputFileName():
+  return "commitInitial.out"
+
+
+def getFinalCommitEmailBodyFileName():
+  return "commitFinalEmailBody.out"
+
+
+def getFinalCommitOutputFileName():
+  return "commitFinal.out"
 
 
 def getCommitStatusEmailBodyFileName():
   return "commitStatusEmailBody.out"
 
 
-def getCommitOutputFileName():
-  return "commit.out"
+def getPushOutputFileName():
+  return "push.out"
 
 
 def getHostname():
@@ -103,9 +139,17 @@ def getEmailAddressesSpaceString(emailAddressesCommasStr):
   return ' '.join(emailAddressesList)
 
 
-def performAnyActions(inOptions):
-  if inOptions.doUpdate or inOptions.doConfigure or inOptions.doBuild \
+def performAnyBuildTestActions(inOptions):
+  if inOptions.doConfigure or inOptions.doBuild \
     or inOptions.doTest or inOptions.doAll \
+    :
+    return True
+  return False
+
+
+def performAnyActions(inOptions):
+  if performAnyBuildTestActions(inOptions) or inOptions.doCommit or inOptions.doPull \
+    or inOptions.doAll \
     :
     return True
   return False
@@ -118,6 +162,20 @@ def doGenerateOutputFiles(inOptions):
 def doRemoveOutputFiles(inOptions):
   return performAnyActions(inOptions)
 
+
+def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
+  cmnd = "eg pull --rebase"
+  if pullFromRepo:
+    print "\nPulling in updates from '"+pullFromRepo+"' ...\n"
+    cmnd += " " + pullFromRep + " master"
+  else:
+    print "\nPulling in updates from 'origin' ...\n"
+  return echoRunSysCmnd( cmnd,
+    workingDir=inOptions.trilinosSrcDir,
+    outFile=os.path.join(baseTestDir, outFile),
+    timeCmnd=True, returnTimeCmnd=True, throwExcept=False
+    )
+  
 
 def writeDefaultCommonConfigFile():
 
@@ -143,7 +201,7 @@ def writeDefaultCommonConfigFile():
       "# NOTE: Please do not add any options here that would select what pacakges\n" \
       "# get enabled or disabled.\n"
 
-    open(commonConfigFileName, 'w').write(commonConfigFileStr)
+    writeStrToFile(commonConfigFileStr, commonConfigFileName)
 
 
 def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
@@ -183,7 +241,7 @@ def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
       "# NOTE: Please do not add any options here that would select what pacakges\n" \
       "# get enabled or disabled.\n"
 
-    open(buildSpecificConfigFileName, 'w').write(buildSpecificConfigFileStr)
+    writeStrToFile(buildSpecificConfigFileStr, buildSpecificConfigFileName)
 
 
 def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
@@ -201,7 +259,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
       cmakeOptions_inout.append(line.strip())
 
 
-reModifedFiles = re.compile(r"^[MA] (.+)$")
+reModifedFiles = re.compile(r"^[MA]\t(.+)$")
 
 
 def isGlobalBuildFile(modifiedFileFullPath):
@@ -225,6 +283,15 @@ def isGlobalBuildFile(modifiedFileFullPath):
     if modifiedFileFullPathArray[-1].rfind(".cmake") != -1:
       return True
   return False
+
+
+def getCurrentDiffOutput(inOptions, baseTestDir):
+  echoRunSysCmnd(
+    "eg diff --name-status origin/master",
+    workingDir=inOptions.trilinosSrcDir,
+    outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName()),
+    timeCmnd=True
+    )
 
 
 def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
@@ -271,7 +338,7 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
     
     doConfigStr += "\n"
   
-    open(configFileName, 'w').write(doConfigStr)
+    writeStrToFile(doConfigStr, configFileName)
     echoRunSysCmnd('chmod a+x '+configFileName)
 
 
@@ -307,7 +374,7 @@ def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
   return stageStatusStr
 
 
-def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
+def analyzeResultsSendEmail(inOptions, buildDirName,
   enabledPackagesList, cmakeOptions, startingTime, timings ) \
   :
 
@@ -319,15 +386,16 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
 
   # Determine if the update passed
 
+  commitPassed = None
   updatePassed = None
   updateOutputExists = False
 
-  if inOptions.doUpdate:
+  if inOptions.doPull:
 
-    if os.path.exists("../"+getUpdateOutputFileName()):
+    if os.path.exists("../"+getInitialPullOutputFileName()):
       updateOutputExists = True
 
-    if os.path.exists("../"+getUpdateSuccessFileName()):
+    if os.path.exists("../"+getInitialPullSuccessFileName()):
       print "\nThe update passed!\n"
       updatePassed = True
     elif updateOutputExists:
@@ -441,7 +509,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   subjectLine = "Trilinos/"+buildDirName
   selectedFinalStatus = False
 
-  if inOptions.doTest:
+  if inOptions.doTest and not selectedFinalStatus:
     if testOutputExists:
       if numTotalTests:
         subjectLine += ": passed="+str(numPassedTests)+",notpassed="+str(numFailedTests)
@@ -451,6 +519,10 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
         overallPassed = True
       else:
         overallPassed = False
+      selectedFinalStatus = True
+    elif not inOptions.doBuild and not buildOutputExists:
+      subjectLine += ": no active build exists"
+      overallPassed = False
       selectedFinalStatus = True
 
   if inOptions.doBuild and not selectedFinalStatus:
@@ -474,7 +546,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
       selectedFinalStatus = True
       selectedFinalStatus = True
 
-  if inOptions.doUpdate and not selectedFinalStatus:
+  if inOptions.doPull and not selectedFinalStatus:
     if updatePassed:
       subjectLine += ": update-only passed"
       overallPassed = True
@@ -488,9 +560,9 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
     raise Exception("Error, final pass/fail status not found!")
 
   if overallPassed:
-    subjectLine = "passed : " + subjectLine
+    subjectLine = "passed: " + subjectLine
   else:
-    subjectLine = "FAILED : " + subjectLine
+    subjectLine = "FAILED: " + subjectLine
 
   print "\nsubjectLine = '"+subjectLine+"'\n"
 
@@ -506,7 +578,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   if inOptions.disablePackages:
     emailBody += "Disabled Packages: " + inOptions.disablePackages + "\n"
   emailBody += "Hostname: " + getHostname() + "\n"
-  emailBody += "Source Dir: " + trilinosSrcDir + "\n"
+  emailBody += "Source Dir: " + inOptions.trilinosSrcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
@@ -516,7 +588,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
   if inOptions.ctestOptions:
     emailBody += "\nCTest Options: " + inOptions.ctestOptions + "\n"
   emailBody += "\n"
-  emailBody += getStageStatus("Update", inOptions.doUpdate, updatePassed, timings.update)
+  emailBody += getStageStatus("Update", inOptions.doPull, updatePassed, timings.update)
   emailBody += getStageStatus("Configure", inOptions.doConfigure, configurePassed, timings.configure)
   emailBody += getStageStatus("Build", inOptions.doBuild, buildPassed, timings.build)
   emailBody += getStageStatus("Test", inOptions.doTest, testsPassed, timings.test)
@@ -543,7 +615,7 @@ def analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
 
   #print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
-  open(getEmailBodyFileName(),'w').write(emailBody)
+  writeStrToFile(emailBody, getEmailBodyFileName())
 
   if overallPassed:
     echoRunSysCmnd("touch "+getEmailSuccessFileName())
@@ -580,7 +652,9 @@ def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
         summaryEmailSectionStr += "  " + line
       summaryEmailSectionStr += "\n"
     else:
-        summaryEmailSectionStr += "Error, the file '"+absEmailBodyFileName+"' does not exist!\n"
+        summaryEmailSectionStr += \
+          "Error, The build/test was never completed!" \
+          " (the file '"+absEmailBodyFileName+"' does not exist.)\n"
   return summaryEmailSectionStr
 
 
@@ -596,7 +670,7 @@ def getSummaryEmailSectionStr(inOptions):
   return summaryEmailSectionStr
 
   
-def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOptions,
+def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
   timings ) \
   :
 
@@ -627,7 +701,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   try:
 
     print ""
-    print "A) Get the CMake configure options ..."
+    print "A) Get the CMake configure options ("+buildDirName+") ..."
     print ""
 
     # A.1) Set the base options
@@ -663,13 +737,13 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
       enablePackagesList = inOptions.enablePackages.split(',')
     else:
-      print "\nDetermining the set of packages to enable by examining update.out ...\n"
-      updateOutFileName = "../"+getUpdateOutputFileName()
-      if os.path.exists(updateOutFileName):
-        updateOutputStr = open(updateOutFileName, 'r').read()
+      diffOutFileName = "../"+getModifiedFilesOutputFileName()
+      print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
+      if os.path.exists(diffOutFileName):
+        updateOutputStr = open(diffOutFileName, 'r').read()
         extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
       else:
-        print "\nThe file "+updateOutFileName+" does not exist!\n"
+        print "\nThe file "+diffOutFileName+" does not exist!\n"
 
     for pkg in enablePackagesList:
       cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
@@ -701,14 +775,17 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     print "\ncmakeOptions =", cmakeOptions
   
     print "\nCreating base configure file do-configure.base ..."
-    createConfigureFile(cmakeBaseOptions, "cmake", trilinosSrcDir, "do-configure.base")
+    createConfigureFile(cmakeBaseOptions, "cmake", inOptions.trilinosSrcDir,
+      "do-configure.base")
   
     print "\nCreating package-enabled configure file do-configure ..."
     createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
   
     print ""
-    print "B) Do the configuration with CMake ..."
+    print "B) Do the configuration with CMake ("+buildDirName+") ..."
     print ""
+
+    configurePassed = False
   
     if inOptions.doConfigure:
   
@@ -726,6 +803,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       if configureRtn == 0:
         print "\nConfigure passed!\n"
         echoRunSysCmnd("touch "+getConfigureSuccessFileName())
+        configurePassed = True
       else:
         print "\nConfigure failed returning "+str(configureRtn)+"!\n"
         raise Exception("Configure failed!")
@@ -733,12 +811,19 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
     else:
   
       print "\nSkipping configure on request!\n"
+      if os.path.exists(getConfigureSuccessFileName()):
+        print "\nA current successful configure exists!\n"
+        configurePassed = True
+      else:
+        print "\nFAILED: A current successful configure does *not* exist!\n"
   
     print ""
-    print "C) Do the build ..."
+    print "C) Do the build ("+buildDirName+") ..."
     print ""
+
+    buildPassed = False
   
-    if inOptions.doBuild:
+    if inOptions.doBuild and configurePassed:
   
       cmnd = "make"
       if inOptions.makeOptions:
@@ -752,19 +837,31 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
       if buildRtn == 0:
         print "\nBuild passed!\n"
         echoRunSysCmnd("touch "+getBuildSuccessFileName())
+        buildPassed = True
       else:
         print "\nBuild failed returning "+str(buildRtn)+"!\n"
         raise Exception("Build failed!")
   
+    elif inOptions.doBuild and not configurePassed:
+
+      print "\nFAILED: Skipping the build since configure did not pass!\n"
+      
     else:
 
       print "\nSkipping the build on request!\n"
+      if os.path.exists(getBuildSuccessFileName()):
+        print "\nA current successful build exists!\n"
+        buildPassed = True
+      else:
+        print "\nFAILED: A current successful build does *not* exist!\n"
   
     print ""
-    print "D) Run the tests ..."
+    print "D) Run the tests ("+buildDirName+") ..."
     print ""
+
+    testPassed = False
   
-    if inOptions.doTest:
+    if inOptions.doTest and buildPassed:
   
       cmnd = "ctest"
       if inOptions.ctestOptions:
@@ -779,8 +876,13 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
         print "\nTest passed!\n"
         echoRunSysCmnd("touch "+getTestSuccessFileName())
       else:
-        print "\nTest failed returning "+str(testRtn)+"!\n"
-        raise Exception("Test failed!")
+        errStr = "FAILED: ctest failed returning "+str(testRtn)+"!"
+        print "\n"+errStr+"\n"
+        raise Exception(errStr)
+  
+    elif inOptions.doTest and not buildPassed:
+
+      print "\nFAILED: Skipping running tests since the build failed!\n"
   
     else:
   
@@ -789,16 +891,15 @@ def runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir, extraCMakeOpt
   except Exception, e:
 
     success = False
-
-    traceback.print_exc()
+    printStackTrace()
 
   print ""
-  print "E) Analyze the overall results and send email notification ..."
+  print "E) Analyze the overall results and send email notification ("+buildDirName+") ..."
   print ""
 
   if performAnyActions(inOptions):
 
-    result = analyzeResultsSendEmail(inOptions, trilinosSrcDir, buildDirName,
+    result = analyzeResultsSendEmail(inOptions, buildDirName,
       enablePackagesList, cmakeOptions, startingTime, timings)
     if not result: succcess = False
 
@@ -817,13 +918,13 @@ def cleanTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
     and os.path.exists(buildDirName) \
     :
     echoChDir(buildDirName)
-    if inOptions.doConfigure or inOptions.doUpdate:
+    if inOptions.doConfigure or inOptions.doPull:
       removeIfExists(getConfigureOutputFileName())
       removeIfExists(getConfigureSuccessFileName())
-    if inOptions.doBuild or inOptions.doConfigure or inOptions.doUpdate:
+    if inOptions.doBuild or inOptions.doConfigure or inOptions.doPull:
       removeIfExists(getBuildOutputFileName())
       removeIfExists(getBuildSuccessFileName())
-    if inOptions.doTest or inOptions.doBuild or inOptions.doConfigure or inOptions.doUpdate:
+    if inOptions.doTest or inOptions.doBuild or inOptions.doConfigure or inOptions.doPull:
       removeIfExists(getTestOutputFileName())
       removeIfExists(getTestSuccessFileName())
     removeIfExists(getEmailBodyFileName())
@@ -832,7 +933,7 @@ def cleanTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
 
 
 def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buildType,
-  trilinosSrcDir, extraCMakeOptions, timings ) \
+  extraCMakeOptions, timings ) \
   :
 
   success = True
@@ -846,12 +947,12 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
     try:
       echoChDir(baseTestDir)
       writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType)
-      result = runTestCase(inOptions, serialOrMpi, buildType, trilinosSrcDir,
+      result = runTestCase(inOptions, serialOrMpi, buildType,
         extraCMakeOptions, timings.deepCopy())
       if not result: success = False
     except Exception, e:
       success = False
-      traceback.print_exc()
+      printStackTrace()
 
   else:
 
@@ -868,24 +969,116 @@ def checkBuildCheckinStatus(runTestCaseBool, serialOrMpi, buildType):
 
   if not runTestCaseBool:
     return (True,
-      "\nTest case "+buildName+" was not run!  Does not affect commit readiness!\n")
+      "\nTest case "+buildName+" was not run!  Does not affect commit/push readiness!\n")
 
   if not os.path.exists(buildName):
-    statusMsg += "\nThe directory "+buildName+" does not exist!  Not ready to commit!\n"
+    statusMsg += "\nThe directory "+buildName+" does not exist!  Not ready for final commit/push!\n"
     return (False, statusMsg)
 
   testSuccessFileName = buildName+"/"+getTestSuccessFileName()
   if not os.path.exists(testSuccessFileName):
-     statusMsg += "\nThe file "+testSuccessFileName+" does not exist!  Not ready to commit!\n"
+     statusMsg += "\nThe file "+testSuccessFileName+" does not exist!  Not ready for final commit/push!\n"
      return (False, statusMsg)
 
   emailSuccessFileName = buildName+"/"+getEmailSuccessFileName()
   if not os.path.exists(emailSuccessFileName):
-    statusMsg += "\nThe file "+emailSuccessFileName+" does not exist!  Not ready to commit!\n"
+    statusMsg += "\nThe file "+emailSuccessFileName+" does not exist!  Not ready for final commit!\n"
     return (False, statusMsg)
 
   statusMsg += "\nThe tests successfully passed for "+buildName+"!\n"
   return (True, statusMsg)
+
+
+def getUserCommitMessageStr(inOptions):
+
+  absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
+  if not os.path.isabs(absCommitMsgHeaderFile):
+    absCommitMsgHeaderFile = os.path.join(inOptions.trilinosSrcDir, absCommitMsgHeaderFile)
+
+  print "\nExtracting commit message subject and header from the file '" \
+        +absCommitMsgHeaderFile+"' ...\n"
+  
+  commitMsgHeaderFileStr = open(absCommitMsgHeaderFile, 'r').read()
+  
+  commitEmailBodyStr = commitMsgHeaderFileStr
+  
+  return commitEmailBodyStr
+
+
+def getAutomatedStatusSummaryHeaderKeyStr():
+  return "Automated status information"
+
+
+def getAutomatedStatusSummaryHeaderStr(inOptions):
+  
+  commitEmailBodyStr = "\n\n\n\n" \
+      "=============================\n" \
+      +getAutomatedStatusSummaryHeaderKeyStr()+"\n" \
+      "=============================\n" \
+      "\n\n" \
+      + getCmndOutput("date", True) + "\n\n" \
+  
+  return commitEmailBodyStr
+
+
+def getLastCommitMessageStr(inOptions):
+
+  # Get the raw output from the last current commit log
+  rawLogOutput = getCmndOutput(
+    "eg cat-file -p HEAD",
+    workingDir=inOptions.trilinosSrcDir
+    )
+
+  #print "\nrawLogOutput = "+rawLogOutput+"\n"
+
+  # Extract the original log message
+  origLogStrList = []
+  pastHeader = False
+  numBlankLines = 0
+  foundStatusHeader = False
+  for line in rawLogOutput.split('\n'):
+    #print "\nline = '"+line+"'\n"
+    if pastHeader:
+      origLogStrList.append(line)
+      if line == "":
+        numBlankLines += 1
+      else:
+        numBlankLines = 0
+      if line == getAutomatedStatusSummaryHeaderKeyStr():
+        foundStatusHeader = True
+        break
+    if line == "":
+      pastHeader = True
+
+  if foundStatusHeader:
+    origLogStrList = origLogStrList[0:-numBlankLines-2]
+
+  return '\n'.join(origLogStrList)
+
+
+def getLocalCommitsSummariesStr(inOptions):
+
+  # Get the raw output from the last current commit log
+  rawLocalCommitsStr = getCmndOutput(
+    " eg shortlog origin/master..master",
+    True,
+    workingDir=inOptions.trilinosSrcDir
+    )
+
+  #print "\nrawLocalCommitsStr:\n=====\n"+rawLocalCommitsStr+"\n=====\n"
+  localCommitsExist = not (rawLocalCommitsStr!= "\n" or rawLocalCommitsStr!= "")
+
+  localCommitsStr = \
+    "\n\n\n\n" \
+    "----------------------------------------\n" \
+    "Local commits for this build/test group:\n" \
+    "----------------------------------------\n\n"
+  if localCommitsExist:
+    localCommitsStr += rawLocalCommitsStr
+  else:
+    localCommitsStr += "No local commits exist!"
+
+  return (localCommitsStr, localCommitsExist)
 
 
 def checkinTest(inOptions):
@@ -897,14 +1090,13 @@ def checkinTest(inOptions):
   scriptsDir = getScriptBaseDir()
   #print "\nscriptsDir =", scriptsDir
 
-  trilinosSrcDir = '/'.join(scriptsDir.split("/")[0:-2])
-  print "\ntrilinosSrcDir =", trilinosSrcDir
+  print "\ntrilinosSrcDir =", inOptions.trilinosSrcDir
 
   baseTestDir = os.getcwd()
   print "\nbaseTestDir =", baseTestDir
 
   if inOptions.doAll:
-    inOptions.doUpdate = True
+    inOptions.doPull = True
     inOptions.doConfigure = True
     inOptions.doBuild = True
     inOptions.doTest = True
@@ -921,16 +1113,22 @@ def checkinTest(inOptions):
     print "\n***"
     print "*** 1) Clean old output files ..."
     print "***"
+  
+    if inOptions.doCommit:
+      removeIfExists(getInitialCommitEmailBodyFileName())
+      removeIfExists(getInitialCommitOutputFileName())
 
-    removeIfExists(getCommitEmailBodyFileName())
+    if inOptions.doPull:
+      removeIfExists(getStatusOutputFileName())
+      removeIfExists(getInitialPullOutputFileName())
+      removeIfExists(getInitialPullSuccessFileName())
+
+    removeIfExists(getFinalCommitEmailBodyFileName())
+    removeIfExists(getFinalCommitOutputFileName())
     removeIfExists(getCommitStatusEmailBodyFileName())
-    removeIfExists(getCommitOutputFileName())
 
-    if inOptions.doUpdate:
-      removeIfExists(getUpdateOutputFileName())
-      removeIfExists(getUpdateSuccessFileName())
-
-    removeIfExists(getUpdateOutput2FileName())
+    removeIfExists(getFinalPullOutputFileName())
+    removeIfExists(getModifiedFilesOutputFileName())
 
     cleanTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
       "MPI", "DEBUG" )
@@ -940,57 +1138,200 @@ def checkinTest(inOptions):
 
 
     print "\n***"
-    print "*** 2) Update the Trilinos sources ..."
+    print "*** 2) Commit changes before pulling updates to merge in ..."
     print "***"
-  
-    if inOptions.doUpdate:
+
+    commitPassed = True # To allow logic below
+
+    if inOptions.doCommit:
     
       try:
+
+        print "\nNOTE: We must commit before doing an 'eg pull --rebase' ...\n"
   
         echoChDir(baseTestDir)
-        (updateRtn, timings.update) = echoRunSysCmnd(inOptions.updateCommand,
-          workingDir=trilinosSrcDir,
-          outFile=os.path.join(baseTestDir, getUpdateOutputFileName()),
-          timeCmnd=True, returnTimeCmnd=True, throwExcept=False
-          )
 
-        if updateRtn == 0:
-          "\nUpdate passed!\n"
-          echoRunSysCmnd("touch "+getUpdateSuccessFileName())
-          updatePassed = True
+        print "\n2.a) Creating the commit message file ...\n"
+
+        commitEmailBodyStr = getUserCommitMessageStr(inOptions)
+        writeStrToFile(commitEmailBodyStr, getInitialCommitEmailBodyFileName())
+
+        print "\n2.b) Performing the initial local commit (staged and unstaged changes) ...\n"
+
+        print \
+          "\nNOTE: This is a trial commit done to allow for a safe pull.  If the  build/test\n"\
+          "fails and this commit does not get erased automatically for some reason (i.e.\n" \
+          "you killed the script before it was able to finish) then please remove this\n" \
+          "commit yourself manually with:\n" \
+          "\n" \
+          "  $ eg reset --soft HEAD^\n" \
+          "\n" \
+          "You can then run the checkin-test.py script again to try the test, commit and\n" \
+          "push again.\n"
+
+        commitRtn = echoRunSysCmnd(
+          "eg commit -a -F "+os.path.join(baseTestDir, getInitialCommitEmailBodyFileName()),
+          workingDir=inOptions.trilinosSrcDir,
+          outFile=os.path.join(baseTestDir, getInitialCommitOutputFileName()),
+          throwExcept=False, timeCmnd=True )
+
+        if commitRtn == 0:
+          print "\nCommit passed!\n"
+          commitPassed = True
         else:
-          "\nUpdate failed!\n"
-          updatePassed = False
+          print "\nFAILED: Commit failed!\n"
+          commitPassed = False
 
       except Exception, e:
         success = False
-	updatePassed = False
-        traceback.print_exc()
-  
-    else:
-  
-      print "\nSkipping update on request!\n"
+        commitPassed = False
+        printStackTrace()
 
-      if os.path.exists(getUpdateSuccessFileName()):
-        print "\nA previous update was performed and was successful!"
-        updatePassed = True
+    else:
+
+      print "\nSkipping initial commit on request ...\n"
+
+    print "\n***"
+    print "*** 3) Update the Trilinos sources ..."
+    print "***"
+
+    pullPassed = True
+
+    doingAtLeastOnePull = (inOptions.extraPullFrom or inOptions.doPull)
+
+    if not doingAtLeastOnePull:
+
+      print "\nSkipping all updates on request!\n"
+
+    if inOptions.doCommit and not commitPassed:
+
+      print "\nCommit failed, aborting pull!\n"
+      pullPassed = False
+
+    if doingAtLeastOnePull and pullPassed:
+
+      #
+      print "\n3.a) Check that there are no uncommited files before doing the pull(s) ...\n"
+      #
+
+      statusRtn = echoRunSysCmnd(
+        "eg status",
+        workingDir=inOptions.trilinosSrcDir,
+        outFile=os.path.join(baseTestDir, getStatusOutputFileName()),
+        throwExcept=False, timeCmnd=True )
+      if statusRtn != 1:
+        print "\n'eg status' returned "+str(statusRtn)+": There are uncommitted changes, can not do the pull!\n"
+        pullPassed = False
+
+    if doingAtLeastOnePull and pullPassed:
+
+      #
+      print "\n3.b) Pull updates from the extra repository '"+inOptions.extraPullFrom+"' ..."
+      #
+
+      timings.update = 0
+      
+      if inOptions.extraPullFrom and pullPassed:
+        echoChDir(baseTestDir)
+        (updateRtn, updateTimings) = \
+          executePull(inOptions, baseTestDir, getInitialExtraPullOutputFileName())
+        timings.update += updateTimings
+        if updateRtn != 0:
+          print "\nPull failed!\n"
+          pullPassed = False
       else:
-        print "\nA previous update was *not* performed or was *not* successful!"
-        updatePassed = False
+        print "\nSkipping extra pull from '"+inOptions.extraPullFrom+"'!\n"
+
+      #
+      print "\n3.c) Pull updates from the global 'origin' repo ..."
+      #
+    
+      if inOptions.doPull and pullPassed:
+        echoChDir(baseTestDir)
+        (updateRtn, updateTimings) = \
+          executePull(inOptions, baseTestDir, getInitialPullOutputFileName())
+        timings.update += updateTimings
+        if updateRtn != 0:
+          print "\nPull failed!\n"
+          pullPassed = False
+      else:
+        print "\nSkipping initial pull from 'origin'!\n"
+
+      #
+      print "\n3.c) Determine overall update pass/success ...\n"
+      #
+
+      echoChDir(baseTestDir)
+
+      if (inOptions.doPull or inOptions.extraPullFrom):
+        if pullPassed:
+          print "\nUpdate passed!\n"
+          echoRunSysCmnd("touch "+getInitialPullSuccessFileName())
+        else:
+          print "\nUpdate failed!\n"
+      elif os.path.exists(getInitialPullSuccessFileName()):
+        print "\nA previous update was performed and was successful!"
+        pullPassed = True
+      elif inOptions.allowNoPull:
+        print "\nNot performing update since --skip-update was passed in\n"
+        pullPassed = True
+      else:
+        print "\nNo previous successful update is still current!"
+        pullPassed = False
 
 
     print "\n***"
-    print "*** 3) Running the different build cases ..."
+    print "*** 4) Get the list of all the modified files ..."
     print "***"
 
-    if updatePassed:
+    getCurrentDiffOutput(inOptions, baseTestDir)
+
+
+    print "\n***"
+    print "*** 5) Running the different build/test cases ..."
+    print "***"
+
+    # Determine if we will run the build/test cases or not
+
+    # Set runBuildCases flag
+    if not performAnyBuildTestActions(inOptions):
+      print "\nNot performing any build cases because no --configure, --build or --test" \
+        " was specified!\n"
+      runBuildCases = False
+    elif inOptions.doCommit and not commitPassed:
+      print "\nThe commit failed, skipping running the build/test cases!\n"
+      runBuildCases = False
+    elif doingAtLeastOnePull:
+      if pullPassed:
+        print "\nThe updated passsed, running the build/test cases ...\n"
+        runBuildCases = True
+      else:
+        print "\nNot running any build/test cases because the update (pull) failed!\n"
+        runBuildCases = False
+    else:
+      if inOptions.allowNoPull:
+        print "\nNo pull was attemted but we are running the build/test cases anyway" \
+          " because --allow-no-pull was specified ...\n"
+        runBuildCases = True
+      elif os.path.exists(getInitialPullSuccessFileName()):
+        print "\nA previous update (pull) was successful, running build/test cases ...!\n"
+        runBuildCases = True
+      else:
+        print "\nNot running any build/test cases because no update was attempted!\n" \
+          "\nHint: Use --allow-no-pull to allow build/test cases to run without" \
+          " having to do a pull first!"
+        runBuildCases = False
+
+    # Run the build/test cases
+
+    if runBuildCases:
 
       echoChDir(baseTestDir)
   
       writeDefaultCommonConfigFile()
   
       result = runTestCaseDriver(inOptions.withMpiDebug, inOptions, baseTestDir,
-        "MPI", "DEBUG", trilinosSrcDir,
+        "MPI", "DEBUG",
         [
           "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
           "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
@@ -1002,7 +1343,7 @@ def checkinTest(inOptions):
       if not result: success = False
   
       result = runTestCaseDriver(inOptions.withSerialRelease, inOptions, baseTestDir,
-        "SERIAL", "RELEASE", trilinosSrcDir,
+        "SERIAL", "RELEASE",
         [
           "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
           "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
@@ -1013,12 +1354,8 @@ def checkinTest(inOptions):
         )
       if not result: success = False
 
-    else:
-
-      print "\nNot doing any builds because the update was not performed or failed!\n"
-
     print "\n***"
-    print "*** 4) Determine overall commit readiness ..."
+    print "*** 6) Determine overall commit/push readiness ..."
     print "***"
 
     if inOptions.doCommitReadinessCheck or inOptions.doCommit:
@@ -1046,11 +1383,11 @@ def checkinTest(inOptions):
   
       if okToCommit:
         print "\nThe tests ran and all passed!\n\n" \
-          "  => A COMMIT IS OKAY TO BE PERFORMED!"
+          "  => A PUSH IS OKAY TO BE PERFORMED!"
       else:
         print "\nAt least one of the actions (update, configure, built, test)" \
           " failed or was not performed correctly!\n\n" \
-          "  => A COMMIT IS *NOT* READY TO BE PERFORMED!"
+          "  => A PUSH IS *NOT* READY TO BE PERFORMED!"
 
     else:
 
@@ -1058,128 +1395,236 @@ def checkinTest(inOptions):
       okToCommit = False
   
     print "\n***"
-    print "*** 5) Do commit or send email about commit readiness status ..."
+    print "*** 7) Do commit and push  ..."
     print "***"
+
+    # Back out commit if one was performed and buid/test failed
+    if not okToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommit:
+      print "\nNOTICE: Backing out the commit that was just done ...\n"
+      try:
+        echoRunSysCmnd("eg reset --soft HEAD^",
+          workingDir=inOptions.trilinosSrcDir,
+          timeCmnd=True,
+          throwExcept=False )
+      except Exception, e:
+        success = False
+        printStackTrace()
+    
+    # Determine if we should do a forced commit
+    forcedCommit = False
+    if inOptions.doCommitReadinessCheck and not okToCommit and commitPassed \
+      and inOptions.forceCommit \
+      :
+      forcedCommitMsg = \
+        "\n***" \
+        "\n*** WARNING: The acceptance criteria for doing a commit/push has *not*" \
+        "\n*** been met, but a commit/push is being forced anyway by --force-commit!" \
+        "\n***\n"
+      print forcedCommitMsg
+      okToCommit = True
+      forcedCommit = True
+
+    # Attempt the final pull, commit ammend, and push
+
+    pullFinalPassed = True
+    ammendFinalCommitPassed = True
+    pushPassed = True
+    didPush = False
+    localCommitSummariesStr = ""
+    okToPush = okToCommit
+
+    if inOptions.doCommitReadinessCheck and okToCommit:
+
+      #
+      print "\n7.a) Performing a final pull to make sure there are no conflicts ...\n"
+      #
+      
+      if not inOptions.doPull:
+
+        print "\nSkipping the final pull (--skip-final-pull)!\n"
+
+      elif not okToPush:
+
+        print "\nSkippng final pull due to prior errors!\n"
+        pullFinalPassed = False
+
+      else: # inOptions.doPull and okToPush
+
+        (update2Rtn, update2Time) = \
+          executePull(inOptions, baseTestDir, getFinalPullOutputFileName())
+
+        if update2Rtn == 0:
+          print "\nFinal update passed!\n"
+          pullFinalPassed = True
+        else:
+          print "\nFinal update failed!\n"
+          pullFinalPassed = False
+
+      if not pullFinalPassed: okToPush = False
+
+      #
+      print "\n7.b) Ammending the final commit message by appending test results ...\n"
+      #
+
+      (localCommitSummariesStr, localCommitsExist) = getLocalCommitsSummariesStr(inOptions)
+      #print "\nlocalCommitsExist =", localCommitsExist, "\n"
+
+      if not inOptions.appendTestResults:
+
+        print "\nSkipping apending test results on request (--no-append-test-results)!\n"
+
+      elif not okToPush:
+
+        print "\nSkippng apending test results due to prior errors!\n"
+        ammendFinalCommitPassed = False
+
+      else:  # inOptions.appendTestResults and okToPush
+  
+        print "\nAttempting to ammend the final commmit message ...\n"
+
+        try:
+
+          # Get then final commit message
+          finalCommitEmailBodyStr = getLastCommitMessageStr(inOptions)
+          finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr(inOptions)
+          finalCommitEmailBodyStr += localCommitSummariesStr
+          if forcedCommit:
+            finalCommitEmailBodyStr += (forcedCommitMsg + "\n\n")
+          finalCommitEmailBodyStr += getSummaryEmailSectionStr(inOptions)
+          writeStrToFile(finalCommitEmailBodyStr, getFinalCommitEmailBodyFileName())
+
+          # Ammend the final commit message
+          if localCommitsExist:
+            echoRunSysCmnd(
+              "eg commit --amend" \
+              " -F "+os.path.join(baseTestDir, getFinalCommitEmailBodyFileName()),
+              workingDir=inOptions.trilinosSrcDir,
+              outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName()),
+              timeCmnd=True
+              )
+          else:
+            print "\nSkipping ammending last commit because there are no local commits!\n"
+            
+        except Exception, e:
+          success = False
+          ammendFinalCommitPassed = False
+          printStackTrace()
+
+      if not ammendFinalCommitPassed: okToPush = False
+
+      #
+      print "\n7.c) Pushing the the local commits to the global repo ...\n"
+      #
+
+      pushPassed = True
+
+      if not inOptions.doPush:
+  
+        print "\nNot doing the push on request (--no-push) but sending an email" \
+              " about the commit/push readiness status ..."
+  
+        if okToCommit:
+          subjectLine = "READY TO PUSH"
+        else:
+          subjectLine = "NOT READY TO PUSH"
+
+      elif not okToPush:
+
+        print "\nNot performing push due to prior errors\n"
+        pushPassed = False
+
+      else: # inOptions.doPush and okToPush:
+  
+        print "\nAttempting to do a push ..."
+
+        pushRtn = echoRunSysCmnd(
+          "eg push",
+          workingDir=inOptions.trilinosSrcDir,
+          outFile=os.path.join(baseTestDir, getPushOutputFileName()),
+          throwExcept=False, timeCmnd=True )
+
+        if pushRtn == 0:
+          print "\nPush passed!\n"
+          pushPassed = True
+          didPush = True
+        else:
+          print "\nPush failed!\n"
+          pushPassed = False
+
+      if not pushPassed: okToPush = False
+
+    else:
+
+      print "\nNot attempted final commit and/or push!"
+
+  
+    print "\n***"
+    print "*** 8) Create and send push (or readiness status) notification email  ..."
+    print "***\n"
 
     if inOptions.doCommitReadinessCheck:
 
-      if inOptions.doCommit:
-  
-        print "\nAttempting to do a commit ..."
-  
-        forcedCommit = False
-  
-        if not okToCommit and inOptions.forceCommit:
-          forcedCommitMsg = \
-            "\n***" \
-            "\n*** WARNING: The acceptance criteria for doing a commit has *not*" \
-            "\n*** been met, but a commit is being forced anyway!" \
-            "\n***\n"
-          print forcedCommitMsg
-          okToCommit = True
-          forcedCommit = True
-  
-        if okToCommit:
-  
-          print "\nDoing a last update to avoid not-up-to-date status ...\n"
-  
-          if inOptions.doFinalUpdate:
-  
-            update2Rtn = echoRunSysCmnd(inOptions.updateCommand,
-              workingDir=trilinosSrcDir,
-              outFile=os.path.join(baseTestDir, getUpdateOutput2FileName()),
-              throwExcept=False,
-              timeCmnd=True
-              )
-            if update2Rtn != 0: okToCommit = False
-  
-          else:
-            
-            print "\nSkipping the final update on request!\n"
-            update2Rtn = 0
-  
-          absCommitMsgHeaderFile = inOptions.commitMsgHeaderFile
-          if not os.path.isabs(absCommitMsgHeaderFile):
-            absCommitMsgHeaderFile = os.path.join(trilinosSrcDir,absCommitMsgHeaderFile)
-  
-          print "\nExtracting commit message subject and header from the file '" \
-            +absCommitMsgHeaderFile+"' ...\n"
-  
-          commitMsgHeaderFileStr = open(absCommitMsgHeaderFile, 'r').read()
-  
-          commitEmailBodyStr = commitMsgHeaderFileStr
-  
-          commitEmailBodyStr += "\n\n\n\n" \
-            "=============================\n" \
-            "Automated status information\n" \
-            "=============================\n" \
-            "\n\n" \
-            + getCmndOutput("date", True) + "\n\n" \
-  
-          if forcedCommit:
-            commitEmailBodyStr += (forcedCommitMsg + "\n\n")
-  
-          commitEmailBodyStr += \
-            getSummaryEmailSectionStr(inOptions)
-  
-          commitMsgFile = getCommitEmailBodyFileName()
-          open(commitMsgFile, 'w').write(commitEmailBodyStr)
-  
-          if okToCommit:
-            commitRtn = echoRunSysCmnd(
-              "cvs commit -F "+os.path.join(baseTestDir,commitMsgFile),
-              workingDir=trilinosSrcDir,
-              outFile=os.path.join(baseTestDir,getCommitOutputFileName()),
-              throwExcept=False,
-              timeCmnd=True
-              )
-  
-          if update2Rtn != 0:
-            okToCommit = False
-            subjectLine = "COMMIT FAILED"
-            commitEmailBodyExtra += "\n\nCommit failed because final update failed!  See 'update2.out'\n\n"
-          elif commitRtn == 0:
-            if forcedCommit:
-              subjectLine = "FORCED COMMIT"
-              commitEmailBodyExtra += forcedCommitMsg
-            else:
-              subjectLine = "DID COMMIT"
-          else:
-            subjectLine = "COMMIT FAILED"
-            commitEmailBodyExtra += "\n\nCommit failed!  See the file 'commit.out'\n\n"
-  
+      #
+      print "\n8.a) Getting final status to send out in the summary email ...\n"
+      #
+
+      if not commitPassed:
+        subjectLine = "INITIAL COMMIT FAILED"
+        commitEmailBodyExtra += "\n\nFailed because initial commit failed!" \
+          " See '"+getInitialCommitOutputFileName()+"'\n\n"
+      elif not pullPassed:
+        subjectLine = "INITIAL PULL FAILED"
+        commitEmailBodyExtra += "\n\nFailed because initial pull failed!" \
+          " See '"+getInitialPullOutputFileName()+"'\n\n"
+      elif not pullFinalPassed:
+        subjectLine = "FINAL PULL FAILED"
+        commitEmailBodyExtra += "\n\nFailed because the final pull failed!" \
+          " See '"+getFinalPullOutputFileName()+"'\n\n"
+      elif not ammendFinalCommitPassed:
+        subjectLine = "AMMEND COMMIT FAILED"
+        commitEmailBodyExtra += "\n\nFailed because the final test commit ammend failed!" \
+          " See '"+getFinalCommitOutputFileName()+"'\n\n"
+      elif not pushPassed:
+        subjectLine = "PUSH FAILED"
+        commitEmailBodyExtra += "\n\nFailed because push failed!" \
+          " See '"+getPushOutputFileName()+"'\n\n"
+      elif inOptions.doPush and pushPassed and forcedCommit:
+        subjectLine = "FORCED COMMIT/PUSH"
+        commitEmailBodyExtra += forcedCommitMsg
+      elif inOptions.doCommit and commitPassed and forcedCommit:
+        subjectLine = "FORCED COMMIT"
+        commitEmailBodyExtra += forcedCommitMsg
+      elif inOptions.doPush:
+        if didPush and not forcedCommit:
+          subjectLine = "DID PUSH"
         else:
-  
-          subjectLine = "ABORTED COMMIT"
-  
-          commitEmailBodyExtra += "\n\nCommit was never attempted since commit criteria failed!\n\n"
-  
+          subjectLine = "ABORTED COMMIT/PUSH"
+          commitEmailBodyExtra += "\n\nCommit/push was never attempted since commit/push" \
+          " criteria failed!\n\n"
       else:
-  
-        print "\nNot doing the commit but sending an email about the commit readiness status ..."
-  
         if okToCommit:
-          subjectLine = "READY TO COMMIT"
+          subjectLine = "READY TO PUSH"
         else:
-          subjectLine = "NOT READY TO COMMIT"
-  
-      print "\nCreate and send out commit (readiness) status notification email ..."
+          subjectLine = "NOT READY TO PUSH"
+
+      #
+      print "\n8.b) Create and send out push (or readinessstatus) notification email ..."
+      #
   
       subjectLine += ": Trilinos: "+getHostname()
-  
-      if not updatePassed:
-        commitEmailBodyExtra += "The update failed!  See the file 'update.out'!\n"
   
       emailBodyStr = subjectLine + "\n\n"
       emailBodyStr += getCmndOutput("date", True) + "\n\n"
       emailBodyStr += commitEmailBodyExtra
+      emailBodyStr += localCommitSummariesStr
       emailBodyStr += getSummaryEmailSectionStr(inOptions)
   
       print "\nCommit status email being sent:\n" \
         "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
-  
+
       summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
-      open(summaryCommitEmailBodyFileName, 'w').write(emailBodyStr)
+  
+      writeStrToFile(emailBodyStr, summaryCommitEmailBodyFileName)
   
       if inOptions.sendEmailTo:
   
@@ -1195,21 +1640,22 @@ def checkinTest(inOptions):
 
     else:
 
-      print "\nSkipping commit or sending commit readiness status on request!"
+      print "\nNot performing commit/push or sending out commit/push readiness status on request!"
   
     if not performAnyActions(inOptions) and not inOptions.doCommit:
 
-      print "\n***"
-      print "*** WARNING: No actions were performed!"
-      print "***"
-      print "*** Specify --do-all to perform full test or --commit to commit a previously run test!"
-      print "***\n"
+      print \
+        "\n***\n" \
+        "*** WARNING: No actions were performed!\n" \
+        "***\n" \
+        "*** Hint: Specify --do-all --commit to perform full integration update/build/test\n" \
+        "*** or --push to push the commits for a previously run test!\n" \
+        "***\n\n"
   
   except Exception, e:
 
     success = False
-
-    traceback.print_exc()
+    printStackTrace()
 
   # Print the final status at the very end
   if subjectLine:
@@ -1298,11 +1744,11 @@ class testCheckinTest(unittest.TestCase):
 ? packages/trilinoscouplings/doc/html
 ? packages/triutils/doc/html
 ? sampleScripts/checkin-test-gabriel.sh
-M cmake/TrilinosPackages.cmake
-M cmake/python/checkin-test.py
-M cmake/python/dump-cdash-deps-xml-file.py
+M	cmake/TrilinosPackages.cmake
+M	cmake/python/checkin-test.py
+M	cmake/python/dump-cdash-deps-xml-file.py
 P packages/thyra/dummy.blah
-A packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
+A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
 """
 
     options = MockOptions()
@@ -1319,12 +1765,12 @@ A packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
 
     updateOutputStr = """
 ? packages/triutils/doc/html
-M cmake/python/checkin-test.py
-M cmake/python/dump-cdash-deps-xml-file.py
-A packages/nox/src/dummy.C
+M	cmake/python/checkin-test.py
+M	cmake/python/dump-cdash-deps-xml-file.py
+A	packages/nox/src/dummy.C
 P packages/stratimikos/dummy.blah
-M packages/thyra/src/Thyra_ConfigDefs.hpp
-M packages/thyra/CMakeLists.txt
+M	packages/thyra/src/Thyra_ConfigDefs.hpp
+M	packages/thyra/CMakeLists.txt
 """
 
     options = MockOptions()

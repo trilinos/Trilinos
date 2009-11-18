@@ -195,24 +195,40 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   return rtn
 
 
+def printStackTrace():
+  sys.stdout.flush()
+  traceback.print_exc()
+
+
 def removeIfExists(fileName):
   if os.path.exists(fileName):
     echoRunSysCmnd("rm "+fileName)
 
 
-def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True):
+def writeStrToFile(fileBodyStr, fileName):
+  open(fileName, 'w').write(fileBodyStr)
+
+
+def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir=""):
   """Run a shell command and return its output"""
-  child = os.popen(cmnd)
-  data = child.read()
-  err = child.close()
-  if err:
-    if throwOnError:
-      raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
-    else:
-      return ""
-  if stripTrailingSpaces:
-    return data.rstrip()
-  return data
+  pwd = None
+  if workingDir:
+    pwd = os.getcwd()
+    os.chdir(workingDir)
+  try:
+    child = os.popen(cmnd)
+    data = child.read()
+    err = child.close()
+    if err:
+      if throwOnError:
+        raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
+      else:
+        return ""
+    if stripTrailingSpaces:
+      return data.rstrip()
+    return data
+  finally:
+    if pwd: os.chdir(pwd)
 
 
 def getFileNamesWithFileTag( baseDir, fileTag ):
