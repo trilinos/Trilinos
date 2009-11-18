@@ -9,9 +9,11 @@ source .bash_profile
 DATE=`date "+%m-%d-%Y"`
 
 CTEST_EXE=/Users/bmpersc/bin/ctest
+EG_EXE=/Users/bmpersc/bin/eg
 BASEDIR=/Users/bmpersc/nightly/Trilinos.base/release_10
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/s909348
-BRANCH="-r trilinos-release-10-0-branch"
+BRANCH="trilinos-release-10-0-branch"
+TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
 echo
 echo "Starting nightly Trilinos release 10.0 testing on s909348: `date`"
@@ -23,7 +25,19 @@ echo
 
 
 cd $BASEDIR
-cvs -q -d :ext:software:/space/CVS co $BRANCH Trilinos/cmake Trilinos/CTestConfig.cmake
+if [ -d Trilinos ]; then
+  echo Doing an update of existing directory
+  cd Trilinos
+  $EG_EXE switch $BRANCH
+  $EG_EXE pull
+  cd ..
+else
+  echo Cloning the repository because none exists yets
+  $EG_EXE clone $TRILINOS_REPOSITORY_LOCATION
+  cd Trilinos
+  $EG_EXE switch $BRANCH
+  cd ..
+fi
 
 echo
 echo "Doing mpi optimized release 10.0 build: `date`"
