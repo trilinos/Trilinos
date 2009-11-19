@@ -26,6 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
+
+// Added a silly comment
+
+
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Exceptions.hpp"
