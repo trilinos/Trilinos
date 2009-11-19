@@ -26,8 +26,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_MULTIVECTOROPS_H
-#define KOKKOS_MULTIVECTOROPS_H
+#ifndef KOKKOS_MULTIVECTOR_KERNELOPS_HPP
+#define KOKKOS_MULTIVECTOR_KERNELOPS_HPP
 
 #include <Teuchos_ScalarTraits.hpp>
 

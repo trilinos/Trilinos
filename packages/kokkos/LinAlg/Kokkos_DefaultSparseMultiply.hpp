@@ -26,14 +26,13 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_DEFAULTSPARSEMULTIPLY_H
-#define KOKKOS_DEFAULTSPARSEMULTIPLY_H
+#ifndef KOKKOS_DEFAULTSPARSEMULTIPLY_HPP
+#define KOKKOS_DEFAULTSPARSEMULTIPLY_HPP
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -42,136 +41,9 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
-
-#ifndef KERNEL_PREFIX
-  #define KERNEL_PREFIX
-#endif
+#include "Kokkos_DefaultSparseMultiplyKernelOps.hpp"
 
 namespace Kokkos {
-
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
-  struct DefaultSparseMultiplyOp1 {
-    // mat data
-    const size_t  *offsets;
-    const Ordinal *inds;
-    const Scalar  *vals;
-    // matvec params
-    Scalar        alpha, beta;
-    size_t numRows;
-    // mv data
-    const DomainScalar  *x;
-    RangeScalar         *y;
-    size_t xstride, ystride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
-      Scalar tmp = 0;
-      const DomainScalar *xj = x + rhs * xstride;
-      RangeScalar        *yj = y + rhs * ystride;
-      for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
-        tmp += vals[c] * xj[inds[c]];
-      }
-      Scalar tmp2 = beta * yj[row];
-      yj[row] = (RangeScalar)(alpha * tmp + tmp2);
-    }
-  };
-
-
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
-  struct DefaultSparseTransposeMultiplyOp1 {
-    // mat data
-    const size_t  *offsets;
-    const Ordinal *inds;
-    const Scalar  *vals;
-    // matvec params
-    Scalar        alpha, beta;
-    size_t numRows, numCols;
-    // mv data
-    const DomainScalar  *x;
-    RangeScalar         *y;
-    size_t xstride, ystride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      // multiply entire matrix for rhs i
-      const size_t rhs = i;
-      const DomainScalar *xj = x + rhs * xstride;
-      RangeScalar        *yj = y + rhs * ystride;
-      for (size_t row=0; row < numCols; ++row) {
-        yj[row] = (RangeScalar)(yj[row] * beta);
-      }
-      for (size_t row=0; row < numRows; ++row) {
-        for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
-          yj[inds[c]] += (RangeScalar)(alpha * vals[c] * xj[row]);
-        }
-      }
-    }
-  };
-
-
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
-  struct DefaultSparseMultiplyOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    // matvec params
-    Scalar        alpha, beta;
-    size_t numRows;
-    // mv data
-    const DomainScalar  *x;
-    RangeScalar         *y;
-    size_t xstride, ystride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      const size_t row = i % numRows;
-      const size_t rhs = (i - row) / numRows;
-      Scalar tmp = 0;
-      const DomainScalar *xj = x + rhs * xstride;
-      RangeScalar        *yj = y + rhs * ystride;
-      const Scalar  *curval = vals_beg[row];
-      const Ordinal *curind = inds_beg[row];
-      for (size_t j=0; j != numEntries[row]; ++j) {
-        tmp += (curval[j]) * xj[curind[j]];
-      }
-      Scalar tmp2 = beta * yj[row];
-      yj[row] = (Scalar)(alpha * tmp + tmp2);
-    }
-  };
-
-
-  template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
-  struct DefaultSparseTransposeMultiplyOp2 {
-    // mat data
-    const Ordinal * const * inds_beg;
-    const Scalar  * const * vals_beg;
-    const size_t  *         numEntries;
-    // matvec params
-    Scalar        alpha, beta;
-    size_t numRows, numCols;
-    // mv data
-    const DomainScalar  *x;
-    RangeScalar         *y;
-    size_t xstride, ystride;
-
-    inline KERNEL_PREFIX void execute(size_t i) {
-      // multiply entire matrix for rhs i
-      const size_t rhs = i;
-      const DomainScalar *xj = x + rhs * xstride;
-      RangeScalar        *yj = y + rhs * ystride;
-      for (size_t row=0; row < numCols; ++row) {
-        yj[row] = (RangeScalar)(yj[row] * beta);
-      }
-      for (size_t row=0; row < numRows; ++row) {
-        const Scalar  *rowval = vals_beg[row];
-        const Ordinal *rowind = inds_beg[row];
-        for (size_t j=0; j != numEntries[row]; ++j) {
-          yj[rowind[j]] += (RangeScalar)(alpha * rowval[j] * xj[row]);
-        }
-      }
-    }
-  };
-
 
   // default implementation
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>

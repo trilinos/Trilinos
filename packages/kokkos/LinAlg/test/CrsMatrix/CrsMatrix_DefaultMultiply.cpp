@@ -31,26 +31,53 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_DefaultNode.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+
+#include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
+#include "Kokkos_CrsMatrix.hpp"
 #include "Kokkos_DefaultSparseMultiply.hpp"
 #include "Kokkos_Version.hpp"
 
+#include "Kokkos_SerialNode.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#include "Kokkos_TBBNode.hpp"
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+#include "Kokkos_ThrustGPUNode.hpp"
+#endif
+
 namespace {
 
-  using std::endl;
   using Kokkos::MultiVector;
   using Kokkos::CrsMatrix;
   using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultSparseMultiply;
+  using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::null;
+  using std::endl;
+
+  RCP<SerialNode> snode;
+#ifdef HAVE_KOKKOS_TBB
+  using Kokkos::TBBNode;
+  RCP<TBBNode> tbbnode;
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  using Kokkos::TPINode;
+  RCP<TPINode> tpinode;
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+  using Kokkos::ThrustGPUNode;
+  RCP<ThrustGPUNode> thrustnode;
+#endif
 
   int N = 1000;
-
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -59,12 +86,64 @@ namespace {
     clp.setOption("test-size",&N,"Vector length for tests.");
   }
 
+  template <class Node>
+  RCP<Node> getNode() {
+    assert(false);
+  }
+
+  template <>
+  RCP<SerialNode> getNode<SerialNode>() {
+    if (snode == null) {
+      Teuchos::ParameterList pl;
+      snode = rcp(new SerialNode(pl));
+    }
+    return snode;
+  }
+
+#ifdef HAVE_KOKKOS_TBB
+  template <>
+  RCP<TBBNode> getNode<TBBNode>() {
+    if (tbbnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tbbnode = rcp(new TBBNode(pl));
+    }
+    return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_THREADPOOL
+  template <>
+  RCP<TPINode> getNode<TPINode>() {
+    if (tpinode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tpinode = rcp(new TPINode(pl));
+    }
+    return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_THRUST
+  template <>
+  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+    if (thrustnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      pl.set<int>("Verbose",1);
+      thrustnode = rcp(new ThrustGPUNode(pl));
+    }
+    return thrustnode;
+  }
+#endif
+
   //
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, SparseMultiply, Scalar, Ordinal )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseMultiply, Ordinal, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef CrsGraph<Ordinal,Node>  GRPH;
     typedef CrsMatrix<Scalar,Node>  MAT;
     typedef MultiVector<Scalar,Node> MV;
@@ -77,7 +156,6 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  1]
     if (N<2) return;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     GRPH G(N,node);
     MAT  A(N,node);
     // allocate buffers for offsets, indices and values
@@ -107,9 +185,9 @@ namespace {
       NNZsofar += 2;
       offsets_h[N]   = NNZsofar;
       TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
-      inds_h    = Teuchos::null;
-      vals_h    = Teuchos::null;
-      offsets_h = Teuchos::null;
+      inds_h    = null;
+      vals_h    = null;
+      offsets_h = null;
     }
     G.setPackedStructure(offsets, inds);
     A.setPackedValues(vals);
@@ -135,19 +213,50 @@ namespace {
     for (int i=0; i<N; ++i) {
       err = axview[i] * axview[i];
     }
-    axview = Teuchos::null;
+    axview = null;
     err = Teuchos::ScalarTraits<Scalar>::squareroot(err);
     TEST_EQUALITY_CONST(err, 0.0);
-    xdat = Teuchos::null;
-    axdat = Teuchos::null;
+    xdat = null;
+    axdat = null;
   }
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, SparseMultiply, SCALAR, ORDINAL ) \
+#define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, SparseMultiply, ORDINAL, SCALAR, NODE )
 
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+#define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )
+
+#ifdef HAVE_KOKKOS_TBB
+#define UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TBBNode )
+#else
+#define UNIT_TEST_TBBNODE(ORDINAL, SCALAR)
+#endif
+
+#ifdef HAVE_KOKKOS_THREADPOOL
+#define UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, TPINode )
+#else
+#define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
+#endif
+
+#ifdef HAVE_KOKKOS_THRUST
+#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR) \
+      ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, ThrustGPUNode )
+#else
+#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
+#endif
+
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
+        UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
+        UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
+
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+        UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
+        UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+
      UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
 
