@@ -289,6 +289,13 @@ in NOX::Abstract::Group
   //! Returns the condition number of the Jacobian matrix.
   virtual double getJacobianConditionNumber() const;
 
+  /*! 
+    \brief 
+    Sets option to disable linear resid computation. If disabled, 
+    this saves on a MatVec per Newton but disallows inexact Newton methods
+  */
+  virtual void disableLinearResidualComputation(const bool disableChoice);
+ 
 protected:
 
   //! resets the isValid flags to false
@@ -364,6 +371,9 @@ protected:
   sharedLinearSystem;
 
   //@}
+
+  // Internal flag to disable linear resid computation. False unless set.
+  bool linearResidCompDisabled;
 
   //! Reference to the user supplied interface functions
   Teuchos::RCP<NOX::Epetra::Interface::Required> userInterfacePtr;

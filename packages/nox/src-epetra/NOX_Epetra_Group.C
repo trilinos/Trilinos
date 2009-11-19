@@ -67,6 +67,7 @@ Group::Group(Teuchos::ParameterList& printParams,
   normNewtonSolveResidual(0),
   conditionNumber(0.0),
   sharedLinearSystem(*sharedLinearSystemPtr),
+  linearResidCompDisabled(false),
   userInterfacePtr(i)
 {
   // Set all isValid flags to false
@@ -90,6 +91,7 @@ Group::Group(Teuchos::ParameterList& printParams,
   conditionNumber(0.0),
   sharedLinearSystemPtr(Teuchos::rcp(new SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>(linSys))), 
   sharedLinearSystem(*sharedLinearSystemPtr),
+  linearResidCompDisabled(false),
   userInterfacePtr(i)
 {
   // Set all isValid flags to false
@@ -108,6 +110,7 @@ Group::Group(const Group& source, CopyType type) :
   NewtonVector(*NewtonVectorPtr), 
   sharedLinearSystemPtr(source.sharedLinearSystemPtr),
   sharedLinearSystem(*sharedLinearSystemPtr),
+  linearResidCompDisabled(source.linearResidCompDisabled),
   userInterfacePtr(source.userInterfacePtr)
 {
  
@@ -211,6 +214,8 @@ Abstract::Group& Group::operator=(const Group& source)
 
   if (isValidConditionNumber)
     conditionNumber = source.conditionNumber;
+
+  linearResidCompDisabled = source.linearResidCompDisabled;
 
   return *this;
 }
@@ -355,7 +360,9 @@ Abstract::Group::ReturnType Group::computeNewton(Teuchos::ParameterList& p)
   isValidNewton = true;
 
   // Compute the 2-norm of the linear solve residual ||Js+f||
-  computeNormNewtonSolveResidual();
+  // Can be disabled, but then disallows inexact Newton methods
+  if (!linearResidCompDisabled)
+    computeNormNewtonSolveResidual();
 
   // Return solution
   return status;
@@ -573,7 +580,7 @@ Abstract::Group::ReturnType NOX::Epetra::Group::getNormLastLinearSolveResidual(d
   if (utils.isPrintType(Utils::Warning)) {
     cout << "ERROR: NOX::Epetra::Group::getNormLastLinearSolveResidual() - "
 	 << "Group has not performed a Newton solve corresponding to this "
-	 << "solution vector!" << endl;
+	 << "solution vector, or disableLinearSolveResidual(true) was set!" << endl;
   }
   return NOX::Abstract::Group::BadDependency;
 }  
@@ -667,4 +674,9 @@ double NOX::Epetra::Group::getJacobianConditionNumber() const
   }
 
   return conditionNumber;
+}
+
+void  NOX::Epetra::Group::disableLinearResidualComputation(const bool disableChoice) 
+{  
+  linearResidCompDisabled = disableChoice;
 }

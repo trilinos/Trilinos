@@ -49,6 +49,7 @@
 #include "Epetra_Import.h"
 #include "NOX_Epetra_Vector.H"
 #include "Teuchos_RCP.hpp"
+#include "NOX_Solver_Generic.H"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -178,6 +179,10 @@ class MatrixFree : public Epetra_Operator,
   //! Clone a NOX::Abstract::Group derived object and use the computeF() method of that group for the perturbation instead of the NOX::Epetra::Interface::Required::computeF() method.  This is required for LOCA to get the operators correct during homotopy.
   void setGroupForComputeF(const NOX::Abstract::Group& group);
 
+  //! Save a RCP to a solver, and use the Solver's current Group's computeF() in the computeJacobian call, which can save a function call by respecting the isValid flag
+  void setSolverForComputeJacobian(const Teuchos::RCP<NOX::Solver::Generic>& slvr);
+
+
 protected:
 
   //! Label for matrix
@@ -224,11 +229,17 @@ protected:
   //! Flag to enables the use of a group instead of the interface for the computeF() calls in the directional difference calculation.
   bool useGroupForComputeF;
 
+  //! Flag to enables the use of Solver's Group instead of the interface for the computeF() calls in the directional difference calculation, to make use of isValid flags
+  bool useSolverForComputeJacobian;
+
   //! A new perturbation formulation developed by C. T. Kelley and A. G. Salinger can be used by the constructor flag useNewPerturbation = true.
   bool useNewPerturbation;
 
   //! Pointer to the group for possible use in computeF() calls.
   Teuchos::RCP<NOX::Abstract::Group> groupPtr;
+
+  //! Pointer to the Solver for possible use in computeF() calls.
+  Teuchos::RCP<NOX::Solver::Generic> slvrPtr;
 
   //! Printing utilities.
   NOX::Utils utils;

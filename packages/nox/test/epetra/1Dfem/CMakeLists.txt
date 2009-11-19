@@ -142,6 +142,18 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
     )
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    1DfemLeanMatrixFree
+    SOURCES 
+    1DfemInterface.H
+    1DfemInterface.C
+    1DfemPrePostOperator.H
+    1DfemPrePostOperator.C
+    1DfemLeanMatrixFree.C
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
     1DfemNonlinearCG
     SOURCES 
     1DfemInterface.H

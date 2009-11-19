@@ -143,6 +143,7 @@ bool Interface::computeF(const Epetra_Vector& x,
 		      Epetra_Vector& FVec, 
 		      NOX::Epetra::Interface::Required::FillType fillType)
 {
+  //static int count=0; count++; cout << "Resid ComputeF Call Number: " << count << endl;
   return evaluate(fillType, &x, &FVec, 0);
 }
 

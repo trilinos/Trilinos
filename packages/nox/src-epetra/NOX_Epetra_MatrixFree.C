@@ -29,10 +29,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: //space/CVS/Trilinos/packages/nox/src-epetra/NOX_Epetra_MatrixFree.C,v $
+//  $Author: rhoope $
+//  $Date: 2007/06/21 16:22:49 $
+//  $Revision: 1.21 $
 // ************************************************************************
 //@HEADER
 
@@ -66,6 +66,7 @@ MatrixFree::MatrixFree(Teuchos::ParameterList& printParams,
   userEta(1.0e-6),
   computeEta(true),
   useGroupForComputeF(false),
+  useSolverForComputeJacobian(false),
   useNewPerturbation(p),
   utils(printParams)
 {
@@ -145,6 +146,8 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (vectorNorm == 0.0) {
     //utils.out(Utils::Warning) << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" << endl;
     vectorNorm = 1.0;
+    wrappedY->PutScalar(0.0);
+    return 0;
   }
 
   // Create an extra perturbed residual vector pointer if needed
@@ -178,8 +181,8 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   perturbX.update(1.0,nevY,1.0);
 
   if (!useGroupForComputeF)
-    interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(), 
-			NOX::Epetra::Interface::Required::MF_Res);
+      interface->computeF(perturbX.getEpetraVector(), fp.getEpetraVector(), 
+			  NOX::Epetra::Interface::Required::MF_Res);
   else{
     groupPtr->setX(perturbX);
     groupPtr->computeF();
@@ -269,14 +272,23 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   currentX = x;
 
   bool ok = false;
-  if (!useGroupForComputeF)
-    ok = interface->computeF(x, fo.getEpetraVector(), 
-			     NOX::Epetra::Interface::Required::MF_Jac);
+  if (!useSolverForComputeJacobian) {
+    if (!useGroupForComputeF)
+      ok = interface->computeF(x, fo.getEpetraVector(), 
+			       NOX::Epetra::Interface::Required::MF_Jac);
+    else {
+      groupPtr->setX(currentX);
+      groupPtr->computeF();
+      fo = dynamic_cast<const NOX::Epetra::Vector&>
+        (groupPtr->getF());
+      ok = true;
+    }
+  }
   else {
-    groupPtr->setX(currentX);
-    groupPtr->computeF();
-    fo = dynamic_cast<const NOX::Epetra::Vector&>
-      (groupPtr->getF());
+    // If this is throwing an invalid resid, switch to
+    // Full Step (no line search) so last Resid is current.
+    fo  = dynamic_cast<const NOX::Epetra::Vector&>
+        (slvrPtr->getSolutionGroup().getF());
     ok = true;
   }
   return ok;
@@ -312,5 +324,12 @@ void MatrixFree::setGroupForComputeF(const NOX::Abstract::Group& group)
 {
   useGroupForComputeF = true;
   groupPtr = group.clone();
+  return;
+}
+
+void MatrixFree::setSolverForComputeJacobian(const Teuchos::RCP<NOX::Solver::Generic>& slvr)
+{
+  useSolverForComputeJacobian = true;
+  slvrPtr = slvr;
   return;
 }
