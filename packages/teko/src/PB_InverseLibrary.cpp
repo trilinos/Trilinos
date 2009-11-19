@@ -129,7 +129,7 @@ Teuchos::RCP<const Teuchos::ParameterList> InverseLibrary::getParameterList(cons
 //! Get the inverse factory associated with a particular label
 Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string & label) const
 {
-   PB_DEBUG_MSG("Begin InverseLibrary::getInverseFactory",10);
+   PB_DEBUG_SCOPE("InverseLibrary::getInverseFactory",10);
 
    std::map<std::string,RCP<const Teuchos::ParameterList> >::const_iterator itr;
 
@@ -192,20 +192,43 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       // try to build a preconditioner factory
       RCP<Thyra::PreconditionerFactoryBase<double> > precFact = strat.createPreconditioningStrategy(type);
 
-      PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Stratimikos preconditioner)",10);
-
       // string must map to a preconditioner
       return rcp(new PreconditionerInverseFactory(precFact,xtraParams));
    }
    else if(isStratSolver) {
+      RCP<Teuchos::ParameterList> solveList = rcp(new Teuchos::ParameterList(*pl));
+      std::string type = solveList->get<std::string>("Linear Solver Type");
+
+      // get preconditioner name, remove "Use Preconditioner" parameter
+      Teuchos::ParameterList & solveSettings = solveList->sublist("Linear Solver Types").sublist(type);
+      std::string precKeyWord = "Use Preconditioner";
+      std::string precName = "None";
+      if(solveSettings.isParameter(precKeyWord)) {
+         precName = solveSettings.get<std::string>(precKeyWord);
+         solveSettings.remove(precKeyWord);
+      }
+
+      // build Thyra preconditioner factory
+      RCP<Thyra::PreconditionerFactoryBase<double> > precFactory;
+      if(precName!="None") {
+         // we will manually set the preconditioner, so set this to null
+         solveList->set<std::string>("Preconditioner Type","None");
+         
+         // build inverse that preconditioner corresponds to
+         RCP<PreconditionerInverseFactory> precInvFactory 
+               = Teuchos::rcp_dynamic_cast<PreconditionerInverseFactory>(getInverseFactory(precName));
+
+         // extract preconditioner factory from preconditioner _inverse_ factory
+         precFactory = precInvFactory->getPrecFactory();
+      }
+
       Stratimikos::DefaultLinearSolverBuilder strat;
-      strat.setParameterList(rcp(new Teuchos::ParameterList(*pl)));
+      strat.setParameterList(solveList);
 
       // try to build a solver factory
-      std::string type = pl->get<std::string>("Linear Solver Type");
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFact = strat.createLinearSolveStrategy(type);
-
-      PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Stratimikos solver)",10);
+      if(precFactory!=Teuchos::null)
+         solveFact->setPreconditionerFactory(precFactory,precName);
 
       // if its around, build a InverseFactory
       return rcp(new SolveInverseFactory(solveFact));
@@ -221,8 +244,6 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
     
          TEUCHOS_ASSERT(precFact!=Teuchos::null);
    
-         PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Block preconditioner)",10);
-
          // return the inverse factory object
          return rcp(new PreconditionerInverseFactory(precFact));   
       }
@@ -239,8 +260,6 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
          throw e;
       }
    }
-
-   PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (FAILURE)",10);
 
    TEUCHOS_ASSERT(false);
 }
