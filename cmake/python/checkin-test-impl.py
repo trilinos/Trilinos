@@ -10,7 +10,7 @@ from CheckinTest import *
 usageHelp = r"""checkin-test.py [OPTIONS]
 
 This tool does checkin testing for Trilinos with CMake/CTest and can actually
-do the checkin itself in a safe way.
+do the checkin itself using eg/git in a safe way.
 
 
 Quickstart:
@@ -19,16 +19,18 @@ Quickstart:
 In order to do a solid checkin, perform the following recommended workflow
 (other workflows are described below):
 
-1) Do a 'cvs -nq update -dP' to review the changes that you have made:
+1) Do a 'eg diff --name-status origin/master..master' to review the changes
+that you have made:
 
   $ cd $TRILINOS_HOME
-  $ cvs -nq update -dP > update.out ; cat update.out
+  $ eg diff --name-status origin/master..master
 
-  NOTE: If you see any files/directories that you need to add in '?' lines,
-  then please do a 'cvs add' on these first.
+  NOTE: If you see any files/directories that are listed as unknown, you need
+  to do a 'eg add' or add them to the ignore list *before* you run the script.
+  The eg script will not allow you to commit if there are unknown files.
 
   NOTE: TRILINOS_HOME is just a mock variable here. You can of course just
-  replace $TRILINOS_HOME with the absoute or relative path to the base
+  replace $TRILINOS_HOME with the absolute or relative path to the base
   Trilinos source directory.
 
 2) Create a commit log file in the main source directory:
@@ -38,6 +40,9 @@ In order to do a solid checkin, perform the following recommended workflow
 
   NOTE: Fill out this checkin message listing what you have changed.  Please
   use the Trilinos template for this file.
+
+  NOTE: Alternatively, you can just do the local commit yourself with eg/git
+  in any way you would like.
 
 3) Set up the checkin base build directory (one time only):
 
@@ -49,7 +54,7 @@ In order to do a solid checkin, perform the following recommended workflow
   the right compilers, MPI, and TPLs by default (see below).
 
   NOTE: You might want to set up a simple shell driver script.  See some
-  examples at:
+  examples in the files:
 
     Trilinos/sampmleScripts/checkin-test-*
 
@@ -59,27 +64,32 @@ In order to do a solid checkin, perform the following recommended workflow
   $ $TRILINOS_HOME/cmake/python/checkin-test.py \
       --make-options="-j4" --ctest-options="-j2" --ctest-time-out=180 \
       --commit-msg-header-file=checkin_message \
-      --do-all --commit
+      --do-all [--commit] --push
+
+  NOTE: You can do the local commit yourself with eg/git before running this
+  script.  In that case, you must take off the --commit argument or the script
+  will fail.
+
+  NOTE: If you do not specify the --commit argument, you must not have any
+  uncommitted changes or the 'eg pull --rebase' command will fail.
 
   NOTE: The above will automatically enable the correct packages and then
   build the code, run the tests, send you emails about what happened, and then
-  do the commit if everything passed.
+  do the (optional) local commit and push to the global repo if everything
+  passed.
 
   NOTE: Once you start running the checkin-test.py script, you can go off and
   do something else and just check your email to see if all the builds and
   tests passed and if the commit happened or not.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
-  for the CVS commits invoked internally to work without you having to type a
+  for the git commits invoked internally to work without you having to type a
   password.
 
-  NOTE: You can actually finish writing the checkin_message file while the
-  checkin-test.py script is running.  Just make sure you finish it in time or
-  don't pass in --commit and do the commit later (with the --commit option).
-
-  NOTE: You can do the commit in a second step with a follow-up run with
-  --commit replacing --do-all (it will remember the results from the tests
-  just run).
+  NOTE: You can do the push in a second step with a follow-up run with --push
+  and removing --do-all (it will remember the results from the build/test
+  cases just run).  You will also have to remove --commit since you must
+  commit before you even update the code.
 
   NOTE: For more details on using this script, see below.
 
@@ -98,37 +108,43 @@ MPI_DEBUG build actually uses -DCMAKE_BUILD_TYPE=RELEASE with
 -DTrilinos_ENABLE_DEBUG=ON to use optimized compiler options but with runtime
 debug checking turned on.  This helps to make the tests run faster but still
 builds and runs the runtime debug checking code.  Therefore, you should not
-use the MPI_DEBUG confgiure options when building a debug version for yourself
+use the MPI_DEBUG configure options when building a debug version for yourself
 to do debugging.
 
-The following steps are performed by this script:
+The following approximate steps are performed by this script:
 
-1) Do a CVS update of the code (and detect the files that have changed
-locally).  (done if --update or --do-all is set.)
+1) [Optional] Do the local commit (done iff --commit is set)
 
-2) Select the list of packages to enable forward based on the package
+2) Do a 'eg pull --rebase' to update the code (done if --pull or --do-all is
+set.).
+
+3) Select the list of packages to enable forward based on the package
 directories where there are changed files (or from a list of packages passed
-in by the user).  NOTE: This can be overridden with the options
---enable-packages, --disable-packages, and --no-enable-fwd-packages.
+in by the user).  NOTE: The automatic behavior can be overridden with the
+options --enable-packages, --disable-packages, and --no-enable-fwd-packages.
 
-3) For each build case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
+4) For each build case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
 
-  3.a) Configure a build directory <BUILD_NAME> in a standard way for all of
+  4.a) Configure a build directory <BUILD_NAME> in a standard way for all of
   the packages that have changed and all of the packages that depend on these
   packages forward. You can manually select which gets enabled (see the enable
   options above).  (done if --configure or --do-all is set.)
   
-  3.b) Build all configured code with 'make' (e.g. with -jN set through
+  4.b) Build all configured code with 'make' (e.g. with -jN set through
   --make-options).  (done if --build or --do-all is set.)
   
-  3.c) Run all tests for enabled packages.  (done if --test or --do-all is
+  4.c) Run all tests for enabled packages.  (done if --test or --do-all is
   set.)
   
-  3.d) Analyze the results of the update, configure, build, and tests and send
+  4.d) Analyze the results of the update, configure, build, and tests and send
   email about results.  (emails only sent out if --send-emails-to is not set
   to ''.)
 
-4) Commit the code given a commit message.  (done if --commit is set.)
+5) Amend commit message of the most recent commit with the summary of the
+testing performed.  (done if --append-test-results is set, the default.)
+
+
+6) Push the local commits to the global repo.  (done if --push is set.)
 
 The recommended way to use this script is to create a new base directory apart
 from your standard build directories such as:
@@ -162,11 +178,13 @@ to find MPI, your compilers, and the basic TPLs.  If you need to fudge what
 packages are enabled, please use the script arguments --enable-packages,
 --disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages.
 
-NOTE: Before running this script, you should first do an CVS update and
-examine what files are changed to make sure you want to commit what you have
-in your local working directory.  Also, please look out for unknown files that
-you may need to add to the VC repository with 'cvs add'.  Your working
-directory needs to be 100% ready to commit before running this script.
+NOTE: Before running this script, you should first do a 'git status' and 'git
+diff --name-status origin/master...master' and examine what files are changed
+to make sure you want to commit what you have in your local working directory.
+Also, please look out for unknown files that you may need to add to the git
+repository with 'eg add' or add to your ignores list.  Your working directory
+needs to be 100% ready to commit before running this script.  Alternatively,
+you can just do the local commit(s) yourself before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
 affect the build or the tests.  For example, if all you have changed are
@@ -177,28 +195,35 @@ Common use cases for using this script are as follows:
 
 (*) Basic full testing without push:
 
-   --do-all
+   --do-all [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
    NOTE: This will result in a set of emails getting sent to your email
    address for the different configurations and an overall commit readiness
    status email.
 
-   NOTE: If everything passed, you can follow this up with a commit (see
+   NOTE: If you have any local uncommitted changes you will need to pass in
+   --commit and --commit-msg-header-file.
+
+   NOTE: If everything passed, you can follow this up with a --push (see
    below).
 
-(*) Basic full testing with commit and push:
+   (*) Basic full testing with push:
 
-   --do-all --push --commit-msg-header-file=<SOME_FILE_NAME>
+   --do-all --push [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
    NOTE: If the commit criteria is not satisfied, no commit will occur and you
    will get an email telling you that.
 
+   NOTE: If you have any local uncommitted changes you will need to pass in
+   --commit and --commit-msg-header-file.
+
 (*) Push to global repo after a completed set of tests have finished:
 
-   --push --commit-msg-header-file=<SOME_FILE_NAME>
+   --push
 
    NOTE: This will pick up the results for the last completed test runs and
-   append the results of those tests to the checkin-message.
+   append the results of those tests to the checkin-message of the most recent
+   commit.
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -237,16 +262,16 @@ Common use cases for using this script are as follows:
 
 (*) Test changes locally without pulling updates:
 
-  --skip-pull --configure --build --test [--commit]
+  --allow-no-pull --configure --build --test
 
   NOTE: This will just configure, build, test, and send and email
-  notificatioin without changing the status of the local git repo at all and
+  notification without changing the status of the local git repo at all and
   without any communication with the global repo.
 
   NOTE: This is not a sufficient level of testing in order to commit and push
   the changes to the global repo.  However, this would be a sufficient level
-  of testing in order to do a local commit and then pull and a remote testing
-  and commit/push.
+  of testing in order to do a local commit and then pull to a remote machine
+  for further testing and commit/push.
 
 (*) Check commit readiness status:
 
@@ -339,7 +364,7 @@ clp.add_option(
 
 clp.add_option(
   "--commit-msg-header-file", dest="commitMsgHeaderFile", type="string", default="",
-  help="Custom commit message file if commiting with --commit." \
+  help="Custom commit message file if committing with --commit." \
   + "  If an relative path is given, this is expected to be with respect to the" \
   +" base source directory for Trilinos.  The very first line of this file should" \
   +" be the summary line that will be used for the commit." )
@@ -377,7 +402,7 @@ clp.add_option(
   help="Do the local commit of all the staged changes before the initial pull." \
   +" The commit message used in specified by the --commit-msg-header-file argument." \
   +"  If you have not already committed your changes, then you will want to" \
-  +" use this option.  The commit is peformed before the initial pull and" \
+  +" use this option.  The commit is performed before the initial pull and" \
   +" before any testing is performed in order to allow for rebasing and for" \
   +" allowing the pull to be backed out.  If the build/test fails and --no-force-commit" \
   +" is specified, then the commit will be backed out." \
@@ -396,7 +421,7 @@ clp.add_option(
   +" WARNING: Only do this when you are 100% certain that the errors are not" \
   +" caused by your code changes.  This only applies when --commit is specified" \
   +" and this script is doing the commit.  When you commit yourself and don't" \
-  +" specify --commmit (i.e. --no-commit), then the commit will not be backed out" \
+  +" specify --commit (i.e. --no-commit), then the commit will not be backed out" \
   +" and it is up to you to back-out the commit or deal with it in some other way.")
 clp.add_option(
   "--no-force-commit", dest="forceCommit", action="store_false", default=False,
@@ -448,15 +473,15 @@ clp.add_option(
 
 clp.add_option(
   "--append-test-results", dest="appendTestResults", action="store_true",
-  help="After the testing is finished, ammend the most recent local commit" \
+  help="After the testing is finished, amend the most recent local commit" \
   +" by appending a summary of the test results.  This provides a record of what builds" \
   +" and tests were performed in order to test the local changes.  NOTE: If the same" \
-  +" local commit is ammeded more than once, the prior test summary sections will be" \
-  +" overwirtten with the most recent test results from the current run. [default]" )
+  +" local commit is amended more than once, the prior test summary sections will be" \
+  +" overwritten with the most recent test results from the current run. [default]" )
 clp.add_option(
   "--no-append-test-results", dest="appendTestResults", action="store_false",
   default=True,
-  help="Do not ammend the last local commit with test results." )
+  help="Do not amend the last local commit with test results." )
 
 clp.add_option(
   "--push", dest="doPush", action="store_true",
@@ -478,7 +503,7 @@ clp.add_option(
 (options, args) = clp.parse_args()
 
 # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
-# takes effect!  That is whay the commands are ordered the way they are!
+# takes effect!  That is why the commands are ordered the way they are!
 
 if options.doCommit and not options.commitMsgHeaderFile:
   print "\nError, if you specify --commit you must also set --commit-msg-header-file!\n"
