@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
 #ifndef HAVE_MPI 
   // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 53) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 659) {
     status = 2;
   }
 #endif
