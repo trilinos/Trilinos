@@ -17,6 +17,7 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(HEADERS "")
 SET(SOURCES "")
+SET(KOKKOS_LINALG_CUDALIBS "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -54,6 +55,7 @@ IF (Kokkos_ENABLE_Thrust)
   # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
   include_directories(${Kokkos_INCLUDE_DIRS})
   CUDA_ADD_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu)
+  APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
 ENDIF()
 
 #
@@ -64,7 +66,7 @@ PACKAGE_ADD_LIBRARY(
   kokkoslinalg
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkos kokkosnodeapi kokkoslinalg_cuda
+  DEPLIBS kokkos kokkosnodeapi ${KOKKOS_LINALG_CUDALIBS}
   )
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)

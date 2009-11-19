@@ -5,9 +5,6 @@ IF (Kokkos_ENABLE_Thrust)
   set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
   set(source_files TestOps.cu)
   CUDA_COMPILE(CUDA_FILES TestOps.cu)
-#TARGET_LINK_LIBRARIES(cuda_compile_example
-# ${CUDA_LIBRARIES}
-# )
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
