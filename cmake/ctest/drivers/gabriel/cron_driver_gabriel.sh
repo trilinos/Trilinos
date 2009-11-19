@@ -19,12 +19,13 @@ echo "DRIVER_SCRIPT_DIR = $DRIVER_SCRIPT_DIR"
 
 
 echo
-echo "Checking out just the skeleton cmake/ctest code: `date`"
+echo "Checking out updated Trilinos driver code: `date`"
 echo
 
-cd $BASEDIR
-cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
+cd $BASEDIR/Trilinos
+eg pull --rebase
 
+cd $BASEDIR
   
 echo
 echo "Doing mpi debug build: `date`"
