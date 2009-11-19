@@ -12,7 +12,8 @@ echo
 echo "Starting nightly Trilinos testing on gabriel: `date`"
 echo
 
-BASEDIR=`echo $0 | sed "s/\(.*\)\/Trilinos\/cmake\/ctest\/.*\.sh/\1/g"`
+#BASEDIR=`echo $0 | sed "s/\(.*\)\/Trilinos\/cmake\/ctest\/.*\.sh/\1/g"`
+BASEDIR=/mnt/disk2/rabartl/CDash/Trilinos.base
 echo "BASEDIR = $BASEDIR"
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/gabriel
 echo "DRIVER_SCRIPT_DIR = $DRIVER_SCRIPT_DIR"
