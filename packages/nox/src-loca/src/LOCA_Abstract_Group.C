@@ -1,5 +1,5 @@
-// $Id$
-// $Source$
+// $Id: LOCA_Abstract_Group.C,v 1.37 2007/06/21 16:22:52 rhoope Exp $
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Abstract_Group.C,v $
 
 //@HEADER
 // ************************************************************************
@@ -32,10 +32,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Abstract_Group.C,v $
+//  $Author: rhoope $
+//  $Date: 2007/06/21 16:22:52 $
+//  $Revision: 1.37 $
 // ************************************************************************
 //@HEADER
 
@@ -245,3 +245,13 @@ LOCA::Abstract::Group::operator=(const NOX::Abstract::Group& source)
   copy(source);
   return *this;
 }
+
+double
+LOCA::Abstract::Group::computeFreeEnergy()
+{
+  globalData->locaErrorCheck->throwError(
+		    "LOCA::Abstract::Group::computeFreeEnergy",
+		    "Method not defined for group");
+  return 0.0;
+}
+

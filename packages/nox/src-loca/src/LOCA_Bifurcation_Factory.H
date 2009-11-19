@@ -1,5 +1,5 @@
-// $Id$
-// $Source$
+// $Id: LOCA_Bifurcation_Factory.H,v 1.11 2007/06/21 16:22:52 rhoope Exp $
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Bifurcation_Factory.H,v $
 
 //@HEADER
 // ************************************************************************
@@ -32,10 +32,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Bifurcation_Factory.H,v $
+//  $Author: rhoope $
+//  $Date: 2007/06/21 16:22:52 $
+//  $Revision: 1.11 $
 // ************************************************************************
 //@HEADER
 
@@ -75,6 +75,7 @@ namespace LOCA {
      *      <li> "Turning Point" Turning point bifurations
      *      <li> "Pitchfork" Pitchfork bifurcations
      *      <li> "Hopf" Hopf bifurcations
+     *      <li> "Phase Transition" Phase Transition points
      *      <li> "User-Defined" User defined bifurcation.  Set 
      *           "User-Defined Name" to be the parameter list name containing
      *           user-defined strategy, which must be of type

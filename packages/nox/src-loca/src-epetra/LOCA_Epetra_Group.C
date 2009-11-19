@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id: LOCA_Epetra_Group.C,v 1.53 2009/03/25 18:50:28 etphipp Exp $ 
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src-epetra/LOCA_Epetra_Group.C,v $ 
 
 //@HEADER
 // ************************************************************************
@@ -32,10 +32,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/src-loca/src-epetra/LOCA_Epetra_Group.C,v $
+//  $Author: etphipp $
+//  $Date: 2009/03/25 18:50:28 $
+//  $Revision: 1.53 $
 // ************************************************************************
 //@HEADER
 
@@ -77,6 +77,7 @@ LOCA::Epetra::Group::Group(
   userInterface(i),
   userInterfaceTime(),
   userInterfaceTimeMF(),
+  userInterfaceFreeEnergy(),
   shiftedSharedLinearSystem(),
   isValidShiftedPrec(false),
   alpha_(1.0),
@@ -107,6 +108,7 @@ LOCA::Epetra::Group::Group(
   userInterface(i),
   userInterfaceTime(),
   userInterfaceTimeMF(),
+  userInterfaceFreeEnergy(),
   shiftedSharedLinearSystem(),
   isValidShiftedPrec(false),
   alpha_(1.0),
@@ -138,6 +140,7 @@ LOCA::Epetra::Group::Group(
   userInterface(i), 
   userInterfaceTime(i),
   userInterfaceTimeMF(),
+  userInterfaceFreeEnergy(),
   shiftedSharedLinearSystem(),
   isValidShiftedPrec(false),
   alpha_(1.0),
@@ -172,6 +175,7 @@ LOCA::Epetra::Group::Group(
   userInterface(i),
   userInterfaceTime(),
   userInterfaceTimeMF(i),
+  userInterfaceFreeEnergy(),
   shiftedSharedLinearSystem(),
   isValidShiftedPrec(false),
   alpha_(1.0),
@@ -200,6 +204,7 @@ LOCA::Epetra::Group::Group(const LOCA::Epetra::Group& source,
   userInterface(source.userInterface),
   userInterfaceTime(source.userInterfaceTime),
   userInterfaceTimeMF(source.userInterfaceTimeMF),
+  userInterfaceFreeEnergy(source.userInterfaceFreeEnergy),
   shiftedSharedLinearSystem(source.shiftedSharedLinearSystem),
   isValidShiftedPrec(source.isValidShiftedPrec),
   alpha_(source.alpha_),
@@ -239,6 +244,7 @@ LOCA::Epetra::Group::operator=(const LOCA::Epetra::Group& source)
     params = source.params;
     userInterface = source.userInterface;
     userInterfaceTime = source.userInterfaceTime;
+    userInterfaceFreeEnergy = source.userInterfaceFreeEnergy;
     if (source.scaleVecPtr != Teuchos::null)
       scaleVecPtr = source.scaleVecPtr->clone(NOX::DeepCopy);
     
@@ -1313,6 +1319,31 @@ LOCA::Epetra::Group::setJacobianOperatorForSolve(
   // Set Jacobian operator for solve
   sharedLinearSystem.getObject(this)->setJacobianOperatorForSolve(op);
   isValidSolverJacOp = true;
+}
+
+void
+LOCA::Epetra::Group::setFreeEnergyInterface(
+              const Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy>& iFE)
+{
+  userInterfaceFreeEnergy = iFE;
+}
+
+double
+LOCA::Epetra::Group::computeFreeEnergy()
+{
+  // We store a real shifted matrix
+  if (userInterfaceFreeEnergy != Teuchos::null) {
+
+     userInterface->setParameters(params);
+
+     return userInterfaceFreeEnergy->computeFreeEnergy(xVector.getEpetraVector());
+  }
+  else {
+    globalData->locaErrorCheck->throwError("LOCA::Epetra::Group::computeFreeEnergy", 
+	 "Free Energy Calculation needed by Phase Transition algorithm."
+         "LOCA::Epetra::Group needs LOCA::Epetra::Interface::FreeEnergy");
+  }
+  return 0; // not reached
 }
 
 void

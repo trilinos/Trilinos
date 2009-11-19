@@ -29,10 +29,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/examples/epetra/LOCA_Tcubed/Problem_Interface.H,v $
+//  $Author: etphipp $
+//  $Date: 2008/10/24 21:04:40 $
+//  $Revision: 1.5 $
 // ************************************************************************
 //@HEADER
                                                                                 
@@ -50,6 +50,7 @@
 #include "LOCA_Epetra.H"
 
 #include "LOCA_Parameter_Library.H"
+#include "LOCA_Epetra_Interface_FreeEnergy.H"
 
 // ---------- Forward Declarations ----------
 class FiniteElementProblem;
@@ -60,6 +61,7 @@ namespace LOCA {
 
 class  Problem_Interface : 
   public LOCA::Epetra::Interface::TimeDependent,
+  public LOCA::Epetra::Interface::FreeEnergy,
   public NOX::Epetra::Interface::Jacobian
   
 {
@@ -87,6 +89,9 @@ public:
 
   //! Print solution to output file
   virtual void printSolution(const Epetra_Vector& x_, double conParam);
+
+  //! Interface for Phase Transition alg
+  double computeFreeEnergy(const Epetra_Vector& x_);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

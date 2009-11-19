@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id: LOCA_Epetra_Group.H,v 1.40 2007/06/21 16:22:55 rhoope Exp $ 
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src-epetra/LOCA_Epetra_Group.H,v $ 
 
 //@HEADER
 // ************************************************************************
@@ -32,10 +32,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/src-loca/src-epetra/LOCA_Epetra_Group.H,v $
+//  $Author: rhoope $
+//  $Date: 2007/06/21 16:22:55 $
+//  $Revision: 1.40 $
 // ************************************************************************
 //@HEADER
 
@@ -48,6 +48,7 @@
 #include "LOCA_Parameter_Vector.H"             // class data element
 #include "NOX_Common.H"                        // class data element (string)
 #include "LOCA_Epetra_Interface_TimeDependent.H"
+#include "LOCA_Epetra_Interface_FreeEnergy.H"
 #include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
 
 // Forward declares
@@ -504,6 +505,19 @@ namespace LOCA {
 
       //@}
 
+      //! Method to inject an interface for calucatiuong the free energy
+      virtual void setFreeEnergyInterface(
+              const Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy>& iFE);
+
+      /*! 
+       * @name Implementation of LOCA::PhseTransition::AbstractGroup virtual methods.
+       */
+      //@{
+
+      virtual double computeFreeEnergy();
+
+      //@}
+
       //! Return the userInterface.
       virtual Teuchos::RCP<NOX::Epetra::Interface::Required> 
       getUserInterface();
@@ -555,6 +569,9 @@ namespace LOCA {
 
       //! Interface for matrix-free shifted-matrix
       Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree> userInterfaceTimeMF;
+
+      //! Interface for free enerfgy calculation for phase transitions
+      Teuchos::RCP<LOCA::Epetra::Interface::FreeEnergy> userInterfaceFreeEnergy;
 
       //! Shared shifted linear system
       Teuchos::RCP< NOX::SharedObject<NOX::Epetra::LinearSystem, 

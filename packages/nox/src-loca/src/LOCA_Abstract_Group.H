@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id: LOCA_Abstract_Group.H,v 1.42 2007/06/21 16:22:52 rhoope Exp $ 
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Abstract_Group.H,v $ 
 
 //@HEADER
 // ************************************************************************
@@ -32,10 +32,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Abstract_Group.H,v $
+//  $Author: rhoope $
+//  $Date: 2007/06/21 16:22:52 $
+//  $Revision: 1.42 $
 // ************************************************************************
 //@HEADER
 
@@ -48,6 +48,7 @@
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
 #include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_PhaseTransition_AbstractGroup.H"
 
 namespace LOCA { 
 
@@ -71,7 +72,8 @@ namespace LOCA {
       public virtual LOCA::Homotopy::AbstractGroup,
       public virtual LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup,
       public virtual LOCA::Pitchfork::MinimallyAugmented::AbstractGroup,
-      public virtual LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup
+      public virtual LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup,
+      public virtual LOCA::PhaseTransition::AbstractGroup
     {
 
     public:
@@ -280,6 +282,16 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //@}
+
+      /*! 
+       * @name Implementation of LOCA::PhaseTransition::AbstractGroup virtual methods.
+       */
+      //@{
+
+      virtual double computeFreeEnergy();
+
+      //@}
+
 
     private:
 

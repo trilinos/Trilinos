@@ -38,6 +38,22 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    LOCA_Tcubed_PhaseTransition_Example
+    SOURCES 
+    Basis.H
+    Basis.C
+    FiniteElementProblem.H
+    FiniteElementProblem.C
+    Problem_Interface.H
+    Problem_Interface.C
+    ExamplePhaseTransContinuation.C
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "All tests passed"
+    )
+
   IF(TPL_ENABLE_MF)
 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(

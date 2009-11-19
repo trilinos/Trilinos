@@ -20,6 +20,7 @@ APPEND_SET(HEADERS
   LOCA_Epetra_Interface_MassMatrix.H
   LOCA_Epetra_Interface_TimeDependent.H
   LOCA_Epetra_Interface_TimeDependentMatrixFree.H
+  LOCA_Epetra_Interface_FreeEnergy.H
   LOCA_Epetra_Group.H
   LOCA_Epetra_CompactWYOp.H
   LOCA_Epetra_LowRankUpdateOp.H

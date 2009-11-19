@@ -153,6 +153,10 @@ APPEND_SET(HEADERS
   LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H
   LOCA_Hopf_MinimallyAugmented_Constraint.H
   LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H
+  LOCA_PhaseTransition_ExtendedVector.H
+  LOCA_PhaseTransition_ExtendedMultiVector.H
+  LOCA_PhaseTransition_AbstractGroup.H
+  LOCA_PhaseTransition_ExtendedGroup.H
   LOCA_Bifurcation_Factory.H
   )
 APPEND_SET(SOURCES
@@ -186,6 +190,9 @@ APPEND_SET(SOURCES
   LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.C
   LOCA_Hopf_MinimallyAugmented_Constraint.C
   LOCA_Hopf_MinimallyAugmented_ExtendedGroup.C
+  LOCA_PhaseTransition_ExtendedVector.C
+  LOCA_PhaseTransition_ExtendedMultiVector.C
+  LOCA_PhaseTransition_ExtendedGroup.C
   LOCA_Bifurcation_Factory.C
   )
 
@@ -265,7 +272,7 @@ APPEND_SET(SOURCES
   LOCA_Stepper.C
   )
 
-# Nonlinear solver status test
+# Status test
 APPEND_SET(HEADERS
   LOCA_Solver_Wrapper.H
   LOCA_StatusTest_Wrapper.H
@@ -273,20 +280,6 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   LOCA_Solver_Wrapper.C
   LOCA_StatusTest_Wrapper.C
-  )
-  
-# Continuation status test
-APPEND_SET(HEADERS
-  LOCA_StatusTest_Abstract.H
-  LOCA_StatusTest_Factory.H
-  LOCA_StatusTest_Combo.H
-  LOCA_StatusTest_MaxIters.H
-  )
-APPEND_SET(SOURCES
-  LOCA_StatusTest_Abstract.C
-  LOCA_StatusTest_Factory.C
-  LOCA_StatusTest_Combo.C
-  LOCA_StatusTest_MaxIters.C
   )
 
 # Factory

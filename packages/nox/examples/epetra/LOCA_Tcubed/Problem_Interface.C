@@ -29,10 +29,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/examples/epetra/LOCA_Tcubed/Problem_Interface.C,v $
+//  $Author: etphipp $
+//  $Date: 2008/10/24 21:04:40 $
+//  $Revision: 1.6 $
 // ************************************************************************
 //@HEADER
                                                                                 
@@ -92,7 +92,18 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
 
 void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 {
+  double ave; x.MeanValue(&ave);
+  cout << "   FreeEnergy Mock Function (param, soln norm, FreeEnergy)= " 
+       << conParam << "   " <<  ave << "   " << computeFreeEnergy(x) << endl;
+
   problem.printSolution(x, conParam);
+}
+
+double Problem_Interface::computeFreeEnergy(const Epetra_Vector& x)
+{
+    double ave; x.MeanValue(&ave);
+    double fe =  abs(ave - 1.2);
+    return abs(ave - 1.2);
 }
 //-----------------------------------------------------------------------------
 

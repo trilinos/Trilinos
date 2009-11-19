@@ -1,5 +1,5 @@
-// $Id$
-// $Source$
+// $Id: LOCA_Bifurcation_Factory.C,v 1.12 2007/06/21 16:22:52 rhoope Exp $
+// $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Bifurcation_Factory.C,v $
 
 //@HEADER
 // ************************************************************************
@@ -32,10 +32,10 @@
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
+//  $Source: /space/CVS/Trilinos/packages/nox/src-loca/src/LOCA_Bifurcation_Factory.C,v $
+//  $Author: rhoope $
+//  $Date: 2007/06/21 16:22:52 $
+//  $Revision: 1.12 $
 // ************************************************************************
 //@HEADER
 
@@ -56,6 +56,8 @@
 #include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_PhaseTransition_AbstractGroup.H"
+#include "LOCA_PhaseTransition_ExtendedGroup.H"
 
 LOCA::Bifurcation::Factory::Factory(
 	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
@@ -195,6 +197,24 @@ LOCA::Bifurcation::Factory::create(
 							   topParams,
 							   bifurcationParams,
 							   mag));
+  }
+  else if (name == "Phase Transition") {
+
+    // Cast group to MinimallyAugmented group
+    Teuchos::RCP<LOCA::PhaseTransition::AbstractGroup> mag = 
+      Teuchos::rcp_dynamic_cast<LOCA::PhaseTransition::AbstractGroup>(grp);
+    if (mag.get() == NULL)
+      globalData->locaErrorCheck->throwError(
+	    methodName,
+	    string("Underlying group must be derived from ") + 
+	    string("LOCA::PhaseTransition::AbstractGroup ") +
+	    string("for Phase Transition tracking!"));
+
+    strategy = 
+      Teuchos::rcp(new LOCA::PhaseTransition::ExtendedGroup(
+						   globalData,
+						   bifurcationParams,
+						   mag));
   }
   else if (name == "User-Defined") {
 
