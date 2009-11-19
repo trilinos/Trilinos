@@ -1047,7 +1047,7 @@ def getLocalCommitsSummariesStr(inOptions):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
-    " eg shortlog origin/master..master",
+    " eg log --oneline origin/master..master",
     True,
     workingDir=inOptions.trilinosSrcDir
     )

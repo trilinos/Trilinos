@@ -19,7 +19,7 @@ Quickstart:
 In order to do a solid checkin, perform the following recommended workflow
 (other workflows are described below):
 
-1) Do a 'eg diff --name-status origin/master..master' to review the changes
+1) Do an 'eg diff --name-status origin/master..master' to review the changes
 that you have made:
 
   $ cd $TRILINOS_HOME
@@ -29,22 +29,20 @@ that you have made:
   to do a 'eg add' or add them to the ignore list *before* you run the script.
   The eg script will not allow you to commit if there are unknown files.
 
-  NOTE: TRILINOS_HOME is just a mock variable here. You can of course just
-  replace $TRILINOS_HOME with the absolute or relative path to the base
-  Trilinos source directory.
-
 2) Create a commit log file in the main source directory:
 
   $ cd $TRILINOS_HOME
   $ xemacs -nw checkin_message
 
   NOTE: Fill out this checkin message listing what you have changed.  Please
-  use the Trilinos template for this file.
+  use the Trilinos checkin template for this file and try to list a bug number
+  in the commit message.
 
   NOTE: Alternatively, you can just do the local commit yourself with eg/git
-  in any way you would like.
+  in any way you would like and avoid letting the checkin-test.py script do
+  the commit.  That way, you can do as many local commits as you would like.
 
-3) Set up the checkin base build directory (one time only):
+3) Set up the checkin base build directory (first time only):
 
   $ cd SOME_BASE_DIR
   $ mkdir CHECKIN
@@ -58,7 +56,7 @@ that you have made:
 
     Trilinos/sampmleScripts/checkin-test-*
 
-4) Do the checkin test (and commit) with:
+4) Do the checkin test, (ptional) commit, and push:
 
   $ cd SOME_BASE_DIR/CHECKIN
   $ $TRILINOS_HOME/cmake/python/checkin-test.py \
@@ -66,32 +64,34 @@ that you have made:
       --commit-msg-header-file=checkin_message \
       --do-all [--commit] --push
 
-  NOTE: You can do the local commit yourself with eg/git before running this
-  script.  In that case, you must take off the --commit argument or the script
-  will fail.
+  NOTE: The above will: a) (optionally) commit local changes, b) pull updates
+  from the global repo, c) automatically enable the correct packages, d) build
+  the code, e) run the tests, f) send you emails about what happened, g) do a
+  final pull to from the global repo, h) ammend the last local commit with the
+  test results, i) and finally push local commits to the global repo if
+  everything passes.
+
+  NOTE: You can do the local commit yourself first with eg/git before running
+  this script.  In that case, you must take off the --commit argument or the
+  script will fail if there are not uncommitted changes.
 
   NOTE: If you do not specify the --commit argument, you must not have any
-  uncommitted changes or the 'eg pull --rebase' command will fail.
-
-  NOTE: The above will automatically enable the correct packages and then
-  build the code, run the tests, send you emails about what happened, and then
-  do the (optional) local commit and push to the global repo if everything
-  passed.
-
-  NOTE: Once you start running the checkin-test.py script, you can go off and
-  do something else and just check your email to see if all the builds and
-  tests passed and if the commit happened or not.
+  uncommitted changes or the 'eg pull --rebase' command will fail and
+  therefore the whole script will fail.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
   for the git commits invoked internally to work without you having to type a
   password.
 
-  NOTE: You can do the push in a second step with a follow-up run with --push
-  and removing --do-all (it will remember the results from the build/test
-  cases just run).  You will also have to remove --commit since you must
-  commit before you even update the code.
+  NOTE: You can do the final push in a second invocation of the script with a
+  follow-up run with --push and removing --do-all (it will remember the
+  results from the build/test cases just run).  For more details, see below.
 
-  NOTE: For more details on using this script, see below.
+  NOTE: Once you start running the checkin-test.py script, you can go off and
+  do something else and just check your email to see if all the builds and
+  tests passed and if the commit happened or not.
+
+For more details on using this script, see below.
 
 
 Detailed Documentation:
@@ -207,7 +207,7 @@ Common use cases for using this script are as follows:
    NOTE: If everything passed, you can follow this up with a --push (see
    below).
 
-   (*) Basic full testing with push:
+(*) Basic full testing with push:
 
    --do-all --push [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
@@ -273,7 +273,7 @@ Common use cases for using this script are as follows:
   of testing in order to do a local commit and then pull to a remote machine
   for further testing and commit/push.
 
-(*) Peforming a remote test/push:
+(*) Performing a remote test/push:
 
 On your local development machine <mymachine>, do the local test/commit with:
 
@@ -287,7 +287,7 @@ On your remote test machine's CHECKIN directory, do a full test/commit run:
 NOTE: You can of course do the local commit yourself first and avoid the
 --commit argument.
 
-NOTE: You can of course adjust the packages and/or buld/test cases that get
+NOTE: You can of course adjust the packages and/or build/test cases that get
 enabled on the different machines.
 
 NOTE: Once you invoke the checkin-test.py script on the remote test machine,
@@ -296,18 +296,7 @@ check your email to see what happens.
 
 NOTE: If something goes wrong on the remote test machine, you can either work
 on fixing the problem there or you can fix the problem on your local
-development machine and then do the process over agin.
-
-
-
-
-
-
-
-
-
-
-
+development machine and then do the process over again.
 
 (*) Check commit readiness status:
 
