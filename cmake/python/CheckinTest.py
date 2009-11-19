@@ -1018,8 +1018,6 @@ def getLastCommitMessageStr(inOptions):
     workingDir=inOptions.trilinosSrcDir
     )
 
-  #print "\nrawLogOutput = "+rawLogOutput+"\n"
-
   # Extract the original log message
   origLogStrList = []
   pastHeader = False
@@ -1054,8 +1052,20 @@ def getLocalCommitsSummariesStr(inOptions):
     workingDir=inOptions.trilinosSrcDir
     )
 
+  print \
+    "\nLocal commits:" \
+    "\n--------------" \
+    "\n" \
+    + rawLocalCommitsStr
+
   #print "\nrawLocalCommitsStr:\n=====\n"+rawLocalCommitsStr+"\n=====\n"
-  localCommitsExist = not (rawLocalCommitsStr!= "\n" or rawLocalCommitsStr!= "")
+  if rawLocalCommitsStr == "\n" or rawLocalCommitsStr == "":
+    localCommitsExist = False
+  else:
+    localCommitsExist = True
+
+  if not localCommitsExist:
+    print "\nNo local commits exit!\n"
 
   localCommitsStr = \
     "\n\n\n\n" \
