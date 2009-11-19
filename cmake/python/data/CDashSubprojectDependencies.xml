@@ -164,7 +164,7 @@
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="LO"/>
