@@ -276,10 +276,12 @@ APPEND_SET(SOURCES
 APPEND_SET(HEADERS
   LOCA_Solver_Wrapper.H
   LOCA_StatusTest_Wrapper.H
+  LOCA_StatusTest_Abstract.H
   )
 APPEND_SET(SOURCES
   LOCA_Solver_Wrapper.C
   LOCA_StatusTest_Wrapper.C
+  LOCA_StatusTest_Abstract.C
   )
 
 # Factory
