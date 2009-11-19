@@ -2,17 +2,8 @@
 #
 # ToDo:
 #
-#
-#  (*) Document that you need to check 'eg status' to make sure that there is
-#  not mix of staged and unstaged files prior to running the commit.  Note
-#  that backing out a commit can result in a mix of staged/unstaged files
-#  after you make changes.
-#
-#  (*) If --commit is specified but the test failed, back out the commit if
-#  --no-force-commit is given.
-#
-#  (*) When ammending current commit, strip off any existing test summary
-#  section before creating the new ammended commit.
+#  (*) Change logic to not enable everything if TrilinosPackages.cmake or
+#  TrilinosTPLs.cmake are changed.
 #
 #  (*) Put in checks for the names of Trilinos packages from --enable-packages
 #  and --disable-packages arguments.  Right now a mispelled package name would
@@ -141,16 +132,14 @@ def getEmailAddressesSpaceString(emailAddressesCommasStr):
 
 def performAnyBuildTestActions(inOptions):
   if inOptions.doConfigure or inOptions.doBuild \
-    or inOptions.doTest or inOptions.doAll \
+    or inOptions.doTest or inOptions.doAll or inOptions.localDoAll \
     :
     return True
   return False
 
 
 def performAnyActions(inOptions):
-  if performAnyBuildTestActions(inOptions) or inOptions.doCommit or inOptions.doPull \
-    or inOptions.doAll \
-    :
+  if performAnyBuildTestActions(inOptions) or inOptions.doCommit or inOptions.doPull:
     return True
   return False
 
@@ -167,7 +156,7 @@ def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
   cmnd = "eg pull --rebase"
   if pullFromRepo:
     print "\nPulling in updates from '"+pullFromRepo+"' ...\n"
-    cmnd += " " + pullFromRep + " master"
+    cmnd += " " + pullFromRepo + " master"
   else:
     print "\nPulling in updates from 'origin' ...\n"
   return echoRunSysCmnd( cmnd,
@@ -1101,6 +1090,12 @@ def checkinTest(inOptions):
     inOptions.doBuild = True
     inOptions.doTest = True
 
+  if inOptions.localDoAll:
+    inOptions.allowNoPull = True
+    inOptions.doConfigure = True
+    inOptions.doBuild = True
+    inOptions.doTest = True
+
   success = True
 
   timings = Timings()
@@ -1225,25 +1220,13 @@ def checkinTest(inOptions):
 
     if doingAtLeastOnePull and pullPassed:
 
-      #
-      print "\n3.b) Pull updates from the extra repository '"+inOptions.extraPullFrom+"' ..."
-      #
-
-      timings.update = 0
-      
-      if inOptions.extraPullFrom and pullPassed:
-        echoChDir(baseTestDir)
-        (updateRtn, updateTimings) = \
-          executePull(inOptions, baseTestDir, getInitialExtraPullOutputFileName())
-        timings.update += updateTimings
-        if updateRtn != 0:
-          print "\nPull failed!\n"
-          pullPassed = False
-      else:
-        print "\nSkipping extra pull from '"+inOptions.extraPullFrom+"'!\n"
+      # NOTE: We want to pull first from the global repo and then from the
+      # extra repo so the extra repo's revisions will get rebased on top of
+      # the others.  This is what you would want and expect for the remote
+      # test/push process where multiple pulls may be needed before it works.
 
       #
-      print "\n3.c) Pull updates from the global 'origin' repo ..."
+      print "\n3.b) Pull updates from the global 'origin' repo ..."
       #
     
       if inOptions.doPull and pullPassed:
@@ -1258,7 +1241,25 @@ def checkinTest(inOptions):
         print "\nSkipping initial pull from 'origin'!\n"
 
       #
-      print "\n3.c) Determine overall update pass/success ...\n"
+      print "\n3.c) Pull updates from the extra repository '"+inOptions.extraPullFrom+"' ..."
+      #
+
+      timings.update = 0
+      
+      if inOptions.extraPullFrom and pullPassed:
+        echoChDir(baseTestDir)
+        (updateRtn, updateTimings) = \
+          executePull(inOptions, baseTestDir, getInitialExtraPullOutputFileName(),
+            inOptions.extraPullFrom )
+        timings.update += updateTimings
+        if updateRtn != 0:
+          print "\nPull failed!\n"
+          pullPassed = False
+      else:
+        print "\nSkipping extra pull from '"+inOptions.extraPullFrom+"'!\n"
+
+      #
+      print "\n3.d) Determine overall update pass/success ...\n"
       #
 
       echoChDir(baseTestDir)

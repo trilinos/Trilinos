@@ -262,16 +262,52 @@ Common use cases for using this script are as follows:
 
 (*) Test changes locally without pulling updates:
 
-  --allow-no-pull --configure --build --test
+  --local-do-all
 
-  NOTE: This will just configure, build, test, and send and email
-  notification without changing the status of the local git repo at all and
+  NOTE: This will just configure, build, test, and send and email notification
+  without updating or changing the status of the local git repo in any way and
   without any communication with the global repo.
 
   NOTE: This is not a sufficient level of testing in order to commit and push
   the changes to the global repo.  However, this would be a sufficient level
   of testing in order to do a local commit and then pull to a remote machine
   for further testing and commit/push.
+
+(*) Peforming a remote test/push:
+
+On your local development machine <mymachine>, do the local test/commit with:
+
+  --local-do-all --no-enable-fwd-packages [--commit --commit-msg-header-file=<???>]
+
+On your remote test machine's CHECKIN directory, do a full test/commit run:
+
+  --extra-pull-from=<mymachine>:/some/dir/to/your/trilinos/src \
+    --do-all --push
+
+NOTE: You can of course do the local commit yourself first and avoid the
+--commit argument.
+
+NOTE: You can of course adjust the packages and/or buld/test cases that get
+enabled on the different machines.
+
+NOTE: Once you invoke the checkin-test.py script on the remote test machine,
+you can start changing files again on your local development machine and just
+check your email to see what happens.
+
+NOTE: If something goes wrong on the remote test machine, you can either work
+on fixing the problem there or you can fix the problem on your local
+development machine and then do the process over agin.
+
+
+
+
+
+
+
+
+
+
+
 
 (*) Check commit readiness status:
 
@@ -463,6 +499,11 @@ clp.add_option(
   +" --build --test)", default=False )
 
 clp.add_option(
+  "--local-do-all", dest="localDoAll", action="store_true",
+  help="Do configure, build, and test with no pull (same as --allow-no-pull" \
+  +" --configure --build --test)", default=False )
+
+clp.add_option(
   "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
   help="Check the commit status at the end and send email if not actually" \
   +" committing. [default]" )
@@ -568,6 +609,8 @@ if options.doTest:
   print "  --test \\"
 if options.doAll:
   print "  --do-all \\"
+if options.localDoAll:
+  print "  --local-do-all \\"
 if options.doCommitReadinessCheck:
   print "  --do-commit-readiness-check \\"
 else:
