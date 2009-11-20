@@ -1,4 +1,6 @@
 # Standard ignores
 *~
 *.pyc
+\#*#
+.#*
 checkin_message
