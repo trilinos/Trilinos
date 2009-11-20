@@ -317,7 +317,7 @@ namespace Kokkos {
           }
         }
         // last row
-        dval = offsets[0];
+        dval = vals[0];
         xj[0] /= dval;
       }
     }

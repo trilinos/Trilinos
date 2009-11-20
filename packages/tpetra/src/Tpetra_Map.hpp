@@ -746,7 +746,7 @@ namespace Tpetra {
   void Map<LocalOrdinal,GlobalOrdinal,Node>::setupDirectory() {
     if (getGlobalNumElements() != Teuchos::OrdinalTraits<global_size_t>::zero()) {
       if (directory_ == Teuchos::null) {
-        directory_ = Teuchos::rcp( new Directory<LocalOrdinal,GlobalOrdinal>(Teuchos::rcp(this,false)) );
+        directory_ = Teuchos::rcp( new Directory<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::rcp(this,false)) );
       }
     }
   }

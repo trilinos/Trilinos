@@ -58,7 +58,7 @@ namespace Tpetra {
       Teuchos::ArrayRCP<Scalar> data = node->template allocBuffer<Scalar>(myLen*NumVectors);
       MVT::initializeValues(lclMV_,myLen,NumVectors,data,myLen);
       if (zeroOut) {
-        MVT::Init(lclMV_,0.0);
+        MVT::Init(lclMV_, Teuchos::ScalarTraits<Scalar>::zero());
       }
     }
     else {

@@ -267,11 +267,11 @@ namespace Tpetra {
 
     // DirectoryMap will have a range of elements from the minimum to the maximum
     // GID of the user Map, and an indexBase of minAllGID from the user Map
-    GlobalOrdinal numGlobalEntries = maxAllGID - minAllGID + GONE;
+    global_size_t numGlobalEntries = maxAllGID - minAllGID + GONE;
 
     // Obviously, we can't afford to store the whole directory on each node
     // Create a uniform linear map to contain the directory to split up the storage among all nodes
-    directoryMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalEntries, minAllGID, comm_));
+    directoryMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalEntries, minAllGID, comm_, GloballyDistributed, map_->getNode() ));
 
     const size_t dir_numMyEntries = directoryMap_->getNodeNumElements();
 

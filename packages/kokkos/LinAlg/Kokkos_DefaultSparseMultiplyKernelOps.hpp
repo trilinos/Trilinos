@@ -54,7 +54,7 @@ namespace Kokkos {
     inline KERNEL_PREFIX void execute(size_t i) {
       const size_t row = i % numRows;
       const size_t rhs = (i - row) / numRows;
-      Scalar tmp = 0;
+      Scalar tmp = Teuchos::ScalarTraits<Scalar>::zero();
       const DomainScalar *xj = x + rhs * xstride;
       RangeScalar        *yj = y + rhs * ystride;
       for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
@@ -114,7 +114,7 @@ namespace Kokkos {
     inline KERNEL_PREFIX void execute(size_t i) {
       const size_t row = i % numRows;
       const size_t rhs = (i - row) / numRows;
-      Scalar tmp = 0;
+      Scalar tmp = Teuchos::ScalarTraits<Scalar>::zero();
       const DomainScalar *xj = x + rhs * xstride;
       RangeScalar        *yj = y + rhs * ystride;
       const Scalar  *curval = vals_beg[row];
