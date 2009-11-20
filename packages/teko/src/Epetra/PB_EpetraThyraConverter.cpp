@@ -40,7 +40,7 @@ void blockEpetraToThyra(int numVectors,const double * epetraData,int leadingDim,
 
       int localSubDim = spmdVS->localSubDim();
 
-      int thyraLeadingDim=0;
+      Thyra::Ordinal thyraLeadingDim=0;
       double * thyraData=0;
       spmdX->getLocalData(&thyraData,&thyraLeadingDim);
 
@@ -112,7 +112,7 @@ void blockThyraToEpetra(int numVectors,double * epetraData,int leadingDim,const 
 
       int localSubDim = spmdVS->localSubDim();
 
-      int thyraLeadingDim=0;
+      Thyra::Ordinal thyraLeadingDim=0;
       const double * thyraData=0;
       spmdX->getLocalData(&thyraData,&thyraLeadingDim);
 

@@ -47,7 +47,7 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
 
 const RCP<const Thyra::VectorSpaceBase<double> > buildCompositeSpace(const Epetra_Comm & Comm)
 {
-   const RCP<const Teuchos::Comm<int> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
+   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
 
    // get process information
    int numProc = Comm.NumProc();
@@ -121,7 +121,7 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
 */
       const Teuchos::RCP<const Thyra::SpmdMultiVectorBase<double> > spmd_tX
             = Teuchos::rcp_dynamic_cast<const Thyra::SpmdMultiVectorBase<double> >(tX);
-      int stride = 0;
+      Thyra::Ordinal stride = 0;
       const double * localBuffer = 0;
       spmd_tX->getLocalData(&localBuffer,&stride);
 
@@ -226,7 +226,7 @@ bool tEpetraThyraConverter::test_blockThyraToEpetra(int verbosity,std::ostream &
    bool allPassed = true;
 
    const Epetra_Comm & Comm = *GetComm();
-   const RCP<const Teuchos::Comm<int> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
+   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
 
    // get process information
    int numProc = Comm.NumProc();
@@ -274,7 +274,7 @@ bool tEpetraThyraConverter::test_single_blockThyraToEpetra(int verbosity,std::os
    bool allPassed = true;
 
    const Epetra_Comm & Comm = *GetComm();
-   const RCP<const Teuchos::Comm<int> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
+   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
 
    // get process information
    int numProc = Comm.NumProc();
@@ -316,7 +316,7 @@ bool tEpetraThyraConverter::test_blockEpetraToThyra(int verbosity,std::ostream &
    bool allPassed = true;
 
    const Epetra_Comm & Comm = *GetComm();
-   const RCP<const Teuchos::Comm<int> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
+   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
  
    // get process information
    int numProc = Comm.NumProc();
@@ -356,7 +356,7 @@ bool tEpetraThyraConverter::test_single_blockEpetraToThyra(int verbosity, std::o
    bool allPassed = true;
 
    const Epetra_Comm & Comm = *GetComm();
-   const RCP<const Teuchos::Comm<int> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
+   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm = Thyra::create_Comm(rcpFromRef(Comm));
  
    // get process information
    int numProc = Comm.NumProc();
