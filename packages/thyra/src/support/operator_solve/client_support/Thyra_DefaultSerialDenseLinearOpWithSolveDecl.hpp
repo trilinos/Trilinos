@@ -150,7 +150,7 @@ private:
 
   RCP<const MultiVectorBase<Scalar> > M_;
   RTOpPack::ConstSubMultiVectorView<Scalar> LU_;
-  Array<Teuchos_Index> ipiv_;
+  Array<int> ipiv_;
 
   // /////////////////////////
   // Private member functions
@@ -158,7 +158,7 @@ private:
   static void factorize(
     const MultiVectorBase<Scalar> &M,
     const Ptr<RTOpPack::ConstSubMultiVectorView<Scalar> > &LU,
-    const Ptr<Array<Teuchos_Index> > &ipiv
+    const Ptr<Array<int> > &ipiv
     );
 
   static void backsolve(

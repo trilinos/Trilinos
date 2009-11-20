@@ -76,6 +76,13 @@ public:
   //! @name Public types 
   //@{
 
+  /** \brief. */
+  typedef Teuchos_Ordinal Ordinal;
+
+  /** \brief . */
+  typedef Ordinal size_type;
+  /** \brief . */
+  typedef Ordinal difference_type;
   /** \brief . */
   typedef std::random_access_iterator_tag iterator_category;
   /** \brief . */
@@ -85,25 +92,22 @@ public:
   /** \brief . */
   typedef T& reference; 
   /** \brief . */
+  typedef const T& const_reference; 
+  /** \brief . */
   typedef T* pointer;
   /** \brief . */
-  typedef  ptrdiff_t difference_type;
-
+  typedef T* const_pointer;
   /** \brief . */
   typedef T  element_type;
-  /** \brief. */
-  typedef Teuchos_Index Ordinal;
+
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   /** \brief . */
   typedef ArrayRCP<T> iterator;
+  /** \brief . */
+  typedef ArrayRCP<const T> const_iterator;
 #else
   typedef T* iterator;
-#endif
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-/** \brief . */
-  typedef ArrayRCP<T> const_iterator;
-#else
-  typedef T* const_iterator;
+  typedef const T* const_iterator;
 #endif
 
   //@}
@@ -137,7 +141,7 @@ public:
    * WARNING!  You should avoid manipulating raw pointers and use other
    * methods to construct an ArrayRCP object instead!
    */
-  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership );
+  ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, bool has_ownership );
 
   /** \brief Construct from a raw pointer, a valid range, and a deallocator.
    *
@@ -152,7 +156,7 @@ public:
    * methods to construct an ArrayRCP object instead!
    */
   template<class Dealloc_T>
-  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc,
+  ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, Dealloc_T dealloc,
     bool has_ownership );
 
   /** \brief Construct allocating an array of size n and filling.
@@ -163,7 +167,7 @@ public:
    * <li><tt>this->has_ownership() == true</tt>
    * </ul>
    */
-  explicit ArrayRCP( Ordinal lowerOffset, const T& val = T() );
+  explicit ArrayRCP( size_type lowerOffset, const T& val = T() );
 
   /** \brief Initialize from another <tt>ArrayRCP<T></tt> object.
    *
@@ -272,7 +276,7 @@ public:
    * <li><tt>this->lowerOffset() <= offset && offset <= this->upperOffset()</tt>
    * </ul>
    */
-  T& operator[](Ordinal offset) const;
+  T& operator[](size_type offset) const;
 
   //@}
 
@@ -337,7 +341,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>offset</tt>
    * </ul>
    */
-  ArrayRCP<T>& operator+=(Ordinal offset);
+  ArrayRCP<T>& operator+=(size_type offset);
 
   /** \brief Pointer integer increment (i.e. ptr-=offset).
    *
@@ -349,7 +353,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>offset</tt>
    * </ul>
    */
-  ArrayRCP<T>& operator-=(Ordinal offset);
+  ArrayRCP<T>& operator-=(size_type offset);
 
   /** \brief Pointer integer increment (i.e. ptr+offset).
    *
@@ -365,7 +369,7 @@ public:
    * objects is not allowed that it does not help at all to make this function
    * into a non-member function.
    */
-  ArrayRCP<T> operator+(Ordinal offset) const;
+  ArrayRCP<T> operator+(size_type offset) const;
 
   /** \brief Pointer integer deincrement (i.e. ptr-offset).
    *
@@ -381,7 +385,7 @@ public:
    * objects is not allowed that it does not help at all to make this function
    * into a non-member function.
    */
-  ArrayRCP<T> operator-(Ordinal offset) const;
+  ArrayRCP<T> operator-(size_type offset) const;
 
   //@}
 
@@ -400,7 +404,7 @@ public:
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */
-  const_iterator begin() const;
+  iterator begin() const;
 
   /** \brief Return an iterator to past the end of the array of data.
    *
@@ -414,7 +418,7 @@ public:
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */
-  const_iterator end() const;
+  iterator end() const;
 
   //@}
 
@@ -442,7 +446,7 @@ public:
    * <li><tt>return->upperOffset() == size-1</tt>
    * </ul>
    */
-  ArrayRCP<T> persistingView( Ordinal lowerOffset, Ordinal size ) const;
+  ArrayRCP<T> persistingView( size_type lowerOffset, size_type size ) const;
 
   //@}
 
@@ -450,15 +454,15 @@ public:
   //@{
 
   /** \brief Return the lower offset to valid data. */
-  Ordinal lowerOffset() const;
+  size_type lowerOffset() const;
 
   /** \brief Return the upper offset to valid data. */
-  Ordinal upperOffset() const;
+  size_type upperOffset() const;
 
   /** \brief The total number of items in the managed array
    * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
    */
-  Ordinal size() const;
+  size_type size() const;
 
   //@}
 
@@ -479,12 +483,12 @@ public:
    * <li><tt>return->upperOffset() == size-1</tt>
    * </ul>
    */
-  ArrayView<T> view( Ordinal lowerOffset, Ordinal size ) const;
+  ArrayView<T> view( size_type lowerOffset, size_type size ) const;
 
   /** \brief Return a view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-  ArrayView<T> operator()( Ordinal lowerOffset, Ordinal size ) const;
+  ArrayView<T> operator()( size_type lowerOffset, size_type size ) const;
 
   /** \brief Return an ArrayView of *this.
    *
@@ -514,7 +518,7 @@ public:
    *
    * \postconditions <tt>size() == n</tt>
    */
-  void assign(Ordinal n, const T &val);
+  void assign(size_type n, const T &val);
 
   /** \brief Resize and assign to iterator sequence [first, last)
    *
@@ -536,7 +540,7 @@ public:
   /** \brief Resize and append new elements if enlarging.
    *
    */
-  void resize(const Ordinal n, const T &val = T());
+  void resize(const size_type n, const T &val = T());
 
   /** \brief Resize to zero..
    *
@@ -704,7 +708,7 @@ public:
    * <tt>(lowerOffset < this->lowerOffset() || this->upperOffset() <
    * upperOffset</tt>, otherwise returns reference to <tt>*this</tt>
    */
-  const ArrayRCP<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
+  const ArrayRCP<T>& assert_in_range( size_type lowerOffset, size_type size ) const;
 
   /** \brief If the object pointer is non-null, assert that it is still valid.
    *
@@ -734,8 +738,8 @@ private:
 
   T *ptr_; // NULL if this pointer is null
   RCPNodeHandle node_; // NULL if this pointer is null
-  Ordinal lowerOffset_; // 0 if this pointer is null
-  Ordinal upperOffset_; // -1 if this pointer is null
+  size_type lowerOffset_; // 0 if this pointer is null
+  size_type upperOffset_; // -1 if this pointer is null
 
   void debug_assert_not_null() const
     {
@@ -744,7 +748,7 @@ private:
 #endif
     }
 
-  void debug_assert_in_range( Ordinal lowerOffset_in, Ordinal size_in ) const
+  void debug_assert_in_range( size_type lowerOffset_in, size_type size_in ) const
     {
       (void)lowerOffset_in; (void)size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -766,7 +770,7 @@ public:
   // this portable (i.e. using friendship etc.) in the past
   // This is a very bad breach of encapsulation that is needed since MS VC++
   // 5.0 will not allow me to declare template functions as friends.
-  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
+  ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset,
     const RCPNodeHandle& node );
   T* access_private_ptr() const;
   RCPNodeHandle& nonconst_access_private_node();
@@ -800,8 +804,8 @@ public:
 template<class T>
 ArrayRCP<T> arcp(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   bool owns_mem = true
   );
 
@@ -814,8 +818,8 @@ ArrayRCP<T> arcp(
 template<class T, class Dealloc_T>
 ArrayRCP<T> arcp(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   Dealloc_T dealloc, bool owns_mem
   );
 
@@ -831,7 +835,7 @@ ArrayRCP<T> arcp(
  * \relates ArrayRCP
  */
 template<class T>
-ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
+ArrayRCP<T> arcp( typename ArrayRCP<T>::size_type size );
 
  
 /** \brief Allocate a new array by cloning data from an input array view.
@@ -856,8 +860,8 @@ template<class T, class Embedded>
 ArrayRCP<T>
 arcpWithEmbeddedObjPreDestroy(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   const Embedded &embedded,
   bool owns_mem = true
   );
@@ -877,8 +881,8 @@ template<class T, class Embedded>
 ArrayRCP<T>
 arcpWithEmbeddedObjPostDestroy(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   const Embedded &embedded,
   bool owns_mem = true
   );
@@ -899,8 +903,8 @@ template<class T, class Embedded>
 ArrayRCP<T>
 arcpWithEmbeddedObj(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   const Embedded &embedded,
   bool owns_mem = true
   );

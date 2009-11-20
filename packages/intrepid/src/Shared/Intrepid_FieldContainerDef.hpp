@@ -65,14 +65,16 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const FieldContainer<Scalar,
 template<class Scalar, int ArrayTypeId>
 FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), dim2_(0), dim3_(0), dim4_(0) 
 {
+  using Teuchos::as;
+  using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative dimension.");
 
 #endif
-  dimensions_.resize(1); 
-  dimensions_[0] = dim0_;  
-  data_.assign(dim0_, (Scalar)0);
+  dimensions_.resize(as<Ordinal>(1)); 
+  dimensions_[0] = dim0_;
+  data_.assign(as<Ordinal>(dim0_), as<Scalar>(0));
 }
 
 
@@ -81,6 +83,8 @@ template<class Scalar, int ArrayTypeId>
 FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
                                        const int dim1) : dim0_(dim0), dim1_(dim1), dim2_(0), dim3_(0), dim4_(0)
 {
+  using Teuchos::as;
+  using Teuchos::Ordinal;
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (0 > dim0), std::invalid_argument, 
                       ">>> ERROR (FieldContainer): FieldContainer cannot have a negative 1st dimension.");
@@ -91,7 +95,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_.resize(2); 
   dimensions_[0] = dim0_;   
   dimensions_[1] = dim1_;  
-  data_.assign(dim0_*dim1_, (Scalar)0);
+  data_.assign(as<Ordinal>(dim0_*dim1_), as<Scalar>(0));
 }
 
 

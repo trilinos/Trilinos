@@ -55,6 +55,7 @@ bool testRTOp(
   using Teuchos::VerboseObjectBase;
   using Teuchos::OSTab;
   using Teuchos::arrayArg;
+  using Teuchos::broadcast;
 
   typedef Teuchos_Ordinal Ordinal;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -112,9 +113,9 @@ bool testRTOp(
   RTOpPack::ReductTargetSerializer<Scalar>
     sumTargetSerializer(Teuchos::rcp(&sumOp,false));
 
-  broadcast(
-    comm,sumTargetSerializer,0,1
-    ,arrayArg<RTOpPack::ReductTarget*>(&*sumTarget2)()
+  broadcast<Ordinal>(
+    comm, sumTargetSerializer, 0, 1,
+    arrayArg<RTOpPack::ReductTarget*>(&*sumTarget2)()
     );
 
   *out << "\nbroadcast value = " << sumOp(*sumTarget2) << "\n";
@@ -159,7 +160,7 @@ int main(int argc, char* argv[])
     RCP<const Teuchos::Comm<Ordinal> >
       comm = Teuchos::DefaultComm<Ordinal>::getComm();
     
-    result = testRTOp<double>(*comm,out);
+    result = testRTOp<double>(*comm, out);
     if(!result) success = false;
     
     if(success)

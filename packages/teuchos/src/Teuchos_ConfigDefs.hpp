@@ -138,6 +138,10 @@ const double Teuchos_Underflow = 2.23E-308;
 #define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
 typedef std::ostringstream TeuchosOStringStream;
 
+#else /* __cplusplus */
+
+#include <stddef.h>
+
 #endif /* __cplusplus */
 
 /* Delete any previous definition of TEUCHOS_NO_ERROR_REPORTS */
@@ -152,8 +156,17 @@ typedef std::ostringstream TeuchosOStringStream;
 #undef TEUCHOS_CHK_REF
 #endif
 
-/* The integral type that is used for the largest ordinal values on this machine */
-typedef int Teuchos_Ordinal; /* ToDo: Determine this in configure for the machine */
+/* The integral type that is used for the largest ordinal values on this
+ * machine.
+ *
+ * On a 32 bit machine, ptrdiff_t will be an unsighed 32 bit integer and on a
+ * 64 bit machine it will be an unsigned 64 bit integer.  Just what I want!
+*/
+typedef ptrdiff_t Teuchos_Ordinal;
+
+#ifdef __cplusplus
+namespace Teuchos { typedef Teuchos_Ordinal Ordinal; }
+#endif /* __cplusplus */
 
 /* Deprecated (use Teuchos_Ordinal) */
 typedef Teuchos_Ordinal Teuchos_Index;

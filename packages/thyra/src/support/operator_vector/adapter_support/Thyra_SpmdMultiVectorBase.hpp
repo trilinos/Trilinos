@@ -223,8 +223,8 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedMultiVectorViewImpl(
   // setup does not handle this well. This all needs to be reworked to clean
   // this up.
   const Scalar *localValues = NULL;
-  int leadingDim = 0;
-  this->getLocalData(&localValues,&leadingDim);
+  Ordinal leadingDim = 0;
+  this->getLocalData(&localValues, &leadingDim);
   localValuesViewPtr_ = localValues;
   sub_mv->initialize(
     rowRng.lbound() // globalOffset
@@ -296,7 +296,7 @@ void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
   */
   // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   Scalar *localValues = NULL;
-  int leadingDim = 0;
+  Ordinal leadingDim = 0;
   this->getLocalData(&localValues, &leadingDim);
   nonconstLocalValuesViewPtr_ = localValues;
   sub_mv->initialize(

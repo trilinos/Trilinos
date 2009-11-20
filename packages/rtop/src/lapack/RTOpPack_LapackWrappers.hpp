@@ -62,8 +62,8 @@ extern const Teuchos::Tuple<char,NUM_ETRANS_ARGS> transpMap;
 template<class Scalar>
 void getrf(
   const SubMultiVectorView<Scalar> &A,
-  const ArrayView<Teuchos_Index> &ipiv,
-  const Ptr<Teuchos_Index> &rank
+  const ArrayView<int> &ipiv,
+  const Ptr<int> &rank
   );
 
 
@@ -71,7 +71,7 @@ void getrf(
 template<class Scalar>
 void getrs(
   const ConstSubMultiVectorView<Scalar> &A,
-  const ArrayView<const Teuchos_Index> &ipiv,
+  const ArrayView<const int> &ipiv,
   const ETransp transp,
   const Ptr<const SubMultiVectorView<Scalar> > &BX
   );
@@ -88,21 +88,21 @@ void getrs(
 template<class Scalar>
 void RTOpPack::getrf(
   const SubMultiVectorView<Scalar> &A,
-  const ArrayView<Teuchos_Index> &ipiv,
-  const Ptr<Teuchos_Index> &rank
+  const ArrayView<int> &ipiv,
+  const Ptr<int> &rank
   )
 {
   using Teuchos::as;
-  const Teuchos_Index maxRank = TEUCHOS_MIN( A.subDim(), A.numSubCols() );
+  const int maxRank = TEUCHOS_MIN( A.subDim(), A.numSubCols() );
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( A.subDim() == 0  );
   TEST_FOR_EXCEPT( A.numSubCols() == 0  );
   TEST_FOR_EXCEPT( is_null(A.values()) );
-  TEUCHOS_ASSERT_EQUALITY( as<Teuchos_Index>(ipiv.size()), maxRank );
+  TEUCHOS_ASSERT_EQUALITY( as<int>(ipiv.size()), maxRank );
 #endif
 
-  Teuchos::LAPACK<Teuchos_Index, Scalar> lapack;
-  Teuchos_Index info = -1;
+  Teuchos::LAPACK<int, Scalar> lapack;
+  int info = -1;
   lapack.GETRF( A.subDim(), A.numSubCols(), A.values().get(), A.leadingDim(),
     &ipiv[0], &info );
   *rank = maxRank;
@@ -118,7 +118,7 @@ void RTOpPack::getrf(
 template<class Scalar>
 void RTOpPack::getrs(
   const ConstSubMultiVectorView<Scalar> &A,
-  const ArrayView<const Teuchos_Index> &ipiv,
+  const ArrayView<const int> &ipiv,
   const ETransp transp,
   const Ptr<const SubMultiVectorView<Scalar> > &BX
   )
@@ -133,8 +133,8 @@ void RTOpPack::getrs(
   TEST_FOR_EXCEPT( is_null(A.values()) );
   TEUCHOS_ASSERT_EQUALITY( A.subDim(), ipiv.size() );
 #endif
-  Teuchos::LAPACK<Teuchos_Index, Scalar> lapack;
-  Teuchos_Index info = -1;
+  Teuchos::LAPACK<int, Scalar> lapack;
+  int info = -1;
   lapack.GETRS(
     transpMap[transp],
     A.subDim(), BX->numSubCols(), A.values().get(), A.leadingDim(),

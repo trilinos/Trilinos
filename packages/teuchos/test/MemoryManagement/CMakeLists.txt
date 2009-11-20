@@ -1,6 +1,7 @@
 
 INCLUDE(PackageAddExecutableAndTest)
 
+
 #
 # The following tests are expressed in this order in order to catch compunding
 # errors.  That is, if the ealier test executables fail, the other test
@@ -22,6 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Boost)
       )
   ENDIF()
 ENDIF()
+
 
 # These RCPNodeHandle tests are pulled out to run first in order to catch
 # problems before running the other memory management tests.
@@ -56,6 +58,36 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS --teuchos-suppress-startup-banner
   STANDARD_PASS_OUTPUT
   )
+
+
+IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
+
+  # These tests just provide additional verification that the unit tests show
+  # that the RCPNode tracing code that catches tricky errors that the old
+  # system could not catch.
+
+  PACKAGE_ADD_TEST(
+      MemoryManagement_UnitTests
+      POSTFIX_AND_ARGS_0 duplicate_rcp_owning
+        --test=duplicate_rcp_owning_polymorphic
+        --details=ALL
+      NUM_MPI_PROCS 1
+      PASS_REGULAR_EXPRESSION
+        "throws Teuchos::DuplicateOwningRCPError: passed"
+      )
+
+  PACKAGE_ADD_TEST(
+      MemoryManagement_UnitTests
+      POSTFIX_AND_ARGS_0 duplicate_rcp_nonowning
+        --test=rcp_duplicate_rcp_nonowning_polymorphic_different_addr
+        --details=ALL
+      NUM_MPI_PROCS 1
+      PASS_REGULAR_EXPRESSION
+        "throws Teuchos::DanglingReferenceError: passed"
+      )
+
+ENDIF()
+
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SimpleObjTbl_UnitTests

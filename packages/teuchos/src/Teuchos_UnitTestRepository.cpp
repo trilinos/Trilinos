@@ -318,7 +318,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   if (failedTests.size()) {
     out << "\nThe following tests FAILED:\n";
-    for (size_t i = 0; i < failedTests.size(); ++i)
+    for (Teuchos_Ordinal i = 0; i < failedTests.size(); ++i)
       out << "    " << failedTests[i] << "\n";
   }
 

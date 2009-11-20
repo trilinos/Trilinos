@@ -351,7 +351,7 @@ namespace Tpetra {
     if (exportGIDs != Teuchos::null) {
       ImportData_->exportLIDs_ = Teuchos::arcp<LocalOrdinal>(exportGIDs.size());
     }
-    typename Teuchos::ArrayRCP<LocalOrdinal>::const_iterator dst = ImportData_->exportLIDs_.begin();
+    typename Teuchos::ArrayRCP<LocalOrdinal>::iterator dst = ImportData_->exportLIDs_.begin();
     typename Teuchos::ArrayRCP<GlobalOrdinal>::const_iterator src = exportGIDs.begin();
     while (src != exportGIDs.end())
     {

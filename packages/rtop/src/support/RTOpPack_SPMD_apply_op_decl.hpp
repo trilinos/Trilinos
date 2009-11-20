@@ -62,12 +62,12 @@ int serializedSize(
  */
 template<class Scalar>
 void serialize(
-  const RTOpT<Scalar>    &op
-  ,int                   num_values
-  ,int                   num_indexes
-  ,int                   num_chars
-  ,const ReductTarget    &reduct_obj
-  ,char                  reduct_obj_ext[]
+  const RTOpT<Scalar> &op,
+  Ordinal num_values,
+  Ordinal num_indexes,
+  Ordinal num_chars,
+  const ReductTarget &reduct_obj,
+  char reduct_obj_ext[]
   );
 
 /** \brief Deserialize a <tt>ReductTarget</tt> object.
@@ -76,12 +76,12 @@ void serialize(
  */
 template<class Scalar>
 void deserialize(
-  const RTOpT<Scalar>    &op
-  ,int                   num_values
-  ,int                   num_indexes
-  ,int                   num_chars
-  ,const char            reduct_obj_ext[]
-  ,ReductTarget          *reduct_obj
+  const RTOpT<Scalar> &op,
+  int num_values,
+  int num_indexes,
+  int num_chars,
+  const char reduct_obj_ext[],
+  ReductTarget *reduct_obj
   );
 
 /** \brief Serializer subclass for <tt>ReductTarget</tt> objects.

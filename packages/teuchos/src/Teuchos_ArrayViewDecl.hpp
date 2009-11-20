@@ -68,8 +68,12 @@ public:
   //@{
 
   /** \brief. */
-  typedef Teuchos_Index Ordinal;
+  typedef Teuchos_Ordinal Ordinal;
 
+  /** \brief . */
+  typedef Ordinal size_type;
+  /** \brief . */
+  typedef Ordinal difference_type;
   /** \brief . */
   typedef T value_type;
   /** \brief . */
@@ -84,15 +88,14 @@ public:
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   /** \brief . */
   typedef ArrayRCP<T> iterator;
+  /** \brief . */
+  typedef ArrayRCP<const T> const_iterator;
 #else
   /** \brief . */
   typedef pointer iterator;
+  /** \brief . */
+  typedef const_pointer const_iterator;
 #endif
-
-  /** \brief . */
-  typedef size_t size_type;
-  /** \brief . */
-  typedef ptrdiff_t difference_type;
 
   //@}
 
@@ -121,7 +124,7 @@ public:
 	 * <li>???
 	 * </ul>
 	 */
-	ArrayView( T* p, Ordinal size );
+	ArrayView( T* p, size_type size );
 
 	/** \brief Initialize from another <tt>ArrayView<T></tt> object.
 	 *
@@ -165,7 +168,7 @@ public:
   bool is_null() const;
 
   /** \brief The total number of items in the managed array. */
-  Ordinal size() const;
+  size_type size() const;
 
   /** \brief Convert an ArrayView<T> to an <tt>std::string</tt> */
   std::string toString() const;
@@ -185,7 +188,7 @@ public:
    * <li><tt>0 <= offset && offset < this->size()</tt>
 	 * </ul>
    */
-	T& operator[](Ordinal i) const;
+	T& operator[](size_type i) const;
 
   /** \brief Get the first element. */
   T& front() const;
@@ -209,11 +212,11 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<T> view( Ordinal offset, Ordinal size ) const;
+	ArrayView<T> view( size_type offset, size_type size ) const;
 
 	/** \brief Return a view of a contiguous range of elements (calls view(offset,size)).
    */
-	ArrayView<T> operator()( Ordinal offset, Ordinal size ) const;
+	ArrayView<T> operator()( size_type offset, size_type size ) const;
 
 	/** \brief Return a *this (just for compatibility with Array and ArrayPtr)
    */
@@ -311,7 +314,7 @@ public:
    * or<tt>this->get()!=NULL</tt>, throws <tt>RangeError</tt> if <tt>(offset < 0 ||
    * this->size() < offset+size</tt>, otherwise returns reference to <tt>*this</tt>
    */
-	const ArrayView<T>& assert_in_range( Ordinal offset, Ordinal size ) const;
+	const ArrayView<T>& assert_in_range( size_type offset, size_type size ) const;
 
   //@}
 
@@ -323,7 +326,7 @@ public:
 
 	explicit ArrayView( const ArrayRCP<T> &arcp );
 
-	explicit ArrayView( T* p, Ordinal size, const ArrayRCP<T> &arcp );
+	explicit ArrayView( T* p, size_type size, const ArrayRCP<T> &arcp );
 
 #endif
 
@@ -350,7 +353,7 @@ private:
 #endif
     }
 
-  void debug_assert_in_range( Ordinal offset, Ordinal size_in ) const
+  void debug_assert_in_range( size_type offset, size_type size_in ) const
     {
       (void)offset; (void)size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -385,7 +388,7 @@ public: // Bad bad bad
  * \relates ArrayView
  */
 template<class T>
-ArrayView<T> arrayView( T* p, typename ArrayView<T>::Ordinal size );
+ArrayView<T> arrayView( T* p, typename ArrayView<T>::size_type size );
 
 
 /** \brief Construct a non-const view of an std::vector.

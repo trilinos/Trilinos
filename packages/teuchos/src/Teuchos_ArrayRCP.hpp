@@ -75,7 +75,7 @@ ArrayRCP<T>::ArrayRCP( ENull )
 
 template<class T>
 inline
-ArrayRCP<T>::ArrayRCP(Ordinal n, const T& val)
+ArrayRCP<T>::ArrayRCP(size_type n, const T& val)
   : ptr_(0), lowerOffset_(0), upperOffset_(-1)
 {
   *this = arcp<T>(n);
@@ -86,7 +86,7 @@ ArrayRCP<T>::ArrayRCP(Ordinal n, const T& val)
 template<class T>
 inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in, bool has_ownership_in
+  T* p, size_type lowerOffset_in, size_type upperOffset_in, bool has_ownership_in
   )
   : ptr_(p),
 #ifndef TEUCHOS_DEBUG
@@ -124,7 +124,7 @@ template<class T>
 REFCOUNTPTR_INLINE
 template<class Dealloc_T>
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in,
+  T* p, size_type lowerOffset_in, size_type upperOffset_in,
   Dealloc_T dealloc, bool has_ownership_in
   )
   : ptr_(p),
@@ -232,7 +232,7 @@ T* ArrayRCP<T>::getRawPtr() const
 
 template<class T>
 REFCOUNTPTR_INLINE
-T& ArrayRCP<T>::operator[](Ordinal offset) const
+T& ArrayRCP<T>::operator[](size_type offset) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(offset,1);
@@ -295,7 +295,7 @@ ArrayRCP<T> ArrayRCP<T>::operator--(int)
 
 template<class T>
 REFCOUNTPTR_INLINE
-ArrayRCP<T>& ArrayRCP<T>::operator+=(Ordinal offset)
+ArrayRCP<T>& ArrayRCP<T>::operator+=(size_type offset)
 {
   if(ptr_) {
     debug_assert_valid_ptr();
@@ -309,7 +309,7 @@ ArrayRCP<T>& ArrayRCP<T>::operator+=(Ordinal offset)
 
 template<class T>
 REFCOUNTPTR_INLINE
-ArrayRCP<T>& ArrayRCP<T>::operator-=(Ordinal offset)
+ArrayRCP<T>& ArrayRCP<T>::operator-=(size_type offset)
 {
   if(ptr_) {
     debug_assert_valid_ptr();
@@ -323,7 +323,7 @@ ArrayRCP<T>& ArrayRCP<T>::operator-=(Ordinal offset)
 
 template<class T>
 REFCOUNTPTR_INLINE
-ArrayRCP<T> ArrayRCP<T>::operator+(Ordinal offset) const
+ArrayRCP<T> ArrayRCP<T>::operator+(size_type offset) const
 {
   ArrayRCP<T> r_ptr = *this;
   r_ptr+=(offset);
@@ -333,7 +333,7 @@ ArrayRCP<T> ArrayRCP<T>::operator+(Ordinal offset) const
 
 template<class T>
 REFCOUNTPTR_INLINE
-ArrayRCP<T> ArrayRCP<T>::operator-(Ordinal offset) const
+ArrayRCP<T> ArrayRCP<T>::operator-(size_type offset) const
 {
   ArrayRCP<T> r_ptr = *this;
   r_ptr-=offset;
@@ -346,7 +346,7 @@ ArrayRCP<T> ArrayRCP<T>::operator-(Ordinal offset) const
 
 template<class T>
 REFCOUNTPTR_INLINE
-typename ArrayRCP<T>::const_iterator ArrayRCP<T>::begin() const
+typename ArrayRCP<T>::iterator ArrayRCP<T>::begin() const
 {
   debug_assert_valid_ptr();
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -359,8 +359,7 @@ typename ArrayRCP<T>::const_iterator ArrayRCP<T>::begin() const
 
 template<class T>
 REFCOUNTPTR_INLINE
-typename ArrayRCP<T>::const_iterator
-ArrayRCP<T>::end() const
+typename ArrayRCP<T>::iterator ArrayRCP<T>::end() const
 {
   debug_assert_valid_ptr();
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -390,7 +389,7 @@ ArrayRCP<const T> ArrayRCP<T>::getConst() const
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRCP<T>
-ArrayRCP<T>::persistingView( Ordinal lowerOffset_in, Ordinal size_in ) const
+ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(lowerOffset_in,size_in);
@@ -407,7 +406,7 @@ ArrayRCP<T>::persistingView( Ordinal lowerOffset_in, Ordinal size_in ) const
 
 template<class T>
 REFCOUNTPTR_INLINE
-typename ArrayRCP<T>::Ordinal
+typename ArrayRCP<T>::size_type
 ArrayRCP<T>::lowerOffset() const
 {
   debug_assert_valid_ptr();
@@ -417,7 +416,7 @@ ArrayRCP<T>::lowerOffset() const
 
 template<class T>
 REFCOUNTPTR_INLINE
-typename ArrayRCP<T>::Ordinal
+typename ArrayRCP<T>::size_type
 ArrayRCP<T>::upperOffset() const
 {
   debug_assert_valid_ptr();
@@ -427,7 +426,7 @@ ArrayRCP<T>::upperOffset() const
 
 template<class T>
 REFCOUNTPTR_INLINE
-typename ArrayRCP<T>::Ordinal
+typename ArrayRCP<T>::size_type
 ArrayRCP<T>::size() const
 {
   debug_assert_valid_ptr();
@@ -439,7 +438,7 @@ ArrayRCP<T>::size() const
 
 
 template<class T> inline
-ArrayView<T> ArrayRCP<T>::view( Ordinal lowerOffset_in, Ordinal size_in ) const
+ArrayView<T> ArrayRCP<T>::view( size_type lowerOffset_in, size_type size_in ) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(lowerOffset_in,size_in);
@@ -453,7 +452,7 @@ ArrayView<T> ArrayRCP<T>::view( Ordinal lowerOffset_in, Ordinal size_in ) const
 
 
 template<class T> inline
-ArrayView<T> ArrayRCP<T>::operator()( Ordinal lowerOffset_in, Ordinal size_in ) const
+ArrayView<T> ArrayRCP<T>::operator()( size_type lowerOffset_in, size_type size_in ) const
 {
   return view(lowerOffset_in,size_in);
 }
@@ -492,7 +491,7 @@ ArrayRCP<T>::operator ArrayRCP<const T>() const
 
 template<class T>
 inline
-void ArrayRCP<T>::assign(Ordinal n, const T &val)
+void ArrayRCP<T>::assign(size_type n, const T &val)
 {
   *this = arcp<T>(n);
   std::fill_n(this->begin(), n, val);
@@ -504,7 +503,7 @@ template<class Iter>
 inline
 void ArrayRCP<T>::assign(Iter first, Iter last)
 {
-  const Ordinal new_n = std::distance(first, last);
+  const size_type new_n = std::distance(first, last);
   if (new_n != size())
     *this = arcp<T>(new_n);
   std::copy( first, last, begin() );
@@ -513,7 +512,7 @@ void ArrayRCP<T>::assign(Iter first, Iter last)
 
 template<class T>
 inline
-void ArrayRCP<T>::resize(const Ordinal n, const T &val)
+void ArrayRCP<T>::resize(const size_type n, const T &val)
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY(lowerOffset(), 0);
@@ -522,14 +521,14 @@ void ArrayRCP<T>::resize(const Ordinal n, const T &val)
     clear();
     return;
   }
-  const Ordinal orig_n = size();
+  const size_type orig_n = size();
   if (n != orig_n) {
     ArrayRCP<T> tmp = *this;
     *this = arcp<T>(n);
-    const Ordinal small_n = std::min(n, orig_n);
-    for (Ordinal i = 0; i < small_n; ++i)
+    const size_type small_n = std::min(n, orig_n);
+    for (size_type i = 0; i < small_n; ++i)
       (*this)[i] = tmp[i];
-    for (Ordinal i = orig_n; i < n; ++i)
+    for (size_type i = orig_n; i < n; ++i)
       (*this)[i] = val;
     upperOffset_ = n-1;
   }
@@ -686,7 +685,7 @@ const ArrayRCP<T>& ArrayRCP<T>::assert_valid_ptr() const
 template<class T>
 inline
 const ArrayRCP<T>&
-ArrayRCP<T>::assert_in_range( Ordinal lowerOffset_in, Ordinal size_in ) const
+ArrayRCP<T>::assert_in_range( size_type lowerOffset_in, size_type size_in ) const
 {
   assert_not_null();
   TEST_FOR_EXCEPTION(
@@ -721,7 +720,7 @@ int ArrayRCP<T>::count() const {
 template<class T>
 inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in,
+  T* p, size_type lowerOffset_in, size_type upperOffset_in,
   const RCPNodeHandle& node
   )
   :ptr_(p),
@@ -784,8 +783,8 @@ template<class T>
 inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp(
-T* p, typename ArrayRCP<T>::Ordinal lowerOffset
-  ,typename ArrayRCP<T>::Ordinal size_in
+T* p, typename ArrayRCP<T>::size_type lowerOffset
+  ,typename ArrayRCP<T>::size_type size_in
   ,bool owns_mem
   )
 {
@@ -797,8 +796,8 @@ template<class T, class Dealloc_T>
 inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp(
-T* p, typename ArrayRCP<T>::Ordinal lowerOffset
-  ,typename ArrayRCP<T>::Ordinal size_in
+T* p, typename ArrayRCP<T>::size_type lowerOffset
+  ,typename ArrayRCP<T>::size_type size_in
   ,Dealloc_T dealloc, bool owns_mem
   )
 {
@@ -809,7 +808,7 @@ T* p, typename ArrayRCP<T>::Ordinal lowerOffset
 template<class T>
 inline
 Teuchos::ArrayRCP<T>
-Teuchos::arcp( typename ArrayRCP<T>::Ordinal size )
+Teuchos::arcp( typename ArrayRCP<T>::size_type size )
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_INEQUALITY( size, >=, 0 );
@@ -835,8 +834,8 @@ template<class T, class Embedded>
 Teuchos::ArrayRCP<T>
 Teuchos::arcpWithEmbeddedObjPreDestroy(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   const Embedded &embedded,
   bool owns_mem
   )
@@ -853,8 +852,8 @@ template<class T, class Embedded>
 Teuchos::ArrayRCP<T>
 Teuchos::arcpWithEmbeddedObjPostDestroy(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   const Embedded &embedded,
   bool owns_mem
   )
@@ -871,8 +870,8 @@ template<class T, class Embedded>
 Teuchos::ArrayRCP<T>
 Teuchos::arcpWithEmbeddedObj(
   T* p,
-  typename ArrayRCP<T>::Ordinal lowerOffset,
-  typename ArrayRCP<T>::Ordinal size,
+  typename ArrayRCP<T>::size_type lowerOffset,
+  typename ArrayRCP<T>::size_type size,
   const Embedded &embedded,
   bool owns_mem
   )
@@ -1038,11 +1037,11 @@ REFCOUNTPTR_INLINE
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::Ordinal Ordinal;
+  typedef typename ArrayRCP<T1>::size_type size_type;
   const int sizeOfT1 = sizeof(T1);
   const int sizeOfT2 = sizeof(T2);
-  Ordinal lowerOffset2 = (p1.lowerOffset()*sizeOfT1) / sizeOfT2;
-  Ordinal upperOffset2 = ((p1.upperOffset()+1)*sizeOfT1) / sizeOfT2 - 1;
+  size_type lowerOffset2 = (p1.lowerOffset()*sizeOfT1) / sizeOfT2;
+  size_type upperOffset2 = ((p1.upperOffset()+1)*sizeOfT1) / sizeOfT2 - 1;
   T2 *ptr2 = reinterpret_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
     ptr2, lowerOffset2, upperOffset2,
@@ -1057,7 +1056,7 @@ REFCOUNTPTR_INLINE
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::Ordinal Ordinal;
+  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 *ptr2 = const_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
     ptr2, p1.lowerOffset(), p1.upperOffset(),
@@ -1072,7 +1071,7 @@ REFCOUNTPTR_INLINE
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 {
-  typedef typename ArrayRCP<T1>::Ordinal Ordinal;
+  typedef typename ArrayRCP<T1>::size_type size_type;
   T2 * raw_ptr2 = p1.get();
   return ArrayRCP<T2>(
     raw_ptr2,p1.lowerOffset(),p1.upperOffset(),

@@ -94,31 +94,31 @@ int RTOpPack::serializedSize(
 template<class Scalar>
 void RTOpPack::serialize(
   const RTOpT<Scalar> &op,
-  int num_values,
-  int num_indexes,
-  int num_chars,
+  Ordinal num_values,
+  Ordinal num_indexes,
+  Ordinal num_chars,
   const ReductTarget &reduct_obj,
   char reduct_obj_ext[]
   )
 {
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
-  typedef Teuchos::SerializationTraits<int,primitive_value_type> PVTST;
-  typedef Teuchos::SerializationTraits<int,index_type> ITST;
-  typedef Teuchos::SerializationTraits<int,char_type> CTST;
-  const int
+  typedef Teuchos::SerializationTraits<Ordinal, primitive_value_type> PVTST;
+  typedef Teuchos::SerializationTraits<Ordinal, index_type> ITST;
+  typedef Teuchos::SerializationTraits<Ordinal, char_type> CTST;
+  const Ordinal
     prim_value_type_size = PVTST::fromCountToIndirectBytes(1),
     index_type_size = ITST::fromCountToIndirectBytes(1);
   //char_type_size = CTST::fromCountToIndirectBytes(1);
-  const int
+  const Ordinal
     num_values_off = 0,
     num_indexes_off = num_values_off + index_type_size,
     num_chars_off = num_indexes_off + index_type_size,
     values_off = num_chars_off + index_type_size,
     indexes_off = values_off + num_values * prim_value_type_size,
     chars_off = indexes_off + num_indexes * index_type_size;
-  ITST::serialize(1,&num_values,index_type_size,&reduct_obj_ext[num_values_off]);
-  ITST::serialize(1,&num_indexes,index_type_size,&reduct_obj_ext[num_indexes_off]);
-  ITST::serialize(1,&num_chars,index_type_size,&reduct_obj_ext[num_chars_off]);
+  ITST::serialize(1, &num_values, index_type_size, &reduct_obj_ext[num_values_off]);
+  ITST::serialize(1, &num_indexes, index_type_size, &reduct_obj_ext[num_indexes_off]);
+  ITST::serialize(1, &num_chars, index_type_size, &reduct_obj_ext[num_chars_off]);
   op.extract_reduct_obj_state(
     reduct_obj
     ,num_values, num_values ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
@@ -143,11 +143,11 @@ void RTOpPack::deserialize(
   typedef Teuchos::SerializationTraits<int,primitive_value_type> PVTST;
   typedef Teuchos::SerializationTraits<int,index_type> ITST;
   typedef Teuchos::SerializationTraits<int,char_type> CTST;
-  const int
+  const Ordinal
     prim_value_type_size = PVTST::fromCountToIndirectBytes(1),
     index_type_size = ITST::fromCountToIndirectBytes(1);
   //char_type_size = CTST::fromCountToIndirectBytes(1);
-  const int
+  const Ordinal
     num_values_off = 0,
     num_indexes_off = num_values_off + index_type_size,
     num_chars_off = num_indexes_off + index_type_size,
@@ -155,10 +155,10 @@ void RTOpPack::deserialize(
     indexes_off = values_off + num_values_in * prim_value_type_size,
     chars_off = indexes_off + num_indexes_in * index_type_size;
 #ifdef RTOPPACK_DEBUG
-  int num_values = -1, num_indexes = -1, num_chars = -1;
-  ITST::deserialize(index_type_size,&reduct_obj_ext[num_values_off],1,&num_values);
-  ITST::deserialize(index_type_size,&reduct_obj_ext[num_indexes_off],1,&num_indexes);
-  ITST::deserialize(index_type_size,&reduct_obj_ext[num_chars_off],1,&num_chars);
+  Ordinal num_values = -1, num_indexes = -1, num_chars = -1;
+  ITST::deserialize(index_type_size, &reduct_obj_ext[num_values_off], 1, &num_values);
+  ITST::deserialize(index_type_size, &reduct_obj_ext[num_indexes_off], 1, &num_indexes);
+  ITST::deserialize(index_type_size, &reduct_obj_ext[num_chars_off], 1, &num_chars);
   TEST_FOR_EXCEPT(
     !(
       num_values==num_values_in && num_indexes==num_indexes_in
@@ -221,8 +221,8 @@ void ReductTargetSerializer<Scalar>::serialize(
   TEST_FOR_EXCEPT( !(bytes==this->getBufferSize(count)) );
   TEST_FOR_EXCEPT( !charBuffer );
 #endif
-  int offset = 0;
-  for( int i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
+  Ordinal offset = 0;
+  for( Ordinal i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
     RTOpPack::serialize(
       *op_,num_values_,num_indexes_,num_chars_
       ,*reduct_objs[i],&charBuffer[offset]
@@ -252,8 +252,8 @@ void ReductTargetSerializer<Scalar>::deserialize(
   TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
   TEST_FOR_EXCEPT( !reduct_objs );
 #endif
-  int offset = 0;
-  for( int i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
+  Ordinal offset = 0;
+  for( Ordinal i = 0; i < count; ++i, offset += reduct_obj_ext_size_ ) {
     RTOpPack::deserialize(
       *op_,num_values_,num_indexes_,num_chars_
       ,&charBuffer[offset],reduct_objs[i]
@@ -282,7 +282,7 @@ void ReductTargetReductionOp<Scalar>::reduce(
   ,ReductTarget*const inoutBuffer[]
   ) const
 {
-  for( int i = 0; i < count; ++i )
+  for( Ordinal i = 0; i < count; ++i )
     op_->reduce_reduct_objs( *inBuffer[i], inoutBuffer[i] );
 }
 
@@ -300,6 +300,7 @@ void RTOpPack::SPMD_all_reduce(
   )
 {
   using Teuchos::Workspace;
+  using Teuchos::reduceAll;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   Workspace<Teuchos::RCP<ReductTarget> >
     i_i_reduct_objs( wss, num_cols );
@@ -313,10 +314,9 @@ void RTOpPack::SPMD_all_reduce(
     serializer(Teuchos::rcp(&op,false));
   ReductTargetReductionOp<Scalar>
     reductOp(Teuchos::rcp(&op,false));
-  reduceAll(
-    *comm,serializer,reductOp
-    ,num_cols,&i_reduct_objs[0],&_i_i_reduct_objs[0]
-    );
+  reduceAll<Ordinal>(
+    *comm, serializer, reductOp,
+    num_cols, &i_reduct_objs[0], &_i_i_reduct_objs[0]);
   for( int kc = 0; kc < num_cols; ++kc ) {
     op.reduce_reduct_objs(*_i_i_reduct_objs[kc],reduct_objs[kc]);
   }
@@ -564,9 +564,9 @@ void RTOpPack::SPMD_apply_op(
   \
   template void serialize<SCALAR >( \
     const RTOpT<SCALAR > &op, \
-    int num_values, \
-    int num_indexes, \
-    int num_chars, \
+    Ordinal num_values, \
+    Ordinal num_indexes, \
+    Ordinal num_chars, \
     const ReductTarget &reduct_obj, \
     char reduct_obj_ext[] \
     ); \

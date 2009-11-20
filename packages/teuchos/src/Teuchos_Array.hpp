@@ -199,6 +199,12 @@ public:
   /** \name std::vector typedefs */
   //@{
 
+  /** \brief. */
+  typedef Teuchos_Ordinal Ordinal;
+  /** \brief . */
+  typedef Ordinal size_type;
+  /** \brief . */
+  typedef Ordinal difference_type;
   /** \brief . */
   typedef typename std::vector<T>::value_type value_type;
   /** \brief . */
@@ -209,9 +215,8 @@ public:
   typedef typename std::vector<T>::reference reference;
   /** \brief . */
   typedef typename std::vector<T>::const_reference const_reference;
-
-  /** \brief. */
-  typedef Teuchos_Index Ordinal;
+  /** \brief . */
+  typedef typename std::vector<T>::allocator_type allocator_type;
 
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   /** \brief . */
@@ -233,12 +238,6 @@ public:
   typedef typename std::vector<T>::const_reverse_iterator const_reverse_iterator;
 #endif
 
-  /** \brief . */
-  typedef typename std::vector<T>::size_type size_type;
-  /** \brief . */
-  typedef typename std::vector<T>::difference_type difference_type;
-  /** \brief . */
-  typedef typename std::vector<T>::allocator_type allocator_type;
 
   //@}
 
@@ -249,7 +248,7 @@ public:
   /** \brief . */
   Array();
   /** \brief . */
-  explicit Array(Ordinal n, const value_type& value = value_type());
+  explicit Array(size_type n, const value_type& value = value_type());
   /** \brief . */
   Array(const Array<T>& x);
   /** \brief . */
@@ -271,7 +270,7 @@ public:
   //@{
 
   /** \brief . */
-  void assign(Ordinal n, const value_type& val);
+  void assign(size_type n, const value_type& val);
   /** \brief . */
   template<typename InputIterator>
   void assign(InputIterator first, InputIterator last);
@@ -296,21 +295,21 @@ public:
   /** \brief . */
   size_type max_size() const;
   /** \brief . */
-  void resize(Ordinal new_size, const value_type& x = value_type());
+  void resize(size_type new_size, const value_type& x = value_type());
   /** \brief . */
   size_type capacity() const;
   /** \brief . */
   bool empty() const;
   /** \brief . */
-  void reserve(Ordinal n);
+  void reserve(size_type n);
   /** \brief . */
-  reference operator[](Ordinal i);
+  reference operator[](size_type i);
   /** \brief . */
-  const_reference operator[](Ordinal i) const;
+  const_reference operator[](size_type i) const;
   /** \brief . */
-  reference at(Ordinal i);
+  reference at(size_type i);
   /** \brief . */
-  const_reference at(Ordinal i) const;
+  const_reference at(size_type i) const;
   /** \brief . */
   reference front();
   /** \brief . */
@@ -326,7 +325,7 @@ public:
   /** \brief . */
   iterator insert(iterator position, const value_type& x);
   /** \brief . */
-  void insert(iterator position, Ordinal n, const value_type& x);
+  void insert(iterator position, size_type n, const value_type& x);
   /** \brief . */
   template<typename InputIterator>
   void insert(iterator position, InputIterator first, InputIterator last);
@@ -403,7 +402,7 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<T> view( Ordinal offset, Ordinal size );
+	ArrayView<T> view( size_type offset, size_type size );
 
 	/** \brief Return const view of a contiguous range of elements.
 	 *
@@ -416,17 +415,17 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<const T> view( Ordinal offset, Ordinal size ) const;
+	ArrayView<const T> view( size_type offset, size_type size ) const;
 
 	/** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	ArrayView<T> operator()( Ordinal offset, Ordinal size );
+	ArrayView<T> operator()( size_type offset, size_type size );
 
 	/** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	ArrayView<const T> operator()( Ordinal offset, Ordinal size ) const;
+	ArrayView<const T> operator()( size_type offset, size_type size ) const;
 
 	/** \brief Return an non-const ArrayView of *this.
    *
@@ -658,7 +657,7 @@ Array<T>::Array()
 
 
 template<typename T> inline
-Array<T>::Array(Ordinal n, const value_type& value) :
+Array<T>::Array(size_type n, const value_type& value) :
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   vec_(rcp(new std::vector<T>(n,value)))
 #else
@@ -726,7 +725,7 @@ Array<T>& Array<T>::operator=(const Array& a)
 
 
 template<typename T> inline
-void Array<T>::assign(Ordinal n, const value_type& val)
+void Array<T>::assign(size_type n, const value_type& val)
 {
   vec(true).assign(n,val);
 }
@@ -864,7 +863,7 @@ Array<T>::max_size() const
 
 template<typename T> inline
 void
-Array<T>::resize(Ordinal new_size, const value_type& x)
+Array<T>::resize(size_type new_size, const value_type& x)
 {
   vec(true).resize(new_size,x);
 }
@@ -886,7 +885,7 @@ bool Array<T>::empty() const
 
 
 template<typename T> inline
-void Array<T>::reserve(Ordinal n)
+void Array<T>::reserve(size_type n)
 {
   vec(true).reserve(n);
 }
@@ -894,7 +893,7 @@ void Array<T>::reserve(Ordinal n)
 
 template<typename T> inline
 typename Array<T>::reference
-Array<T>::operator[](Ordinal i)
+Array<T>::operator[](size_type i)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -905,7 +904,7 @@ Array<T>::operator[](Ordinal i)
 
 template<typename T> inline
 typename Array<T>::const_reference
-Array<T>::operator[](Ordinal i) const
+Array<T>::operator[](size_type i) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -916,7 +915,7 @@ Array<T>::operator[](Ordinal i) const
 
 template<typename T> inline
 typename Array<T>::reference
-Array<T>::at(Ordinal i)
+Array<T>::at(size_type i)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -927,7 +926,7 @@ Array<T>::at(Ordinal i)
 
 template<typename T> inline
 typename Array<T>::const_reference
-Array<T>::at(Ordinal i) const
+Array<T>::at(size_type i) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assertIndex(i);
@@ -1026,7 +1025,7 @@ Array<T>::insert(iterator position, const value_type& x)
 
 
 template<typename T> inline
-void Array<T>::insert(iterator position, Ordinal n, const value_type& x)
+void Array<T>::insert(iterator position, size_type n, const value_type& x)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   const typename std::vector<T>::iterator raw_poss = raw_position(position);
@@ -1194,7 +1193,7 @@ Array<T>& Array<T>::operator=( const std::vector<T> &v )
 
 
 template<typename T> inline
-ArrayView<T> Array<T>::view( Ordinal offset, Ordinal size_in )
+ArrayView<T> Array<T>::view( size_type offset, size_type size_in )
 {
   if (size_in) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -1208,7 +1207,7 @@ ArrayView<T> Array<T>::view( Ordinal offset, Ordinal size_in )
 
 
 template<typename T> inline
-ArrayView<const T> Array<T>::view( Ordinal offset, Ordinal size_in ) const
+ArrayView<const T> Array<T>::view( size_type offset, size_type size_in ) const
 {
   if (size_in) {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -1225,14 +1224,14 @@ ArrayView<const T> Array<T>::view( Ordinal offset, Ordinal size_in ) const
 
 
 template<typename T> inline
-ArrayView<T> Array<T>::operator()( Ordinal offset, Ordinal size_in )
+ArrayView<T> Array<T>::operator()( size_type offset, size_type size_in )
 {
   return view(offset, size_in);
 }
 
 
 template<typename T> inline
-ArrayView<const T> Array<T>::operator()( Ordinal offset, Ordinal size_in ) const
+ArrayView<const T> Array<T>::operator()( size_type offset, size_type size_in ) const
 {
   return view(offset, size_in);
 }

@@ -44,6 +44,7 @@ using namespace Thyra;
 template <class Scalar> inline 
 bool runVectorTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
 {
+  typedef Teuchos::Ordinal Ordinal;
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType Mag;
 
@@ -52,7 +53,7 @@ bool runVectorTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
   Mag epsErr = 1.0e1 * ST::prec();
   Mag epsWarn = 1.0e2 * epsErr;
 
-  Teuchos::RCP<const Comm<int> > comm = DefaultComm<Index>::getComm();
+  Teuchos::RCP<const Comm<Ordinal> > comm = DefaultComm<Ordinal>::getComm();
 
   /* ------- test on a monolithic space ------------ */
   

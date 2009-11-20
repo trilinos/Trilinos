@@ -56,7 +56,7 @@ namespace NCGU = OptiPack::NonlinearCGUtils;
 
 std::string g_solverType = "FR";
 
-Teuchos_Ordinal g_globalDim = 16;
+int g_globalDim = 16;
 
 double g_solve_tol_scale = 10.0;
 

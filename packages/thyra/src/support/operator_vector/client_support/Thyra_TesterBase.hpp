@@ -48,7 +48,7 @@ public:
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \brief . */
-  TesterBase(const RCP<const Comm<int> >& comm,
+  TesterBase(const RCP<const Comm<Ordinal> >& comm,
     const VectorSpace<Scalar>& space, int nCols,
     Teuchos::RCP<Teuchos::FancyOStream>& out)
     : comm_(comm), space_(space), nCols_(nCols), out_(out) 
@@ -87,10 +87,10 @@ public:
   ostream& out() const {return *out_;}
 
   /** \brief . */
-  const Comm<int>& comm() const {return *comm_;}
+  const Comm<Ordinal>& comm() const {return *comm_;}
     
 private:
-  RCP<const Comm<int> > comm_;
+  RCP<const Comm<Ordinal> > comm_;
   VectorSpace<Scalar> space_;
   int nCols_;
   mutable Teuchos::RCP<Teuchos::FancyOStream> out_;

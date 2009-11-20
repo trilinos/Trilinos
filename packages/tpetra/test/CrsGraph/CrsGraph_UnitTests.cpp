@@ -18,6 +18,7 @@
 
 namespace {
 
+  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -54,6 +55,7 @@ namespace {
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
   using Tpetra::DynamicProfile;
+  using Tpetra::Array_size_type;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -248,13 +250,13 @@ namespace {
         LO row = myImageID*numLocal;
         //insert a column-index:
         diaggraph.insertLocalIndices(row, lids());
-        TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), lids.size())
+        TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
         //remove the column-index:
         diaggraph.removeLocalIndices(row);
         TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), 0)
         //now inserting the index again, should make the row-length be 1 again...
         diaggraph.insertLocalIndices(row, lids());
-        TEST_EQUALITY(diaggraph.getNumEntriesInLocalRow(row), lids.size())
+        TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
       }
     }
   }
@@ -312,7 +314,7 @@ namespace {
       trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
       GView = trigraph.getGlobalRowView(myrowind);
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
-      for (size_t j=0; j < ginds.size(); ++j) {
+      for (Array_size_type j=0; j < ginds.size(); ++j) {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
       TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary

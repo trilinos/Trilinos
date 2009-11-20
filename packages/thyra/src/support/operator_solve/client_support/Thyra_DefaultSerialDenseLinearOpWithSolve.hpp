@@ -174,7 +174,7 @@ template<class Scalar>
 void DefaultSerialDenseLinearOpWithSolve<Scalar>::factorize(
   const MultiVectorBase<Scalar> &M,
   const Ptr<RTOpPack::ConstSubMultiVectorView<Scalar> > &LU,
-  const Ptr<Array<Teuchos_Index> > &ipiv
+  const Ptr<Array<int> > &ipiv
   )
 {
   using Teuchos::outArg;
@@ -183,7 +183,7 @@ void DefaultSerialDenseLinearOpWithSolve<Scalar>::factorize(
   ipiv->resize(dim);
   RTOpPack::SubMultiVectorView<Scalar> LU_tmp(dim, dim);
   RTOpPack::assign_entries<Scalar>( outArg(LU_tmp), dM.smv() );
-  Teuchos_Index rank = -1;
+  int rank = -1;
   RTOpPack::getrf<Scalar>( LU_tmp, (*ipiv)(), outArg(rank) );
   TEUCHOS_ASSERT_EQUALITY( dim, rank );
   *LU = LU_tmp; // Weak copy

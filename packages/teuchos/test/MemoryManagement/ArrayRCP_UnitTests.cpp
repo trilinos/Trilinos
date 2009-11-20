@@ -336,7 +336,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assign_n_val, T )
   std::vector<T> a;
   a.assign(n, val);
   ArrayRCP<T> a_arcp;
-  a_arcp.assign(n, val);
+  a_arcp.assign(as<Ordinal>(n), val);
   TEST_COMPARE_ARRAYS(a, a_arcp);
 }
 

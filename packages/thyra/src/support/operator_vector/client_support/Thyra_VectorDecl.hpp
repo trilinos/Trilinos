@@ -158,7 +158,7 @@ namespace Thyra
     /** \brief Read-only access to the \f$i\f$-th block. If the std::vector is not
      * a product std::vector, this function will throw an std::exception if \f$i\ne 0\f$,
      * or otherwise return the whole std::vector. */
-    ConstVector<Scalar> getBlock(Index i) const ;
+    ConstVector<Scalar> getBlock(Ordinal i) const ;
     //@}
     
   };

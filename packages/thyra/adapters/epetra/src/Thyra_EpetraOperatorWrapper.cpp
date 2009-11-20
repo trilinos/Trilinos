@@ -302,12 +302,12 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
                      "blocks to be SPMD std::vector spaces");
 
 
-  const SerialComm<int>* serialComm 
-    = dynamic_cast<const SerialComm<int>*>(spmd->getComm().get());
+  const SerialComm<Ordinal>* serialComm 
+    = dynamic_cast<const SerialComm<Ordinal>*>(spmd->getComm().get());
 
 #ifdef HAVE_MPI
-  const MpiComm<int>* mpiComm 
-    = dynamic_cast<const MpiComm<int>*>(spmd->getComm().get());
+  const MpiComm<Ordinal>* mpiComm 
+    = dynamic_cast<const MpiComm<Ordinal>*>(spmd->getComm().get());
 
   TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error, 
                      "SPMD std::vector space has a communicator that is "

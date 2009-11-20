@@ -74,8 +74,11 @@ namespace Teuchos {
 class Range1D {
 public:
 
-  /** \brief . */
-  typedef Teuchos_Index  Index;
+  /** \brief Deprecated. */
+  typedef Teuchos_Ordinal  Index;
+
+  /** \brief Deprecated. */
+  typedef Teuchos_Ordinal  Ordinal;
 
   /** \brief . */
   enum EInvalidRange { INVALID };
@@ -119,7 +122,7 @@ public:
    * <li> <tt>this->ubound() == ubound</tt>
    *	</ul>
    */
-  inline Range1D(Index lbound, Index ubound);
+  inline Range1D(Ordinal lbound, Ordinal ubound);
 
   /** Returns \c true if the range represents the entire region (constructed
    * from \c Range1D())
@@ -127,30 +130,30 @@ public:
   inline bool full_range() const;
 
   /** \brief Return lower bound of the range */
-  inline Index lbound() const;
+  inline Ordinal lbound() const;
 
   /** \brief Return upper bound of the range */
-  inline Index ubound() const;
+  inline Ordinal ubound() const;
 
   /** \brief Return the size of the range (<tt>ubound() - lbound() + 1</tt>) */
-  inline Index size() const;
+  inline Ordinal size() const;
 
   /** \brief Return true if the index is in range */
-  inline bool in_range(Index i) const;
+  inline bool in_range(Ordinal i) const;
 
   /** \brief Increment the range by a constant */
-  inline Range1D& operator+=( Index incr );
+  inline Range1D& operator+=( Ordinal incr );
 
   /** \brief  Deincrement the range by a constant */
-  inline Range1D& operator-=( Index incr );
+  inline Range1D& operator-=( Ordinal incr );
 
 private:
-  Index lbound_;
-  Index ubound_;	// = INT_MAX-1 flag for entire range
+  Ordinal lbound_;
+  Ordinal ubound_;	// = INT_MAX-1 flag for entire range
   // lbound == ubound == 0 flag for invalid range.
   
   // assert that the range is valid
-  inline void assert_valid_range(Index lbound, Index ubound) const;
+  inline void assert_valid_range(Ordinal lbound, Ordinal ubound) const;
   
 }; // end class Range1D
   
@@ -176,7 +179,7 @@ inline bool operator==(const Range1D& rng1, const Range1D& rng2 )
  *
  * \relates Range1D
   */
-inline Range1D operator+(const Range1D &rng_rhs, Range1D::Index i)
+inline Range1D operator+(const Range1D &rng_rhs, Range1D::Ordinal i)
 {
     return Range1D(i+rng_rhs.lbound(), i+rng_rhs.ubound());
 }
@@ -192,7 +195,7 @@ inline Range1D operator+(const Range1D &rng_rhs, Range1D::Index i)
  *
  * \relates Range1D
   */
-inline Range1D operator+(Range1D::Index i, const Range1D &rng_rhs)
+inline Range1D operator+(Range1D::Ordinal i, const Range1D &rng_rhs)
 {
     return Range1D(i+rng_rhs.lbound(), i+rng_rhs.ubound());
 }
@@ -208,7 +211,7 @@ inline Range1D operator+(Range1D::Index i, const Range1D &rng_rhs)
  *
  * \relates Range1D
   */
-inline Range1D operator-(const Range1D &rng_rhs, Range1D::Index i)
+inline Range1D operator-(const Range1D &rng_rhs, Range1D::Ordinal i)
 {
     return Range1D(rng_rhs.lbound()-i, rng_rhs.ubound()-i);
 }
@@ -228,7 +231,7 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Index i)
  *
  * \relates Range1D
   */
-inline Range1D full_range(const Range1D &rng, Range1D::Index lbound, Range1D::Index ubound)
+inline Range1D full_range(const Range1D &rng, Range1D::Ordinal lbound, Range1D::Ordinal ubound)
 {	return rng.full_range() ? Range1D(lbound,ubound) : rng; }
 
 // //////////////////////////////////////////////////////////
@@ -246,7 +249,7 @@ Range1D::Range1D( EInvalidRange )
 
 
 inline
-Range1D::Range1D(Index lbound_in, Index ubound_in)
+Range1D::Range1D(Ordinal lbound_in, Ordinal ubound_in)
   : lbound_(lbound_in), ubound_(ubound_in)
 {
   assert_valid_range(lbound_in,ubound_in);
@@ -258,27 +261,27 @@ bool Range1D::full_range() const {
 }
 
 inline
-Range1D::Index Range1D::lbound() const {
+Range1D::Ordinal Range1D::lbound() const {
   return lbound_;
 }
 
 inline
-Range1D::Index Range1D::ubound() const {
+Range1D::Ordinal Range1D::ubound() const {
   return ubound_;
 }
 
 inline
-Range1D::Index Range1D::size() const {
+Range1D::Ordinal Range1D::size() const {
   return ubound_ - lbound_ + 1;
 }
 
 inline
-bool Range1D::in_range(Index i) const {
+bool Range1D::in_range(Ordinal i) const {
   return lbound_ <= i && i <= ubound_;
 }
 
 inline
-Range1D& Range1D::operator+=( Index incr ) {
+Range1D& Range1D::operator+=( Ordinal incr ) {
   assert_valid_range( lbound_ + incr, ubound_ + incr );
   lbound_ += incr;
   ubound_ += incr;
@@ -286,7 +289,7 @@ Range1D& Range1D::operator+=( Index incr ) {
 }
 
 inline
-Range1D& Range1D::operator-=( Index incr )
+Range1D& Range1D::operator-=( Ordinal incr )
 {
   assert_valid_range( lbound_ - incr, ubound_ - incr );
   lbound_ -= incr;
@@ -297,7 +300,7 @@ Range1D& Range1D::operator-=( Index incr )
 
 // See Range1D.cpp
 inline
-void Range1D::assert_valid_range(int lbound_in, int ubound_in) const
+void Range1D::assert_valid_range(Ordinal lbound_in, Ordinal ubound_in) const
 {
   (void)lbound_in; (void)ubound_in;
 #ifdef TEUCHOS_DEBUG

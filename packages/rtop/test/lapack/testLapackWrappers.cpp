@@ -107,7 +107,7 @@ bool testLapackWrappers(
   //
   
   SubMultiVectorView<Scalar> LU(n, n);
-  Array<Ordinal> ipiv(n);
+  Array<int> ipiv(n);
   
   {
 
@@ -115,7 +115,7 @@ bool testLapackWrappers(
 
     RTOpPack::assign_entries<Scalar>( outArg(LU), M );
 
-    Ordinal rank;
+    int rank;
     RTOpPack::getrf<Scalar>( LU, ipiv, outArg(rank) );
 
     // Note: The contents of ipiv and LU is technically an implementation

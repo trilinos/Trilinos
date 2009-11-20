@@ -50,7 +50,7 @@ ArrayView<T>::ArrayView( ENull )
 
 
 template<class T> inline
-ArrayView<T>::ArrayView( T* p, Ordinal size_in )
+ArrayView<T>::ArrayView( T* p, size_type size_in )
   :ptr_(p), size_(size_in)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -119,7 +119,7 @@ bool ArrayView<T>::is_null() const
 
 
 template<class T> inline
-typename ArrayView<T>::Ordinal ArrayView<T>::size() const
+typename ArrayView<T>::size_type ArrayView<T>::size() const
 {
   debug_assert_valid_ptr();
   return size_;
@@ -161,7 +161,7 @@ T* ArrayView<T>::getRawPtr() const
 
 
 template<class T> inline
-T& ArrayView<T>::operator[](Ordinal i) const
+T& ArrayView<T>::operator[](size_type i) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(i,1);
@@ -191,7 +191,7 @@ T& ArrayView<T>::back() const
 
 
 template<class T> inline
-ArrayView<T> ArrayView<T>::view(Ordinal offset, Ordinal size_in) const
+ArrayView<T> ArrayView<T>::view(size_type offset, size_type size_in) const
 {
   debug_assert_valid_ptr();
   debug_assert_in_range(offset, size_in);
@@ -205,7 +205,7 @@ ArrayView<T> ArrayView<T>::view(Ordinal offset, Ordinal size_in) const
 
 
 template<class T> inline
-ArrayView<T> ArrayView<T>::operator()( Ordinal offset, Ordinal size_in ) const
+ArrayView<T> ArrayView<T>::operator()(size_type offset, size_type size_in) const
 {
   return view(offset, size_in);
 }
@@ -295,7 +295,7 @@ const ArrayView<T>& ArrayView<T>::assert_not_null() const
 
 template<class T>
 const ArrayView<T>&
-ArrayView<T>::assert_in_range( Ordinal offset, Ordinal size_in ) const
+ArrayView<T>::assert_in_range(size_type offset, size_type size_in) const
 {
   
   assert_not_null();
@@ -323,7 +323,7 @@ ArrayView<T>::ArrayView( const ArrayRCP<T> &arcp )
 
 
 template<class T>
-ArrayView<T>::ArrayView( T* p, Ordinal size_in, const ArrayRCP<T> &arcp )
+ArrayView<T>::ArrayView(T* p, size_type size_in, const ArrayRCP<T> &arcp)
   : ptr_(p), size_(size_in), arcp_(arcp)
 {}
 
@@ -355,7 +355,7 @@ void ArrayView<T>::setUpIterators()
 
 template<class T> inline
 Teuchos::ArrayView<T>
-Teuchos::arrayView( T* p, typename ArrayView<T>::Ordinal size )
+Teuchos::arrayView( T* p, typename ArrayView<T>::size_type size )
 {
   return ArrayView<T>(p, size);
 }
@@ -414,10 +414,10 @@ REFCOUNTPTR_INLINE
 Teuchos::ArrayView<T2>
 Teuchos::av_reinterpret_cast(const ArrayView<T1>& p1)
 {
-  typedef typename ArrayView<T1>::Ordinal Ordinal;
+  typedef typename ArrayView<T1>::size_type size_type;
   const int sizeOfT1 = sizeof(T1);
   const int sizeOfT2 = sizeof(T2);
-  Ordinal size2 = (p1.size()*sizeOfT1) / sizeOfT2;
+  size_type size2 = (p1.size()*sizeOfT1) / sizeOfT2;
   T2 *ptr2 = reinterpret_cast<T2*>(p1.getRawPtr());
   return ArrayView<T2>(
     ptr2, size2

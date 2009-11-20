@@ -133,7 +133,7 @@ namespace Thyra
 
   //===========================================================================
   template <class Scalar> inline
-  ConstVector<Scalar> ConstVector<Scalar>::getBlock(int i) const
+  ConstVector<Scalar> ConstVector<Scalar>::getBlock(Ordinal i) const
   {
     const Thyra::ProductVectorBase<Scalar>* pv = 
       dynamic_cast <const Thyra::ProductVectorBase<Scalar>* >(this->constPtr().get());

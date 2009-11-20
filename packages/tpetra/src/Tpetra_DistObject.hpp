@@ -351,7 +351,7 @@ namespace Tpetra {
           distor.doReversePostsAndWaits(numExportPacketsPerLID_().getConst(), 1,
                                         numImportPacketsPerLID_());
           size_t totalImportPackets = 0;
-          for(size_t i=0; i<numImportPacketsPerLID_.size(); ++i) {
+          for(Array_size_type i=0; i<numImportPacketsPerLID_.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID_[i];
           }
           imports_.resize(totalImportPackets);
@@ -367,7 +367,7 @@ namespace Tpetra {
           distor.doPostsAndWaits(numExportPacketsPerLID_().getConst(), 1,
                                  numImportPacketsPerLID_());
           size_t totalImportPackets = 0;
-          for(size_t i=0; i<numImportPacketsPerLID_.size(); ++i) {
+          for(Array_size_type i=0; i<numImportPacketsPerLID_.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID_[i];
           }
           imports_.resize(totalImportPackets);

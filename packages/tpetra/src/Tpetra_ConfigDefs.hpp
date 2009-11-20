@@ -68,6 +68,10 @@
 #include <Tpetra_config.h>
 #include <Teuchos_ConfigDefs.hpp>
 
+// Used in all Tpetra code that explicitly must a type (like a loop index)
+// that is used with the Teuchos::Array[View,RCP] classes.
+namespace Tpetra { typedef Teuchos_Ordinal Array_size_type; }
+
 // these make some of the macros in Tpetra_Util.hpp much easier to describe
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   #define TPETRA_THROWS_EFFICIENCY_WARNINGS 1

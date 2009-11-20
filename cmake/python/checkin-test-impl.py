@@ -19,15 +19,18 @@ Quickstart:
 In order to do a solid checkin, perform the following recommended workflow
 (other workflows are described below):
 
-1) Do an 'eg diff --name-status origin/master..master' to review the changes
-that you have made:
+1) Review the changes that you have made to make sure it is safe to
+commit/push:
 
   $ cd $TRILINOS_HOME
-  $ eg diff --name-status origin/master..master
+  $ eg status                      # Look at state of working dir
+  $ eg diff --name-status origin.. # Look at which files have changed
+  $ eg diff origin..               # [optional] View the full diffs
 
-  NOTE: If you see any files/directories that are listed as unknown, you need
-  to do a 'eg add' or add them to the ignore list *before* you run the script.
-  The eg script will not allow you to commit if there are unknown files.
+  NOTE: If you see any files/directories that are listed as 'unknown', then
+  you will need to do an 'eg add' to track them or add them to the ignore list
+  *before* you run this tool.  The eg script will not allow you to commit if
+  there are new 'unknown' files.
 
 2) Create a commit log file in the main source directory:
 
@@ -424,7 +427,11 @@ clp.add_option(
 
 clp.add_option(
   "--commit", dest="doCommit", action="store_true",
-  help="Do the local commit of all the staged changes before the initial pull." \
+  help="Do the local commit of all the staged changes using:\n" \
+  +" \n" \
+  + "   eg commit -a -F <COMMITMSGHEADERFILE>\n" \
+  +" \n" \
+  +"before the initial pull." \
   +" The commit message used in specified by the --commit-msg-header-file argument." \
   +"  If you have not already committed your changes, then you will want to" \
   +" use this option.  The commit is performed before the initial pull and" \
@@ -511,7 +518,9 @@ clp.add_option(
 clp.add_option(
   "--no-append-test-results", dest="appendTestResults", action="store_false",
   default=True,
-  help="Do not amend the last local commit with test results." )
+  help="Do not amend the last local commit with test results.  NOTE: If you have" \
+  +" uncommitted local changes that you do not want this script to commit then you" \
+  +" must select this option to avoid this last amending commit." )
 
 clp.add_option(
   "--push", dest="doPush", action="store_true",

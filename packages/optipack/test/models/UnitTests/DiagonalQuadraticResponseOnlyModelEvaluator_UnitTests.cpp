@@ -22,7 +22,7 @@ using Teuchos::RCP;
 using Thyra::createMember;
 
 
-Teuchos_Ordinal g_localDim = 4;
+int g_localDim = 4;
 
 double g_tol_scale = 10.0;
 

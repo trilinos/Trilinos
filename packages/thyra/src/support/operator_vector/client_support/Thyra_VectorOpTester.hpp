@@ -54,7 +54,7 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** */
-  VectorOpTester(const RCP<const Comm<int> >& comm,
+  VectorOpTester(const RCP<const Comm<Ordinal> >& comm,
     const VectorSpace<Scalar>& space,
     Teuchos::RCP<Teuchos::FancyOStream>& out,
     const TestSpecifier<Scalar>& spec);
@@ -83,7 +83,7 @@ private:
 
 template <class Scalar> 
 inline VectorOpTester<Scalar>
-::VectorOpTester(const RCP<const Comm<int> >& comm,
+::VectorOpTester(const RCP<const Comm<Ordinal> >& comm,
   const VectorSpace<Scalar>& space,
   Teuchos::RCP<Teuchos::FancyOStream>& out,
   const TestSpecifier<Scalar>& spec)

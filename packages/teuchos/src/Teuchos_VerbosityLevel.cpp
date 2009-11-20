@@ -34,14 +34,14 @@
 namespace {
 
 
-const Teuchos::Array<Teuchos::EVerbosityLevel>
-verbLevelArray = Teuchos::tuple<Teuchos::EVerbosityLevel>(
-	Teuchos::VERB_NONE,
-	Teuchos::VERB_LOW,
-	Teuchos::VERB_MEDIUM,
-	Teuchos::VERB_HIGH,
-	Teuchos::VERB_EXTREME
-  );
+const Teuchos::Array<Teuchos::EVerbosityLevel> verbLevelArray =
+  Teuchos::tuple<Teuchos::EVerbosityLevel>(
+    Teuchos::VERB_NONE,
+    Teuchos::VERB_LOW,
+    Teuchos::VERB_MEDIUM,
+    Teuchos::VERB_HIGH,
+    Teuchos::VERB_EXTREME
+    );
 
 
 } // namespace

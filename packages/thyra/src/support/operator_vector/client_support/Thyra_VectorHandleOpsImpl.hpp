@@ -72,7 +72,7 @@ namespace Thyra
   {
     Scalar maxEl;
     Scalar* maxElP = &maxEl;
-    int* indexP = &index;
+    Index* indexP = &index;
     Thyra::max(*(toVector(x).constPtr()), maxElP, indexP); 
     return maxEl;
   }
@@ -82,7 +82,7 @@ namespace Thyra
   {
     Scalar minEl;
     Scalar* minElP = &minEl;
-    int* indexP = &index;
+    Index* indexP = &index;
     Thyra::min(*(toVector(x).constPtr()), minElP, indexP); 
     return minEl;
   }
@@ -93,7 +93,7 @@ namespace Thyra
   {
     Scalar minEl;
     Scalar* minElP = &minEl;
-    int* indexP = &index;
+    Index* indexP = &index;
     Thyra::minGreaterThanBound(*(toVector(x).constPtr()), bound, minElP, indexP); 
     return minEl;
   }
@@ -104,7 +104,7 @@ namespace Thyra
   {
     Scalar maxEl;
     Scalar* maxElP = &maxEl;
-    int* indexP = &index;
+    Index* indexP = &index;
     Thyra::maxLessThanBound(*(toVector(x).constPtr()), bound, maxElP, indexP); 
     return maxEl;
   }
