@@ -434,7 +434,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Y.ExtractView(&yPtr);
 
 #ifdef HAVE_IFPACK_EPETRAEXT
-  const EpetraExt_PointToBlockDiagPermute& IBD=*(&*InvBlockDiagonal_);
+  //const EpetraExt_PointToBlockDiagPermute& IBD=*(&*InvBlockDiagonal_);
+  EpetraExt_PointToBlockDiagPermute* IBD;
+  if (UseBlockMode_) IBD=&*InvBlockDiagonal_;
 #endif
   
 
@@ -443,7 +445,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if(!UseBlockMode_) invDiag=InvDiagonal_->Values();
   if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_)) {
 #ifdef HAVE_IFPACK_EPETRAEXT
-    if(UseBlockMode_) IBD.ApplyInverse(*Xcopy,Y);
+    if(UseBlockMode_) IBD->ApplyInverse(*Xcopy,Y);
     else
 #endif
     if (nVec == 1) {
@@ -491,7 +493,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 #ifdef HAVE_IFPACK_EPETRAEXT    
     if(UseBlockMode_) {
       Temp.Update(oneOverTheta,X,-oneOverTheta,V,0.0);
-      IBD.ApplyInverse(Temp,W);
+      IBD->ApplyInverse(Temp,W);
     }
     else
 #endif
@@ -517,7 +519,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     // Compute W = invDiag * X / Theta
 #ifdef HAVE_IFPACK_EPETRAEXT    
     if(UseBlockMode_) {
-      IBD.ApplyInverse(X,W);
+      IBD->ApplyInverse(X,W);
       W.Scale(oneOverTheta);
       Y.Update(1.0, W, 0.0);      
     }
@@ -563,7 +565,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if(UseBlockMode_) {
       //NTS: We can clobber V since it will be reset in the Apply
       V.Update(dtemp2,X,-dtemp2);
-      IBD.ApplyInverse(V,Temp);
+      IBD->ApplyInverse(V,Temp);
       W.Update(1.0,Temp,1.0);
     }
     else{
@@ -592,7 +594,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if(UseBlockMode_) {
       //We can clobber V since it will be reset in the Apply
       V.Update(dtemp2,X,-dtemp2);
-      IBD.ApplyInverse(V,Temp);
+      IBD->ApplyInverse(V,Temp);
       W.Update(1.0,Temp,1.0);
     }
     else{
