@@ -49,7 +49,6 @@ def getCommonConfigFileName():
 def getTestCaseName(serialOrMpi, buildType):
   return serialOrMpi + "_" + buildType
 
-
 def getBuildSpecificConfigFileName(serialOrMpi, buildType):
   return getTestCaseName(serialOrMpi, buildType) + ".config"
 
@@ -1139,6 +1138,7 @@ def checkinTest(inOptions):
     if inOptions.doPull:
       removeIfExists(getStatusOutputFileName())
       removeIfExists(getInitialPullOutputFileName())
+      removeIfExists(getInitialExtraPullOutputFileName())
       removeIfExists(getInitialPullSuccessFileName())
 
     removeIfExists(getFinalCommitEmailBodyFileName())
