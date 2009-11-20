@@ -2,8 +2,21 @@
 #
 # ToDo:
 #
+#  (*) Implement checking and control for enableing TrilinosFramework tests or
+#  not depending on if anything under cmake/ or packages/teuchos/test/CTestxxx
+#  is modified or not, except if TrilinosPackages.cmake and TrilinosTPLs.cmake
+#  is specified.
+#
+#  (*) Implement check that -DTPL_ENABLE* is not specified in any of the
+#  standard configure files.  Also, make sure that there are not
+#  -DTrilinos_ENABLE commands either.  Force users to do package
+#  enables/disables using --enable-packages, --disable-packages.
+#
 #  (*) Change logic to not enable everything if TrilinosPackages.cmake or
 #  TrilinosTPLs.cmake are changed.
+#
+#  (*) Make this work automatically on branches too.  It should pull and push
+#  to 'origin' always but the current branch should always be used.
 #
 #  (*) Put in checks for the names of Trilinos packages from --enable-packages
 #  and --disable-packages arguments.  Right now a mispelled package name would
