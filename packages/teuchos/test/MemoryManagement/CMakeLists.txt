@@ -60,7 +60,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_DEBUG)
+
+IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
+  AND ${PACKAGE_NAME}_ENABLE_DEBUG
+  )
 
   # These tests just provide additional verification that the unit tests show
   # that the RCPNode tracing code that catches tricky errors that the old
