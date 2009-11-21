@@ -27,7 +27,7 @@ echo "-DTrilinos_ENABLE_Sundance:BOOL=OFF" > SERIAL_RELEASE.config
 # Run the standard checkin testing script with my specializations
 #
 
-/home/rabartl/PROJECTS/Trilinos.base/Trilinos/cmake/python/checkin-test.py \
+../../../Trilinos/cmake/python/checkin-test.py \
 --make-options="-j4" \
 --ctest-options="-j4" \
 --ctest-time-out=180 \
