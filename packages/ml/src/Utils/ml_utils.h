@@ -178,7 +178,7 @@ std::cout << "--- Leaving:
    void   ML_serial_start(ML_Comm *comm);
    void   ML_serial_end(ML_Comm *comm);
    int    ML_Coord2RBM(int Nnodes, double x[], double y[], double z[],
-                       double rbm[], int Ndof);
+                       double rbm[], int Ndof, int Npdes);
    void ML_az_dsort2(double dlist[], int N, int list2[]);
 
    /* these are functions used by Ray in his RAP thing */

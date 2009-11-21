@@ -301,7 +301,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("XML input file","ml_ParameterList.xml",string(""));
 
   /* Smoothed Aggregation and the Null Space (Section 6.4.9) */
-  setStringToIntegralParameter<int>("null space: type","default vectors","Type of null space to use",tuple<string>("pre-computed","enriched","default vectors"),PL);
+  setStringToIntegralParameter<int>("null space: type","default vectors","Type of null space to use",tuple<string>("pre-computed","enriched","default vectors","from coordinates"),PL);
   PL->set("null space: vectors",(double*)0); 
   setIntParameter("null space: dimension",0,"Number of user-supplied null space vectors",PL,intParam);
   setIntParameter("null space: vectors to compute",1,"Number of vectors to compute",PL,intParam);

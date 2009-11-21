@@ -22,8 +22,7 @@
 #endif
 
 
-   int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[],
-                    double rbm[], int Ndof);
+extern int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof, int NSdim);
 
 
 #ifndef ML_CPP

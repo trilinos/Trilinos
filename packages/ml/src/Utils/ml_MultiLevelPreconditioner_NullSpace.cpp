@@ -23,6 +23,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_anasazi.h"
+#include "ml_rbm.h"
 
 using namespace Teuchos;
 
@@ -50,19 +51,47 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   {
     // sanity check for default null-space
     if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
-    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
+    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NULL,
                                RowMatrix_->NumMyRows());
+    if (verbose_)
+      cout << PrintMsg_ << "Null space type      = default (constants)" << endl;
+  } //"default vectors"
 
-  } 
+  else if (option == "from coordinates")
+  {
+    //TODO could add an option to provide center of rotations
+//int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], double rbm[], int Ndof)
+    double *in_x_coord = List_.get("x-coordinates", (double *)0);
+    double *in_y_coord = List_.get("y-coordinates", (double *)0);
+    double *in_z_coord = List_.get("z-coordinates", (double *)0);
+
+    //NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
+    if (in_z_coord == 0) NullSpaceDim = 3;
+    else                 NullSpaceDim = 6;
+
+    if (in_x_coord == 0 || in_y_coord == 0) {
+      if (Comm().MyPID() == 0) 
+        cerr << ErrorMsg_ << "You asked for the near null-space from coordinates," << endl
+             << ErrorMsg_ << "but either x- or y-coordinate vector is NULL!" << endl;
+      ML_EXIT(EXIT_FAILURE);
+    }
+
+    NullSpacePtr = new double[NullSpaceDim*NumMyRows()];
+    ML_Coord2RBM(NumMyRows()/NumPDEEqns_, in_x_coord, in_y_coord, in_z_coord, NullSpacePtr,
+                 NumPDEEqns_, NullSpaceDim);
+    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr, RowMatrix_->NumMyRows());
+    if (verbose_) {
+      cout << PrintMsg_ << "Null space type      = computed from coordinates" << endl;
+      cout << PrintMsg_ << "  (This option ignores any user-specified nullspace dimension.)" << endl;
+    }
+
+  } //"from coordinates" 
+
   else if (option == "pre-computed") 
   {
     NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
     NullSpacePtr = List_.get("null space: vectors", NullSpacePtr);
 
-    if (verbose_) {
-      cout << PrintMsg_ << "Using pre-computed null space of dimension "
-           << NullSpaceDim << endl;
-    }
     if (NullSpacePtr == 0) {
       if (Comm().MyPID() == 0) 
         cerr << ErrorMsg_ << "Null space vectors is NULL!" << endl;
@@ -71,8 +100,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
 			       RowMatrix_->NumMyRows());
+    if (verbose_)
+      cout << PrintMsg_ << "Null space type      = user-supplied" << endl;
   
-  } 
+  } //"pre-computed"
 #if FIXME
   else if (option == "enriched") 
   {
@@ -245,7 +276,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     cerr << ErrorMsg_ << "Option `null space: type' not recognized ("
 	 << option << ")" << endl
 	 << ErrorMsg_ << "It should be:" << endl
-	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <enriched>" << endl;
+	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <from coordinates> / <enriched>" << endl;
     exit(EXIT_FAILURE);
   }
   
@@ -260,6 +291,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,
                                  RowMatrix_->RowMatrixRowMap().NumMyElements());
   } 
+
+  if (verbose_) cout << PrintMsg_ << "Null space dimension = " << NullSpaceDim << endl;
 
   return(0);
 }
