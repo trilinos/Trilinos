@@ -11,6 +11,12 @@ MESSAGE("")
 MESSAGE("Configuring Trilinos build directory")
 MESSAGE("")
 
+IF ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+  MESSAGE(FATAL_ERROR "Error, CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+    " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+    " Trilinos does not support in source builds!" )
+ENDIF()
+
 PROJECT(Trilinos NONE)
 
 SET(Trilinos_VERSION "11.0d")
@@ -32,7 +38,6 @@ INCLUDE(AdvancedOption)
 
 OPTION(Trilinos_VERBOSE_CONFIGURE
   "Make the Trilinos configure process verbose." OFF)
-
 
 #
 # A.1) Run misc unit tests that don't need anything else
