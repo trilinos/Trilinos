@@ -143,7 +143,115 @@ def expandDirsDict(trilinosDirsDict_inout):
       trilinosDirsDict_inout.update(
         { joinDirs(subdirsList[:i+1]) : 0 }
         )
-  
+
+
+#########################################
+# System command unit testing utiltities
+#########################################
+
+
+class InterceptedCmndStruct:
+
+  def __init__(self, cmndRegex, cmndReturn, cmndOutput):
+    self.cmndRegex = cmndRegex
+    self.cmndReturn = cmndReturn
+    self.cmndOutput = cmndOutput
+
+  def __str__(self):
+    return "{cmndRegex='"+self.cmndRegex+"'," \
+     " cmndReturn="+str(self.cmndReturn)+"," \
+     " cmndOutput='"+str(self.cmndOutput)+"'}"
+
+#
+# Class that is used to record a set of commands that will be used to
+# intercept commands
+#
+
+class SysCmndInterceptor:
+
+  def __init__(self):
+    self.fallThroughCmndRegexList = []
+    self.interceptedCmndStructList = []
+    self.allowExtraCmnds = True
+
+  def setFallThroughCmndRegex(self, cmndRegex):
+    self.fallThroughCmndRegexList.append(cmndRegex)
+
+  def setInterceptedCmnd(self, cmndRegex, cmndReturn, cmndOutput=None):
+    self.interceptedCmndStructList.append(
+       InterceptedCmndStruct(cmndRegex, cmndReturn, cmndOutput) )
+
+  def setAllowExtraCmnds(self, allowExtraCmnds):
+    self.allowExtraCmnds = allowExtraCmnds
+
+  def hasInterceptedCmnds(self):
+     return len(self.interceptedCmndStructList) > 0
+
+  def doProcessInterceptedCmnd(self, cmnd):
+    if self.isFallThroughCmnd(cmnd):
+      return False
+    if len(self.interceptedCmndStructList) > 0:
+      return True
+    if not self.allowExtraCmnds:
+      return True
+    return False
+
+  def isFallThroughCmnd(self, cmnd):
+     for cmndRegex in self.fallThroughCmndRegexList:
+       if re.match(cmndRegex, cmnd):
+         return True
+     return False
+
+  def nextInterceptedCmndStruct(self, cmnd):
+    assert(not self.isFallThroughCmnd(cmnd))
+    if len(self.interceptedCmndStructList) == 0:
+      raise Exception("Error, cmnd='"+cmnd+"' is past the last expected command!")
+    ics = self.interceptedCmndStructList.pop(0)
+    if re.match(ics.cmndRegex, cmnd):
+      return (ics.cmndReturn, ics.cmndOutput)
+    raise Exception("Error, cmnd='"+cmnd+"' did not match the" \
+      " expected regex='"+ics.cmndRegex+"'!")
+
+  def clear(self):
+    self.fallThroughCmndRegexList = []
+    self.interceptedCmndStructList = []
+    self.allowExtraCmnds = True
+
+
+g_sysCmndInterceptor = SysCmndInterceptor()
+
+
+def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
+  if outFile!=None and rtnOutput==True:
+    raise Exception("Error, both outFile and rtnOutput can not be true!") 
+  if g_sysCmndInterceptor.doProcessInterceptedCmnd(cmnd):
+    (cmndReturn, cmndOutput) = g_sysCmndInterceptor.nextInterceptedCmndStruct(cmnd)
+    if rtnOutput:
+      if cmndOutput==None:
+        raise Exception("Error, the command '"+cmnd+"' gave None output when" \
+          " non-null output was expected!")
+      return (cmndOutput, cmndReturn)
+    assert(outFile==None, "Error, can't handle output files yet!")
+    return cmndReturn
+  # Else, fall through
+  if rtnOutput:
+    child = os.popen(cmnd)
+    data = child.read()
+    rtnCode = child.close()
+    return (data, rtnCode)
+  else:
+    outFileHandle = None
+    if outFile:
+      outFileHandle = open(outFile, 'w')
+    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
+      stdout=outFileHandle)
+    return rtnCode
+
+
+#
+# System interaction utilties
+#
+
 
 def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
   """Run system command and optionally throw on failure"""
@@ -153,19 +261,20 @@ def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
     if workingDir:
       pwd = os.getcwd()
       os.chdir(workingDir)
-    #errCode = subprocess.call(cmnd, shell=True)
+    #rtnCode = subprocess.call(cmnd, shell=True)
     outFileHandle = None
-    if outFile:
-       outFileHandle = open(outFile, 'w')
-    errCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT, stdout=outFileHandle)
+    rtnCode = runSysCmndInterface(cmnd, outFile)
+#    if outFile:
+#       outFileHandle = open(outFile, 'w')
+#    rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT, stdout=outFileHandle)
   except OSError, e:
-    errCode = 1 # Just some error code != 0 please!
+    rtnCode = 1 # Just some error code != 0 please!
   if workingDir:
     os.chdir(pwd)
-  if errCode != 0 and throwExcept:
+  if rtnCode != 0 and throwExcept:
     raise RuntimeError('Error, the command \'%s\' failed with error code %d' \
-                       % (cmnd,errCode) )
-  return errCode
+                       % (cmnd,rtnCode) )
+  return rtnCode
 
 
 def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
@@ -195,9 +304,29 @@ def echoRunSysCmnd(cmnd, throwExcept=True, outFile=None, msg=None,
   return rtn
 
 
-def printStackTrace():
-  sys.stdout.flush()
-  traceback.print_exc()
+def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir=""):
+  """Run a shell command and return its output"""
+  pwd = None
+  if workingDir:
+    pwd = os.getcwd()
+    os.chdir(workingDir)
+  try:
+    (data, err) = runSysCmndInterface(cmnd, rtnOutput=True)
+    if err:
+      if throwOnError:
+        raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
+      else:
+        return ""
+    if stripTrailingSpaces:
+      return data.rstrip()
+    return data
+  finally:
+    if pwd: os.chdir(pwd)
+
+
+###############
+# File helpers
+###############
 
 
 def removeIfExists(fileName):
@@ -209,26 +338,9 @@ def writeStrToFile(fileBodyStr, fileName):
   open(fileName, 'w').write(fileBodyStr)
 
 
-def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir=""):
-  """Run a shell command and return its output"""
-  pwd = None
-  if workingDir:
-    pwd = os.getcwd()
-    os.chdir(workingDir)
-  try:
-    child = os.popen(cmnd)
-    data = child.read()
-    err = child.close()
-    if err:
-      if throwOnError:
-        raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
-      else:
-        return ""
-    if stripTrailingSpaces:
-      return data.rstrip()
-    return data
-  finally:
-    if pwd: os.chdir(pwd)
+def printStackTrace():
+  sys.stdout.flush()
+  traceback.print_exc()
 
 
 def getFileNamesWithFileTag( baseDir, fileTag ):
@@ -773,6 +885,116 @@ class testGeneralScriptSupport(unittest.TestCase):
     self.assertEqual( expandedDirsList, expandedDirsList_expected )
 
 
+  def test_runSysCmndInteface_pass(self):
+    self.assertEqual(0, runSysCmndInterface("echo junk"))
+
+
+  def test_runSysCmndInteface_fail(self):
+    self.assertEqual(1, runSysCmndInterface("ls this_file_does_not_exist"))
+
+
+  def test_runSysCmndInteface_rtnOutput_pass(self):
+    self.assertEqual(("junk\n", None), runSysCmndInterface("echo junk", rtnOutput=True))
+
+
+  def test_runSysCmndInteface_rtnOutput_fail(self):
+    (output, rtnCode) = runSysCmndInterface("ls this_file_does_not_exist", rtnOutput=True)
+    self.assertNotEqual(rtnCode, 0)
+
+
+  def test_SysCmndInterceptor_isFallThroughCmnd(self):
+    sci = SysCmndInterceptor()
+    self.assertEqual(sci.hasInterceptedCmnds(), False)
+    sci.setFallThroughCmndRegex("eg log.*")
+    sci.setFallThroughCmndRegex("ls.*")
+    self.assertEqual(sci.hasInterceptedCmnds(), False)
+    self.assertEqual(sci.isFallThroughCmnd("eg log"), True)
+    self.assertEqual(sci.isFallThroughCmnd("eg log origin.."), True)
+    self.assertEqual(sci.isFallThroughCmnd("eg pull"), False)
+    self.assertEqual(sci.isFallThroughCmnd("ls"), True)
+    self.assertEqual(sci.isFallThroughCmnd("ls dogs"), True)
+    self.assertEqual(sci.isFallThroughCmnd("mkdir cats"), False)
+
+
+  def test_SysCmndInterceptor_nextInterceptedCmndStruct_02(self):
+    sci = SysCmndInterceptor()
+    self.assertEqual(sci.hasInterceptedCmnds(), False)
+    sci.setInterceptedCmnd("eg commit", 0)
+    self.assertEqual(sci.hasInterceptedCmnds(), True)
+    self.assertRaises(Exception, sci.nextInterceptedCmndStruct, "eg pull")
+
+
+  def test_runSysCmndInterface_fall_through(self):
+    try:
+      g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
+      self.assertNotEqual(0, runSysCmndInterface("ls not_exists"))
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
+  def test_runSysCmndInterface_intercept_rtnCode_01(self):
+    try:
+      g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg log", 3)
+      g_sysCmndInterceptor.setInterceptedCmnd("eg frog", 5)
+      g_sysCmndInterceptor.setAllowExtraCmnds(False)
+      self.assertEqual(3, runSysCmndInterface("eg log"))
+      self.assertEqual(("dummy1\n", None),
+        runSysCmndInterface("echo dummy1", rtnOutput=True)) # Fall through!
+      self.assertEqual(5, runSysCmndInterface("eg frog"))
+      self.assertEqual(g_sysCmndInterceptor.hasInterceptedCmnds(), False)
+      self.assertRaises(Exception, runSysCmndInterface, "ls not_exists")
+      self.assertEqual(("dummy2\n", None),
+        runSysCmndInterface("echo dummy2", rtnOutput=True)) # Fall through!
+      g_sysCmndInterceptor.setAllowExtraCmnds(True)
+      self.assertNotEqual(0, runSysCmndInterface("ls not_exists_2")) # Fall through!
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
+  def test_runSysCmndInterface_intercept_rtnOutput_01(self):
+    try:
+      g_sysCmndInterceptor.setInterceptedCmnd("eg log", 3, "bad log\n")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg frog", 5, "good frog\n")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg blog", 7) # No output defined
+      g_sysCmndInterceptor.setAllowExtraCmnds(False)
+      self.assertEqual(("bad log\n", 3), runSysCmndInterface("eg log", rtnOutput=True))
+      self.assertEqual(("good frog\n", 5), runSysCmndInterface("eg frog", rtnOutput=True))
+      self.assertRaises(Exception, runSysCmndInterface, "eg blog", rtnOutput=True)
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
+  def test_runSysCmnd_intercept_01(self):
+    try:
+      g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg log", 3)
+      g_sysCmndInterceptor.setInterceptedCmnd("eg frog", 5)
+      g_sysCmndInterceptor.setAllowExtraCmnds(False)
+      self.assertEqual(3, runSysCmnd("eg log", throwExcept=False))
+      self.assertRaises(Exception, runSysCmnd, "eg frog")
+      self.assertEqual(g_sysCmndInterceptor.hasInterceptedCmnds(), False)
+      self.assertRaises(Exception, runSysCmnd, "ls not_exists", throwExcept=False)
+      g_sysCmndInterceptor.setAllowExtraCmnds(True)
+      self.assertRaises(Exception, runSysCmnd, "ls not_exists_2") # Fall through!
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
+  def test_getCmndOutput_intercept_01(self):
+    try:
+      g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg log", 0, "good log\n")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg frog", 0, "bad frog\n")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg blog", 2, "who cares\n")
+      g_sysCmndInterceptor.setAllowExtraCmnds(False)
+      self.assertEqual("good log", getCmndOutput("eg log", True))
+      self.assertEqual("bad frog", getCmndOutput("eg frog", True, False))
+      self.assertRaises(Exception, getCmndOutput, "eg blog", True)
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(testGeneralScriptSupport))
@@ -780,4 +1002,4 @@ def suite():
 
 
 if __name__ == '__main__':
-  unittest.TextTestRunner(verbosity=2).run(suite())
+  unittest.main()

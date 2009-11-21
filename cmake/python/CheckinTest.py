@@ -1007,7 +1007,7 @@ def getUserCommitMessageStr(inOptions):
 
 
 def getAutomatedStatusSummaryHeaderKeyStr():
-  return "Automated status information"
+  return "Build/Test Cases Summary"
 
 
 def getAutomatedStatusSummaryHeaderStr(inOptions):
@@ -1502,6 +1502,10 @@ def checkinTest(inOptions):
         print "\nSkippng apending test results due to prior errors!\n"
         ammendFinalCommitPassed = False
 
+      elif not performAnyActions(inOptions):
+
+        print "\nSkippng apending test results because no action was selected!\n"
+
       else:  # inOptions.appendTestResults and okToPush
   
         print "\nAttempting to ammend the final commmit message ...\n"
@@ -1814,4 +1818,4 @@ def suite():
 
 
 if __name__ == '__main__':
-  unittest.TextTestRunner(verbosity=2).run(suite())
+  unittest.main()

@@ -4,17 +4,24 @@ INCLUDE(PackageAddAdvancedTest)
 
 IF (PYTHON_EXECUTABLE)
 
+  PACKAGE_ADD_ADVANCED_TEST( TrilinosFramework_PythonUnitTests_GeneralScriptSupport
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    TEST_0 CMND ${PYTHON_EXECUTABLE} 
+      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/GeneralScriptSupport.py -v
+      PASS_REGULAR_EXPRESSION "OK"
+    )
+
   PACKAGE_ADD_ADVANCED_TEST( TrilinosFramework_PythonUnitTests_TrilinosPackageFilePathUtils
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
-      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageFilePathUtils.py
+      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageFilePathUtils.py -v
       PASS_REGULAR_EXPRESSION "OK"
     )
 
   PACKAGE_ADD_ADVANCED_TEST( TrilinosFramework_PythonUnitTests_CheckinTest
     OVERALL_WORKING_DIRECTORY TEST_NAME
     TEST_0 CMND ${PYTHON_EXECUTABLE} 
-      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/CheckinTest.py
+      ARGS ${CMAKE_CURRENT_SOURCE_DIR}/CheckinTest.py -v
       PASS_REGULAR_EXPRESSION "OK"
     )
 
