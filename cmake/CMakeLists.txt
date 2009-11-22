@@ -1,3 +1,8 @@
+
+# Label all of these tests as TrilinosFramework tests!
+SET(PACKAGE_NAME TrilinosFramework)
+
+
 IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
   ADD_SUBDIRECTORY(DependencyUnitTests)
 ENDIF()
