@@ -51,4 +51,10 @@ if logFileName:
 
 rtnVal = echoRunSysCmnd(cmnd, throwExcept=False)
 
+# This return value is always 0 even if it fails!
+#if rtnVal==0:
+#  print "\nOVERALL: PASSED\n"
+#else:
+#  print "\nOVERALL: FAILED\n"
+
 sys.exit(rtnVal)

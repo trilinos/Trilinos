@@ -100,16 +100,30 @@ def arrayToFormattedString(array_in, offsetStr = ""):
    return sout
 
 
-def createDir( dirName ):
+def echoChDir(dirName, verbose=True):
+  if verbose:
+    print "\nChanging current directory to \'"+dirName+"\'"
+  if not os.path.isdir(dirName):
+    raise OSError("Error, the directory \'"+dirName+"\' does not exist in the" \
+      + " base directory \'"+os.getcwd()+"\"!" )
+  os.chdir(dirName)
+  if verbose:
+    print "\nCurrent directory is \'"+os.getcwd()+"\'\n"
+
+
+def createDir(dirName, cdIntoDir=False, verbose=False):
   """Create a directory if it does not exist"""
   if os.path.exists(dirName):
     if not os.path.isdir(dirName):
-      print "\nError the path", dirName, "already exists but it is not a directory!"
-      raise RuntimeError("Directory path error!")
-    print "\nThe directory", dirName, "already exists!"
+      errMsg = "\nError the path '"+dirName+"'already exists but it is not a directory!"
+      if verbose: print errMsg
+      raise RuntimeError(errMsg)
+    if verbose: print "\nThe directory", dirName, "already exists!"
   else:
-    print "\nCreating directory "+dirName+" ..."
+    if verbose: print "\nCreating directory "+dirName+" ..."
     os.mkdir(dirName)
+  if cdIntoDir:
+    echoChDir(dirName, verbose=verbose)
 
 
 def createDirsFromPath(path):
@@ -123,15 +137,6 @@ def createDirsFromPath(path):
     if currDir and not os.path.exists(currDir):
       #print "\ncurrDir =", currDir
       createDir(currDir)
-
-
-def echoChDir(dirName):
-  print "\nChanging current directory to \'"+dirName+"\'"
-  if not os.path.isdir(dirName):
-    raise OSError("Error, the directory \'"+dirName+"\' does not exist in the" \
-      + " base directory \'"+os.getcwd()+"\"!" )
-  os.chdir(dirName)
-  print "\nCurrent directory is \'"+os.getcwd()+"\'\n"
 
 
 def expandDirsDict(trilinosDirsDict_inout):
@@ -170,58 +175,101 @@ class InterceptedCmndStruct:
 class SysCmndInterceptor:
 
   def __init__(self):
-    self.fallThroughCmndRegexList = []
-    self.interceptedCmndStructList = []
-    self.allowExtraCmnds = True
+    self.__fallThroughCmndRegexList = []
+    self.__interceptedCmndStructList = []
+    self.__allowExtraCmnds = True
 
   def setFallThroughCmndRegex(self, cmndRegex):
-    self.fallThroughCmndRegexList.append(cmndRegex)
+    self.__fallThroughCmndRegexList.append(cmndRegex)
 
   def setInterceptedCmnd(self, cmndRegex, cmndReturn, cmndOutput=None):
-    self.interceptedCmndStructList.append(
+    self.__interceptedCmndStructList.append(
        InterceptedCmndStruct(cmndRegex, cmndReturn, cmndOutput) )
 
   def setAllowExtraCmnds(self, allowExtraCmnds):
-    self.allowExtraCmnds = allowExtraCmnds
+    self.__allowExtraCmnds = allowExtraCmnds
 
   def hasInterceptedCmnds(self):
-     return len(self.interceptedCmndStructList) > 0
+     return len(self.__interceptedCmndStructList) > 0
+
+  def getFallThroughCmndRegexList(self):
+    return self.__fallThroughCmndRegexList[:]
+
+  def getInterceptedCmndStructList(self):
+    return self.__interceptedCmndStructList[:]
 
   def doProcessInterceptedCmnd(self, cmnd):
     if self.isFallThroughCmnd(cmnd):
       return False
-    if len(self.interceptedCmndStructList) > 0:
+    if len(self.__interceptedCmndStructList) > 0:
       return True
-    if not self.allowExtraCmnds:
+    if not self.__allowExtraCmnds:
       return True
     return False
 
   def isFallThroughCmnd(self, cmnd):
-     for cmndRegex in self.fallThroughCmndRegexList:
+     for cmndRegex in self.__fallThroughCmndRegexList:
        if re.match(cmndRegex, cmnd):
          return True
      return False
 
   def nextInterceptedCmndStruct(self, cmnd):
     assert(not self.isFallThroughCmnd(cmnd))
-    if len(self.interceptedCmndStructList) == 0:
+    if len(self.__interceptedCmndStructList) == 0:
       raise Exception("Error, cmnd='"+cmnd+"' is past the last expected command!")
-    ics = self.interceptedCmndStructList.pop(0)
+    ics = self.__interceptedCmndStructList.pop(0)
     if re.match(ics.cmndRegex, cmnd):
       return (ics.cmndReturn, ics.cmndOutput)
     raise Exception("Error, cmnd='"+cmnd+"' did not match the" \
       " expected regex='"+ics.cmndRegex+"'!")
 
   def clear(self):
-    self.fallThroughCmndRegexList = []
-    self.interceptedCmndStructList = []
-    self.allowExtraCmnds = True
+    self.__fallThroughCmndRegexList = []
+    self.__interceptedCmndStructList = []
+    self.__allowExtraCmnds = True
+
+  def readCommandsFromStr(self, cmndsStr):
+    lines = cmndsStr.split('\n')
+    for line in lines:
+      if line == "":
+        continue
+      (tag, entry) = line.split(':')
+      #print "(tag, entry) =", (tag, entry)
+      if tag == "FT":
+        self.__fallThroughCmndRegexList.append(entry.strip())
+      elif tag == "IT":
+        (cmndRegex, cmndReturn, cmndOutput) = entry.split(';')
+        self.__interceptedCmndStructList.append(
+          InterceptedCmndStruct(cmndRegex.strip(), int(cmndReturn),
+            cmndOutput.strip()[1:-1] )
+          )
+      else:
+        raise Exception("Error, invalid tag = '"+tag+"'!")
 
 
 g_sysCmndInterceptor = SysCmndInterceptor()
 
 
+# Read the command interepts from a file?
+cmndInterceptsFile = os.environ.get(
+  "GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE","")
+if cmndInterceptsFile:
+  cmndInterceptsFileStr = open(cmndInterceptsFile, 'r').read()
+  print "\nReading system command intercepts from file '"+cmndInterceptsFile+"' with contents:\n" \
+    "-----------------------------------\n" \
+    +cmndInterceptsFileStr+ \
+    "-----------------------------------\n"
+  g_sysCmndInterceptor.readCommandsFromStr(cmndInterceptsFileStr)
+  g_sysCmndInterceptor.setAllowExtraCmnds(False)
+
+
+# Dump all commands being performed?
+g_dumpAllSysCmnds = os.environ.has_key("GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS")
+
+
 def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
+  if g_dumpAllSysCmnds:
+    print "\nDUMP SYS CMND: " + cmnd + "\n"
   if outFile!=None and rtnOutput==True:
     raise Exception("Error, both outFile and rtnOutput can not be true!") 
   if g_sysCmndInterceptor.doProcessInterceptedCmnd(cmnd):
@@ -231,7 +279,8 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
         raise Exception("Error, the command '"+cmnd+"' gave None output when" \
           " non-null output was expected!")
       return (cmndOutput, cmndReturn)
-    assert(outFile==None, "Error, can't handle output files yet!")
+    if outFile:
+      writeStrToFile(cmndOutput, outFile)  
     return cmndReturn
   # Else, fall through
   if rtnOutput:
@@ -246,6 +295,24 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
     rtnCode = subprocess.call(cmnd, shell=True, stderr=subprocess.STDOUT,
       stdout=outFileHandle)
     return rtnCode
+
+
+###############
+# File helpers
+###############
+
+
+def removeIfExists(fileName):
+  if os.path.exists(fileName):
+    echoRunSysCmnd("rm "+fileName)
+
+
+def writeStrToFile(fileBodyStr, fileName):
+  open(fileName, 'w').write(fileBodyStr)
+
+
+def readStrFromFile(fileName):
+  return open(fileName, 'r').read()
 
 
 #
@@ -324,18 +391,9 @@ def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir
     if pwd: os.chdir(pwd)
 
 
-###############
-# File helpers
-###############
-
-
-def removeIfExists(fileName):
-  if os.path.exists(fileName):
-    echoRunSysCmnd("rm "+fileName)
-
-
-def writeStrToFile(fileBodyStr, fileName):
-  open(fileName, 'w').write(fileBodyStr)
+#####################
+# Other Stuff
+#####################
 
 
 def printStackTrace():
@@ -783,6 +841,9 @@ def deleteAllButProtectedInBaseDir(absBaseDir, protectedFilesAndDirs,
 import unittest
 
 
+utilsDir = getScriptBaseDir()+"/utils"
+
+
 class testGeneralScriptSupport(unittest.TestCase):
 
 
@@ -886,11 +947,11 @@ class testGeneralScriptSupport(unittest.TestCase):
 
 
   def test_runSysCmndInteface_pass(self):
-    self.assertEqual(0, runSysCmndInterface("echo junk"))
+    self.assertEqual(0, runSysCmndInterface(utilsDir+"/return_input.py 0"))
 
 
   def test_runSysCmndInteface_fail(self):
-    self.assertEqual(1, runSysCmndInterface("ls this_file_does_not_exist"))
+    self.assertEqual(1, runSysCmndInterface(utilsDir+"/return_input.py 1"))
 
 
   def test_runSysCmndInteface_rtnOutput_pass(self):
@@ -898,8 +959,8 @@ class testGeneralScriptSupport(unittest.TestCase):
 
 
   def test_runSysCmndInteface_rtnOutput_fail(self):
-    (output, rtnCode) = runSysCmndInterface("ls this_file_does_not_exist", rtnOutput=True)
-    self.assertNotEqual(rtnCode, 0)
+    (output, rtnCode) = runSysCmndInterface(utilsDir+"/return_input.py 5", rtnOutput=True)
+    self.assertNotEqual(rtnCode, 0) # Does not return the right rtnCode!
 
 
   def test_SysCmndInterceptor_isFallThroughCmnd(self):
@@ -916,7 +977,7 @@ class testGeneralScriptSupport(unittest.TestCase):
     self.assertEqual(sci.isFallThroughCmnd("mkdir cats"), False)
 
 
-  def test_SysCmndInterceptor_nextInterceptedCmndStruct_02(self):
+  def test_SysCmndInterceptor_nextInterceptedCmndStruct(self):
     sci = SysCmndInterceptor()
     self.assertEqual(sci.hasInterceptedCmnds(), False)
     sci.setInterceptedCmnd("eg commit", 0)
@@ -924,10 +985,30 @@ class testGeneralScriptSupport(unittest.TestCase):
     self.assertRaises(Exception, sci.nextInterceptedCmndStruct, "eg pull")
 
 
+  def test_SysCmndInterceptor_readCmndFile_01(self):
+    sci = SysCmndInterceptor()
+    sci.readCommandsFromStr(
+"""
+FT: eg log.*
+FT: ls .*
+IT: eg log; 0; 'good log'
+IT: eg frog; 3; 'bad frog'
+IT: ./do-configure; 5; ''
+"""
+    )
+    self.assertEqual(["eg log.*", "ls .*"], sci.getFallThroughCmndRegexList())
+    self.assertEqual( str(InterceptedCmndStruct("eg log", 0, "good log")),
+      str(sci.getInterceptedCmndStructList()[0]) )
+    self.assertEqual( str(InterceptedCmndStruct("eg frog", 3, "bad frog")),
+      str(sci.getInterceptedCmndStructList()[1]) )
+    self.assertEqual( str(InterceptedCmndStruct("./do-configure", 5, "")),
+      str(sci.getInterceptedCmndStructList()[2]) )
+
+
   def test_runSysCmndInterface_fall_through(self):
     try:
       g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
-      self.assertNotEqual(0, runSysCmndInterface("ls not_exists"))
+      self.assertEqual(3, runSysCmndInterface(utilsDir+"/return_input.py 3"))
     finally:
       g_sysCmndInterceptor.clear()
 
@@ -943,11 +1024,11 @@ class testGeneralScriptSupport(unittest.TestCase):
         runSysCmndInterface("echo dummy1", rtnOutput=True)) # Fall through!
       self.assertEqual(5, runSysCmndInterface("eg frog"))
       self.assertEqual(g_sysCmndInterceptor.hasInterceptedCmnds(), False)
-      self.assertRaises(Exception, runSysCmndInterface, "ls not_exists")
+      self.assertRaises(Exception, runSysCmndInterface, utilsDir+"/return_input.py 2")
       self.assertEqual(("dummy2\n", None),
         runSysCmndInterface("echo dummy2", rtnOutput=True)) # Fall through!
       g_sysCmndInterceptor.setAllowExtraCmnds(True)
-      self.assertNotEqual(0, runSysCmndInterface("ls not_exists_2")) # Fall through!
+      self.assertEqual(4, runSysCmndInterface(utilsDir+"/return_input.py 4")) # Fall through!
     finally:
       g_sysCmndInterceptor.clear()
 
@@ -965,6 +1046,15 @@ class testGeneralScriptSupport(unittest.TestCase):
       g_sysCmndInterceptor.clear()
 
 
+  def test_runSysCmndInterface_intercept_outFile_01(self):
+    try:
+      g_sysCmndInterceptor.setInterceptedCmnd("eg log", 3, "bad log\n")
+      self.assertEqual(3, runSysCmndInterface("eg log", outFile="eg_log.out"))
+      self.assertEqual("bad log\n", readStrFromFile("eg_log.out"))
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
   def test_runSysCmnd_intercept_01(self):
     try:
       g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
@@ -974,9 +1064,9 @@ class testGeneralScriptSupport(unittest.TestCase):
       self.assertEqual(3, runSysCmnd("eg log", throwExcept=False))
       self.assertRaises(Exception, runSysCmnd, "eg frog")
       self.assertEqual(g_sysCmndInterceptor.hasInterceptedCmnds(), False)
-      self.assertRaises(Exception, runSysCmnd, "ls not_exists", throwExcept=False)
+      self.assertRaises(Exception, runSysCmnd, utilsDir+"/return_input.py 1", throwExcept=False)
       g_sysCmndInterceptor.setAllowExtraCmnds(True)
-      self.assertRaises(Exception, runSysCmnd, "ls not_exists_2") # Fall through!
+      self.assertRaises(Exception, runSysCmnd, utilsDir+"/return_input.py 3") # Fall through!
     finally:
       g_sysCmndInterceptor.clear()
 
