@@ -49,12 +49,15 @@ cmnd = scriptsDir+"/checkin-test-impl.py " + requoteCmndLineArgs(sys.argv[1:])
 if logFileName:
   cmnd = cmnd + " 2>&1 | tee "+logFileName
 
+# This return value is always 0 even if it fails?
 rtnVal = echoRunSysCmnd(cmnd, throwExcept=False)
 
-# This return value is always 0 even if it fails!
-#if rtnVal==0:
-#  print "\nOVERALL: PASSED\n"
-#else:
-#  print "\nOVERALL: FAILED\n"
-
-sys.exit(rtnVal)
+# Grep the output to determine success or failure
+success = True
+if logFileName and getCmndOutput("grep 'OVERALL: PASSED' "+logFileName)=="":
+  success = False
+  
+if success:
+  sys.exit(0)
+else:
+  sys.exit(1)

@@ -641,6 +641,8 @@ if not options.showDefaults:
   print "\nFinal time:", getCmndOutput("date",True)
   
   if success:
+    print "\nOVERALL: PASSED\n"
     sys.exit(0)
   else:
+    print "\nOVERALL: FAILED\n"
     sys.exit(1)

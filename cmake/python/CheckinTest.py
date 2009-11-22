@@ -1732,9 +1732,9 @@ def checkinTest(inOptions):
 
 
 
-#
-# Unit testing code
-# 
+#####################
+# Unit testing code #
+#####################
 
 
 import unittest
@@ -1745,22 +1745,248 @@ class MockOptions:
     self.enableAllPackages = 'default'
 
 
+#
+# Test isGlobalBuildFile
+#
+
+class test_isGlobalBuildFile(unittest.TestCase):
+
+
+  def test_00(self):
+    self.assertEqual( isGlobalBuildFile( 'Trilinos_version.h' ), True )
+
+
+  def test_01(self):
+    self.assertEqual( isGlobalBuildFile( 'CMakeLists.txt' ), True )
+
+
+  def test_02(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosPackages.cmake' ), True )
+
+
+  def test_03(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
+
+
+  def test_04(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/ctest/experimental_build_test.cmake' ),
+      False )
+
+
+  def test_05(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/DependencyUnitTests/blah' ),
+      False )
+
+
+  def test_06(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLBLAS.cmake' ),
+      True )
+
+
+  def test_07(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
+      True )
+
+
+  def test_08(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLMPI.cmake' ),
+      True )
+
+
+  def test_09(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLDummy.cmake' ),
+      False )
+
+
+  def test_10(self):
+    self.assertEqual( isGlobalBuildFile( 'cmake/utils/SetNotFound.cmake' ),
+      True )
+
+
+#
+# Test extractPackageEnablesFromChangeStatus
+#
+
+class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
+
+
+  def test_1(self):
+
+    updateOutputStr = """
+? packages/tpetra/doc/html
+? packages/trilinoscouplings/doc/html
+? packages/triutils/doc/html
+? sampleScripts/checkin-test-gabriel.sh
+M	cmake/TrilinosPackages.cmake
+M	cmake/python/checkin-test.py
+M	cmake/python/dump-cdash-deps-xml-file.py
+P packages/thyra/dummy.blah
+A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
+"""
+
+    options = MockOptions()
+    enablePackagesList = []
+
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+      enablePackagesList, False)
+
+    self.assertEqual( options.enableAllPackages, 'on' )
+    self.assertEqual( enablePackagesList, ['Teuchos'] )
+
+
+  def test_2(self):
+
+    updateOutputStr = """
+? packages/triutils/doc/html
+M	cmake/python/checkin-test.py
+M	cmake/python/dump-cdash-deps-xml-file.py
+A	packages/nox/src/dummy.C
+P packages/stratimikos/dummy.blah
+M	packages/thyra/src/Thyra_ConfigDefs.hpp
+M	packages/thyra/CMakeLists.txt
+"""
+
+    options = MockOptions()
+    enablePackagesList = []
+
+    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
+      enablePackagesList, False)
+
+    self.assertEqual( options.enableAllPackages, 'default' )
+    self.assertEqual( enablePackagesList, ['NOX', 'Thyra'] )
+
+# Unit test class
+
+
+class test_getLastCommitMessageStrFromRawCommitLogStr(unittest.TestCase):
+
+
+  def test_01(self):
+    cleanCommitMsg_expected = \
+"""Some Commit Message
+
+Some commit body
+
+Some other message
+"""
+    rawLogOutput = "Standard git header stuff\n\n"+cleanCommitMsg_expected
+    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
+    self.assertEqual(numBlankLines, -1)
+    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+
+
+  def test_02(self):
+    cleanCommitMsg_expected = \
+"""Some Commit Message
+
+Some commit body
+
+Some other message
+"""
+    rawLogOutput = \
+       "Standard git header stuff\n\n" \
+       +cleanCommitMsg_expected+ \
+       "\n\n\n=====================\n" \
+       "Build/Test Cases Summary\n" \
+       "=====================\n"
+    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
+    self.assertEqual(numBlankLines, 3)
+    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+
+
+  def test_03(self):
+    cleanCommitMsg_expected = \
+"""Some Commit Message
+
+Some commit body
+
+Some other message
+"""
+    rawLogOutput = \
+       "Standard git header stuff\n\n" \
+       +cleanCommitMsg_expected+ \
+       "\n=====================\n" \
+       "Build/Test Cases Summary\n" \
+       "=====================\n"
+    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
+    self.assertEqual(numBlankLines, 1)
+    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+
+
+  def test_04(self):
+    cleanCommitMsg_expected = \
+"""Some Commit Message
+
+Some commit body
+
+Some other message"""
+    rawLogOutput = \
+       "Standard git header stuff\n\n" \
+       +cleanCommitMsg_expected+ \
+       "\n=====================\n" \
+       "Build/Test Cases Summary\n" \
+       "=====================\n"
+    self.assertRaises(Exception, getLastCommitMessageStrFromRawCommitLogStr, rawLogOutput)
+
+
+  def test_05(self):
+    cleanCommitMsg_expected = \
+"""Some Commit Message
+
+Some commit body
+
+Some other message
+"""
+    rawLogOutput = \
+       "Standard git header stuff\n\n" \
+       +cleanCommitMsg_expected+ \
+       "\n=====================\n" \
+       "Build/Test Cases Summary\n" \
+       "=====================\n"
+    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
+    self.assertEqual(numBlankLines, 1)
+    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+    # Strip it again to make sure we can pull it off again and recover
+    rawLogOutput = \
+       "Standard git header stuff\n\n" \
+       +cleanCommitMsg+ \
+       "\n=====================\n" \
+       "Build/Test Cases Summary\n" \
+       "=====================\n"
+    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
+    self.assertEqual(numBlankLines, 1)
+    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+
+
+#
+# Test getLastCommitMessageStrFromRawCommitLogStr
+#
+
+g_verbose=True
+g_verbose=False
+
+
+g_checkin_test_tests_dir = "checkin_test_tests"
+
+
+# Unit test driver
+
+
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
-  expectPass, passRegexList, fromScratch=True \
+  expectPass, passRegexStrList, fromScratch=True \
   ):
 
   scriptsDir = getScriptBaseDir()
-  #verbose=True
-  verbose=False
+  verbose = g_verbose
+
+  passRegexList = passRegexStrList.split('\n')
 
   if verbose: print "\npassRegexList =", passRegexList
 
   # A) Create the test directory
 
   baseDir = os.getcwd()
-  createDir("checkin_test_tests", True, verbose)
-  if os.path.exists(testName) and fromScratch:
-    echoRunSysCmnd("rm -rf "+testName, verbose=verbose)
+  createDir(g_checkin_test_tests_dir, True, verbose)
   createDir(testName, True, verbose)
 
   try:
@@ -1805,11 +2031,10 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     # F) Examine the final return code
 
-# Darn, the final return code is not returning non-zero for failure!
-#    if expectPass:
-#      testObject.assertEqual(rtnCode, 0)
-#    else:
-#      testObject.assertNotEqual(rtnCode, 0)
+    if expectPass:
+      testObject.assertEqual(rtnCode, 0)
+    else:
+      testObject.assertNotEqual(rtnCode, 0)
     
   finally:
     # F) Get back to the current directory and reset
@@ -1817,365 +2042,201 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE']=""
 
 
-class testCheckinTest(unittest.TestCase):
+# Test Data
 
 
-  def test_isGlobalBuildFile_00(self):
-    self.assertEqual( isGlobalBuildFile( 'Trilinos_version.h' ), True )
+# ToDo: Extract out expected regex strings as helper varaibles and switch from
+# an array to a single string and then split on '\n'.
 
 
-  def test_isGlobalBuildFile_01(self):
-    self.assertEqual( isGlobalBuildFile( 'CMakeLists.txt' ), True )
+g_cmndinterceptsPullPasses = \
+  "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
+  "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
+  "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
+
+g_cmndinterceptsConfigBuildTestPasses = \
+  "IT: \./do-configure; 0; 'do-configure passed'\n" \
+  "IT: make -j3; 0; 'make passed'\n" \
+  "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
+
+g_cmndinterceptsFinalPullCommitPasses = \
+  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+  "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
+  "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
+  "IT: eg commit --amend -F .*; 0; 'Ammending the last commit'\n" \
+
+g_expectedRegexUpdatePasses = \
+  "Update passed!\n" \
+  "The update passed!\n" \
+  "Update: Passed\n"
+
+g_expectedRegexConfigPasses = \
+  "Modified file: .packages/teuchos/CMakeLists\.txt\n" \
+  "  => Enabling .Teuchos.!\n" \
+  "Configure passed!\n" \
+  "The configure passed!\n" \
+  "Configure: Passed\n" \
+
+g_expectedRegexBuildPasses = \
+  "Build passed!\n" \
+  "The build passed!\n" \
+  "Build: Passed\n"
+
+g_expectedRegexBuildFailed = \
+  "Build failed returning 1!\n" \
+  "The build FAILED!\n" \
+  "Build: FAILED\n"
+
+g_expectedRegexTestPasses = \
+  "Test passed!\n" \
+  "testResultsLine = 100% tests passed, 0 tests failed out of 100\n" \
+  "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+  "Test: Passed\n"
+
+g_expectedRegexTestNotRun = \
+  "The tests where never even run!\n" \
+  "Test: FAILED\n"
+
+g_expectedCommonOptionsSummary = \
+  "Enabled Packages: Teuchos\n" \
+  "Make Options: -j3\n" \
+  "CTest Options: -j5\n"
+
+#
+# Test checkin_test
+#
+
+class test_checkin_test(unittest.TestCase):
 
 
-  def test_isGlobalBuildFile_02(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosPackages.cmake' ), True )
-
-
-  def test_isGlobalBuildFile_03(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
-
-
-  def test_isGlobalBuildFile_04(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/ctest/experimental_build_test.cmake' ),
-      False )
-
-
-  def test_isGlobalBuildFile_05(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/DependencyUnitTests/blah' ),
-      False )
-
-
-  def test_isGlobalBuildFile_06(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLBLAS.cmake' ),
-      True )
-
-
-  def test_isGlobalBuildFile_07(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
-      True )
-
-
-  def test_isGlobalBuildFile_08(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLMPI.cmake' ),
-      True )
-
-
-  def test_isGlobalBuildFile_09(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLDummy.cmake' ),
-      False )
-
-
-  def test_isGlobalBuildFile_10(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/utils/SetNotFound.cmake' ),
-      True )
-
-
-  def test_extractPackageEnablesFromChangeStatus_1(self):
-
-    updateOutputStr = """
-? packages/tpetra/doc/html
-? packages/trilinoscouplings/doc/html
-? packages/triutils/doc/html
-? sampleScripts/checkin-test-gabriel.sh
-M	cmake/TrilinosPackages.cmake
-M	cmake/python/checkin-test.py
-M	cmake/python/dump-cdash-deps-xml-file.py
-P packages/thyra/dummy.blah
-A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
-"""
-
-    options = MockOptions()
-    enablePackagesList = []
-
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
-      enablePackagesList, False)
-
-    self.assertEqual( options.enableAllPackages, 'on' )
-    self.assertEqual( enablePackagesList, ['Teuchos'] )
-
-
-  def test_extractPackageEnablesFromChangeStatus_2(self):
-
-    updateOutputStr = """
-? packages/triutils/doc/html
-M	cmake/python/checkin-test.py
-M	cmake/python/dump-cdash-deps-xml-file.py
-A	packages/nox/src/dummy.C
-P packages/stratimikos/dummy.blah
-M	packages/thyra/src/Thyra_ConfigDefs.hpp
-M	packages/thyra/CMakeLists.txt
-"""
-
-    options = MockOptions()
-    enablePackagesList = []
-
-    extractPackageEnablesFromChangeStatus(updateOutputStr, options,
-      enablePackagesList, False)
-
-    self.assertEqual( options.enableAllPackages, 'default' )
-    self.assertEqual( enablePackagesList, ['NOX', 'Thyra'] )
-
-
-  def test_getLastCommitMessageStrFromRawCommitLogStr_01(self):
-    cleanCommitMsg_expected = \
-"""Some Commit Message
-
-Some commit body
-
-Some other message
-"""
-    rawLogOutput = "Standard git header stuff\n\n"+cleanCommitMsg_expected
-    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
-    self.assertEqual(numBlankLines, -1)
-    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
-
-
-  def test_getLastCommitMessageStrFromRawCommitLogStr_02(self):
-    cleanCommitMsg_expected = \
-"""Some Commit Message
-
-Some commit body
-
-Some other message
-"""
-    rawLogOutput = \
-       "Standard git header stuff\n\n" \
-       +cleanCommitMsg_expected+ \
-       "\n\n\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
-    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
-    self.assertEqual(numBlankLines, 3)
-    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
-
-
-  def test_getLastCommitMessageStrFromRawCommitLogStr_03(self):
-    cleanCommitMsg_expected = \
-"""Some Commit Message
-
-Some commit body
-
-Some other message
-"""
-    rawLogOutput = \
-       "Standard git header stuff\n\n" \
-       +cleanCommitMsg_expected+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
-    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
-    self.assertEqual(numBlankLines, 1)
-    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
-
-
-  def test_getLastCommitMessageStrFromRawCommitLogStr_04(self):
-    cleanCommitMsg_expected = \
-"""Some Commit Message
-
-Some commit body
-
-Some other message"""
-    rawLogOutput = \
-       "Standard git header stuff\n\n" \
-       +cleanCommitMsg_expected+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
-    self.assertRaises(Exception, getLastCommitMessageStrFromRawCommitLogStr, rawLogOutput)
-
-
-  def test_getLastCommitMessageStrFromRawCommitLogStr_05(self):
-    cleanCommitMsg_expected = \
-"""Some Commit Message
-
-Some commit body
-
-Some other message
-"""
-    rawLogOutput = \
-       "Standard git header stuff\n\n" \
-       +cleanCommitMsg_expected+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
-    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
-    self.assertEqual(numBlankLines, 1)
-    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
-    # Strip it again to make sure we can pull it off again and recover
-    rawLogOutput = \
-       "Standard git header stuff\n\n" \
-       +cleanCommitMsg+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
-    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
-    self.assertEqual(numBlankLines, 1)
-    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
-
-
-  def test_checkin_test_do_all_pass(self):
+  def test_do_all_without_serial_release_pass(self):
     checkin_test_run_case(
+      \
       self,
-      "do_all_pass",
+      \
+      "do_all_without_serial_release_pass",
       "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      \
       "FT: grep .*\n" \
-      "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-      "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
-      "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n" \
-      "IT: \./do-configure; 0; 'do-configure passed'\n" \
-      "IT: make -j3; 0; 'make passed'\n" \
-      "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n" \
-      "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
-      "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
-      "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
-      "IT: eg commit --amend -F .*; 0; 'Ammending the last commit'\n" \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsFinalPullCommitPasses \
       ,
-      False,
-      [
-      "Update passed!",
-      "Modified file: .packages/teuchos/CMakeLists\.txt",
-      "  => Enabling .Teuchos.!",
-      "Configure passed!",
-      "Build passed!",
-      "Test passed!",
-      "The update passed!",
-      "The configure passed!",
-      "The build passed!",
-      "testResultsLine = 100% tests passed, 0 tests failed out of 100",
-      "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0",
-      "The tests successfully passed for MPI_DEBUG!",
-      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!",
-      "Enabled Packages: Teuchos",
-      "Make Options: -j3",
-      "CTest Options: -j5",
-      "Update: Passed",
-      "Configure: Passed",
-      "Build: Passed",
-      "Test: Passed",
-      "=> A PUSH IS OKAY TO BE PERFORMED!",
-      "^READY TO PUSH: Trilinos:"
-      ]
+      \
+      True,
+      \
+      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexConfigPasses+ \
+      g_expectedRegexBuildPasses+ \
+      g_expectedRegexTestPasses+ \
+      g_expectedCommonOptionsSummary+ \
+      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "^READY TO PUSH: Trilinos:\n"
       )
 
 
-  def test_checkin_test_do_all_pull_fail(self):
+  def test_do_all_without_serial_release_pull_fail(self):
     checkin_test_run_case(
+      \
       self,
-      "do_all_pull_fail",
+      \
+      "do_all_without_serial_release_pull_fail",
+      \
       "--do-all",
       "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
       "IT: eg pull --rebase; 1; 'eg pull failed'\n" \
       ,
+      \
       False,
-      [
-      "Pull failed!",
-      "Update failed!",
-      "Skipping getting list of modified files because pull failed!",
-      "A PUSH IS \*NOT\* READY TO BE PERFORMED!",
-      "INITIAL PULL FAILED: Trilinos:"
-      ]
+      \
+      "Pull failed!\n" \
+      "Update failed!\n" \
+      "Skipping getting list of modified files because pull failed!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "INITIAL PULL FAILED: Trilinos:\n"
       )
 
 
-  def test_checkin_test_do_all_configure_fail(self):
+  def test_do_all_without_serial_release_configure_fail(self):
     checkin_test_run_case(
       self,
-      "do_all_configure_fail",
+      \
+      "do_all_without_serial_release_configure_fail",
       "--do-all --without-serial-release",
-      "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-      "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
-      "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n" \
+      \
+      g_cmndinterceptsPullPasses+ \
       "IT: \./do-configure; 1; 'do-configure failed'\n" \
       ,
+      \
       False,
-      [
-      "Configure failed returning 1!",
-      "The configure FAILED!",
-      "The build was never attempted!",
-      "The tests where never even run!",
-      "FAILED: Trilinos/MPI_DEBUG: configure failed",
-      "A PUSH IS \*NOT\* READY TO BE PERFORMED!",
-      "NOT READY TO PUSH: Trilinos:"
-      ]
+      \
+      g_expectedRegexUpdatePasses+ \
+      "Configure failed returning 1!\n" \
+      "The configure FAILED!\n" \
+      "The build was never attempted!\n" \
+      "The tests where never even run!\n" \
+      "FAILED: Trilinos/MPI_DEBUG: configure failed\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "NOT READY TO PUSH: Trilinos:\n"
       )
 
 
-  def test_checkin_test_do_all_build_fail(self):
+  def test_do_all_without_serial_release_build_fail(self):
     checkin_test_run_case(
+      \
       self,
-      "do_all_build_fail",
-      "--do-all --without-serial-release --make-options=-j3",
-      "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-      "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
-      "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n" \
+      \
+      "do_all_without_serial_release_build_fail",
+      "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      \
+      g_cmndinterceptsPullPasses+ \
       "IT: \./do-configure; 0; 'do-configure passed'\n" \
       "IT: make -j3; 1; 'make filed'\n" \
       ,
+      \
       False,
-      [
-      "Update passed!",
-      "Modified file: .packages/teuchos/CMakeLists\.txt",
-      "  => Enabling .Teuchos.!",
-      "Configure passed!",
-      "Build failed returning 1!",
-      "The update passed!",
-      "The configure passed!",
-      "The build FAILED!",
-      "The tests where never even run!",
-      "FAILED: Trilinos/MPI_DEBUG: build failed",
-      "The file MPI_DEBUG/ctest.success does not exist!  Not ready for final commit/push!",
-      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!",
-      "Enabled Packages: Teuchos",
-      "Make Options: -j3",
-      "Update: Passed",
-      "Configure: Passed",
-      "Build: FAILED",
-      "Test: FAILED",
-      "A PUSH IS \*NOT\* READY TO BE PERFORMED!",
-      "NOT READY TO PUSH: Trilinos:"
-      ]
+      \
+      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexConfigPasses+ \
+      g_expectedRegexTestNotRun+ \
+      g_expectedRegexBuildFailed+ \
+      "FAILED: Trilinos/MPI_DEBUG: build failed\n" \
+      "The file MPI_DEBUG/ctest.success does not exist!  Not ready for final commit/push!\n" \
+      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +g_expectedCommonOptionsSummary+ \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "NOT READY TO PUSH: Trilinos:\n"
       )
 
 
-  def test_checkin_test_do_all_test_fail(self):
+  def test_do_all_without_serial_release_test_fail(self):
     checkin_test_run_case(
+      \
       self,
-      "do_all_test_fail",
+      \
+      "do_all_without_serial_release_test_fail",
       "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      \
       "FT: grep .*\n" \
-      "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-      "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
-      "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n" \
+      +g_cmndinterceptsPullPasses+ \
       "IT: \./do-configure; 0; 'do-configure passed'\n" \
       "IT: make -j3; 0; 'make passed'\n" \
       "IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
-      ,
+      ,      \
       False,
-      [
-      "Update passed!",
-      "Modified file: .packages/teuchos/CMakeLists\.txt",
-      "  => Enabling .Teuchos.!",
-      "Configure passed!",
-      "Build passed!",
-      "FAILED: ctest failed returning 1!",
-      "The update passed!",
-      "The configure passed!",
-      "The build passed!",
-      "testResultsLine = 80% tests passed, 20 tests failed out of 100",
-      "FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20",
-      "The file MPI_DEBUG/ctest.success does not exist!  Not ready for final commit/push!",
-      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!",
-      "Enabled Packages: Teuchos",
-      "Make Options: -j3",
-      "CTest Options: -j5",
-      "Update: Passed",
-      "Configure: Passed",
-      "Build: Passed",
-      "Test: FAILED",
-      "A PUSH IS \*NOT\* READY TO BE PERFORMED!",
-      "NOT READY TO PUSH: Trilinos:"
-      ]
+      \
+      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexConfigPasses+ \
+      g_expectedRegexBuildPasses+ \
+      "FAILED: ctest failed returning 1!\n" \
+      "testResultsLine = 80% tests passed, 20 tests failed out of 100\n" \
+      "FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
+      "The file MPI_DEBUG/ctest.success does not exist!  Not ready for final commit/push!\n" \
+      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +g_expectedCommonOptionsSummary+ \
+      "Test: FAILED\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "NOT READY TO PUSH: Trilinos:\n"
       )
 
 
@@ -2186,4 +2247,6 @@ def suite():
 
 
 if __name__ == '__main__':
+  if os.path.exists(g_checkin_test_tests_dir):
+    echoRunSysCmnd("rm -rf "+g_checkin_test_tests_dir, verbose=g_verbose)
   unittest.main()
