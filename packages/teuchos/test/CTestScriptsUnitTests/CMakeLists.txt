@@ -62,7 +62,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_out_file
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!" --return-val=5
-    OUTPUT_FILE outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_outputFile.out
     PASS_REGULAR_EXPRESSION "This is a crazy test"
   )
 
@@ -88,14 +88,14 @@ PACKAGE_ADD_ADVANCED_TEST(
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
-    OUTPUT_FILE outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_1
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
-    OUTPUT_FILE outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_1_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is a crazy test} [^a]PASSED[^a]"
   )
@@ -103,7 +103,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_2
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
-    OUTPUT_FILE outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_2_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is not the best test} [^a]PASSED[^a]"
   )
@@ -115,7 +115,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_out_file_no_echo_output
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!" --return-val=5
-    OUTPUT_FILE outputFile.out
+    OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_no_echo_output_outputFile.out
     NO_ECHO_OUTPUT
   FINAL_FAIL_REGULAR_EXPRESSION "[^=]This is a crazy test"
   )
@@ -130,7 +130,7 @@ PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_working_directory
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
     WORKING_DIRECTORY TEST_NAME
-    OUTPUT_FILE console.out
+    OUTPUT_FILE cmnd_1_args_1_working_directory_console.out
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
@@ -182,18 +182,18 @@ PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
-    OUTPUT_FILE console.out
-  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy console.out console.gold.out
-  TEST_2 CMND ${DIFF_COMMAND_STUFF} console.out console.gold.out
+    OUTPUT_FILE cmnd_3_args_1_overall_working_directory_console.out
+  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy cmnd_3_args_1_overall_working_directory_console.out cmnd_3_args_1_overall_working_directory_console.gold.out
+  TEST_2 CMND ${DIFF_COMMAND_STUFF} cmnd_3_args_1_overall_working_directory_console.out cmnd_3_args_1_overall_working_directory_console.gold.out
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
-    OUTPUT_FILE console.out
+    OUTPUT_FILE cmnd_3_args_1_overall_working_directory_working_directory_console.out
     WORKING_DIRECTORY GenericDriver
-  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy ../GenericDriver/console.out console.gold.out
+  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy ../GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
     WORKING_DIRECTORY Gold
-  TEST_2 CMND ${DIFF_COMMAND_STUFF} GenericDriver/console.out Gold/console.gold.out
+  TEST_2 CMND ${DIFF_COMMAND_STUFF} GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out Gold/cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
   )
