@@ -260,7 +260,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     # B) Create the command to run the checkin-test.py script
     
-    cmnd = scriptsDir + "/checkin-test.py --send-email-to= " + optionsStr
+    cmnd = scriptsDir + "/checkin-test.py " + optionsStr
     
     # C) Set up the command intercept file
 
@@ -271,7 +271,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
       "FT: touch .*\n" \
       "FT: chmod .*\n" \
       "FT: hostname\n" \
-      "FT: sleep .*\n"
+      "FT: grep .*OVERALL. PASSED.*\n"
 
     fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
 
@@ -332,6 +332,13 @@ g_cmndinterceptsFinalPullCommitPasses = \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Ammending the last commit'\n" \
 
+g_cmndinterceptsSendEmail = \
+  "IT: mailx -s .*; 0; 'Do not really send email '\n"
+
+g_cmndinterceptsSendFinalEmail = \
+  "IT: sleep .*; 0; 'Do not really sleep'\n" \
+  "IT: mailx -s .*; 0; 'Do not really send email '\n"
+
 g_expectedRegexUpdatePasses = \
   "Update passed!\n" \
   "The update passed!\n" \
@@ -376,6 +383,42 @@ g_expectedCommonOptionsSummary = \
 class test_checkin_test(unittest.TestCase):
 
 
+  def test_do_all_commit_push_pass(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_commit_push_pass",
+      "--make-options=-j3 --ctest-options=-j5" \
+      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      " --do-all --commit --push",
+      \
+      "FT: grep .*\n" \
+      "IT: eg commit -a -F .*; 0; 'initial eg commit passes'\n" \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendEmail \
+      +g_cmndinterceptsFinalPullCommitPasses+ \
+      "IT: eg push; 0; 'push passes'\n" \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexConfigPasses+ \
+      g_expectedRegexBuildPasses+ \
+      g_expectedRegexTestPasses+ \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
+      +g_expectedCommonOptionsSummary+ \
+      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "^DID PUSH: Trilinos:\n"
+      )
+
+
   def test_do_all_without_serial_release_pass(self):
     checkin_test_run_case(
       \
@@ -387,16 +430,20 @@ class test_checkin_test(unittest.TestCase):
       "FT: grep .*\n" \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendEmail \
       +g_cmndinterceptsFinalPullCommitPasses \
+      +g_cmndinterceptsSendFinalEmail \
       ,
       \
       True,
       \
-      g_expectedRegexUpdatePasses+ \
-      g_expectedRegexConfigPasses+ \
-      g_expectedRegexBuildPasses+ \
-      g_expectedRegexTestPasses+ \
-      g_expectedCommonOptionsSummary+ \
+      g_expectedRegexUpdatePasses \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses+ \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +g_expectedCommonOptionsSummary+ \
       "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
       "^READY TO PUSH: Trilinos:\n"
       )
@@ -459,6 +506,8 @@ class test_checkin_test(unittest.TestCase):
       g_cmndinterceptsPullPasses+ \
       "IT: \./do-configure; 0; 'do-configure passed'\n" \
       "IT: make -j3; 1; 'make filed'\n" \
+      +g_cmndinterceptsSendEmail \
+      +g_cmndinterceptsSendFinalEmail \
       ,
       \
       False,
@@ -467,9 +516,8 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexConfigPasses+ \
       g_expectedRegexTestNotRun+ \
       g_expectedRegexBuildFailed+ \
-      "FAILED: Trilinos/MPI_DEBUG: build failed\n" \
-      "The file MPI_DEBUG/ctest.success does not exist!  Not ready for final commit/push!\n" \
-      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      "0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: build failed  Not ready for final commit/push!\n" \
+      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary+ \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
@@ -489,6 +537,8 @@ class test_checkin_test(unittest.TestCase):
       "IT: \./do-configure; 0; 'do-configure passed'\n" \
       "IT: make -j3; 0; 'make passed'\n" \
       "IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
+      +g_cmndinterceptsSendEmail \
+      +g_cmndinterceptsSendFinalEmail \
       ,      \
       False,
       \
@@ -497,13 +547,41 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexBuildPasses+ \
       "FAILED: ctest failed returning 1!\n" \
       "testResultsLine = 80% tests passed, 20 tests failed out of 100\n" \
-      "FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
-      "The file MPI_DEBUG/ctest.success does not exist!  Not ready for final commit/push!\n" \
-      "Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      "0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
+      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary+ \
       "Test: FAILED\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
+      )
+
+
+  def test_do_all_without_serial_release_commit_initial_commit_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_without_serial_release_commit_initial_commit_fail",
+      \
+     "--make-options=-j3 --ctest-options=-j5" \
+      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      " --do-all --without-serial-release --commit" \
+      ,
+      \
+      "IT: eg commit -a -F .*; 1; 'initial commit failed'\n" \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "FAILED: Commit failed!\n" \
+      "Commit failed, aborting pull!\n" \
+      "Skipping getting list of modified files because pull failed!\n" \
+      "The commit failed, skipping running the build/test cases!\n" \
+      "0) MPI_DEBUG => The directory MPI_DEBUG does not exist!  Not ready for final commit/push!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "Not attempted final commit and/or push!\n" \
+      "INITIAL COMMIT FAILED: Trilinos:\n"
       )
 
 

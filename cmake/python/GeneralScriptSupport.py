@@ -533,6 +533,13 @@ def removeItemsFromList(list, items):
   return itemsRemoved
 
 
+def getStrUnderlineStr(width):
+  underlineStr = ""
+  for i in range(width):
+    underlineStr += "-"
+  return underlineStr
+
+
 reCmndLineArg = re.compile(r"(--.+=)(.+)")
 
 

@@ -54,7 +54,7 @@ rtnVal = echoRunSysCmnd(cmnd, throwExcept=False)
 
 # Grep the output to determine success or failure
 success = True
-if logFileName and getCmndOutput("grep 'OVERALL: PASSED' "+logFileName)=="":
+if logFileName and getCmndOutput("grep 'OVERALL: PASSED' "+logFileName, True, False)=="":
   success = False
   
 if success:

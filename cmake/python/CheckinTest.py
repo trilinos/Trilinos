@@ -585,11 +585,11 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   emailBody += "Build Dir: " + os.getcwd() + "\n"
   emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
-    emailBody += "\nExtra CMake Options: " + inOptions.extraCmakeOptions + "\n"
+    emailBody += "Extra CMake Options: " + inOptions.extraCmakeOptions + "\n"
   if inOptions.makeOptions:
-    emailBody += "\nMake Options: " + inOptions.makeOptions + "\n"
+    emailBody += "Make Options: " + inOptions.makeOptions + "\n"
   if inOptions.ctestOptions:
-    emailBody += "\nCTest Options: " + inOptions.ctestOptions + "\n"
+    emailBody += "CTest Options: " + inOptions.ctestOptions + "\n"
   emailBody += "\n"
   emailBody += getStageStatus("Update", inOptions.doPull, updatePassed, timings.update)
   emailBody += getStageStatus("Configure", inOptions.doConfigure, configurePassed, timings.configure)
@@ -598,8 +598,6 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   emailBody += "\n"
 
   if inOptions.doTest and testOutputExists and numTotalTests:
-
-    emailBody += "Test summary:\n-------------\n\n"
 
     if inOptions.showAllTests:
       emailBody += getCmndOutput("cat "+getTestOutputFileName())
@@ -613,8 +611,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   endingTime = time.time()
   totalTime = (endingTime - startingTime) / 60.0
 
-  emailBody += "\n\nFinal:\n------\n\n"
-  emailBody += "Total time for "+buildDirName+" = "+str(totalTime) + " minutes"
+  emailBody += "\nTotal time for "+buildDirName+" = "+str(totalTime) + " minutes"
 
   #print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
@@ -641,35 +638,53 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   return success
 
 
-def getTestCaseEmailSummary(doTestCaseBool, testCaseName):
-  summaryEmailSectionStr = ""
-  if doTestCaseBool:
+def getTestCaseSummaryLine(testCaseName):
+  # Get the email file
+  absEmailBodyFileName = testCaseName+"/"+getEmailBodyFileName()
+  if os.path.exists(absEmailBodyFileName):
+    testCaseEmailStrArray = open(absEmailBodyFileName, 'r').readlines()
+  else:
+    testCaseEmailStrArray = None
+  # Get the first line (which is the summary)
+  if testCaseEmailStrArray:
+    summaryLine = testCaseEmailStrArray[0].strip()
+  else:
+    summaryLine = \
+      "Error, The build/test was never completed!" \
+      " (the file '"+absEmailBodyFileName+"' does not exist.)"
+  return summaryLine
+
+
+def getTestCaseEmailSummary(testCaseName, testCaseNum):
+  # Get the email file
+  absEmailBodyFileName = testCaseName+"/"+getEmailBodyFileName()
+  if os.path.exists(absEmailBodyFileName):
+    testCaseEmailStrArray = open(absEmailBodyFileName, 'r').readlines()
+  else:
+    testCaseEmailStrArray = None
+  # Write the entry
+  testCaseHeader = str(testCaseNum)+") "+testCaseName+" Results:"
+  summaryEmailSectionStr = \
+    "\n"+testCaseHeader+ \
+    "\n"+getStrUnderlineStr(len(testCaseHeader))+"\n" \
+    "\n"
+  if testCaseEmailStrArray:
+    for line in testCaseEmailStrArray:
+      summaryEmailSectionStr += "  " + line
+    summaryEmailSectionStr += "\n"
+  else:
     summaryEmailSectionStr += \
-      "\n\n"+testCaseName+" Results:\n" \
-      "------------------------\n" \
-      "\n"
-    absEmailBodyFileName = testCaseName+"/"+getEmailBodyFileName()
-    if os.path.exists(absEmailBodyFileName):
-      testCaseEmailStrArray = open(absEmailBodyFileName, 'r').readlines()
-      for line in testCaseEmailStrArray:
-        summaryEmailSectionStr += "  " + line
-      summaryEmailSectionStr += "\n"
-    else:
-        summaryEmailSectionStr += \
-          "Error, The build/test was never completed!" \
-          " (the file '"+absEmailBodyFileName+"' does not exist.)\n"
+      "Error, The build/test was never completed!" \
+      " (the file '"+absEmailBodyFileName+"' does not exist.)\n"
   return summaryEmailSectionStr
 
 
 def getSummaryEmailSectionStr(inOptions):
-  summaryEmailSectionStr = \
-    "\n\n-------------------\n" \
-    "Summary of Results:\n" \
-    "-------------------\n"
-  summaryEmailSectionStr += \
-    getTestCaseEmailSummary(inOptions.withMpiDebug, "MPI_DEBUG")
-  summaryEmailSectionStr += \
-    getTestCaseEmailSummary(inOptions.withSerialRelease, "SERIAL_RELEASE")
+  summaryEmailSectionStr = ""
+  if inOptions.withMpiDebug:
+    summaryEmailSectionStr += getTestCaseEmailSummary("MPI_DEBUG", 0)
+  if inOptions.withSerialRelease:
+    summaryEmailSectionStr += getTestCaseEmailSummary("SERIAL_RELEASE", 1)
   return summaryEmailSectionStr
 
   
@@ -968,28 +983,35 @@ def checkBuildCheckinStatus(runTestCaseBool, serialOrMpi, buildType):
 
   buildName = serialOrMpi+"_"+buildType
 
-  statusMsg = ""
+  buildOkay = False
+  statusMsg = None
 
   if not runTestCaseBool:
-    return (True,
-      "\nTest case "+buildName+" was not run!  Does not affect commit/push readiness!\n")
+    buildOkay = True
+    statusMsg = \
+      "Test case "+buildName+" was not run!  Does not affect commit/push readiness!"
+    return (buildOkay, statusMsg)
 
   if not os.path.exists(buildName):
-    statusMsg += "\nThe directory "+buildName+" does not exist!  Not ready for final commit/push!\n"
-    return (False, statusMsg)
+    buildOkay = True
+    statusMsg = "The directory "+buildName+" does not exist!"
 
   testSuccessFileName = buildName+"/"+getTestSuccessFileName()
   if not os.path.exists(testSuccessFileName):
-     statusMsg += "\nThe file "+testSuccessFileName+" does not exist!  Not ready for final commit/push!\n"
-     return (False, statusMsg)
+    buildOkay = False
+  else:
+    buildOkay = True
 
   emailSuccessFileName = buildName+"/"+getEmailSuccessFileName()
   if not os.path.exists(emailSuccessFileName):
-    statusMsg += "\nThe file "+emailSuccessFileName+" does not exist!  Not ready for final commit!\n"
-    return (False, statusMsg)
+    buildOkay = False
+  else:
+    buildOkay = True
 
-  statusMsg += "\nThe tests successfully passed for "+buildName+"!\n"
-  return (True, statusMsg)
+  if not statusMsg:
+    statusMsg = getTestCaseSummaryLine(buildName)
+
+  return (buildOkay, statusMsg)
 
 
 def getUserCommitMessageStr(inOptions):
@@ -1105,14 +1127,14 @@ def getLocalCommitsSummariesStr(inOptions):
     print "\nNo local commits exit!\n"
 
   localCommitsStr = \
-    "\n\n\n\n" \
-    "----------------------------------------\n" \
+    "\n" \
     "Local commits for this build/test group:\n" \
-    "----------------------------------------\n\n"
+    "----------------------------------------\n"
   if localCommitsExist:
     localCommitsStr += rawLocalCommitsStr
   else:
     localCommitsStr += "No local commits exist!"
+  localCommitsStr += "\n"
 
   return (localCommitsStr, localCommitsExist)
 
@@ -1409,6 +1431,7 @@ def checkinTest(inOptions):
         )
       if not result: success = False
 
+
     print "\n***"
     print "*** 6) Determine overall commit/push readiness ..."
     print "***"
@@ -1420,20 +1443,26 @@ def checkinTest(inOptions):
       okToCommit = True
       subjectLine = None
       commitEmailBodyExtra = ""
-  
-      (buildOkay, statusMsg) = \
-        checkBuildCheckinStatus(inOptions.withMpiDebug, "MPI", "DEBUG")
-      print statusMsg
-      commitEmailBodyExtra += statusMsg
-      if not buildOkay:
-        okToCommit = False
-        
-      (buildOkay, statusMsg) = \
-        checkBuildCheckinStatus(inOptions.withSerialRelease, "SERIAL", "RELEASE")
-      print statusMsg
-      commitEmailBodyExtra += statusMsg
-      if not buildOkay:
-        okToCommit = False
+
+      commitEmailBodyExtra += \
+        "\nBuild test results:" \
+        "\n-------------------\n"
+      buildTestCaseList = [
+        [inOptions.withMpiDebug, "MPI", "DEBUG"] ,
+        [inOptions.withSerialRelease, "SERIAL", "RELEASE"]
+        ]
+      for i in range(len(buildTestCaseList)):
+        buildTestCase = buildTestCaseList[i]
+        (buildOkay, statusMsg) = \
+          checkBuildCheckinStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2])
+        print "\n"+statusMsg
+        commitEmailBodyExtra += str(i)+") "+buildTestCase[1]+"_"+buildTestCase[2]+" => "+statusMsg
+        if not buildOkay:
+          commitEmailBodyExtra += "  Not ready for final commit/push!"
+        commitEmailBodyExtra += "\n"
+        print "buildOkay =", buildOkay
+        if not buildOkay:
+          okToCommit = False
   
   
       if okToCommit:
@@ -1448,6 +1477,7 @@ def checkinTest(inOptions):
 
       print "\nSkipping commit readiness check on request!"
       okToCommit = False
+
   
     print "\n***"
     print "*** 7) Do commit and push  ..."
@@ -1631,6 +1661,7 @@ def checkinTest(inOptions):
         subjectLine = "INITIAL COMMIT FAILED"
         commitEmailBodyExtra += "\n\nFailed because initial commit failed!" \
           " See '"+getInitialCommitOutputFileName()+"'\n\n"
+        success = False
       elif not pullPassed:
         subjectLine = "INITIAL PULL FAILED"
         commitEmailBodyExtra += "\n\nFailed because initial pull failed!" \
@@ -1654,7 +1685,7 @@ def checkinTest(inOptions):
       elif inOptions.doPush and pushPassed and forcedCommit:
         subjectLine = "FORCED COMMIT/PUSH"
         commitEmailBodyExtra += forcedCommitMsg
-        success = False
+        success = True
       elif inOptions.doCommit and commitPassed and forcedCommit:
         subjectLine = "FORCED COMMIT"
         commitEmailBodyExtra += forcedCommitMsg
@@ -1665,7 +1696,7 @@ def checkinTest(inOptions):
           subjectLine = "ABORTED COMMIT/PUSH"
           commitEmailBodyExtra += "\n\nCommit/push was never attempted since commit/push" \
           " criteria failed!\n\n"
-        success = False
+          success = False
       else:
         if okToCommit:
           subjectLine = "READY TO PUSH"
@@ -1695,7 +1726,8 @@ def checkinTest(inOptions):
       if inOptions.sendEmailTo:
   
         emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
-        echoRunSysCmnd("sleep 2s && mailx -s \""+subjectLine+"\" " \
+        echoRunSysCmnd("sleep 2s")
+        echoRunSysCmnd("mailx -s \""+subjectLine+"\" " \
           +emailAddresses+" < "+summaryCommitEmailBodyFileName)
         # Above, we use 'sleep 2s' to try to make sure this email is posted
         # after the last pass/fail email!
