@@ -1576,6 +1576,7 @@ def checkinTest(inOptions):
           # Get then final commit message
           finalCommitEmailBodyStr = getLastCommitMessageStr(inOptions)
           finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr(inOptions)
+          finalCommitEmailBodyStr += commitEmailBodyExtra
           finalCommitEmailBodyStr += localCommitSummariesStr
           if forcedCommit:
             finalCommitEmailBodyStr += (forcedCommitMsg + "\n\n")
