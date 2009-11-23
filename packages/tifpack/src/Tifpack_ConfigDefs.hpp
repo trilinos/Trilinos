@@ -59,6 +59,5 @@
 		       } return(ifpack_err); }
 
 #define TIFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
-#define TIFPACK_ABS(x) (((x) > 0.0) ? (x) : (-x))  /* abs function */
 
 #endif /*_TIFPACK_CONFIGDEFS_HPP_*/

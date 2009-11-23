@@ -7,6 +7,7 @@
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 namespace tif_utest {
 using Tpetra::global_size_t;
@@ -51,7 +52,7 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_tr
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_graph(LocalOrdinal num_rows_per_proc)
+Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_graph(LocalOrdinal num_rows_per_proc)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
@@ -85,6 +86,28 @@ Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_te
   crsgraph->fillComplete();
 
   return crsgraph;
+}
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& crsgraph)
+{
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph));
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = crsmatrix->getRowMap();
+
+  Teuchos::Array<GlobalOrdinal> col(1);
+  Teuchos::Array<Scalar> coef(1);
+
+  for(GlobalOrdinal g_row = rowmap->getMinGlobalIndex(); g_row<=rowmap->getMaxGlobalIndex(); ++g_row) {
+    col[0] = g_row;
+    coef[0] = 1;
+
+    crsmatrix->sumIntoGlobalValues(g_row, col(), coef() );
+  }
+
+  crsmatrix->fillComplete();
+
+  return crsmatrix;
 }
 
 }//namespace tif_utest

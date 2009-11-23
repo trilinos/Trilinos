@@ -29,13 +29,10 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_IC_Utils.hpp"
+#include <cmath>
 
 #define SYMSTR 1 /* structurally symmetric version */
 #include <stdio.hpp>
-
-#define MIN(a,b) ((a)<=(b) ? (a) : (b))
-#define MAX(a,b) ((a)>=(b) ? (a) : (b))
-#define ABS(a) ((a)>=0 ? (a) : -(a))
 
 #define SHORTCUT(p, a, ja, ia) \
         (a)  = (p)->val; \
@@ -80,10 +77,10 @@ static void qsplit(double *a, int *ind, int n, int ncut)
     while (1)
     {
         mid = first;
-        abskey = ABS(a[mid]);
+        abskey = std::abs(a[mid]);
         for (j=first+1; j<=last; j++)
         {
-            if (ABS(a[j]) > abskey)
+            if (std::abs(a[j]) > abskey)
             {
                 mid = mid+1;
                 /* interchange */
@@ -340,7 +337,7 @@ void crout_ict(
       getcol(A, k, len_l, work_l, ind_l);
       for (j=0; j<len_l; j++)
 	{
-	  norm_l += ABS(work_l[j]);
+	  norm_l += std::abs(work_l[j]);
 	  marker_l[ind_l[j]] = j;
 	}
 #else
@@ -349,7 +346,7 @@ void crout_ict(
         {
             index = jal[j];
             work_l[len_l] = al[j];
-            norm_l += ABS(al[j]);
+            norm_l += std::abs(al[j]);
             ind_l[len_l] = index;
             marker_l[index] = len_l++; /* points into work array */
         }
@@ -367,7 +364,7 @@ void crout_ict(
 	i = 0;
         for (j=0; j<len_l; j++)
 	{
-	    if (ABS(work_l[j]) < droptol * norm_l)
+	    if (std::abs(work_l[j]) < droptol * norm_l)
 	    {
 	        /* zero out marker array for this */
 		marker_l[ind_l[j]] = -1;
@@ -387,7 +384,7 @@ void crout_ict(
 	 * part into the factors
 	 */
 
-	count_l = MIN(len_l, lfil);
+	count_l = std::min(len_l, lfil);
 	qsplit(work_l, ind_l, len_l, count_l);
 	quicksort(ind_l, work_l, count_l);
 

@@ -31,6 +31,7 @@
 #define TIFPACK_UTILS_HPP
 
 #include "Tifpack_ConfigDefs.hpp"
+#include <cmath>
 #include "Tpetra_Comm.hpp"
 #if !( defined(__INTEL_COMPILER) && defined(_WIN32) )
 #  include "unistd.hpp" // Not a standard header file!
@@ -152,7 +153,7 @@ public:
   inline void SetValue(const double val)
   {
     val_ = val;
-    aval_ = TIFPACK_ABS(val_);
+    aval_ = std::abs(val_);
   }
 
   inline bool operator <(const Tifpack_Element& rhs) const 

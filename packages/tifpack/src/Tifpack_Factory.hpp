@@ -27,12 +27,11 @@
 //@HEADER
 */
 
-#ifndef TIFPACK_HPP
-#define TIFPACK_HPP
+#ifndef TIFPACK_FACTORY_HPP
+#define TIFPACK_FACTORY_HPP
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_PointRelaxation.hpp"
@@ -60,19 +59,21 @@ precTypeNameToIntMap(
   "parameter \"Prec Type\"", Tifpack::numPrecTypes, Tifpack::precTypeNames
   );
 
-} // namespace
+} // namespace <anonymous>
 
-//! Tifpack: a function class to define Tifpack preconditioners.
+namespace Tifpack {
+
+//! Tifpack::Factory a factory class to create Tifpack preconditioners.
 /*!
-Class Tifpack is a function class, that contains just one method:
+Class Tifpack::Factory is a function class, that contains just one method:
 Create(). Using Create(), users can easily define a variety of 
-TIFPACK preconditioners. 
+Tifpack preconditioners. 
 
 Create requires 3 arguments:
 - a string, indicating the preconditioner to be built;
-- a pointer to an Tpetra_RowMatrix, representing the matrix
+- a pointer to a Tpetra::RowMatrix, representing the matrix
   to be used to define the preconditioner;
-- an interger (defaulted to 0), that specifies the amount of
+- an integer (defaulted to 0), that specifies the amount of
   overlap among the processes.
 
 The first argument can assume the following values:
@@ -102,7 +103,7 @@ basic usage of this class.
 
 ...
 
-Tifpack Factory;
+Tifpack::Factory Factory;
 
 Tpetra_RowMatrix* A; // A is FillComplete()'d.
 string PrecType = "ILU"; // use incomplete LU on each process
@@ -143,7 +144,7 @@ delete Prec;
 \date Last updated on 25-Jan-05.
 */
 
-class Tifpack {
+class Factory {
 public:
 
   /** \brief Enum for the type of preconditioner. */

@@ -32,24 +32,28 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_CondestType.hpp"
-#include "Tpetra_Object.hpp"
-#include "Tpetra_Operator.hpp"
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_InverseOperator.hpp"
+#include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_ParameterList.hpp"
-class Tpetra_RowMatrix;
+#include "Teuchos_ScalarTraits.hpp"
+#include <iostream>
 
-//! Tifpack_Preconditioner: basic class for preconditioning in Tifpack
+namespace Tifpack {
+
+//! Tifpack::Preconditioner: basic class for preconditioning in Tifpack
 
 /*!
   Class Tifpack_Preconditioner is a pure virtual class, and it defines
   the structure of all Tifpack preconditioners.
 
-  This class is a simple extension to Tpetra_Operator. It provides 
+  This class is a simple extension to Tpetra::Operator. It provides 
   the following additional methods:
   - Initialize() performs all operations based on the graph
     of the matrix (without considering the numerical values);
   - IsInitialized() returns true if the preconditioner
     has been successfully initialized;
-  - Compute() computes all is required to apply the
+  - Compute() computes everything required to apply the
     preconditioner, using matrix values  (and assuming that the
     sparsity of the matrix has not been changed);
   - IsComputed() should return true if the preconditioner
@@ -109,51 +113,56 @@ this problem, we must be able to detect it.
 
   
 \note 
-  If TIFPACK is configured with Teuchos support, method SetParameters()
-  should be adopted. Otherwise, users can set parameters (one at-a-time),
-  using methods SetParameter(), for integers and doubles.
-  \date Sep-04
-
-  Tifpack_Preconditioner objects overload the << operator. Derived
+  Tifpack::Preconditioner objects overload the << operator. Derived
   classes should specify a Print() method, that will be used in
   operator <<.
 
 */
 
-class Tifpack_Preconditioner : public Tpetra_Operator {
+template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+class Preconditioner : virtual public Tpetra::InverseOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 public:
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   //! Sets all parameters for the preconditioner.
-  virtual int SetParameters(Teuchos::ParameterList& List) = 0;
+  virtual void SetParameters(Teuchos::ParameterList& List) = 0;
 
-  //! Computes all it is necessary to initialize the preconditioner.
+  //! Computes all (graph-related) data necessary to initialize the preconditioner.
   virtual int Initialize() = 0;
 
   //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
   virtual bool IsInitialized() const = 0;
 
-  //! Computes all it is necessary to apply the preconditioner.
+  //! Computes all (coefficient) data necessary to apply the preconditioner.
   virtual int Compute() = 0;
 
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool IsComputed() const = 0;
 
   //! Computes the condition number estimate, returns its value.
-  virtual double Condest(const Tifpack_CondestType CT = Tifpack_Cheap,
-                         const int MaxIters = 1550,
-                         const double Tol = 1e-9,
-			 Tpetra_RowMatrix* Matrix = 0) = 0;
+  virtual magnitudeType Condest(const Tifpack::CondestType CT = Tifpack::Cheap,
+                         const LocalOrdinal MaxIters = 1550,
+                         const magnitudeType Tol = 1e-9,
+                         Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix = 0) = 0;
 
   //! Returns the computed condition number estimate, or -1.0 if not computed.
-  virtual double Condest() const = 0;
+  virtual magnitudeType Condest() const = 0;
 
-  //! Applies the preconditioner to vector X, returns the result in Y.
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const = 0;
+//  //! Applies the preconditioner to vector X, returns the result in Y.
+//  virtual void applyInverse(
+//      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+//			      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+//            Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
   //! Returns a pointer to the matrix to be preconditioned.
-  virtual const Tpetra_RowMatrix& Matrix() const = 0;
+  virtual const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Matrix() const = 0;
+
+  //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
+//  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
+
+  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+//  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const = 0;
@@ -183,13 +192,16 @@ public:
   virtual double ApplyInverseFlops() const = 0;
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const = 0;
+  virtual std::ostream& Print(std::ostream& os) const = 0;
 
 };
 
-inline ostream& operator<<(ostream& os, const Tifpack_Preconditioner& obj)
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+inline std::ostream& operator<<(std::ostream& os, const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& obj)
 {
   return(obj.Print(os));
 }
+
+}//namespace Tifpack
 
 #endif // TIFPACK_PRECONDITIONER_HPP

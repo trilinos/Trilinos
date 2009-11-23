@@ -31,32 +31,38 @@
 #define TIFPACK_POINTRELAXATION_HPP
 
 #include "Tifpack_ConfigDefs.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Operator.hpp"
 #include "Tifpack_Preconditioner.hpp"
+#include "Tifpack_Parameters.hpp"
 
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Time.hpp"
+#include "Teuchos_Time.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import.hpp"
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
 
-namespace Teuchos {
-  class ParameterList;
-}
-class Tpetra_MultiVector;
-class Tpetra_Vector;
-class Tpetra_Map;
-class Tpetra_Comm;
-class Tpetra_CrsMatrix;
+#include <string>
+#include <sstream>
+#include <iostream>
 
-//! Tifpack_PointRelaxation: a class to define point relaxation preconditioners of for Tpetra_RowMatrix's.
+namespace Tifpack {
+enum PointRelaxationType {
+  JACOBI,
+  GS,
+  SGS
+};
+
+//! Tifpack::PointRelaxation: a class to define point relaxation preconditioners for Tpetra::RowMatrix objects.
 
 /*! 
-  The Tifpack_PointRelaxation class enables the construction of point
-  relaxation
-  preconditioners of an Tpetra_RowMatrix. Tifpack_PointRelaxation 
-  is derived from 
-  the Tifpack_Preconditioner class, which is itself derived from Tpetra_Operator.
+  The Tifpack::PointRelaxation class enables the construction of point
+  relaxation preconditioners of a Tpetra::RowMatrix. Tifpack::PointRelaxation 
+  is derived from the Tifpack::Preconditioner class, which is itself derived
+  from Tpetra::Operator.
   Therefore this object can be used as preconditioner everywhere an
   ApplyInverse() method is required in the preconditioning step.
  
@@ -86,7 +92,7 @@ x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
 \f]
 for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter.
 
-Using Tifpack_Jacobi, the user can apply the specified number of sweeps
+Using Tifpack::Jacobi, the user can apply the specified number of sweeps
 (\f$k_{max}\f$), and the damping parameter. If only one sweep is used, then
 the class simply applies the inverse of the diagonal of A to the input
 vector.
@@ -102,33 +108,35 @@ the Gauss-Seidel preconditioner can be defined as
 P_{GS}^{-1} = (D - E)^{-1}.
 \f]
 Clearly, the role of E and F can be interchanged. However,
-Tifpack_GaussSeidel does not consider backward Gauss-Seidel methods.
+Tifpack::GaussSeidel does not consider backward Gauss-Seidel methods.
 
 <P>For a list of supported parameters, please refer to page \ref ifp_params.
 
 <P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
-\ref Tifpack_PointRelaxation.
+\ref Tifpack::PointRelaxation.
 
 \author Michael Heroux, SNL 9214.
 
 \date Last modified on 22-Jan-05.
   
 */
-class Tifpack_PointRelaxation : public Tifpack_Preconditioner {
+template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+class PointRelaxation /* : virtual public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> */{
 
 public:
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   //@{ \name Constructors/Destructors
-  //! Tifpack_PointRelaxation constructor with given Tpetra_RowMatrix.
-  /*! Creates an instance of Tifpack_PointRelaxation class.
+  //! Tifpack::PointRelaxation constructor with given Tpetra::RowMatrix.
+  /*! Creates an instance of Tifpack::PointRelaxation class.
    *
    * \param
    * Matrix - (In) Pointer to matrix to precondition.
    */
-  Tifpack_PointRelaxation(const Tpetra_RowMatrix* Matrix);
+  PointRelaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
 
   //! Destructor.
-  virtual ~Tifpack_PointRelaxation() {}
+  virtual ~PointRelaxation() {}
 
   //@}
 
@@ -138,7 +146,7 @@ public:
    * \return Integer error code, set to 0 if successful.  
    * Set to -1 if this implementation does not support transpose.
     */
-  virtual inline int SetUseTranspose(bool UseTranspose_in)
+  int SetUseTranspose(bool UseTranspose_in)
   {
     UseTranspose_ = UseTranspose_in;
     return(0);
@@ -148,162 +156,160 @@ public:
 
   //@{ \name Mathematical functions.
 
-  //! Applies the matrix to an Tpetra_MultiVector.
+  //! Applies the matrix to a Tpetra::MultiVector.
   /*! 
     \param 
-    X - (In) A Tpetra_MultiVector of dimension NumVectors to multiply with matrix.
+    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
     \param 
-    Y - (Out) A Tpetra_MultiVector of dimension NumVectors containing the result.
+    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual inline int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //! Applies the preconditioner to X, returns the result in Y.
   /*! 
     \param
-    X - (In) A Tpetra_MultiVector of dimension NumVectors to be preconditioned.
+    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
     \param
-    Y - (InOut) A Tpetra_MultiVector of dimension NumVectors containing result.
+    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
 
     \warning This routine is NOT AztecOO complaint.
     */
-  virtual int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  void applyInverse(
+          const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //! Returns the infinity norm of the global matrix (not implemented)
-  virtual double NormInf() const
+  magnitudeType NormInf() const
   {
-    return(-1.0);
+    return(-1);
   }
   //@}
 
   //@{ \name Atribute access functions
 
-  virtual const char * Label() const
-  {
-    return(Label_.c_str());
-  }
-
   //! Returns the current UseTranspose setting.
-  virtual bool UseTranspose() const
+  bool UseTranspose() const
   {
     return(UseTranspose_);
   }
 
   //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
-  virtual bool HasNormInf() const
+  bool HasNormInf() const
   {
     return(false);
   }
 
-  //! Returns a pointer to the Tpetra_Comm communicator associated with this operator.
-  virtual const Tpetra_Comm & Comm() const;
+  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  const Teuchos::RCP<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal> >& getDomainMap() const;
 
-  //! Returns the Tpetra_Map object associated with the domain of this operator.
-  virtual const Tpetra_Map & OperatorDomainMap() const;
+  //! Returns the Tpetra::Map object associated with the range of this operator.
+  const Teuchos::RCP<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal> >& getRangeMap() const;
 
-  //! Returns the Tpetra_Map object associated with the range of this operator.
-  virtual const Tpetra_Map & OperatorRangeMap() const;
-
-  virtual int Initialize();
+  int Initialize();
   
-  virtual bool IsInitialized() const
+  bool IsInitialized() const
   {
     return(IsInitialized_);
   }
 
   //! Returns \c true if the preconditioner has been successfully computed.
-  virtual inline bool IsComputed() const
+  bool IsComputed() const
   {
     return(IsComputed_);
   }
 
   //! Computes the preconditioners.
-  virtual int Compute();
+  int Compute();
 
   //@}
  
   //@{ \name Miscellaneous
 
-  virtual const Tpetra_RowMatrix& Matrix() const 
+  const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Matrix() const 
   {
     return(*Matrix_);
   }
 
   //! Computes the condition number estimates and returns the value.
-  virtual double Condest(const Tifpack_CondestType CT = Tifpack_Cheap,
-                         const int MaxIters = 1550,
-                         const double Tol = 1e-9,
-			 Tpetra_RowMatrix* Matrix = 0);
+  magnitudeType Condest(
+       const Tifpack::CondestType CT = Tifpack::Cheap,
+       const LocalOrdinal MaxIters = 1550,
+       const magnitudeType Tol = 1e-9,
+			 Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix = 0);
 
   //! Returns the condition number estimate, or -1.0 if not computed.
-  virtual double Condest() const
+  magnitudeType Condest() const
   {
     return(Condest_);
   }
 
   //! Sets all the parameters for the preconditioner
-  virtual int SetParameters(Teuchos::ParameterList& List);
+  void SetParameters(Teuchos::ParameterList& List);
 
   //! Prints object to an output stream
-  virtual ostream& Print(ostream & os) const;
+  std::ostream& Print(std::ostream & os) const;
 
   //@}
 
   //@{ \name Timing and flop count
 
   //! Returns the number of calls to Initialize().
-  virtual int NumInitialize() const
+  int NumInitialize() const
   {
     return(NumInitialize_);
   }
 
   //! Returns the number of calls to Compute().
-  virtual int NumCompute() const
+  int NumCompute() const
   {
     return(NumCompute_);
   }
 
   //! Returns the number of calls to ApplyInverse().
-  virtual int NumApplyInverse() const
+  int NumApplyInverse() const
   {
     return(NumApplyInverse_);
   }
 
   //! Returns the time spent in Initialize().
-  virtual double InitializeTime() const
+  double InitializeTime() const
   {
     return(InitializeTime_);
   }
 
   //! Returns the time spent in Compute().
-  virtual double ComputeTime() const
+  double ComputeTime() const
   {
     return(ComputeTime_);
   }
 
   //! Returns the time spent in ApplyInverse().
-  virtual double ApplyInverseTime() const
+  double ApplyInverseTime() const
   {
     return(ApplyInverseTime_);
   }
 
   //! Returns the number of flops in the initialization phase.
-  virtual double InitializeFlops() const
+  double InitializeFlops() const
   {
     return(0.0);
   }
 
   //! Returns the number of flops in the computation phase.
-  virtual double ComputeFlops() const
+  double ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
   //! Returns the number of flops for the application of the preconditioner.
-  virtual double ApplyInverseFlops() const
+  double ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
@@ -315,54 +321,56 @@ private:
   // @{ Application of the preconditioner
   
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseJacobi(const Tpetra_MultiVector& X, 
-                                 Tpetra_MultiVector& Y) const;
+  int ApplyInverseJacobi(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseGS(const Tpetra_MultiVector& X, 
-                              Tpetra_MultiVector& Y) const;
+  int ApplyInverseGS(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseGS_RowMatrix(const Tpetra_MultiVector& X, 
-                                        Tpetra_MultiVector& Y) const;
+  int ApplyInverseGS_RowMatrix(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseGS_CrsMatrix(const Tpetra_CrsMatrix* A,
-                                        const Tpetra_MultiVector& X, 
-                                        Tpetra_MultiVector& Y) const;
+  int ApplyInverseGS_CrsMatrix(
+        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseGS_FastCrsMatrix(const Tpetra_CrsMatrix* A,
-                                            const Tpetra_MultiVector& X, 
-                                            Tpetra_MultiVector& Y) const;
+  int ApplyInverseGS_FastCrsMatrix(
+        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
-  virtual int ApplyInverseSGS(const Tpetra_MultiVector& X, 
-                              Tpetra_MultiVector& Y) const;
+  int ApplyInverseSGS(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseSGS_RowMatrix(const Tpetra_MultiVector& X, 
-                                        Tpetra_MultiVector& Y) const;
+  int ApplyInverseSGS_RowMatrix(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseSGS_CrsMatrix(const Tpetra_CrsMatrix* A,
-                                        const Tpetra_MultiVector& X, 
-                                        Tpetra_MultiVector& Y) const;
+  int ApplyInverseSGS_CrsMatrix(
+        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseSGS_FastCrsMatrix(const Tpetra_CrsMatrix* A,
-                                            const Tpetra_MultiVector& X, 
-                                            Tpetra_MultiVector& Y) const;
+  int ApplyInverseSGS_FastCrsMatrix(
+        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
   //@}
 
 private:
   
-  //! Sets the label.
-  virtual void SetLabel();
-
   //! Copy constructor (PRIVATE, should not be used)
-  Tifpack_PointRelaxation(const Tifpack_PointRelaxation& rhs)
-  {}
-  
+  PointRelaxation(const Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>& rhs);
+ 
   //! operator = (PRIVATE, should not be used)
-  Tifpack_PointRelaxation& operator=(const Tifpack_PointRelaxation& rhs)
-  {
-    return(*this);
-  }
+  PointRelaxation& operator=(const Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
   // @{ Initializations, timing and flops
   //! If \c true, the preconditioner has been computed successfully.
@@ -395,13 +403,13 @@ private:
   //! If true, use the tranpose of \c Matrix_.
   bool UseTranspose_;
   //! Contains the estimated condition number
-  double Condest_;
+  magnitudeType Condest_;
   //! If true, Compute() also computes the condition number estimate.
   bool ComputeCondest_;
   //! Contains the label of this object.
-  string Label_;
+  std::string Label_;
   int PrecType_;
-  double MinDiagonalValue_;
+  Scalar MinDiagonalValue_;
   // @}
 
   // @{ Other data
@@ -414,13 +422,13 @@ private:
   //! Number of global nonzeros.
   int NumGlobalNonzeros_;
   //! Pointers to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> Matrix_;
+  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix_;
   //! Importer for parallel GS and SGS
-  Teuchos::RefCountPtr<Tpetra_Import> Importer_;
+  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
-  mutable Teuchos::RefCountPtr<Tpetra_Vector> Diagonal_;
+  mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
   //! Time object to track timing.
-  Teuchos::RefCountPtr<Tpetra_Time> Time_;
+  Teuchos::RCP<Teuchos::Time> Time_;
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
@@ -428,9 +436,76 @@ private:
   //! Backward-Mode Gauss Seidel 
   bool DoBackwardGS_;
   // @}
+};//class PointRelaxation
 
-  
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::PointRelaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix_in)
+: IsInitialized_(false),
+  IsComputed_(false),
+  NumInitialize_(0),
+  NumCompute_(0),
+  NumApplyInverse_(0),
+  InitializeTime_(0.0),
+  ComputeTime_(0.0),
+  ApplyInverseTime_(0.0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
+  NumSweeps_(1),
+  DampingFactor_(1.0),
+  UseTranspose_(false),
+  Condest_(-1.0),
+  ComputeCondest_(false),
+  PrecType_(Tifpack::JACOBI),
+  MinDiagonalValue_(0.0),
+  NumMyRows_(0),
+  NumMyNonzeros_(0),
+  NumGlobalRows_(0),
+  NumGlobalNonzeros_(0),
+  Matrix_(Matrix_in),
+  IsParallel_(false),
+  ZeroStartingSolution_(true),
+  DoBackwardGS_(false)
+{
+}
 
-};
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetParameters(Teuchos::ParameterList& List)
+{
+  Teuchos::ParameterList validparams;
+  Tifpack::GetValidParameters(validparams);
+  List.validateParameters(validparams);
+
+  std::string PT;
+  if (PrecType_ == Tifpack::JACOBI)
+    PT = "Jacobi";
+  else if (PrecType_ == Tifpack::GS)
+    PT = "Gauss-Seidel";
+  else if (PrecType_ == Tifpack::SGS)
+    PT = "symmetric Gauss-Seidel";
+
+  Tifpack::GetParameter(List, "relaxation: type", PT);
+
+  if (PT == "Jacobi")
+    PrecType_ = Tifpack::JACOBI;
+  else if (PT == "Gauss-Seidel")
+    PrecType_ = Tifpack::GS;
+  else if (PT == "symmetric Gauss-Seidel")
+    PrecType_ = Tifpack::SGS;
+  else {
+    std::ostringstream osstr;
+    osstr << "Tifpack::PointRelaxation::SetParameters: unsupported parameter-value for 'relaxation: type' (" << PT << ")";
+    std::string str = osstr.str();
+    throw std::runtime_error(str);
+  }
+
+  Tifpack::GetParameter(List, "relaxation: sweeps",NumSweeps_);
+  Tifpack::GetParameter(List, "relaxation: damping factor", DampingFactor_);
+  Tifpack::GetParameter(List, "relaxation: min diagonal value", MinDiagonalValue_);
+  Tifpack::GetParameter(List, "relaxation: zero starting solution", ZeroStartingSolution_);
+  Tifpack::GetParameter(List, "relaxation: backward mode",DoBackwardGS_);
+}
+
+}//namespace Tifpack
 
 #endif // TIFPACK_POINTRELAXATION_HPP
+

@@ -36,10 +36,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Tifpack_CreateOverlapGraph.hpp"
 
-class Tpetra_Comm;
-class Tpetra_BlockMap;
-class Tpetra_RowMatrix;
-
 namespace Teuchos {
   class ParameterList;
 }
@@ -53,8 +49,8 @@ class OverlapGraph : public Teuchos::Describable {
 
  public:
   //@{ \name Constructors/Destructor
-  //! Constructor using Tpetra_CrsGraph.
-  /*! Creates an Tifpack_OverlapGraph object from the user graph. 
+  //! Constructor using Tpetra::CrsGraph.
+  /*! Creates an Tifpack::OverlapGraph object from the user graph. 
     \param In
            UserMatrixGraph_in - Graph from user matrix.
   */
@@ -71,7 +67,7 @@ class OverlapGraph : public Teuchos::Describable {
   //! Copy constructor.
   OverlapGraph(const OverlapGraph<LocalOrdinal,GlobalOrdinal,Node> & Source);
 
-  //! Tifpack_CrsIlut Destructor
+  //! Destructor
   virtual ~OverlapGraph() {};
   //@}
 

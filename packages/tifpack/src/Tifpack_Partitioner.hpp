@@ -31,20 +31,17 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
-class Tpetra_Comm;
-class Tifpack_Graph;
-class Tpetra_Map;
-class Tpetra_BlockMap;
-class Tpetra_Import;
 
-//! Tifpack_Partitioner: A class to decompose local Tifpack_Graph's.
+namespace Tifpack {
+
+//! Tifpack::Partitioner: A class to decompose local Tifpack::Graph objects.
 
 /*!
  
-  Class Tifpack_Partitioner enables the decomposition of a local
-  Tifpack_Graph's. It is supposed that the graph refers to
+  Class Tifpack::Partitioner enables the decomposition of a local
+  Tifpack::Graph. It is supposed that the graph refers to
   a localized matrix (that is, a matrix that has been filtered
-  through Tifpack_LocalFilter).
+  through Tifpack::LocalFilter).
   
   The overloaded operator (int i) can be used to extract the local partition
   ID of local row i.  
@@ -80,7 +77,7 @@ class Tpetra_Import;
   - Tifpack_Graph_Tpetra_RowMatrix, a light-weight class to
     wrap Tpetra_RowMatrix objects as Tifpack_Graph objects.
   
-  <P>An example of use is an Tifpack_Partitioner derived class is as follows:  
+  <P>An example use of a Tifpack_Partitioner derived class is as follows:  
   \code
 #include "Tifpack_Partitioner.hpp"
 #include "Tifpack_LinearPartitioner.hpp"

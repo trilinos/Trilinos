@@ -117,7 +117,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
       if (Indices_[i] == MyRow)
 	continue;
       // put absolute value
-      Values2[count] = TIFPACK_ABS(Values_[i]);
+      Values2[count] = std::abs(Values_[i]);
       count++;
     }
 
@@ -138,10 +138,10 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
   for (int i = 0 ; i < Nnz ; ++i) {
 
-    if (TIFPACK_ABS(Indices_[i] - MyRow) > AllowedBandwidth_)
+    if (std::abs(Indices_[i] - MyRow) > AllowedBandwidth_)
       continue;
 
-    if ((Indices_[i] != MyRow) && (TIFPACK_ABS(Values_[i]) < Threshold))
+    if ((Indices_[i] != MyRow) && (std::abs(Values_[i]) < Threshold))
       continue;
 
     Values[NumEntries] = Values_[i];

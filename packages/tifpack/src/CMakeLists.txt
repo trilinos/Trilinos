@@ -31,6 +31,9 @@ SET(HEADERS ${HEADERS}
   Tifpack_Version.hpp
   Tifpack_IlukGraph.hpp
   Tifpack_Parameters.hpp
+  Tifpack_PointRelaxation.hpp
+  Tifpack_Preconditioner.hpp
+  Tifpack_Version.hpp
   )
 
 SET(SOURCES ${SOURCES}

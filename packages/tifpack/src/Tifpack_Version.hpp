@@ -28,8 +28,14 @@
 */
 
 #include "Tifpack_ConfigDefs.hpp"
+#include <string>
 
-string Tifpack_Version() { 
+namespace Tifpack {
+
+inline
+std::string Version() { 
   return("Tifpack Version 1.0d -- 20-Oct-2009"); 
 }
+
+}//namespace Tifpack
 

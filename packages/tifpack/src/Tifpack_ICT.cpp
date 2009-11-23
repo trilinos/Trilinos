@@ -293,7 +293,7 @@ int Tifpack_ICT::Compute()
 
       h_ij /= h_jj;
 
-      if (TIFPACK_ABS(h_ij) > DropTolerance_)
+      if (std::abs(h_ij) > DropTolerance_)
       {
         Hash.set(col_j, h_ij);
       }
@@ -315,7 +315,7 @@ int Tifpack_ICT::Compute()
 
     for (int i = 0 ; i < size ; ++i)
     {
-      AbsRow[i] = TIFPACK_ABS(values[i]);
+      AbsRow[i] = std::abs(values[i]);
     }
     count = size;
 
@@ -343,7 +343,7 @@ int Tifpack_ICT::Compute()
     count = 0;
     for (int i = 0 ; i < size ; ++i)    
     { 
-      if (TIFPACK_ABS(values[i]) > cutoff)
+      if (std::abs(values[i]) > cutoff)
       {
         values[count] = values[i];
         keys[count] = keys[i];

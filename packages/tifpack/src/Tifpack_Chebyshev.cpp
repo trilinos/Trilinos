@@ -247,7 +247,7 @@ int Tifpack_Chebyshev::Compute()
     // Replace zeros with 1.0
     for (int i = 0 ; i < NumMyRows_ ; ++i) {
       double diag = (*InvDiagonal_)[i];
-      if (TIFPACK_ABS(diag) < MinDiagonalValue_)
+      if (std::abs(diag) < MinDiagonalValue_)
         (*InvDiagonal_)[i] = MinDiagonalValue_;
       else
         (*InvDiagonal_)[i] = 1.0 / diag;

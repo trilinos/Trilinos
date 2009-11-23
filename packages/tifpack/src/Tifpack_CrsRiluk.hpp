@@ -45,10 +45,10 @@ namespace Teuchos {
 
 namespace Tifpack {
 
-//! Tifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
+//! Tifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
 
 /*! The Tifpack_CrsRiluk class computes a "Relaxed" ILU factorization with level k fill 
-    of a given Epetra_CrsMatrix.  The factorization 
+    of a given Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.  The factorization 
     that is produced is a function of several parameters:
 <ol>
   <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
@@ -76,7 +76,7 @@ namespace Tifpack {
        results in redundant approximations for any elements of y that correspond to 
        rows that are part of more than one local ILU factor.  The OverlapMode (changed by calling SetOverlapMode())
        defines how these redundancies are
-       handled using the Epetra_CombineMode enum.  The default is to zero out all values of y for rows that
+       handled using the Tpetra::CombineMode enum.  The default is to zero out all values of y for rows that
        were not part of the original matrix row distribution.
 
   <li> Fraction of relaxation - Tifpack_CrsRiluk computes the ILU factorization row-by-row.  As entries at a given
@@ -180,10 +180,10 @@ create new entries.
 Each Tifpack::CrsRiluk object keep track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
 to the function.  The Flops() function returns this number as a double precision number.  Using this 
-information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
+information, in conjunction with the Teuchos::Time class, one can get accurate parallel performance
 numbers.  The ResetFlops() function resets the floating point counter.
 
-\warning A Epetra_Map is required for the Tifpack_CrsRiluk constructor.
+\warning A Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> is required for the Tifpack_CrsRiluk constructor.
 
 */    
 
@@ -263,28 +263,28 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
   // Mathematical functions.
   
   
-  //! Returns the result of a Tifpack_CrsRiluk forward/back solve on a Epetra_MultiVector X in Y (works for Epetra_Vectors also).
+  //! Returns the result of a Tifpack_CrsRiluk forward/back solve on a Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y (works for Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>s also).
   /*! 
     \param In
     Trans -If true, solve transpose problem.
     \param In
-    X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
     \param Out
-    Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+    Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectorscontaining result.
     
     \return Integer error code, set to 0 if successful.
   */
   int Solve(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  //! Returns the result of multiplying U, D and L in that order on an Epetra_MultiVector X in Y.
+  //! Returns the result of multiplying U, D and L in that order on an Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
   /*! 
     \param In
     Trans -If true, multiply by L^T, D and U^T in that order.
     \param In
-    X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
     \param Out
-    Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+    Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectorscontaining result.
     
     \return Integer error code, set to 0 if successful.
   */
@@ -358,7 +358,7 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
   //! Returns the L factor associated with this factored matrix.
   const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & U() const {return(*U_);};
 
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //@{ \name Additional methods required to support the Tpetra::Operator interface.
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -372,40 +372,40 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
   */
   int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};
 
-    //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
+    //! Returns the result of a Tpetra::Operator applied to a Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
     /*! Note that this implementation of Apply does NOT perform a forward back solve with
         the LDU factorization.  Instead it applies these operators via multiplication with 
 	U, D and L respectively.  The ApplyInverse() method performs a solve.
 
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+	   X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to multiply with matrix.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+	   Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  int Apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
     return(Multiply(Tifpack_CrsRiluk::UseTranspose(), X, Y));};
 
-    //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+    //! Returns the result of a Tpetra::Operator inverse applied to an Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> X in Y.
     /*! In this implementation, we use several existing attributes to determine how virtual
         method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
-	the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
+	the Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
 	if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
 	be accounted for when doing a triangular solve.
 
     \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+	   X - A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors to solve for.
     \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+	   Y -A Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  int ApplyInverse(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
     return(Solve(Tifpack_CrsRiluk::UseTranspose(), X, Y));};
 
     //! Returns 0.0 because this class cannot compute Inf-norm.
-    double NormInf() const {return(0.0);};
+    Scalar NormInf() const {return(0);};
 
     //! Returns false because this class cannot compute an Inf-norm.
     bool HasNormInf() const {return(false);};
@@ -413,14 +413,12 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
     //! Returns the current UseTranspose setting.
     bool UseTranspose() const {return(UseTranspose_);};
 
-    //! Returns the Epetra_Map object associated with the domain of this operator.
-    const Epetra_Map & OperatorDomainMap() const {return(U_->OperatorDomainMap());};
+    //! Returns the Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> object associated with the domain of this operator.
+    const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & OperatorDomainMap() const {return(U_->OperatorDomainMap());};
 
-    //! Returns the Epetra_Map object associated with the range of this operator.
-    const Epetra_Map & OperatorRangeMap() const{return(L_->OperatorRangeMap());};
+    //! Returns the Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> object associated with the range of this operator.
+    const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & OperatorRangeMap() const{return(L_->OperatorRangeMap());};
 
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    const Epetra_Comm & Comm() const{return(Comm_);};
   //@}
 
  protected:
@@ -428,34 +426,33 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
   void SetValuesInitialized(bool Flag) {ValuesInitialized_ = Flag;};
   bool Allocated() const {return(Allocated_);};
   int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
-  int BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper);
+  int BlockGraph2PointGraph(const Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> & BG, Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> & PG, bool Upper);
   
  private:
   
   
   int AllocateCrs();
   int AllocateVbr();
-  int InitAllValues(const Epetra_RowMatrix & A, int MaxNumEntries);
-  int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Teuchos::RefCountPtr<Epetra_Map>* PointMap);
+  int InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, int MaxNumEntries);
+  int BlockMap2PointMap(const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & BlockMap, Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* PointMap);
   int GenerateXY(bool Trans, 
-		 const Epetra_MultiVector& Xin, const Epetra_MultiVector& Yin,
-		 Teuchos::RefCountPtr<Epetra_MultiVector>* Xout, 
-                 Teuchos::RefCountPtr<Epetra_MultiVector>* Yout) const;
+		 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
+		 Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* Xout, 
+                 Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* Yout) const;
   bool UserMatrixIsVbr_;
   bool UserMatrixIsCrs_;
   bool IsOverlapped_;
   const Tifpack_IlukGraph & Graph_;
-  Teuchos::RefCountPtr<Epetra_Map> IlukRowMap_;
-  Teuchos::RefCountPtr<Epetra_Map> IlukDomainMap_;
-  Teuchos::RefCountPtr<Epetra_Map> IlukRangeMap_;
-  Teuchos::RefCountPtr<const Epetra_Map> U_DomainMap_;
-  Teuchos::RefCountPtr<const Epetra_Map> L_RangeMap_;
-  const Epetra_Comm & Comm_;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> L_;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
-  Teuchos::RefCountPtr<Epetra_CrsGraph> L_Graph_;
-  Teuchos::RefCountPtr<Epetra_CrsGraph> U_Graph_;
-  Teuchos::RefCountPtr<Epetra_Vector> D_;
+  Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukRowMap_;
+  Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukDomainMap_;
+  Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukRangeMap_;
+  Teuchos::RefCountPtr<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_DomainMap_;
+  Teuchos::RefCountPtr<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_RangeMap_;
+  Teuchos::RefCountPtr<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_;
+  Teuchos::RefCountPtr<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_;
+  Teuchos::RefCountPtr<Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_Graph_;
+  Teuchos::RefCountPtr<Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_Graph_;
+  Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > D_;
   bool UseTranspose_;
 
   int NumMyDiagonals_;
@@ -467,11 +464,11 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
   double Rthresh_;
   mutable double Condest_;
 
-  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlapX_;
-  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlapY_;
-  mutable Teuchos::RefCountPtr<Epetra_MultiVector> VbrX_;
-  mutable Teuchos::RefCountPtr<Epetra_MultiVector> VbrY_;
-  Epetra_CombineMode OverlapMode_;
+  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;
+  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapY_;
+  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > VbrX_;
+  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > VbrY_;
+  Tpetra::CombineMode OverlapMode_;
 
 
 };

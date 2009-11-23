@@ -103,7 +103,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
     // if element is above specified tol, add to the
     // user's defined arrays. Check that we are not
     // exceeding allocated space. Do not drop any diagonal entry.
-    if ((Indices_[i] == MyRow) || (TIFPACK_ABS(Values_[i]) >= DropTol_)) {
+    if ((Indices_[i] == MyRow) || (std::abs(Values_[i]) >= DropTol_)) {
       if (count == Length)
 	TIFPACK_CHK_ERR(-1);
       Values[count] = Values_[i];

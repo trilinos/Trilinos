@@ -198,7 +198,7 @@ class Tifpack_AbsComp
  public:
   inline bool operator()(const double& x, const double& y) 
   {
-    return(TIFPACK_ABS(x) > TIFPACK_ABS(y));
+    return(std::abs(x) > std::abs(y));
   }
 };
 

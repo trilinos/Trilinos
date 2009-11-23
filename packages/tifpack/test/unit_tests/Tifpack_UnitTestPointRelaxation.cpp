@@ -25,12 +25,9 @@
 // ***********************************************************************
 
 
-/*! \file Tifpack_UnitTestTemplate.cpp
+/*! \file Tifpack_UnitTestPointRelaxation.cpp
 
-\brief Tifpack Unit testing template.
-
-This file demonstrates how you create a unit test for template code.
-
+\brief Tifpack Unit test for the PointRelaxation template.
 */
 
 
@@ -40,31 +37,42 @@ This file demonstrates how you create a unit test for template code.
 #include <Tifpack_Version.hpp>
 #include <iostream>
 
-template<class T>
-T my_trivial_function(T in)
-{
-  T out = in*in;
-  return out;
-}
+#include <Tifpack_UnitTestHelpers.hpp>
+#include <Tifpack_PointRelaxation.hpp>
 
-//this macro declares the test-class:
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(TifpackGroup0, TifpackTest0, T)
+namespace {
+using Tpetra::global_size_t;
+typedef tif_utest::Node Node;
+
+//this macro declares the unit-test-class:
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
 {
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
   std::string version = Tifpack::Version();
-  bool empty_version = version.empty();
-  TEUCHOS_TEST_EQUALITY(empty_version, false, out, success);
+  out << "Tifpack::Version(): " << version << std::endl;
 
-  T input = 5;
-  T result = my_trivial_function(input);
-  T expected_result = input*input;
+  global_size_t num_rows_per_proc = 5;
 
-  TEUCHOS_TEST_EQUALITY(result, expected_result, out, success);
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph);
+
+  Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("relaxation: type", "Jacobi");
+
+  TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
 }
 
-//this macro instantiates and registers the test:
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(TifpackGroup0, TifpackTest0)
+#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackPointRelaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
+
+UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+
+}//namespace <anonymous>
+
 

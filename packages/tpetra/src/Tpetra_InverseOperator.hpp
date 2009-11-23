@@ -33,13 +33,14 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_RCP.hpp>
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Operator.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 namespace Tpetra {
 
-  // forward declaration
-  template <class S, class LO, class GO, class N>
-  class Operator;
+//  // forward declaration
+//  template <class S, class LO, class GO, class N>
+//  class Operator;
 
   //! \brief Abstract interface for linear inverse operators accepting Tpetra MultiVector objects.
   /*!

@@ -151,7 +151,7 @@ class Tifpack_AbsComp
  public:
   inline bool operator()(const double& x, const double& y) 
   {
-    return(TIFPACK_ABS(x) > TIFPACK_ABS(y));
+    return(std::abs(x) > std::abs(y));
   }
 };
 
@@ -329,7 +329,7 @@ int Tifpack_ILUT::Compute()
         DiagonalValueK = AbsoluteThreshold();
       
       double xxx = SingleRowU.get(col_k);
-      if (TIFPACK_ABS(xxx) > DropTolerance()) {
+      if (std::abs(xxx) > DropTolerance()) {
         SingleRowL.set(col_k, xxx / DiagonalValueK);
         ++flops;
 
@@ -365,8 +365,8 @@ int Tifpack_ILUT::Compute()
       values.size() ? &values[0] : 0
       );
     for (int i = 0; i < sizeL; ++i)
-      if (TIFPACK_ABS(values[i]) > DropTolerance()) {
-        AbsRow[count++] = TIFPACK_ABS(values[i]);
+      if (std::abs(values[i]) > DropTolerance()) {
+        AbsRow[count++] = std::abs(values[i]);
       }
 
     if (count > FillL) {
@@ -376,7 +376,7 @@ int Tifpack_ILUT::Compute()
     }
 
     for (int i = 0; i < sizeL; ++i) {
-      if (TIFPACK_ABS(values[i]) >= cutoff) {
+      if (std::abs(values[i]) >= cutoff) {
         TIFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &values[i], (int*)&keys[i]));
       }
       else
@@ -398,9 +398,9 @@ int Tifpack_ILUT::Compute()
     SingleRowU.arrayify(&keys[0], &values[0]);
 
     for (int i = 0; i < sizeU; ++i)
-      if (keys[i] >= row_i && TIFPACK_ABS(values[i]) > DropTolerance())
+      if (keys[i] >= row_i && std::abs(values[i]) > DropTolerance())
       {
-        AbsRow[count++] = TIFPACK_ABS(values[i]);
+        AbsRow[count++] = std::abs(values[i]);
       }
 
     if (count > FillU) {
@@ -416,7 +416,7 @@ int Tifpack_ILUT::Compute()
       double val = values[i];
 
       if (col >= row_i) {
-        if (TIFPACK_ABS(val) >= cutoff || row_i == col) {
+        if (std::abs(val) >= cutoff || row_i == col) {
           TIFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &val, &col));
         }
         else

@@ -205,7 +205,7 @@ int Tifpack_PointRelaxation::Compute()
   // its inverse is zero as well (that is, the row is ignored).
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
     double& diag = (*Diagonal_)[i];
-    if (TIFPACK_ABS(diag) < MinDiagonalValue_)
+    if (std::abs(diag) < MinDiagonalValue_)
       diag = MinDiagonalValue_;
     if (diag != 0.0)
       diag = 1.0 / diag;

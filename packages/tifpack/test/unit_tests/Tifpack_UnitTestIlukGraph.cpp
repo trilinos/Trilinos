@@ -37,6 +37,7 @@ This file demonstrates how you create a unit test for template code.
 #include <Teuchos_ConfigDefs.hpp>
 #include <Tifpack_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Tifpack_Version.hpp>
 #include <iostream>
 
 #include <Tifpack_UnitTestHelpers.hpp>
@@ -53,9 +54,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackIlukGraph, IlukGraphTest0, LocalOrdinal
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
+  std::string version = Tifpack::Version();
+  out << "Tifpack::Version(): " << version << std::endl;
+
   global_size_t num_rows_per_proc = 5;
 
-  Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
   TEUCHOS_TEST_EQUALITY( crsgraph->getMap()->getNodeNumElements(), num_rows_per_proc, out, success)
 
@@ -63,7 +67,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackIlukGraph, IlukGraphTest0, LocalOrdinal
 
   LocalOrdinal fill_levels = 0;
 
-  Tifpack::IlukGraph<int,int> iluk0_graph(crsgraph, fill_levels, overlap_levels);
+  Tifpack::IlukGraph<LocalOrdinal,GlobalOrdinal> iluk0_graph(crsgraph, fill_levels, overlap_levels);
 
   iluk0_graph.ConstructFilledGraph();
 
