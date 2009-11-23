@@ -300,7 +300,7 @@
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Kokkos" type="ILO"/>
-    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
