@@ -720,14 +720,14 @@ SUB_EXAMPLE_FALSE
 FCLIBS
 FCFLAGS_f
 FCFLAGS_f90
-F90_MODULE_LOWERCASE_TRUE
-F90_MODULE_LOWERCASE_FALSE
 FC_VERSION_STRING
 FC_VENDOR
 FC_VERSION
 FC_MAJOR_VERSION
 FC_MODNAME
 FC_MODNAME_Q
+F90_MODULE_LOWERCASE_TRUE
+F90_MODULE_LOWERCASE_FALSE
 NAG_F90_COMPILER_TRUE
 NAG_F90_COMPILER_FALSE
 ac_aux_dir
@@ -6740,6 +6740,9 @@ fi
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+ax_cv_f90_modulecase="lower"
+FC_VENDOR="none"
+
 # Define F77_FUNC that will be used to link with Fortran subroutines.
 if test "X$ac_cv_use_fortran" != "Xno"; then
 
@@ -7902,15 +7905,6 @@ fi
 fi
 { echo "$as_me:$LINENO: result: $ax_cv_f90_modulecase" >&5
 echo "${ECHO_T}$ax_cv_f90_modulecase" >&6; }
-   if test "X$ax_cv_f90_modulecase" != "Xupper"; then
-  F90_MODULE_LOWERCASE_TRUE=
-  F90_MODULE_LOWERCASE_FALSE='#'
-else
-  F90_MODULE_LOWERCASE_TRUE='#'
-  F90_MODULE_LOWERCASE_FALSE=
-fi
-
-
   echo "KDDKDD " $ax_cv_f90_modulecase
 
   { echo "$as_me:$LINENO: checking the compiler ID" >&5
@@ -8042,7 +8036,16 @@ FC_MODNAME_Q='\$(1:.o=.mod)'
     FCFLAGS="-DFUJITSU ${FCFLAGS}"
     CFLAGS="-DFUJITSU ${CFLAGS}"
   fi
-   if test "X$FC_VENDOR" == "XNAG"; then
+fi
+ if test "X$ax_cv_f90_modulecase" != "Xupper"; then
+  F90_MODULE_LOWERCASE_TRUE=
+  F90_MODULE_LOWERCASE_FALSE='#'
+else
+  F90_MODULE_LOWERCASE_TRUE='#'
+  F90_MODULE_LOWERCASE_FALSE=
+fi
+
+ if test "X$FC_VENDOR" == "XNAG"; then
   NAG_F90_COMPILER_TRUE=
   NAG_F90_COMPILER_FALSE='#'
 else
@@ -8050,7 +8053,6 @@ else
   NAG_F90_COMPILER_FALSE=
 fi
 
-fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -9393,14 +9395,14 @@ SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 FCLIBS!$FCLIBS$ac_delim
 FCFLAGS_f!$FCFLAGS_f$ac_delim
 FCFLAGS_f90!$FCFLAGS_f90$ac_delim
-F90_MODULE_LOWERCASE_TRUE!$F90_MODULE_LOWERCASE_TRUE$ac_delim
-F90_MODULE_LOWERCASE_FALSE!$F90_MODULE_LOWERCASE_FALSE$ac_delim
 FC_VERSION_STRING!$FC_VERSION_STRING$ac_delim
 FC_VENDOR!$FC_VENDOR$ac_delim
 FC_VERSION!$FC_VERSION$ac_delim
 FC_MAJOR_VERSION!$FC_MAJOR_VERSION$ac_delim
 FC_MODNAME!$FC_MODNAME$ac_delim
 FC_MODNAME_Q!$FC_MODNAME_Q$ac_delim
+F90_MODULE_LOWERCASE_TRUE!$F90_MODULE_LOWERCASE_TRUE$ac_delim
+F90_MODULE_LOWERCASE_FALSE!$F90_MODULE_LOWERCASE_FALSE$ac_delim
 NAG_F90_COMPILER_TRUE!$NAG_F90_COMPILER_TRUE$ac_delim
 NAG_F90_COMPILER_FALSE!$NAG_F90_COMPILER_FALSE$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim

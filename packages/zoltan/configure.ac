@@ -296,6 +296,9 @@ TAC_ARG_WITH_INCDIRS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+ax_cv_f90_modulecase="lower"
+FC_VENDOR="none"
+
 # Define F77_FUNC that will be used to link with Fortran subroutines.
 if test "X$ac_cv_use_fortran" != "Xno"; then
   AC_FC_WRAPPERS
@@ -310,8 +313,6 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
   fi
   # Determine case (upper or lower) of F90 module files. 
   AX_F90_MODULE_CASE
-  AM_CONDITIONAL(F90_MODULE_LOWERCASE, [test "X$ax_cv_f90_modulecase" != "Xupper"])
-
   echo "KDDKDD " $ax_cv_f90_modulecase 
 
   WK_FC_GET_VENDOR()
@@ -324,8 +325,9 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
     FCFLAGS="-DFUJITSU ${FCFLAGS}"
     CFLAGS="-DFUJITSU ${CFLAGS}"
   fi
-  AM_CONDITIONAL(NAG_F90_COMPILER, [test "X$FC_VENDOR" == "XNAG"])
 fi
+AM_CONDITIONAL(F90_MODULE_LOWERCASE, [test "X$ax_cv_f90_modulecase" != "Xupper"])
+AM_CONDITIONAL(NAG_F90_COMPILER, [test "X$FC_VENDOR" == "XNAG"])
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
