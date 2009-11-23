@@ -46,6 +46,8 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
+// FINISH: add some more tests. test GEMM using a finite-difference stencil matrix, compared against a manual operation.
+
 namespace {
 
   using Kokkos::MultiVector;
