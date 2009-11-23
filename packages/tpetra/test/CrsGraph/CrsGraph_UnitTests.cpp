@@ -298,7 +298,7 @@ namespace {
       ginds[2] = myrowind+1;
     }
     Array<LO> linds(ginds.size());
-    for (unsigned int i=0; i<linds.size(); ++i) linds[i] = i;
+    for (typename Array<LO>::size_type i=0; i<linds.size(); ++i) linds[i] = i;
     RCP<const Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds,0,comm) );
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;

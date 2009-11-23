@@ -93,7 +93,7 @@ void TableFormat::writeRow(
   TEST_FOR_EXCEPT(entries.size() != columnWidths_.size() 
     && columnWidths_.size() != 0);
 
-  for (unsigned int i=0; i<entries.size(); i++)
+  for (Array<RCP<TableEntry> >::size_type i=0; i<entries.size(); i++)
   {
     int cw = defaultColumnWidth();
     if (columnWidths_.size() != 0) cw = columnWidths_[i];
@@ -111,7 +111,7 @@ void TableFormat::writeRow(
   ) const
 {
   Array<RCP<TableEntry> > entries(columns.size());
-  for (unsigned int i=0; i<columns.size(); i++)
+  for (Array<TableColumn>::size_type i=0; i<columns.size(); i++)
   {
     entries[i] = columns[i].entry(rowIndex);
   }
@@ -130,7 +130,7 @@ void TableFormat::writeWholeTable(
 
   /* compute the total width */
   int pgWidth = 0;
-  for (unsigned int i=0; i<columnNames.size(); i++)
+  for (Array<TableColumn>::size_type i=0; i<columnNames.size(); i++)
   {
     int cw = defaultColumnWidth();
     if (columnWidths_.size() != 0) cw = columnWidths_[i];
@@ -146,7 +146,7 @@ void TableFormat::writeWholeTable(
   out << std::endl;
 
   /* write the column titles */
-  for (unsigned int i=0; i<columnNames.size(); i++)
+  for (Array<std::string>::size_type i=0; i<columnNames.size(); i++)
   {
     int cw = defaultColumnWidth();
     if (columnWidths_.size() != 0) cw = columnWidths_[i];
@@ -157,7 +157,7 @@ void TableFormat::writeWholeTable(
 
   /* ensure that all columns have the same number of rows */
   int numRows = columns[0].numRows();
-  for (unsigned int i=1; i<columns.size(); i++)
+  for (Array<TableColumn>::size_type i=1; i<columns.size(); i++)
   {
     TEUCHOS_ASSERT_EQUALITY(columns[i].numRows(), numRows);
   }

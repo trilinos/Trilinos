@@ -34,7 +34,7 @@ using namespace Teuchos;
 TableColumn::TableColumn(const Array<std::string>& vals)
   : data_(vals.size())
 {
-  for (unsigned int i=0; i<vals.size(); i++)
+  for (Array<std::string>::size_type i=0; i<vals.size(); i++)
     {
       data_[i] = rcp(new StringEntry(vals[i]));
     }
@@ -45,7 +45,7 @@ TableColumn::TableColumn(const Array<double>& vals,
                          int precision)
   : data_(vals.size())
 {
-  for (unsigned int i=0; i<vals.size(); i++)
+  for (Array<double>::size_type i=0; i<vals.size(); i++)
     {
       data_[i] = rcp(new DoubleEntry(vals[i], precision));
     }
@@ -58,7 +58,7 @@ TableColumn::TableColumn(const Array<double>& first,
                          bool spaceBeforeParentheses)
   : data_(first.size())
 {
-  for (unsigned int i=0; i<first.size(); i++)
+  for (Array<double>::size_type i=0; i<first.size(); i++)
     {
       RCP<DoubleEntry> x1 = rcp(new DoubleEntry(first[i], precision));
       RCP<DoubleEntry> x2 = rcp(new DoubleEntry(second[i], precision));

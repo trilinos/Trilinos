@@ -48,9 +48,9 @@ void PerformanceMonitorUtils::synchNames(const MPIComm& comm,
       /* on the root processor, compile the set union of all names */
       if (comm.getRank()==0)
         {
-          for (unsigned int p=0; p<namesForAllProcs.size(); p++)
+          for (Array<Array<std::string> >::size_type p=0; p<namesForAllProcs.size(); p++)
             {
-              for (unsigned int i=0; i<namesForAllProcs[p].size(); i++)
+              for (Array<std::string>::size_type i=0; i<namesForAllProcs[p].size(); i++)
                 {
                   nameSet.insert(namesForAllProcs[p][i]);
                 }
@@ -81,10 +81,10 @@ void PerformanceMonitorUtils
 {
   std::map<std::string, Array<double> > localNameToValMap;
 
-  for (unsigned int i=0; i<localNames.size(); i++)
+  for (Array<std::string>::size_type i=0; i<localNames.size(); i++)
     {
       Array<double> tmp(localValues.size());
-      for (unsigned int j=0; j<localValues.size(); j++)
+      for (Array<Array<double> >::size_type j=0; j<localValues.size(); j++)
         {
           tmp[j] = localValues[j][i];
         }
@@ -94,25 +94,25 @@ void PerformanceMonitorUtils
   synchNames(comm, localNames, allNames);
   
   allValues.resize(localValues.size());
-  for (unsigned int i=0; i<allValues.size(); i++)
+  for (Array<Array<double> >::size_type i=0; i<allValues.size(); i++)
     {
       allValues[i].resize(allNames.size());
     }
 
-  for (unsigned int i=0; i<allNames.size(); i++)
+  for (Array<std::string>::size_type i=0; i<allNames.size(); i++)
     {
       const std::string& name = allNames[i];
       if (localNameToValMap.find(name) != localNameToValMap.end()) 
         {
           const Array<double>& tmp = localNameToValMap[name];
-          for (unsigned int j=0; j<tmp.size(); j++)
+          for (Array<double>::size_type j=0; j<tmp.size(); j++)
             {
               allValues[j][i] = tmp[j];
             }
         }
       else 
         {
-          for (unsigned int j=0; j<allValues.size(); j++)
+          for (Array<Array<double> >::size_type j=0; j<allValues.size(); j++)
             {
               allValues[j][i] = 0.0;
             }
@@ -152,7 +152,7 @@ void  PerformanceMonitorUtils::reduce(const MPIComm& comm,
 
   if (reductionType==EAvg)
     {
-      for (unsigned int i=0; i<reducedVals.size(); i++)
+      for (Array<double>::size_type i=0; i<reducedVals.size(); i++)
         {
           reducedVals[i] /= ((double) comm.getNProc());
         }

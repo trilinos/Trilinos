@@ -654,7 +654,7 @@ namespace Teuchos
 
     int* header = reinterpret_cast<int*>( &(bigArray[0]) );
     header[0] = x.size();
-    for (unsigned int i=0; i<=x.size(); i++)
+    for (Array<std::string>::size_type i=0; i<=x.size(); i++)
       {
         header[i+1] = offsets[i];
       }
@@ -675,12 +675,12 @@ namespace Teuchos
 
     x.resize(header[0]);
     Array<int> offsets(x.size()+1);
-    for (unsigned int i=0; i<=x.size(); i++) offsets[i] = header[i+1];
+    for (Array<std::string>::size_type i=0; i<=x.size(); i++) offsets[i] = header[i+1];
 
-    for (unsigned int i=0; i<x.size(); i++)
+    for (Array<std::string>::size_type i=0; i<x.size(); i++)
       {
         x[i].resize(offsets[i+1]-offsets[i]);
-        for (unsigned int j=0; j<x[i].length(); j++)
+        for (std::string::size_type j=0; j<x[i].length(); j++)
           {
             x[i][j] = packed[offsets[i] + j];
           }
