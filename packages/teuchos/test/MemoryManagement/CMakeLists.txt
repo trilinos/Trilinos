@@ -77,7 +77,7 @@ IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
         --details=ALL
       NUM_MPI_PROCS 1
       PASS_REGULAR_EXPRESSION
-        "throws Teuchos::DuplicateOwningRCPError: passed"
+        "throws .*Teuchos.*DuplicateOwningRCPError.*: passed"
       )
 
   PACKAGE_ADD_TEST(
@@ -87,8 +87,13 @@ IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
         --details=ALL
       NUM_MPI_PROCS 1
       PASS_REGULAR_EXPRESSION
-        "throws Teuchos::DanglingReferenceError: passed"
+        "throws .*Teuchos.*DanglingReferenceError.*: passed"
       )
+
+  # NOTE: Above, we have to use the regular expressions in order to account
+  # for machines that don't have name demangling turned on.  For example, on
+  # GCC without name demangling it returns N7Teuchos22DanglingReferenceErrorE
+  # instead of Teuchos::DanglingReferenceError.
 
 ENDIF()
 

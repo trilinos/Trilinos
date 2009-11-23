@@ -23,14 +23,14 @@ In order to do a solid checkin, perform the following recommended workflow
 commit/push:
 
   $ cd $TRILINOS_HOME
-  $ eg status                      # Look at state of working dir
-  $ eg diff --name-status origin.. # Look at which files have changed
-  $ eg diff origin..               # [optional] View the full diffs
+  $ eg status                                # Look at state of working dir
+  $ eg diff --name-status                    # Look at the files have changed
+  $ eg log --oneline --name-status origin..  # [optional] Look at the local commits
 
-  NOTE: If you see any files/directories that are listed as 'unknown', then
-  you will need to do an 'eg add' to track them or add them to the ignore list
-  *before* you run this tool.  The eg script will not allow you to commit if
-  there are new 'unknown' files.
+  NOTE: If you see any files/directories that are listed as 'unknown' returned
+  from 'eg status', then you will need to do an 'eg add' to track them or add
+  them to the ignore list *before* you run the checkin-test.py script.  The eg
+  script will not allow you to commit if there are new 'unknown' files.
 
 2) Create a commit log file in the main source directory:
 
@@ -43,7 +43,8 @@ commit/push:
 
   NOTE: Alternatively, you can just do the local commit yourself with eg/git
   in any way you would like and avoid letting the checkin-test.py script do
-  the commit.  That way, you can do as many local commits as you would like.
+  the commit.  That way, you can do as many local commits as you would like
+  and organize them any way you would like.
 
 3) Set up the checkin base build directory (first time only):
 
