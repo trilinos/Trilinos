@@ -2287,6 +2287,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   if (status == 0)
   {
+    int i;
+    double * tmp_coord = 0;
     if (ag !=NULL)
     {
      if (ag->nullspace_vect != NULL) {
@@ -2309,19 +2311,32 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      } /* if (ag->nullspace_vect != NULL) */
     } /* if (ag !=NULL) */
 
+    tmp_coord = (double *) ML_allocate(sizeof(double)*(perm->invec_leng +1));
     if (xcoord != NULL) {
       new_xcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
                                         (perm->outvec_leng +1));
+
+      /* make sure coordinate is setup as a degree of freedom vector */
+      for (i=0; i < perm->invec_leng ; i++) {
+         tmp_coord[i] = xcoord[i/Amatrix->num_PDEs];
+      }
+
       ML_Operator_Apply(perm, perm->invec_leng, 
-            xcoord, perm->outvec_leng, new_xcoord);
+            tmp_coord, perm->outvec_leng, new_xcoord);
       ML_free(grid_info->x);
       grid_info->x = new_xcoord;
     }
     if (ycoord != NULL) {
       new_ycoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
                                           (perm->outvec_leng +1));
+
+      /* make sure coordinate is setup as a degree of freedom vector */
+      for (i=0; i < perm->invec_leng ; i++) {
+         tmp_coord[i] = ycoord[i/Amatrix->num_PDEs];
+      }
+
       ML_Operator_Apply(perm,
-                        perm->invec_leng, ycoord,
+                        perm->invec_leng, tmp_coord,
                         perm->outvec_leng, new_ycoord);
       ML_free(grid_info->y);
       grid_info->y = new_ycoord;
@@ -2329,12 +2344,19 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     if (zcoord != NULL) {
       new_zcoord = (double *) ML_allocate(sizeof(double)*(N_dimensions)*
                                           (perm->outvec_leng +1));
+
+      /* make sure coordinate is setup as a degree of freedom vector */
+      for (i=0; i < perm->invec_leng ; i++) {
+         tmp_coord[i] = zcoord[i/Amatrix->num_PDEs];
+      }
+
       ML_Operator_Apply(perm,
-                        perm->invec_leng, zcoord,
+                        perm->invec_leng, tmp_coord,
                         perm->outvec_leng, new_zcoord);
       ML_free(grid_info->z);
       grid_info->z = new_zcoord;
     }
+    ML_free(tmp_coord);
 
     ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
 
