@@ -180,12 +180,43 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Template instantiation for two templated types. */
+/** \brief Template instantiation for three templated types. */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3 >; \
   TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3 > \
   instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TYPE3##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2,#TYPE3);
+
+/** \brief Basic unit test creation macro for templated code on four template parameters. */
+#define TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
+  template<class TYPE1, class TYPE2, class TYPE3, class TYPE4> \
+  class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
+	{ \
+  public: \
+    TEST_GROUP##_##TEST_NAME##_UnitTest( \
+      const std::string& type1Name, \
+      const std::string& type2Name, \
+      const std::string& type3Name, \
+      const std::string& type4Name \
+       ) \
+      :Teuchos::UnitTestBase( \
+         std::string(#TEST_GROUP)+"_"+type1Name+"_"+type2Name+"_"+type3Name+"_"+type4Name, #TEST_NAME ) \
+    {} \
+    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+  }; \
+  \
+  template<class TYPE1, class TYPE2, class TYPE3, class TYPE4> \
+	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3,TYPE4>::runUnitTestImpl( \
+    Teuchos::FancyOStream &out, bool &success ) const \
+
+/** \brief Template instantiation for four templated types. */
+#define TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3, TYPE4) \
+  \
+  template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3, TYPE4 >; \
+  TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3, TYPE4 > \
+  instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TYPE3##_##TYPE4##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2,#TYPE3,#TYPE4);
 
 
 /** \brief Run setup code statically in a translation unit.

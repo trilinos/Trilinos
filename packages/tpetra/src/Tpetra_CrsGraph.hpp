@@ -2387,7 +2387,7 @@ namespace Tpetra
             Teuchos::typeName(*this) << "::makeColMap(): Internal logic error. Please contact Tpetra team.");
       }
     }
-    colMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(GOT::invalid(), myColumns, domainMap->getIndexBase(), domainMap->getComm()) );
+    colMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(GOT::invalid(), myColumns, domainMap->getIndexBase(), domainMap->getComm(), domainMap->getNode()) );
     checkInternalState();
     return;
   }

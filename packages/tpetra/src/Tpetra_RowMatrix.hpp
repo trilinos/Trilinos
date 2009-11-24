@@ -203,7 +203,7 @@ namespace Tpetra {
       //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
           the zero and non-zero diagonals owned by this node. */
-      virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal> &diag) const = 0;
+      virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;
 
       //@}
 

@@ -1,21 +1,29 @@
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_as.hpp>
+#include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_Tuple.hpp>
-#include <Teuchos_as.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-#ifdef HAVE_TPETRA_TRIUTILS
-#include <iohb.h>
+#include "Kokkos_SerialNode.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#include "Kokkos_TBBNode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+#include "Kokkos_ThrustGPUNode.hpp"
+#endif
+
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -40,45 +48,29 @@ namespace Teuchos {
 
 namespace {
 
+  using std::endl;
+  using std::swap;
+
+  using std::string;
+
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Teuchos::arcpClone;
-  using Tpetra::Map;
-  using Tpetra::OptimizeOption;
-  using Tpetra::DoOptimizeStorage;
-  using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::DefaultPlatform;
-  using Tpetra::global_size_t;
-  using std::sort;
   using Teuchos::arrayView;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
-  using Tpetra::MultiVector;
-  using Tpetra::Vector;
-  using std::endl;
-  using std::swap;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  using Tpetra::InverseOperator;
-  using Tpetra::Operator;
-  using Tpetra::CrsMatrix;
-  using Tpetra::CrsGraph;
-  using Tpetra::RowMatrix;
-  using Tpetra::INSERT;
-  using Tpetra::Import;
-  using std::string;
   using Teuchos::tuple;
+  using Teuchos::null;
   using Teuchos::VERB_NONE;
   using Teuchos::VERB_LOW;
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
-  using Tpetra::DynamicProfile;
   using Teuchos::ETransp;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
@@ -89,16 +81,48 @@ namespace {
   using Teuchos::EUplo;
   using Teuchos::UPPER_TRI;
   using Teuchos::LOWER_TRI;
+
+  using Tpetra::Map;
+  using Tpetra::MultiVector;
+  using Tpetra::Vector;
+  using Tpetra::InverseOperator;
+  using Tpetra::Operator;
+  using Tpetra::CrsMatrix;
+  using Tpetra::CrsGraph;
+  using Tpetra::RowMatrix;
+  using Tpetra::Import;
+  using Tpetra::global_size_t;
+  using Tpetra::DefaultPlatform;
+  using Tpetra::ProfileType;
+  using Tpetra::StaticProfile;
+  using Tpetra::DynamicProfile;
+  using Tpetra::OptimizeOption;
+  using Tpetra::DoOptimizeStorage;
+  using Tpetra::DoNotOptimizeStorage;
   using Tpetra::LocallyReplicated;
   using Tpetra::GloballyDistributed;
+  using Tpetra::INSERT;
 
-  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
+  using Kokkos::SerialNode;
+  RCP<SerialNode> snode;
+#ifdef HAVE_KOKKOS_TBB
+  using Kokkos::TBBNode;
+  RCP<TBBNode> tbbnode;
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  using Kokkos::TPINode;
+  RCP<TPINode> tpinode;
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+  using Kokkos::ThrustGPUNode;
+  RCP<ThrustGPUNode> thrustnode;
+#endif
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
   string filedir;
 
-#define ARRAYVIEW_TO_ARRAY(Type, arr, av) \
+#define DYN_ARRAYVIEW_TO_ARRAY(Type, arr, av) \
   { \
     ArrayView<Type> av2 = av; \
     arr.resize(av2.size()); \
@@ -154,13 +178,65 @@ namespace {
     return ret;
   }
 
+  template <class Node>
+  RCP<Node> getNode() {
+    assert(false);
+  }
+
+  template <>
+  RCP<SerialNode> getNode<SerialNode>() {
+    if (snode == null) {
+      Teuchos::ParameterList pl;
+      snode = rcp(new SerialNode(pl));
+    }
+    return snode;
+  }
+
+#ifdef HAVE_KOKKOS_TBB
+  template <>
+  RCP<TBBNode> getNode<TBBNode>() {
+    if (tbbnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tbbnode = rcp(new TBBNode(pl));
+    }
+    return tbbnode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_THREADPOOL
+  template <>
+  RCP<TPINode> getNode<TPINode>() {
+    if (tpinode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      tpinode = rcp(new TPINode(pl));
+    }
+    return tpinode;
+  }
+#endif
+
+#ifdef HAVE_KOKKOS_THRUST
+  template <>
+  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
+    if (thrustnode == null) {
+      Teuchos::ParameterList pl;
+      pl.set<int>("Num Threads",0);
+      pl.set<int>("Verbose",1);
+      thrustnode = rcp(new ThrustGPUNode(pl));
+    }
+    return thrustnode;
+  }
+#endif
+
   //
   // UNIT TESTS
   // 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, BadCalls, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, BadCalls, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -171,10 +247,10 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
     MV mv1(map,1), mv2(map,2), mv3(map,3);
     // create the zero matrix
-    RCP<RowMatrix<Scalar,LO,GO> > zero;
+    RCP<RowMatrix<Scalar,LO,GO,Node> > zero;
     {
       RCP<MAT> zero_crs = rcp( new MAT(map,0,DynamicProfile) );
       TEST_THROW(zero_crs->apply(mv1,mv1), std::runtime_error);
@@ -193,8 +269,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, WithGraph, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, WithGraph, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     // generate a tridiagonal matrix
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -207,8 +284,8 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
-    CrsGraph<LO,GO> graph(map,3,StaticProfile);
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    CrsGraph<LO,GO,Node> graph(map,3,StaticProfile);
     for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
       if (r == map->getMinAllGlobalIndex()) {
         graph.insertGlobalIndices(r,tuple(r,r+1));
@@ -256,8 +333,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, ExceedStaticAlloc, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ExceedStaticAlloc, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
     typedef typename ST::magnitudeType Mag;
@@ -269,7 +347,7 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
     {
       MAT matrix(map,1,StaticProfile);
       // room for one on each row
@@ -304,8 +382,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, MultipleFillCompletes, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MultipleFillCompletes, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     // test that an exception is thrown when we exceed statically allocated memory
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
@@ -317,7 +396,7 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 1; // change to 10
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
     {
       // room for two on each row
       MAT matrix(map,2,StaticProfile);
@@ -364,8 +443,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, CopiesAndViews, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, CopiesAndViews, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     // test that an exception is thrown when we exceed statically allocated memory
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -380,31 +460,31 @@ namespace {
     // create a Map, one row per processor
     const GO indexBase = 0;
     const size_t numLocal = 1;
-    RCP<Map<LO,GO,Node> > rmap = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<Map<LO,GO,Node> > rmap = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm,node) );
     GO myrowind = rmap->getGlobalElement(0);
     // specify the column map to control ordering
     // construct tridiagonal graph
     Array<GO> ginds;
     Array<LO> linds;
     if (myImageID==0) {
-      ARRAYVIEW_TO_ARRAY( GO, ginds, tuple(myrowind,myrowind+1) );
-      ARRAYVIEW_TO_ARRAY( LO, linds, tuple(0,1) );
+      DYN_ARRAYVIEW_TO_ARRAY( GO, ginds, tuple<GO>(myrowind,myrowind+1) );
+      DYN_ARRAYVIEW_TO_ARRAY( LO, linds, tuple<LO>(0,1) );
     }
     else if (myImageID==numImages-1) {
-      ARRAYVIEW_TO_ARRAY( GO, ginds , tuple(myrowind-1,myrowind) );
-      ARRAYVIEW_TO_ARRAY( LO, linds , tuple(0,1) );
+      DYN_ARRAYVIEW_TO_ARRAY( GO, ginds , tuple<GO>(myrowind-1,myrowind) );
+      DYN_ARRAYVIEW_TO_ARRAY( LO, linds , tuple<LO>(0,1) );
     }
     else {
-      ARRAYVIEW_TO_ARRAY( GO, ginds , tuple(myrowind-1,myrowind,myrowind+1) );
-      ARRAYVIEW_TO_ARRAY( LO, linds , tuple(0,1,2) );
+      DYN_ARRAYVIEW_TO_ARRAY( GO, ginds , tuple<GO>(myrowind-1,myrowind,myrowind+1) );
+      DYN_ARRAYVIEW_TO_ARRAY( LO, linds , tuple<LO>(0,1,2) );
     }
     Array<Scalar> vals(ginds.size(),ST::one());
-    RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm) );
+    RCP<Map<LO,GO,Node> > cmap = rcp( new Map<LO,GO,Node>(INVALID,ginds(),0,comm,node) );
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
-      RowMatrix<Scalar,LO,GO> &rowmatrix = matrix;
+      RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
       ArrayRCP<const GO> CGView; ArrayRCP<const LO> CLView; ArrayRCP<const Scalar> CSView;
       size_t numentries;
@@ -455,8 +535,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TheEyeOfTruth, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TheEyeOfTruth, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -470,12 +551,12 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the identity matrix
     GO base = numLocal*myImageID;
-    RCP<RowMatrix<Scalar,LO,GO> > eye;
+    RCP<RowMatrix<Scalar,LO,GO,Node> > eye;
     {
       RCP<MAT> eye_crs = rcp(new MAT(map,1));
       for (size_t i=0; i<numLocal; ++i) {
@@ -510,8 +591,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, NonSquare, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonSquare, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -556,9 +638,9 @@ namespace {
     // 
     // 
     const size_t numVecs  = 3;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,static_cast<GO>(0),comm) );
+    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,static_cast<GO>(0),comm,node) );
     rowmap->setObjectLabel("Row Map");
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(static_cast<global_size_t>(P),static_cast<GO>(0),comm,LocallyReplicated) );
+    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(static_cast<global_size_t>(P),static_cast<GO>(0),comm,LocallyReplicated,node) );
     lclmap->setObjectLabel("Local Map");
     // create the matrix
     MAT A(rowmap,P,DynamicProfile);
@@ -595,8 +677,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, Transpose, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Transpose, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     // this is the same matrix as in test NonSquare, but we will apply the transpose
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -651,8 +734,8 @@ namespace {
     //   k=0
     // 
     const size_t numVecs  = 3;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm) );
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,static_cast<GO>(0),comm,LocallyReplicated) );
+    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm,node) );
+    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,static_cast<GO>(0),comm,LocallyReplicated,node) );
     // create the matrix
     MAT A(rowmap,P);
     for (size_t i=0; i<M; ++i) {
@@ -689,8 +772,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, DomainRange, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, DomainRange, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -737,9 +821,9 @@ namespace {
     // domain map will be equal to the row map
     // range  map will be [0,np] [1,np+1] [2,np+2]
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm) );
-    RCP<Map<LO,GO,Node> > rngmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm) );
-    RCP<RowMatrix<Scalar,LO,GO> > tri;
+    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(2*myImageID,2*myImageID+1),0,comm,node) );
+    RCP<Map<LO,GO,Node> > rngmap = rcp( new Map<LO,GO,Node>(INVALID,tuple<GO>(myImageID,numImages+myImageID),0,comm,node) );
+    RCP<RowMatrix<Scalar,LO,GO,Node> > tri;
     {
       RCP<MAT> tri_crs = rcp(new MAT(rowmap,3) );
       Array<Scalar>  vals(3,ST::one());
@@ -807,8 +891,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -822,11 +907,11 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the identity matrix
-    RCP<RowMatrix<Scalar,LO,GO> > eye;
+    RCP<RowMatrix<Scalar,LO,GO,Node> > eye;
     {
       RCP<MAT> eye_crs = rcp(new MAT(map,1) );
       if (myImageID == 0) {
@@ -862,8 +947,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SimpleEigTest, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, SimpleEigTest, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -877,7 +963,7 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm,node) );
     // create a multivector ones(n,1)
     MV ones(map,ONE,false), threes(map,ONE,false);
     ones.putScalar(ST::one());
@@ -939,8 +1025,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, EmptyTriSolve, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyTriSolve, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef Operator<Scalar,LO,GO,Node>  OP;
     typedef InverseOperator<Scalar,LO,GO,Node>  IOP;
@@ -953,7 +1040,7 @@ namespace {
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
 
     /* Create a triangular matrix with no entries, for testing implicit diagonals.
       We test with Transpose and Non-Transpose application solve (these should be equivalent for the identity matrix)
@@ -992,8 +1079,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, TriSolve, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, TriSolve, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef Operator<Scalar,LO,GO,Node>  OP;
     typedef InverseOperator<Scalar,LO,GO,Node>  IOP;
@@ -1006,7 +1094,7 @@ namespace {
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
     Scalar SONE = static_cast<Scalar>(1.0);
 
     /* Create one of the following locally triangular matries:
@@ -1123,8 +1211,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, FullMatrixTriDiag, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, FullMatrixTriDiag, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     // do a FEM-type communication, then apply to a MultiVector containing the identity
     // this will check more difficult communication and test multivector apply
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -1140,7 +1229,7 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm,node) );
 
     // for debugging: Teuchos::VerboseObjectBase::setDefaultOStream(Teuchos::rcp(&out,false));
     
@@ -1203,307 +1292,14 @@ namespace {
   }
 
 
-  ////
-#ifdef HAVE_TPETRA_TRIUTILS
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, FullMatrixComplex, LO, GO, Scalar )
-  {
-    // assumes that Scalar has a constructor of the form: Scalar(realpart,imagpart)
-    typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t myImageID = comm->getRank();
 
-    int dim,dim2,nnz,info;
-    int rnnzmax;
-    double *dvals = NULL;
-    int *colptr = NULL,
-        *rowind = NULL;
-    nnz = -1;
-    string fn = filedir + "mhd1280b.cua";
-    if (myImageID == 0) {
-      info = readHB_newmat_double(fn.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-      // find maximum NNZ over all rows
-      Array<int> rnnz(dim,0);
-      for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-        ++rnnz[*ri-1];
-      }
-      rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-    }
-    else {
-      // address uninitialized data warnings
-      dvals = NULL;
-      colptr = NULL;
-      rowind = NULL;
-    }
-    Teuchos::broadcast(*comm,0,&info);
-    Teuchos::broadcast(*comm,0,&nnz);
-    Teuchos::broadcast(*comm,0,&dim);
-    Teuchos::broadcast(*comm,0,&rnnzmax);
-    if (info == 0 || nnz < 0) {
-      success = false;
-      out << "Error reading \"" << fn << "\"" << endl;
-      return;
-    }
-    // create map: partition matrix equally among all procs
-    RCP<Map<LO,GO,Node> > map_shared = rcp( new Map<LO,GO,Node>(dim,0,comm) );
-    RCP<Map<LO,GO,Node> > map_AllOnRoot = rcp( new Map<LO,GO,Node>(dim,(myImageID==0?dim:0),0,comm) );
-    MAT A_crs(map_shared,rnnzmax);
-    // create a multivector with the entire matrix on Root, we will export it to the other procs
-    MV A_mv(map_shared,dim), A_mv_AllOnRoot(map_AllOnRoot,dim), mvres(map_shared,dim), mveye(map_shared,dim);
-    Import<LO,GO> AllFromRoot(map_AllOnRoot,map_shared);
-    if (myImageID == 0) {
-      // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
-      // HB format is compressed column. CrsMatrix is compressed row. Convert.
-      const double *dptr = dvals;
-      const int *rptr = rowind;
-      for (int c=0; c<dim; ++c) {
-        for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.insertGlobalValues(*rptr-1,tuple<GO>(c),tuple<Scalar>(Scalar(dptr[0],dptr[1])));
-          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
-          ++rptr;
-          dptr += 2;
-        }
-      }
-    }
-    // fillComplete() will distribute matrix entries from Root to all other procs
-    A_crs.fillComplete();
-    // doExport() will distribute MV entries from Root to all other procs
-    A_mv.doImport(A_mv_AllOnRoot,AllFromRoot,INSERT);
 
-    if (myImageID == 0) {
-      // Clean up allocated memory.
-      free( dvals );
-      free( colptr );
-      free( rowind );
-    }
-
-    // build identity MV
-    for (GO j=0; j<map_shared.getNumMyEntries(); ++j) {
-      GO gid = map_shared->getGlobalElement(j);
-      mveye.replaceGlobalValue(gid,gid,ST::one());
-    }
-    // test the properties
-    TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
-    TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
-    TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getRangeMap()) , true);
-    // test the action
-    A_crs.apply(mveye,mvres);
-    mvres.update(-ST::one(),A_mv,ST::one());
-    Array<Mag> norms(dim), zeros(dim,MT::zero());
-    mvres.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
-  }
-#endif
 
 
   ////
-#ifdef HAVE_TPETRA_TRIUTILS
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, PowerComplex, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, BadGID, LO, GO, Scalar, Node )
   {
-    // assumes that Scalar has a constructor of the form: Scalar(realpart,imagpart)
-    typedef ScalarTraits<Scalar> ST;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t myImageID = comm->getRank();
-
-    int dim,dim2,nnz,info;
-    int rnnzmax;
-    double *dvals = NULL;
-    int *colptr = NULL,
-        *rowind = NULL;
-    nnz = -1;
-    string fn = filedir + "mhd1280b.cua";
-    if (myImageID == 0) {
-      info = readHB_newmat_double(fn.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-      // find maximum NNZ over all rows
-      Array<int> rnnz(dim,0);
-      for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-        ++rnnz[*ri-1];
-      }
-      rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-    }
-    else {
-      // address uninitialized data warnings
-      dvals = NULL;
-      colptr = NULL;
-      rowind = NULL;
-    }
-    Teuchos::broadcast(*comm,0,&info);
-    Teuchos::broadcast(*comm,0,&nnz);
-    Teuchos::broadcast(*comm,0,&dim);
-    Teuchos::broadcast(*comm,0,&rnnzmax);
-    if (info == 0 || nnz < 0) {
-      success = false;
-      out << "Error reading \"" << fn << "\"" << endl;
-      return;
-    }
-    // create map: partition matrix equally among all procs
-    RCP<Map<LO,GO,Node> > map_shared = rcp( new Map<LO,GO,Node>(dim,0,comm) );
-    MAT A_crs(map_shared,rnnzmax);
-    if (myImageID == 0) {
-      // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
-      // HB format is compressed column. CrsMatrix is compressed row. Convert.
-      const double *dptr = dvals;
-      const int *rptr = rowind;
-      for (int c=0; c<dim; ++c) {
-        for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.insertGlobalValues(*rptr-1,tuple<GO>(c),tuple<Scalar>(Scalar(dptr[0],dptr[1])));
-          ++rptr;
-          dptr += 2;
-        }
-      }
-    }
-    // fillComplete() will distribute matrix entries from Root to all other procs
-    A_crs.fillComplete();
-    if (myImageID == 0) {
-      // Clean up allocated memory.
-      free( dvals );
-      free( colptr );
-      free( rowind );
-    }
-
-    // simple power method
-    RCP<MV> x = rcp(new MV(map_shared,1)), 
-            r = rcp(new MV(map_shared,1));
-    Scalar lam, lam_left;
-    Mag nrm, nrm_left;
-    x->putScalar(Scalar(1.0f,1.0f)); x->norm2(arrayView<Mag>(&nrm,1)); x->scale(MT::one()/nrm);
-    for (int i=0; i<20; ++i) {
-      A_crs.apply(*x,*r);                                         // r = A*x
-      x->dot(*r,arrayView<Scalar>(&lam,1));                       // lambda = x'*r = x'*A*x
-      x->update(ST::one(),*r,-lam);                               // x = r - x*lam = A*x - x*lam \doteq oldres
-      r->norm2(arrayView<Mag>(&nrm,1)); r->scale(MT::one()/nrm);  // r = A*x / |A*x| \doteq newx
-      swap(x,r);                                                  // x = newx; r = oldres
-      r->norm2(arrayView<Mag>(&nrm,1));                           // nrm = |r| = |oldres|
-      out << "i: " << i << "\t\tlambda: " << lam << "\t\t|r|: " << nrm << endl;
-    }
-    // check that the computed right eigenpair is also a left eigenpair (the matrix is Hermitian)
-    A_crs.apply(*x,*r,CONJ_TRANS);
-    x->dot(*r,arrayView<Scalar>(&lam_left,1));
-    x->update(ST::one(),*r,-lam_left);  // x = A'*x - x*lam_left
-    x->norm2(arrayView<Mag>(&nrm_left,1));
-    out << "lam_left: " << lam_left << "\t\tnrm_left: " << nrm_left << endl;
-    TEST_FLOATING_EQUALITY(lam, Scalar(70.322f,0.0f), static_cast<Mag>(0.000001f));
-    TEST_FLOATING_EQUALITY(lam_left, lam, static_cast<Mag>(0.000001f));
-    TEST_EQUALITY_CONST(nrm      < 0.0001f, true);
-    TEST_EQUALITY_CONST(nrm_left < 0.0001f, true);
-  }
-#endif
-
-
-  ////
-#ifdef HAVE_TPETRA_TRIUTILS
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, FullMatrix, LO, GO, Scalar )
-  {
-    typedef ScalarTraits<Scalar> ST;
-    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
-    typedef MultiVector<Scalar,LO,GO,Node> MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef ScalarTraits<Mag> MT;
-    if (Teuchos::ScalarTraits<Scalar>::isOrdinal) return;
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const size_t myImageID = comm->getRank();
-
-    int dim,dim2,nnz,info;
-    int rnnzmax;
-    double *dvals = NULL;
-    int *colptr = NULL,
-        *rowind = NULL;
-    nnz = -1;
-    string fn = filedir + "west0067.rua";
-    if (myImageID == 0) {
-      info = readHB_newmat_double(fn.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-      // find maximum NNZ over all rows
-      Array<int> rnnz(dim,0);
-      for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-        ++rnnz[*ri-1];
-      }
-      rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-    }
-    else {
-      // address uninitialized data warnings
-      dvals = NULL;
-      colptr = NULL;
-      rowind = NULL;
-    }
-    Teuchos::broadcast(*comm,0,&info);
-    Teuchos::broadcast(*comm,0,&nnz);
-    Teuchos::broadcast(*comm,0,&dim);
-    Teuchos::broadcast(*comm,0,&rnnzmax);
-    if (info == 0 || nnz < 0) {
-      success = false;
-      out << "Error reading \"" << fn << "\"" << endl;
-      return;
-    }
-    // create map: partition matrix equally among all procs
-    RCP<Map<LO,GO,Node> > map_shared = rcp( new Map<LO,GO,Node>(dim,0,comm) ); 
-    RCP<Map<LO,GO,Node> > map_AllOnRoot = rcp( new Map<LO,GO,Node>(dim,(myImageID==0?dim:0),0,comm) );
-    MAT A_crs(map_shared,rnnzmax);
-    // create a multivector with the entire matrix on Root, we will export it to the other procs
-    MV A_mv(map_shared,dim), A_mv_AllOnRoot(map_AllOnRoot,dim), mvres(map_shared,dim), mveye(map_shared,dim);
-    Import<LO,GO> AllFromRoot(map_AllOnRoot,map_shared);
-    if (myImageID == 0) {
-      // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
-      // HB format is compressed column. CrsMatrix is compressed row. Convert.
-      double *dptr = dvals;
-      int *rptr = rowind;
-      for (int c=0; c<dim; ++c) {
-        for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          Scalar s = static_cast<Scalar>(*dptr);
-          A_crs.insertGlobalValues(*rptr-1,tuple<GO>(c),tuple(s));
-          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,s);
-          ++rptr;
-          ++dptr;
-        }
-      }
-    }
-    // fillComplete() will distribute matrix entries from Root to all other procs
-    A_crs.fillComplete();
-    // doExport() will distribute MV entries from Root to all other procs
-    A_mv.doImport(A_mv_AllOnRoot,AllFromRoot,INSERT);
-
-    if (myImageID == 0) {
-      // Clean up allocated memory.
-      free( dvals );
-      free( colptr );
-      free( rowind );
-    }
-
-    // build identity MV
-    for (GO j=0; j<map_shared.getNumMyEntries(); ++j) {
-      GO gid = map_shared->getGlobalElement(j);
-      mveye.replaceGlobalValue(gid,gid,ST::one());
-    }
-    // test the properties
-    TEST_EQUALITY(A_crs.getGlobalNumEntries()   , nnz);
-    TEST_EQUALITY(A_crs.getGlobalNumRows()       , dim);
-    TEST_EQUALITY_CONST(A_crs.getIndexBase()     , 0);
-    TEST_EQUALITY_CONST(A_crs.getRowMap()->isSameAs(*A_crs.getRangeMap()) , true);
-    // test the action
-    A_crs.apply(mveye,mvres);
-    mvres.update(-ST::one(),A_mv,ST::one());
-    Array<Mag> norms(dim), zeros(dim,MT::zero());
-    mvres.norm2(norms());
-    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
-  }
-#endif
-
-
-  ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, BadGID, LO, GO, Scalar )
-  {
+    RCP<Node> node = getNode<Node>();
     // what happens when we call CrsMatrix::insertGlobalValues() for a row that isn't on the Map?
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
@@ -1517,7 +1313,7 @@ namespace {
     const size_t numImages = comm->getSize();
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
     {
       // create the matrix
       MAT A(map,1);
@@ -1540,8 +1336,9 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, ZeroMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ZeroMatrix, LO, GO, Scalar, Node )
   {
+    RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -1553,7 +1350,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm) );
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the zero matrix
@@ -1567,87 +1364,82 @@ namespace {
   }
 
 
-  // 
-  // INSTANTIATIONS
-  //
+// 
+// INSTANTIATIONS
+//
 
-#ifdef HAVE_TPETRA_TRIUTILS
-# define TRIUTILS_USING_TESTS(LO, GO,SCALAR) \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, FullMatrix, LO, GO, SCALAR ) */
-#else
-# define TRIUTILS_USING_TESTS(LO, GO,SCALAR)
-#endif
-
-#ifdef HAVE_TPETRA_TRIUTILS
-# define COMPLEX_TRIUTILS_USING_TESTS(LO, GO,SCALAR) \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, FullMatrixComplex, LO, GO, SCALAR ) */ \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, PowerComplex, LO, GO, SCALAR ) */
-#else
-# define COMPLEX_TRIUTILS_USING_TESTS(LO, GO,SCALAR)
-#endif
-
-#ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)\
-     typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat) \
-     COMPLEX_TRIUTILS_USING_TESTS(LO, GO, ComplexFloat)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)\
-     typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble) \
-     COMPLEX_TRIUTILS_USING_TESTS(LO, GO, ComplexDouble)
-#else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
-#endif
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR )  \
-      /* TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, SCALAR )*/ \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ZeroMatrix   , LO, GO, SCALAR )  \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, BadCalls     , LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, SimpleEigTest, LO, GO, SCALAR )  \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, BadGID       , LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, FullMatrixTriDiag, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, DomainRange, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR ) \
-      TRIUTILS_USING_TESTS( LO, GO, SCALAR )
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR, NODE )  \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix   , LO, GO, SCALAR, NODE )  \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls     , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest, LO, GO, SCALAR, NODE )  \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadGID       , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, FullMatrixTriDiag, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, DomainRange, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE )
 
-#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT( LO, GO )
-     UNIT_TEST_GROUP_ORDINAL(int)
+#define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
 
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#ifdef HAVE_KOKKOS_TBB
+#define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TBBNode )
+#else
+#define UNIT_TEST_TBBNODE(LO, GO, SCALAR)
+#endif
 
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)  \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#ifdef HAVE_KOKKOS_THREADPOOL
+#define UNIT_TEST_TPINODE(LO, GO, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, TPINode )
+#else
+#define UNIT_TEST_TPINODE(LO, GO, SCALAR)
+#endif
 
-     UNIT_TEST_GROUP_ORDINAL(int)
+#ifdef HAVE_KOKKOS_THRUST
+#define UNIT_TEST_THRUSTGPUNODE(LO, GO, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, ThrustGPUNode )
+#else
+#define UNIT_TEST_THRUSTGPUNODE(LO, GO, SCALAR)
+#endif
 
-     typedef long int LongInt;
-     UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
-        typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
-#    endif
+#define UNIT_TEST_ALLNODES(LO, GO, SCALAR) \
+    UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
+    UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
+    UNIT_TEST_TPINODE(LO, GO, SCALAR) \
+    UNIT_TEST_THRUSTGPUNODE(LO, GO, SCALAR)
 
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
+    UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
+    UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
+    UNIT_TEST_TPINODE(LO, GO, SCALAR)
+
+#define UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(LO, GO) \
+     typedef std::complex<double> ComplexDouble; \
+     UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble)
+
+#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
+           UNIT_TEST_ALLNODES(LO, GO, float)
+    UNIT_TEST_GROUP_ORDINAL(int, int)
+#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
+           UNIT_TEST_ALLNODES(LO, GO, float) \
+           UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(LO, GO)
+    typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
+    UNIT_TEST_GROUP_ORDINAL(int, int)
+#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

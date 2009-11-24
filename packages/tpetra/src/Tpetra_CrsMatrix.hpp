@@ -206,7 +206,7 @@ namespace Tpetra
       Teuchos::RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
 
       //! Returns the CrsGraph associated with this matrix. 
-      Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal> > getCrsGraph() const;
+      Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > getCrsGraph() const;
 
       //! Returns the number of global rows in this matrix.
       global_size_t getGlobalNumRows() const;
@@ -330,7 +330,7 @@ namespace Tpetra
       //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
           the zero and non-zero diagonals owned by this node. */
-      void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal> &diag) const;
+      void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
 
       //@}
 
@@ -443,7 +443,7 @@ namespace Tpetra
        */
       Teuchos::ArrayRCP<Scalar> getFullViewNonConst(size_t myRow, RowInfo sizeInfo);
 
-      Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal> > graph_;
+      Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > graph_;
 
       Kokkos::CrsMatrix<Scalar,Node> lclMatrix_;
       LocalMatVec lclMatVec_;
@@ -763,7 +763,7 @@ namespace Tpetra
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal> >
+  Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getCrsGraph() const { 
     return graph_; 
   }
@@ -1649,7 +1649,7 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal> &dvec) const {
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dvec) const {
     TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
         Teuchos::typeName(*this) << ": cannot call getLocalDiagCopy() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(dvec.getMap()->isSameAs(*getRowMap()) == false, std::runtime_error,
@@ -2195,8 +2195,8 @@ namespace Tpetra
 #endif
 
     const size_t numVectors = X.getNumVectors();
-    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal> > importer = graph_->getImporter();
-    Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal> > exporter = graph_->getExporter();
+    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer = graph_->getImporter();
+    Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = graph_->getExporter();
     Teuchos::RCP<MV>        Xcopy;
     Teuchos::RCP<const MV>  Ycopy;
     Kokkos::MultiVector<Scalar,Node>        *lclX = &X.getLocalMVNonConst();
@@ -2411,8 +2411,8 @@ namespace Tpetra
     // because of Views, it is difficult to determine if X and Y point to the same data. 
     // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
     // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
-    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal> > importer = graph_->getImporter();
-    Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal> > exporter = graph_->getExporter();
+    Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer = graph_->getImporter();
+    Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = graph_->getExporter();
     Teuchos::RCP<const MV> Xcopy;
     Teuchos::RCP<MV>       Ycopy;
     const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();

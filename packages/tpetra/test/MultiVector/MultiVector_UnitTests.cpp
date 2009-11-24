@@ -43,14 +43,18 @@ namespace Teuchos {
 
 namespace {
 
-  using std::vector;
-  using std::sort;
+  using std::endl;
+  using std::copy;
+  using std::ostream_iterator;
+  using std::string;
+
+  using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
+  using Teuchos::rcp;
   using Teuchos::null;
   using Teuchos::Array;
-  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::Comm;
-  using Teuchos::RCP;
   using Teuchos::SerialDenseMatrix;
   using Teuchos::Range1D;
   using Teuchos::Tuple;
@@ -59,7 +63,6 @@ namespace {
   using Teuchos::ScalarTraits;
   using Teuchos::arrayView;
   using Teuchos::tuple;
-  using Teuchos::rcp;
   using Teuchos::NO_TRANS;
   using Teuchos::TRANS;
   using Teuchos::CONJ_TRANS;
@@ -69,16 +72,13 @@ namespace {
   using Teuchos::VERB_MEDIUM;
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
-  using Tpetra::LocallyReplicated;
-  using Tpetra::GloballyDistributed;
+
   using Tpetra::Map;
-  using Tpetra::DefaultPlatform;
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
-  using std::endl;
-  using std::copy;
-  using std::ostream_iterator;
-  using std::string;
+  using Tpetra::DefaultPlatform;
+  using Tpetra::LocallyReplicated;
+  using Tpetra::GloballyDistributed;
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
@@ -113,10 +113,14 @@ namespace {
 
   RCP<const Comm<int> > getDefaultComm()
   {
+    RCP<const Comm<int> > ret;
     if (testMpi) {
-      return DefaultPlatform::getDefaultPlatform().getComm();
+      ret = DefaultPlatform::getDefaultPlatform().getComm();
     }
-    return rcp(new Teuchos::SerialComm<int>());
+    else {
+      ret = rcp(new Teuchos::SerialComm<int>());
+    }
+    return ret;
   }
 
   template <class Node>
@@ -1973,24 +1977,19 @@ namespace {
     UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 
 #define UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(ORDINAL) \
-     typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexFloat)
+     typedef std::complex<double> ComplexDouble; \
+     UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexDouble)
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_ALLNODES(ORDINAL, float)
-     UNIT_TEST_GROUP_ORDINAL(int)
-
+#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+           UNIT_TEST_ALLNODES(ORDINAL, float)
+    UNIT_TEST_GROUP_ORDINAL(int)
 #else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_ALLNODES(ORDINAL, float) \
-         UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(ORDINAL)
-     typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
-     UNIT_TEST_GROUP_ORDINAL(int)
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
-        typedef long long int LongLongInt; UNIT_TEST_GROUP_ORDINAL(LongLongInt)
-#    endif
-
+#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+           UNIT_TEST_ALLNODES(ORDINAL, float) \
+           UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(ORDINAL)
+    typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+    UNIT_TEST_GROUP_ORDINAL(int)
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

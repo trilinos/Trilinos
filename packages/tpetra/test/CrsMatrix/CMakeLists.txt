@@ -20,6 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraCrsMatrixCopyFiles

@@ -33,6 +33,7 @@
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_BLAS_types.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -102,7 +103,8 @@ namespace Kokkos {
 
     //! Applies the matrix to a MultiVector.
     template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, Scalar alpha, const MultiVector<DomainScalar,Node> &X, Scalar beta, MultiVector<RangeScalar,Node> &Y) const;
+    void multiply(Teuchos::ETransp trans, 
+                  Scalar alpha, const MultiVector<DomainScalar,Node> &X, Scalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
     //@}
 
@@ -121,7 +123,7 @@ namespace Kokkos {
     Teuchos::ArrayRCP<const Ordinal *> pbuf_inds2D_;
     Teuchos::ArrayRCP<const Scalar  *> pbuf_vals2D_;
     Teuchos::ArrayRCP<size_t>          pbuf_numEntries_;
-    
+
     size_t numRows_;
     bool indsInit_, valsInit_, isPacked_, isEmpty_;
   };
@@ -143,14 +145,16 @@ namespace Kokkos {
   template <class GRAPH>
   Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse graphs
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(true, std::exception, 
+        Teuchos::typeName(*this) << "::initializeStructure(): method is not implemented for graph of type " << Teuchos::typeName(graph));
   }
 
   template<class Scalar, class Ordinal, class Node>
   template <class MATRIX>
-  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseMultiply<Scalar,Ordinal,Node>::initializeValues(MATRIX &matrix, Teuchos::DataAccess cv) {
     // not implemented for general sparse matrices
-    TEST_FOR_EXCEPT(true);
+    TEST_FOR_EXCEPTION(true, std::exception, 
+        Teuchos::typeName(*this) << "::initializeValues(): method is not implemented for matrix of type " << Teuchos::typeName(matrix));
   }
 
 
@@ -350,4 +354,4 @@ namespace Kokkos {
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_DEFAULTSPARSEMULTIPLY_H */
+#endif /* KOKKOS_DEFAULTSPARSEMULTIPLY_HPP */
