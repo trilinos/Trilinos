@@ -156,8 +156,29 @@ namespace {
     buf = Teuchos::null;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, ElemMult, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef MultiVector<Scalar,Node> MV;
+    const int numVecs = 5;
+    MV C(node), A(node), B(node);
+    ArrayRCP<Scalar> buf = node->template allocBuffer<Scalar>((2*numVecs+1)*N);
+    C.initializeValues(N,numVecs,buf            ,N);
+    B.initializeValues(N,numVecs,buf+  numVecs*N,N);
+    A.initializeValues(N,1      ,buf+2*numVecs*N,N);
+    DefaultArithmetic<MV>::Init(A,2);                 // A = twos()
+    DefaultArithmetic<MV>::Init(B,2);                 // B = twos()
+    DefaultArithmetic<MV>::ElemMult(C, 0, 2, (const MV&)A,(const MV&)B);  // C(i,j) = 2*A(i) @ B(i,j) = 8 (@ denotes element-wise multiply)
+    ArrayRCP<const Scalar> viewC = node->template viewBuffer<Scalar>(numVecs*N, buf);
+    ArrayRCP<Scalar> eights(numVecs*N, static_cast<Scalar>(8) );
+    TEST_COMPARE_FLOATING_ARRAYS(viewC, eights(), ScalarTraits<Scalar>::eps());
+    viewC = Teuchos::null;
+    buf = Teuchos::null;
+  }
+
 #define ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Scale, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Scale, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ElemMult, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE( SCALAR ) \
       ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, SerialNode )

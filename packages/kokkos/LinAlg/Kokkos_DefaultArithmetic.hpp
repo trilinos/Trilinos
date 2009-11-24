@@ -239,6 +239,48 @@ namespace Kokkos {
         }
       }
 
+      //! Set MultiVector to the scaled element-wise multiple of two others:
+      /** C(i,j) = scalarC * C(i,j) + scalarAB * B(i,j) * A(i,1) (A has only 1 column)
+       */
+      inline static void ElemMult(MultiVector<Scalar,Node> &C, Scalar scalarC,
+                               Scalar scalarAB,
+                               const MultiVector<Scalar,Node> &A,
+                               const MultiVector<Scalar,Node> &B) {
+        const size_t nR_A = A.getNumRows();
+        const size_t nC_A = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC_A != 1, std::runtime_error,
+                           "DefaultArithmetic<"<<Teuchos::typeName(A) << ">::ElemMult(C,sC,sAB,A,B): A must have just 1 column.");
+        const size_t Cstride = C.getStride();
+        const size_t Bstride = B.getStride();
+        const size_t nC_C = C.getNumCols();
+        const size_t nR_C = C.getNumRows();
+        TEST_FOR_EXCEPTION(nC_C != B.getNumCols() || nR_A != B.getNumRows() || nR_C != B.getNumRows(), std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::ElemMult(C,sC,sAB,A,B): A, B and C must have the same num-rows, B and C must have the same num-cols.");
+        Teuchos::RCP<Node> node = B.getNode();
+        Teuchos::ArrayRCP<Scalar> Cdata = B.getValuesNonConst();
+        Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
+        Teuchos::ArrayRCP<const Scalar>       Adata = A.getValues();
+        // prepare buffers
+        ReadyBufferHelper<Node> rbh(node);
+        rbh.begin();
+        rbh.template addNonConstBuffer<Scalar>(Cdata);
+        rbh.template addConstBuffer<Scalar>(Bdata);
+        rbh.template addConstBuffer<Scalar>(Adata);
+        rbh.end();
+        MVElemMultOp<Scalar> wdp;
+        wdp.scalarX = scalarC;
+        wdp.scalarYZ = scalarAB;
+        // one kernel invocation for each column
+        for (size_t j=0; j<nC_C; ++j) {
+          wdp.x = Cdata(0,nR).getRawPtr();
+          wdp.y = Adata(0,nR).getRawPtr();
+          wdp.z = Bdata(0,nR).getRawPtr();
+          node->template parallel_for<RecipOp<Scalar> >(0,nR,wdp);
+          Cdata += Cstride;
+          Bdata += Bstride;
+        }
+      }
+
       //! Assign one MultiVector to another
       inline static void Assign(MultiVector<Scalar,Node> &A, const MultiVector<Scalar,Node> &B) {
         const size_t nR = A.getNumRows();
