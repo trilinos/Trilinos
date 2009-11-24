@@ -52,7 +52,7 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_NodeOps.hpp"
+#include <Kokkos_MultiVectorKernelOps.hpp>
 
 namespace Tpetra {
   // struct for i,j,v triplets
@@ -834,18 +834,18 @@ namespace Tpetra
         pbuf_values1D_ = node->template allocBuffer<Scalar>(nta);
         // init values in parallel, if the graph already has valid entries
         if (numEntries > 0) {
-          InitOp<Scalar> wdp;
-          wdp.val = alpha;
+          Kokkos::InitOp<Scalar> wdp;
+          wdp.alpha = alpha;
           rbh.begin();
           wdp.x   = rbh.addNonConstBuffer(pbuf_values1D_);
           rbh.end();
-          node->template parallel_for<InitOp<Scalar> >(0,nta,wdp);
+          node->template parallel_for<Kokkos::InitOp<Scalar> >(0,nta,wdp);
         }
       }
       ///////////////////////////////////////////////
       else { // if getProfileType() == DynamicProfile
-        InitOp<Scalar> wdp;
-        wdp.val = alpha;
+        Kokkos::InitOp<Scalar> wdp;
+        wdp.alpha = alpha;
         // allocate array of buffers
         pbuf_values2D_ = Teuchos::arcp< Teuchos::ArrayRCP<Scalar> >(nlrs);
         for (size_t r=0; r<nlrs; ++r) {
@@ -860,7 +860,7 @@ namespace Tpetra
               rbh.begin();
               wdp.x   = rbh.addNonConstBuffer(pbuf_values2D_[r]);
               rbh.end();
-              node->template parallel_for<InitOp<Scalar> >(0,ntarow,wdp);
+              node->template parallel_for<Kokkos::InitOp<Scalar> >(0,ntarow,wdp);
             }
           }
         }
@@ -1580,13 +1580,13 @@ namespace Tpetra
     else {
       Teuchos::RCP<Node> node = lclMatrix_.getNode();
       Kokkos::ReadyBufferHelper<Node> rbh(node);
-      ScaleOp<Scalar> wdp;
-      wdp.val = alpha;
+      Kokkos::SingleScaleOp<Scalar> wdp;
+      wdp.alpha = alpha;
       if (graph_->getProfileType() == StaticProfile) {
         rbh.begin();
         wdp.x = rbh.addNonConstBuffer(pbuf_values1D_);
         rbh.end();
-        node->template parallel_for<ScaleOp<Scalar> >(0,numAlloc,wdp);
+        node->template parallel_for<Kokkos::SingleScaleOp<Scalar> >(0,numAlloc,wdp);
       }
       else if (graph_->getProfileType() == DynamicProfile) {
         for (size_t row=0; row < nlrs; ++row) {
@@ -1594,7 +1594,7 @@ namespace Tpetra
             rbh.begin();
             wdp.x = rbh.addNonConstBuffer(pbuf_values2D_[row]);
             rbh.end();
-            node->template parallel_for<ScaleOp<Scalar> >(0,pbuf_values2D_[row].size(),wdp);
+            node->template parallel_for<Kokkos::SingleScaleOp<Scalar> >(0,pbuf_values2D_[row].size(),wdp);
           }
         }
       }
@@ -1624,13 +1624,13 @@ namespace Tpetra
     else {
       Teuchos::RCP<Node> node = lclMatrix_.getNode();
       Kokkos::ReadyBufferHelper<Node> rbh(node);
-      InitOp<Scalar> wdp;
-      wdp.val = alpha;
+      Kokkos::InitOp<Scalar> wdp;
+      wdp.alpha = alpha;
       if (graph_->getProfileType() == StaticProfile) {
         rbh.begin();
         wdp.x = rbh.addNonConstBuffer(pbuf_values1D_);
         rbh.end();
-        node->template parallel_for<InitOp<Scalar> >(0,numAlloc,wdp);
+        node->template parallel_for<Kokkos::InitOp<Scalar> >(0,numAlloc,wdp);
       }
       else if (graph_->getProfileType() == DynamicProfile) {
         for (size_t row=0; row < nlrs; ++row) {
@@ -1638,7 +1638,7 @@ namespace Tpetra
             rbh.begin();
             wdp.x = rbh.addNonConstBuffer(pbuf_values2D_[row]);
             rbh.end();
-            node->template parallel_for<InitOp<Scalar> >(0,pbuf_values2D_[row].size(),wdp);
+            node->template parallel_for<Kokkos::InitOp<Scalar> >(0,pbuf_values2D_[row].size(),wdp);
           }
         }
       }
@@ -2083,12 +2083,12 @@ namespace Tpetra
           pbuf_values1D_ = node->template allocBuffer<Scalar>(numEntries);        
           // init to zero
           Kokkos::ReadyBufferHelper<Node> rbh(node);
-          InitOp<Scalar> wdp;
-          wdp.val = Teuchos::ScalarTraits<Scalar>::zero();
+          Kokkos::InitOp<Scalar> wdp;
+          wdp.alpha = Teuchos::ScalarTraits<Scalar>::zero();
           rbh.begin();
           wdp.x   = rbh.addNonConstBuffer(pbuf_values1D_);
           rbh.end();
-          node->template parallel_for<InitOp<Scalar> >(0,numEntries,wdp);
+          node->template parallel_for<Kokkos::InitOp<Scalar> >(0,numEntries,wdp);
         } 
         valuesAreAllocated_ = true;
       }

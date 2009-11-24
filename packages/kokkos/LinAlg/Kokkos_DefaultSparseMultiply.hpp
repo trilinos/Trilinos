@@ -133,7 +133,7 @@ namespace Kokkos {
   : node_(node)
   , indsInit_(false)
   , valsInit_(false)
-  , isPacked_(false) 
+  , isPacked_(false)
   , isEmpty_(false) {
   }
 

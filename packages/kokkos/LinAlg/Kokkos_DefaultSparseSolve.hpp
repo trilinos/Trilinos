@@ -248,7 +248,7 @@ namespace Kokkos {
     indsInit_ = false;
     valsInit_ = false;
     isPacked_ = false;
-    isEmpty_ = false;
+    isEmpty_  = false;
   }
 
 

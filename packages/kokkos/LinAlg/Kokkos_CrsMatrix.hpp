@@ -152,7 +152,7 @@ namespace Kokkos {
     isEmpty_ = (allvals == Teuchos::null);
     pbuf_values1D_ = allvals;
     isInitialized_ = true;
-    isPacked_ = true;
+    isPacked_ = (allvals != Teuchos::null);
   }
 
   //==============================================================================

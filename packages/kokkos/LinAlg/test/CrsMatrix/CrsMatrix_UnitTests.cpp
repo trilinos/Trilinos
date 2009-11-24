@@ -110,8 +110,8 @@ namespace {
       ArrayRCP<Scalar>  vals;
       G.setPackedStructure(offsets,inds);
       A.setPackedValues(vals);
-      TEST_EQUALITY_CONST( G.isPacked(), true );
-      TEST_EQUALITY_CONST( A.isPacked(), true );
+      TEST_EQUALITY_CONST( G.isPacked(), false );
+      TEST_EQUALITY_CONST( A.isPacked(), false );
       TEST_EQUALITY_CONST( G.isEmpty(),  true );
       TEST_EQUALITY_CONST( A.isEmpty(),  true );
       TEST_EQUALITY_CONST( G.getPackedOffsets(), offsets );

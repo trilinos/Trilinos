@@ -160,7 +160,7 @@ namespace Kokkos {
     pbuf_indices1D_ = allinds;
     pbuf_offsets_ = offsets;
     isInitialized_ = true;
-    isPacked_ = true;
+    isPacked_ = (allinds != Teuchos::null);
   }
 
   //==============================================================================
@@ -222,6 +222,12 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Ordinal, class Node>
+  typename Node::size_t CrsGraph<Ordinal,Node>::getNumRows() const {
+    return numRows_;
+  }
+
+  //==============================================================================
+  template <class Ordinal, class Node>
   Teuchos::ArrayRCP<const typename Node::size_t> 
   CrsGraph<Ordinal,Node>::getPackedOffsets() const {
 #ifdef HAVE_KOKKOS_DEBUG
@@ -229,12 +235,6 @@ namespace Kokkos {
         Teuchos::typeName(*this) << "::getPackedOffsets(): graph is uninitialized or not packed.");
 #endif
     return pbuf_offsets_;
-  }
-
-  //==============================================================================
-  template <class Ordinal, class Node>
-  typename Node::size_t CrsGraph<Ordinal,Node>::getNumRows() const {
-    return numRows_;
   }
 
 } // namespace Kokkos
