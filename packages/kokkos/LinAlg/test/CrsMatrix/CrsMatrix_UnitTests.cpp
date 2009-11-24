@@ -58,7 +58,7 @@ namespace {
   // intialize using packed data
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, PackedData, Scalar, Ordinal )
   {
-    const int N = 10;
+    const size_t N = 10;
     typedef typename Node::size_t size;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     // test non-empty
@@ -132,7 +132,7 @@ namespace {
   // intialize using nonpacked data
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, NonPackedData, Scalar, Ordinal )
   {
-    const int N = 3;
+    const size_t N = 3;
     typedef typename Node::size_t size;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     // test sort of empty

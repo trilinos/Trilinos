@@ -168,7 +168,7 @@ namespace {
       ArrayRCP<size_t>  offsets_h = node->template viewBufferNonConst<size_t> (Kokkos::WriteOnly,N+1,offsets);
       ArrayRCP<Ordinal>    inds_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,totalNNZ,inds);
       ArrayRCP<Scalar>     vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
-      int NNZsofar = 0;
+      size_t NNZsofar = 0;
       offsets_h[0] = NNZsofar;
       inds_h[NNZsofar] = 0; inds_h[NNZsofar+1] =  1;
       vals_h[NNZsofar] = 1; vals_h[NNZsofar+1] = -1;

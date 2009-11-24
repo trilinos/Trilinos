@@ -257,7 +257,7 @@ namespace Kokkos {
         TEST_FOR_EXCEPTION(nC_C != B.getNumCols() || nR_A != B.getNumRows() || nR_C != B.getNumRows(), std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::ElemMult(C,sC,sAB,A,B): A, B and C must have the same num-rows, B and C must have the same num-cols.");
         Teuchos::RCP<Node> node = B.getNode();
-        Teuchos::ArrayRCP<Scalar> Cdata = B.getValuesNonConst();
+        Teuchos::ArrayRCP<Scalar> Cdata = C.getValuesNonConst();
         Teuchos::ArrayRCP<const Scalar> Bdata = B.getValues();
         Teuchos::ArrayRCP<const Scalar>       Adata = A.getValues();
         // prepare buffers
@@ -272,10 +272,10 @@ namespace Kokkos {
         wdp.scalarYZ = scalarAB;
         // one kernel invocation for each column
         for (size_t j=0; j<nC_C; ++j) {
-          wdp.x = Cdata(0,nR).getRawPtr();
-          wdp.y = Adata(0,nR).getRawPtr();
-          wdp.z = Bdata(0,nR).getRawPtr();
-          node->template parallel_for<RecipOp<Scalar> >(0,nR,wdp);
+          wdp.x = Cdata(0,nR_C).getRawPtr();
+          wdp.y = Adata(0,nR_C).getRawPtr();
+          wdp.z = Bdata(0,nR_C).getRawPtr();
+          node->template parallel_for<MVElemMultOp<Scalar> >(0,nR_C,wdp);
           Cdata += Cstride;
           Bdata += Bstride;
         }
