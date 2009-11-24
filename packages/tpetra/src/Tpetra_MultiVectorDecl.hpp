@@ -233,6 +233,13 @@ namespace Tpetra {
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta);
 
+    //! Element-wise multiply of a Vector A with a MultiVector B.
+    /** Forms this = scalarThis * this + scalarAB * B @ A
+     *  where @ denotes element-wise multiplication.
+     *  B must be the same shape (size and num-vectors) as this, while
+     *  A is the same size but a single vector (column).
+     */
+    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, Scalar scalarThis);
     //@} 
 
     //! @name Attribute access functions

@@ -717,6 +717,43 @@ namespace {
     }
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, ElementWiseMultiply, Ordinal, Scalar , Node )
+  {
+    using Teuchos::View;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> V;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<Node> node = getNode<Node>();
+    const Ordinal indexBase = 0;
+    // create a Map
+    RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),indexBase,comm,node) );
+    const Mag    M0 = ScalarTraits<Mag>::zero();
+    const Scalar S1 = ScalarTraits<Scalar>::one();
+    const Scalar S0 = ScalarTraits<Scalar>::zero();
+    {
+      // case 1: C = S1*A@B ('@' denotes element-wise multiplication)
+      // C has 2 vectors, A has 1 vector, B has 2 vectors.
+      // A and B will be filled with 1s, so C should get filled with 1s.
+      V A(map3n,1);
+      MV B(map3n,2),
+         C(map3n,2);
+      // fill multivectors with ones
+      A.putScalar(ScalarTraits<Scalar>::one());
+      B.putScalar(ScalarTraits<Scalar>::one());
+      // fill expected answers Array
+      Teuchos::Array<Scalar> check2(6,1); // each entry (of six) is 1
+      // test
+      ArrayRCP<const Scalar> tmpView;
+      C.elementWiseMultiply(S1, A, B, S0);
+      tmpView = C.get1dView();
+      TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,6),check2,M0);
+    }
+  }
+
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, BadConstAA, Ordinal, Scalar , Node )
@@ -1933,6 +1970,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, ElementWiseMultiply,ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, NonContigView     , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Describable       , ORDINAL, SCALAR, NODE )
 

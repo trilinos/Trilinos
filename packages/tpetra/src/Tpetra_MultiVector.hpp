@@ -1456,6 +1456,34 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis)
+  {
+    using Teuchos::ArrayRCP;
+    using Teuchos::arcp_const_cast;
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*A.getMap()) || !this->getMap()->isCompatible(*B.getMap()), std::runtime_error,
+        "Tpetra::MultiVector::elementWiseMultiply(): MultiVectors do not have compatible Maps:" << std::endl
+        << "this->getMap(): " << std::endl << *this->getMap() 
+        << "A.getMap(): " << std::endl << *A.getMap() << std::endl
+        << "B.getMap(): " << std::endl << *B.getMap() << std::endl);
+#else
+    TEST_FOR_EXCEPTION( getLocalLength() != A.getLocalLength() || getLocalLength() != B.getLocalLength(), std::runtime_error,
+        "Tpetra::MultiVector::reciprocal(): MultiVectors do not have the same local length.");
+#endif
+    TEST_FOR_EXCEPTION(B.getNumVectors() != this->getNumVectors(), std::runtime_error,
+        "Tpetra::MultiVector::reciprocal(): MultiVectors 'this' and B must have the same number of vectors.");
+    TEST_FOR_EXCEPTION(A.getNumVectors() != 1, std::runtime_error,
+        "Tpetra::MultiVector::reciprocal(): MultiVectors A must have just 1 vector.");
+    try {
+      MVT::ElemMult(lclMV_,scalarThis,scalarAB,(const KMV &)A.lclMV_,(const KMV &)B.lclMV_);
+    }
+    catch (std::runtime_error &e) {
+      TEST_FOR_EXCEPTION(true,std::runtime_error,
+          "Tpetra::MultiVector::elementWiseMultiply(): caught exception from Kokkos:" << std::endl
+          << e.what() << std::endl);
+    }
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reduce() {
