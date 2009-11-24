@@ -1779,6 +1779,99 @@ Create containers for using color and index maps in parallel coloring
 ";
 
 
+// File: classNOX_1_1Epetra_1_1FiniteDifferenceColoringWithUpdate.xml
+%feature("docstring") NOX::Epetra::FiniteDifferenceColoringWithUpdate
+"
+
+Concrete implementation for creating an Epetra_RowMatrix Jacobian via
+finite differencing of the residual using coloring. This method
+assumes the existence of a valid parallel coloring of the columns of
+the Jacobian (aka from Isorropia).
+
+Unlike the class NOX::FiniteDifferenceColoring, this class allows for
+\"update\" colorings, for use in situations where part of the Jacobian
+changes from iteration to iteration, but part does not. The first time
+(or any time after the forceJacobianRecompute method is called) the
+method uses the complete coloring. Afterwards, it uses the \"update\"
+coloring and only changes the entries that can change.
+
+WARNING: The \"update\" coloring assumes that rows AND columns
+corresponding to uncolored (aka color 0) nodes do not change from call
+to call. If either the row or the column corresponding to a given node
+change then you must make sure it gets colored.
+
+WARNING: Centered Difference Coloring is NOT supported as of yet.
+
+C++ includes: NOX_Epetra_FiniteDifferenceColoringWithUpdate.H ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate
+"FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(Teuchos::ParameterList
+&printingParams, const Teuchos::RCP< Interface::Required > &i, const
+NOX::Epetra::Vector &initialGuess, const Teuchos::RCP<
+Epetra_MapColoring > &colorMap, double beta=1.0e-6, double
+alpha=1.0e-4)
+
+Constructor with no frills. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate
+"FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(Teuchos::ParameterList
+&printingParams, const Teuchos::RCP< Interface::Required > &i, const
+NOX::Epetra::Vector &initialGuess, const Teuchos::RCP< Epetra_CrsGraph
+> &rawGraph, const Teuchos::RCP< Epetra_MapColoring > &colorMap,
+double beta=1.0e-6, double alpha=1.0e-4)
+
+Constructor with graph. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate
+"FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(Teuchos::ParameterList
+&printingParams, const Teuchos::RCP< Interface::Required > &i, const
+NOX::Epetra::Vector &initialGuess, const Teuchos::RCP<
+Epetra_MapColoring > &colorMap, const Teuchos::RCP< Epetra_MapColoring
+> &updateColorMap, double beta=1.0e-6, double alpha=1.0e-4)
+
+Constructor with update map. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate
+"FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(Teuchos::ParameterList
+&printingParams, const Teuchos::RCP< Interface::Required > &i, const
+NOX::Epetra::Vector &initialGuess, const Teuchos::RCP< Epetra_CrsGraph
+> &rawGraph, const Teuchos::RCP< Epetra_MapColoring > &colorMap, const
+Teuchos::RCP< Epetra_MapColoring > &updatecolorMap, double
+beta=1.0e-6, double alpha=1.0e-4)
+
+Constructor with update map and graph. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::forceJacobianRecompute
+"virtual void
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::forceJacobianRecompute()
+";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::~FiniteDifferenceColoringWithUpdate
+"FiniteDifferenceColoringWithUpdate::~FiniteDifferenceColoringWithUpdate()
+
+Pure virtual destructor. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::computeJacobian "bool FiniteDifferenceColoringWithUpdate::computeJacobian(const
+Epetra_Vector &x, Epetra_Operator &Jac)
+
+Computes (or updates) the Jacobian given the specified input vector,
+x. Returns true if computation was successful. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifferenceColoringWithUpdate::computeJacobian "bool FiniteDifferenceColoringWithUpdate::computeJacobian(const
+Epetra_Vector &x)
+
+Computes (or updates) Jacobian given the specified input vector, x.
+Returns true if computation was successful. ";
+
+
 // File: classNOX_1_1StatusTest_1_1FiniteValue.xml
 %feature("docstring") NOX::StatusTest::FiniteValue "
 
@@ -2542,6 +2635,481 @@ object that stores a reference to a sublist should also store the
 global data object. ";
 
 
+// File: classNOX_1_1Epetra_1_1Group.xml
+%feature("docstring") NOX::Epetra::Group "
+
+Concrete implementation of NOX::Abstract::Group for Trilinos/Epetra.
+
+This group is set up to use the linear algebra services provided
+through the Trilinos/Epetra package with AztecOO for the linear
+solver.
+
+C++ includes: NOX_Epetra_Group.H ";
+
+/*  Vectors  */
+
+/* */
+
+/*  IsValid flags  */
+
+/* True if the current solution is up-to-date with respect to the
+currect xVector.
+
+*/
+
+/*  Shared Operators  */
+
+/* */
+
+/*  "Compute" functions.  */
+
+/* */
+
+%feature("docstring")  NOX::Epetra::Group::setX "void
+Group::setX(const NOX::Epetra::Vector &y) ";
+
+%feature("docstring")  NOX::Epetra::Group::setX "void
+Group::setX(const NOX::Abstract::Vector &y)
+
+Set the solution vector x to y.
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Group::computeX "void
+Group::computeX(const Group &grp, const NOX::Epetra::Vector &d, double
+step) ";
+
+%feature("docstring")  NOX::Epetra::Group::computeX "void
+Group::computeX(const NOX::Abstract::Group &grp, const
+NOX::Abstract::Vector &d, double step)
+
+Compute x = grp.x + step * d.
+
+Let $x$ denote this group's solution vector. Let $\\\\hat x$ denote
+the result of grp.getX(). Then set \\\\[ x = \\\\hat x +
+\\\\mbox{step} \\\\; d. \\\\]
+
+This should invalidate the function value, Jacobian, gradient, and
+Newton direction.
+
+Throw an error if the copy fails.
+
+Reference to this object ";
+
+%feature("docstring")  NOX::Epetra::Group::computeF "Abstract::Group::ReturnType Group::computeF()
+
+Compute and store F(x).
+
+It's generally useful to also compute and store the 2-norm of F(x) at
+this point for later access by the getNormF() function.
+
+NOX::Abstract::Group::Failed - If the computation fails in any way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::computeJacobian "Abstract::Group::ReturnType Group::computeJacobian()
+
+Compute and store Jacobian.
+
+Recall that \\\\[ F(x) = \\\\left[ \\\\begin{array}{c} F_1(x) \\\\\\\\
+F_2(x) \\\\\\\\ \\\\vdots \\\\\\\\ F_n(x) \\\\\\\\ \\\\end{array}
+\\\\right]. \\\\]
+
+The Jacobian is denoted by $J$ and defined by \\\\[ J_{ij} =
+\\\\frac{\\\\partial F_i}{\\\\partial x_j} (x). \\\\]
+
+If this is a shared object, this group should taken ownership of the
+Jacobian before it computes it.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::computeGradient "Abstract::Group::ReturnType Group::computeGradient()
+
+Compute and store gradient.
+
+We can pose the nonlinear equation problem $F(x) = 0$ as an
+optimization problem as follows: \\\\[ \\\\min f(x) \\\\equiv
+\\\\frac{1}{2} \\\\|F(x)\\\\|_2^2. \\\\]
+
+In that case, the gradient (of $f$) is defined as \\\\[ g \\\\equiv
+J^T F. \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
+been computed
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::computeNewton "Abstract::Group::ReturnType
+Group::computeNewton(Teuchos::ParameterList &params)
+
+Compute the Newton direction, using parameters for the linear solve.
+
+The Newton direction is the solution, s, of \\\\[ J s = -F. \\\\]
+
+The parameters are from the \"Linear %Solver\" sublist of the
+\"Direction\" sublist that is passed to solver during construction.
+
+The \"Tolerance\" parameter may be added/modified in the sublist of
+\"Linear Solver\" parameters that is passed into this function. The
+solution should be such that \\\\[ \\\\frac{\\\\| J s - (-F)
+\\\\|_2}{\\\\max \\\\{ 1, \\\\|F\\\\|_2\\\\} } < \\\\mbox{Tolerance}
+\\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
+been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails in any other
+way
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+/*  Jacobian operations.  */
+
+/* Operations using the Jacobian matrix. These may not be defined in
+matrix-free scenarios.
+
+*/
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobian "Abstract::Group::ReturnType Group::applyJacobian(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobian "Abstract::Group::ReturnType Group::applyJacobian(const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies Jacobian to the given input vector and puts the answer in the
+result.
+
+Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If the Jacobian $J$ has not been
+computed
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianTranspose "Abstract::Group::ReturnType Group::applyJacobianTranspose(const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianTranspose "Abstract::Group::ReturnType Group::applyJacobianTranspose(const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies Jacobian-Transpose to the given input vector and puts the
+answer in the result.
+
+Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
+input vector, and $v$ is the result vector.
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianInverse "Abstract::Group::ReturnType
+Group::applyJacobianInverse(Teuchos::ParameterList &params, const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameter \"Tolerance\" may be added/modified in the list of
+parameters - this is the ideal solution tolerance for an iterative
+linear solve.
+
+The parameter \"Reuse Preconditioner\" is a boolean that tells the
+group to turn off control of preconditioner recalculation. This is a
+dangerous flag but can really speed the computations if the user knows
+what they are doing. Toggling this flag is left to the user (ideally
+it should be done through a status test). Defaults to false. ";
+
+%feature("docstring")  NOX::Epetra::Group::applyJacobianInverse "Abstract::Group::ReturnType
+Group::applyJacobianInverse(Teuchos::ParameterList &params, const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Applies the inverse of the Jacobian matrix to the given input vector
+and puts the answer in result.
+
+Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
+the input vector, and $v$ is the result vector.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::BadDependency - If $J$ has not been computed
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameter \"Tolerance\" may be added/modified in the list of
+parameters - this is the ideal solution tolerance for an iterative
+linear solve. ";
+
+%feature("docstring")  NOX::Epetra::Group::applyRightPreconditioning "Abstract::Group::ReturnType Group::applyRightPreconditioning(bool
+useTranspose, Teuchos::ParameterList &params, const
+NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
+
+%feature("docstring")  NOX::Epetra::Group::applyRightPreconditioning "Abstract::Group::ReturnType Group::applyRightPreconditioning(bool
+useTranspose, Teuchos::ParameterList &params, const
+NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
+
+Apply right preconditiong to the given input vector.
+
+Let $M$ be a right preconditioner for the Jacobian $J$; in other
+words, $M$ is a matrix such that \\\\[ JM \\\\approx I. \\\\]
+
+Compute \\\\[ u = M^{-1} v, \\\\] where $u$ is the input vector and
+$v$ is the result vector.
+
+If useTranspose is true, then the transpose of the preconditioner is
+applied: \\\\[ u = {M^{-1}}^T v, \\\\] The transpose preconditioner is
+currently only required for Tensor methods.
+
+The \"Tolerance\" parameter specifies that the solution should be such
+that \\\\[ \\\\frac{\\\\| M v - u \\\\|_2}{\\\\max \\\\{ 1,
+\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
+
+NOX::Abstract::Group::NotDefined - Returned by default implementation
+in NOX::Abstract::Group
+
+NOX::Abstract::Group::NotConverged - If the linear solve fails to
+satisfy the \"Tolerance\" specified in params
+
+NOX::Abstract::Group::Failed - If the computation fails
+
+NOX::Abstract::Group::Ok - Otherwise
+
+The parameters are from the \"Linear %Solver\" sublist of the
+\"Direction\" sublist that is passed to solver during construction. ";
+
+/*  "Is" functions  */
+
+/* Checks to see if various objects have been computed. Returns true
+if the corresponding \"compute\" function has been called since the
+last update to the solution vector (via instantiation or computeX).
+
+*/
+
+%feature("docstring")  NOX::Epetra::Group::isF "bool Group::isF()
+const
+
+Return true if F is valid. ";
+
+%feature("docstring")  NOX::Epetra::Group::isJacobian "bool
+Group::isJacobian() const
+
+Return true if the Jacobian is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Epetra::Group::isGradient "bool
+Group::isGradient() const
+
+Return true if the gradient is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Epetra::Group::isNewton "bool
+Group::isNewton() const
+
+Return true if the Newton direction is valid.
+
+Default implementation in NOX::Abstract::Group returns false. ";
+
+%feature("docstring")  NOX::Epetra::Group::isNormNewtonSolveResidual "bool Group::isNormNewtonSolveResidual() const
+
+Returns true if the value of the Norm of the linear model for a full
+Newton step ||Js + f|| is valid with respect to the current solution
+vector. ";
+
+%feature("docstring")  NOX::Epetra::Group::isPreconditioner "bool
+Group::isPreconditioner() const
+
+Returns true if an explicitly constructed preconditioner exists (i.e.
+one that is computed and saved for further use in multiple calls to
+applyRightPreconditioner). ";
+
+%feature("docstring")  NOX::Epetra::Group::isConditionNumber "bool
+Group::isConditionNumber() const
+
+Returns true if the condition number has been computed. ";
+
+/*  "Get" functions  */
+
+/* Note that these function do not check whether or not the vectors
+are valid. Must use the \"Is\" functions for that purpose.
+
+*/
+
+%feature("docstring")  NOX::Epetra::Group::getX "const
+Abstract::Vector & Group::getX() const
+
+Return solution vector. ";
+
+%feature("docstring")  NOX::Epetra::Group::getF "const
+Abstract::Vector & Group::getF() const
+
+Return F(x). ";
+
+%feature("docstring")  NOX::Epetra::Group::getNormF "double
+Group::getNormF() const
+
+Return 2-norm of F(x).
+
+In other words, \\\\[ \\\\sqrt{\\\\sum_{i=1}^n F_i^2} \\\\] ";
+
+%feature("docstring")  NOX::Epetra::Group::getGradient "const
+Abstract::Vector & Group::getGradient() const
+
+Return gradient. ";
+
+%feature("docstring")  NOX::Epetra::Group::getNewton "const
+Abstract::Vector & Group::getNewton() const
+
+Return Newton direction. ";
+
+%feature("docstring")
+NOX::Epetra::Group::getNormLastLinearSolveResidual "Abstract::Group::ReturnType
+NOX::Epetra::Group::getNormLastLinearSolveResidual(double &residual)
+const
+
+Returns the 2-norm of the residual of the linear model used in the
+Newton solve computation, ||Js+f||. This does not account for line
+search adjustments to the step length! ";
+
+%feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
+Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
+NOX::Epetra::Vector &initialGuess)
+
+Constructor with NO linear system (VERY LIMITED).
+
+WARNING: If this constructor is used, then methods that require a
+Jacobian or preconditioning will not be available. You will be limited
+to simple algorithms like nonlinear-CG with no preconditioning. ";
+
+%feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
+Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
+NOX::Epetra::Vector &initialGuess, const Teuchos::RCP<
+NOX::Epetra::LinearSystem > &linSys)
+
+Standard Constructor. ";
+
+%feature("docstring")  NOX::Epetra::Group::Group "Group::Group(const
+NOX::Epetra::Group &source, NOX::CopyType type=NOX::DeepCopy)
+
+Copy constructor. If type is DeepCopy, takes ownership of valid shared
+linear system. ";
+
+%feature("docstring")  NOX::Epetra::Group::~Group "Group::~Group()
+
+Destructor. ";
+
+%feature("docstring")  NOX::Epetra::Group::clone "Teuchos::RCP<
+NOX::Abstract::Group > Group::clone(CopyType type=DeepCopy) const
+
+Create a new Group of the same derived type as this one by cloning
+this one, and return a ref count pointer to the new group.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\" (only the memory is allocated, the values are
+not copied into the vectors and Jacobian). Returns NULL if clone is
+not supported.
+
+Any shared data should have its ownership transfered to this group
+from the source for a NOX::DeepCopy. ";
+
+%feature("docstring")  NOX::Epetra::Group::getRequiredInterface "Teuchos::RCP< NOX::Epetra::Interface::Required >
+Group::getRequiredInterface()
+
+Return the userInterface. ";
+
+%feature("docstring")  NOX::Epetra::Group::getLinearSystem "Teuchos::RCP< const NOX::Epetra::LinearSystem >
+Group::getLinearSystem() const
+
+Return the Linear System. ";
+
+%feature("docstring")  NOX::Epetra::Group::getLinearSystem "Teuchos::RCP< NOX::Epetra::LinearSystem > Group::getLinearSystem()
+
+Return the Linear System. ";
+
+%feature("docstring")
+NOX::Epetra::Group::computeJacobianConditionNumber "Abstract::Group::ReturnType
+NOX::Epetra::Group::computeJacobianConditionNumber(int maxIters,
+double tolerance, int krylovSubspaceSize=100, bool printOutput=false)
+";
+
+%feature("docstring")  NOX::Epetra::Group::getJacobianConditionNumber
+"double NOX::Epetra::Group::getJacobianConditionNumber() const
+
+Returns the condition number of the Jacobian matrix. ";
+
+%feature("docstring")
+NOX::Epetra::Group::disableLinearResidualComputation "void
+NOX::Epetra::Group::disableLinearResidualComputation(const bool
+disableChoice)
+
+Sets option to disable linear resid computation. If disabled, this
+saves on a MatVec per Newton but disallows inexact Newton methods. ";
+
+
 // File: classNOX_1_1Multiphysics_1_1Group.xml
 %feature("docstring") NOX::Multiphysics::Group "
 
@@ -3112,473 +3680,6 @@ x-value so that getX() is always defined. ";
 NOX::Abstract::Group::~Group()
 
 Destructor. ";
-
-
-// File: classNOX_1_1Epetra_1_1Group.xml
-%feature("docstring") NOX::Epetra::Group "
-
-Concrete implementation of NOX::Abstract::Group for Trilinos/Epetra.
-
-This group is set up to use the linear algebra services provided
-through the Trilinos/Epetra package with AztecOO for the linear
-solver.
-
-C++ includes: NOX_Epetra_Group.H ";
-
-/*  Vectors  */
-
-/* */
-
-/*  IsValid flags  */
-
-/* True if the current solution is up-to-date with respect to the
-currect xVector.
-
-*/
-
-/*  Shared Operators  */
-
-/* */
-
-/*  "Compute" functions.  */
-
-/* */
-
-%feature("docstring")  NOX::Epetra::Group::setX "void
-Group::setX(const NOX::Epetra::Vector &y) ";
-
-%feature("docstring")  NOX::Epetra::Group::setX "void
-Group::setX(const NOX::Abstract::Vector &y)
-
-Set the solution vector x to y.
-
-This should invalidate the function value, Jacobian, gradient, and
-Newton direction.
-
-Throw an error if the copy fails.
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Epetra::Group::computeX "void
-Group::computeX(const Group &grp, const NOX::Epetra::Vector &d, double
-step) ";
-
-%feature("docstring")  NOX::Epetra::Group::computeX "void
-Group::computeX(const NOX::Abstract::Group &grp, const
-NOX::Abstract::Vector &d, double step)
-
-Compute x = grp.x + step * d.
-
-Let $x$ denote this group's solution vector. Let $\\\\hat x$ denote
-the result of grp.getX(). Then set \\\\[ x = \\\\hat x +
-\\\\mbox{step} \\\\; d. \\\\]
-
-This should invalidate the function value, Jacobian, gradient, and
-Newton direction.
-
-Throw an error if the copy fails.
-
-Reference to this object ";
-
-%feature("docstring")  NOX::Epetra::Group::computeF "Abstract::Group::ReturnType Group::computeF()
-
-Compute and store F(x).
-
-It's generally useful to also compute and store the 2-norm of F(x) at
-this point for later access by the getNormF() function.
-
-NOX::Abstract::Group::Failed - If the computation fails in any way
-
-NOX::Abstract::Group::Ok - Otherwise ";
-
-%feature("docstring")  NOX::Epetra::Group::computeJacobian "Abstract::Group::ReturnType Group::computeJacobian()
-
-Compute and store Jacobian.
-
-Recall that \\\\[ F(x) = \\\\left[ \\\\begin{array}{c} F_1(x) \\\\\\\\
-F_2(x) \\\\\\\\ \\\\vdots \\\\\\\\ F_n(x) \\\\\\\\ \\\\end{array}
-\\\\right]. \\\\]
-
-The Jacobian is denoted by $J$ and defined by \\\\[ J_{ij} =
-\\\\frac{\\\\partial F_i}{\\\\partial x_j} (x). \\\\]
-
-If this is a shared object, this group should taken ownership of the
-Jacobian before it computes it.
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::Failed - If the computation fails in any other
-way
-
-NOX::Abstract::Group::Ok - Otherwise ";
-
-%feature("docstring")  NOX::Epetra::Group::computeGradient "Abstract::Group::ReturnType Group::computeGradient()
-
-Compute and store gradient.
-
-We can pose the nonlinear equation problem $F(x) = 0$ as an
-optimization problem as follows: \\\\[ \\\\min f(x) \\\\equiv
-\\\\frac{1}{2} \\\\|F(x)\\\\|_2^2. \\\\]
-
-In that case, the gradient (of $f$) is defined as \\\\[ g \\\\equiv
-J^T F. \\\\]
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
-been computed
-
-NOX::Abstract::Group::Failed - If the computation fails in any other
-way
-
-NOX::Abstract::Group::Ok - Otherwise ";
-
-%feature("docstring")  NOX::Epetra::Group::computeNewton "Abstract::Group::ReturnType
-Group::computeNewton(Teuchos::ParameterList &params)
-
-Compute the Newton direction, using parameters for the linear solve.
-
-The Newton direction is the solution, s, of \\\\[ J s = -F. \\\\]
-
-The parameters are from the \"Linear %Solver\" sublist of the
-\"Direction\" sublist that is passed to solver during construction.
-
-The \"Tolerance\" parameter may be added/modified in the sublist of
-\"Linear Solver\" parameters that is passed into this function. The
-solution should be such that \\\\[ \\\\frac{\\\\| J s - (-F)
-\\\\|_2}{\\\\max \\\\{ 1, \\\\|F\\\\|_2\\\\} } < \\\\mbox{Tolerance}
-\\\\]
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If either $F$ or $J$ has not
-been computed
-
-NOX::Abstract::Group::NotConverged - If the linear solve fails to
-satisfy the \"Tolerance\" specified in params
-
-NOX::Abstract::Group::Failed - If the computation fails in any other
-way
-
-NOX::Abstract::Group::Ok - Otherwise ";
-
-/*  Jacobian operations.  */
-
-/* Operations using the Jacobian matrix. These may not be defined in
-matrix-free scenarios.
-
-*/
-
-%feature("docstring")  NOX::Epetra::Group::applyJacobian "Abstract::Group::ReturnType Group::applyJacobian(const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
-
-%feature("docstring")  NOX::Epetra::Group::applyJacobian "Abstract::Group::ReturnType Group::applyJacobian(const
-NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
-
-Applies Jacobian to the given input vector and puts the answer in the
-result.
-
-Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
-input vector, and $v$ is the result vector.
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If the Jacobian $J$ has not been
-computed
-
-NOX::Abstract::Group::Failed - If the computation fails
-
-NOX::Abstract::Group::Ok - Otherwise ";
-
-%feature("docstring")  NOX::Epetra::Group::applyJacobianTranspose "Abstract::Group::ReturnType Group::applyJacobianTranspose(const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
-
-%feature("docstring")  NOX::Epetra::Group::applyJacobianTranspose "Abstract::Group::ReturnType Group::applyJacobianTranspose(const
-NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
-
-Applies Jacobian-Transpose to the given input vector and puts the
-answer in the result.
-
-Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
-input vector, and $v$ is the result vector.
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If $J$ has not been computed
-
-NOX::Abstract::Group::Failed - If the computation fails
-
-NOX::Abstract::Group::Ok - Otherwise ";
-
-%feature("docstring")  NOX::Epetra::Group::applyJacobianInverse "Abstract::Group::ReturnType
-Group::applyJacobianInverse(Teuchos::ParameterList &params, const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Applies the inverse of the Jacobian matrix to the given input vector
-and puts the answer in result.
-
-Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
-the input vector, and $v$ is the result vector.
-
-The \"Tolerance\" parameter specifies that the solution should be such
-that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
-\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If $J$ has not been computed
-
-NOX::Abstract::Group::NotConverged - If the linear solve fails to
-satisfy the \"Tolerance\" specified in params
-
-NOX::Abstract::Group::Failed - If the computation fails
-
-NOX::Abstract::Group::Ok - Otherwise
-
-The parameter \"Tolerance\" may be added/modified in the list of
-parameters - this is the ideal solution tolerance for an iterative
-linear solve.
-
-The parameter \"Reuse Preconditioner\" is a boolean that tells the
-group to turn off control of preconditioner recalculation. This is a
-dangerous flag but can really speed the computations if the user knows
-what they are doing. Toggling this flag is left to the user (ideally
-it should be done through a status test). Defaults to false. ";
-
-%feature("docstring")  NOX::Epetra::Group::applyJacobianInverse "Abstract::Group::ReturnType
-Group::applyJacobianInverse(Teuchos::ParameterList &params, const
-NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
-
-Applies the inverse of the Jacobian matrix to the given input vector
-and puts the answer in result.
-
-Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
-the input vector, and $v$ is the result vector.
-
-The \"Tolerance\" parameter specifies that the solution should be such
-that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
-\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If $J$ has not been computed
-
-NOX::Abstract::Group::NotConverged - If the linear solve fails to
-satisfy the \"Tolerance\" specified in params
-
-NOX::Abstract::Group::Failed - If the computation fails
-
-NOX::Abstract::Group::Ok - Otherwise
-
-The parameter \"Tolerance\" may be added/modified in the list of
-parameters - this is the ideal solution tolerance for an iterative
-linear solve. ";
-
-%feature("docstring")  NOX::Epetra::Group::applyRightPreconditioning "Abstract::Group::ReturnType Group::applyRightPreconditioning(bool
-useTranspose, Teuchos::ParameterList &params, const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const ";
-
-%feature("docstring")  NOX::Epetra::Group::applyRightPreconditioning "Abstract::Group::ReturnType Group::applyRightPreconditioning(bool
-useTranspose, Teuchos::ParameterList &params, const
-NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) const
-
-Apply right preconditiong to the given input vector.
-
-Let $M$ be a right preconditioner for the Jacobian $J$; in other
-words, $M$ is a matrix such that \\\\[ JM \\\\approx I. \\\\]
-
-Compute \\\\[ u = M^{-1} v, \\\\] where $u$ is the input vector and
-$v$ is the result vector.
-
-If useTranspose is true, then the transpose of the preconditioner is
-applied: \\\\[ u = {M^{-1}}^T v, \\\\] The transpose preconditioner is
-currently only required for Tensor methods.
-
-The \"Tolerance\" parameter specifies that the solution should be such
-that \\\\[ \\\\frac{\\\\| M v - u \\\\|_2}{\\\\max \\\\{ 1,
-\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
-
-NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::NotConverged - If the linear solve fails to
-satisfy the \"Tolerance\" specified in params
-
-NOX::Abstract::Group::Failed - If the computation fails
-
-NOX::Abstract::Group::Ok - Otherwise
-
-The parameters are from the \"Linear %Solver\" sublist of the
-\"Direction\" sublist that is passed to solver during construction. ";
-
-/*  "Is" functions  */
-
-/* Checks to see if various objects have been computed. Returns true
-if the corresponding \"compute\" function has been called since the
-last update to the solution vector (via instantiation or computeX).
-
-*/
-
-%feature("docstring")  NOX::Epetra::Group::isF "bool Group::isF()
-const
-
-Return true if F is valid. ";
-
-%feature("docstring")  NOX::Epetra::Group::isJacobian "bool
-Group::isJacobian() const
-
-Return true if the Jacobian is valid.
-
-Default implementation in NOX::Abstract::Group returns false. ";
-
-%feature("docstring")  NOX::Epetra::Group::isGradient "bool
-Group::isGradient() const
-
-Return true if the gradient is valid.
-
-Default implementation in NOX::Abstract::Group returns false. ";
-
-%feature("docstring")  NOX::Epetra::Group::isNewton "bool
-Group::isNewton() const
-
-Return true if the Newton direction is valid.
-
-Default implementation in NOX::Abstract::Group returns false. ";
-
-%feature("docstring")  NOX::Epetra::Group::isNormNewtonSolveResidual "bool Group::isNormNewtonSolveResidual() const
-
-Returns true if the value of the Norm of the linear model for a full
-Newton step ||Js + f|| is valid with respect to the current solution
-vector. ";
-
-%feature("docstring")  NOX::Epetra::Group::isPreconditioner "bool
-Group::isPreconditioner() const
-
-Returns true if an explicitly constructed preconditioner exists (i.e.
-one that is computed and saved for further use in multiple calls to
-applyRightPreconditioner). ";
-
-%feature("docstring")  NOX::Epetra::Group::isConditionNumber "bool
-Group::isConditionNumber() const
-
-Returns true if the condition number has been computed. ";
-
-/*  "Get" functions  */
-
-/* Note that these function do not check whether or not the vectors
-are valid. Must use the \"Is\" functions for that purpose.
-
-*/
-
-%feature("docstring")  NOX::Epetra::Group::getX "const
-Abstract::Vector & Group::getX() const
-
-Return solution vector. ";
-
-%feature("docstring")  NOX::Epetra::Group::getF "const
-Abstract::Vector & Group::getF() const
-
-Return F(x). ";
-
-%feature("docstring")  NOX::Epetra::Group::getNormF "double
-Group::getNormF() const
-
-Return 2-norm of F(x).
-
-In other words, \\\\[ \\\\sqrt{\\\\sum_{i=1}^n F_i^2} \\\\] ";
-
-%feature("docstring")  NOX::Epetra::Group::getGradient "const
-Abstract::Vector & Group::getGradient() const
-
-Return gradient. ";
-
-%feature("docstring")  NOX::Epetra::Group::getNewton "const
-Abstract::Vector & Group::getNewton() const
-
-Return Newton direction. ";
-
-%feature("docstring")
-NOX::Epetra::Group::getNormLastLinearSolveResidual "Abstract::Group::ReturnType
-NOX::Epetra::Group::getNormLastLinearSolveResidual(double &residual)
-const
-
-Returns the 2-norm of the residual of the linear model used in the
-Newton solve computation, ||Js+f||. This does not account for line
-search adjustments to the step length! ";
-
-%feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
-Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
-NOX::Epetra::Vector &initialGuess)
-
-Constructor with NO linear system (VERY LIMITED).
-
-WARNING: If this constructor is used, then methods that require a
-Jacobian or preconditioning will not be available. You will be limited
-to simple algorithms like nonlinear-CG with no preconditioning. ";
-
-%feature("docstring")  NOX::Epetra::Group::Group "Group::Group(Teuchos::ParameterList &printingParams, const
-Teuchos::RCP< NOX::Epetra::Interface::Required > &i, const
-NOX::Epetra::Vector &initialGuess, const Teuchos::RCP<
-NOX::Epetra::LinearSystem > &linSys)
-
-Standard Constructor. ";
-
-%feature("docstring")  NOX::Epetra::Group::Group "Group::Group(const
-NOX::Epetra::Group &source, NOX::CopyType type=NOX::DeepCopy)
-
-Copy constructor. If type is DeepCopy, takes ownership of valid shared
-linear system. ";
-
-%feature("docstring")  NOX::Epetra::Group::~Group "Group::~Group()
-
-Destructor. ";
-
-%feature("docstring")  NOX::Epetra::Group::clone "Teuchos::RCP<
-NOX::Abstract::Group > Group::clone(CopyType type=DeepCopy) const
-
-Create a new Group of the same derived type as this one by cloning
-this one, and return a ref count pointer to the new group.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\" (only the memory is allocated, the values are
-not copied into the vectors and Jacobian). Returns NULL if clone is
-not supported.
-
-Any shared data should have its ownership transfered to this group
-from the source for a NOX::DeepCopy. ";
-
-%feature("docstring")  NOX::Epetra::Group::getRequiredInterface "Teuchos::RCP< NOX::Epetra::Interface::Required >
-Group::getRequiredInterface()
-
-Return the userInterface. ";
-
-%feature("docstring")  NOX::Epetra::Group::getLinearSystem "Teuchos::RCP< const NOX::Epetra::LinearSystem >
-Group::getLinearSystem() const
-
-Return the Linear System. ";
-
-%feature("docstring")  NOX::Epetra::Group::getLinearSystem "Teuchos::RCP< NOX::Epetra::LinearSystem > Group::getLinearSystem()
-
-Return the Linear System. ";
-
-%feature("docstring")
-NOX::Epetra::Group::computeJacobianConditionNumber "Abstract::Group::ReturnType
-NOX::Epetra::Group::computeJacobianConditionNumber(int maxIters,
-double tolerance, int krylovSubspaceSize=100, bool printOutput=false)
-";
-
-%feature("docstring")  NOX::Epetra::Group::getJacobianConditionNumber
-"double NOX::Epetra::Group::getJacobianConditionNumber() const
-
-Returns the condition number of the Jacobian matrix. ";
 
 
 // File: classNOX_1_1Direction_1_1Utils_1_1InexactNewton.xml
@@ -4239,195 +4340,6 @@ Set preconditioner operator for solve.
 
 Note: This should only be called if hasPreconditioner() returns true.
 ";
-
-
-// File: classNOX_1_1Epetra_1_1LinearSystemAmesos.xml
-%feature("docstring") NOX::Epetra::LinearSystemAmesos "
-
-Concrete implementation of NOX::Epetra::LinearSolver for Amesos. This
-class has been written taking NOX::Epetra::LinearSystemAztecOO as an
-example.
-
-The NOX::Epetra::LinearSystemAmesos object provides a way to interface
-an Epetra based application code to the Amesos linear solver. This
-class handles construction the Amesos solver. All options are
-determined through parameter lists and the basic constructor.
-
-This class contains exclusively NOX::Epetra::LinearSolver virtual
-methods. Scaling of the linear system is currently not implemented.
-
-Constructing a Linear System
-
-At the time being there is only one constructor that can be used:
-among other things, parameter, the user must provide a NOX printing
-parameter sublist, a NOX linear solver sublist, and a Jacobian. This
-constructor is analogous to one of the NOX:Epetra: LinearSystemAmesos
-ones.
-
-The user can select an Amesos solver type via the parameter Amesos
-Solver in the NOX linear solver sublist. The default solver is
-\"Amesos_Klu\".
-
-C++ includes: NOX_Epetra_LinearSystem_Amesos.H ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::LinearSystemAmesos "NOX::Epetra::LinearSystemAmesos::LinearSystemAmesos(Teuchos::ParameterList
-&printingParams, Teuchos::ParameterList &linearSolverParams, const
-Teuchos::RCP< NOX::Epetra::Interface::Required > &iReq, const
-Teuchos::RCP< NOX::Epetra::Interface::Jacobian > &iJac, const
-Teuchos::RCP< Epetra_Operator > &J, const NOX::Epetra::Vector
-&cloneVector, const Teuchos::RCP< NOX::Epetra::Scaling >
-scalingObject=Teuchos::null)
-
-Constructor with a user supplied Jacobian Operator. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::~LinearSystemAmesos "NOX::Epetra::LinearSystemAmesos::~LinearSystemAmesos()
-
-Destructor. ";
-
-%feature("docstring")  NOX::Epetra::LinearSystemAmesos::applyJacobian
-"bool NOX::Epetra::LinearSystemAmesos::applyJacobian(const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Applies Jacobian to the given input vector and puts the answer in the
-result.
-
-Computes \\\\[ v = J u, \\\\] where $J$ is the Jacobian, $u$ is the
-input vector, and $v$ is the result vector. Returns true if
-successful. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::applyJacobianTranspose "bool
-NOX::Epetra::LinearSystemAmesos::applyJacobianTranspose(const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Applies Jacobian-Transpose to the given input vector and puts the
-answer in the result.
-
-Computes \\\\[ v = J^T u, \\\\] where $J$ is the Jacobian, $u$ is the
-input vector, and $v$ is the result vector. Returns true if
-successful. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::applyJacobianInverse "bool
-NOX::Epetra::LinearSystemAmesos::applyJacobianInverse(Teuchos::ParameterList
-&params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector
-&result)
-
-Applies the inverse of the Jacobian matrix to the given input vector
-and puts the answer in result.
-
-Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
-the input vector, and $v$ is the result vector.
-
-The parameter list contains the linear solver options. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::applyRightPreconditioning "bool
-NOX::Epetra::LinearSystemAmesos::applyRightPreconditioning(bool
-useTranspose, Teuchos::ParameterList &params, const
-NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
-
-Returns false. ";
-
-%feature("docstring")  NOX::Epetra::LinearSystemAmesos::getScaling "Teuchos::RCP< NOX::Epetra::Scaling >
-NOX::Epetra::LinearSystemAmesos::getScaling()
-
-Returns supplied scaling object. ";
-
-%feature("docstring")  NOX::Epetra::LinearSystemAmesos::resetScaling "void NOX::Epetra::LinearSystemAmesos::resetScaling(const Teuchos::RCP<
-NOX::Epetra::Scaling > &s)
-
-Reset supplied scaling object. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::computeJacobian "bool
-NOX::Epetra::LinearSystemAmesos::computeJacobian(const
-NOX::Epetra::Vector &x)
-
-Evaluates the Jacobian based on the solution vector x. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::createPreconditioner "bool
-NOX::Epetra::LinearSystemAmesos::createPreconditioner(const
-NOX::Epetra::Vector &x, Teuchos::ParameterList &p, bool
-recomputeGraph) const
-
-Returns false. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::destroyPreconditioner "bool
-NOX::Epetra::LinearSystemAmesos::destroyPreconditioner() const
-
-Returns false. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::recomputePreconditioner "bool
-NOX::Epetra::LinearSystemAmesos::recomputePreconditioner(const
-NOX::Epetra::Vector &x, Teuchos::ParameterList &linearSolverParams)
-const
-
-Returns false. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::getPreconditionerPolicy "NOX::Epetra::LinearSystem::PreconditionerReusePolicyType
-NOX::Epetra::LinearSystemAmesos::getPreconditionerPolicy(bool
-advanceReuseCounter=true)
-
-Returns PRPT_REUSE;. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::isPreconditionerConstructed "bool
-NOX::Epetra::LinearSystemAmesos::isPreconditionerConstructed() const
-
-Returns false. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::hasPreconditioner "bool
-NOX::Epetra::LinearSystemAmesos::hasPreconditioner() const
-
-Returns false. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::getJacobianOperator "Teuchos::RCP<
-const Epetra_Operator >
-NOX::Epetra::LinearSystemAmesos::getJacobianOperator() const
-
-Returns jacobian operator. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::getJacobianOperator "Teuchos::RCP<
-Epetra_Operator >
-NOX::Epetra::LinearSystemAmesos::getJacobianOperator()
-
-Returns jacobian operator. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator "Teuchos::RCP< const Epetra_Operator >
-NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator() const
-
-Returns Teuchos::null. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator "Teuchos::RCP< Epetra_Operator >
-NOX::Epetra::LinearSystemAmesos::getGeneratedPrecOperator()
-
-Returns Teuchos::null. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::setJacobianOperatorForSolve "void
-NOX::Epetra::LinearSystemAmesos::setJacobianOperatorForSolve(const
-Teuchos::RCP< const Epetra_Operator > &solveJacOp)
-
-Resets the jacobian operator. ";
-
-%feature("docstring")
-NOX::Epetra::LinearSystemAmesos::setPrecOperatorForSolve "void
-NOX::Epetra::LinearSystemAmesos::setPrecOperatorForSolve(const
-Teuchos::RCP< const Epetra_Operator > &solvePrecOp)
-
-Does nothing. ";
 
 
 // File: classNOX_1_1Epetra_1_1LinearSystemAztecOO.xml
@@ -5452,6 +5364,15 @@ method of that group for the perturbation instead of the
 NOX::Epetra::Interface::Required::computeF() method. This is required
 for LOCA to get the operators correct during homotopy. ";
 
+%feature("docstring")
+NOX::Epetra::MatrixFree::setSolverForComputeJacobian "void
+MatrixFree::setSolverForComputeJacobian(const Teuchos::RCP<
+NOX::Solver::Generic > &slvr)
+
+Save a RCP to a solver, and use the Solver's current Group's
+computeF() in the computeJacobian call, which can save a function call
+by respecting the isValid flag. ";
+
 
 // File: classNOX_1_1StatusTest_1_1MaxIters.xml
 %feature("docstring") NOX::StatusTest::MaxIters "
@@ -5513,61 +5434,6 @@ NOX::StatusTest::MaxIters::getNumIters() const
 Returns the current number of iterations taken by the solver.
 
 Returns -1 if the status of this test is NOX::StatusTest::Unevaluated.
-";
-
-
-// File: classNOX_1_1Epetra_1_1ModelEvaluatorInterface.xml
-%feature("docstring") NOX::Epetra::ModelEvaluatorInterface "
-
-Wrapper for an EpetraExt::ModelEvaluator.
-
-If an application interfaces their code to solvers using the
-EpetraExt::ModelEvaluator, this class provides a wrapper so that the
-model evaluator can be used instead of having the user write concrete
-versions of the NOX::Epetra::Interface objects.
-
-C++ includes: NOX_Epetra_ModelEvaluatorInterface.H ";
-
-%feature("docstring")
-NOX::Epetra::ModelEvaluatorInterface::ModelEvaluatorInterface "NOX::Epetra::ModelEvaluatorInterface::ModelEvaluatorInterface(const
-Teuchos::RCP< EpetraExt::ModelEvaluator > &m)
-
-Constructor. ";
-
-%feature("docstring")
-NOX::Epetra::ModelEvaluatorInterface::~ModelEvaluatorInterface "NOX::Epetra::ModelEvaluatorInterface::~ModelEvaluatorInterface()
-
-Destructor. ";
-
-%feature("docstring")  NOX::Epetra::ModelEvaluatorInterface::computeF
-"bool NOX::Epetra::ModelEvaluatorInterface::computeF(const
-Epetra_Vector &x, Epetra_Vector &F, const FillType fillFlag)
-
-Compute the function, F, given the specified input vector x. Returns
-true if computation was successful. ";
-
-%feature("docstring")
-NOX::Epetra::ModelEvaluatorInterface::computeJacobian "bool
-NOX::Epetra::ModelEvaluatorInterface::computeJacobian(const
-Epetra_Vector &x, Epetra_Operator &Jac)
-
-Compute Jacobian given the specified input vector x. Returns true if
-computation was successful. ";
-
-%feature("docstring")
-NOX::Epetra::ModelEvaluatorInterface::computePreconditioner "bool
-NOX::Epetra::ModelEvaluatorInterface::computePreconditioner(const
-Epetra_Vector &x, Epetra_Operator &M, Teuchos::ParameterList
-*precParams=0)
-
-Computes a user defined preconditioner. ";
-
-%feature("docstring")
-NOX::Epetra::ModelEvaluatorInterface::inargs_set_p "bool
-NOX::Epetra::ModelEvaluatorInterface::inargs_set_p(const Teuchos::RCP<
-const Epetra_Vector > p, const int l=0)
-
-Set the parameter vector in inargs of the underlying model evaluator.
 ";
 
 
@@ -5942,6 +5808,144 @@ NOX::MultiVector::print(std::ostream &stream) const
 Print the vector. This is meant for debugging purposes only. ";
 
 
+// File: classNOX_1_1Abstract_1_1MultiVector.xml
+%feature("docstring") NOX::Abstract::MultiVector "
+
+Abstract interface for multi-vectors used by NOX.
+
+C++ includes: NOX_Abstract_MultiVector.H ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::init "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::init(double
+gamma)=0
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::random "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::random(bool
+useSeed=false, int seed=1)=0
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::setBlock "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const vector< int > &index)=0
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::augment "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)=0
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::scale "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::scale(double
+gamma)=0
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector&
+NOX::Abstract::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Abstract::MultiVector &a, const DenseMatrix &b,
+double gamma=0.0)=0
+
+Compute x = (alpha * a * op(b)) + (gamma * x) where a is a
+multivector, b is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::clone(NOX::CopyType type=NOX::DeepCopy)
+const =0
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::clone(int numvecs) const =0
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::subCopy "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::subCopy(const vector< int > &index) const
+=0
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::subView "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::subView(const vector< int > &index) const
+=0
+
+Creates a new multi-vector with ndex.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::norm "virtual void
+NOX::Abstract::MultiVector::norm(vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const =0
+
+Norm. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::multiply "virtual
+void NOX::Abstract::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, DenseMatrix &b) const =0
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::MultiVector "NOX::Abstract::MultiVector::MultiVector()
+
+Default constructor. Does nothing. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::~MultiVector "virtual NOX::Abstract::MultiVector::~MultiVector()
+
+Destructor. Does nothing. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::length "virtual
+int NOX::Abstract::MultiVector::length() const =0
+
+Return the length of multi-vector. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::numVectors "virtual int NOX::Abstract::MultiVector::numVectors() const =0
+
+Return the number of vectors in the multi-vector. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::print "virtual
+void NOX::Abstract::MultiVector::print(std::ostream &stream) const =0
+
+Print the vector. This is meant for debugging purposes only. ";
+
+
 // File: classNOX_1_1Epetra_1_1MultiVector.xml
 %feature("docstring") NOX::Epetra::MultiVector "
 
@@ -6123,144 +6127,6 @@ Return the number of vectors in the multi-vector. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::print "void
 NOX::Epetra::MultiVector::print(std::ostream &stream) const
-
-Print the vector. This is meant for debugging purposes only. ";
-
-
-// File: classNOX_1_1Abstract_1_1MultiVector.xml
-%feature("docstring") NOX::Abstract::MultiVector "
-
-Abstract interface for multi-vectors used by NOX.
-
-C++ includes: NOX_Abstract_MultiVector.H ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::init "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::init(double
-gamma)=0
-
-Initialize every element of this multi-vector with gamma. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::random "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::random(bool
-useSeed=false, int seed=1)=0
-
-Initialize each element of this multi-vector with a random value. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::setBlock "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)=0
-
-Copy the vectors in source to a set of vectors in *this. The
-index.size() vectors in source are copied to a subset of vectors in
-*this indicated by the indices given in index. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::augment "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::augment(const
-NOX::Abstract::MultiVector &source)=0
-
-Append the vectors in source to *this. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::scale "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::scale(double
-gamma)=0
-
-Scale each element of this multivector by gamma. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
-= *this. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double beta, const
-NOX::Abstract::MultiVector &b, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
-multi-vectors and x = *this. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
-NOX::Abstract::MultiVector&
-NOX::Abstract::MultiVector::update(Teuchos::ETransp transb, double
-alpha, const NOX::Abstract::MultiVector &a, const DenseMatrix &b,
-double gamma=0.0)=0
-
-Compute x = (alpha * a * op(b)) + (gamma * x) where a is a
-multivector, b is a dense matrix, x = *this, and op(b) = b if transb =
-Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
-";
-
-%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::clone(NOX::CopyType type=NOX::DeepCopy)
-const =0
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\". Note that there is no assumption that a vector
-created by ShapeCopy is initialized to zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::clone(int numvecs) const =0
-
-Creates a new multi-vector with numvecs columns. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::subCopy "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::subCopy(const vector< int > &index) const
-=0
-
-Creates a new multi-vector with index.size() columns whose columns are
-copies of the columns of *this given by index. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::subView "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::subView(const vector< int > &index) const
-=0
-
-Creates a new multi-vector with ndex.size() columns that shares the
-columns of *this given by index. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::norm "virtual void
-NOX::Abstract::MultiVector::norm(vector< double > &result,
-NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
-const =0
-
-Norm. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::multiply "virtual
-void NOX::Abstract::MultiVector::multiply(double alpha, const
-NOX::Abstract::MultiVector &y, DenseMatrix &b) const =0
-
-Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::MultiVector "NOX::Abstract::MultiVector::MultiVector()
-
-Default constructor. Does nothing. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::~MultiVector "virtual NOX::Abstract::MultiVector::~MultiVector()
-
-Destructor. Does nothing. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::length "virtual
-int NOX::Abstract::MultiVector::length() const =0
-
-Return the length of multi-vector. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::numVectors "virtual int NOX::Abstract::MultiVector::numVectors() const =0
-
-Return the number of vectors in the multi-vector. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::print "virtual
-void NOX::Abstract::MultiVector::print(std::ostream &stream) const =0
 
 Print the vector. This is meant for debugging purposes only. ";
 
@@ -9606,6 +9472,12 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: NOX__Epetra__FiniteDifferenceColoring_8H.xml
 
 
+// File: NOX__Epetra__FiniteDifferenceColoringWithUpdate_8C.xml
+
+
+// File: NOX__Epetra__FiniteDifferenceColoringWithUpdate_8H.xml
+
+
 // File: NOX__Epetra__Group_8C.xml
 
 
@@ -9634,6 +9506,12 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 
 
 // File: NOX__Epetra__LinearSystem__AztecOO_8H.xml
+
+
+// File: NOX__Epetra__LinearSystem__Stratimikos_8C.xml
+
+
+// File: NOX__Epetra__LinearSystem__Stratimikos_8H.xml
 
 
 // File: NOX__Epetra__MatrixFree_8C.xml
@@ -9984,13 +9862,13 @@ NOX::StatusTest::Generic > > *tagged_tests) ";
 // File: deprecated.xml
 
 
-// File: dir_a9d3f64d6c63347af9cd4f0fea68f236.xml
+// File: dir_f2683f988ca34ac55e3dc18f951c3808.xml
 
 
-// File: dir_99bee0a6f766fd7187291f2180a0a36c.xml
+// File: dir_d62c630a0530d67a07a7aceddf3bc884.xml
 
 
-// File: dir_f746085b285a8510bcd8c947f4a4015d.xml
+// File: dir_f50f9eb6625ea3402a6cbaf4bb84e100.xml
 
 
 // File: indexpage.xml

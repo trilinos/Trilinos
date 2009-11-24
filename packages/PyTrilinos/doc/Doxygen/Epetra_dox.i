@@ -4695,6 +4695,11 @@ None.
 
 Unchanged. ";
 
+%feature("docstring")  Epetra_CrsMatrix::Map "const Epetra_BlockMap&
+Epetra_CrsMatrix::Map() const
+
+Map() method inherited from Epetra_DistObject. ";
+
 %feature("docstring")  Epetra_CrsMatrix::RowMatrixRowMap "const
 Epetra_Map& Epetra_CrsMatrix::RowMatrixRowMap() const
 
@@ -7020,15 +7025,15 @@ NumSend         = 2 NumRecv         = 2
 
 On PE 1:
 
-NumSameIDs      = 0  NumPermuteIDs   = 3 PermuteToLIDs   = [0, 1, 2]
-PermuteFromLIDs = [1, 2, 3]  NumRemoteIDs    = 2 RemoteLIDs      = [0,
+NumSameIDs      = 0  NumPermuteIDs   = 3 PermuteFromLIDs = [0, 1, 2]
+PermuteToLIDs   = [1, 2, 3]  NumRemoteIDs    = 2 RemoteLIDs      = [0,
 4]  NumExportIDs    = 2 ExportLIDs      = [0, 2] ExportPIDs      = [0,
 2]  NumSend         = 2 NumRecv         = 2
 
 On PE 2:
 
-NumSameIDs      = 0  NumPermuteIDs   = 3 PermuteToLIDs   = [0, 1, 2]
-PermuteFromLIDs = [2, 3, 4]  NumRemoteIDs    = 2 RemoteLIDs      = [0,
+NumSameIDs      = 0  NumPermuteIDs   = 3 PermuteFromLIDs = [0, 1, 2]
+PermuteToLIDs   = [2, 3, 4]  NumRemoteIDs    = 2 RemoteLIDs      = [0,
 1]  NumExportIDs    = 2 ExportLIDs      = [0, 2] ExportPIDs      = [0,
 1]  NumSend         = 2 NumRecv         = 2
 
@@ -18651,6 +18656,11 @@ Epetra_VbrMatrix::MaxNumEntries() const
 
 Returns the maximum of NumMyRowEntries() over all rows. ";
 
+%feature("docstring")  Epetra_VbrMatrix::Map "const Epetra_BlockMap&
+Epetra_VbrMatrix::Map() const
+
+Map() method inherited from Epetra_DistObject. ";
+
 %feature("docstring")  Epetra_VbrMatrix::RowMatrixRowMap "const
 Epetra_Map& Epetra_VbrMatrix::RowMatrixRowMap() const
 
@@ -20659,8 +20669,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_18b2d64510239fed06b88e74196cfd3f.xml
+// File: dir_2534def4f84aa35075b05dd819cb9c26.xml
 
 
-// File: dir_4368af47e412e90c65d06ecb9459c00d.xml
+// File: dir_23d251d1d4f1ab1c54d355f65e3f7597.xml
 
