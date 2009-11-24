@@ -17,14 +17,14 @@ Quickstart:
 -----------
 
 In order to do a solid checkin, perform the following recommended workflow
-(other workflows are described below):
+(different variations on this workflow are described below):
 
 1) Review the changes that you have made to make sure it is safe to
 commit/push:
 
   $ cd $TRILINOS_HOME
   $ eg status                                # Look at state of working dir
-  $ eg diff --name-status                    # Look at the files have changed
+  $ eg diff --name-status                    # Look at the files that have changed
   $ eg log --oneline --name-status origin..  # [optional] Look at the local commits
 
   NOTE: If you see any files/directories that are listed as 'unknown' returned
@@ -101,7 +101,7 @@ For more details on using this script, see below.
 Detailed Documentation:
 -----------------------
 
-There are two basic configurations that are tested: MPI_DEBUG and
+There are two basic configurations that are tested by default: MPI_DEBUG and
 SERIAL_RELEASE.  Several configure options are varied in these two builds to
 try to catch as much conditional configuration behavior has possible.  If
 nothing else, please at least do the MPI_DEBUG build since that will cover the
@@ -124,34 +124,42 @@ set.).
 
 3) Select the list of packages to enable forward based on the package
 directories where there are changed files (or from a list of packages passed
-in by the user).  NOTE: The automatic behavior can be overridden with the
-options --enable-packages, --disable-packages, and --no-enable-fwd-packages.
+in by the user).  NOTE: The automatic behavior can be overridden or modified
+using the options --enable-packages, --disable-packages, and/or
+--no-enable-fwd-packages.
 
-4) For each build case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE, etc.)
+4) For each build/test case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE,
+etc.)
 
   4.a) Configure a build directory <BUILD_NAME> in a standard way for all of
   the packages that have changed and all of the packages that depend on these
   packages forward. You can manually select which gets enabled (see the enable
-  options above).  (done if --configure or --do-all is set.)
+  options above).  (done if --configure, --do-all, or --local-do-all is set.)
   
   4.b) Build all configured code with 'make' (e.g. with -jN set through
-  --make-options).  (done if --build or --do-all is set.)
+  --make-options).  (done if --build, --do-all, or --local-do-all is set.)
   
-  4.c) Run all tests for enabled packages.  (done if --test or --do-all is
-  set.)
+  4.c) Run all tests for enabled packages.  (done if --test, --do-all, or
+  --local-do-all is set.)
   
   4.d) Analyze the results of the update, configure, build, and tests and send
   email about results.  (emails only sent out if --send-emails-to is not set
   to ''.)
 
-5) Amend commit message of the most recent commit with the summary of the
-testing performed.  (done if --append-test-results is set, the default.)
+5) Do final pull, append test results to last commit message, and push (done
+if --push is set)
 
+5.a) Do a final pull (done if --pull or --do-all is set.)
 
-6) Push the local commits to the global repo.  (done if --push is set.)
+5.b) Amend commit message of the most recent commit with the summary of the
+testing performed.  (done if --append-test-results (default) is set.)
 
-The recommended way to use this script is to create a new base directory apart
-from your standard build directories such as:
+5.c) Push the local commits to the global repo.
+
+END
+
+The recommended way to use this script is to create a new base CHECKIN test
+directory apart from your standard build directories such as:
 
   $ cd SOME_BASE_DIR
   $ mkdir CHECKIN
@@ -163,29 +171,30 @@ The most basic way to do the checkin test is:
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
 LAPACK) can be found automatically, then this is all you will need to do.
-However, if the setup can not be determined automatically, then you can append
-a set of CMake variables that will get read in the files:
+However, if the setup can not be determined automatically, then you can add a
+set of CMake variables that will get read in the files:
 
   SOME_BASE_DIR/CHECKIN/COMMON.config
   SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
   SOME_BASE_DIR/CHECKIN/SERIAL_RELEASE.config
 
 Actually, skeletons of these files will automatically be written out with
-typical CMake cache variables that you would need to set commented out.  Any
-CMake cache variables listed in these files will be read into and passed on
-the configure line to 'cmake'.
+typical CMake cache variables (commented out) that you would need to set out.
+Any CMake cache variables listed in these files will be read into and passed
+on the configure line to 'cmake'.
 
 WARNING: Please do not add any CMake cache variables in the *.config files
-that will alter what packages are enabled or what tests are run.  The goal of
-these configuration files is to allow you to specify the minimum environment
-to find MPI, your compilers, and the basic TPLs.  If you need to fudge what
-packages are enabled, please use the script arguments --enable-packages,
---disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages.
+that will alter what packages or TPLs are enabled or what tests are run.  The
+goal of these configuration files is to allow you to specify the minimum
+environment to find MPI, your compilers, and the required TPLs (e.g. BLAS,
+LAPACK, etc.).  If you need to fudge what packages are enabled, please use the
+script arguments --enable-packages, --disable-packages,
+--no-enable-fwd-packages, and/or --enable-all-packages.
 
-NOTE: Before running this script, you should first do a 'git status' and 'git
-diff --name-status origin/master...master' and examine what files are changed
-to make sure you want to commit what you have in your local working directory.
-Also, please look out for unknown files that you may need to add to the git
+NOTE: Before running this script, you should first do an 'eg status' and 'eg
+diff --name-status origin..' and examine what files are changed to make sure
+you want to commit what you have in your local working directory.  Also,
+please look out for unknown files that you may need to add to the git
 repository with 'eg add' or add to your ignores list.  Your working directory
 needs to be 100% ready to commit before running this script.  Alternatively,
 you can just do the local commit(s) yourself before running this script.
@@ -199,35 +208,45 @@ Common use cases for using this script are as follows:
 
 (*) Basic full testing without push:
 
-   --do-all [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
+  --do-all [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
-   NOTE: This will result in a set of emails getting sent to your email
-   address for the different configurations and an overall commit readiness
-   status email.
+  NOTE: This will result in a set of emails getting sent to your email
+  address for the different configurations and an overall commit readiness
+  status email.
 
-   NOTE: If you have any local uncommitted changes you will need to pass in
-   --commit and --commit-msg-header-file.
+  NOTE: If you have any local uncommitted changes you will need to pass in
+  --commit and --commit-msg-header-file.
 
-   NOTE: If everything passed, you can follow this up with a --push (see
-   below).
+  NOTE: If everything passed, you can follow this up with a --push (see
+  below).
 
 (*) Basic full testing with push:
 
-   --do-all --push [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
+  --do-all --push [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
-   NOTE: If the commit criteria is not satisfied, no commit will occur and you
-   will get an email telling you that.
+  NOTE: If the commit criteria is not satisfied, no commit will occur and you
+  will get an email telling you that.
 
-   NOTE: If you have any local uncommitted changes you will need to pass in
-   --commit and --commit-msg-header-file.
+  NOTE: If you have any local uncommitted changes you will need to pass in
+  --commit and --commit-msg-header-file.
 
 (*) Push to global repo after a completed set of tests have finished:
 
-   --push
+  [other options] --push
 
-   NOTE: This will pick up the results for the last completed test runs and
-   append the results of those tests to the checkin-message of the most recent
-   commit.
+  NOTE: This will pick up the results for the last completed test runs with
+  [other options] and append the results of those tests to the
+  checkin-message of the most recent commit.
+
+  NOTE: Take the action options for the prior run and replace --do-all and
+  --commit (for exampe) with --push but keep all of the rest of the options
+  the same.  For example, if you did:
+
+    --enable-packages=Blah --without-serial-release --do-all
+
+  then follow that up with:
+
+    --enable-packages=Blah --without-serial-release --push
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -247,7 +266,7 @@ Common use cases for using this script are as follows:
 (*) The minimum acceptable testing when code has been changed:
 
   --do-all --enable-all-packages=off --no-enable-fwd-packages \
-    --without-serial-release
+   --without-serial-release
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
@@ -256,7 +275,7 @@ Common use cases for using this script are as follows:
 (*) Test only a specific set of packages and no others:
 
   --do-all --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> \
-    --no-enable-fwd-packages
+   --no-enable-fwd-packages
   
   NOTE: This will override all logic in the script about which packages will
   be enabled and only the given packages will be enabled.
@@ -286,7 +305,7 @@ On your local development machine <mymachine>, do the local test/commit with:
 On your remote test machine's CHECKIN directory, do a full test/commit run:
 
   --extra-pull-from=<mymachine>:/some/dir/to/your/trilinos/src \
-    --do-all --push
+   --do-all --push
 
 NOTE: You can of course do the local commit yourself first and avoid the
 --commit argument.
@@ -304,10 +323,10 @@ development machine and then do the process over again.
 
 (*) Check commit readiness status:
 
-   [no arguments]
+  [no arguments]
 
-   NOTE: This will examine results for the last testing process and send out
-   an email stating if the a commit is ready to perform or not.
+  NOTE: This will examine results for the last testing process and send out
+  an email stating if the a commit is ready to perform or not.
 
 (*) See the default option values without doing anything:
 
@@ -430,7 +449,7 @@ clp.add_option(
   "--commit", dest="doCommit", action="store_true",
   help="Do the local commit of all the staged changes using:\n" \
   +" \n" \
-  + "   eg commit -a -F <COMMITMSGHEADERFILE>\n" \
+  + "  eg commit -a -F <COMMITMSGHEADERFILE>\n" \
   +" \n" \
   +"before the initial pull." \
   +" The commit message used in specified by the --commit-msg-header-file argument." \
@@ -511,9 +530,10 @@ clp.add_option(
 
 clp.add_option(
   "--append-test-results", dest="appendTestResults", action="store_true",
-  help="After the testing is finished, amend the most recent local commit" \
-  +" by appending a summary of the test results.  This provides a record of what builds" \
-  +" and tests were performed in order to test the local changes.  NOTE: If the same" \
+  help="Before the final push, amend the most recent local commit by appending a" \
+  +" summary of the test results.  This provides a record of what builds" \
+  +" and tests were performed in order to test the local changes.  This is only " \
+  +" perfomed if --push is also set.  NOTE: If the same" \
   +" local commit is amended more than once, the prior test summary sections will be" \
   +" overwritten with the most recent test results from the current run. [default]" )
 clp.add_option(

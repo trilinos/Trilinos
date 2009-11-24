@@ -1480,7 +1480,7 @@ def checkinTest(inOptions):
 
   
     print "\n***"
-    print "*** 7) Do commit and push  ..."
+    print "*** 7) Do final push  ..."
     print "***"
 
     # Back out commit if one was performed and buid/test failed
@@ -1495,7 +1495,7 @@ def checkinTest(inOptions):
         success = False
         printStackTrace()
     
-    # Determine if we should do a forced commit
+    # Determine if we should do a forced commit/push
     forcedCommit = False
     if inOptions.doCommitReadinessCheck and not okToCommit and commitPassed \
       and inOptions.forceCommit \
@@ -1515,13 +1515,29 @@ def checkinTest(inOptions):
     ammendFinalCommitPassed = True
     pushPassed = True
     didPush = False
+    pushPassed = True
     localCommitSummariesStr = ""
     okToPush = okToCommit
 
-    if inOptions.doCommitReadinessCheck and okToCommit:
+    if not inOptions.doPush:
+  
+      print "\nNot doing the push on request (--no-push) but sending an email" \
+            " about the commit/push readiness status ..."
+  
+      if okToPush:
+        subjectLine = "READY TO PUSH"
+      else:
+        subjectLine = "NOT READY TO PUSH"
+
+    elif not okToPush:
+
+      print "\nNot performing push due to prior errors\n"
+      pushPassed = False
+
+    else: # inOptions.doPush and okToPush:
 
       #
-      print "\n7.a) Performing a final pull to make sure there are no conflicts ...\n"
+      print "\n7.a) Performing a final pull to make sure there are no conflicts for push ...\n"
       #
       
       if not inOptions.doPull:
@@ -1606,26 +1622,14 @@ def checkinTest(inOptions):
       print "\n7.c) Pushing the the local commits to the global repo ...\n"
       #
 
-      pushPassed = True
-
-      if not inOptions.doPush:
-  
-        print "\nNot doing the push on request (--no-push) but sending an email" \
-              " about the commit/push readiness status ..."
-  
-        if okToCommit:
-          subjectLine = "READY TO PUSH"
-        else:
-          subjectLine = "NOT READY TO PUSH"
-
-      elif not okToPush:
+      if not okToPush:
 
         print "\nNot performing push due to prior errors\n"
         pushPassed = False
 
-      else: # inOptions.doPush and okToPush:
+      else:
   
-        print "\nAttempting to do a push ..."
+        print "\nAttempting to do the push ..."
 
         pushRtn = echoRunSysCmnd(
           "eg push",
@@ -1642,10 +1646,6 @@ def checkinTest(inOptions):
           pushPassed = False
 
       if not pushPassed: okToPush = False
-
-    else:
-
-      print "\nNot attempted final commit and/or push!"
 
   
     print "\n***"
