@@ -202,7 +202,9 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       state->invMass_ = (useLumping_ ? getInvLumpedMatrix(massMatrix_) 
                                      : getInvDiagonalOp(massMatrix_));
    else if(massMatrix_==Teuchos::null) // otherwise if there is no mass matrix 
-      state->invMass_ = getInvDiagonalOp(F);
+      // state->invMass_ = getInvDiagonalOp(F);
+      state->invMass_ = (useLumping_ ? getInvLumpedMatrix(F) 
+                                     : getInvDiagonalOp(F));
 
    // compute BQBt
    state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
