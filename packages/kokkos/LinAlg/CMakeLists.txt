@@ -50,12 +50,15 @@ APPEND_SET(SOURCES
     Kokkos_LinAlgVersion.cpp
   )
 
+SET(KOKKOS_LINALG_CUDALIBS "")
 ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
 IF (Kokkos_ENABLE_Thrust)
   # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
   include_directories(${Kokkos_INCLUDE_DIRS})
   CUDA_ADD_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu Kokkos_DefaultSparseMultiply.cu)
   APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
+  # we use CUBLAS in DefaultArithmetic< Kokkos::MultiVector<T, ThrustGPUNode> >
+  CUDA_ADD_CUBLAS_TO_TARGET( kokkoslinalg_cuda )
 ENDIF()
 
 #
