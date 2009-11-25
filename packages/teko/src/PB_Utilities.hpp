@@ -474,7 +474,7 @@ inline LinearOp adjoint(ModifiableLinearOp & a)
   *
   * \returns An diagonal operator.
   */
-const LinearOp getDiagonalOp(const LinearOp & op);
+const ModifiableLinearOp getDiagonalOp(const LinearOp & op);
 
 /** \brief Get the diagonal of a linear operator
   *
@@ -645,6 +645,51 @@ double computeSpectralRad(const Teuchos::RCP<const Thyra::LinearOpBase<double> >
   */
 double computeSmallestMagEig(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A, double tol,
                           bool isHermitian=false,int numBlocks=5,int restart=0,int verbosity=0);
+
+//! Type describing the type of diagonal to construct. 
+typedef enum {  Diagonal     //! Specifies that just the diagonal is used
+              , Lumped       //! Specifies that row sum is used to form a diagonal
+              , AbsRowSum    //! Specifies that the \f$i^{th}\f$ diagonal entry is \f$\sum_j |A_{ij}|\f$
+              , NotDiag      //! For user convenience, if Teko recieves this value, exceptions will be thrown
+              } DiagonalType;
+
+/** Get a diagonal operator from a matrix. The mechanism for computing
+  * the diagonal is specified by a <code>DiagonalType</code> arugment.
+  *
+  * \param[in] A <code>Epetra_CrsMatrix</code> to extract the diagonal from.
+  * \param[in] dt Specifies the type of diagonal that is desired.
+  *
+  * \returns A diagonal operator.
+  */
+ModifiableLinearOp getDiagonalOp(PB::LinearOp & A,DiagonalType dt);
+
+/** Get the inverse of a diagonal operator from a matrix. The mechanism for computing
+  * the diagonal is specified by a <code>DiagonalType</code> arugment.
+  *
+  * \param[in] A <code>Epetra_CrsMatrix</code> to extract the diagonal from.
+  * \param[in] dt Specifies the type of diagonal that is desired.
+  *
+  * \returns A inverse of a diagonal operator.
+  */
+ModifiableLinearOp getInvDiagonalOp(PB::LinearOp & A,DiagonalType dt);
+
+/** Get a string corresponding to the type of digaonal specified.
+  *
+  * \param[in] dt The type of diagonal.
+  *
+  * \returns A string name representing this diagonal type.
+  */
+std::string getDiagonalName(DiagonalType dt);
+
+/** Get a type corresponding to the name of a diagonal specified.
+  *
+  * \param[in] name String representing the diagonal type
+  *
+  * \returns The type representation of the string, if the
+  *          string is not recognized this function returns
+  *          a <code>NotDiag</code>
+  */
+DiagonalType getDiagonalType(std::string name);
 
 } // end namespace PB
 

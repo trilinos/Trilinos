@@ -42,7 +42,8 @@ protected:
    Teuchos::RCP<InverseFactory> invVelFactory_;
    Teuchos::RCP<InverseFactory> invPrsFactory_;
    double alpha_;
-   enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
+   DiagonalType fInverseType_;
+   // enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
 
    bool useMass_;
    PB::LinearOp massMatrix_;

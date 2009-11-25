@@ -61,6 +61,20 @@ LinearOp SIMPLEPreconditionerFactory
    // get approximation of inv(F) name H
    std::string fApproxStr = "<error>";
    LinearOp H;
+   if(fInverseType_==NotDiag) {
+      H = buildInverse(*customHFactory_,matF);
+      fApproxStr = customHFactory_->toString();
+
+      // since H is now implicit, we must build an implicit Schur complement
+      buildExplicitSchurComplement = false;
+   }
+   else {
+      // get generic diagonal
+      H = getInvDiagonalOp(matF,fInverseType_);
+      fApproxStr = getDiagonalName(fInverseType_);
+   }
+
+/*
    if(fInverseType_==Diagonal) {
       H = getInvDiagonalOp(matF);
       fApproxStr = "Diagonal";
@@ -83,6 +97,7 @@ LinearOp SIMPLEPreconditionerFactory
    else {
       TEUCHOS_ASSERT(false);
    }
+*/
 
    // adjust H for time scaling if it is a mass matrix
    if(useMass_) {
@@ -171,6 +186,13 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
      alpha_ = pl.get<double>("Alpha");
    if(pl.isParameter("Explicit Velocity Inverse Type")) {
       std::string fInverseStr = pl.get<std::string>("Explicit Velocity Inverse Type");
+
+      // build inverse types
+      fInverseType_ = getDiagonalType(fInverseStr);
+      if(fInverseType_==NotDiag)
+         customHFactory_ = invLib->getInverseFactory(fInverseStr);
+
+      /*
       if(fInverseStr=="Diagonal")
          fInverseType_ = Diagonal;
       else if(fInverseStr=="Lumped")
@@ -181,6 +203,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
          fInverseType_ = Custom;
          customHFactory_ = invLib->getInverseFactory(fInverseStr);
       } 
+      */
    }
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");

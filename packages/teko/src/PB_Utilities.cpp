@@ -555,7 +555,7 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
   *
   * \returns An diagonal operator.
   */
-const LinearOp getDiagonalOp(const LinearOp & op)
+const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
 {
    RCP<const Epetra_CrsMatrix> eCrsOp;
 
@@ -1078,6 +1078,98 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
       // cout << "Anasazi::BlockKrylovSchur::solve() converged!" << endl;
       return std::abs(eigProb->getSolution().Evals.begin()->realpart);
    }
+}
+
+/** Get a diagonal operator from a matrix. The mechanism for computing
+  * the diagonal is specified by a <code>DiagonalType</code> arugment.
+  *
+  * \param[in] A <code>Epetra_CrsMatrix</code> to extract the diagonal from.
+  * \param[in] dt Specifies the type of diagonal that is desired.
+  *
+  * \returns A diagonal operator.
+  */
+ModifiableLinearOp getDiagonalOp(PB::LinearOp & A,DiagonalType dt)
+{
+   switch(dt) {
+   case Diagonal:
+      return getDiagonalOp(A);  
+   case Lumped:
+      return getLumpedMatrix(A);  
+   case AbsRowSum:
+      return getAbsRowSumMatrix(A);  
+   case NotDiag:
+   default:
+      TEST_FOR_EXCEPT(true);
+   };
+
+   return Teuchos::null;
+}
+
+/** Get the inverse of a diagonal operator from a matrix. The mechanism for computing
+  * the diagonal is specified by a <code>DiagonalType</code> arugment.
+  *
+  * \param[in] A <code>Epetra_CrsMatrix</code> to extract the diagonal from.
+  * \param[in] dt Specifies the type of diagonal that is desired.
+  *
+  * \returns A inverse of a diagonal operator.
+  */
+ModifiableLinearOp getInvDiagonalOp(PB::LinearOp & A,PB::DiagonalType dt)
+{
+   switch(dt) {
+   case Diagonal:
+      return getInvDiagonalOp(A);  
+   case Lumped:
+      return getInvLumpedMatrix(A);  
+   case AbsRowSum:
+      return getAbsRowSumInvMatrix(A);  
+   case NotDiag:
+   default:
+      TEST_FOR_EXCEPT(true);
+   };
+
+   return Teuchos::null;
+}
+
+/** Get a string corresponding to the type of diagonal specified.
+  *
+  * \param[in] dt The type of diagonal.
+  *
+  * \returns A string name representing this diagonal type.
+  */
+std::string getDiagonalName(DiagonalType dt)
+{
+   switch(dt) {
+   case Diagonal:
+      return "Diagonal";
+   case Lumped:
+      return "Lumped";
+   case AbsRowSum:
+      return "AbsRowSum";
+   case NotDiag:
+      return "NotDiag";
+   };
+
+   return "<error>";
+}
+
+/** Get a type corresponding to the name of a diagonal specified.
+  *
+  * \param[in] name String representing the diagonal type
+  *
+  * \returns The type representation of the string, if the
+  *          string is not recognized this function returns
+  *          a <code>NotDiag</code>
+  */
+DiagonalType getDiagonalType(std::string name)
+{
+   if(name=="Diagonal")
+      return Diagonal;
+   if(name=="Lumped")
+      return Lumped;
+   if(name=="AbsRowSum")
+      return AbsRowSum;
+ 
+   return NotDiag;
 }
 
 }
