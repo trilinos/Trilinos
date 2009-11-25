@@ -19,7 +19,7 @@
 
 #include <vector>
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 namespace Strided {
 
@@ -148,6 +148,6 @@ void one2many(std::vector<Teuchos::RCP<Epetra_MultiVector> > & many,const Epetra
 
 }
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

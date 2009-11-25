@@ -12,7 +12,7 @@
 // Thyra includes
 #include "Thyra_VectorSpaceBase.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 /** \brief Convert a Epetra_MultiVector with assumed block structure dictated by the
@@ -125,6 +125,6 @@ const Teuchos::RCP<Epetra_Map>
 thyraVSToEpetraMap(const Thyra::VectorSpaceBase<double> & vs,const Teuchos::RCP<const Epetra_Comm> & comm);
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

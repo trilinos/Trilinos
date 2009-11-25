@@ -10,7 +10,7 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 
 // Thyra includes
@@ -26,7 +26,7 @@
 // Test-rig
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::rcp;
@@ -48,23 +48,23 @@ int tLumping::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failst
    failstrm << "tLumping";
 
    status = test_lumping(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"lumping\" ... PASSED","   \"lumping\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"lumping\" ... PASSED","   \"lumping\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_invLumping(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"invLumping\" ... PASSED","   \"invLumping\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"invLumping\" ... PASSED","   \"invLumping\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tLumping...PASSED","tLumping...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tLumping...PASSED","tLumping...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tLumping...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tLumping...FAILED");
    }
 
    return failcount;
@@ -108,9 +108,9 @@ bool tLumping::test_lumping(int verbosity,std::ostream & os)
    }
    B.FillComplete();
 
-   PB::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
-   PB::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
-   PB::LinearOp lumpedA = getLumpedMatrix(pA);
+   Teko::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
+   Teko::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
+   Teko::LinearOp lumpedA = getLumpedMatrix(pA);
 
    {
       std::stringstream ss;
@@ -164,9 +164,9 @@ bool tLumping::test_invLumping(int verbosity,std::ostream & os)
    }
    B.FillComplete();
 
-   PB::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
-   PB::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
-   PB::LinearOp lumpedA = getInvLumpedMatrix(pA);
+   Teko::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
+   Teko::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
+   Teko::LinearOp lumpedA = getInvLumpedMatrix(pA);
 
    {
       std::stringstream ss;
@@ -183,4 +183,4 @@ bool tLumping::test_invLumping(int verbosity,std::ostream & os)
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

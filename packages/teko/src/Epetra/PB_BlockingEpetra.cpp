@@ -6,7 +6,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 namespace Blocking {
 
@@ -286,4 +286,4 @@ void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<Ma
 
 } // end Blocking
 } // end Epetra
-} // end PB
+} // end Teko

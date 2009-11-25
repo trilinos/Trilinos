@@ -33,7 +33,7 @@
 #include "tEpetraOperatorWrapper.hpp"
 
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::null;
@@ -56,17 +56,17 @@ int tEpetraOperatorWrapper::runTest(int verbosity,std::ostream & stdstrm,std::os
    failstrm << "tEpetraOperatorWrapper";
 
    status = test_functionality(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"functionality\" ... PASSED","   \"functionality\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"functionality\" ... PASSED","   \"functionality\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tEpetraOperatorWrapper...PASSED","tEpetraOperatorWrapper...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tEpetraOperatorWrapper...PASSED","tEpetraOperatorWrapper...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tEpetraOperatorWrapper...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tEpetraOperatorWrapper...FAILED");
    }
 
    return failcount;
@@ -237,4 +237,4 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
 
 
 } // end Test namespace
-} // end PB namespace
+} // end Teko namespace

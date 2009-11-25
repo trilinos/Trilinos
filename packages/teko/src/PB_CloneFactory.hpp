@@ -1,9 +1,9 @@
-#ifndef __Clone_Factory_hpp__
-#define __Clone_Factory_hpp__
+#ifndef __PB_CloneFactory_hpp__
+#define __PB_CloneFactory_hpp__
 
 #include "Teuchos_RCP.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** Base class for cloneable objects */
 class Cloneable {

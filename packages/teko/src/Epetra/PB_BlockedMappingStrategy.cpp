@@ -13,7 +13,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 // Creates a strided mapping strategy. This class is useful
@@ -46,7 +46,7 @@ BlockedMappingStrategy::BlockedMappingStrategy(const std::vector<std::vector<int
 //
 void BlockedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
                                                  const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                                 const PB::Epetra::EpetraOperatorWrapper & eow) const
+                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
 {
    int count = X.NumVectors(); 
 
@@ -81,7 +81,7 @@ void BlockedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 //
 void BlockedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
                                                  Epetra_MultiVector& Y,
-                                                 const PB::Epetra::EpetraOperatorWrapper & eow) const
+                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
 {
    std::vector<RCP<const Epetra_MultiVector> > subY;
    RCP<const Thyra::DefaultProductMultiVector<double> > prod_Y 
@@ -187,4 +187,4 @@ void BlockedMappingStrategy::rebuildBlockedThyraOp(const RCP<const Epetra_CrsMat
 }
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

@@ -3,7 +3,7 @@
 
 #include "PB_EpetraOperatorWrapper.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 class EpetraInverseOpWrapper : public EpetraOperatorWrapper {
@@ -27,6 +27,6 @@ protected:
 };
 
 } // end Epetra
-} // end PB
+} // end Teko
 
 #endif

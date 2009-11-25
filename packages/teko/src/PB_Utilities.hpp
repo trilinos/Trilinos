@@ -1,7 +1,7 @@
 /** \file PB_Utilities.hpp
   *
   * This file contains a number of useful functions and classes
-  * used in PB. They are distinct from the core functionality of
+  * used in Teko. They are distinct from the core functionality of
   * the preconditioner factory, however, the functions are critical
   * to construction of the preconditioners themselves.
   */
@@ -28,10 +28,10 @@
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
-// #define PB_DEBUG_OFF
-#define PB_DEBUG_INT 5
+// #define Teko_DEBUG_OFF
+#define Teko_DEBUG_INT 5
 
-namespace PB {
+namespace Teko {
 
 using Thyra::multiply;
 using Thyra::scale;
@@ -86,48 +86,48 @@ Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const
   */
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil);
 
-/** \brief Function used internally by PB to find the output stream.
+/** \brief Function used internally by Teko to find the output stream.
   * 
-  * Function used internally by PB to find the output stream.
+  * Function used internally by Teko to find the output stream.
   *
   * \returns An output stream to use for printing
   */
 inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
 { return Teuchos::VerboseObjectBase::getDefaultOStream(); }
 
-#ifndef PB_DEBUG_OFF
-   #define PB_DEBUG_EXPR(str) str
-   #define PB_DEBUG_MSG(str,level) if(level<=PB_DEBUG_INT) { \
-      Teuchos::RCP<Teuchos::FancyOStream> out = PB::getOutputStream(); \
-      *out << "PB: " << str << std::endl; }
-   #define PB_DEBUG_MSG_BEGIN(level) if(level<=PB_DEBUG_INT) { \
-      PB::getOutputStream()->pushTab(3); \
-      *PB::getOutputStream() << "PB: Begin debug MSG\n"; \
-      std::ostream & DEBUG_STREAM = *PB::getOutputStream(); \
-      PB::getOutputStream()->pushTab(3);
-   #define PB_DEBUG_MSG_END() PB::getOutputStream()->popTab(); \
-                             *PB::getOutputStream() << "PB: End debug MSG\n"; \
-                              PB::getOutputStream()->popTab(); }
-   #define PB_DEBUG_PUSHTAB() PB::getOutputStream()->pushTab(3)
-   #define PB_DEBUG_POPTAB() PB::getOutputStream()->popTab()
+#ifndef Teko_DEBUG_OFF
+   #define Teko_DEBUG_EXPR(str) str
+   #define Teko_DEBUG_MSG(str,level) if(level<=Teko_DEBUG_INT) { \
+      Teuchos::RCP<Teuchos::FancyOStream> out = Teko::getOutputStream(); \
+      *out << "Teko: " << str << std::endl; }
+   #define Teko_DEBUG_MSG_BEGIN(level) if(level<=Teko_DEBUG_INT) { \
+      Teko::getOutputStream()->pushTab(3); \
+      *Teko::getOutputStream() << "Teko: Begin debug MSG\n"; \
+      std::ostream & DEBUG_STREAM = *Teko::getOutputStream(); \
+      Teko::getOutputStream()->pushTab(3);
+   #define Teko_DEBUG_MSG_END() Teko::getOutputStream()->popTab(); \
+                             *Teko::getOutputStream() << "Teko: End debug MSG\n"; \
+                              Teko::getOutputStream()->popTab(); }
+   #define Teko_DEBUG_PUSHTAB() Teko::getOutputStream()->pushTab(3)
+   #define Teko_DEBUG_POPTAB() Teko::getOutputStream()->popTab()
 
    struct __DebugScope__ {
       __DebugScope__(const std::string & str,int level)
          : str_(str), level_(level)
-      { PB_DEBUG_MSG("BEGIN "+str_,level_); PB_DEBUG_PUSHTAB(); }      
+      { Teko_DEBUG_MSG("BEGIN "+str_,level_); Teko_DEBUG_PUSHTAB(); }      
       ~__DebugScope__()
-      { PB_DEBUG_POPTAB(); PB_DEBUG_MSG("END "+str_,level_); } 
+      { Teko_DEBUG_POPTAB(); Teko_DEBUG_MSG("END "+str_,level_); } 
       std::string str_; int level_; };
-   #define PB_DEBUG_SCOPE(str,level) __DebugScope__ __dbgScope__(str,level);
+   #define Teko_DEBUG_SCOPE(str,level) __DebugScope__ __dbgScope__(str,level);
 #else 
-   #define PB_DEBUG_EXPR(str)
-   #define PB_DEBUG_MSG(str,level)
-   #define PB_DEBUG_MSG_BEGIN(level) if(false) { \
-      std::ostream & DEBUG_STREAM = *PB::getOutputStream();
-   #define PB_DEBUG_MSG_END() }
-   #define PB_DEBUG_PUSHTAB() 
-   #define PB_DEBUG_POPTAB() 
-   #define PB_DEBUG_SCOPE(str,level)
+   #define Teko_DEBUG_EXPR(str)
+   #define Teko_DEBUG_MSG(str,level)
+   #define Teko_DEBUG_MSG_BEGIN(level) if(false) { \
+      std::ostream & DEBUG_STREAM = *Teko::getOutputStream();
+   #define Teko_DEBUG_MSG_END() }
+   #define Teko_DEBUG_PUSHTAB() 
+   #define Teko_DEBUG_POPTAB() 
+   #define Teko_DEBUG_SCOPE(str,level)
 #endif
 
 // typedefs for increased simplicity
@@ -661,7 +661,7 @@ typedef enum {  Diagonal     //! Specifies that just the diagonal is used
   *
   * \returns A diagonal operator.
   */
-ModifiableLinearOp getDiagonalOp(PB::LinearOp & A,DiagonalType dt);
+ModifiableLinearOp getDiagonalOp(Teko::LinearOp & A,DiagonalType dt);
 
 /** Get the inverse of a diagonal operator from a matrix. The mechanism for computing
   * the diagonal is specified by a <code>DiagonalType</code> arugment.
@@ -671,7 +671,7 @@ ModifiableLinearOp getDiagonalOp(PB::LinearOp & A,DiagonalType dt);
   *
   * \returns A inverse of a diagonal operator.
   */
-ModifiableLinearOp getInvDiagonalOp(PB::LinearOp & A,DiagonalType dt);
+ModifiableLinearOp getInvDiagonalOp(Teko::LinearOp & A,DiagonalType dt);
 
 /** Get a string corresponding to the type of digaonal specified.
   *
@@ -691,6 +691,6 @@ std::string getDiagonalName(DiagonalType dt);
   */
 DiagonalType getDiagonalType(std::string name);
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

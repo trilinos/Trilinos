@@ -52,7 +52,7 @@ int main(int argc,char * argv[])
       Epetra_SerialComm Comm;
    #endif
 
-   PB::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm));
+   Teko::Test::UnitTest::SetComm(Teuchos::rcpFromRef(Comm));
 
    Teuchos::CommandLineProcessor clp;
 
@@ -80,31 +80,31 @@ int main(int argc,char * argv[])
    termout->setOutputToRootOnly(0);
    failout->setOutputToRootOnly(0);
 
-   PB_ADD_UNIT_TEST(PB::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
-   PB_ADD_UNIT_TEST(PB::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
-   PB_ADD_UNIT_TEST(PB::Test::tLSCStabilized,LSCStabilized);
-   PB_ADD_UNIT_TEST(PB::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
-   PB_ADD_UNIT_TEST(PB::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
-   PB_ADD_UNIT_TEST(PB::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
-   PB_ADD_UNIT_TEST(PB::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
-   PB_ADD_UNIT_TEST(PB::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
-   PB_ADD_UNIT_TEST(PB::Test::tInterlacedEpetra,InterlacedEpetra);
-   PB_ADD_UNIT_TEST(PB::Test::tBlockingEpetra,BlockingEpetra);
-   PB_ADD_UNIT_TEST(PB::Test::tEpetraThyraConverter,EpetraThyraConverter);
-   PB_ADD_UNIT_TEST(PB::Test::tGraphLaplacian,tGraphLaplacian);
-   PB_ADD_UNIT_TEST(PB::Test::tParallelInverse,tParallelInverse);
-   PB_ADD_UNIT_TEST(PB::Test::tExplicitOps,tExplicitOps);
-   PB_ADD_UNIT_TEST(PB::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
-   PB_ADD_UNIT_TEST(PB::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
-   PB_ADD_UNIT_TEST(PB::Test::tLumping,Lumping);
-   PB_ADD_UNIT_TEST(PB::Test::tAbsRowSum,AbsRowSum);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
+   Teko_ADD_UNIT_TEST(Teko::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
+   Teko_ADD_UNIT_TEST(Teko::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
+   Teko_ADD_UNIT_TEST(Teko::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
+   Teko_ADD_UNIT_TEST(Teko::Test::tInterlacedEpetra,InterlacedEpetra);
+   Teko_ADD_UNIT_TEST(Teko::Test::tBlockingEpetra,BlockingEpetra);
+   Teko_ADD_UNIT_TEST(Teko::Test::tEpetraThyraConverter,EpetraThyraConverter);
+   Teko_ADD_UNIT_TEST(Teko::Test::tGraphLaplacian,tGraphLaplacian);
+   Teko_ADD_UNIT_TEST(Teko::Test::tParallelInverse,tParallelInverse);
+   Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps,tExplicitOps);
+   Teko_ADD_UNIT_TEST(Teko::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLumping,Lumping);
+   Teko_ADD_UNIT_TEST(Teko::Test::tAbsRowSum,AbsRowSum);
    if(not isfast) {
-      PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
-      PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
-      PB_ADD_UNIT_TEST(PB::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
+      Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest,LSCIntegrationTest);
+      Teko_ADD_UNIT_TEST(Teko::Test::tStridedEpetraOperator,tStridedEpetraOperator);
+      Teko_ADD_UNIT_TEST(Teko::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
    }
 
-   bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);
+   bool status = Teko::Test::UnitTest::RunTests(verbosity,*termout,*failout);
 
 
    if(not status)

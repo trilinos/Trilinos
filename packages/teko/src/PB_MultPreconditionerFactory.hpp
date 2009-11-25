@@ -5,13 +5,13 @@
 #include "PB_Utilities.hpp"
 #include "PB_BlockImplicitLinearOp.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** Preconditioning factories must supply a 'State' class which
   * is where data specific to the preconditioner construction 
   * is stored. The constructor will be invoked elsewhere.
   */
-class MultPrecondState : public PB::BlockPreconditionerState {
+class MultPrecondState : public Teko::BlockPreconditionerState {
 public:
    MultPrecondState() {}
 
@@ -19,7 +19,7 @@ public:
    Teuchos::RCP<BlockPreconditionerState> StateTwo_;
 };
 
-/** Declaration of a PB::BlockImplicitLinearOp.
+/** Declaration of a Teko::BlockImplicitLinearOp.
   * BlockImplicitLinearOp's are useful
   * when there is no simple or cheap matrix representation 
   * of something like f(r). This particular class 
@@ -42,20 +42,20 @@ public:
   *
   * so we didn't really need to create an implicit operator.
   */
-class MultPrecsLinearOp : public PB::BlockImplicitLinearOp {
+class MultPrecsLinearOp : public Teko::BlockImplicitLinearOp {
 public:
 
    //! Constructor
-   MultPrecsLinearOp(const PB::LinearOp &A, const PB::LinearOp &M1, 
-            const PB::LinearOp &M2): A_(A), M1_(M1), M2_(M2) { }
+   MultPrecsLinearOp(const Teko::LinearOp &A, const Teko::LinearOp &M1, 
+            const Teko::LinearOp &M2): A_(A), M1_(M1), M2_(M2) { }
 
-   virtual PB::VectorSpace  range() const { return M1_->range(); }
-   virtual PB::VectorSpace domain() const { return M1_->domain();}
-   virtual void implicitApply(const PB::BlockedMultiVector & r, PB::BlockedMultiVector & y,
+   virtual Teko::VectorSpace  range() const { return M1_->range(); }
+   virtual Teko::VectorSpace domain() const { return M1_->domain();}
+   virtual void implicitApply(const Teko::BlockedMultiVector & r, Teko::BlockedMultiVector & y,
              const double alpha = 1.0, const double beta = 0.0) const;
 
 protected:
-   PB::LinearOp A_, M1_, M2_;
+   Teko::LinearOp A_, M1_, M2_;
 
 private:
    // hide me!
@@ -68,30 +68,30 @@ private:
   * of two other preconditioners.
   */
 class MultPreconditionerFactory
-   : public PB::BlockPreconditionerFactory {
+   : public Teko::BlockPreconditionerFactory {
 public:
    //! Constructor
-   MultPreconditionerFactory(const Teuchos::RCP<const PB::BlockPreconditionerFactory> & FirstFactory,
-                             const Teuchos::RCP<const PB::BlockPreconditionerFactory> & SecondFactory);
+   MultPreconditionerFactory(const Teuchos::RCP<const Teko::BlockPreconditionerFactory> & FirstFactory,
+                             const Teuchos::RCP<const Teko::BlockPreconditionerFactory> & SecondFactory);
 
    MultPreconditionerFactory();
 
-   //! Function inherited from PB::BlockPreconditionerFactory
-   PB::LinearOp buildPreconditionerOperator(PB::BlockedLinearOp & blo,
-                                            PB::BlockPreconditionerState & state) const;
+   //! Function inherited from Teko::BlockPreconditionerFactory
+   Teko::LinearOp buildPreconditionerOperator(Teko::BlockedLinearOp & blo,
+                                            Teko::BlockPreconditionerState & state) const;
     
    //! Build the MultPrecondState object
-   virtual Teuchos::RCP<PB::BlockPreconditionerState> buildPreconditionerState() const;
+   virtual Teuchos::RCP<Teko::BlockPreconditionerState> buildPreconditionerState() const;
 
 protected:
    // class members
-   Teuchos::RCP<const PB::BlockPreconditionerFactory> FirstFactory_;
-   Teuchos::RCP<const PB::BlockPreconditionerFactory> SecondFactory_;
+   Teuchos::RCP<const Teko::BlockPreconditionerFactory> FirstFactory_;
+   Teuchos::RCP<const Teko::BlockPreconditionerFactory> SecondFactory_;
    
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

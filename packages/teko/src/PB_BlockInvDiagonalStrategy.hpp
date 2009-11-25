@@ -9,12 +9,12 @@
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "PB_BlockPreconditionerFactory.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** this should be paired with a BlockJacobiPreconditionerFactory
   * or BlockGSPreconditionerFactory.  The idea is that this object
@@ -115,6 +115,6 @@ private:
    InvFactoryDiagStrategy(const InvFactoryDiagStrategy &);
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

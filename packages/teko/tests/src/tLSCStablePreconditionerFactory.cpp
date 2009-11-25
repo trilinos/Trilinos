@@ -33,12 +33,12 @@
 //
 // see the matlab file
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using namespace Teuchos;
 using namespace Thyra;
-using namespace PB::NS;
+using namespace Teko::NS;
 
 void tLSCStablePreconditionerFactory::initializeTest()
 {
@@ -121,53 +121,53 @@ int tLSCStablePreconditionerFactory::runTest(int verbosity,std::ostream & stdstr
    failstrm << "tLSCStablePreconditionerFactory";
 
    status = test_createPrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializePrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_uninitializePrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_isCompatable(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_identity(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_diagonal(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_result(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tLSCStablePreconditionedFactory...PASSED","tLSCStablePreconditionedFactory...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tLSCStablePreconditionedFactory...PASSED","tLSCStablePreconditionedFactory...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tLSCStablePreconditionedFactory...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCStablePreconditionedFactory...FAILED");
    }
 
    return failcount;
@@ -283,7 +283,7 @@ bool tLSCStablePreconditionerFactory::test_identity(int verbosity,std::ostream &
    // ef[0] = eb[0]; ef[1] = eb[1]; eg[0] = ea[0]-eb[0]; eg[1] = ea[1]-eb[1];
    ef[0] = ea[0]+eb[0]; ef[1] = ea[1]+eb[1]; eg[0] = -eb[0]; eg[1] = -eb[1];
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = (PB::Test::Difference(y,z)<tolerance_);
+   status = (Teko::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
@@ -297,7 +297,7 @@ bool tLSCStablePreconditionerFactory::test_identity(int verbosity,std::ostream &
    // ef[0] = eb[0]; ef[1] = eb[1]; eg[0] = ea[0]-eb[0]; eg[1] = ea[1]-eb[1];
    ef[0] = ea[0]+eb[0]; ef[1] = ea[1]+eb[1]; eg[0] = -eb[0]; eg[1] = -eb[1];
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = (PB::Test::Difference(y,z)<tolerance_);
+   status = (Teko::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
@@ -311,7 +311,7 @@ bool tLSCStablePreconditionerFactory::test_identity(int verbosity,std::ostream &
    // ef[0] = eb[0]; ef[1] = eb[1]; eg[0] = ea[0]-eb[0]; eg[1] = ea[1]-eb[1];
    ef[0] = ea[0]+eb[0]; ef[1] = ea[1]+eb[1]; eg[0] = -eb[0]; eg[1] = -eb[1];
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = (PB::Test::Difference(y,z)<tolerance_);
+   status = (Teko::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
@@ -325,7 +325,7 @@ bool tLSCStablePreconditionerFactory::test_identity(int verbosity,std::ostream &
    // ef[0] = eb[0]; ef[1] = eb[1]; eg[0] = ea[0]-eb[0]; eg[1] = ea[1]-eb[1];
    ef[0] = ea[0]+eb[0]; ef[1] = ea[1]+eb[1]; eg[0] = -eb[0]; eg[1] = -eb[1];
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = (PB::Test::Difference(y,z)<tolerance_);
+   status = (Teko::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_Identity " << toString(status) << ": (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
@@ -358,23 +358,23 @@ bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    //
 
    vec[0] = 1.0; vec[1] = 2.0;
-   LinearOp F = PB::Test::DiagMatrix(2,vec);
+   LinearOp F = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 7.0; vec[1] = 8.0;
-   LinearOp G = PB::Test::DiagMatrix(2,vec);
+   LinearOp G = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 5.0; vec[1] = 6.0;
-   LinearOp D = PB::Test::DiagMatrix(2,vec);
+   LinearOp D = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 0.0; vec[1] = 0.0;
-   LinearOp C = PB::Test::DiagMatrix(2,vec);
+   LinearOp C = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 1.0; vec[1] = 0.5;
-   LinearOp iF = PB::Test::DiagMatrix(2,vec);
+   LinearOp iF = Teko::Test::DiagMatrix(2,vec);
 
    // S = -C+D*iF*G
    vec[0] = 0.028571428571429; vec[1] = 0.020833333333333; 
-   LinearOp iBBt = PB::Test::DiagMatrix(2,vec);
+   LinearOp iBBt = Teko::Test::DiagMatrix(2,vec);
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
    const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory 
@@ -402,7 +402,7 @@ bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] =  0.200000000000000; ef[1] =  1.000000000000000;  
    eg[0] = -0.028571428571429; eg[1] =  -0.125;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -419,7 +419,7 @@ bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] = -0.600000000000000; ef[1] =  3.500000000000000;
    eg[0] = -0.200000000000000; eg[1] = -0.375000000000000;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -436,7 +436,7 @@ bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] =  1.000000000000000; ef[1] = -0.833333333333333;
    eg[0] =  0.000000000000000; eg[1] =  0.208333333333333;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -453,7 +453,7 @@ bool tLSCStablePreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] = 05.200000000000000; ef[1] =  0.000000000000000;
    eg[0] = -0.171428571428571; eg[1] = -0.500000000000000;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -504,7 +504,7 @@ bool tLSCStablePreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = -4.333333333333333;  ef[1] = -2.333333333333327;
    eg[0] = -10.499999999999991; eg[1] = -19.499999999999979;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -519,7 +519,7 @@ bool tLSCStablePreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = -13.666666666666668; ef[1] = -10.666666666666645;
    eg[0] = -37.499999999999964; eg[1] = -70.499999999999915;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -534,7 +534,7 @@ bool tLSCStablePreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = 7.166666666666667; ef[1] = 3.166666666666658;
    eg[0] = 14.999999999999986; eg[1] = 27.499999999999968;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -549,7 +549,7 @@ bool tLSCStablePreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = -25.000000000000000; ef[1] = -4.999999999999973;
    eg[0] = -44.999999999999964; eg[1] = -83.999999999999915;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCStablePreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -563,4 +563,4 @@ bool tLSCStablePreconditionerFactory::test_result(int verbosity,std::ostream & o
 }
 
 } // end namespace Test
-} // end namespace PB
+} // end namespace Teko

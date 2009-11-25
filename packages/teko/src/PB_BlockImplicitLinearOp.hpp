@@ -3,7 +3,7 @@
 
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** \brief A virtual class that simplifies the construction
   *        of custom operators. 
@@ -47,6 +47,6 @@ public:
    //@}
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

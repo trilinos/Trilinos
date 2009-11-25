@@ -10,7 +10,7 @@
 
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tLU2x2PreconditionerFactory : public UnitTest {
@@ -46,6 +46,6 @@ protected:
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif

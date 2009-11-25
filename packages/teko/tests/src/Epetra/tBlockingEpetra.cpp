@@ -34,9 +34,9 @@
 
 #include "Epetra/PB_BlockingEpetra.hpp"
 
-using namespace PB::Epetra;
+using namespace Teko::Epetra;
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::null;
@@ -92,35 +92,35 @@ int tBlockingEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
    failstrm << "tBlockingEpetra";
 
    status = test_buildMaps(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_one2many(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_many2one(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildSubBlock(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"buildSubBlock\" ... PASSED","   \"buildSubBlock\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"buildSubBlock\" ... PASSED","   \"buildSubBlock\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tBlockingEpetra...PASSED","tBlockingEpetra...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tBlockingEpetra...PASSED","tBlockingEpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tBlockingEpetra...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tBlockingEpetra...FAILED");
    }
 
    return failcount;
@@ -160,17 +160,17 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
    Blocking::MapPair map2 = Blocking::buildSubMap(gid2,*GetComm());
 
    TEST_ASSERT(map0.first->NumMyElements()==gid0.size() && map0.second->NumMyElements()==gid0.size(),
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << " Checking map size: first=" << map0.first->NumMyElements() 
       << ", second="<< map0.second->NumMyElements()
       << ", gid="<< gid0.size());
    TEST_ASSERT(map1.first->NumMyElements()==gid1.size() && map0.second->NumMyElements()==gid0.size(),
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << " Checking map size: first=" << map1.first->NumMyElements() 
       << ", second="<< map1.second->NumMyElements()
       << ", gid="<< gid1.size());
    TEST_ASSERT(map2.first->NumMyElements()==gid2.size() && map0.second->NumMyElements()==gid0.size(),
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << " Checking map size: first=" << map2.first->NumMyElements() 
       << ", second="<< map2.second->NumMyElements()
       << ", gid="<< gid2.size());
@@ -189,11 +189,11 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
 
    // test that the extra data is attached
    TEST_ASSERT(contigMaps[0]!=Teuchos::null,
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << ")");
    TEST_ASSERT(contigMaps[1]!=Teuchos::null,
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << ")");
    TEST_ASSERT(contigMaps[2]!=Teuchos::null,
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << ")");
    TEST_MSG("   tBlockingEpetra::test_buildMaps: extracted \"contigMaps\"");
 
    bool test;
@@ -208,7 +208,7 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
       test &= cid== (i+contigMaps[0]->MinMyGID());
    }
    TEST_ASSERT(test, 
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    test = true;
@@ -220,7 +220,7 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
       test &= cid== (i+contigMaps[1]->MinMyGID());
    }
    TEST_ASSERT(test, 
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    test = true;
@@ -232,7 +232,7 @@ bool tBlockingEpetra::test_buildMaps(int verbosity,std::ostream & os)
       test &= cid== (i+contigMaps[2]->MinMyGID());
    }
    TEST_ASSERT(test, 
-         "   tBlockingEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tBlockingEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    return allPassed;
@@ -351,7 +351,7 @@ bool tBlockingEpetra::test_many2one(int verbosity,std::ostream & os)
    }
    TEST_ASSERT(maxn>0.0,"   tBlockingEpetra::test_many2one maxn>0? maxn = " << maxn);
    TEST_ASSERT(max<=tolerance_,
-            "   tBlockingEpetra::test_many2one (" << PB::Test::toString(status) << "): "
+            "   tBlockingEpetra::test_many2one (" << Teko::Test::toString(status) << "): "
          << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ 
          << " maxn = " << maxn << ", maxn2 = " << maxn2 << " )");
    
@@ -409,17 +409,17 @@ bool tBlockingEpetra::test_buildSubBlock(int verbosity,std::ostream & os)
    GetComm()->Barrier();
 
    std::cout << "A_00 Matrix = \n";
-   PB::Epetra::Blocking::buildSubBlock(0,0,A,mapPairs)->Print(std::cout);
+   Teko::Epetra::Blocking::buildSubBlock(0,0,A,mapPairs)->Print(std::cout);
    std::cout << "A_01 Matrix = \n";
-   PB::Epetra::Blocking::buildSubBlock(0,1,A,mapPairs)->Print(std::cout);
+   Teko::Epetra::Blocking::buildSubBlock(0,1,A,mapPairs)->Print(std::cout);
    std::cout << "A_10 Matrix = \n";
-   PB::Epetra::Blocking::buildSubBlock(1,0,A,mapPairs)->Print(std::cout);
+   Teko::Epetra::Blocking::buildSubBlock(1,0,A,mapPairs)->Print(std::cout);
    std::cout << "A_11 Matrix = \n";
-   PB::Epetra::Blocking::buildSubBlock(1,1,A,mapPairs)->Print(std::cout);
+   Teko::Epetra::Blocking::buildSubBlock(1,1,A,mapPairs)->Print(std::cout);
 */
 
    return allPassed;
 }
 
 } // end Test namespace
-} // end PB namespace
+} // end Teko namespace

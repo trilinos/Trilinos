@@ -18,7 +18,7 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::Array;
 
-namespace PB {
+namespace Teko {
 
 void BlockReorderManager::SetBlock(int blockIndex,int reorder)
 { 
@@ -117,12 +117,12 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       const BlockReorderLeaf & colLeaf = dynamic_cast<const BlockReorderLeaf &>(colMgr);
 
       // simply return entry in matrix
-      PB::LinearOp linOp = blkOp->getBlock(rowLeaf.GetIndex(),colLeaf.GetIndex());
+      Teko::LinearOp linOp = blkOp->getBlock(rowLeaf.GetIndex(),colLeaf.GetIndex());
 
       return linOp;
    }
    else if(rowSz==0) {
-      PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
+      Teko::BlockedLinearOp reBlkOp = Teko::createBlockedOp();
 
       // operator will be rowSz by colSz
       reBlkOp->beginBlockFill(1,colSz);   
@@ -140,7 +140,7 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       return reBlkOp;
    }
    else if(colSz==0) {
-      PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
+      Teko::BlockedLinearOp reBlkOp = Teko::createBlockedOp();
 
       // operator will be rowSz by colSz
       reBlkOp->beginBlockFill(rowSz,1);   
@@ -158,7 +158,7 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       return reBlkOp;
    }
    else {
-      PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
+      Teko::BlockedLinearOp reBlkOp = Teko::createBlockedOp();
   
       // this is the general case
       TEUCHOS_ASSERT(rowSz>0);
@@ -465,13 +465,13 @@ static RCP<BlockReorderManager> blockedReorderFromTokens(const std::vector<std::
 {
    // base case
    if(tokens.size()==1)
-      return rcp(new PB::BlockReorderLeaf(Teuchos::StrUtils::atoi(tokens[0])));
+      return rcp(new Teko::BlockReorderLeaf(Teuchos::StrUtils::atoi(tokens[0])));
 
    // check first and last character
    TEUCHOS_ASSERT(*(tokens.begin())=="[")
    TEUCHOS_ASSERT(*(tokens.end()-1)=="]");
 
-   std::vector<RCP<PB::BlockReorderManager> > vecRMgr;
+   std::vector<RCP<Teko::BlockReorderManager> > vecRMgr;
    std::vector<std::string>::const_iterator itr = tokens.begin()+1; 
    while(itr!=tokens.end()-1) {
       // figure out which tokens are relevant for this block
@@ -486,7 +486,7 @@ static RCP<BlockReorderManager> blockedReorderFromTokens(const std::vector<std::
    }
 
    // build the parent reorder manager
-   RCP<PB::BlockReorderManager> rMgr = rcp(new PB::BlockReorderManager(vecRMgr.size()));
+   RCP<Teko::BlockReorderManager> rMgr = rcp(new Teko::BlockReorderManager(vecRMgr.size()));
    for(unsigned int i=0;i<vecRMgr.size();i++)
       rMgr->SetBlock(i,vecRMgr[i]);
 
@@ -522,4 +522,4 @@ Teuchos::RCP<const BlockReorderManager> blockedReorderFromString(std::string & r
    return mgr;
 }
 
-} // end namespace PB
+} // end namespace Teko

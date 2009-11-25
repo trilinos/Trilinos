@@ -9,7 +9,7 @@
 
 using Teuchos::RCP;
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 // Constructor definition
@@ -35,8 +35,8 @@ LinearOp SIMPLEPreconditionerFactory
    ::buildPreconditionerOperator(BlockedLinearOp & blockOp,
                                  BlockPreconditionerState & state) const
 {
-   PB_DEBUG_SCOPE("SIMPLEPreconditionerFactory::buildPreconditionerOperator",10);
-   PB_DEBUG_EXPR(Teuchos::Time timer(""));
+   Teko_DEBUG_SCOPE("SIMPLEPreconditionerFactory::buildPreconditionerOperator",10);
+   Teko_DEBUG_EXPR(Teuchos::Time timer(""));
 
    int rows = blockRowCount(blockOp);
    int cols = blockColCount(blockOp);
@@ -208,7 +208,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");
 
-   PB_DEBUG_MSG_BEGIN(5)
+   Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
       DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
       DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
@@ -217,7 +217,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       DEBUG_STREAM << "   use mass   = " << useMass_ << std::endl;
       DEBUG_STREAM << "SIMPLE Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
-   PB_DEBUG_MSG_END()
+   Teko_DEBUG_MSG_END()
 
    // set defaults as needed
    if(invStr=="") invStr = "Amesos";
@@ -275,7 +275,7 @@ Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedPa
 
    // use the mass matrix
    if(useMass_) {
-      pl->set<PB::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
+      pl->set<Teko::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
       result = pl;
    }
 
@@ -285,7 +285,7 @@ Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedPa
 //! For assiting in construction of the preconditioner
 bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl) 
 {
-   PB_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
+   Teko_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
    bool result = true;
  
    // update requested parameters in solvers
@@ -296,7 +296,7 @@ bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::Param
 
    // set the mass matrix: throw if the strategy is not the right type
    if(useMass_) {
-      PB::LinearOp mass = pl.get<PB::LinearOp>("Velocity Mass Matrix");
+      Teko::LinearOp mass = pl.get<Teko::LinearOp>("Velocity Mass Matrix");
 
       // we must have a mass matrix
       if(mass==Teuchos::null)
@@ -309,4 +309,4 @@ bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::Param
 }
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko

@@ -13,7 +13,7 @@
 
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tEpetraOperatorWrapper : public UnitTest {
@@ -28,6 +28,6 @@ public:
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif

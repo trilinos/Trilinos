@@ -10,7 +10,7 @@
 
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** \brief Abstract class for building an inverse operator
   *
@@ -358,7 +358,7 @@ public:
    virtual std::string toString() const { return inverse_->description(); }
 
 protected:
-   PB::LinearOp inverse_;
+   Teko::LinearOp inverse_;
 
 private:
    // hide me!
@@ -431,6 +431,6 @@ Teuchos::RCP<const Teuchos::ParameterList> invFactoryValidParameters();
 
 //@}
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

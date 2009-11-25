@@ -13,7 +13,7 @@
 
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tEpetraThyraConverter : public UnitTest {
@@ -33,6 +33,6 @@ public:
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif

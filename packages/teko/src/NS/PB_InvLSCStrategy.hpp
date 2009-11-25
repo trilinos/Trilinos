@@ -3,7 +3,7 @@
 
 #include "NS/PB_LSCStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 class LSCPrecondState; // forward declration
@@ -129,7 +129,7 @@ public:
 
    //! When computing the Schur complement, use the passed in matrix instead
    //! of \f$C\f$ to stabilize the gradient operator.
-   virtual void setPressureStabMatrix(const PB::LinearOp & psm)
+   virtual void setPressureStabMatrix(const Teko::LinearOp & psm)
    { userPresStabMat_ = psm; }
 
    //! Initialize the state object using this blocked linear operator
@@ -201,6 +201,6 @@ protected:
 };
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko
 
 #endif

@@ -10,7 +10,7 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 
 // Thyra includes
@@ -26,7 +26,7 @@
 // Test-rig
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::rcp;
@@ -48,23 +48,23 @@ int tAbsRowSum::runTest(int verbosity,std::ostream & stdstrm,std::ostream & fail
    failstrm << "tAbsRowSum";
 
    status = test_absRowSum(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"absRowSum\" ... PASSED","   \"absRowSum\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"absRowSum\" ... PASSED","   \"absRowSum\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_invAbsRowSum(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"invAbsRowSum\" ... PASSED","   \"invAbsRowSum\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"invAbsRowSum\" ... PASSED","   \"invAbsRowSum\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tAbsRowSum...PASSED","tAbsRowSum...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tAbsRowSum...PASSED","tAbsRowSum...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tAbsRowSum...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tAbsRowSum...FAILED");
    }
 
    return failcount;
@@ -108,9 +108,9 @@ bool tAbsRowSum::test_absRowSum(int verbosity,std::ostream & os)
    }
    B.FillComplete();
 
-   PB::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
-   PB::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
-   PB::LinearOp absRowA = getAbsRowSumMatrix(pA);
+   Teko::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
+   Teko::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
+   Teko::LinearOp absRowA = getAbsRowSumMatrix(pA);
 
    {
       std::stringstream ss;
@@ -164,9 +164,9 @@ bool tAbsRowSum::test_invAbsRowSum(int verbosity,std::ostream & os)
    }
    B.FillComplete();
 
-   PB::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
-   PB::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
-   PB::LinearOp absRowA = getAbsRowSumInvMatrix(pA);
+   Teko::LinearOp pA = Thyra::epetraLinearOp(rcpFromRef(A));
+   Teko::LinearOp pB = Thyra::epetraLinearOp(rcpFromRef(B));
+   Teko::LinearOp absRowA = getAbsRowSumInvMatrix(pA);
 
    {
       std::stringstream ss;
@@ -183,4 +183,4 @@ bool tAbsRowSum::test_invAbsRowSum(int verbosity,std::ostream & os)
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

@@ -15,7 +15,7 @@
 #include <iostream>
 #include <list>
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 // build a 2x2 matrix...only in serial
@@ -75,10 +75,10 @@ protected:
 inline const std::string toString(bool status) { return status ? "PASSED" : "FAILED"; }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
-#define PB_ADD_UNIT_TEST(str,name) PB::Test::UnitTest::AddTest(Teuchos::rcp(new str()),#name)
-#define PB_TEST_MSG(os,level,msgp,msgf) {          \
+#define Teko_ADD_UNIT_TEST(str,name) Teko::Test::UnitTest::AddTest(Teuchos::rcp(new str()),#name)
+#define Teko_TEST_MSG(os,level,msgp,msgf) {          \
     int failPID = -1;                              \
     status = UnitTest::CheckParallelBools(status,failPID); \
     if(verbosity>=level && status)                 \

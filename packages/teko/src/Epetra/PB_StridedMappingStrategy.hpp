@@ -20,10 +20,10 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 
-// PB includes
+// Teko includes
 #include "Epetra/PB_EpetraOperatorWrapper.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 class StridedMappingStrategy : public MappingStrategy {
@@ -43,7 +43,7 @@ public:
    StridedMappingStrategy(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Map> & map, const Epetra_Comm & comm);
    //@}
 
-   //!\name Member functions inherited from PB::Epetra::MappingStrategy
+   //!\name Member functions inherited from Teko::Epetra::MappingStrategy
    //@{
 
    /** Virtual function defined in MappingStrategy.  This copies
@@ -56,7 +56,7 @@ public:
      */
    virtual void copyEpetraIntoThyra(const Epetra_MultiVector& epetra_X, 
                                     const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                    const PB::Epetra::EpetraOperatorWrapper & eow) const;
+                                    const Teko::Epetra::EpetraOperatorWrapper & eow) const;
 
    /** Virtual function defined in MappingStrategy.  This copies
      * an Epetra_MultiVector into a Thyra::MultiVectorBase with
@@ -68,7 +68,7 @@ public:
      */
    virtual void copyThyraIntoEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & thyra_Y, 
                                     Epetra_MultiVector& epetra_Y,
-                                    const PB::Epetra::EpetraOperatorWrapper & eow) const;
+                                    const Teko::Epetra::EpetraOperatorWrapper & eow) const;
 
    /** Returns the domain and range maps used by this class.
      * This faciliates building an Epetra_Operator around this
@@ -179,6 +179,6 @@ protected:
 };
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

@@ -7,7 +7,7 @@
 // Stratimikos includes
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 #include "PB_BlockPreconditionerFactory.hpp"
 
@@ -16,7 +16,7 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 
-namespace PB {
+namespace Teko {
 
 /** \brief Constructor that takes a Thyra solve factory and 
   *        makes it look like an InverseFactory
@@ -157,14 +157,14 @@ InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & line
   */
 void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
 {
-   PB_DEBUG_MSG("BEGIN PreconditionerInverseFactory::rebuildInverse",10);
+   Teko_DEBUG_MSG("BEGIN PreconditionerInverseFactory::rebuildInverse",10);
 
    RCP<Thyra::PreconditionerBase<double> > prec 
          = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
 
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(source),&*prec);
 
-   PB_DEBUG_MSG("END PreconditionerInverseFactory::rebuildInverse",10);
+   Teko_DEBUG_MSG("END PreconditionerInverseFactory::rebuildInverse",10);
 }
 
 /** \brief A function that permits inspection of the parameters used to create
@@ -271,9 +271,9 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
       inv = factory.buildInverse(A);
    }
    catch(std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
+      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
 
-      *out << "PB: \"buildInverse\" could not construct the inverse operator using ";
+      *out << "Teko: \"buildInverse\" could not construct the inverse operator using ";
       *out << "\"" << factory.toString() << "\"" << std::endl;
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
@@ -296,9 +296,9 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
       factory.rebuildInverse(A,invA);
    } 
    catch(std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
+      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
 
-      *out << "PB: \"rebuildInverse\" could not construct the inverse operator using ";
+      *out << "Teko: \"rebuildInverse\" could not construct the inverse operator using ";
       *out << "\"" << factory.toString() << "\"" << std::endl;
       *out << std::endl;
       *out << "*** THROWN EXCEPTION ***\n";
@@ -364,4 +364,4 @@ Teuchos::RCP<const Teuchos::ParameterList> invFactoryValidParameters()
    return strat.getValidParameters();
 }
 
-} // end namespace PB
+} // end namespace Teko

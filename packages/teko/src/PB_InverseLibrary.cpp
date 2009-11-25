@@ -7,7 +7,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace PB {
+namespace Teko {
 
 InverseLibrary::InverseLibrary()
 {
@@ -23,7 +23,7 @@ InverseLibrary::InverseLibrary()
    stratValidPrecond_.push_back("ML"); 
    stratValidPrecond_.push_back("Ifpack"); 
 
-   // set valid PB preconditioner factory names
+   // set valid Teko preconditioner factory names
    blockValidPrecond_.push_back("Block LU2x2"); 
    blockValidPrecond_.push_back("Block Jacobi"); 
    blockValidPrecond_.push_back("Block Gauss-Seidel"); 
@@ -54,11 +54,11 @@ void InverseLibrary::addInverse(const std::string & label,const Teuchos::Paramet
       addStratSolver(label,type,settingsList);
    }
    else if(std::find(blockValidPrecond_.begin(),blockValidPrecond_.end(),type)!=blockValidPrecond_.end()) {
-      // this is a PB preconditioner factory
+      // this is a Teko preconditioner factory
       addBlockPrecond(label,type,settingsList);
    }
    else {
-      Teuchos::FancyOStream & os = *PB::getOutputStream();
+      Teuchos::FancyOStream & os = *Teko::getOutputStream();
       os << "ERROR: Could not find inverse type \"" << type 
          << "\" required by inverse name \"" << label << "\"" << std::endl;
       TEUCHOS_ASSERT(false);
@@ -88,7 +88,7 @@ void InverseLibrary::addStratPrecond(const std::string & label,const std::string
    stratPrecond_[label] = stratList;
 }
 
-//! Add a PB preconditioner to the library with a label
+//! Add a Teko preconditioner to the library with a label
 void InverseLibrary::addBlockPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl)
 {
    // add some additional parameters onto the list
@@ -96,7 +96,7 @@ void InverseLibrary::addBlockPrecond(const std::string & label,const std::string
    blockList->set("Preconditioner Type",type);
    blockList->set("Preconditioner Settings",pl.sublist(type));
 
-   // add the PB preconditioner parameter list into the library
+   // add the Teko preconditioner parameter list into the library
    blockPrecond_[label] = blockList;
 }
 
@@ -129,7 +129,7 @@ Teuchos::RCP<const Teuchos::ParameterList> InverseLibrary::getParameterList(cons
 //! Get the inverse factory associated with a particular label
 Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string & label) const
 {
-   PB_DEBUG_SCOPE("InverseLibrary::getInverseFactory",10);
+   Teko_DEBUG_SCOPE("InverseLibrary::getInverseFactory",10);
 
    std::map<std::string,RCP<const Teuchos::ParameterList> >::const_iterator itr;
 
@@ -151,7 +151,7 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       isBlockPrecond = itr!=blockPrecond_.end();
    }
 
-   PB_DEBUG_MSG("PB: Inverse \"" << label << "\" is of type " 
+   Teko_DEBUG_MSG("Teko: Inverse \"" << label << "\" is of type " 
              << "strat prec = " << isStratPrecond << ", "
              << "strat solv = " << isStratSolver << ", " 
              << "block prec = " << isBlockPrecond,3);
@@ -160,7 +160,7 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
    if(not (isStratSolver || isStratPrecond || isBlockPrecond)) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "PB: getInverseFactory could not find \"" << label << "\" ... aborting\n";
+      *out << "Teko: getInverseFactory could not find \"" << label << "\" ... aborting\n";
       *out << std::endl;
 
       TEUCHOS_ASSERT(isStratSolver || isStratPrecond || isBlockPrecond);
@@ -178,13 +178,13 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       plCopy->sublist("Preconditioner Types").sublist(type).remove("Required Parameters"); 
 
       // print some debuggin info
-      PB_DEBUG_MSG_BEGIN(10);
+      Teko_DEBUG_MSG_BEGIN(10);
          DEBUG_STREAM << "Printing parameter list: " << std::endl; 
-         PB_DEBUG_PUSHTAB(); plCopy->print(DEBUG_STREAM); PB_DEBUG_POPTAB();
+         Teko_DEBUG_PUSHTAB(); plCopy->print(DEBUG_STREAM); Teko_DEBUG_POPTAB();
 
          DEBUG_STREAM << "Printing extra parameters: " << std::endl; 
-         PB_DEBUG_PUSHTAB(); xtraParams->print(DEBUG_STREAM); PB_DEBUG_POPTAB();
-      PB_DEBUG_MSG_END();
+         Teko_DEBUG_PUSHTAB(); xtraParams->print(DEBUG_STREAM); Teko_DEBUG_POPTAB();
+      Teko_DEBUG_MSG_END();
 
       Stratimikos::DefaultLinearSolverBuilder strat;
       strat.setParameterList(plCopy);
@@ -248,9 +248,9 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
          return rcp(new PreconditionerInverseFactory(precFact));   
       }
       catch(std::exception & e) {
-         RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
+         RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
          
-         *out << "PB: \"getInverseFactory\" failed, Parameter List =\n";
+         *out << "Teko: \"getInverseFactory\" failed, Parameter List =\n";
          pl->print(*out);
 
          *out << "*** THROWN EXCEPTION ***\n";
@@ -375,4 +375,4 @@ Teuchos::RCP<InverseLibrary> InverseLibrary::buildFromStratimikos(const Stratimi
    return invLib;
 }
 
-} // end namespace PB
+} // end namespace Teko

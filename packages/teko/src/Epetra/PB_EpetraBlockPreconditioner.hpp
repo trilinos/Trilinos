@@ -4,7 +4,7 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "Epetra/PB_EpetraInverseOpWrapper.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 /** \brief A single Epetra wrapper for all the BlockPreconditioners.
@@ -132,6 +132,6 @@ protected:
 };
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

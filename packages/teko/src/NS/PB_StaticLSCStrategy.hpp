@@ -3,7 +3,7 @@
 
 #include "NS/PB_LSCStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 class LSCPrecondState; // forward declaration
@@ -115,6 +115,6 @@ protected:
 };
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko
 
 #endif

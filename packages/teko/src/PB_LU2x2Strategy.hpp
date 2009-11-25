@@ -9,7 +9,7 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 
 
-namespace PB {
+namespace Teko {
 
 /** @brief Abstract strategy for computing inv(F) and inv(S) in the
  *         LU2x2PreconditionerFactory.
@@ -59,16 +59,16 @@ public:
    virtual ~LU2x2Strategy() {}
 
    /** returns the first (approximate) inverse of \f$A_{00}\f$ */
-   virtual const PB::LinearOp
-   getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual const Teko::LinearOp
+   getHatInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    /** returns the scond (approximate) inverse of \f$A_{00}\f$ */
-   virtual const PB::LinearOp
-   getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual const Teko::LinearOp
+   getTildeInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01}\f$ */
-   virtual const PB::LinearOp
-   getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   virtual const Teko::LinearOp
+   getInvS(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    /** \brief This function builds the internals of the state from a parameter list.
      *        
@@ -104,9 +104,9 @@ public:
      * @param[in] tInvA00 Inverse of \f$\tilde{A}_{00}\f$ in the source matrix.
      * @param[in] invS Inverse of the Schur complement of the source matrix.
      */
-   StaticLU2x2Strategy(const PB::LinearOp & hInvA00,
-                       const PB::LinearOp & tInvA00,
-                       const PB::LinearOp & invS)
+   StaticLU2x2Strategy(const Teko::LinearOp & hInvA00,
+                       const Teko::LinearOp & tInvA00,
+                       const Teko::LinearOp & invS)
       : hatInvA00_(hInvA00), tildeInvA00_(tInvA00), invS_(invS)
    {}
 
@@ -116,32 +116,32 @@ public:
    //@{
 
    /** returns a static (approximate) inverse of F */
-   virtual const PB::LinearOp
-   getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual const Teko::LinearOp
+   getHatInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return hatInvA00_; }
 
    /** returns a static (approximate) inverse of F */
-   virtual const PB::LinearOp
-   getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual const Teko::LinearOp
+   getTildeInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return tildeInvA00_; }
 
    /** returns a static (approximate) inverse of S = -D + L*inv(F)*U */
-   virtual const PB::LinearOp
-   getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual const Teko::LinearOp
+   getInvS(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invS_; }
 
    //@}
 
 protected:
-   const PB::LinearOp hatInvA00_;  /**< Stored value of \f$\hat{A}_{00}^{-1}\f$ */
-   const PB::LinearOp tildeInvA00_;  /**< Stored value of \f$\tilde{A}_{00}^{-1}\f$ */
-   const PB::LinearOp invS_; /**< Stored value of \f$S^{-1}\f$ */
+   const Teko::LinearOp hatInvA00_;  /**< Stored value of \f$\hat{A}_{00}^{-1}\f$ */
+   const Teko::LinearOp tildeInvA00_;  /**< Stored value of \f$\tilde{A}_{00}^{-1}\f$ */
+   const Teko::LinearOp invS_; /**< Stored value of \f$S^{-1}\f$ */
 
 private:
    // hide me!
    StaticLU2x2Strategy() {}
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

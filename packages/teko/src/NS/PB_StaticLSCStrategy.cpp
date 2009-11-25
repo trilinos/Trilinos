@@ -13,14 +13,14 @@
 
 #include "Teuchos_Time.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcp_const_cast;
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
    // Staiblized constructor
@@ -39,4 +39,4 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 { }
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko

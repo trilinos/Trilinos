@@ -4,7 +4,7 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_InverseFactory.hpp"
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 // Declaration of the preconditioner factory
@@ -27,7 +27,7 @@ public:
                                         BlockPreconditionerState & state) const;
 
    //! Set the mass matrix for this factory
-   virtual void setMassMatrix(PB::LinearOp & mass)
+   virtual void setMassMatrix(Teko::LinearOp & mass)
    { massMatrix_ = mass; }
 
    //! For assisting in construction of the preconditioner
@@ -46,13 +46,13 @@ protected:
    // enum FInverseType {Diagonal,Lumped,AbsRowSum,Custom} fInverseType_;
 
    bool useMass_;
-   PB::LinearOp massMatrix_;
+   Teko::LinearOp massMatrix_;
    
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
  
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko
 
 #endif

@@ -2,7 +2,7 @@
 
 using namespace Teuchos;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 int EpetraInverseOpWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -12,4 +12,4 @@ int EpetraInverseOpWrapper::ApplyInverse(const Epetra_MultiVector& X, Epetra_Mul
 { return EpetraOperatorWrapper::Apply(X,Y);}
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

@@ -29,7 +29,7 @@
 
 using namespace Teuchos;
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d)
@@ -104,9 +104,9 @@ void HardExtract(std::ostream & os,const RCP<const Thyra::LinearOpBase<double> >
 
    // print the matrix the hard way
    for(int i=0;i<nrows;i++) {
-      const RCP<Thyra::VectorBase<double> > u = PB::Test::BuildIVector(i,A->range());
+      const RCP<Thyra::VectorBase<double> > u = Teko::Test::BuildIVector(i,A->range());
       for(int j=0;j<ncols;j++) {
-         const RCP<const Thyra::VectorBase<double> > ej = PB::Test::BuildIVector(j,A->domain());
+         const RCP<const Thyra::VectorBase<double> > ej = Teko::Test::BuildIVector(j,A->domain());
          const RCP<Thyra::VectorBase<double> > v = Thyra::createMember(A->range()); 
          A->apply(Thyra::NONCONJ_ELE,*ej,&*v);
           
@@ -198,9 +198,9 @@ bool UnitTest::RunTests(int verbosity, std::ostream & stdstrm,std::ostream & fai
       if(verbosity>=1) {
          stdstrm << "Test \"" << itr->second << "\" completed ... ";
          if(status)
-            stdstrm << PB::Test::toString(status) << " (" << localrun << ")" << std::endl;
+            stdstrm << Teko::Test::toString(status) << " (" << localrun << ")" << std::endl;
          else
-            stdstrm << PB::Test::toString(status) << " (" << localfail << ")" << std::endl;
+            stdstrm << Teko::Test::toString(status) << " (" << localfail << ")" << std::endl;
       } 
        
       allPassed &= status;
@@ -246,4 +246,4 @@ bool UnitTest::CheckParallelBools(bool myBool,int & failPID)
 }
 
 } // end Tests
-} // end PB
+} // end Teko

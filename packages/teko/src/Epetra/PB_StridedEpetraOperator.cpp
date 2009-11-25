@@ -18,7 +18,7 @@
 
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 using Teuchos::RCP;
@@ -27,7 +27,7 @@ using Teuchos::rcp_dynamic_cast;
 
 StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content,
                                              const std::string & label) 
-      : PB::Epetra::EpetraOperatorWrapper(), label_(label)
+      : Teko::Epetra::EpetraOperatorWrapper(), label_(label)
 {
    std::vector<int> vars;
    
@@ -39,7 +39,7 @@ StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epet
 
 StridedEpetraOperator::StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content,
                                              const std::string & label) 
-      : PB::Epetra::EpetraOperatorWrapper(), label_(label)
+      : Teko::Epetra::EpetraOperatorWrapper(), label_(label)
 {
    SetContent(vars,content);
 }
@@ -122,7 +122,7 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
          = rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(stridedOperator_);
 
    // get size of strided block operator
-   int rows = PB::blockRowCount(blockOp);
+   int rows = Teko::blockRowCount(blockOp);
 
    for(int i=0;i<rows;i++) {
       for(int j=0;j<rows;j++) {
@@ -140,7 +140,7 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
    }
 }
 
-#ifndef PB_DEBUG_OFF
+#ifndef Teko_DEBUG_OFF
 bool StridedEpetraOperator::testAgainstFullOperator(int count,double tol) const
 {
    Epetra_Vector xf(OperatorRangeMap());
@@ -173,4 +173,4 @@ bool StridedEpetraOperator::testAgainstFullOperator(int count,double tol) const
 #endif
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

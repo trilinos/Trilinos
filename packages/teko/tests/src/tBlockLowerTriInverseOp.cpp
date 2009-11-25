@@ -9,7 +9,7 @@
 #include "PB_Utilities.hpp"
 #include "PB_BlockLowerTriInverseOp.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::RCP;
@@ -126,23 +126,23 @@ int tBlockLowerTriInverseOp::runTest(int verbosity,std::ostream & stdstrm,std::o
    failstrm << "tLowerTriInverseOp";
 
    status = test_apply(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_alphabeta(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tLowerTriInverseOp...PASSED","tLowerTriInverseOp...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tLowerTriInverseOp...PASSED","tLowerTriInverseOp...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tLowerTriInverseOp...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tLowerTriInverseOp...FAILED");
    }
 
    return failcount;
@@ -165,7 +165,7 @@ bool tBlockLowerTriInverseOp::test_alphabeta(int verbosity,std::ostream & os)
 
    RCP<Thyra::VectorBase<double> > dstn = dste->clone_v();
 
-   diff = PB::Test::Difference(dste,dstn);
+   diff = Teko::Test::Difference(dste,dstn);
    TEST_ASSERT(diff<=0.0,
           std::endl << "   tBlockLowerTriInverseOp::test_apply " << toString(status)
                     << ": exact copy failed (abserr=" << diff << " <= " << 0.0 << ")" );
@@ -176,7 +176,7 @@ bool tBlockLowerTriInverseOp::test_alphabeta(int verbosity,std::ostream & os)
    applyOp(invA_,src,dste_mv,3.2,-1.9);
    applyOp(invTri,src,dstn_mv,3.2,-1.9);
 
-   diff = PB::Test::Difference(dste,dstn)/Thyra::norm_2(*dste);
+   diff = Teko::Test::Difference(dste,dstn)/Thyra::norm_2(*dste);
    TEST_ASSERT(diff<=tolerance_,
           std::endl << "   tBlockLowerTriInverseOp::test_apply " << toString(status)
                     << ": alpha/beta apply operation failed (relerr=" << diff << " <= " << tolerance_ << ")" );
@@ -207,4 +207,4 @@ bool tBlockLowerTriInverseOp::test_apply(int verbosity,std::ostream & os)
 }
 
 } // end Test
-} // end PB
+} // end Teko

@@ -4,7 +4,7 @@
 #include "PB_LU2x2Strategy.hpp"
 
 
-namespace PB {
+namespace Teko {
 
 /** @brief Strategy for computing \f$A_00^{-1}\f$ and \f$S^{-1}\f$ in the
  *         LU2x2PreconditionerFactory. Uses the diagonal of \f$A_00\f$ to
@@ -28,16 +28,16 @@ public:
    virtual ~LU2x2DiagonalStrategy() {}
 
    /** returns the first (approximate) inverse of \f$A_{00}\f$ */
-   virtual const PB::LinearOp
-   getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const;
+   virtual const Teko::LinearOp
+   getHatInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    /** returns the second (approximate) inverse of \f$A_{00}\f$ */
-   virtual const PB::LinearOp
-   getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const;
+   virtual const Teko::LinearOp
+   getTildeInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} \mbox{diag}(A_{00})^{-1} A_{01}\f$ */
-   virtual const PB::LinearOp
-   getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const;
+   virtual const Teko::LinearOp
+   getInvS(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    /** \brief This function builds the internals of the state from a parameter list.
      *        
@@ -60,13 +60,13 @@ protected:
      * \param[in] A Operator to intialize with.
      * \param[in] state Storage object for this operator.
      */
-   void initializeState(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const;
+   void initializeState(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    // how to invert the matrices
    Teuchos::RCP<InverseFactory> invFactoryA00_; // for \tilde{A_00}\f$
    Teuchos::RCP<InverseFactory> invFactoryS_;
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

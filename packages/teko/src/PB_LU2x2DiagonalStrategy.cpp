@@ -1,6 +1,6 @@
 #include "PB_LU2x2DiagonalStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 
 LU2x2DiagonalStrategy::LU2x2DiagonalStrategy() 
 { }
@@ -12,8 +12,8 @@ LU2x2DiagonalStrategy::LU2x2DiagonalStrategy(const Teuchos::RCP<InverseFactory> 
 { }
 
 /** returns the first (approximate) inverse of \f$A_{00}\f$ */
-const PB::LinearOp
-LU2x2DiagonalStrategy::getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+const Teko::LinearOp
+LU2x2DiagonalStrategy::getHatInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    initializeState(A,state);
 
@@ -21,8 +21,8 @@ LU2x2DiagonalStrategy::getHatInvA00(const PB::BlockedLinearOp & A,BlockPrecondit
 }
 
 /** returns the second (approximate) inverse of \f$A_{00}\f$ */
-const PB::LinearOp
-LU2x2DiagonalStrategy::getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+const Teko::LinearOp
+LU2x2DiagonalStrategy::getTildeInvA00(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    initializeState(A,state);
 
@@ -30,31 +30,31 @@ LU2x2DiagonalStrategy::getTildeInvA00(const PB::BlockedLinearOp & A,BlockPrecond
 }
 
 /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} \mbox{diag}(A_{00})^{-1} A_{01}\f$ */
-const PB::LinearOp
-LU2x2DiagonalStrategy::getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+const Teko::LinearOp
+LU2x2DiagonalStrategy::getInvS(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    initializeState(A,state);
 
    return state.getInverse("invS");
 }
 
-void LU2x2DiagonalStrategy::initializeState(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
-   PB_DEBUG_SCOPE("LU2x2DiagonalStrategy::initializeState",10);
+   Teko_DEBUG_SCOPE("LU2x2DiagonalStrategy::initializeState",10);
 
    // no work to be done
    if(state.isInitialized())
       return;
 
    // extract sub blocks
-   LinearOp A00 = PB::getBlock(0,0,A);
-   LinearOp A01 = PB::getBlock(0,1,A);
-   LinearOp A10 = PB::getBlock(1,0,A);
-   LinearOp A11 = PB::getBlock(1,1,A);
+   LinearOp A00 = Teko::getBlock(0,0,A);
+   LinearOp A01 = Teko::getBlock(0,1,A);
+   LinearOp A10 = Teko::getBlock(1,0,A);
+   LinearOp A11 = Teko::getBlock(1,1,A);
 
    // build the Schur complement
    /////////////////////////////////////////////
-   PB_DEBUG_MSG("Building S",5);
+   Teko_DEBUG_MSG("Building S",5);
    LinearOp diagA00 = getInvDiagonalOp(A00);
 
    // grab operators for building Schur complement 
@@ -71,7 +71,7 @@ void LU2x2DiagonalStrategy::initializeState(const PB::BlockedLinearOp & A,BlockP
 
    // build inverse S
    /////////////////////////////////////////////
-   PB_DEBUG_MSG("Building inverse(S)",5);
+   Teko_DEBUG_MSG("Building inverse(S)",5);
    InverseLinearOp invS = state.getInverse("invS");
    if(invS==Teuchos::null)
       invS = buildInverse(*invFactoryS_,S);
@@ -81,7 +81,7 @@ void LU2x2DiagonalStrategy::initializeState(const PB::BlockedLinearOp & A,BlockP
 
    // build inverse A00
    /////////////////////////////////////////////
-   PB_DEBUG_MSG("Building inverse(A00)",5);
+   Teko_DEBUG_MSG("Building inverse(A00)",5);
    InverseLinearOp invA00 = state.getInverse("invA00");
    if(invA00==Teuchos::null)
       invA00 = buildInverse(*invFactoryA00_,A00);
@@ -107,7 +107,7 @@ void LU2x2DiagonalStrategy::initializeState(const PB::BlockedLinearOp & A,BlockP
 void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
                                                         const InverseLibrary & invLib)
 {
-   PB_DEBUG_SCOPE("LU2x2DiagonalStrategy::initializeFromParameterList",10);
+   Teko_DEBUG_SCOPE("LU2x2DiagonalStrategy::initializeFromParameterList",10);
 
    std::string invStr="Amesos", invA00Str="", invSStr="";
 
@@ -123,14 +123,14 @@ void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::Parameter
    if(invA00Str=="") invA00Str = invStr;
    if(invSStr=="") invSStr = invStr;
 
-   PB_DEBUG_MSG_BEGIN(5)
+   Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameters: " << std::endl;
       DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
       DEBUG_STREAM << "   inv A00 type = \"" << invA00Str << "\"" << std::endl;
       DEBUG_STREAM << "   inv S type = \"" << invSStr << "\"" << std::endl;
       DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
-   PB_DEBUG_MSG_END()
+   Teko_DEBUG_MSG_END()
 
    // build velocity inverse factory
    invFactoryA00_ = invLib.getInverseFactory(invA00Str);
@@ -140,4 +140,4 @@ void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::Parameter
    else
       invFactoryS_ = invLib.getInverseFactory(invSStr);
 }
-} // end namespace PB
+} // end namespace Teko

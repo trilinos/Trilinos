@@ -2,7 +2,7 @@
 
 using Teuchos::rcp;
 
-namespace PB {
+namespace Teko {
 
 JacobiPreconditionerFactory::JacobiPreconditionerFactory(const LinearOp & invD0,const LinearOp & invD1)
       : invOpsStrategy_(rcp(new StaticInvDiagStrategy(invD0,invD1)))
@@ -66,4 +66,4 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
 }
 
-} // end namspace PB
+} // end namspace Teko

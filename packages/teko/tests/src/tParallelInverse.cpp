@@ -10,7 +10,7 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "PB_InverseLibrary.hpp"
@@ -21,7 +21,7 @@
 // Test-rig
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::rcp;
@@ -50,7 +50,7 @@ void tParallelInverse::loadStridedMatrix()
 
    // Block the linear system using a strided epetra operator
    std::vector<int> vec(2); vec[0] = 1; vec[1] = 2; /*@ \label{lned:define-strided} @*/
-   PB::Epetra::StridedEpetraOperator sA(vec,A);
+   Teko::Epetra::StridedEpetraOperator sA(vec,A);
 
    // get 0,0 block
    F_ = Thyra::epetraLinearOp(sA.GetBlock(0,0));
@@ -66,23 +66,23 @@ int tParallelInverse::runTest(int verbosity,std::ostream & stdstrm,std::ostream 
 
 
    status = test_inverse(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_stridedInverse(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tParallelInverse...PASSED","tParallelInverse...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tParallelInverse...PASSED","tParallelInverse...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tParallelInverse...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tParallelInverse...FAILED");
    }
 
    return failcount;
@@ -96,12 +96,12 @@ bool tParallelInverse::test_inverse(int verbosity,std::ostream & os)
    loadMatrix();
 
    // build an InverseLibrary
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
    // build the inverse factory needed by the example preconditioner
-   RCP<const PB::InverseFactory> invFact  = invLib->getInverseFactory("Amesos");
+   RCP<const Teko::InverseFactory> invFact  = invLib->getInverseFactory("Amesos");
 
-   PB::LinearOp inv = invFact->buildInverse(F_);
+   Teko::LinearOp inv = invFact->buildInverse(F_);
 
    return allPassed;
 }
@@ -115,17 +115,17 @@ bool tParallelInverse::test_stridedInverse(int verbosity,std::ostream & os)
 
    // build an InverseLibrary
    TEST_MSG("\n   Building inverse library");
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
    // build the inverse factory needed by the example preconditioner
    TEST_MSG("\n   Building inverse factory");
-   RCP<const PB::InverseFactory> invFact  = invLib->getInverseFactory("Amesos");
+   RCP<const Teko::InverseFactory> invFact  = invLib->getInverseFactory("Amesos");
 
    TEST_MSG("\n   Building inverse");
-   PB::LinearOp inv = invFact->buildInverse(F_);
+   Teko::LinearOp inv = invFact->buildInverse(F_);
 
    return allPassed;
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

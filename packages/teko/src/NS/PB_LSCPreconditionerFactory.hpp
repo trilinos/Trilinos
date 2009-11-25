@@ -4,7 +4,7 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_LSCStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 namespace NS { // Navier-Stokes specialization
 
 /** \brief Preconditioner state for the LSC factory. 
@@ -137,6 +137,6 @@ private:
 };
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko
 
 #endif

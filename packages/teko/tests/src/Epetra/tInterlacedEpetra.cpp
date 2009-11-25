@@ -34,9 +34,9 @@
 
 #include "Epetra/PB_InterlacedEpetra.hpp"
 
-using namespace PB::Epetra;
+using namespace Teko::Epetra;
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::null;
@@ -62,41 +62,41 @@ int tInterlacedEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream
    failstrm << "tInterlacedEpetra";
 
    status = test_buildSubMaps_num(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"buildSubMaps_num\" ... PASSED","   \"buildSubMaps_num\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"buildSubMaps_num\" ... PASSED","   \"buildSubMaps_num\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildSubMaps_vec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"buildSubMaps_vec\" ... PASSED","   \"buildSubMaps_vec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"buildSubMaps_vec\" ... PASSED","   \"buildSubMaps_vec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildMaps(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_one2many(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_many2one(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tInterlacedEpetra...PASSED","tInterlacedEpetra...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tInterlacedEpetra...PASSED","tInterlacedEpetra...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tInterlacedEpetra...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tInterlacedEpetra...FAILED");
    }
 
    return failcount;
@@ -310,10 +310,10 @@ bool tInterlacedEpetra::test_buildMaps(int verbosity,std::ostream & os)
    Strided::buildSubMaps(size,vec,*GetComm(),subMaps);
 
    TEST_ASSERT(subMaps[0].first==vec[0],
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "  first map unknowns is " << subMaps[0].first << " ( should be " << vec[0] << ")");
    TEST_ASSERT(subMaps[1].first==vec[1],
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "  second map unknowns is " << subMaps[1].first << " ( should be " << vec[1] << ")");
 
    std::vector<Teuchos::RCP<Epetra_Map> > globalMaps(2);
@@ -328,30 +328,30 @@ bool tInterlacedEpetra::test_buildMaps(int verbosity,std::ostream & os)
 
    // test that the extra data is attached
    TEST_ASSERT(contigMaps[0]!=Teuchos::null,
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << ")");
    TEST_ASSERT(contigMaps[1]!=Teuchos::null,
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << ")");
    TEST_MSG("   tInterlacedEpetra::test_buildMaps: extracted \"contigMaps\" from RCP");
 
    // make sure all maps have the correct size
    TEST_ASSERT(globalMaps[0]->NumGlobalElements()==2000,
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checking number of global elements");
    TEST_ASSERT(globalMaps[1]->NumGlobalElements()==1000,
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checking number of global elements");
    TEST_ASSERT(contigMaps[0]->NumGlobalElements()==2000,
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checking number of global elements");
    TEST_ASSERT(contigMaps[1]->NumGlobalElements()==1000,
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checking number of global elements");
 
    TEST_ASSERT(contigMaps[0]->NumMyElements()==globalMaps[0]->NumMyElements(),
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "check for lineup of number of local elements");
    TEST_ASSERT(contigMaps[1]->NumMyElements()==globalMaps[1]->NumMyElements(),
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "check for lineup of number of local elements");
 
    bool test;
@@ -373,7 +373,7 @@ bool tInterlacedEpetra::test_buildMaps(int verbosity,std::ostream & os)
       test &= cidp1==2*block+1;
    }
    TEST_ASSERT(test, 
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    test = true;
@@ -386,7 +386,7 @@ bool tInterlacedEpetra::test_buildMaps(int verbosity,std::ostream & os)
       test &= cid==block;
    }
    TEST_ASSERT(test, 
-         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checked that block maps were internally consitent");
 
    return allPassed;
@@ -421,7 +421,7 @@ bool tInterlacedEpetra::test_one2many(int verbosity,std::ostream & os)
    for(itr=subVectors.begin();itr!=subVectors.end();++itr) {
       RCP<const Epetra_Map> lm = Teuchos::get_extra_data<RCP<Epetra_Map> >(*itr,"globalMap");
       TEST_ASSERT(lm!=Teuchos::null,
-            "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+            "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
          << "check that vector contains \"globalMap\" in RCP");
    }
 
@@ -462,7 +462,7 @@ bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
    for(itr=subVectors.begin();itr!=subVectors.end();++itr) {
       RCP<const Epetra_Map> lm = Teuchos::get_extra_data<RCP<Epetra_Map> >(*itr,"globalMap");
       TEST_ASSERT(lm!=Teuchos::null,
-            "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+            "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
          << "check that vector contains \"globalMap\" in RCP");
    }
 
@@ -489,11 +489,11 @@ bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
       maxn = maxn>norm[i] ? maxn : norm[i];
    }
    TEST_ASSERT(max<=tolerance_,
-            "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+            "   tInterlacedEpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
          << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ << " maxn = " << maxn << " )");
    
    return allPassed;
 }
 
 } // end Test namespace
-} // end PB namespace
+} // end Teko namespace

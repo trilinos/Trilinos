@@ -5,7 +5,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 namespace Strided {
 
@@ -394,4 +394,4 @@ void one2many(std::vector<RCP<Epetra_MultiVector> > & many,const Epetra_MultiVec
 
 }
 } // end namespace Epetra 
-} // end namespace PB
+} // end namespace Teko

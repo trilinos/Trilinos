@@ -14,7 +14,7 @@
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "Epetra/PB_EpetraHelpers.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
@@ -38,7 +38,7 @@
 #include "PB_InverseFactory.hpp"
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::rcp;
@@ -59,17 +59,17 @@ int tLSCHIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std::ostr
    failstrm << "tLSCHIntegrationTest";
 
    status = test_hScaling(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"hScaling\" ... PASSED","   \"hScaling\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"hScaling\" ... PASSED","   \"hScaling\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tLSCHIntegrationTest...PASSED","tLSCHIntegrationTest...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tLSCHIntegrationTest...PASSED","tLSCHIntegrationTest...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tLSCHIntegrationTest...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCHIntegrationTest...FAILED");
    }
 
    return failcount;
@@ -83,41 +83,41 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
    RCP<const Epetra_Comm> comm = GetComm();
 
    // build some operators
-   PB::LinearOp F = PB::Test::build2x2(*comm,1,2,2,1);
-   PB::LinearOp G = PB::Test::build2x2(*comm,1,-1,-3,1);
-   PB::LinearOp D = PB::Test::build2x2(*comm,1,-3,-1,1);
+   Teko::LinearOp F = Teko::Test::build2x2(*comm,1,2,2,1);
+   Teko::LinearOp G = Teko::Test::build2x2(*comm,1,-1,-3,1);
+   Teko::LinearOp D = Teko::Test::build2x2(*comm,1,-3,-1,1);
 
    double diag[2];
  
    diag[0] = 1.0/3.0; diag[1] = 1.0/2.0;
-   PB::LinearOp M = PB::Test::DiagMatrix(2,diag,"M");
+   Teko::LinearOp M = Teko::Test::DiagMatrix(2,diag,"M");
 
    diag[0] = 5.0; diag[1] = 9.0;
-   PB::LinearOp H = PB::Test::DiagMatrix(2,diag,"H");
+   Teko::LinearOp H = Teko::Test::DiagMatrix(2,diag,"H");
 
-   PB::LinearOp A = Thyra::block2x2<double>(F,G,D,Teuchos::null);
+   Teko::LinearOp A = Thyra::block2x2<double>(F,G,D,Teuchos::null);
 
-   PB::LinearOp exact;
+   Teko::LinearOp exact;
    {
       // build some operators
-      PB::LinearOp D0 = PB::Test::build2x2(*comm,-1.0/3.0,2.0/3.0,2.0/3.0,-1.0/3.0);
-      PB::LinearOp D1 = PB::Test::build2x2(*comm,-1.5,-3.0,-3.0,-5.5);
-      PB::LinearOp U  = PB::Test::build2x2(*comm,-0.5,-1.5,-0.5,-0.5);
+      Teko::LinearOp D0 = Teko::Test::build2x2(*comm,-1.0/3.0,2.0/3.0,2.0/3.0,-1.0/3.0);
+      Teko::LinearOp D1 = Teko::Test::build2x2(*comm,-1.5,-3.0,-3.0,-5.5);
+      Teko::LinearOp U  = Teko::Test::build2x2(*comm,-0.5,-1.5,-0.5,-0.5);
       
       exact = Thyra::block2x2<double>(D0,U,Teuchos::null,D1);
    }
 
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
-   RCP<PB::InverseFactory> invFact = invLib->getInverseFactory("Amesos");
-   RCP<PB::NS::InvLSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(invFact,M));
-   strategy->setHScaling(PB::getDiagonal(H));
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("Amesos");
+   RCP<Teko::NS::InvLSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(invFact,M));
+   strategy->setHScaling(Teko::getDiagonal(H));
    strategy->setUseFullLDU(false);
 
-   RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
-   RCP<PB::BlockPreconditionerState> bps = precFact->buildPreconditionerState();
-   PB::LinearOp prec = precFact->buildPreconditionerOperator(A,*bps);
+   RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+   RCP<Teko::BlockPreconditionerState> bps = precFact->buildPreconditionerState();
+   Teko::LinearOp prec = precFact->buildPreconditionerOperator(A,*bps);
 
-   PB::BlockedLinearOp bA = PB::toBlockedLinearOp(A);
+   Teko::BlockedLinearOp bA = Teko::toBlockedLinearOp(A);
    std::stringstream ss;
    ss << "invF = " << Teuchos::describe(*strategy->getInvF(bA,*bps),Teuchos::VERB_EXTREME) << std::endl;
    ss << "invBQBt = " << Teuchos::describe(*strategy->getInvBQBt(bA,*bps),Teuchos::VERB_EXTREME) << std::endl;
@@ -176,4 +176,4 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

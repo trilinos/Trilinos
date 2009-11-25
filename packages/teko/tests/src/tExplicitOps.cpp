@@ -10,7 +10,7 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 
 // Thyra includes
@@ -26,7 +26,7 @@
 // Test-rig
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::rcp;
@@ -72,41 +72,41 @@ int tExplicitOps::runTest(int verbosity,std::ostream & stdstrm,std::ostream & fa
    failstrm << "tExplicitOps";
 
    status = test_mult_diagScaleMatProd(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"mult_diagScaleMatProd\" ... PASSED","   \"mult_diagScaleMatProd\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"mult_diagScaleMatProd\" ... PASSED","   \"mult_diagScaleMatProd\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_mult_diagScaling(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"mult_diagScaling\" ... PASSED","   \"mult_diagScaling\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"mult_diagScaling\" ... PASSED","   \"mult_diagScaling\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_add(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"add\" ... PASSED","   \"add\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"add\" ... PASSED","   \"add\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_mult_modScaleMatProd(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"mult_modScaleMatProd\" ... PASSED","   \"mult_modScaleMatProd\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"mult_modScaleMatProd\" ... PASSED","   \"mult_modScaleMatProd\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_add_mod(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"add_mod\" ... PASSED","   \"add\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"add_mod\" ... PASSED","   \"add\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tExplicitOps...PASSED","tExplicitOps...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tExplicitOps...PASSED","tExplicitOps...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tExplicitOps...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tExplicitOps...FAILED");
    }
 
    return failcount;
@@ -121,10 +121,10 @@ bool tExplicitOps::test_mult_diagScaleMatProd(int verbosity,std::ostream & os)
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
-   PB::LinearOp expOp;
+   Teko::LinearOp expOp;
 
-   thyOp = Thyra::multiply(PB::scale(-4.0,F_),D_,PB::adjoint(G_));
-   expOp = PB::explicitMultiply(PB::scale(-4.0,F_),D_,PB::adjoint(G_));
+   thyOp = Thyra::multiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_));
+   expOp = Teko::explicitMultiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_));
 
    {
       std::stringstream ss;
@@ -137,8 +137,8 @@ bool tExplicitOps::test_mult_diagScaleMatProd(int verbosity,std::ostream & os)
          os << ss.str(); 
    }
 
-   thyOp = PB::multiply(PB::scale(-4.0,F_),PB::adjoint(G_));
-   expOp = PB::explicitMultiply(PB::scale(-4.0,F_),PB::adjoint(G_));
+   thyOp = Teko::multiply(Teko::scale(-4.0,F_),Teko::adjoint(G_));
+   expOp = Teko::explicitMultiply(Teko::scale(-4.0,F_),Teko::adjoint(G_));
 
    {
       std::stringstream ss;
@@ -163,10 +163,10 @@ bool tExplicitOps::test_mult_diagScaling(int verbosity,std::ostream & os)
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
-   PB::LinearOp expOp;
+   Teko::LinearOp expOp;
 
-   thyOp = PB::multiply(PB::scale(-4.0,F_),D_);
-   expOp = PB::explicitMultiply(PB::scale(-4.0,F_),D_);
+   thyOp = Teko::multiply(Teko::scale(-4.0,F_),D_);
+   expOp = Teko::explicitMultiply(Teko::scale(-4.0,F_),D_);
 
    {
       std::stringstream ss;
@@ -179,8 +179,8 @@ bool tExplicitOps::test_mult_diagScaling(int verbosity,std::ostream & os)
          os << ss.str(); 
    }
 
-   thyOp = PB::multiply(D_,PB::scale(-9.0,F_));
-   expOp = PB::explicitMultiply(D_,PB::scale(-9.0,F_));
+   thyOp = Teko::multiply(D_,Teko::scale(-9.0,F_));
+   expOp = Teko::explicitMultiply(D_,Teko::scale(-9.0,F_));
 
    {
       std::stringstream ss;
@@ -204,11 +204,11 @@ bool tExplicitOps::test_mult_modScaleMatProd(int verbosity,std::ostream & os)
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
 
-   PB::LinearOp thyOp;
-   PB::ModifiableLinearOp expOp;
+   Teko::LinearOp thyOp;
+   Teko::ModifiableLinearOp expOp;
 
-   thyOp = PB::multiply(PB::scale(-4.0,F_),D_,PB::adjoint(G_));
-   expOp = PB::explicitMultiply(PB::scale(-4.0,F_),D_,PB::adjoint(G_),expOp);
+   thyOp = Teko::multiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_));
+   expOp = Teko::explicitMultiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_),expOp);
 
    RCP<const Epetra_Operator> eop1 = Thyra::get_Epetra_Operator(*expOp);
 
@@ -238,8 +238,8 @@ bool tExplicitOps::test_mult_modScaleMatProd(int verbosity,std::ostream & os)
    for(int i=0;i<numEntries;i++) values[i] *= values[i]*double(i+1)*0.92;
 
    // perform the next test
-   thyOp = PB::multiply(PB::scale(-4.0,F_),D_,PB::adjoint(G_));
-   expOp = PB::explicitMultiply(PB::scale(-4.0,F_),D_,PB::adjoint(G_),expOp);
+   thyOp = Teko::multiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_));
+   expOp = Teko::explicitMultiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_),expOp);
 
    RCP<const Epetra_Operator> eop2 = Thyra::get_Epetra_Operator(*expOp);
    TEUCHOS_ASSERT(eop1==eop2);
@@ -267,10 +267,10 @@ bool tExplicitOps::test_add(int verbosity,std::ostream & os)
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
-   PB::LinearOp expOp;
+   Teko::LinearOp expOp;
 
-   thyOp = PB::add(PB::scale(-4.0,F_),PB::adjoint(G_));
-   expOp = PB::explicitAdd(PB::scale(-4.0,F_),PB::adjoint(G_));
+   thyOp = Teko::add(Teko::scale(-4.0,F_),Teko::adjoint(G_));
+   expOp = Teko::explicitAdd(Teko::scale(-4.0,F_),Teko::adjoint(G_));
 
    {
       std::stringstream ss;
@@ -295,10 +295,10 @@ bool tExplicitOps::test_add_mod(int verbosity,std::ostream & os)
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
-   PB::ModifiableLinearOp expOp;
+   Teko::ModifiableLinearOp expOp;
 
-   thyOp = PB::add(PB::scale(-4.0,F_),PB::adjoint(G_));
-   expOp = PB::explicitAdd(PB::scale(-4.0,F_),PB::adjoint(G_),expOp);
+   thyOp = Teko::add(Teko::scale(-4.0,F_),Teko::adjoint(G_));
+   expOp = Teko::explicitAdd(Teko::scale(-4.0,F_),Teko::adjoint(G_),expOp);
 
    RCP<const Epetra_Operator> eop1 = Thyra::get_Epetra_Operator(*expOp);
 
@@ -328,8 +328,8 @@ bool tExplicitOps::test_add_mod(int verbosity,std::ostream & os)
    for(int i=0;i<numEntries;i++) values[i] *= values[i]*double(i+1)*0.92;
 
    // perform the next test
-   thyOp = PB::add(PB::scale(-4.0,F_),PB::adjoint(G_));
-   expOp = PB::explicitAdd(PB::scale(-4.0,F_),PB::adjoint(G_),expOp);
+   thyOp = Teko::add(Teko::scale(-4.0,F_),Teko::adjoint(G_));
+   expOp = Teko::explicitAdd(Teko::scale(-4.0,F_),Teko::adjoint(G_),expOp);
 
    RCP<const Epetra_Operator> eop2 = Thyra::get_Epetra_Operator(*expOp);
    TEUCHOS_ASSERT(eop1==eop2);
@@ -349,4 +349,4 @@ bool tExplicitOps::test_add_mod(int verbosity,std::ostream & os)
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

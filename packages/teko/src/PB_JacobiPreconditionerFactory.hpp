@@ -6,7 +6,7 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_BlockInvDiagonalStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 
 class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
    public:
@@ -46,6 +46,6 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
       virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

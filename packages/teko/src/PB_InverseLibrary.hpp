@@ -9,7 +9,7 @@
 // Stratimikos includes
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-namespace PB {
+namespace Teko {
 
 class InverseLibrary {
 public:
@@ -24,7 +24,7 @@ public:
    //! Add a Stratimikos preconditioner with a label to the library
    void addStratPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl);
 
-   //! Add a PB preconditioner to the library with a label
+   //! Add a Teko preconditioner to the library with a label
    void addBlockPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl);
 
    /** Get the fully constructed parameter list for a particular label
@@ -81,6 +81,6 @@ public:
          const Stratimikos::DefaultLinearSolverBuilder & strat=Stratimikos::DefaultLinearSolverBuilder());
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

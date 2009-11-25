@@ -172,7 +172,7 @@ double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
 } // end namespace
 
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 void tEpetraThyraConverter::initializeTest() {}
@@ -186,35 +186,35 @@ int tEpetraThyraConverter::runTest(int verbosity,std::ostream & stdstrm,std::ost
    failstrm << "tEpetraThyraConverter";
 
    status = test_blockThyraToEpetra(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"blockThyraToEpetra\" ... PASSED","   \"blockThyraToEpetra\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"blockThyraToEpetra\" ... PASSED","   \"blockThyraToEpetra\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_single_blockThyraToEpetra(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"single_blockThyraToEpetra\" ... PASSED","   \"single_blockThyraToEpetra\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"single_blockThyraToEpetra\" ... PASSED","   \"single_blockThyraToEpetra\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_blockEpetraToThyra(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"blockEpetraToThyra\" ... PASSED","   \"blockEpetraToThyra\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"blockEpetraToThyra\" ... PASSED","   \"blockEpetraToThyra\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_single_blockEpetraToThyra(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"single_blockEpetraToThyra\" ... PASSED","   \"single_blockEpetraToThyra\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"single_blockEpetraToThyra\" ... PASSED","   \"single_blockEpetraToThyra\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tEpetraThyraConverter...PASSED","tEpetraThyraConverter...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tEpetraThyraConverter...PASSED","tEpetraThyraConverter...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tEpetraThyraConverter...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tEpetraThyraConverter...FAILED");
    }
 
    return failcount;
@@ -243,7 +243,7 @@ bool tEpetraThyraConverter::test_blockThyraToEpetra(int verbosity,std::ostream &
 
    // from the vector space build an epetra map
    TEST_MSG("\n   1. creating Map");
-   const RCP<const Epetra_Map> map = PB::Epetra::thyraVSToEpetraMap(*prodVS,rcpFromRef(Comm));
+   const RCP<const Epetra_Map> map = Teko::Epetra::thyraVSToEpetraMap(*prodVS,rcpFromRef(Comm));
 
    // create a vector
    const RCP<Thyra::MultiVectorBase<double> > tX = Thyra::createMembers<double>(prodVS,5);
@@ -253,7 +253,7 @@ bool tEpetraThyraConverter::test_blockThyraToEpetra(int verbosity,std::ostream &
 
    const RCP<Epetra_MultiVector> eX = rcp(new Epetra_MultiVector(*map,5));
    TEST_MSG("   3. calling blockThyraToEpetra");
-   PB::Epetra::blockThyraToEpetra(tX,*eX);
+   Teko::Epetra::blockThyraToEpetra(tX,*eX);
 
    TEST_ASSERT(eX!=Teuchos::null,
             "\n   tEpetraThyraConverter::test_blockThyraToEpetra " << toString(status) 
@@ -289,14 +289,14 @@ bool tEpetraThyraConverter::test_single_blockThyraToEpetra(int verbosity,std::os
          = Thyra::defaultSpmdVectorSpace<double>(tComm,myElmts,glElmts); 
 
    // from the vector space build an epetra map
-   const RCP<const Epetra_Map> map = PB::Epetra::thyraVSToEpetraMap(*vs,rcpFromRef(Comm));
+   const RCP<const Epetra_Map> map = Teko::Epetra::thyraVSToEpetraMap(*vs,rcpFromRef(Comm));
 
    // create a vector
    const RCP<Thyra::MultiVectorBase<double> > tX = Thyra::createMembers<double>(vs,5);
    Thyra::randomize<double>(-10.0,10.0,tX.ptr()); 
 
    const RCP<Epetra_MultiVector> eX = rcp(new Epetra_MultiVector(*map,5));
-   PB::Epetra::blockThyraToEpetra(tX,*eX);
+   Teko::Epetra::blockThyraToEpetra(tX,*eX);
 
    TEST_ASSERT(eX!=Teuchos::null,
             "\n   tEpetraThyraConverter::test_single_blockThyraToEpetra: " << toString(status) 
@@ -332,7 +332,7 @@ bool tEpetraThyraConverter::test_blockEpetraToThyra(int verbosity,std::ostream &
    const RCP<const Thyra::VectorSpaceBase<double> > prodVS = Thyra::productVectorSpace(vs,2); 
  
    // from the vector space build an epetra map
-   const RCP<const Epetra_Map> map = PB::Epetra::thyraVSToEpetraMap(*prodVS,rcpFromRef(Comm));
+   const RCP<const Epetra_Map> map = Teko::Epetra::thyraVSToEpetraMap(*prodVS,rcpFromRef(Comm));
    
    // build an epetra multivector 
    Epetra_MultiVector eX(*map,3);
@@ -340,7 +340,7 @@ bool tEpetraThyraConverter::test_blockEpetraToThyra(int verbosity,std::ostream &
 
    // build a Thyra copy of this Epetra_MultiVector
    const RCP<Thyra::MultiVectorBase<double> >  tX = Thyra::createMembers(prodVS,eX.NumVectors());
-   PB::Epetra::blockEpetraToThyra(eX,tX.ptr());
+   Teko::Epetra::blockEpetraToThyra(eX,tX.ptr());
 
    double result = compareEpetraMVToThyra(eX,tX,verbosity,os);
    TEST_ASSERT(result==0.0,
@@ -372,7 +372,7 @@ bool tEpetraThyraConverter::test_single_blockEpetraToThyra(int verbosity, std::o
    const RCP<const Thyra::VectorSpaceBase<double> > prodVS = vs;
  
    // from the vector space build an epetra map
-   const RCP<const Epetra_Map> map = PB::Epetra::thyraVSToEpetraMap(*prodVS,rcpFromRef(Comm));
+   const RCP<const Epetra_Map> map = Teko::Epetra::thyraVSToEpetraMap(*prodVS,rcpFromRef(Comm));
    
    // build an epetra multivector 
    int vecs = 10;
@@ -381,7 +381,7 @@ bool tEpetraThyraConverter::test_single_blockEpetraToThyra(int verbosity, std::o
 
    // build a Thyra copy of this Epetra_MultiVector
    const RCP<Thyra::MultiVectorBase<double> >  tX = Thyra::createMembers(prodVS,eX.NumVectors());
-   PB::Epetra::blockEpetraToThyra(eX,tX.ptr());
+   Teko::Epetra::blockEpetraToThyra(eX,tX.ptr());
 
    TEST_ASSERT(tX!=Teuchos::null,
             "\n   tEpetraThyraConverter::test_single_blockEpetraToThyra: " << toString(status) 
@@ -396,4 +396,4 @@ bool tEpetraThyraConverter::test_single_blockEpetraToThyra(int verbosity, std::o
 }
 
 } // end Test namespace
-} // end PB namespace
+} // end Teko namespace

@@ -29,7 +29,7 @@
 
 #include <vector>
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using namespace Teuchos;
@@ -93,35 +93,35 @@ int tBlockJacobiPreconditionerFactory::runTest(int verbosity,std::ostream & stds
    failstrm << "tBlockJacobiPreconditionerFactory";
 
    status = test_createPrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializePrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_uninitializePrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_isCompatible(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"isCompatible\" ... PASSED","   \"isCompatible\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"isCompatible\" ... PASSED","   \"isCompatible\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tBlockJacobiPreconditionedFactory...PASSED","tBlockJacobiPreconditionedFactory...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tBlockJacobiPreconditionedFactory...PASSED","tBlockJacobiPreconditionedFactory...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tBlockJacobiPreconditionedFactory...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tBlockJacobiPreconditionedFactory...FAILED");
    }
 
    return failcount;
@@ -345,4 +345,4 @@ bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ost
 }
 
 } // end namespace Test
-} // end namespace PB
+} // end namespace Teko

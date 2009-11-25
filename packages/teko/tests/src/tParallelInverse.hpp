@@ -9,14 +9,14 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 
 #include <string>
 
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tParallelInverse : public UnitTest {
@@ -37,10 +37,10 @@ protected:
    double tolerance_;
 
    // matrix to invert
-   PB::LinearOp F_;
+   Teko::LinearOp F_;
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif

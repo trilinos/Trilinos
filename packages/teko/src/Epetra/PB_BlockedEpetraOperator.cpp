@@ -17,7 +17,7 @@
 
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 using Teuchos::RCP;
@@ -27,7 +27,7 @@ using Teuchos::rcp_dynamic_cast;
 BlockedEpetraOperator::BlockedEpetraOperator(const std::vector<std::vector<int> > & vars,
                                              const Teuchos::RCP<Epetra_Operator> & content,
                                              const std::string & label) 
-      : PB::Epetra::EpetraOperatorWrapper(), label_(label)
+      : Teko::Epetra::EpetraOperatorWrapper(), label_(label)
 {
    SetContent(vars,content);
 }
@@ -113,7 +113,7 @@ void BlockedEpetraOperator::WriteBlocks(const std::string & prefix) const
          = rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(blockedOperator_);
 
    // get size of blocked block operator
-   int rows = PB::blockRowCount(blockOp);
+   int rows = Teko::blockRowCount(blockOp);
 
    for(int i=0;i<rows;i++) {
       for(int j=0;j<rows;j++) {
@@ -132,4 +132,4 @@ void BlockedEpetraOperator::WriteBlocks(const std::string & prefix) const
 }
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

@@ -9,7 +9,7 @@
 #include "PB_Utilities.hpp"
 #include "PB_BlockImplicitLinearOp.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** \brief This linear operator approximates the inverse
  *         of a block \f$ 2\times 2 \f$ operator using a
@@ -214,6 +214,6 @@ inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & hatInvA00,Li
    return result;
 }
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif	

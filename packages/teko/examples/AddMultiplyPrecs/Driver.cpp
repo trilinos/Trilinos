@@ -42,7 +42,7 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "PB_JacobiPreconditionerFactory.hpp"
@@ -115,21 +115,21 @@ int main(int argc,char * argv[])
 
    std::cout << "Building strided operator" << std::endl;
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   PB::Epetra::StridedEpetraOperator sA(vec,A);
+   Teko::Epetra::StridedEpetraOperator sA(vec,A);
 
-   RCP<const PB::InverseFactory>      inverse = PB::invFactoryFromParamList(*paramList,"Amesos");
-   RCP<PB::BlockInvDiagonalStrategy> strategy = rcp(new PB::InvFactoryDiagStrategy(inverse));
+   RCP<Teko::InverseFactory>      inverse = Teko::invFactoryFromParamList(*paramList,"Amesos");
+   RCP<Teko::BlockInvDiagonalStrategy> strategy = rcp(new Teko::InvFactoryDiagStrategy(inverse));
 
-   RCP<PB::BlockPreconditionerFactory>     GSFactory = rcp(new PB::GaussSeidelPreconditionerFactory(
-                                                           PB::GS_UseLowerTriangle,strategy));
-   RCP<PB::BlockPreconditionerFactory> JacobiFactory = rcp(new PB::JacobiPreconditionerFactory(strategy));
+   RCP<Teko::BlockPreconditionerFactory>     GSFactory = rcp(new Teko::GaussSeidelPreconditionerFactory(
+                                                           Teko::GS_UseLowerTriangle,strategy));
+   RCP<Teko::BlockPreconditionerFactory> JacobiFactory = rcp(new Teko::JacobiPreconditionerFactory(strategy));
    #ifdef ADD_PREC
-   RCP<PB::BlockPreconditionerFactory> MasterFactory = rcp(new PB::AddPreconditionerFactory(GSFactory,JacobiFactory));
+   RCP<Teko::BlockPreconditionerFactory> MasterFactory = rcp(new Teko::AddPreconditionerFactory(GSFactory,JacobiFactory));
    #else
-   RCP<PB::BlockPreconditionerFactory> MasterFactory = rcp(new PB::MultPreconditionerFactory(GSFactory,JacobiFactory));
+   RCP<Teko::BlockPreconditionerFactory> MasterFactory = rcp(new Teko::MultPreconditionerFactory(GSFactory,JacobiFactory));
    #endif
 
-   PB::Epetra::EpetraBlockPreconditioner MyPreconditioner(MasterFactory);
+   Teko::Epetra::EpetraBlockPreconditioner MyPreconditioner(MasterFactory);
    MyPreconditioner.buildPreconditioner(sA);
    Epetra_LinearProblem problem(&*A,&*x,&*b);
 

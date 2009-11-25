@@ -15,7 +15,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "PB_InverseLibrary.hpp"
@@ -64,13 +64,13 @@ int main(int argc,char * argv[])
    Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
    // build the sub blocks
-   PB::LinearOp A_00 = Thyra::epetraLinearOp(build2x2(1,2,2,1,Comm));
-   PB::LinearOp A_01 = Thyra::epetraLinearOp(build2x2(0,-1,3,4,Comm));
-   PB::LinearOp A_10 = Thyra::epetraLinearOp(build2x2(1,6,-3,2,Comm));
-   PB::LinearOp A_11 = Thyra::epetraLinearOp(build2x2(2,1,1,2,Comm));
+   Teko::LinearOp A_00 = Thyra::epetraLinearOp(build2x2(1,2,2,1,Comm));
+   Teko::LinearOp A_01 = Thyra::epetraLinearOp(build2x2(0,-1,3,4,Comm));
+   Teko::LinearOp A_10 = Thyra::epetraLinearOp(build2x2(1,6,-3,2,Comm));
+   Teko::LinearOp A_11 = Thyra::epetraLinearOp(build2x2(2,1,1,2,Comm));
 
    // build the Epetra operator
-   PB::Epetra::EpetraOperatorWrapper A(PB::block2x2(A_00,A_01,A_10,A_11));
+   Teko::Epetra::EpetraOperatorWrapper A(Teko::block2x2(A_00,A_01,A_10,A_11));
 
    // build the Epetra vector
    Epetra_Vector b(A.OperatorRangeMap());
@@ -87,18 +87,18 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////
 
    // build an InverseLibrary
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos(); /*@ \label{lnet:define-inv-params} @*/
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lnet:define-inv-params} @*/
    
    // build the inverse factory needed by the example preconditioner
-   RCP<const PB::InverseFactory> inverse  /*@ \label{lnet:define-inv-fact} @*/
+   RCP<const Teko::InverseFactory> inverse  /*@ \label{lnet:define-inv-fact} @*/
          = invLib->getInverseFactory("Amesos");
 
    // build the preconditioner factory
-   RCP<PB::BlockPreconditionerFactory> precFact /*@ \label{lnet:const-prec-fact} @*/
+   RCP<Teko::BlockPreconditionerFactory> precFact /*@ \label{lnet:const-prec-fact} @*/
           = rcp(new ExamplePreconditionerFactory(inverse,0.9));
 
    // using the preconditioner factory construct an Epetra_Operator
-   PB::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lnet:const-epetra-prec} @*/
+   Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lnet:const-epetra-prec} @*/
    prec.buildPreconditioner(A); // fill epetra preconditioner using the strided operator
 
    // apply the precondtioner

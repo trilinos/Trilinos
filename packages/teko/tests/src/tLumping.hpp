@@ -9,14 +9,14 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 
 #include <string>
 
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tLumping : public UnitTest {
@@ -35,6 +35,6 @@ protected:
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif

@@ -6,7 +6,7 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_LU2x2Strategy.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** \brief Construct a preconditioner using a LDU dcomposition of a block
  *  2x2 matrix.
@@ -222,6 +222,6 @@ private:
    static void initializeStrategyBuilder();
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

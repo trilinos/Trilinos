@@ -10,7 +10,7 @@
 #include <string>
 
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
   using Teuchos::RCP;
 
@@ -243,6 +243,6 @@ namespace Epetra {
     std::string label_;
   };
 } // end namespace Epetra 
-} // end namespace PB
+} // end namespace Teko
 
 #endif 

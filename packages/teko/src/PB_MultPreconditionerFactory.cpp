@@ -1,10 +1,10 @@
 #include "PB_MultPreconditionerFactory.hpp"
 
-namespace PB {
+namespace Teko {
 
 using Teuchos::RCP;
 
-void MultPrecsLinearOp::implicitApply(const PB::BlockedMultiVector & r, PB::BlockedMultiVector & y,
+void MultPrecsLinearOp::implicitApply(const Teko::BlockedMultiVector & r, Teko::BlockedMultiVector & y,
                      const double alpha, const double beta) const 
 { 
    // Casting is a bit delicate. We basically use 
@@ -13,21 +13,21 @@ void MultPrecsLinearOp::implicitApply(const PB::BlockedMultiVector & r, PB::Bloc
    //
    //  2) toMultiVector to cast BlockedMultiVectors to MultiVectors.
    //
-   PB::MultiVector MOne_r = PB::deepcopy(r);
-   PB::MultiVector t      = PB::deepcopy(r);
-   PB::MultiVector w      = PB::toMultiVector(y);
+   Teko::MultiVector MOne_r = Teko::deepcopy(r);
+   Teko::MultiVector t      = Teko::deepcopy(r);
+   Teko::MultiVector w      = Teko::toMultiVector(y);
 
-   PB::applyOp(M1_, r, MOne_r);
-   PB::applyOp(A_, MOne_r,  t);
-   PB::update(1.,r,-1.,t);
-   PB::applyOp(M2_, t,  w);
-   PB::update(1.,MOne_r, 1.,  w);
+   Teko::applyOp(M1_, r, MOne_r);
+   Teko::applyOp(A_, MOne_r,  t);
+   Teko::update(1.,r,-1.,t);
+   Teko::applyOp(M2_, t,  w);
+   Teko::update(1.,MOne_r, 1.,  w);
 }
 
 //! Constructor
 MultPreconditionerFactory 
-   ::MultPreconditionerFactory(const RCP<const PB::BlockPreconditionerFactory> & FirstFactory,
-                                  const RCP<const PB::BlockPreconditionerFactory> & SecondFactory)
+   ::MultPreconditionerFactory(const RCP<const Teko::BlockPreconditionerFactory> & FirstFactory,
+                                  const RCP<const Teko::BlockPreconditionerFactory> & SecondFactory)
    : FirstFactory_(FirstFactory), SecondFactory_(SecondFactory)
 { } 
 
@@ -35,7 +35,7 @@ MultPreconditionerFactory::MultPreconditionerFactory()
 { }
 
 //! Build the MultPrecondState object
-RCP<PB::BlockPreconditionerState> MultPreconditionerFactory::buildPreconditionerState() const
+RCP<Teko::BlockPreconditionerState> MultPreconditionerFactory::buildPreconditionerState() const
 { 
    MultPrecondState*   mystate = new MultPrecondState(); 
    mystate->StateOne_ = FirstFactory_->buildPreconditionerState();
@@ -45,17 +45,17 @@ RCP<PB::BlockPreconditionerState> MultPreconditionerFactory::buildPreconditioner
 
 
 //! Use the factory to build the preconditioner (this is where the work goes)
-PB::LinearOp MultPreconditionerFactory
-   ::buildPreconditionerOperator(PB::BlockedLinearOp & blockOp,
-                                 PB::BlockPreconditionerState & state) const
+Teko::LinearOp MultPreconditionerFactory
+   ::buildPreconditionerOperator(Teko::BlockedLinearOp & blockOp,
+                                 Teko::BlockPreconditionerState & state) const
 {
    
    MultPrecondState *MyState = dynamic_cast<MultPrecondState *> (&state);
 
    TEUCHOS_ASSERT(MyState != 0);
 
-   PB::LinearOp M1 = FirstFactory_->buildPreconditionerOperator(blockOp, *MyState->StateOne_);
-   PB::LinearOp M2 = SecondFactory_->buildPreconditionerOperator(blockOp, *MyState->StateTwo_);
+   Teko::LinearOp M1 = FirstFactory_->buildPreconditionerOperator(blockOp, *MyState->StateOne_);
+   Teko::LinearOp M2 = SecondFactory_->buildPreconditionerOperator(blockOp, *MyState->StateTwo_);
 
 
    /*************************************************************************
@@ -63,12 +63,12 @@ PB::LinearOp MultPreconditionerFactory
       matrix representation discussed above. At the present time, there
       appears to be some kind of bug in Thrya so this doesn't work.
 
-   const RCP<const Thyra::LinearOpBase<double>> Mat1= Thyra::block2x1(PB::identity(PB::rangeSpace(M1)) ,M1);
-   const RCP<const Thyra::LinearOpBase<double>> Mat3= Thyra::block1x2(M2,PB::identity(PB::rangeSpace(M1)));
+   const RCP<const Thyra::LinearOpBase<double>> Mat1= Thyra::block2x1(Teko::identity(Teko::rangeSpace(M1)) ,M1);
+   const RCP<const Thyra::LinearOpBase<double>> Mat3= Thyra::block1x2(M2,Teko::identity(Teko::rangeSpace(M1)));
    const RCP<const Thyra::LinearOpBase<double>> Mat2= Thyra::block2x2(
-                     PB::identity(PB::rangeSpace(M1)),                            PB::scale(-1.,PB::toLinearOp(blockOp)),
-                     Thyra::zero<double>(PB::rangeSpace(M1),PB::domainSpace(M1)), PB::identity(PB::rangeSpace(M1)));
-   PB::LinearOp invA = PB::multiply(Mat3,Mat2,Mat1);
+                     Teko::identity(Teko::rangeSpace(M1)),                            Teko::scale(-1.,Teko::toLinearOp(blockOp)),
+                     Thyra::zero<double>(Teko::rangeSpace(M1),Teko::domainSpace(M1)), Teko::identity(Teko::rangeSpace(M1)));
+   Teko::LinearOp invA = Teko::multiply(Mat3,Mat2,Mat1);
 
    return invA; 
     *************************************************************************/
@@ -96,17 +96,17 @@ void MultPreconditionerFactory::initializeFromParameterList(const Teuchos::Param
 
    // build preconditioner from the parameters
    std::string aType = aSettings->get<std::string>("Preconditioner Type");
-   RCP<PB::BlockPreconditionerFactory> precA
-         = PB::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
+   RCP<Teko::BlockPreconditionerFactory> precA
+         = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
 
    // build preconditioner from the parameters
    std::string bType = bSettings->get<std::string>("Preconditioner Type");
-   RCP<PB::BlockPreconditionerFactory> precB
-         = PB::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
+   RCP<Teko::BlockPreconditionerFactory> precB
+         = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
 
    // set precondtioners
    FirstFactory_ = precA;
    SecondFactory_ = precB;
 }
 
-} // end namespace PB
+} // end namespace Teko

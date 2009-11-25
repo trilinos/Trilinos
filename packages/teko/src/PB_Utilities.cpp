@@ -31,12 +31,12 @@
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
 
-// PB includes
+// Teko includes
 #include "Epetra/PB_EpetraHelpers.hpp"
 
 #include <cmath>
 
-namespace PB {
+namespace Teko {
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -413,7 +413,7 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "PB: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
+      *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
       *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
       *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
@@ -442,7 +442,7 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
    }
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
+   return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSum( " + op->getObjectLabel() + " )");
 }
 
 /** \brief Compute inverse of the absolute row sum matrix.
@@ -467,7 +467,7 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "PB: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
+      *out << "Teko: getAbsRowSumMatrix requires an Epetra_CrsMatrix\n";
       *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
       *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
@@ -497,7 +497,7 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
    diag.Reciprocal(diag); // invert entries
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSumInv( " + op->getObjectLabel() + " )");
+   return Teko::Epetra::thyraDiagOp(ptrDiag,eCrsOp->RowMap(),"absRowSumInv( " + op->getObjectLabel() + " )");
 }
 
 /** \brief Compute the lumped version of this matrix.
@@ -569,7 +569,7 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "PB: getDiagonalOp requires an Epetra_CrsMatrix\n";
+      *out << "Teko: getDiagonalOp requires an Epetra_CrsMatrix\n";
       *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
       *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
@@ -586,7 +586,7 @@ const ModifiableLinearOp getDiagonalOp(const LinearOp & op)
    TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
+   return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
 }
 
 const MultiVector getDiagonal(const LinearOp & op)
@@ -603,7 +603,7 @@ const MultiVector getDiagonal(const LinearOp & op)
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "PB: getDiagonal requires an Epetra_CrsMatrix\n";
+      *out << "Teko: getDiagonal requires an Epetra_CrsMatrix\n";
       *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
       *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
@@ -647,7 +647,7 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
    catch (std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "PB: getInvDiagonalOp requires an Epetra_CrsMatrix\n";
+      *out << "Teko: getInvDiagonalOp requires an Epetra_CrsMatrix\n";
       *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
       *out << "           OR\n";
       *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
@@ -665,7 +665,7 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp & op)
    diag->Reciprocal(*diag);
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+   return Teko::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
 }
 
 /** \brief Multiply three linear operators. 
@@ -1088,7 +1088,7 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
   *
   * \returns A diagonal operator.
   */
-ModifiableLinearOp getDiagonalOp(PB::LinearOp & A,DiagonalType dt)
+ModifiableLinearOp getDiagonalOp(Teko::LinearOp & A,DiagonalType dt)
 {
    switch(dt) {
    case Diagonal:
@@ -1113,7 +1113,7 @@ ModifiableLinearOp getDiagonalOp(PB::LinearOp & A,DiagonalType dt)
   *
   * \returns A inverse of a diagonal operator.
   */
-ModifiableLinearOp getInvDiagonalOp(PB::LinearOp & A,PB::DiagonalType dt)
+ModifiableLinearOp getInvDiagonalOp(Teko::LinearOp & A,Teko::DiagonalType dt)
 {
    switch(dt) {
    case Diagonal:

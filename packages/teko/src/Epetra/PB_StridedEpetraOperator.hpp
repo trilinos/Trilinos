@@ -9,12 +9,12 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_BlockedReordering.hpp"
 #include "Epetra/PB_EpetraOperatorWrapper.hpp"
 #include "Epetra/PB_StridedMappingStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 class StridedEpetraOperator : public EpetraOperatorWrapper {
@@ -73,7 +73,7 @@ public:
    virtual const Epetra_Comm & Comm() const { return fullContent_->Comm(); }
 
    
-   #ifndef PB_DEBUG_OFF
+   #ifndef Teko_DEBUG_OFF
    //! Helps perform sanity checks
    bool testAgainstFullOperator(int count,double tol) const;
    #endif
@@ -91,6 +91,6 @@ protected:
 };
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

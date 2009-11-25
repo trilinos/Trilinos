@@ -42,7 +42,7 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "NS/PB_SIMPLEPreconditionerFactory.hpp"
@@ -116,20 +116,20 @@ int main(int argc,char * argv[])
 
    std::cout << "Building strided operator" << std::endl;
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   PB::Epetra::StridedEpetraOperator sA(vec,A);
+   Teko::Epetra::StridedEpetraOperator sA(vec,A);
 
    double alpha = 0.9;
-   RCP<const PB::InverseFactory> inverse = PB::invFactoryFromParamList(*paramList,solveName);
+   RCP<Teko::InverseFactory> inverse = Teko::invFactoryFromParamList(*paramList,solveName);
 #if 1
-   RCP<PB::BlockPreconditionerFactory> precFact 
-         = rcp(new PB::NS::SIMPLEPreconditionerFactory(inverse,alpha));
+   RCP<Teko::BlockPreconditionerFactory> precFact 
+         = rcp(new Teko::NS::SIMPLEPreconditionerFactory(inverse,alpha));
 #else
-   RCP<PB::NS::LSCStrategy> precStrat = rcp(new PB::NS::InvLSCStrategy(inverse));
-   RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(precStrat));
+   RCP<Teko::NS::LSCStrategy> precStrat = rcp(new Teko::NS::InvLSCStrategy(inverse));
+   RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(precStrat));
 #endif
 
    std::cout << "Preconditioner factory built" << std::endl;
-   PB::Epetra::EpetraBlockPreconditioner prec(precFact);
+   Teko::Epetra::EpetraBlockPreconditioner prec(precFact);
    prec.buildPreconditioner(sA);
 
    std::cout << "Preconditioner built" << std::endl;

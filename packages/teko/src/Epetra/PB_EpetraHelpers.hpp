@@ -16,7 +16,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
 
-namespace PB {
+namespace Teko {
 
 namespace Epetra {
 
@@ -143,6 +143,6 @@ protected:
 };
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

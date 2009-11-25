@@ -34,14 +34,14 @@
 //
 // see the matlab file
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
-using PB::Test::toString;
-using namespace PB;
+using Teko::Test::toString;
+using namespace Teko;
 
 void tJacobi2x2PreconditionerFactory::initializeTest()
 {
@@ -124,53 +124,53 @@ int tJacobi2x2PreconditionerFactory::runTest(int verbosity,std::ostream & stdstr
    failstrm << "tJacobi2x2PreconditionerFactory";
 
    status = test_createPrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializePrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_uninitializePrec(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_isCompatable(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"isCompatable\" ... PASSED","   \"isCompatable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_identity(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"identity\" ... PASSED","   \"identity\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_diagonal(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_result(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tJacobi2x2PreconditionedFactory...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tJacobi2x2PreconditionedFactory...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tJacobi2x2PreconditionedFactory...FAILED");
    }
 
    return failcount;
@@ -280,7 +280,7 @@ bool tJacobi2x2PreconditionerFactory::test_identity(int verbosity,std::ostream &
    // test vector [0 1 1 3]
    ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -292,7 +292,7 @@ bool tJacobi2x2PreconditionerFactory::test_identity(int verbosity,std::ostream &
    // test vector [-2 4 7 9]
    ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -304,7 +304,7 @@ bool tJacobi2x2PreconditionerFactory::test_identity(int verbosity,std::ostream &
    // test vector [1 0 0 -5]
    ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -316,7 +316,7 @@ bool tJacobi2x2PreconditionerFactory::test_identity(int verbosity,std::ostream &
    // test vector [4 -4 6 12]
    ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,x)/Thyra::norm_2(*x))<tolerance_);
    if(not status || verbosity>=10) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_identity " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -349,22 +349,22 @@ bool tJacobi2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    //
 
    vec[0] = 1.0; vec[1] = 2.0;
-   LinearOp F = PB::Test::DiagMatrix(2,vec);
+   LinearOp F = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 7.0; vec[1] = 8.0;
-   LinearOp G = PB::Test::DiagMatrix(2,vec);
+   LinearOp G = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 5.0; vec[1] = 6.0;
-   LinearOp D = PB::Test::DiagMatrix(2,vec);
+   LinearOp D = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 0.0; vec[1] = 0.0;
-   LinearOp C = PB::Test::DiagMatrix(2,vec);
+   LinearOp C = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 1.0; vec[1] = 0.5;
-   LinearOp iF = PB::Test::DiagMatrix(2,vec);
+   LinearOp iF = Teko::Test::DiagMatrix(2,vec);
 
    vec[0] = 1.0/3.0; vec[1] = 0.25;
-   LinearOp iC = PB::Test::DiagMatrix(2,vec);
+   LinearOp iC = Teko::Test::DiagMatrix(2,vec);
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
@@ -390,7 +390,7 @@ bool tJacobi2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] =  0.0;     ef[1] =  0.5;  
    eg[0] =  1.0/3.0; eg[1] = 0.75;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -405,7 +405,7 @@ bool tJacobi2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] = -2.000000000000000; ef[1] =  2.000000000000000;
    eg[0] =  2.333333333333333; eg[1] =  2.250000000000000;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -420,7 +420,7 @@ bool tJacobi2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] =  1.000000000000000; ef[1] =  0.000000000000000;
    eg[0] =  0.000000000000000; eg[1] = -1.250000000000000;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -435,7 +435,7 @@ bool tJacobi2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream &
    ef[0] =  4.000000000000000; ef[1] = -2.000000000000000;
    eg[0] =  2.000000000000000; eg[1] =  3.000000000000000;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -484,7 +484,7 @@ bool tJacobi2x2PreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = 6.6666666666666663e-01; ef[1] = -3.3333333333333331e-01;
    eg[0] = -3.0303030303030304e-02; eg[1] = 6.3636363636363635e-01;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -499,7 +499,7 @@ bool tJacobi2x2PreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = 3.3333333333333330e+00; ef[1] = -2.6666666666666665e+00;
    eg[0] = 5.1515151515151514e-01; eg[1] = 1.1818181818181817e+00;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -514,7 +514,7 @@ bool tJacobi2x2PreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = -3.3333333333333331e-01; ef[1] = 6.6666666666666663e-01;
    eg[0] = 3.0303030303030298e-01; eg[1] = -1.3636363636363635e+00;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -529,7 +529,7 @@ bool tJacobi2x2PreconditionerFactory::test_result(int verbosity,std::ostream & o
    ef[0] = -4.0000000000000000e+00; ef[1] = 4.0000000000000000e+00;
    eg[0] = 1.8181818181818177e-01; eg[1] = 2.1818181818181817e+00;
    Thyra::apply(*precOp,Thyra::NONCONJ_ELE,*x,&*y);
-   status = ((diff = PB::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tJacobi2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -543,4 +543,4 @@ bool tJacobi2x2PreconditionerFactory::test_result(int verbosity,std::ostream & o
 }
 
 } // end namespace Test
-} // end namespace PB
+} // end namespace Teko

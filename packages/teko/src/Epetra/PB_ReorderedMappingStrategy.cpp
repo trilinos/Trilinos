@@ -7,7 +7,7 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcpFromRef;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 ReorderedMappingStrategy::ReorderedMappingStrategy(const BlockReorderManager & brm,const Teuchos::RCP<const MappingStrategy> & map)
@@ -19,7 +19,7 @@ ReorderedMappingStrategy::ReorderedMappingStrategy(const BlockReorderManager & b
 
 void ReorderedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
                                                  const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
-                                                 const PB::Epetra::EpetraOperatorWrapper & eow) const
+                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
 {
    using Teuchos::ptr_const_cast;
    using Teuchos::rcp_const_cast;
@@ -34,7 +34,7 @@ void ReorderedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 
 void ReorderedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
                                                  Epetra_MultiVector& Y,
-                                                 const PB::Epetra::EpetraOperatorWrapper & eow) const
+                                                 const Teko::Epetra::EpetraOperatorWrapper & eow) const
 {
    // first flatten the vector: notice this just works on the block structure
    RCP<const Thyra::ProductMultiVectorBase<double> > prod_Y = rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(rcpFromRef(*thyra_Y));
@@ -45,4 +45,4 @@ void ReorderedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiV
 }
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

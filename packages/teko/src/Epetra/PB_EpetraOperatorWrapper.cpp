@@ -50,7 +50,7 @@
 #include "Teuchos_Ptr.hpp"
 
 
-namespace PB { 
+namespace Teko { 
 namespace Epetra { 
 
 
@@ -63,22 +63,22 @@ DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBa
    domainSpace_ = thyraOp->domain();
    rangeSpace_ = thyraOp->range();
 
-   domainMap_ = PB::Epetra::thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
-   rangeMap_ = PB::Epetra::thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
+   domainMap_ = Teko::Epetra::thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
+   rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
 }
 
 void DefaultMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& x, const Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
                                       const EpetraOperatorWrapper & eow) const
 {
    // epetraToThyra(x,Teuchos::ptr_dynamic_cast<Thyra::VectorBase<double> >(thyraVec));
-   PB::Epetra::blockEpetraToThyra(x,thyraVec);
+   Teko::Epetra::blockEpetraToThyra(x,thyraVec);
 }
 
 void DefaultMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec, Epetra_MultiVector& v,
                                       const EpetraOperatorWrapper & eow) const
 {
    // thyraToEpetra(rcp_dynamic_cast<const Thyra::VectorBase<double> >(thyraVec), v);
-   PB::Epetra::blockThyraToEpetra(thyraVec,v);
+   Teko::Epetra::blockThyraToEpetra(thyraVec,v);
 }
 
 EpetraOperatorWrapper::EpetraOperatorWrapper()
@@ -251,4 +251,4 @@ int EpetraOperatorWrapper::GetBlockColCount()
 
 
 } // namespace Epetra
-} // namespace PB
+} // namespace Teko

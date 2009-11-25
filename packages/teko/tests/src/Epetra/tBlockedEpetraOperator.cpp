@@ -36,7 +36,7 @@
 
 #include "EpetraExt_RowMatrixOut.h"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::null;
@@ -95,26 +95,26 @@ int tBlockedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    failstrm << "tBlockedEpetraOperator";
 
    status = test_vector_constr(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++; 
 
    status = test_reorder(verbosity,failstrm,0);
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,1);
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,2);
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
@@ -122,10 +122,10 @@ int tBlockedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tBlockedEpetraOperator...PASSED","tBlockedEpetraOperator...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tBlockedEpetraOperator...PASSED","tBlockedEpetraOperator...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tBlockedEpetraOperator...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tBlockedEpetraOperator...FAILED");
    }
 
    return failcount;
@@ -165,7 +165,7 @@ bool tBlockedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    std::vector<std::vector<int> > vars;
    buildBlockGIDs(vars,A->RowMap());
 
-   PB::Epetra::BlockedEpetraOperator shell(vars,A);
+   Teko::Epetra::BlockedEpetraOperator shell(vars,A);
 
    // test the operator against a lot of random vectors
    int numtests = 50;
@@ -278,10 +278,10 @@ bool tBlockedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    std::vector<std::vector<int> > vars;
    buildBlockGIDs(vars,A->RowMap());
 
-   PB::Epetra::BlockedEpetraOperator flatShell(vars,A,"Af");
-   PB::Epetra::BlockedEpetraOperator reorderShell(vars,A,"Ar");
+   Teko::Epetra::BlockedEpetraOperator flatShell(vars,A,"Af");
+   Teko::Epetra::BlockedEpetraOperator reorderShell(vars,A,"Ar");
  
-   PB::BlockReorderManager brm;
+   Teko::BlockReorderManager brm;
    switch (total) {
    case 0:
       brm.SetNumBlocks(3);
@@ -345,4 +345,4 @@ bool tBlockedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
 }
 
 } // end Test namespace
-} // end PB namespace
+} // end Teko namespace

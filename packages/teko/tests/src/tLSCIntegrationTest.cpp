@@ -14,7 +14,7 @@
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "Epetra/PB_EpetraHelpers.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
@@ -35,7 +35,7 @@
 #include "PB_InverseFactory.hpp"
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::rcp;
@@ -89,9 +89,9 @@ void tLSCIntegrationTest::loadStableSystem()
    // set stable matrix pointers
    sF_  = rcp(F); sB_  = rcp(B); sBt_ = rcp(Bt); sQu_ = rcp(Qu);
 
-   PB::LinearOp C;
-   PB::LinearOp tA_ = PB::block2x2<double>(epetraLinearOp(sF_),epetraLinearOp(sBt_),epetraLinearOp(sB_),C,"A");
-   sA_ = rcp(new PB::Epetra::EpetraOperatorWrapper(tA_));
+   Teko::LinearOp C;
+   Teko::LinearOp tA_ = Teko::block2x2<double>(epetraLinearOp(sF_),epetraLinearOp(sBt_),epetraLinearOp(sB_),C,"A");
+   sA_ = rcp(new Teko::Epetra::EpetraOperatorWrapper(tA_));
 
    // build an exporter to work around issue with MMFileToVector
    Epetra_Export exporter(*fullMap_,sA_->OperatorRangeMap());
@@ -136,29 +136,29 @@ int tLSCIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std::ostre
    failstrm << "tLSCIntegrationTest";
 
    status = test_withmassStable(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_nomassStable(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_plConstruction(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"plConstruction\" ... PASSED","   \"plConstruction\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"plConstruction\" ... PASSED","   \"plConstruction\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tLSCIntegrationTest...PASSED","tLSCIntegrationTest...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tLSCIntegrationTest...PASSED","tLSCIntegrationTest...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tLSCIntegrationTest...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tLSCIntegrationTest...FAILED");
    }
 
    return failcount;
@@ -169,7 +169,7 @@ bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
    Teuchos::ParameterList paramList;
    solveList(paramList,8);
 
-   RCP<PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
+   RCP<Teko::InverseFactory> invFact = Teko::invFactoryFromParamList(paramList,"ML");
    TEUCHOS_ASSERT(invFact!=Teuchos::null);
 
    bool status = false;
@@ -185,9 +185,9 @@ bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
    }
 
    LinearOp Qu = epetraLinearOp(sQu_);
-   const RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(invFact,Qu));
-   const RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
-   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
+   const RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(invFact,Qu));
+   const RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+   const RCP<Teko::Epetra::EpetraBlockPreconditioner> prec = rcp(new Teko::Epetra::EpetraBlockPreconditioner(precFact));
    prec->buildPreconditioner(*sA_);
 
    // B. Build solver and solve system
@@ -234,7 +234,7 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
    Teuchos::ParameterList paramList;
    solveList(paramList,8);
 
-   RCP<PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
+   RCP<Teko::InverseFactory> invFact = Teko::invFactoryFromParamList(paramList,"ML");
    TEUCHOS_ASSERT(invFact!=Teuchos::null);
 
    bool status = false;
@@ -251,9 +251,9 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
          << toString(true) << std::endl;
    }
 
-   const RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(invFact));
-   const RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
-   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
+   const RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(invFact));
+   const RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
+   const RCP<Teko::Epetra::EpetraBlockPreconditioner> prec = rcp(new Teko::Epetra::EpetraBlockPreconditioner(precFact));
    prec->buildPreconditioner(*sA_);
 
    // B. Build solver and solve system
@@ -302,8 +302,8 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 
    using Teuchos::ParameterList;
 
-   RCP<PB::BlockPreconditionerFactory> precFact;
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::BlockPreconditionerFactory> precFact;
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
    /////////////////////////////////////////////////////////////////////////////
 
@@ -314,7 +314,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
    pl.set("Ignore Boundary Rows",true);
    pl.set("Use LDU",true);
 
-   precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
+   precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
 
    TEST_ASSERT(precFact!=Teuchos::null,
          std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -326,7 +326,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
    parPl.set("Strategy Name","Basic Inverse");
    parPl.set("Strategy Settings",pl);
 
-   precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
+   precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
 
    TEST_ASSERT(precFact!=Teuchos::null,
          std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -336,7 +336,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 
    try {
       parPl.set("Strategy Name","The Cat");
-      precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
+      precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
 
       TEST_ASSERT(false,
          std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -348,7 +348,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 
    try {
       pl.set("Strategy Name","The Cat");
-      precFact = PB::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
+      precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
 
       TEST_ASSERT(false,
             std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -362,4 +362,4 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

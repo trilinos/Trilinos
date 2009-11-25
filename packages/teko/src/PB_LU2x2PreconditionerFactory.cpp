@@ -1,6 +1,6 @@
 #include "PB_LU2x2PreconditionerFactory.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_LU2x2InverseOp.hpp"
 #include "PB_BlockUpperTriInverseOp.hpp"
 
@@ -10,7 +10,7 @@
 using Teuchos::rcp;
 using Teuchos::RCP;
 
-namespace PB {
+namespace Teko {
 
 // construct a PreconditionerFactory
 LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(LinearOp & invA00, LinearOp & invS)
@@ -36,7 +36,7 @@ LU2x2PreconditionerFactory::LU2x2PreconditionerFactory()
 // initialize a newly created preconditioner object
 LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
-   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildPreconditionerOperator",10);
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildPreconditionerOperator",10);
    LinearOp hatInvA00   = invOpsStrategy_->getHatInvA00(A,state);
    LinearOp tildeInvA00 = invOpsStrategy_->getTildeInvA00(A,state);
    LinearOp invS        = invOpsStrategy_->getInvS(A,state);
@@ -66,7 +66,7 @@ LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp
   */
 void LU2x2PreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
 {
-   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::initializeFromParameterList",10);
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::initializeFromParameterList",10);
 
    // use Golub & Wathen type or full LDU decomposition for inverse solve?
    bool useLDU = true; 
@@ -103,7 +103,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
                                                              const Teuchos::ParameterList & settings,
                                                              const RCP<const InverseLibrary> & invLib)
 {
-   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildStrategy",10);
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildStrategy",10);
 
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
@@ -112,7 +112,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
    RCP<LU2x2Strategy> strategy = strategyBuilder_.build(name);
 
    if(strategy==Teuchos::null) {
-      PB_DEBUG_MSG("Warning: Could not build LU2x2Strategy named \"" 
+      Teko_DEBUG_MSG("Warning: Could not build LU2x2Strategy named \"" 
                  << name << "\"...pressing on, failure expected",0)
       return Teuchos::null;
    }
@@ -139,7 +139,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
   */
 void LU2x2PreconditionerFactory::addStrategy(const std::string & name,const RCP<Cloneable> & clone)
 {
-   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::addStrategy",10);
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::addStrategy",10);
 
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
@@ -151,7 +151,7 @@ void LU2x2PreconditionerFactory::addStrategy(const std::string & name,const RCP<
 //! This is where the default objects are put into the strategyBuilder_
 void LU2x2PreconditionerFactory::initializeStrategyBuilder()
 {
-   PB_DEBUG_SCOPE("LU2x2PreconditionerFactory::initializeStrategyBuilder",10);
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::initializeStrategyBuilder",10);
 
    RCP<Cloneable> clone;
 
@@ -160,4 +160,4 @@ void LU2x2PreconditionerFactory::initializeStrategyBuilder()
    strategyBuilder_.addClone("Diagonal Strategy",clone);
 }
 
-} // end namespace PB
+} // end namespace Teko

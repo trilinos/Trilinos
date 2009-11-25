@@ -1,6 +1,6 @@
 #include "PB_AddPreconditionerFactory.hpp"
 
-namespace PB {
+namespace Teko {
 
 using Teuchos::RCP;
 
@@ -61,17 +61,17 @@ void AddPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    // build preconditioner from the parameters
    std::string aType = aSettings->get<std::string>("Preconditioner Type");
-   RCP<PB::BlockPreconditionerFactory> precA
-         = PB::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
+   RCP<Teko::BlockPreconditionerFactory> precA
+         = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
 
    // build preconditioner from the parameters
    std::string bType = bSettings->get<std::string>("Preconditioner Type");
-   RCP<PB::BlockPreconditionerFactory> precB
-         = PB::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
+   RCP<Teko::BlockPreconditionerFactory> precB
+         = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
 
    // set precondtioners
    FirstFactory_ = precA;
    SecondFactory_ = precB;
 }
 
-} // end namespace PB
+} // end namespace Teko

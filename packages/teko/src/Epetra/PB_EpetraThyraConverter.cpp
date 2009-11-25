@@ -20,7 +20,7 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::ptr_dynamic_cast;
 using Teuchos::null;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 // const Teuchos::RCP<const Thyra::MultiVectorBase<double> > 
@@ -236,4 +236,4 @@ const RCP<Epetra_Map> thyraVSToEpetraMap(const Thyra::VectorSpaceBase<double> & 
 }
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

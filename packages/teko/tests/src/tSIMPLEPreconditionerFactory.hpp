@@ -11,7 +11,7 @@
 #include "Test_Utils.hpp"
 #include "PB_InverseFactory.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tSIMPLEPreconditionerFactory : public UnitTest {
@@ -48,6 +48,6 @@ protected:
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif

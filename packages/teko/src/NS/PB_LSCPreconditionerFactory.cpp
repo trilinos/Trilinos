@@ -16,7 +16,7 @@
 
 #include "Teuchos_Time.hpp"
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 using Teuchos::rcp;
@@ -53,10 +53,10 @@ LSCPreconditionerFactory::LSCPreconditionerFactory() : useMass_(false)
 // initialize a newly created preconditioner object
 LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blockOp,BlockPreconditionerState & state) const
 {
-   PB_DEBUG_SCOPE("LSCPreconditionerFactory::buildPreconditionerOperator",10);
-   PB_DEBUG_EXPR(Teuchos::Time timer(""));
-   PB_DEBUG_EXPR(Teuchos::Time totalTimer(""));
-   PB_DEBUG_EXPR(totalTimer.start());
+   Teko_DEBUG_SCOPE("LSCPreconditionerFactory::buildPreconditionerOperator",10);
+   Teko_DEBUG_EXPR(Teuchos::Time timer(""));
+   Teko_DEBUG_EXPR(Teuchos::Time totalTimer(""));
+   Teko_DEBUG_EXPR(totalTimer.start());
 
    // extract sub-matrices from source operator 
    LinearOp F  = blockOp->getBlock(0,0);
@@ -64,13 +64,13 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp Bt = blockOp->getBlock(0,1);
 
    // build what is neccessary for the state object
-   PB_DEBUG_EXPR(timer.start(true));
+   Teko_DEBUG_EXPR(timer.start(true));
    invOpsStrategy_->buildState(blockOp,state);
-   PB_DEBUG_EXPR(timer.stop());
-   PB_DEBUG_MSG("LSCPrecFact::buildPO BuildStateTime = " << timer.totalElapsedTime(),2);
+   Teko_DEBUG_EXPR(timer.stop());
+   Teko_DEBUG_MSG("LSCPrecFact::buildPO BuildStateTime = " << timer.totalElapsedTime(),2);
 
    // extract operators from strategy
-   PB_DEBUG_EXPR(timer.start(true));
+   Teko_DEBUG_EXPR(timer.start(true));
    LinearOp invF      = invOpsStrategy_->getInvF(blockOp,state);
    LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp,state);
    LinearOp invBHBtmC = invOpsStrategy_->getInvBHBt(blockOp,state);
@@ -81,8 +81,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp HScaling  = invOpsStrategy_->getHScaling(blockOp,state);
    if(invMass==Teuchos::null)  invMass = identity<double>(F->range());
    if(HScaling==Teuchos::null) HScaling = identity<double>(F->range());
-   PB_DEBUG_EXPR(timer.stop());
-   PB_DEBUG_MSG("LSCPrecFact::buildPO GetInvTime = " << timer.totalElapsedTime(),2);
+   Teko_DEBUG_EXPR(timer.stop());
+   Teko_DEBUG_MSG("LSCPrecFact::buildPO GetInvTime = " << timer.totalElapsedTime(),2);
 
    // need to build Schur complement,  inv(P) = inv(B*Bt)*(B*F*Bt)*inv(B*Bt)
 
@@ -100,8 +100,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 
    // build the preconditioner operator: Use LDU or upper triangular approximation
    if(invOpsStrategy_->useFullLDU()) { 
-      PB_DEBUG_EXPR(totalTimer.stop());
-      PB_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
+      Teko_DEBUG_EXPR(totalTimer.stop());
+      Teko_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
 
       // solve using a full LDU decomposition
       return createLU2x2InverseOp(blockOp,invF,invPschur,"LSC-LDU");
@@ -114,8 +114,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
       // get upper triangular matrix
       BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
-      PB_DEBUG_EXPR(totalTimer.stop());
-      PB_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
+      Teko_DEBUG_EXPR(totalTimer.stop());
+      Teko_DEBUG_MSG("LSCPrecFact::buildPO TotalTime = " << totalTimer.totalElapsedTime(),2);
 
       // solve using only one inversion of F
       return createBlockUpperTriInverseOp(U,invDiag,"LSC-Upper");
@@ -125,7 +125,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 //! Initialize from a parameter list
 void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
 {
-   PB_DEBUG_SCOPE("LSCPreconditionerFactory::initializeFromParameterList",10);
+   Teko_DEBUG_SCOPE("LSCPreconditionerFactory::initializeFromParameterList",10);
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
@@ -196,7 +196,7 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
                                                              const Teuchos::ParameterList & settings,
                                                              const RCP<const InverseLibrary> & invLib)
 {
-   PB_DEBUG_MSG("Begin LSCPreconditionerFactory::buildStrategy",10);
+   Teko_DEBUG_MSG("Begin LSCPreconditionerFactory::buildStrategy",10);
 
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
@@ -210,7 +210,7 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
    // pass in the parameter list
    strategy->initializeFromParameterList(settings,*invLib);
 
-   PB_DEBUG_MSG("End LSCPreconditionerFactory::buildStrategy",10);
+   Teko_DEBUG_MSG("End LSCPreconditionerFactory::buildStrategy",10);
 
    return strategy;
 }
@@ -248,4 +248,4 @@ void LSCPreconditionerFactory::initializeStrategyBuilder()
 }
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko

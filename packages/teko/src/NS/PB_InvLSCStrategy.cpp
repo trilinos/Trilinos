@@ -14,7 +14,7 @@
 
 #include "Teuchos_Time.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 #include "Epetra/PB_EpetraHelpers.hpp"
@@ -24,12 +24,12 @@ using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcp_const_cast;
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 // helper function for a lid driven cavity-like problem
 // This function _WILL_ change the operator
-PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::vector<int> & zeroIndicies)
+Teko::ModifiableLinearOp reduceCrsOperator(Teko::ModifiableLinearOp & op,const std::vector<int> & zeroIndicies)
 {
    // Extract a non-const version of the operator
    RCP<Epetra_Operator> eOp = get_Epetra_Operator(*rcp_const_cast<Thyra::LinearOpBase<double> >(op));
@@ -69,7 +69,7 @@ PB::ModifiableLinearOp reduceCrsOperator(PB::ModifiableLinearOp & op,const std::
    #endif
 
    // now wrap the crs matrix in a ZeroedEpetraOperator
-   // return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,eCrsOp)));
+   // return Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndicies,eCrsOp)));
    return Thyra::nonconstEpetraLinearOp(eCrsOp);
 }
 
@@ -112,35 +112,35 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
-   PB_DEBUG_SCOPE("InvLSCStrategy::buildState",10);
+   Teko_DEBUG_SCOPE("InvLSCStrategy::buildState",10);
 
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
 
    // if neccessary save state information
    if(not lscState->isInitialized()) {
-      PB_DEBUG_EXPR(Teuchos::Time timer(""));
+      Teko_DEBUG_EXPR(Teuchos::Time timer(""));
 
       // construct operators
       {
-         PB_DEBUG_SCOPE("LSC::buildState constructing operators",1);
-         PB_DEBUG_EXPR(timer.start(true));
+         Teko_DEBUG_SCOPE("LSC::buildState constructing operators",1);
+         Teko_DEBUG_EXPR(timer.start(true));
 
          initializeState(A,lscState);
 
-         PB_DEBUG_EXPR(timer.stop());
-         PB_DEBUG_MSG("LSC::buildState BuildOpsTime = " << timer.totalElapsedTime(),1);
+         Teko_DEBUG_EXPR(timer.stop());
+         Teko_DEBUG_MSG("LSC::buildState BuildOpsTime = " << timer.totalElapsedTime(),1);
       }
 
       // Build the inverses
       {
-         PB_DEBUG_SCOPE("LSC::buildState calculating inverses",1);
-         PB_DEBUG_EXPR(timer.start(true));
+         Teko_DEBUG_SCOPE("LSC::buildState calculating inverses",1);
+         Teko_DEBUG_EXPR(timer.start(true));
 
          computeInverses(A,lscState);
 
-         PB_DEBUG_EXPR(timer.stop());
-         PB_DEBUG_MSG("LSC::buildState BuildInvTime = " << timer.totalElapsedTime(),1);
+         Teko_DEBUG_EXPR(timer.stop());
+         Teko_DEBUG_MSG("LSC::buildState BuildInvTime = " << timer.totalElapsedTime(),1);
       }
    }
 }
@@ -188,7 +188,7 @@ LinearOp InvLSCStrategy::getHScaling(const BlockedLinearOp & A,BlockPrecondition
 //! Initialize the state object using this blocked linear operator
 void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const
 {
-   PB_DEBUG_SCOPE("InvLSCStrategy::initiailzeState",10);
+   Teko_DEBUG_SCOPE("InvLSCStrategy::initiailzeState",10);
 
    const LinearOp F  = getBlock(0,0,A);
    const LinearOp Bt = getBlock(0,1,A);
@@ -208,7 +208,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // compute BQBt
    state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
-   PB_DEBUG_MSG("Computed BQBt",10);
+   Teko_DEBUG_MSG("Computed BQBt",10);
 
    // if there is no H-Scaling
    if(wScaling_!=Teuchos::null && hScaling_==Teuchos::null) {
@@ -257,25 +257,25 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
          std::vector<int> zeroIndices;
           
          // get rows in need of zeroing
-         PB::Epetra::identityRowIndices(crsF->RowMap(), *crsF,zeroIndices);
+         Teko::Epetra::identityRowIndices(crsF->RowMap(), *crsF,zeroIndices);
 
          // build an operator that zeros those rows
-         modF = Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndices,crsF)));
+         modF = Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndices,crsF)));
       }
    }
 
    // compute gamma
-   PB_DEBUG_MSG("Calculating gamma",10);
+   Teko_DEBUG_MSG("Calculating gamma",10);
    LinearOp iQuF = multiply(state->invMass_,modF);
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
-   PB::LinearOp stabMatrix; // this is the pressure stabilization matrix to use
-   state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
-   PB_DEBUG_MSG("Calculated gamma",10);
+   Teko::LinearOp stabMatrix; // this is the pressure stabilization matrix to use
+   state->gamma_ = std::fabs(Teko::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
+   Teko_DEBUG_MSG("Calculated gamma",10);
    if(userPresStabMat_!=Teuchos::null) {
-      PB::LinearOp invDGl = PB::getInvDiagonalOp(userPresStabMat_);
-      PB::LinearOp gammaOp = multiply(invDGl,C);
-      state->gamma_ *= std::fabs(PB::computeSpectralRad(gammaOp,5e-2,false,eigSolveParam_));
+      Teko::LinearOp invDGl = Teko::getInvDiagonalOp(userPresStabMat_);
+      Teko::LinearOp gammaOp = multiply(invDGl,C);
+      state->gamma_ *= std::fabs(Teko::computeSpectralRad(gammaOp,5e-2,false,eigSolveParam_));
       stabMatrix = userPresStabMat_;
    } else 
       stabMatrix = C;
@@ -283,7 +283,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    // construct B_idF_Bt and save it for refilling later: This could reuse BQBt graph
    LinearOp invDiagF = getInvDiagonalOp(F);
-   PB::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
+   Teko::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
    modB_idF_Bt = explicitMultiply(B,invDiagF,Bt,modB_idF_Bt);
    state->addInverse("BidFBt",modB_idF_Bt);
    const LinearOp B_idF_Bt = modB_idF_Bt;
@@ -292,30 +292,30 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    update(-1.0,getDiagonal(C),1.0,vec_D); // vec_D = diag(B*inv(diag(F))*Bt)-diag(C)
    const LinearOp invD = buildInvDiagonal(vec_D,"inv(D)");
 
-   PB_DEBUG_MSG("Calculating alpha",10);
+   Teko_DEBUG_MSG("Calculating alpha",10);
    const LinearOp BidFBtidD = multiply<double>(B_idF_Bt,invD);
-   double num = std::fabs(PB::computeSpectralRad(BidFBtidD,5e-2,false,eigSolveParam_));
-   PB_DEBUG_MSG("Calculated alpha",10);
+   double num = std::fabs(Teko::computeSpectralRad(BidFBtidD,5e-2,false,eigSolveParam_));
+   Teko_DEBUG_MSG("Calculated alpha",10);
    state->alpha_ = 1.0/num;
    state->aiD_ = Thyra::scale(state->alpha_,invD);
 
    // now build B*Q*Bt-gamma*C
-   PB::ModifiableLinearOp BQBtmC = state->getInverse("BQBtmC");
+   Teko::ModifiableLinearOp BQBtmC = state->getInverse("BQBtmC");
    BQBtmC = explicitAdd(state->BQBt_,scale(-state->gamma_,stabMatrix),BQBtmC);
    state->addInverse("BQBtmC",BQBtmC);
 
    // now build B*H*Bt-gamma*C
-   PB::ModifiableLinearOp BHBtmC = state->getInverse("BHBtmC");
+   Teko::ModifiableLinearOp BHBtmC = state->getInverse("BHBtmC");
    if(H==Teuchos::null)
       BHBtmC = BQBtmC;
    else
       BHBtmC = explicitAdd(state->BHBt_,scale(-state->gamma_,stabMatrix),BHBtmC);
    state->addInverse("BHBtmC",BHBtmC);
 
-   PB_DEBUG_MSG_BEGIN(5)
+   Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Gamma Parameter = " << state->gamma_ << std::endl;
       DEBUG_STREAM << "LSC Alpha Parameter = " << state->alpha_ << std::endl;
-   PB_DEBUG_MSG_END()
+   Teko_DEBUG_MSG_END()
 
    state->setInitialized(true);
 }
@@ -327,16 +327,16 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
   */
 void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState * state) const
 {
-   PB_DEBUG_SCOPE("InvLSCStrategy::computeInverses",10);
-   PB_DEBUG_EXPR(Teuchos::Time invTimer(""));
+   Teko_DEBUG_SCOPE("InvLSCStrategy::computeInverses",10);
+   Teko_DEBUG_EXPR(Teuchos::Time invTimer(""));
 
    const LinearOp F  = getBlock(0,0,A);
 
    /////////////////////////////////////////////////////////
 
    // (re)build the inverse of F
-   PB_DEBUG_MSG("LSC::computeInverses Building inv(F)",1);
-   PB_DEBUG_EXPR(invTimer.start(true));
+   Teko_DEBUG_MSG("LSC::computeInverses Building inv(F)",1);
+   Teko_DEBUG_EXPR(invTimer.start(true));
    InverseLinearOp invF = state->getInverse("invF");
    if(invF==Teuchos::null) {
       invF = buildInverse(*invFactoryF_,F);
@@ -344,14 +344,14 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    } else {
       rebuildInverse(*invFactoryF_,F,invF);
    }
-   PB_DEBUG_EXPR(invTimer.stop());
-   PB_DEBUG_MSG("LSC::computeInverses GetInvF = " << invTimer.totalElapsedTime(),1);
+   Teko_DEBUG_EXPR(invTimer.stop());
+   Teko_DEBUG_MSG("LSC::computeInverses GetInvF = " << invTimer.totalElapsedTime(),1);
 
    /////////////////////////////////////////////////////////
 
    // (re)build the inverse of BQBt 
-   PB_DEBUG_MSG("LSC::computeInverses Building inv(BQBtmC)",1);
-   PB_DEBUG_EXPR(invTimer.start(true));
+   Teko_DEBUG_MSG("LSC::computeInverses Building inv(BQBtmC)",1);
+   Teko_DEBUG_EXPR(invTimer.start(true));
    const LinearOp BQBt = state->getInverse("BQBtmC");
    InverseLinearOp invBQBt = state->getInverse("invBQBtmC");
    if(invBQBt==Teuchos::null) {
@@ -360,8 +360,8 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    } else {
       rebuildInverse(*invFactoryS_,BQBt,invBQBt);
    }
-   PB_DEBUG_EXPR(invTimer.stop());
-   PB_DEBUG_MSG("LSC::computeInverses GetInvBQBt = " << invTimer.totalElapsedTime(),1);
+   Teko_DEBUG_EXPR(invTimer.stop());
+   Teko_DEBUG_MSG("LSC::computeInverses GetInvBQBt = " << invTimer.totalElapsedTime(),1);
 
    /////////////////////////////////////////////////////////
 
@@ -369,8 +369,8 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
    ModifiableLinearOp invBHBt = state->getInverse("invBHBtmC");
    if(hScaling_!=Teuchos::null) {
       // (re)build the inverse of BHBt 
-      PB_DEBUG_MSG("LSC::computeInverses Building inv(BHBtmC)",1);
-      PB_DEBUG_EXPR(invTimer.start(true));
+      Teko_DEBUG_MSG("LSC::computeInverses Building inv(BHBtmC)",1);
+      Teko_DEBUG_EXPR(invTimer.start(true));
       const LinearOp BHBt = state->getInverse("BHBtmC");
       if(invBHBt==Teuchos::null) {
          invBHBt = buildInverse(*invFactoryS_,BHBt);
@@ -378,8 +378,8 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
       } else {
          rebuildInverse(*invFactoryS_,BHBt,invBHBt);
       }
-      PB_DEBUG_EXPR(invTimer.stop());
-      PB_DEBUG_MSG("LSC::computeInverses GetInvBHBt = " << invTimer.totalElapsedTime(),1);
+      Teko_DEBUG_EXPR(invTimer.stop());
+      Teko_DEBUG_MSG("LSC::computeInverses GetInvBHBt = " << invTimer.totalElapsedTime(),1);
    } 
    else if(invBHBt==Teuchos::null) {
       // just use the Q version
@@ -413,7 +413,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    if(pl.isParameter("Use W-Scaling"))
       useWScaling_ = pl.get<bool>("Use W-Scaling");
 
-   PB_DEBUG_MSG_BEGIN(5)
+   Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
       DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
       DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
@@ -425,7 +425,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
-   PB_DEBUG_MSG_END()
+   Teko_DEBUG_MSG_END()
 
    // set defaults as needed
    if(invStr=="") invStr = "Amesos";
@@ -469,13 +469,13 @@ Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() co
 
    // use the mass matrix
    if(useMass_) {
-      pl->set<PB::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
+      pl->set<Teko::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
       result = pl;
    }
 
    // use the mass matrix
    if(useWScaling_) {
-      pl->set<PB::LinearOp>("W-Scaling Vector", Teuchos::null,"W-Scaling Vector");
+      pl->set<Teko::LinearOp>("W-Scaling Vector", Teuchos::null,"W-Scaling Vector");
       result = pl;
    }
 
@@ -485,7 +485,7 @@ Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() co
 //! For assiting in construction of the preconditioner
 bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl) 
 {
-   PB_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
+   Teko_DEBUG_SCOPE("InvLSCStrategy::updateRequestedParameters",10);
    bool result = true;
  
    // update requested parameters in solvers
@@ -494,7 +494,7 @@ bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl
 
    // set the mass matrix: throw if the strategy is not the right type
    if(useMass_) {
-      PB::LinearOp mass = pl.get<PB::LinearOp>("Velocity Mass Matrix");
+      Teko::LinearOp mass = pl.get<Teko::LinearOp>("Velocity Mass Matrix");
 
       // we must have a mass matrix
       if(mass==Teuchos::null)
@@ -505,7 +505,7 @@ bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl
 
    // use W scaling matrix
    if(useWScaling_) {
-      PB::MultiVector wScale = pl.get<PB::MultiVector>("W-Scaling Vector");
+      Teko::MultiVector wScale = pl.get<Teko::MultiVector>("W-Scaling Vector");
 
       if(wScale==Teuchos::null)
          result &= false;
@@ -517,4 +517,4 @@ bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl
 }
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko

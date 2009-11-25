@@ -11,7 +11,7 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** \brief Class that describes how a flat blocked operator
   *        should be reordered.
@@ -347,6 +347,6 @@ buildFlatMultiVector(const BlockReorderManager & mgr,
   */
 Teuchos::RCP<const BlockReorderManager> blockedReorderFromString(std::string & reorder);
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

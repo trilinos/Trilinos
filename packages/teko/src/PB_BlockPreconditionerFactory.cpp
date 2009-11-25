@@ -13,7 +13,7 @@
 
 using namespace Thyra;
 
-namespace PB {
+namespace Teko {
 /////////////////////////////////////////////////////
 
 //! Set parameters from a parameter list and return with default values.
@@ -183,7 +183,7 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
                                                        const Teuchos::ParameterList & settings,
                                                        const RCP<const InverseLibrary> & invLib)
 {
-   PB_DEBUG_MSG("Begin BlockPreconditionerFactory::buildPreconditionerFactory",10);
+   Teko_DEBUG_MSG("Begin BlockPreconditionerFactory::buildPreconditionerFactory",10);
 
    // initialize the defaults if necessary
    if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
@@ -191,10 +191,10 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
    // request the preconditioner factory from the CloneFactory
    RCP<BlockPreconditionerFactory> precFact = precFactoryBuilder_.build(name);
 
-   PB_DEBUG_MSG_BEGIN(5);
+   Teko_DEBUG_MSG_BEGIN(5);
       DEBUG_STREAM << "Looked up \"" << name << "\"" << std::endl;
       DEBUG_STREAM << "Built " << precFact << std::endl;
-   PB_DEBUG_MSG_END();
+   Teko_DEBUG_MSG_END();
 
    if(precFact==Teuchos::null)  
       return Teuchos::null;
@@ -207,7 +207,7 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
    // pass in the parameter list
    precFact->initializeFromParameterList(settings);
 
-   PB_DEBUG_MSG("End BlockPreconditionerFactory::buildPreconditionerFactory",10);
+   Teko_DEBUG_MSG("End BlockPreconditionerFactory::buildPreconditionerFactory",10);
 
    return precFact;
 }
@@ -262,4 +262,4 @@ void BlockPreconditionerFactory::initializePrecFactoryBuilder()
    precFactoryBuilder_.addClone("NS SIMPLE",clone);
 }
 
-} // end namespace PB
+} // end namespace Teko

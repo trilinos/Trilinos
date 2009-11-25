@@ -10,7 +10,7 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::dyn_cast;
 
-namespace PB {
+namespace Teko {
 
 // Thyra::LinearOpBase requirements
 ////////////////////////////////////////////////////////////////////////
@@ -159,4 +159,4 @@ void LU2x2InverseOp::describe(Teuchos::FancyOStream & out_arg,
   }
 }
 
-} // end namespace PB
+} // end namespace Teko

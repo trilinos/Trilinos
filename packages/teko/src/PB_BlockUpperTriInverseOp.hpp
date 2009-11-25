@@ -4,7 +4,7 @@
 #include "PB_Utilities.hpp"
 #include "PB_BlockImplicitLinearOp.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** \brief This linear operator computes the inverse
   *        of a upper triangular matrix.
@@ -86,6 +86,6 @@ inline LinearOp createBlockUpperTriInverseOp(BlockedLinearOp & U,const std::vect
    return result;
 }
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif	

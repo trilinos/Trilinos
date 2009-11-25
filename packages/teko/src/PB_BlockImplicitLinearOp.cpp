@@ -1,6 +1,6 @@
 #include "PB_BlockImplicitLinearOp.hpp"
 
-namespace PB {
+namespace Teko {
 
 using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
@@ -28,4 +28,4 @@ void BlockImplicitLinearOp::apply(const Thyra::EConj conj,
    implicitApply(srcX,destY,alpha,beta);
 }
  
-} // end namespace PB
+} // end namespace Teko

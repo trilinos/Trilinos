@@ -9,12 +9,12 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_BlockedReordering.hpp"
 #include "Epetra/PB_EpetraOperatorWrapper.hpp"
 #include "Epetra/PB_BlockedMappingStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 class BlockedEpetraOperator : public EpetraOperatorWrapper {
@@ -85,6 +85,6 @@ protected:
 };
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko
 
 #endif

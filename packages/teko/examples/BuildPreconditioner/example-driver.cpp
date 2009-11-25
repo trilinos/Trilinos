@@ -16,7 +16,7 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-// PB-Package includes
+// Teko-Package includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "PB_InverseLibrary.hpp"
@@ -62,25 +62,25 @@ int main(int argc,char * argv[])
 
    // Block the linear system using a strided epetra operator
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1; /*@ \label{lned:define-strided} @*/
-   PB::Epetra::StridedEpetraOperator sA(vec,A);
+   Teko::Epetra::StridedEpetraOperator sA(vec,A);
 
    // Build the preconditioner /*@ \label{lned:construct-prec} @*/
    /////////////////////////////////////////////////////////
 
    // build an InverseLibrary
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
    
    // build the inverse factory needed by the example preconditioner
-   RCP<const PB::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
+   RCP<const Teko::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
          = invLib->getInverseFactory("Amesos");
 
    // build the preconditioner factory
-   RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
-   RCP<PB::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
-          = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
+   RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
+   RCP<Teko::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
+          = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
 
    // using the preconditioner factory construct an Epetra_Operator
-   PB::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
+   Teko::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
    prec.buildPreconditioner(sA); // fill epetra preconditioner using the strided operator
 
    // Build and solve the linear system

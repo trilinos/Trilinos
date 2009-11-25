@@ -10,12 +10,12 @@
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 
-// PB includes
+// Teko includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseLibrary.hpp"
 #include "PB_CloneFactory.hpp"
 
-namespace PB {
+namespace Teko {
 
 using Thyra::LinearOpBase;
 using Thyra::DefaultPreconditioner;
@@ -70,20 +70,20 @@ public:
    { isInitialized_ = init; }
 
    //! Set the vector associated with this operator (think nonlinear system)
-   virtual void setSourceVector(const PB::BlockedMultiVector & srcVec)
+   virtual void setSourceVector(const Teko::BlockedMultiVector & srcVec)
    { srcVector_ = srcVec; }
 
    //! Set the vector associated with this operator (think nonlinear system)
-   virtual const PB::BlockedMultiVector getSourceVector() const
+   virtual const Teko::BlockedMultiVector getSourceVector() const
    { return srcVector_; }
 
    //! Add a named inverse to the state object
-   virtual void addInverse(const std::string & name,const PB::InverseLinearOp & ilo)
+   virtual void addInverse(const std::string & name,const Teko::InverseLinearOp & ilo)
    { inverses_[name] = ilo; }
 
    //! Get a named inverse from the state object
-   virtual PB::InverseLinearOp getInverse(const std::string & name) const
-   { std::map<std::string,PB::InverseLinearOp>::const_iterator itr;
+   virtual Teko::InverseLinearOp getInverse(const std::string & name) const
+   { std::map<std::string,Teko::InverseLinearOp>::const_iterator itr;
      itr =  inverses_.find(name);
      if(itr==inverses_.end()) return Teuchos::null; 
      return itr->second; }
@@ -93,20 +93,20 @@ protected:
    RCP<ParameterList>          paramList_;
 
    //! Store a source vector
-   PB::BlockedMultiVector srcVector_;
+   Teko::BlockedMultiVector srcVector_;
 
    //! Store a map of inverse linear operators
-   std::map<std::string,PB::InverseLinearOp> inverses_;
+   std::map<std::string,Teko::InverseLinearOp> inverses_;
 
    //! Stores the initialization state 
    bool isInitialized_;
 };
 
 /** \brief An extension of the <code>Thyra::DefaultPreconditioner</code>
-  *        class with some specializations useful for use within PB.
+  *        class with some specializations useful for use within Teko.
   *
   * An extension of the <code>Thyra::DefaultPreconditioner</code>
-  * class with some specializations useful for use within PB. This includes
+  * class with some specializations useful for use within Teko. This includes
   * having facilities to store the source vector and the state object.
   */
 class BlockPreconditioner : public DefaultPreconditioner<double> {
@@ -132,7 +132,7 @@ public:
      * \param[in] srcVec The source vector associated with this preconditioner.
      */
    virtual void setSourceVector(const RCP<Thyra::MultiVectorBase<double> > & srcVec)
-   { if(srcVec!=Teuchos::null) state_->setSourceVector(PB::toBlockedMultiVector(srcVec));
+   { if(srcVec!=Teuchos::null) state_->setSourceVector(Teko::toBlockedMultiVector(srcVec));
      else                      state_->setSourceVector(Teuchos::null); }
 
    /** Set the state object associated with this preconditioner
@@ -162,10 +162,10 @@ protected:
 };
 
 
-/** \brief Abstract class which block preconditioner factories in PB
+/** \brief Abstract class which block preconditioner factories in Teko
   *        should be based on.
   *
-  * Abstract class which block preconditioner factories in PB should
+  * Abstract class which block preconditioner factories in Teko should
   * be based on. All that is needed is the implementation of 
   * "buildPreconditionerOperator".
   */
@@ -358,6 +358,6 @@ private:
    static void initializePrecFactoryBuilder();
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

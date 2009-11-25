@@ -2,7 +2,7 @@
 
 #include "Teuchos_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 
 using Teuchos::RCP;
 
@@ -138,4 +138,4 @@ void BlockUpperTriInverseOp::describe(Teuchos::FancyOStream & out_arg,
   }
 }
 
-} // end namespace PB
+} // end namespace Teko

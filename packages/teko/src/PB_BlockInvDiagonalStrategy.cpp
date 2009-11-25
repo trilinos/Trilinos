@@ -1,6 +1,6 @@
 #include "PB_BlockInvDiagonalStrategy.hpp"
 
-namespace PB {
+namespace Teko {
 
 InvFactoryDiagStrategy::InvFactoryDiagStrategy(const Teuchos::RCP<InverseFactory> & factory)
 {
@@ -25,13 +25,13 @@ InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<In
   */
 void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state,std::vector<LinearOp> & invDiag) const
 { 
-   PB_DEBUG_SCOPE("InvFactoryDiagStrategy::getInvD",10);
+   Teko_DEBUG_SCOPE("InvFactoryDiagStrategy::getInvD",10);
 
    // loop over diagonals, build an inverse operator for each
    int diagCnt = A->productRange()->numBlocks();
    int invCnt = invDiagFact_.size();
 
-   PB_DEBUG_MSG("# diags = " << diagCnt << ", # inverses = " << invCnt,6);
+   Teko_DEBUG_MSG("# diags = " << diagCnt << ", # inverses = " << invCnt,6);
 
    if(diagCnt<=invCnt) {
       for(int i=0;i<diagCnt;i++) 
@@ -46,4 +46,4 @@ void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPrecondition
    }
 }
 
-} // end namespace PB
+} // end namespace Teko

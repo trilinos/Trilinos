@@ -8,7 +8,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 #define hard_point(i,m,n,o) { x[i] = m; y[i] = n; z[i] = o; }
@@ -99,23 +99,23 @@ int tGraphLaplacian::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
    failstrm << "tGraphLaplacian";
 
    status = test_single_array(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"single_array\" ... PASSED","   \"single_array\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"single_array\" ... PASSED","   \"single_array\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_multi_array(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"multi_array\" ... PASSED","   \"multi_array\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"multi_array\" ... PASSED","   \"multi_array\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tGraphLaplacian...PASSED","tGraphLaplacian...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tGraphLaplacian...PASSED","tGraphLaplacian...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tGraphLaplacian...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tGraphLaplacian...FAILED");
    }
 
    return failcount;
@@ -203,4 +203,4 @@ bool tGraphLaplacian::test_multi_array(int verbosity,std::ostream & os)
 }
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko

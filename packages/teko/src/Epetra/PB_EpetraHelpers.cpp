@@ -18,7 +18,7 @@
 #include "EpetraExt_ProductOperator.h"
 #include "EpetraExt_MatrixMatrix.h"
 
-// PB includes
+// Teko includes
 #include "PB_EpetraOperatorWrapper.hpp"
 #include "PB_Utilities.hpp"
 
@@ -28,7 +28,7 @@ using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::null;
 
-namespace PB {
+namespace Teko {
 namespace Epetra {
 
 /** \brief Convert an Epetra_Vector into a diagonal linear operator.
@@ -205,4 +205,4 @@ int ZeroedOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
 }
 
 } // end namespace Epetra
-} // end namespace PB
+} // end namespace Teko

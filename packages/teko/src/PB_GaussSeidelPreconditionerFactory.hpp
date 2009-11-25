@@ -7,7 +7,7 @@
 #include "PB_BlockInvDiagonalStrategy.hpp"
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 
 typedef enum {GS_UseLowerTriangle,GS_UseUpperTriangle} TriSolveType;
 
@@ -71,6 +71,6 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
       virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

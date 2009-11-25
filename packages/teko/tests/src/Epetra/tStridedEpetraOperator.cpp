@@ -35,7 +35,7 @@
 #include "Epetra/PB_StridedEpetraOperator.hpp"
 
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 using Teuchos::null;
@@ -61,32 +61,32 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    failstrm << "tStridedEpetraOperator";
 
    status = test_numvars_constr(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"numvars_constr\" ... PASSED","   \"numvars_constr\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"numvars_constr\" ... PASSED","   \"numvars_constr\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_vector_constr(verbosity,failstrm);
-   PB_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++; 
 
    status = test_reorder(verbosity,failstrm,0);
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,1);
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,2);
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
+   Teko_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
@@ -94,10 +94,10 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tStridedEpetraOperator...PASSED","tStridedEpetraOperator...FAILED");
+      Teko_TEST_MSG(failstrm,0,"tStridedEpetraOperator...PASSED","tStridedEpetraOperator...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tStridedEpetraOperator...FAILED");
+      Teko_TEST_MSG(failstrm,0,"...PASSED","tStridedEpetraOperator...FAILED");
    }
 
    return failcount;
@@ -133,7 +133,7 @@ bool tStridedEpetraOperator::test_numvars_constr(int verbosity,std::ostream & os
    Epetra_MultiVector ys(A->OperatorRangeMap(),width);
    Epetra_MultiVector y(A->OperatorRangeMap(),width);
 
-   PB::Epetra::StridedEpetraOperator shell(vars,A);
+   Teko::Epetra::StridedEpetraOperator shell(vars,A);
 
    // test the operator against a lot of random vectors
    int numtests = 50;
@@ -247,7 +247,7 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    std::vector<int> vars;
    vars.push_back(2);
    vars.push_back(1);
-   PB::Epetra::StridedEpetraOperator shell(vars,A);
+   Teko::Epetra::StridedEpetraOperator shell(vars,A);
 
    // test the operator against a lot of random vectors
    int numtests = 50;
@@ -358,10 +358,10 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    Epetra_MultiVector yf(A->OperatorRangeMap(),width);
    Epetra_MultiVector yr(A->OperatorRangeMap(),width);
 
-   PB::Epetra::StridedEpetraOperator flatShell(3,A,"Af");
-   PB::Epetra::StridedEpetraOperator reorderShell(3,A,"Ar");
+   Teko::Epetra::StridedEpetraOperator flatShell(3,A,"Af");
+   Teko::Epetra::StridedEpetraOperator reorderShell(3,A,"Ar");
  
-   PB::BlockReorderManager brm;
+   Teko::BlockReorderManager brm;
    switch (total) {
    case 0:
       brm.SetNumBlocks(3);
@@ -425,4 +425,4 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
 }
 
 } // end Test namespace
-} // end PB namespace
+} // end Teko namespace

@@ -4,13 +4,13 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_Utilities.hpp"
 
-namespace PB {
+namespace Teko {
 
 /** Preconditioning factories must supply a 'State' class which
   * is where data specific to the preconditioner construction 
   * is stored. The constructor will be invoked elsewhere.
   */
-class AddPrecondState : public PB::BlockPreconditionerState {
+class AddPrecondState : public Teko::BlockPreconditionerState {
 public:
    AddPrecondState() {}
 
@@ -23,30 +23,30 @@ public:
   * other preconditioners.
   */
 class AddPreconditionerFactory 
-   : public PB::BlockPreconditionerFactory {
+   : public Teko::BlockPreconditionerFactory {
 public:
    //! Constructor
-   AddPreconditionerFactory(const Teuchos::RCP<const PB::BlockPreconditionerFactory> & FirstFactory,
-                            const Teuchos::RCP<const PB::BlockPreconditionerFactory> & SecondFactory);
+   AddPreconditionerFactory(const Teuchos::RCP<const Teko::BlockPreconditionerFactory> & FirstFactory,
+                            const Teuchos::RCP<const Teko::BlockPreconditionerFactory> & SecondFactory);
 
    AddPreconditionerFactory();
 
-   //! Function inherited from PB::BlockPreconditionerFactory
-   PB::LinearOp buildPreconditionerOperator(PB::BlockedLinearOp & blo,
-                                            PB::BlockPreconditionerState & state) const;
+   //! Function inherited from Teko::BlockPreconditionerFactory
+   Teko::LinearOp buildPreconditionerOperator(Teko::BlockedLinearOp & blo,
+                                            Teko::BlockPreconditionerState & state) const;
     
    //! Build the AddPrecondState object
-   virtual Teuchos::RCP<PB::BlockPreconditionerState> buildPreconditionerState() const;
+   virtual Teuchos::RCP<Teko::BlockPreconditionerState> buildPreconditionerState() const;
 
 protected:
    // class members
-   Teuchos::RCP<const PB::BlockPreconditionerFactory> FirstFactory_;
-   Teuchos::RCP<const PB::BlockPreconditionerFactory> SecondFactory_;
+   Teuchos::RCP<const Teko::BlockPreconditionerFactory> FirstFactory_;
+   Teuchos::RCP<const Teko::BlockPreconditionerFactory> SecondFactory_;
 
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
-} // end namespace PB
+} // end namespace Teko
 
 #endif

@@ -9,7 +9,7 @@
 #include "PB_InverseFactory.hpp"
 #include "PB_BlockPreconditionerFactory.hpp"
 
-namespace PB {
+namespace Teko {
 namespace NS {
 
 class LSCPrecondState; // forward declaration
@@ -162,6 +162,6 @@ public:
 };
 
 } // end namespace NS
-} // end namespace PB
+} // end namespace Teko
 
 #endif

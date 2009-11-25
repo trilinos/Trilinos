@@ -13,7 +13,7 @@
 
 #include "Test_Utils.hpp"
 
-namespace PB {
+namespace Teko {
 namespace Test {
 
 class tLSCHIntegrationTest : public UnitTest {
@@ -31,6 +31,6 @@ protected:
 };
 
 } // end namespace Tests
-} // end namespace PB
+} // end namespace Teko
 
 #endif
