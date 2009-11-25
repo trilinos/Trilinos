@@ -197,3 +197,19 @@ PACKAGE_ADD_ADVANCED_TEST(
     WORKING_DIRECTORY Gold
   TEST_2 CMND ${DIFF_COMMAND_STUFF} GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out Gold/cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
   )
+
+# Demonstrate processes never dying
+
+IF (PERL_EXECUTABLE AND Teuchos_ENABLE_RUNS_FOREVER_TEST)
+  
+  PACKAGE_ADD_EXECUTABLE(
+    RunsForever
+    SOURCES RunsForever.cpp
+    )
+  
+  PACKAGE_ADD_ADVANCED_TEST(
+    CTestScripts_RunsForever
+    TEST_0 CMND ${PERL_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/runs_forever.pl
+    )
+
+ENDIF()
