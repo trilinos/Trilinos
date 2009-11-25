@@ -2,10 +2,14 @@
 #
 # ToDo:
 #
-#  (*) Implement checking and control for enableing TrilinosFramework tests or
-#  not depending on if anything under cmake/ or packages/teuchos/test/CTestxxx
-#  is modified or not, except if TrilinosPackages.cmake and TrilinosTPLs.cmake
-#  is specified.
+#  (*) Create a TaskStatus class and use it to simplify the logic replacing
+#  the simple bools.
+#
+#  (*) Put in checks for the names of Trilinos packages from --enable-packages
+#  and --disable-packages arguments.  Right now a mispelled package name would
+#  just be ignored.  Also, put in unit tests for this.
+#
+#  (*) Implement --extra-builds option and support.
 #
 #  (*) Implement check that -DTPL_ENABLE* is not specified in any of the
 #  standard configure files.  Also, make sure that there are not
@@ -15,12 +19,22 @@
 #  (*) Change logic to not enable everything if TrilinosPackages.cmake or
 #  TrilinosTPLs.cmake are changed.
 #
-#  (*) Make this work automatically on branches too.  It should pull and push
-#  to 'origin' always but the current branch should always be used.
+#  (*) Add --execute-on-pass to set a command to launch after everything in
+#  the script has occured if the tests passed.  This can be used for launching
+#  a remote test/push with ssh.  Remember to print out this command in the
+#  final summary email to let user know that it is running.  Hint: Users can
+#  run with:
 #
-#  (*) Put in checks for the names of Trilinos packages from --enable-packages
-#  and --disable-packages arguments.  Right now a mispelled package name would
-#  just be ignored.  Also, put in unit tests for this.
+#    --execute-on-pass="ssh -q godel 'checkin-test-godel.sh --do-all --extra-pull-from=... 2>&1 > /dev/null' &"
+#
+#  (*) Implement checking and control for enabling TrilinosFramework tests or
+#  not depending on if anything under cmake/ or packages/teuchos/test/CTestxxx
+#  is modified or not, except if TrilinosPackages.cmake and TrilinosTPLs.cmake
+#  is specified.  Also, implement Teuchos in this case.
+#
+#  (*) Make this work automatically on branches too.  It should pull and push
+#  to 'origin' always but the current branch should always be used.  Change
+#  --extra-pull-from to require the repository and branch.
 #
 #  (*) Turn off framework tests by default and turn them in checkin
 #      testing ...
@@ -151,7 +165,7 @@ def performAnyBuildTestActions(inOptions):
 
 
 def performAnyActions(inOptions):
-  if performAnyBuildTestActions(inOptions) or inOptions.doCommit or inOptions.doPull:
+  if performAnyBuildTestActions(inOptions) or inOptions.doPull:
     return True
   return False
 
@@ -700,11 +714,6 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
 
   buildDirName = serialOrMpi+"_"+buildType
 
-  if not inOptions.rebuild:
-    print "\nRemoving the existing build directory ..."
-    if os.path.exists(buildDirName):
-      echoRunSysCmnd("rm -rf "+buildDirName)
-
   if not performAnyActions(inOptions):
     print "\nNo other actions to perform!\n"
     return success
@@ -928,26 +937,35 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
   return success
 
 
-def cleanTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
+def cleanBuildTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
   serialOrMpi, buildType ) \
   :
+
   buildDirName = serialOrMpi+"_"+buildType
-  if runTestCaseBool and doRemoveOutputFiles(inOptions) \
-    and os.path.exists(buildDirName) \
-    :
-    echoChDir(buildDirName)
-    if inOptions.doConfigure or inOptions.doPull:
-      removeIfExists(getConfigureOutputFileName())
-      removeIfExists(getConfigureSuccessFileName())
-    if inOptions.doBuild or inOptions.doConfigure or inOptions.doPull:
-      removeIfExists(getBuildOutputFileName())
-      removeIfExists(getBuildSuccessFileName())
-    if inOptions.doTest or inOptions.doBuild or inOptions.doConfigure or inOptions.doPull:
-      removeIfExists(getTestOutputFileName())
-      removeIfExists(getTestSuccessFileName())
-    removeIfExists(getEmailBodyFileName())
-    removeIfExists(getEmailSuccessFileName())
-    echoChDir("..")
+
+  if runTestCaseBool and os.path.exists(buildDirName):
+
+    if not inOptions.rebuild:
+
+      print "\nRemoving the existing build directory "+buildDirName+" (--from-scratch) ..."
+      if os.path.exists(buildDirName):
+        echoRunSysCmnd("rm -rf "+buildDirName)
+
+    elif doRemoveOutputFiles(inOptions):
+
+      echoChDir(buildDirName)
+      if inOptions.doConfigure or inOptions.doPull:
+        removeIfExists(getConfigureOutputFileName())
+        removeIfExists(getConfigureSuccessFileName())
+      if inOptions.doBuild or inOptions.doConfigure or inOptions.doPull:
+        removeIfExists(getBuildOutputFileName())
+        removeIfExists(getBuildSuccessFileName())
+      if inOptions.doTest or inOptions.doBuild or inOptions.doConfigure or inOptions.doPull:
+        removeIfExists(getTestOutputFileName())
+        removeIfExists(getTestSuccessFileName())
+      removeIfExists(getEmailBodyFileName())
+      removeIfExists(getEmailSuccessFileName())
+      echoChDir("..")
 
 
 def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buildType,
@@ -1195,10 +1213,10 @@ def checkinTest(inOptions):
     removeIfExists(getFinalPullOutputFileName())
     removeIfExists(getModifiedFilesOutputFileName())
 
-    cleanTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
+    cleanBuildTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
       "MPI", "DEBUG" )
 
-    cleanTestCaseOutputFiles(inOptions.withSerialRelease, inOptions, baseTestDir,
+    cleanBuildTestCaseOutputFiles(inOptions.withSerialRelease, inOptions, baseTestDir,
       "SERIAL", "RELEASE" )
 
 
@@ -1460,10 +1478,9 @@ def checkinTest(inOptions):
         if not buildOkay:
           commitEmailBodyExtra += "  Not ready for final commit/push!"
         commitEmailBodyExtra += "\n"
-        print "buildOkay =", buildOkay
+        #print "buildOkay =", buildOkay
         if not buildOkay:
           okToCommit = False
-  
   
       if okToCommit:
         print "\nThe tests ran and all passed!\n\n" \
@@ -1572,16 +1589,12 @@ def checkinTest(inOptions):
 
       if not inOptions.appendTestResults:
 
-        print "\nSkipping apending test results on request (--no-append-test-results)!\n"
+        print "\nSkipping appending test results on request (--no-append-test-results)!\n"
 
       elif not okToPush:
 
-        print "\nSkippng apending test results due to prior errors!\n"
+        print "\nSkippng appending test results due to prior errors!\n"
         ammendFinalCommitPassed = False
-
-      elif not performAnyActions(inOptions):
-
-        print "\nSkippng apending test results because no action was selected!\n"
 
       else:  # inOptions.appendTestResults and okToPush
   
@@ -1684,11 +1697,11 @@ def checkinTest(inOptions):
           " See '"+getPushOutputFileName()+"'\n\n"
         success = False
       elif inOptions.doPush and pushPassed and forcedCommit:
-        subjectLine = "FORCED COMMIT/PUSH"
+        subjectLine = "DID FORCED PUSH"
         commitEmailBodyExtra += forcedCommitMsg
         success = True
       elif inOptions.doCommit and commitPassed and forcedCommit:
-        subjectLine = "FORCED COMMIT"
+        subjectLine = "DID FORCED COMMIT"
         commitEmailBodyExtra += forcedCommitMsg
       elif inOptions.doPush:
         if didPush and not forcedCommit:
@@ -1741,7 +1754,7 @@ def checkinTest(inOptions):
 
       print "\nNot performing commit/push or sending out commit/push readiness status on request!"
   
-    if not performAnyActions(inOptions) and not inOptions.doCommit:
+    if not performAnyActions(inOptions) and not inOptions.doPush:
 
       print \
         "\n***\n" \

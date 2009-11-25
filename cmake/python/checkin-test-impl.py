@@ -232,7 +232,7 @@ Common use cases for using this script are as follows:
 
 (*) Push to global repo after a completed set of tests have finished:
 
-  [other options] --push
+  [other options] --push  [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
   NOTE: This will pick up the results for the last completed test runs with
   [other options] and append the results of those tests to the
@@ -247,6 +247,9 @@ Common use cases for using this script are as follows:
   then follow that up with:
 
     --enable-packages=Blah --without-serial-release --push
+
+  NOTE: If you did not commit the first time, then you can commit the second
+  time along with the push by adding the --commit argument.
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -289,7 +292,9 @@ Common use cases for using this script are as follows:
 
   NOTE: This will just configure, build, test, and send and email notification
   without updating or changing the status of the local git repo in any way and
-  without any communication with the global repo.
+  without any communication with the global repo.  Hense, you can have
+  uncommitted changes and still run the configure, build, test without having
+  to have a commit ready to go.
 
   NOTE: This is not a sufficient level of testing in order to commit and push
   the changes to the global repo.  However, this would be a sufficient level
@@ -517,7 +522,7 @@ clp.add_option(
 clp.add_option(
   "--local-do-all", dest="localDoAll", action="store_true",
   help="Do configure, build, and test with no pull (same as --allow-no-pull" \
-  +" --configure --build --test)", default=False )
+  +" --configure --build --test).", default=False )
 
 clp.add_option(
   "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",

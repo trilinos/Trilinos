@@ -236,11 +236,19 @@ g_verbose=False
 g_checkin_test_tests_dir = "checkin_test_tests"
 
 
+def create_checkin_test_case_dir(testName, verbose=False):
+  baseDir = os.getcwd()
+  testDirName = os.path.join(g_checkin_test_tests_dir, testName)
+  createDir(g_checkin_test_tests_dir, verbose)
+  createDir(testDirName, verbose)
+  return testDirName
+
+
 # Unit test driver
 
 
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
-  expectPass, passRegexStrList, fromScratch=True \
+  expectPass, passRegexStrList, fromScratch=True, mustHaveCheckinTestOut=True \
   ):
 
   scriptsDir = getScriptBaseDir()
@@ -253,8 +261,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   # A) Create the test directory
 
   baseDir = os.getcwd()
-  createDir(g_checkin_test_tests_dir, True, verbose)
-  createDir(testName, True, verbose)
+  echoChDir(create_checkin_test_case_dir(testName, verbose), verbose)
 
   try:
 
@@ -267,10 +274,11 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
       "FT: date\n" \
-      "FT: rm .*\n" \
+      "FT: rm [a-zA-Z0-9_/\.]+\n" \
       "FT: touch .*\n" \
       "FT: chmod .*\n" \
       "FT: hostname\n" \
+      "FT: grep .* "+getTestOutputFileName()+"\n" \
       "FT: grep .*OVERALL. PASSED.*\n"
 
     fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
@@ -282,13 +290,20 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     
     # D) Run the checkin-test.py script with mock commands
 
+    checkin_test_test_out = "checkin-test.test.out"
+
     rtnCode = echoRunSysCmnd(cmnd, timeCmnd=True, throwExcept=False,
-      outFile="checkin-test.test.out", verbose=verbose)
+      outFile=checkin_test_test_out, verbose=verbose)
     
     # E) Grep the output looking for specific string
 
+    if mustHaveCheckinTestOut:
+      outputFileToGrep = "checkin-test.out"
+    else:
+      outputFileToGrep = checkin_test_test_out
+      
     for passRegex in passRegexList:
-      foundRegex = getCmndOutput("grep '"+passRegex+"' checkin-test.out", True, False)
+      foundRegex = getCmndOutput("grep '"+passRegex+"' "+outputFileToGrep, True, False)
       if verbose or not foundRegex:
         print "\ncheckin_test::"+testName+": Look for regex '"+passRegex+"' ...", 
         print "'"+foundRegex+"'", 
@@ -315,23 +330,37 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 # ToDo: Extract out expected regex strings as helper varaibles and switch from
 # an array to a single string and then split on '\n'.
 
+g_cmndinterceptsInitialCommitPasses = \
+  "IT: eg commit -a -F .*; 0; 'initial eg commit passes'\n"
+
+g_cmndinterceptsDiffOnlyPasses = \
+  "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
 g_cmndinterceptsPullPasses = \
   "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
   "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
-  "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
+  +g_cmndinterceptsDiffOnlyPasses
+
+g_cmndinterceptsConfigPasses = \
+  "IT: \./do-configure; 0; 'do-configure passed'\n"
+
+g_cmndinterceptsConfigBuildPasses = \
+  g_cmndinterceptsConfigPasses+ \
+  "IT: make -j3; 0; 'make passed'\n"
 
 g_cmndinterceptsConfigBuildTestPasses = \
-  "IT: \./do-configure; 0; 'do-configure passed'\n" \
-  "IT: make -j3; 0; 'make passed'\n" \
+  g_cmndinterceptsConfigBuildPasses+ \
   "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
 
-g_cmndinterceptsFinalPushPasses = \
-  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+g_cmndinterceptsFinalNoPullPushPasses = \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Ammending the last commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
+
+g_cmndinterceptsFinalPushPasses = \
+  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+  +g_cmndinterceptsFinalNoPullPushPasses
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email '\n"
@@ -377,11 +406,68 @@ g_expectedCommonOptionsSummary = \
   "Make Options: -j3\n" \
   "CTest Options: -j5\n"
 
+
+# Helper test case that is used as the inital case for other tests
+def g_test_do_all_without_serial_release_pass(testObject, testName):
+  checkin_test_run_case(
+    \
+    testObject,
+    \
+    testName,
+    \
+    "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all",
+    \
+    g_cmndinterceptsPullPasses \
+    +g_cmndinterceptsConfigBuildTestPasses \
+    +g_cmndinterceptsSendBuildTestCaseEmail \
+    +g_cmndinterceptsSendFinalEmail \
+    ,
+    \
+    True,
+    \
+    g_expectedRegexUpdatePasses \
+    +g_expectedRegexConfigPasses \
+    +g_expectedRegexBuildPasses \
+    +g_expectedRegexTestPasses+ \
+    "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+    "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+    +g_expectedCommonOptionsSummary+ \
+    "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+    "^READY TO PUSH: Trilinos:\n"
+    )
+
+
+
 #
 # Test checkin_test
 #
 
+
 class test_checkin_test(unittest.TestCase):
+
+
+  # A) Test basic passing use cases
+
+
+  def test_help(self):
+    testName = "help"
+    checkin_test_run_case(
+      self,
+      testName,
+      "--help",
+      "", # No shell commands!
+      True,
+      "Usage: checkin-test.py \[OPTIONS\]\n" \
+      "Quickstart:\n" \
+      "Detailed Documentation:\n" \
+      ".*--show-defaults.*\n" \
+      ,
+      mustHaveCheckinTestOut=False
+      )
+    # Help should not write the checkin-test.out file!
+    self.assertEqual(
+      os.path.exists(create_checkin_test_case_dir(testName, g_verbose)+"/checkin-test.out"),
+      False)
 
 
   def test_do_all_commit_push_pass(self):
@@ -394,8 +480,7 @@ class test_checkin_test(unittest.TestCase):
       " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       " --do-all --commit --push",
       \
-      "FT: grep .*\n" \
-      "IT: eg commit -a -F .*; 0; 'initial eg commit passes'\n" \
+      g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -420,15 +505,105 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_do_all_without_serial_release_pass(self):
+    g_test_do_all_without_serial_release_pass(self, "do_all_without_serial_release_pass")
+
+
+  def test_do_all_without_serial_release_then_push_pass(self):
+    testName = "do_all_without_serial_release_then_push_pass"
+    # Do the build/test only first (ready to push)
+    g_test_do_all_without_serial_release_pass(self, testName)
+    # Do the push after the fact
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_without_serial_release_pass",
-      "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
+      testName,
       \
-      "FT: grep .*\n" \
-      +g_cmndinterceptsPullPasses \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push",
+      \
+      g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsFinalNoPullPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "^DID PUSH: Trilinos:\n"
+      )
+
+
+  def test_do_all_without_serial_release_then_commit_push_pass(self):
+
+    testName = "do_all_without_serial_release_then_commit_push_pass"
+
+    # Do the build/test only first (ready to push)
+    g_test_do_all_without_serial_release_pass(self, testName)
+
+    # Do the push after the fact
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --commit --push" \
+      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      ,
+      \
+      g_cmndinterceptsInitialCommitPasses \
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsFinalNoPullPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "^DID PUSH: Trilinos:\n"
+      )
+
+
+  def test_do_all_without_serial_release_then_empty(self):
+
+    testName = "do_all_without_serial_release_then_push_pass"
+
+    # Do the build/test only first (ready to push)
+    g_test_do_all_without_serial_release_pass(self, testName)
+
+    # Check the status after (no action arguments)
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release",
+      \
+      "IT: eg diff --name-status.*; 0; 'eg diff passed'\n" 
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "^READY TO PUSH: Trilinos:\n"
+      )
+
+
+  def test_local_do_all_without_serial_release_pass(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "local_do_all_without_serial_release_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all",
+      \
+      g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
@@ -436,8 +611,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      g_expectedRegexUpdatePasses \
-      +g_expectedRegexConfigPasses \
+      g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses+ \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
@@ -446,6 +620,114 @@ class test_checkin_test(unittest.TestCase):
       "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
       "^READY TO PUSH: Trilinos:\n"
       )
+
+
+  def test_do_all_without_serial_release_test_fail_force_commit_push_pass(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_without_serial_release_test_fail_force_commit_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      " --do-all --commit --force-commit --push",
+      \
+      g_cmndinterceptsInitialCommitPasses \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildPasses \
+      +"IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,      \
+      True,
+      \
+      g_expectedRegexUpdatePasses \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +"FAILED: ctest failed returning 1!\n" \
+      +"testResultsLine = 80% tests passed, 20 tests failed out of 100\n" \
+      +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +g_expectedCommonOptionsSummary \
+      +"Test: FAILED\n" \
+      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"\*\*\* WARNING: The acceptance criteria for doing a commit/push has \*not\*\n" \
+      +"\*\*\* been met, but a commit/push is being forced anyway by --force-commit!\n" \
+      +"DID FORCED PUSH: Trilinos:\n" \
+      +"OVERALL: PASSED\n"
+      )
+
+
+  def test_do_all_without_serial_release_then_from_scratch_pull_pass(self):
+
+    testName = "do_all_without_serial_release_then_from_scratch_pull_pass"
+
+    # Do the build/test only first (ready to push)
+    g_test_do_all_without_serial_release_pass(self, testName)
+
+    # Do the push after the fact
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      +" --from-scratch --pull" \
+      ,
+      \
+      "FT: rm -rf MPI_DEBUG\n" \
+      +g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Running: rm -rf MPI_DEBUG\n" \
+      +"^0) MPI_DEBUG => The directory MPI_DEBUG does not exist!  Not ready for final commit/push!\n" \
+      +"^NOT READY TO PUSH: Trilinos:\n"
+      )
+
+
+  # ToDo: Test --extra-pull from
+  # ToDo: Test --skip-commit-readiness-check
+  # ToDo: Test --no-append-test-results
+  # ToDo: Test --show-defaults
+  
+  
+  # B) Test package enable/disable logic
+
+
+  # ToDo: Test pulling info correctly from *.config files
+  # ToDo: Test setting --enable-packages
+  # ToDo: Test setting --disable-packages
+  # ToDo: Test setting --enable-packages and --disable-packages
+  # ToDo: Test setting --no-enable-fwd-packages
+  # ToDo: Test setting --enable-all-packages=auto (changed from 'default')
+  # ToDo: Test setting --enable-all-packages=off
+  # ToDo: Test setting --enable-all-packages=on
+
+
+  # C) Test intermediate states with rerunning to fill out
+
+
+  # ToDo: On all of these check that the right files are being deleted!
+
+
+  # ToDo: Add test for pull followed by configure
+  # ToDo: Add test for configure followed by build
+  # ToDo: Add test for build followed by test
+  # ToDo: Add test for test for removing files on pull
+  # ToDo: Add test for test for removing files on configure
+  # ToDo: Add test for test for removing files on configure
+
+
+  # D) Test various failing use cases
+
+
+  # ToDo: Test passing in --commit without --commit-msg-header
 
 
   def test_do_all_without_serial_release_commit_initial_commit_fail(self):
@@ -560,8 +842,7 @@ class test_checkin_test(unittest.TestCase):
       "do_all_without_serial_release_test_fail",
       "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
       \
-      "FT: grep .*\n" \
-      +g_cmndinterceptsPullPasses+ \
+      g_cmndinterceptsPullPasses+ \
       "IT: \./do-configure; 0; 'do-configure passed'\n" \
       "IT: make -j3; 0; 'make passed'\n" \
       "IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
@@ -582,6 +863,13 @@ class test_checkin_test(unittest.TestCase):
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
       )
+
+
+  # ToDo: Add test for the final pull failing
+  # ToDo: Add test for final commit failing
+  # ToDo: Add test for final push failing
+  # ToDo: Add test that fails to push if some active pull was not performed
+  #       first (in case --local-do-all is used).
 
 
 def suite():
