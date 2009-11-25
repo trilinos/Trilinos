@@ -63,7 +63,7 @@ class TeuchosTestCase(unittest.TestCase):
 
     def testVersion(self):
         "Test Teuchos Teuchos_Version function"
-        front   = "Teuchos Version "
+        front   = "Teuchos in Trilinos "
         version = Teuchos.Teuchos_Version()
         self.assertEquals(version[:len(front)], front)
 
