@@ -357,6 +357,15 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       RETURN_VALUE  UPDATE_RETURN_VAL)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
     
+    IF(CTEST_TEST_TYPE STREQUAL Continuous)
+      IF(UPDATE_RETURN_VAL EQUAL 0)
+        IF(NOT CTEST_START_WITH_EMPTY_BINARY_DIRECTORY) # indicator of '1st time'...
+          MESSAGE("CTEST_UPDATE reported no changes for Continuous - returning early...")
+          RETURN()
+        ENDIF()
+      ENDIF()
+    ENDIF()    
+
     #setting branch switch to success incase we are not doing a switch to a different branch.
     SET(BRANCH_SUCCEEDED "0")
     IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0")

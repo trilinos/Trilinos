@@ -2,7 +2,7 @@
 
 CTEST_EXE=/home/trilinos/cmake/bin/ctest
 EG_EXE=/home/trilinos/git/bin/eg
-BASEDIR=/home/jmwille/TrilinosTestHarness/TrilinosDevelopment
+BASEDIR=/home/trilinos/dashboards/dev
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
@@ -13,6 +13,8 @@ source .bash_profile
 if [ "$_DAYOFWEEK" == "" ] ; then
   _DAYOFWEEK=`date +%A`
 fi
+
+DATE=`date "+%Y%m%d"`
 
 echo "_DAYOFWEEK=$_DAYOFWEEK"
 
@@ -32,21 +34,18 @@ if [ -d Trilinos ]; then
   $EG_EXE pull
   cd ..
 else
-  echo Cloning the repository because none exists yets
+  echo Cloning the repository because none exists yet
   $EG_EXE clone $TRILINOS_REPOSITORY_LOCATION
 fi
 
 
 echo
-echo "Doing mpi debug continuous builds: `date`"
+echo "Doing continuous mpi optimized development shared library build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_continuous_mpi_debug_shared_trilinos-test.cmake -VV \
-  &> $BASEDIR/ctest_linux_continuous_mpi_debug_shared_trilinos-test.out
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_continuous_mpi_development_opt_shared_trilinos-test.cmake -VV &> "CONTINUOUS_MPI_OPT_DEV_SHARED_$DATE.log"
+
 
 echo
 echo "Ending Trilinos continuous integration testing on trilinos-test. `date`"
 echo
-
-
-#/home/rabartl/mailmsg.py "Finished nightly Trilinos tests trilinos-test. http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos"
