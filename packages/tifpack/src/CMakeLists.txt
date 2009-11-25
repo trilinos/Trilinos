@@ -28,6 +28,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
   Tifpack_ConfigDefs.hpp
+  Tifpack_Condest.hpp
+  Tifpack_CondestType.hpp
   Tifpack_Version.hpp
   Tifpack_IlukGraph.hpp
   Tifpack_Parameters.hpp

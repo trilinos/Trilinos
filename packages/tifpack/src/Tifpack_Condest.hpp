@@ -32,13 +32,94 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_CondestType.hpp"
-class Tifpack_Preconditioner;
-class Tpetra_RowMatrix;
+#include "Tifpack_Preconditioner.hpp"
 
-double Tifpack_Condest(const Tifpack_Preconditioner& IFP,
-		      const Tifpack_CondestType CT,
+namespace Tifpack {
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal, class Node>
+Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& TIFP,
+		      const Tifpack::CondestType CT,
 		      const int MaxIters = 1550,
 		      const double Tol = 1e-9,
-		      Tpetra_RowMatrix* Matrix = 0);
+		      Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix = 0)
+{
+  Scalar ConditionNumberEstimate = -1.0;
+
+  if (CT == Tifpack::Cheap) {
+
+    // Create a vector with all values equal to one
+    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ones(TIFP.getDomainMap());
+    Ones.putScalar(1.0);
+    // Create the vector of results
+    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> OnesResult(TIFP.getRangeMap());
+    // Compute the effect of the solve on the vector of ones
+    TIFP.applyInverse(Ones, OnesResult);
+    // Make all values non-negative
+    OnesResult.abs(OnesResult);
+    // Get the maximum value across all processors
+    Teuchos::Array<Scalar> cne(1,0);
+    OnesResult.normInf(cne());
+    ConditionNumberEstimate = cne[0];
+  }
+  else if (CT == Tifpack::CG) {
+
+#ifdef HAVE_TIFPACK_AZTECOO
+this code not yet converted!!!
+    if (Matrix == 0)
+      Matrix = (Tpetra_RowMatrix*)&(IFP.Matrix());
+
+    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
+    LHS.PutScalar(0.0);
+    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> RHS(IFP.getRangeMap());
+    RHS.Random();
+    Tpetra_LinearProblem Problem;
+    Problem.SetOperator(Matrix);
+    Problem.SetLHS(&LHS);
+    Problem.SetRHS(&RHS);
+
+    AztecOO Solver(Problem);
+    Solver.SetAztecOption(AZ_output,AZ_none);
+    Solver.SetAztecOption(AZ_solver,AZ_cg_condnum);
+    Solver.Iterate(MaxIters,Tol);
+
+    const double* status = Solver.GetAztecStatus();
+    ConditionNumberEstimate = status[AZ_condnum];
+#endif
+
+  } else if (CT == Tifpack::GMRES) {
+
+#ifdef HAVE_TIFPACK_AZTECOO
+this code not yet converted!!!
+    if (Matrix == 0)
+      Matrix = (Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>*)&(IFP.Matrix());
+
+    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
+    LHS.PutScalar(0.0);
+    Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> RHS(IFP.getRangeMap());
+    RHS.Random();
+    Tpetra_LinearProblem Problem;
+    Problem.SetOperator(Matrix);
+    Problem.SetLHS(&LHS);
+    Problem.SetRHS(&RHS);
+
+    AztecOO Solver(Problem);
+    Solver.SetAztecOption(AZ_solver,AZ_gmres_condnum);
+    Solver.SetAztecOption(AZ_output,AZ_none);
+    // the following can be problematic for large problems,
+    // but any restart would destroy useful information about
+    // the condition number.
+    Solver.SetAztecOption(AZ_kspace,MaxIters);
+    Solver.Iterate(MaxIters,Tol);
+
+    const double* status = Solver.GetAztecStatus();
+    ConditionNumberEstimate = status[AZ_condnum];
+#endif
+  }
+
+  return(ConditionNumberEstimate);
+}
+
+}//namespace Tifpack
 
 #endif // TIFPACK_CONDEST_HPP
+

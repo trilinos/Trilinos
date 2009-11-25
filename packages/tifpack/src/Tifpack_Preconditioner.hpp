@@ -129,13 +129,13 @@ public:
   virtual void SetParameters(Teuchos::ParameterList& List) = 0;
 
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
-  virtual int Initialize() = 0;
+  virtual void Initialize() = 0;
 
   //! Returns true if the  preconditioner has been successfully initialized, false otherwise.
   virtual bool IsInitialized() const = 0;
 
   //! Computes all (coefficient) data necessary to apply the preconditioner.
-  virtual int Compute() = 0;
+  virtual void Compute() = 0;
 
   //! Returns true if the  preconditioner has been successfully computed, false otherwise.
   virtual bool IsComputed() const = 0;
@@ -149,20 +149,8 @@ public:
   //! Returns the computed condition number estimate, or -1.0 if not computed.
   virtual magnitudeType Condest() const = 0;
 
-//  //! Applies the preconditioner to vector X, returns the result in Y.
-//  virtual void applyInverse(
-//      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-//			      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-//            Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
-
   //! Returns a pointer to the matrix to be preconditioned.
   virtual const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Matrix() const = 0;
-
-  //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-//  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
-
-  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-//  virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const = 0;

@@ -34,6 +34,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Operator.hpp"
+#include "Tifpack_Condest.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Parameters.hpp"
 
@@ -121,7 +122,7 @@ Tifpack::GaussSeidel does not consider backward Gauss-Seidel methods.
   
 */
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-class PointRelaxation /* : virtual public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> */{
+class PointRelaxation : virtual public Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
 public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
@@ -207,12 +208,12 @@ public:
   }
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal> >& getDomainMap() const;
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal> >& getRangeMap() const;
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
 
-  int Initialize();
+  void Initialize();
   
   bool IsInitialized() const
   {
@@ -226,7 +227,7 @@ public:
   }
 
   //! Computes the preconditioners.
-  int Compute();
+  void Compute();
 
   //@}
  
@@ -237,7 +238,7 @@ public:
     return(*Matrix_);
   }
 
-  //! Computes the condition number estimates and returns the value.
+  //! Computes the condition number estimate and returns the value.
   magnitudeType Condest(
        const Tifpack::CondestType CT = Tifpack::Cheap,
        const LocalOrdinal MaxIters = 1550,
@@ -321,47 +322,38 @@ private:
   // @{ Application of the preconditioner
   
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  int ApplyInverseJacobi(
+  void ApplyInverseJacobi(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
-  int ApplyInverseGS(
+  void ApplyInverseGS(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int ApplyInverseGS_RowMatrix(
+  void ApplyInverseGS_RowMatrix(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int ApplyInverseGS_CrsMatrix(
+  void ApplyInverseGS_CrsMatrix(
         const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  int ApplyInverseGS_FastCrsMatrix(
-        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
-  int ApplyInverseSGS(
+  void ApplyInverseSGS(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int ApplyInverseSGS_RowMatrix(
+  void ApplyInverseSGS_RowMatrix(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int ApplyInverseSGS_CrsMatrix(
+  void ApplyInverseSGS_CrsMatrix(
         const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int ApplyInverseSGS_FastCrsMatrix(
-        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
   //@}
 
 private:
@@ -503,6 +495,636 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetParameters(Teuc
   Tifpack::GetParameter(List, "relaxation: min diagonal value", MinDiagonalValue_);
   Tifpack::GetParameter(List, "relaxation: zero starting solution", ZeroStartingSolution_);
   Tifpack::GetParameter(List, "relaxation: backward mode",DoBackwardGS_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
+PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const
+{
+  return Matrix_->getDomainMap();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
+PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const
+{
+  return Matrix_->getRangeMap();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(
+       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+             Teuchos::ETransp mode) const
+{
+  TEST_FOR_EXCEPTION(IsComputed() == false, std::runtime_error,
+     "Tifpack::PointRelaxation::apply ERROR: IsComputed() must be true prior to calling apply.");
+
+  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+     "Tifpack::PointRelaxation::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  Matrix_->apply(X, Y, mode);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
+          const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                Teuchos::ETransp mode) const
+{
+  TEST_FOR_EXCEPTION(IsComputed() == false, std::runtime_error,
+     "Tifpack::PointRelaxation::applyInverse ERROR: IsComputed() must be true prior to calling applyInverse.");
+
+  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+     "Tifpack::PointRelaxation::applyInverse ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  Time_->start(true);
+
+  // AztecOO gives X and Y pointing to the same memory location.
+  // In that case we need to create an auxiliary vector, Xcopy
+  Teuchos::RCP< const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;
+  if (&(X.get2dView()[0][0]) == &(Y.get2dView()[0][0]))
+    Xcopy = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(X) );
+  else
+    Xcopy = Teuchos::rcp( &X, false );
+
+  if (ZeroStartingSolution_)
+    Y.putScalar(0.0);
+
+  // Flops are updated in each of the following.
+  switch (PrecType_) {
+  case Tifpack::JACOBI:
+    ApplyInverseJacobi(*Xcopy,Y);
+    break;
+  case Tifpack::GS:
+    ApplyInverseGS(*Xcopy,Y);
+    break;
+  case Tifpack::SGS:
+    ApplyInverseSGS(*Xcopy,Y);
+    break;
+  default:
+    throw std::runtime_error("Tifpack::PointRelaxation::applyInverse internal logic error.");
+  }
+
+  ++NumApplyInverse_;
+  Time_->stop();
+  ApplyInverseTime_ += Time_->totalElapsedTime();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseJacobi(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  int NumVectors = X.getNumVectors();
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> A_times_Y( Y.getMap(),NumVectors );
+
+  for (int j = 0; j < NumSweeps_ ; j++) {
+    apply(Y,A_times_Y);
+    A_times_Y.update(1.0,X,-1.0);
+    Y.elementWiseMultiply(DampingFactor_, *Diagonal_, A_times_Y, 1.0);
+  }
+
+  // Flops:
+  // - matrix vector              (2 * NumGlobalNonzeros_)
+  // - update                     (2 * NumGlobalRows_)
+  // - Multiply:
+  //   - DampingFactor            (NumGlobalRows_)
+  //   - Diagonal                 (NumGlobalRows_)
+  //   - A + B                    (NumGlobalRows_)
+  //   - 1.0                      (NumGlobalRows_)
+  ApplyInverseFlops_ += NumVectors * (6 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseGS(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* CrsMatrix = dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>*>(&*Matrix_);
+  // try to pick the best option; performances may be improved
+  // if several sweeps are used.
+  if (CrsMatrix != 0)
+  {
+    ApplyInverseGS_CrsMatrix(*CrsMatrix, X, Y);
+  }
+  else {
+    ApplyInverseGS_RowMatrix(X, Y);
+  }
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseGS_RowMatrix(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  size_t NumVectors = X.getNumVectors();
+
+  size_t maxLength = Matrix().getNodeMaxNumRowEntries();
+  Teuchos::Array<LocalOrdinal> Indices(maxLength);
+  Teuchos::Array<Scalar> Values(maxLength);
+
+  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  if (IsParallel_)
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  // extract views (for nicer and faster code)
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+ 
+  for (int j = 0; j < NumSweeps_ ; j++) {
+
+    // data exchange is here, once per sweep
+    if (IsParallel_)
+      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+    if(!DoBackwardGS_){      
+      /* Forward Mode */
+      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+        
+        size_t NumEntries;
+        Matrix_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
+        
+        for (size_t m = 0 ; m < NumVectors ; ++m) {
+
+          double dtemp = 0.0;
+          for (size_t k = 0 ; k < NumEntries ; ++k) {
+            LocalOrdinal col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * d_ptr[i] * (x_ptr[m][i] - dtemp);
+        }
+      }
+    }
+    else {
+      /* Backward Mode */
+      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+        size_t NumEntries;
+        Matrix_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
+
+        for (size_t m = 0 ; m < NumVectors ; ++m) {
+          
+          Scalar dtemp = 0.0;
+          for (size_t k = 0 ; k < NumEntries ; ++k) {
+            LocalOrdinal col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+
+          y2_ptr[m][i] += DampingFactor_ * d_ptr[i] * (x_ptr[m][i] - dtemp);
+        }
+      }
+    }
+
+    // using Export() sounded quite expensive   
+    if (IsParallel_) {
+      for (size_t m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
+    }
+  }
+
+  ApplyInverseFlops_ += NumVectors * (4 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseGS_CrsMatrix(
+        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  size_t NumVectors = X.getNumVectors();
+
+  Teuchos::ArrayRCP<const LocalOrdinal> Indices;
+  Teuchos::ArrayRCP<const Scalar> Values;
+
+  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  if (IsParallel_) {
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+  }
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+    if(!DoBackwardGS_){  
+      /* Forward Mode */
+      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+        LocalOrdinal col;
+        Scalar diag = d_ptr[i];
+        
+        A.getLocalRowView(i, Indices, Values);
+        size_t NumEntries = Indices.size();
+        
+        for (size_t m = 0 ; m < NumVectors ; ++m) {
+          
+          Scalar dtemp = 0.0;
+          
+          for (size_t k = 0; k < NumEntries; ++k) {
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+        }
+      }
+    }
+    else {
+      /* Backward Mode */
+      for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+        LocalOrdinal col;
+        Scalar diag = d_ptr[i];
+        
+        A.getLocalRowView(i, Indices, Values);
+        size_t NumEntries = Indices.size();
+        
+        for (size_t m = 0 ; m < NumVectors ; ++m) {
+          
+          Scalar dtemp = 0.0;
+          for (size_t k = 0; k < NumEntries; ++k) {
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+          
+          y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+          
+        }
+      }
+    }
+    
+    if (IsParallel_) {
+      for (size_t m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
+    }
+  }
+
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseSGS(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* CrsMatrix = dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>*>(&*Matrix_);
+  // try to pick the best option; performance may be improved
+  // if several sweeps are used.
+  if (CrsMatrix != 0)
+  {
+    ApplyInverseSGS_CrsMatrix(*CrsMatrix, X, Y);
+  }
+  else
+    ApplyInverseSGS_RowMatrix(X, Y);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseSGS_RowMatrix(
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  size_t NumVectors = X.getNumVectors();
+  size_t maxLength = Matrix().getNodeMaxNumRowEntries();
+  Teuchos::Array<LocalOrdinal> Indices(maxLength);
+  Teuchos::Array<Scalar> Values(maxLength);
+
+  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  if (IsParallel_) {
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+  }
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+      size_t NumEntries;
+      Scalar diag = d_ptr[i];
+
+      Matrix_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
+
+      for (size_t m = 0 ; m < NumVectors ; ++m) {
+
+        Scalar dtemp = 0.0;
+
+        for (size_t k = 0 ; k < NumEntries ; ++k) {
+          LocalOrdinal col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+      }
+    }
+
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+      size_t NumEntries;
+      Scalar diag = d_ptr[i];
+
+      Matrix_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
+
+      for (size_t m = 0 ; m < NumVectors ; ++m) {
+
+        Scalar dtemp = 0.0;
+        for (size_t k = 0 ; k < NumEntries ; ++k) {
+          LocalOrdinal col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+      }
+    }
+
+    if (IsParallel_) {
+      for (size_t m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
+    }
+  }
+
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseSGS_CrsMatrix(
+        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  size_t NumVectors = X.getNumVectors();
+
+  Teuchos::ArrayRCP<const LocalOrdinal> Indices;
+  Teuchos::ArrayRCP<const Scalar> Values;
+
+  Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
+  if (IsParallel_) {
+    Y2 = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Importer_->getTargetMap(), NumVectors) );
+  }
+  else
+    Y2 = Teuchos::rcp( &Y, false );
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y_ptr = Y.get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > y2_ptr = Y2->get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > x_ptr =  X.get2dView();
+  Teuchos::ArrayRCP<const Scalar> d_ptr = Diagonal_->get1dView();
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      Y2->doImport(Y,*Importer_,Tpetra::INSERT);
+
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+      Scalar diag = d_ptr[i];
+
+      A.getLocalRowView(i, Indices, Values);
+      size_t NumEntries = Indices.size();
+
+      for (size_t m = 0 ; m < NumVectors ; ++m) {
+
+        Scalar dtemp = 0.0;
+
+        for (size_t k = 0; k < NumEntries; ++k) {
+
+          LocalOrdinal col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+      }
+    }
+
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+      Scalar diag = d_ptr[i];
+
+      A.getLocalRowView(i, Indices, Values);
+      size_t NumEntries = Indices.size();
+
+      for (size_t m = 0 ; m < NumVectors ; ++m) {
+
+        Scalar dtemp = 0.0;
+        for (size_t k = 0; k < NumEntries; ++k) {
+
+          LocalOrdinal col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
+
+      }
+    }
+
+    if (IsParallel_) {
+      for (size_t m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
+    }
+  }
+
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::magnitudeType
+PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Condest(
+       const Tifpack::CondestType CT,
+       const LocalOrdinal MaxIters,
+       const magnitudeType Tol,
+			 Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix_in)
+{
+  if (!IsComputed()) // cannot compute right now
+    return(-1.0);
+
+  // always compute it. Call Condest() with no parameters to get
+  // the previous estimate.
+  Condest_ = Tifpack::Condest(*this, CT, MaxIters, Tol, Matrix_in);
+
+  return(Condest_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::ostream& PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Print(std::ostream & os) const
+{
+  Scalar MinVal = Teuchos::ScalarTraits<Scalar>::zero();
+  Scalar MaxVal = Teuchos::ScalarTraits<Scalar>::zero();
+
+  const Teuchos::RCP<const Teuchos::Comm<int> >& tcomm = Matrix_->getRowMap()->getComm();
+  if (IsComputed_) {
+    Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
+    Scalar myMinVal = DiagView[0];
+    Scalar myMaxVal = DiagView[0];
+    for(typename Teuchos::ArrayRCP<Scalar>::size_type i=0; i<DiagView.size(); ++i) {
+      if (myMinVal > DiagView[i]) myMinVal = DiagView[i];
+      if (myMaxVal < DiagView[i]) myMaxVal = DiagView[i];
+    }
+
+    Teuchos::reduceAll(*tcomm, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
+    Teuchos::reduceAll(*tcomm, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);
+  }
+
+  if (!tcomm->getRank()) {
+    os << std::endl;
+    os << "================================================================================" << std::endl;
+    os << "Tifpack_PointRelaxation" << std::endl;
+    os << "Sweeps         = " << NumSweeps_ << std::endl;
+    os << "damping factor = " << DampingFactor_ << std::endl;
+    if (PrecType_ == Tifpack::JACOBI)
+      os << "Type           = Jacobi" << std::endl;
+    else if (PrecType_ == Tifpack::GS)
+      os << "Type           = Gauss-Seidel" << std::endl;
+    else if (PrecType_ == Tifpack::SGS)
+      os << "Type           = symmetric Gauss-Seidel" << std::endl;
+    if (DoBackwardGS_) 
+      os << "Using backward mode (GS only)" << std::endl;
+    if (ZeroStartingSolution_) 
+      os << "Using zero starting solution" << std::endl;
+    else
+      os << "Using input starting solution" << std::endl;
+    os << "Condition number estimate = " << Condest_ << std::endl;
+    os << "Global number of rows            = " << Matrix_->getGlobalNumRows() << std::endl;
+    if (IsComputed_) {
+      os << "Minimum value on stored diagonal = " << MinVal << std::endl;
+      os << "Maximum value on stored diagonal = " << MaxVal << std::endl;
+    }
+    os << std::endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << std::endl;
+    os << "-----           -------   --------------       ------------     --------" << std::endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
+       << "  " << std::setw(15) << InitializeTime_ 
+       << "              0.0              0.0" << std::endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+       << "  " << std::setw(15) << ComputeTime_
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
+    if (ComputeTime_ != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << std::endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << std::endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+       << "  " << std::setw(15) << ApplyInverseTime_
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
+    if (ApplyInverseTime_ != 0.0)
+      os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << std::endl;
+    else
+      os << "  " << std::setw(15) << 0.0 << std::endl;
+    os << "================================================================================" << std::endl;
+    os << std::endl;
+  }
+
+  return(os);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Initialize()
+{
+  IsInitialized_ = false;
+
+  TEST_FOR_EXCEPTION(Matrix_ == Teuchos::null, std::runtime_error,
+    "Tifpack::PointRelaxation::Initialize ERROR, Matrix is NULL");
+
+  if (Time_ == Teuchos::null)
+    Time_ = Teuchos::rcp( new Teuchos::Time("Tifpack::PointRelaxation") );
+
+//  size_t globalrows = Matrix().getGlobalNumRows();
+//  size_t globalcols = Matrix().getGlobalNumCols();
+//  TEST_FOR_EXCEPTION(globalrows != globalcols, std::runtime_error,
+//   "Tifpack::PointRelaxation::Initialize ERROR, only square matrices are supported");
+
+  NumMyRows_ = Matrix_->getNodeNumRows();
+  NumMyNonzeros_ = Matrix_->getNodeNumEntries();
+  NumGlobalRows_ = Matrix_->getGlobalNumRows();
+  NumGlobalNonzeros_ = Matrix_->getGlobalNumEntries();
+
+  const Teuchos::RCP<const Teuchos::Comm<int> >& tcomm = Matrix_->getRowMap()->getComm();
+  if (tcomm->getSize() != 1)
+    IsParallel_ = true;
+  else
+    IsParallel_ = false;
+
+  ++NumInitialize_;
+  InitializeTime_ += Time_->totalElapsedTime();
+  IsInitialized_ = true;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
+{
+  if (!IsInitialized())
+    Initialize();
+
+  Time_->start(true);
+
+  // reset values
+  IsComputed_ = false;
+  Condest_ = -1.0;
+
+  TEST_FOR_EXCEPTION(NumSweeps_ < 0, std::runtime_error,
+    "Tifpack::PointRelaxation::Compute, NumSweeps_ must be >= 0");
+  
+  Diagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix().getRowMap()) );
+
+  TEST_FOR_EXCEPTION(Diagonal_ == Teuchos::null, std::runtime_error,
+    "Tifpack::PointRelaxation::Compute, failed to create Diagonal_");
+
+  Matrix().getLocalDiagCopy(*Diagonal_);
+
+  // check diagonal elements, store the inverses, and verify that
+  // no zeros are around. If an element is zero, then by default
+  // its inverse is zero as well (that is, the row is ignored).
+  Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
+  for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    Scalar& diag = DiagView[i];
+    if (std::abs(diag) < MinDiagonalValue_)
+      diag = MinDiagonalValue_;
+    if (diag != 0.0)
+      diag = 1.0 / diag;
+  }
+  ComputeFlops_ += NumMyRows_;
+
+  //Marzio's comment:
+  // We need to import data from external processors. Here I create a
+  // Tpetra::Import object because I cannot assume that Matrix_ has one.
+  // This is a bit of waste of resources (but the code is more robust).
+  // Note that I am doing some strange stuff to set the components of Y
+  // from Y2 (to save some time).
+  //
+  if (IsParallel_ && ((PrecType_ == Tifpack::GS) || (PrecType_ == Tifpack::SGS))) {
+    Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(Matrix().getColMap(),
+                                  Matrix().getRowMap()) );
+    TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
+      "Tifpack::PointRelaxation::Compute ERROR failed to create Importer_");
+  }
+
+  ++NumCompute_;
+  Time_->stop();
+  ComputeTime_ += Time_->totalElapsedTime();
+  IsComputed_ = true;
 }
 
 }//namespace Tifpack

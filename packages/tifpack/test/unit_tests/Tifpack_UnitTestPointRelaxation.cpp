@@ -56,9 +56,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
 
   global_size_t num_rows_per_proc = 5;
 
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_test_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph);
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
   Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
 
@@ -66,6 +66,42 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
   params.set("relaxation: type", "Jacobi");
 
   TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
+
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
+
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
+
+  TEUCHOS_TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr, out, success );
+  TEUCHOS_TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr, out, success );
+
+  prec.Initialize();
+  prec.Compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  prec.apply(x, y);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+
+  //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
+  //y should be full of 2's now.
+
+  Teuchos::ArrayRCP<Scalar> twos(num_rows_per_proc*2, 2);
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+
+  prec.applyInverse(x, y);
+
+  //y should be full of 0.5's now.
+
+  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
