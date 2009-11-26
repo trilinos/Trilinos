@@ -141,8 +141,8 @@ class EpetraLinearProblemTestCase(unittest.TestCase):
         "Test Epetra.LinearProblem copy constructor"
         lp = Epetra.LinearProblem(self.linProb)
         self.assertEqual(id(lp.GetMatrix()), id(self.linProb.GetMatrix()))
-        self.assertEqual(id(lp.GetLHS()   ), id(self.linProb.GetLHS()   ))
-        self.assertEqual(id(lp.GetRHS()   ), id(self.linProb.GetRHS()   ))
+        self.assertEqual(lp.GetLHS().array.data, self.linProb.GetLHS().array.data)
+        self.assertEqual(lp.GetRHS().array.data, self.linProb.GetRHS().array.data)
 
     def testIsOperatorSymmetric(self):
         "Test Epetra.LinearProblem IsOperatorSymmetric/AssertSymmetric methods"
