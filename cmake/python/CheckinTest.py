@@ -184,7 +184,7 @@ def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
   cmnd = "eg pull --rebase"
   if pullFromRepo:
     print "\nPulling in updates from '"+pullFromRepo+"' ...\n"
-    cmnd += " " + pullFromRepo + " master"
+    cmnd += " " + pullFromRepo
   else:
     print "\nPulling in updates from 'origin' ...\n"
   return echoRunSysCmnd( cmnd,

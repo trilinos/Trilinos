@@ -333,9 +333,12 @@ g_cmndinterceptsInitialCommitPasses = \
 g_cmndinterceptsDiffOnlyPasses = \
   "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
-g_cmndinterceptsPullPasses = \
+g_cmndinterceptsPullOnlyPasses = \
   "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-  "IT: eg pull --rebase; 0; 'eg pull passed'\n" \
+  "IT: eg pull --rebase; 0; 'eg pull passed'\n"
+
+g_cmndinterceptsPullPasses = \
+  g_cmndinterceptsPullOnlyPasses \
   +g_cmndinterceptsDiffOnlyPasses
 
 g_cmndinterceptsConfigPasses = \
@@ -698,8 +701,6 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # ToDo: Test --extra-pull from
-  # ToDo: Test --skip-commit-readiness-check
   # ToDo: Test --no-append-test-results
   # ToDo: Test --show-defaults
   
@@ -737,6 +738,53 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexUpdatePasses \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
       +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready for final commit/push!\n" \
+      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"^NOT READY TO PUSH: Trilinos:\n"
+      )
+
+
+  def test_without_serial_release_pull_skip_commit_readiness_check(self):
+    checkin_test_run_case(
+      self,
+      \
+      "without_serial_release_pull_only",
+      \
+      "--without-serial-release --pull --skip-commit-readiness-check",
+      \
+      g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdatePasses \
+      +"Skipping commit readiness check on request!\n" \
+      +"Not performing commit/push or sending out commit/push readiness status on request!\n" \
+      "^NOT READY TO PUSH$\n" \
+      +"REQUESTED ACTIONS: PASSED\n"
+      )
+
+
+  def test_without_serial_release_pull_extra_pull_only(self):
+    checkin_test_run_case(
+      self,
+      \
+      "without_serial_release_pull_extra_pull_only",
+      \
+      "--pull --extra-pull-from='machine:/repo/dir/repo master'",
+      \
+      g_cmndinterceptsPullOnlyPasses \
+      +"IT: eg pull --rebase machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
+      +g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdatePasses \
+      +"Pulling in updates from .machine:\/repo\/dir\/repo master.\n" \
+      +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
       +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"

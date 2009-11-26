@@ -233,7 +233,9 @@ class SysCmndInterceptor:
     for line in lines:
       if line == "":
         continue
-      (tag, entry) = line.split(':')
+      splitArray = line.split(':')
+      (tag, entry) = (splitArray[0], ':'.join(splitArray[1:]))
+      #(tag, entry) = line.split(':')
       #print "(tag, entry) =", (tag, entry)
       if tag == "FT":
         self.__fallThroughCmndRegexList.append(entry.strip())

@@ -321,7 +321,7 @@ On your local development machine <mymachine>, do the local test/commit with:
 
 On your remote test machine's CHECKIN directory, do a full test/commit run:
 
-  --extra-pull-from=<mymachine>:/some/dir/to/your/trilinos/src \
+  --extra-pull-from='<mymachine>:/some/dir/to/your/trilinos/src master' \
    --do-all --push
 
 NOTE: You can of course do the local commit yourself first and avoid the
@@ -505,7 +505,9 @@ clp.add_option(
 clp.add_option(
   "--extra-pull-from", dest="extraPullFrom", type="string", default="",
   help="Optional extra git repository to pull and merge in changes from after" \
-    +" pulling in changes from 'origin'." )
+  +" pulling in changes from 'origin'.  This must include the repository and the" \
+  +" branch, separated by a space.  For example --extra-pull-from='machine:/base/dir/repo" \
+  +" master'." )
 
 clp.add_option(
   "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
