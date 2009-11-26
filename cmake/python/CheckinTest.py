@@ -695,10 +695,11 @@ def getTestCaseEmailSummary(testCaseName, testCaseNum):
 
 def getSummaryEmailSectionStr(inOptions):
   summaryEmailSectionStr = ""
-  if inOptions.withMpiDebug:
-    summaryEmailSectionStr += getTestCaseEmailSummary("MPI_DEBUG", 0)
-  if inOptions.withSerialRelease:
-    summaryEmailSectionStr += getTestCaseEmailSummary("SERIAL_RELEASE", 1)
+  if performAnyBuildTestActions(inOptions):
+    if inOptions.withMpiDebug:
+      summaryEmailSectionStr += getTestCaseEmailSummary("MPI_DEBUG", 0)
+    if inOptions.withSerialRelease:
+      summaryEmailSectionStr += getTestCaseEmailSummary("SERIAL_RELEASE", 1)
   return summaryEmailSectionStr
 
   
@@ -996,7 +997,7 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
 
   return success
 
-def checkBuildTestCaseStatus(runTestCaseBool, serialOrMpi, buildType):
+def checkBuildTestCaseStatus(runTestCaseBool, serialOrMpi, buildType, inOptions):
 
   buildName = serialOrMpi+"_"+buildType
 
@@ -1006,7 +1007,13 @@ def checkBuildTestCaseStatus(runTestCaseBool, serialOrMpi, buildType):
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = True
     statusMsg = \
-      "Test case "+buildName+" was not run!  Does not affect commit/push readiness!"
+      "Test case "+buildName+" was not run! => Does not affect commit/push readiness!"
+    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
+
+  if not os.path.exists(buildName) and not performAnyBuildTestActions(inOptions):
+    buildTestCaseActionsPass = True
+    buildTestCaseOkayToCommit = False
+    statusMsg = "No configure, build, or test for "+buildName+" was requested!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
 
   if not os.path.exists(buildName):
@@ -1482,7 +1489,7 @@ def checkinTest(inOptions):
       for i in range(len(buildTestCaseList)):
         buildTestCase = buildTestCaseList[i]
         (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg) = \
-          checkBuildTestCaseStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2])
+          checkBuildTestCaseStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2], inOptions)
         print "\n"+statusMsg
         commitEmailBodyExtra += str(i)+") "+buildTestCase[1]+"_"+buildTestCase[2]+" => "+statusMsg
         if not buildTestCaseOkayToCommit:
@@ -1493,6 +1500,7 @@ def checkinTest(inOptions):
           success = False
         if not buildTestCaseOkayToCommit:
           okayToCommit = False
+        
 
       # Print message if a commit is okay or not
       if okayToCommit:

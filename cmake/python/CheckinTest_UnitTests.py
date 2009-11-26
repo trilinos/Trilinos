@@ -327,9 +327,6 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 # Test Data
 
 
-# ToDo: Extract out expected regex strings as helper varaibles and switch from
-# an array to a single string and then split on '\n'.
-
 g_cmndinterceptsInitialCommitPasses = \
   "IT: eg commit -a -F .*; 0; 'initial eg commit passes'\n"
 
@@ -370,6 +367,9 @@ g_cmndinterceptsSendFinalEmail = \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_expectedRegexUpdatePasses = \
+  "Update passed!\n" \
+
+g_expectedRegexUpdateWithBuildCasePasses = \
   "Update passed!\n" \
   "The update passed!\n" \
   "Update: Passed\n"
@@ -425,12 +425,12 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     \
     True,
     \
-    g_expectedRegexUpdatePasses \
+    g_expectedRegexUpdateWithBuildCasePasses \
     +g_expectedRegexConfigPasses \
     +g_expectedRegexBuildPasses \
     +g_expectedRegexTestPasses+ \
     "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-    "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+    "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
     +g_expectedCommonOptionsSummary+ \
     "=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
     "=> A PUSH IS READY TO BE PERFORMED!\n" \
@@ -493,7 +493,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexUpdateWithBuildCasePasses+ \
       g_expectedRegexConfigPasses+ \
       g_expectedRegexBuildPasses+ \
       g_expectedRegexTestPasses+ \
@@ -619,7 +619,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
       +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
       +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
@@ -650,13 +650,13 @@ class test_checkin_test(unittest.TestCase):
       ,      \
       True,
       \
-      g_expectedRegexUpdatePasses \
+      g_expectedRegexUpdateWithBuildCasePasses \
       +g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +"FAILED: ctest failed returning 1!\n" \
       +"testResultsLine = 80% tests passed, 20 tests failed out of 100\n" \
       +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
-      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
       +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
@@ -691,10 +691,12 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
-      False,
+      True,
       \
       "Running: rm -rf MPI_DEBUG\n" \
-      +"^0) MPI_DEBUG => The directory MPI_DEBUG does not exist! => Not ready for final commit/push!\n" \
+      +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready for final commit/push!\n" \
+      +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
 
@@ -721,6 +723,29 @@ class test_checkin_test(unittest.TestCase):
   # C) Test partial actions short of running tests
 
 
+  def test_without_serial_release_pull_only(self):
+    checkin_test_run_case(
+      self,
+      \
+      "without_serial_release_pull_only",
+      \
+      "--without-serial-release --pull",
+      \
+      g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdatePasses \
+      +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
+      +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready for final commit/push!\n" \
+      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"^NOT READY TO PUSH: Trilinos:\n"
+      )
+
+
   def test_without_serial_release_configure_only(self):
     checkin_test_run_case(
       self,
@@ -737,7 +762,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexUpdateWithBuildCasePasses+ \
       "Configure passed!\n" \
       "touch configure.success\n" \
       "Skipping the build on request!\n" \
@@ -748,8 +773,31 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # ToDo: Test --pull
-  # ToDo: Test --pull --configure --build
+  def test_without_serial_release_build_only(self):
+    checkin_test_run_case(
+      self,
+      \
+      "without_serial_release_build_only",
+      \
+      "--make-options=-j3 --without-serial-release --pull --configure --build",
+      \
+      g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdateWithBuildCasePasses+ \
+      "Configure passed!\n" \
+      "touch configure.success\n" \
+      "Build passed!\n" \
+      "Skipping the tests on request!\n" \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: build-only passed => Not ready for final commit/push!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "NOT READY TO PUSH: Trilinos:\n"
+      )
 
 
   # D) Test intermediate states with rerunning to fill out
@@ -761,9 +809,10 @@ class test_checkin_test(unittest.TestCase):
   # ToDo: Add test for pull followed by configure
   # ToDo: Add test for configure followed by build
   # ToDo: Add test for build followed by test
-  # ToDo: Add test for test for removing files on pull
-  # ToDo: Add test for test for removing files on configure
-  # ToDo: Add test for test for removing files on configure
+  # ToDo: Add test for removing files on pull
+  # ToDo: Add test for removing files on configure
+  # ToDo: Add test for removing files on build
+  # ToDo: Add test for removing files on test
 
 
   # E) Test various failing use cases
@@ -836,7 +885,7 @@ class test_checkin_test(unittest.TestCase):
       \
       False,
       \
-      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexUpdateWithBuildCasePasses+ \
       "Configure failed returning 1!\n" \
       "The configure FAILED!\n" \
       "The build was never attempted!\n" \
@@ -864,12 +913,12 @@ class test_checkin_test(unittest.TestCase):
       \
       False,
       \
-      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexUpdateWithBuildCasePasses+ \
       g_expectedRegexConfigPasses+ \
       g_expectedRegexTestNotRun+ \
       g_expectedRegexBuildFailed+ \
       "0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: build failed => Not ready for final commit/push!\n" \
-      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary+ \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
@@ -893,13 +942,13 @@ class test_checkin_test(unittest.TestCase):
       ,      \
       False,
       \
-      g_expectedRegexUpdatePasses+ \
+      g_expectedRegexUpdateWithBuildCasePasses+ \
       g_expectedRegexConfigPasses+ \
       g_expectedRegexBuildPasses+ \
       "FAILED: ctest failed returning 1!\n" \
       "testResultsLine = 80% tests passed, 20 tests failed out of 100\n" \
       "0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
-      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary+ \
       "Test: FAILED\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
