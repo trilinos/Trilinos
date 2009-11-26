@@ -195,9 +195,12 @@ protected:
    // flags for handling various options
    bool rowZeroingNeeded_;
    bool useFullLDU_;
-   bool useMass_;
    bool useLumping_;
    bool useWScaling_;
+
+   // scaling operator parameters
+   bool useMass_;
+   DiagonalType scaleType_; 
 };
 
 } // end namespace NS

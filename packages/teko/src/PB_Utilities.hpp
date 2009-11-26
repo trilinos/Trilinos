@@ -661,7 +661,7 @@ typedef enum {  Diagonal     //! Specifies that just the diagonal is used
   *
   * \returns A diagonal operator.
   */
-ModifiableLinearOp getDiagonalOp(Teko::LinearOp & A,DiagonalType dt);
+ModifiableLinearOp getDiagonalOp(const Teko::LinearOp & A,const DiagonalType & dt);
 
 /** Get the inverse of a diagonal operator from a matrix. The mechanism for computing
   * the diagonal is specified by a <code>DiagonalType</code> arugment.
@@ -671,7 +671,7 @@ ModifiableLinearOp getDiagonalOp(Teko::LinearOp & A,DiagonalType dt);
   *
   * \returns A inverse of a diagonal operator.
   */
-ModifiableLinearOp getInvDiagonalOp(Teko::LinearOp & A,DiagonalType dt);
+ModifiableLinearOp getInvDiagonalOp(const Teko::LinearOp & A,const DiagonalType & dt);
 
 /** Get a string corresponding to the type of digaonal specified.
   *
@@ -679,7 +679,7 @@ ModifiableLinearOp getInvDiagonalOp(Teko::LinearOp & A,DiagonalType dt);
   *
   * \returns A string name representing this diagonal type.
   */
-std::string getDiagonalName(DiagonalType dt);
+std::string getDiagonalName(const DiagonalType & dt);
 
 /** Get a type corresponding to the name of a diagonal specified.
   *

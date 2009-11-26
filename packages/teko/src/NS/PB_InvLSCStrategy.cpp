@@ -81,31 +81,31 @@ Teko::ModifiableLinearOp reduceCrsOperator(Teko::ModifiableLinearOp & op,const s
 /////////////////////////////////////////////////////////////////////////////
 InvLSCStrategy::InvLSCStrategy()
    : massMatrix_(Teuchos::null), invFactoryF_(Teuchos::null), invFactoryS_(Teuchos::null), eigSolveParam_(5)
-   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
+   , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                const Teuchos::RCP<InverseFactory> & invFactS,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                const Teuchos::RCP<InverseFactory> & invFactS,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false)
+   , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
 { }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -188,7 +188,7 @@ LinearOp InvLSCStrategy::getHScaling(const BlockedLinearOp & A,BlockPrecondition
 //! Initialize the state object using this blocked linear operator
 void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const
 {
-   Teko_DEBUG_SCOPE("InvLSCStrategy::initiailzeState",10);
+   Teko_DEBUG_SCOPE("InvLSCStrategy::initializeState",10);
 
    const LinearOp F  = getBlock(0,0,A);
    const LinearOp Bt = getBlock(0,1,A);
@@ -197,6 +197,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    bool isStabilized = (not isZeroOp(C));
 
+/*
    // if a mass matrix and diagonal op hasn't been setup (don't setup it up more then once)
    if(massMatrix_!=Teuchos::null && state->invMass_==Teuchos::null)
       state->invMass_ = (useLumping_ ? getInvLumpedMatrix(massMatrix_) 
@@ -205,6 +206,25 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       // state->invMass_ = getInvDiagonalOp(F);
       state->invMass_ = (useLumping_ ? getInvLumpedMatrix(F) 
                                      : getInvDiagonalOp(F));
+*/
+
+   // The logic follows like this
+   //    if there is no mass matrix available --> build from F
+   //    if there is a mass matrix and the inverse hasn't yet been built
+   //       --> build from the mass matrix
+   //    otherwise, there is already an invMass_ matrix that is appropriate
+   //       --> use that one
+   if(massMatrix_==Teuchos::null) {
+      Teko_DEBUG_MSG("LSC::initializeState Build Scaling <F> type \"" 
+                   << getDiagonalName(scaleType_) << "\"" ,1);
+      state->invMass_ = getInvDiagonalOp(F,scaleType_);
+   }
+   else if(state->invMass_==Teuchos::null) {
+      Teko_DEBUG_MSG("LSC::initializeState Build Scaling <mass> type \"" 
+                   << getDiagonalName(scaleType_) << "\"" ,1);
+      state->invMass_ = getInvDiagonalOp(massMatrix_,scaleType_);
+   }
+   // else "invMass_" should be set and there is no reason to rebuild it
 
    // compute BQBt
    state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
@@ -394,6 +414,7 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    std::string invStr="", invVStr="", invPStr="";
    bool rowZeroing = true;
    bool useLDU = false;
+   scaleType_ = Diagonal;
 
    // "parse" the parameter list
    if(pl.isParameter("Inverse Type"))
@@ -408,10 +429,14 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       useLDU = pl.get<bool>("Use LDU");
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");
-   if(pl.isParameter("Use Lumping"))
-      useLumping_ = pl.get<bool>("Use Lumping");
+   // if(pl.isParameter("Use Lumping"))
+   //    useLumping_ = pl.get<bool>("Use Lumping");
    if(pl.isParameter("Use W-Scaling"))
       useWScaling_ = pl.get<bool>("Use W-Scaling");
+   if(pl.isParameter("Scaling Type")) {
+      scaleType_ = getDiagonalType(pl.get<std::string>("Scaling Type"));
+      TEST_FOR_EXCEPT(scaleType_==NotDiag);
+   }
 
    Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Inverse Strategy Parameters: " << std::endl;
@@ -421,8 +446,9 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-      DEBUG_STREAM << "   use lumping    = " << useLumping_ << std::endl;
+      // DEBUG_STREAM << "   use lumping    = " << useLumping_ << std::endl;
       DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
+      DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    Teko_DEBUG_MSG_END()

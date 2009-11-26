@@ -170,6 +170,7 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    // default conditions
    useMass_ = false;
    customHFactory_ = Teuchos::null;
+   fInverseType_ = Diagonal;
   
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";

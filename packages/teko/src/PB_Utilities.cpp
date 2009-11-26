@@ -1088,7 +1088,7 @@ double computeSmallestMagEig(const RCP<const Thyra::LinearOpBase<double> > & A, 
   *
   * \returns A diagonal operator.
   */
-ModifiableLinearOp getDiagonalOp(Teko::LinearOp & A,DiagonalType dt)
+ModifiableLinearOp getDiagonalOp(const Teko::LinearOp & A,const DiagonalType & dt)
 {
    switch(dt) {
    case Diagonal:
@@ -1113,7 +1113,7 @@ ModifiableLinearOp getDiagonalOp(Teko::LinearOp & A,DiagonalType dt)
   *
   * \returns A inverse of a diagonal operator.
   */
-ModifiableLinearOp getInvDiagonalOp(Teko::LinearOp & A,Teko::DiagonalType dt)
+ModifiableLinearOp getInvDiagonalOp(const Teko::LinearOp & A,const Teko::DiagonalType & dt)
 {
    switch(dt) {
    case Diagonal:
@@ -1136,7 +1136,7 @@ ModifiableLinearOp getInvDiagonalOp(Teko::LinearOp & A,Teko::DiagonalType dt)
   *
   * \returns A string name representing this diagonal type.
   */
-std::string getDiagonalName(DiagonalType dt)
+std::string getDiagonalName(const DiagonalType & dt)
 {
    switch(dt) {
    case Diagonal:
