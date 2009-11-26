@@ -349,15 +349,12 @@ g_cmndinterceptsConfigBuildTestPasses = \
   g_cmndinterceptsConfigBuildPasses+ \
   "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
 
-g_cmndinterceptsFinalNoPullPushPasses = \
+g_cmndinterceptsFinalPushPasses = \
+  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Ammending the last commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
-
-g_cmndinterceptsFinalPushPasses = \
-  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
-  +g_cmndinterceptsFinalNoPullPushPasses
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email '\n"
@@ -526,7 +523,7 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push",
       \
       g_cmndinterceptsDiffOnlyPasses \
-      +g_cmndinterceptsFinalNoPullPushPasses \
+      +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -558,7 +555,7 @@ class test_checkin_test(unittest.TestCase):
       \
       g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsDiffOnlyPasses \
-      +g_cmndinterceptsFinalNoPullPushPasses \
+      +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \

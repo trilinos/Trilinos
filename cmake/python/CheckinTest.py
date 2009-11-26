@@ -9,12 +9,12 @@
 #  and --disable-packages arguments.  Right now a mispelled package name would
 #  just be ignored.  Also, put in unit tests for this.
 #
-#  (*) Implement --extra-builds option and support.
+#  (*) Implement --extra-builds option.
 #
 #  (*) Implement check that -DTPL_ENABLE* is not specified in any of the
-#  standard configure files.  Also, make sure that there are not
-#  -DTrilinos_ENABLE commands either.  Force users to do package
-#  enables/disables using --enable-packages, --disable-packages.
+#  standard configure files.  Also, make sure that there are no
+#  -DTrilinos_ENABLE* variables in COMMON.config either.  Force users to do
+#  package enables/disables using --enable-packages, --disable-packages.
 #
 #  (*) Change logic to not enable everything if TrilinosPackages.cmake or
 #  TrilinosTPLs.cmake are changed.
@@ -36,11 +36,13 @@
 #  to 'origin' always but the current branch should always be used.  Change
 #  --extra-pull-from to require the repository and branch.
 #
-#  (*) Turn off framework tests by default and turn them in checkin
-#      testing ...
+#  (*) Once everyone is using the checkin-test.py script:
 #
-#  (*) Turn off generation of HTML/XML files by default and turn them on in
-#      checkin testing ...
+#  - Turn off framework tests by default and turn them in checkin
+#    testing ...
+#
+#  - Turn off generation of HTML/XML files by default and turn them on in
+#    checkin testing ...
 #
 
 #
@@ -1599,16 +1601,17 @@ def checkinTest(inOptions):
       print "\n7.a) Performing a final pull to make sure there are no conflicts for push ...\n"
       #
       
-      if not inOptions.doPull:
-
-        print "\nSkipping the final pull (--skip-final-pull)!\n"
-
-      elif not okayToPush:
+      if not okayToPush:
 
         print "\nSkippng final pull due to prior errors!\n"
         pullFinalPassed = False
 
-      else: # inOptions.doPull and okayToPush
+      else:
+
+        print "\nExplanation: In order to push, the local repo needs to be up-to-date" \
+          " with the global repo or the push will not be allowed.  Therefore, a pull" \
+          " before the push must be performed if there are updates in the global reop" \
+          " regardless if --pull was specified or not.\n"
 
         (update2Rtn, update2Time) = \
           executePull(inOptions, baseTestDir, getFinalPullOutputFileName())
@@ -1620,7 +1623,7 @@ def checkinTest(inOptions):
           print "\nFinal update failed!\n"
           pullFinalPassed = False
 
-      if not pullFinalPassed: okayToPush = False
+        if not pullFinalPassed: okayToPush = False
 
       #
       print "\n7.b) Ammending the final commit message by appending test results ...\n"
