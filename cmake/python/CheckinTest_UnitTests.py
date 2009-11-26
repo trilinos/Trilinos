@@ -686,7 +686,7 @@ class test_checkin_test(unittest.TestCase):
       False,
       \
       "Running: rm -rf MPI_DEBUG\n" \
-      +"^0) MPI_DEBUG => The directory MPI_DEBUG does not exist!  Not ready for final commit/push!\n" \
+      +"^0) MPI_DEBUG => The directory MPI_DEBUG does not exist! => Not ready for final commit/push!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
 
@@ -710,7 +710,41 @@ class test_checkin_test(unittest.TestCase):
   # ToDo: Test setting --enable-all-packages=on
 
 
-  # C) Test intermediate states with rerunning to fill out
+  # C) Test partial actions short of running tests
+
+
+  def test_without_serial_release_configure_only(self):
+    checkin_test_run_case(
+      self,
+      \
+      "do_all_without_serial_release_configure_fail",
+      \
+      "--without-serial-release --pull --configure",
+      \
+      g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      g_expectedRegexUpdatePasses+ \
+      "Configure passed!\n" \
+      "touch configure.success\n" \
+      "Skipping the build on request!\n" \
+      "Skipping the tests on request!\n" \
+      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: configure-only passed => Not ready for final commit/push!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "NOT READY TO PUSH: Trilinos:\n"
+      )
+
+
+  # ToDo: Test --pull
+  # ToDo: Test --pull --configure --build
+
+
+  # D) Test intermediate states with rerunning to fill out
 
 
   # ToDo: On all of these check that the right files are being deleted!
@@ -724,7 +758,7 @@ class test_checkin_test(unittest.TestCase):
   # ToDo: Add test for test for removing files on configure
 
 
-  # D) Test various failing use cases
+  # E) Test various failing use cases
 
 
   # ToDo: Test passing in --commit without --commit-msg-header
@@ -752,7 +786,7 @@ class test_checkin_test(unittest.TestCase):
       "Commit failed, aborting pull!\n" \
       "Skipping getting list of modified files because pull failed!\n" \
       "The commit failed, skipping running the build/test cases!\n" \
-      "0) MPI_DEBUG => The directory MPI_DEBUG does not exist!  Not ready for final commit/push!\n" \
+      "0) MPI_DEBUG => The directory MPI_DEBUG does not exist! => Not ready for final commit/push!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "Not doing the push on request (--no-push) but sending an email about the commit/push readiness status ...\n" \
       "INITIAL COMMIT FAILED: Trilinos:\n"
@@ -826,7 +860,7 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexConfigPasses+ \
       g_expectedRegexTestNotRun+ \
       g_expectedRegexBuildFailed+ \
-      "0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: build failed  Not ready for final commit/push!\n" \
+      "0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: build failed => Not ready for final commit/push!\n" \
       "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary+ \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \

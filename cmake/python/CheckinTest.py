@@ -913,7 +913,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
   
     else:
   
-      print "\nSkipping the testing on request!\n"
+      print "\nSkipping the tests on request!\n"
 
   except Exception, e:
 
@@ -1001,35 +1001,31 @@ def checkBuildCheckinStatus(runTestCaseBool, serialOrMpi, buildType):
 
   buildName = serialOrMpi+"_"+buildType
 
-  buildOkay = False
+  buildOkayToPush = None
   statusMsg = None
 
   if not runTestCaseBool:
-    buildOkay = True
+    buildOkayToPush = True
     statusMsg = \
       "Test case "+buildName+" was not run!  Does not affect commit/push readiness!"
-    return (buildOkay, statusMsg)
+    return (buildOkayToPush, statusMsg)
 
   if not os.path.exists(buildName):
-    buildOkay = True
+    buildOkayToPush = False
     statusMsg = "The directory "+buildName+" does not exist!"
 
+  # If it is okay to push is based soley on whether the tests ran and all
+  # passed!
   testSuccessFileName = buildName+"/"+getTestSuccessFileName()
-  if not os.path.exists(testSuccessFileName):
-    buildOkay = False
+  if os.path.exists(testSuccessFileName):
+    buildOkayToPush = True
   else:
-    buildOkay = True
-
-  emailSuccessFileName = buildName+"/"+getEmailSuccessFileName()
-  if not os.path.exists(emailSuccessFileName):
-    buildOkay = False
-  else:
-    buildOkay = True
+    buildOkayToPush = False
 
   if not statusMsg:
     statusMsg = getTestCaseSummaryLine(buildName)
 
-  return (buildOkay, statusMsg)
+  return (buildOkayToPush, statusMsg)
 
 
 def getUserCommitMessageStr(inOptions):
@@ -1471,15 +1467,15 @@ def checkinTest(inOptions):
         ]
       for i in range(len(buildTestCaseList)):
         buildTestCase = buildTestCaseList[i]
-        (buildOkay, statusMsg) = \
+        (buildOkayToPush, statusMsg) = \
           checkBuildCheckinStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2])
         print "\n"+statusMsg
         commitEmailBodyExtra += str(i)+") "+buildTestCase[1]+"_"+buildTestCase[2]+" => "+statusMsg
-        if not buildOkay:
-          commitEmailBodyExtra += "  Not ready for final commit/push!"
+        if not buildOkayToPush:
+          commitEmailBodyExtra += " => Not ready for final commit/push!"
         commitEmailBodyExtra += "\n"
-        #print "buildOkay =", buildOkay
-        if not buildOkay:
+        #print "buildOkayToPush =", buildOkayToPush
+        if not buildOkayToPush:
           okToCommit = False
   
       if okToCommit:
