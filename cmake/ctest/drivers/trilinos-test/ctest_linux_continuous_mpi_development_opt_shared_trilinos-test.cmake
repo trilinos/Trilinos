@@ -17,13 +17,21 @@ SET(EXTRA_EXCLUDE_PACKAGES Mesquite)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
+  "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
   "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
   )
+
+# 2009/11/26: rabartl: Do we really wantk to be pointing to Trilinos_DATA_DIR?
+# Unless the CI sever is going to be updatting this every iteration this is
+# likely to cause an inconsistency and a test failure.  For example, if
+# someone adds a new test and then adds new test data, the CI server will only
+# get the new test but not the new test data.  Therefore, I am removing this.
+# # "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
+
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test
