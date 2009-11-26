@@ -996,36 +996,40 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
 
   return success
 
-
-def checkBuildCheckinStatus(runTestCaseBool, serialOrMpi, buildType):
+def checkBuildTestCaseStatus(runTestCaseBool, serialOrMpi, buildType):
 
   buildName = serialOrMpi+"_"+buildType
 
-  buildOkayToPush = None
   statusMsg = None
 
   if not runTestCaseBool:
-    buildOkayToPush = True
+    buildTestCaseActionsPass = True
+    buildTestCaseOkayToCommit = True
     statusMsg = \
       "Test case "+buildName+" was not run!  Does not affect commit/push readiness!"
-    return (buildOkayToPush, statusMsg)
+    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
 
   if not os.path.exists(buildName):
-    buildOkayToPush = False
+    buildTestCaseActionsPass = False
+    buildTestCaseOkayToCommit = False
     statusMsg = "The directory "+buildName+" does not exist!"
 
-  # If it is okay to push is based soley on whether the tests ran and all
-  # passed!
+  emailsuccessFileName = buildName+"/"+getEmailSuccessFileName()
+  if os.path.exists(emailsuccessFileName):
+    buildTestCaseActionsPass = True
+  else:
+    buildTestCaseActionsPass = False
+
   testSuccessFileName = buildName+"/"+getTestSuccessFileName()
   if os.path.exists(testSuccessFileName):
-    buildOkayToPush = True
+    buildTestCaseOkayToCommit = True
   else:
-    buildOkayToPush = False
+    buildTestCaseOkayToCommit = False
 
   if not statusMsg:
     statusMsg = getTestCaseSummaryLine(buildName)
 
-  return (buildOkayToPush, statusMsg)
+  return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
 
 
 def getUserCommitMessageStr(inOptions):
@@ -1342,27 +1346,33 @@ def checkinTest(inOptions):
       else:
         print "\nSkipping extra pull from '"+inOptions.extraPullFrom+"'!\n"
 
-      #
-      print "\n3.d) Determine overall update pass/success ...\n"
-      #
+    #
+    print "\nDetermine overall update pass/fail ...\n"
+    #
 
-      echoChDir(baseTestDir)
+    echoChDir(baseTestDir)
 
-      if (inOptions.doPull or inOptions.extraPullFrom):
-        if pullPassed:
-          print "\nUpdate passed!\n"
-          echoRunSysCmnd("touch "+getInitialPullSuccessFileName())
-        else:
-          print "\nUpdate failed!\n"
-      elif os.path.exists(getInitialPullSuccessFileName()):
-        print "\nA previous update was performed and was successful!"
-        pullPassed = True
-      elif inOptions.allowNoPull:
-        print "\nNot performing update since --skip-update was passed in\n"
-        pullPassed = True
+    # Check for prior successful initial pull
+    currentSuccessfullPullExists = os.path.exists(getInitialPullSuccessFileName())
+
+    if (inOptions.doPull or inOptions.extraPullFrom):
+      if pullPassed:
+        print "\nUpdate passed!\n"
+        echoRunSysCmnd("touch "+getInitialPullSuccessFileName())
       else:
-        print "\nNo previous successful update is still current!"
-        pullPassed = False
+        print "\nUpdate failed!\n"
+    elif currentSuccessfullPullExists:
+      print "\nA previous update was performed and was successful!"
+      pullPassed = True
+    elif inOptions.allowNoPull:
+      print "\nNot performing update since --skip-update was passed in\n"
+      pullPassed = True
+    else:
+      print "\nNo previous successful update is still current!"
+      pullPassed = False
+
+    # Update for current successful pull
+    currentSuccessfullPullExists = os.path.exists(getInitialPullSuccessFileName())
 
 
     print "\n***"
@@ -1447,14 +1457,18 @@ def checkinTest(inOptions):
 
 
     print "\n***"
-    print "*** 6) Determine overall commit/push readiness ..."
+    print "*** 6) Determine overall success and commit/push readiness (and backout commit if failed) ..."
     print "***"
+
+    okayToCommit = False
+    okayToPush = False
+    forcedCommit = False
 
     if inOptions.doCommitReadinessCheck or inOptions.doCommit:
 
       echoChDir(baseTestDir)
   
-      okToCommit = True
+      okayToCommit = True
       subjectLine = None
       commitEmailBodyExtra = ""
 
@@ -1467,60 +1481,85 @@ def checkinTest(inOptions):
         ]
       for i in range(len(buildTestCaseList)):
         buildTestCase = buildTestCaseList[i]
-        (buildOkayToPush, statusMsg) = \
-          checkBuildCheckinStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2])
+        (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg) = \
+          checkBuildTestCaseStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2])
         print "\n"+statusMsg
         commitEmailBodyExtra += str(i)+") "+buildTestCase[1]+"_"+buildTestCase[2]+" => "+statusMsg
-        if not buildOkayToPush:
+        if not buildTestCaseOkayToCommit:
           commitEmailBodyExtra += " => Not ready for final commit/push!"
         commitEmailBodyExtra += "\n"
-        #print "buildOkayToPush =", buildOkayToPush
-        if not buildOkayToPush:
-          okToCommit = False
-  
-      if okToCommit:
+        #print "buildTestCaseActionsPass =", buildTestCaseActionsPass
+        if not buildTestCaseActionsPass:
+          success = False
+        if not buildTestCaseOkayToCommit:
+          okayToCommit = False
+
+      # Print message if a commit is okay or not
+      if okayToCommit:
         print "\nThe tests ran and all passed!\n\n" \
-          "  => A PUSH IS OKAY TO BE PERFORMED!"
+          "  => A COMMIT IS OKAY TO BE PERFORMED!"
       else:
         print "\nAt least one of the actions (update, configure, built, test)" \
           " failed or was not performed correctly!\n\n" \
-          "  => A PUSH IS *NOT* READY TO BE PERFORMED!"
+          "  => A COMMIT IS *NOT* OKAY TO BE PERFORMED!"
+
+      # Back out commit if one was performed and buid/test failed
+      if not okayToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommit:
+        print "\nNOTICE: Backing out the commit that was just done ...\n"
+        try:
+          echoRunSysCmnd("eg reset --soft HEAD^",
+            workingDir=inOptions.trilinosSrcDir,
+            timeCmnd=True,
+            throwExcept=False )
+        except Exception, e:
+          success = False
+          printStackTrace()
+      
+      # Determine if we should do a forced commit/push
+      if inOptions.doCommitReadinessCheck and not okayToCommit and commitPassed \
+        and inOptions.forceCommit \
+        :
+        forcedCommitMsg = \
+          "\n***" \
+          "\n*** WARNING: The acceptance criteria for doing a commit/push has *not*" \
+          "\n*** been met, but a commit/push is being forced anyway by --force-commit!" \
+          "\n***\n"
+        print forcedCommitMsg
+        okayToCommit = True
+        forcedCommit = True
+
+      # Determine if a push is ready to try or not
+
+      if okayToCommit:
+        if currentSuccessfullPullExists:
+          print "\nA current successful pull also exists => Ready for final push!\n"
+          okayToPush = True
+        else:
+          commitEmailBodyExtra += \
+             "\nA current successful pull does *not* exist => Not ready for final push!\n" \
+             "\nExplanation: In order to safely push, the local working directory needs" \
+             " to be up-to-date with the global repo or a full integration has not been" \
+             " performed!\n"
+          print commitEmailBodyExtra
+          okayToPush = False
+      else:
+        okayToPush = False
+  
+      if okayToPush:
+        print "\n  => A PUSH IS READY TO BE PERFORMED!"
+      else:
+        print "\n  => A PUSH IS *NOT* READY TO BE PERFORMED!"
 
     else:
 
       print "\nSkipping commit readiness check on request!"
-      okToCommit = False
+      okayToCommit = False
+      okayToPush = False
 
   
     print "\n***"
     print "*** 7) Do final push  ..."
     print "***"
-
-    # Back out commit if one was performed and buid/test failed
-    if not okToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommit:
-      print "\nNOTICE: Backing out the commit that was just done ...\n"
-      try:
-        echoRunSysCmnd("eg reset --soft HEAD^",
-          workingDir=inOptions.trilinosSrcDir,
-          timeCmnd=True,
-          throwExcept=False )
-      except Exception, e:
-        success = False
-        printStackTrace()
-    
-    # Determine if we should do a forced commit/push
-    forcedCommit = False
-    if inOptions.doCommitReadinessCheck and not okToCommit and commitPassed \
-      and inOptions.forceCommit \
-      :
-      forcedCommitMsg = \
-        "\n***" \
-        "\n*** WARNING: The acceptance criteria for doing a commit/push has *not*" \
-        "\n*** been met, but a commit/push is being forced anyway by --force-commit!" \
-        "\n***\n"
-      print forcedCommitMsg
-      okToCommit = True
-      forcedCommit = True
 
     # Attempt the final pull, commit ammend, and push
 
@@ -1530,24 +1569,23 @@ def checkinTest(inOptions):
     didPush = False
     pushPassed = True
     localCommitSummariesStr = ""
-    okToPush = okToCommit
 
     if not inOptions.doPush:
   
       print "\nNot doing the push on request (--no-push) but sending an email" \
             " about the commit/push readiness status ..."
   
-      if okToPush:
+      if okayToPush:
         subjectLine = "READY TO PUSH"
       else:
         subjectLine = "NOT READY TO PUSH"
 
-    elif not okToPush:
+    elif not okayToPush:
 
       print "\nNot performing push due to prior errors\n"
       pushPassed = False
 
-    else: # inOptions.doPush and okToPush:
+    else: # inOptions.doPush and okayToPush:
 
       #
       print "\n7.a) Performing a final pull to make sure there are no conflicts for push ...\n"
@@ -1557,12 +1595,12 @@ def checkinTest(inOptions):
 
         print "\nSkipping the final pull (--skip-final-pull)!\n"
 
-      elif not okToPush:
+      elif not okayToPush:
 
         print "\nSkippng final pull due to prior errors!\n"
         pullFinalPassed = False
 
-      else: # inOptions.doPull and okToPush
+      else: # inOptions.doPull and okayToPush
 
         (update2Rtn, update2Time) = \
           executePull(inOptions, baseTestDir, getFinalPullOutputFileName())
@@ -1574,7 +1612,7 @@ def checkinTest(inOptions):
           print "\nFinal update failed!\n"
           pullFinalPassed = False
 
-      if not pullFinalPassed: okToPush = False
+      if not pullFinalPassed: okayToPush = False
 
       #
       print "\n7.b) Ammending the final commit message by appending test results ...\n"
@@ -1587,12 +1625,12 @@ def checkinTest(inOptions):
 
         print "\nSkipping appending test results on request (--no-append-test-results)!\n"
 
-      elif not okToPush:
+      elif not okayToPush:
 
         print "\nSkippng appending test results due to prior errors!\n"
         ammendFinalCommitPassed = False
 
-      else:  # inOptions.appendTestResults and okToPush
+      else:  # inOptions.appendTestResults and okayToPush
   
         print "\nAttempting to ammend the final commmit message ...\n"
 
@@ -1625,13 +1663,13 @@ def checkinTest(inOptions):
           ammendFinalCommitPassed = False
           printStackTrace()
 
-      if not ammendFinalCommitPassed: okToPush = False
+      if not ammendFinalCommitPassed: okayToPush = False
 
       #
       print "\n7.c) Pushing the the local commits to the global repo ...\n"
       #
 
-      if not okToPush:
+      if not okayToPush:
 
         print "\nNot performing push due to prior errors\n"
         pushPassed = False
@@ -1654,7 +1692,7 @@ def checkinTest(inOptions):
           print "\nPush failed!\n"
           pushPassed = False
 
-      if not pushPassed: okToPush = False
+      if not pushPassed: okayToPush = False
 
   
     print "\n***"
@@ -1708,11 +1746,10 @@ def checkinTest(inOptions):
           " criteria failed!\n\n"
           success = False
       else:
-        if okToCommit:
+        if okayToPush:
           subjectLine = "READY TO PUSH"
         else:
           subjectLine = "NOT READY TO PUSH"
-          success = False
 
       #
       print "\n8.b) Create and send out push (or readinessstatus) notification email ..."

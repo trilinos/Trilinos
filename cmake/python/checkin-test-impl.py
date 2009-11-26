@@ -204,7 +204,19 @@ affect the build or the tests.  For example, if all you have changed are
 documentation files, then you don't need to run this script before committing
 manually.
 
-Common use cases for using this script are as follows:
+
+Exit Code:
+---------
+
+This script returns 0 if the actions requested are successful.  This does not
+necessarily imply that it is okay to do a push.  For example, if only --push
+is passed in and is successful, then 0 will be returned but that does *not*
+mean that it is okay to do a push.  A 0 return value is a necessary but not
+sufficient condition for readiness to push.
+
+
+Common Use Cases (examples):
+----------------------------
 
 (*) Basic full testing without push:
 
@@ -667,8 +679,8 @@ if not options.showDefaults:
   print "\nFinal time:", getCmndOutput("date",True)
   
   if success:
-    print "\nOVERALL: PASSED\n"
+    print "\nREQUESTED ACTIONS: PASSED\n"
     sys.exit(0)
   else:
-    print "\nOVERALL: FAILED\n"
+    print "\nREQUESTED ACTIONS: FAILED\n"
     sys.exit(1)

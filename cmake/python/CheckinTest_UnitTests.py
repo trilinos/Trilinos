@@ -279,7 +279,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
       "FT: chmod .*\n" \
       "FT: hostname\n" \
       "FT: grep .* "+getTestOutputFileName()+"\n" \
-      "FT: grep .*OVERALL. PASSED.*\n"
+      "FT: grep .*REQUESTED ACTIONS. PASSED.*\n"
 
     fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
 
@@ -432,7 +432,8 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
     "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
     +g_expectedCommonOptionsSummary+ \
-    "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+    "=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
+    "=> A PUSH IS READY TO BE PERFORMED!\n" \
     "^READY TO PUSH: Trilinos:\n"
     )
 
@@ -499,7 +500,7 @@ class test_checkin_test(unittest.TestCase):
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
       "1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
       +g_expectedCommonOptionsSummary+ \
-      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "=> A PUSH IS READY TO BE PERFORMED!\n" \
       "^DID PUSH: Trilinos:\n"
       )
 
@@ -509,9 +510,12 @@ class test_checkin_test(unittest.TestCase):
 
 
   def test_do_all_without_serial_release_then_push_pass(self):
+
     testName = "do_all_without_serial_release_then_push_pass"
+
     # Do the build/test only first (ready to push)
     g_test_do_all_without_serial_release_pass(self, testName)
+
     # Do the push after the fact
     checkin_test_run_case(
       \
@@ -529,7 +533,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "=> A PUSH IS READY TO BE PERFORMED!\n" \
       "^DID PUSH: Trilinos:\n"
       )
 
@@ -561,7 +565,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "=> A PUSH IS READY TO BE PERFORMED!\n" \
       "^DID PUSH: Trilinos:\n"
       )
 
@@ -589,7 +593,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
+      "=> A PUSH IS READY TO BE PERFORMED!\n" \
       "^READY TO PUSH: Trilinos:\n"
       )
 
@@ -613,12 +617,15 @@ class test_checkin_test(unittest.TestCase):
       \
       g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
-      +g_expectedRegexTestPasses+ \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
-      +g_expectedCommonOptionsSummary+ \
-      "=> A PUSH IS OKAY TO BE PERFORMED!\n" \
-      "^READY TO PUSH: Trilinos:\n"
+      +g_expectedRegexTestPasses \
+      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
+      +g_expectedCommonOptionsSummary \
+      +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
+      +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
+      +"Explanation: In order to safely push, the local working directory needs to be up-to-date\n" \
+      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"^NOT READY TO PUSH: Trilinos:\n"
       )
 
 
@@ -652,11 +659,12 @@ class test_checkin_test(unittest.TestCase):
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run!  Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
-      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"\*\*\* WARNING: The acceptance criteria for doing a commit/push has \*not\*\n" \
       +"\*\*\* been met, but a commit/push is being forced anyway by --force-commit!\n" \
       +"DID FORCED PUSH: Trilinos:\n" \
-      +"OVERALL: PASSED\n"
+      +"REQUESTED ACTIONS: PASSED\n"
       )
 
 
@@ -717,7 +725,7 @@ class test_checkin_test(unittest.TestCase):
     checkin_test_run_case(
       self,
       \
-      "do_all_without_serial_release_configure_fail",
+      "without_serial_release_configure_only",
       \
       "--without-serial-release --pull --configure",
       \
@@ -727,7 +735,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
-      False,
+      True,
       \
       g_expectedRegexUpdatePasses+ \
       "Configure passed!\n" \
