@@ -54,8 +54,8 @@ WHILE(NOT done)
   # Loop at most once every 3 minutes (180 seconds)
   CTEST_SLEEP(${START_TIME} 180 ${CTEST_ELAPSED_TIME})
 
-  # Stop after 10 hours:
-  IF(${CTEST_ELAPSED_TIME} GREATER 36000)
+  # Stop after 14 hours:
+  IF(${CTEST_ELAPSED_TIME} GREATER 50400)
     SET(done 1)
   ENDIF()
 
