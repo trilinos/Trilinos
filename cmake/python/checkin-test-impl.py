@@ -366,6 +366,15 @@ going using this script for all of the pre-checkin testing and global commits.
 from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
+
+clp.add_option(
+  "--eg-git-version-check", dest="enableEgGitVersionCheck", action="store_true",
+  help="Enable automatic check for the right versions of eg and git. [default]" )
+clp.add_option(
+  "--no-eg-git-version-check", dest="enableEgGitVersionCheck", action="store_false",
+  help="Do not check the versions of eg and git, just trust they are okay.",
+  default=True )
+
 clp.add_option(
   "--trilinos-src-dir", dest="trilinosSrcDir", type="string",
   default='/'.join(getScriptBaseDir().split("/")[0:-2]),
@@ -602,6 +611,11 @@ if options.doCommit and not options.commitMsgHeaderFile:
 print ""
 print "**************************************************************************"
 print "Script: checkin-test.py \\"
+
+if options.enableEgGitVersionCheck:
+  print "  --eg-git-version-check \\"
+else:
+  print "  --no-eg-git-version-check \\"
 print "  --trilinos-src-dir='"+options.trilinosSrcDir+"' \\"
 print "  --enable-packages='"+options.enablePackages+"' \\"
 print "  --disable-packages='"+options.disablePackages+"' \\"

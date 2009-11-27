@@ -189,7 +189,7 @@ def doRemoveOutputFiles(inOptions):
 def assertEgGitVersionHelper(returnedVersion, expectedVersion):
   if returnedVersion != expectedVersion:
     raise Exception("Error, the installed "+returnedVersion+" does not equal the official "\
-      +expectedVersion+"!")
+      +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
   
 
 def assertEgGitVersions(inOptions):
@@ -201,8 +201,9 @@ def assertEgGitVersions(inOptions):
   egVersionOuput = getCmndOutput("eg --version", True, False)
   egVersionsList = egVersionOuput.split('\n')
 
-  assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
-  assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
+  if inOptions.enableEgGitVersionCheck:
+    assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
+    assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
 
 
 def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):

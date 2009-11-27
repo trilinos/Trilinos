@@ -897,7 +897,27 @@ class test_checkin_test(unittest.TestCase):
       \
       False,
       \
-      " Error, the installed eg version wrong-version does not equal the official eg version "+g_officialEgVersion+"!\n" \
+      "Error, the installed eg version wrong-version does not equal the official eg version "+g_officialEgVersion+"!\n" \
+      )
+
+
+  def test_wrong_eg_vesion_ignore(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_wrong_eg_vesion",
+      \
+      "--no-eg-git-version-check --skip-commit-readiness-check" \
+      ,
+      \
+      "IT: eg --version; 1; 'eg version wrong-version'\n" \
+      ,
+      \
+      True,
+      \
+      "WARNING: No actions were performed!\n" \
+      "REQUESTED ACTIONS: PASSED\n" \
       )
 
   #NOTE: I would also like to check the git verion but I can't becuase my
