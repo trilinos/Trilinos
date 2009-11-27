@@ -16,3 +16,14 @@ SET(${PROJECT_NAME}_LIBRARIES "${${PROJECT_NAME}_LIBRARIES}")
 
 # The package version number
 SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
+
+
+# Export the specification of the compilers used to build Trilinos.
+# (KRL 26 Nov 2009)
+
+SET(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+
+SET(Trilinos_C_COMPILER ${CMAKE_C_COMPILER})
+
+SET(Trilinos_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
+

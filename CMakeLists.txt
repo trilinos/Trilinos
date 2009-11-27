@@ -391,3 +391,16 @@ PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake )
+
+
+#
+# M) Export the library dependencies. This will let client projects
+# refer to all TPLs used by Trilinos. (KRL, 26 Nov 2009)
+#
+
+MESSAGE("")
+MESSAGE("Exporting library dependencies ...")
+MESSAGE("")
+export_library_dependencies( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake
+ )
+
