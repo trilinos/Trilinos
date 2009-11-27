@@ -209,16 +209,6 @@ documentation files, then you don't need to run this script before committing
 manually.
 
 
-Exit Code:
----------
-
-This script returns 0 if the actions requested are successful.  This does not
-necessarily imply that it is okay to do a push.  For example, if only --push
-is passed in and is successful, then 0 will be returned but that does *not*
-mean that it is okay to do a push.  A 0 return value is a necessary but not
-sufficient condition for readiness to push.
-
-
 Common Use Cases (examples):
 ----------------------------
 
@@ -361,11 +351,45 @@ Hopefully the above documentation, the documentation of the command-line
 arguments below, and some basic experimentation will be enough to get you
 going using this script for all of the pre-checkin testing and global commits.
 
+
+Conventions for Command-Line Arguments:
+---------------------------------------
+
+The command-line arguments are segregated into three broad categories: a)
+action commands, b) aggregate action commands, and c) others.
+
+a) The action commands are those such as --commit, --build etc. and are shown
+with [ACTION] in their documnetation.  These action commands have no off
+complement.  If the action command appears, then the action will be performed.
+
+b) Aggregate action commands such as --do-all and --local-do-all turn on sets
+of other action commands and are shown with [AGGR ACTION] in their
+documentation.  The sub-actions that these commands turn on can not be
+disabled with other arguments.
+
+c) Other arguments are those that are not [ACTION] or [AGGR ACTION] arguments
+and tend to either pass in data and turn a control flag on or off.
+
+
+Exit Code:
+---------
+
+This script returns 0 if the actions requested are successful.  This does not
+necessarily imply that it is okay to do a push.  For example, if only --push
+is passed in and is successful, then 0 will be returned but that does *not*
+mean that it is okay to do a push.  A 0 return value is a necessary but not
+sufficient condition for readiness to push.
+
 """
 
 from optparse import OptionParser
 
 clp = OptionParser(usage=usageHelp)
+
+clp.add_option(
+  "--show-defaults", dest="showDefaults", action="store_true",
+  help="Show the default option values and do nothing at all.",
+  default=False )
 
 clp.add_option(
   "--eg-git-version-check", dest="enableEgGitVersionCheck", action="store_true",
@@ -463,40 +487,11 @@ clp.add_option(
   help="Skip the serial release build.", default=True )
 
 clp.add_option(
-  "--rebuild", dest="rebuild", action="store_true",
-  help="Keep an existing build tree and simply rebuild on top of it. [default]" )
-clp.add_option(
-  "--from-scratch", dest="rebuild", action="store_false", default=True,
-  help="Blow existing build directories rebuild from scratch." )
-
-clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
   default=os.environ["USER"]+"@sandia.gov",
   help="List of comma-separated email addresses to send email notification to." \
   +"  By default, this is your Sandia User ID.  In order to turn off email" \
   +" notification, just set --send-email-to='' and no email will be sent." )
-
-clp.add_option(
-  "--commit", dest="doCommit", action="store_true",
-  help="Do the local commit of all the staged changes using:\n" \
-  +" \n" \
-  + "  eg commit -a -F <COMMITMSGHEADERFILE>\n" \
-  +" \n" \
-  +"before the initial pull." \
-  +" The commit message used in specified by the --commit-msg-header-file argument." \
-  +"  If you have not already committed your changes, then you will want to" \
-  +" use this option.  The commit is performed before the initial pull and" \
-  +" before any testing is performed in order to allow for rebasing and for" \
-  +" allowing the pull to be backed out.  If the build/test fails and --no-force-commit" \
-  +" is specified, then the commit will be backed out." \
-  +"  Note: By default, unknown files will result in the commit to fail." \
-  +"  In this case, you will need to deal with the unknown files in some way" \
-  +" or just commit manually and then not pass in this option when running" \
-  +" the script again.  WARNING: Committing alone does *not* push changes to" \
-  +" the global repo 'origin', you have to use a --push for that." )
-clp.add_option(
-  "--skip-commit", dest="doCommit", action="store_false", default=False,
-  help="Skip the commit at the end. [default]" )
 
 clp.add_option(
   "--force-commit", dest="forceCommit", action="store_true",
@@ -509,51 +504,6 @@ clp.add_option(
 clp.add_option(
   "--no-force-commit", dest="forceCommit", action="store_false", default=False,
   help="Do not force a local commit. [default]" )
-
-clp.add_option(
-  "--pull", dest="doPull", action="store_true",
-  help="Do the pull from the default (origin) repository and optionally also" \
-    +" merge in changes from the repo pointed to by --extra-pull-from.",
-  default=False )
-
-clp.add_option(
-  "--extra-pull-from", dest="extraPullFrom", type="string", default="",
-  help="Optional extra git repository to pull and merge in changes from after" \
-  +" pulling in changes from 'origin'.  This must include the repository and the" \
-  +" branch, separated by a space.  For example --extra-pull-from='machine:/base/dir/repo" \
-  +" master'." )
-
-clp.add_option(
-  "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
-  help="Allowing for there to be no pull performed and still doing the other actions." \
-  +"  This option is useful for testing against local changes without having to" \
-  +" get the updates from the global repo.  However, if you don't pull, you can't" \
-  +" push your changes to the global repo.  WARNING: This does *not* stop a pull" \
-  +" attempt from being performed by --pull or --do-all!" )
-
-clp.add_option(
-  "--configure", dest="doConfigure", action="store_true",
-  help="Do the configure of Trilinos.", default=False )
-
-clp.add_option(
-  "--build", dest="doBuild", action="store_true",
-  help="Do the build of Trilinos.", default=False )
-
-clp.add_option(
-  "--test", dest="doTest", action="store_true",
-  help="Do the running of the enabled Trilinos tests.", default=False )
-
-clp.add_option(
-  "--do-all", dest="doAll", action="store_true",
-  help="Do update, configure, build, and test (same as --pull --configure" \
-  +" --build --test).  NOTE: This will do a --pull regardless if --allow-no-pull" \
-  +" is set or not.  To avoid the pull, use --local-do-all.", default=False )
-
-clp.add_option(
-  "--local-do-all", dest="localDoAll", action="store_true",
-  help="Do configure, build, and test with no pull (same as --allow-no-pull" \
-  +" --configure --build --test).  This is the same as --do-all except it" \
-  +" does not do --pull and allows for no pull", default=False )
 
 clp.add_option(
   "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
@@ -574,27 +524,90 @@ clp.add_option(
   +" overwritten with the most recent test results from the current run. [default]" )
 clp.add_option(
   "--no-append-test-results", dest="appendTestResults", action="store_false",
-  default=True,
   help="Do not amend the last local commit with test results.  NOTE: If you have" \
   +" uncommitted local changes that you do not want this script to commit then you" \
-  +" must select this option to avoid this last amending commit." )
+  +" must select this option to avoid this last amending commit.",
+  default=True )
 
 clp.add_option(
-  "--push", dest="doPush", action="store_true",
-  help="Push the committed changes in the local repo into to global repo" \
+  "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
+  help="Allowing for there to be no pull performed and still doing the other actions." \
+  +"  This option is useful for testing against local changes without having to" \
+  +" get the updates from the global repo.  However, if you don't pull, you can't" \
+  +" push your changes to the global repo.  WARNING: This does *not* stop a pull" \
+  +" attempt from being performed by --pull or --do-all!" )
+
+clp.add_option(
+  "--wipe-clean", dest="wipeClean", action="store_true", default=False,
+  help="[ACTION] Blow existing build directories and build/test results.  The action can be" \
+  +" performed on its own or with other actions in which case the wipe clean will be" \
+  +" performed before any other actions. NOTE: This will only wipe clean the builds" \
+  +" that are specified and will not touch those being ignored (e.g. SERIAL_RELEASE" \
+  +" will not be removed if --without-serial-release is specified)." )
+
+clp.add_option(
+  "--commit", dest="doCommit", action="store_true", default=False,
+  help="[ACTION] Do the local commit of all the staged changes using:\n" \
+  +" \n" \
+  + "  eg commit -a -F <COMMITMSGHEADERFILE>\n" \
+  +" \n" \
+  +"before the initial pull." \
+  +" The commit message used in specified by the --commit-msg-header-file argument." \
+  +"  If you have not already committed your changes, then you will want to" \
+  +" use this option.  The commit is performed before the initial pull and" \
+  +" before any testing is performed in order to allow for rebasing and for" \
+  +" allowing the pull to be backed out.  If the build/test fails and --no-force-commit" \
+  +" is specified, then the commit will be backed out." \
+  +"  Note: By default, unknown files will result in the commit to fail." \
+  +"  In this case, you will need to deal with the unknown files in some way" \
+  +" or just commit manually and then not pass in this option when running" \
+  +" the script again.  WARNING: Committing alone does *not* push changes to" \
+  +" the global repo 'origin', you have to use a --push for that!" )
+
+clp.add_option(
+  "--pull", dest="doPull", action="store_true", default=False,
+  help="[ACTION] Do the pull from the default (origin) repository and optionally also" \
+    +" merge in changes from the repo pointed to by --extra-pull-from." )
+
+clp.add_option(
+  "--extra-pull-from", dest="extraPullFrom", type="string", default="",
+  help="[ACTION] Optional extra git' <repository> <branch>' to pull and merge in changes from after" \
+  +" pulling in changes from 'origin'.  This option must include the <repository> " \
+  +" <branch>', separated by a space.  For example --extra-pull-from='machine:/base/dir/repo" \
+  +" master'." )
+
+clp.add_option(
+  "--configure", dest="doConfigure", action="store_true", default=False,
+  help="[ACTION] Do the configure of Trilinos." )
+
+clp.add_option(
+  "--build", dest="doBuild", action="store_true", default=False,
+  help="[ACTION] Do the build of Trilinos." )
+
+clp.add_option(
+  "--test", dest="doTest", action="store_true", default=False,
+  help="[ACTION] Do the running of the enabled Trilinos tests." )
+
+clp.add_option(
+  "--push", dest="doPush", action="store_true", default=False,
+  help="[ACTION] Push the committed changes in the local repo into to global repo" \
     +" 'origin'.  Note: If you have uncommitted changes this command will fail." \
     +"  You would usually use the --commit option as well to do these together." \
     +"  Note: You must have SSH public/private keys set up with" \
     +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
     +" having to type your password." )
-clp.add_option(
-  "--skip-push", dest="doPush", action="store_false", default=False,
-  help="Skip the push at the end. [default]" )
 
 clp.add_option(
-  "--show-defaults", dest="showDefaults", action="store_true",
-  help="Show the default option values and do nothing at all.",
-  default=False )
+  "--local-do-all", dest="localDoAll", action="store_true", default=False,
+  help="[AGGR ACTION] Do configure, build, and test with no pull (same as --allow-no-pull" \
+  +" --configure --build --test).  This is the same as --do-all except it" \
+  +" does not do --pull and also allows for no pull." )
+
+clp.add_option(
+  "--do-all", dest="doAll", action="store_true", default=False,
+  help="[AGGR ACTION] Do update, configure, build, and test (same as --pull --configure" \
+  +" --build --test).  NOTE: This will do a --pull regardless if --allow-no-pull" \
+  +" is set or not.  To avoid the pull, use --local-do-all." )
 
 (options, args) = clp.parse_args()
 
@@ -642,35 +655,11 @@ if options.withSerialRelease:
   print "  --with-serial-release \\"
 else:
   print "  --without-serial-release \\" 
-if options.rebuild:
-  print "  --rebuild \\"
-else:
-  print "  --from-scratch \\"
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
-if options.doCommit:
-  print "  --commit \\"
-else:
-  print "  --skip-commit \\"
 if options.forceCommit:
   print "  --force-commit \\"
 else:
   print "  --no-force-commit \\"
-if options.doPull:
-  print "  --pull \\"
-if options.extraPullFrom:
-  print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
-if options.allowNoPull:
-  print "  --allow-no-pull \\"
-if options.doConfigure:
-  print "  --configure \\"
-if options.doBuild:
-  print "  --build \\"
-if options.doTest:
-  print "  --test \\"
-if options.doAll:
-  print "  --do-all \\"
-if options.localDoAll:
-  print "  --local-do-all \\"
 if options.doCommitReadinessCheck:
   print "  --do-commit-readiness-check \\"
 else:
@@ -679,25 +668,46 @@ if options.appendTestResults:
   print "  --append-test-results \\"
 else:
   print "  --no-append-test-results \\"
+if options.allowNoPull:
+  print "  --allow-no-pull \\"
+if options.wipeClean:
+  print "  --wipe-clean \\"
+if options.doCommit:
+  print "  --commit \\"
+if options.doPull:
+  print "  --pull \\"
+if options.extraPullFrom:
+  print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
+if options.doConfigure:
+  print "  --configure \\"
+if options.doBuild:
+  print "  --build \\"
+if options.doTest:
+  print "  --test \\"
 if options.doPush:
   print "  --push \\"
-else:
-  print "  --skip-push \\"
-
+if options.localDoAll:
+  print "  --local-do-all \\"
+if options.doAll:
+  print "  --do-all \\"
 
 
 #
 # Check the input arguments
 #
 
+if options.doAll and options.localDoAll:
+  print "\nError, you can not use --do-all and --local-do-all together!  Use on or the other!"
+  sys.exit(1)
+
 if options.doAll and options.allowNoPull:
   print "\nError, you can not use --do-all and --allow-no-pull together! (see the" \
     " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)"
-  sys.exit(1)
+  sys.exit(2)
 
 if options.doCommit and not options.commitMsgHeaderFile:
   print "\nError, if you use --commit you must also specify --commit-msg-header-file!"
-  sys.exit(2)
+  sys.exit(3)
   
 
 

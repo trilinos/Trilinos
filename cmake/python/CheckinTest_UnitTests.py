@@ -266,7 +266,10 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     # B) Create the command to run the checkin-test.py script
     
-    cmnd = scriptsDir + "/checkin-test.py " + optionsStr
+    cmnd = scriptsDir + "/checkin-test.py --no-eg-git-version-check " + optionsStr
+    # NOTE: Above, we want to turn off the eg/git version tests since we want
+    # these unit tests to run on machines that do not have the official
+    # versions (e.g. the SCICO LAN) but where the versions might be okay.
     
     # C) Set up the command intercept file
 
@@ -669,7 +672,7 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_without_serial_release_then_from_scratch_pull_pass(self):
+  def test_do_all_without_serial_release_then_wipe_clean_pull_pass(self):
 
     testName = "do_all_without_serial_release_then_from_scratch_pull_pass"
 
@@ -684,7 +687,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
-      +" --from-scratch --pull" \
+      +" --wipe-clean --pull" \
       ,
       \
       "FT: rm -rf MPI_DEBUG\n" \
@@ -889,7 +892,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_wrong_eg_vesion",
       \
-      "--do-all" \
+      "--do-all --eg-git-version-check" \
       ,
       \
       "IT: eg --version; 1; 'eg version wrong-version'\n" \
@@ -922,6 +925,25 @@ class test_checkin_test(unittest.TestCase):
 
   #NOTE: I would also like to check the git verion but I can't becuase my
   #command intercept system can't hanlde more than one line of output.
+
+
+  def test_do_all_local_do_all(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_local_do_all",
+      \
+      "--do-all --local-do-all" \
+      ,
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "Error, you can not use --do-all and --local-do-all together!\n" \
+      )
 
 
   def test_do_all_allow_no_pull(self):
