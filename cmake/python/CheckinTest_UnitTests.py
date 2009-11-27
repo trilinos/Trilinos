@@ -232,7 +232,6 @@ Some other message
 g_verbose=True
 g_verbose=False
 
-
 g_checkin_test_tests_dir = "checkin_test_tests"
 
 
@@ -273,6 +272,8 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
+      "FT: which eg\n" \
+      "FT: eg --version\n" \
       "FT: date\n" \
       "FT: rm [a-zA-Z0-9_/\.]+\n" \
       "FT: touch .*\n" \
@@ -753,7 +754,6 @@ class test_checkin_test(unittest.TestCase):
       "--without-serial-release --pull --skip-commit-readiness-check",
       \
       g_cmndinterceptsPullPasses \
-      +g_cmndinterceptsSendFinalEmail \
       ,
       \
       True,
@@ -863,7 +863,83 @@ class test_checkin_test(unittest.TestCase):
   # E) Test various failing use cases
 
 
-  # ToDo: Test passing in --commit without --commit-msg-header
+  def test_do_all_no_eg_installed(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_no_eg_installed",
+      \
+      "--do-all" \
+      ,
+      \
+      "IT: which eg; 1; '/usr/bin/which: no eg in (path1:path2:path3)'\n" \
+      ,
+      \
+      False,
+      \
+      "Error, the eg command is not in your path!\n" \
+      )
+
+
+  def test_do_all_wrong_eg_vesion(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_wrong_eg_vesion",
+      \
+      "--do-all" \
+      ,
+      \
+      "IT: eg --version; 1; 'eg version wrong-version'\n" \
+      ,
+      \
+      False,
+      \
+      " Error, the installed eg version wrong-version does not equal the official eg version "+g_officialEgVersion+"!\n" \
+      )
+
+  #NOTE: I would also like to check the git verion but I can't becuase my
+  #command intercept system can't hanlde more than one line of output.
+
+
+  def test_do_all_allow_no_pull(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_allow_no_pull",
+      \
+      "--do-all --allow-no-pull" \
+      ,
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "Error, you can not use --do-all and --allow-no-pull together!\n" \
+      )
+
+
+  def test_do_all_commit_no_commit_msg_header(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_commit_no_commit_msg_header",
+      \
+      "--do-all --commit" \
+      ,
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "Error, if you use --commit you must also specify --commit-msg-header-file!\n" \
+      )
 
 
   def test_do_all_without_serial_release_commit_initial_commit_fail(self):
@@ -873,7 +949,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "do_all_without_serial_release_commit_initial_commit_fail",
       \
-     "--make-options=-j3 --ctest-options=-j5" \
+      "--make-options=-j3 --ctest-options=-j5" \
       " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       " --do-all --without-serial-release --commit" \
       ,

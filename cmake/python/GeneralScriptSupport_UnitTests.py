@@ -146,9 +146,13 @@ class testGeneralScriptSupport(unittest.TestCase):
     sci = SysCmndInterceptor()
     self.assertEqual(sci.hasInterceptedCmnds(), False)
     sci.setInterceptedCmnd("eg commit", 0)
+    self.assertRaises(Exception, sci.assertAllCommandsRun)
     self.assertEqual(sci.hasInterceptedCmnds(), True)
     self.assertRaises(Exception, sci.nextInterceptedCmndStruct, "eg pull")
-
+    sci.nextInterceptedCmndStruct("eg commit") # No exception
+    sci.assertAllCommandsRun() # No exception
+    self.assertEqual(sci.hasInterceptedCmnds(), False)
+    
 
   def test_SysCmndInterceptor_readCmndFile_01(self):
     sci = SysCmndInterceptor()
@@ -244,6 +248,20 @@ IT: ./do-configure; 5; ''
       g_sysCmndInterceptor.setInterceptedCmnd("eg blog", 2, "who cares\n")
       g_sysCmndInterceptor.setAllowExtraCmnds(False)
       self.assertEqual("good log", getCmndOutput("eg log", True))
+      self.assertEqual("bad frog", getCmndOutput("eg frog", True, False))
+      self.assertRaises(Exception, getCmndOutput, "eg blog", True)
+    finally:
+      g_sysCmndInterceptor.clear()
+
+
+  def test_getCmndOutput_intercept_02(self):
+    try:
+      g_sysCmndInterceptor.setFallThroughCmndRegex("echo .+")
+      g_sysCmndInterceptor.setInterceptedCmnd("echo log", 0, "good log\n") # Override FT
+      g_sysCmndInterceptor.setInterceptedCmnd("eg frog", 0, "bad frog\n")
+      g_sysCmndInterceptor.setInterceptedCmnd("eg blog", 2, "who cares\n")
+      g_sysCmndInterceptor.setAllowExtraCmnds(False)
+      self.assertEqual("good log", getCmndOutput("echo log", True))
       self.assertEqual("bad frog", getCmndOutput("eg frog", True, False))
       self.assertRaises(Exception, getCmndOutput, "eg blog", True)
     finally:

@@ -75,6 +75,10 @@ commit/push:
   test results, i) and finally push local commits to the global repo if
   everything passes.
 
+  NOTE: You must have installed the official versions of eg/git with the
+  install-git.py scirpt in order to run this script.  If you don't, the script
+  will die right away with an error message telling you what the problem is.
+
   NOTE: You can do the local commit yourself first with eg/git before running
   this script.  In that case, you must take off the --commit argument or the
   script will fail if there are not uncommitted changes.
@@ -302,16 +306,17 @@ Common Use Cases (examples):
 
   --local-do-all
 
-  NOTE: This will just configure, build, test, and send and email notification
+  NOTE: This will just configure, build, test, and send an email notification
   without updating or changing the status of the local git repo in any way and
   without any communication with the global repo.  Hense, you can have
-  uncommitted changes and still run the configure, build, test without having
-  to have a commit ready to go.
+  uncommitted changes and still run configure, build, test without having to
+  have a commit ready to go.
 
   NOTE: This is not a sufficient level of testing in order to commit and push
-  the changes to the global repo.  However, this would be a sufficient level
-  of testing in order to do a local commit and then pull to a remote machine
-  for further testing and commit/push.
+  the changes to the global repo because you have not fully integrated your
+  changes yet.  However, this would be a sufficient level of testing in order
+  to do a local commit and then pull to a remote machine for further testing
+  and a push.
 
 (*) Performing a remote test/push:
 
@@ -511,10 +516,11 @@ clp.add_option(
 
 clp.add_option(
   "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
-  help="Skipping the pull and not requiring any pull at all to have been performed." \
-    +"  This option is useful for testing against local changes without having to" \
-    +" get the updates from the global repo.  However, if you don't pull, you can't" \
-    +" push your changes to the global repo." )
+  help="Allowing for there to be no pull performed and still doing the other actions." \
+  +"  This option is useful for testing against local changes without having to" \
+  +" get the updates from the global repo.  However, if you don't pull, you can't" \
+  +" push your changes to the global repo.  WARNING: This does *not* stop a pull" \
+  +" attempt from being performed by --pull or --do-all!" )
 
 clp.add_option(
   "--configure", dest="doConfigure", action="store_true",
@@ -531,12 +537,14 @@ clp.add_option(
 clp.add_option(
   "--do-all", dest="doAll", action="store_true",
   help="Do update, configure, build, and test (same as --pull --configure" \
-  +" --build --test)", default=False )
+  +" --build --test).  NOTE: This will do a --pull regardless if --allow-no-pull" \
+  +" is set or not.  To avoid the pull, use --local-do-all.", default=False )
 
 clp.add_option(
   "--local-do-all", dest="localDoAll", action="store_true",
   help="Do configure, build, and test with no pull (same as --allow-no-pull" \
-  +" --configure --build --test).", default=False )
+  +" --configure --build --test).  This is the same as --do-all except it" \
+  +" does not do --pull and allows for no pull", default=False )
 
 clp.add_option(
   "--do-commit-readiness-check", dest="doCommitReadinessCheck", action="store_true",
@@ -661,6 +669,22 @@ if options.doPush:
   print "  --push \\"
 else:
   print "  --skip-push \\"
+
+
+
+#
+# Check the input arguments
+#
+
+if options.doAll and options.allowNoPull:
+  print "\nError, you can not use --do-all and --allow-no-pull together! (see the" \
+    " documentation for the --do-all, --local-do-all, and --allow-no-pull arguments.)"
+  sys.exit(1)
+
+if options.doCommit and not options.commitMsgHeaderFile:
+  print "\nError, if you use --commit you must also specify --commit-msg-header-file!"
+  sys.exit(2)
+  
 
 
 #

@@ -208,6 +208,9 @@ class SysCmndInterceptor:
     return False
 
   def isFallThroughCmnd(self, cmnd):
+     for interceptCmndStruct in self.__interceptedCmndStructList:
+       if re.match(interceptCmndStruct.cmndRegex, cmnd):
+         return False
      for cmndRegex in self.__fallThroughCmndRegexList:
        if re.match(cmndRegex, cmnd):
          return True
@@ -217,11 +220,12 @@ class SysCmndInterceptor:
     assert(not self.isFallThroughCmnd(cmnd))
     if len(self.__interceptedCmndStructList) == 0:
       raise Exception("Error, cmnd='"+cmnd+"' is past the last expected command!")
-    ics = self.__interceptedCmndStructList.pop(0)
-    if re.match(ics.cmndRegex, cmnd):
-      return (ics.cmndReturn, ics.cmndOutput)
-    raise Exception("Error, cmnd='"+cmnd+"' did not match the" \
-      " expected regex='"+ics.cmndRegex+"'!")
+    ics = self.__interceptedCmndStructList[0]
+    if not re.match(ics.cmndRegex, cmnd):
+      raise Exception("Error, cmnd='"+cmnd+"' did not match the" \
+        " expected regex='"+ics.cmndRegex+"'!")
+    self.__interceptedCmndStructList.pop(0)
+    return (ics.cmndReturn, ics.cmndOutput)
 
   def clear(self):
     self.__fallThroughCmndRegexList = []
@@ -247,6 +251,11 @@ class SysCmndInterceptor:
           )
       else:
         raise Exception("Error, invalid tag = '"+tag+"'!")
+
+  def assertAllCommandsRun(self):
+    if len(self.__interceptedCmndStructList) > 0:
+      raise Exception("Error, all of the commands have not been run starting with" \
+        " the command "+str(self.__interceptedCmndStructList[0])+"!")
 
 
 g_sysCmndInterceptor = SysCmndInterceptor()
@@ -384,8 +393,6 @@ def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir
     if err:
       if throwOnError:
         raise RuntimeError, '%s failed w/ exit code %d' % (cmnd, err)
-      else:
-        return ""
     if stripTrailingSpaces:
       return data.rstrip()
     return data

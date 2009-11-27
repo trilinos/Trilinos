@@ -51,11 +51,17 @@
 # NOTE: Included first to check the version of python!
 #
 
+from GeneralScriptSupport import *
+
 from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
 from TrilinosDependencies import defaultTrilinosDepsXmlInFile
 from TrilinosPackageFilePathUtils import *
-from GeneralScriptSupport import *
 import time
+
+
+# Set the official eg/git versions!
+g_officialEgVersion = "1.6.5.3"
+g_officialGitVersion = "1.6.5.2"
 
 
 def getCommonConfigFileName():
@@ -178,6 +184,25 @@ def doGenerateOutputFiles(inOptions):
 
 def doRemoveOutputFiles(inOptions):
   return performAnyActions(inOptions)
+
+
+def assertEgGitVersionHelper(returnedVersion, expectedVersion):
+  if returnedVersion != expectedVersion:
+    raise Exception("Error, the installed "+returnedVersion+" does not equal the official "\
+      +expectedVersion+"!")
+  
+
+def assertEgGitVersions(inOptions):
+
+  egWhich = getCmndOutput("which eg", True, False)
+  if egWhich == "" or re.match(".+no eg.+", egWhich):
+    raise Exception("Error, the eg command is not in your path! ("+egWhich+")")
+
+  egVersionOuput = getCmndOutput("eg --version", True, False)
+  egVersionsList = egVersionOuput.split('\n')
+
+  assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
+  assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
 
 
 def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
@@ -1192,6 +1217,8 @@ def checkinTest(inOptions):
     inOptions.doBuild = True
     inOptions.doTest = True
 
+  assertEgGitVersions(inOptions)
+
   success = True
 
   timings = Timings()
@@ -1812,6 +1839,8 @@ def checkinTest(inOptions):
 
     success = False
     printStackTrace()
+
+  g_sysCmndInterceptor.assertAllCommandsRun()
 
   # Print the final status at the very end
   if subjectLine:
