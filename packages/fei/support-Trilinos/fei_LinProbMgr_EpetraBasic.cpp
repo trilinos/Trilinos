@@ -8,8 +8,10 @@
 
 #include <fei_macros.hpp>
 #include <fei_SparseRowGraph.hpp>
-#include <fei_LinProbMgr_EpetraBasic.hpp>
 
+#ifdef HAVE_FEI_EPETRA
+
+#include <fei_LinProbMgr_EpetraBasic.hpp>
 
 LinProbMgr_EpetraBasic::LinProbMgr_EpetraBasic(MPI_Comm comm)
  : comm_(comm),
@@ -284,3 +286,5 @@ LinProbMgr_EpetraBasic::get_solution_vector()
   return( x_ );
 }
 
+//HAVE_FEI_EPETRA
+#endif

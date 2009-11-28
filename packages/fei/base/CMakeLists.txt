@@ -39,6 +39,7 @@ fei_BlockDescriptor.hpp
 fei_BlockLinearProblemManager.hpp
 fei_bool.h
 fei_chk_mpi.hpp
+fei_CommMap.hpp
 fei_CommUtils.hpp
 fei_ConnectivityBlock.hpp
 fei_ConnectivityTable.hpp
@@ -49,6 +50,8 @@ fei_Data.hpp
 fei_defs.h
 fei_DirichletBCManager.hpp
 fei_DirichletBCRecord.hpp
+fei_Dof.hpp
+fei_DofMapper.hpp
 fei_EqnBuffer.hpp
 fei_EqnComm.hpp
 fei_EqnCommMgr.hpp
@@ -73,6 +76,7 @@ fei_IndexTable.hpp
 fei_iosfwd.hpp
 fei_iostream.hpp
 fei_LibraryWrapper.hpp
+fei_LinearDecomposition.hpp
 fei_LinearProblemManager.hpp
 fei_LinearSystemCore.hpp
 fei_LinearSystem.hpp
@@ -111,6 +115,8 @@ fei_ProcEqns.hpp
 fei_Record.hpp
 fei_Reducer.hpp
 fei_ReverseMapper.hpp
+fei_set_dof_mappings.hpp
+fei_set_shared_ids.hpp
 fei_SharedIDs.hpp
 fei_SharedPtr.hpp
 fei_SlaveVariable.hpp
@@ -201,9 +207,9 @@ fei_Pattern.cpp
 fei_Pool_alloc.cpp
 fei_Pool.cpp
 fei_ProcEqns.cpp
-fei_Record.cpp
 fei_Reducer.cpp
 fei_ReverseMapper.cpp
+fei_set_shared_ids.cpp
 fei_Solver.cpp
 fei_utils.cpp
 fei_Vector_core.cpp

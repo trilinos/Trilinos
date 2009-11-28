@@ -24,6 +24,7 @@ namespace fei_VERSION {
 //  Mangled 'version' function. The name of this namespace, 'fei_VERSION'
 //  is a macro that is defined (in fei_version.h) to include the current
 //  version number.
+//  This fei_VERSION::version() function is not intended for public use.
 //  There is another 'version' function below, which is for public use,
 //  but internally it calls this function in the fei_VERSION namespace. This
 //  prevents header-mismatch errors, where a user application accidentally

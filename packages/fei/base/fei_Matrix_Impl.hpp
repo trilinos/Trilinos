@@ -644,7 +644,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
   bool symmetric = cblock->isSymmetric();
   const fei::Pattern* pattern = cblock->getRowPattern();
   const fei::Pattern* colpattern = symmetric ? NULL : cblock->getColPattern();
-  const fei::Record*const* rowConn = cblock->getRowConnectivity(connectivityID);
+  const fei::Record<int>*const* rowConn = cblock->getRowConnectivity(connectivityID);
 
   mgraph->getRowSpace()->getGlobalIndices(pattern, rowConn, work_indices2_);
 
@@ -764,7 +764,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
   int numColIndices = symmetric ? numRowIndices : colpattern->getNumIndices();
   int* colIndices = rowIndices;
-  const fei::Record*const* colConn = NULL;
+  const fei::Record<int>*const* colConn = NULL;
 
   if (!symmetric) {
     colConn = cblock->getColConnectivity(connectivityID);

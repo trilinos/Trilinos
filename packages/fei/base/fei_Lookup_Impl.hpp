@@ -139,97 +139,100 @@ namespace fei {
 
     /** Implementation of Lookup:: method */
     int getNumSubdomains(int nodeNumber)
-      {
-	std::vector<int>* subdomains = NULL;
-	std::map<int,std::vector<int>* >::iterator
-	  nns_iter = nodenumSubdomainDB_.find(nodeNumber);
-	if (nns_iter != nodenumSubdomainDB_.end()) subdomains = (*nns_iter).second;
-	return( subdomains==0 ? 0 : subdomains->size() );
-      }
+    {
+      std::vector<int>* subdomains = NULL;
+      std::map<int,std::vector<int>* >::iterator
+        nns_iter = nodenumSubdomainDB_.find(nodeNumber);
+      if (nns_iter != nodenumSubdomainDB_.end()) subdomains = (*nns_iter).second;
+      return( subdomains==0 ? 0 : subdomains->size() );
+    }
 
     /** Implementation of Lookup:: method */
     int* getSubdomainList(int nodeNumber)
-      {
-	std::vector<int>* subdomains = NULL;
-	std::map<int,std::vector<int>* >::iterator
-	  nns_iter = nodenumSubdomainDB_.find(nodeNumber);
-	if (nns_iter != nodenumSubdomainDB_.end()) subdomains = (*nns_iter).second;
+    {
+      std::vector<int>* subdomains = NULL;
+      std::map<int,std::vector<int>* >::iterator
+        nns_iter = nodenumSubdomainDB_.find(nodeNumber);
+      if (nns_iter != nodenumSubdomainDB_.end()) subdomains = (*nns_iter).second;
 
-	return( subdomains==0 ? NULL : &(*subdomains)[0] );
-      }
+      return( subdomains==0 ? NULL : &(*subdomains)[0] );
+    }
 
     /** Implementation of Lookup:: method */
     int getNumSharedNodes()
-      {
-	int numShared;
-	int err = vspace_->getNumSharedIDs(nodeIDType_, numShared);
-	return(err==0 ? numShared : -1);
-      }
+    {
+      int numShared;
+      int err = vspace_->getNumSharedIDs(nodeIDType_, numShared);
+      return(err==0 ? numShared : -1);
+    }
 
     /** Implementation of Lookup:: method */
     const int* getSharedNodeNumbers()
-      {
-	fei::SharedIDs* sharedIDs = NULL;
-	vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
+    {
+      fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
 
-	int numShared = sharedIDs->getSharedIDs().getMap().size();
-	workspace_.resize(numShared*2);
-	int* wkPtr = &workspace_[0];
-	fei::copyKeysToArray(sharedIDs->getSharedIDs().getMap(), numShared, wkPtr);
+      int numShared = sharedIDs.getSharedIDs().size();
+      workspace_.resize(numShared*2);
+      int* wkPtr = &workspace_[0];
+      fei::copyKeysToArray(sharedIDs.getSharedIDs(), numShared, wkPtr);
 
-	snl_fei::RecordCollection* collection = NULL;
-	vspace_->getRecordCollection(nodeIDType_, collection);
+      snl_fei::RecordCollection* collection = NULL;
+      vspace_->getRecordCollection(nodeIDType_, collection);
 
-	for(int i=0; i<numShared; ++i) {
-	  fei::Record* node = collection->getRecordWithID(wkPtr[i]);
-          if (node == NULL) return NULL;
+      for(int i=0; i<numShared; ++i) {
+        fei::Record<int>* node = collection->getRecordWithID(wkPtr[i]);
+        if (node == NULL) return NULL;
 
-	  wkPtr[numShared+i] = node->getNumber();
-	}
-	return(wkPtr+numShared);
+        wkPtr[numShared+i] = node->getNumber();
       }
+      return(wkPtr+numShared);
+    }
 
     /** Implementation of Lookup:: method */
     const int* getSharedNodeProcs(int nodeNumber)
-      {
-	std::map<int,fei::Record*>::iterator
-	  nnp_iter = nodenumPairs_.find(nodeNumber);
+    {
+      std::map<int,fei::Record<int>*>::iterator
+        nnp_iter = nodenumPairs_.find(nodeNumber);
 
-	if (nnp_iter == nodenumPairs_.end()) return(0);
+      if (nnp_iter == nodenumPairs_.end()) return(0);
 
-	fei::Record* node = (*nnp_iter).second;
+      fei::Record<int>* node = (*nnp_iter).second;
 
-	fei::SharedIDs* sharedIDs = NULL;
-	vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
+      const fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
 
-	int shID = node->getID();
+      int shID = node->getID();
 
-	fei::SharedIDs::table_type::row_type* list = sharedIDs->getSharedIDs().getRow(shID);
-	if (list == NULL) return(NULL);
+      fei::SharedIDs<int>::map_type::const_iterator
+        iter = sharedIDs.getSharedIDs().find(shID);
+      if (iter == sharedIDs.getSharedIDs().end()) return(NULL);
 
-        workspace_.resize(list->size());
-	list->copy_to_array(workspace_.size(), &workspace_[0]);
-	return(&workspace_[0]);
-      }
+      const std::set<int>& shprocs = iter->second;
+
+      fei::copySetToVector(shprocs, workspace_);
+      return(&workspace_[0]);
+    }
 
     /** Implementation of Lookup:: method */
     int getNumSharingProcs(int nodeNumber)
-      {
-	std::map<int,fei::Record*>::iterator
-	  nnp_iter = nodenumPairs_.find(nodeNumber);
+    {
+      std::map<int,fei::Record<int>*>::iterator
+        nnp_iter = nodenumPairs_.find(nodeNumber);
 
-	if (nnp_iter == nodenumPairs_.end()) return(0);
+      if (nnp_iter == nodenumPairs_.end()) return(0);
 
-	fei::Record* node = (*nnp_iter).second;
+      fei::Record<int>* node = (*nnp_iter).second;
 
-	fei::SharedIDs* sharedIDs = NULL;
-	vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
+      const fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
 
-	int shID = node->getID();
+      int shID = node->getID();
 
-	fei::SharedIDs::table_type::row_type* list = sharedIDs->getSharedIDs().getRow(shID);
-	return(list!=NULL ? list->size() : -1);
-      }
+      fei::SharedIDs<int>::map_type::const_iterator
+        iter = sharedIDs.getSharedIDs().find(shID);
+      if (iter == sharedIDs.getSharedIDs().end()) return(0);
+
+      const std::set<int>& shprocs = iter->second;
+      return(shprocs.size());
+    }
 
     /** Implementation of Lookup:: method */
     bool isExactlyBlkEqn(int ptEqn)
@@ -244,9 +247,9 @@ namespace fei {
 
     /** Implementation of Lookup:: method */
     int getBlkEqnSize(int blkEqn)
-      {
-	return( ptBlkMap_->getBlkEqnSize(blkEqn) );
-      }
+    {
+      return( ptBlkMap_->getBlkEqnSize(blkEqn) );
+    }
 
   private:
     int buildDatabases();
@@ -256,8 +259,8 @@ namespace fei {
     fei::SharedPtr<fei::VectorSpace> vspace_;
     int nodeIDType_;
 
-    std::map<int, fei::Record*> nodenumPairs_;
-    std::map<int,fei::Record*> eqnnumPairs_;
+    std::map<int, fei::Record<int>*> nodenumPairs_;
+    std::map<int,fei::Record<int>*> eqnnumPairs_;
 
     std::map<int,std::vector<int>*> nodenumSubdomainDB_;
 

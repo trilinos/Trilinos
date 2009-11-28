@@ -390,15 +390,15 @@ int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
   double fei_eps = 1.e-49;
 
   std::vector<int> cr_indices;
-  std::map<int,Constraint<fei::Record*>*>& lagrangeConstraints =
+  std::map<int,Constraint<fei::Record<int>*>*>& lagrangeConstraints =
     matrixGraph.getLagrangeConstraints();
 
-  std::map<int,Constraint<fei::Record*>*>::const_iterator
+  std::map<int,Constraint<fei::Record<int>*>*>::const_iterator
     cr_iter = lagrangeConstraints.begin(),
     cr_end  = lagrangeConstraints.end();
 
   while(cr_iter != cr_end) {
-    Constraint<fei::Record*>* cr = (*cr_iter).second;
+    Constraint<fei::Record<int>*>* cr = (*cr_iter).second;
 
     CHK_ERR( matrixGraph.getConstraintConnectivityIndices(cr, cr_indices) );
 

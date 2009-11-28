@@ -70,6 +70,7 @@ namespace fei {
   class MatrixGraph;
   class Param;
   class ParameterSet;
+  template<typename T> class SharedIDs;
   class SparseRowGraph;
   class Vector;
   class Matrix;

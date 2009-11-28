@@ -432,7 +432,7 @@ int fei::Vector_core::copyOutFieldData(int fieldID,
 
     int offset = 0;
     for(int i=0; i<numIDs; ++i) {
-      fei::Record* node = collection->getRecordWithID(IDs[i]);
+      fei::Record<int>* node = collection->getRecordWithID(IDs[i]);
       if (node == NULL) {
         ERReturn(-1);
       }

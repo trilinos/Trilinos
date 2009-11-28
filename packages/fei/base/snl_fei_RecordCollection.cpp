@@ -43,16 +43,16 @@ snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
 
   map_type::iterator records_end = records_.end();
 
-  static fei::Record dummyRecord;
+  static fei::Record<int> dummyRecord;
 
   for(; iter != iter_end; ++iter) {
     map_type::value_type srcpair = *iter;
     int srcID = srcpair.first;
-    fei::Record* srcRec = srcpair.second;
+    fei::Record<int>* srcRec = srcpair.second;
 
-    fei::Record* record = recordPool_.allocate(1);
+    fei::Record<int>* record = recordPool_.allocate(1);
     recordPool_.construct(record,dummyRecord);
-    record->deepCopy(*srcRec);
+    *record = *srcRec;
     records_.insert(records_end, map_type::value_type(srcID, record));
   }
 }
@@ -65,7 +65,7 @@ snl_fei::RecordCollection::~RecordCollection()
 //----------------------------------------------------------------------------
 void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
                                             std::vector<fei::FieldMask*>& fieldMasks,
-                                            fei::Record** records)
+                                            fei::Record<int>** records)
 {
   int maskID = 0;
   fei::FieldMask* mask = NULL;
@@ -81,10 +81,10 @@ void snl_fei::RecordCollection::initRecords(int numIDs, const int* IDs,
     fieldMasks.push_back(mask);
   }
 
-  static fei::Record dummyRecord;
+  static fei::Record<int> dummyRecord;
 
   for(int i=0; i<numIDs; ++i) {
-    fei::Record* record = NULL;
+    fei::Record<int>* record = NULL;
 
     map_type::iterator riter = records_.lower_bound(IDs[i]);
     if (riter != records_.end()) {
@@ -145,10 +145,10 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 
   fei::FieldMask* lastMask = mask;
   int lastMaskID = maskID;
-  static fei::Record dummyRecord;
+  static fei::Record<int> dummyRecord;
 
   for(int i=0; i<numIDs; ++i) {
-    fei::Record* record = NULL;
+    fei::Record<int>* record = NULL;
 
     map_type::iterator riter = records_.lower_bound(IDs[i]);
 
@@ -224,7 +224,7 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
                                               int numInstances,
                                               int numIDs, const int* IDs,
                                               std::vector<fei::FieldMask*>& fieldMasks,
-                                              fei::Record** records,
+                                              fei::Record<int>** records,
                                               bool skipIDsWithThisField)
 {
   int maskID = fei::FieldMask::calculateMaskID(1, &fieldID,
@@ -244,12 +244,12 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 
   fei::FieldMask* lastMask = mask;
   int lastMaskID = maskID;
-  static fei::Record dummyRecord;
+  static fei::Record<int> dummyRecord;
 
   map_type::iterator rend = records_.end();
 
   for(int i=0; i<numIDs; ++i) {
-    fei::Record* record = NULL;
+    fei::Record<int>* record = NULL;
     int ID = IDs[i];
 
     map_type::iterator riter = records_.lower_bound(ID);
@@ -331,21 +331,21 @@ void snl_fei::RecordCollection::initRecords(int fieldID, int fieldSize,
 
 //----------------------------------------------------------------------------
 void snl_fei::RecordCollection::
-setOwners_lowestSharing(fei::SharedIDs* sharedIDs)
+setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs)
 {
-  fei::SharedIDs::table_type::iterator
-    s_beg = sharedIDs->getSharedIDs().getMap().begin(),
-    s_end = sharedIDs->getSharedIDs().getMap().end(),
+  fei::SharedIDs<int>::map_type::iterator
+    s_beg = sharedIDs.getSharedIDs().begin(),
+    s_end = sharedIDs.getSharedIDs().end(),
     s_it;
 
-  std::vector<int>& owningProcs = sharedIDs->getOwningProcs();
+  std::vector<int>& owningProcs = sharedIDs.getOwningProcs();
 
   map_type::iterator rend = records_.end();
 
   int i;
   for(i=0, s_it = s_beg; s_it != s_end; ++i, ++s_it) {
-    fei::Record* record = NULL;
-    int sh_id = (*s_it).first;
+    fei::Record<int>* record = NULL;
+    int sh_id = s_it->first;
     map_type::iterator riter = records_.find(sh_id);
     if (riter == rend) continue;
 
@@ -362,7 +362,7 @@ setOwners_lowestSharing(fei::SharedIDs* sharedIDs)
   }
 }
 
-fei::Record* snl_fei::RecordCollection::getRecordWithID(int ID)
+fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID)
 {
   map_type::iterator rend = records_.end();
   map_type::iterator riter = records_.find(ID);
@@ -371,12 +371,24 @@ fei::Record* snl_fei::RecordCollection::getRecordWithID(int ID)
     return( NULL );
   }
 
-  return((*riter).second);
+  return(riter->second);
+}
+
+const fei::Record<int>* snl_fei::RecordCollection::getRecordWithID(int ID) const
+{
+  map_type::const_iterator rend = records_.end();
+  map_type::const_iterator riter = records_.find(ID);
+
+  if (riter == rend) {
+    return( NULL );
+  }
+
+  return(riter->second);
 }
 
 int snl_fei::RecordCollection::getGlobalBlkIndex(int ID, int& globalBlkIndex)
 {
-  fei::Record* record = getRecordWithID(ID);
+  fei::Record<int>* record = getRecordWithID(ID);
   if (record == NULL) {
     globalBlkIndex = -1;
     ERReturn(-1);
@@ -394,7 +406,7 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
                                               int whichComponentOfField,
                                               const int* eqnNumbers)
 {
-  fei::Record* record = getRecordWithID(ID);
+  fei::Record<int>* record = getRecordWithID(ID);
   if (record == NULL) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "snl_fei::RecordCollection::getGlobalIndex ERROR, no record with "

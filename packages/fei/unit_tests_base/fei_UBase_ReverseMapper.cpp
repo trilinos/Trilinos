@@ -1,28 +1,27 @@
 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 #include <fei_mpi.h>
 #include <fei_iostream.hpp>
 #include <fei_ReverseMapper.hpp>
 #include <fei_VectorSpace.hpp>
 
-#include <fei_unit_ReverseMapper.hpp>
-
-#undef fei_file
-#define fei_file "fei_unit_ReverseMapper.cpp"
-#include <fei_ErrMacros.hpp>
-
 #include <vector>
 #include <cmath>
 
-int test_ReverseMapper_test1(MPI_Comm comm)
+namespace {
+
+TEUCHOS_UNIT_TEST(ReverseMapper, test1)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
+
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
 #endif
 
-  if (numProcs > 1) return(0);
-
-  FEI_COUT << "testing fei::ReverseMapper...";
+  if (numProcs > 1) return;
 
   fei::VectorSpace vspace(comm);
 
@@ -57,32 +56,13 @@ int test_ReverseMapper_test1(MPI_Comm comm)
 
   fei::EqnRecord er1 = rm.getEqnRecord(4);
 
-  if (er1.IDType != idTypes[0]) {
-    throw std::runtime_error("ReverseMapper test 1 failed.");
-  }
+  TEUCHOS_TEST_EQUALITY(er1.IDType, idTypes[0], out, success);
+  TEUCHOS_TEST_EQUALITY(er1.ID, ids[1], out, success);
 
-  if (er1.ID != ids[1]) {
-    throw std::runtime_error("ReverseMapper test 2 failed.");
-  }
+  TEUCHOS_TEST_EQUALITY(er1.fieldID, fieldIDs[1], out, success);
 
-  if (er1.fieldID != fieldIDs[1]) {
-    throw std::runtime_error("ReverseMapper test 3 failed.");
-  }
-
-  if (er1.offset != 0) {
-    throw std::runtime_error("ReverseMapper test 4 failed.");
-  }
-
-  FEI_COUT << "ok" << FEI_ENDL;
-  return(0);
+  TEUCHOS_TEST_EQUALITY(er1.offset, 0, out, success);
 }
 
-bool test_ReverseMapper::run(MPI_Comm comm)
-{
-  if (test_ReverseMapper_test1(comm) != 0) {
-    throw std::runtime_error("test_ReverseMapper_test1 failed.");
-  }
-
-  return true;
-}
+}//namespace <anonymous>
 

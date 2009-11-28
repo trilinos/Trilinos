@@ -66,6 +66,7 @@ class Factory_Trilinos : public fei::Factory {
   fei::SharedPtr<fei::Vector>
     createVector(fei::SharedPtr<fei::VectorSpace> vecSpace, int numVectors=1);
 
+#ifdef HAVE_FEI_EPETRA
   /** Wrap fei::Vector around existing Epetra_MultiVector.
       If the specified vector-space isn't compatible with the multi-vector's size,
       then return a null fei::Vector.
@@ -81,6 +82,7 @@ class Factory_Trilinos : public fei::Factory {
   fei::SharedPtr<fei::Vector>
     wrapVector(fei::SharedPtr<fei::MatrixGraph> matGraph,
                fei::SharedPtr<Epetra_MultiVector> multiVec);
+#endif
 
   /** Implementation of fei::Vector::Factory::createVector() */
   fei::SharedPtr<fei::Vector>

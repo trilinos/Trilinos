@@ -848,7 +848,7 @@ int snl_fei::LinearSystem_General::loadLagrangeConstraint(int constraintID,
     os << "loadLagrangeConstraint crID: "<<constraintID<<FEI_ENDL;
   }
 
-  Constraint<fei::Record*>* cr =
+  Constraint<fei::Record<int>*>* cr =
     matrixGraph_->getLagrangeConstraint(constraintID);
   if (cr == NULL) {
     return(-1);
@@ -898,7 +898,7 @@ int snl_fei::LinearSystem_General::loadPenaltyConstraint(int constraintID,
     os << "loadPenaltyConstraint crID: "<<constraintID<<FEI_ENDL;
   }
 
-  Constraint<fei::Record*>* cr =
+  Constraint<fei::Record<int>*>* cr =
     matrixGraph_->getPenaltyConstraint(constraintID);
   if (cr == NULL) {
     return(-1);

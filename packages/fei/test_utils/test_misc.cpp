@@ -160,7 +160,7 @@ void test_misc_RecordCollection()
 
   snl_fei::RecordCollection recColl(0);
 
-  fei::Record** records = new fei::Record*[1];
+  fei::Record<int>** records = new fei::Record<int>*[1];
 
   recColl.initRecords(fieldID0, fieldSize, 1, 1, &ID0,
 		      fieldMasks, records);

@@ -38,7 +38,7 @@ ReverseMapper::ReverseMapper(const VectorSpace& vspace)
       r_end  = recordmap.end();
 
     for(; r_iter != r_end; ++r_iter) {
-      const fei::Record* record = r_iter->second;
+      const fei::Record<int>* record = r_iter->second;
 
       const fei::FieldMask* fm = record->getFieldMask();
       const std::vector<int>& fieldIDs = fm->getFieldIDs();

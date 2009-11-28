@@ -1,18 +1,19 @@
 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 #include "fei_CSVec.hpp"
 #include "fei_CSRMat.hpp"
 
 #include "fei_iostream.hpp"
 
-#include "fei_unit_CSRMat_CSVec.hpp"
-
 #include <cmath>
 #include <limits>
 
-void test_FillableVec_1()
-{
-  FEI_COUT << "testing fei::FillableVec...";
+namespace {
 
+TEUCHOS_UNIT_TEST(CSRMatCSVec, FillableVec_1)
+{
   fei::FillableVec fv;
 
   if (fv.hasEntry(0)) {
@@ -54,14 +55,10 @@ void test_FillableVec_1()
   if (fv.size() != 3) {
     throw std::runtime_error("FillableVec failed 5");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_FillableMat_1()
+TEUCHOS_UNIT_TEST(CSRMatCSVec, FillableMat_1)
 {
-  FEI_COUT << "testing fei::FillableMat...";
-
   fei::FillableMat fm;
 
   if (fm.hasRow(0)) {
@@ -102,14 +99,10 @@ void test_FillableMat_1()
   if (fm.getNumRows() != 3) {
     throw std::runtime_error("FillableMat failed 5");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_multiply_CSRMat_CSVec()
+TEUCHOS_UNIT_TEST(CSRMatCSVec, multiply_CSRMat_CSVec)
 {
-  FEI_COUT << "testing multiply_CSRMat_CSVec...";
-
   fei::FillableMat fm;
 
   fm.putCoef(0, 0, 0.0);
@@ -150,9 +143,6 @@ void test_multiply_CSRMat_CSVec()
     throw std::runtime_error("CSRMat y=Ax test 4 failed.");
   }
 
-  FEI_COUT << "ok"<<FEI_ENDL;
-  FEI_COUT << "testing multiply_trans_CSRMat_CSVec...";
-
   fei::multiply_trans_CSRMat_CSVec(A, x, y);
 
   if (y.size() != 3) {
@@ -173,14 +163,10 @@ void test_multiply_CSRMat_CSVec()
   if (std::abs(y_coef2[2] - 6.6) > 1.e-13) {
     throw std::runtime_error("CSRMat y=A^Tx test 4 failed.");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_multiply_CSRMat_CSRMat()
+TEUCHOS_UNIT_TEST(CSRMatCSVec, multiply_CSRMat_CSRMat)
 {
-  FEI_COUT << "testing multiply_CSRMat_CSRMat...";
-
   fei::FillableMat fa, fb;
 
   fa.putCoef(0, 0, 1.0);
@@ -285,9 +271,6 @@ void test_multiply_CSRMat_CSRMat()
     throw std::runtime_error("FillableMat::clear() test failed.");
   }
 
-  FEI_COUT << "ok"<<FEI_ENDL;
-  FEI_COUT << "testing multiply_trans_CSRMat_CSRMat...";
-
   fei::multiply_trans_CSRMat_CSRMat(A, B, C);
 
   if (C.getNumRows() != 3) {
@@ -316,14 +299,10 @@ void test_multiply_CSRMat_CSRMat()
   if (std::abs(tcoefs[6] - 9.0) > 1.e-13) {
     throw std::runtime_error("CSRMAT C=A^TB test 6 failed.");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_multiply_CSRMat_CSRMat_sparse()
+TEUCHOS_UNIT_TEST(CSRMatCSVec, multiply_CSRMat_CSRMat_sparse)
 {
-  FEI_COUT << "testing multiply_CSRMat_CSRMat with more sparsity...";
-
   fei::FillableMat fa, fb;
 
   fa.putCoef(0, 0, 1.0);
@@ -387,9 +366,6 @@ void test_multiply_CSRMat_CSRMat_sparse()
     throw std::runtime_error("CSRMAT C=AB test s2.5 failed.");
   }
 
-  FEI_COUT << "ok"<<FEI_ENDL;
-  FEI_COUT << "testing multiply_trans_CSRMat_CSRMat with more sparsity...";
-
   fei::FillableMat fa2, fb2;
 
   fa2.putCoef(1, 1, 2.0);
@@ -433,14 +409,10 @@ void test_multiply_CSRMat_CSRMat_sparse()
   if (fa2.getNumRows() != 0 || fa2.begin() != fa2.end()) {
     throw std::runtime_error("FillableMat::clear() test failed.");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_csvec_add_entry()
+TEUCHOS_UNIT_TEST(CSRMatCSVec, csvec_add_entry)
 {
-  FEI_COUT << "testing fei::add_entry(CSVec& ...)...";
-
   std::vector<int> ind(3);
   std::vector<double> coef(3);
 
@@ -461,27 +433,15 @@ void test_csvec_add_entry()
     throw std::runtime_error("add_entry(CSVec... failed 2.");
   }
 
-  FEI_COUT << "ok" << FEI_ENDL;
-  FEI_COUT << "testing fei::put_entry(CSVec& ...)...";
-
   coef[1] = 7.0;
   fei::put_entry(csv, ind[1], 7.0);
 
-  if (csv.indices() != ind) {
-    throw std::runtime_error("put_entry(CSVec... failed 1.");
-  }
-
-  if (csv.coefs() != coef) {
-    throw std::runtime_error("put_entry(CSVec... failed 2.");
-  }
-
-  FEI_COUT << "ok" << FEI_ENDL;
+  TEUCHOS_TEST_EQUALITY(csv.indices() == ind, true, out, success);
+  TEUCHOS_TEST_EQUALITY(csv.coefs() == coef, true, out, success);
 }
 
-bool test_csvec::run(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(CSRMatCSVec, constructors)
 {
-  FEI_COUT <<"testing CSRMat,CSVec constructors...";
-
   fei::FillableVec fv;
 
   fv.putEntry(0, 0.0);
@@ -500,14 +460,9 @@ bool test_csvec::run(MPI_Comm comm)
   fei::FillableVec::iterator iter = fv.begin(), iter_end = fv.end();
   unsigned i=0;
   for(; iter != iter_end; ++iter, ++i) {
-    if (inds[i] != iter->first) {
-      throw std::runtime_error("CSVec ctor test 2 failed.");
-    }
-    if (coefs[i] != iter->second) {
-      throw std::runtime_error("CSVec ctor test 3 failed.");
-    }
+    TEUCHOS_TEST_EQUALITY(inds[i], iter->first, out, success);
+    TEUCHOS_TEST_EQUALITY(coefs[i], iter->second, out, success);
   }
-
 
   fei::FillableMat fm;
 
@@ -529,21 +484,6 @@ bool test_csvec::run(MPI_Comm comm)
   if (csrm.getPackedCoefs()[2] != 2.0) {
     throw std::runtime_error("CSRMat ctor test 3 failed.");
   }
-
-  FEI_COUT << "ok" << FEI_ENDL;
-
-  test_FillableVec_1();
-
-  test_FillableMat_1();
-
-  test_multiply_CSRMat_CSVec();
-
-  test_multiply_CSRMat_CSRMat();
-
-  test_multiply_CSRMat_CSRMat_sparse();
-
-  test_csvec_add_entry();
-
-  return true;
 }
 
+}//namespace <anonymous>

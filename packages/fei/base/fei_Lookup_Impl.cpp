@@ -60,12 +60,12 @@ fei::Lookup_Impl::~Lookup_Impl()
 //----------------------------------------------------------------------------
 int fei::Lookup_Impl::getEqnNumber(int nodeNumber, int fieldID)
 {
-  std::map<int,fei::Record*>::iterator
+  std::map<int,fei::Record<int>*>::iterator
     nnp_iter = nodenumPairs_.find(nodeNumber);
 
   if (nnp_iter == nodenumPairs_.end()) return(-1);
 
-  fei::Record* node = (*nnp_iter).second;
+  fei::Record<int>* node = (*nnp_iter).second;
 
   std::vector<int>& eqnNums = vspace_->getEqnNumbers();
   int* eqnNumbers = eqnNums.size() > 0 ? &eqnNums[0] : NULL;
@@ -82,12 +82,12 @@ int fei::Lookup_Impl::getEqnNumber(int nodeNumber, int fieldID)
 //----------------------------------------------------------------------------
 int fei::Lookup_Impl::getAssociatedNodeNumber(int eqnNumber)
 {
-  std::map<int,fei::Record*>::iterator
+  std::map<int,fei::Record<int>*>::iterator
     enp_iter = eqnnumPairs_.find(eqnNumber);
 
   if (enp_iter == eqnnumPairs_.end()) return(-1);
 
-  fei::Record* node = (*enp_iter).second;
+  fei::Record<int>* node = (*enp_iter).second;
 
   return( node->getNumber() );
 }
@@ -95,12 +95,12 @@ int fei::Lookup_Impl::getAssociatedNodeNumber(int eqnNumber)
 //----------------------------------------------------------------------------
 int fei::Lookup_Impl::getAssociatedNodeID(int eqnNumber)
 {
-  std::map<int,fei::Record*>::iterator
+  std::map<int,fei::Record<int>*>::iterator
     enp_iter = eqnnumPairs_.find(eqnNumber);
 
   if (enp_iter == eqnnumPairs_.end()) return(-1);
 
-  fei::Record* node = (*enp_iter).second;
+  fei::Record<int>* node = (*enp_iter).second;
 
   return( node->getID() );
 }
@@ -113,7 +113,7 @@ bool fei::Lookup_Impl::isInLocalElement(int nodeNumber)
     return( true );
   }
 
-  std::map<int,fei::Record*>::iterator
+  std::map<int,fei::Record<int>*>::iterator
     nnp_iter = nodenumPairs_.find(nodeNumber);
 
   return(nnp_iter != nodenumPairs_.end() ? true : false);
@@ -123,12 +123,12 @@ bool fei::Lookup_Impl::isInLocalElement(int nodeNumber)
 int fei::Lookup_Impl::getOffsetIntoBlkEqn(int blkEqn, int ptEqn)
 {
   //assume blkEqn is a node-number, for now.
-  std::map<int,fei::Record*>::iterator
+  std::map<int,fei::Record<int>*>::iterator
     nnp_iter = nodenumPairs_.find(blkEqn);
 
   if (nnp_iter == nodenumPairs_.end()) return(-1);
 
-  fei::Record* node = (*nnp_iter).second;
+  fei::Record<int>* node = (*nnp_iter).second;
 
   int eqn = vspace_->getEqnNumbers()[node->getOffsetIntoEqnNumbers()];
   return(ptEqn - eqn);
@@ -156,9 +156,9 @@ int fei::Lookup_Impl::buildDatabases()
     r_end = rmap.end();
 
   for(; r_iter != r_end; ++r_iter) {
-    fei::Record* node = (*r_iter).second;
+    fei::Record<int>* node = (*r_iter).second;
 
-    std::pair<int,fei::Record* > int_node_pair(node->getNumber(), node);
+    std::pair<int,fei::Record<int>* > int_node_pair(node->getNumber(), node);
 
     nodenumPairs_.insert(int_node_pair);
 
@@ -167,7 +167,7 @@ int fei::Lookup_Impl::buildDatabases()
                     + node->getOffsetIntoEqnNumbers();
 
     for(int eq=0; eq<numEqns; ++eq) {
-      std::pair<int,fei::Record* > eqn_node_pair(eqnNumbers[eq], node);
+      std::pair<int,fei::Record<int>* > eqn_node_pair(eqnNumbers[eq], node);
       eqnnumPairs_.insert(eqn_node_pair);
     }
   }
@@ -181,22 +181,15 @@ int fei::Lookup_Impl::buildDatabases()
 
   bool noconstraints = numGlobalLagrangeConstraints<1 ? true : false;
 
-  fei::SharedIDs* subdomainIDs = NULL;
-  fei::SharedIDs* sharedIDs = NULL;
-  vspace_->getSharedIDs_private(nodeIDType_, sharedIDs);
+  fei::SharedIDs<int> subdomainIDs;
+  fei::SharedIDs<int>& sharedIDs = vspace_->getSharedIDs_private(nodeIDType_);
 
   if (noconstraints == false) {
-    subdomainIDs = new fei::SharedIDs;
+    snl_fei::SubdMsgHandler subdmsghndlr(collection, &sharedIDs, &subdomainIDs);
 
-    snl_fei::SubdMsgHandler subdmsghndlr(collection, sharedIDs, subdomainIDs);
-
-    int idx = fei::binarySearch(nodeIDType_, vspace_->sharedIDTypes_);
-    if (idx < 0) ERReturn(-1);
-
-    if ((int)vspace_->ownerPatterns_.size() > idx &&
-	(int)vspace_->sharerPatterns_.size() > idx) {
-      subdmsghndlr.setSendPattern(vspace_->ownerPatterns_[idx]);
-      subdmsghndlr.setRecvPattern(vspace_->sharerPatterns_[idx]);
+    if (vspace_->ownerPatterns_.size() > 0 && vspace_->sharerPatterns_.size() > 0) {
+      subdmsghndlr.setSendPattern(vspace_->ownerPatterns_.find(nodeIDType_)->second);
+      subdmsghndlr.setRecvPattern(vspace_->sharerPatterns_.find(nodeIDType_)->second);
       CHK_ERR( fei::exchange(comm, &subdmsghndlr) );
     }
 
@@ -212,24 +205,24 @@ int fei::Lookup_Impl::buildDatabases()
 
   int local_proc = fei::localProc(comm);
 
-  fei::SharedIDs::table_type& sdIDTable = subdomainIDs->getSharedIDs();
-  fei::SharedIDs::table_type::iterator
+  fei::SharedIDs<int>::map_type& sdIDTable = subdomainIDs.getSharedIDs();
+  fei::SharedIDs<int>::map_type::iterator
     sd_iter = sdIDTable.begin(),
     sd_end  = sdIDTable.end();
 
   for(int i=0; sd_iter != sd_end; ++i, ++sd_iter) {
-    int id = (*sd_iter).first;
-    fei::SharedIDs::table_type::row_type* procList = (*sd_iter).second;
+    int id = sd_iter->first;
+    std::set<int>& procList = sd_iter->second;
 
-    fei::Record* node = collection->getRecordWithID(id);
+    fei::Record<int>* node = collection->getRecordWithID(id);
     if (node == NULL) {
       ERReturn(-1);
     }
 
     std::vector<int>* newarray = new std::vector<int>;
-    fei::SharedIDs::table_type::row_type::const_iterator
-      p_iter = procList->begin(),
-      p_end = procList->end();
+    std::set<int>::const_iterator
+      p_iter = procList.begin(), p_end = procList.end();
+
     for(; p_iter != p_end; ++p_iter) {
       int proc = *p_iter;
       newarray->push_back(proc);
@@ -240,10 +233,6 @@ int fei::Lookup_Impl::buildDatabases()
     }
 
     nodenumSubdomainDB_.insert(std::pair<int,std::vector<int>*>(node->getNumber(), newarray));
-  }
-
-  if (!noconstraints) {
-    delete subdomainIDs;
   }
 
   databasesBuilt_ = true;

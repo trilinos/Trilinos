@@ -142,7 +142,7 @@ void fei::utils::getConnectivityArrays(fei::MatrixGraph& matrixGraph,
 
     int ne = cblk->getConnectivityIDs().size();
     int nn = pattern->getNumIDs();
-    std::vector<fei::Record*>& cblk_nodes = cblk->getRowConnectivities();
+    std::vector<fei::Record<int>*>& cblk_nodes = cblk->getRowConnectivities();
     for(unsigned i=0; i<cblk_nodes.size(); ++i) {
       nodes[node_offset++] = cblk_nodes[i]->getID();
     }

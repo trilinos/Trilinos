@@ -586,7 +586,7 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
 
    int addPattern(fei::Pattern* pattern);
 
-   int getConnectivityIndices_multiField(fei::Record** records, int numRecords,
+   int getConnectivityIndices_multiField(fei::Record<int>** records, int numRecords,
                                          const int* numFieldsPerID,
                                          const int* fieldIDs,
                                          const int* fieldSizes,
@@ -594,13 +594,13 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
                                          int* indices,
                                          int& numIndices);
 
-   int getConnectivityIndices_singleField(fei::Record** records, int numRecords,
+   int getConnectivityIndices_singleField(fei::Record<int>** records, int numRecords,
                                           int fieldID, int fieldSize,
                                           int indicesAllocLen,
                                           int* indices,
                                           int& numIndices);
 
-   int getConnectivityIndices_singleField_unreduced(fei::Record** records,
+   int getConnectivityIndices_singleField_unreduced(fei::Record<int>** records,
                                                     int numRecords,
                                                     int* idTypes,
                                                     int fieldID, int fieldSize,
@@ -608,7 +608,7 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
                                                     int* indices,
                                                     int& numIndices);
 
-   int getConnectivityIndices_noField(fei::Record** records,
+   int getConnectivityIndices_noField(fei::Record<int>** records,
                                       int numRecords,
                                       int indicesAllocLen,
                                       int* indices,
@@ -618,19 +618,19 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
                               int idType,
                               int numIDs,
                               const int* IDs,
-                              fei::Record** records);
+                              fei::Record<int>** records);
 
    int getConnectivityRecords(fei::VectorSpace* vecSpace,
                               int idType,
                               int fieldID,
                               int numIDs,
                               const int* IDs,
-                              fei::Record** records);
+                              fei::Record<int>** records);
 
    int getConnectivityRecords(fei::Pattern* pattern,
                               fei::VectorSpace* solnSpace,
                               const int* connectedIdentifiers,
-                              fei::Record** recordList);
+                              fei::Record<int>** recordList);
 
    int exchangeBlkEqnSizes(fei::Graph* graph);
 

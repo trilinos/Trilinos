@@ -1,4 +1,7 @@
 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 #include <fei_iostream.hpp>
 #include <fei_DirichletBCRecord.hpp>
 #include <fei_DirichletBCManager.hpp>
@@ -6,15 +9,11 @@
 #include <fei_MatrixGraph_Impl2.hpp>
 #include <fei_Matrix_Impl.hpp>
 
-#include <fei_unit_DirBC.hpp>
-
 #include <vector>
 #include <cmath>
 
-void test_DirBCRecord()
+TEUCHOS_UNIT_TEST(DirBC, DirBCRecord)
 {
-  FEI_COUT << "testing fei::DirichletBCRecord...";
-
   fei::DirichletBCRecord dbc1;
   fei::DirichletBCRecord dbc2;
 
@@ -54,14 +53,11 @@ void test_DirBCRecord()
   if (dbc1 != dbc2) {
     throw std::runtime_error("DirBCRecord::operator!= test 3 failed.");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_DirBCManager_addBCRecords(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(DirBC, DirBCManager_addBCRecords)
 {
-  FEI_COUT << "testing fei::DirichletBCManager::addBCRecords...";
-
+  MPI_Comm comm = MPI_COMM_WORLD;
   int idtype = 0;
   int fieldID = 0;
   int fieldSize = 2;
@@ -125,12 +121,12 @@ void test_DirBCManager_addBCRecords(MPI_Comm comm)
   if (bcmgr.getNumBCRecords() != 8) {
     throw std::runtime_error("test_DirBCManager test 3 failed.");
   }
-
-  FEI_COUT << "ok" << FEI_ENDL;
 }
 
-void test_DirBCManager_finalizeBCEqns(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(DirBC, DirBCManager_finalizeBCEqns)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
+
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
@@ -141,8 +137,6 @@ void test_DirBCManager_finalizeBCEqns(MPI_Comm comm)
      << " runs on 1 proc." << FEI_ENDL;
     return;
   }
-
-  FEI_COUT << "testing fei::DirichletBCManager::finalizeBCEqn...";
 
   int idtype = 0;
   int fieldID = 0;
@@ -188,30 +182,9 @@ void test_DirBCManager_finalizeBCEqns(MPI_Comm comm)
   fei::SharedPtr<fei::FillableMat> inner(new fei::FillableMat);
   fei::SharedPtr<fei::Matrix_Impl<fei::FillableMat> > feimat(new fei::Matrix_Impl<fei::FillableMat>(inner, mgraph, ids.size()));
 
-  int err = bcmgr.finalizeBCEqns(*feimat, false);
-  if (err != 0) {
-    throw std::runtime_error("test_DirBCManager test 4 failed.");
-  }
+  TEUCHOS_TEST_EQUALITY(bcmgr.finalizeBCEqns(*feimat, false), 0, out, success);
 
-  if (feimat->getGlobalNumRows() != feimat->getLocalNumRows() ||
-      feimat->getGlobalNumRows() != (int)ids.size()) {
-    std::ostringstream osstr;
-    osstr << "test_DirBCManager test 5 failed, num-rows == " << feimat->getGlobalNumRows()
-         << ", expected " << ids.size();
-    throw std::runtime_error(osstr.str());
-  }
-
-  FEI_COUT << "ok" << FEI_ENDL;
-}
-
-bool test_DirBC::run(MPI_Comm comm)
-{
-  test_DirBCRecord();
-
-  test_DirBCManager_addBCRecords(comm);
-
-  test_DirBCManager_finalizeBCEqns(comm);
-
-  return true;
+  TEUCHOS_TEST_EQUALITY(feimat->getGlobalNumRows(), feimat->getLocalNumRows(),out,success);
+  TEUCHOS_TEST_EQUALITY(feimat->getGlobalNumRows(), (int)ids.size(), out, success);
 }
 

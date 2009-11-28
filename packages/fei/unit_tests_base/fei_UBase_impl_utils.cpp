@@ -1,4 +1,7 @@
 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 #include <fei_impl_utils.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_CSVec.hpp>
@@ -6,10 +9,10 @@
 
 #include <fei_iostream.hpp>
 
-#include <fei_unit_impl_utils.hpp>
-
 #include <cmath>
 #include <limits>
+
+namespace {
 
 bool verify_offsets(const std::vector<int>& src, const std::vector<int>& tgt,
                     const std::vector<int>& offsets)
@@ -25,10 +28,8 @@ bool verify_offsets(const std::vector<int>& src, const std::vector<int>& tgt,
   return true;
 }
 
-void test_find_offsets()
+TEUCHOS_UNIT_TEST(impl_utils, find_offsets)
 {
-  FEI_COUT << "testing fei::impl_utils::find_offsets...";
-
   std::vector<int> s1(5), t1(5), offs1;
 
   for(size_t i=0; i<5; ++i) {
@@ -74,14 +75,10 @@ void test_find_offsets()
   if (!verify_offsets(s1, t1, offs1)) {
     throw std::runtime_error("failed test 4.");
   }
-
-  FEI_COUT << "ok" << FEI_ENDL;
 }
 
-void test_pack_unpack_FillableMat()
+TEUCHOS_UNIT_TEST(impl_utils, pack_unpack_FillableMat)
 {
-  FEI_COUT << "testing fei::impl_utils::pack_FillableMat, unpack_FillableMat...";
-
   fei::FillableMat fm, fm2;
 
   fm.putCoef(0, 0, 0.0);
@@ -106,17 +103,11 @@ void test_pack_unpack_FillableMat()
     throw std::runtime_error("pack/unpack FillableMat, wrong number of nonzeros");
   }
 
-  if (fm != fm2) {
-    throw std::runtime_error("pack/unpack FillableMat test failed.");
-  }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
+  TEUCHOS_TEST_EQUALITY(fm, fm2, out, success);
 }
 
-void test_separateBCEqns()
+TEUCHOS_UNIT_TEST(impl_utils, separateBCEqns)
 {
-  FEI_COUT << "testing fei::impl_utils::separateBCEqns...";
-
   fei::FillableMat fm;
 
   fm.putCoef(0, 0, 0.0);
@@ -153,14 +144,10 @@ void test_separateBCEqns()
   if (bcEqns[2] != 2 || std::abs(bcVals[2] - 2.0) > eps) {
     throw std::runtime_error("separate_BC_eqns test 4 failed.");
   }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
-void test_create_col_to_row_map()
+TEUCHOS_UNIT_TEST(impl_utils, create_col_to_row_map)
 {
-  FEI_COUT << "testing fei::impl_utils::create_col_to_row_map...";
-
   fei::FillableMat fm;
 
   fm.putCoef(0, 0, 0.0);
@@ -187,14 +174,10 @@ void test_create_col_to_row_map()
     FEI_COUT << "ERROR, size of equal_range(1)=="<<num<<", expected 2."<<FEI_ENDL;
     throw std::runtime_error("create_col_to_row_map failed 2");
   }
-
-  FEI_COUT << "ok" << FEI_ENDL;
 }
 
-void test_remove_couplings()
+TEUCHOS_UNIT_TEST(impl_utils, remove_couplings)
 {
-  FEI_COUT << "testing fei::impl_utils::remove_couplings...";
-
   fei::FillableMat fm;
 
   fm.putCoef(2,  0, 0.5);
@@ -229,13 +212,11 @@ void test_remove_couplings()
   if (levels > 0) {
     throw std::runtime_error("remove_couplings test 2 failed");
   }
-
-  FEI_COUT << "ok" << FEI_ENDL;
 }
 
-void test_global_union_mat(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(impl_utils, global_union_mat)
 {
-  FEI_COUT << "testing fei::impl_utils::global_union(,mat,)...";
+  MPI_Comm comm = MPI_COMM_WORLD;
 
   int numProcs = fei::numProcs(comm);
   int localProc = fei::localProc(comm);
@@ -265,24 +246,7 @@ void test_global_union_mat(MPI_Comm comm)
   if (globalmat != globalmat0) {
     throw std::runtime_error("globalUnion test (mat) failed");
   }
-
-  FEI_COUT << "ok" << FEI_ENDL;
 }
 
-bool test_impl_utils::run(MPI_Comm comm)
-{
-  test_find_offsets();
-
-  test_pack_unpack_FillableMat();
-
-  test_separateBCEqns();
-
-  test_create_col_to_row_map();
-
-  test_remove_couplings();
-
-  test_global_union_mat(comm);
-
-  return true;
-}
+}//namespace <anonymous>
 

@@ -85,21 +85,21 @@ namespace fei {
       { return(connectivityOffsets_); }
 
     /** get array of row-connectivities */
-    std::vector<Record*>& getRowConnectivities()
+    std::vector<Record<int>*>& getRowConnectivities()
       { return(connectivities_); }
 
     /** get array of column-connectivities */
-    std::vector<Record*>& getColConnectivities()
+    std::vector<Record<int>*>& getColConnectivities()
       { return(colConnectivities_); }
 
     /** get row-connectivity for a specified ID */
-    const Record*const* getRowConnectivity(int ID) const;
+    const Record<int>*const* getRowConnectivity(int ID) const;
     /** get column-connectivity for a specified ID */
-    const Record*const* getColConnectivity(int ID) const;
+    const Record<int>*const* getColConnectivity(int ID) const;
     /** get row-connectivity for a specified ID */
-    Record** getRowConnectivity(int ID);
+    Record<int>** getRowConnectivity(int ID);
     /** get column-connectivity for a specified ID */
-    Record** getColConnectivity(int ID);
+    Record<int>** getColConnectivity(int ID);
 
     /** query whether block is symmetric */
     bool isSymmetric() const { return( isSymmetric_ ); }
@@ -129,9 +129,9 @@ namespace fei {
     std::vector<int> connectivityOffsets_;
 
     int numRecordsPerConnectivity_;
-    std::vector<Record*> connectivities_;
+    std::vector<Record<int>*> connectivities_;
     int numRecordsPerColConnectivity_;
-    std::vector<Record*> colConnectivities_;
+    std::vector<Record<int>*> colConnectivities_;
 
     int fieldID_;
     bool haveFieldID_;

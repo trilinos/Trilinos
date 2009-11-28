@@ -14,6 +14,7 @@
 #include "fei_TemplateUtils.hpp"
 #include "fei_chk_mpi.hpp"
 #include <fei_CommUtils.hpp>
+#include <fei_set_shared_ids.hpp>
 #include "snl_fei_Utils.hpp"
 #include "fei_Record.hpp"
 #include "snl_fei_RecordCollection.hpp"
@@ -31,7 +32,7 @@
 #include "fei_ErrMacros.hpp"
 
 namespace fei {
-  class RecordAttributeCounter : public Record_Operator {
+  class RecordAttributeCounter : public Record_Operator<int> {
   public:
     RecordAttributeCounter(int proc)
       : numLocalDOF_(0),
@@ -43,7 +44,7 @@ namespace fei {
 
     virtual ~RecordAttributeCounter(){}
 
-    void operator()(fei::Record& record)
+    void operator()(fei::Record<int>& record)
     {
       fei::FieldMask* mask = record.getFieldMask();
       int owner = record.getOwnerProc();
@@ -72,7 +73,7 @@ namespace fei {
     int proc_;
   };//class Record_Operator
 
-  class BlkIndexAccessor : public Record_Operator {
+  class BlkIndexAccessor : public Record_Operator<int> {
   public:
     BlkIndexAccessor(int localProc,
                      int lenBlkIndices,
@@ -97,7 +98,7 @@ namespace fei {
     {
     }
 
-    void operator()(fei::Record& record)
+    void operator()(fei::Record<int>& record)
     {
       int owner = record.getOwnerProc();
       if (owner != proc_ && proc_ > -1) {
@@ -141,7 +142,6 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
     idTypes_(),
     fieldDatabase_(),
     recordCollections_(),
-    sharedIDTypes_(),
     sharedIDTables_(),
     ownerPatterns_(),
     sharerPatterns_(),
@@ -184,19 +184,16 @@ fei::VectorSpace::~VectorSpace()
   len = recordCollections_.size();
   for(i=0; i<len; ++i) delete recordCollections_[i];
 
-  len = sharedIDTypes_.size();
-  for(i=0; i<len; ++i) {
-    delete sharedIDTables_[i];
+  std::map<int,fei::comm_map*>::iterator
+    o_iter = ownerPatterns_.begin(), o_end = ownerPatterns_.end();
+  for(; o_iter != o_end; ++o_iter) {
+    delete o_iter->second;
   }
 
-  len = ownerPatterns_.size();
-  for(i=0; i<len; ++i) {
-    delete ownerPatterns_[i];
-  }
-
-  len = sharerPatterns_.size();
-  for(i=0; i<len; ++i) {
-    delete sharerPatterns_[i];
+  std::map<int,fei::comm_map*>::iterator
+    s_iter = sharerPatterns_.begin(), s_end = sharerPatterns_.end();
+  for(; s_iter != s_end; ++s_iter) {
+    delete s_iter->second;
   }
 
   delete ptBlkMap_;
@@ -340,7 +337,7 @@ int fei::VectorSpace::addDOFs(int fieldID,
                                           int idType,
                                           int numIDs,
                                           const int* IDs,
-                                          fei::Record** records)
+                                          fei::Record<int>** records)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -409,7 +406,7 @@ int fei::VectorSpace::addDOFs(int idType,
 int fei::VectorSpace::addDOFs(int idType,
                                           int numIDs,
                                           const int* IDs,
-                                          fei::Record** records)
+                                          fei::Record<int>** records)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -461,16 +458,15 @@ int fei::VectorSpace::initSharedIDs(int numShared,
   int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
-  fei::SharedIDs* shIDs = NULL;
-  getSharedIDs_private(idType, shIDs);
+  fei::SharedIDs<int>& shIDs = getSharedIDs_private(idType);
 
   int offset = 0;
   for(int i=0; i<numShared; ++i) {
-    CHK_ERR( shIDs->addSharedID(sharedIDs[i], numSharingProcsPerID[i],
-                                &(sharingProcs[offset])) );
+    shIDs.addSharedID(sharedIDs[i], numSharingProcsPerID[i],
+                                &(sharingProcs[offset]));
     offset += numSharingProcsPerID[i];
 
-    fei::Record* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
+    fei::Record<int>* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
     if (rec == NULL) {
       CHK_ERR( addDOFs(idType, 1, &(sharedIDs[i])) );
     }
@@ -504,17 +500,16 @@ int fei::VectorSpace::initSharedIDs(int numShared,
 
   if (numShared == 0) return(0);
 
-  fei::SharedIDs* shIDs = NULL;
-  getSharedIDs_private(idType, shIDs);
+  fei::SharedIDs<int>& shIDs = getSharedIDs_private(idType);
 
   int idx = fei::binarySearch(idType, idTypes_);
   if (idx < 0) ERReturn(-1);
 
   for(int i=0; i<numShared; ++i) {
-    CHK_ERR( shIDs->addSharedID(sharedIDs[i], numSharingProcsPerID[i],
-                                 sharingProcs[i]) );
+    shIDs.addSharedID(sharedIDs[i], numSharingProcsPerID[i],
+                                 sharingProcs[i]);
 
-    fei::Record* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
+    fei::Record<int>* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
     if (rec == NULL) {
       CHK_ERR( addDOFs(idType, 1, &(sharedIDs[i])) );
     }
@@ -554,13 +549,7 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
       new snl_fei::RecordCollection(*(inputSpace->recordCollections_[i]));
   }
 
-  sharedIDTypes_ = inputSpace->sharedIDTypes_;
-
-  len = inputSpace->sharedIDTables_.size();
-  sharedIDTables_.resize(len);
-  for(i=0; i<len; ++i) {
-    sharedIDTables_[i] = new fei::SharedIDs(*(inputSpace->sharedIDTables_[i]));
-  }
+  sharedIDTables_ = inputSpace->sharedIDTables_;
 
   newInitData_ = true;
   sharedRecordsSynchronized_ = false;
@@ -569,19 +558,31 @@ int fei::VectorSpace::addVectorSpace(fei::VectorSpace* inputSpace)
 }
 
 //----------------------------------------------------------------------------
-void fei::VectorSpace::getSharedIDs_private(int idType,
-                                           fei::SharedIDs*& shIDs)
+fei::SharedIDs<int>& fei::VectorSpace::getSharedIDs_private(int idType)
 {
-  int insertPoint = -1;
-  int idx = fei::binarySearch(idType, sharedIDTypes_, insertPoint);
-  if (idx < 0) {
-    sharedIDTypes_.insert(sharedIDTypes_.begin()+insertPoint, idType);
+  std::map<int,fei::SharedIDs<int> >::iterator
+    iter = sharedIDTables_.find(idType);
 
-    shIDs = new fei::SharedIDs;
-
-    sharedIDTables_.insert(sharedIDTables_.begin()+insertPoint, shIDs);
+  if (iter == sharedIDTables_.end()) {
+    iter = sharedIDTables_.insert(std::make_pair(idType,fei::SharedIDs<int>())).first;
   }
-  else shIDs = sharedIDTables_[idx];
+
+  return iter->second;
+}
+
+//----------------------------------------------------------------------------
+void fei::VectorSpace::compute_shared_ids()
+{
+  //For each ID-type, call the fei::set_shared_ids function, which
+  //takes a RecordCollection as input and fills a SharedIDs object
+  //with mappings for which processors share each ID that appears
+  //on multiple processors.
+  for(size_t i=0; i<idTypes_.size(); ++i) {
+    snl_fei::RecordCollection* records = recordCollections_[i];
+    fei::SharedIDs<int>& shIDs = getSharedIDs_private(idTypes_[i]);
+
+    fei::set_shared_ids(comm_, *records, shIDs);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -600,26 +601,47 @@ int fei::VectorSpace::initComplete()
   CHK_ERR( fei::GlobalMax(comm_, localInitData, globalInitData) );
   newInitData_ = globalInitData > 0 ? true : false;
 
-  if (newInitData_) {
-    //setOwners_lowestSharing is a local operation (no communication), which
-    //basically assumes that each processor holds CORRECT (globally symmetric)
-    //shared-id/sharing-proc tables. No correctness-checking is performed here.
-    setOwners_lowestSharing();
+  if (!newInitData_) {
+    return(0);
+  }
 
-    //synchronizeSharedRecords ensures that each sharing processor has the same
-    //view of the shared records, with respect to the layout of fields, which
-    //determines how many DOFs and equation-numbers reside at each ID.
-    //This involves inter-processor communication.
-    if ( synchronizeSharedRecords() != 0) return(-1);
+  //if running on multiple procs and initSharedIDs(...) has not been
+  //called, then we need to specifically figure out which IDs are
+  //shared and which procs share them.
 
-    //calculateGlobalIndices is also a global operation.
-    CHK_ERR( calculateGlobalIndices() );
+  bool need_to_compute_shared_ids = false;
+  if (fei::numProcs(comm_) > 1 && sharedIDTables_.size() < 1) {
+    need_to_compute_shared_ids = true;
+  }
 
-    //finally we need to exchange global indices for shared records. i.e., the
-    //processors that own shared records, need to send the global indices for
-    //those records to the sharing-but-not-owning processors.
-    if (fei::numProcs(comm_) > 1) {
-      CHK_ERR( exchangeGlobalIndices() );
+  if (need_to_compute_shared_ids) {
+    compute_shared_ids();
+  }
+
+  //setOwners_lowestSharing is a local operation (no communication), which
+  //assumes that each processor holds CORRECT (globally symmetric)
+  //shared-id/sharing-proc tables. No correctness-checking is performed here.
+  setOwners_lowestSharing();
+
+  //synchronizeSharedRecords ensures that each sharing processor has the same
+  //view of the shared records, with respect to the layout of fields, which
+  //determines how many DOFs and equation-numbers reside at each ID.
+  //This involves inter-processor communication.
+  if ( synchronizeSharedRecords() != 0) {
+    return(-1);
+  }
+
+  //calculateGlobalIndices is also a global operation.
+  if ( calculateGlobalIndices() != 0) {
+    return(-1);
+  }
+
+  //finally we need to exchange global indices for shared records. i.e., the
+  //processors that own shared records, need to send the global indices for
+  //those records to the sharing-but-not-owning processors.
+  if (fei::numProcs(comm_) > 1) {
+    if ( exchangeGlobalIndices() != 0) {
+      return(-1);
     }
   }
 
@@ -782,7 +804,7 @@ int fei::VectorSpace::getGlobalIndices(int numIDs,
 
 //----------------------------------------------------------------------------
 void fei::VectorSpace::getGlobalBlkIndices(const fei::Pattern* pattern,
-                                           const fei::Record*const* records,
+                                           const fei::Record<int>*const* records,
                                            std::vector<int>& indices)
 {
   int numRecords = pattern->getNumIDs();
@@ -794,7 +816,7 @@ void fei::VectorSpace::getGlobalBlkIndices(const fei::Pattern* pattern,
 
 //----------------------------------------------------------------------------
 void fei::VectorSpace::getGlobalIndices(const fei::Pattern* pattern,
-                                        const fei::Record*const* records,
+                                        const fei::Record<int>*const* records,
                                         std::vector<int>& indices)
 {
   int numRecords = pattern->getNumIDs();
@@ -837,7 +859,7 @@ void fei::VectorSpace::getGlobalIndices(const fei::Pattern* pattern,
 
 //----------------------------------------------------------------------------
 void fei::VectorSpace::getGlobalIndices(int numRecords,
-                                        const fei::Record*const* records,
+                                        const fei::Record<int>*const* records,
                                         int fieldID,
                                         int fieldSize,
                                         int indicesAllocLen,
@@ -854,7 +876,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 
   if (fieldSize == 1 && simpleProblem_) {
     for(int i=0; i<len; ++i) {
-      const fei::Record* record = records[i];
+      const fei::Record<int>* record = records[i];
       indices[numIndices++] = *(eqnPtr+record->getOffsetIntoEqnNumbers());
     }    
     return;
@@ -862,7 +884,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 
   if (fieldSize == 1) {
     for(int i=0; i<len; ++i) {
-      const fei::Record* record = records[i];
+      const fei::Record<int>* record = records[i];
 
       int eqnOffset = 0, numInstances = 0;
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
@@ -874,7 +896,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
   }
   else {
     for(int i=0; i<len; ++i) {
-      const fei::Record* record = records[i];
+      const fei::Record<int>* record = records[i];
 
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
@@ -893,7 +915,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 
 //----------------------------------------------------------------------------
 void fei::VectorSpace::getGlobalIndices(int numRecords,
-                                        const fei::Record*const* records,
+                                        const fei::Record<int>*const* records,
                                         const int* numFieldsPerID,
                                         const int* fieldIDs,
                                         const int* fieldSizes,
@@ -906,7 +928,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
   int* eqnPtr = &eqnNumbers_[0];
 
   for(int i=0; i<numRecords; ++i) {
-    const fei::Record* record = records[i];
+    const fei::Record<int>* record = records[i];
 
     const fei::FieldMask* fieldMask = record->getFieldMask();
     int* eqnNumbers = eqnPtr + record->getOffsetIntoEqnNumbers();
@@ -928,7 +950,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 
 //----------------------------------------------------------------------------
 void fei::VectorSpace::getGlobalBlkIndices(int numRecords,
-                                           const fei::Record*const* records,
+                                           const fei::Record<int>*const* records,
                                            int indicesAllocLen,
                                            int* indices,
                                            int& numIndices)
@@ -950,7 +972,7 @@ int fei::VectorSpace::getGlobalIndex(int idType,
   int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(-1);
 
-  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  fei::Record<int>* record = recordCollections_[idindex]->getRecordWithID(ID);
   if (record == NULL) {
     ERReturn(-1);
   }
@@ -969,7 +991,7 @@ int fei::VectorSpace::getNumDegreesOfFreedom(int idType,
   int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(0);
 
-  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  fei::Record<int>* record = recordCollections_[idindex]->getRecordWithID(ID);
   if (record == NULL) {
     ERReturn(-1);
   }
@@ -1015,7 +1037,7 @@ int fei::VectorSpace::getNumFields(int idType,
   int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(0);
 
-  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  fei::Record<int>* record = recordCollections_[idindex]->getRecordWithID(ID);
   if (record == NULL) {
     ERReturn(-1);
   }
@@ -1029,7 +1051,7 @@ bool fei::VectorSpace::isLocal(int idType, int ID)
   int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(false);
 
-  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  fei::Record<int>* record = recordCollections_[idindex]->getRecordWithID(ID);
   if (record == NULL) {
     return(false);
   }
@@ -1043,7 +1065,7 @@ bool fei::VectorSpace::isLocallyOwned(int idType, int ID)
   int idindex = fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(false);
 
-  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  fei::Record<int>* record = recordCollections_[idindex]->getRecordWithID(ID);
   if (record == NULL) {
     return(false);
   }
@@ -1082,7 +1104,7 @@ void fei::VectorSpace::getFields(int idType, int ID, std::vector<int>& fieldIDs)
     return;
   }
 
-  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  fei::Record<int>* record = recordCollections_[idindex]->getRecordWithID(ID);
   if (record == NULL) {
     voidERReturn;
   }
@@ -1160,18 +1182,9 @@ int fei::VectorSpace::getNumOwnedIDs(int idType)
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::getNumSharedIDs(int idType,
-                                          int& numShared)
+int fei::VectorSpace::getNumSharedIDs(int idType, int& numShared)
 {
-  int idx = fei::binarySearch(idType, sharedIDTypes_);
-  if (idx < 0) {
-    numShared = 0;
-    return(0);
-  }
-
-  fei::SharedIDs* sharedIDs = sharedIDTables_[idx];
-
-  numShared = sharedIDs->getSharedIDs().getMap().size();
+  numShared = sharedIDTables_[idType].getSharedIDs().size();
 
   return(0);
 }
@@ -1216,7 +1229,7 @@ int fei::VectorSpace::getOwnedIDs(int idType,
     r_end  = rmap.end();
 
   for(; r_iter != r_end; ++r_iter) {
-    fei::Record& thisrecord = *((*r_iter).second);
+    fei::Record<int>& thisrecord = *((*r_iter).second);
 
     if (thisrecord.getOwnerProc() == fei::localProc(comm_)) {
       if (numLocalIDs < lenList) {
@@ -1416,58 +1429,62 @@ int fei::VectorSpace::getRecordCollection(int idType,
 }
 
 //----------------------------------------------------------------------------
-int fei::VectorSpace::setOwners_lowestSharing()
+void fei::VectorSpace::setOwners_lowestSharing()
 {
   //first, add localProc to each of the sharing-proc lists, in case it wasn't
   //included via initSharedIDs().
   int localProc = fei::localProc(comm_);
 
-  for(size_t i=0; i<sharedIDTables_.size(); ++i) {
-    fei::SharedIDs::table_type& shid_table = sharedIDTables_[i]->getSharedIDs();
+  std::map<int, fei::SharedIDs<int> >::iterator
+    s_iter = sharedIDTables_.begin(), s_end = sharedIDTables_.end();
 
-    fei::SharedIDs::table_type::iterator
+  for(; s_iter != s_end; ++s_iter) {
+    fei::SharedIDs<int>::map_type& shid_table = s_iter->second.getSharedIDs();
+
+    fei::SharedIDs<int>::map_type::iterator
       t_iter = shid_table.begin(),
       t_end = shid_table.end();
 
     for(; t_iter != t_end; ++t_iter) {
-      fei::SharedIDs::table_type::row_type* shProcs = (*t_iter).second;
-      shProcs->insert(localProc);
+      std::set<int>& shProcs = t_iter->second;
+      shProcs.insert(localProc);
     }
   }
 
   //now set the owningProcs for the SharedIDs records, and the owning procs on
   //the appropriate records in the recordCollections. Set the owner to be the
   //lowest-numbered sharing proc in all cases.
-  for(size_t i=0; i<sharedIDTypes_.size(); ++i) {
-    fei::SharedIDs::table_type& shid_table = sharedIDTables_[i]->getSharedIDs();
+  s_iter = sharedIDTables_.begin();
+  for(; s_iter != s_end; ++s_iter) {
+    fei::SharedIDs<int>::map_type& shid_table = s_iter->second.getSharedIDs();
 
-    std::vector<int>& owningProcs = sharedIDTables_[i]->getOwningProcs();
+    std::vector<int>& owningProcs = s_iter->second.getOwningProcs();
 
-    int len = shid_table.getMap().size();
+    int len = shid_table.size();
     owningProcs.resize(len);
     int j = 0;
 
-    fei::SharedIDs::table_type::iterator
+    fei::SharedIDs<int>::map_type::iterator
       t_iter = shid_table.begin(),
       t_end = shid_table.end();
 
     for(; t_iter != t_end; ++t_iter, ++j) {
-      fei::SharedIDs::table_type::row_type* shProcs = (*t_iter).second;
-      int lowest = *(shProcs->begin());
+      std::set<int>& shProcs = (*t_iter).second;
+      int lowest = *(shProcs.begin());
       owningProcs[j] = lowest;
     }
     
-    int idx = fei::binarySearch(sharedIDTypes_[i], idTypes_);
-    if (idx < 0) ERReturn(-1);
+    int idx = fei::binarySearch(s_iter->first, idTypes_);
+    if (idx < 0) {
+      throw std::runtime_error("internal error in fei::VectorSapce::setOwners_lowestSharing");
+    }
 
     if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
       recordCollections_[idx]->setDebugOutput(output_stream_);
     }
 
-    recordCollections_[idx]->setOwners_lowestSharing(sharedIDTables_[i]);
+    recordCollections_[idx]->setOwners_lowestSharing(s_iter->second);
   }
-
-  return(0);
 }
 
 //----------------------------------------------------------------------------
@@ -1545,7 +1562,7 @@ int fei::VectorSpace::synchronizeSharedRecords()
 
   int numProcs = fei::numProcs(comm_);
   int localProc = fei::localProc(comm_);
-  int numShTables = sharedIDTypes_.size();
+  int numShTables = sharedIDTables_.size();
 
   if (numProcs < 2) {
     sharedRecordsSynchronized_ = true;
@@ -1573,48 +1590,48 @@ int fei::VectorSpace::synchronizeSharedRecords()
   }
 
   //Create a list of fei::comm_maps which will be the communication-patterns
-  //for each of the sharedIDTables. The sharedIDTables map lists of processors
-  //to each shared ID. The communication-pattern will be kind of a transpose of
-  //that, mappings lists of IDs to owning or sharing processors.
+  //for each of the sharedIDTables. A sharedIDTable maps lists of processors
+  //to each shared ID. The communication-pattern will be a transpose of
+  //that, mapping lists of IDs to owning or sharing processors.
   //
 
   int local_err = 0;
 
-  for(int i=0; i<numShTables; ++i) {
+  for(size_t i=0; i<idTypes_.size(); ++i) {
 
-    fei::SharedIDs* shared = sharedIDTables_[i];
+    fei::SharedIDs<int>& shared = getSharedIDs_private(idTypes_[i]);
     
     //now create/initialize ownerPatterns which map owning processors to lists
     //of ids that are shared locally, and sharerPatterns which map sharing
     //processors to lists of ids that are owned locally.
     fei::comm_map* ownerPattern = new fei::comm_map(1, numProcs);
 
-    ownerPatterns_.push_back(ownerPattern);
+    ownerPatterns_[idTypes_[i]] = ownerPattern;
 
     fei::comm_map* sharerPattern = 
             new fei::comm_map(1, numProcs);
 
-    sharerPatterns_.push_back(sharerPattern);
+    sharerPatterns_[idTypes_[i]] = sharerPattern;
 
-    std::vector<int>& owningProcs = shared->getOwningProcs();
+    std::vector<int>& owningProcs = shared.getOwningProcs();
 
-    fei::SharedIDs::table_type& shtable = shared->getSharedIDs();
+    fei::SharedIDs<int>::map_type& shtable = shared.getSharedIDs();
 
-    fei::SharedIDs::table_type::iterator
+    fei::SharedIDs<int>::map_type::iterator
       s_iter = shtable.begin(),
       s_end = shtable.end();
     
     int j = 0;
     for(; s_iter != s_end; ++s_iter, ++j) {
       int ID = (*s_iter).first;
-      fei::SharedIDs::table_type::row_type* shProcs = (*s_iter).second;
+      std::set<int>& shProcs = (*s_iter).second;
 
       int owner = owningProcs[j];
 
       if (owner == localProc) {
-        fei::SharedIDs::table_type::row_type::const_iterator
-          p_iter = shProcs->begin(),
-          p_end = shProcs->end();
+        std::set<int>::const_iterator
+          p_iter = shProcs.begin(),
+          p_end = shProcs.end();
         for(; p_iter != p_end; ++p_iter) {
           if (*p_iter != localProc) {
             sharerPattern->addIndices(*p_iter, 1, &ID);
@@ -1689,11 +1706,8 @@ int fei::VectorSpace::synchronizeSharedRecords()
       }
     }
 
-    int idx = fei::binarySearch(sharedIDTypes_[i], idTypes_);
-    if (idx < 0) ERReturn(-1);
-
     local_err += exchangeFieldInfo(ownerPattern, sharerPattern,
-                                   recordCollections_[idx], fieldMasks_);
+                                   recordCollections_[i], fieldMasks_);
   }
 
   int global_err = 0;
@@ -1711,18 +1725,14 @@ int fei::VectorSpace::synchronizeSharedRecords()
 //----------------------------------------------------------------------------
 int fei::VectorSpace::exchangeGlobalIndices()
 {
-  size_t numShTables = sharedIDTypes_.size();
-  for(size_t i=0; i<numShTables; ++i) {
-    int idx = fei::binarySearch(sharedIDTypes_[i], idTypes_);
-    if (idx < 0) ERReturn(-1);
-
+  for(size_t i=0; i<idTypes_.size(); ++i) {
     snl_fei::RecordMsgHandler recmsghndlr(fei::localProc(comm_),
-                                 recordCollections_[idx], *ptBlkMap_,
+                                 recordCollections_[i], *ptBlkMap_,
                                           fieldMasks_, eqnNumbers_);
     recmsghndlr.setTask(snl_fei::RecordMsgHandler::_EqnNumbers_);
 
-    recmsghndlr.setSendPattern(sharerPatterns_[i]);
-    recmsghndlr.setRecvPattern(ownerPatterns_[i]);
+    recmsghndlr.setSendPattern(sharerPatterns_[idTypes_[i]]);
+    recmsghndlr.setRecvPattern(ownerPatterns_[idTypes_[i]]);
     CHK_ERR( fei::exchange(comm_, &recmsghndlr) );
   }
 
@@ -1730,7 +1740,7 @@ int fei::VectorSpace::exchangeGlobalIndices()
 }
 
 //----------------------------------------------------------------------------
-void fei::VectorSpace::runRecords(fei::Record_Operator& record_op)
+void fei::VectorSpace::runRecords(fei::Record_Operator<int>& record_op)
 {
   for(size_t rec=0; rec<recordCollections_.size(); ++rec) {
     snl_fei::RecordCollection* records = recordCollections_[rec];
@@ -1742,7 +1752,7 @@ void fei::VectorSpace::runRecords(fei::Record_Operator& record_op)
       r_end  = rmap.end();
 
     for(; r_iter != r_end; ++r_iter) {
-      fei::Record& thisrecord = *((*r_iter).second);
+      fei::Record<int>& thisrecord = *((*r_iter).second);
 
       record_op(thisrecord);
     }
@@ -1804,7 +1814,7 @@ int fei::VectorSpace::setLocalEqnNumbers()
     int* eqnNumPtr = &eqnNumbers_[0];
 
     for(; r_iter != r_end; ++r_iter) {
-      fei::Record& thisrecord = *((*r_iter).second);
+      fei::Record<int>& thisrecord = *((*r_iter).second);
 
       fei::FieldMask* mask = thisrecord.getFieldMask();
 

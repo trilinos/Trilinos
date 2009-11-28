@@ -1,9 +1,16 @@
 
+#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+
 #include <fei_iostream.hpp>
 #include <fei_mpi.h>
+
+#if defined(HAVE_FEI_EPETRA) && defined(HAVE_FEI_AZTECOO)
 #include <test_utils/LibraryFactory.hpp>
 #include <test_utils/test_VectorSpace.hpp>
 #include <test_utils/test_MatrixGraph.hpp>
+#endif
+
 #include <fei_MatrixGraph_Impl2.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_Factory.hpp>
@@ -15,6 +22,7 @@
 #ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
 #endif
+
 #include <fei_Factory_Trilinos.hpp>
 
 #ifdef HAVE_FEI_FETI
@@ -25,15 +33,13 @@
 #define fei_file "fei_unit_Reducer.cpp"
 #include <fei_ErrMacros.hpp>
 
-#include <fei_unit_Reducer.hpp>
-
 #include <vector>
 #include <cmath>
 
-int test_reducer_unit1()
-{
-  FEI_COUT << "testing fei::Reducer: basic test 1...";
+namespace {
 
+TEUCHOS_UNIT_TEST(Reducer, reducer_unit1)
+{
   //define equation-space to be 0 .. 4
   std::vector<int> eqns(5);
   for(unsigned i=0; i<5; ++i) {
@@ -52,9 +58,7 @@ int test_reducer_unit1()
 
   reducer.setLocalUnreducedEqns(eqns);
 
-  if (!reducer.isSlaveEqn(1)) {
-    ERReturn(-1);
-  }
+  TEUCHOS_TEST_EQUALITY(reducer.isSlaveEqn(1), true, out, success);
 
   bool exception_caught = false;
   //calling translateToReducedEqn with a slave eqn should cause reducer
@@ -66,19 +70,10 @@ int test_reducer_unit1()
     exception_caught = true;
   }
 
-  if (!exception_caught) {
-    FEI_COUT << " ERROR, expected exception not thrown."<<FEI_ENDL;
-    ERReturn(-2);
-  }
+  TEUCHOS_TEST_EQUALITY(exception_caught, true, out, success);
 
   int reducedEqn = reducer.translateToReducedEqn(3);
-  if (reducedEqn != 2) {
-    ERReturn(-3);
-  }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-
-  return(0);
+  TEUCHOS_TEST_EQUALITY(reducedEqn, 2, out, success);
 }
 
 void fill_matrices(fei::FillableMat& Kii, fei::FillableMat& Kid,
@@ -135,16 +130,18 @@ void addFillableMatToReducer(fei::FillableMat& mat, fei::Reducer& reducer,
   }
 }
 
-int test_Reducer_test1(MPI_Comm comm)
+#if defined(HAVE_FEI_EPETRA) && defined(HAVE_FEI_AZTECOO)
+
+TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test1)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
+
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
 #endif
 
-  if (numProcs > 1) return(0);
-
-  FEI_COUT << "testing fei::Reducer matrix assembly...";
+  if (numProcs > 1) return;
 
   fei::SharedPtr<fei::FillableMat> D(new fei::FillableMat);
 
@@ -193,8 +190,8 @@ int test_Reducer_test1(MPI_Comm comm)
     factory = fei::create_fei_Factory(comm, "Trilinos");
   }
   catch(...) {
-    FEI_COUT << "couldn't create Trilinos factory."<<FEI_ENDL;
-    return(0);
+    FEI_COUT << "\ncouldn't create Trilinos factory."<<FEI_ENDL;
+    return;
   }
 
   fei::SharedPtr<fei::VectorSpace> vspace =
@@ -225,25 +222,21 @@ int test_Reducer_test1(MPI_Comm comm)
 
   fei::CSRMat csrtarget;
   csrtarget = *target;
-  if (Kr != csrtarget) {
-    FEI_COUT << "reducer produced incorrect matrix."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-  return(0);
+  TEUCHOS_TEST_EQUALITY(Kr == csrtarget, true, out, success);
 }
 
-int test_Reducer_test2(MPI_Comm comm)
+#endif
+
+TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test2)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
+
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
 #endif
 
-  if (numProcs>1) return(0);
-
-  FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 1...";
+  if (numProcs>1) return;
 
   fei::SharedPtr<fei::FillableMat> D(new fei::FillableMat);
   D->putCoef(0, 1, 0.5); D->putCoef(0, 2, 0.5);
@@ -271,25 +264,18 @@ int test_Reducer_test2(MPI_Comm comm)
     }
   }
 
-  if (eqns1 != eqns2) {
-    FEI_COUT << "failed."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  FEI_COUT << "ok" <<FEI_ENDL;
-  return(0);
+  TEUCHOS_TEST_EQUALITY(eqns1 == eqns2, true, out, success);
 }
 
-int test_Reducer_test3(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test3)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
 #endif
 
-  if (numProcs>1) return(0);
-
-  FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 2...";
+  if (numProcs>1) return;
 
   fei::SharedPtr<fei::FillableMat> D(new fei::FillableMat);
   D->putCoef(1, 0, 0.5); D->putCoef(1, 2, 0.5);
@@ -318,25 +304,18 @@ int test_Reducer_test3(MPI_Comm comm)
     }
   }
 
-  if (eqns1 != eqns2) {
-    FEI_COUT << "failed."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  FEI_COUT << "ok" <<FEI_ENDL;
-  return(0);
+  TEUCHOS_TEST_EQUALITY(eqns1 == eqns2, true, out, success);
 }
 
-int test_Reducer_test4(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test4)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
 #endif
 
-  if (numProcs>1) return(0);
-
-  FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 3...";
+  if (numProcs>1) return;
 
   fei::SharedPtr<fei::FillableMat> D(new fei::FillableMat);
   D->putCoef(3, 0, 0.5); D->putCoef(3, 2, 0.5);
@@ -365,25 +344,19 @@ int test_Reducer_test4(MPI_Comm comm)
     }
   }
 
-  if (eqns1 != eqns2) {
-    FEI_COUT << "failed."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  FEI_COUT << "ok" <<FEI_ENDL;
-  return(0);
+  TEUCHOS_TEST_EQUALITY(eqns1 == eqns2, true, out, success);
 }
 
-int test_Reducer_test5(MPI_Comm comm)
+TEUCHOS_UNIT_TEST(Reducer, test_Reducer_test5)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
+
   int numProcs = 1;
 #ifndef FEI_SER
   MPI_Comm_size(comm, &numProcs);
 #endif
 
-  if (numProcs>1) return(0);
-
-  FEI_COUT << "testing fei::Reducer::translate[To/From]ReducedEqn case 4...";
+  if (numProcs>1) return;
 
   fei::SharedPtr<fei::FillableMat> D(new fei::FillableMat);
 //  D.putCoef(28, 0, 1.0);
@@ -429,39 +402,8 @@ int test_Reducer_test5(MPI_Comm comm)
     }
   }
 
-  if (eqns1 != eqns2) {
-    FEI_COUT << "failed."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  FEI_COUT << "ok" <<FEI_ENDL;
-  return(0);
+  TEUCHOS_TEST_EQUALITY(eqns1 == eqns2, true, out, success);
 }
 
-bool test_Reducer::run(MPI_Comm comm)
-{
-  test_reducer_unit1();
-
-  if (test_Reducer_test1(comm) != 0) {
-    throw std::runtime_error("test_Reducer_test1 failed.");
-  }
-
-  if (test_Reducer_test2(comm) != 0) {
-    throw std::runtime_error("test_Reducer_test2 failed.");
-  }
-
-  if (test_Reducer_test3(comm) != 0) {
-    throw std::runtime_error("test_Reducer_test3 failed.");
-  }
-
-  if (test_Reducer_test4(comm) != 0) {
-    throw std::runtime_error("test_Reducer_test4 failed.");
-  }
-
-  if (test_Reducer_test5(comm) != 0) {
-    throw std::runtime_error("test_Reducer_test5 failed.");
-  }
-
-  return true;
-}
+}//namespace <anonymous>
 

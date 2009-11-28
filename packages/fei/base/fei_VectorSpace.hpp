@@ -22,9 +22,9 @@ namespace fei {
   class FieldMask;
   class Lookup_Impl;
   class Pattern;
-  class Record;
-  class Record_Operator;
-  class SharedIDs;
+  template<typename GlobalIDType> class Record;
+  template<typename GlobalIDType> class Record_Operator;
+  template<typename GlobalIDType> class SharedIDs;
 
   /** Class containing the methods for defining a solution-space (a set of
       degrees-of-freedom) and mapping that space to a globally unique set of
@@ -40,7 +40,7 @@ namespace fei {
       <ol>
       <li>Define fields and identifier-types
       <li>Initialize active fields over sets of identifiers
-      <li>Obtain index offset and range information via one of the methods
+      <li>Obtain index offset and range information via the methods
       'getGlobalIndexOffsets()', 'getIndices_Owned()',
       'getIndices_SharedAndOwned()', etc., to use in constructing or
       initializing a vector object.
@@ -50,8 +50,8 @@ namespace fei {
       <ol>
       <li>Define fields and identifier-types
       <li>Construct an instance of fei::MatrixGraph (using this
-      VectorSpace as a contructor argument or intialization argument) and
-      proceed to initialize connectivities and other structural attributes on
+      VectorSpace as a contructor argument) and then
+      initialize connectivities and other structural attributes on
       the MatrixGraph object.
       <li>Obtain matrix-graph information from the fei::MatrixGraph
       object to use in constructing or initializing a matrix object.
@@ -629,15 +629,15 @@ namespace fei {
     const snl_fei::PointBlockMap* getPointBlockMap() const;
 
     void getGlobalIndices(const fei::Pattern* pattern,
-                          const fei::Record*const* records,
+                          const fei::Record<int>*const* records,
                           std::vector<int>& indices);
 
     void getGlobalBlkIndices(const fei::Pattern* pattern,
-                             const fei::Record*const* records,
+                             const fei::Record<int>*const* records,
                              std::vector<int>& indices);
 
     void getGlobalIndices(int numRecords,
-                          const fei::Record*const* records,
+                          const fei::Record<int>*const* records,
                           int fieldID,
                           int fieldSize,
                           int indicesAllocLen,
@@ -645,7 +645,7 @@ namespace fei {
                           int& numIndices);
 
     void getGlobalIndices(int numRecords,
-                          const fei::Record*const* records,
+                          const fei::Record<int>*const* records,
                           const int* numFieldsPerID,
                           const int* fieldIDs,
                           const int* fieldSizes,
@@ -654,7 +654,7 @@ namespace fei {
                           int& numIndices);
 
     void getGlobalBlkIndices(int numRecords,
-                             const fei::Record*const* records,
+                             const fei::Record<int>*const* records,
                              int indicesAllocLen,
                              int* indices,
                              int& numIndices);
@@ -664,12 +664,12 @@ namespace fei {
                             int idType,
                             int numIDs,
                             const int* IDs,
-                            fei::Record** records);
+                            fei::Record<int>** records);
 
     int addDOFs(int idType,
                             int numIDs,
                             const int* IDs,
-                            fei::Record** records);
+                            fei::Record<int>** records);
 
     std::vector<fei::FieldMask*> fieldMasks_;
 
@@ -680,13 +680,15 @@ namespace fei {
     VectorSpace(const VectorSpace& src);
     VectorSpace& operator=(const VectorSpace& src);
 
+    void compute_shared_ids();
+
     inline void check_version() { fei::utils::version(); }
 
-    int setOwners_lowestSharing();
+    void setOwners_lowestSharing();
 
     int calculateGlobalIndices();
 
-    void runRecords(fei::Record_Operator& record_op);
+    void runRecords(fei::Record_Operator<int>& record_op);
 
     int synchronizeSharedRecords();
 
@@ -699,7 +701,7 @@ namespace fei {
                           snl_fei::RecordCollection* recordCollection,
                           std::vector<fei::FieldMask*>& fieldMasks);
 
-    void getSharedIDs_private(int idType, fei::SharedIDs*& shIDs);
+    fei::SharedIDs<int>& getSharedIDs_private(int idType);
 
     void setName(const char* name);
 
@@ -711,10 +713,9 @@ namespace fei {
     int maxFieldSize_;
     std::vector<snl_fei::RecordCollection*> recordCollections_;
 
-    std::vector<int> sharedIDTypes_;
-    std::vector<fei::SharedIDs*> sharedIDTables_;
-    std::vector<fei::comm_map*> ownerPatterns_;
-    std::vector<fei::comm_map*> sharerPatterns_;
+    std::map<int, fei::SharedIDs<int> > sharedIDTables_;
+    std::map<int, fei::comm_map*> ownerPatterns_;
+    std::map<int, fei::comm_map*> sharerPatterns_;
 
     bool sharedRecordsSynchronized_;
 

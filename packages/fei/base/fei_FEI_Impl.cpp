@@ -1304,11 +1304,11 @@ int fei::FEI_Impl::fillNodeset(int blockID) const
     throw std::runtime_error(osstr.str());
   }
 
-  std::vector<fei::Record*>& nodes = block->getRowConnectivities();
+  std::vector<fei::Record<int>*>& nodes = block->getRowConnectivities();
 
   nodeset_.clear();
 
-  fei::Record** nodesPtr = &nodes[0];
+  fei::Record<int>** nodesPtr = &nodes[0];
   for(unsigned i=0; i<nodes.size(); ++i) {
     nodeset_.insert(nodesPtr[i]->getID());
   }

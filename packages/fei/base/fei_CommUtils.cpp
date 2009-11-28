@@ -213,9 +213,9 @@ int mirrorCommPattern(MPI_Comm comm, comm_map* inPattern, comm_map*& outPattern)
 
 //------------------------------------------------------------------------
 int exchangeIntData(MPI_Comm comm,
-                    std::vector<int>& sendProcs,
+                    const std::vector<int>& sendProcs,
                     std::vector<int>& sendData,
-                    std::vector<int>& recvProcs,
+                    const std::vector<int>& recvProcs,
                     std::vector<int>& recvData)
 {
   if (sendProcs.size() == 0 && recvProcs.size() == 0) return(0);

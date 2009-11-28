@@ -22,6 +22,8 @@
 #include <fei_Solver_Amesos.hpp>
 #endif
 
+#ifdef HAVE_FEI_EPETRA
+
 Factory_Trilinos::Factory_Trilinos(MPI_Comm comm)
   : fei::Factory(comm),
     comm_(comm),
@@ -401,3 +403,5 @@ void Factory_Trilinos::create_LinProbMgr(bool replace_if_already_created)
   }
 }
 
+//HAVE_FEI_EPETRA
+#endif

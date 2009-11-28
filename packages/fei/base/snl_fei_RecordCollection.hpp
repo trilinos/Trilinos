@@ -22,7 +22,7 @@
 #include <fei_ErrMacros.hpp>
 
 namespace fei {
-  class SharedIDs;
+  template<typename T> class SharedIDs;
 }
 
 namespace snl_fei {
@@ -40,13 +40,13 @@ namespace snl_fei {
     virtual ~RecordCollection();
 
     /** alias for map container */
-    typedef std::map<int,fei::Record*> map_type;
+    typedef std::map<int,fei::Record<int>*> map_type;
 
     /** initialize records for specified IDs */
     void initRecords(int numIDs,
 		     const int* IDs,
 		     std::vector<fei::FieldMask*>& fieldMasks,
-		     fei::Record** records=NULL);
+		     fei::Record<int>** records=NULL);
 
     /** initialize records for specified IDs with specified fieldID */
     void initRecords(int fieldID,
@@ -64,41 +64,44 @@ namespace snl_fei {
 		    int numIDs,
 		    const int* IDs,
 		    std::vector<fei::FieldMask*>& fieldMasks,
-		    fei::Record** records,
+		    fei::Record<int>** records,
 		    bool skipIDsWithThisField=true);
 
     /** set owner-proc attribute for specified IDs, to be the
        lowest-numbered sharing processor */
-    void setOwners_lowestSharing(fei::SharedIDs* sharedIDs);
+    void setOwners_lowestSharing(fei::SharedIDs<int>& sharedIDs);
 
     /** Query the number of records in this collection */
     size_t getNumRecords()
-      {
-	return( records_.size() );
-      }
+    {
+      return( records_.size() );
+    }
 
     /** Get the map containing the records */
     map_type& getRecords()
-      {
-	return( records_ );
-      }
+    {
+      return( records_ );
+    }
 
     /** Get the map containing the records */
     const map_type& getRecords() const
-      {
-	return( records_ );
-      }
+    {
+      return( records_ );
+    }
 
     /** Get record with the specified ID. Returns NULL if not found. */
-    fei::Record* getRecordWithID(int ID);
+    fei::Record<int>* getRecordWithID(int ID);
+
+    /** Get record with the specified ID. Returns NULL if not found. */
+    const fei::Record<int>* getRecordWithID(int ID) const;
 
     /** Get global equation index for specified ID */
     int getGlobalIndex(int ID,
-		       int fieldID,
-		       int fieldSize,
-		       int fieldOffset,
-		       int whichComponentOfField,
-		       const int* eqnNumbers);
+        int fieldID,
+        int fieldSize,
+        int fieldOffset,
+        int whichComponentOfField,
+        const int* eqnNumbers);
 
     /** Get global block-equation index for specified ID */
     int getGlobalBlkIndex(int ID, int& globalBlkIndex);
@@ -116,7 +119,7 @@ namespace snl_fei {
 
     int localProc_;
 
-    fei_Pool_alloc<fei::Record > recordPool_;
+    fei_Pool_alloc<fei::Record<int> > recordPool_;
 
     bool debugOutput_;
     FEI_OSTREAM* dbgOut_;

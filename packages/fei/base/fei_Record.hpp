@@ -12,163 +12,185 @@
 #include <fei_macros.hpp>
 
 namespace fei {
-  class FieldMask;
+class FieldMask;
 
-  /** Container for record attributes. A Record is basically the
-    FEI representation of a "mesh-object". */
-  class Record {
-  public:
-    /** Constructor */
-    Record();
+/** Container for record attributes. A Record is basically the
+  FEI representation of a "mesh-object". */
+template<typename GlobalIDType>
+class Record {
+public:
+  /** Constructor */
+  Record();
 
-    Record(const Record& src)
-     : isInLocalSubdomain_(src.isInLocalSubdomain_), ID_(src.ID_),
-       fieldMask_(NULL), offsetIntoEqnNumbers_(src.offsetIntoEqnNumbers_),
-       ownerProc_(src.ownerProc_), hasSlaveDof_(false)
+  /** copy constructor */
+  Record(const Record<GlobalIDType>& src)
+    : isInLocalSubdomain_(src.isInLocalSubdomain_),
+      ID_(src.ID_),
+      number_(src.number_),
+      fieldMask_(src.fieldMask_),
+      offsetIntoEqnNumbers_(src.offsetIntoEqnNumbers_),
+      ownerProc_(src.ownerProc_),
+      hasSlaveDof_(src.hasSlaveDof_)
     {}
 
-    /** Destructor */
-    virtual ~Record();
+  /** Destructor */
+  virtual ~Record();
 
-    /** Set globally unique identifier. */
-    void setID(int ID)
-      {
-	ID_ = ID;
-      }
+  /** Set globally unique identifier. */
+  void setID(const GlobalIDType& ID)
+  {
+    ID_ = ID;
+  }
 
-    /** Query globally unique identifier. */
-    int getID() const
-      {
-	return(ID_);
-      }
+  /** Query globally unique identifier. */
+  GlobalIDType getID() const
+  {
+    return(ID_);
+  }
 
-    /** Set globally zero-based number. */
-    void setNumber(int num)
-      {
-	number_ = num;
-      }
+  /** Set globally zero-based number. */
+  void setNumber(const GlobalIDType& num)
+  {
+    number_ = num;
+  }
 
-    /** Get globally zero-based number. */
-    int getNumber() const
-      {
-	return(number_);
-      }
+  /** Get globally zero-based number. */
+  GlobalIDType getNumber() const
+  {
+    return(number_);
+  }
 
-    /** operator== */
-    bool operator==(const Record& rcd) const
-      {
-	return( ID_ == rcd.ID_ );
-      }
+  /** operator== */
+  bool operator==(const Record<GlobalIDType>& rcd) const
+  {
+    return( ID_ == rcd.ID_ );
+  }
 
-    /** operator!= */
-    bool operator!=(const Record& rcd) const
-      {
-	return( ID_ != rcd.ID_ );
-      }
+  /** operator!= */
+  bool operator!=(const Record<GlobalIDType>& rcd) const
+  {
+    return( ID_ != rcd.ID_ );
+  }
 
-    /** operator< */
-    bool operator<(const Record& rcd) const
-      {
-	return( ID_ < rcd.ID_ );
-      }
+  /** operator< */
+  bool operator<(const Record<GlobalIDType>& rcd) const
+  {
+    return( ID_ < rcd.ID_ );
+  }
 
-    /** operator> */
-    bool operator>(const Record& rcd) const
-      {
-	return( ID_ > rcd.ID_ );
-      }
+  /** operator> */
+  bool operator>(const Record<GlobalIDType>& rcd) const
+  {
+    return( ID_ > rcd.ID_ );
+  }
 
-    /** setOwnerProc */
-    void setOwnerProc(int owner)
-      {
-	ownerProc_ = owner;
-      }
+  /** setOwnerProc */
+  void setOwnerProc(int owner)
+  {
+    ownerProc_ = owner;
+  }
 
-    /** getOwnerProc */
-    int getOwnerProc() const
-      {
-	return(ownerProc_);
-      }
+  /** getOwnerProc */
+  int getOwnerProc() const
+  {
+    return(ownerProc_);
+  }
 
-    /** setFieldMask */
-    void setFieldMask(fei::FieldMask* fm)
-      {
-	fieldMask_ = fm;
-      }
+  /** setFieldMask */
+  void setFieldMask(fei::FieldMask* fm)
+  {
+    fieldMask_ = fm;
+  }
 
-    /** getFieldMask */
-    fei::FieldMask* getFieldMask()
-      {
-	return( fieldMask_ );
-      }
+  /** getFieldMask */
+  fei::FieldMask* getFieldMask()
+  {
+    return( fieldMask_ );
+  }
 
-    /** getFieldMask */
-    const fei::FieldMask* getFieldMask() const
-      {
-	return( fieldMask_ );
-      }
+  /** getFieldMask */
+  const fei::FieldMask* getFieldMask() const
+  {
+    return( fieldMask_ );
+  }
 
-    /** Set offset-into-equation-numbers.
-     */
-    void setOffsetIntoEqnNumbers(int offset)
-      {
-	offsetIntoEqnNumbers_ = offset;
-      }
+  /** Set offset-into-equation-numbers.
+   */
+  void setOffsetIntoEqnNumbers(int offset)
+  {
+    offsetIntoEqnNumbers_ = offset;
+  }
 
-    /** Return offset-into-equation-numbers.
-    */
-    int getOffsetIntoEqnNumbers() const
-      {
-	return(offsetIntoEqnNumbers_);
-      }
+  /** Return offset-into-equation-numbers.
+   */
+  int getOffsetIntoEqnNumbers() const
+  {
+    return(offsetIntoEqnNumbers_);
+  }
 
-    bool hasSlaveDof() const
-      { return( hasSlaveDof_ ); }
+  bool hasSlaveDof() const
+  { return( hasSlaveDof_ ); }
 
-    void hasSlaveDof(bool flag)
-      { hasSlaveDof_ = flag; }
+  void hasSlaveDof(bool flag)
+  { hasSlaveDof_ = flag; }
 
-    /** Like a copy constructor */
-    int deepCopy(const Record& rcd);
+  /** ugh, public data member... */
+  bool isInLocalSubdomain_;
 
-    /** ugh, public data member... */
-    bool isInLocalSubdomain_;
+  Record<GlobalIDType>& operator=(const Record<GlobalIDType>& src)
+  {
+    ID_ = src.ID_;
+    number_ = src.number_;
+    fieldMask_ = src.fieldMask_;
+    offsetIntoEqnNumbers_ = src.offsetIntoEqnNumbers_;
+    ownerProc_ = src.ownerProc_;
+    hasSlaveDof_ = src.hasSlaveDof_;
+    return *this;
+  }
 
-  private:
-    Record& operator=(const Record& src);
+private:
 
-    int ID_;
-    int number_;
+  GlobalIDType ID_;
+  GlobalIDType number_;
 
-    fei::FieldMask* fieldMask_;
+  fei::FieldMask* fieldMask_;
 
-    int offsetIntoEqnNumbers_;
+  int offsetIntoEqnNumbers_;
 
-    int ownerProc_;
+  int ownerProc_;
 
-    bool hasSlaveDof_;
-  };
+  bool hasSlaveDof_;
+};
 
-  /** lessthan operator for Record */
-  struct record_lessthan {
-    /** operator() */
-    bool operator()(const Record* lhs,
-		    const Record* rhs) const
-      {
-	return( *lhs < *rhs );
-      }
-  };
-
-  /** implementation detail, power-users only */
-  class Record_Operator {
+/** implementation detail, power-users only */
+template<class GlobalIDType>
+class Record_Operator {
   public:
     /** destructor */
     virtual ~Record_Operator(){}
 
     /** operator() */
-    virtual void operator()(Record& record) = 0;
+    virtual void operator()(Record<GlobalIDType>& record) = 0;
 
-  };//class Record_Operator
+};//class Record_Operator
+
+template<class GlobalIDType>
+fei::Record<GlobalIDType>::Record()
+  : isInLocalSubdomain_(false),
+    ID_(-1),
+    number_(-1),
+    fieldMask_(NULL),
+    offsetIntoEqnNumbers_(0),
+    ownerProc_(-1),
+    hasSlaveDof_(false)
+{
+}
+
+template<class GlobalIDType>
+fei::Record<GlobalIDType>::~Record()
+{
+}
+
 
 } //namespace fei
 

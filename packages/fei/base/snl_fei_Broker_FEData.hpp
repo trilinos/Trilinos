@@ -186,12 +186,12 @@ namespace snl_fei {
 
 	  std::map<int,int>& elemIDs = cblock->getConnectivityIDs();
 	  int numElems = elemIDs.size();
-	  fei::Record** nodes = &(cblock->getRowConnectivities()[0]);
+	  fei::Record<int>** nodes = &(cblock->getRowConnectivities()[0]);
 
 	  int offset = 0;
 	  for(int elem=0; elem<numElems; ++elem) {
 	    for(int n=0; n<numConnectedNodes; ++n) {
-	      fei::Record* node = nodes[offset++];
+	      fei::Record<int>* node = nodes[offset++];
 	      nodeNumPtr[n] = node->getNumber();
 	    }
 

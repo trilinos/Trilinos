@@ -24,7 +24,7 @@ namespace fei {
   class Pattern;
   class SparseRowGraph;
   /** alias for constraint type */
-  typedef snl_fei::Constraint<fei::Record*> ConstraintType;
+  typedef snl_fei::Constraint<fei::Record<int>*> ConstraintType;
 
 /** A container for the data that defines connectivity, and which will
     ultimately be used to generate a matrix graph.

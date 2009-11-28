@@ -209,7 +209,7 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id,
 //----------------------------------------------------------------------------
 namespace snl_fei {
 template<>
-inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
+inline snl_fei::Constraint<fei::Record<int>*>::Constraint(int id,
                                             int constraintIDType,
                                             bool isSlave,
                                             bool isPenaltyConstr,
@@ -242,7 +242,7 @@ inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
     vspace->getRecordCollection(idTypes[i],recordCollection);
 
     vspace->addDOFs(fieldIDs[i], 1, idTypes[i], 1, &(IDs[i]));
-    fei::Record* rec = recordCollection->getRecordWithID(IDs[i]);
+    fei::Record<int>* rec = recordCollection->getRecordWithID(IDs[i]);
 
     unsigned fieldSize = vspace->getFieldSize(fieldIDs[i]);
 

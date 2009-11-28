@@ -18,8 +18,8 @@
 #include <fei_ErrMacros.hpp>
 
 snl_fei::SubdMsgHandler::SubdMsgHandler(RecordCollection* recordCollection,
-					fei::SharedIDs* sharedIDTable,
-					fei::SharedIDs* subdomainIDTable)
+					fei::SharedIDs<int>* sharedIDTable,
+					fei::SharedIDs<int>* subdomainIDTable)
   :sendPattern_(NULL),
    recvPattern_(NULL),
    recordCollection_(recordCollection),
@@ -75,7 +75,7 @@ int snl_fei::SubdMsgHandler::getSendMessage(int destProc,
   int offset = 0;
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
-    fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    fei::Record<int>* rec = recordCollection_->getRecordWithID(ID);
     if (rec == NULL) {
       ERReturn(-1);
     }
@@ -112,7 +112,7 @@ int snl_fei::SubdMsgHandler::processRecvMessage(int srcProc,
     bool isInRemoteSubdomain = msgPtr[offset++] > 1 ? true : false;
 
     if (isInRemoteSubdomain) {
-      subdomainIDTable_->getSharedIDs().addIndices(ID, 1, &srcProc);
+      subdomainIDTable_->addSharedID(ID, 1, &srcProc);
     }
   }
 

@@ -215,7 +215,7 @@ int snl_fei::RecordMsgHandler::packMaskIDs(int destProc, std::vector<int>& msg)
   int* msgPtr = &msg[0];
 
   for(; id_iter != id_end; ++id_iter) {
-    fei::Record* rec = recordCollection_->getRecordWithID(*id_iter);
+    fei::Record<int>* rec = recordCollection_->getRecordWithID(*id_iter);
     if (rec == NULL) {
       FEI_OSTRINGSTREAM osstr;
       osstr << "RecordMsgHandler::packMaskIDs: proc " << localProc_
@@ -242,7 +242,7 @@ int snl_fei::RecordMsgHandler::mergeMaskIDs(int srcProc, std::vector<int>& msg)
 
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
-    fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    fei::Record<int>* rec = recordCollection_->getRecordWithID(ID);
     if (rec == NULL) {
       ERReturn(-1);
     }
@@ -292,7 +292,7 @@ int snl_fei::RecordMsgHandler::eqnNumbersMsgLength(int destProc)
 
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
-    fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    fei::Record<int>* rec = recordCollection_->getRecordWithID(ID);
     if (rec == NULL) {
       ERReturn(-1);
     }
@@ -317,7 +317,7 @@ int snl_fei::RecordMsgHandler::packEqnNumbersMsg(int destProc,
   int offset = 0;
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
-    fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    fei::Record<int>* rec = recordCollection_->getRecordWithID(ID);
     if (rec == NULL) {
       ERReturn(-1);
     }
@@ -347,7 +347,7 @@ int snl_fei::RecordMsgHandler::storeEqnNumbers(int srcProc, std::vector<int>& ms
     int ID = msgPtr[i*3];
     int recNumber = msgPtr[i*3+1];
     int numEqns = msgPtr[i*3+2];
-    fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    fei::Record<int>* rec = recordCollection_->getRecordWithID(ID);
     if (rec == NULL) {
       ERReturn(-1);
     }

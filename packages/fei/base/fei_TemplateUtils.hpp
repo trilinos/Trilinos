@@ -42,22 +42,36 @@ namespace fei {
       }
     }
 
+  /** copy a set to a vector
+  */
+  template<typename T>
+    void copySetToVector(const std::set<T>& set_obj, std::vector<T>& vec)
+    {
+      vec.clear();
+      vec.reserve(set_obj.size());
+
+      typename std::set<T>::const_iterator
+        s_iter = set_obj.begin(), s_end = set_obj.end();
+      for(; s_iter != s_end; ++s_iter) {
+        vec.push_back(*s_iter);
+      }
+    }
+
   /** dangerous function to copy map keys to an
    array, assuming the keys are of type int
   */
   template<typename MAP_TYPE>
-    void copyKeysToArray(MAP_TYPE& map_obj,
+    void copyKeysToArray(const MAP_TYPE& map_obj,
 			 unsigned lenList,
 			 int* list)
     {
       unsigned i = 0;
-      typename MAP_TYPE::iterator
-        iter = map_obj.begin(),
-             iter_end = map_obj.end();
+      typename MAP_TYPE::const_iterator
+        iter = map_obj.begin(), iter_end = map_obj.end();
 
       for(; iter != iter_end; ++iter) {
         if (i == lenList) break;
-        list[i++] = (*iter).first;
+        list[i++] = iter->first;
       }
     }
 
@@ -65,12 +79,33 @@ namespace fei {
    vector, assuming the keys are of type int
   */
   template<typename MAP_TYPE>
-    void copyKeysToVector(MAP_TYPE& map_obj,
+    void copyKeysToVector(const MAP_TYPE& map_obj,
                           std::vector<int>& keyvector)
     {
       keyvector.resize(map_obj.size());
       if (map_obj.empty()) return;
       copyKeysToArray<MAP_TYPE>(map_obj, map_obj.size(), &keyvector[0]);
+    }
+
+  template<typename T, typename U>
+    void copyMapOfSetsToVectorOfVectors(const std::map<T,std::set<U> >& mapset,
+                                     std::vector<T>& keys,
+                                     std::vector<std::vector<U> >& values)
+    {
+      typedef std::map<T,std::set<U> > mapsettype;
+      keys.resize(mapset.size());
+      values.resize(mapset.size());
+      typename mapsettype::const_iterator
+       ms_iter = mapset.begin(), ms_end = mapset.end();
+      for(size_t i=0; ms_iter!=ms_end; ++ms_iter, ++i) {
+        keys[i] = ms_iter->first;
+        typename std::set<U>::const_iterator
+          s_iter = ms_iter->second.begin(), s_end = ms_iter->second.end();
+        values[i].resize(ms_iter->second.size());
+        for(size_t j=0; s_iter!=s_end; ++s_iter, ++j) {
+          values[i][j] = *s_iter;
+        }
+      }
     }
 
   /** dangerous function to copy a map object to a

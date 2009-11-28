@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace fei {
-  class SharedIDs;
+  template<typename T> class SharedIDs;
 }
 
 namespace snl_fei {
@@ -25,8 +25,8 @@ namespace snl_fei {
   public:
     /** constructor */
     SubdMsgHandler(RecordCollection* recordCollection,
-		   fei::SharedIDs* sharedIDTable,
-		   fei::SharedIDs* subdomainIDTable);
+		   fei::SharedIDs<int>* sharedIDTable,
+		   fei::SharedIDs<int>* subdomainIDTable);
     /** destructor */
     virtual ~SubdMsgHandler();
 
@@ -57,8 +57,8 @@ namespace snl_fei {
     fei::comm_map* sendPattern_;
     fei::comm_map* recvPattern_;
     RecordCollection* recordCollection_;
-    fei::SharedIDs* sharedIDTable_;
-    fei::SharedIDs* subdomainIDTable_;
+    fei::SharedIDs<int>* sharedIDTable_;
+    fei::SharedIDs<int>* subdomainIDTable_;
 
     std::vector<int> sendProcs_;
     std::vector<int> recvProcs_;
