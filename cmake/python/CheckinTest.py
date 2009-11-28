@@ -244,7 +244,7 @@ def writeDefaultCommonConfigFile():
       "# NOTE: Please do not add any options here that would select what pacakges\n" \
       "# get enabled or disabled.\n"
 
-    writeStrToFile(commonConfigFileStr, commonConfigFileName)
+    writeStrToFile(commonConfigFileName, commonConfigFileStr)
 
 
 def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
@@ -284,7 +284,7 @@ def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
       "# NOTE: Please do not add any options here that would change what pacakges\n" \
       "# or TPLs get enabled or disabled.\n"
 
-    writeStrToFile(buildSpecificConfigFileStr, buildSpecificConfigFileName)
+    writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
 
 
 def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
@@ -383,7 +383,7 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
     
     doConfigStr += "\n"
   
-    writeStrToFile(doConfigStr, configFileName)
+    writeStrToFile(configFileName, doConfigStr)
     echoRunSysCmnd('chmod a+x '+configFileName)
 
 
@@ -657,7 +657,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
 
   #print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
-  writeStrToFile(emailBody, getEmailBodyFileName())
+  writeStrToFile(getEmailBodyFileName(), emailBody)
 
   if overallPassed:
     echoRunSysCmnd("touch "+getEmailSuccessFileName())
@@ -1274,7 +1274,7 @@ def checkinTest(inOptions):
         print "\n2.a) Creating the commit message file ...\n"
 
         commitEmailBodyStr = getUserCommitMessageStr(inOptions)
-        writeStrToFile(commitEmailBodyStr, getInitialCommitEmailBodyFileName())
+        writeStrToFile(getInitialCommitEmailBodyFileName(), commitEmailBodyStr)
 
         print "\n2.b) Performing the initial local commit (staged and unstaged changes) ...\n"
 
@@ -1683,7 +1683,7 @@ def checkinTest(inOptions):
           if forcedCommit:
             finalCommitEmailBodyStr += (forcedCommitMsg + "\n\n")
           finalCommitEmailBodyStr += getSummaryEmailSectionStr(inOptions)
-          writeStrToFile(finalCommitEmailBodyStr, getFinalCommitEmailBodyFileName())
+          writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
 
           # Ammend the final commit message
           if localCommitsExist:
@@ -1807,7 +1807,7 @@ def checkinTest(inOptions):
 
       summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
   
-      writeStrToFile(emailBodyStr, summaryCommitEmailBodyFileName)
+      writeStrToFile(summaryCommitEmailBodyFileName, emailBodyStr)
   
       if inOptions.sendEmailTo:
   

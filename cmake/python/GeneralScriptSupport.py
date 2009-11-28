@@ -291,7 +291,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
           " non-null output was expected!")
       return (cmndOutput, cmndReturn)
     if outFile:
-      writeStrToFile(cmndOutput, outFile)  
+      writeStrToFile(outFile, cmndOutput)  
     return cmndReturn
   # Else, fall through
   if rtnOutput:
@@ -318,7 +318,7 @@ def removeIfExists(fileName):
     echoRunSysCmnd("rm "+fileName)
 
 
-def writeStrToFile(fileBodyStr, fileName):
+def writeStrToFile(fileName, fileBodyStr):
   open(fileName, 'w').write(fileBodyStr)
 
 

@@ -122,7 +122,13 @@ M	packages/thyra/CMakeLists.txt
     self.assertEqual( options.enableAllPackages, 'default' )
     self.assertEqual( enablePackagesList, ['NOX', 'Thyra'] )
 
-# Unit test class
+
+
+#############################################################################
+#
+#         Test getLastCommitMessageStrFromRawCommitLogStr
+#
+#############################################################################
 
 
 class test_getLastCommitMessageStrFromRawCommitLogStr(unittest.TestCase):
@@ -225,121 +231,25 @@ Some other message
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
 
 
+#############################################################################
 #
-# Test getLastCommitMessageStrFromRawCommitLogStr
+#                     Test checkin-test.py script
 #
-
-g_verbose=True
-g_verbose=False
-
-g_checkin_test_tests_dir = "checkin_test_tests"
-
-
-def create_checkin_test_case_dir(testName, verbose=False):
-  baseDir = os.getcwd()
-  testDirName = os.path.join(g_checkin_test_tests_dir, testName)
-  createDir(g_checkin_test_tests_dir, verbose)
-  createDir(testDirName, verbose)
-  return testDirName
-
-
-# Unit test driver
-
-
-def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
-  expectPass, passRegexStrList, fromScratch=True, mustHaveCheckinTestOut=True \
-  ):
-
-  scriptsDir = getScriptBaseDir()
-  verbose = g_verbose
-
-  passRegexList = passRegexStrList.split('\n')
-
-  if verbose: print "\npassRegexList =", passRegexList
-
-  # A) Create the test directory
-
-  baseDir = os.getcwd()
-  echoChDir(create_checkin_test_case_dir(testName, verbose), verbose)
-
-  try:
-
-    # B) Create the command to run the checkin-test.py script
-    
-    cmnd = scriptsDir + "/checkin-test.py --no-eg-git-version-check " + optionsStr
-    # NOTE: Above, we want to turn off the eg/git version tests since we want
-    # these unit tests to run on machines that do not have the official
-    # versions (e.g. the SCICO LAN) but where the versions might be okay.
-    
-    # C) Set up the command intercept file
-
-    baseCmndInterceptsStr = \
-      "FT: .*checkin-test-impl\.py.*\n" \
-      "FT: which eg\n" \
-      "FT: eg --version\n" \
-      "FT: date\n" \
-      "FT: rm [a-zA-Z0-9_/\.]+\n" \
-      "FT: touch .*\n" \
-      "FT: chmod .*\n" \
-      "FT: hostname\n" \
-      "FT: grep .* "+getTestOutputFileName()+"\n" \
-      "FT: grep .*REQUESTED ACTIONS. PASSED.*\n"
-
-    fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
-
-    fullCmndInterceptsFileName = os.path.join(os.getcwd(), "cmndIntercepts.txt")
-    writeStrToFile(fullCmndInterceptsStr, fullCmndInterceptsFileName)
-
-    os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE'] = fullCmndInterceptsFileName
-    
-    # D) Run the checkin-test.py script with mock commands
-
-    checkin_test_test_out = "checkin-test.test.out"
-
-    rtnCode = echoRunSysCmnd(cmnd, timeCmnd=True, throwExcept=False,
-      outFile=checkin_test_test_out, verbose=verbose)
-    
-    # E) Grep the output looking for specific string
-
-    if mustHaveCheckinTestOut:
-      outputFileToGrep = "checkin-test.out"
-    else:
-      outputFileToGrep = checkin_test_test_out
-      
-    for passRegex in passRegexList:
-      foundRegex = getCmndOutput("grep '"+passRegex+"' "+outputFileToGrep, True, False)
-      if verbose or not foundRegex:
-        print "\ncheckin_test::"+testName+": Look for regex '"+passRegex+"' ...", 
-        print "'"+foundRegex+"'", 
-        if foundRegex: print ": PASSED"
-        else: print ": FAILED"
-      testObject.assertNotEqual(foundRegex, "")
-
-    # F) Examine the final return code
-
-    if expectPass:
-      testObject.assertEqual(rtnCode, 0)
-    else:
-      testObject.assertNotEqual(rtnCode, 0)
-    
-  finally:
-    # F) Get back to the current directory and reset
-    echoChDir(baseDir, verbose=verbose)
-    os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE']=""
+#############################################################################
 
 
 # Test Data
 
 
 g_cmndinterceptsInitialCommitPasses = \
-  "IT: eg commit -a -F .*; 0; 'initial eg commit passes'\n"
+  "IT: eg commit -a -F .*; 0; 'initial eg commit passed'\n"
 
 g_cmndinterceptsDiffOnlyPasses = \
   "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
 g_cmndinterceptsPullOnlyPasses = \
   "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-  "IT: eg pull --rebase; 0; 'eg pull passed'\n"
+  "IT: eg pull --rebase; 0; 'initial eg pull passed'\n"
 
 g_cmndinterceptsPullPasses = \
   g_cmndinterceptsPullOnlyPasses \
@@ -360,11 +270,16 @@ g_cmndinterceptsFinalPushPasses = \
   "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
-  "IT: eg commit --amend -F .*; 0; 'Ammending the last commit'\n" \
+  "IT: eg commit --amend -F .*; 0; 'Ammending the last commit passed'\n" \
+  "IT: eg push; 0; 'push passes'\n"
+
+g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
+  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+  "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
-  "IT: mailx -s .*; 0; 'Do not really sending build/test case email '\n"
+  "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
 g_cmndinterceptsSendFinalEmail = \
   "IT: sleep .*; 0; 'Do not really sleep'\n" \
@@ -410,6 +325,128 @@ g_expectedCommonOptionsSummary = \
   "Make Options: -j3\n" \
   "CTest Options: -j5\n"
 
+g_verbose=True
+g_verbose=False
+
+
+#
+# Test helper functions
+#
+
+
+g_checkin_test_tests_dir = "checkin_test_tests"
+
+
+def create_checkin_test_case_dir(testName, verbose=False):
+  baseDir = os.getcwd()
+  testDirName = os.path.join(g_checkin_test_tests_dir, testName)
+  createDir(g_checkin_test_tests_dir, verbose)
+  createDir(testDirName, verbose)
+  return testDirName
+
+
+def assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
+  assert(os.path.isfile(fileName))
+  for passRegex in regexStrList.split('\n'):
+    foundRegex = getCmndOutput("grep '"+passRegex+"' "+fileName, True, False)
+    if verbose or not foundRegex:
+      print "\ncheckin_test::"+testName+": In '"+fileName+"' look for regex '"+passRegex+"' ...", 
+      print "'"+foundRegex+"'", 
+      if foundRegex: print ": PASSED"
+      else: print ": FAILED"
+    testObject.assertNotEqual(foundRegex, "")
+
+
+# Unit test driver
+def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
+  expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True \
+  ):
+
+  scriptsDir = getScriptBaseDir()
+  verbose = g_verbose
+
+  passRegexList = passRegexStrList.split('\n')
+
+  if verbose: print "\npassRegexList =", passRegexList
+
+  # A) Create the test directory
+
+  baseDir = os.getcwd()
+  echoChDir(create_checkin_test_case_dir(testName, verbose), verbose)
+
+  try:
+
+    # B) Create the command to run the checkin-test.py script
+    
+    cmnd = scriptsDir + "/checkin-test.py --no-eg-git-version-check " + optionsStr
+    # NOTE: Above, we want to turn off the eg/git version tests since we want
+    # these unit tests to run on machines that do not have the official
+    # versions (e.g. the SCICO LAN) but where the versions might be okay.
+    
+    # C) Set up the command intercept file
+
+    baseCmndInterceptsStr = \
+      "FT: .*checkin-test-impl\.py.*\n" \
+      "FT: which eg\n" \
+      "FT: eg --version\n" \
+      "FT: date\n" \
+      "FT: rm [a-zA-Z0-9_/\.]+\n" \
+      "FT: touch .*\n" \
+      "FT: chmod .*\n" \
+      "FT: hostname\n" \
+      "FT: grep .* "+getTestOutputFileName()+"\n" \
+      "FT: grep .*REQUESTED ACTIONS\: PASSED.*\n"
+
+    fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
+
+    fullCmndInterceptsFileName = os.path.join(os.getcwd(), "cmndIntercepts.txt")
+    writeStrToFile(fullCmndInterceptsFileName, fullCmndInterceptsStr)
+
+    os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE'] = fullCmndInterceptsFileName
+    
+    # D) Run the checkin-test.py script with mock commands
+
+    checkin_test_test_out = "checkin-test.test.out"
+
+    rtnCode = echoRunSysCmnd(cmnd, timeCmnd=True, throwExcept=False,
+      outFile=checkin_test_test_out, verbose=verbose)
+    
+    # E) Grep the main output file looking for specific strings
+
+    if mustHaveCheckinTestOut:
+      outputFileToGrep = "checkin-test.out"
+    else:
+      outputFileToGrep = checkin_test_test_out
+
+    assertGrepFileForRegexStrList(testObject, testName, outputFileToGrep, passRegexStrList, verbose)
+      
+#    for passRegex in passRegexList:
+#      foundRegex = getCmndOutput("grep '"+passRegex+"' "+outputFileToGrep, True, False)
+#      if verbose or not foundRegex:
+#        print "\ncheckin_test::"+testName+": Look for regex '"+passRegex+"' ...", 
+#        print "'"+foundRegex+"'", 
+#        if foundRegex: print ": PASSED"
+#        else: print ": FAILED"
+#      testObject.assertNotEqual(foundRegex, "")
+
+    # F) Grep a set of output files looking for given strings
+    if filePassRegexStrList:
+      for fileRegexGroup in filePassRegexStrList:
+        (fileName, regexStrList) = fileRegexGroup
+        assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
+
+    # G) Examine the final return code
+
+    if expectPass:
+      testObject.assertEqual(rtnCode, 0)
+    else:
+      testObject.assertNotEqual(rtnCode, 0)
+    
+  finally:
+    # \H) Get back to the current directory and reset
+    echoChDir(baseDir, verbose=verbose)
+    os.environ['GENERAL_SCRIPT_SUPPORT_CMND_INTERCEPTS_FILE']=""
+
 
 # Helper test case that is used as the inital case for other tests
 def g_test_do_all_without_serial_release_pass(testObject, testName):
@@ -432,19 +469,43 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     g_expectedRegexUpdateWithBuildCasePasses \
     +g_expectedRegexConfigPasses \
     +g_expectedRegexBuildPasses \
-    +g_expectedRegexTestPasses+ \
-    "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-    "1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
-    +g_expectedCommonOptionsSummary+ \
-    "=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
-    "=> A PUSH IS READY TO BE PERFORMED!\n" \
-    "^READY TO PUSH: Trilinos:\n"
+    +g_expectedRegexTestPasses \
+    +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+    +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
+    +g_expectedCommonOptionsSummary \
+    +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
+    +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+    +"^READY TO PUSH: Trilinos:\n"
     )
 
 
+def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexStrList):
+
+  checkin_test_run_case(
+    \
+    testObject,
+    \
+    testName,
+    \
+    " --allow-no-pull --configure --send-email-to= --skip-commit-readiness-check" \
+    +" " +optionsStr \
+    ,
+    \
+    g_cmndinterceptsDiffOnlyPasses \
+    +g_cmndinterceptsConfigPasses \
+    ,
+    \
+    True,
+    \
+    "Configure passed!\n" \
+    +"^NOT READY TO PUSH\n" \
+    ,
+    filePassRegexStrList
+    )
+
 
 #
-# Test checkin_test
+# checkin_test unit tests
 #
 
 
@@ -463,9 +524,27 @@ class test_checkin_test(unittest.TestCase):
       "", # No shell commands!
       True,
       "Usage: checkin-test.py \[OPTIONS\]\n" \
-      "Quickstart:\n" \
+      "Quickstart\:\n" \
       "Detailed Documentation:\n" \
       ".*--show-defaults.*\n" \
+      ,
+      mustHaveCheckinTestOut=False
+      )
+    # Help should not write the checkin-test.out file!
+    self.assertEqual(
+      os.path.exists(create_checkin_test_case_dir(testName, g_verbose)+"/checkin-test.out"),
+      False)
+
+
+  def test_show_defaults(self):
+    testName = "show_defaults"
+    checkin_test_run_case(
+      self,
+      testName,
+      "--show-defaults",
+      "", # No shell commands!
+      True,
+      "Script: checkin-test.py\n" \
       ,
       mustHaveCheckinTestOut=False
       )
@@ -481,9 +560,10 @@ class test_checkin_test(unittest.TestCase):
       self,
       \
       "do_all_commit_push_pass",
+      \
       "--make-options=-j3 --ctest-options=-j5" \
-      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      " --do-all --commit --push",
+      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      +" --do-all --commit --push",
       \
       g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
@@ -497,15 +577,48 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      g_expectedRegexUpdateWithBuildCasePasses+ \
-      g_expectedRegexConfigPasses+ \
-      g_expectedRegexBuildPasses+ \
-      g_expectedRegexTestPasses+ \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
-      +g_expectedCommonOptionsSummary+ \
-      "=> A PUSH IS READY TO BE PERFORMED!\n" \
-      "^DID PUSH: Trilinos:\n"
+      g_expectedRegexUpdateWithBuildCasePasses \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses \
+      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
+      +g_expectedCommonOptionsSummary \
+      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+      +"^DID PUSH: Trilinos:\n" \
+      ,
+      [
+      (getStatusOutputFileName(), "eg status shows no uncommitted files\n"),
+      (getInitialCommitOutputFileName(), "initial eg commit passed\n"),
+      (getInitialPullOutputFileName(), "initial eg pull passed\n"),
+      (getModifiedFilesOutputFileName(), "M\tpackages/teuchos/CMakeLists.txt\n"),
+      (getFinalPullOutputFileName(), "final eg pull --rebase passed\n"),
+      (getFinalCommitEmailBodyFileName(), getAutomatedStatusSummaryHeaderKeyStr()+"\n"),
+      ("MPI_DEBUG/do-configure.base",
+       "\-DTPL_ENABLE_MPI:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
+       +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
+       +"\-DTrilinos_ENABLE_DEBUG:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\n"),
+      ("MPI_DEBUG/do-configure",
+       "\./do-configure.base\n" \
+       +"\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON\n"),
+      ("SERIAL_RELEASE/do-configure.base",
+       "\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
+       +"\-DCMAKE_BUILD_TYPE:STRING=RELEASE\n" \
+       +"\-DTrilinos_ENABLE_DEBUG:BOOL=OFF\n" \
+       +"\-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF\n" \
+       +"\-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF\n"),
+      ("SERIAL_RELEASE/do-configure",
+       "\./do-configure.base\n" \
+       +"\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON\n" \
+       +"\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON\n"),
+      # ToDo: Add more files to check
+      ]
       )
 
 
@@ -705,14 +818,90 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # ToDo: Test --no-append-test-results
-  # ToDo: Test --show-defaults
+  def test_do_all_no_append_test_results_push_pass(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_no_append_test_results_push_pass",
+      \
+      "--make-options=-j3 --ctest-options=-j5" \
+      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      +" --do-all --no-append-test-results --push",
+      \
+      g_cmndinterceptsPullPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsFinalPushNoAppendTestResultsPasses \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      True,
+      \
+      g_expectedRegexUpdateWithBuildCasePasses \
+      +g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses \
+      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
+      +g_expectedCommonOptionsSummary \
+      +"Skipping appending test results on request (--no-append-test-results)!\n" \
+      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+      +"^DID PUSH: Trilinos:\n" \
+      )
   
   
   # B) Test package enable/disable logic
 
 
-  # ToDo: Test pulling info correctly from *.config files
+  # NOTE: The setting of built-in cmake cache variables in do-configure[.base]
+  # fiels is tested in the unit test test_do_all_commit_push_pass(...)
+
+
+  def test_read_config_files_mpi_debug(self):
+    
+    testName = "read_config_files"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG.config",
+      "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
+      "-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
+      "-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
+      "-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n" \
+      )
+
+    checkin_test_configure_test(
+      \
+      self,
+      \
+      testName,
+      \
+      "--without-serial-release",
+      \
+      [
+      ("MPI_DEBUG/do-configure.base",
+       "\-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+       +"\-DBUILD_SHARED:BOOL=ON\n" \
+       +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+       +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
+       +"\-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc\n" \
+       +"\-DMPI_CXX_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicxx\n" \
+       +"\-DMPI_C_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpicc\n" \
+       +"\-DMPI_Fortran_COMPILER:PATHNAME=/usr/lib64/openmpi/1.2.7-gcc/mpif77\n" \
+       ),
+      ]
+      )
+      
   # ToDo: Test setting --enable-packages
   # ToDo: Test setting --disable-packages
   # ToDo: Test setting --enable-packages and --disable-packages
@@ -851,16 +1040,17 @@ class test_checkin_test(unittest.TestCase):
   # D) Test intermediate states with rerunning to fill out
 
 
-  # ToDo: On all of these check that the right files are being deleted!
-
-
   # ToDo: Add test for pull followed by configure
   # ToDo: Add test for configure followed by build
   # ToDo: Add test for build followed by test
-  # ToDo: Add test for removing files on pull
-  # ToDo: Add test for removing files on configure
-  # ToDo: Add test for removing files on build
-  # ToDo: Add test for removing files on test
+
+
+  # ToDo: On all of these below check that the right files are being deleted!
+
+  # ToDo: Add test for removing files on pull (fail immediately)
+  # ToDo: Add test for removing files on configure (fail immediately)
+  # ToDo: Add test for removing files on build (fail immediately)
+  # ToDo: Add test for removing files on test (fail immediately)
 
 
   # E) Test various failing use cases
