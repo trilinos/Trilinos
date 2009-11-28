@@ -3,31 +3,41 @@ Release Notes for PyTrilinos 4.2 (Trilinos 10.0)
 
 General notes for PyTrilinos:
 
+  * Converted to CMake build system
+
+  * Added const-correctness for char* function arguments.  This
+    improves compatibility with newer gnu compilers.
+
 PyTrilinos.Teuchos notes:
 
-PyTrilinos.Epetra notes:
-
-PyTrilinos.TriUtils notes:
+  * LabeledObject and Describable classes converted to director
+    classes so that virtual methods can be overridden in python.
 
 PyTrilinos.EpetraExt notes:
 
-PyTrilinos.Pliris notes:
-
-PyTrilinos.AztecOO notes:
-
-PyTrilinos.Galeri notes:
-
-PyTrilinos.Amesos notes:
-
-PyTrilinos.IFPACK notes:
+  * Added wrappers for ModelEvaluator and all associated classes
 
 PyTrilinos.Komplex notes:
 
-PyTrilinos.Anasazi notes:
+  * Added Komplex module
 
-PyTrilinos.ML notes:
+PyTrilinos.Pliris notes:
+
+  * Added Pliris module
 
 PyTrilinos.NOX notes:
+
+  * Improved robustness of NOX sub-packages
+
+  * Added wrappers for ModelEvaluatorInterface class
+
+  * Added default builder functions:
+
+    + defaultNonlinearParameters()
+    + defaultGroup()
+    + defaultStatusTest()
+    + defaultSolver()
+
 
 
 Release Notes for PyTrilinos 4.1 (Trilinos 9.0)
