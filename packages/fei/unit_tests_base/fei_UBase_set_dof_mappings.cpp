@@ -142,7 +142,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(set_dof_mappings, test4, LocalOrdinal, GlobalO
   LocalOrdinal rank = 0;
   GlobalOrdinal id = 8;
   LocalOrdinal field1 = 0;
-  LocalOrdinal field2 = 1;
+//  LocalOrdinal field2 = 1;
   TEUCHOS_TEST_THROW(dofmapper.getGlobalIndex(rank, id, field1), std::runtime_error, out, success);
 
   GlobalOrdinal idx = 0;

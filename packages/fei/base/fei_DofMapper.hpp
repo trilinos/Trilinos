@@ -69,7 +69,7 @@ class DofMapper {
   std::pair<const Dof<LocalOrdinal,GlobalOrdinal>*,LocalOrdinal> getDof(GlobalOrdinal global_index) const;
 
   bool maps_are_valid() const { return m_maps_are_valid; }
-  void set_maps_are_valid(bool flag) { m_maps_are_valid; }
+  void set_maps_are_valid(bool flag) { m_maps_are_valid = flag; }
 
   typedef typename std::map<Dof<LocalOrdinal,GlobalOrdinal>,GlobalOrdinal,DofOrder> DofMap;
 
@@ -123,7 +123,7 @@ class DofMapper {
 template<class LocalOrdinal,class GlobalOrdinal,class DofOrder>
 void DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::setFieldSize(LocalOrdinal field, LocalOrdinal field_size)
 {
-	FieldSizeMap::iterator f_iter = m_field_sizes.find(field);
+	typename FieldSizeMap::iterator f_iter = m_field_sizes.find(field);
 	if (f_iter == m_field_sizes.end()) {
 	  m_field_sizes.insert(std::make_pair(field, field_size));
 	}
@@ -136,7 +136,7 @@ void DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::setFieldSize(LocalOrdinal f
 template<class LocalOrdinal,class GlobalOrdinal,class DofOrder>
 LocalOrdinal DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::getFieldSize(LocalOrdinal field) const
 {
-  FieldSizeMap::const_iterator f_iter = m_field_sizes.find(field);
+  typename FieldSizeMap::const_iterator f_iter = m_field_sizes.find(field);
   if (f_iter == m_field_sizes.end()) {
 	  std::ostringstream os;
 	  os << "fei::DofMapper::getFieldSize ERROR, field=="
@@ -150,7 +150,7 @@ LocalOrdinal DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::getFieldSize(LocalO
 template<class LocalOrdinal,class GlobalOrdinal,class DofOrder>
 GlobalOrdinal DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::getGlobalIndex(LocalOrdinal rank, GlobalOrdinal id, LocalOrdinal field) const
 {
-  DofMap::const_iterator iter = m_dof_idx.find(Dof<LocalOrdinal,GlobalOrdinal>(rank,id,field));
+  typename DofMap::const_iterator iter = m_dof_idx.find(Dof<LocalOrdinal,GlobalOrdinal>(rank,id,field));
   if (iter == m_dof_idx.end()) {
     std::ostringstream osstr;
     osstr << "fei::DofMapper::getGlobalIndex ERROR, dof("
@@ -166,7 +166,7 @@ template<class LocalOrdinal,class GlobalOrdinal,class DofOrder>
 std::pair<const Dof<LocalOrdinal,GlobalOrdinal>*,LocalOrdinal>
 DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::getDof(GlobalOrdinal global_index) const
 {
-  IdxMap::const_iterator iter = m_idx_dof.lower_bound(global_index);
+  typename IdxMap::const_iterator iter = m_idx_dof.lower_bound(global_index);
   if (iter == m_idx_dof.begin()) {
 	if (iter->first == global_index) {
 	  return std::make_pair(iter->second, global_index);
@@ -190,7 +190,7 @@ DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::getDof(GlobalOrdinal global_inde
   LocalOrdinal component = global_index - iter->first;
   bool check_range_of_component = last_dof && !m_field_sizes.empty();
   if (check_range_of_component) {
-	std::map<LocalOrdinal,LocalOrdinal>::const_iterator f_iter = m_field_sizes.find(iter->second->field());
+	typename std::map<LocalOrdinal,LocalOrdinal>::const_iterator f_iter = m_field_sizes.find(iter->second->field());
 	if (f_iter == m_field_sizes.end() || f_iter->second <= component) {
 	  std::ostringstream os;
 	  os << "fei::DofMapper::getDof ERROR2, dof not found for global_index=="

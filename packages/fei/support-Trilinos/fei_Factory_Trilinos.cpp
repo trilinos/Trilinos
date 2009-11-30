@@ -405,3 +405,4 @@ void Factory_Trilinos::create_LinProbMgr(bool replace_if_already_created)
 
 //HAVE_FEI_EPETRA
 #endif
+

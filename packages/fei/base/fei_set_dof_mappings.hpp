@@ -22,7 +22,7 @@ void set_dof_mappings(GlobalOrdinal first_index,
   typedef typename fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::DofMap DofMap;
   typedef typename fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::IdxMap IdxMap;
 
-  DofMap::iterator
+  typename DofMap::iterator
     d_iter = dof_mapper.begin_dof(), d_end = dof_mapper.end_dof();
 
   IdxMap& idxmap = dof_mapper.get_idx_dof_map();

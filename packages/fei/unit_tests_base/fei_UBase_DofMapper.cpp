@@ -25,7 +25,7 @@ void fill_dof_mapper_1(fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>& dof_
   typedef typename fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::DofMap DofMap;
   typedef typename fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::IdxMap IdxMap;
 
-  DofMap::iterator iter = dof_mapper.begin_dof(), i_end = dof_mapper.end_dof();
+  typename DofMap::iterator iter = dof_mapper.begin_dof(), i_end = dof_mapper.end_dof();
   IdxMap& idxmap = dof_mapper.get_idx_dof_map();
   GlobalOrdinal idx = 0;
   for(; iter != i_end; ++iter) {
@@ -59,7 +59,7 @@ void fill_dof_mapper_2(fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>& dof_
   typedef typename fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::DofMap DofMap;
   typedef typename fei::DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::IdxMap IdxMap;
 
-  DofMap::iterator iter = dof_mapper.begin_dof(), i_end = dof_mapper.end_dof();
+  typename DofMap::iterator iter = dof_mapper.begin_dof(), i_end = dof_mapper.end_dof();
   IdxMap& idxmap = dof_mapper.get_idx_dof_map();
   GlobalOrdinal idx = 0;
   for(; iter != i_end; ++iter) {
@@ -163,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(DofMapper, test4, LocalOrdinal, GlobalOrdinal)
   LocalOrdinal rank = 0;
   GlobalOrdinal id = 8;
   LocalOrdinal field1 = 0;
-  LocalOrdinal field2 = 1;
+//  LocalOrdinal field2 = 1;
   TEUCHOS_TEST_THROW(dofmapper.getGlobalIndex(rank, id, field1), std::runtime_error, out, success);
 
   GlobalOrdinal idx = 0;
