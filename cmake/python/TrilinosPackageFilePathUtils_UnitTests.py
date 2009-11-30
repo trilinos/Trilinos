@@ -13,6 +13,7 @@ trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXml
 
 updateOutputStr = """
 ? packages/triutils/doc/html
+M CMakeLists.txt
 M cmake/python/checkin-test.py
 M cmake/python/dump-cdash-deps-xml-file.py
 A packages/nox/src/dummy.C
@@ -29,12 +30,20 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
 
   def test_getPackageNameFromPath_01(self):
     self.assertEqual(
-      getPackageNameFromPath( trilinosDependencies, 'packages/teuchos/CMakeLists.txt' ), 'Teuchos' )
+      getPackageNameFromPath( trilinosDependencies, 'packages/teuchos/CMakeLists.txt' ),
+      'Teuchos' )
 
 
   def test_getPackageNameFromPath_02(self):
     self.assertEqual(
-      getPackageNameFromPath( trilinosDependencies, 'packages/thyra/src/blob.cpp' ), 'Thyra' )
+      getPackageNameFromPath( trilinosDependencies, 'packages/thyra/src/blob.cpp' ),
+      'Thyra' )
+
+
+  def test_getPackageNameFromPath_03(self):
+    self.assertEqual(
+      getPackageNameFromPath( trilinosDependencies, 'cmake/CMakeLists.txt' ),
+      'TrilinosFramework' )
 
 
   def test_getPackageNameFromPath_noMatch(self):
@@ -49,6 +58,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
 
     modifedFilesList_expected = \
       [
+        "CMakeLists.txt",
         "cmake/python/checkin-test.py",
         "cmake/python/dump-cdash-deps-xml-file.py",
         "packages/nox/src/dummy.C",
@@ -62,11 +72,12 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
   def test_getPackgesListFromFilePathsList_01(self):
 
     filesList = extractFilesListMatchingPattern( updateOutputList,
-      re.compile(r"^[AMP?] (.+)$") )
+      re.compile(r"^[AMP] (.+)$") )
     
     packagesList = getPackgesListFromFilePathsList( trilinosDependencies, filesList )
 
-    packagesList_expected = [u"Triutils", u"", u"NOX", u"Stratimikos", u"Thyra"]
+    packagesList_expected = \
+      [u"", u"TrilinosFramework", u"NOX", u"Stratimikos", u"Thyra"]
 
     self.assertEqual( packagesList, packagesList_expected )
 
@@ -74,14 +85,14 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
   def test_getPackageCheckinEmailAddressesListFromFilePathsList_01(self):
 
     filesList = extractFilesListMatchingPattern( updateOutputList,
-      re.compile(r"^[AMP?] (.+)$") )
+      re.compile(r"^[AMP] (.+)$") )
     
     packagesList = getPackageCheckinEmailAddressesListFromFilePathsList(
       trilinosDependencies, filesList )
 
     packagesList_expected = [
-      u"triutils-checkins@software.sandia.gov",
       u"trilinos-checkins@software.sandia.gov",
+      u"trilinosframework-checkins@software.sandia.gov",
       u"nox-checkins@software.sandia.gov",
       u"stratimikos-checkins@software.sandia.gov",
       u"thyra-checkins@software.sandia.gov"

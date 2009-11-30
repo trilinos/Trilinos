@@ -50,6 +50,7 @@ INCLUDE(PackageListHelpers)
 #
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+  TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
   Teuchos               teuchos                        PS
   ThreadPool            ThreadPool                     SS # Depends on Ptheads TPL
   RTOp                  rtop                           PS

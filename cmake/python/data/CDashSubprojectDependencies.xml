@@ -1,4 +1,9 @@
 <Project name="Trilinos">
+  <SubProject name="TrilinosFramework">
+    <EmailAddresses>
+      <Email address="trilinosframework-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Teuchos">
     <EmailAddresses>
       <Email address="teuchos-regression@software.sandia.gov"/>

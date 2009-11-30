@@ -10,7 +10,13 @@
 
 
 INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
 INCLUDE(PackageAddAdvancedTest)
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MPI)
+IF (${PACKAGE_NAME}_ENABLE_MPI)
+  ADD_DEFINITIONS(-DHAVE_MPI)
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(
   GenericDriver
@@ -24,77 +30,79 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 PACKAGE_ADD_TEST( GenericDriver
   NAME CTestScripts_simple_pass_regex
-  ARGS "--print-msg=\"This is a crazy test!\" --return-val=1"
+  ARGS "\"This is a crazy test!\" 1"
   PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
   )
 
 PACKAGE_ADD_TEST( GenericDriver
   NAME CTestScripts_simple_posfix_and_args_1
-  POSTFIX_AND_ARGS_0 test1 --print-msg="This is a crazy test!" --return-val=1
+  POSTFIX_AND_ARGS_0 test1 "This is a crazy test!" 1
   PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
   )
 
 PACKAGE_ADD_TEST( GenericDriver
   NAME CTestScripts_simple_posfix_and_args_2
-  POSTFIX_AND_ARGS_0 test1 --print-msg="This is a crazy test!"
-  POSTFIX_AND_ARGS_1 test2 --print-msg="This is a silly test!"
+  POSTFIX_AND_ARGS_0 test1 "This is a crazy test!" 0
+  POSTFIX_AND_ARGS_1 test2 "This is a silly test!" 0
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!" --return-val=1
-  FINAL_PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
+  TEST_0 EXEC GenericDriver ARGS "This is a crazy test!" 1
+  FINAL_PASS_REGULAR_EXPRESSION "\"This is a crazy test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_no_echo_output
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
+  TEST_0 EXEC GenericDriver ARGS "This is a crazy test!" 0
     NO_ECHO_OUTPUT
-  FINAL_FAIL_REGULAR_EXPRESSION "[^=]This is a crazy test"
+  FINAL_FAIL_REGULAR_EXPRESSION "\"This is a crazy test\""
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_return_code
-  TEST_0 EXEC GenericDriver ARGS --return-val=1
+  TEST_0 EXEC GenericDriver ARGS "Dummy msg" 1
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Return code = 1"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_out_file
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!" --return-val=5
+  TEST_0 EXEC GenericDriver ARGS "This is a crazy test!" 5
     OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_outputFile.out
     PASS_REGULAR_EXPRESSION "This is a crazy test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_any_test_0
-  TEST_0 EXEC GenericDriver ARGS --return-val=7
+  TEST_0 EXEC GenericDriver ARGS "Dummy msg" 7
     PASS_ANY
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Pass Any"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_any_overall
-  TEST_0 EXEC GenericDriver ARGS --return-val=7
+  TEST_0 EXEC GenericDriver ARGS "Dummy msg" 7
     PASS_ANY
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_standard_pass_output
-  TEST_0 EXEC GenericDriver ARGS --return-val=7
+  TEST_0 EXEC GenericDriver ARGS "Dummy msg" 7
     STANDARD_PASS_OUTPUT
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test\n\nThis is not the best test" 5
     OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_1
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test\n\nThis is not the best test" 5
     OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_1_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is a crazy test} [^a]PASSED[^a]"
@@ -102,7 +110,8 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all_compare_2
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test\n\nThis is not the best test" 5
     OUTPUT_FILE cmnd_1_args_1_pass_regular_expression_all_compare_2_outputFile.out
     PASS_REGULAR_EXPRESSION_ALL "This is a crazy test" "This is not the best test"
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Match REGEX {This is not the best test} [^a]PASSED[^a]"
@@ -114,61 +123,75 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg_out_file_no_echo_output
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!" --return-val=5
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test!" 5
     OUTPUT_FILE cmnd_1_args_1_print_msg_out_file_no_echo_output_outputFile.out
     NO_ECHO_OUTPUT
-  FINAL_FAIL_REGULAR_EXPRESSION "[^=]This is a crazy test"
+  FINAL_FAIL_REGULAR_EXPRESSION "^This is a crazy test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_message
-  TEST_0 EXEC GenericDriver ARGS --return-val=1 MESSAGE "This is a crazy test!"
+  TEST_0 EXEC GenericDriver
+    ARGS "Dummy msg" 1
+    MESSAGE "This is a crazy test!"
   FINAL_PASS_REGULAR_EXPRESSION "This is a crazy test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_working_directory
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test!" 0
     WORKING_DIRECTORY TEST_NAME
     OUTPUT_FILE cmnd_1_args_1_working_directory_console.out
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_args_1_basic
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is the first test" --return-val=3
+  TEST_0 EXEC GenericDriver
+    ARGS "This is the first test" 3
     PASS_REGULAR_EXPRESSION "first test"
-  TEST_1 EXEC GenericDriver ARGS --print-msg="This is the second test" --return-val=4
+  TEST_1 EXEC GenericDriver
+    ARGS "This is the second test" 4
     PASS_REGULAR_EXPRESSION "second test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_args_1_check_second_print
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is the first test" --return-val=3
+  TEST_0 EXEC GenericDriver
+    ARGS "This is the first test" 3
     PASS_REGULAR_EXPRESSION "first test"
-  TEST_1 EXEC GenericDriver ARGS --print-msg="This is the second test" --return-val=4
+  TEST_1 EXEC GenericDriver
+    ARGS "This is the second test" 4
     PASS_REGULAR_EXPRESSION "second test"
   FINAL_PASS_REGULAR_EXPRESSION "second test"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_fail_fast
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This first test will fail" --return-val=3
-  TEST_1 EXEC GenericDriver ARGS --print-msg="This is the second test will never be run"
+  TEST_0 EXEC GenericDriver
+    ARGS "This first test will fail" 3
+  TEST_1 EXEC GenericDriver
+    ARGS "This is the second test will never be run" 0
   FAIL_FAST
   FINAL_PASS_REGULAR_EXPRESSION "TEST_0: FAIL FAST, SKIPPING REST OF TEST CASES!"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_no_fail_fast_print_msg
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This first test will fail" --return-val=3
-  TEST_1 EXEC GenericDriver ARGS --print-msg="This is the second test should be run"
+  TEST_0 EXEC GenericDriver
+    ARGS "This first test will fail" 3
+  TEST_1 EXEC GenericDriver
+    ARGS "This is the second test should be run" 0
   FINAL_PASS_REGULAR_EXPRESSION "This is the second test should be run"
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_2_no_fail_fast_final_fail
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This first test will fail" --return-val=3
-  TEST_1 EXEC GenericDriver ARGS --print-msg="This is the second test should be run"
+  TEST_0 EXEC GenericDriver
+    ARGS "This first test will fail" 3
+  TEST_1 EXEC GenericDriver
+    ARGS "This is the second test should be run" 0
   FINAL_PASS_REGULAR_EXPRESSION "OVERALL FINAL RESULT: TEST FAILED"
   )
 
@@ -181,7 +204,8 @@ ENDIF()
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test!" 0
     OUTPUT_FILE cmnd_3_args_1_overall_working_directory_console.out
   TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy cmnd_3_args_1_overall_working_directory_console.out cmnd_3_args_1_overall_working_directory_console.gold.out
   TEST_2 CMND ${DIFF_COMMAND_STUFF} cmnd_3_args_1_overall_working_directory_console.out cmnd_3_args_1_overall_working_directory_console.gold.out
@@ -190,7 +214,8 @@ PACKAGE_ADD_ADVANCED_TEST(
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_3_args_1_overall_working_directory_working_directory
   OVERALL_WORKING_DIRECTORY TEST_NAME
-  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
+  TEST_0 EXEC GenericDriver
+    ARGS "This is a crazy test!" 0
     OUTPUT_FILE cmnd_3_args_1_overall_working_directory_working_directory_console.out
     WORKING_DIRECTORY GenericDriver
   TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy ../GenericDriver/cmnd_3_args_1_overall_working_directory_working_directory_console.out cmnd_3_args_1_overall_working_directory_working_directory_console.gold.out
@@ -200,7 +225,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 # Demonstrate processes never dying
 
-IF (PERL_EXECUTABLE AND Teuchos_ENABLE_RUNS_FOREVER_TEST)
+IF (PERL_EXECUTABLE AND TrilinosFramework_ENABLE_RUNS_FOREVER_TEST)
   
   PACKAGE_ADD_EXECUTABLE(
     RunsForever

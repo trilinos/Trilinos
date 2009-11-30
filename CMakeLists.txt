@@ -42,6 +42,9 @@ OPTION(Trilinos_VERBOSE_CONFIGURE
 #
 # A.1) Run misc unit tests that don't need anything else
 #
+# These below tests are a bit strange.  See
+# cmake/TestingUnitTests/CMakeLists.txt for details!
+#
 
 IF (Trilinos_INVOKE_TESTING_UNIT_TESTS)
   ADD_SUBDIRECTORY(cmake/TestingUnitTests/UnitTests)
@@ -234,7 +237,7 @@ IF (NOT (WIN32 AND NOT CYGWIN))
   
     COMMAND echo
     COMMAND echo \"***\"
-    COMMAND echo \"*** Reconfigure with the given package list\"
+    COMMAND echo \"*** Reconfigure with the original package list\"
     COMMAND echo \"***\"
     COMMAND echo
     COMMAND echo Running: ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
@@ -242,7 +245,11 @@ IF (NOT (WIN32 AND NOT CYGWIN))
     COMMAND echo
     COMMAND ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
       -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
-  
+
+    COMMAND echo
+    COMMAND echo \"See the results at http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&display=project\#Experimental\"
+    COMMAND echo
+ 
     )
 
 ENDIF()

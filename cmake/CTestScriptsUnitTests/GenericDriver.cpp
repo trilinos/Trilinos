@@ -26,49 +26,46 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
+
+#include <iostream>
+#include <cstdlib>
+
+#ifdef HAVE_MPI
+#  include <mpi.h>
+#endif
 
 
 int main( int argc, char* argv[] )
 {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  using Teuchos::CommandLineProcessor;
- 
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-
-  int returnVal = 0;
-
   bool success = true;
+  int procRank = 0;
+
+#ifdef HAVE_MPI
+  MPI_Init (&argc, &argv);
+  MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+#endif
+
+  std::string printMsg = "";
+  if (argc > 1)
+    printMsg = argv[1];
+  int returnVal = 0;
+  if (argc > 2)
+    returnVal = std::atoi(argv[2]);
+
+  if (printMsg.length() && procRank==0)
+    std::cout << "\n" << printMsg << "\n";
  
-	try {
+  if (procRank==0) {
+    if (success)
+      std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+    else
+      std::cout << "\nEnd Result: TEST FAILED" << std::endl;
+  }
 
-    CommandLineProcessor clp(false); // Don't throw exceptions
-
-    std::string printMsg = "";
-    clp.setOption( "print-msg", &printMsg, "Print message to the screen." );
-
-    clp.setOption( "return-val", &returnVal, "Value to return from main." );
-
-		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-			*out << "\nEnd Result: TEST FAILED" << std::endl;
-			return parse_return;
-		}
- 
-    if (printMsg.length())
-      *out << "\n" << printMsg << "\n";
-
-	}
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
- 
-  if(success)
-    *out << "\nEnd Result: TEST PASSED" << std::endl;	
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
  
   return returnVal;
  

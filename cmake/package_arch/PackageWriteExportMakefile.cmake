@@ -1,3 +1,6 @@
+INCLUDE(PackageGeneralMacros)
+
+
 #############################################################################
 #
 # Function to generate an export makefile, simplifying the building of

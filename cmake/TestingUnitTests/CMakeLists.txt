@@ -9,9 +9,8 @@ PACKAGE_ADD_ADVANCED_TEST( CTestFunctions_UnitTest
     PASS_REGULAR_EXPRESSION "Final UnitTests Result: PASSED"
   )
 
-
-
-
-
-
-
+# The above test runs CMake to invoke the unit tests in
+# ./UnitTests/CMakeLists.txt.  These tests run as part of the CMake
+# configuration process.  The configure actually fails (currently with error
+# message "Configuring incomplete, errors occurred!" but it actually passes
+# because the unit tests all pass based on the above grep.

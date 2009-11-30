@@ -84,9 +84,10 @@ class test_extractPackageEnablesFromChangeStatus(unittest.TestCase):
 ? packages/trilinoscouplings/doc/html
 ? packages/triutils/doc/html
 ? sampleScripts/checkin-test-gabriel.sh
+M	CMakeLists.txt
 M	cmake/TrilinosPackages.cmake
 M	cmake/python/checkin-test.py
-M	cmake/python/dump-cdash-deps-xml-file.py
+M	 doc/Thyra/coding_guildlines/ThyraCodingGuideLines.tex
 P packages/thyra/dummy.blah
 A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
 """
@@ -98,7 +99,7 @@ A	packages/teuchos/example/ExplicitInstantiation/four_files/CMakeLists.txt
       enablePackagesList, False)
 
     self.assertEqual( options.enableAllPackages, 'on' )
-    self.assertEqual( enablePackagesList, ['Teuchos'] )
+    self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'Teuchos'] )
 
 
   def test_2(self):
@@ -120,7 +121,7 @@ M	packages/thyra/CMakeLists.txt
       enablePackagesList, False)
 
     self.assertEqual( options.enableAllPackages, 'default' )
-    self.assertEqual( enablePackagesList, ['NOX', 'Thyra'] )
+    self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'NOX', u'Thyra'] )
 
 
 

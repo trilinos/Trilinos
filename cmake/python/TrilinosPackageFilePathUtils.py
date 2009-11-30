@@ -28,8 +28,9 @@ def getPackageStructFromPath(trilinosDependencies, fullPath):
   fullPathArray = getFilePathArray(fullPath)
   if fullPathArray[0] == "packages":
     packageDir = fullPathArray[1]
-    return trilinosDependencies.getPackageByDir(packageDir)
-  return None
+  else:
+    packageDir = "../"+fullPathArray[0]
+  return trilinosDependencies.getPackageByDir(packageDir)
 
 
 def getPackageNameFromPath(trilinosDependencies, fullPath):
