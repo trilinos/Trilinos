@@ -42,6 +42,16 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 
+const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
+{ 
+   Teuchos::RCP<Teuchos::FancyOStream> os = 
+         Teuchos::VerboseObjectBase::getDefaultOStream(); 
+  
+   //os->setShowProcRank(true);
+   //os->setOutputToRootOnly(-1);
+   return os;
+}
+
 // distance function...not parallel...entirely internal to this cpp file
 inline double dist(int dim,double * coords,int row,int col)
 {

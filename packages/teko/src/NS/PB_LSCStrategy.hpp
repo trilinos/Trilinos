@@ -151,6 +151,13 @@ public:
      */
    virtual bool useFullLDU() const = 0;
 
+   /** Tell strategy that this operator is supposed to be symmetric.
+     * Behavior of LSC is slightly different for non-symmetric case.
+     *
+     * \param[in] isSymmetric Is this operator symmetric?
+     */
+   virtual void setSymmetric(bool isSymmetric) = 0;
+
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl,const InverseLibrary & invLib) {}
 

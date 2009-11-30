@@ -106,6 +106,13 @@ public:
      */
    virtual bool useFullLDU() const { return false; }
 
+   /** Tell strategy that this operator is supposed to be symmetric.
+     * Behavior of LSC is slightly different for non-symmetric case.
+     *
+     * \param[in] isSymmetric Is this operator symmetric?
+     */
+   virtual void setSymmetric(bool isSymmetric) { }
+
 protected:
    // protected memebers
    LinearOp invF_;

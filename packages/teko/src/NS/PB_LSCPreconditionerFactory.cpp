@@ -30,21 +30,21 @@ using Thyra::identity;
 // Stabilized constructor
 LSCPreconditionerFactory::LSCPreconditionerFactory(const LinearOp & invF,const LinearOp & invBQBtmC,
                                                    const LinearOp & invD,const LinearOp & invMass)
-      : invOpsStrategy_(rcp(new StaticLSCStrategy(invF,invBQBtmC,invD,invMass))), useMass_(false)
+      : invOpsStrategy_(rcp(new StaticLSCStrategy(invF,invBQBtmC,invD,invMass))), isSymmetric_(true)
 { }
 
 // Stable constructor
 LSCPreconditionerFactory::LSCPreconditionerFactory(const LinearOp & invF, const LinearOp & invBQBtmC,
                                                    const LinearOp & invMass)
-      : invOpsStrategy_(rcp(new StaticLSCStrategy(invF,invBQBtmC,invMass))), useMass_(false)
+      : invOpsStrategy_(rcp(new StaticLSCStrategy(invF,invBQBtmC,invMass))), isSymmetric_(true)
 { }
 
 // fully generic constructor
 LSCPreconditionerFactory::LSCPreconditionerFactory(const RCP<LSCStrategy> & strategy)
-   : invOpsStrategy_(strategy), useMass_(false)
+   : invOpsStrategy_(strategy), isSymmetric_(true)
 { }
 
-LSCPreconditionerFactory::LSCPreconditionerFactory() : useMass_(false)
+LSCPreconditionerFactory::LSCPreconditionerFactory() : isSymmetric_(true)
 { }
 
 // for PreconditionerFactoryBase
@@ -62,6 +62,9 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp F  = blockOp->getBlock(0,0);
    LinearOp B  = blockOp->getBlock(1,0);
    LinearOp Bt = blockOp->getBlock(0,1);
+
+   if(not isSymmetric_)
+      Bt = transpose(B);
 
    // build what is neccessary for the state object
    Teko_DEBUG_EXPR(timer.start(true));
@@ -129,6 +132,9 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
+   if(pl.isParameter("Is Symmetric"))
+      isSymmetric_ = pl.get<bool>("Is Symmetric");
+
    std::string name = "Basic Inverse";
    if(pl.isParameter("Strategy Name"))
       name = pl.get<std::string>("Strategy Name");
@@ -158,6 +164,7 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
       throw std::runtime_error("LSC Construction failed: Strategy could not be constructed");
    }
 
+   strategy->setSymmetric(isSymmetric_);
    invOpsStrategy_ = strategy;
 }
 

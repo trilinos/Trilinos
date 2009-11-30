@@ -1,15 +1,43 @@
 #include "PB_LU2x2DiagonalStrategy.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
+
 namespace Teko {
 
+using Teuchos::TimeMonitor;
+
+Teuchos::RCP<Teuchos::Time> LU2x2DiagonalStrategy::initTimer_;
+Teuchos::RCP<Teuchos::Time> LU2x2DiagonalStrategy::invSTimer_;
+Teuchos::RCP<Teuchos::Time> LU2x2DiagonalStrategy::invA00Timer_;
+Teuchos::RCP<Teuchos::Time> LU2x2DiagonalStrategy::opsTimer_;
+
+void LU2x2DiagonalStrategy::buildTimers()
+{
+   if(initTimer_==Teuchos::null)
+      initTimer_ = TimeMonitor::getNewTimer("LU2x2DiagonalStrategy::initializePrec");
+
+   if(invSTimer_==Teuchos::null)
+      invSTimer_ = TimeMonitor::getNewTimer("LU2x2DiagonalStrategy::initializePrec invS");
+
+   if(invA00Timer_==Teuchos::null)
+      invA00Timer_ = TimeMonitor::getNewTimer("LU2x2DiagonalStrategy::initializePrec invA00");
+
+   if(opsTimer_==Teuchos::null)
+      opsTimer_ = TimeMonitor::getNewTimer("LU2x2DiagonalStrategy::initializePrec buildOps");
+}
+
 LU2x2DiagonalStrategy::LU2x2DiagonalStrategy() 
-{ }
+{ 
+   buildTimers();
+}
 
 //! Constructor to set the inverse factories.
 LU2x2DiagonalStrategy::LU2x2DiagonalStrategy(const Teuchos::RCP<InverseFactory> & invFA,
                                              const Teuchos::RCP<InverseFactory> & invS)
    : invFactoryA00_(invFA), invFactoryS_(invS) 
-{ }
+{
+   buildTimers();
+}
 
 /** returns the first (approximate) inverse of \f$A_{00}\f$ */
 const Teko::LinearOp
@@ -17,7 +45,7 @@ LU2x2DiagonalStrategy::getHatInvA00(const Teko::BlockedLinearOp & A,BlockPrecond
 {
    initializeState(A,state);
 
-   return state.getInverse("invA00");
+   return state.getModifiableOp("invA00");
 }
 
 /** returns the second (approximate) inverse of \f$A_{00}\f$ */
@@ -26,7 +54,7 @@ LU2x2DiagonalStrategy::getTildeInvA00(const Teko::BlockedLinearOp & A,BlockPreco
 {
    initializeState(A,state);
 
-   return state.getInverse("invA00");
+   return state.getModifiableOp("invA00");
 }
 
 /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} \mbox{diag}(A_{00})^{-1} A_{01}\f$ */
@@ -35,7 +63,7 @@ LU2x2DiagonalStrategy::getInvS(const Teko::BlockedLinearOp & A,BlockPrecondition
 {
    initializeState(A,state);
 
-   return state.getInverse("invS");
+   return state.getModifiableOp("invS");
 }
 
 void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
@@ -46,6 +74,8 @@ void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,Bloc
    if(state.isInitialized())
       return;
 
+   Teuchos::TimeMonitor timer(*initTimer_,true);
+
    // extract sub blocks
    LinearOp A00 = Teko::getBlock(0,0,A);
    LinearOp A01 = Teko::getBlock(0,1,A);
@@ -54,40 +84,45 @@ void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,Bloc
 
    // build the Schur complement
    /////////////////////////////////////////////
-   Teko_DEBUG_MSG("Building S",5);
-   LinearOp diagA00 = getInvDiagonalOp(A00);
+   ModifiableLinearOp & S = state.getModifiableOp("S");
+   {
+      Teko_DEBUG_SCOPE("Building S",5);
+      Teuchos::TimeMonitor timer(*opsTimer_,true);
 
-   // grab operators for building Schur complement 
-   InverseLinearOp triple = state.getInverse("triple");
-   InverseLinearOp S = state.getInverse("S");
-
-   // build Schur-complement
-   triple = explicitMultiply(A10,diagA00,A01,triple);
-   S = explicitAdd(scale(-1.0,A11),triple,S);
-
-   // add to state
-   state.addInverse("trip",triple);
-   state.addInverse("S",S);
+      LinearOp diagA00 = getInvDiagonalOp(A00);
+   
+      // build Schur-complement
+      ModifiableLinearOp & triple = state.getModifiableOp("triple");
+      triple = explicitMultiply(A10,diagA00,A01,triple);
+      S = explicitAdd(scale(-1.0,A11),triple,S);
+   }
 
    // build inverse S
    /////////////////////////////////////////////
-   Teko_DEBUG_MSG("Building inverse(S)",5);
-   InverseLinearOp invS = state.getInverse("invS");
-   if(invS==Teuchos::null)
-      invS = buildInverse(*invFactoryS_,S);
-   else
-      rebuildInverse(*invFactoryS_,S,invS);
-   state.addInverse("invS",invS);
+   {
+      Teko_DEBUG_SCOPE("Building inverse(S)",5);
+      Teuchos::TimeMonitor timer(*invSTimer_,true);
+
+      ModifiableLinearOp & invS = state.getModifiableOp("invS"); 
+      if(invS==Teuchos::null)
+         invS = buildInverse(*invFactoryS_,S);
+      else
+         rebuildInverse(*invFactoryS_,S,invS);
+   }
 
    // build inverse A00
    /////////////////////////////////////////////
-   Teko_DEBUG_MSG("Building inverse(A00)",5);
-   InverseLinearOp invA00 = state.getInverse("invA00");
-   if(invA00==Teuchos::null)
-      invA00 = buildInverse(*invFactoryA00_,A00);
-   else
-      rebuildInverse(*invFactoryA00_,A00,invA00);
-   state.addInverse("invA00",invA00);
+   {
+      Teko_DEBUG_SCOPE("Building inverse(A00)",5);
+      Teuchos::TimeMonitor timer(*invA00Timer_,true);
+
+      ModifiableLinearOp & invA00 = state.getModifiableOp("invA00"); 
+      *getOutputStream() << "(LU2x2) invA00 pointer = " << invA00 << std::endl;
+      if(invA00==Teuchos::null)
+         invA00 = buildInverse(*invFactoryA00_,A00);
+      else
+         rebuildInverse(*invFactoryA00_,A00,invA00);
+   }
 
    // mark state as initialized
    state.setInitialized(true);

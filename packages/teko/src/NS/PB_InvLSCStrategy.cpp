@@ -82,11 +82,13 @@ Teko::ModifiableLinearOp reduceCrsOperator(Teko::ModifiableLinearOp & op,const s
 InvLSCStrategy::InvLSCStrategy()
    : massMatrix_(Teuchos::null), invFactoryF_(Teuchos::null), invFactoryS_(Teuchos::null), eigSolveParam_(5)
    , rowZeroingNeeded_(false), useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
+   , isSymmetric_(true)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
+   , isSymmetric_(true)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
@@ -94,11 +96,13 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                bool rzn)
    : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
+   , isSymmetric_(true)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
+   , isSymmetric_(true)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
@@ -106,6 +110,7 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<InverseFactory> & invFactF,
                                LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
    , useFullLDU_(false), useMass_(false), useLumping_(false), useWScaling_(false), scaleType_(Diagonal)
+   , isSymmetric_(true)
 { }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -195,18 +200,10 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    const LinearOp B  = getBlock(1,0,A);
    const LinearOp C  = getBlock(1,1,A);
 
-   bool isStabilized = (not isZeroOp(C));
+   LinearOp D = B;
+   LinearOp G = isSymmetric_ ? Bt : transpose(D);
 
-/*
-   // if a mass matrix and diagonal op hasn't been setup (don't setup it up more then once)
-   if(massMatrix_!=Teuchos::null && state->invMass_==Teuchos::null)
-      state->invMass_ = (useLumping_ ? getInvLumpedMatrix(massMatrix_) 
-                                     : getInvDiagonalOp(massMatrix_));
-   else if(massMatrix_==Teuchos::null) // otherwise if there is no mass matrix 
-      // state->invMass_ = getInvDiagonalOp(F);
-      state->invMass_ = (useLumping_ ? getInvLumpedMatrix(F) 
-                                     : getInvDiagonalOp(F));
-*/
+   bool isStabilized = (not isZeroOp(C));
 
    // The logic follows like this
    //    if there is no mass matrix available --> build from F
@@ -243,13 +240,16 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       hScaling_ = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(h));
    } 
 
-   // setup the scaling operator
    LinearOp H = hScaling_;
+   if(H==Teuchos::null && not isSymmetric_)
+      H = state->invMass_;
+
+   // setup the scaling operator
    if(H==Teuchos::null)
       state->BHBt_ = state->BQBt_;
    else {
       // compute BHBt
-      state->BHBt_ = explicitMultiply(B,H,Bt,state->BHBt_);
+      state->BHBt_ = explicitMultiply(D,H,G,state->BHBt_);
    }
 
    // if this is a stable discretization...we are done!

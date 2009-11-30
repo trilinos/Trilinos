@@ -3,6 +3,8 @@
 
 #include "PB_LU2x2Strategy.hpp"
 
+// Teuchos includes
+#include "Teuchos_Time.hpp"
 
 namespace Teko {
 
@@ -54,6 +56,10 @@ public:
                                             const InverseLibrary & invLib);
 
 protected:
+   /** Build timers for this type of object.
+     */
+   static void buildTimers();
+
    /** Initialize the operator's state. This builds the Schur complement and the inverse
      * operators. If the state has already been initialized this method does nothing.
      *
@@ -65,6 +71,11 @@ protected:
    // how to invert the matrices
    Teuchos::RCP<InverseFactory> invFactoryA00_; // for \tilde{A_00}\f$
    Teuchos::RCP<InverseFactory> invFactoryS_;
+
+   static Teuchos::RCP<Teuchos::Time> initTimer_;
+   static Teuchos::RCP<Teuchos::Time> invSTimer_;
+   static Teuchos::RCP<Teuchos::Time> invA00Timer_;
+   static Teuchos::RCP<Teuchos::Time> opsTimer_;
 };
 
 } // end namespace Teko

@@ -90,7 +90,7 @@ public:
 protected:
    // Gimmie object
    Teuchos::RCP<LSCStrategy> invOpsStrategy_;
-   bool useMass_;
+   bool isSymmetric_;
 
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);

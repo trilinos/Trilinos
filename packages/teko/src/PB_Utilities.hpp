@@ -92,8 +92,9 @@ Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double 
   *
   * \returns An output stream to use for printing
   */
-inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
-{ return Teuchos::VerboseObjectBase::getDefaultOStream(); }
+const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream();
+// inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream();
+// { return Teuchos::VerboseObjectBase::getDefaultOStream(); }
 
 #ifndef Teko_DEBUG_OFF
    #define Teko_DEBUG_EXPR(str) str

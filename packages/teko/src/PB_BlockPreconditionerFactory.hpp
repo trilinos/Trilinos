@@ -88,6 +88,19 @@ public:
      if(itr==inverses_.end()) return Teuchos::null; 
      return itr->second; }
 
+   //! Add a named operator to the state object
+   virtual void addModifiableOp(const std::string & name,const Teko::ModifiableLinearOp & mlo)
+   { modifiableOp_[name] = mlo; }
+
+   //! Add a named operator to the state object
+   virtual Teko::ModifiableLinearOp &
+   getModifiableOp(const std::string & name)
+   { std::map<std::string,Teko::ModifiableLinearOp>::iterator itr;
+     itr =  modifiableOp_.find(name);
+     if(itr==modifiableOp_.end())
+        return modifiableOp_[name];
+     return itr->second; }
+
 protected:
    //! for ParameterListAcceptor
    RCP<ParameterList>          paramList_;
@@ -97,6 +110,7 @@ protected:
 
    //! Store a map of inverse linear operators
    std::map<std::string,Teko::InverseLinearOp> inverses_;
+   std::map<std::string,Teko::ModifiableLinearOp> modifiableOp_;
 
    //! Stores the initialization state 
    bool isInitialized_;
