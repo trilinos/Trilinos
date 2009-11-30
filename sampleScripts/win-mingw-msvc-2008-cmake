@@ -1,0 +1,28 @@
+#!/bin/sh
+
+#
+# This is the cmake command I used on a Windows Vista laptop, which
+# has Git for windows installed. Git for Windows comes with some MinGW
+# tools, including a bash shell.
+# I run this script from within the git-bash shell to generate the
+# project files for Visual Studio 2008, then start up
+# Visual Studio to do the Trilinos build.
+#
+
+EXTRA_ARGS=$@
+
+cmake \
+-G "Visual Studio 9 2008" \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Epetra:BOOL=OFF \
+-D Trilinos_ENABLE_AztecOO:BOOL=OFF \
+-D Trilinos_ENABLE_FEI:BOOL=ON \
+-D Trilinos_ENABLE_BLAS:BOOL=ON \
+-D Trilinos_ENABLE_LAPACK:BOOL=ON \
+-D BLAS_LIBRARY_DIRS:PATH=/c/Users/william/lapack-3.1.1 \
+-D LAPACK_LIBRARY_DIRS:PATH=/c/Users/william/lapack-3.1.1 \
+-D BLAS_LIBRARY_NAMES:STRING="blas" \
+-D LAPACK_LIBRARY_NAMES:STRING="lapack" \
+$EXTRA_ARGS \
+../../Trilinos
+
