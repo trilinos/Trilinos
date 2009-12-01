@@ -9,6 +9,10 @@ SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME CONTINUOUS_${COMM_TYPE}_OPT_DEV_SHARED)
 
+#override the default number of processors to run on.
+SET( CTEST_BUILD_FLAGS "-j11 -i" )
+SET( CTEST_PARALLEL_LEVEL "11" )
+
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
 #disabling Mesquite because of a build error when shared libs is turned on.
