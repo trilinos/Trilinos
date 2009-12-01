@@ -524,7 +524,7 @@ class test_checkin_test(unittest.TestCase):
       "--help",
       "", # No shell commands!
       True,
-      "Usage: checkin-test.py \[OPTIONS\]\n" \
+      "checkin-test.py \[OPTIONS\]\n" \
       "Quickstart\:\n" \
       "Detailed Documentation:\n" \
       ".*--show-defaults.*\n" \
