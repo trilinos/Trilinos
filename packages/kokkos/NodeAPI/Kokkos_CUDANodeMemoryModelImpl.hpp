@@ -30,7 +30,10 @@ namespace Kokkos {
     }
     CUDANodeDeallocator dealloc;
     const bool OwnsMem = true;
-    Teuchos::ArrayRCP<T> buff(devptr,0,size,dealloc,OwnsMem);
+    const typename Teuchos::ArrayRCP<T>::Ordinal 
+        LowerBound = 0,   
+        UpperBound = size-1;
+    Teuchos::ArrayRCP<T> buff(devptr,LowerBound,UpperBound,dealloc,OwnsMem);
     MARK_COMPUTE_BUFFER(buff);
     return buff;
   }
