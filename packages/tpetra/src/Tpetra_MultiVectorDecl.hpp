@@ -239,7 +239,7 @@ namespace Tpetra {
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, Scalar scalarThis);
+    void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis);
     //@} 
 
     //! @name Attribute access functions

@@ -275,7 +275,7 @@ int Tifpack_ILUT::Compute()
     for (int i = 0 ;i < RowNnzU ; ++i) {
       if (RowIndicesU[i] < row_i)
         NnzLower++;
-      else if (RowIndicesU[i] == row_i) {
+      else if (R wIndicesU[i] == row_i) {
         // add threshold
         NnzUpper++;
         double& v = RowValuesU[i];
