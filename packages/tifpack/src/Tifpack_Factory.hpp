@@ -32,22 +32,7 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Tifpack.hpp"
-#include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_PointRelaxation.hpp"
-#include "Tifpack_BlockRelaxation.hpp"
-#include "Tifpack_IC.hpp"
-#include "Tifpack_ICT.hpp"
-#include "Tifpack_ILU.hpp"
-#include "Tifpack_ILUT.hpp"
-#include "Tifpack_SPARSKIT.hpp"
-#include "Tifpack_AdditiveSchwarz.hpp"
-#include "Tifpack_DenseContainer.hpp"
-#include "Tifpack_SparseContainer.hpp"
-#ifdef HAVE_TIFPACK_AMESOS
-#include "Tifpack_Amesos.hpp"
-#endif
-#include "Tifpack_Chebyshev.hpp"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StringToIntMap.hpp"
@@ -99,24 +84,25 @@ However, their construction can be slightly faster than the non stand-alone coun
 <P> The following fragment of code shows the
 basic usage of this class.
 \code
-#include "Tifpack.hpp"
+#include "Tifpack_Factory.hpp"
 
 ...
 
 Tifpack::Factory Factory;
 
-Tpetra_RowMatrix* A; // A is FillComplete()'d.
+Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* A; // A is FillComplete()'d.
 string PrecType = "ILU"; // use incomplete LU on each process
 int OverlapLevel = 1; // one row of overlap among the processes
-Tifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
-assert (Prec != 0);
+Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>*> Prec =
+     Factory.Create(PrecType, A, OverlapLevel);
+assert (Prec != Teuchos::null);
 
 Teuchos::ParameterList List;
 List.set("fact: level-of-fill", 5); // use ILU(5)
 
-TIFPACK_CHK_ERR(Prec->SetParameters(List));
-TIFPACK_CHK_ERR(Prec->Initialize());
-TIFPACK_CHK_ERR(Prec->Compute());
+Prec->SetParameters(List);
+Prec->Initialize();
+Prec->Compute();
 
 // now Prec can be used as AztecOO preconditioner
 // like for instance
@@ -133,15 +119,12 @@ AztecOOSolver.SetPrecOperator(Prec);
 AztecOOSolver.Iterate(1550,1e-8);
 
 // print information on stdout
-cout << *Prec;
-
-// delete the preconditioner
-delete Prec;
+std::cout << *Prec;
 \endcode
 
 \author Michael Heroux, (formally) SNL org. 1416
 
-\date Last updated on 25-Jan-05.
+\date Last updated on Dec-01-2009.
 */
 
 class Factory {
@@ -151,7 +134,7 @@ public:
   enum EPrecType {
     POINT_RELAXATION
     ,POINT_RELAXATION_STAND_ALONE
-    ,BLOCK_RELAXATION
+/*    ,BLOCK_RELAXATION
     ,BLOCK_RELAXATION_STAND_ALONE
     ,BLOCK_RELAXATION_STAND_ALONE_ILU
 #ifdef HAVE_TIFPACK_AMESOS
@@ -172,11 +155,12 @@ public:
     ,SPARSKIT
 #endif // HAVE_TIFPACK_SPARSKIT
     ,CHEBYSHEV
-  };
+*/  };
 
   /** \brief . */
   static const int numPrecTypes =
-    +5
+    2
+/*    +5
 #ifdef HAVE_TIFPACK_AMESOS
     +4
 #endif
@@ -185,7 +169,7 @@ public:
     +1
 #endif
     +1
-    ;
+*/    ;
 
   /** \brief List of the preconditioner types as enum values . */
   static const EPrecType precTypeValues[numPrecTypes];
@@ -202,7 +186,7 @@ public:
   static const char* toString(const EPrecType precType)
       { return precTypeNames[precType]; }
 
-  /** \brief Creates an instance of Tifpack_Preconditioner given the enum value
+  /** \brief Creates an instance of Tifpack::Preconditioner given the enum value
    * of the preconditioner type (can not fail, no bad input possible).
    *
    * \param PrecType (In) - Enum value of preconditioner type to be created. 
@@ -211,8 +195,8 @@ public:
    *
    * \param overlap (In) - specified overlap, defaulted to 0.
    */
-  static Tifpack_Preconditioner* Create(
-    EPrecType PrecType, Tpetra_RowMatrix* Matrix, const int overlap = 0
+  static Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Create(
+    EPrecType PrecType, const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix, const int overlap = 0
     );
 
   /** \brief Creates an instance of Tifpack_Preconditioner given the string
@@ -229,8 +213,8 @@ public:
    * that the client is responsible for calling <tt>delete</tt> on the
    * returned object once it is finished using it!
    */
-  Tifpack_Preconditioner* Create(const string PrecType,
-				Tpetra_RowMatrix* Matrix,
+  Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Create(const string PrecType,
+				const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
 				const int overlap = 0);
 
   /** \brief Sets the options in List from the command line.

@@ -34,10 +34,8 @@
 #include "Tifpack_CondestType.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_Time.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -46,7 +44,7 @@ namespace Teuchos {
 namespace Tifpack {
 
 //! Tifpack::ILUT: A class for constructing and using an ILUT factorization
-// of a given Tpetra_RowMatrix.
+// of a given Tpetra::RowMatrix.
 
 /*! The Tifpack::ILUT class computes a "Relaxed" ILUT factorization with level k fill 
     of a given Tpetra::RowMatrix. 
@@ -59,12 +57,13 @@ namespace Tifpack {
 
     \date Last modified on 22-Jan-05.
 */    
-class ILUT: public Tifpack::Preconditioner {
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+class ILUT: public Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
       
 public:
   // @{ Constructors and Destructors
   //! ILUT constuctor with variable number of indices per row.
-  ILUT(const Tpetra_RowMatrix* A);
+  ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
   
   //! ILUT Destructor
   virtual ~ILUT();
@@ -77,7 +76,7 @@ public:
      absolute_threshold, relative_threshold and overlap_mode. These names are
      case insensitive. For level_fill the ParameterEntry must have type int, the 
      threshold entries must have type double and overlap_mode must have type
-     Tpetra_CombineMode.
+     Tpetra::CombineMode.
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
 
@@ -85,10 +84,10 @@ public:
   /*! Copies values from the user's matrix into the nonzero pattern of L and U.
     \param In 
            A - User matrix to be factored.
-    \warning The graph of A must be identical to the graph passed in to Tifpack_IlukGraph constructor.
+    \warning The graph of A must be identical to the graph passed in to IlukGraph constructor.
              
    */
-  int Initialize();
+  void Initialize();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   bool IsInitialized() const
@@ -99,37 +98,37 @@ public:
   //! Compute IC factor U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the RILU(k) factors L and U using the current:
     <ol>
-    <li> Tifpack_IlukGraph specifying the structure of L and U.
+    <li> IlukGraph specifying the structure of L and U.
     <li> Value for the RILU(k) relaxation parameter.
     <li> Value for the \e a \e priori diagonal threshold values.
     </ol>
     InitValues() must be called before the factorization can proceed.
    */
-  int Compute();
+  void Compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.
   bool IsComputed() const {return(IsComputed_);};
 
   // Mathematical functions.
   
-  //! Returns the result of a Tifpack_ILUT forward/back solve on a Tpetra_MultiVector X in Y.
+  //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
   /*! 
     \param 
-    X - (In) A Tpetra_MultiVector of dimension NumVectors to solve for.
+    X - (In) A Tpetra::MultiVector of dimension NumVectors to solve for.
     \param 
-    Y - (Out) A Tpetra_MultiVector of dimension NumVectorscontaining result.
+    Y - (Out) A Tpetra::MultiVector of dimension NumVectorscontaining result.
     
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  void applyInverse(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Computed the estimated condition number and returns the value.
-  double Condest(const Tifpack_CondestType CT = Tifpack_Cheap, 
+  double Condest(const CondestType CT = Cheap, 
                  const int MaxIters = 1550,
                  const double Tol = 1e-9,
-		 Tpetra_RowMatrix* Matrix_in = 0);
+		 Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix_in = 0);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
   double Condest() const
@@ -158,42 +157,29 @@ public:
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Returns the Tpetra_Map object associated with the domain of this operator.
-  const Tpetra_Map & OperatorDomainMap() const {return(A_.OperatorDomainMap());};
+  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> & getDomainMap() const {return(A_.getDomainMap());};
 
-  //! Returns the Tpetra_Map object associated with the range of this operator.
-  const Tpetra_Map & OperatorRangeMap() const{return(A_.OperatorRangeMap());};
+  //! Returns the Tpetra::Map object associated with the range of this operator.
+  const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getRangeMap() const{return(A_.getRangeMap());};
 
-  //! Returns the Tpetra_BlockMap object associated with the range of this matrix operator.
-  const Tpetra_Comm & Comm() const{return(Comm_);};
+  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
+  const Teuchos::Comm & Comm() const{return(Comm_);};
 
   //! Returns a reference to the matrix to be preconditioned.
-  const Tpetra_RowMatrix& Matrix() const
+  const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Matrix() const
   {
     return(A_);
   }
 
   //! Returns a reference to the L factor.
-  const Tpetra_CrsMatrix & L() const {return(*L_);};
+  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & L() const {return(*L_);};
   
   //! Returns a reference to the U factor.
-  const Tpetra_CrsMatrix & U() const {return(*U_);};
+  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & U() const {return(*U_);};
     
-  //! Returns the label of \c this object.
-  const char* Label() const
-  {
-    return(Label_.c_str());
-  }
-
-  //! Sets the label for \c this object
-  int SetLabel(const char* Label_in)
-  {
-    Label_ = Label_in;
-    return(0);
-  }
- 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -291,17 +277,13 @@ private:
   // @{ Internal methods
 
   //! Copy constructor (should never be used)
-  Tifpack_ILUT(const Tifpack_ILUT& RHS) :
+  ILUT(const ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) :
     A_(RHS.Matrix()),
     Comm_(RHS.Comm()),
-    Time_(Comm())
-  {};
+    Time_(Comm());
 
   //! operator= (should never be used)
-  Tifpack_ILUT& operator=(const Tifpack_ILUT& RHS)
-  {
-    return(*this);
-  }
+  ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS);
 
   //! Releases all allocated memory.
   void Destroy();
@@ -310,13 +292,13 @@ private:
   // @{ Internal data
 
   //! reference to the matrix to be preconditioned.
-  const Tpetra_RowMatrix& A_;
+  const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A_;
   //! Reference to the communicator object.
-  const Tpetra_Comm& Comm_;
+  const Teuchos::Comm& Comm_;
   //! L factor
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> L_;
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_;
   //! U factor
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> U_;
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_;
   //! Condition number estimate.
   double Condest_;
   //! relaxation value
@@ -329,8 +311,6 @@ private:
   double LevelOfFill_;
   //! Discards all elements below this tolerance
   double DropTolerance_;
-  //! Label for \c this object
-  string Label_;
   //! \c true if \c this object has been initialized
   bool IsInitialized_;
   //! \c true if \c this object has been computed
@@ -359,9 +339,9 @@ private:
   mutable Teuchos::Time Time_;
   //! Global number of nonzeros in L and U factors
   int GlobalNonzeros_;
-  Teuchos::RefCountPtr<Tpetra_SerialComm> SerialComm_;
-  Teuchos::RefCountPtr<Tpetra_Map> SerialMap_;
-}; // Tifpack_ILUT
+  Teuchos::RCP<Tpetra::SerialComm> SerialComm_;
+  Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > SerialMap_;
+}; // ILUT
 
 }//namespace Tifpack
 

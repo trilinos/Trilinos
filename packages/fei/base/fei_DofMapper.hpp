@@ -128,7 +128,7 @@ void DofMapper<LocalOrdinal,GlobalOrdinal,DofOrder>::setFieldSize(LocalOrdinal f
 	  m_field_sizes.insert(std::make_pair(field, field_size));
 	}
 	else {
-	  //field already present, re-setting field_size:
+	  //field already present, resetting field_size:
 	  f_iter->second = field_size;
 	}
 }
