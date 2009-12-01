@@ -64,7 +64,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp Bt = blockOp->getBlock(0,1);
 
    if(not isSymmetric_)
-      Bt = transpose(B);
+      Bt = adjoint(B);
 
    // build what is neccessary for the state object
    Teko_DEBUG_EXPR(timer.start(true));

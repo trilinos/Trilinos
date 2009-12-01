@@ -201,7 +201,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    const LinearOp C  = getBlock(1,1,A);
 
    LinearOp D = B;
-   LinearOp G = isSymmetric_ ? Bt : transpose(D);
+   LinearOp G = isSymmetric_ ? Bt : adjoint(D);
 
    bool isStabilized = (not isZeroOp(C));
 
@@ -387,7 +387,7 @@ void InvLSCStrategy::computeInverses(const BlockedLinearOp & A,LSCPrecondState *
 
    // Compute the inverse of BHBt or just use BQBt
    ModifiableLinearOp invBHBt = state->getInverse("invBHBtmC");
-   if(hScaling_!=Teuchos::null) {
+   if(hScaling_!=Teuchos::null || not isSymmetric_) {
       // (re)build the inverse of BHBt 
       Teko_DEBUG_MSG("LSC::computeInverses Building inv(BHBtmC)",1);
       Teko_DEBUG_EXPR(invTimer.start(true));
