@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Source the env
-cd $HOME
-source .bash_profile
-
 # Set what ctest to use
 CTEST_EXE=/usr/local/bin/ctest
 
@@ -20,11 +16,21 @@ echo "DRIVER_SCRIPT_DIR = $DRIVER_SCRIPT_DIR"
 
 
 echo
-echo "Checking out updated Trilinos driver code: `date`"
+echo "Setting up thet environment ..."
+echo
+
+cd $DRIVER_SCRIPT_DIR
+source bash_profile
+echo $PATH
+which eg
+
+
+echo
+echo "Updating Trilinos driver code: `date`"
 echo
 
 cd $BASEDIR/Trilinos
-eg pull --rebase
+eg pull
 
 cd $BASEDIR
   

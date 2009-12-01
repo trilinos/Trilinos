@@ -1,0 +1,22 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+export PATH=$PATH:$HOME/bin:/usr/local/Adobe/Acrobat7.0/bin:/usr/local/bin
+
+unset USERNAME
+
+# Setup ssh agent for passwordless access to other machines
+export CVS_RSH=ssh
+./ssh-passkey-setup.sh
+
+# Setup for CUBIT
+export PATH=/usr/local/cubit-10.2:$PATH
+
+# Set my editor
+export EDITOR="xemacs -nw"
