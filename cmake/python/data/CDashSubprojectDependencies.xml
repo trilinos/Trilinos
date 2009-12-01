@@ -110,6 +110,8 @@
   </SubProject>
   <SubProject name="Isorropia">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ITO"/>
+    <Dependency name="Kokkos" type="TO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
