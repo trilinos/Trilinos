@@ -94,12 +94,14 @@ CellTopology::CellTopology( const CellTopology & right )
 
 CellTopology & CellTopology::operator = ( const CellTopology & right )
 {
+  if ( this != & right ) {
   { // Proper memory management of shared and allocated 'm_owned'
     deleteOwned();
     m_owned = right.m_owned ;
     if ( m_owned ) { ++( m_owned->m_count_ref ); }
   }
   m_cell = right.m_cell ;
+}
   return *this ;
 }
 
