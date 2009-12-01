@@ -27,6 +27,20 @@ ADD_OPTION_AND_DEFINE(
   ON
   )
 
+ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_CUDA_FLOAT
+  HAVE_KOKKOS_CUDA_FLOAT
+  "Enable float type for CUDA nodes."
+  ON
+)
+
+ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_CUDA_DOUBLE
+  HAVE_KOKKOS_CUDA_DOUBLE
+  "Enable double type for CUDA nodes."
+  OFF
+)
+
 #
 # C) Add the libraries, tests, and examples
 #

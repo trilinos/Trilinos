@@ -33,7 +33,12 @@
 #define KERNEL_PREFIX
 #endif
 
+#ifdef __CUDACC__
+#include <Teuchos_ScalarTraitsCUDA.hpp>
+#else
 #include <Teuchos_ScalarTraits.hpp>
+#endif
+
 
 namespace Kokkos {
 

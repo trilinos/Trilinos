@@ -121,6 +121,8 @@ namespace Kokkos {
       }
   };
 
+
+#ifdef HAVE_KOKKOS_CUDA_FLOAT
   template <>
   struct NodeGEMM<float,ThrustGPUNode> {
     public:
@@ -140,7 +142,9 @@ namespace Kokkos {
 #endif
       }
   };
+#endif
 
+#ifdef HAVE_KOKKOS_CUDA_DOUBLE
   template <>
   struct NodeGEMM<double,ThrustGPUNode> {
     public:
@@ -160,6 +164,8 @@ namespace Kokkos {
 #endif
       }
   };
+#endif
+
 #endif
 
   //! Class DefaultArithmetic, unimplemented

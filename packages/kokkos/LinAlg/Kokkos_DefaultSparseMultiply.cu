@@ -10,7 +10,15 @@
   template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::DefaultSparseTransposeMultiplyOp1<SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultSparseTransposeMultiplyOp1<SCALAR, ORDINAL, SCALAR, SCALAR> ); \
   template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::DefaultSparseTransposeMultiplyOp2<SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultSparseTransposeMultiplyOp2<SCALAR, ORDINAL, SCALAR, SCALAR> );
 
+#ifdef HAVE_KOKKOS_CUDA_FLOAT
 INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(int,float)
 typedef short int ShortInt; INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(ShortInt,float)
+#endif
+
+#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(int,double)
+typedef short int ShortInt; INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(ShortInt,double)
+#endif
+
 INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(int,int)
 typedef short int ShortInt; INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(ShortInt,int)

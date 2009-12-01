@@ -14,6 +14,7 @@
   template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::RecipOp      <SCALAR> >(int, int, Kokkos::RecipOp      <SCALAR> ); \
   template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::GESUMOp      <SCALAR> >(int, int, Kokkos::GESUMOp      <SCALAR> ); \
   template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::GESUMOp3     <SCALAR> >(int, int, Kokkos::GESUMOp3     <SCALAR> ); \
+  template void Kokkos::ThrustGPUNode::parallel_for< Kokkos::MVElemMultOp <SCALAR> >(int, int, Kokkos::MVElemMultOp <SCALAR> ); \
   template Kokkos::SumAbsOp    <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::SumAbsOp    <SCALAR> >(int, int, Kokkos::SumAbsOp    <SCALAR> ); \
   template Kokkos::WeightNormOp<SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::WeightNormOp<SCALAR> >(int, int, Kokkos::WeightNormOp<SCALAR> ); \
   template Kokkos::SumOp       <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::SumOp       <SCALAR> >(int, int, Kokkos::SumOp       <SCALAR> ); \
@@ -21,5 +22,10 @@
   template Kokkos::DotOp1      <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::DotOp1      <SCALAR> >(int, int, Kokkos::DotOp1      <SCALAR> ); \
   template Kokkos::DotOp2      <SCALAR>::ReductionType Kokkos::ThrustGPUNode::parallel_reduce< Kokkos::DotOp2      <SCALAR> >(int, int, Kokkos::DotOp2      <SCALAR> );
 
+#ifdef HAVE_KOKKOS_CUDA_FLOAT
 INSTANTIATE_MULTIVECTOR_SCALAR(float)
+#endif
+#ifdef HAVE_KOKKOS_CUDA_DOUBLE
+INSTANTIATE_MULTIVECTOR_SCALAR(double)
+#endif
 INSTANTIATE_MULTIVECTOR_SCALAR(int)
