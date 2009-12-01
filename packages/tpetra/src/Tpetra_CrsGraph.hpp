@@ -2535,7 +2535,7 @@ namespace Tpetra
       else {
         // storage is already allocated; just need to pack
         if (nodeNumEntries_ > 0) {
-          ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(Kokkos::WriteOnly,nlrs+1,pbuf_rowOffsets_);
+          ArrayRCP<size_t> view_offsets = node->template viewBufferNonConst(Kokkos::ReadWrite,nlrs+1,pbuf_rowOffsets_);
           ArrayRCP<LocalOrdinal> curptr = pbuf_lclInds1D_,
                                  oldptr = pbuf_lclInds1D_;
           size_t sofar = 0;
