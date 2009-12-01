@@ -15,3 +15,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
   ADD_SUBDIRECTORY(mtx)
 ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_TestLevelSolver)
+  ADD_SUBDIRECTORY(levelsolver)
+ENDIF()
