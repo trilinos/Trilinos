@@ -237,6 +237,9 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Do the tests or not (Note: must be true for coverage testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 
+  # How many tests ctest will spawn simultaneously
+  SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL 1 )
+
   # Turn off or change warnings-as-errors flag(s) (i.e. -Werror)
   SET_DEFAULT_AND_FROM_ENV( Trilinos_WARNINGS_AS_ERRORS_FLAGS "" )
   
@@ -573,13 +576,14 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
           # Run the tests that match the ${PACKAGE} name 
           MESSAGE("\nRunning test for package '${PACKAGE}' ...\n")
           CTEST_TEST(BUILD "${CTEST_BINARY_DIRECTORY}"
+            PARALLEL_LEVEL "${CTEST_PARALLEL_LEVEL}"
             INCLUDE "^${PACKAGE}_"
             )
           IF (CTEST_DO_SUBMIT)
             CTEST_SUBMIT( PARTS Test )
           ENDIF()
         ENDIF()
-  
+
         IF (CTEST_DO_COVERAGE_TESTING)
           MESSAGE("\nRunning coverage for package '${PACKAGE}' ...\n")
           CTEST_COVERAGE(
