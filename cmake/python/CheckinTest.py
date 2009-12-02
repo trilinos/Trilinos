@@ -51,11 +51,8 @@ def getCommonConfigFileName():
   return "COMMON.config"
 
 
-def getTestCaseName(serialOrMpi, buildType):
-  return serialOrMpi + "_" + buildType
-
-def getBuildSpecificConfigFileName(serialOrMpi, buildType):
-  return getTestCaseName(serialOrMpi, buildType) + ".config"
+def getBuildSpecificConfigFileName(buildTestCaseName):
+  return buildTestCaseName+".config"
 
 
 def getStatusOutputFileName():
@@ -216,6 +213,23 @@ def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
     outFile=os.path.join(baseTestDir, outFile),
     timeCmnd=True, returnTimeCmnd=True, throwExcept=False
     )
+
+
+class BuildTestCase:
+  def __init__(self, name, runBuildTestCase, isDefaultBuild, extraCMakeOptions, buildIdx):
+    self.name = name
+    self.runBuildTestCase = runBuildTestCase
+    self.isDefaultBuild = isDefaultBuild
+    self.extraCMakeOptions = extraCMakeOptions
+    self.buildIdx = buildIdx
+
+
+def setBuildTestCaseInList(buildTestCaseList_inout,
+  name, runBuildTestCase, isDefaultBuild, extraCMakeOptions \
+  ):
+  buildTestCaseList_inout.append(
+    BuildTestCase(name, runBuildTestCase, isDefaultBuild, extraCMakeOptions,
+      len(buildTestCaseList_inout)))
   
 
 def writeDefaultCommonConfigFile():
@@ -245,9 +259,11 @@ def writeDefaultCommonConfigFile():
     writeStrToFile(commonConfigFileName, commonConfigFileStr)
 
 
-def writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType):
+def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
 
-  buildSpecificConfigFileName = getBuildSpecificConfigFileName(serialOrMpi, buildType)
+  serialOrMpi = buildTestCaseName.split('_')[0]
+
+  buildSpecificConfigFileName = getBuildSpecificConfigFileName(buildTestCaseName)
 
   if os.path.exists(buildSpecificConfigFileName):
 
@@ -383,9 +399,6 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
     echoRunSysCmnd('chmod a+x '+configFileName)
 
 
-reCtestFailTotal = re.compile(r".+, ([0-9]+) tests failed out of ([0-9]+)")
-
-
 class Timings:
   def __init__(self):
     self.update = -1.0
@@ -413,6 +426,9 @@ def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
     stageStatusStr += "Not Performed"
   stageStatusStr += "\n"
   return stageStatusStr
+
+
+reCtestFailTotal = re.compile(r".+, ([0-9]+) tests failed out of ([0-9]+)")
 
 
 def analyzeResultsSendEmail(inOptions, buildDirName,
@@ -727,9 +743,7 @@ def getSummaryEmailSectionStr(inOptions):
   return summaryEmailSectionStr
 
   
-def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
-  timings ) \
-  :
+def runBuildTestCase(inOptions, buildTestCase, timings):
 
   success = True
 
@@ -737,45 +751,42 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
 
   baseTestDir = os.getcwd()
 
-  buildDirName = serialOrMpi+"_"+buildType
+  buildTestCaseName = buildTestCase.name
 
   if not performAnyActions(inOptions):
     print "\nNo other actions to perform!\n"
     return success
 
   print "\nCreating a new build directory if it does not already exist ..."
-  createDir(buildDirName)
+  createDir(buildTestCaseName)
 
-  absBuildDir = os.path.join(baseTestDir, buildDirName)
+  absBuildDir = os.path.join(baseTestDir, buildTestCaseName)
 
   echoChDir(absBuildDir)
 
   try:
 
     print ""
-    print "A) Get the CMake configure options ("+buildDirName+") ..."
+    print "A) Get the CMake configure options ("+buildTestCaseName+") ..."
     print ""
 
     # A.1) Set the base options
   
     cmakeBaseOptions = []
-    
-    if serialOrMpi == "MPI":
-      cmakeBaseOptions.append("-DTPL_ENABLE_MPI:BOOL=ON")
   
     cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
   
-    cmakeBaseOptions.extend(extraCMakeOptions)
+    cmakeBaseOptions.extend(buildTestCase.extraCMakeOptions)
 
     readAndAppendCMakeOptions(
       os.path.join("..", getCommonConfigFileName()),
       cmakeBaseOptions)
 
     readAndAppendCMakeOptions(
-      os.path.join("..", getBuildSpecificConfigFileName(serialOrMpi, buildType)),
+      os.path.join("..", getBuildSpecificConfigFileName(buildTestCaseName)),
       cmakeBaseOptions)
 
     print "\ncmakeBaseOptions:", cmakeBaseOptions
@@ -834,7 +845,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
     createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
   
     print ""
-    print "B) Do the configuration with CMake ("+buildDirName+") ..."
+    print "B) Do the configuration with CMake ("+buildTestCaseName+") ..."
     print ""
 
     configurePassed = False
@@ -870,7 +881,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
         print "\nFAILED: A current successful configure does *not* exist!\n"
   
     print ""
-    print "C) Do the build ("+buildDirName+") ..."
+    print "C) Do the build ("+buildTestCaseName+") ..."
     print ""
 
     buildPassed = False
@@ -908,7 +919,7 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
         print "\nFAILED: A current successful build does *not* exist!\n"
   
     print ""
-    print "D) Run the tests ("+buildDirName+") ..."
+    print "D) Run the tests ("+buildTestCaseName+") ..."
     print ""
 
     testPassed = False
@@ -946,12 +957,12 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
     printStackTrace()
 
   print ""
-  print "E) Analyze the overall results and send email notification ("+buildDirName+") ..."
+  print "E) Analyze the overall results and send email notification ("+buildTestCaseName+") ..."
   print ""
 
   if performAnyActions(inOptions):
 
-    result = analyzeResultsSendEmail(inOptions, buildDirName,
+    result = analyzeResultsSendEmail(inOptions, buildTestCaseName,
       enablePackagesList, cmakeOptions, startingTime, timings)
     if not result: succcess = False
 
@@ -962,23 +973,19 @@ def runTestCase(inOptions, serialOrMpi, buildType, extraCMakeOptions,
   return success
 
 
-def cleanBuildTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
-  serialOrMpi, buildType ) \
-  :
+def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, buildTestCaseName):
 
-  buildDirName = serialOrMpi+"_"+buildType
-
-  if runTestCaseBool and os.path.exists(buildDirName):
+  if runBuildTestCaseBool and os.path.exists(buildTestCaseName):
 
     if inOptions.wipeClean:
 
-      print "\nRemoving the existing build directory "+buildDirName+" (--wipe-clean) ..."
-      if os.path.exists(buildDirName):
-        echoRunSysCmnd("rm -rf "+buildDirName)
+      print "\nRemoving the existing build directory "+buildTestCaseName+" (--wipe-clean) ..."
+      if os.path.exists(buildTestCaseName):
+        echoRunSysCmnd("rm -rf "+buildTestCaseName)
 
     elif doRemoveOutputFiles(inOptions):
 
-      echoChDir(buildDirName)
+      echoChDir(buildTestCaseName)
       if inOptions.doConfigure or inOptions.doPull:
         removeIfExists(getConfigureOutputFileName())
         removeIfExists(getConfigureSuccessFileName())
@@ -993,23 +1000,22 @@ def cleanBuildTestCaseOutputFiles(runTestCaseBool, inOptions, baseTestDir, \
       echoChDir("..")
 
 
-def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buildType,
-  extraCMakeOptions, timings ) \
-  :
+def runBuildTestCaseDriver(inOptions, baseTestDir, buildTestCase, timings):
 
   success = True
 
+  buildTestCaseName = buildTestCase.name
+
   print "\n***"
-  print "*** Doing build and test of "+serialOrMpi+" "+buildType+" ..."
+  print "*** Doing build and test of "+buildTestCaseName+" ..."
   print "***\n"
   
-  if runTestCaseBool:
+  if buildTestCase.runBuildTestCase:
 
     try:
       echoChDir(baseTestDir)
-      writeDefaultBuildSpecificConfigFile(serialOrMpi, buildType)
-      result = runTestCase(inOptions, serialOrMpi, buildType,
-        extraCMakeOptions, timings.deepCopy())
+      writeDefaultBuildSpecificConfigFile(buildTestCaseName)
+      result = runBuildTestCase(inOptions, buildTestCase, timings.deepCopy())
       if not result: success = False
     except Exception, e:
       success = False
@@ -1017,48 +1023,47 @@ def runTestCaseDriver(runTestCaseBool, inOptions, baseTestDir, serialOrMpi, buil
 
   else:
 
-    print "\nSkipping "+serialOrMpi+" "+buildType+" build/test on request!\n"
+    print "\nSkipping "+buildTestCaseName+" build/test on request!\n"
 
   return success
 
-def checkBuildTestCaseStatus(runTestCaseBool, serialOrMpi, buildType, inOptions):
 
-  buildName = serialOrMpi+"_"+buildType
+def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestName, inOptions):
 
   statusMsg = None
 
-  if not runTestCaseBool:
+  if not runBuildTestCaseBool:
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = True
     statusMsg = \
-      "Test case "+buildName+" was not run! => Does not affect commit/push readiness!"
+      "Test case "+buildTestName+" was not run! => Does not affect commit/push readiness!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
 
-  if not os.path.exists(buildName) and not performAnyBuildTestActions(inOptions):
+  if not os.path.exists(buildTestName) and not performAnyBuildTestActions(inOptions):
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = False
-    statusMsg = "No configure, build, or test for "+buildName+" was requested!"
+    statusMsg = "No configure, build, or test for "+buildTestName+" was requested!"
     return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
 
-  if not os.path.exists(buildName):
+  if not os.path.exists(buildTestName):
     buildTestCaseActionsPass = False
     buildTestCaseOkayToCommit = False
-    statusMsg = "The directory "+buildName+" does not exist!"
+    statusMsg = "The directory "+buildTestName+" does not exist!"
 
-  emailsuccessFileName = buildName+"/"+getEmailSuccessFileName()
+  emailsuccessFileName = buildTestName+"/"+getEmailSuccessFileName()
   if os.path.exists(emailsuccessFileName):
     buildTestCaseActionsPass = True
   else:
     buildTestCaseActionsPass = False
 
-  testSuccessFileName = buildName+"/"+getTestSuccessFileName()
+  testSuccessFileName = buildTestName+"/"+getTestSuccessFileName()
   if os.path.exists(testSuccessFileName):
     buildTestCaseOkayToCommit = True
   else:
     buildTestCaseOkayToCommit = False
 
   if not statusMsg:
-    statusMsg = getTestCaseSummaryLine(buildName)
+    statusMsg = getTestCaseSummaryLine(buildTestName)
 
   return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
 
@@ -1225,8 +1230,32 @@ def checkinTest(inOptions):
 
   subjectLine = None
 
-  try:
+  # Set up build/test cases array
 
+  buildTestCaseList = []
+
+  setBuildTestCaseInList( buildTestCaseList,
+    "MPI_DEBUG", inOptions.withMpiDebug, True,
+    [
+      "-DTPL_ENABLE_MPI:BOOL=ON",
+      "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
+      "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
+      "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
+      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+    ]
+    )
+
+  setBuildTestCaseInList( buildTestCaseList,
+    "SERIAL_RELEASE", inOptions.withSerialRelease, True,
+    [
+      "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
+      "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
+      "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
+      "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
+    ]
+    )
+  
+  try:
 
     print "\n***"
     print "*** 1) Clean old output files ..."
@@ -1249,12 +1278,9 @@ def checkinTest(inOptions):
     removeIfExists(getFinalPullOutputFileName())
     removeIfExists(getModifiedFilesOutputFileName())
 
-    cleanBuildTestCaseOutputFiles(inOptions.withMpiDebug, inOptions, baseTestDir,
-      "MPI", "DEBUG" )
-
-    cleanBuildTestCaseOutputFiles(inOptions.withSerialRelease, inOptions, baseTestDir,
-      "SERIAL", "RELEASE" )
-
+    for buildTestCase in buildTestCaseList:
+      cleanBuildTestCaseOutputFiles(
+        buildTestCase.runBuildTestCase, inOptions, baseTestDir, buildTestCase.name)
 
     print "\n***"
     print "*** 2) Commit changes before pulling updates to merge in ..."
@@ -1466,31 +1492,15 @@ def checkinTest(inOptions):
       echoChDir(baseTestDir)
   
       writeDefaultCommonConfigFile()
-  
-      result = runTestCaseDriver(inOptions.withMpiDebug, inOptions, baseTestDir,
-        "MPI", "DEBUG",
-        [
-          "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-          "-DTrilinos_ENABLE_DEBUG:BOOL=ON",
-          "-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON",
-          "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-        ],
-        timings
-        )
-      if not result: success = False
-  
-      result = runTestCaseDriver(inOptions.withSerialRelease, inOptions, baseTestDir,
-        "SERIAL", "RELEASE",
-        [
-          "-DCMAKE_BUILD_TYPE:STRING=RELEASE",
-          "-DTrilinos_ENABLE_DEBUG:BOOL=OFF",
-          "-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF",
-          "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
-        ],
-        timings
-        )
-      if not result: success = False
 
+      for buildTestCase in buildTestCaseList:
+        result = runBuildTestCaseDriver(
+          inOptions,
+          baseTestDir,
+          buildTestCase,
+          timings
+          )
+        if not result: success = False
 
     print "\n***"
     print "*** 6) Determine overall success and commit/push readiness (and backout commit if failed) ..."
@@ -1511,16 +1521,13 @@ def checkinTest(inOptions):
       commitEmailBodyExtra += \
         "\nBuild test results:" \
         "\n-------------------\n"
-      buildTestCaseList = [
-        [inOptions.withMpiDebug, "MPI", "DEBUG"] ,
-        [inOptions.withSerialRelease, "SERIAL", "RELEASE"]
-        ]
       for i in range(len(buildTestCaseList)):
         buildTestCase = buildTestCaseList[i]
+        buildTestName = buildTestCase.name
         (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg) = \
-          checkBuildTestCaseStatus(buildTestCase[0], buildTestCase[1], buildTestCase[2], inOptions)
+          checkBuildTestCaseStatus(buildTestCase.runBuildTestCase, buildTestName, inOptions)
         print "\n"+statusMsg
-        commitEmailBodyExtra += str(i)+") "+buildTestCase[1]+"_"+buildTestCase[2]+" => "+statusMsg
+        commitEmailBodyExtra += str(i)+") "+buildTestName+" => "+statusMsg
         if not buildTestCaseOkayToCommit:
           commitEmailBodyExtra += " => Not ready for final commit/push!"
         commitEmailBodyExtra += "\n"
