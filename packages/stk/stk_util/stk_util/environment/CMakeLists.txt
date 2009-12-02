@@ -38,7 +38,6 @@ ReportHandler.hpp
 RuntimeDoomed.hpp
 RuntimeMessage.hpp
 RuntimeWarning.hpp
-sierra_version.hpp
 WallTime.hpp
   )
 

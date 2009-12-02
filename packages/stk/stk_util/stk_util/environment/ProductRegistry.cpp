@@ -9,7 +9,6 @@
 
 #include <stk_util/environment/product_registry.h>
 #include <stk_util/environment/ProductRegistry.hpp>
-#include <stk_util/environment/sierra_version.hpp>
 
 namespace stk {
 
