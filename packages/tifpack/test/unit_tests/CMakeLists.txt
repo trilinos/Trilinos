@@ -25,6 +25,7 @@ Tifpack_UnitTestCreateOverlapGraph.cpp
 Tifpack_UnitTestOverlapGraph.cpp
 Tifpack_UnitTestParameters.cpp
 Tifpack_UnitTestIlukGraph.cpp
+Tifpack_UnitTestILUT.cpp
 Tifpack_UnitTestPointRelaxation.cpp
   )
 

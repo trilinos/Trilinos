@@ -38,23 +38,17 @@
 #include "Tifpack_Condest.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_IlukGraph.hpp"
-#include "Tpetra::CompObject.hpp"
-#include "Tpetra::MultiVector.hpp"
-#include "Tpetra::Vector.hpp"
-#include "Tpetra::CrsGraph.hpp"
-#include "Tpetra::CrsMatrix.hpp"
-#include "Tpetra::BlockMap.hpp"
-#include "Tpetra::Map.hpp"
-#include "Tpetra::Object.hpp"
-#include "Tpetra::Comm.hpp"
-#include "Tpetra::RowMatrix.hpp"
-#include "Tpetra::Time.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Map.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include "Teuchos_Time.hpp"
 
 #include "Tifpack_CondestType.hpp"
 #include "Teuchos_ParameterList.hpp"
-
-using Teuchos::RefCountPtr;
-using Teuchos::rcp;
 
 // Define this macro to see some timers for some of these functions
 #define ENABLE_TIFPACK_ILU_TEUCHOS_TIMERS
@@ -64,7 +58,7 @@ using Teuchos::rcp;
 #endif
 
 namespace Teuchos {
-	class ParameterList;
+  class ParameterList;
 }
 namespace Tifpack {
 	//! ILU: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix.
@@ -75,13 +69,13 @@ namespace Tifpack {
 	 \author Mike Heroux, SNL 1416.
 	 \date Last modified on 11-May-2009
 	 */    
-	template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal>	
-	class ILU: public Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal> {
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>	
+	class ILU: public Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 	
 public:
 	// @{ Constructors and destructors.
 	//! Constructor
-	ILU(Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal> * A);
+	ILU(Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> * A);
 	
 	//! Destructor
 	~ILU()
@@ -143,14 +137,14 @@ public:
 	
 	// @{ Mathematical functions.
 	// Applies the matrix to X, returns the result in Y.
-	int apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& X, 
-			  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& Y) const
+	int apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 	{
 		return(Multiply(false,X,Y));
 	}
 	
-	int multiply(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& X, 
-				 Tpetra::Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& Y) const;
+	int multiply(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+				 Tpetra::Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 	
 	//! Returns the result of a Tpetra::Operator inverse applied to an Tpetra::MultiVector X in Y.
 	/*! In this implementation, we use several existing attributes to determine how virtual
@@ -166,14 +160,14 @@ public:
 	 
 	 \return Integer error code, set to 0 if successful.
 	 */
-	int applyInverse(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& X, 
-					 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& Y) const;
+	int applyInverse(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+					 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 	
 	//! Computes the estimated condition number and returns the value.
 	double getCondest(const Tifpack_CondestType CT = Tifpack_Cheap, 
 					  const int MaxIters = 1550,
 					  const double Tol = 1e-9,
-					  Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>* Matrix_in = 0);
+					  Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix_in = 0);
 	
 	//! Returns the computed estimated condition number, or -1.0 if not computed.
 	double getCondest() const
@@ -185,13 +179,13 @@ public:
 	// @{ Query methods
 	
 	//! Returns the address of the L factor associated with this factored matrix.
-	const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> & getL() const {return(*L_);};
+	const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getL() const {return(*L_);};
 	
 	//! Returns the address of the D factor associated with this factored matrix.
-	const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal> & getD() const {return(*D_);};
+	const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getD() const {return(*D_);};
 	
 	//! Returns the address of the L factor associated with this factored matrix.
-	const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> & getU() const {return(*U_);};
+	const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getU() const {return(*U_);};
 	
 	//! Returns a character string describing the operator
 	const char* getLabel() const {return(Label_);}
@@ -213,13 +207,13 @@ public:
 	bool useTranspose() const {return(UseTranspose_);};
 	
 	//! Returns the Tpetra::Map object associated with the domain of this operator.
-	const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal> & getOperatorDomainMap() const {return(U_->OperatorDomainMap());};
+	const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getOperatorDomainMap() const {return(U_->OperatorDomainMap());};
 	
 	//! Returns the Tpetra::Map object associated with the range of this operator.
-	const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal> & getOperatorRangeMap() const{return(L_->OperatorRangeMap());};
+	const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & getOperatorRangeMap() const{return(L_->OperatorRangeMap());};
 	
 	//! Returns a reference to the matrix to be preconditioned.
-	const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>& getUserMatrix() const
+	const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& getUserMatrix() const
 	{ 
 		return(*A_);
 	}
@@ -304,11 +298,11 @@ private:
 	 
 	 \return Integer error code, set to 0 if successful.
 	 */
-	void solve(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& X, 
-			   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>& Y) const;
+	void solve(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 	
 	void computeSetup();
-	void initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal> & A, int MaxNumEntries);
+	void initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, int MaxNumEntries);
 	
 	//! Returns the level of fill.
 	int getLevelOfFill() const {return levelOfFill_;}
@@ -356,7 +350,7 @@ private:
 	const Tifpack_IlukGraph & Graph() const {return(*Graph_);};
 	
 	//! Returns a reference to the matrix.
-	Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>& Matrix()
+	Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Matrix()
 	{
 		return(*A_);
 	}
@@ -365,22 +359,22 @@ private:
 	// @{ Internal data
 	
 	//! Pointer to the Tpetra::RowMatrix to factorize
-	Teuchos::RefCountPtr<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>> A_;
-	Teuchos::RefCountPtr<Tifpack_IlukGraph<LocalOrdinal,GlobalOrdinal>> Graph_;
-	Teuchos::RefCountPtr<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal>> CrsGraph_;
-	Teuchos::RefCountPtr<Tpetra::Map<LocalOrdinal,GlobalOrdinal>> IlukRowMap_;
-	Teuchos::RefCountPtr<Tpetra::Map<LocalOrdinal,GlobalOrdinal>> IlukDomainMap_;
-	Teuchos::RefCountPtr<Tpetra::Map<LocalOrdinal,GlobalOrdinal>> IlukRangeMap_;
-	const Tpetra::Map<LocalOrdinal,GlobalOrdinal> * U_DomainMap_;
-	const Tpetra::Map<LocalOrdinal,GlobalOrdinal> * L_RangeMap_;
+	Teuchos::RCP<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> A_;
+	Teuchos::RCP<Tifpack_IlukGraph<LocalOrdinal,GlobalOrdinal,Node>> Graph_;
+	Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>> CrsGraph_;
+	Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> IlukRowMap_;
+	Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> IlukDomainMap_;
+	Teuchos::RCP<Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> IlukRangeMap_;
+	const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> * U_DomainMap_;
+	const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> * L_RangeMap_;
 	//! Contains the L factors
-	Teuchos::RefCountPtr<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>> L_;
+	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> L_;
 	//! Contains the U factors.
-	Teuchos::RefCountPtr<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>> U_;
-	Teuchos::RefCountPtr<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal>> L_Graph_;
-	Teuchos::RefCountPtr<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal>> U_Graph_;
+	Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>> U_;
+	Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>> L_Graph_;
+	Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>> U_Graph_;
 	//! Diagonal of factors
-	Teuchos::RefCountPtr<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal>> D_;
+	Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>> D_;
 	bool useTranspose_;
 	
 	int numMyDiagonals_;
@@ -427,7 +421,7 @@ private:
 ////////////////////////////////////////
 
 //==============================================================================
-ILU::ILU(Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>* Matrix_in) :
+ILU::ILU(Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix_in) :
 A_(rcp(Matrix_in,false)),
 useTranspose_(false),
 numMyDiagonals_(Teuchos::OrdinalTraits<LocalOrdinal>::zero()),
@@ -485,9 +479,9 @@ void ILU::computeSetup() {
 	LocalOrdinal izero = LOT::zero();
 	Scalar zero = ST::zero();
 	
-	L_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>(Copy, Graph().getL_Graph()));
-	U_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>(Copy, Graph().getU_Graph()));
-	D_ = rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal>(Graph().getL_Graph().getRowMap()));
+	L_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Copy, Graph().getL_Graph()));
+	U_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Copy, Graph().getU_Graph()));
+	D_ = rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph().getL_Graph().getRowMap()));
 	TEST_FOR_EXCEPTION(((L_.get() == 0) || (U_.get() == 0) || (D_.get() == 0)), std::runtime_error,
 					   "Tifpack::ILU::computeSetup(): Local column value of "<< k << 
 					   " for user matrix at local row " << i << " and index " << j << " less than zero on node " <<
@@ -606,8 +600,6 @@ void ILU::computeSetup() {
 					   "Tifpack::ILU::computeSetup(): Number of nonzero diagonal values "<< numNonzeroDiags << 
 					   " for factorization is less than the number of rows " << getNumMyRows() << " in factor node " <<
 					   getGraph().getL_Graph().getRowMap().getComm()->getRank());	 // Diagonals are not right, warn user
-	
-	return;
 }
 
 //==========================================================================
@@ -930,7 +922,7 @@ int ILU::ApplyInverse(const Tpetra::MultiVector& X,
 	
 	// AztecOO gives X and Y pointing to the same memory location,
 	// need to create an auxiliary vector, Xcopy
-	Teuchos::RefCountPtr< const Tpetra::MultiVector > Xcopy;
+	Teuchos::RCP< const Tpetra::MultiVector > Xcopy;
 	if (X.Pointers()[0] == Y.Pointers()[0])
 		Xcopy = Teuchos::rcp( new Tpetra::MultiVector(X) );
 	else

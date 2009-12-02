@@ -33,7 +33,7 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_IlukGraph.hpp"
-#include "Tpetra_Operator.hpp"
+#include "Tifpack_Preconditioner.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -189,7 +189,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+class CrsRiluk: public virtual Tpetra::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
       
   // Give ostream << function some access to private and protected data/functions.
 
@@ -205,7 +205,7 @@ class CrsRiluk: public virtual Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdina
   CrsRiluk(const Teuchos::RCP<const Tifpack::IlukGraph<LocalOrdinal,GlobalOrdinal,Node> >& Graph_in);
   
   //! Copy constructor.
-  CrsRiluk(const Tifpack::CrsRiluk<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Matrix);
+  CrsRiluk(const Tifpack::CrsRiluk<Scalar,LocalOrdinal,GlobalOrdinal,Node> & src);
 
   //! Tifpack_CrsRiluk Destructor
   virtual ~CrsRiluk();

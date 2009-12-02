@@ -32,6 +32,11 @@
 
 #include <Tifpack_config.h>
 
+/* sign function stolen from epetra. Perhaps this will need to
+ be a template function which uses Teuchos::ScalarTraits...
+*/
+#define TIFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)
+
 #ifdef HAVE_TIFPACK_MPI
 
 #endif
