@@ -288,3 +288,4 @@ LinProbMgr_EpetraBasic::get_solution_vector()
 
 //HAVE_FEI_EPETRA
 #endif
+
