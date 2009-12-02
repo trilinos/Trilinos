@@ -37,10 +37,9 @@
 
 namespace Tifpack {
 
-enum PrecType {
- POINT_RELAXATION,
- ILUT
-};
+/** \brief Return true if the specified precondtioner type supports
+ * unsymmetric matrices. */
+bool supportsUnsymmetric(const std::string& prec_type);
 
 //! Tifpack::Factory a factory class to create Tifpack preconditioners.
 /*!
@@ -124,33 +123,6 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 class Factory {
 public:
 
-  static void getPrecTypes(std::vector<Tifpack::PrecTypes>& prec_types);
-
-  static void getPrecTypeNames(std::vector<std::string>& prec_type_names);
-
-  /** \brief Return true if the specified precondtioner type supports
-   * unsymmetric matrices. */
-  static bool supportsUnsymmetric(Tifpack::PrecTypes prec_type);
-
-  /** \brief Function that gives the string name for preconditioner given its
-   * enumeration value. */
-  static const char* toString(Tifpack::PrecType prec_type);
-
-  /** \brief Creates an instance of Tifpack::Preconditioner given the enum value
-   * of the preconditioner type (can not fail, no bad input possible).
-   *
-   * \param PrecType (In) - Enum value of preconditioner type to be created. 
-   *
-   * \param Matrix (In) - Matrix used to define the preconditioner
-   *
-   * \param overlap (In) - specified overlap, defaulted to 0.
-   */
-  static
-  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Create(Tifpack::PrecType prec_type,
-         const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-         const int overlap = 0);
-
   /** \brief Creates an instance of Tifpack_Preconditioner given the string
    * name of the preconditioner type (throws exception if given unrecognized name).
    *
@@ -167,7 +139,7 @@ public:
    */
   static
   Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  Create(const std::string& PrecType,
+  Create(const std::string& prec_type,
          const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
          const int overlap = 0);
 
@@ -187,217 +159,30 @@ public:
 /////////////////////////////////////////////
 /////////////////////////////////////////////
 
-//==============================================================================
-const Tifpack::EPrecType Tifpack::precTypeValues[Tifpack::numPrecTypes] =
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Create(const std::string& prec_type,
+         const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
+         const int /* overlap */)
 {
-  POINT_RELAXATION
-  ,POINT_RELAXATION_STAND_ALONE
-  ,BLOCK_RELAXATION
-  ,BLOCK_RELAXATION_STAND_ALONE
-  ,BLOCK_RELAXATION_STAND_ALONE_ILU
-#ifdef HAVE_TIFPACK_AMESOS
-  ,BLOCK_RELAXATION_STAND_ALONE_AMESOS
-  ,BLOCK_RELAXATION_AMESOS
-  ,AMESOS
-  ,AMESOS_STAND_ALONE
-#endif // HAVE_TIFPACK_AMESOS
-  ,IC
-  ,IC_STAND_ALONE
-  ,ICT
-  ,ICT_STAND_ALONE
-  ,ILU
-  ,ILU_STAND_ALONE
-  ,ILUT
-  ,ILUT_STAND_ALONE
-#ifdef HAVE_TIFPACK_SPARSKIT
-  ,SPARSKIT
-#endif // HAVE_TIFPACK_SPARSKIT
-  ,CHEBYSHEV
-};
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec;
 
-//==============================================================================
-const char* Tifpack::precTypeNames[Tifpack::numPrecTypes] =
-{
-  "point relaxation"
-  ,"point relaxation stand-alone"
-  ,"block relaxation"
-  ,"block relaxation stand-alone"
-  ,"block relaxation stand-alone (ILU)"
-#ifdef HAVE_TIFPACK_AMESOS
-  ,"block relaxation stand-alone (Amesos)"
-  ,"block relaxation (Amesos)"
-  ,"Amesos"
-  ,"Amesos stand-alone"
-#endif
-  ,"IC"
-  ,"IC stand-alone"
-  ,"ICT"
-  ,"ICT stand-alone"
-  ,"ILU"
-  ,"ILU stand-alone"
-  ,"ILUT"
-  ,"ILUT stand-alone"
-#ifdef HAVE_TIFPACK_SPARSKIT
-  ,"SPARSKIT"
-#endif
-  ,"Chebyshev"
-};
-
-//==============================================================================
-const bool Tifpack::supportsUnsymmetric[Tifpack::numPrecTypes] =
-{
-  true // point relaxation
-  ,true // point relaxation stand-alone
-  ,true // block relaxation
-  ,true // block relaxation stand-alone
-  ,true // block relaxation stand-alone (ILU)
-#ifdef HAVE_TIFPACK_AMESOS
-  ,true // block relaxation stand-alone (Amesos)
-  ,true // block relaxation (Amesos)
-  ,true // Amesos
-  ,true // Amesos stand-alone 
-#endif
-  ,false // IC
-  ,false // IC stand-alone
-  ,false // ICT
-  ,false // ICT stand-alone
-  ,true // ILU
-  ,true // ILU stand-alone
-  ,true // ILUT
-  ,true // ILUT stand-alone
-#ifdef HAVE_TIFPACK_SPARSKIT
-  ,true // SPARSKIT
-#endif
-  ,false // CHEBYSHEV
-};
-
-//==============================================================================
-Tifpack_Preconditioner* Tifpack::Create(EPrecType PrecType,
-                                      Tpetra_RowMatrix* Matrix,
-                                      const int Overlap)
-{
-  switch(PrecType) {
-    case POINT_RELAXATION:
-      return(new Tifpack_AdditiveSchwarz<Tifpack_PointRelaxation>(Matrix, Overlap));
-    case POINT_RELAXATION_STAND_ALONE:
-      return(new Tifpack_PointRelaxation(Matrix));
-    case BLOCK_RELAXATION:
-      return(new Tifpack_AdditiveSchwarz<
-             Tifpack_BlockRelaxation<Tifpack_DenseContainer> >(Matrix,Overlap));
-    case BLOCK_RELAXATION_STAND_ALONE:
-      return(new Tifpack_BlockRelaxation<Tifpack_DenseContainer>(Matrix));
-    case BLOCK_RELAXATION_STAND_ALONE_ILU:
-      return(new Tifpack_BlockRelaxation<Tifpack_SparseContainer<Tifpack_ILU> >(Matrix));
-#ifdef HAVE_TIFPACK_AMESOS
-    case BLOCK_RELAXATION_STAND_ALONE_AMESOS:
-      return(new Tifpack_BlockRelaxation<Tifpack_SparseContainer<Tifpack_Amesos> >(Matrix));
-    case BLOCK_RELAXATION_AMESOS:
-      return(new Tifpack_AdditiveSchwarz<
-             Tifpack_BlockRelaxation<Tifpack_SparseContainer<Tifpack_Amesos> > >(Matrix,Overlap));
-    case AMESOS:
-      return(new Tifpack_AdditiveSchwarz<Tifpack_Amesos>(Matrix,Overlap));
-    case AMESOS_STAND_ALONE:
-      return(new Tifpack_Amesos(Matrix));
-#endif
-    case IC:
-      return(new Tifpack_AdditiveSchwarz<Tifpack_IC>(Matrix,Overlap));
-    case IC_STAND_ALONE:
-      return(new Tifpack_IC(Matrix));
-    case ICT:
-      return(new Tifpack_AdditiveSchwarz<Tifpack_ICT>(Matrix,Overlap));
-    case ICT_STAND_ALONE:
-      return(new Tifpack_ICT(Matrix));
-    case ILU:
-      return(new Tifpack_AdditiveSchwarz<Tifpack_ILU>(Matrix,Overlap));
-    case ILU_STAND_ALONE:
-      return(new Tifpack_ILU(Matrix));
-    case ILUT:
-      return(new Tifpack_AdditiveSchwarz<Tifpack_ILUT>(Matrix,Overlap));
-    case ILUT_STAND_ALONE:
-      return(new Tifpack_ILUT(Matrix));
-#ifdef HAVE_TIFPACK_SPARSKIT
-    case SPARSKIT:
-      return(new Tifpack_SPARSKIT(Matrix));
-#endif
-    case CHEBYSHEV:
-      return(new Tifpack_Chebyshev(Matrix));
-    default:
-      TEST_FOR_EXCEPT(true);
-      // The only way to get here is if some code developer does a cast like
-      // (EPrecType)(anyNumber).  You can never get here by passing in a
-      // string value for the preconditioner!
-  } // end switch
-  return 0; // This will never ever be executed!
-}
-
-//==============================================================================
-Tifpack_Preconditioner* Tifpack::Create(const string PrecType,
-                                      Tpetra_RowMatrix* Matrix,
-                                      const int Overlap)
-{
-  try {
-    return Tifpack::Create(Teuchos::get<EPrecType>(::precTypeNameToIntMap,PrecType),Matrix,Overlap);
+  if (prec_type == "POINT_RELAXATION") {
+    prec = Teuchos::rcp(new Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix));
   }
-  catch( const Teuchos::StringToIntMap::DoesNotExist &excpt ) {
-    // The old implementation of this function just silently returned a NULL
-    // when a preconditiner type name was not recognized.  If you like this
-    // behavior then you should use this function.  If you do not like this
-    // behavior, then consider using the Tifpack/Thyra adapter
-    // Thyra::TifpackPreconditionerFactory or better yet the Stratimikos
-    // wrapper class Stratimikos::DefaultLinearSolverBuilder.
+  else if (prec_type == "ILUT") {
+    prec = Teuchos::rcp(new Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix));
   }
-  return 0;
+  else {
+    std::ostringstream os;
+    os << "Tifpack::Factory::Create ERROR, invalid preconditioner type ("
+       << prec_type;
+    std::string str = os.str();
+    throw std::runtime_error(str);
+  }
+  return prec;
 }
 
-// ======================================================================
-int Tifpack::SetParameters(int argc, char* argv[],
-                          Teuchos::ParameterList& List, string& PrecType,
-                          int& Overlap)
-{
-  // THIS FUNCTION IS VERY INCOMPLETE...
+} //namespace Tifpack
 
-  Teuchos::CommandLineProcessor CLP;
-
-  // prec type
-  string ifp_prec_type = "ILU";
-  CLP.setOption("ifp-prec-type",&ifp_prec_type,"Preconditioner type");
-  // overlap among the processors
-  int ifp_overlap = 0;
-  CLP.setOption("ifp-overlap",&ifp_overlap,"Overlap among processors");
-  // relaxation type
-  string ifp_relax_type = "Jacobi";
-  CLP.setOption("ifp-relax-type",&ifp_relax_type,"Relaxation type");
-  // sweeps (for relax only)
-  int ifp_relax_sweeps = 1;
-  CLP.setOption("ifp-relax-sweeps",
-                &ifp_relax_sweeps,"Number of sweeps for relaxation");
-  // damping (for relax only)
-  double ifp_relax_damping = 1.0;
-  CLP.setOption("ifp-relax-damping",
-                &ifp_relax_damping,"Damping for relaxation");
-  // partitioner type (for block relaxation only)
-  string ifp_part_type = "greedy";
-  CLP.setOption("ifp-part-type",&ifp_part_type,"Partitioner type");
-  // number of local parts (for block relaxation only)
-  int ifp_part_local = 1;
-  CLP.setOption("ifp-part-local",&ifp_part_local,"number of local partitions");
-
-  // allow users to specify other options for other packages
-  CLP.recogniseAllOptions(false);
-  CLP.throwExceptions(false);
-  CLP.parse(argc,argv);
-
-  // I cannot really set those in the List, I pass them back to the user
-  PrecType = ifp_prec_type;
-  Overlap = ifp_overlap;
-
-  // set the list here
-  List.set("relaxation: type", ifp_relax_type);
-  List.set("relaxation: sweeps", ifp_relax_sweeps);
-  List.set("relaxation: damping factor", ifp_relax_damping);
-  List.set("partitioner: type", ifp_part_type);
-  List.set("partitioner: local parts", ifp_part_local);
-
-  return(0);
-}
 #endif

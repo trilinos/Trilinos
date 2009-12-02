@@ -36,6 +36,7 @@
 #include "Tifpack_DenseRow.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Parameters.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_RCP.hpp"

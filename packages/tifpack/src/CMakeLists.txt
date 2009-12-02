@@ -30,15 +30,18 @@ SET(HEADERS ${HEADERS}
   Tifpack_ConfigDefs.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
-  Tifpack_Version.hpp
+  Tifpack_DenseRow.hpp
+  Tifpack_ILUT.hpp
   Tifpack_IlukGraph.hpp
   Tifpack_Parameters.hpp
   Tifpack_PointRelaxation.hpp
   Tifpack_Preconditioner.hpp
+  Tifpack_ScalingType.hpp
   Tifpack_Version.hpp
   )
 
 SET(SOURCES ${SOURCES}
+  Tifpack_Factory.cpp
   Tifpack_Parameters.cpp
   )
 

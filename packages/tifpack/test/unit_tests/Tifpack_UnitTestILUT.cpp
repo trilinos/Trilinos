@@ -64,7 +64,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test0, Scalar, LocalOrdinal, Glob
 
   Teuchos::ParameterList params;
   params.set("fact: ilut level-of-fill", 1.0);
-  params.set("fact: drop tolerance", 1.0);
+  params.set("fact: drop tolerance", 0.0);
 
   TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
 
@@ -96,8 +96,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test0, Scalar, LocalOrdinal, Glob
   TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
+  std::string version = Tifpack::Version();
+  out << "Tifpack::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 5;
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
+  Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
+
+  Teuchos::ParameterList params;
+  params.set("fact: ilut level-of-fill", 6.0);
+  params.set("fact: drop tolerance", 0.0);
+
+  TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
+
+  prec.Initialize();
+  prec.Compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  crsmatrix->apply(x,y);
+  prec.applyInverse(y, x);
+
+  Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
+
+  //x should be full of 1's now.
+
+  Teuchos::ArrayRCP<Scalar> ones(num_rows_per_proc*2, 1);
+
+  TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
+}
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackILUT, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)

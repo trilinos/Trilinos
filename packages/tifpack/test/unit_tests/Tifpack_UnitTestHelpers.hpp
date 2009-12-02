@@ -104,7 +104,7 @@ Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > create_test_gra
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
 {
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 1/*diagonal matrix*/));
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 3/*tri-diagonal matrix*/));
 
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
@@ -135,6 +135,50 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
       coef[0] = 0;
       coef[1] = 2;
       coef[2] = 0;
+    }
+
+    crsmatrix->insertGlobalValues(g_row, col(), coef() );
+  }
+
+  crsmatrix->fillComplete();
+
+  return crsmatrix;
+}
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix2(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap)
+{
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 3/*tri-diagonal matrix*/));
+
+  Teuchos::Array<GlobalOrdinal> col(1);
+  Teuchos::Array<Scalar> coef(1);
+
+  for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
+    if (g_row == rowmap->getMinGlobalIndex()) {
+      col.resize(2);
+      coef.resize(2);
+      col[0] = g_row;
+      col[1] = g_row+1;
+      coef[0] = 2;
+      coef[1] = 0.1;
+    }
+    else if (g_row == rowmap->getMaxGlobalIndex()) {
+      col.resize(2);
+      coef.resize(2);
+      col[0] = g_row-1;
+      col[1] = g_row;
+      coef[0] = 0.1;
+      coef[1] = 2;
+    }
+    else {
+      col.resize(3);
+      coef.resize(3);
+      col[0] = g_row-1;
+      col[1] = g_row;
+      col[2] = g_row+1;
+      coef[0] = 0.1;
+      coef[1] = 2;
+      coef[2] = 0.1;
     }
 
     crsmatrix->insertGlobalValues(g_row, col(), coef() );

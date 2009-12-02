@@ -34,6 +34,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Operator.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tifpack_Condest.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Parameters.hpp"
