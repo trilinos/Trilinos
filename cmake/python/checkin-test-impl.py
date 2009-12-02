@@ -422,9 +422,9 @@ clp.add_option(
   +" in this script." )
 
 addOptionParserChoiceOption(
-  "--enable-all-packages", "enableAllPackages", ('default', 'on', 'off'), 0,
+  "--enable-all-packages", "enableAllPackages", ('auto', 'on', 'off'), 0,
   "Determine if all Trilinos packages are enabled 'on', or 'off', or let" \
-  +" other logic decide 'default'.  Setting to 'off' is appropriate when" \
+  +" other logic decide 'auto'.  Setting to 'off' is appropriate when" \
   +" the logic in this script determines that a global build file has changed" \
   +" but you know that you don't need to rebuild every Trilinos package for" \
   +" a reasonable test.  Setting --enable-packages effectively disables this" \
@@ -494,15 +494,16 @@ clp.add_option(
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(
-  "--force-commit", dest="forceCommit", action="store_true",
-  help="Force the local commit to stay even if there are build/test errors." \
+  "--force-commit-push", dest="forceCommitPush", action="store_true",
+  help="Force the local commit and/or push even if there are build/test errors." \
   +" WARNING: Only do this when you are 100% certain that the errors are not" \
-  +" caused by your code changes.  This only applies when --commit is specified" \
-  +" and this script is doing the commit.  When you commit yourself and don't" \
+  +" caused by your code changes.  This only applies when --commit or push are specified" \
+  +" and this script.  When you commit yourself and don't" \
   +" specify --commit (i.e. --no-commit), then the commit will not be backed out" \
-  +" and it is up to you to back-out the commit or deal with it in some other way.")
+  +" and it is up to you to back-out the commit or deal with it in some other way." \
+  +"  When doing a --push, the push will be allowed even if the build/tests failed." )
 clp.add_option(
-  "--no-force-commit", dest="forceCommit", action="store_false", default=False,
+  "--no-force-commit-push", dest="forceCommitPush", action="store_false", default=False,
   help="Do not force a local commit. [default]" )
 
 clp.add_option(
@@ -656,10 +657,10 @@ if options.withSerialRelease:
 else:
   print "  --without-serial-release \\" 
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
-if options.forceCommit:
-  print "  --force-commit \\"
+if options.forceCommitPush:
+  print "  --force-commit-push \\"
 else:
-  print "  --no-force-commit \\"
+  print "  --no-force-commit-push \\"
 if options.doCommitReadinessCheck:
   print "  --do-commit-readiness-check \\"
 else:

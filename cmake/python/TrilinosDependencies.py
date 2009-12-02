@@ -165,8 +165,16 @@ class TrilinosDependencies:
     return len(self.__packagesList)
 
 
+  def packageNameToID(self, packageName):
+    return self.__packagesNameToID.get(packageName, -1)
+
+
+  def getPackageByID(self, packageID):
+    return self.__packagesList[packageID]
+
+
   def getPackageByName(self, packageName):
-    return self.__packagesList[self.__packagesNameToID[packageName]]
+    return self.getPackageByID(self.__packagesNameToID[packageName])
 
 
   def getPackageByDir(self, packageDir):

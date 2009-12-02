@@ -9,7 +9,7 @@ import unittest
 
 class MockOptions:
   def __init__(self):
-    self.enableAllPackages = 'default'
+    self.enableAllPackages = 'auto'
 
 
 #
@@ -120,7 +120,7 @@ M	packages/thyra/CMakeLists.txt
     extractPackageEnablesFromChangeStatus(updateOutputStr, options,
       enablePackagesList, False)
 
-    self.assertEqual( options.enableAllPackages, 'default' )
+    self.assertEqual( options.enableAllPackages, 'auto' )
     self.assertEqual( enablePackagesList, [u'TrilinosFramework', u'NOX', u'Thyra'] )
 
 
@@ -348,19 +348,34 @@ def create_checkin_test_case_dir(testName, verbose=False):
 
 def assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
   assert(os.path.isfile(fileName))
-  for passRegex in regexStrList.split('\n'):
-    foundRegex = getCmndOutput("grep '"+passRegex+"' "+fileName, True, False)
+  for regexToFind in regexStrList.strip().split('\n'):
+    if regexToFind == "": continue
+    foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
     if verbose or not foundRegex:
-      print "\ncheckin_test::"+testName+": In '"+fileName+"' look for regex '"+passRegex+"' ...", 
+      print "\ncheckin_test::"+testName+": In '"+fileName+"' look for regex '"+regexToFind+"' ...", 
       print "'"+foundRegex+"'", 
       if foundRegex: print ": PASSED"
       else: print ": FAILED"
     testObject.assertNotEqual(foundRegex, "")
 
 
-# Unit test driver
+def assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose):
+  assert(os.path.isfile(fileName))
+  for regexToFind in regexStrList.strip().split('\n'):
+    if regexToFind == "": continue
+    foundRegex = getCmndOutput("grep '"+regexToFind+"' "+fileName, True, False)
+    if verbose or foundRegex:
+      print "\ncheckin_test::"+testName+": In '"+fileName \
+        +"' assert not exist regex '"+regexToFind+"' ... '"+foundRegex+"'", 
+      if foundRegex: print ": FAILED"
+      else: print ": PASSED"
+    testObject.assertEqual(foundRegex, "")
+
+
+# Main unit test driver
 def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
-  expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True \
+  expectPass, passRegexStrList, filePassRegexStrList=None, mustHaveCheckinTestOut=True, \
+  failRegexStrList=None, fileFailRegexStrList=None \
   ):
 
   scriptsDir = getScriptBaseDir()
@@ -419,22 +434,24 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
     else:
       outputFileToGrep = checkin_test_test_out
 
-    assertGrepFileForRegexStrList(testObject, testName, outputFileToGrep, passRegexStrList, verbose)
-      
-#    for passRegex in passRegexList:
-#      foundRegex = getCmndOutput("grep '"+passRegex+"' "+outputFileToGrep, True, False)
-#      if verbose or not foundRegex:
-#        print "\ncheckin_test::"+testName+": Look for regex '"+passRegex+"' ...", 
-#        print "'"+foundRegex+"'", 
-#        if foundRegex: print ": PASSED"
-#        else: print ": FAILED"
-#      testObject.assertNotEqual(foundRegex, "")
+    assertGrepFileForRegexStrList(testObject, testName, outputFileToGrep,
+      passRegexStrList, verbose)
+
+    if failRegexStrList:
+      assertNotGrepFileForRegexStrList(testObject, testName, outputFileToGrep,
+        failRegexStrList, verbose)
 
     # F) Grep a set of output files looking for given strings
+
     if filePassRegexStrList:
       for fileRegexGroup in filePassRegexStrList:
         (fileName, regexStrList) = fileRegexGroup
         assertGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
+
+    if fileFailRegexStrList:
+      for fileRegexGroup in fileFailRegexStrList:
+        (fileName, regexStrList) = fileRegexGroup
+        assertNotGrepFileForRegexStrList(testObject, testName, fileName, regexStrList, verbose)
 
     # G) Examine the final return code
 
@@ -476,11 +493,20 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     +g_expectedCommonOptionsSummary \
     +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
     +"=> A PUSH IS READY TO BE PERFORMED!\n" \
-    +"^READY TO PUSH: Trilinos:\n"
+    +"^READY TO PUSH: Trilinos:\n" \
+    ,
+    \
+    failRegexStrList = \
+    "DID PUSH: Trilinos\n"
     )
 
 
-def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexStrList):
+def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexStrList, \
+  fileFailRegexStrList=[], modifiedFilesStr="" \
+  ):
+
+  if not modifiedFilesStr:
+    modifiedFilesStr = "M\tpackages/teuchos/CMakeLists.txt"
 
   checkin_test_run_case(
     \
@@ -492,7 +518,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     +" " +optionsStr \
     ,
     \
-    g_cmndinterceptsDiffOnlyPasses \
+    "IT: eg diff --name-status.*; 0; '"+modifiedFilesStr+"'\n" \
     +g_cmndinterceptsConfigPasses \
     ,
     \
@@ -502,7 +528,23 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     +"^NOT READY TO PUSH\n" \
     ,
     filePassRegexStrList
+    ,
+    fileFailRegexStrList=fileFailRegexStrList
     )
+
+
+def checkin_test_configure_enables_test(testObject, testName, optionsStr, regexListStr, \
+  notRegexListStr="", modifiedFilesStr="" \
+  ):
+  checkin_test_configure_test(
+     testObject,
+     testName,
+     "--without-serial-release "+optionsStr,
+     [("MPI_DEBUG/do-configure", regexListStr)],
+     [("MPI_DEBUG/do-configure", notRegexListStr)],
+     modifiedFilesStr,
+     )
+  
 
 
 #
@@ -651,8 +693,9 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "=> A PUSH IS READY TO BE PERFORMED!\n" \
-      "^DID PUSH: Trilinos:\n"
+      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+      +"^DID PUSH: Trilinos:\n" \
+      
       )
 
 
@@ -756,7 +799,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
       " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      " --do-all --commit --force-commit --push",
+      " --do-all --commit --force-commit-push --push",
       \
       g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
@@ -780,7 +823,7 @@ class test_checkin_test(unittest.TestCase):
       +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"\*\*\* WARNING: The acceptance criteria for doing a commit/push has \*not\*\n" \
-      +"\*\*\* been met, but a commit/push is being forced anyway by --force-commit!\n" \
+      +"\*\*\* been met, but a commit/push is being forced anyway by --force-commit-push!\n" \
       +"DID FORCED PUSH: Trilinos:\n" \
       +"REQUESTED ACTIONS: PASSED\n"
       )
@@ -858,7 +901,7 @@ class test_checkin_test(unittest.TestCase):
 
 
   # NOTE: The setting of built-in cmake cache variables in do-configure[.base]
-  # fiels is tested in the unit test test_do_all_commit_push_pass(...)
+  # files is tested in the unit test test_do_all_commit_push_pass(...)
 
 
   def test_read_config_files_mpi_debug(self):
@@ -902,14 +945,129 @@ class test_checkin_test(unittest.TestCase):
        ),
       ]
       )
-      
-  # ToDo: Test setting --enable-packages
-  # ToDo: Test setting --disable-packages
-  # ToDo: Test setting --enable-packages and --disable-packages
-  # ToDo: Test setting --no-enable-fwd-packages
-  # ToDo: Test setting --enable-all-packages=auto (changed from 'default')
-  # ToDo: Test setting --enable-all-packages=off
-  # ToDo: Test setting --enable-all-packages=on
+
+
+  def test_auto_enable(self):
+    checkin_test_configure_enables_test(
+      \
+      self,
+      \
+      "auto_enable",
+      \
+      "", # Allow auto-enable of Teuchos!
+      \
+      "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+      )
+
+
+  def test_enable_packages(self):
+    checkin_test_configure_enables_test(
+      \
+      self,
+      \
+      "enable_packages",
+      \
+      "--enable-packages=TrilinosFramework,RTOp,Thyra",
+      \
+      "\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_RTOp:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_Thyra:BOOL=ON\n" \
+      ,
+      \
+      "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+      )
+    # Above, the --enable-packages option turns off the check of the modified
+    # files and set the enables manually.
+
+
+  def test_disable_packages(self):
+    checkin_test_configure_enables_test(
+      \
+      self,
+      \
+      "disable_packages",
+      \
+      "--disable-packages=Tpetra,Sundance",
+      \
+      "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_Tpetra:BOOL=OFF\n" \
+      +"\-DTrilinos_ENABLE_Sundance:BOOL=OFF\n" \
+      )
+    # Above: --disable-packages does not turn off auto-enable and therefore
+    # Teuchos is picked up.
+
+
+  def test_enable_disable_packages(self):
+    checkin_test_configure_enables_test(
+      \
+      self,
+      \
+      "enable_disable_packages",
+      \
+      "--enable-packages=TrilinosFramework,RTOp,Thyra" \
+      +" --disable-packages=Tpetra,Sundance",
+      \
+      "\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_RTOp:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_Thyra:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_Tpetra:BOOL=OFF\n" \
+      +"\-DTrilinos_ENABLE_Sundance:BOOL=OFF\n" \
+      ,
+      \
+      "\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n" \
+      )
+
+
+  def test_no_enable_fwd_packages(self):
+    checkin_test_configure_enables_test(
+      self,
+      "no_enable_fwd_packages",
+      "--no-enable-fwd-packages",
+      "\-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF\n" \
+      )
+
+
+  def test_enable_all_packages_auto_implicit(self):
+    checkin_test_configure_enables_test(
+      self,
+      "enable_all_packages_auto",
+      "", # --enable-all-packages=auto
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n",
+      modifiedFilesStr="M\tcmake/utils/AppendSet.cmake",
+      )
+
+
+  def test_enable_all_packages_auto(self):
+    checkin_test_configure_enables_test(
+      self,
+      "enable_all_packages_auto",
+      "--enable-all-packages=auto",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n",
+      modifiedFilesStr="M\tcmake/utils/AppendSet.cmake",
+      )
+
+
+  def test_enable_all_packages_on(self):
+    checkin_test_configure_enables_test(
+      self,
+      "enable_all_packages_on",
+      "--enable-all-packages=on",
+      "\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n" \
+      +"\-DTrilinos_ENABLE_Teuchos:BOOL=ON\n",
+      )
+
+
+  def test_enable_all_packages_off(self):
+    checkin_test_configure_enables_test(
+      self,
+      "enable_all_packages_auto",
+      "--enable-all-packages=off",
+      "\-DTrilinos_ENABLE_TrilinosFramework:BOOL=ON\n",
+      notRegexListStr="\-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON\n",
+      modifiedFilesStr="M\tcmake/utils/AppendSet.cmake",
+      )
 
 
   # C) Test partial actions short of running tests
@@ -1116,6 +1274,46 @@ class test_checkin_test(unittest.TestCase):
 
   #NOTE: I would also like to check the git verion but I can't becuase my
   #command intercept system can't hanlde more than one line of output.
+
+
+  def test_enable_packages_error(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "enable_packages_error",
+      \
+      "--enable-packages=TEuchos" \
+      ,
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "Error, invalid package name TEuchos in --enable-packages=TEuchos." \
+      "  The valid package names include: .*Teuchos, .*\n" \
+      )
+
+
+  def test_disable_packages_error(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "disable_packages_error",
+      \
+      "--disable-packages=TEuchos" \
+      ,
+      \
+      "" \
+      ,
+      \
+      False,
+      \
+      "Error, invalid package name TEuchos in --disable-packages=TEuchos." \
+      "  The valid package names include: .*Teuchos, .*\n" \
+      )
 
 
   def test_do_all_local_do_all(self):

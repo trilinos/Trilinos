@@ -5,11 +5,7 @@
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
-#  (*) Put in checks for the names of Trilinos packages from --enable-packages
-#  and --disable-packages arguments.  Right now a mispelled package name would
-#  just be ignored.  Also, put in unit tests for this.
-#
-#  (*) Implement --extra-builds option.
+#  (*) Implement --extra-builds option with unit tests.
 #
 #  (*) Implement check that -DTPL_ENABLE* is not specified in any of the
 #  standard configure files.  Also, make sure that there are no
@@ -26,23 +22,6 @@
 #  run with:
 #
 #    --execute-on-pass="ssh -q godel 'checkin-test-godel.sh --do-all --extra-pull-from=... 2>&1 > /dev/null' &"
-#
-#  (*) Implement checking and control for enabling TrilinosFramework tests or
-#  not depending on if anything under cmake/ or packages/teuchos/test/CTestxxx
-#  is modified or not, except if TrilinosPackages.cmake and TrilinosTPLs.cmake
-#  is specified.  Also, implement Teuchos in this case.
-#
-#  (*) Make this work automatically on branches too.  It should pull and push
-#  to 'origin' always but the current branch should always be used.  Change
-#  --extra-pull-from to require the repository and branch.
-#
-#  (*) Once everyone is using the checkin-test.py script:
-#
-#  - Turn off framework tests by default and turn them in checkin
-#    testing ...
-#
-#  - Turn off generation of HTML/XML files by default and turn them on in
-#    checkin testing ...
 #
 
 #
@@ -62,6 +41,10 @@ import time
 # Set the official eg/git versions!
 g_officialEgVersion = "1.6.5.3"
 g_officialGitVersion = "1.6.5.2"
+
+
+# Read the Trilinos dependencies that will be used else where
+trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
 
 
 def getCommonConfigFileName():
@@ -190,6 +173,21 @@ def assertEgGitVersionHelper(returnedVersion, expectedVersion):
   if returnedVersion != expectedVersion:
     raise Exception("Error, the installed "+returnedVersion+" does not equal the official "\
       +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
+
+
+def assertPackageNames(optionName, packagesListStr):
+  if not packagesListStr:
+    return
+  for packageName in packagesListStr.split(','):
+    if trilinosDependencies.packageNameToID(packageName) == -1:
+      validPackagesListStr = ""
+      for i in range(trilinosDependencies.numPackages()):
+        if validPackagesListStr != "":
+          validPackagesListStr += ", "
+        validPackagesListStr += trilinosDependencies.getPackageByID(i).packageName
+      raise Exception("Error, invalid package name "+packageName+" in " \
+        +optionName+"="+packagesListStr \
+        +".  The valid package names include: "+validPackagesListStr)
   
 
 def assertEgGitVersions(inOptions):
@@ -341,15 +339,13 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   enablePackagesList_inout, verbose=True ) \
   :
 
-  trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
-
   modifiedFilesList = extractFilesListMatchingPattern(
     updateOutputStr.split('\n'), reModifedFiles )
 
   for modifiedFileFullPath in modifiedFilesList:
 
     if isGlobalBuildFile(modifiedFileFullPath):
-      if inOptions_inout.enableAllPackages == 'default':
+      if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
             "  => Enabling all Trilinos packages!"
@@ -1220,6 +1216,9 @@ def checkinTest(inOptions):
 
   assertEgGitVersions(inOptions)
 
+  assertPackageNames("--enable-packages", inOptions.enablePackages)
+  assertPackageNames("--disable-packages", inOptions.disablePackages)
+
   success = True
 
   timings = Timings()
@@ -1499,7 +1498,7 @@ def checkinTest(inOptions):
 
     okayToCommit = False
     okayToPush = False
-    forcedCommit = False
+    forcedCommitPush = False
 
     if inOptions.doCommitReadinessCheck or inOptions.doCommit:
 
@@ -1542,7 +1541,7 @@ def checkinTest(inOptions):
           "  => A COMMIT IS *NOT* OKAY TO BE PERFORMED!"
 
       # Back out commit if one was performed and buid/test failed
-      if not okayToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommit:
+      if not okayToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommitPush:
         print "\nNOTICE: Backing out the commit that was just done ...\n"
         try:
           echoRunSysCmnd("eg reset --soft HEAD^",
@@ -1555,16 +1554,16 @@ def checkinTest(inOptions):
       
       # Determine if we should do a forced commit/push
       if inOptions.doCommitReadinessCheck and not okayToCommit and commitPassed \
-        and inOptions.forceCommit \
+        and inOptions.forceCommitPush \
         :
-        forcedCommitMsg = \
+        forcedCommitPushMsg = \
           "\n***" \
           "\n*** WARNING: The acceptance criteria for doing a commit/push has *not*" \
-          "\n*** been met, but a commit/push is being forced anyway by --force-commit!" \
+          "\n*** been met, but a commit/push is being forced anyway by --force-commit-push!" \
           "\n***\n"
-        print forcedCommitMsg
+        print forcedCommitPushMsg
         okayToCommit = True
-        forcedCommit = True
+        forcedCommitPush = True
 
       # Determine if a push is ready to try or not
 
@@ -1680,8 +1679,8 @@ def checkinTest(inOptions):
           finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr(inOptions)
           finalCommitEmailBodyStr += commitEmailBodyExtra
           finalCommitEmailBodyStr += localCommitSummariesStr
-          if forcedCommit:
-            finalCommitEmailBodyStr += (forcedCommitMsg + "\n\n")
+          if forcedCommitPush:
+            finalCommitEmailBodyStr += (forcedCommitPushMsg + "\n\n")
           finalCommitEmailBodyStr += getSummaryEmailSectionStr(inOptions)
           writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
 
@@ -1769,15 +1768,15 @@ def checkinTest(inOptions):
         commitEmailBodyExtra += "\n\nFailed because push failed!" \
           " See '"+getPushOutputFileName()+"'\n\n"
         success = False
-      elif inOptions.doPush and pushPassed and forcedCommit:
+      elif inOptions.doPush and pushPassed and forcedCommitPush:
         subjectLine = "DID FORCED PUSH"
-        commitEmailBodyExtra += forcedCommitMsg
+        commitEmailBodyExtra += forcedCommitPushMsg
         success = True
-      elif inOptions.doCommit and commitPassed and forcedCommit:
+      elif inOptions.doCommit and commitPassed and forcedCommitPush:
         subjectLine = "DID FORCED COMMIT"
-        commitEmailBodyExtra += forcedCommitMsg
+        commitEmailBodyExtra += forcedCommitPushMsg
       elif inOptions.doPush:
-        if didPush and not forcedCommit:
+        if didPush and not forcedCommitPush:
           subjectLine = "DID PUSH"
         else:
           subjectLine = "ABORTED COMMIT/PUSH"
