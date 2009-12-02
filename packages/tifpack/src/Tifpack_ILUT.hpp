@@ -325,7 +325,7 @@ private:
   //! \c true if transpose has to be used.
   bool UseTranspose_;
   //! Number of local rows.
-  int NumMyRows_;
+  GlobalOrdinal NumMyRows_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
@@ -458,9 +458,9 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
   NumMyRows_ = A_->getNodeNumRows();
   size_t Length = A_->getNodeMaxNumRowEntries();
-  Teuchos::Array<LocalOrdinal>    RowIndicesL(Length);
+  Teuchos::Array<GlobalOrdinal>    RowIndicesL(Length);
   Teuchos::Array<Scalar> RowValuesL(Length);
-  Teuchos::Array<LocalOrdinal>    RowIndicesU(Length);
+  Teuchos::Array<GlobalOrdinal>    RowIndicesU(Length);
   Teuchos::Array<Scalar> RowValuesU(Length);
   bool distributed = (Comm().getSize() > 1) ? true : false;
 
@@ -473,7 +473,8 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
      "Tifpack::ILUT::Compute ERROR, failed to allocate L_ or U_");
 
   // insert first row in U_ and L_
-  A_->getLocalRowCopy(0, RowIndicesU(), RowValuesU(), RowNnzU);
+  LocalOrdinal lrow0 = 0;
+  A_->getGlobalRowCopy(lrow0, RowIndicesU(), RowValuesU(), RowNnzU);
 
   if (distributed)
   {
@@ -500,16 +501,13 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     }
   }
 
-  U_->insertGlobalValues(0,RowIndicesU(), RowValuesU());
+  GlobalOrdinal grow0 = 0;
+  U_->insertGlobalValues(grow0,RowIndicesU(), RowValuesU());
 
    // FIXME: DOES IT WORK IN PARALLEL ??
   RowValuesU[0] = 1.0;
   RowIndicesU[0] = 0;
-  L_->insertGlobalValues(0,RowIndicesU(0,1), RowValuesU(0,1));
-
-  int hash_size = 128;
-  while (hash_size < (int) 1.5 * A_->getNodeMaxNumRowEntries() * LevelOfFill())
-    hash_size *= 2;
+  L_->insertGlobalValues(grow0,RowIndicesU(0,1), RowValuesU(0,1));
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colmap =
     A_->getColMap();
@@ -527,12 +525,12 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
   // start factorization //
   // =================== //
 
-  double this_proc_flops = 0.0;
+  magnitudeType this_proc_flops = 0.0;
 
-  for (LocalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
+  for (GlobalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
   {
     // get row `row_i' of the matrix, store in U pointers
-    A_->getLocalRowCopy(row_i, RowIndicesU(), RowValuesU(), RowNnzU);
+    A_->getGlobalRowCopy(row_i, RowIndicesU(), RowValuesU(), RowNnzU);
 
     if (distributed)
     {
@@ -581,7 +579,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     // for the multipliers
     SingleRowL.reset();
 
-    int start_col = NumMyRows_;
+    GlobalOrdinal start_col = NumMyRows_;
     for (size_t i = 0 ; i < RowNnzU ; ++i)
       start_col = std::min(start_col, RowIndicesU[i]);
 

@@ -100,6 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test0, Scalar, LocalOrdinal, Glob
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackILUT, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
 
 }//namespace <anonymous>
 
