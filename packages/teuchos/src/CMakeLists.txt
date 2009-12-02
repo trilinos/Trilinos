@@ -114,6 +114,8 @@ APPEND_SET(HEADERS
   Teuchos_RefCountPtr.hpp
   Teuchos_RefCountPtrDecl.hpp
   Teuchos_ScalarTraits.hpp
+  Teuchos_ScalarTraitsDecl.hpp
+  Teuchos_ScalarTraitsCUDA.hpp
   Teuchos_SerialDenseMatrix.hpp
   Teuchos_SerialSymDenseMatrix.hpp
   Teuchos_SerialDenseVector.hpp
