@@ -33,20 +33,14 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_PointRelaxation.hpp"
-
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_StringToIntMap.hpp"
-
-namespace {
-
-const Teuchos::StringToIntMap
-precTypeNameToIntMap(
-  "parameter \"Prec Type\"", Tifpack::numPrecTypes, Tifpack::precTypeNames
-  );
-
-} // namespace <anonymous>
+#include "Tifpack_ILUT.hpp"
 
 namespace Tifpack {
+
+enum PrecType {
+ POINT_RELAXATION,
+ ILUT
+};
 
 //! Tifpack::Factory a factory class to create Tifpack preconditioners.
 /*!
@@ -126,65 +120,21 @@ std::cout << *Prec;
 
 \date Last updated on Dec-01-2009.
 */
-
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 class Factory {
 public:
 
-  /** \brief Enum for the type of preconditioner. */
-  enum EPrecType {
-    POINT_RELAXATION
-    ,POINT_RELAXATION_STAND_ALONE
-/*    ,BLOCK_RELAXATION
-    ,BLOCK_RELAXATION_STAND_ALONE
-    ,BLOCK_RELAXATION_STAND_ALONE_ILU
-#ifdef HAVE_TIFPACK_AMESOS
-    ,BLOCK_RELAXATION_STAND_ALONE_AMESOS
-    ,BLOCK_RELAXATION_AMESOS
-    ,AMESOS
-    ,AMESOS_STAND_ALONE
-#endif // HAVE_TIFPACK_AMESOS
-    ,IC
-    ,IC_STAND_ALONE
-    ,ICT
-    ,ICT_STAND_ALONE
-    ,ILU
-    ,ILU_STAND_ALONE
-    ,ILUT
-    ,ILUT_STAND_ALONE
-#ifdef HAVE_TIFPACK_SPARSKIT
-    ,SPARSKIT
-#endif // HAVE_TIFPACK_SPARSKIT
-    ,CHEBYSHEV
-*/  };
+  static void getPrecTypes(std::vector<Tifpack::PrecTypes>& prec_types);
 
-  /** \brief . */
-  static const int numPrecTypes =
-    2
-/*    +5
-#ifdef HAVE_TIFPACK_AMESOS
-    +4
-#endif
-    +8
-#ifdef HAVE_TIFPACK_SPARSKIT
-    +1
-#endif
-    +1
-*/    ;
+  static void getPrecTypeNames(std::vector<std::string>& prec_type_names);
 
-  /** \brief List of the preconditioner types as enum values . */
-  static const EPrecType precTypeValues[numPrecTypes];
-
-  /** \brief List of preconditioner types as string values. */
-  static const char* precTypeNames[numPrecTypes];
-
-  /** \brief List of bools that determines if the precondtioner type supports
+  /** \brief Return true if the specified precondtioner type supports
    * unsymmetric matrices. */
-  static const bool supportsUnsymmetric[numPrecTypes];
+  static bool supportsUnsymmetric(Tifpack::PrecTypes prec_type);
 
   /** \brief Function that gives the string name for preconditioner given its
-   * enumerication value. */
-  static const char* toString(const EPrecType precType)
-      { return precTypeNames[precType]; }
+   * enumeration value. */
+  static const char* toString(Tifpack::PrecType prec_type);
 
   /** \brief Creates an instance of Tifpack::Preconditioner given the enum value
    * of the preconditioner type (can not fail, no bad input possible).
@@ -195,12 +145,14 @@ public:
    *
    * \param overlap (In) - specified overlap, defaulted to 0.
    */
-  static Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Create(
-    EPrecType PrecType, const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix, const int overlap = 0
-    );
+  static
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Create(Tifpack::PrecType prec_type,
+         const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
+         const int overlap = 0);
 
   /** \brief Creates an instance of Tifpack_Preconditioner given the string
-   * name of the preconditioner type (can fail with bad input).
+   * name of the preconditioner type (throws exception if given unrecognized name).
    *
    * \param PrecType (In) - String name of preconditioner type to be created. 
    *
@@ -213,9 +165,11 @@ public:
    * that the client is responsible for calling <tt>delete</tt> on the
    * returned object once it is finished using it!
    */
-  Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Create(const string PrecType,
-				const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-				const int overlap = 0);
+  static
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Create(const std::string& PrecType,
+         const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
+         const int overlap = 0);
 
   /** \brief Sets the options in List from the command line.
    *
@@ -224,9 +178,9 @@ public:
    * function <tt>Teuchos::updateParametersFromXmlFile()</tt> or
    * <tt>Teuchos::updateParametersFromXmlStream()</tt>.
    */
-  int SetParameters(int argc, char* argv[],
-                    Teuchos::ParameterList& List, string& PrecType,
-                    int& Overlap);
+//  int SetParameters(int argc, char* argv[],
+//                    Teuchos::ParameterList& List, string& PrecType,
+//                    int& Overlap);
 
 };
 
