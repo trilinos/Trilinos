@@ -20,7 +20,8 @@ OBJS = tLSCStablePreconditionerFactory.o \
        tSIMPLEPreconditionerFactory.o \
        tExplicitOps.o \
        tLumping.o \
-       tAbsRowSum.o
+       tAbsRowSum.o \
+       tNeumannSeries.o
 
 PREC = $(OBJS:%.o=%._tmp)
 

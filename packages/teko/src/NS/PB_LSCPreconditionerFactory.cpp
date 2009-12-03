@@ -132,8 +132,8 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
-   if(pl.isParameter("Is Symmetric"))
-      isSymmetric_ = pl.get<bool>("Is Symmetric");
+   // if(pl.isParameter("Is Symmetric"))
+   //    isSymmetric_ = pl.get<bool>("Is Symmetric");
 
    std::string name = "Basic Inverse";
    if(pl.isParameter("Strategy Name"))

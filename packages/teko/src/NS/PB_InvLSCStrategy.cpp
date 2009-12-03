@@ -248,6 +248,9 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    if(H==Teuchos::null)
       state->BHBt_ = state->BQBt_;
    else {
+      RCP<Teuchos::Time> time = Teuchos::TimeMonitor::getNewTimer("InvLSCStrategy::initializeState Build BHBt");
+      Teuchos::TimeMonitor timer(*time);
+
       // compute BHBt
       state->BHBt_ = explicitMultiply(D,H,G,state->BHBt_);
    }
@@ -328,8 +331,12 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
    Teko::ModifiableLinearOp BHBtmC = state->getInverse("BHBtmC");
    if(H==Teuchos::null)
       BHBtmC = BQBtmC;
-   else
+   else {
       BHBtmC = explicitAdd(state->BHBt_,scale(-state->gamma_,stabMatrix),BHBtmC);
+
+      RCP<const Epetra_RowMatrix> row = rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*BHBtmC));
+      EpetraExt::RowMatrixToMatrixMarketFile("bhbtmc.mm",*row);
+   }
    state->addInverse("BHBtmC",BHBtmC);
 
    Teko_DEBUG_MSG_BEGIN(5)

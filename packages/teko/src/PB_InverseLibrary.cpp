@@ -2,12 +2,28 @@
 
 #include "PB_BlockPreconditionerFactory.hpp"
 
+#include "Teko_NeumannSeriesPreconditionerFactory.hpp"
+#include "Teuchos_AbstractFactoryStd.hpp"
+
 #include <algorithm>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
 namespace Teko {
+
+/** This function adds some additional preconditioners to Stratimikos.
+  * These are NOT block preconditioners.
+  */
+void addToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder)
+{
+   typedef Thyra::PreconditionerFactoryBase<double> PrecFactory;
+
+   RCP<const Teuchos::AbstractFactory<Thyra::PreconditionerFactoryBase<double> > > factory;
+     
+   factory = Teuchos::abstractFactoryStd<PrecFactory,Teko::NeumannSeriesPreconditionerFactory<double> >();
+   builder.setPreconditioningStrategyFactory(factory,"Neumann Series");
+}
 
 InverseLibrary::InverseLibrary()
 {
@@ -22,6 +38,7 @@ InverseLibrary::InverseLibrary()
    // set valid preconditioner factory name
    stratValidPrecond_.push_back("ML"); 
    stratValidPrecond_.push_back("Ifpack"); 
+   stratValidPrecond_.push_back("Neumann Series"); 
 
    // set valid Teko preconditioner factory names
    blockValidPrecond_.push_back("Block LU2x2"); 
@@ -187,6 +204,7 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       Teko_DEBUG_MSG_END();
 
       Stratimikos::DefaultLinearSolverBuilder strat;
+      addToStratimikosBuilder(strat);
       strat.setParameterList(plCopy);
 
       // try to build a preconditioner factory
@@ -223,6 +241,7 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       }
 
       Stratimikos::DefaultLinearSolverBuilder strat;
+      addToStratimikosBuilder(strat);
       strat.setParameterList(solveList);
 
       // try to build a solver factory
