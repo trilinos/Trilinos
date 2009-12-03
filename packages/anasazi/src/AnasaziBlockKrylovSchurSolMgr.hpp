@@ -498,19 +498,25 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         else if ( (bks_solver->getCurSubspaceDim() == bks_solver->getMaxSubspaceDim()) ||
                   (!_problem->isHermitian() && !_conjSplit && (bks_solver->getCurSubspaceDim()+1 == bks_solver->getMaxSubspaceDim())) ) {
   
-          Teuchos::TimeMonitor restimer(*_timerRestarting);
-  
-          if ( numRestarts >= _maxRestarts ) {
+          // Update the Schur form of the projected eigenproblem, then sort it.
+          if (!bks_solver->isSchurCurrent()) {
+            bks_solver->computeSchurForm( true );
+
+            // Check for convergence, just in case we wait for every restart to check
+            outputtest->checkStatus( &*bks_solver );  
+          }
+
+          // Don't bother to restart if we've converged or reached the maximum number of restarts
+          if ( numRestarts >= _maxRestarts || ordertest->getStatus() == Passed) {
             break; // break from while(1){bks_solver->iterate()}
           }
+
+          // Start restarting timer and increment counter 
+          Teuchos::TimeMonitor restimer(*_timerRestarting);
           numRestarts++;
   
           printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
   
-          // Update the Schur form of the projected eigenproblem, then sort it.
-          if (!bks_solver->isSchurCurrent())
-            bks_solver->computeSchurForm( true );
-
           // Get the most current Ritz values before we continue.
           _ritzValues = bks_solver->getRitzValues();
 
