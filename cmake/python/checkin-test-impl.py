@@ -65,27 +65,29 @@ commit/push:
   $ cd SOME_BASE_DIR/CHECKIN
   $ $TRILINOS_HOME/cmake/python/checkin-test.py \
       --make-options="-j4" --ctest-options="-j2" --ctest-time-out=180 \
-      --commit-msg-header-file=checkin_message \
-      --do-all [--commit] --push
+      [--commit -commit-msg-header-file=checkin_message] \
+      --do-all --push
 
   NOTE: The above will: a) (optionally) commit local changes, b) pull updates
   from the global repo, c) automatically enable the correct packages, d) build
   the code, e) run the tests, f) send you emails about what happened, g) do a
-  final pull to from the global repo, h) ammend the last local commit with the
-  test results, i) and finally push local commits to the global repo if
+  final pull to from the global repo, h) amend the last local commit with the
+  test results, and i) finally push local commits to the global repo if
   everything passes.
 
   NOTE: You must have installed the official versions of eg/git with the
   install-git.py scirpt in order to run this script.  If you don't, the script
   will die right away with an error message telling you what the problem is.
 
-  NOTE: You can do the local commit yourself first with eg/git before running
-  this script.  In that case, you must take off the --commit argument or the
-  script will fail if there are not uncommitted changes.
+  NOTE: You can do the local commit(s) yourself first with eg/git before
+  running this script.  In that case, you must take off the --commit argument
+  or the script will fail if there are not uncommitted changes.
 
   NOTE: If you do not specify the --commit argument, you must not have any
   uncommitted changes or the 'eg pull --rebase' command will fail and
-  therefore the whole script will fail.
+  therefore the whole script will fail.  To still run the script, you will
+  need to use 'eg stash' to stash away your unstaged/uncommitted changes
+  *before* running this script.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
   for the git commits invoked internally to work without you having to type a
@@ -106,20 +108,23 @@ Detailed Documentation:
 -----------------------
 
 There are two basic configurations that are tested by default: MPI_DEBUG and
-SERIAL_RELEASE.  Several configure options are varied in these two builds to
-try to catch as much conditional configuration behavior has possible.  If
-nothing else, please at least do the MPI_DEBUG build since that will cover the
-most code and best supports day-to-day development efforts.  However, if you
-are changing code that might break the serial build or break non-debug code,
-please allow the SERIAL_RELEASE build to be run as well.  Note that the
-MPI_DEBUG build actually uses -DCMAKE_BUILD_TYPE=RELEASE with
--DTrilinos_ENABLE_DEBUG=ON to use optimized compiler options but with runtime
-debug checking turned on.  This helps to make the tests run faster but still
-builds and runs the runtime debug checking code.  Therefore, you should not
-use the MPI_DEBUG configure options when building a debug version for yourself
-to do debugging.
+SERIAL_RELEASE.  Both of these configurations only test Primary Stable Code
+(see --extra-builds for testing other types of code).  Several configure
+options are varied in these two builds to try to catch as much conditional
+configuration behavior as possible.  If nothing else, please at least do the
+MPI_DEBUG build since that will cover the most code and best supports
+day-to-day development efforts.  However, if you are changing code that might
+break the serial build or break non-debug code, please allow the
+SERIAL_RELEASE build to be run as well.  Note that the MPI_DEBUG build
+actually uses -DCMAKE_BUILD_TYPE=RELEASE with -DTrilinos_ENABLE_DEBUG=ON to
+use optimized compiler options but with runtime debug checking turned on.
+This helps to make the tests run faster but still builds and runs the runtime
+debug checking code.  Therefore, you should not use the MPI_DEBUG configure
+options when building a debug version for yourself to do debugging.
 
 The following approximate steps are performed by this script:
+
+----------------------------------------------------------------------------
 
 1) [Optional] Do the local commit (done iff --commit is set)
 
@@ -160,7 +165,7 @@ testing performed.  (done if --append-test-results (default) is set.)
 
 5.c) Push the local commits to the global repo.
 
-END
+----------------------------------------------------------------------------
 
 The recommended way to use this script is to create a new base CHECKIN test
 directory apart from your standard build directories such as:
@@ -182,18 +187,30 @@ set of CMake variables that will get read in the files:
   SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
   SOME_BASE_DIR/CHECKIN/SERIAL_RELEASE.config
 
-Actually, skeletons of these files will automatically be written out with
-typical CMake cache variables (commented out) that you would need to set out.
-Any CMake cache variables listed in these files will be read into and passed
-on the configure line to 'cmake'.
+Actually, for built-in build/test cases, skeletons of these files will
+automatically be written out with typical CMake cache variables (commented
+out) that you would need to set out.  Any CMake cache variables listed in
+these files will be read into and passed on the configure line to 'cmake'.
+
+WARNING: Please do not add any more CMake case variables that what are needed
+to get the MPI_DEBUG and SERIAL_RELEASE builds to work.  Adding other
+enables/disables will make the builds non-standard and may result in not
+testing the standard builds.  The goal of these configuration files is to
+allow you to specify the minimum environment to find MPI, your compilers, and
+the required TPLs (e.g. BLAS, LAPACK, etc.).  If you need to fudge what
+packages are enabled, please use the script arguments --enable-packages,
+--disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages to
+control this, not the *.config files.
 
 WARNING: Please do not add any CMake cache variables in the *.config files
-that will alter what packages or TPLs are enabled or what tests are run.  The
-goal of these configuration files is to allow you to specify the minimum
-environment to find MPI, your compilers, and the required TPLs (e.g. BLAS,
-LAPACK, etc.).  If you need to fudge what packages are enabled, please use the
-script arguments --enable-packages, --disable-packages,
---no-enable-fwd-packages, and/or --enable-all-packages.
+that will alter what packages or TPLs are enabled or what tests are run.
+Actually, the script will not allow you to change TPL enables in these
+standard *.config files because to do so deviates from a consistent build
+configuration.
+
+NOTE: If you want to add extra build/test cases that do not conform to the
+standard build/test configurations described above, then you need to create
+extra builds with the --extra-builds option (see below).
 
 NOTE: Before running this script, you should first do an 'eg status' and 'eg
 diff --name-status origin..' and examine what files are changed to make sure
@@ -308,31 +325,59 @@ Common Use Cases (examples):
   to do a local commit and then pull to a remote machine for further testing
   and a push.
 
+(*) Adding extra build/test cases:
+
+  Often you will be working on Secondary Stable Code or Experimentatl Code and
+  want to include the testing of this in your pre-checkin testing along with
+  the standard MPI_DEBUG and SERIAL_RELEASE build/test cases which can only
+  include Primary Stable Code.  In this case you can run with:
+  
+    --extra-builds=<BUILD1>,<BUILD2>,... [other options]
+  
+  For example, if you have a build that enables the TPL CUDA for Tpetra you
+  would do:
+  
+    echo -DTPL_ENABLE_MPI:BOOL=ON > MPI_DEBUG_CUDA.config
+    echo -DTPL_ENABLE_CUDA:BOOL=ON >> MPI_DEBUG_CUDA.config
+  
+  and then run with:
+  
+    --enable-packages=Tpetra --extra-builds=MPI_DEBUG_CUDA --do-all
+  
+  This will do the standard MPI_DEBUG and SERIAL_RELEASE build/test cases
+  along with your non-standard MPI_DEBUG_CUDA build/test case.
+
+  NOTE: You can disable the default build/test cases with
+  --without-default-builds.  However, please only do this when you are not
+  going to push because we need at least one default build/test case to be
+  safe to push.
+
 (*) Performing a remote test/push:
 
-On your local development machine <mymachine>, do the local test/commit with:
-
-  --local-do-all --no-enable-fwd-packages [--commit --commit-msg-header-file=<???>]
-
-On your remote test machine's CHECKIN directory, do a full test/commit run:
-
-  --extra-pull-from='<mymachine>:/some/dir/to/your/trilinos/src master' \
-   --do-all --push
-
-NOTE: You can of course do the local commit yourself first and avoid the
---commit argument.
-
-NOTE: You can of course adjust the packages and/or build/test cases that get
-enabled on the different machines.
-
-NOTE: Once you invoke the checkin-test.py script on the remote test machine,
-you can start changing files again on your local development machine and just
-check your email to see what happens.
-
-NOTE: If something goes wrong on the remote test machine, you can either work
-on fixing the problem there or you can fix the problem on your local
-development machine and then do the process over again.
-
+  On your local development machine <mymachine>, do the local test/commit
+  with:
+  
+    --local-do-all --no-enable-fwd-packages [--commit --commit-msg-header-file=<???>]
+  
+  On your remote test machine's CHECKIN directory, do a full test/commit run:
+  
+    --extra-pull-from='<mymachine>:/some/dir/to/your/trilinos/src master' \
+     --do-all --push
+  
+  NOTE: You can of course do the local commit yourself first and avoid the
+  --commit argument.
+  
+  NOTE: You can of course adjust the packages and/or build/test cases that get
+  enabled on the different machines.
+  
+  NOTE: Once you invoke the checkin-test.py script on the remote test machine,
+  you can start changing files again on your local development machine and
+  just check your email to see what happens.
+  
+  NOTE: If something goes wrong on the remote test machine, you can either
+  work on fixing the problem there or you can fix the problem on your local
+  development machine and then do the process over again.
+  
 (*) Check commit readiness status:
 
   [no arguments]
@@ -473,18 +518,26 @@ clp.add_option(
   +" be the summary line that will be used for the commit." )
 
 clp.add_option(
-  "--with-mpi-debug", dest="withMpiDebug", action="store_true",
-  help="Do the mpi debug build. [default]" )
-clp.add_option(
   "--without-mpi-debug", dest="withMpiDebug", action="store_false",
   help="Skip the mpi debug build.", default=True )
 
 clp.add_option(
-  "--with-serial-release", dest="withSerialRelease", action="store_true",
-  help="Do the serial release build. [default]" )
-clp.add_option(
   "--without-serial-release", dest="withSerialRelease", action="store_false",
   help="Skip the serial release build.", default=True )
+
+clp.add_option(
+  "--without-default-builds", dest="withoutDefaultBuilds", action="store_true",
+  default=False,
+    help="Skip the default builds (same as --without-mpi-debug --without-serial-release)." \
+    +"  You would use option along with --extra-builds=BUILD1,BUILD2,... to run your own" \
+    +" local custom builds." )
+
+clp.add_option(
+  "--extra-builds", dest="extraBuilds", type="string", default="",
+  help="List of comma-separated extra build names.  For each of the buld names in" \
+  +" --extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
+  +" the local directory along side the COMMON.config file that defines the special" \
+  +" build options for the extra build." )
 
 clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
@@ -648,14 +701,12 @@ if options.showAllTests:
 else:
   print "  --no-show-all-tests \\"
 print "  --commit-msg-header-file='"+options.commitMsgHeaderFile+"' \\"
-if options.withMpiDebug:
-  print "  --with-mpi-debug \\"
-else:
+if not options.withMpiDebug:
   print "  --without-mpi-debug \\" 
-if options.withSerialRelease:
-  print "  --with-serial-release \\"
-else:
+if not options.withSerialRelease:
   print "  --without-serial-release \\" 
+if options.withoutDefaultBuilds:
+  print "  --without-default-builds \\" 
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
 if options.forceCommitPush:
   print "  --force-commit-push \\"

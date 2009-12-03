@@ -12,8 +12,7 @@
 EXTRA_ARGS=$@
 
 #
-# Set up some specific options that we will not want to change through the
-# command-line
+# Set up configuration files
 #
 
 echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
@@ -22,6 +21,34 @@ echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
 # to turn it off for now.  Plese don't do this in your scripts unless you
 # absolutely have to!
 echo "-DTrilinos_ENABLE_Sundance:BOOL=OFF" > SERIAL_RELEASE.config
+
+echo "
+-DTPL_ENABLE_Boost:BOOL=ON
+-DBoost_INCLUDE_DIRS:PATH=$HOME/PROJECTS/install/boost-1.40.0/include
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+-DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON
+-DTeuchos_ENABLE_FLOAT:BOOL=OFF
+-DTeuchos_ENABLE_COMPLEX:BOOL=OFF
+" > SERIAL_DEBUG_BOOST_TRACE.config
+
+echo "
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+-DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON
+-DTeuchos_ENABLE_FLOAT:BOOL=OFF
+-DTeuchos_ENABLE_COMPLEX:BOOL=OFF
+" > SERIAL_DEBUG_TRACE.config
+
+echo "
+-DTPL_ENABLE_Boost:BOOL=ON
+-DBoost_INCLUDE_DIRS:PATH=$HOME/PROJECTS/install/boost-1.40.0/include
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+-DTeuchos_ENABLE_FLOAT:BOOL=OFF
+-DTeuchos_ENABLE_COMPLEX:BOOL=OFF
+" > SERIAL_DEBUG_BOOST.config
+
 
 #
 # Run the standard checkin testing script with my specializations
@@ -34,6 +61,9 @@ echo "-DTrilinos_ENABLE_Sundance:BOOL=OFF" > SERIAL_RELEASE.config
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
 
+# Options to run with:
+#
+#  --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST
 
 #
 # NOTES:

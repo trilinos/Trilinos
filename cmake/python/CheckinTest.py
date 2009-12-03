@@ -170,6 +170,20 @@ def assertEgGitVersionHelper(returnedVersion, expectedVersion):
   if returnedVersion != expectedVersion:
     raise Exception("Error, the installed "+returnedVersion+" does not equal the official "\
       +expectedVersion+"!  To turn this check off, pass in --no-eg-git-version-check.")
+  
+
+def assertEgGitVersions(inOptions):
+
+  egWhich = getCmndOutput("which eg", True, False)
+  if egWhich == "" or re.match(".+no eg.+", egWhich):
+    raise Exception("Error, the eg command is not in your path! ("+egWhich+")")
+
+  egVersionOuput = getCmndOutput("eg --version", True, False)
+  egVersionsList = egVersionOuput.split('\n')
+
+  if inOptions.enableEgGitVersionCheck:
+    assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
+    assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
 
 
 def assertPackageNames(optionName, packagesListStr):
@@ -185,20 +199,16 @@ def assertPackageNames(optionName, packagesListStr):
       raise Exception("Error, invalid package name "+packageName+" in " \
         +optionName+"="+packagesListStr \
         +".  The valid package names include: "+validPackagesListStr)
-  
 
-def assertEgGitVersions(inOptions):
 
-  egWhich = getCmndOutput("which eg", True, False)
-  if egWhich == "" or re.match(".+no eg.+", egWhich):
-    raise Exception("Error, the eg command is not in your path! ("+egWhich+")")
-
-  egVersionOuput = getCmndOutput("eg --version", True, False)
-  egVersionsList = egVersionOuput.split('\n')
-
-  if inOptions.enableEgGitVersionCheck:
-    assertEgGitVersionHelper(egVersionsList[0], "eg version "+g_officialEgVersion)
-    assertEgGitVersionHelper(egVersionsList[1], "git version "+g_officialGitVersion)
+def assertExtraBuildConfigFiles(extraBuilds):
+  if not extraBuilds:
+    return
+  for extraBuild in extraBuilds.split(','):
+    extraBuildConfigFile = extraBuild+".config"
+    if not os.path.exists(extraBuildConfigFile):
+      raise Exception("Error, the extra build configuration file " \
+        +extraBuildConfigFile+" does not exit!")
 
 
 def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
@@ -301,7 +311,26 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
     writeStrToFile(buildSpecificConfigFileName, buildSpecificConfigFileStr)
 
 
-def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
+reTPlEnable = re.compile(r"-DTPL_ENABLE_.+")
+
+
+reTrilinosEnableOn = re.compile(r"-DTrilinos_ENABLE_[a-zA-Z]+.+=ON")
+
+
+def assertNoIllegalEnables(fileName, cmakeOption):
+  success = True
+  if reTPlEnable.match(cmakeOption):
+    print "    ERROR: Illegal TPL enable "+cmakeOption+" in "+fileName+"!"    
+    success = False
+  elif reTrilinosEnableOn.match(cmakeOption):
+    print "    ERROR: Illegal enable "+cmakeOption+" in "+fileName+"!"    
+    success = False
+  return success
+
+
+def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnablesBool):
+
+  success = True
 
   if not os.path.exists(fileName):
     return
@@ -312,8 +341,15 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout):
 
   for line in cmakeOptionsFile:
     if line[0] != '#':
-      print "  Appnding: "+line.strip()
-      cmakeOptions_inout.append(line.strip())
+      cmakeOption = line.strip()
+      if cmakeOption == "": continue
+      print "  Appending: "+cmakeOption
+      if assertNoIllegalEnablesBool:
+        if not assertNoIllegalEnables(fileName, cmakeOption):
+          success = False
+      cmakeOptions_inout.append(cmakeOption)
+
+  return success
 
 
 reModifedFiles = re.compile(r"^[MA]\t(.+)$")
@@ -436,7 +472,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   :
 
   print ""
-  print "1) Determine what passed and failed ..."
+  print "E.1) Determine what passed and failed ..."
   print ""
 
   success = False
@@ -557,7 +593,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
     print "\nRunning the tests was not performed!\n"
 
   print ""
-  print "2) Construct the email message ..."
+  print "E.2) Construct the email message ..."
   print ""
 
   # 2.a) Construct the subject line
@@ -601,6 +637,9 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
       subjectLine += ": configure failed"
       overallPassed = False
       selectedFinalStatus = True
+    else:
+      subjectLine += ": pre-configure failed"
+      overallPassed = False
       selectedFinalStatus = True
 
   if inOptions.doPull and not selectedFinalStatus:
@@ -675,7 +714,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
     echoRunSysCmnd("touch "+getEmailSuccessFileName())
 
   print ""
-  print "3) Send the email message ..."
+  print "E.3) Send the email message ..."
   print ""
 
   if inOptions.sendEmailTo:
@@ -733,13 +772,13 @@ def getTestCaseEmailSummary(testCaseName, testCaseNum):
   return summaryEmailSectionStr
 
 
-def getSummaryEmailSectionStr(inOptions):
+def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   summaryEmailSectionStr = ""
   if performAnyBuildTestActions(inOptions):
-    if inOptions.withMpiDebug:
-      summaryEmailSectionStr += getTestCaseEmailSummary("MPI_DEBUG", 0)
-    if inOptions.withSerialRelease:
-      summaryEmailSectionStr += getTestCaseEmailSummary("SERIAL_RELEASE", 1)
+    for buildTestCase in buildTestCaseList:
+      if buildTestCase.runBuildTestCase:
+        summaryEmailSectionStr += \
+          getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
 
   
@@ -770,6 +809,8 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
     print "A) Get the CMake configure options ("+buildTestCaseName+") ..."
     print ""
 
+    preConfigurePassed = True
+
     # A.1) Set the base options
   
     cmakeBaseOptions = []
@@ -781,13 +822,17 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
   
     cmakeBaseOptions.extend(buildTestCase.extraCMakeOptions)
 
-    readAndAppendCMakeOptions(
+    result = readAndAppendCMakeOptions(
       os.path.join("..", getCommonConfigFileName()),
-      cmakeBaseOptions)
+      cmakeBaseOptions,
+      True)
+    if not result: preConfigurePassed = False
 
-    readAndAppendCMakeOptions(
+    reuslt = readAndAppendCMakeOptions(
       os.path.join("..", getBuildSpecificConfigFileName(buildTestCaseName)),
-      cmakeBaseOptions)
+      cmakeBaseOptions,
+      buildTestCase.isDefaultBuild)
+    if not result: preConfigurePassed = False
 
     print "\ncmakeBaseOptions:", cmakeBaseOptions
 
@@ -795,62 +840,72 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
 
     cmakePkgOptions = []
     enablePackagesList = []
-  
-    if inOptions.enablePackages:
-      print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
-      enablePackagesList = inOptions.enablePackages.split(',')
-    else:
-      diffOutFileName = "../"+getModifiedFilesOutputFileName()
-      print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
-      if os.path.exists(diffOutFileName):
-        updateOutputStr = open(diffOutFileName, 'r').read()
-        extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
+
+    if preConfigurePassed:
+    
+      if inOptions.enablePackages:
+        print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
+        enablePackagesList = inOptions.enablePackages.split(',')
       else:
-        print "\nThe file "+diffOutFileName+" does not exist!\n"
-
-    for pkg in enablePackagesList:
-      cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
-
-    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+        diffOutFileName = "../"+getModifiedFilesOutputFileName()
+        print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
+        if os.path.exists(diffOutFileName):
+          updateOutputStr = open(diffOutFileName, 'r').read()
+          extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
+        else:
+          print "\nThe file "+diffOutFileName+" does not exist!\n"
   
-    if inOptions.enableAllPackages == 'on':
-      print "\nEnabling all packages on request ..."
-      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
+      for pkg in enablePackagesList:
+        cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
   
-    if inOptions.enableFwdPackages:
-      print "\nEnabling forward packages on request ..."
-      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
-    else:
-      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
-
-    if inOptions.disablePackages:
-      print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
-      disablePackagesList = inOptions.disablePackages.split(',')
-      for pkg in disablePackagesList:
-        cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
-
-    print "\ncmakePkgOptions:", cmakePkgOptions
-
+      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+    
+      if inOptions.enableAllPackages == 'on':
+        print "\nEnabling all packages on request ..."
+        cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
+    
+      if inOptions.enableFwdPackages:
+        print "\nEnabling forward packages on request ..."
+        cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+      else:
+        cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
+  
+      if inOptions.disablePackages:
+        print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
+        disablePackagesList = inOptions.disablePackages.split(',')
+        for pkg in disablePackagesList:
+          cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
+  
+      print "\ncmakePkgOptions:", cmakePkgOptions
+  
     # A.3) Set the combined options
 
-    cmakeOptions    = cmakeBaseOptions + cmakePkgOptions
-  
-    print "\ncmakeOptions =", cmakeOptions
-  
-    print "\nCreating base configure file do-configure.base ..."
-    createConfigureFile(cmakeBaseOptions, "cmake", inOptions.trilinosSrcDir,
-      "do-configure.base")
-  
-    print "\nCreating package-enabled configure file do-configure ..."
-    createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
+    cmakeOptions = []
+
+    if preConfigurePassed:
+
+      cmakeOptions = cmakeBaseOptions + cmakePkgOptions
+    
+      print "\ncmakeOptions =", cmakeOptions
+    
+      print "\nCreating base configure file do-configure.base ..."
+      createConfigureFile(cmakeBaseOptions, "cmake", inOptions.trilinosSrcDir,
+        "do-configure.base")
+    
+      print "\nCreating package-enabled configure file do-configure ..."
+      createConfigureFile(cmakePkgOptions, "./do-configure.base", None, "do-configure")
   
     print ""
     print "B) Do the configuration with CMake ("+buildTestCaseName+") ..."
     print ""
 
     configurePassed = False
+
+    if inOptions.doConfigure and not preConfigurePassed:
+
+      print "\nSkipping configure because pre-configure failed (see above)!\n"
   
-    if inOptions.doConfigure:
+    elif inOptions.doConfigure:
   
       removeIfExists("CMakeCache.txt")
 
@@ -964,7 +1019,7 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
 
     result = analyzeResultsSendEmail(inOptions, buildTestCaseName,
       enablePackagesList, cmakeOptions, startingTime, timings)
-    if not result: succcess = False
+    if not result: success = False
 
   else:
 
@@ -975,7 +1030,11 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
 
 def cleanBuildTestCaseOutputFiles(runBuildTestCaseBool, inOptions, baseTestDir, buildTestCaseName):
 
-  if runBuildTestCaseBool and os.path.exists(buildTestCaseName):
+  if runBuildTestCaseBool and not os.path.exists(buildTestCaseName):
+
+    print "\nSkipping cleaning build/test files for "+buildTestCaseName+" because dir does not exist!\n"
+
+  elif runBuildTestCaseBool and os.path.exists(buildTestCaseName):
 
     if inOptions.wipeClean:
 
@@ -1207,6 +1266,10 @@ def checkinTest(inOptions):
   baseTestDir = os.getcwd()
   print "\nbaseTestDir =", baseTestDir
 
+  if inOptions.withoutDefaultBuilds:
+    inOptions.withMpiDebug = False
+    inOptions.withSerialRelease = False
+
   if inOptions.doAll:
     inOptions.doPull = True
     inOptions.doConfigure = True
@@ -1223,6 +1286,8 @@ def checkinTest(inOptions):
 
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
+
+  assertExtraBuildConfigFiles(inOptions.extraBuilds)
 
   success = True
 
@@ -1254,6 +1319,10 @@ def checkinTest(inOptions):
       "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
     ]
     )
+
+  if inOptions.extraBuilds:
+    for extraBuild in inOptions.extraBuilds.split(','):
+      setBuildTestCaseInList(buildTestCaseList, extraBuild, True, False, [])
   
   try:
 
@@ -1493,6 +1562,15 @@ def checkinTest(inOptions):
   
       writeDefaultCommonConfigFile()
 
+      print "\nSetting up to run the build/test cases:"
+      for i in range(len(buildTestCaseList)):
+        buildTestCase = buildTestCaseList[i]
+        print str(i) + ") " + buildTestCase.name + ":",
+        if buildTestCase.runBuildTestCase:
+          print "Will attempt to run!"
+        else:
+          print "Will *not* attempt to run on request!"
+
       for buildTestCase in buildTestCaseList:
         result = runBuildTestCaseDriver(
           inOptions,
@@ -1688,7 +1766,7 @@ def checkinTest(inOptions):
           finalCommitEmailBodyStr += localCommitSummariesStr
           if forcedCommitPush:
             finalCommitEmailBodyStr += (forcedCommitPushMsg + "\n\n")
-          finalCommitEmailBodyStr += getSummaryEmailSectionStr(inOptions)
+          finalCommitEmailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
           writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
 
           # Ammend the final commit message
@@ -1806,7 +1884,7 @@ def checkinTest(inOptions):
       emailBodyStr += getCmndOutput("date", True) + "\n\n"
       emailBodyStr += commitEmailBodyExtra
       emailBodyStr += localCommitSummariesStr
-      emailBodyStr += getSummaryEmailSectionStr(inOptions)
+      emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
   
       print "\nCommit status email being sent:\n" \
         "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"

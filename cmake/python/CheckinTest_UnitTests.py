@@ -488,6 +488,8 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     +g_expectedRegexConfigPasses \
     +g_expectedRegexBuildPasses \
     +g_expectedRegexTestPasses \
+    +"0) MPI_DEBUG: Will attempt to run!\n" \
+    +"1) SERIAL_RELEASE: Will \*not\* attempt to run on request!\n" \
     +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
     +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
     +g_expectedCommonOptionsSummary \
@@ -895,6 +897,11 @@ class test_checkin_test(unittest.TestCase):
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
       )
+
+
+  # ToDo: Add test for case where no files are updated and no tests are run
+  # and therefore we consider the tests to have failed!  If you don't run any
+  # tests then how can we say it is okay to pass?
   
   
   # B) Test package enable/disable logic
@@ -1196,7 +1203,67 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  # D) Test intermediate states with rerunning to fill out
+  # D) Test --extra-builds
+
+
+  def test_extra_builds_read_config_file(self):
+    
+    testName = "extra_builds_read_config_file"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/SERIAL_DEBUG_BOOST_TRACING.config",
+      "-DTPL_ENABLE_BOOST:BOOL=ON\n" \
+      +"-DTeuchos_ENABLE_RCP_NODE_TRACING:BOOL=ON\n" \
+      )
+
+    checkin_test_configure_test(
+      \
+      self,
+      \
+      testName,
+      \
+      "--without-default-builds --extra-builds=SERIAL_DEBUG_BOOST_TRACING",
+      \
+      [
+      ("SERIAL_DEBUG_BOOST_TRACING/do-configure.base",
+       "\-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+       +"\-DBUILD_SHARED:BOOL=ON\n" \
+       +"\-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+       +"\-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n"
+       +"\-DTPL_ENABLE_BOOST:BOOL=ON\n" \
+       +"\-DTeuchos_ENABLE_RCP_NODE_TRACING:BOOL=ON\n" \
+       ),
+      ]
+      )
+
+
+  def test_extra_builds_missing_config_file_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "extra_builds_missing_config_file_fail",
+      \
+      "--extra-builds=SERIAL_DEBUG_BOOST_TRACING",
+      \
+      "", # No shell commands!
+      \
+      False,
+      \
+      "Error, the extra build configuration file SERIAL_DEBUG_BOOST_TRACING.config" \
+      +" does not exit!\n" \
+      )
+
+
+  # E) Test intermediate states with rerunning to fill out
 
 
   # ToDo: Add test for pull followed by configure
@@ -1212,7 +1279,7 @@ class test_checkin_test(unittest.TestCase):
   # ToDo: Add test for removing files on test (fail immediately)
 
 
-  # E) Test various failing use cases
+  # F) Test various failing use cases
 
 
   def test_do_all_no_eg_installed(self):
@@ -1424,6 +1491,66 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
+  def test_illegal_enables_fail(self):
+    
+    testName = "illegal_enables_fail"
+
+    testBaseDir = create_checkin_test_case_dir(testName, g_verbose)
+
+    writeStrToFile(testBaseDir+"/COMMON.config",
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\n" \
+      +"-DBUILD_SHARED:BOOL=ON\n" \
+      +"-DTPL_BLAS_LIBRARIES:PATH=/usr/local/libblas.a\n" \
+      +"-DTPL_LAPACK_LIBRARIES:PATH=/usr/local/liblapack.a\n" \
+      +"-DTPL_ENABLE_BOOST:BOOL=ON\n" \
+      +"-DTrilinos_ENABLE_TriKota:BOOL=ON\n" \
+      +"-DTrilinos_ENABLE_WebTrilinos=ON\n" \
+      )
+
+    writeStrToFile(testBaseDir+"/MPI_DEBUG.config",
+      "-DTPL_ENABLE_MPI:BOOL=ON\n" \
+      +"-DTPL_ENABLE_CUDA:BOOL=ON\n" \
+      +"-DTrilinos_ENABLE_STK:BOOL=ON\n" \
+      +"-DTrilinos_ENABLE_Phalanx=ON\n" \
+      +"-DTrilinos_ENABLE_Sundance=OFF\n" \
+      )
+
+    checkin_test_run_case(
+      \
+      self,
+      \
+      testName,
+      \
+      "--without-serial-release --configure --allow-no-pull",
+      \
+      g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "ERROR: Illegal TPL enable -DTPL_ENABLE_BOOST:BOOL=ON in ../COMMON.config!\n" \
+      +"ERROR: Illegal enable -DTrilinos_ENABLE_TriKota:BOOL=ON in ../COMMON.config!\n" \
+      +"ERROR: Illegal enable -DTrilinos_ENABLE_WebTrilinos=ON in ../COMMON.config!\n" \
+      +"ERROR: Illegal TPL enable -DTPL_ENABLE_CUDA:BOOL=ON in ../MPI_DEBUG.config!\n" \
+      +"ERROR: Illegal TPL enable -DTPL_ENABLE_MPI:BOOL=ON in ../MPI_DEBUG.config!\n" \
+      +"ERROR: Illegal enable -DTrilinos_ENABLE_STK:BOOL=ON in ../MPI_DEBUG.config!\n" \
+      +"ERROR: Illegal enable -DTrilinos_ENABLE_Phalanx=ON in ../MPI_DEBUG.config!\n" \
+      +"Skipping configure because pre-configure failed (see above)!\n" \
+      +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: pre-configure failed => Not ready for final commit/push!\n" \
+      +"Configure: FAILED\n" \
+      +"NOT READY TO PUSH\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
+      ,
+      failRegexStrList = \
+      "ERROR: Illegal enable -DTrilinos_ENABLE_Sundance=OFF\n" # Package disables are okay but not great
+      )
+
+    self.assertEqual(os.path.exists(testBaseDir+"/MPI_DEBUG/do-configure.base"), False)
+    self.assertEqual(os.path.exists(testBaseDir+"/MPI_DEBUG/do-configure"), False)
+
+
   def test_do_all_without_serial_release_configure_fail(self):
     checkin_test_run_case(
       self,
@@ -1506,7 +1633,6 @@ class test_checkin_test(unittest.TestCase):
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
       )
-
 
   # ToDo: Add test for the final pull failing
   # ToDo: Add test for final commit failing
