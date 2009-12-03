@@ -1423,7 +1423,7 @@ Optional Packages:
                           and CPPFLAGS. (default is no)
   --with-nemesis_exodus   Enable Nemesis/Exodus support for the Zdrive test
                           executable. Library and include paths must be
-                          specified using LDFLAGS and CPPFLAGS. (default is
+                          specified using LDFLAGS and CFLAGS. (default is
                           no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
