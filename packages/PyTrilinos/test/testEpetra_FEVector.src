@@ -31,30 +31,34 @@
 
 #
 # System imports
+from   getopt   import getopt
 from   numpy    import *
-from   optparse import *
 import sys
 import unittest
 
 #
-# Parse the command-line arguments
-parser = OptionParser()
-parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
-                  default=False,
-                  help="test the experimental boost-generated PyTrilinos package")
-parser.add_option("-t", "--testharness", action="store_true",
-                  dest="testharness", default=False,
-                  help="test local build modules; prevent loading system-installed modules")
-parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
-                  help="set the verbosity level [default 2]")
-options,args = parser.parse_args()
+# Parse the command-line arguments.  NB: I specifically use the outdated getopt
+# here instead of the more modern optparse because I used to get the following
+# error:
+#
+#   python(65587) malloc: *** error for object 0x1715674: Non-aligned pointer being freed
+#
+# during unit tests that access the Epetra Print() methods and the only way I
+# have been able to find to fix the problem has been to use getopt rather than
+# optparse.
+testharness = False
+verbosity   = 2
+(options,args) = getopt(sys.argv[1:], "tv:", ["testharness", "verbose="])
+for (opt, val) in options:
+    if opt in ("-t", "--testharness"): testharness = True
+    if opt in ("-v", "--verbosity"  ): verbosity = int(val)
 
 #
 # Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
 # we want to be able to control whether we import from the build directory or
 # from a system-installed version of PyTrilinos.
 from testutil import fromPyTrilinosImport
-Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+Epetra = fromPyTrilinosImport('Epetra', testharness)
 
 ##########################################################################
 
@@ -454,8 +458,8 @@ if __name__ == "__main__":
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
        "\n***********************\nTesting Epetra.FEVector\n***********************\n"
-    verbosity = options.verbosity * int(iAmRoot)
-    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+    v = verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=v).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
