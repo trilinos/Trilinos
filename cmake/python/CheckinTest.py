@@ -1254,7 +1254,6 @@ def checkinTest(inOptions):
 
   if inOptions.localDoAll:
     inOptions.allowNoPull = True
-    inOptions.extraPullFrom = ""
     inOptions.doConfigure = True
     inOptions.doBuild = True
     inOptions.doTest = True
@@ -1388,7 +1387,7 @@ def checkinTest(inOptions):
 
     pullPassed = True
 
-    doingAtLeastOnePull = (inOptions.extraPullFrom or inOptions.doPull)
+    doingAtLeastOnePull = inOptions.doPull
 
     if not doingAtLeastOnePull:
 
@@ -1463,7 +1462,7 @@ def checkinTest(inOptions):
     # Check for prior successful initial pull
     currentSuccessfullPullExists = os.path.exists(getInitialPullSuccessFileName())
 
-    if (inOptions.doPull or inOptions.extraPullFrom):
+    if inOptions.doPull:
       if pullPassed:
         print "\nUpdate passed!\n"
         echoRunSysCmnd("touch "+getInitialPullSuccessFileName())

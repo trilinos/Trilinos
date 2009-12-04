@@ -717,7 +717,8 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --commit --push" \
-      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      +" --extra-pull-from='dummy master'" \
+      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       ,
       \
       g_cmndinterceptsInitialCommitPasses \
@@ -1149,6 +1150,35 @@ class test_checkin_test(unittest.TestCase):
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
       )
+
+
+
+
+
+
+  def test_without_serial_release_extra_pull_only(self):
+    checkin_test_run_case(
+      self,
+      \
+      "without_serial_release_extra_pull_only",
+      \
+      "--extra-pull-from='machine:/repo/dir/repo master'",
+      \
+      g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Skipping all updates on request!\n" \
+      +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
+      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"^INITIAL PULL FAILED: Trilinos:\n"
+      )
+
+
+
+
 
 
   def test_without_serial_release_configure_only(self):

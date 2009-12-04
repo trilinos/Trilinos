@@ -636,6 +636,13 @@ clp.add_option(
   default=True )
 
 clp.add_option(
+  "--extra-pull-from", dest="extraPullFrom", type="string", default="",
+  help="Optional extra git' <repository> <branch>' to pull and merge in changes from after" \
+  +" pulling in changes from 'origin'.  This option must include the <repository> " \
+  +" <branch>', separated by a space.  For example --extra-pull-from='machine:/base/dir/repo" \
+  +" master'.  This pull is only done if --pull is also specified" )
+
+clp.add_option(
   "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
   help="Allowing for there to be no pull performed and still doing the other actions." \
   +"  This option is useful for testing against local changes without having to" \
@@ -676,13 +683,6 @@ clp.add_option(
     +" merge in changes from the repo pointed to by --extra-pull-from." )
 
 clp.add_option(
-  "--extra-pull-from", dest="extraPullFrom", type="string", default="",
-  help="[ACTION] Optional extra git' <repository> <branch>' to pull and merge in changes from after" \
-  +" pulling in changes from 'origin'.  This option must include the <repository> " \
-  +" <branch>', separated by a space.  For example --extra-pull-from='machine:/base/dir/repo" \
-  +" master'." )
-
-clp.add_option(
   "--configure", dest="doConfigure", action="store_true", default=False,
   help="[ACTION] Do the configure of Trilinos." )
 
@@ -697,7 +697,7 @@ clp.add_option(
 clp.add_option(
   "--local-do-all", dest="localDoAll", action="store_true", default=False,
   help="[AGGR ACTION] Do configure, build, and test with no pull (same as setting" \
-  +" --allow-no-pull --extra-pull-from=\"\" --configure --build --test)." \
+  +" --allow-no-pull ---configure --build --test)." \
   +"  This is the same as --do-all except it does not do --pull and also allows for no pull." )
 
 clp.add_option(
@@ -770,6 +770,8 @@ if options.appendTestResults:
   print "  --append-test-results \\"
 else:
   print "  --no-append-test-results \\"
+if options.extraPullFrom:
+  print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
 if options.allowNoPull:
   print "  --allow-no-pull \\"
 if options.wipeClean:
@@ -778,8 +780,6 @@ if options.doCommit:
   print "  --commit \\"
 if options.doPull:
   print "  --pull \\"
-if options.extraPullFrom:
-  print "  --extra-pull-from='"+options.extraPullFrom+"' \\"
 if options.doConfigure:
   print "  --configure \\"
 if options.doBuild:
