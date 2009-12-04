@@ -751,11 +751,10 @@ def getTestCaseEmailSummary(testCaseName, testCaseNum):
 
 def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   summaryEmailSectionStr = ""
-  if performAnyBuildTestActions(inOptions):
-    for buildTestCase in buildTestCaseList:
-      if buildTestCase.runBuildTestCase:
-        summaryEmailSectionStr += \
-          getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
+  for buildTestCase in buildTestCaseList:
+    if buildTestCase.runBuildTestCase:
+      summaryEmailSectionStr += \
+        getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
 
   

@@ -695,6 +695,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "0) MPI_DEBUG Results:\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
       
