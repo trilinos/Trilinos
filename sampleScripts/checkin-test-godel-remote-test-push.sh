@@ -33,7 +33,7 @@ echo "
 # Run the checkin-test.py script with more arguments
 #
 
-../../Trilinos/cmake/python/checkin-test.py \
+../../Trilinos/checkin-test.py \
 --make-options="-j8" \
 --ctest-options="-j8" \
 --commit-msg-header-file=checkin_message \
