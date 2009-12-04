@@ -179,6 +179,22 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
 
       *out << "Teko: getInverseFactory could not find \"" << label << "\" ... aborting\n";
       *out << std::endl;
+      *out << "Choose one of: " << std::endl; 
+
+      *out << "   Stratimikos preconditioners = ";
+      for(itr==stratPrecond_.begin();itr!=stratPrecond_.end();++itr)
+         *out << "\"" << itr->first << "\" ";
+      *out << std::endl;
+
+      *out << "   Stratimikos solvers = ";
+      for(itr==stratSolver_.begin();itr!=stratSolver_.end();++itr)
+         *out << "\"" << itr->first << "\" ";
+      *out << std::endl;
+
+      *out << "   Block preconditioners = ";
+      for(itr==blockPrecond_.begin();itr!=blockPrecond_.end();++itr)
+         *out << "\"" << itr->first << "\" ";
+      *out << std::endl;
 
       TEUCHOS_ASSERT(isStratSolver || isStratPrecond || isBlockPrecond);
    }
