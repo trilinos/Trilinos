@@ -11,7 +11,7 @@ SET(BUILD_DIR_NAME SERIAL_RELEASE_PS)
 
 # 2009/08/28: Sundance is not building for this build case.  Kevin long said
 # to turn it off for now.
-SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES Sundance )
+SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES TrilinosFramework Sundance )
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF"
