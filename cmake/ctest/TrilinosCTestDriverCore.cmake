@@ -203,9 +203,10 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
 
   #
   # C) Set all of the package enables that are currently on from the
-  # execution of SELECT_DEFAULT_TRILINOS_PACKAGES() to empty "" but leave
-  # the disabled packages turned off.  That way, we will respect
-  # Trilinos_EXCLUDE_PACKAGES but not Trilinos_ADDITIONAL_PACKAGES.
+  # execution of SELECT_DEFAULT_TRILINOS_PACKAGES() to empty "".  Also turn
+  # off the packages in Trilinos_EXCLUDE_PACKAGES.  We ignore the
+  # Trilinos_ADDITIONAL_PACKAGES because we don't need to test any more
+  # packages than is determined automatically below.
   #
 
   FOREACH(PACKAGE ${Trilinos_PACKAGES_FULL})
@@ -214,13 +215,18 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
     ENDIF()
   ENDFOREACH()
 
+  FOREACH(PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
+    MESSAGE("Disabling excluded package ${PACKAGE} ...")
+    SET(Trilinos_ENABLE_${PACKAGE} OFF)
+  ENDFOREACH()
+
   #
   # D) Enable the changed packages
   #
 
   FOREACH(PACKAGE ${ALL_PACKAGE_TO_BE_TESTED})
+    MESSAGE("Enabling modified or past failing package ${PACKAGE} ...")
     SET(Trilinos_ENABLE_${PACKAGE} ON)
-    PRINT_VAR(Trilinos_ENABLE_${PACKAGE})
   ENDFOREACH()
 
   PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
@@ -236,6 +242,7 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
   SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
   SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
+  SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
   PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(FALSE)
 
   #
@@ -527,6 +534,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     SELECT_MODIFIED_PACKAGES_ONLY()
     MESSAGE("\nUpdated list of packages to enable:")
     PRINT_VAR(Trilinos_PACKAGES)
+    #RETURN(1)
   ENDIF()
   
   #
