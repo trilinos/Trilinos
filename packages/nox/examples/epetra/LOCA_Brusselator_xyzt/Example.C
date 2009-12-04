@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
 #ifdef DO_XYZT
   int maxTimeSteps = 1; // No longer need a time integration loop
 #else
-  int maxTimeSteps = 16;
+  int maxTimeSteps = 2;
 #endif
   int timeStep = 0;
   double time = 0.;
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
 
 #ifndef DO_XYZT
 
-    Problem.reset(finalSolution);
+    //Problem.reset(finalSolution);
     grp->setX(finalSolution);
     stepper.reset(globalData, grp, combo, paramList);
     grp->computeF();
