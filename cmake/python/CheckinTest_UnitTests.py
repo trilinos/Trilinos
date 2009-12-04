@@ -1152,10 +1152,6 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-
-
-
-
   def test_without_serial_release_extra_pull_only(self):
     checkin_test_run_case(
       self,
@@ -1175,10 +1171,6 @@ class test_checkin_test(unittest.TestCase):
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^INITIAL PULL FAILED: Trilinos:\n"
       )
-
-
-
-
 
 
   def test_without_serial_release_configure_only(self):
