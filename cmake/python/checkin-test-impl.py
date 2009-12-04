@@ -4,13 +4,15 @@ from CheckinTest import *
 
 
 #
-# Read in the commandline arguments
+# Read in the command-line arguments
 #
 
 usageHelp = r"""checkin-test.py [OPTIONS]
 
 This tool does checkin testing for Trilinos with CMake/CTest and can actually
-do the checkin itself using eg/git in a safe way.
+do the checkin itself using eg/git in a safe way.  In fact, it is recommended
+that you use this script to push since it will append the commit message with
+a summary of the builds and tests run with results.
 
 
 Quickstart:
@@ -32,6 +34,13 @@ commit/push:
   them to the ignore list *before* you run the checkin-test.py script.  The eg
   script will not allow you to commit if there are new 'unknown' files.
 
+  NOTE: In case you don't want to commit all local changes, you will need to
+  stage files that you want to commit first and then stash the rest of the
+  files away that you don't before you run this script. i.e.:
+
+    $ eg stage <files you want to commit>
+    $ eg stash
+
 2) Create a commit log file in the main source directory:
 
   $ cd $TRILINOS_HOME
@@ -44,27 +53,32 @@ commit/push:
   NOTE: Alternatively, you can just do the local commit yourself with eg/git
   in any way you would like and avoid letting the checkin-test.py script do
   the commit.  That way, you can do as many local commits as you would like
-  and organize them any way you would like.
+  and organize them any way you would like.  However, if you only decide to
+  stage and commit a subset of the changed files, you must stash the rest of
+  the changed files away with 'eg stash'.
 
 3) Set up the checkin base build directory (first time only):
 
-  $ cd SOME_BASE_DIR
+  $ cd $TRILINOS_HOME
+  $ echo CHECKIN >> .git/info/exclude
   $ mkdir CHECKIN
   $ cd CHECKIN
 
   NOTE: You may need to set up some configuration files if CMake can not find
-  the right compilers, MPI, and TPLs by default (see below).
+  the right compilers, MPI, and TPLs by default (see detailed documentation
+  below).
 
   NOTE: You might want to set up a simple shell driver script.  See some
   examples in the files:
 
     Trilinos/sampmleScripts/checkin-test-*
 
-4) Do the checkin test, (ptional) commit, and push:
+4) Do the checkin test, (optional) commit, and push:
 
-  $ cd SOME_BASE_DIR/CHECKIN
-  $ $TRILINOS_HOME/cmake/python/checkin-test.py \
-      --make-options="-j4" --ctest-options="-j2" --ctest-time-out=180 \
+  $ cd $TRILINOS_HOME
+  $ cd CHECKIN
+  $ ../checkin-test.py \
+      --make-options="-j4" --ctest-options="-j4" --ctest-time-out=180 \
       [--commit -commit-msg-header-file=checkin_message] \
       --do-all --push
 
@@ -76,12 +90,12 @@ commit/push:
   everything passes.
 
   NOTE: You must have installed the official versions of eg/git with the
-  install-git.py scirpt in order to run this script.  If you don't, the script
+  install-git.py script in order to run this script.  If you don't, the script
   will die right away with an error message telling you what the problem is.
 
-  NOTE: You can do the local commit(s) yourself first with eg/git before
-  running this script.  In that case, you must take off the --commit argument
-  or the script will fail if there are not uncommitted changes.
+  NOTE: You can do the local commit(s) yourself with eg/git before running
+  this script.  In that case, you must take off the --commit argument or the
+  script will fail if there are no uncommitted changes.
 
   NOTE: If you do not specify the --commit argument, you must not have any
   uncommitted changes or the 'eg pull --rebase' command will fail and
@@ -90,12 +104,13 @@ commit/push:
   *before* running this script.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
-  for the git commits invoked internally to work without you having to type a
-  password.
+  for the git commands invoked in the script to work without you having to
+  type a password.
 
   NOTE: You can do the final push in a second invocation of the script with a
   follow-up run with --push and removing --do-all (it will remember the
-  results from the build/test cases just run).  For more details, see below.
+  results from the build/test cases just run).  For more details, see detailed
+  documentation below.
 
   NOTE: Once you start running the checkin-test.py script, you can go off and
   do something else and just check your email to see if all the builds and
@@ -126,24 +141,31 @@ The following approximate steps are performed by this script:
 
 ----------------------------------------------------------------------------
 
-1) [Optional] Do the local commit (done iff --commit is set)
+1) [Optional] Do the local commit (done if --commit is set)
 
 2) Do a 'eg pull --rebase' to update the code (done if --pull or --do-all is
 set.).
 
+  NOTE: You can not have any uncommitted changes!
+
+  NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
+
 3) Select the list of packages to enable forward based on the package
 directories where there are changed files (or from a list of packages passed
-in by the user).  NOTE: The automatic behavior can be overridden or modified
-using the options --enable-packages, --disable-packages, and/or
---no-enable-fwd-packages.
+in by the user).
+
+  NOTE: The automatic enable behavior can be overridden or modified using the
+  options --enable-packages, --disable-packages, and/or
+  --no-enable-fwd-packages.
 
 4) For each build/test case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE,
-etc.)
+extra builds specified with --extra-builds):
 
   4.a) Configure a build directory <BUILD_NAME> in a standard way for all of
   the packages that have changed and all of the packages that depend on these
-  packages forward. You can manually select which gets enabled (see the enable
-  options above).  (done if --configure, --do-all, or --local-do-all is set.)
+  packages forward. You can manually select which packages get enabled (see
+  the enable options above).  (done if --configure, --do-all, or
+  --local-do-all is set.)
   
   4.b) Build all configured code with 'make' (e.g. with -jN set through
   --make-options).  (done if --build, --do-all, or --local-do-all is set.)
@@ -158,55 +180,56 @@ etc.)
 5) Do final pull, append test results to last commit message, and push (done
 if --push is set)
 
-5.a) Do a final pull (done if --pull or --do-all is set.)
-
-5.b) Amend commit message of the most recent commit with the summary of the
-testing performed.  (done if --append-test-results (default) is set.)
-
-5.c) Push the local commits to the global repo.
+  5.a) Do a final pull (done if --pull or --do-all is set.)
+  
+  5.b) Amend commit message of the most recent commit with the summary of the
+  testing performed.  (done if --append-test-results (default) is set.)
+  
+  5.c) Push the local commits to the global repo.
 
 ----------------------------------------------------------------------------
 
 The recommended way to use this script is to create a new base CHECKIN test
-directory apart from your standard build directories such as:
+directory apart from your standard build directories such as with:
 
-  $ cd SOME_BASE_DIR
+  $ $TRILINOS_HOME
   $ mkdir CHECKIN
+  $ echo CHECKIN >> .git/info/exclude
 
 The most basic way to do the checkin test is:
 
-  $ cd SOME_BASE_DIR/CHECKIN
-  $ $TRILINOS_HOME/cmake/python/checkin-test.py --do-all [other options]
+  $ cd CHECKIN
+  $ ../checkin-test.py --do-all [other options]
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
 LAPACK) can be found automatically, then this is all you will need to do.
 However, if the setup can not be determined automatically, then you can add a
 set of CMake variables that will get read in the files:
 
-  SOME_BASE_DIR/CHECKIN/COMMON.config
-  SOME_BASE_DIR/CHECKIN/MPI_DEBUG.config
-  SOME_BASE_DIR/CHECKIN/SERIAL_RELEASE.config
+  COMMON.config
+  MPI_DEBUG.config
+  SERIAL_RELEASE.config
 
 Actually, for built-in build/test cases, skeletons of these files will
 automatically be written out with typical CMake cache variables (commented
 out) that you would need to set out.  Any CMake cache variables listed in
 these files will be read into and passed on the configure line to 'cmake'.
 
-WARNING: Please do not add any more CMake case variables that what are needed
-to get the MPI_DEBUG and SERIAL_RELEASE builds to work.  Adding other
-enables/disables will make the builds non-standard and may result in not
-testing the standard builds.  The goal of these configuration files is to
-allow you to specify the minimum environment to find MPI, your compilers, and
-the required TPLs (e.g. BLAS, LAPACK, etc.).  If you need to fudge what
-packages are enabled, please use the script arguments --enable-packages,
+WARNING: Please do not add any CMake case variables than what are needed to
+get the MPI_DEBUG and SERIAL_RELEASE builds to work.  Adding other
+enables/disables will make the builds non-standard and break the Primary
+Stable build.  The goal of these configuration files is to allow you to
+specify the minimum environment to find MPI, your compilers, and the required
+TPLs (e.g. BLAS, LAPACK, etc.).  If you need to fudge what packages are
+enabled, please use the script arguments --enable-packages,
 --disable-packages, --no-enable-fwd-packages, and/or --enable-all-packages to
-control this, not the *.config files.
+control this, not the *.config files!
 
 WARNING: Please do not add any CMake cache variables in the *.config files
 that will alter what packages or TPLs are enabled or what tests are run.
 Actually, the script will not allow you to change TPL enables in these
 standard *.config files because to do so deviates from a consistent build
-configuration.
+configuration for Primary Stable Code.
 
 NOTE: If you want to add extra build/test cases that do not conform to the
 standard build/test configurations described above, then you need to create
@@ -231,7 +254,7 @@ Common Use Cases (examples):
 
 (*) Basic full testing without push:
 
-  --do-all [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
+  ../checkin-test.py --do-all [--commit --commit-msg-header-file=commit_msg]
 
   NOTE: This will result in a set of emails getting sent to your email
   address for the different configurations and an overall commit readiness
@@ -245,38 +268,43 @@ Common Use Cases (examples):
 
 (*) Basic full testing with push:
 
-  --do-all --push [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
+  ../checkin-test.py --do-all --push [--commit --commit-msg-header-file=commit_msg]
 
-  NOTE: If the commit criteria is not satisfied, no commit will occur and you
-  will get an email telling you that.
+  NOTE: If the commit criteria is not satisfied, the commit will get backed
+  out and you will get an email telling you that.
 
   NOTE: If you have any local uncommitted changes you will need to pass in
   --commit and --commit-msg-header-file.
 
 (*) Push to global repo after a completed set of tests have finished:
 
-  [other options] --push  [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
+  ../checkin-test.py \
+    [other options] --push  [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
 
   NOTE: This will pick up the results for the last completed test runs with
   [other options] and append the results of those tests to the
   checkin-message of the most recent commit.
 
   NOTE: Take the action options for the prior run and replace --do-all and
-  --commit (for exampe) with --push but keep all of the rest of the options
+  --commit (for example) with --push but keep all of the rest of the options
   the same.  For example, if you did:
 
-    --enable-packages=Blah --without-serial-release --do-all
+    ../checkin-test.py --enable-packages=Blah --without-serial-release --do-all
 
   then follow that up with:
 
-    --enable-packages=Blah --without-serial-release --push
+    ../checkin-test.py --enable-packages=Blah --without-serial-release --push
 
   NOTE: If you did not commit the first time, then you can commit the second
   time along with the push by adding the --commit argument.
 
+  NOTE: This is a common use case when some tests are failing and the initial
+  push failed but you determine it is okay to push anyway and do so with
+  --force-commit-and-push.
+
 (*) Test only the packages modified and not the forward dependent packages:
 
-  --do-all --no-enable-fwd-packages
+  ../checkin-test.py --do-all --no-enable-fwd-packages
 
   NOTE: This is a safe thing to do when only tests in the modified packages
   are changed and not library code.  This can speed up the testing process and
@@ -285,14 +313,15 @@ Common Use Cases (examples):
   changed because every Trilinos package does not follow a set pattern for
   tests and test code.
 
-(*) MPI DEBUG only (run at least this if nothing else):
+(*) Run the MPI_DEBUG build/test only:
 
-  --do-all --without-serial-release
+  ../checkin-test.py --do-all --without-serial-release
 
 (*) The minimum acceptable testing when code has been changed:
 
-  --do-all --enable-all-packages=off --no-enable-fwd-packages \
-   --without-serial-release
+  ../checkin-test.py \
+    --do-all --enable-all-packages=off --no-enable-fwd-packages \
+    --without-serial-release
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
@@ -300,49 +329,58 @@ Common Use Cases (examples):
 
 (*) Test only a specific set of packages and no others:
 
-  --do-all --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> \
-   --no-enable-fwd-packages
+  ../checkin-test.py \
+    --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> --no-enable-fwd-packages \
+    --do-all
   
   NOTE: This will override all logic in the script about which packages will
   be enabled and only the given packages will be enabled.
 
-  NOTE: Using this option is greatly preferred to not running this script at
-  all!
+  NOTE: You might also want to pass in --enable-all-packages=off in case the
+  script wants to enable all the packages (see the output in the
+  checkin-test.py log file for details) and you think it is not necessary to
+  do so.
+
+  NOTE: Using these options is greatly preferred to not running this script at
+  all and should not be any more expensive than what testing you already do.
 
 (*) Test changes locally without pulling updates:
 
-  --local-do-all
+  ../checkin-test.py --local-do-all
 
   NOTE: This will just configure, build, test, and send an email notification
   without updating or changing the status of the local git repo in any way and
-  without any communication with the global repo.  Hense, you can have
+  without any communication with the global repo.  Hence, you can have
   uncommitted changes and still run configure, build, test without having to
-  have a commit ready to go.
+  have a commit ready to go or having to stash changes.
 
   NOTE: This is not a sufficient level of testing in order to commit and push
   the changes to the global repo because you have not fully integrated your
-  changes yet.  However, this would be a sufficient level of testing in order
-  to do a local commit and then pull to a remote machine for further testing
-  and a push.
+  changes yet with other developers.  However, this would be a sufficient
+  level of testing in order to do a local commit and then pull to a remote
+  machine for further testing and a push (see below).
 
 (*) Adding extra build/test cases:
 
-  Often you will be working on Secondary Stable Code or Experimentatl Code and
+  Often you will be working on Secondary Stable Code or Experimental Code and
   want to include the testing of this in your pre-checkin testing along with
   the standard MPI_DEBUG and SERIAL_RELEASE build/test cases which can only
   include Primary Stable Code.  In this case you can run with:
   
-    --extra-builds=<BUILD1>,<BUILD2>,... [other options]
+    ../checkin-test.py --extra-builds=<BUILD1>,<BUILD2>,... [other options]
   
   For example, if you have a build that enables the TPL CUDA for Tpetra you
   would do:
   
-    echo -DTPL_ENABLE_MPI:BOOL=ON > MPI_DEBUG_CUDA.config
-    echo -DTPL_ENABLE_CUDA:BOOL=ON >> MPI_DEBUG_CUDA.config
+    echo "
+    -DTPL_ENABLE_MPI:BOOL=ON
+    -DTPL_ENABLE_CUDA:BOOL=ON
+    " > MPI_DEBUG_CUDA.config
   
   and then run with:
   
-    --enable-packages=Tpetra --extra-builds=MPI_DEBUG_CUDA --do-all
+    ../checkin-test.py \
+      --enable-packages=Tpetra --extra-builds=MPI_DEBUG_CUDA --do-all
   
   This will do the standard MPI_DEBUG and SERIAL_RELEASE build/test cases
   along with your non-standard MPI_DEBUG_CUDA build/test case.
@@ -354,15 +392,22 @@ Common Use Cases (examples):
 
 (*) Performing a remote test/push:
 
-  On your local development machine <mymachine>, do the local test/commit
+  If you develop on a slow machine like your laptop, doing an appropriate level
+  of testing may take a long time.  In this case, you can pull the changes to
+  another faster workstation machine and do a more complete set of tests and
+  push from there.
+
+  On your slow local development machine <mymachine>, do the local test/commit
   with:
   
-    --local-do-all --no-enable-fwd-packages [--commit --commit-msg-header-file=<???>]
+    ../checkin-test.py \
+      --local-do-all --no-enable-fwd-packages [--commit --commit-msg-header-file=cmtmsg]
   
-  On your remote test machine's CHECKIN directory, do a full test/commit run:
+  On your fast remote test machine, do a full test and push with:
   
-    --extra-pull-from='<mymachine>:/some/dir/to/your/trilinos/src master' \
-     --do-all --push
+    ../checkin-test.py \
+      --extra-pull-from='<mymachine>:/some/dir/to/your/trilinos/src master' \
+      --do-all --push
   
   NOTE: You can of course do the local commit yourself first and avoid the
   --commit argument.
@@ -377,24 +422,31 @@ Common Use Cases (examples):
   NOTE: If something goes wrong on the remote test machine, you can either
   work on fixing the problem there or you can fix the problem on your local
   development machine and then do the process over again.
+
+  NOTE: If you alter the commits on the remote machine (such as squashing
+  commits), you may have trouble merging back on our local machine.
+  Therefore, if you have to to fix problems, make new commits and don't alter
+  the ones you pulled from your local machine.
   
 (*) Check commit readiness status:
 
-  [no arguments]
+  ../checkin-test.py
 
   NOTE: This will examine results for the last testing process and send out
   an email stating if the a commit is ready to perform or not.
 
 (*) See the default option values without doing anything:
 
-  --show-defaults
+  ../checkin-test.py --show-defaults
 
   NOTE: This is the easiest way to figure out what all of the default options
   are.
 
 Hopefully the above documentation, the documentation of the command-line
-arguments below, and some basic experimentation will be enough to get you
-going using this script for all of the pre-checkin testing and global commits.
+arguments below, and some experimentation will be enough to get you going
+using this script for all of the pre-checkin testing and global commits.  If
+that is not sufficient, send email to trilinos-framework@software.sandia.gov
+to ask for help.
 
 
 Conventions for Command-Line Arguments:
@@ -404,23 +456,23 @@ The command-line arguments are segregated into three broad categories: a)
 action commands, b) aggregate action commands, and c) others.
 
 a) The action commands are those such as --commit, --build etc. and are shown
-with [ACTION] in their documnetation.  These action commands have no off
+with [ACTION] in their documentation.  These action commands have no off
 complement.  If the action command appears, then the action will be performed.
 
 b) Aggregate action commands such as --do-all and --local-do-all turn on sets
 of other action commands and are shown with [AGGR ACTION] in their
-documentation.  The sub-actions that these commands turn on can not be
-disabled with other arguments.
+documentation.  The sub-actions that these aggregate action commands turn on
+can not be disabled with other arguments.
 
 c) Other arguments are those that are not [ACTION] or [AGGR ACTION] arguments
-and tend to either pass in data and turn a control flag on or off.
+and tend to either pass in data and turn control flags on or off.
 
 
 Exit Code:
 ---------
 
 This script returns 0 if the actions requested are successful.  This does not
-necessarily imply that it is okay to do a push.  For example, if only --push
+necessarily imply that it is okay to do a push.  For example, if only --pull
 is passed in and is successful, then 0 will be returned but that does *not*
 mean that it is okay to do a push.  A 0 return value is a necessary but not
 sufficient condition for readiness to push.
@@ -534,7 +586,7 @@ clp.add_option(
 
 clp.add_option(
   "--extra-builds", dest="extraBuilds", type="string", default="",
-  help="List of comma-separated extra build names.  For each of the buld names in" \
+  help="List of comma-separated extra build names.  For each of the build names in" \
   +" --extra-builds=<BUILD1>,<BUILD2>,..., there must be a file <BUILDN>.config in" \
   +" the local directory along side the COMMON.config file that defines the special" \
   +" build options for the extra build." )
@@ -573,7 +625,7 @@ clp.add_option(
   help="Before the final push, amend the most recent local commit by appending a" \
   +" summary of the test results.  This provides a record of what builds" \
   +" and tests were performed in order to test the local changes.  This is only " \
-  +" perfomed if --push is also set.  NOTE: If the same" \
+  +" performed if --push is also set.  NOTE: If the same" \
   +" local commit is amended more than once, the prior test summary sections will be" \
   +" overwritten with the most recent test results from the current run. [default]" )
 clp.add_option(
@@ -643,15 +695,6 @@ clp.add_option(
   help="[ACTION] Do the running of the enabled Trilinos tests." )
 
 clp.add_option(
-  "--push", dest="doPush", action="store_true", default=False,
-  help="[ACTION] Push the committed changes in the local repo into to global repo" \
-    +" 'origin'.  Note: If you have uncommitted changes this command will fail." \
-    +"  You would usually use the --commit option as well to do these together." \
-    +"  Note: You must have SSH public/private keys set up with" \
-    +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
-    +" having to type your password." )
-
-clp.add_option(
   "--local-do-all", dest="localDoAll", action="store_true", default=False,
   help="[AGGR ACTION] Do configure, build, and test with no pull (same as --allow-no-pull" \
   +" --configure --build --test).  This is the same as --do-all except it" \
@@ -663,16 +706,23 @@ clp.add_option(
   +" --build --test).  NOTE: This will do a --pull regardless if --allow-no-pull" \
   +" is set or not.  To avoid the pull, use --local-do-all." )
 
+clp.add_option(
+  "--push", dest="doPush", action="store_true", default=False,
+  help="[ACTION] Push the committed changes in the local repo into to global repo" \
+    +" 'origin'.  Note: If you have uncommitted changes this command will fail." \
+    +"  You would usually use the --commit option as well to do these together." \
+    +"  Note: You must have SSH public/private keys set up with" \
+    +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
+    +" having to type your password." )
+
 (options, args) = clp.parse_args()
 
 # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
 # takes effect!  That is why the commands are ordered the way they are!
 
-if options.doCommit and not options.commitMsgHeaderFile:
-  print "\nError, if you specify --commit you must also set --commit-msg-header-file!\n"
 
 #
-# Echo the commandline
+# Echo the command-line
 #
 
 print ""
@@ -736,12 +786,12 @@ if options.doBuild:
   print "  --build \\"
 if options.doTest:
   print "  --test \\"
-if options.doPush:
-  print "  --push \\"
 if options.localDoAll:
   print "  --local-do-all \\"
 if options.doAll:
   print "  --do-all \\"
+if options.doPush:
+  print "  --push \\"
 
 
 #
@@ -760,11 +810,10 @@ if options.doAll and options.allowNoPull:
 if options.doCommit and not options.commitMsgHeaderFile:
   print "\nError, if you use --commit you must also specify --commit-msg-header-file!"
   sys.exit(3)
-  
 
 
 #
-# Execute
+# Execute the checkin test guts
 #
 
 import time

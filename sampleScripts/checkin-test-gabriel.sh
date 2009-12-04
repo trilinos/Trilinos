@@ -54,7 +54,7 @@ echo "
 # Run the standard checkin testing script with my specializations
 #
 
-../../../Trilinos/cmake/python/checkin-test.py \
+../../../Trilinos/checkin-test.py \
 --make-options="-j4" \
 --ctest-options="-j4" \
 --ctest-time-out=180 \
