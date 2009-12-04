@@ -1254,6 +1254,7 @@ def checkinTest(inOptions):
 
   if inOptions.localDoAll:
     inOptions.allowNoPull = True
+    inOptions.extraPullFrom = ""
     inOptions.doConfigure = True
     inOptions.doBuild = True
     inOptions.doTest = True

@@ -769,7 +769,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "local_do_all_without_serial_release_pass",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all",
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      +" --extra-pull-from='dummy master' --local-do-all",
       \
       g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \

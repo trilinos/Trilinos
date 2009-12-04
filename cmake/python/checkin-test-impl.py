@@ -696,9 +696,9 @@ clp.add_option(
 
 clp.add_option(
   "--local-do-all", dest="localDoAll", action="store_true", default=False,
-  help="[AGGR ACTION] Do configure, build, and test with no pull (same as --allow-no-pull" \
-  +" --configure --build --test).  This is the same as --do-all except it" \
-  +" does not do --pull and also allows for no pull." )
+  help="[AGGR ACTION] Do configure, build, and test with no pull (same as setting" \
+  +" --allow-no-pull --extra-pull-from=\"\" --configure --build --test)." \
+  +"  This is the same as --do-all except it does not do --pull and also allows for no pull." )
 
 clp.add_option(
   "--do-all", dest="doAll", action="store_true", default=False,
