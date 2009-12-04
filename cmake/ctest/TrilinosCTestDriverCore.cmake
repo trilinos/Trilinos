@@ -203,21 +203,13 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
 
   #
   # C) Set all of the package enables that are currently on from the
-  # execution of SELECT_DEFAULT_TRILINOS_PACKAGES() to empty "".  Also turn
-  # off the packages in Trilinos_EXCLUDE_PACKAGES.  We ignore the
-  # Trilinos_ADDITIONAL_PACKAGES because we don't need to test any more
-  # packages than is determined automatically below.
+  # execution of SELECT_DEFAULT_TRILINOS_PACKAGES() to empty "".
   #
 
   FOREACH(PACKAGE ${Trilinos_PACKAGES_FULL})
     IF (Trilinos_ENABLE_${PACKAGE})
       SET(Trilinos_ENABLE_${PACKAGE} "")
     ENDIF()
-  ENDFOREACH()
-
-  FOREACH(PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
-    MESSAGE("Disabling excluded package ${PACKAGE} ...")
-    SET(Trilinos_ENABLE_${PACKAGE} OFF)
   ENDFOREACH()
 
   #
@@ -233,7 +225,17 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
     "\nDirect packages that need to be tested" ON FALSE)
 
   #
-  # E) Adjust all the package dependencies
+  # E) Turn off the packages in Trilinos_EXCLUDE_PACKAGES. These need to
+  # dominate over the above enables.
+  #
+
+  FOREACH(PACKAGE ${Trilinos_EXCLUDE_PACKAGES})
+    MESSAGE("Disabling excluded package ${PACKAGE} ...")
+    SET(Trilinos_ENABLE_${PACKAGE} OFF)
+  ENDFOREACH()
+
+  #
+  # F) Adjust all the package dependencies
   #
 
   SET(Trilinos_PACKAGES ${Trilinos_PACKAGES_FULL})
@@ -246,7 +248,7 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
   PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(FALSE)
 
   #
-  # F) Set the new list of packages to enable based on
+  # G) Set the new list of packages to enable based on
   # if the tests are enabled
   #
 
