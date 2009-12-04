@@ -113,7 +113,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
       )
 
     self.assertEqual(
-      getCmndOutput("./get-trilinos-packages-from-files-list.py" \
+      getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
         " --files-list-file=modifiedFiles.txt", True),
       "ALL_PACKAGES;TrilinosFramework;NOX;Thyra"
       )
