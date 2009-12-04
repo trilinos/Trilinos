@@ -352,30 +352,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
   return success
 
 
-reModifedFiles = re.compile(r"^[MA]\t(.+)$")
-
-
-def isGlobalBuildFile(modifiedFileFullPath):
-  modifiedFileFullPathArray = getFilePathArray(modifiedFileFullPath)
-  if len(modifiedFileFullPathArray)==1:
-    if modifiedFileFullPathArray[0] == "CMakeLists.txt":
-      return True
-    if modifiedFileFullPathArray[0] == "Trilinos_version.h":
-      return True
-  if modifiedFileFullPathArray[0] == 'cmake':
-    if modifiedFileFullPathArray[1] == 'ctest':
-      return False
-    if modifiedFileFullPathArray[1] == 'DependencyUnitTests':
-      return False
-    if modifiedFileFullPathArray[1] == 'TPLs':
-      if ['FindTPLBLAS.cmake', 'FindTPLLAPACK.cmake', 'FindTPLMPI.cmake'].count(
-        modifiedFileFullPathArray[2]) == 1 \
-        :
-        return True
-      return False
-    if modifiedFileFullPathArray[-1].rfind(".cmake") != -1:
-      return True
-  return False
+reModifiedFiles = re.compile(r"^[MA]\t(.+)$")
 
 
 def getCurrentDiffOutput(inOptions, baseTestDir):
@@ -392,7 +369,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   :
 
   modifiedFilesList = extractFilesListMatchingPattern(
-    updateOutputStr.split('\n'), reModifedFiles )
+    updateOutputStr.split('\n'), reModifiedFiles )
 
   for modifiedFileFullPath in modifiedFilesList:
 

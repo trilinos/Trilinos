@@ -15,6 +15,8 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
+# Must set this *before* reading the following file!
+SET(PROJECT_NAME Trilinos)
 
 # Get the base diretory for the Trilinos source.  We only assume that the
 # CTest script that is being called is under Trilinos/cmake.
@@ -28,6 +30,7 @@ ENDIF()
 MESSAGE("TRILINOS_CMAKE_DIR = ${TRILINOS_CMAKE_DIR}")
 
 SET( CMAKE_MODULE_PATH
+   "${TRILINOS_CMAKE_DIR}/.."
    "${TRILINOS_CMAKE_DIR}"
    "${TRILINOS_CMAKE_DIR}/utils"
    "${TRILINOS_CMAKE_DIR}/package_arch"
@@ -37,7 +40,9 @@ SET( CMAKE_MODULE_PATH
 
 INCLUDE(PrintVar)
 INCLUDE(AssertDefined)
+INCLUDE(AppendSet)
 INCLUDE(PackageArchProcessPackagesAndDirsLists)
+INCLUDE(PackageArchAdjustPackageEnables)
 
 
 #
@@ -104,9 +109,6 @@ SITE_NAME(CTEST_SITE_DEFAULT)
 
 MACRO(SELECT_DEFAULT_TRILINOS_PACKAGES)
 
-  # Must set this *before* reading the following file!
-  SET(PROJECT_NAME Trilinos)
-
   INCLUDE(TrilinosPackages)
   #PRINT_VAR(Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS)
 
@@ -116,6 +118,9 @@ MACRO(SELECT_DEFAULT_TRILINOS_PACKAGES)
   SET(${PROJECT_NAME}_ASSERT_MISSING_PACKAGES FALSE)
   SET(${PROJECT_NAME}_IGNORE_PACKAGE_EXISTS_CHECK TRUE)
   PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+
+  # Remember the full list of packages for possible use later
+  SET(Trilinos_PACKAGES_FULL ${Trilinos_PACKAGES})
 
   SET(Trilinos_PACKAGES_DEFAULT)
 
@@ -143,6 +148,108 @@ MACRO(SELECT_DEFAULT_TRILINOS_PACKAGES)
 
   # Reset the list of packages
   SET( Trilinos_PACKAGES ${Trilinos_PACKAGES_SAVED} )
+
+ENDMACRO()
+
+
+#
+# Select only packages that are modified
+#
+
+MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
+
+  #
+  # A) Get the list of changed packages
+  #
+
+  SET(MODIFIED_FILES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/modifiedFiles.txt")
+
+  FIND_PROGRAM(EG_EXE NAMES eg)
+  EXECUTE_PROCESS(
+    COMMAND "${EG_EXE}" diff --name-only ORIG_HEAD..HEAD
+    WORKING_DIRECTORY "${CTEST_SOURCE_DIRECTORY}"
+    OUTPUT_FILE ${MODIFIED_FILES_FILE_NAME}
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+  EXECUTE_PROCESS(
+    COMMAND ${TRILINOS_CMAKE_DIR}/python/get-trilinos-packages-from-files-list.py
+      --files-list-file=${MODIFIED_FILES_FILE_NAME}
+    OUTPUT_VARIABLE MODIFIED_PACKAGES_LIST
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+  PRINT_VAR(MODIFIED_PACKAGES_LIST)
+  SET(ALL_PACKAGE_TO_BE_TESTED ${MODIFIED_PACKAGES_LIST})
+
+  #
+  # B) Get the list of packages that failed last CI iteration
+  #
+
+  # NOTE: It is critical to enable and test packages until they pass.  If you
+  # don't do this, then the package will not show as updated in the above
+  # logic.  In this case only downstream packages will get enabled.  If the
+  # failing packages break the downstream packages, this will be bad.
+  # Therefore, we must enable failing packages from the last CI iteration and
+  # keep enabling and testing them until they do pass!
+  #
+
+  IF (EXISTS "${FAILED_PACKAGES_FILE_NAME}")
+    FILE(READ "${FAILED_PACKAGES_FILE_NAME}" FAILING_PACKAGES_LIST) 
+    STRING(STRIP "${FAILING_PACKAGES_LIST}" FAILING_PACKAGES_LIST)
+    PRINT_VAR(FAILING_PACKAGES_LIST)
+    SET(ALL_PACKAGE_TO_BE_TESTED ${ALL_PACKAGE_TO_BE_TESTED} ${FAILING_PACKAGES_LIST})
+  ENDIF()
+
+  #
+  # C) Set all of the package enables that are currently on from the
+  # execution of SELECT_DEFAULT_TRILINOS_PACKAGES() to empty "" but leave
+  # the disabled packages turned off.  That way, we will respect
+  # Trilinos_EXCLUDE_PACKAGES but not Trilinos_ADDITIONAL_PACKAGES.
+  #
+
+  FOREACH(PACKAGE ${Trilinos_PACKAGES_FULL})
+    IF (Trilinos_ENABLE_${PACKAGE})
+      SET(Trilinos_ENABLE_${PACKAGE} "")
+    ENDIF()
+  ENDFOREACH()
+
+  #
+  # D) Enable the changed packages
+  #
+
+  FOREACH(PACKAGE ${ALL_PACKAGE_TO_BE_TESTED})
+    SET(Trilinos_ENABLE_${PACKAGE} ON)
+    PRINT_VAR(Trilinos_ENABLE_${PACKAGE})
+  ENDFOREACH()
+
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nDirect packages that need to be tested" ON FALSE)
+
+  #
+  # E) Adjust all the package dependencies
+  #
+
+  SET(Trilinos_PACKAGES ${Trilinos_PACKAGES_FULL})
+  SET(Trilinos_ENABLE_TESTS ON)
+  SET(Trilinos_ENABLE_EXAMPLES ON)
+  SET(Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES ON)
+  SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
+  PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
+  PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(FALSE)
+
+  #
+  # F) Set the new list of packages to enable based on
+  # if the tests are enabled
+  #
+
+  SET(Trilinos_PACKAGES "")
+
+  FOREACH(PACKAGE ${Trilinos_PACKAGES_FULL})
+    IF (${PACKAGE}_ENABLE_TESTS)
+      APPEND_SET(Trilinos_PACKAGES ${PACKAGE}) 
+    ENDIF()
+  ENDFOREACH()
 
 ENDMACRO()
 
@@ -276,6 +383,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
   SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
 
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SELECT_MODIFIED_PACKAGES_ONLY OFF )
+
   #
   # Setup and create the base dashboard directory if it is not created yet.
   #
@@ -292,6 +401,9 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       FILE(MAKE_DIRECTORY "${CTEST_DASHBOARD_ROOT}")
     ENDIF()
   ENDIF()
+
+  # Must be set here after CTEST_BINARY_DIRECTORY is set!
+  SET(FAILED_PACKAGES_FILE_NAME "${CTEST_BINARY_DIRECTORY}/failedPackages.txt")
   
   #
   # Some platform-independent setup
@@ -401,11 +513,26 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     ENDIF()
     RETURN()
   ENDIF()
+
+  #
+  # Select what packages to enable base on what is modified
+  #
+
+  IF (CTEST_SELECT_MODIFIED_PACKAGES_ONLY)
+    MESSAGE(
+      "\n***"
+      "\n*** Determining what packages to enable based on what changed ..."
+      "\n***\n"
+      )
+    SELECT_MODIFIED_PACKAGES_ONLY()
+    MESSAGE("\nUpdated list of packages to enable:")
+    PRINT_VAR(Trilinos_PACKAGES)
+  ENDIF()
   
   #
   # Tell CDash about the latest subproject dependencies:
   #
-  
+
   PRINT_VAR(CTEST_DROP_SITE)
   IF (CTEST_DO_SUBMIT)
     CTEST_SUBMIT( FILES
@@ -414,7 +541,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       )
     MESSAGE("\nSubmitted subproject dependencies: Return='${SUBMIT_RETURN_VAL}'")
   ENDIF()
-  
+
   #
   # loop over all Trilinos packages
   #
@@ -625,6 +752,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   IF(Trilinos_FAILED_PACKAGES)
     MESSAGE("\nFinal set of failed packages: '${Trilinos_FAILED_PACKAGES}'")
   ENDIF()
+
+  # Write a file listing the packages that failed.  This will be read in on the next CI
+  # iteration since these packages must be enabled
+  FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${Trilinos_FAILED_PACKAGES}")
 
   MESSAGE("\nKill all hanging Zoltan processes ...")
   EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
