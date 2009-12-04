@@ -96,3 +96,5 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #cmakedefine STDC_HEADERS
+
+#cmakedefine Epetra_ENABLE_CASK

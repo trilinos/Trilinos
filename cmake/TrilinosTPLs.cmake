@@ -85,6 +85,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   HIPS           EX
   HDF5           EX
   MATLAB         EX
+  CASK           EX
   )
 
 # NOTES:

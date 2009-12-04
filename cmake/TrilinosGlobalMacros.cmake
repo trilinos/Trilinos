@@ -109,7 +109,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/mesquite
     /packages/optika
     /packages/optipack
-    /packages/stokhos
     /packages/tifpack
     /packages/TriKota
     /packages/aristos
