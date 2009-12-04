@@ -168,7 +168,7 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       isBlockPrecond = itr!=blockPrecond_.end();
    }
 
-   Teko_DEBUG_MSG("Teko: Inverse \"" << label << "\" is of type " 
+   Teko_DEBUG_MSG("Inverse \"" << label << "\" is of type " 
              << "strat prec = " << isStratPrecond << ", "
              << "strat solv = " << isStratSolver << ", " 
              << "block prec = " << isBlockPrecond,3);
@@ -177,23 +177,22 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
    if(not (isStratSolver || isStratPrecond || isBlockPrecond)) {
       RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-      *out << "Teko: getInverseFactory could not find \"" << label << "\" ... aborting\n";
-      *out << std::endl;
+      *out << "InverseLibrary::getInverseFactory could not find \"" << label << "\" ... aborting\n";
       *out << "Choose one of: " << std::endl; 
 
       *out << "   Stratimikos preconditioners = ";
-      for(itr==stratPrecond_.begin();itr!=stratPrecond_.end();++itr)
-         *out << "\"" << itr->first << "\" ";
+      for(itr=stratPrecond_.begin();itr!=stratPrecond_.end();++itr)
+         *out << "      \"" << itr->first << "\"\n";
       *out << std::endl;
 
       *out << "   Stratimikos solvers = ";
-      for(itr==stratSolver_.begin();itr!=stratSolver_.end();++itr)
-         *out << "\"" << itr->first << "\" ";
+      for(itr=stratSolver_.begin();itr!=stratSolver_.end();++itr)
+         *out << "      \"" << itr->first << "\"\n";
       *out << std::endl;
 
       *out << "   Block preconditioners = ";
-      for(itr==blockPrecond_.begin();itr!=blockPrecond_.end();++itr)
-         *out << "\"" << itr->first << "\" ";
+      for(itr=blockPrecond_.begin();itr!=blockPrecond_.end();++itr)
+         *out << "      \"" << itr->first << "\"\n";
       *out << std::endl;
 
       TEUCHOS_ASSERT(isStratSolver || isStratPrecond || isBlockPrecond);
@@ -206,17 +205,22 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
       // remove required parameters
       RCP<Teuchos::ParameterList> plCopy = rcp(new Teuchos::ParameterList(*pl));
       std::string type = plCopy->get<std::string>("Preconditioner Type");
-      RCP<Teuchos::ParameterList> xtraParams = rcp(new Teuchos::ParameterList(
-            plCopy->sublist("Preconditioner Types").sublist(type).sublist("Required Parameters"))); 
-      plCopy->sublist("Preconditioner Types").sublist(type).remove("Required Parameters"); 
+      RCP<Teuchos::ParameterList> xtraParams;
+      if(plCopy->sublist("Preconditioner Types").sublist(type).isParameter("Required Parameters")) {
+         xtraParams = rcp(new Teuchos::ParameterList(
+               plCopy->sublist("Preconditioner Types").sublist(type).sublist("Required Parameters"))); 
+         plCopy->sublist("Preconditioner Types").sublist(type).remove("Required Parameters"); 
+      }
 
       // print some debuggin info
       Teko_DEBUG_MSG_BEGIN(10);
          DEBUG_STREAM << "Printing parameter list: " << std::endl; 
          Teko_DEBUG_PUSHTAB(); plCopy->print(DEBUG_STREAM); Teko_DEBUG_POPTAB();
 
-         DEBUG_STREAM << "Printing extra parameters: " << std::endl; 
-         Teko_DEBUG_PUSHTAB(); xtraParams->print(DEBUG_STREAM); Teko_DEBUG_POPTAB();
+         if(xtraParams!=Teuchos::null) {
+            DEBUG_STREAM << "Printing extra parameters: " << std::endl; 
+            Teko_DEBUG_PUSHTAB(); xtraParams->print(DEBUG_STREAM); Teko_DEBUG_POPTAB();
+         }
       Teko_DEBUG_MSG_END();
 
       Stratimikos::DefaultLinearSolverBuilder strat;

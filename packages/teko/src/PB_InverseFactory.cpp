@@ -116,8 +116,13 @@ PreconditionerInverseFactory::PreconditionerInverseFactory(const Teuchos::RCP<Th
 PreconditionerInverseFactory::PreconditionerInverseFactory(
               const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
               const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam)
-   : precFactory_(precFactory), extraParams_(rcp(new Teuchos::ParameterList(*xtraParam)))
-{ }
+   : precFactory_(precFactory)
+{ 
+   if(xtraParam!=Teuchos::null)
+      extraParams_ = rcp(new Teuchos::ParameterList(*xtraParam));
+   else
+      extraParams_ = Teuchos::null; // make it explicit
+}
 
 //! Copy constructor
 PreconditionerInverseFactory::PreconditionerInverseFactory(const PreconditionerInverseFactory & pFactory)
