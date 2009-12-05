@@ -9,6 +9,9 @@
 /* Define if Epetra namespace is enabled within NOX */
 #cmakedefine HAVE_NOX_EPETRA
 
+/* Define if EpetraExt capabilities are enabled within NOX::Epetra */
+#cmakedefine HAVE_NOX_EPETRAEXT
+
 /* Define ML options */
 #define MLAPI_LC
 /* #define MLAPI_CHECK */
@@ -91,6 +94,9 @@
 
 /* Define if want to build nox-epetra */
 #cmakedefine HAVE_PYTRILINOS_NOX_EPETRA
+
+/* Define if want to build nox-epetra with epetraext */
+#cmakedefine HAVE_PYTRILINOS_NOX_EPETRAEXT
 
 /* Define if want to build with pytrilinos enabled */
 #cmakedefine HAVE_PYTRILINOS_RTOP
