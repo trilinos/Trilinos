@@ -41,6 +41,7 @@ SET( CMAKE_MODULE_PATH
 INCLUDE(PrintVar)
 INCLUDE(AssertDefined)
 INCLUDE(AppendSet)
+INCLUDE(AppendStringVar)
 INCLUDE(PackageArchProcessPackagesAndDirsLists)
 INCLUDE(PackageArchAdjustPackageEnables)
 
@@ -328,16 +329,16 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SELECT_DEFAULT_GENERATOR()
   SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
 
-  # Do the CVS updates or not
+  # Do the Git updates or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
  
   # Generate the XML dependency output files or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
 
-  # Flags used on cvs when doing a CVS update
+  # Flags used on git when doing a Git update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "")
 
-  # Flags used on update when doing a CVS update
+  # Flags used on update when doing a Git update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
 
   # Flags passed to 'make' assume gnumake with unix makefiles
@@ -428,18 +429,18 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   #
 
   IF (CTEST_DO_UPDATES)
-    FIND_PROGRAM(GIT_EXECUTABLE NAMES eg)
-    MESSAGE("GIT_EXECUTABLE=${GIT_EXECUTABLE}")
+    FIND_PROGRAM(EG_EXECUTABLE NAMES eg)
+    MESSAGE("EG_EXECUTABLE=${EG_EXECUTABLE}")
 
     SET(UPDATE_TYPE "git")
     MESSAGE("UPDATE_TYPE = '${UPDATE_TYPE}'")
     
-    SET(CTEST_UPDATE_COMMAND "${GIT_EXECUTABLE}")
+    SET(CTEST_UPDATE_COMMAND "${EG_EXECUTABLE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
       MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
       SET( CTEST_CHECKOUT_COMMAND
-        "${GIT_EXECUTABLE} clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
+        "${EG_EXECUTABLE} clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
       MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
@@ -491,22 +492,22 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     ENDIF()    
 
     #setting branch switch to success incase we are not doing a switch to a different branch.
-    SET(BRANCH_SUCCEEDED "0")
+    SET(EG_SWITCH_RETURN_VAL "0")
     IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0")
       MESSAGE("Doing switch to branch ${Trilinos_BRANCH}")
-      EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} switch ${Trilinos_BRANCH}
+      EXECUTE_PROCESS(COMMAND ${EG_EXECUTABLE} switch ${Trilinos_BRANCH}
         WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
-        RESULT_VARIABLE BRANCH_SUCCEEDED
+        RESULT_VARIABLE EG_SWITCH_RETURN_VAL
         OUTPUT_VARIABLE BRANCH_OUTPUT
         ERROR_VARIABLE  BRANCH_ERROR
       )
-      IF(NOT "${BRANCH_SUCCEEDED}" EQUAL "0")
-        MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${BRANCH_SUCCEEDED}")
+      IF(NOT "${EG_SWITCH_RETURN_VAL}" EQUAL "0")
+        MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${EG_SWITCH_RETURN_VAL}")
       ENDIF()
       #Apparently the successful branch switch is also written to stderr.
       MESSAGE("${BRANCH_ERROR}")
     ENDIF()
-    IF ("${UPDATE_RETURN_VAL}" LESS "0" OR NOT "${BRANCH_SUCCEEDED}" EQUAL "0")
+    IF ("${UPDATE_RETURN_VAL}" LESS "0" OR NOT "${EG_SWITCH_RETURN_VAL}" EQUAL "0")
       SET(UPDATE_FAILED TRUE)
     ELSE()
       SET(UPDATE_FAILED FALSE)
@@ -559,7 +560,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   MESSAGE("\nBegin incremental building and testing of Trilinos packages ...\n")
   
   SET(Trilinos_LAST_WORKING_PACKAGE)
-  SET(Trilinos_FAILED_PACKAGES)
+  SET(Trilinos_FAILED_LIB_BUILD_PACKAGES)
   
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
 
@@ -572,7 +573,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     MESSAGE("\nCurrent Trilinos package: '${PACKAGE}'\n")
   
     #
-    # Configure the package and its dependent packages
+    # A) Configure the package and its dependent packages
     #
   
     MESSAGE("\nConfiguring PACKAGE='${PACKAGE}'\n")
@@ -608,35 +609,38 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
         "-DTrilinos_ENABLE_${Trilinos_LAST_WORKING_PACKAGE}:BOOL=")
       SET(Trilinos_LAST_WORKING_PACKAGE)
     ENDIF()
-    FOREACH(FAILED_PACKAGE ${Trilinos_FAILED_PACKAGES})
+    FOREACH(FAILED_PACKAGE ${Trilinos_FAILED_LIB_BUILD_PACKAGES})
       LIST(APPEND CONFIGURE_OPTIONS
         "-DTrilinos_ENABLE_${FAILED_PACKAGE}:BOOL=OFF")
     ENDFOREACH()
     SET(CONFIGURE_OPTIONS ${CONFIGURE_OPTIONS}
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS} ${EXTRA_CONFIGURE_OPTIONS})
     MESSAGE("CONFIGURE_OPTIONS = '${CONFIGURE_OPTIONS}'")
-  
+
     # Do the configure
     CTEST_CONFIGURE(
       BUILD "${CTEST_BINARY_DIRECTORY}"
       OPTIONS "${CONFIGURE_OPTIONS}" # New option!
       RETURN_VALUE CONFIGURE_RETURN_VAL
       )
+
     MESSAGE("Generating the file CMakeCache.clean.txt ...")
     FILE(STRINGS "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt" CACHE_CONTENTS)
-    message("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
-    FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}")
+    MESSAGE("CMAKE_CACHE_CLEAN_FILE = ${CMAKE_CACHE_CLEAN_FILE}")
+    SET(CMAKE_CACHE_CLEAN_FILE_STR "")
     FOREACH(line ${CACHE_CONTENTS})
       # write lines that do not start with # or //
       IF(NOT "${line}" MATCHES "^(#|//)")
-        FILE(APPEND "${CMAKE_CACHE_CLEAN_FILE}" "${line}\n")
+        APPEND_STRING_VAR(CMAKE_CACHE_CLEAN_FILE_STR "${line}\n")
       ENDIF()
     ENDFOREACH()
+    FILE(WRITE "${CMAKE_CACHE_CLEAN_FILE}" ${CMAKE_CACHE_CLEAN_FILE_STR})
+
     # If the configure failed, add the package to the list
     # of failed packages
     IF (NOT "${CONFIGURE_RETURN_VAL}" EQUAL "0")
       MESSAGE("${PACKAGE} FAILED to configure")
-      LIST(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+      LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${PACKAGE})
     ELSE()
       # load target properties and test keywords
       CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
@@ -651,7 +655,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     ENDIF()
   
     #
-    # If configure passed then try the build.  Otherwise, move on to
+    # B) If configure passed then try the build.  Otherwise, move on to
     # to the next package.
     #
   
@@ -746,7 +750,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       ELSE()
   
         MESSAGE("FAILED library build for package '${PACKAGE}'")
-        LIST(APPEND Trilinos_FAILED_PACKAGES ${PACKAGE})
+        LIST(APPEND Trilinos_FAILED_LIB_BUILD_PACKAGES ${PACKAGE})
   
       ENDIF()
   
@@ -759,13 +763,15 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
   ENDFOREACH(PACKAGE)
   
-  IF(Trilinos_FAILED_PACKAGES)
-    MESSAGE("\nFinal set of failed packages: '${Trilinos_FAILED_PACKAGES}'")
+  IF(Trilinos_FAILED_LIB_BUILD_PACKAGES)
+    MESSAGE(
+      "\nFinal set packages that failed to configure or have the libraries build:"
+      " '${Trilinos_FAILED_LIB_BUILD_PACKAGES}'")
   ENDIF()
 
   # Write a file listing the packages that failed.  This will be read in on the next CI
   # iteration since these packages must be enabled
-  FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${Trilinos_FAILED_PACKAGES}")
+  FILE(WRITE "${FAILED_PACKAGES_FILE_NAME}" "${Trilinos_FAILED_LIB_BUILD_PACKAGES}")
 
   MESSAGE("\nKill all hanging Zoltan processes ...")
   EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
