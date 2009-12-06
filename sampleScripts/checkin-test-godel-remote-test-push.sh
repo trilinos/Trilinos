@@ -38,8 +38,21 @@ echo "
 --ctest-options="-j6" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
---extra-pull-from="gabriel:~/PROJECTS/Trilinos.base/Trilinos master" \
+--extra-pull-from="gabriel master" \
 $EXTRA_ARGS
+
+# NOTE: The above remote 'gabriel' was created from:
+#
+#   $ eg remote add gabriel gabriel:~/PROJECTS/Trilinos.base/Trilinos
+#
+# This allows the shorthand 'gabriel' in lots of eg/git operations.
+
+# NOTE: If you want to pull from a different remote you have to quote
+# the --extra-pull-from option to this shell script as:
+#
+#    "--extra-pull-from=\"otherrepo master\""
+#
+# Otherwise, the space will mess things up!
 
 # NOTE: Even though godel has 8 cores, I will only use 6 of them so that I
 # don't dominate the machine.
