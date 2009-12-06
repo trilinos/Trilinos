@@ -24,9 +24,10 @@ echo "
 # Run the standard checkin testing script with my specializations
 #
 
-/sierra/Dev/rabartl/PROJECTS/Trilinos.base/Trilinoscheckin-test.py \
+/sierra/Dev/rabartl/PROJECTS/Trilinos.base/Trilinos/checkin-test.py \
 --make-options="-j8" \
 --ctest-options="-j8" \
+--ctest-timeout=180 \
 --without-serial-release \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  

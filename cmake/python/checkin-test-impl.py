@@ -78,7 +78,7 @@ commit/push:
   $ cd $TRILINOS_HOME
   $ cd CHECKIN
   $ ../checkin-test.py \
-      --make-options="-j4" --ctest-options="-j4" --ctest-time-out=180 \
+      --make-options="-j4" --ctest-options="-j4" --ctest-timeout=180 \
       [--commit -commit-msg-header-file=checkin_message] \
       --do-all --push
 
@@ -392,12 +392,12 @@ Common Use Cases (examples):
 
 (*) Performing a remote test/push:
 
-  If you develop on a slow machine like your laptop, doing an appropriate level
-  of testing may take a long time.  In this case, you can pull the changes to
-  another faster workstation machine and do a more complete set of tests and
-  push from there.
+  If you develop on a slow machine like your laptop, doing an appropriate
+  level of testing may take a long time.  In this case, you can pull the
+  changes to another faster remote workstation machine and do a more complete
+  set of tests and push from there.
 
-  On your slow local development machine <mymachine>, do the local test/commit
+  On your slow local development machine mymachine, do the local test/commit
   with:
   
     ../checkin-test.py \
@@ -406,7 +406,7 @@ Common Use Cases (examples):
   On your fast remote test machine, do a full test and push with:
   
     ../checkin-test.py \
-      --extra-pull-from='<mymachine>:/some/dir/to/your/trilinos/src master' \
+      --extra-pull-from='mymachine:/some/dir/to/your/trilinos/src master' \
       --do-all --push
   
   NOTE: You can of course do the local commit yourself first and avoid the
@@ -550,8 +550,8 @@ clp.add_option(
   help="Extra options to pass to 'ctest' (e.g. -j2)." )
 
 clp.add_option(
-  "--ctest-time-out", dest="ctestTimeOut", type="float", default=None,
-  help="Time-out (in seconds) for each single 'ctest' test (e.g. 180)." )
+  "--ctest-timeout", dest="ctestTimeOut", type="float", default=None,
+  help="timeout (in seconds) for each single 'ctest' test (e.g. 180)." )
 
 clp.add_option(
   "--show-all-tests", dest="showAllTests", action="store_true",
@@ -745,7 +745,7 @@ print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
 print "  --make-options='"+options.makeOptions+"' \\"
 print "  --ctest-options='"+options.ctestOptions+"' \\"
 if options.ctestTimeOut:
-  print "  --ctest-time-out="+str(options.ctestTimeOut)+" \\"
+  print "  --ctest-timeout="+str(options.ctestTimeOut)+" \\"
 if options.showAllTests:
   print "  --show-all-tests \\"
 else:

@@ -34,11 +34,15 @@ echo "
 #
 
 ../../Trilinos/checkin-test.py \
---make-options="-j8" \
---ctest-options="-j8" \
+--make-options="-j6" \
+--ctest-options="-j6" \
+--ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 --extra-pull-from="gabriel:~/PROJECTS/Trilinos.base/Trilinos master" \
-$EXTRA_ARGS  
+$EXTRA_ARGS
+
+# NOTE: Even though godel has 8 cores, I will only use 6 of them so that I
+# don't dominate the machine.
 
 # Above, I left in the --commit-msg-header option in case I need to
 # fix problems and add more commits.  I like editing a file before I

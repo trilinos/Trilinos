@@ -27,9 +27,10 @@ echo "-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=" >> COMMON.config
 # Run the checkin-test.py script with more arguments
 #
 
-/cygdrive/c/_mystuff/PROJECTS/Trilinos.base/Trilinos/cmake/python/checkin-test.py \
+/cygdrive/c/_mystuff/PROJECTS/Trilinos.base/Trilinos/checkin-test.py \
 --make-options="-j2" \
 --ctest-options="-j2" \
+--ctest-timeout=180 \
 --send-email-to= \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  

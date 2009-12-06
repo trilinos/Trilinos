@@ -54,10 +54,10 @@ echo "
 # Run the standard checkin testing script with my specializations
 #
 
-../../../Trilinos/checkin-test.py \
+../../Trilinos/checkin-test.py \
 --make-options="-j4" \
 --ctest-options="-j4" \
---ctest-time-out=180 \
+--ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
 

@@ -13,6 +13,6 @@ cmake \
 -D Teuchos_ENABLE_FLOAT:BOOL=OFF \
 -D Teuchos_ENABLE_COMPLEX:BOOL=OFF \
 $EXTRA_ARGS \
-../../../Trilinos
+../../Trilinos
 
 #-D BUILD_SHARED_LIBS:BOOL=ON \
