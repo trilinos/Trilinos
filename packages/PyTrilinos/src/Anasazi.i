@@ -241,6 +241,7 @@ package:
 // Teuchos::RCP<...>, as function arguments //
 //////////////////////////////////////////////
 #ifdef HAVE_TEUCHOS
+%teuchos_rcp_typemaps(std::basic_ostream)
 %teuchos_rcp_typemaps(std::ostream)
 %teuchos_rcp_typemaps(std::vector<int, std::allocator<int> >)
 %teuchos_rcp_typemaps(Teuchos::SerialDenseMatrix<int, double>)
