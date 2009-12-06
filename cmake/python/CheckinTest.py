@@ -5,13 +5,6 @@
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
-#  (*) Implement --extra-builds option with unit tests.
-#
-#  (*) Implement check that -DTPL_ENABLE* is not specified in any of the
-#  standard configure files.  Also, make sure that there are no
-#  -DTrilinos_ENABLE* variables in COMMON.config either.  Force users to do
-#  package enables/disables using --enable-packages, --disable-packages.
-#
 #  (*) Change logic to not enable everything if TrilinosPackages.cmake or
 #  TrilinosTPLs.cmake are changed.
 #
