@@ -36,7 +36,7 @@ import sys
 import types
 import os.path
 import optparse
-
+import unicodedata
 
 def my_open_read(source):
     if hasattr(source, "read"):
@@ -54,7 +54,7 @@ def my_str(source):
     try:
         result = str(source)
     except UnicodeEncodeError, e:
-        result = source.encode("utf-8")
+        result = unicodedata.normalize('NFKD',source).encode('ascii','ignore')
     return result
 
 
