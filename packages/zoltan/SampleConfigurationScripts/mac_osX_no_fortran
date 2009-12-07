@@ -7,11 +7,11 @@
 set path=(/Users/kddevin/code/lib-m64/lam-7.1.4/bin $path)
 setenv CC /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpicc
 setenv CXX /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpic++
-setenv F77 /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpif77
+setenv FC /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpif77
 setenv CFLAGS -m64
 setenv CXXFLAGS -m64
 setenv CPPFLAGS -m64
-setenv FFLAGS -m64
+setenv FCFLAGS -m64
 
 ../configure -C \
   --prefix=/Users/kddevin/code/trilinos_v9.0/Obj_mac64 \

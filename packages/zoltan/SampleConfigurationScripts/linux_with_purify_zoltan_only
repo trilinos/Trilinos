@@ -11,7 +11,7 @@ setenv CXX "$PURE_CC g++34  -Wall -Werror-implicit-function-declaration"
 setenv CFLAGS "-m64 -g"
 setenv CXXFLAGS "-m64 -g"
 setenv CPPFLAGS "-m64 -g"
-setenv FFLAGS "-m64 -g"
+setenv FCFLAGS "-m64 -g"
 setenv MPIINC `mpicc --showme:compile`
 setenv MPILIB `mpicc --showme:link`
 
