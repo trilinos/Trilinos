@@ -60,8 +60,9 @@ echo "
 #
 
 ../../Trilinos/checkin-test.py \
+--send-email-to=bakercg@ornl.gov \
 --make-options="-j2" \
---ctest-options="-j2" \
+--ctest-options="-j1" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 --enable-all-packages=off --no-enable-fwd-packages \
