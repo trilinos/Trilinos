@@ -27,7 +27,7 @@ CPPC			= mpic++ -m64 -bind_at_load
 INCLUDE_PATH		= 
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O3
-CFLAGS 			= $(OPT_FLAGS) 
+CFLAGS 			= $(DBG_FLAGS) 
 
 # To use fortran, MUST USE lam mpi in ~/code/lib-m64/lam-7.1.4.
 # Make sure path to mpif77 points to ~/code/lib-m64/lam-7.1.4/bin/mpif77.
