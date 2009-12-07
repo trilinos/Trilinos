@@ -64,6 +64,7 @@ echo "
 --ctest-options="-j2" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
+--enable-all-packages=off --no-enable-fwd-packages \
 $EXTRA_ARGS  
 
 # Options to run with:
