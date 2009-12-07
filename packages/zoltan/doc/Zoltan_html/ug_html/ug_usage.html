@@ -33,17 +33,17 @@
 This section contains information needed to use the Zoltan library with
 applications:
 <blockquote>
-<a href="#System Requirements">System requirements.</a>
-<br><a href="#Building the Library">Building the Zoltan library.</a>
-<br><a href="#Testing the Library">Testing the Zoltan library.</a>
-<br><a href="#ReportingBugs">Reporting bugs</a> in Zoltan.
+<a href="#System Requirements">System requirements</a>
+<br><a href="#Building the Library">Building the Zoltan library</a>
+<br><a href="#Testing the Library">Testing the Zoltan library</a>
+<br><a href="#ReportingBugs">Reporting bugs</a> in Zoltan
 <br><a href="#Incorporating Zoltan">Incorporating Zoltan into Applications</a>
 <br><a href="#Building Applications">Building applications</a>
-that use Zoltan.
+that use Zoltan
 <br><a href="#Data Types for Object IDs">Data types</a> for global and
-local IDs.
-<br><a href="ug_cpp.html">C++ interface</a>.
-<br><a href="ug_fortran.html">F90 interface</a>.
+local IDs
+<br><a href="ug_cpp.html">C++ interface</a>
+<br><a href="ug_fortran.html">F90 interface</a>
 </blockquote>
 
 <hr>
@@ -145,6 +145,11 @@ make install
 </blockquote>
 <p>
 More examples are in the directory zoltan/SampleConfigurationScripts.
+<p>
+After the configuration is done in 
+the build directory, object files and executables can be removed with
+<i>make clean</i>; the same configuration will be used for subsequent builds.  
+Configuration information is removed with <i>make distclean</i>.
 <p>
 <h4><a NAME="CMake"></a>Using CMake to Build Zoltan</h4>
 Zoltan can be built as part of the Trilinos framework using the 
