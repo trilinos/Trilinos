@@ -253,7 +253,7 @@ TAC_ARG_WITH_PACKAGE(drum, [Enable Drum support.  Library name as well as librar
 #  CPPFLAGS="-I${tac_with_drum_incdir}  ${CPPFLAGS}"
 #fi
 
-TAC_ARG_WITH_PACKAGE(nemesis_exodus, [Enable Nemesis/Exodus support for the Zdrive test executable.  Library and include paths must be specified using LDFLAGS and CPPFLAGS.], NEMESIS_EXODUS, no)
+TAC_ARG_WITH_PACKAGE(nemesis_exodus, [Enable Nemesis/Exodus support for the Zdrive test executable.  Library and include paths must be specified using LDFLAGS and CFLAGS.], NEMESIS_EXODUS, no)
 #I am not sure if we can do this.  We may not be able to get things in the right
 #order. JW.
 if test "X$ac_cv_use_nemesis_exodus" != "Xno"; then
