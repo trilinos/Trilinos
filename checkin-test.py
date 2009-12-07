@@ -15,6 +15,9 @@ import sys
 import os
 import traceback
 
+scriptsDir = os.path.abspath(os.path.dirname(sys.argv[0]))+"/cmake/python"
+sys.path.insert(0, scriptsDir)
+
 from GeneralScriptSupport import *
 
 #
@@ -36,8 +39,6 @@ showDefaultsOpt = len( set(cmndLineArgs) & set(("--show-defaults", "dummy")) ) >
 #
 # Forward the options but tee the output
 #
-
-scriptsDir = getScriptBaseDir()
 
 if (not helpOpt) and (not showDefaultsOpt):
   logFileName = "checkin-test.out"

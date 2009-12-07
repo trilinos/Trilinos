@@ -22,6 +22,16 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  Epetra_BKS_norestart_test
+  SOURCES cxx_main_norestart.cpp
+  ARGS 
+    "--verbose"
+#    "--debug"
+#    "--debug --shortrun"
+  COMM serial mpi
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Epetra_BKS_nh_test
   SOURCES cxx_main_nh.cpp
   ARGS 

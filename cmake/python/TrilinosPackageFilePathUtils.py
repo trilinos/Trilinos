@@ -20,6 +20,29 @@ from GeneralScriptSupport import *
 import time
 
 
+def isGlobalBuildFile(modifiedFileFullPath):
+  modifiedFileFullPathArray = getFilePathArray(modifiedFileFullPath)
+  if len(modifiedFileFullPathArray)==1:
+    if modifiedFileFullPathArray[0] == "CMakeLists.txt":
+      return True
+    if modifiedFileFullPathArray[0] == "Trilinos_version.h":
+      return True
+  if modifiedFileFullPathArray[0] == 'cmake':
+    if modifiedFileFullPathArray[1] == 'ctest':
+      return False
+    if modifiedFileFullPathArray[1] == 'DependencyUnitTests':
+      return False
+    if modifiedFileFullPathArray[1] == 'TPLs':
+      if ['FindTPLBLAS.cmake', 'FindTPLLAPACK.cmake', 'FindTPLMPI.cmake'].count(
+        modifiedFileFullPathArray[2]) == 1 \
+        :
+        return True
+      return False
+    if modifiedFileFullPathArray[-1].rfind(".cmake") != -1:
+      return True
+  return False
+
+
 def getFilePathArray(filePathStr):
   return filePathStr.split('/')
 
@@ -49,12 +72,18 @@ def extractFilesListMatchingPattern(fileList_in, reMatachingPattern):
   return fileList_out
 
 
-def getPackgesListFromFilePathsList(trilinosDependencies, filePathsList):
+def getPackagesListFromFilePathsList(trilinosDependencies, filePathsList,
+  allPackages=False \
+  ):
   packagesList = []
+  enabledAllPackages = False
   for filePath in filePathsList:
     packageName = getPackageNameFromPath(trilinosDependencies, filePath)
-    if findInSequence(packagesList, packageName) == -1:
-      packagesList.append(packageName)
+    if findInSequence(packagesList, packageName) == -1 and packageName: 
+      packagesList.append(packageName.strip())
+    if allPackages and isGlobalBuildFile(filePath) and not enabledAllPackages:
+      packagesList.append("ALL_PACKAGES")
+      enabledAllPackages = True
   return packagesList
 
 

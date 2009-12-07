@@ -2,6 +2,6 @@
 
 namespace Kokkos {
   std::string NodeAPIVersion() { 
-		return("Kokkos Node API Version 1.0d - 10/14/2009"); 
+		return("Kokkos Node API Version 1.0d - 12/07/2009"); 
 	}
 }

@@ -43,9 +43,6 @@
 // ----------   User Defined Includes   ----------
 #include "Brusselator.H"
 #include "Epetra_CrsMatrix.h"
-#ifdef HAVE_NOX_EPETRAEXT
-#include "EpetraExt_MatrixMatrix.h"
-#endif
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(Brusselator& Problem) :

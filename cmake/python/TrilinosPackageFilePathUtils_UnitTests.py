@@ -69,15 +69,15 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
     self.assertEqual( modifedFilesList, modifedFilesList_expected )
 
 
-  def test_getPackgesListFromFilePathsList_01(self):
+  def test_getPackagesListFromFilePathsList_01(self):
 
     filesList = extractFilesListMatchingPattern( updateOutputList,
       re.compile(r"^[AMP] (.+)$") )
     
-    packagesList = getPackgesListFromFilePathsList( trilinosDependencies, filesList )
+    packagesList = getPackagesListFromFilePathsList( trilinosDependencies, filesList )
 
     packagesList_expected = \
-      [u"", u"TrilinosFramework", u"NOX", u"Stratimikos", u"Thyra"]
+      [u"TrilinosFramework", u"NOX", u"Stratimikos", u"Thyra"]
 
     self.assertEqual( packagesList, packagesList_expected )
 
@@ -99,6 +99,24 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
       ]
 
     self.assertEqual( packagesList, packagesList_expected )
+
+
+  def test_get_trilinos_packages_from_files_list_01(self):
+
+    writeStrToFile( "modifiedFiles.txt",
+      "CMakeLists.txt\n" \
+      "cmake/python/checkin-test.py\n" \
+      "cmake/python/dump-cdash-deps-xml-file.py\n" \
+      "packages/nox/src/dummy.C\n" \
+      "packages/thyra/src/Thyra_ConfigDefs.hpp\n" \
+      "packages/thyra/CMakeLists.txt\n" \
+      )
+
+    self.assertEqual(
+      getCmndOutput(getScriptBaseDir()+"/get-trilinos-packages-from-files-list.py" \
+        " --files-list-file=modifiedFiles.txt", True),
+      "ALL_PACKAGES;TrilinosFramework;NOX;Thyra"
+      )
 
 
 def suite():

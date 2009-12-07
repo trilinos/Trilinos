@@ -29,7 +29,7 @@
 // @HEADER
 
 %{
-#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_SerializationTraits.hpp"
 
 // Specializations of Teuchos::SerializationTraits<>:
@@ -71,7 +71,7 @@ class SerializationTraits<Ordinal,unsigned long long>
 ///////////////////////////////////
 // Teuchos::ScalarTraits support //
 ///////////////////////////////////
-%include "Teuchos_ScalarTraits.hpp"
+%include "Teuchos_ScalarTraitsDecl.hpp"
 // Specialization of ScalarTraits<> for type long
 %inline 
 %{

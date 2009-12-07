@@ -5,13 +5,6 @@
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
-#  (*) Implement --extra-builds option with unit tests.
-#
-#  (*) Implement check that -DTPL_ENABLE* is not specified in any of the
-#  standard configure files.  Also, make sure that there are no
-#  -DTrilinos_ENABLE* variables in COMMON.config either.  Force users to do
-#  package enables/disables using --enable-packages, --disable-packages.
-#
 #  (*) Change logic to not enable everything if TrilinosPackages.cmake or
 #  TrilinosTPLs.cmake are changed.
 #
@@ -133,6 +126,10 @@ def getCommitStatusEmailBodyFileName():
 
 def getPushOutputFileName():
   return "push.out"
+
+
+def getExtraCommandOutputFileName():
+  return "extraCommand.out"
 
 
 def getHostname():
@@ -352,30 +349,7 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
   return success
 
 
-reModifedFiles = re.compile(r"^[MA]\t(.+)$")
-
-
-def isGlobalBuildFile(modifiedFileFullPath):
-  modifiedFileFullPathArray = getFilePathArray(modifiedFileFullPath)
-  if len(modifiedFileFullPathArray)==1:
-    if modifiedFileFullPathArray[0] == "CMakeLists.txt":
-      return True
-    if modifiedFileFullPathArray[0] == "Trilinos_version.h":
-      return True
-  if modifiedFileFullPathArray[0] == 'cmake':
-    if modifiedFileFullPathArray[1] == 'ctest':
-      return False
-    if modifiedFileFullPathArray[1] == 'DependencyUnitTests':
-      return False
-    if modifiedFileFullPathArray[1] == 'TPLs':
-      if ['FindTPLBLAS.cmake', 'FindTPLLAPACK.cmake', 'FindTPLMPI.cmake'].count(
-        modifiedFileFullPathArray[2]) == 1 \
-        :
-        return True
-      return False
-    if modifiedFileFullPathArray[-1].rfind(".cmake") != -1:
-      return True
-  return False
+reModifiedFiles = re.compile(r"^[MA]\t(.+)$")
 
 
 def getCurrentDiffOutput(inOptions, baseTestDir):
@@ -392,7 +366,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
   :
 
   modifiedFilesList = extractFilesListMatchingPattern(
-    updateOutputStr.split('\n'), reModifedFiles )
+    updateOutputStr.split('\n'), reModifiedFiles )
 
   for modifiedFileFullPath in modifiedFilesList:
 
@@ -774,11 +748,10 @@ def getTestCaseEmailSummary(testCaseName, testCaseNum):
 
 def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
   summaryEmailSectionStr = ""
-  if performAnyBuildTestActions(inOptions):
-    for buildTestCase in buildTestCaseList:
-      if buildTestCase.runBuildTestCase:
-        summaryEmailSectionStr += \
-          getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
+  for buildTestCase in buildTestCaseList:
+    if buildTestCase.runBuildTestCase:
+      summaryEmailSectionStr += \
+        getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
 
   
@@ -1346,6 +1319,8 @@ def checkinTest(inOptions):
 
     removeIfExists(getFinalPullOutputFileName())
     removeIfExists(getModifiedFilesOutputFileName())
+    removeIfExists(getPushOutputFileName())
+    removeIfExists(getExtraCommandOutputFileName())
 
     for buildTestCase in buildTestCaseList:
       cleanBuildTestCaseOutputFiles(
@@ -1411,7 +1386,7 @@ def checkinTest(inOptions):
 
     pullPassed = True
 
-    doingAtLeastOnePull = (inOptions.extraPullFrom or inOptions.doPull)
+    doingAtLeastOnePull = inOptions.doPull
 
     if not doingAtLeastOnePull:
 
@@ -1486,7 +1461,7 @@ def checkinTest(inOptions):
     # Check for prior successful initial pull
     currentSuccessfullPullExists = os.path.exists(getInitialPullSuccessFileName())
 
-    if (inOptions.doPull or inOptions.extraPullFrom):
+    if inOptions.doPull:
       if pullPassed:
         print "\nUpdate passed!\n"
         echoRunSysCmnd("touch "+getInitialPullSuccessFileName())
@@ -1819,13 +1794,34 @@ def checkinTest(inOptions):
 
   
     print "\n***"
-    print "*** 8) Create and send push (or readiness status) notification email  ..."
+    print "*** 8) Set up to run execute extra command on ready to push  ..."
+    print "***"
+
+    if inOptions.executeOnReadyToPush and not okayToPush:
+
+      print "\nNot executing final command ("+inOptions.executeOnReadyToPush+") since" \
+        +" a push is not okay to be performed!\n"
+
+    elif inOptions.executeOnReadyToPush and okayToPush:
+
+      executeCmndStr = "\nExecuting final command ("+inOptions.executeOnReadyToPush+") since" \
+        +" a push is okay to be performed!\n"
+      commitEmailBodyExtra += executeCmndStr
+      print executeCmndStr
+
+    else:
+
+      print "\nNot executing final command since none was given ...\n"
+
+  
+    print "\n***"
+    print "*** 9) Create and send push (or readiness status) notification email  ..."
     print "***\n"
 
     if inOptions.doCommitReadinessCheck:
 
       #
-      print "\n8.a) Getting final status to send out in the summary email ...\n"
+      print "\n9.a) Getting final status to send out in the summary email ...\n"
       #
 
       if not commitPassed:
@@ -1875,7 +1871,7 @@ def checkinTest(inOptions):
           subjectLine = "NOT READY TO PUSH"
 
       #
-      print "\n8.b) Create and send out push (or readinessstatus) notification email ..."
+      print "\n9.b) Create and send out push (or readinessstatus) notification email ..."
       #
   
       subjectLine += ": Trilinos: "+getHostname()
@@ -1909,6 +1905,32 @@ def checkinTest(inOptions):
     else:
 
       print "\nNot performing commit/push or sending out commit/push readiness status on request!"
+
+  
+    print "\n***"
+    print "*** 10) Run execute extra command on ready to push  ..."
+    print "***"
+
+    if inOptions.executeOnReadyToPush and okayToPush:
+
+      print executeCmndStr
+
+      extraCommandRtn = echoRunSysCmnd(
+        inOptions.executeOnReadyToPush,
+        workingDir=baseTestDir,
+        outFile=os.path.join(baseTestDir, getExtraCommandOutputFileName()),
+        throwExcept=False, timeCmnd=True )
+
+      if extraCommandRtn == 0:
+        print "\nExtra command passed!\n"
+      else:
+        print "\nExtra command failed!\n"
+        success = False
+
+    else:
+
+      print "\nNot executing final command ...\n"
+
   
     if not performAnyActions(inOptions) and not inOptions.doPush:
 

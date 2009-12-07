@@ -394,7 +394,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     # B) Create the command to run the checkin-test.py script
     
-    cmnd = scriptsDir + "/checkin-test.py --no-eg-git-version-check " + optionsStr
+    cmnd = scriptsDir + "/../../checkin-test.py --no-eg-git-version-check " + optionsStr
     # NOTE: Above, we want to turn off the eg/git version tests since we want
     # these unit tests to run on machines that do not have the official
     # versions (e.g. the SCICO LAN) but where the versions might be okay.
@@ -608,7 +608,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5" \
       +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      +" --do-all --commit --push",
+      +" --do-all --commit --push" \
+      +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
@@ -618,6 +619,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
+      +"IT: ssh -q godel /some/dir/some_command.sh &; 0; 'extra command passed'\n" \
       ,
       \
       True,
@@ -631,6 +633,8 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedCommonOptionsSummary \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
+      +"Executing final command (ssh -q godel /some/dir/some_command.sh &) since a push is okay to be performed!\n" \
+      +"Running: ssh -q godel /some/dir/some_command.sh &\n" \
       ,
       [
       (getStatusOutputFileName(), "eg status shows no uncommitted files\n"),
@@ -695,6 +699,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "0) MPI_DEBUG Results:\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
       
@@ -716,7 +721,8 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --commit --push" \
-      " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
+      +" --extra-pull-from='dummy master'" \
+      +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       ,
       \
       g_cmndinterceptsInitialCommitPasses \
@@ -768,7 +774,9 @@ class test_checkin_test(unittest.TestCase):
       \
       "local_do_all_without_serial_release_pass",
       \
-      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all",
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
+      +" --extra-pull-from='dummy master' --local-do-all" \
+      +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
@@ -788,7 +796,8 @@ class test_checkin_test(unittest.TestCase):
       +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
       +"Explanation: In order to safely push, the local working directory needs to be up-to-date\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
-      +"^NOT READY TO PUSH: Trilinos:\n"
+      +"^NOT READY TO PUSH: Trilinos:\n" \
+      +"Not executing final command (ssh -q godel /some/dir/some_command.sh &) since a push is not okay to be performed!\n" \
       )
 
 
@@ -1146,6 +1155,27 @@ class test_checkin_test(unittest.TestCase):
       +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
+      )
+
+
+  def test_without_serial_release_extra_pull_only(self):
+    checkin_test_run_case(
+      self,
+      \
+      "without_serial_release_extra_pull_only",
+      \
+      "--extra-pull-from='machine:/repo/dir/repo master'",
+      \
+      g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      "Skipping all updates on request!\n" \
+      +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
+      +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      +"^INITIAL PULL FAILED: Trilinos:\n"
       )
 
 

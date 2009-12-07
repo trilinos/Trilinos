@@ -25,6 +25,7 @@ SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 # Above, we put these in the cache so we can grep them out
 
 SET( CMAKE_MODULE_PATH
+   ${TRILINOS_HOME_DIR}
    ${TRILINOS_HOME_DIR}/cmake
    ${TRILINOS_HOME_DIR}/cmake/utils
    ${TRILINOS_HOME_DIR}/cmake/package_arch
@@ -278,7 +279,8 @@ PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
 PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
 
-PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES()
+SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
+PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(TRUE)
 
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
   "\nFinal set of enabled packages" ON FALSE)

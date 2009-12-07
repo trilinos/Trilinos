@@ -14,15 +14,6 @@ Prioritized Backlog Items:
 -------------------------
 
 
-(*) [CTest] [P1] Implement timeouts of tests when CTest will be run on the
-commandline and not in dashbaord mode.  Currently, if you set the option CMake
-configure DART_TESTING_TIMEOUT, this will only affect timeouts when CTest is
-run in dasbhaord mode, not when it is run in regular command-line mode.  This
-is very bad because it will not timeout tests in our checkin-test.py script
-(or when run manually by Trilinos developers).  We just need some way to set a
-timeout when running ctest like 'ctest -jN'.
-
-
 (*) [CTest] [P2] Not all Zoltan tests are being run nightly.  See Bugzilla bug
 4511.
 
@@ -498,6 +489,14 @@ compilers should be tested for compatibility.
 Kitware to set up our MS Windows HPC Server 2008 machine and get the
 Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
+
+(*) [CTest] [P1] Implement timeouts of tests when CTest will be run on the
+commandline and not in dashbaord mode.  Currently, if you set the option CMake
+configure DART_TESTING_TIMEOUT, this will only affect timeouts when CTest is
+run in dasbhaord mode, not when it is run in regular command-line mode.  This
+is very bad because it will not timeout tests in our checkin-test.py script
+(or when run manually by Trilinos developers).  We just need some way to set a
+timeout when running ctest like 'ctest -jN'.
 
 (*) [CTest] [P2] By default, automatically widen the main summary
 output to show the full test names: Currently, only the first 30

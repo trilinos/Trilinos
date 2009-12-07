@@ -22,50 +22,50 @@ EXTRA_ARGS=$@
 # Set up configuration files
 #
 
-echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
-
-# 2009/08/28: Sundance is not building for this build case.  Kevin long said
-# to turn it off for now.  Plese don't do this in your scripts unless you
-# absolutely have to!
-echo "-DTrilinos_ENABLE_Sundance:BOOL=OFF" > SERIAL_RELEASE.config
+echo "
+-DBUILD_SHARED_LIBS:BOOL=ON
+-DTrilinos_ENABLE_Fortran=OFF
+-DCMAKE_C_FLAGS:STRING=\"-m32\"
+-DCMAKE_CXX_FLAGS:STRING=\"-m32\"
+" > COMMON.config
 
 echo "
--DTPL_ENABLE_Boost:BOOL=ON
--DBoost_INCLUDE_DIRS:PATH=$HOME/PROJECTS/install/boost-1.40.0/include
--DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
--DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
--DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON
--DTeuchos_ENABLE_FLOAT:BOOL=OFF
--DTeuchos_ENABLE_COMPLEX:BOOL=OFF
-" > SERIAL_DEBUG_BOOST_TRACE.config
+-DCMAKE_CXX_COMPILER=g++-4.2
+-DCMAKE_C_COMPILER=gcc-4.2
+-DMAKE_BUILD_TYPE:STRING=DEBUG
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF
+-DTrilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
+-DTrilinos_ENABLE_ThreadPool:BOOL=ON
+-DThreadPool_ENABLE_TESTS=OFF
+-DTPL_ENABLE_Pthread:BOOL=ON
+-DTPL_ENABLE_CUDA:BOOL=ON
+-DTPL_ENABLE_TBB:BOOL=ON
+-DTBB_LIBRARY_DIRS=/Users/ogb/sw_builds/TBB22/ia32/cc4.0.1_os10.4.9/lib
+-DTBB_INCLUDE_DIRS=/Users/ogb/sw_builds/TBB22/include
+-DTPL_ENABLE_Thrust:BOOL=ON
+-DThrust_INCLUDE_DIRS=/opt/gpulibs
+" > SERIAL_DEBUG_MULTICORE.config
 
 echo "
--DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
--DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
--DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON
--DTeuchos_ENABLE_FLOAT:BOOL=OFF
--DTeuchos_ENABLE_COMPLEX:BOOL=OFF
-" > SERIAL_DEBUG_TRACE.config
+-DMPI_BASE_DIR:PATH=/opt/openmpi-1.3.3-gcc-4.2_32bit
+" > MPI_DEBUG.config
 
 echo "
--DTPL_ENABLE_Boost:BOOL=ON
--DBoost_INCLUDE_DIRS:PATH=$HOME/PROJECTS/install/boost-1.40.0/include
--DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
--DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
--DTeuchos_ENABLE_FLOAT:BOOL=OFF
--DTeuchos_ENABLE_COMPLEX:BOOL=OFF
-" > SERIAL_DEBUG_BOOST.config
-
+-DCMAKE_CXX_COMPILER=g++-4.2
+-DCMAKE_C_COMPILER=gcc-4.2
+" > SERIAL_RELEASE.config
 
 #
 # Run the standard checkin testing script with my specializations
 #
 
 ../../Trilinos/checkin-test.py \
---make-options="-j4" \
---ctest-options="-j4" \
+--send-email-to=bakercg@ornl.gov \
+--make-options="-j2" \
+--ctest-options="-j1" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
+--enable-all-packages=off --no-enable-fwd-packages \
 $EXTRA_ARGS  
 
 # Options to run with:
