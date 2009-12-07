@@ -15,9 +15,6 @@ setenv FFLAGS -m64
 
 ../configure -C \
   --prefix=/Users/kddevin/code/trilinos_v9.0/Obj_mac64 \
-  --disable-default-packages \
-  --disable-fortran \
-  --enable-mpi --with-mpi-compilers \
   --with-parmetis \
   --with-parmetis-incdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
   --with-parmetis-libdir="/Users/kddevin/code/lib-m64/ParMETIS3_1" \

@@ -11,9 +11,6 @@ setenv FFLAGS -m64
 
 ../configure -C \
   --prefix=/Net/local/homes/kddevin/code/zoltan_v3.1/Obj_linux64 \
-  --disable-default-packages \
-  --enable-mpi --with-mpi-compilers \
-  --disable-fortran \
   --with-parmetis \
   --with-parmetis-incdir="/Net/local/proj/zoltan/arch/all/src/ParMETIS3_1" \
   --with-parmetis-libdir="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3_1" \
