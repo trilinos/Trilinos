@@ -14,6 +14,8 @@
 
 EXTRA_ARGS=$@
 
+source ~/.bashrc
+
 #
 # Set up basic environment options
 #
@@ -21,20 +23,19 @@ EXTRA_ARGS=$@
 echo "
 -DBUILD_SHARED_LIBS:BOOL=ON
 -DTrilinos_ENABLE_Fortran:BOOL=OFF
--DTrilinos_EXTRA_LINK_FLAGS:STRING=\"-Wl,-rpath,/opt/gcc/current/lib64\"
+-DTrilinos_EXTRA_LINK_FLAGS:STRING=\"-Wl,-rpath,/opt/gcc/gcc-4.3.2/lib64\"
 " > COMMON.config
 
 
 echo "
--DMPI_BASE_DIR:PATH=/opt/openmpi/gcc/current
+-DMPI_BASE_DIR:PATH=/usr/local/openmpi/gcc-4.3.2/openmpi-1.3.2
 -DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=\"\"
-" 
-> MPI_DEBUG.config
+" > MPI_DEBUG.config
 
 
 echo "
--DCMAKE_CXX_COMPILER=/opt/gcc/current/bin/g++
--DCMAKE_C_COMPILER=/opt/gcc/current/bin/gcc
+-DCMAKE_CXX_COMPILER=/opt/gcc/gcc-4.3.2/bin/g++
+-DCMAKE_C_COMPILER=/opt/gcc/gcc-4.3.2/bin/gcc
 " > SERIAL_RELEASE.config
 
 
