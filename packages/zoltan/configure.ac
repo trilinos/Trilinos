@@ -313,12 +313,18 @@ if test "X$ac_cv_use_fortran" != "Xno"; then
   AC_FC_WRAPPERS
   AC_FC_SRCEXT(f)
   AC_FC_SRCEXT(f90)
+  # Determine compile-line flag for F90 modules (e.g., -M).
   AX_F90_MODULE_FLAG
   if test "X$ax_cv_f90_modflag" = "Xunknown" ; then
     AC_MSG_ERROR([unable to find f90 modules extension])
   else
     FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
   fi
+  # Determine case (upper or lower) of F90 module files. 
+  AX_F90_MODULE_CASE
+  AM_CONDITIONAL(F90_MODULE_LOWERCASE, [test "X$ac_cv_f90_modulecase" != "Xupper"])
+
+  echo "KDDKDD " $ax_cv_f90_modulecase 
 
   WK_FC_GET_VENDOR()
   echo "KDDKDD " $FC_VENDOR

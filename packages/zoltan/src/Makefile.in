@@ -54,7 +54,8 @@ subdir = src
 DIST_COMMON = README $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_flag.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_case.m4 \
+	$(top_srcdir)/config/ax_f90_module_flag.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -315,8 +316,10 @@ am__include_HEADERS_DIST = $(srcdir)/include/lbi_const.h \
 	$(srcdir)/include/zoltan_timer_cpp.h \
 	$(srcdir)/include/zoltan_timer.h $(srcdir)/include/zoltan_dd.h \
 	$(srcdir)/include/zoltan_dd_cpp.h \
-	$(srcdir)/include/zoltan_mem.h lb_user_const.mod \
-	zoltan_types.mod zoltan.mod zoltan_user_data.mod
+	$(srcdir)/include/zoltan_mem.h LB_USER_CONST.mod \
+	ZOLTAN_TYPES.mod ZOLTAN.mod ZOLTAN_USER_DATA.mod \
+	lb_user_const.mod zoltan_types.mod zoltan.mod \
+	zoltan_user_data.mod
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -1017,11 +1020,17 @@ EXTRA_libzoltan_a_SOURCES = \
 	$(EXTRA_FORTRAN_H) \
 	$(EXTRA_FORTRAN)
 
-FORTRAN_MODULES = \
-	lb_user_const.mod \
-	zoltan_types.mod \
-	zoltan.mod \
-	zoltan_user_data.mod
+@F90_MODULE_LOWERCASE_FALSE@FORTRAN_MODULES = \
+@F90_MODULE_LOWERCASE_FALSE@	LB_USER_CONST.mod \
+@F90_MODULE_LOWERCASE_FALSE@	ZOLTAN_TYPES.mod \
+@F90_MODULE_LOWERCASE_FALSE@	ZOLTAN.mod \
+@F90_MODULE_LOWERCASE_FALSE@	ZOLTAN_USER_DATA.mod
+
+@F90_MODULE_LOWERCASE_TRUE@FORTRAN_MODULES = \
+@F90_MODULE_LOWERCASE_TRUE@	lb_user_const.mod \
+@F90_MODULE_LOWERCASE_TRUE@	zoltan_types.mod \
+@F90_MODULE_LOWERCASE_TRUE@	zoltan.mod \
+@F90_MODULE_LOWERCASE_TRUE@	zoltan_user_data.mod
 
 EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
 AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
