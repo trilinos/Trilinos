@@ -50,8 +50,7 @@ target_triplet = @target@
 bin_PROGRAMS = mpirun$(EXEEXT)
 subdir = siMPI/pyMPI/siMPI
 DIST_COMMON = README $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in COPYING INSTALL depcomp install-sh \
-	missing
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_case.m4 \
 	$(top_srcdir)/config/ax_f90_module_flag.m4 \
