@@ -165,7 +165,8 @@ int Zoltan_Scotch_Order(
   /* Check what ordering type is requested */
 #ifdef ZOLTAN_PTSCOTCH
   SET_GLOBAL_GRAPH(&gr.graph_type);
-  if (order_opt && (strcmp(order_opt->method, "SCOTCH") == 0))
+  if (order_opt && ((strcmp(order_opt->order_type, "SERIAL") == 0) ||
+		    (strcmp(order_opt->order_type, "LOCAL") == 0))) /* For compatibility reason */
 #endif
     SET_LOCAL_GRAPH(&gr.graph_type);
 
