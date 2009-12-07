@@ -7871,6 +7871,32 @@ echo "$as_me: error: unable to find f90 modules extension" >&2;}
   else
     FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
   fi
+  # Provide some information about the compiler; add flags if PGI or LAHEY.
+  { (eval echo "$as_me:$LINENO: \"${FC} --version </dev/null >KDDKDD\"") >&5
+  (eval ${FC} --version </dev/null >KDDKDD) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }
+  { (eval echo "$as_me:$LINENO: \"${FC} -v </dev/null >>KDDKDD\"") >&5
+  (eval ${FC} -v </dev/null >>KDDKDD) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }
+  { (eval echo "$as_me:$LINENO: \"${FC} -V </dev/null >>KDDKDD\"") >&5
+  (eval ${FC} -V </dev/null >>KDDKDD) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }
+  { (eval echo "$as_me:$LINENO: \"grep pgf90 KDDKDD > KDDKDD1\"") >&5
+  (eval grep pgf90 KDDKDD > KDDKDD1) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }
+  if test -s KDDKDD1; then
+    echo "KDDKDD" ${FC} "-DPGI"
+    FCFLAGS="-DPGI ${FCFLAGS}"
+  fi
+
 fi
 
 # If tests, examples and libcheck are disabled, we don't have to check
