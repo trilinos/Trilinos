@@ -16,11 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef ZOLTAN_NEMESIS
-#include "exodusII.h"
-#include "ne_nemesisI.h"
-#endif /* ZOLTAN_NEMESIS */
-
 #include "dr_const.h"
 #include "dr_input_const.h"
 #include "dr_elem_const.h"
@@ -30,6 +25,11 @@
 #include "dr_output_const.h"
 #include "dr_elem_util_const.h"
 #include "zoltan_comm.h"
+
+#ifdef ZOLTAN_NEMESIS
+#include "exodusII.h"
+#include "ne_nemesisI.h"
+#endif /* ZOLTAN_NEMESIS */
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

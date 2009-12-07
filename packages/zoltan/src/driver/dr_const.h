@@ -31,8 +31,10 @@ extern "C" {
 #ifndef TRILINOS_NO_CONFIG_H
 
 /*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
- * be undef'd here to avoid warnings when this file is included from another package.
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for 
+ * each package and need to
+ * be undef'd here to avoid warnings when this file is included 
+ * from another package.
  * KL 11/25/02
  */
 #ifdef PACKAGE
