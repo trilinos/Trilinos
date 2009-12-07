@@ -71,13 +71,20 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/Zoltan_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = farg_typical.$(OBJEXT)
+am__zfdrive_SOURCES_DIST = $(srcdir)/mpi_h.f $(srcdir)/mpistring.c \
+	$(srcdir)/farg_typical.f $(srcdir)/farg_nagf95.f \
+	$(srcdir)/mmio.f $(srcdir)/fdr_const.f90 \
+	$(srcdir)/fdr_input.f90 $(srcdir)/fdr_chaco_io.f90 \
+	$(srcdir)/fdr_sort.f90 $(srcdir)/fdr_param_file.f90 \
+	$(srcdir)/fdr_mm_io.f90 $(srcdir)/fdr_migrate.f90 \
+	$(srcdir)/fdr_loadbal.f90 $(srcdir)/fdr_main.f90
+@NAG_F90_COMPILER_FALSE@am__objects_1 = farg_typical.$(OBJEXT)
+@NAG_F90_COMPILER_TRUE@am__objects_1 = farg_nagf95.$(OBJEXT)
 am_zfdrive_OBJECTS = mpi_h.$(OBJEXT) zfdrive-mpistring.$(OBJEXT) \
-	$(am__objects_1) lampmpi.$(OBJEXT) mmio.$(OBJEXT) \
-	fdr_const.$(OBJEXT) fdr_input.$(OBJEXT) fdr_chaco_io.$(OBJEXT) \
-	fdr_sort.$(OBJEXT) fdr_param_file.$(OBJEXT) \
-	fdr_mm_io.$(OBJEXT) fdr_migrate.$(OBJEXT) \
-	fdr_loadbal.$(OBJEXT) fdr_main.$(OBJEXT)
+	$(am__objects_1) mmio.$(OBJEXT) fdr_const.$(OBJEXT) \
+	fdr_input.$(OBJEXT) fdr_chaco_io.$(OBJEXT) fdr_sort.$(OBJEXT) \
+	fdr_param_file.$(OBJEXT) fdr_mm_io.$(OBJEXT) \
+	fdr_migrate.$(OBJEXT) fdr_loadbal.$(OBJEXT) fdr_main.$(OBJEXT)
 zfdrive_OBJECTS = $(am_zfdrive_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src/include@am__isrc@
@@ -96,7 +103,7 @@ FCLD = $(FC)
 FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 	$@
 SOURCES = $(zfdrive_SOURCES)
-DIST_SOURCES = $(zfdrive_SOURCES)
+DIST_SOURCES = $(am__zfdrive_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -231,12 +238,12 @@ EXPORT_LIBS = $(ZOLTAN_LIBS)
 EXPORT_INC_PATH = $(ZOLTAN_INCLUDES)
 #endif
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-FARG_SRC = $(srcdir)/farg_typical.f
+@NAG_F90_COMPILER_FALSE@FARG_SRC = $(srcdir)/farg_typical.f
+@NAG_F90_COMPILER_TRUE@FARG_SRC = $(srcdir)/farg_nagf95.f
 zfdrive_SOURCES = \
 	$(srcdir)/mpi_h.f \
 	$(srcdir)/mpistring.c \
 	$(FARG_SRC) \
-	$(srcdir)/lampmpi.f90 \
 	$(srcdir)/mmio.f \
 	$(srcdir)/fdr_const.f90 \
 	$(srcdir)/fdr_input.f90 \
@@ -257,8 +264,8 @@ EXTRA_DIST = $(srcdir)/CMakeLists.txt \
 	$(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in \
 	$(srcdir)/README.mpich \
-	$(srcdir)/farg_nagf90.f \
 	$(srcdir)/farg_nagf95.f \
+	$(srcdir)/farg_typical.f \
 	$(srcdir)/makefile \
 	$(srcdir)/zoltan_user_data.f90.old
 
@@ -357,6 +364,12 @@ farg_typical.o: $(srcdir)/farg_typical.f
 farg_typical.obj: $(srcdir)/farg_typical.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o farg_typical.obj `if test -f '$(srcdir)/farg_typical.f'; then $(CYGPATH_W) '$(srcdir)/farg_typical.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/farg_typical.f'; fi`
 
+farg_nagf95.o: $(srcdir)/farg_nagf95.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o farg_nagf95.o `test -f '$(srcdir)/farg_nagf95.f' || echo '$(srcdir)/'`$(srcdir)/farg_nagf95.f
+
+farg_nagf95.obj: $(srcdir)/farg_nagf95.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o farg_nagf95.obj `if test -f '$(srcdir)/farg_nagf95.f'; then $(CYGPATH_W) '$(srcdir)/farg_nagf95.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/farg_nagf95.f'; fi`
+
 mmio.o: $(srcdir)/mmio.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o mmio.o `test -f '$(srcdir)/mmio.f' || echo '$(srcdir)/'`$(srcdir)/mmio.f
 
@@ -368,12 +381,6 @@ mmio.obj: $(srcdir)/mmio.f
 
 .f90.obj:
 	$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-lampmpi.o: $(srcdir)/lampmpi.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lampmpi.o `test -f '$(srcdir)/lampmpi.f90' || echo '$(srcdir)/'`$(srcdir)/lampmpi.f90
-
-lampmpi.obj: $(srcdir)/lampmpi.f90
-	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o lampmpi.obj `if test -f '$(srcdir)/lampmpi.f90'; then $(CYGPATH_W) '$(srcdir)/lampmpi.f90'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/lampmpi.f90'; fi`
 
 fdr_const.o: $(srcdir)/fdr_const.f90
 	$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c -o fdr_const.o `test -f '$(srcdir)/fdr_const.f90' || echo '$(srcdir)/'`$(srcdir)/fdr_const.f90

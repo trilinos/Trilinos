@@ -7,7 +7,6 @@ SET(ZFDRIVE_SOURCES
     fdr_migrate.f90 
     farg_typical.f
     mpistring.c
-    lampmpi.f90 
     fdr_sort.f90 
     fdr_main.f90 
     fdr_loadbal.f90 

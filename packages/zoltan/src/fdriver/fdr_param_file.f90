@@ -438,7 +438,7 @@ end function get_part
 subroutine get_method(data,level,azz,ierr)
 integer(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(in) :: level
-type(Zoltan_Struct), target :: azz
+type(Zoltan_Struct), intent(in), target :: azz
 integer(Zoltan_INT), intent(out) :: ierr
 type(Zoltan_Struct), pointer :: zz
 
