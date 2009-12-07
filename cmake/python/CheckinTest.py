@@ -8,14 +8,6 @@
 #  (*) Change logic to not enable everything if TrilinosPackages.cmake or
 #  TrilinosTPLs.cmake are changed.
 #
-#  (*) Add --execute-on-pass to set a command to launch after everything in
-#  the script has occured if the tests passed.  This can be used for launching
-#  a remote test/push with ssh.  Remember to print out this command in the
-#  final summary email to let user know that it is running.  Hint: Users can
-#  run with:
-#
-#    --execute-on-pass="ssh -q godel 'checkin-test-godel.sh --do-all --extra-pull-from=... 2>&1 > /dev/null' &"
-#
 
 #
 # General scripting support
