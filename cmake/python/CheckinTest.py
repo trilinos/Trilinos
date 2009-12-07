@@ -128,6 +128,10 @@ def getPushOutputFileName():
   return "push.out"
 
 
+def getExtraCommandOutputFileName():
+  return "extraCommand.out"
+
+
 def getHostname():
   return getCmndOutput("hostname", True)
 
@@ -1315,6 +1319,8 @@ def checkinTest(inOptions):
 
     removeIfExists(getFinalPullOutputFileName())
     removeIfExists(getModifiedFilesOutputFileName())
+    removeIfExists(getPushOutputFileName())
+    removeIfExists(getExtraCommandOutputFileName())
 
     for buildTestCase in buildTestCaseList:
       cleanBuildTestCaseOutputFiles(
@@ -1788,13 +1794,34 @@ def checkinTest(inOptions):
 
   
     print "\n***"
-    print "*** 8) Create and send push (or readiness status) notification email  ..."
+    print "*** 8) Set up to run execute extra command on ready to push  ..."
+    print "***"
+
+    if inOptions.executeOnReadyToPush and not okayToPush:
+
+      print "\nNot executing final command ("+inOptions.executeOnReadyToPush+") since" \
+        +" a push is not okay to be performed!\n"
+
+    elif inOptions.executeOnReadyToPush and okayToPush:
+
+      executeCmndStr = "\nExecuting final command ("+inOptions.executeOnReadyToPush+") since" \
+        +" a push is okay to be performed!\n"
+      commitEmailBodyExtra += executeCmndStr
+      print executeCmndStr
+
+    else:
+
+      print "\nNot executing final command since none was given ...\n"
+
+  
+    print "\n***"
+    print "*** 9) Create and send push (or readiness status) notification email  ..."
     print "***\n"
 
     if inOptions.doCommitReadinessCheck:
 
       #
-      print "\n8.a) Getting final status to send out in the summary email ...\n"
+      print "\n9.a) Getting final status to send out in the summary email ...\n"
       #
 
       if not commitPassed:
@@ -1844,7 +1871,7 @@ def checkinTest(inOptions):
           subjectLine = "NOT READY TO PUSH"
 
       #
-      print "\n8.b) Create and send out push (or readinessstatus) notification email ..."
+      print "\n9.b) Create and send out push (or readinessstatus) notification email ..."
       #
   
       subjectLine += ": Trilinos: "+getHostname()
@@ -1878,6 +1905,32 @@ def checkinTest(inOptions):
     else:
 
       print "\nNot performing commit/push or sending out commit/push readiness status on request!"
+
+  
+    print "\n***"
+    print "*** 10) Run execute extra command on ready to push  ..."
+    print "***"
+
+    if inOptions.executeOnReadyToPush and okayToPush:
+
+      print executeCmndStr
+
+      extraCommandRtn = echoRunSysCmnd(
+        inOptions.executeOnReadyToPush,
+        workingDir=baseTestDir,
+        outFile=os.path.join(baseTestDir, getExtraCommandOutputFileName()),
+        throwExcept=False, timeCmnd=True )
+
+      if extraCommandRtn == 0:
+        print "\nExtra command passed!\n"
+      else:
+        print "\nExtra command failed!\n"
+        success = False
+
+    else:
+
+      print "\nNot executing final command ...\n"
+
   
     if not performAnyActions(inOptions) and not inOptions.doPush:
 

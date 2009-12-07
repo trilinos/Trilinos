@@ -716,6 +716,12 @@ clp.add_option(
     +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
     +" having to type your password." )
 
+clp.add_option(
+  "--execute-on-ready-to-push", dest="executeOnReadyToPush", type="string", default="",
+  help="[ACTION] A command to execute on successful execution and 'READY TO PUSH'" \
+  +" status from this script.  This can be used to do a remote SSH invocation to a" \
+  +" remote machine to do a remote pull/test/push after this machine finishes." )
+
 (options, args) = clp.parse_args()
 
 # NOTE: Above, in the pairs of boolean options, the *last* add_option(...) 
@@ -792,6 +798,8 @@ if options.doAll:
   print "  --do-all \\"
 if options.doPush:
   print "  --push \\"
+if options.executeOnReadyToPush:
+  print "  --execute-on-ready-to-push=("+options.executeOnReadyToPush+") \\"
 
 
 #

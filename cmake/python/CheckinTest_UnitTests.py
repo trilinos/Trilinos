@@ -608,7 +608,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5" \
       +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
-      +" --do-all --commit --push",
+      +" --do-all --commit --push" \
+      +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
@@ -618,6 +619,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
+      +"IT: ssh -q godel /some/dir/some_command.sh &; 0; 'extra command passed'\n" \
       ,
       \
       True,
@@ -631,6 +633,8 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedCommonOptionsSummary \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
+      +"Executing final command (ssh -q godel /some/dir/some_command.sh &) since a push is okay to be performed!\n" \
+      +"Running: ssh -q godel /some/dir/some_command.sh &\n" \
       ,
       [
       (getStatusOutputFileName(), "eg status shows no uncommitted files\n"),
@@ -771,7 +775,8 @@ class test_checkin_test(unittest.TestCase):
       "local_do_all_without_serial_release_pass",
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
-      +" --extra-pull-from='dummy master' --local-do-all",
+      +" --extra-pull-from='dummy master' --local-do-all" \
+      +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
@@ -791,7 +796,8 @@ class test_checkin_test(unittest.TestCase):
       +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
       +"Explanation: In order to safely push, the local working directory needs to be up-to-date\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
-      +"^NOT READY TO PUSH: Trilinos:\n"
+      +"^NOT READY TO PUSH: Trilinos:\n" \
+      +"Not executing final command (ssh -q godel /some/dir/some_command.sh &) since a push is not okay to be performed!\n" \
       )
 
 

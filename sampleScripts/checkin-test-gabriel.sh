@@ -4,6 +4,13 @@
 # This is the script that I used to checkin to Trilinos on gabriel.sandia.gov.
 # You can copy this script and adapt it to your own machine.
 #
+# If you want to automatically do the remote pull/test/push on godel, you can
+# use the arguments:
+#
+#    "--execute-on-ready-to-push=\"ssh -q godel /home/rabartl/PROJECTS/Trilinos.base.checkin/BUILDS/CHECKIN/checkin-test-godel-remote-test-push-gabriel-remote-driver.sh &\""
+#
+# NOTE: You will need the funny quotes when passing through a shell script.
+#
 
 #
 # Allow command-line arguments to pass through to cmake configure!
