@@ -1,6 +1,6 @@
 #!/bin/tcsh
 
-EXTRA_ARGS=$@
+set EXTRA_ARGS="$*"
 
 cd ~/
 source .cshrc

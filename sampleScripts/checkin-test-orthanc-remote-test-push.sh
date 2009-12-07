@@ -12,7 +12,7 @@
 # then just wait for the return email
 #
 
-EXTRA_ARGS=$@
+set EXTRA_ARGS="$*"
 
 #
 # Set up basic environment options
