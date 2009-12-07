@@ -1,9 +1,9 @@
-#!/bin/tcsh
+#!/bin/bash
 
-set EXTRA_ARGS="$*"
+EXTRA_ARGS=$@
 
 cd ~/
-source .cshrc
+source .bashrc
 
 cd ~/TBUILDS/CHECKIN/
 ./checkin-test-orthanc-remote-test-push.sh "--extra-pull-from=\"zan master\"" \

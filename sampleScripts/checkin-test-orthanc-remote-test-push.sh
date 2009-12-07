@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/bash
 
 #
 # This is the script that I use for remote test/push on
@@ -12,7 +12,7 @@
 # then just wait for the return email
 #
 
-set EXTRA_ARGS="$*"
+EXTRA_ARGS=$@
 
 #
 # Set up basic environment options
@@ -42,13 +42,13 @@ echo "
 # Run the checkin-test.py script with more arguments
 #
 
-../../Trilinos/cmake/python/checkin-test.py \
+../../Trilinos/checkin-test.py \
 --send-email-to=bakercg@ornl.gov \
---make-options="-j12" \
---ctest-options="-j2" \
+--make-options=\"-j12\" \
+--ctest-options=\"-j2\" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
---extra-pull-from="zan master" \
+--extra-pull-from=\"zan master\" \
 --do-all \
 $EXTRA_ARGS
 
