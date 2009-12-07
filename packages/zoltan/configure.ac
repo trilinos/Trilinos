@@ -299,7 +299,7 @@ AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 # enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
 TAC_ARG_WITH_LIBDIRS
-# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
+# enable use of --with-incdirs="-Iincdir1 -Iincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
 # ------------------------------------------------------------------------

@@ -6863,7 +6863,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
+# enable use of --with-incdirs="-Iincdir1 -Iincdir2 ..." to prepend to CPPFLAGS
 
 { echo "$as_me:$LINENO: checking whether additional include search paths defined" >&5
 echo $ECHO_N "checking whether additional include search paths defined... $ECHO_C" >&6; }
@@ -6872,6 +6872,9 @@ echo $ECHO_N "checking whether additional include search paths defined... $ECHO_
 if test "${with_incdirs+set}" = set; then
   withval=$with_incdirs;
 CPPFLAGS="${withval} ${CPPFLAGS}"
+CFLAGS="${withval} ${CFLAGS}"
+FCFLAGS="${withval} ${FCFLAGS}"
+FFLAGS="${withval} ${FFLAGS}"
 { echo "$as_me:$LINENO: result: ${withval}" >&5
 echo "${ECHO_T}${withval}" >&6; }
 

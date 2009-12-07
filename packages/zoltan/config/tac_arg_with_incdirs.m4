@@ -16,6 +16,9 @@ AC_HELP_STRING([--with-incdirs],
 [additional directories containing include files: will prepend to search here for includes, use -Idir format]),
 [
 CPPFLAGS="${withval} ${CPPFLAGS}"
+CFLAGS="${withval} ${CFLAGS}"
+FCFLAGS="${withval} ${FCFLAGS}"
+FFLAGS="${withval} ${FFLAGS}"
 AC_MSG_RESULT([${withval}])
 ],
 AC_MSG_RESULT(no)
