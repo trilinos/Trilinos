@@ -112,7 +112,9 @@ AM_CONDITIONAL(HAVE_ZOLTAN_CPPDRIVER, [test "X$ac_cv_use_zoltan_cppdriver" != "X
 # ------------------------------------------------------------------------
 
 # We may want to handle this differently because Zoltan requires MPI
-TAC_ARG_CONFIG_MPI
+#TAC_ARG_CONFIG_MPI
+
+ZAC_ARG_CONFIG_MPI
 
 #  #np# - can eliminate compiler checks below if your package does not use the
 #         language corresponding to the check.  Please note that if you use
