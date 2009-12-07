@@ -721,6 +721,12 @@ SUB_EXAMPLE_FALSE
 FCLIBS
 FCFLAGS_f
 FCFLAGS_f90
+FC_VERSION_STRING
+FC_VENDOR
+FC_VERSION
+FC_MAJOR_VERSION
+FC_MODNAME
+FC_MODNAME_Q
 ac_aux_dir
 LIBOBJS
 LTLIBOBJS'
@@ -7871,31 +7877,139 @@ echo "$as_me: error: unable to find f90 modules extension" >&2;}
   else
     FCFLAGS="$ax_cv_f90_modflag../ $ax_cv_f90_modflag. ${FCFLAGS}"
   fi
-  # Provide some information about the compiler; add flags if PGI or LAHEY.
-  { (eval echo "$as_me:$LINENO: \"${FC} --version </dev/null >KDDKDD\"") >&5
-  (eval ${FC} --version </dev/null >KDDKDD) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-  { (eval echo "$as_me:$LINENO: \"${FC} -v </dev/null >>KDDKDD\"") >&5
-  (eval ${FC} -v </dev/null >>KDDKDD) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-  { (eval echo "$as_me:$LINENO: \"${FC} -V </dev/null >>KDDKDD\"") >&5
-  (eval ${FC} -V </dev/null >>KDDKDD) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-  { (eval echo "$as_me:$LINENO: \"grep pgf90 KDDKDD > KDDKDD1\"") >&5
-  (eval grep pgf90 KDDKDD > KDDKDD1) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-  if test -s KDDKDD1; then
-    echo "KDDKDD" ${FC} "-DPGI"
+
+  { echo "$as_me:$LINENO: checking the compiler ID" >&5
+echo $ECHO_N "checking the compiler ID... $ECHO_C" >&6; }
+if test "${wk_cv_prog_f90_version_string+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  $FC -version >conftest.log 2>&1
+$FC -V >>conftest.log 2>&1
+$FC --version >>conftest.log 2>&1
+
+wk_grep_f90_NAG=`grep NAG conftest.log | head -1`
+wk_grep_f90_Compaq=`grep Compaq conftest.log | head -1`
+wk_grep_f90_Digital=`grep DIGITAL conftest.log | head -1`
+wk_grep_f90_SGI=`grep MIPS conftest.log | head -1`
+wk_grep_f90_Intel=`grep 'Intel(R)' conftest.log | head -1`
+wk_grep_f90_Sun=`grep 'Sun' conftest.log | head -1`
+wk_grep_f90_Lahey=`grep 'Lahey' conftest.log | head -1`
+wk_grep_f90_PGI=`grep 'pgf' conftest.log | head -1`
+wk_grep_f90_G95=`grep -i 'g95' conftest.log | grep -i 'gcc' | head -1`
+wk_grep_f90_GFORTRAN=`grep -i 'GNU Fortran' conftest.log | head -1`
+
+if test -n "$wk_grep_f90_NAG"; then
+  wk_cv_prog_f90_type="NAG"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_NAG
+  wk_cv_prog_f90_version=`echo $wk_cv_prog_f90_version_string | sed -e 's/.* Release \([0-9][0-9]*\.[0-9][0-9]*.*$\)/\1/'`
+  wk_cv_prog_f90_major_version=`echo $wk_cv_prog_f90_version | sed -e 's/\([0-9][0-9]*\)\..*/\1/'`
+elif test -n "$wk_grep_f90_Compaq"; then
+  wk_cv_prog_f90_type="Compaq"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Compaq
+elif test -n "$wk_grep_f90_Digital"; then
+  wk_cv_prog_f90_type="DEC"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Digital
+elif test -n "$wk_grep_f90_SGI"; then
+  wk_cv_prog_f90_type="SGI"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_SGI
+elif test -n "$wk_grep_f90_Intel"; then
+  wk_cv_prog_f90_type="Intel"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Intel
+  wk_cv_prog_f90_version=`echo $wk_cv_prog_f90_version_string | sed -e 's/.* Version \([0-9][0-9]*\.[0-9][0-9]*\) .*/\1/'`
+  wk_cv_prog_f90_major_version=`echo $wk_cv_prog_f90_version | sed -e 's/\([0-9][0-9]*\)\..*/\1/'`
+elif test -n "$wk_grep_f90_Sun"; then
+  wk_cv_prog_f90_type="Sun"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Sun
+  wk_cv_prog_f90_version=`echo $wk_cv_prog_f90_version_string | sed -e 's/.* Fortran 95 \([0-9][0-9]*\.[0-9][0-9]*\) .*/\1/'`
+  wk_cv_prog_f90_major_version=`echo $wk_cv_prog_f90_version | sed -e 's/\([0-9][0-9]*\)\..*/\1/'`
+elif test -n "$wk_grep_f90_Lahey"; then
+  wk_cv_prog_f90_type="Lahey"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_Lahey
+elif test -n "$wk_grep_f90_PGI"; then
+  wk_cv_prog_f90_type="PGI"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_PGI
+elif test -n "$wk_grep_f90_G95"; then
+  wk_cv_prog_f90_type="G95"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_G95
+elif test -n "$wk_grep_f90_GFORTRAN"; then
+  wk_cv_prog_f90_type="GNU"
+  wk_cv_prog_f90_version_string=$wk_grep_f90_GFORTRAN
+  wk_cv_prog_f90_version=`echo $wk_cv_prog_f90_version_string | sed -e 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/'`
+  wk_cv_prog_f90_major_version=`echo $wk_cv_prog_f90_version | sed -e 's/\([0-9][0-9]*\)\..*/\1/'`
+else
+  wk_cv_prog_f90_type="unknown"
+  wk_cv_prog_f90_version_string="unknown"
+fi
+
+rm -f conftest.log
+
+
+fi
+{ echo "$as_me:$LINENO: result: $wk_cv_prog_f90_version_string" >&5
+echo "${ECHO_T}$wk_cv_prog_f90_version_string" >&6; }
+{ echo "$as_me:$LINENO: checking the compiler vendor" >&5
+echo $ECHO_N "checking the compiler vendor... $ECHO_C" >&6; }
+if test "${wk_cv_prog_f90_type+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $wk_cv_prog_f90_type" >&5
+echo "${ECHO_T}$wk_cv_prog_f90_type" >&6; }
+
+if test -n "$wk_cv_prog_f90_version"; then
+  { echo "$as_me:$LINENO: checking the compiler version" >&5
+echo $ECHO_N "checking the compiler version... $ECHO_C" >&6; }
+if test "${wk_cv_prog_f90_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $wk_cv_prog_f90_version" >&5
+echo "${ECHO_T}$wk_cv_prog_f90_version" >&6; }
+else
+  wk_cv_prog_f90_version=$wk_cv_prog_f90_version_string
+fi
+
+if test -n "$wk_cv_prog_f90_major_version"; then
+  { echo "$as_me:$LINENO: checking the compiler major version" >&5
+echo $ECHO_N "checking the compiler major version... $ECHO_C" >&6; }
+if test "${wk_cv_prog_f90_major_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+{ echo "$as_me:$LINENO: result: $wk_cv_prog_f90_major_version" >&5
+echo "${ECHO_T}$wk_cv_prog_f90_major_version" >&6; }
+else
+  wk_cv_prog_f90_major_version=$wk_cv_prog_f90_version
+fi
+
+FC_VERSION_STRING=$wk_cv_prog_f90_version_string
+FC_VENDOR=$wk_cv_prog_f90_type
+FC_VERSION=$wk_cv_prog_f90_version
+FC_MAJOR_VERSION=$wk_cv_prog_f90_major_version
+
+
+
+
+
+FC_MODNAME='$(1:.o=.mod)'
+FC_MODNAME_Q='\$(1:.o=.mod)'
+
+
+
+
+  echo "KDDKDD " $FC_VENDOR
+  if test "$FC_VENDOR" = "PGI"; then
     FCFLAGS="-DPGI ${FCFLAGS}"
   fi
+  if test "$FC_VENDOR" = "Lahey"; then
+    FCFLAGS="-DFUJITSU ${FCFLAGS}"
+  fi
+# Provide some information about the compiler; add flags if PGI or LAHEY.
+#  _AC_EVAL([${FC} --version </dev/null >KDDKDD])
+#  _AC_EVAL([${FC} -v </dev/null >>KDDKDD])
+#  _AC_EVAL([${FC} -V </dev/null >>KDDKDD])
+#  _AC_EVAL([grep pgf90 KDDKDD > KDDKDD1])
+#  if test -s KDDKDD1; then
+#    echo "KDDKDD" ${FC} "-DPGI"
+#    FCFLAGS="-DPGI ${FCFLAGS}"
+#  fi
 
 fi
 
@@ -9232,12 +9346,18 @@ SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 FCLIBS!$FCLIBS$ac_delim
 FCFLAGS_f!$FCFLAGS_f$ac_delim
 FCFLAGS_f90!$FCFLAGS_f90$ac_delim
+FC_VERSION_STRING!$FC_VERSION_STRING$ac_delim
+FC_VENDOR!$FC_VENDOR$ac_delim
+FC_VERSION!$FC_VERSION$ac_delim
+FC_MAJOR_VERSION!$FC_MAJOR_VERSION$ac_delim
+FC_MODNAME!$FC_MODNAME$ac_delim
+FC_MODNAME_Q!$FC_MODNAME_Q$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 48; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
