@@ -502,7 +502,8 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       driver_eval(mesh);
       int i;
 
-      zz.LB_Eval(1, NULL, NULL, NULL);
+      i = zz.LB_Eval(1, NULL, NULL, NULL);
+      if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
 
     }
     if (Test.Gen_Files) {
@@ -637,7 +638,8 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       driver_eval(mesh);
       int i;
 
-      zz.LB_Eval(1, NULL, NULL, NULL);
+      i = zz.LB_Eval(1, NULL, NULL, NULL);
+      if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
       /* Write output files. */
