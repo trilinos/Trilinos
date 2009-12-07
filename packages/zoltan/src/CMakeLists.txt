@@ -724,12 +724,16 @@ IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
     fort/cwrap.c
     )
 
+#  FILE(GLOB MODULES ${CMAKE_CURRENT_BINARY_DIR}/*.mod)
+#  MESSAGE("KDDKDD MODULES " ${MODULES})
+
   APPEND_SET(MODULES
     ${CMAKE_CURRENT_BINARY_DIR}/zoltan.mod
     ${CMAKE_CURRENT_BINARY_DIR}/zoltan_types.mod
     ${CMAKE_CURRENT_BINARY_DIR}/lb_user_const.mod
     ${CMAKE_CURRENT_BINARY_DIR}/zoltan_user_data.mod
     )
+    
 ENDIF()
 
 

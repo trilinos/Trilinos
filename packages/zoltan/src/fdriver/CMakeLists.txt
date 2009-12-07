@@ -5,7 +5,6 @@ INCLUDE(PackageAddExecutable)
 
 SET(ZFDRIVE_SOURCES
     fdr_migrate.f90 
-    farg_typical.f
     mpistring.c
     fdr_sort.f90 
     fdr_main.f90 
@@ -18,6 +17,12 @@ SET(ZFDRIVE_SOURCES
     mmio.f
     mpi_h.f
     )
+
+if(${CMAKE_Fortran_COMPILER_ID} MATCHES "NAG")
+  APPEND_SET(ZFDRIVE_SOURCES farg_nagf95.f)
+ELSE()
+  APPEND_SET(ZFDRIVE_SOURCES farg_typical.f)
+ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
