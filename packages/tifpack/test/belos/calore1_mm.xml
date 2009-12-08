@@ -1,0 +1,16 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="calore1.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Verbosity" type="int" value="2"/>
+  </ParameterList>
+
+  <Parameter name="Tifpack::Preconditioner" type="string" value="ILUT"/>
+  <ParameterList name="Tifpack">
+    <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
+    <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="13"/>
+</ParameterList>

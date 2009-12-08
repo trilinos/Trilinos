@@ -19,6 +19,12 @@ ADD_OPTION_AND_DEFINE(
   ON
   )
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEBUG
+  HAVE_TIFPACK_DEBUG
+  "Enable runtime debug checking."
+  ${Trilinos_ENABLE_DEBUG}
+  )
 
 #
 # C) Add the libraries, tests, and examples

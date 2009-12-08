@@ -33,7 +33,9 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 
+#ifdef HAVE_TIFPACK_DEBUG
 #define HAVE_TIFPACK_ARRAY_BOUNDSCHECK
+#endif
 
 #ifdef HAVE_TIFPACK_ARRAY_BOUNDSCHECK
 #include <sstream>
