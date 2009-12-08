@@ -393,7 +393,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     int Valperline, Valwidth, Valprec;
     int Valflag;           /* Indicates 'E','D', or 'F' float format */
     char* ThisElement;
-    char Title[73], Key[8], Type[4] = "XXX", Rhstype[4];
+    char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
     char line[BUFSIZ];
 
@@ -947,7 +947,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     int Valflag;           /* Indicates 'E','D', or 'F' float format */
     char* ThisElement;
     char line[BUFSIZ];
-    char Title[73], Key[8], Type[4] = "XXX", Rhstype[4];
+    char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Rhsfmt[21];
 
     if ( (in_file = std::fopen( filename, "r")) == NULL ) {
@@ -1593,7 +1593,7 @@ char* substr(const char* S, const int pos, const int len)
 {
     int i;
     char *SubS;
-    if ( pos+len <= std::strlen(S)) {
+    if ( (size_t)pos+len <= std::strlen(S)) {
     SubS = (char *)malloc(len+1);
     if ( SubS == NULL ) IOHBTerminate("Insufficient memory for SubS.");
     for (i=0;i<len;i++) SubS[i] = S[pos+i];

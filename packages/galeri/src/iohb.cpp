@@ -390,7 +390,7 @@ int readHB_mat_double(const char* filename, int colptr[], int rowind[],
     int Valperline, Valwidth, Valprec;
     int Valflag;           /* Indicates 'E','D', or 'F' float format */
     char* ThisElement;
-    char Title[73], Key[8], Type[4] = "XXX", Rhstype[4];
+    char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
     char line[BUFSIZ];
 
@@ -942,7 +942,7 @@ int readHB_mat_char(const char* filename, int colptr[], int rowind[],
     int Valflag;           /* Indicates 'E','D', or 'F' float format */
     char* ThisElement;
     char line[BUFSIZ];
-    char Title[73], Key[8], Type[4] = "XXX", Rhstype[4];
+    char Title[73], Key[9], Type[4] = "XXX", Rhstype[4];
     char Ptrfmt[17], Indfmt[17], Rhsfmt[21];
 
     if ( (in_file = fopen( filename, "r")) == NULL ) {
