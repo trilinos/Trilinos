@@ -30,6 +30,14 @@ looping for continuous integration testing.  Assist in getting
 continuous integration testing set up on trilinos-test.sandia.gov.
 
 
+(*) [CTest] [P2] Get updated files info attached to every build row for each
+package (e.g. Label).  Currently, it is very hard to track down what files
+where updated when you are querying individual tests with queryTests.php or
+individual builds with index.php?project=Trilinos&subproject=Zoltan.  Only the
+first package in the build sequence shows updated files.  All the packages
+(i.e. Labels) in a build sequence need to show the updated files.
+
+
 (*) [CTest] [P2] Create a robust system to handle the overall testing process
 driving different CTest scripts on a machine that has the following
 properties:
