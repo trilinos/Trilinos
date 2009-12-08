@@ -130,6 +130,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
   SET(CPACK_SOURCE_IGNORE_FILES
     /CVS/
     ".cvsignore"
+    /.git/
+    ".gitignore"
     classicMakefile
     /cmake/CMakeKitwareBacklog.txt
     /cmake/TODO
