@@ -218,8 +218,13 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
   #
 
   FOREACH(PACKAGE ${MODIFIED_PACKAGES_LIST})
-    MESSAGE("Enabling modified package: ${PACKAGE}")
-    SET(Trilinos_ENABLE_${PACKAGE} ON)
+    ASSERT_DEFINED(Trilinos_ENABLE_${PACKAGE})
+    IF (Trilinos_ENABLE_${PACKAGE} STREQUAL "")
+      MESSAGE("Enabling modified package: ${PACKAGE}")
+      SET(Trilinos_ENABLE_${PACKAGE} ON)
+    ELSE()
+      MESSAGE("Not enabling experimental modified package: ${PACKAGE}")
+    ENDIF()
   ENDFOREACH()
 
   FOREACH(PACKAGE ${FAILING_PACKAGES_LIST})
