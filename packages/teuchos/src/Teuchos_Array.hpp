@@ -857,7 +857,7 @@ template<typename T> inline
 typename Array<T>::size_type
 Array<T>::max_size() const
 {
-  return vec().max_size();
+  return std::numeric_limits<size_type>::max();
 }
 
 

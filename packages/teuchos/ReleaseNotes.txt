@@ -4,6 +4,26 @@ Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
 
+Trilinos 10.2:
+--------------
+
+(*) Known breaks in backward compatibility:
+
+- The type Teuchos_Ordinal has been changed from int to ptrdiff_t by default.
+On 64 bit machines, this will be 'long int' instead of 'int'.  This can be
+changed back to int by configuring with -DTeuchos_ORDINAL_TYPE:STRING=int.
+
+- The size_type typedef in Teuchos::Array has been changed from size_t to
+Teuchos_Ordinal which is now ptrdiff_t, a signed integer which is *not* int on
+a 64 bit platform.  See the argument for this in Bugzilla bug 4253.
+
+- The size_type typedef in Teuchos::ArrayView and Teuchos::ArrayRCP has also
+been changed to Teuchos_Ordinal to be consistent with Teuchos::Array.
+
+- The size_type typedef in Teuchos::Range1D has been changed to
+Teuchos_Ordinal.
+
+
 Trilinos 10.0:
 --------------
 
@@ -18,19 +38,3 @@ changed to Teuchos::Ptr<T>&.  This requires that you replace:
 with:
 
     Teuchos::set_extra_data(data, dataName, Teuchos::outArg(rcpObj));
-
-
-Trilinos 10.2:
---------------
-
-(*) Known breaks in backward compatibility:
-
-- The size_type typedef in Teuchos::Array has been changed from size_t to
-Teuchos_Ordinal which is now ptrdiff_t, a signed integer which is *not* int on
-a 64 bit platform.  See the argument for this in Bugzilla bug 4253.
-
-- The size_type typedef in Teuchos::ArrayView and Teuchos::ArrayRCP has also
-been changed to Teuchos_Ordinal to be consistent with Teuchos::Array.
-
-- The size_type typedef in Teuchos::Range1D has been changed to
-Teuchos_Ordinal.

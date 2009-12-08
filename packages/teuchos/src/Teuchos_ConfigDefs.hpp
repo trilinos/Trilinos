@@ -162,7 +162,7 @@ typedef std::ostringstream TeuchosOStringStream;
  * On a 32 bit machine, ptrdiff_t will be an unsighed 32 bit integer and on a
  * 64 bit machine it will be an unsigned 64 bit integer.  Just what I want!
 */
-typedef ptrdiff_t Teuchos_Ordinal;
+typedef TEUCHOS_ORDINAL_TYPE Teuchos_Ordinal;
 
 #ifdef __cplusplus
 namespace Teuchos { typedef Teuchos_Ordinal Ordinal; }

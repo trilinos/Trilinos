@@ -4,6 +4,12 @@
 # This is the script that I used to checkin to Trilinos on gabriel.sandia.gov.
 # You can copy this script and adapt it to your own machine.
 #
+# Options to run with:
+#
+#  For all the extra builds
+#
+#  --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST,MPI_DEBUG_INT
+#
 # If you want to automatically do the remote pull/test/push on godel, you can
 # use the arguments:
 #
@@ -56,6 +62,17 @@ echo "
 -DTeuchos_ENABLE_COMPLEX:BOOL=OFF
 " > SERIAL_DEBUG_BOOST.config
 
+echo "
+-DTPL_ENABLE_MPI:BOOL=ON
+-DCMAKE_BUILD_TYPE:STRING=DEBUG
+-DTrilinos_ENABLE_DEBUG:BOOL=ON
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
+-DTeuchos_ORDINAL_TYPE:STRIRNG=int
+-DTeuchos_ENABLE_FLOAT:BOOL=OFF
+-DTeuchos_ENABLE_COMPLEX:BOOL=OFF
+" > MPI_DEBUG_INT.config
+
 
 #
 # Run the standard checkin testing script with my specializations
@@ -67,11 +84,6 @@ echo "
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
-
-# Options to run with:
-#
-#  --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST
-
 #
 # NOTES:
 #

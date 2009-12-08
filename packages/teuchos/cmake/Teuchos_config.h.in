@@ -65,6 +65,8 @@
 
 #cmakedefine HAVE_TEUCHOS_FLOAT
 
+#define TEUCHOS_ORDINAL_TYPE @Teuchos_ORDINAL_TYPE@
+
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
