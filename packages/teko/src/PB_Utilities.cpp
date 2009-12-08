@@ -1002,12 +1002,22 @@ double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, dou
    Anasazi::ReturnType solverreturn = MyBlockKrylovSchur.solve();
 
    if(solverreturn==Anasazi::Unconverged) {
+      double real = MyBlockKrylovSchur.getRitzValues().begin()->realpart;
+      double comp = MyBlockKrylovSchur.getRitzValues().begin()->imagpart;
+
+      return -std::abs(std::sqrt(real*real+comp*comp));
+
       // cout << "Anasazi::BlockKrylovSchur::solve() did not converge!" << std::endl; 
-      return -std::abs(MyBlockKrylovSchur.getRitzValues().begin()->realpart);
+      // return -std::abs(MyBlockKrylovSchur.getRitzValues().begin()->realpart);
    }
    else { // solverreturn==Anasazi::Converged
+      double real = eigProb->getSolution().Evals.begin()->realpart;
+      double comp = eigProb->getSolution().Evals.begin()->imagpart;
+
+      return std::abs(std::sqrt(real*real+comp*comp));
+
       // cout << "Anasazi::BlockKrylovSchur::solve() converged!" << endl;
-      return std::abs(eigProb->getSolution().Evals.begin()->realpart);
+      // return std::abs(eigProb->getSolution().Evals.begin()->realpart);
    }
 }
 
