@@ -727,7 +727,7 @@ class test_checkin_test(unittest.TestCase):
       testName,
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --commit --push" \
-      +" --extra-pull-from='dummy master'" \
+      +" --extra-pull-from=dummy:master" \
       +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       ,
       \
@@ -740,8 +740,11 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      "=> A PUSH IS READY TO BE PERFORMED!\n" \
-      "^DID PUSH: Trilinos:\n"
+      +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+      +"^DID PUSH: Trilinos:\n" \
+      ,
+      failRegexStrList = \
+      "eg pull --rebase dummy master\n" \
       )
 
 
@@ -781,7 +784,7 @@ class test_checkin_test(unittest.TestCase):
       "local_do_all_without_serial_release_pass",
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release" \
-      +" --extra-pull-from='dummy master' --local-do-all" \
+      +" --extra-pull-from=machine:/path/to/repo:master --local-do-all" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
       g_cmndinterceptsDiffOnlyPasses \
@@ -1145,7 +1148,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_pull_extra_pull_only",
       \
-      "--pull --extra-pull-from='machine:/repo/dir/repo master'",
+      "--pull --extra-pull-from=machine:/repo/dir/repo:master",
       \
       g_cmndinterceptsPullOnlyPasses \
       +"IT: eg pull --rebase machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
@@ -1157,6 +1160,7 @@ class test_checkin_test(unittest.TestCase):
       \
       g_expectedRegexUpdatePasses \
       +"Pulling in updates from .machine:\/repo\/dir\/repo master.\n" \
+      +"eg pull --rebase machine:\/repo\/dir\/repo master\n" \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
       +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
@@ -1170,7 +1174,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "without_serial_release_extra_pull_only",
       \
-      "--extra-pull-from='machine:/repo/dir/repo master'",
+      "--extra-pull-from=machine:master",
       \
       g_cmndinterceptsSendFinalEmail \
       ,

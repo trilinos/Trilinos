@@ -6,7 +6,7 @@ cd ~/
 source .bash_profile
 
 cd ~/PROJECTS/Trilinos.base.checkin/BUILDS/CHECKIN/
-./checkin-test-godel-remote-test-push.sh "--extra-pull-from=\"gabriel master\"" \
+./checkin-test-godel-remote-test-push.sh --extra-pull-from=gabriel:master \
 --do-all --push \
 $EXTRA_ARGS
 

@@ -2,16 +2,6 @@
 #
 # ToDo:
 #
-#  (*) Change to --extra-pull-from=<repo>:<branch> to remove the space in the
-#  argument.  Removing the space will make using shell script pass-through
-#  much cleaner.  Change the instructions to explicitly pass in this argument
-#  on the remote machine.
-#
-#  (*) Change logic so that the last email commit message is only appended
-#  with the header of the build/test case summary and not the detail.  The new
-#  trilinos-checkin-test@software.sandia.gov mail list will have the rest of
-#  the details.
-#
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
@@ -210,11 +200,23 @@ def assertExtraBuildConfigFiles(extraBuilds):
         +extraBuildConfigFile+" does not exit!")
 
 
+def getRepoSpaceBranchFromOptionStr(extraPullFrom):
+  pullFromRepoList = extraPullFrom.split(':')
+  if len(pullFromRepoList) < 2:
+    raise Exception("Error, the --extra-pull-from='"+pullFromRepo+"' is not a valid" \
+      " <repo>:<branch> specification!")
+  repo = ':'.join(pullFromRepoList[0:-1])
+  branch = pullFromRepoList[-1]
+  return repo + " " + branch
+
+
+
 def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
   cmnd = "eg pull --rebase"
   if pullFromRepo:
-    print "\nPulling in updates from '"+pullFromRepo+"' ...\n"
-    cmnd += " " + pullFromRepo
+    repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
+    print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
+    cmnd += " " + repoSpaceBranch
   else:
     print "\nPulling in updates from 'origin' ...\n"
   return echoRunSysCmnd( cmnd,

@@ -6,7 +6,7 @@ cd ~/
 source .bashrc
 
 cd ~/TBUILDS/CHECKIN/
-./checkin-test-orthanc-remote-test-push.sh "--extra-pull-from=\"zan master\"" \
+./checkin-test-orthanc-remote-test-push.sh --extra-pull-from=zan:master \
 --do-all --push \
 $EXTRA_ARGS
 

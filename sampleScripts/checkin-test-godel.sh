@@ -26,8 +26,7 @@ echo "
 # Run the checkin-test.py script with more arguments
 #
 
-
-/home/rabartl/PROJECTS/Trilinos.base/Trilinos/checkin-test.py \
+../../Trilinos/checkin-test.py \
 --make-options="-j6" \
 --ctest-options="-j6" \
 --ctest-timeout=180 \

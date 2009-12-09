@@ -406,7 +406,7 @@ Common Use Cases (examples):
   On your fast remote test machine, do a full test and push with:
   
     ../checkin-test.py \
-      --extra-pull-from='mymachine:/some/dir/to/your/trilinos/src master' \
+      --extra-pull-from=mymachine:/some/dir/to/your/trilinos/src:master \
       --do-all --push
   
   NOTE: You can of course do the local commit yourself first and avoid the
@@ -650,10 +650,11 @@ clp.add_option(
 
 clp.add_option(
   "--extra-pull-from", dest="extraPullFrom", type="string", default="",
-  help="Optional extra git' <repository> <branch>' to pull and merge in changes from after" \
-  +" pulling in changes from 'origin'.  This option must include the <repository> " \
-  +" <branch>', separated by a space.  For example --extra-pull-from='machine:/base/dir/repo" \
-  +" master'.  This pull is only done if --pull is also specified" )
+  help="Optional extra git pull '<repository>:<branch>' to merge in changes from after" \
+  +" pulling in changes from 'origin'.  This option uses a colon with  no spaces in between" \
+  +" <repository>:<branch>' to avoid issues with passing arguments with spaces." \
+  +"  For example --extra-pull-from=machine:/base/dir/repo:master." \
+  +"  This pull is only done if --pull is also specified" )
 
 clp.add_option(
   "--allow-no-pull", dest="allowNoPull", action="store_true", default=False,
@@ -831,6 +832,9 @@ if options.doAll and options.allowNoPull:
 if options.doCommit and not options.commitMsgHeaderFile:
   print "\nError, if you use --commit you must also specify --commit-msg-header-file!"
   sys.exit(3)
+
+if options.extraPullFrom:
+  getRepoSpaceBranchFromOptionStr(options.extraPullFrom) # Will validate form
 
 
 #
