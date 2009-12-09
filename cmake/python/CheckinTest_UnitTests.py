@@ -403,6 +403,7 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
 
     baseCmndInterceptsStr = \
       "FT: .*checkin-test-impl\.py.*\n" \
+      "FT: eg config --get user.email\n" \
       "FT: which eg\n" \
       "FT: eg --version\n" \
       "FT: date\n" \

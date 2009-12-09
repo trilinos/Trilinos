@@ -594,9 +594,10 @@ clp.add_option(
 
 clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
-  default=os.environ["USER"]+"@sandia.gov",
+  default=getCmndOutput("eg config --get user.email", True, False),
   help="List of comma-separated email addresses to send email notification to." \
-  +"  By default, this is your Sandia User ID.  In order to turn off email" \
+  +"  By default, this is the email address you set for git returned by" \
+  +" `eg config --get user.email`.  In order to turn off email" \
   +" notification, just set --send-email-to='' and no email will be sent." )
 
 clp.add_option(

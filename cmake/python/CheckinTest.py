@@ -2,6 +2,21 @@
 #
 # ToDo:
 #
+#  (*) Change to --extra-pull-from=<repo>:<branch> to remove the space in the
+#  argument.  Removing the space will make using shell script pass-through
+#  much cleaner.  Change the instructions to explicitly pass in this argument
+#  on the remote machine.
+#
+#  (*) Add argument --send-email-to-on-push that default to
+#  trilinos-checkin-tests@software.sandia.gov and put in hooks and unit tests
+#  to see that this email address gets only the final email and only if the
+#  push passed.
+#
+#  (*) Change logic so that the last email commit message is only appended
+#  with the header of the build/test case summary and not the detail.  The new
+#  trilinos-checkin-test@software.sandia.gov mail list will have the rest of
+#  the details.
+#
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
