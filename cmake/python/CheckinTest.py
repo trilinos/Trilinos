@@ -7,11 +7,6 @@
 #  much cleaner.  Change the instructions to explicitly pass in this argument
 #  on the remote machine.
 #
-#  (*) Add argument --send-email-to-on-push that default to
-#  trilinos-checkin-tests@software.sandia.gov and put in hooks and unit tests
-#  to see that this email address gets only the final email and only if the
-#  push passed.
-#
 #  (*) Change logic so that the last email commit message is only appended
 #  with the header of the build/test case summary and not the detail.  The new
 #  trilinos-checkin-test@software.sandia.gov mail list will have the rest of
@@ -651,9 +646,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
 
   emailBody += getCmndOutput("date", True) + "\n\n"
 
-  emailBody += "Enabled Packages: " + ', '.join(enabledPackagesList) + "\n"
-  if inOptions.disablePackages:
-    emailBody += "Disabled Packages: " + inOptions.disablePackages + "\n"
+  emailBody += getEnableStatusList(inOptions, enabledPackagesList)
   emailBody += "Hostname: " + getHostname() + "\n"
   emailBody += "Source Dir: " + inOptions.trilinosSrcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
@@ -761,7 +754,58 @@ def getSummaryEmailSectionStr(inOptions, buildTestCaseList):
         getTestCaseEmailSummary(buildTestCase.name, buildTestCase.buildIdx)
   return summaryEmailSectionStr
 
-  
+
+def getEnablesLists(inOptions, baseTestDir, verbose):
+
+  cmakePkgOptions = []
+  enablePackagesList = []
+    
+  if inOptions.enablePackages:
+    if verbose:
+      print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
+    enablePackagesList = inOptions.enablePackages.split(',')
+  else:
+    diffOutFileName = baseTestDir+"/"+getModifiedFilesOutputFileName()
+    if verbose:
+      print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
+    if os.path.exists(diffOutFileName):
+      updateOutputStr = open(diffOutFileName, 'r').read()
+      extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions,
+        enablePackagesList, verbose)
+    else:
+      if verbose:
+        print "\nThe file "+diffOutFileName+" does not exist!\n"
+
+  for pkg in enablePackagesList:
+    cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
+
+  cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
+
+  if inOptions.enableAllPackages == 'on':
+    if verbose:
+      print "\nEnabling all packages on request ..."
+    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
+
+  if inOptions.enableFwdPackages:
+    if verbose:
+      print "\nEnabling forward packages on request ..."
+    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
+  else:
+    cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
+
+  if inOptions.disablePackages:
+    if verbose:
+      print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
+    disablePackagesList = inOptions.disablePackages.split(',')
+    for pkg in disablePackagesList:
+      cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
+
+  if verbose:
+    print "\ncmakePkgOptions:", cmakePkgOptions
+
+  return (cmakePkgOptions, enablePackagesList)
+
+
 def runBuildTestCase(inOptions, buildTestCase, timings):
 
   success = True
@@ -822,41 +866,7 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
     enablePackagesList = []
 
     if preConfigurePassed:
-    
-      if inOptions.enablePackages:
-        print "\nEnabling only the explicitly specified packages '"+inOptions.enablePackages+"' ...\n"
-        enablePackagesList = inOptions.enablePackages.split(',')
-      else:
-        diffOutFileName = "../"+getModifiedFilesOutputFileName()
-        print "\nDetermining the set of packages to enable by examining "+diffOutFileName+" ...\n"
-        if os.path.exists(diffOutFileName):
-          updateOutputStr = open(diffOutFileName, 'r').read()
-          extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions, enablePackagesList)
-        else:
-          print "\nThe file "+diffOutFileName+" does not exist!\n"
-  
-      for pkg in enablePackagesList:
-        cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=ON")
-  
-      cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON")
-    
-      if inOptions.enableAllPackages == 'on':
-        print "\nEnabling all packages on request ..."
-        cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON")
-    
-      if inOptions.enableFwdPackages:
-        print "\nEnabling forward packages on request ..."
-        cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON")
-      else:
-        cmakePkgOptions.append("-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=OFF")
-  
-      if inOptions.disablePackages:
-        print "\nDisabling specified packages '"+inOptions.disablePackages+"' ...\n"
-        disablePackagesList = inOptions.disablePackages.split(',')
-        for pkg in disablePackagesList:
-          cmakePkgOptions.append("-DTrilinos_ENABLE_"+pkg+":BOOL=OFF")
-  
-      print "\ncmakePkgOptions:", cmakePkgOptions
+      (cmakePkgOptions, enablePackagesList) = getEnablesLists(inOptions, baseTestDir, True)
   
     # A.3) Set the combined options
 
@@ -1137,6 +1147,18 @@ def getAutomatedStatusSummaryHeaderStr(inOptions):
       + getCmndOutput("date", True) + "\n\n" \
   
   return commitEmailBodyStr
+
+
+def getEnableStatusList(inOptions, enabledPackagesList):
+  enabledStatusStr = ""
+  enabledStatusStr += "Enabled Packages: " + ', '.join(enabledPackagesList) + "\n"
+  if inOptions.disablePackages:
+    enabledStatusStr += "Disabled Packages: " + inOptions.disablePackages + "\n"
+  if inOptions.enableAllPackages == "on":
+    enabledStatusStr += "Enabled all Packages\n"
+  elif inOptions.enableFwdPackages:
+    enabledStatusStr += "Enabled all Forward Packages\n"
+  return enabledStatusStr
 
 
 # Extract the original log message from the output from:
@@ -1578,6 +1600,11 @@ def checkinTest(inOptions):
       subjectLine = None
       commitEmailBodyExtra = ""
 
+      (cmakePkgOptions, enabledPackagesList) = getEnablesLists(inOptions, baseTestDir, False)
+
+      commitEmailBodyExtra += \
+        getEnableStatusList(inOptions, enabledPackagesList)
+
       commitEmailBodyExtra += \
         "\nBuild test results:" \
         "\n-------------------\n"
@@ -1748,7 +1775,6 @@ def checkinTest(inOptions):
           finalCommitEmailBodyStr += localCommitSummariesStr
           if forcedCommitPush:
             finalCommitEmailBodyStr += (forcedCommitPushMsg + "\n\n")
-          finalCommitEmailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
           writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
 
           # Ammend the final commit message
@@ -1944,7 +1970,7 @@ def checkinTest(inOptions):
         "\n***\n" \
         "*** WARNING: No actions were performed!\n" \
         "***\n" \
-        "*** Hint: Specify --do-all --commit to perform full integration update/build/test\n" \
+        "*** Hint: Specify [--commit] --do-all to perform full integration update/build/test\n" \
         "*** or --push to push the commits for a previously run test!\n" \
         "***\n\n"
   

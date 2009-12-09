@@ -644,7 +644,11 @@ class test_checkin_test(unittest.TestCase):
       (getInitialPullOutputFileName(), "initial eg pull passed\n"),
       (getModifiedFilesOutputFileName(), "M\tpackages/teuchos/CMakeLists.txt\n"),
       (getFinalPullOutputFileName(), "final eg pull --rebase passed\n"),
-      (getFinalCommitEmailBodyFileName(), getAutomatedStatusSummaryHeaderKeyStr()+"\n"),
+      (getFinalCommitEmailBodyFileName(),
+         getAutomatedStatusSummaryHeaderKeyStr()+"\n"
+         +"Enabled Packages: Teuchos\n" \
+         +"Enabled all Forward Packages\n" \
+         ),
       ("MPI_DEBUG/do-configure.base",
        "\-DTPL_ENABLE_MPI:BOOL=ON\n" \
        +"\-DTrilinos_ENABLE_TESTS:BOOL=ON\n" \
