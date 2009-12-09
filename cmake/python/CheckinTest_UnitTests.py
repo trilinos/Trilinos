@@ -283,6 +283,7 @@ g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
 g_cmndinterceptsSendFinalEmail = \
+  "IT: sleep .*; 0; 'Do not really sleep'\n" \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_expectedRegexUpdatePasses = \
