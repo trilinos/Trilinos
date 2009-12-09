@@ -283,7 +283,6 @@ g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
 g_cmndinterceptsSendFinalEmail = \
-  "IT: sleep .*; 0; 'Do not really sleep'\n" \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
 g_expectedRegexUpdatePasses = \
@@ -500,7 +499,8 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     ,
     \
     failRegexStrList = \
-    "DID PUSH: Trilinos\n"
+    "mailx .* trilinos-checkin-tests.*\n" \
+    +"DID PUSH: Trilinos\n" \
     )
 
 
@@ -633,6 +633,7 @@ class test_checkin_test(unittest.TestCase):
       +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
       +g_expectedCommonOptionsSummary \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
+      +"mailx .* trilinos-checkin-tests.*\n" \
       +"^DID PUSH: Trilinos:\n" \
       +"Executing final command (ssh -q godel /some/dir/some_command.sh &) since a push is okay to be performed!\n" \
       +"Running: ssh -q godel /some/dir/some_command.sh &\n" \

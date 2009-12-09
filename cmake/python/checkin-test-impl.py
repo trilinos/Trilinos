@@ -595,10 +595,21 @@ clp.add_option(
 clp.add_option(
   "--send-email-to", dest="sendEmailTo", type="string",
   default=getCmndOutput("eg config --get user.email", True, False),
-  help="List of comma-separated email addresses to send email notification to." \
+  help="List of comma-separated email addresses to send email notification to" \
+  +" after every build/test case finishes and at the end for an overall summary" \
+  +" and push status." \
   +"  By default, this is the email address you set for git returned by" \
   +" `eg config --get user.email`.  In order to turn off email" \
   +" notification, just set --send-email-to='' and no email will be sent." )
+
+clp.add_option(
+  "--send-email-to-on-push", dest="sendEmailToOnPush", type="string",
+  default="trilinos-checkin-tests@software.sandia.gov",
+  help="List of comma-separated email addresses to send email notification to" \
+  +" on a successful push.  This is used to log pushes to a central list." \
+  +"  In order to turn off this email" \
+  +" notification, just set --send-email-to-on-push='' and no email will be sent" \
+  +" to these email lists." )
 
 clp.add_option(
   "--force-commit-push", dest="forceCommitPush", action="store_true",
@@ -765,6 +776,7 @@ if not options.withSerialRelease:
 if options.withoutDefaultBuilds:
   print "  --without-default-builds \\" 
 print "  --send-email-to='"+options.sendEmailTo+"' \\"
+print "  --send-email-to-on-push='"+options.sendEmailToOnPush+"' \\"
 if options.forceCommitPush:
   print "  --force-commit-push \\"
 else:

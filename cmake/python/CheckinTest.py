@@ -1899,11 +1899,10 @@ def checkinTest(inOptions):
       if inOptions.sendEmailTo:
   
         emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
-        echoRunSysCmnd("sleep 2s")
+        if inOptions.sendEmailToOnPush and didPush:
+          emailAddresses += " " + getEmailAddressesSpaceString(inOptions.sendEmailToOnPush)
         echoRunSysCmnd("mailx -s \""+subjectLine+"\" " \
           +emailAddresses+" < "+summaryCommitEmailBodyFileName)
-        # Above, we use 'sleep 2s' to try to make sure this email is posted
-        # after the last pass/fail email!
   
       else:
   
