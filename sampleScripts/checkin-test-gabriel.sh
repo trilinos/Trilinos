@@ -6,16 +6,18 @@
 #
 # Options to run with:
 #
-#  For all the extra builds
+#  For all the extra builds pass in:
 #
 #  --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST,MPI_DEBUG_INT
 #
 # If you want to automatically do the remote pull/test/push on godel, you can
-# use the arguments:
+# use the argument:
 #
-#    "--execute-on-ready-to-push=\"ssh -q godel /home/rabartl/PROJECTS/Trilinos.base.checkin/BUILDS/CHECKIN/checkin-test-godel-remote-test-push-gabriel-remote-driver.sh &\""
+#    "--execute-on-ready-to-push=\"ssh -q godel '~/PROJECTS/Trilinos.base.checkin/checkin-test-godel-remote.sh --extra-pull-from gabriel:master' &\""
 #
 # NOTE: You will need the funny quotes when passing through a shell script.
+# You also oneed to leave the '=' off of --extra-pull-from because the python
+# scripting code can't handle an '=' inside of an quoted argument (yet).
 #
 
 #
@@ -84,6 +86,7 @@ echo "
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
+
 #
 # NOTES:
 #
