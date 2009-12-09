@@ -525,7 +525,9 @@ addOptionParserChoiceOption(
   +" the logic in this script determines that a global build file has changed" \
   +" but you know that you don't need to rebuild every Trilinos package for" \
   +" a reasonable test.  Setting --enable-packages effectively disables this" \
-  +" option.",
+  +" option.  NOTE: Setting this to 'off' does *not* stop the forward enabling" \
+  +" of downstream packages for packages that are modified or set by --enable-packages." \
+  +"  This only stops the setting of -DTrilinos_ENABLE_ALL_PAKCAGES:BOOL=ON.",
   clp )
 
 clp.add_option(
