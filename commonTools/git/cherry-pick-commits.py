@@ -17,6 +17,14 @@ from GeneralScriptSupport import *
 
 usageHelp = r"""cherry-pick-commits.py [OPTIONS]
 
+Example:
+
+eg log --oneline --topo-order --reverse \
+  trilinos-release-10-0-branch ^trilinos-release-10-0-branch-init \
+  -- packages/zoltan \
+  | ./commonTools/git/cherry-pick-commits.py 2>&1 \
+  | tee cherry-pick-commits.log
+
 ToDo: Finish documentation!
 
 """
