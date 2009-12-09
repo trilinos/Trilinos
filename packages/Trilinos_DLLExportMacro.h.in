@@ -1,0 +1,9 @@
+#if defined (_WIN32) 
+#  if defined(@CURRENT_PACKAGE@_LIB_EXPORTS_MODE)
+#    define @CURRENT_PACKAGE@_LIB_DLL_EXPORT __declspec(dllexport)
+#  else
+#    define @CURRENT_PACKAGE@_LIB_DLL_EXPORT __declspec(dllimport)
+#  endif
+#else
+#  define @CURRENT_PACKAGE@_LIB_DLL_EXPORT
+#endif

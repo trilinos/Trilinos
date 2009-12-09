@@ -192,4 +192,6 @@ const int Teuchos_DefaultTracebackMode = 1; /* Default value for traceback behav
 #  endif
 #endif
 
+#include "Teuchos_DLLExportMacro.h"
+
 #endif /* TEUCHOS_CONFIGDEFS_HPP */

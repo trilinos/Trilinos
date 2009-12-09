@@ -68,7 +68,7 @@ enum ERCPStrength { RCP_STRENGTH_INVALID=0, RCP_STRONG, RCP_WEAK };
 
 
 template<>
-class ToStringTraits<ERCPStrength> {
+class TEUCHOS_LIB_DLL_EXPORT ToStringTraits<ERCPStrength> {
 public:
   static std::string toString( const ERCPStrength &t )
     {
@@ -105,7 +105,7 @@ public:
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-class RCPNode {
+class TEUCHOS_LIB_DLL_EXPORT RCPNode {
 public:
   /** \brief . */
   RCPNode(bool has_ownership_in)
@@ -247,7 +247,7 @@ private:
  * must already be an owning (or non-owning) RCP object that will delete the
  * underlying object and therefore this class should *not* call delete_obj()!
  */
-class RCPNodeThrowDeleter {
+class TEUCHOS_LIB_DLL_EXPORT RCPNodeThrowDeleter {
 public:
   /** \brief . */
   RCPNodeThrowDeleter(RCPNode *node)
@@ -313,10 +313,10 @@ const void* getRCPNodeBaseObjMapKeyVoidPtr(T *p)
  *
  * \relates RCPNode
  */
-void add_new_RCPNode( RCPNode* rcp_node, const std::string &info );
+TEUCHOS_LIB_DLL_EXPORT void add_new_RCPNode( RCPNode* rcp_node, const std::string &info );
 
 
-int get_add_new_RCPNode_call_number();
+TEUCHOS_LIB_DLL_EXPORT int get_add_new_RCPNode_call_number();
 
 
 /** \brief Remove RCP from global list.
@@ -325,7 +325,7 @@ int get_add_new_RCPNode_call_number();
  *
  * \relates RCPNode
  */
-void remove_RCPNode( RCPNode* rcp_node );
+TEUCHOS_LIB_DLL_EXPORT void remove_RCPNode( RCPNode* rcp_node );
 
 
 /** \brief Return an raw existing RCPNode for a given its lookup key.
@@ -334,7 +334,7 @@ void remove_RCPNode( RCPNode* rcp_node );
  *
  * \relates RCPNode
  */
-RCPNode* get_existing_RCPNodeGivenLookupKey(const void* lookupKey);
+TEUCHOS_LIB_DLL_EXPORT RCPNode* get_existing_RCPNodeGivenLookupKey(const void* lookupKey);
 
 
 /** \brief Return an raw existing RCPNode for a given object if it exits.
@@ -354,7 +354,7 @@ RCPNode* get_existing_RCPNode(T *p)
  *
  * \ingroup teuchos_mem_mng_grp
  */
-class ActiveRCPNodesSetup {
+class TEUCHOS_LIB_DLL_EXPORT ActiveRCPNodesSetup {
 public:
   /** \brief . */
   ActiveRCPNodesSetup();
@@ -374,7 +374,7 @@ private:
  *
  * \relates RCPNode
  */
-bool isTracingActiveRCPNodes();
+TEUCHOS_LIB_DLL_EXPORT bool isTracingActiveRCPNodes();
 
 
 #ifdef TEUCHOS_DEBUG
@@ -392,13 +392,13 @@ bool isTracingActiveRCPNodes();
  *
  * \relates RCPNode
  */
-void setTracingActiveRCPNodes(bool tracingActiveNodes);
+void TEUCHOS_LIB_DLL_EXPORT setTracingActiveRCPNodes(bool tracingActiveNodes);
 
 #endif // TEUCHOS_DEBUG
 
 
 /** \brief Print the number of active RCPNode objects being tracked. */
-int numActiveRCPNodes();
+int TEUCHOS_LIB_DLL_EXPORT numActiveRCPNodes();
 
 
 /** \brief Print the list of currently active RCP nodes.
@@ -417,7 +417,7 @@ int numActiveRCPNodes();
  *
  * \relates RCPNode
  */
-void printActiveRCPNodes(std::ostream &out);
+TEUCHOS_LIB_DLL_EXPORT void printActiveRCPNodes(std::ostream &out);
 
 
 /** \brief Throw that a pointer passed into an RCP object is null. */

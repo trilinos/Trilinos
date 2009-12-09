@@ -7,6 +7,10 @@ INCLUDE(PackageLibraryMacros)
 
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
+SET(CURRENT_PACKAGE TEUCHOS)
+CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  Teuchos_DLLExportMacro.h)
+
 #
 # B) Define the header and source files (and include directories)
 #
@@ -30,6 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h
   )
 
 # NOTE: Above, we add the XXX_config.h file so tht MS Visual Studio
@@ -295,4 +300,5 @@ PACKAGE_ADD_LIBRARY(
   teuchos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEFINES -DTEUCHOS_LIB_EXPORTS_MODE
   )
