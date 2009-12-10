@@ -193,6 +193,18 @@ GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
 APPEND_SET(CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
 
 #
+# Determine the install directory
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print sys.version[:3]"
+  OUTPUT_VARIABLE PYTHON_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+SET(PyTrilinos_INSTALL_DIR
+  ${PyTrilinos_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/site-packages/PyTrilinos
+  CACHE PATH "The path where PyTrilinos will be installed"
+  )
+MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
+
+#
 # Loop over the PyTrilinos-enabled Trilinos modules and define the
 # swig-generated PyTrilinos extension modules
 FOREACH(MODULE ${PyTrilinos_MODULES})
@@ -213,16 +225,67 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME} python "${MODULE_OUTDIR}"
     "${MODULE_NAME}" ${MODULE}.i)
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
-  # Choosing the Trilinos libraries to link against requires a little bit
-  # of logic
+  #
+  # Choosing the Trilinos libraries to link against, the python module
+  # to byte-compile and the installation rules requires a little bit
+  # of logic.
+  #
+  # PyTrilinos.NOX.Epetra
   IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/Epetra/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/Epetra/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
+  #
+  # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")
     SET(TRILINOS_LIBS ${NOX_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/NOX/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling NOX/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/NOX/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX)
+  #
+  # PyTrilinos.LOCA
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA")
     SET(TRILINOS_LIBS ${LOCA_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/LOCA/${MODULE_NAME}.py')"
+      COMMENT "Byte compiling LOCA/${MODULE_NAME}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/LOCA/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA)
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA)
+  #
+  # PyTrilinos
   ELSE("${MODULE_OUTDIR}")
     SET(TRILINOS_LIBS ${${MODULE_UPPER}_LIBRARIES})
+    ADD_CUSTOM_COMMAND(TARGET ${PyTrilinos_TARGET_NAME} POST_BUILD
+      COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('PyTrilinos/${MODULE}.py')"
+      COMMENT "Byte compiling ${MODULE}.py"
+      VERBATIM)
+    INSTALL(FILES
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/${MODULE_NAME}.py
+      ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos/${MODULE_NAME}.pyc
+      DESTINATION ${PyTrilinos_INSTALL_DIR})
+    INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
+      DESTINATION ${PyTrilinos_INSTALL_DIR})
+  #
   ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
   SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
