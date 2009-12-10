@@ -21,6 +21,7 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_ZoltanTpl)
         )
 ENDIF()
 
+
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND NOT ${PACKAGE_NAME}_ENABLE_MPI)
   MESSAGE(STATUS "  WARNING:  Setting ${PACKAGE_NAME}_ENABLE_Zoltan=OFF since ${PACKAGE_NAME}_ENABLE_MPI=OFF!")
   DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_Zoltan "")
@@ -97,11 +98,19 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Cfunc
   "Enable the Cfunc functionality."
   OFF )
 
+
+ADD_OPTION_AND_DEFINE(TPL_ENABLE_MATLAB
+  HAVE_ML_MATLAB
+  "Enable Matlab Functionality."
+  OFF )
+
+
 #
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(matlab)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
