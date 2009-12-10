@@ -1783,10 +1783,6 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexBuildPasses \
       +"No tests failed!\n"\
       +"CTest was invoked but no tests were run!\n"\
-      +"\n"\
-      +"\n"\
-      +"\n"\
-      +"\n"\
       +"At least one of the actions (update, configure, built, test) failed or was not performed correctly!\n" \
        +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: no tests run\n" \
       +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
@@ -1795,8 +1791,34 @@ class test_checkin_test(unittest.TestCase):
       +"REQUESTED ACTIONS: FAILED\n" \
       )
 
-  # ToDo: Add test that fails to push if some active pull was not performed
-  #       first (in case --local-do-all is used).
+
+  def test_local_do_all_without_serial_release_push_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "local_do_all_without_serial_release_push_fail",
+      \
+      "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all --push",
+      \
+      g_cmndinterceptsDiffOnlyPasses \
+      +g_cmndinterceptsConfigBuildTestPasses \
+      +g_cmndinterceptsSendBuildTestCaseEmail \
+      +g_cmndinterceptsSendFinalEmail \
+      ,
+      \
+      False,
+      \
+      g_expectedRegexConfigPasses \
+      +g_expectedRegexBuildPasses \
+      +g_expectedRegexTestPasses \
+      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
+      +"A current successful pull does \*not\* exist => Not ready for final push!\n"\
+      +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n"\
+      +"^ABORTED COMMIT/PUSH: Trilinos:\n" \
+      +"REQUESTED ACTIONS: FAILED\n" \
+      )
 
 
 def suite():

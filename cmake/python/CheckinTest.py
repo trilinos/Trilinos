@@ -1602,6 +1602,7 @@ def checkinTest(inOptions):
     okayToCommit = False
     okayToPush = False
     forcedCommitPush = False
+    abortedCommitPush = False
 
     if inOptions.doCommitReadinessCheck or inOptions.doCommit:
 
@@ -1639,11 +1640,11 @@ def checkinTest(inOptions):
       # Print message if a commit is okay or not
       if okayToCommit:
         print "\nThe tests ran and all passed!\n\n" \
-          "  => A COMMIT IS OKAY TO BE PERFORMED!"
+          "  => A COMMIT IS OKAY TO BE PERFORMED!\n"
       else:
         print "\nAt least one of the actions (update, configure, built, test)" \
           " failed or was not performed correctly!\n\n" \
-          "  => A COMMIT IS *NOT* OKAY TO BE PERFORMED!"
+          "  => A COMMIT IS *NOT* OKAY TO BE PERFORMED!\n"
 
       # Back out commit if one was performed and buid/test failed
       if not okayToCommit and inOptions.doCommit and commitPassed and not inOptions.forceCommitPush:
@@ -1684,6 +1685,7 @@ def checkinTest(inOptions):
              " performed!\n"
           print commitEmailBodyExtra
           okayToPush = False
+          abortedCommitPush = True
       else:
         okayToPush = False
   
@@ -1909,18 +1911,18 @@ def checkinTest(inOptions):
         subjectLine = "FAILED CONFIGURE/BUILD/TEST"
         commitEmailBodyExtra += "\n\nFailed because one of the build/test cases failed!\n"
         success = False
-      elif not pushPassed:
-        subjectLine = "PUSH FAILED"
-        commitEmailBodyExtra += "\n\nFailed because push failed!" \
-          " See '"+getPushOutputFileName()+"'\n\n"
-        success = False
       elif inOptions.doPush:
         if didPush and not forcedCommitPush:
           subjectLine = "DID PUSH"
-        else:
+        elif abortedCommitPush:
           subjectLine = "ABORTED COMMIT/PUSH"
           commitEmailBodyExtra += "\n\nCommit/push was never attempted since commit/push" \
           " criteria failed!\n\n"
+          success = False
+        else:
+          subjectLine = "PUSH FAILED"
+          commitEmailBodyExtra += "\n\nFailed because push failed!" \
+            " See '"+getPushOutputFileName()+"'\n\n"
           success = False
       else:
         if okayToPush:
