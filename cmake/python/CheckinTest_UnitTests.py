@@ -13,64 +13,6 @@ class MockOptions:
 
 
 #
-# Test isGlobalBuildFile
-#
-
-class test_isGlobalBuildFile(unittest.TestCase):
-
-
-  def test_00(self):
-    self.assertEqual( isGlobalBuildFile( 'Trilinos_version.h' ), True )
-
-
-  def test_01(self):
-    self.assertEqual( isGlobalBuildFile( 'CMakeLists.txt' ), True )
-
-
-  def test_02(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosPackages.cmake' ), True )
-
-
-  def test_03(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
-
-
-  def test_04(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/ctest/experimental_build_test.cmake' ),
-      False )
-
-
-  def test_05(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/DependencyUnitTests/blah' ),
-      False )
-
-
-  def test_06(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLBLAS.cmake' ),
-      True )
-
-
-  def test_07(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
-      True )
-
-
-  def test_08(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLMPI.cmake' ),
-      True )
-
-
-  def test_09(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/TPLs/FindTPLDummy.cmake' ),
-      False )
-
-
-  def test_10(self):
-    self.assertEqual( isGlobalBuildFile( 'cmake/utils/SetNotFound.cmake' ),
-      True )
-
-
-#
 # Test extractPackageEnablesFromChangeStatus
 #
 

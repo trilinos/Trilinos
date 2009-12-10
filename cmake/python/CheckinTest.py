@@ -5,9 +5,6 @@
 #  (*) Create a TaskStatus class and use it to simplify the logic replacing
 #  the simple bools.
 #
-#  (*) Change logic to not enable everything if TrilinosPackages.cmake or
-#  TrilinosTPLs.cmake are changed.
-#
 
 #
 # General scripting support
@@ -374,7 +371,7 @@ def extractPackageEnablesFromChangeStatus(updateOutputStr, inOptions_inout,
 
   for modifiedFileFullPath in modifiedFilesList:
 
-    if isGlobalBuildFile(modifiedFileFullPath):
+    if isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \

@@ -7,6 +7,68 @@ from TrilinosPackageFilePathUtils import *
 import unittest
 
 
+#
+# Test isGlobalBuildFileRequiringGlobalRebuild
+#
+
+class test_isGlobalBuildFileRequiringGlobalRebuild(unittest.TestCase):
+
+
+  def test_Trilinos_version_h(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'Trilinos_version.h' ), True )
+
+
+  def test_CMakeLists_txt(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'CMakeLists.txt' ), True )
+
+
+  def test_TrilinosPackages_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosPackages.cmake' ), False )
+
+
+  def test_TrilinosTPLs_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosTPLs.cmake' ), False )
+
+
+  def test_TrilinosCMakeQuickstart_txt(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TrilinosCMakeQuickstart.txt' ), False )
+
+
+  def test_experimental_build_test_cmake(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/ctest/experimental_build_test.cmake' ),
+      False )
+
+
+  def test_DependencyUnitTests(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/DependencyUnitTests/blah' ),
+      False )
+
+
+  def test_FindTPLBLAS(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLBLAS.cmake' ),
+      True )
+
+
+  def test_FindTPLLAPACK(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLLAPACK.cmake' ),
+      True )
+
+
+  def test_FindTPLMPI(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLMPI.cmake' ),
+      True )
+
+
+  def test_FindTPLDummy(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/TPLs/FindTPLDummy.cmake' ),
+      False )
+
+
+  def test_SetNotFound(self):
+    self.assertEqual( isGlobalBuildFileRequiringGlobalRebuild( 'cmake/utils/SetNotFound.cmake' ),
+      True )
+
+
 trilinosDependencies = getTrilinosDependenciesFromXmlFile(defaultTrilinosDepsXmlInFile)
 #print "\ntrilinosDependencies:\n", trilinosDependencies
 

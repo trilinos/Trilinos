@@ -20,7 +20,30 @@ from GeneralScriptSupport import *
 import time
 
 
-def isGlobalBuildFile(modifiedFileFullPath):
+#
+# Determine if a given file should be considered a global build file such that
+# all of Trilinos should be rebuilt.  In general, any file under the cmake/
+# directory with the extension *.cmake is considered a file that requires a
+# global rebuild of all Trilinos packaes.  There are a few special files
+# that we don't do a global rebuild for:
+#
+
+# cmake/TrilinosPackages.cmake: This file gets modified frequently to add new
+# packages and rearrange packages.  We don't need to do a global rebuild
+# because this list of pakages is validated if we do even a single rebuild.
+# If a package line gets removed, the code that reads the Dependencies.cmake
+# files will fail and stop.
+#
+# cmake/TrilinosPackages.cmake: This file also gets modified frequently.  We
+# don't need to enable all Trilinos packages either for the same reason as for
+# the TrilinosPackages.cmake file.
+#
+# cmake/TPLs/*.cmake: Any FileTPLSOMETHING.cmake file that is not for BLAS,
+# LAPACK, or MPI is not needed for Primary Stable code and therefore does not
+# need to trigger a global rebulid.
+#
+
+def isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
   modifiedFileFullPathArray = getFilePathArray(modifiedFileFullPath)
   if len(modifiedFileFullPathArray)==1:
     if modifiedFileFullPathArray[0] == "CMakeLists.txt":
@@ -28,6 +51,10 @@ def isGlobalBuildFile(modifiedFileFullPath):
     if modifiedFileFullPathArray[0] == "Trilinos_version.h":
       return True
   if modifiedFileFullPathArray[0] == 'cmake':
+    if modifiedFileFullPathArray[1] == 'TrilinosPackages.cmake':
+      return False
+    if modifiedFileFullPathArray[1] == 'TrilinosTPLs.cmake':
+      return False
     if modifiedFileFullPathArray[1] == 'ctest':
       return False
     if modifiedFileFullPathArray[1] == 'DependencyUnitTests':
@@ -81,7 +108,7 @@ def getPackagesListFromFilePathsList(trilinosDependencies, filePathsList,
     packageName = getPackageNameFromPath(trilinosDependencies, filePath)
     if findInSequence(packagesList, packageName) == -1 and packageName: 
       packagesList.append(packageName.strip())
-    if allPackages and isGlobalBuildFile(filePath) and not enabledAllPackages:
+    if allPackages and isGlobalBuildFileRequiringGlobalRebuild(filePath) and not enabledAllPackages:
       packagesList.append("ALL_PACKAGES")
       enabledAllPackages = True
   return packagesList
