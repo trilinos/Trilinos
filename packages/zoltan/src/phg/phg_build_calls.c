@@ -289,7 +289,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
 
     for (i=0; i<myPins.nHedges; i++){
-      myPins.esizes[i] = pinIdx[i+1] - pinIdx[i];
+      myPins.esizes[i] = (pinIdx[i+1] - pinIdx[i])/gid_size;
     }
 
     ZOLTAN_FREE(&pinIdx);
@@ -1451,7 +1451,7 @@ int *rptr=NULL, *cptr=NULL;
     if (!row_storage){    /* compressed column storage */
 
       vid = ZOLTAN_MALLOC_GID_ARRAY(zz, nl);
-      cptr = (int *)ZOLTAN_MALLOC(nl * sizeof(int));
+      cptr = (int *)ZOLTAN_MALLOC((nl+1) * sizeof(int));
       eid = ZOLTAN_MALLOC_GID_ARRAY(zz, np);
 
       if (!vid|| !cptr || !eid){
@@ -1462,6 +1462,7 @@ int *rptr=NULL, *cptr=NULL;
       }
       zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
                nl, np, format, vid, cptr, eid, &ierr);
+      cptr[nl] = np * zz->Num_GID;
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
@@ -1493,7 +1494,7 @@ int *rptr=NULL, *cptr=NULL;
                  nl, np, format, eid, rptr, vid, &ierr);
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
-      rptr[nl] = np;
+      rptr[nl] = np * zz->Num_GID;
     }
 
     *edg_GID = eid;
@@ -1615,7 +1616,7 @@ int numGID = zz->Num_GID;
       ZOLTAN_SET_GID(zz, edges + e*numGID, hn->egid);
       hn->firstVert = vIdx[e];
       hn->nextVert  = 0;
-      vIdx[e+1] = vIdx[e] + hn->numVerts;
+      vIdx[e+1] = vIdx[e] + (hn->numVerts * numGID);
       hn = hn->next;
       e++;
     }
@@ -1635,7 +1636,7 @@ int numGID = zz->Num_GID;
   eIdx = col_ptr;
 
   for (v=0; v < numVerts; v++){
-    npins = ((v == (numVerts - 1)) ? num_pins : eIdx[v+1]) - eIdx[v];
+    npins = (eIdx[v+1] - eIdx[v])/numGID;
 
     for (e=0; e < npins; e++){
       idx = Zoltan_Hash(egid, numGID, (unsigned int)ht_size);
@@ -1645,10 +1646,10 @@ int numGID = zz->Num_GID;
         if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
 
           ZOLTAN_SET_GID(zz,
-             pins + numGID*(hn->firstVert + hn->nextVert),
+             pins + hn->firstVert + hn->nextVert,
              vgid);
 
-          hn->nextVert++;
+          hn->nextVert += numGID;
           break;
         }
         else{
