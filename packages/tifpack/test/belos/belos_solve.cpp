@@ -35,10 +35,8 @@
 #include "Teuchos_Comm.hpp"
 
 #include "Tifpack_Parameters.hpp"
-#include "Tifpack_Factory.hpp"
 
 #include "Tpetra_DefaultPlatform.hpp"
-
 
 #include "build_problem.hpp"
 #include "build_solver.hpp"
@@ -73,7 +71,8 @@ int main(int argc, char*argv[])
   //for Belos and Tifpack, those will be passed to the respective destinations
   //from within the build_problem and build_solver functions.
 
-  std::cout << "Reading parameters from xml_params_file: " << xml_params_file << std::endl;
+  std::cout << "Every proc reading parameters from xml_params_file: "
+            << xml_params_file << std::endl;
   Teuchos::ParameterList test_params =
       Teuchos::ParameterXMLFileReader(xml_params_file).getParameters();
 
@@ -89,7 +88,9 @@ int main(int argc, char*argv[])
 
   Belos::ReturnType ret = solver->solve();
 
-  std::cout << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
+  if (comm->getRank() == 0) {
+    std::cout << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
+  }
 
   //If the xml file specified a number of iterations to expect, then we will
   //use that as a test pass/fail criteria.
@@ -99,11 +100,15 @@ int main(int argc, char*argv[])
     Tifpack::GetParameter(test_params, "expectNumIters", expected_iters);
     int actual_iters = solver->getNumIters();
     if (ret == Belos::Converged && actual_iters == expected_iters) {
-      std::cout << "End Result: TEST PASSED" << std::endl;
+      if (comm->getRank() == 0) {
+        std::cout << "End Result: TEST PASSED" << std::endl;
+      }
     }
     else {
-      std::cout << "Failed to converge in expected number of iterations ("
+      if (comm->getRank() == 0) {
+        std::cout << "Failed to converge in expected number of iterations ("
               <<expected_iters<<")!" << std::endl;
+      }
     }
   }
 

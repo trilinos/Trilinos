@@ -4,6 +4,7 @@
   <Parameter name="solver_type" type="string" value="BlockGmres"/>
   <ParameterList name="Belos">
     <Parameter name="Verbosity" type="int" value="2"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
   <Parameter name="Tifpack::Preconditioner" type="string" value="POINT_RELAXATION"/>
