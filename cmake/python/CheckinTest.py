@@ -535,22 +535,17 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
     if os.path.exists(getTestOutputFileName()):
       testOutputExists = True
 
-    if os.path.exists(getTestSuccessFileName()):
-      print "\nAll of the tests ran passed!\n"
-      testsPassed = True
-    elif testOutputExists:
-      print "\nAt least one of the tests ran FAILED!\n"
-      testsPassed = False
-    else:
+    if not testOutputExists:
+
       print "\nThe tests where never even run!\n"
       testsPassed = False
 
-    if testOutputExists:
+    else: # testOutputExists
 
       testResultsLine = getCmndOutput("grep 'tests failed out of' "+getTestOutputFileName(),
         True, False)
 
-      print "testResultsLine =", testResultsLine
+      print "testResultsLine = '"+testResultsLine+"'"
 
       reCtestFailTotalMatch = reCtestFailTotal.match(testResultsLine)
 
@@ -561,6 +556,19 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
       else:
         numTotalTests = None
         numPassedTests = None
+        testsPassed = False
+
+      if not os.path.exists(getTestSuccessFileName()):
+        print "\nThe tests did not run and pass!\n"
+        testsPassed = False
+      elif numTotalTests == None:
+        print "\nCTest was invoked but no tests were run!\n"
+        testsPassed = False
+      elif numTotalTests == numPassedTests:
+        print "\nAll of the tests ran passed!\n"
+        testsPassed = True
+      else:
+        print "\n"+(numTotalTests-numPassedTests)+" tests failed!\n"
         testsPassed = False
 
   else:
@@ -583,7 +591,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
         subjectLine += ": passed="+str(numPassedTests)+",notpassed="+str(numFailedTests)
       else:
         subjectLine += ": no tests run"
-      if testsPassed:
+      if testsPassed and numTotalTests > 0:
         overallPassed = True
       else:
         overallPassed = False
@@ -980,7 +988,7 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
         )
   
       if testRtn == 0:
-        print "\nTest passed!\n"
+        print "\nNo tests failed!\n"
         echoRunSysCmnd("touch "+getTestSuccessFileName())
       else:
         errStr = "FAILED: ctest failed returning "+str(testRtn)+"!"
@@ -1559,6 +1567,8 @@ def checkinTest(inOptions):
 
     # Run the build/test cases
 
+    buildTestCasesPassed = True
+
     if runBuildCases:
 
       echoChDir(baseTestDir)
@@ -1581,7 +1591,9 @@ def checkinTest(inOptions):
           buildTestCase,
           timings
           )
-        if not result: success = False
+        if not result:
+          buildTestCasesPassed = False
+          success = False
 
     print "\n***"
     print "*** 6) Determine overall success and commit/push readiness (and backout commit if failed) ..."
@@ -1595,7 +1607,7 @@ def checkinTest(inOptions):
 
       echoChDir(baseTestDir)
   
-      okayToCommit = True
+      okayToCommit = success
       subjectLine = None
       commitEmailBodyExtra = ""
 
@@ -1746,7 +1758,7 @@ def checkinTest(inOptions):
         if not pullFinalPassed: okayToPush = False
 
       #
-      print "\n7.b) Ammending the final commit message by appending test results ...\n"
+      print "\n7.b) Amending the final commit message by appending test results ...\n"
       #
 
       (localCommitSummariesStr, localCommitsExist) = getLocalCommitsSummariesStr(inOptions)
@@ -1776,16 +1788,26 @@ def checkinTest(inOptions):
             finalCommitEmailBodyStr += (forcedCommitPushMsg + "\n\n")
           writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
 
-          # Ammend the final commit message
+          # Amend the final commit message
           if localCommitsExist:
-            echoRunSysCmnd(
+
+            commitAmendRtn = echoRunSysCmnd(
               "eg commit --amend" \
               " -F "+os.path.join(baseTestDir, getFinalCommitEmailBodyFileName()),
               workingDir=inOptions.trilinosSrcDir,
               outFile=os.path.join(baseTestDir, getFinalCommitOutputFileName()),
-              timeCmnd=True
+              timeCmnd=True, throwExcept=False
               )
+
+            if commitAmendRtn == 0:
+              print "\nAppending test results to last commit passed!\n"
+              ammendFinalCommitPassed = True
+            else:
+              print "\nAppending test results to last commit failed!\n"
+              ammendFinalCommitPassed = False
+
           else:
+
             print "\nSkipping ammending last commit because there are no local commits!\n"
             
         except Exception, e:
@@ -1801,7 +1823,7 @@ def checkinTest(inOptions):
 
       if not okayToPush:
 
-        print "\nNot performing push due to prior errors\n"
+        print "\nNot performing push due to prior errors!\n"
         pushPassed = False
 
       else:
@@ -1872,14 +1894,9 @@ def checkinTest(inOptions):
           " See '"+getFinalPullOutputFileName()+"'\n\n"
         success = False
       elif not ammendFinalCommitPassed:
-        subjectLine = "AMMEND COMMIT FAILED"
+        subjectLine = "AMEND COMMIT FAILED"
         commitEmailBodyExtra += "\n\nFailed because the final test commit ammend failed!" \
           " See '"+getFinalCommitOutputFileName()+"'\n\n"
-        success = False
-      elif not pushPassed:
-        subjectLine = "PUSH FAILED"
-        commitEmailBodyExtra += "\n\nFailed because push failed!" \
-          " See '"+getPushOutputFileName()+"'\n\n"
         success = False
       elif inOptions.doPush and pushPassed and forcedCommitPush:
         subjectLine = "DID FORCED PUSH"
@@ -1888,6 +1905,15 @@ def checkinTest(inOptions):
       elif inOptions.doCommit and commitPassed and forcedCommitPush:
         subjectLine = "DID FORCED COMMIT"
         commitEmailBodyExtra += forcedCommitPushMsg
+      elif not buildTestCasesPassed:
+        subjectLine = "FAILED CONFIGURE/BUILD/TEST"
+        commitEmailBodyExtra += "\n\nFailed because one of the build/test cases failed!\n"
+        success = False
+      elif not pushPassed:
+        subjectLine = "PUSH FAILED"
+        commitEmailBodyExtra += "\n\nFailed because push failed!" \
+          " See '"+getPushOutputFileName()+"'\n\n"
+        success = False
       elif inOptions.doPush:
         if didPush and not forcedCommitPush:
           subjectLine = "DID PUSH"
