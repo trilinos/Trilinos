@@ -94,6 +94,9 @@ ZOLTAN_HG_SIZE_EDGE_WTS_FN get_hg_size_edge_weights;
 ZOLTAN_HG_CS_FN get_hg_compressed_pin_storage;
 ZOLTAN_HG_EDGE_WTS_FN get_hg_edge_weights;
 
+ZOLTAN_HG_SIZE_CS_FN get_nemesis_hg_size;
+ZOLTAN_HG_CS_FN get_nemesis_hg;
+
 ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
 ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
 
@@ -482,6 +485,23 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
     }
   }
+
+#ifdef ZOLTAN_NEMESIS
+  if (pio_info->file_type == NEMESIS_FILE) {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_CS_FN_TYPE,
+		      (void (*)()) get_nemesis_hg_size,
+		      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_CS_FN_TYPE,
+		      (void (*)()) get_nemesis_hg,
+		      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  }
+#endif
 
   /* Functions for parts */
   if (Test.Multi_Callbacks) {
@@ -1753,6 +1773,115 @@ int get_part(void *data, int num_gid_entries, int num_lid_entries,
   return current_elem->my_part;
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_nemesis_hg_size(
+  void *data,
+  int *num_lists,
+  int *num_pins,
+  int *format, int *ierr)
+{
+/* Callback for testing mesh-based hypergraph model. */
+/* One edge per mesh vertex containing all elements sharing the mesh vertex. */
+/* We'll specify it them wrt elements, however, giving for each element the  */
+/* GIDs of edges to which they belong. */
+  MESH_INFO_PTR mesh;
+  int i;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+     return;
+  }
+
+  *ierr = ZOLTAN_OK;
+
+  mesh = (MESH_INFO_PTR) data;
+
+  *num_lists = mesh->num_elems;
+  *format = ZOLTAN_COMPRESSED_VERTEX;
+  *num_pins = 0;
+  for (i = 0; i < mesh->num_el_blks; i++)
+    *num_pins += (mesh->eb_cnts[i] * mesh->eb_nnodes[i]);
+
+{
+int me;
+MPI_Comm_rank(MPI_COMM_WORLD, &me);
+printf("%d KDDKDD HGSIZE numlist %d format %d numpins %d\n", me, *num_lists, *format, *num_pins);
+}
+  STOP_CALLBACK_TIMER;
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_nemesis_hg(
+  void *data,
+  int num_gid_entries,
+  int nelem,
+  int npins,
+  int format,
+  ZOLTAN_ID_PTR elemGID,
+  int *edgelistPtr,
+  ZOLTAN_ID_PTR meshvtxGID, int *ierr)
+{
+/* Callback for testing mesh-based hypergraph model. */
+/* One edge per mesh vertex containing all elements sharing the mesh vertex. */
+/* We'll specify it them wrt elements, however, giving for each element the  */
+/* GIDs of edges to which they belong. */
+  MESH_INFO_PTR mesh;
+  ZOLTAN_ID_PTR edg_GID, vtx_GID;
+  int nelems, pincnt, nnodes;
+  int gid = num_gid_entries - 1;
+  int i, j, k;
+
+  START_CALLBACK_TIMER;
+  *ierr = ZOLTAN_OK;
+
+  mesh = (MESH_INFO_PTR) data;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  if (format != ZOLTAN_COMPRESSED_VERTEX){
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  nelems = 0; 
+  pincnt = 0;
+  vtx_GID = elemGID;
+  edg_GID = meshvtxGID;
+  /* copy vertex GIDs -- elements are vertices */
+  for (i = 0; i < mesh->elem_array_len; i++){
+    if (mesh->elements[i].globalID < 0) continue;
+    for (k=0; k<gid; k++) *vtx_GID++ = 0;
+    *vtx_GID++ = mesh->elements[i].globalID;
+    /* copy mesh vertex IDs into pins array */
+    edgelistPtr[nelems] = pincnt * num_gid_entries;   
+    nnodes = mesh->eb_nnodes[mesh->elements[i].elem_blk];
+    for (j = 0; j < nnodes; j++) {
+      for (k=0; k<gid; k++) *edg_GID++ = 0;
+      *edg_GID++ = mesh->elements[i].connect[j];
+      pincnt++;
+    }
+{
+int me;
+MPI_Comm_rank(MPI_COMM_WORLD, &me);
+printf("%d KDDKDD EDGELIST %d:  ", me, elemGID[nelems*num_gid_entries+gid]);
+for (j = 0; j < nnodes; j++) printf("%d ", meshvtxGID[(j*num_gid_entries)+edgelistPtr[nelems]+gid]);
+printf("\n");
+}
+
+    nelems++;
+  }
+
+End:
+
+  STOP_CALLBACK_TIMER;
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
