@@ -140,10 +140,6 @@ ENDIF(PyTrilinos_ENABLE_NOX)
 #  ENDIF(NOX_ENABLE_Epetra)
 #ENDIF(NOX_ENABLE_LOCA)
 
-# Print the enabled PyTrilinos packages
-MESSAGE(STATUS "Enabled ${PACKAGE_NAME} modules:")
-MESSAGE(STATUS "    ${${PACKAGE_NAME}_PACKAGES}")
-
 # Python interpreter and header files are required
 FIND_PACKAGE(PythonInterp 2.2 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
@@ -156,6 +152,19 @@ FIND_PACKAGE(SWIG 1.3.38 REQUIRED)
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
+
+# Print the enabled PyTrilinos packages
+MESSAGE(STATUS "Enabled ${PACKAGE_NAME} modules:")
+MESSAGE(STATUS "    ${${PACKAGE_NAME}_PACKAGES}")
+
+# Determine the installation directory prefix.  If not set by the
+# user, then the path is set to the value of python's sys.prefix.
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print sys.prefix"
+  OUTPUT_VARIABLE PYTHON_PREFIX
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+SET(PyTrilinos_INSTALL_PREFIX ${PYTHON_PREFIX}
+  CACHE PATH "The path prefix for where PyTrilinos will be installed, e.g. /usr/local")
 
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and
