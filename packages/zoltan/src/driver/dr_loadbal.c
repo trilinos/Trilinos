@@ -2005,6 +2005,9 @@ void get_hg_compressed_pin_storage(
 
   /* copy row (hyperedge) pointers */
   memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
+  if (num_gid_entries > 1) 
+    for (i = 0; i < nedges; i++)
+      row_ptr[i] *= num_gid_entries;
 
   /* copy pin (vertex) GIDs */
   for (i=0; i<mesh->nhedges; i++){
