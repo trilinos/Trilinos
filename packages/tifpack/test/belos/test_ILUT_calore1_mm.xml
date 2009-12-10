@@ -3,7 +3,11 @@
 
   <Parameter name="solver_type" type="string" value="BlockGmres"/>
   <ParameterList name="Belos">
-    <Parameter name="Verbosity" type="int" value="2"/>
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="50"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
   <Parameter name="Tifpack::Preconditioner" type="string" value="ILUT"/>
