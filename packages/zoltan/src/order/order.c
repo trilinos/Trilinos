@@ -38,32 +38,27 @@ extern "C" {
 /**********  parameters structure for ordering **********/
 static PARAM_VARS Order_params[] = {
         { "ORDER_METHOD", NULL, "STRING", 0 },
-        { "ORDER_START_INDEX", NULL, "INT", 0 },
         { "USE_ORDER_INFO", NULL, "INT", 0 },
         { NULL, NULL, NULL, 0 } };
 
-int Zoltan_Order(
-  ZZ *zz,               /* Zoltan structure */
-  int num_gid_entries, /* # of entries for a global id */
-  int num_obj,		/* Number of objects to order */
-  ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
-                        /* The application must allocate enough space */
-  int *rank,            /* rank[i] is the rank of gids[i] */
-  int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
-)
+  /* New Interface */
+
+int Zoltan_Order (
+      struct Zoltan_Struct *zz,
+      int num_gid_entries,
+      int num_obj,
+      ZOLTAN_ID_PTR gids,
+      ZOLTAN_ID_PTR permuted_global_ids
+    )
 {
 /*
  * Main user-call for ordering.
  * Input:
  *   zz, a Zoltan structure with appropriate function pointers set.
- *   gids, a list of global ids or enough space to store such a list
- *   lids, a list of local ids or enough space to store such a list
- * Output:
+ *   gids, a list of global ids.
  *   num_gid_entries
- *   num_lid_entries
- *   gids, a list of global ids (filled in if empty on entry)
- *   lids, a list of local ids (filled in if empty on entry)
- *   rank, rank[i] is the global rank of gids[i]
+ * Output:
+ *   permuted_global_ids
  * Return values:
  *   Zoltan error code.
  */
@@ -76,14 +71,10 @@ int Zoltan_Order(
   int comm[2],gcomm[2];
   ZOLTAN_ORDER_FN *Order_fn;
   struct Zoltan_Order_Options opt;
-  int * vtxdist = NULL;
   ZOLTAN_ID_PTR local_gids=NULL, lids=NULL;
   int local_num_obj;
-  int *local_rank = NULL, *local_iperm=NULL;
+  int *local_rank = NULL;
   struct Zoltan_DD_Struct *dd = NULL;
-
-  /* MMW: needed to temporarily support (ignore) iperm for local hsfc */
-  int *tmpIperm;
 
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -110,10 +101,6 @@ int Zoltan_Order(
 
 
   zz->Order.nbr_objects = num_obj;
-  zz->Order.rank = rank;
-  zz->Order.iperm = iperm;
-  zz->Order.gids = gids;
-  zz->Order.lids = lids;
   zz->Order.start = NULL;
   zz->Order.ancestor = NULL;
   zz->Order.leaves = NULL;
@@ -147,18 +134,15 @@ int Zoltan_Order(
   opt.start_index = 0;
 
   Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) opt.method);
-  Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &opt.start_index);
   Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &opt.use_order_info);
 
   Zoltan_Assign_Param_Vals(zz->Params, Order_params, zz->Debug_Level,
                            zz->Proc, zz->Debug_Proc);
 
-  zz->Order.start_index = opt.start_index;
-
   /*
    *  Check that the user has allocated space for the return args.
    */
-  if (!(gids && rank)){
+  if (num_obj && !(gids && permuted_global_ids)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input argument is NULL. Please allocate all required arrays before calling this routine.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
@@ -175,14 +159,10 @@ int Zoltan_Order(
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);
   }
-  else if (!strcmp(opt.method, "LOCAL_HSFC")) 
+  else if (!strcmp(opt.method, "LOCAL_HSFC"))
   {
     Order_fn = Zoltan_LocalHSFC_Order;
     strcpy(zz->Order.order_type, "LOCAL"); /*MMW, not sure about this*/
-
-    /*MMW: tmp code to ignore iperm */
-    tmpIperm = iperm;
-    iperm = NULL;
   }
 #ifdef ZOLTAN_PARMETIS
   else if (!strcmp(opt.method, "METIS")) {
@@ -211,21 +191,19 @@ int Zoltan_Order(
     return (ZOLTAN_FATAL);
   }
 
+  /* TODO : Ask why useful ! */
   /*
    *  Construct the heterogenous machine description.
    */
-
   ierr = Zoltan_Build_Machine_Desc(zz);
-
   if (ierr == ZOLTAN_FATAL){
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ierr);
   }
-
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
 
 
-  /************************************ 
+  /************************************
    *  Check for required query function
    ************************************/
   if (zz->Get_Num_Obj != NULL) {
@@ -243,7 +221,6 @@ int Zoltan_Order(
 
   local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
   local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
-  local_iperm = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
 
   lids = ZOLTAN_MALLOC_LID_ARRAY(zz, local_num_obj);
 
@@ -252,18 +229,17 @@ int Zoltan_Order(
    * Compute gid according to the local graph.
    */
 
-  ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, local_iperm, &opt);
+  ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, NULL, &opt);
   ZOLTAN_FREE(&lids);
 
-  
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
     if (ierr == ZOLTAN_WARN){
       ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
     } else {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-      Zoltan_Multifree(__FILE__, __LINE__, 3,
-                       &local_gids, &local_rank, &local_iperm);
+      Zoltan_Multifree(__FILE__, __LINE__, 2,
+                       &local_gids, &local_rank);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ierr);
     }
@@ -271,59 +247,28 @@ int Zoltan_Order(
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 
-
-/*   Compute inverse permutation if necessary */
-  if ((!(opt.return_args & RETURN_RANK) && (rank != NULL))
-      || (!(opt.return_args & RETURN_IPERM) && (iperm != NULL))) {
-    ierr = Zoltan_Get_Distribution(zz, &vtxdist);
-    if (ierr){
-      /* Error */
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Get_Distribution.\n");
-      return (ierr);
-    }
-
-    if (!(opt.return_args & RETURN_RANK) && (rank != NULL)){
-      /* Compute rank from iperm */
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, local_iperm, local_rank, vtxdist, zz->Order.order_type, opt.start_index); 
-    }
-    else if (!(opt.return_args & RETURN_IPERM) && (iperm != NULL)){
-    /* Compute iperm from rank */
-      ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-      Zoltan_Inverse_Perm(zz, local_rank, local_iperm, vtxdist, zz->Order.order_type, opt.start_index); 
-    }
-    ZOLTAN_FREE(&vtxdist);
-  }
-
-  ZOLTAN_TRACE_DETAIL(zz, yo, "Done Invert Permutation");
-
-
   /* TODO: Use directly the "graph" structure to avoid to duplicate things. */
-  /* I store : GNO, rank, iperm */
+
+  /* TODO: At this time, I consider rank == permuted_global_ids */
+
+  /* I store : GNO, rank, permuted GID */
   /* MMW: perhaps don't ever use graph here since we need to support geometric orderings, otherwise need if/else */
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, (local_iperm==NULL)?0:1, local_num_obj, 0); 
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, 0, local_num_obj, 0);
   /* Hope a linear assignment will help a little */
-  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj); 
+  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
   /* Associate all the data with our xGNO */
 
-  Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, (ZOLTAN_ID_PTR) local_iperm, NULL, local_num_obj);
+  Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, NULL, NULL, local_num_obj);
+
 
   ZOLTAN_FREE(&local_gids);
   ZOLTAN_FREE(&local_rank);
-  ZOLTAN_FREE(&local_iperm);
 
-  Zoltan_DD_Find (dd, gids, (ZOLTAN_ID_PTR)rank, (ZOLTAN_ID_PTR)iperm, NULL,
+  Zoltan_DD_Find (dd, gids, (ZOLTAN_ID_PTR)permuted_global_ids, NULL, NULL,
 		  num_obj, NULL);
   Zoltan_DD_Destroy(&dd);
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done Registering results");
-
-
-  if (!strcmp(opt.method, "LOCAL_HSFC")) 
-  {
-    /*MMW: tmp code to reset iperm pointer*/
-    iperm = tmpIperm;
-  }
 
 
   end_time = Zoltan_Time(zz->Timer);
@@ -336,7 +281,7 @@ int Zoltan_Order(
     for (i = 0; i < num_obj; i++) {
       printf("GID = ");
       ZOLTAN_PRINT_GID(zz, &(gids[i*(num_gid_entries)]));
-      printf(", rank = %3d\n", rank[i]);
+      printf(", rank = %3d\n", permuted_global_ids[i]);
     }
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);
@@ -489,102 +434,6 @@ void Zoltan_Order_Get_Block_Leaves(
   else
     *leaves = -1;
 }
-
-/*****************************************************************************/
-/*
- *  Function to return the ordering on the GID
- *  Input:
- *    zz                  --  The Zoltan structure containing
- *                            info for this load-balancing invocation.
- *    order_info          --  The ordering computed by Zoltan_Order.
- *    gids                --  List of global ids.
- *  Ouput:
- *    order_ids           --  New ordering of the gids.
- *  Returned value:       --  Error Code.
- */
-
-int Zoltan_Order_Get_GID_Order(
-  struct Zoltan_Struct       *zz,
-  ZOLTAN_ID_PTR               global_ids,
-  ZOLTAN_ID_PTR               order_ids
-  )
-{
-  int * proctab;
-  ZOLTAN_ID_PTR sendgidtab;
-  int * sendtab, *recvtab;
-  int i;
-  int nrecv;
-  struct Zoltan_Comm_Obj *plan;
-  int ierr = ZOLTAN_OK;
-  int *vtxdist;
-  int tag = 24061986;
-  int offset;
-
-  zz->Order.gidrank = order_ids;
-
-  if (!strcmp(zz->Order.order_type, "LOCAL")) {
-    for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
-      order_ids[i] = global_ids[zz->Order.rank[i] - zz->Order.start_index];
-    }
-    return (ZOLTAN_OK);
-  }
-
-  ierr = Zoltan_Get_Distribution(zz, &vtxdist);
-  if (ierr != ZOLTAN_OK) return (ierr);
-
-  proctab = (int*) ZOLTAN_MALLOC(3*zz->Order.nbr_objects*sizeof(int));
-  sendgidtab = ZOLTAN_MALLOC_GID_ARRAY(zz, 2*zz->Order.nbr_objects);
-  if (proctab == NULL)  {
-    ZOLTAN_FREE(&vtxdist); return (ZOLTAN_MEMERR);
-  }
-  if (sendgidtab == NULL) {
-    ZOLTAN_FREE(&proctab);
-    ZOLTAN_FREE(&vtxdist); return (ZOLTAN_MEMERR);
-  }
-  sendtab = proctab + zz->Order.nbr_objects;
-  recvtab = sendtab + zz->Order.nbr_objects;
-
-  for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
-    proctab[i] = Zoltan_Get_Processor_Graph(vtxdist, zz->Num_Proc, zz->Order.rank[i] - zz->Order.start_index);
-    sendtab[i] = zz->Order.rank[i] - zz->Order.start_index;
-  }
-
-  ierr = Zoltan_Comm_Create(&plan, zz->Order.nbr_objects, proctab, zz->Communicator, tag++,
-                     &nrecv);
-  if (ierr != ZOLTAN_OK) {
-    ZOLTAN_FREE(&sendgidtab);
-    ZOLTAN_FREE(&proctab);
-    ZOLTAN_FREE(&vtxdist);
-    return (ierr);
-  }
-
-  ierr = Zoltan_Comm_Do(plan, tag++, (char *) sendtab, sizeof(int), (char *) recvtab);
-
-  if (ierr != ZOLTAN_OK) {
-    ZOLTAN_FREE(&sendgidtab);
-    ZOLTAN_FREE(&proctab);
-    ZOLTAN_FREE(&vtxdist);
-    return (ierr);
-  }
-
-  offset = vtxdist[zz->Proc];
-  for (i = 0 ; i < zz->Order.nbr_objects ; ++i) {
-    int position;
-    position = recvtab[i]-offset;
-    ZOLTAN_SET_GID(zz, &sendgidtab[i], &global_ids[position]);
-  }
-
-  ierr = Zoltan_Comm_Do_Reverse(plan, tag++, (char *) sendgidtab, zz->Num_GID*sizeof(int), NULL,
-				(char *) order_ids);
-
-  Zoltan_Comm_Destroy(&plan);
-  ZOLTAN_FREE(&sendgidtab);
-  ZOLTAN_FREE(&proctab);
-  ZOLTAN_FREE(&vtxdist);
-
-  return (ierr);
-}
-
 
 
 

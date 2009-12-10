@@ -2781,7 +2781,7 @@ int Zoltan_RCB_Box(
  *  Routine to compute an ordering (permutation) of the objects.
  *
  *  Input:
- *    zz                  --  The Zoltan structure containing 
+ *    zz                  --  The Zoltan structure containing
  *                            info for this load-balancing invocation.
  *  Input:
  *    num_gid_entries     --  number of entries of type ZOLTAN_ID_TYPE
@@ -2794,23 +2794,19 @@ int Zoltan_RCB_Box(
  *                            the corresponding permutation.
  *
  *  Output:
- *    rank                --  rank[i] is the rank of gids[i] produced by
- *                            the ordering. This defines a permutation.
- *                            rank is between 0 and N-1.
- *    iperm               --  in a sequential (local) call, iperm[rank[i]]=i
- *                            can be NULL if you want to ignore.
+ *    permuted_global_ids --  Permutation Vector: global_ids[i] becomes
+ *                            permuted_global_ids[i] in the new ordering.
  *
  *  Returned value:       --  Error code
  */
 
 
-extern int Zoltan_Order(
-  struct Zoltan_Struct *zz,
-  int num_gid_entries,
-  int num_obj,
-  ZOLTAN_ID_PTR global_ids,
-  int *rank,
-  int *iperm
+int Zoltan_Order (
+      struct Zoltan_Struct *zz,
+      int num_gid_entries,
+      int num_obj,
+      ZOLTAN_ID_PTR global_ids,
+      ZOLTAN_ID_PTR permuted_global_ids
 );
 
 /*****************************************************************************/
@@ -2900,24 +2896,6 @@ extern int Zoltan_Order_Get_Num_Leaves(struct Zoltan_Struct *zz);
 extern void Zoltan_Order_Get_Block_Leaves(
   struct Zoltan_Struct *zz,          /* Info about ordering */
   int                  *leaves
-);
-
-/*****************************************************************************/
-/*
- *  Function to return the ordering on the GID
- *  Input:
- *    zz                  --  The Zoltan structure containing
- *                            info for this load-balancing invocation.
- *    gids                --  List of global ids.
- *  Ouput:
- *    order_ids           --  New ordering of the gids.
- *  Returned value:       --  Error Code.
- */
-
-extern int Zoltan_Order_Get_GID_Order(
-  struct Zoltan_Struct *zz,
-  ZOLTAN_ID_PTR        global_ids,
-  ZOLTAN_ID_PTR        order_ids
 );
 
 

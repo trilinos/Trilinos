@@ -823,7 +823,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     if (Zoltan_Order(zz, num_gid_entries,
 	mesh->num_elems, order_gids,
-	order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
+	order) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
       safe_free((void **)(void *) &order);
       safe_free((void **)(void *) &order_gids);
@@ -839,21 +839,22 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     /* Verify ordering */
     if (Debug_Driver > 0) {
-      if (Zoltan_Order_Test(zz, &num_gid_entries, &num_lid_entries,
-			    mesh->num_elems, order_gids, order_lids,
-			    order, &order[mesh->num_elems]) == ZOLTAN_FATAL) {
-	Gen_Error(0, "fatal:  error returned from Zoltan_Order_Test()\n");
-	safe_free((void **)(void *) &order);
-	safe_free((void **)(void *) &order_gids);
-	safe_free((void **)(void *) &order_lids);
-	return (0);
-      }
+/*       if (Zoltan_Order_Test(zz, &num_gid_entries, &num_lid_entries, */
+/* 			    mesh->num_elems, order_gids, order_lids, */
+/* 			    order, &order[mesh->num_elems]) == ZOLTAN_FATAL) { */
+/* 	Gen_Error(0, "fatal:  error returned from Zoltan_Order_Test()\n"); */
+/* 	safe_free((void **)(void *) &order); */
+/* 	safe_free((void **)(void *) &order_gids); */
+/* 	safe_free((void **)(void *) &order_lids); */
+/* 	return (0); */
+/*       } */
     }
     /* Copy ordering permutation into mesh structure */
     for (i = 0; i < mesh->num_elems; i++){
       int lid = order_lids[num_lid_entries * i + (num_lid_entries - 1)];
       mesh->elements[lid].perm_value = order[i];
-      mesh->elements[lid].invperm_value = order[(mesh->num_elems)+i];
+      /* TODO: Add a function to compute invert permutation */
+      mesh->elements[lid].invperm_value = order[i];/* order[(mesh->num_elems)+i] */;
     }
 
     /* Free order data */

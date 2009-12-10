@@ -44,7 +44,6 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 <li><b><a href="#Zoltan_Order_Get_Block_Parent">Zoltan_Order_Get_Block_Parent</a></b></li>
 <li><b><a href="#Zoltan_Order_Get_Num_Leaves">Zoltan_Order_Get_Num_Leaves</a></b></li>
 <li><b><a href="#Zoltan_Order_Get_Block_Leaves">Zoltan_Order_Get_Block_Leaves</a></b></li>
-<li><b><a href="#Zoltan_Order_Get_GID_Order">Zoltan_Order_Get_GID_Order</a></b></li>
 </ul>
 </blockquote>
 <!------------------------------------------------------------------------->
@@ -563,78 +562,7 @@ which has been used in the ordering routine.</td>
 
 <!------------------------------------------------------------------------->
 
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%"><a NAME="Zoltan_Order_Get_GID_Order"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%">int <b>Zoltan_Order_Get_GID_Order</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <b>Zoltan_Struct</b> *<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>order_ids</i>)
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C++:</td>
-
-<td WIDTH="85%">int <b>Zoltan::Order_Get_GID_Order</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>order_ids</i>)
-</tr>
-
-</table>
-
-<hr WIDTH="100%"><b>Zoltan_Order_Get_GID_Order </b> provides the
-permuted GID associated with the ordering. It corresponds to
-GID[rank[i]] where GID is the concatenation of all the global_ids.
-
-<br>&nbsp;
-
-  <table WIDTH="100%" NOSAVE > <tr> <td VALIGN=TOP
-WIDTH="20%"><b>Arguments:</b></td>
-
-<td WIDTH="80%"></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
-
-<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
-which has been used in the ordering routine.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
-
-<td>Array, filled by the user before calling the function, that hold the GID of local objects.</td>
-</tr>
-
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; order_ids</i></td>
-
-<td>Array of permutted GID. Must be allocated by user before calling.</td>
-</tr>
-
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
-
-<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
-</tr>
-</table>
-
-<p>
-
-<!------------------------------------------------------------------------->
 
 
 

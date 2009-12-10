@@ -147,18 +147,26 @@ public:
                                      part_ids, wgt_idx, part_sizes );
   }
 
+  /* This method is deprecated */
   int Order    ( int num_gid_entries,
                  int num_objs,
                  ZOLTAN_ID_PTR global_ids,
-                 int * rank,
+                 int *rank,
                  int * iperm )
+  {
+    return Order(  num_gid_entries, num_objs, global_ids,
+		  (ZOLTAN_ID_PTR)rank);
+  }
+
+  int Order    ( int num_gid_entries,
+                 int num_objs,
+                 ZOLTAN_ID_PTR global_ids,
+                 ZOLTAN_ID_PTR permuted_global_ids)
   {
     return Zoltan_Order( ZZ_Ptr,
                          num_gid_entries, num_objs, global_ids,
-                         rank, iperm);
+                         permuted_global_ids);
   }
-
-/*   int Order    (int * rank, int * iperm); */
 
   int Order_Get_Num_Blocks() {
     return Zoltan_Order_Get_Num_Blocks(ZZ_Ptr);
@@ -182,10 +190,6 @@ public:
 
   void Order_Get_Block_Leaves(int *leaves) {
     return Zoltan_Order_Get_Block_Leaves(ZZ_Ptr, leaves);
-  }
-
-  int Order_Get_GID_Order(ZOLTAN_ID_PTR global_ids,ZOLTAN_ID_PTR order_ids) {
-    return Zoltan_Order_Get_GID_Order(ZZ_Ptr, global_ids, order_ids);
   }
 
   int Color (int &num_gid_entries,
