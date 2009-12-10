@@ -1806,11 +1806,13 @@ void get_nemesis_hg_size(
   for (i = 0; i < mesh->num_el_blks; i++)
     *num_pins += (mesh->eb_cnts[i] * mesh->eb_nnodes[i]);
 
+/* KDDKDD
 {
 int me;
 MPI_Comm_rank(MPI_COMM_WORLD, &me);
 printf("%d KDDKDD HGSIZE numlist %d format %d numpins %d\n", me, *num_lists, *format, *num_pins);
 }
+*/
   STOP_CALLBACK_TIMER;
 }
 /*****************************************************************************/
@@ -1867,6 +1869,7 @@ void get_nemesis_hg(
       *edg_GID++ = mesh->elements[i].connect[j];
       pincnt++;
     }
+/* KDDKDD
 {
 int me;
 MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -1874,6 +1877,7 @@ printf("%d KDDKDD EDGELIST %d:  ", me, elemGID[nelems*num_gid_entries+gid]);
 for (j = 0; j < nnodes; j++) printf("%d ", meshvtxGID[(j*num_gid_entries)+edgelistPtr[nelems]+gid]);
 printf("\n");
 }
+*/
 
     nelems++;
   }
