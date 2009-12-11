@@ -876,10 +876,6 @@ Traits specialization.
 C++ includes: Teuchos_ParameterList.hpp ";
 
 
-// File: structTeuchos_1_1UndefinedScalarTraits.xml
-%feature("docstring") Teuchos::UndefinedScalarTraits "";
-
-
 // File: classTeuchos_1_1XMLInputSource.xml
 %feature("docstring") Teuchos::XMLInputSource "
 
@@ -1506,10 +1502,10 @@ XML version of the parameter list specification. ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_b49b8d60bd16fab99fe139e95540ff39.xml
+// File: dir_daa2443682d0f547b84c7fa838636502.xml
 
 
-// File: dir_b3b830e5a98dd843f319b193e7efcd18.xml
+// File: dir_2c9d975476051ec1d3cf6e8ee401cf57.xml
 
 
 // File: ParameterList_2cxx__main_8cpp-example.xml
