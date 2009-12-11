@@ -289,7 +289,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
 
     for (i=0; i<myPins.nHedges; i++){
-      myPins.esizes[i] = (pinIdx[i+1] - pinIdx[i])/gid_size;
+      myPins.esizes[i] = pinIdx[i+1] - pinIdx[i];
     }
 
     ZOLTAN_FREE(&pinIdx);
@@ -1462,7 +1462,7 @@ int *rptr=NULL, *cptr=NULL;
       }
       zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
                nl, np, format, vid, cptr, eid, &ierr);
-      cptr[nl] = np * zz->Num_GID;
+      cptr[nl] = np;
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
@@ -1494,7 +1494,7 @@ int *rptr=NULL, *cptr=NULL;
                  nl, np, format, eid, rptr, vid, &ierr);
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
-      rptr[nl] = np * zz->Num_GID;
+      rptr[nl] = np;
     }
 
     *edg_GID = eid;
@@ -1616,7 +1616,7 @@ int numGID = zz->Num_GID;
       ZOLTAN_SET_GID(zz, edges + e*numGID, hn->egid);
       hn->firstVert = vIdx[e];
       hn->nextVert  = 0;
-      vIdx[e+1] = vIdx[e] + (hn->numVerts * numGID);
+      vIdx[e+1] = vIdx[e] + hn->numVerts;
       hn = hn->next;
       e++;
     }
@@ -1636,7 +1636,7 @@ int numGID = zz->Num_GID;
   eIdx = col_ptr;
 
   for (v=0; v < numVerts; v++){
-    npins = (eIdx[v+1] - eIdx[v])/numGID;
+    npins = eIdx[v+1] - eIdx[v];
 
     for (e=0; e < npins; e++){
       idx = Zoltan_Hash(egid, numGID, (unsigned int)ht_size);
@@ -1646,10 +1646,10 @@ int numGID = zz->Num_GID;
         if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
 
           ZOLTAN_SET_GID(zz,
-             pins + hn->firstVert + hn->nextVert,
+             pins + numGID * (hn->firstVert + hn->nextVert),
              vgid);
 
-          hn->nextVert += numGID;
+          hn->nextVert++;
           break;
         }
         else{

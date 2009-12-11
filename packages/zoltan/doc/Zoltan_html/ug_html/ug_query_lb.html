@@ -1940,12 +1940,23 @@ hyperedge global IDs are expected to be returned in <i>pin_GIDs</i>.
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_ptr</i></td>
-<td>Upon return, this array contains <i>num_vtx_edge</i> integers.
-The integer in the <i>i'th</i> array element is the index in
-array <i>pin_GID</i> where the pins for the <i>i'th</i> hyperedge
-(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> vertex
-(if format is <b>ZOLTAN_COMPRESSED_VERTEX</b>) begins.  Array indices
-begin at zero.
+<td>Upon return, this array contains <i>num_vtx_edge</i> integers
+such that the number of pins specified for hyperedge <i>j</i> 
+(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or vertex <i>j</i>
+(if format is <b>ZOLTAN_COMPRESSED_VERTEX</b>)  
+is 
+<i>vtxedge_ptr[j+1]-vtxedge_ptr[j]</i>.
+If <i>format</i> is <b>ZOLTAN_COMPRESSED_EDGE</b>, 
+<i>vtxedge_ptr[j]*num_gid_entries</i> is the index into the
+array <i>pin_GID</i> where edge <i>j</i>'s pins 
+(vertices belonging to edge <i>j</i>)
+begin;
+if <i>format</i> is <b>ZOLTAN_COMPRESSED_VERTEX</b>, 
+<i>vtxedge_ptr[j]*num_gid_entries</i> is the index into the
+array <i>pin_GID</i> where vertex <i>j</i>'s pins (edges to which 
+vertex <i>j</i> belongs)
+begin.
+Array indices begin at zero.
 </td>
 </tr>
 

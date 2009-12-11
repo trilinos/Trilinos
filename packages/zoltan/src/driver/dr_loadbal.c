@@ -1852,7 +1852,7 @@ void get_nemesis_hg(
     goto End;
   }
 
-  nelems = 0; 
+  nelems = 0;
   pincnt = 0;
   vtx_GID = elemGID;
   edg_GID = meshvtxGID;
@@ -1862,7 +1862,7 @@ void get_nemesis_hg(
     for (k=0; k<gid; k++) *vtx_GID++ = 0;
     *vtx_GID++ = mesh->elements[i].globalID;
     /* copy mesh vertex IDs into pins array */
-    edgelistPtr[nelems] = pincnt * num_gid_entries;   
+    edgelistPtr[nelems] = pincnt;
     nnodes = mesh->eb_nnodes[mesh->elements[i].elem_blk];
     for (j = 0; j < nnodes; j++) {
       for (k=0; k<gid; k++) *edg_GID++ = 0;
@@ -2005,9 +2005,6 @@ void get_hg_compressed_pin_storage(
 
   /* copy row (hyperedge) pointers */
   memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
-  if (num_gid_entries > 1) 
-    for (i = 0; i < nedges; i++)
-      row_ptr[i] *= num_gid_entries;
 
   /* copy pin (vertex) GIDs */
   for (i=0; i<mesh->nhedges; i++){
