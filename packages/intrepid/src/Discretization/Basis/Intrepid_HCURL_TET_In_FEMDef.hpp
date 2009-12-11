@@ -42,236 +42,242 @@ namespace Intrepid {
     Phis_( n ),
     coeffs_( (n+1)*(n+2)*(n+3)/2 , n*(n+2)*(n+3)/2  )
   {
-    const int N = n*(n+2)*(n+3)/2;
-    this -> basisCardinality_  = N;
-    this -> basisDegree_       = n;
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-    this -> basisType_         = BASIS_FEM_FIAT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+     const int N = n*(n+2)*(n+3)/2;
+     this -> basisCardinality_  = N;
+     this -> basisDegree_       = n;
+     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+     this -> basisType_         = BASIS_FEM_FIAT;
+     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
+     this -> basisTagsAreSet_   = false;
 
-    const int littleN = n*(n+1)*(n+2)/2;    // dim of (P_{n-1})^3 -- smaller space
-    const int bigN = (n+1)*(n+2)*(n+3)/2;   // dim of (P_{n})^3 -- larger space
-    const int start_PkH = (n-1)*n*(n+1)/6;  // dim of P({n-2}), offset into 
-    const int dim_PkH = n*(n+1)*(n+2)/6 - start_PkH;
-    const int scalarLittleN = littleN/3;
-    const int scalarBigN = bigN/3;
+     const int littleN = n*(n+1)*(n+2)/2;    // dim of (P_{n-1})^3 -- smaller space
+     const int bigN = (n+1)*(n+2)*(n+3)/2;   // dim of (P_{n})^3 -- larger space
+     const int start_PkH = (n-1)*n*(n+1)/6;  // dim of P({n-2}), offset into 
+     const int dim_PkH = n*(n+1)*(n+2)/6 - start_PkH;
+     const int scalarLittleN = littleN/3;
+     const int scalarBigN = bigN/3;
 
-//     std::cout << littleN << std::endl;
-//     std::cout << bigN << std::endl;
-//     std::cout << start_PkH << std::endl;
-//     std::cout << dim_PkH << std::endl;
-//     std::cout << scalarLittleN << std::endl;
-//     std::cout << scalarBigN << std::endl;
+     // first, need to project the basis for Nedelec space onto the
+     // orthogonal basis of degree n
+     // get coefficients of PkHx
 
-    // first, need to project the basis for Nedelec space onto the
-    // orthogonal basis of degree n
-    // get coefficients of PkHx
+     Teuchos::SerialDenseMatrix<int,Scalar> V1(bigN, littleN + 3 * dim_PkH);
 
-    Teuchos::SerialDenseMatrix<int,Scalar> V1(bigN, littleN + 3 * dim_PkH);
+     // these two loops get the first three sets of basis functions
+     for (int i=0;i<scalarLittleN;i++) {
+       for (int k=0;k<3;k++) {
+         V1(i+k*scalarBigN,i+k*scalarLittleN) = 1.0;
+       }
+     }
 
-    // these two loops get the first three sets of basis functions
-    for (int i=0;i<scalarLittleN;i++) {
-      for (int k=0;k<3;k++) {
-        V1(i+k*scalarBigN,i+k*scalarLittleN) = 1.0;
-      }
-    }
-
-    // first 3*scalarLittleN columns are (P_{n-1})^3 space
+     // first 3*scalarLittleN columns are (P_{n-1})^3 space
 
 
-    // now I need to integrate { (x,y,z) \times } against the big basis
-    // first, get a cubature rule.
-    CubatureDirectTetDefault<Scalar,FieldContainer<Scalar> > myCub( 2 * n );
-    FieldContainer<Scalar> cubPoints( myCub.getNumPoints() , 3 );
-    FieldContainer<Scalar> cubWeights( myCub.getNumPoints() );
-    myCub.getCubature( cubPoints , cubWeights );
+     // now I need to integrate { (x,y,z) \times } against the big basis
+     // first, get a cubature rule.
+     CubatureDirectTetDefault<Scalar,FieldContainer<Scalar> > myCub( 2 * n );
+     FieldContainer<Scalar> cubPoints( myCub.getNumPoints() , 3 );
+     FieldContainer<Scalar> cubWeights( myCub.getNumPoints() );
+     myCub.getCubature( cubPoints , cubWeights );
 
-    // tabulate the scalar orthonormal basis at cubature points
-    FieldContainer<Scalar> phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
-    Phis_.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
+     // tabulate the scalar orthonormal basis at cubature points
+     FieldContainer<Scalar> phisAtCubPoints( scalarBigN , myCub.getNumPoints() );
+     Phis_.getValues( phisAtCubPoints , cubPoints , OPERATOR_VALUE );
 
 
 
-    // first set of these functions will write into the first dimPkH columns of remainder
+     // first set of these functions will write into the first dimPkH columns of remainder
 
-    for (int j=0;j<dim_PkH;j++) { // loop over homogeneous polynomials
-      // write into second spatial component, where
-      // I integrate z phi_j phi_i
-      for (int i=0;i<scalarBigN;i++) {
-        V1(scalarBigN+i,littleN+j) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
-          V1(scalarBigN+i,littleN+j) -= cubWeights(k) * cubPoints(k,2) 
-            * phisAtCubPoints(start_PkH+j,k)
-            * phisAtCubPoints(i,k);
-        }
-      }  
-      // write into third spatial component (-y phi_j, phi_i)
-      for (int i=0;i<scalarBigN;i++) {
-        V1(2*scalarBigN+i,littleN+j) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
-          V1(2*scalarBigN+i,littleN+j) += cubWeights(k) * cubPoints(k,1) 
-            * phisAtCubPoints(start_PkH+j,k)
-            * phisAtCubPoints(i,k);
-        }
-      }  
-    }
+     for (int j=0;j<dim_PkH;j++) { // loop over homogeneous polynomials
+       // write into second spatial component, where
+       // I integrate z phi_j phi_i
+       for (int i=0;i<scalarBigN;i++) {
+         V1(scalarBigN+i,littleN+j) = 0.0;
+         for (int k=0;k<myCub.getNumPoints();k++) {
+           V1(scalarBigN+i,littleN+j) -= cubWeights(k) * cubPoints(k,2) 
+             * phisAtCubPoints(start_PkH+j,k)
+             * phisAtCubPoints(i,k);
+         }
+       }  
+       // write into third spatial component (-y phi_j, phi_i)
+       for (int i=0;i<scalarBigN;i++) {
+         V1(2*scalarBigN+i,littleN+j) = 0.0;
+         for (int k=0;k<myCub.getNumPoints();k++) {
+           V1(2*scalarBigN+i,littleN+j) += cubWeights(k) * cubPoints(k,1) 
+             * phisAtCubPoints(start_PkH+j,k)
+             * phisAtCubPoints(i,k);
+         }
+       }  
+     }
 
-    // second set of basis functions, write into second set of dimPkH columns
-    for (int j=0;j<dim_PkH;j++) { // loop over homogeneous polynomials
-      // write into first spatial component, where
-      // I integrate -z phi_j phi_i
-      for (int i=0;i<scalarBigN;i++) {
-        V1(i,littleN+dim_PkH+j) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
-          V1(i,littleN+dim_PkH+j) += cubWeights(k) * cubPoints(k,2) 
-            * phisAtCubPoints(start_PkH+j,k)
-            * phisAtCubPoints(i,k);
-        }
-      }  
-      // third spatial component, x phi_j phi_i
-      for (int i=0;i<scalarBigN;i++) {
-        V1(2*scalarBigN+i,littleN+dim_PkH+j) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
-          V1(2*scalarBigN+i,littleN+dim_PkH+j) -= cubWeights(k) * cubPoints(k,0) 
-            * phisAtCubPoints(start_PkH+j,k)
-            * phisAtCubPoints(i,k);
-        }
-      }  
-    }
+     // second set of basis functions, write into second set of dimPkH columns
+     for (int j=0;j<dim_PkH;j++) { // loop over homogeneous polynomials
+       // write into first spatial component, where
+       // I integrate -z phi_j phi_i
+       for (int i=0;i<scalarBigN;i++) {
+         V1(i,littleN+dim_PkH+j) = 0.0;
+         for (int k=0;k<myCub.getNumPoints();k++) {
+           V1(i,littleN+dim_PkH+j) += cubWeights(k) * cubPoints(k,2) 
+             * phisAtCubPoints(start_PkH+j,k)
+             * phisAtCubPoints(i,k);
+         }
+       } 
+     
+       // third spatial component, x phi_j phi_i
+       for (int i=0;i<scalarBigN;i++) {
+         V1(2*scalarBigN+i,littleN+dim_PkH+j) = 0.0;
+         for (int k=0;k<myCub.getNumPoints();k++) {
+           V1(2*scalarBigN+i,littleN+dim_PkH+j) -= cubWeights(k) * cubPoints(k,0) 
+             * phisAtCubPoints(start_PkH+j,k)
+             * phisAtCubPoints(i,k);
+         }
+       }  
+     }
     
-    // third clump of dimPkH columns
-    for (int j=0;j<dim_PkH;j++) { // loop over homogeneous polynomials
-      // write into first spatial component, where
-      // I integrate y phi_j phi_i
-      for (int i=0;i<scalarBigN;i++) {
-        V1(i,littleN+2*dim_PkH+j) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
-          V1(i,littleN+2*dim_PkH+j) -= cubWeights(k) * cubPoints(k,1) 
-            * phisAtCubPoints(start_PkH+j,k)
-            * phisAtCubPoints(i,k);
-        }
-      }  
-      // second spatial component, -x phi_j phi_i
-      for (int i=0;i<scalarBigN;i++) {
-        V1(scalarBigN+i,littleN+2*dim_PkH+j) = 0.0;
-        for (int k=0;k<myCub.getNumPoints();k++) {
-          V1(scalarBigN+i,littleN+2*dim_PkH+j) += cubWeights(k) * cubPoints(k,0) 
-            * phisAtCubPoints(start_PkH+j,k)
-            * phisAtCubPoints(i,k);
-        }
-      }  
-    }
+     // third clump of dimPkH columns
+     for (int j=0;j<dim_PkH;j++) { // loop over homogeneous polynomials
+       // write into first spatial component, where
+       // I integrate y phi_j phi_i
+       for (int i=0;i<scalarBigN;i++) {
+         V1(i,littleN+2*dim_PkH+j) = 0.0;
+         for (int k=0;k<myCub.getNumPoints();k++) {
+           V1(i,littleN+2*dim_PkH+j) -= cubWeights(k) * cubPoints(k,1) 
+             * phisAtCubPoints(start_PkH+j,k)
+             * phisAtCubPoints(i,k);
+         }
+       }  
+       // second spatial component, -x phi_j phi_i
+       for (int i=0;i<scalarBigN;i++) {
+         V1(scalarBigN+i,littleN+2*dim_PkH+j) = 0.0;
+         for (int k=0;k<myCub.getNumPoints();k++) {
+           V1(scalarBigN+i,littleN+2*dim_PkH+j) += cubWeights(k) * cubPoints(k,0) 
+             * phisAtCubPoints(start_PkH+j,k)
+             * phisAtCubPoints(i,k);
+         }
+       }  
+     }
 
-    // now I need to set up an SVD...
+     // now I need to set up an SVD to get a basis for the space
+     Teuchos::SerialDenseMatrix<int,Scalar> S(bigN,1);
+     Teuchos::SerialDenseMatrix<int,Scalar> U(bigN, bigN);
+     Teuchos::SerialDenseMatrix<int,Scalar> Vt(bigN,bigN);
+     Teuchos::SerialDenseMatrix<int,Scalar> work(5*bigN,1);
+     Teuchos::SerialDenseMatrix<int,Scalar> rWork(1,1);
+     int info;
 
-    Teuchos::SerialDenseMatrix<int,Scalar> S(bigN,1);
-    Teuchos::SerialDenseMatrix<int,Scalar> U(bigN, N);
-    Teuchos::SerialDenseMatrix<int,Scalar> Vt(bigN,bigN);
-    Teuchos::SerialDenseMatrix<int,Scalar> work(5*bigN,1);
-    Teuchos::SerialDenseMatrix<int,Scalar> rWork(1,1);
-    int info;
+     Teuchos::LAPACK<int,Scalar> lala;
 
-    Teuchos::LAPACK<int,Scalar> lala;
+     lala.GESVD( 'A',  
+                 'N',
+                 V1.numRows() ,
+                 V1.numCols() ,
+                 V1.values() ,
+                 V1.stride() ,
+                 S.values() ,
+                 U.values() ,
+                 U.stride() ,
+                 Vt.values() ,
+                 Vt.stride() ,
+                 work.values() ,
+                 5*bigN ,
+                 rWork.values() ,
+                 &info );
+                        
+     int num_nonzero_sv = 0;
+     for (int i=0;i<bigN;i++) {
+       if (S(i,0) > INTREPID_TOL) {
+	 num_nonzero_sv++;
+       }
+     }
+     
+     Teuchos::SerialDenseMatrix<int,Scalar> Uslender(bigN, num_nonzero_sv);
+     for (int j=0;j<num_nonzero_sv;j++) {
+       for (int i=0;i<bigN;i++) {
+	 Uslender(i,j) = U(i,j);
+       }
+     }
 
-    lala.GESVD( 'S',  
-                'N',
-                V1.numRows() ,
-                V1.numCols() ,
-                V1.values() ,
-                V1.stride() ,
-                S.values() ,
-                U.values() ,
-                U.stride() ,
-                Vt.values() ,
-                Vt.stride() ,
-                work.values() ,
-                5*bigN ,
-                rWork.values() ,
-                &info );
-                                
-    // apply nodes to big space
-    Teuchos::SerialDenseMatrix<int,Scalar> V2(N, bigN);
+     // apply nodes to big space
+     Teuchos::SerialDenseMatrix<int,Scalar> V2(N, bigN);
 
-    shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
-    shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
-
-
-    const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
-                                                          n+1 ,
-                                                          1 );
-
-    const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
-                                                          n+1 ,
-                                                          1 );
-
-    const int numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
-                                                          n+1 ,
-                                                          1 );
-
-    // these hold the reference domain points that will be mapped to each edge or face
-    FieldContainer<Scalar> oneDPts( numPtsPerEdge , 1 );
-    FieldContainer<Scalar> twoDPts( numPtsPerFace , 2 );
-
-    if (pointType == POINTTYPE_WARPBLEND) {
-      CubatureDirectLineGauss<Scalar> edgeRule( numPtsPerEdge );
-      FieldContainer<Scalar> edgeCubWts( numPtsPerEdge );
-      edgeRule.getCubature( oneDPts , edgeCubWts );
-    }
-    else if (pointType == POINTTYPE_EQUISPACED ) {
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( oneDPts , 
-                                                              edgeTop ,
-                                                              n+1 , 
-                                                              1 ,
-                                                              pointType );
-    }
+     shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
+     shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
 
 
-    PointTools::getLattice<Scalar,FieldContainer<Scalar> >( twoDPts ,
-                                                            faceTop ,
-                                                            n+1 ,
-                                                            1 ,
-                                                            pointType );
+     const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+                                                           n+1 ,
+                                                           1 );
 
-    FieldContainer<Scalar> edgePts( numPtsPerEdge , 3 );
-    FieldContainer<Scalar> phisAtEdgePoints( scalarBigN , numPtsPerEdge );
+     const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+                                                           n+1 ,
+                                                           1 );
 
-    FieldContainer<Scalar> facePts( numPtsPerFace , 3 );
-    FieldContainer<Scalar> phisAtFacePoints( scalarBigN , 
-                                            numPtsPerFace );   
-
-    FieldContainer<Scalar> edgeTan( 3 );
+     const int numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
+                                                           n+1 ,
+                                                           1 );
     
-    // loop over the edges
-    for (int edge=0;edge<6;edge++) {
-      CellTools<Scalar>::getReferenceEdgeTangent( edgeTan ,
-                                                  edge ,
-                                                  this->basisCellTopology_ );
-      /* multiply by 2.0 to account for a scaling in Pavel's definition */
-      for (int j=0;j<3;j++) {
-        edgeTan(j) *= 2.0;
-      }
+     // these hold the reference domain points that will be mapped to each edge or face
+     FieldContainer<Scalar> oneDPts( numPtsPerEdge , 1 );
+     FieldContainer<Scalar> twoDPts( numPtsPerFace , 2 );
 
-      CellTools<Scalar>::mapToReferenceSubcell( edgePts ,
-                                                oneDPts ,
-                                                1 ,
-                                                edge ,
-                                                this->basisCellTopology_ );
+     if (pointType == POINTTYPE_WARPBLEND) {
+       CubatureDirectLineGauss<Scalar> edgeRule( numPtsPerEdge );
+       FieldContainer<Scalar> edgeCubWts( numPtsPerEdge );
+       edgeRule.getCubature( oneDPts , edgeCubWts );
+     }
+     else if (pointType == POINTTYPE_EQUISPACED ) {
+       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( oneDPts , 
+                                                               edgeTop ,
+                                                               n+1 , 
+                                                               1 ,
+                                                               pointType );
+     }
+
+     PointTools::getLattice<Scalar,FieldContainer<Scalar> >( twoDPts ,
+                                                             faceTop ,
+                                                             n+1 ,
+                                                             1 ,
+                                                             pointType );
+
+     FieldContainer<Scalar> edgePts( numPtsPerEdge , 3 );
+     FieldContainer<Scalar> phisAtEdgePoints( scalarBigN , numPtsPerEdge );
+
+     FieldContainer<Scalar> facePts( numPtsPerFace , 3 );
+     FieldContainer<Scalar> phisAtFacePoints( scalarBigN , 
+                                             numPtsPerFace );   
+
+     FieldContainer<Scalar> edgeTan( 3 );
+    
+     // loop over the edges
+     for (int edge=0;edge<6;edge++) {
+       CellTools<Scalar>::getReferenceEdgeTangent( edgeTan ,
+                                                   edge ,
+                                                   this->basisCellTopology_ );
+       /* multiply by 2.0 to account for a scaling in Pavel's definition */
+       for (int j=0;j<3;j++) {
+         edgeTan(j) *= 2.0;
+       }
+
+       CellTools<Scalar>::mapToReferenceSubcell( edgePts ,
+                                                 oneDPts ,
+                                                 1 ,
+                                                 edge ,
+                                                 this->basisCellTopology_ );
       
-      Phis_.getValues( phisAtEdgePoints , edgePts , OPERATOR_VALUE );
+       Phis_.getValues( phisAtEdgePoints , edgePts , OPERATOR_VALUE );
+   
+       // loop over points (rows of V2)
+       for (int j=0;j<numPtsPerEdge;j++) {
+	 // loop over orthonormal basis functions (columns of V2)
+         for (int k=0;k<scalarBigN;k++) {
+           for (int d=0;d<3;d++) {
+             V2(edge*numPtsPerEdge+j,k+scalarBigN*d) = edgeTan(d) * phisAtEdgePoints(k,j);
+           }
+         }
+       }
+     }
 
-      // loop over points (rows of V2)
-      for (int j=0;j<numPtsPerEdge;j++) {
-        // loop over orthonormal basis functions (columns of V2)
-        for (int k=0;k<scalarBigN;k++) {
-          for (int d=0;d<3;d++) {
-            V2(edge*numPtsPerEdge+j,k+scalarBigN*d) = edgeTan(d) * phisAtEdgePoints(k,j);
-          }
-        }
-      }
-    }
-
-    // handle the faces, if needed
+   // handle the faces, if needed
     if (n > 1) {
       FieldContainer<Scalar> refFaceTanU(3);
       FieldContainer<Scalar> refFaceTanV(3);
@@ -297,44 +303,40 @@ namespace Intrepid {
           }
         }
       }
-    }
+   }
 
-    // internal dof, if needed
-    if (n > 2) {
-      FieldContainer<Scalar> cellPoints( numPtsPerCell , 3 );
-      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( cellPoints ,
-                                                              this->getBaseCellTopology() , 
-                                                              n + 1 ,
-                                                              1 ,
-                                                              pointType );
-      FieldContainer<Scalar> phisAtCellPoints( scalarBigN , numPtsPerCell );
-      Phis_.getValues( phisAtCellPoints , cellPoints , OPERATOR_VALUE );
-      for (int i=0;i<numPtsPerCell;i++) {
-        for (int j=0;j<scalarBigN;j++) {
-          for (int k=0;k<3;k++) {
-            V2(6*numPtsPerEdge+8*numPtsPerFace+k*numPtsPerCell+i,k*scalarBigN+j) = phisAtCellPoints(j,i);
-          }
-        }
-      }
-    }
+     // internal dof, if needed
+     if (n > 2) {
+       FieldContainer<Scalar> cellPoints( numPtsPerCell , 3 );
+       PointTools::getLattice<Scalar,FieldContainer<Scalar> >( cellPoints ,
+							       this->getBaseCellTopology() , 
+							       n + 1 ,
+							       1 ,
+							       pointType );
+       FieldContainer<Scalar> phisAtCellPoints( scalarBigN , numPtsPerCell );
+       Phis_.getValues( phisAtCellPoints , cellPoints , OPERATOR_VALUE );
+       for (int i=0;i<numPtsPerCell;i++) {
+	 for (int j=0;j<scalarBigN;j++) {
+	   for (int k=0;k<3;k++) {
+	     V2(6*numPtsPerEdge+8*numPtsPerFace+k*numPtsPerCell+i,k*scalarBigN+j) = phisAtCellPoints(j,i);
+	   }
+	 }
+       }
+     }
 
     Teuchos::SerialDenseMatrix<int,Scalar> Vsdm( N , N );
     
     // multiply V2 * U --> V
-    Vsdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , V2 , U , 0.0 );
+    Vsdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , V2 , Uslender , 0.0 );
 
     Teuchos::SerialDenseSolver<int,Scalar> solver;
     solver.setMatrix( rcp( &Vsdm , false ) );
-
-//     Scalar cond;
-//     solver.reciprocalConditionEstimate( cond );
-//     std::cout << "one-norm reciprocal cond number estimate: " << cond << "\n";
 
     solver.invert( );
 
 
     Teuchos::SerialDenseMatrix<int,Scalar> Csdm( bigN , N );
-    Csdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , U , Vsdm , 0.0 );
+    Csdm.multiply( Teuchos::NO_TRANS , Teuchos::NO_TRANS , 1.0 , Uslender , Vsdm , 0.0 );
 
     //std::cout << Csdm << "\n";
 
@@ -343,6 +345,8 @@ namespace Intrepid {
         coeffs_(i,j) = Csdm(i,j);
       }
     }
+
+    //std::cout << coeffs_ << std::endl;
 
   }
     

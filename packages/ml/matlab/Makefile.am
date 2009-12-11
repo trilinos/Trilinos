@@ -23,7 +23,7 @@ mlmex_SOURCES      = mlmex.cpp
 mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
 mlmex_CXXFLAGS     = ${ML_MLMEX_INCLUDES} -fPIC
 mlmex_LDADD        = ${ML_MLMEX_LIBS} 
-mlmex_LINK         = $(MEX) -cxx -o $@
+mlmex_LINK         = ${MEX} -cxx -o $@
 endif
 
 

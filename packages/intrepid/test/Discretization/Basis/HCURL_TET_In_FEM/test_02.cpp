@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                  Unit Test (Basis_HGRAD_TRI_In_FEM)                         |\n" \
+    << "|                  Unit Test (Basis_HCURL_TET_In_FEM)                         |\n" \
     << "|                                                                             |\n" \
     << "| 1) Patch test involving H(curl) matrices                                    |\n" \
     << "|                                                                             |\n" \
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
     << "|                                                                             |\n" \
     << "===============================================================================\n" \
-    << "| TEST 1: Patch test for mass matrices                                        |\n" \
+    << "| TEST 2: Patch test for mass matrices                                        |\n" \
     << "===============================================================================\n";
   
   
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     int cellDim = cell.getDimension();
     
     int min_order = 1;
-    int max_order = 1;
+    int max_order = 5;
     
     int numIntervals = max_order;
     int numInterpPoints = ((numIntervals + 1)*(numIntervals + 2)*(numIntervals+3))/6;
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
       value_of_basis_at_cub_points_cell.resize( numFields , numCubPointsCell , cellDim );
       
 
-      std::cout << fe_matrix_bak << std::endl;
+      //std::cout << fe_matrix_bak << std::endl;
 
       for (int x_order=0;x_order<basis_order;x_order++) {
         for (int y_order=0;y_order<basis_order-x_order;y_order++) {

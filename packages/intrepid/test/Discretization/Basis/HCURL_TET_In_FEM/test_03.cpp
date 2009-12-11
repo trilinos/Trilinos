@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
     int sideDim = side.getDimension();
     
     int min_order = 1;
-    int max_order = 5;
+    int max_order = 4;
     
     int numIntervals = max_order;
     int numInterpPoints = ((numIntervals + 1)*(numIntervals + 2)*(numIntervals+3))/6;

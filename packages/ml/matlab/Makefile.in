@@ -230,7 +230,7 @@ EXTRA_DIST = ml.m
 @BUILD_ML_MATLAB_TRUE@mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
 @BUILD_ML_MATLAB_TRUE@mlmex_CXXFLAGS = ${ML_MLMEX_INCLUDES} -fPIC
 @BUILD_ML_MATLAB_TRUE@mlmex_LDADD = ${ML_MLMEX_LIBS} 
-@BUILD_ML_MATLAB_TRUE@mlmex_LINK = $(MEX) -cxx -o $@
+@BUILD_ML_MATLAB_TRUE@mlmex_LINK = ${MEX} -cxx -o $@
 all: all-am
 
 .SUFFIXES:

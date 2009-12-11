@@ -9,7 +9,7 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(CURRENT_PACKAGE TEUCHOS)
 CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
-  Teuchos_DLLExportMacro.h)
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 #
 # B) Define the header and source files (and include directories)

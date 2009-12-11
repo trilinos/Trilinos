@@ -1451,7 +1451,7 @@ int *rptr=NULL, *cptr=NULL;
     if (!row_storage){    /* compressed column storage */
 
       vid = ZOLTAN_MALLOC_GID_ARRAY(zz, nl);
-      cptr = (int *)ZOLTAN_MALLOC(nl * sizeof(int));
+      cptr = (int *)ZOLTAN_MALLOC((nl+1) * sizeof(int));
       eid = ZOLTAN_MALLOC_GID_ARRAY(zz, np);
 
       if (!vid|| !cptr || !eid){
@@ -1462,6 +1462,7 @@ int *rptr=NULL, *cptr=NULL;
       }
       zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
                nl, np, format, vid, cptr, eid, &ierr);
+      cptr[nl] = np;
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
@@ -1635,7 +1636,7 @@ int numGID = zz->Num_GID;
   eIdx = col_ptr;
 
   for (v=0; v < numVerts; v++){
-    npins = ((v == (numVerts - 1)) ? num_pins : eIdx[v+1]) - eIdx[v];
+    npins = eIdx[v+1] - eIdx[v];
 
     for (e=0; e < npins; e++){
       idx = Zoltan_Hash(egid, numGID, (unsigned int)ht_size);
@@ -1645,7 +1646,7 @@ int numGID = zz->Num_GID;
         if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
 
           ZOLTAN_SET_GID(zz,
-             pins + numGID*(hn->firstVert + hn->nextVert),
+             pins + numGID * (hn->firstVert + hn->nextVert),
              vgid);
 
           hn->nextVert++;

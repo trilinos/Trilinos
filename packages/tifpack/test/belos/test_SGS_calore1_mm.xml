@@ -1,0 +1,15 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="calore1.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Verbosity" type="int" value="2"/>
+  </ParameterList>
+
+  <Parameter name="Tifpack::Preconditioner" type="string" value="POINT_RELAXATION"/>
+  <ParameterList name="Tifpack">
+    <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="17"/>
+</ParameterList>

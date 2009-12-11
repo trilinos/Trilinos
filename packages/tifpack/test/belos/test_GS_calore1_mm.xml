@@ -6,11 +6,10 @@
     <Parameter name="Verbosity" type="int" value="2"/>
   </ParameterList>
 
-  <Parameter name="Tifpack::Preconditioner" type="string" value="ILUT"/>
+  <Parameter name="Tifpack::Preconditioner" type="string" value="POINT_RELAXATION"/>
   <ParameterList name="Tifpack">
-    <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
-    <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="13"/>
+  <Parameter name="expectNumIters" type="int" value="22"/>
 </ParameterList>

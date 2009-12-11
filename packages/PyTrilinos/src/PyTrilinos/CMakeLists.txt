@@ -11,25 +11,28 @@ FOREACH(PACKAGE ${${PACKAGE_NAME}_PACKAGES})
 ENDFOREACH(PACKAGE ${${PACKAGE_NAME}_PACKAGES})
 SET(${PACKAGE_NAME}_ALL "${${PACKAGE_NAME}_ALL}]")
 
-# Create the __init__.py file
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/__init__.src
-  ${CMAKE_CURRENT_BINARY_DIR}/__init__.py)
+# Define a trigger target
+ADD_CUSTOM_TARGET(Pure_Python_Modules ALL)
 
-# Create the PropertyBase.py file
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/PropertyBase.src
-  ${CMAKE_CURRENT_BINARY_DIR}/PropertyBase.py)
+# Define the list of local modules
+SET(LOCAL_MODULES __init__ PropertyBase typed_tuple typed_list typed_dict)
 
-# Create the typed_tuple.py file
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/typed_tuple.src
-  ${CMAKE_CURRENT_BINARY_DIR}/typed_tuple.py)
+# Create each local module, its byte-compiled file and its
+# installation rules
+FOREACH(MODULE ${LOCAL_MODULES})
 
-# Create the typed_list.py file
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/typed_list.src
-  ${CMAKE_CURRENT_BINARY_DIR}/typed_list.py)
-
-# Create the typed_dict.py file
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/typed_dict.src
-  ${CMAKE_CURRENT_BINARY_DIR}/typed_dict.py)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.src
+    ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
+  ADD_CUSTOM_COMMAND(TARGET Pure_Python_Modules
+    COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py')"
+    COMMENT "Byte compiling ${MODULE}.py"
+    VERBATIM)
+  INSTALL(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py
+    ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.pyc
+    DESTINATION ${PyTrilinos_INSTALL_DIR})
+  
+ENDFOREACH(MODULE ${LOCAL_MODULES})
 
 # The NOX module employs namespaces, so include the NOX directory
 IF(${PACKAGE_NAME}_ENABLE_NOX)

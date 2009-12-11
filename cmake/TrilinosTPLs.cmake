@@ -84,6 +84,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   Dakota	 EX
   HIPS           EX
   HDF5           EX
+  MATLAB         EX
   )
 
 # NOTES:

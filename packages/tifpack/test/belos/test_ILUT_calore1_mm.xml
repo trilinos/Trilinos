@@ -1,0 +1,20 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="calore1.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="50"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Tifpack::Preconditioner" type="string" value="ILUT"/>
+  <ParameterList name="Tifpack">
+    <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
+    <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="13"/>
+</ParameterList>
