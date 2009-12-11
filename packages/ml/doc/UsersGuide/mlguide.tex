@@ -3718,7 +3718,11 @@ solver routines from MATLAB and does little else.  MLMEX allows users
 to setup and solve arbitrarily many problems, so long as memory
 suffices.  More than one problem can be setup simultaneously. 
 
-\subsection{Configure and Make}\label{sec:mlmex:conf_make}
+\subsection{Autotools Configure and Make}\label{sec:mlmex:conf_make}
+WARNING: Autotools support was deprecated with Trilinos 10.0.  There
+is no guarantee that this will work with any Trilinos 10.0 or beyond.
+See Section~\ref{sec:mlmex:cmake} for building MLMEX with cmake.
+
 In order to use MLMEX, ML must be configured with (at least) the following options:
 \begin{verbatim}
 ../configure -enable-epetra --enable-teuchos --enable-ifpack \
@@ -3741,6 +3745,67 @@ The build system uses the \texttt{mexext} script from Mathworks to
 detect the appropriate file extension for the architecture.  At
 present, this means that cross-compilation is not possible.  It also
 means that MLMEX will only support MATLAB 7.2 (R2006a) and up.
+
+
+\subsection{Cmake Configure and Make}\label{sec:mlmex:cmake}
+To use MLMEX, Trilinos must be configured with (at least) the
+following options:
+
+\begin{verbatim}
+cmake \
+-D Trilinos_ENABLE_Amesos:BOOL=ON \
+-D Trilinos_ENABLE_AztecOO:BOOL=ON \
+-D Trilinos_ENABLE_Epetra:BOOL=ON \
+-D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+-D Trilinos_ENABLE_Ifpack:BOOL=ON \
+-D Trilinos_ENABLE_ML:BOOL=ON \
+-D Trilinos_ENABLE_Teuchos:BOOL=ON \
+-D MATLAB_ROOT:STRING="<directory of matlab root>" \
+-D MATLAB_ARCH:STRING="<matlab arch>" \
+-D TPL_ENABLE_MATLAB:BOOL=ON \
+../Trilinos
+\end{verbatim}
+Most additional options can be specified as well.  It is important to
+note that MLMEX does not work properly with MPI, hence MPI must be
+disabled in order to compile MLMEX.  The MATLAB\_ARCH option is new to
+the cmake build system, and involves the MATLAB-specific architecture
+code for your system.  There is currently no automatic way to extract
+this, so it must be user-specified.  As of MATLAB 7.9 (R2009b), common
+arch codes are:
+\begin{center}
+\begin{tabular}{l|l}
+Code& OS\\
+\hline
+glnx86& 32-bit Linux (intel/amd)\\
+glnxa64& 64-bit Linux (intel/amd)\\
+sol64& 64-bit Solaris(sparc)\\
+sola64& 64-bit Solaris(intel/amd)\\
+maci64& 64-bit MacOS\\
+maci& 32-bit MacOS\\
+\end{tabular}
+\end{center}
+
+On 64-bit Intel/AMD architectures, Trilinos and all relevant TPLs
+(note: this includes BLAS and LAPACK)
+must be compiled with the \texttt{-fPIC} option.  This necessitates adding:
+\begin{verbatim}
+-D CMAKE_CXX_FLAGS:STRING="-fPIC" \
+-D CMAKE_C_FLAGS:STRING="-fPIC" \
+-D CMAKE_Fortran_FLAGS:STRING="-fPIC" \
+\end{verbatim}
+to the cmake configure line.  Trilinos does not play nicely with
+MATLAB's default LAPACK and BLAS on 64-bit machines, so be sure to
+specify your own with something like:
+\begin{verbatim}
+-D LAPACK_LIBRARY_DIRS:STRING="<path to my lapack>" \
+-D BLAS_LIBRARY_DIRS:STRING="<path to my blas>" \
+\end{verbatim}
+If MLMEX randomly crashes when you turn 'PDE equations' above one,
+chances are MLMEX is finding the wrong BLAS/LAPACK libraries.  Be sure
+cmake is finding the right copy. MLMEX has only been tested with cmake on MATLAB 7.9 (R2009b) on a
+64-bit Linux system.  Like the autotools build, the cmake uses
+\texttt{mexext}, so any version of MATLAB before version 7.2 (R2006a)
+will never work.  MLMEX is also unlikely to work on Solaris.
 
 
 \subsection{Using MLMEX}\label{sec:mlmex:usage}
