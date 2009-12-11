@@ -103,3 +103,23 @@ packages/zoltan/src/fort/cwrap_fmangle.h
 packages/zoltan/src/fort/fwrap.f90
 packages/zoltan/src/fort/makefile
 packages/zoltan/src/include/Zoltan_config.h.in
+
+
+12/11/2009
+1355c7a3e8f404cf96074340d8d941b85771b776 - K Devine, Fri Dec 11 12:11:51 2009 -0
+700 : Merge remote branch 'origin/trilinos-release-10-0-branch' into trilinos-re
+lease-10-0-branch
+95adaa96990289ddb52054c2423dc3e8d568fa84 - K Devine, Fri Dec 11 12:02:26 2009 -0
+700 : Getting documentation and code in agreement on use of vtxedge_ptr in ZOLTA
+N_HG_CS_FN.
+50e0e265a1d0dc924aa011fc4cf3ce24d1e56574 - K Devine, Thu Dec 10 13:23:28 2009 -0
+700 : When NUM_GID_ENTRIES>1, ZOLTAN_HG_CS_FN returned incorrect values in vtxed
+ge_ptr.
+c21b84c5bb26dd03389868727772529c2a11c7d3 - K Devine, Thu Dec 10 13:10:40 2009 -0
+700 : Removed noisy print statements.
+46cab13997d5b4d487fe318b57cfe51bfb06f14d - K Devine, Thu Dec 10 12:57:34 2009 -0
+700 : Fixed bugs in construction of hypergraphs when NUM_GID_ENTRIES>1.
+276eaf227847586f0bfedc656f82ba7213b3f2a3 - K Devine, Thu Dec 10 12:48:39 2009 -0
+700 : Added hypergraph callbacks to test mesh-partitioning model with exodus mes
+h files.
+
