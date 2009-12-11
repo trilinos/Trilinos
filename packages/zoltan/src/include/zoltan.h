@@ -1769,12 +1769,21 @@ typedef void ZOLTAN_HG_SIZE_CS_FORT_FN(
  *    format              --  ZOLTAN_COMPRESSED_VERTEX or ZOLTAN_COMPRESSED_EDGE
  *
  *  Output:
- *    vtxedge_GID --  if ZOLTAN_COMPRESSED_EDGE: global edge ID for each edge
- *                   if ZOLTAN_COMPRESSED_VERTEX: global vertex ID for each vertex
- *    vtxedge_ptr --  if ZOLTAN_COMPRESSED_EDGE: pointer into pin_GID list for
- *                     the start of each edge
- *                   if ZOLTAN_COMPRESSED_VERTEX: pointer into pin_GID list for
- *                     the start of each vertex
+ *    vtxedge_GID -- if ZOLTAN_COMPRESSED_EDGE: global edge ID for each edge
+ *                   if ZOLTAN_COMPRESSED_VERTEX: global vertex ID for each 
+ *                   vertex
+ *    vtxedge_ptr -- if ZOLTAN_COMPRESSED_EDGE:  
+ *                      vtxedge_ptr[i+1]-vtxedge_ptr[i] is the number of 
+ *                      vertices belonging to edge i (i.e., pins or non-zeros)
+ *                      specified by this processor in pin_GID. The starting
+ *                      index in pin_GID of edge i's vertices is 
+ *                      vtxedge_ptr[i]*num_gid_entries.
+ *                   if ZOLTAN_COMPRESSED_VERTEX:  
+ *                      vtxedge_ptr[i+1]-vtxedge_ptr[i] is the number of 
+ *                      edges to which vertex i belongs 
+ *                      specified by this processor in pin_GID. The starting
+ *                      index in pin_GID of vertex i's edges is 
+ *                      vtxedge_ptr[i]*num_gid_entries.
  *    pin_GID    --  if ZOLTAN_COMPRESSED_EDGE: global vertex ID for each
  *                     pin (non-zero) in each edge
  *                   if ZOLTAN_COMPRESSED_VERTEX: global edge ID for each
