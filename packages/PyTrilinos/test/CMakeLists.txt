@@ -34,9 +34,9 @@ IF(PyTrilinos_ENABLE_Epetra)
   PyTrilinos_MAKE_TEST(testEpetra_Vector        )
 ENDIF(PyTrilinos_ENABLE_Epetra)
 
-IF(PyTrilinos_ENABLE_TriUtils)
+IF(PyTrilinos_ENABLE_Triutils)
   PyTrilinos_MAKE_TEST(testTriUtils)
-ENDIF(PyTrilinos_ENABLE_TriUtils)
+ENDIF(PyTrilinos_ENABLE_Triutils)
 
 IF(PyTrilinos_ENABLE_EpetraExt)
   PyTrilinos_MAKE_TEST(testEpetraExt_Coloring)
@@ -56,9 +56,9 @@ IF(PyTrilinos_ENABLE_Amesos)
   PyTrilinos_MAKE_TEST(testAmesos)
 ENDIF(PyTrilinos_ENABLE_Amesos)
 
-IF(PyTrilinos_ENABLE_IFPACK)
+IF(PyTrilinos_ENABLE_Ifpack)
   PyTrilinos_MAKE_TEST(testIFPACK)
-ENDIF(PyTrilinos_ENABLE_IFPACK)
+ENDIF(PyTrilinos_ENABLE_Ifpack)
 
 IF(PyTrilinos_ENABLE_Komplex)
   PyTrilinos_MAKE_TEST(testKomplex_LinearProblem)
