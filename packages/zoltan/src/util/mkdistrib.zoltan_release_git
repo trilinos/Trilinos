@@ -16,8 +16,9 @@ rm -f zoltan_distrib.tar.gz
 #
 #Zoltan checkout
 git clone software.sandia.gov:/space/git/Trilinos
-git checkout trilinos-release-10-0-branch
 cd Trilinos/packages
+git branch trilinos-release-10-0-branch origin/trilinos-release-10-0-branch
+git checkout trilinos-release-10-0-branch
 #
 #ParMETIS checkout
 cvs -d software:/space/CVS-Zoltan checkout -P ParMETIS3_1
