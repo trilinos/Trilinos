@@ -251,18 +251,100 @@ struct ScalarTraits<unsigned long long>
 
 }
 %}
-%template(ScalarTraitsByte     ) Teuchos::ScalarTraits< char               >;
-%template(ScalarTraitsUbyte    ) Teuchos::ScalarTraits< unsigned char      >;
-%template(ScalarTraitsShort    ) Teuchos::ScalarTraits< short              >;
-%template(ScalarTraitsUshort   ) Teuchos::ScalarTraits< unsigned short     >;
-%template(ScalarTraitsInt      ) Teuchos::ScalarTraits< int                >;
-%template(ScalarTraitsUint     ) Teuchos::ScalarTraits< unsigned int       >;
-%template(ScalarTraitsLong     ) Teuchos::ScalarTraits< long               >;
-%template(ScalarTraitsUlong    ) Teuchos::ScalarTraits< unsigned long      >;
-%template(ScalarTraitsLongLong ) Teuchos::ScalarTraits< long long          >;
+%ignore Teuchos::ScalarTraits< char >::eps  ;
+%ignore Teuchos::ScalarTraits< char >::sfmin;
+%ignore Teuchos::ScalarTraits< char >::base ;
+%ignore Teuchos::ScalarTraits< char >::prec ;
+%ignore Teuchos::ScalarTraits< char >::t    ;
+%ignore Teuchos::ScalarTraits< char >::rnd  ;
+%ignore Teuchos::ScalarTraits< char >::emin ;
+%ignore Teuchos::ScalarTraits< char >::rmin ;
+%ignore Teuchos::ScalarTraits< char >::emax ;
+%ignore Teuchos::ScalarTraits< char >::rmax ;
+%ignore Teuchos::ScalarTraits< char >::nan  ;
+%template(ScalarTraitsByte) Teuchos::ScalarTraits< char >;
+
+%template(ScalarTraitsUbyte) Teuchos::ScalarTraits< unsigned char >;
+
+%ignore Teuchos::ScalarTraits< short >::eps     ;
+%ignore Teuchos::ScalarTraits< short >::sfmin   ;
+%ignore Teuchos::ScalarTraits< short >::base    ;
+%ignore Teuchos::ScalarTraits< short >::prec    ;
+%ignore Teuchos::ScalarTraits< short >::t       ;
+%ignore Teuchos::ScalarTraits< short >::rnd     ;
+%ignore Teuchos::ScalarTraits< short >::emin    ;
+%ignore Teuchos::ScalarTraits< short >::rmin    ;
+%ignore Teuchos::ScalarTraits< short >::emax    ;
+%ignore Teuchos::ScalarTraits< short >::rmax    ;
+%ignore Teuchos::ScalarTraits< short >::nan     ;
+%ignore Teuchos::ScalarTraits< short >::isnaninf;
+%template(ScalarTraitsShort) Teuchos::ScalarTraits< short >;
+
+%template(ScalarTraitsUshort) Teuchos::ScalarTraits< unsigned short >;
+
+%ignore Teuchos::ScalarTraits< int >::eps  ;
+%ignore Teuchos::ScalarTraits< int >::sfmin;
+%ignore Teuchos::ScalarTraits< int >::base ;
+%ignore Teuchos::ScalarTraits< int >::prec ;
+%ignore Teuchos::ScalarTraits< int >::t    ;
+%ignore Teuchos::ScalarTraits< int >::rnd  ;
+%ignore Teuchos::ScalarTraits< int >::emin ;
+%ignore Teuchos::ScalarTraits< int >::rmin ;
+%ignore Teuchos::ScalarTraits< int >::emax ;
+%ignore Teuchos::ScalarTraits< int >::rmax ;
+%ignore Teuchos::ScalarTraits< int >::nan  ;
+%template(ScalarTraitsInt) Teuchos::ScalarTraits< int >;
+
+%ignore Teuchos::ScalarTraits< unsigned int >::eps     ;
+%ignore Teuchos::ScalarTraits< unsigned int >::sfmin   ;
+%ignore Teuchos::ScalarTraits< unsigned int >::base    ;
+%ignore Teuchos::ScalarTraits< unsigned int >::prec    ;
+%ignore Teuchos::ScalarTraits< unsigned int >::t       ;
+%ignore Teuchos::ScalarTraits< unsigned int >::rnd     ;
+%ignore Teuchos::ScalarTraits< unsigned int >::emin    ;
+%ignore Teuchos::ScalarTraits< unsigned int >::rmin    ;
+%ignore Teuchos::ScalarTraits< unsigned int >::emax    ;
+%ignore Teuchos::ScalarTraits< unsigned int >::rmax    ;
+%ignore Teuchos::ScalarTraits< unsigned int >::nan     ;
+%ignore Teuchos::ScalarTraits< unsigned int >::isnaninf;
+%template(ScalarTraitsUint) Teuchos::ScalarTraits< unsigned int >;
+
+%ignore Teuchos::ScalarTraits< long >::eps     ;
+%ignore Teuchos::ScalarTraits< long >::sfmin   ;
+%ignore Teuchos::ScalarTraits< long >::base    ;
+%ignore Teuchos::ScalarTraits< long >::prec    ;
+%ignore Teuchos::ScalarTraits< long >::t       ;
+%ignore Teuchos::ScalarTraits< long >::rnd     ;
+%ignore Teuchos::ScalarTraits< long >::emin    ;
+%ignore Teuchos::ScalarTraits< long >::rmin    ;
+%ignore Teuchos::ScalarTraits< long >::emax    ;
+%ignore Teuchos::ScalarTraits< long >::rmax    ;
+%ignore Teuchos::ScalarTraits< long >::nan     ;
+%ignore Teuchos::ScalarTraits< long >::isnaninf;
+%template(ScalarTraitsLong) Teuchos::ScalarTraits< long >;
+
+%ignore Teuchos::ScalarTraits< unsigned long >::eps     ;
+%ignore Teuchos::ScalarTraits< unsigned long >::sfmin   ;
+%ignore Teuchos::ScalarTraits< unsigned long >::base    ;
+%ignore Teuchos::ScalarTraits< unsigned long >::prec    ;
+%ignore Teuchos::ScalarTraits< unsigned long >::t       ;
+%ignore Teuchos::ScalarTraits< unsigned long >::rnd     ;
+%ignore Teuchos::ScalarTraits< unsigned long >::emin    ;
+%ignore Teuchos::ScalarTraits< unsigned long >::rmin    ;
+%ignore Teuchos::ScalarTraits< unsigned long >::emax    ;
+%ignore Teuchos::ScalarTraits< unsigned long >::rmax    ;
+%ignore Teuchos::ScalarTraits< unsigned long >::nan     ;
+%ignore Teuchos::ScalarTraits< unsigned long >::isnaninf;
+%template(ScalarTraitsUlong) Teuchos::ScalarTraits< unsigned long >;
+
+%template(ScalarTraitsLongLong) Teuchos::ScalarTraits< long long >;
+
 %template(ScalarTraitsUlongLong) Teuchos::ScalarTraits< unsigned long long >;
-%template(ScalarTraitsFloat    ) Teuchos::ScalarTraits< float              >;
-%template(ScalarTraitsDouble   ) Teuchos::ScalarTraits< double             >;
+
+%template(ScalarTraitsFloat) Teuchos::ScalarTraits< float >;
+
+%template(ScalarTraitsDouble) Teuchos::ScalarTraits< double >;
+
 %pythoncode
 %{
 def ScalarTraits(scalarType):
