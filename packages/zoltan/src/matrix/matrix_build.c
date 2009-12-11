@@ -97,7 +97,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     Zoltan_DD_Update (dd, xGID, (ZOLTAN_ID_PTR) xGNO, NULL,  NULL, nX);
   }
   else { /* We don't want to use the DD */
-    xGNO = xGID;
+    xGNO = (int *) xGID;
     MPI_Allreduce(&nX, &matrix->globalX, 1, MPI_INT, MPI_SUM, zz->Communicator);
   }
 
@@ -168,7 +168,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     dd = NULL;
   }
   else {
-    matrix->pinGNO = pinID;
+    matrix->pinGNO = (int *) pinID;
     pinID = NULL;
   }
 

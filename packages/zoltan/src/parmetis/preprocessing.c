@@ -99,6 +99,7 @@ int Zoltan_Preprocess_Graph(
   char msg[256];
   ZG *graph = &(gr->graph);
   int local;
+  int *input_part = NULL;
 
   char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
@@ -160,7 +161,7 @@ int Zoltan_Preprocess_Graph(
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
-  int *input_part = NULL;
+  input_part = NULL;
   ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
   CHECK_IERR;

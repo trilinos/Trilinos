@@ -70,7 +70,6 @@ int Zoltan_Order(
 
   char *yo = "Zoltan_Order";
   int ierr;
-  int counti,myrank;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
   char msg[256];

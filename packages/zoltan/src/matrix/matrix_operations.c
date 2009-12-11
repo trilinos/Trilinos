@@ -59,6 +59,7 @@ wgtFctMax(float* current, float* new, int dim);
 /* Function definitions are here        */
 /****************************************/
 
+/*
 static  int
 compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2)
 {
@@ -66,6 +67,7 @@ compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2)
     return (e1->pinGNO - e2->pinGNO);
   return (e1->yGNO - e2->yGNO);
 }
+*/
 
 /* This function compare if the wgt are the same for both arcs*/
 static int
@@ -256,7 +258,6 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   int *tmparray=NULL;
   WgtFctPtr wgtfct;
   int ierr = ZOLTAN_OK;
-  int nY, nPin;
   int i;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -310,8 +311,6 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
 
 
-
- End:
   ZOLTAN_FREE(&tmparray);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
