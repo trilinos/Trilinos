@@ -123,3 +123,5 @@ c21b84c5bb26dd03389868727772529c2a11c7d3 - K Devine, Thu Dec 10 13:10:40 2009 -0
 700 : Added hypergraph callbacks to test mesh-partitioning model with exodus mes
 h files.
 
+519a66c536d0171471536d2d2f4183eb165327d0 - K Devine, Fri Dec 11 12:53:52 2009 -0700 : My notes on using git
+
