@@ -4,6 +4,26 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.0.3 December 08, 2009
+
+1. Epetra - Added support for the Cray CASK Library
+
+2. Zoltan - Fixed improper arguments for Zfw_Invert_Lists and
+            Zfw_Compute_Destination
+
+3. Zoltan - Various fixes/updates to autotools build system
+
+4. TriUtils - Fixed an assignment error in tridiagonal matrix builder
+
+5. Ifpack - Fixed an issue with the RCM when some processes have no part of the
+            graph
+
+6. EpetraExt - Added support for the HDF5 library to the cmake build system.
+
+7. ML - Coordinate fix when number of PDEs > 1
+
+8. PyTrilinos - Fixes to allow Anasazi to build under certain conditions
+
 Release update 10.0.2 October 28, 2009
 
 1. Framework level - Fixed an issue with over excluding PyTrilinos files from

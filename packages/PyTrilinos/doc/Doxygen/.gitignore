@@ -1,0 +1,13 @@
+.deps/*_dox.Pi
+Amesos
+Anasazi
+AztecOO
+Epetra
+EpetraExt
+Galeri
+IFPACK
+Komplex
+ML
+NOX
+Teuchos
+TriUtils

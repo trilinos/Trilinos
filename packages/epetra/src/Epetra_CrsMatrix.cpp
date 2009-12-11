@@ -37,6 +37,13 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
+
+#ifdef Epetra_ENABLE_CASK 
+#include "cask_kernels.h"
+#endif 
+
+#include <cstdlib>
+#include <cstdio>
 #ifdef EPETRA_CACHE_BYPASS
 // Turn cache bypass on or off for a given memory range.
 // address is the starting address of the range
@@ -2611,7 +2618,7 @@ void Epetra_CrsMatrix::UpdateExportVector(int NumVectors) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
   
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK) 
   if (StorageOptimized() && Graph().StorageOptimized()) {
 
     double * Values = All_Values();
@@ -2628,10 +2635,10 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
 #endif
 
      {
+#ifndef Epetra_ENABLE_CASK
        const double *val_ptr    = Values;
        const int    *colnum_ptr = Indices;
        double       * dst_ptr = y;
- 	
        for (unsigned int row=0; row<NumMyRows_; ++row)
  	{
  	  double s = 0.;
@@ -2640,6 +2647,9 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
  	    s += *val_ptr++ * x[*colnum_ptr++];
  	  *dst_ptr++ = s;
  	}
+#else
+       cask_csr_dax(NumMyRows_, IndexOffset, Indices, Values, x, y );
+#endif
      }
 
 #ifdef EPETRA_CACHE_BYPASS
@@ -2698,7 +2708,7 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
 void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 
   int NumCols = NumMyCols();
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
@@ -2713,8 +2723,13 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
       Epetra_SetCacheBypassRange(x, numMyColumns*sizeof(double), true); // Set y vector to bypass cache
     }
 #endif
+#ifndef Epetra_ENABLE_CASK
    int ione = 1;
-    EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, x, y);
+   EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, x, y);
+#else
+   cask_csr_datx( NumMyRows_, NumCols, IndexOffset,  Indices,  Values,x ,y );
+#endif
+
 #ifdef EPETRA_CACHE_BYPASS
     { // make sure variables are local
       int numMyEntries = Graph().NumMyEntries();
@@ -2774,7 +2789,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const {
 
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
@@ -2788,9 +2803,15 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
       Epetra_SetCacheBypassRange(*Y, LDY*NumVectors*sizeof(double), true); // Set Y vector(s) to bypass cache
     }
 #endif
+
     if (LDX!=0 && LDY!=0) {
+#ifndef Epetra_ENABLE_CASK
     int izero = 0;
     EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+#else
+    cask_csr_dgesmm(0, 1.0, NumMyRows_, NumMyRows_,  NumVectors, 
+                    IndexOffset, Indices, Values, *X, LDX, 0.0,  *Y, LDY);
+#endif
     return;
     }
     for (int i=0; i < NumMyRows_; i++) {
@@ -2856,7 +2877,7 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, int NumVectors)  const{
 
   int NumCols = NumMyCols();
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized()) {
     if (LDX!=0 && LDY!=0) {
       double * Values = All_Values_;
@@ -2871,8 +2892,14 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
       Epetra_SetCacheBypassRange(*X, LDX*NumVectors*sizeof(double), true); // Set Y vector(s) to bypass cache
     }
 #endif
+
+#ifndef Epetra_ENABLE_CASK
       int ione = 1;
       EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+#else
+      cask_csr_dgesmm(1, 1.0, NumMyRows_, NumMyRows_,  NumVectors, 
+                      IndexOffset, Indices, Values, *X, LDX, 0.0, *Y, LDY);
+#endif
 #ifdef EPETRA_CACHE_BYPASS
     { // make sure variables are local
       int numMyEntries = Graph().NumMyEntries();
@@ -2948,7 +2975,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 
   int i, j, j0;
 
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   if (StorageOptimized() && Graph().StorageOptimized() && ((UnitDiagonal && NoDiagonal())|| (!UnitDiagonal && !NoDiagonal()))) {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
@@ -2959,7 +2986,13 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
     int udiag =  UnitDiagonal ? 1:0;
     int nodiag = NoDiagonal() ? 1:0;
     int xysame = (xp==yp) ? 1:0;
+
+#ifndef Epetra_ENABLE_CASK
     EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, xp, yp, &xysame);
+#else
+    cask_csr_dtrsv( iupper, itrans, udiag, nodiag, 0, xysame, NumMyRows_, 
+                    NumMyRows_, IndexOffset, Indices, Values, xp, yp);
+#endif
     return;
   }
   //=================================================================
@@ -3053,7 +3086,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
       }
       
     }
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
   }
 #endif
   return;
@@ -3068,15 +3101,22 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
-#ifndef FORTRAN_DISABLED
+#if !defined(FORTRAN_DISABLED) || defined(Epetra_ENABLE_CASK)
     if (LDX!=0 && LDY!=0 && ((UnitDiagonal && NoDiagonal()) || (!UnitDiagonal && !NoDiagonal()))) {
       int iupper = Upper ? 1:0;
       int itrans = Trans ? 1:0;
       int udiag =  UnitDiagonal ? 1:0;
       int nodiag = NoDiagonal() ? 1:0;
       int xysame = (Xp==Yp) ? 1:0;
+
+#ifndef Epetra_ENABLE_CASK
       EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, 
 			 *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
+#else
+      cask_csr_dtrsm( iupper, itrans, udiag, nodiag, 0, xysame,  NumMyRows_, 
+                      NumMyRows_, NumVectors, IndexOffset, Indices, Values, 
+                      *Xp, LDX, *Yp, LDY);
+#endif
       return;
     }
 #endif

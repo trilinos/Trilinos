@@ -39,8 +39,8 @@ of the first complex equation, and so on. This approach is documented
 in:
 
 David Day and Michael A. Heroux. Solving complex-valued linear systems
-via equivalent real formulations. SIAM J. Sci. Comput.,
-23(2):480–498, 2001.
+via equivalent real formulations. SIAM J. Sci. Comput., 23(2):480498,
+2001.
 
 C++ includes: Komplex_LinearProblem.h ";
 

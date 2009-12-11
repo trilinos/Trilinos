@@ -1886,7 +1886,7 @@ Amesos_Mumps::Destroy()
 Destroys all data associated with  this object. ";
 
 %feature("docstring")  Amesos_Mumps::SetUseTranspose "int
-Amesos_Mumps::SetUseTranspose(bool UseTranspose)
+Amesos_Mumps::SetUseTranspose(bool UseTranspose_in)
 
 If set true, X will be set to the solution of AT X = B (not A X = B).
 
@@ -4189,8 +4189,8 @@ taucs_supernodal_factor_free_ptr(taucs_ccs_matrix
 // File: Amesos__Utils_8h.xml
 
 
-// File: dir_796171713f8879ba8a89d3cb79ff11ad.xml
+// File: dir_d53f8c62814696217e158e7aad87e672.xml
 
 
-// File: dir_bb994f08ab1d36e85f5d30f076109173.xml
+// File: dir_c8c2a17146c2ce4e369662083835a4f7.xml
 
