@@ -6,7 +6,7 @@ TIME="`date +%H%M`"
 DATE="`date +%d%h%y`"
 #
 # Get rid of blanks in the date
-TAGVAL="distrib_${TIME}_${DATE}"
+TAGVAL="zoltan_distrib_${TIME}_${DATE}"
 CURDIR="`pwd`"
 #
 # Get rid of space when day of the month is a single digit
