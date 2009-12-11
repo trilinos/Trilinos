@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
       Teuchos::LAPACK<int, double> solver;
       
       // set test tolerance
-      double zero = (basis_order+1)*(basis_order+1)*100*INTREPID_TOL;
+      double zero = (basis_order+1)*(basis_order+1)*1000*INTREPID_TOL;
       
       // build matrices outside the loop, and then just do the rhs
       // for each iteration
