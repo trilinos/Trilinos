@@ -1,0 +1,195 @@
+File file states:
+-  Untracked
+-  Unmodified
+-  Modified
+-  Staged
+-  Committed
+
+Remotes and branches:
+-  origin  -- server you cloned from
+-  master  -- main development trunk in local repository; 
+              master pointer moves forward with each commit to main.
+-  HEAD -- pointer to local branch you're currently on.
+-  origin/master -- pointer to master branch on server.
+   Each clone has origin/master (remote repository) and master (local).
+
+A common scenario (assuming working in master):
+-  Two people have clones and make commits.
+-  Person A pushes his commits.
+-  Person B tries to push his commits, but must do an update first.
+-  Person B must do the following:
+   git fetch origin
+   git merge origin/master
+   git push origin master
+
+Commands:
+
+-  git clone software.sandia.gov:/space/git/Trilinos
+
+-  git status
+   Shows which state files are in
+   Offers suggestions on how to change state
+
+-  git add <file>
+   Adds a file
+   Stages a file
+   Staging a file marks it as having all conflicts resolved.
+
+-  git reset HEAD <file>
+   Unstages a file
+
+-  git diff
+   Shows modified vs committed.
+
+-  git diff --staged
+   Shows staged vs committed.
+
+-  git diff master...branchname
+   See all changes done on branchname; compares with first common ancestor
+   between master and branchname.
+   Shows only the work the current topic branch has introduced since 
+   its common ancestor with master.
+
+-  git commit
+   Commits all staged files
+
+-  git commit -a
+   Commits all modified files
+
+-  git rm <file or wildcard>
+   Removes file from tracking
+   E.g., git rm \*~
+   Note the backslash.
+
+-  git mv <file1> <file2>
+   Renames a file
+
+-  git log
+   Show history of commits.
+     -p       includes diff introduced by commit
+     -5       show only the five most recent commits
+     --pretty=oneline, short, full, fuller
+     --name-only
+     --name-status
+     --since, --after   commits made after the specified date.
+     --until, --before  commits made before the specified date.
+     --author           author entry matches the specified string.
+     --committer        committer entry matches the specified string.
+
+-  git checkout -- <file>
+   revert to previously committed version of file
+
+-  git remote -v
+   Shows remote repositories
+
+-  git remote show origin
+   Shows origin plus branches.
+
+-  git fetch [origin]
+   Gets all new work pushed to server since last fetch/clone.
+   Doesn't merge with my work, though.  Need manual merge.
+
+-  git pull
+   Gets all new work pushed to server since last fetch/clone.
+   Attempts a merge on current branch.
+   
+-  git push [remote] [branch]
+   Push committed work to server.
+
+-  git tag
+   Lists tags
+
+-  git tag -a "tagname"
+   Adds an annotated tag (with much info)
+
+-  git tag "tagname"
+   Adds a lightweight tag
+
+-  git push origin --tags
+   Have to explicitly push tags to origin; they don't go with normal "git push"
+
+-  git branch <branchname>
+   create a branch
+
+-  git branch -d <branchname>
+   delete a branch.
+
+-  git branch
+   lists available branches.
+
+-  git branch -v
+   lists last commit on each branch.
+
+-  git branch --merged
+   lists branches already merged into the HEAD branch.
+   git branch --no-merged
+   lists branches not yet merged into the HEAD branch.
+
+-  git checkout <branchname>
+   switch to a different branch
+
+-  git checkout -b <branchname>
+   creates a new branch and switches HEAD to it; equivalent to
+   git branch <branchname>
+   git checkout <branchname>
+
+-  git merge <branchname>
+   merge branch into HEAD.
+
+-  git fetch origin
+   Updates origin/master pointer with updated files from remote repository.
+
+-  git rebase <branchname>
+   Another way to merge.
+   Replays changes from <branchname> into HEAD in order they were done, 
+   rather than merging the endpoints of <branchname> and HEAD.
+   !! Do not rebase commits that you have pushed to a public repository. !!
+   !! only rebase commits that have never been available publicly.  !!
+
+
+---------------------------------------------------------------------------
+How I merged the trilinos-release-10-0-branch with the main trunk
+
+Determine which commits exist.
+ git log master..trilinos-release-10-0-branch --pretty=format:"%H - %cn, %cd : %s" -- packages/zoltan > commit_list
+
+This lists the hash, committer name, committer date, and subject of the commit.
+
+Our last CVS merge was Sept. 28, 2009.  I'll merge only commits that occurred
+after that date.
+
+Unfortunately, I need to cherry-pick each one.  :(
+  git cherry-pick --no-commit -x hash
+where hash is one of the hash keys from above.  
+The -x appends the original commit message, which is nice.
+The --no-commit prevent automatic commit if no conflicts.  I like to see
+what happened.
+
+To see what happened...See what files were merged.
+  git status
+
+If conflicts, resolve and "git add"
+
+Then "git commit".
+
+Repeat for each hash.
+
+The following hashes seemed to have no effect when I followed this procedure;
+the comments indicate they actually were transferring files from the main
+trunk to the branch, so perhaps there was no difference resulting from the
+merge.
+
+bf94764977b44107c5bdddab06a1a2a8dfa38274 - Michael M. Wolf, Thu Oct 8 22:42:04 2009 +0000 :      SUMMARY: Small change to C++ Order function
+ab55e6c4872d016be3e5127366b3410a531790f3 - Cedric Chevalier, Wed Oct 7 15:31:16 2009 +0000 :      SUMMARY: Port scotch answer file from the trunk
+cadf7e50e5f5b6c7f49b2e05d16eeb6736af824b - Brent M. Perschbacher, Mon Oct 5 18:24:14 2009 +0000 :      SUMMARY:  fix issue with fortran/c interface verify check
+
+Tag the repository with a sanity date.
+git tag -a Zoltan_bugmerge_07December2009
+git push --tags
+
+--------------------------------------------------------------------------
+My former cvss
+ git diff --name-only origin/master .
+Shows which files differ from the Trilinos repository
+
+
