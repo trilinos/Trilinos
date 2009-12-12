@@ -118,16 +118,7 @@ int Zoltan_Order_Test(
     ZOLTAN_FREE(&blocks);
   }
 
-  perm_gids = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC(num_obj *sizeof(int) * (*num_gid_entries));
-
-  Zoltan_Order_Get_GID_Order(zz,global_ids, perm_gids);
-/*   for (i = 0 ; i <num_obj ; ++i) { */
-/*     fprintf(stderr, "%d(%d) becomes %d (%d)\n", global_ids[i], i, perm_gids[i], rank[i]); */
-/*   } */
-
-
-  ZOLTAN_FREE(&perm_gids);
-  return (ZOLTAN_OK);
+ return (ZOLTAN_OK);
 }
 
 
