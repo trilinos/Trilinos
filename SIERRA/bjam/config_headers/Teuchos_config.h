@@ -1,7 +1,8 @@
 
 #include "TrilinosPlatform_config.h"
 
-#define TEUCHOS_ORDINAL_TYPE ptrdiff_t
+/* ToDo: Make this ptrdiff_t. */ 
+#define TEUCHOS_ORDINAL_TYPE int
 #define TEUCHOS_LIB_DLL_EXPORT
 #define HAVE_TEUCHOS_BLASFLOAT 
 #define HAVE_TEUCHOS_COMM_TIMERS 
