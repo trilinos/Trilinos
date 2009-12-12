@@ -39,6 +39,8 @@
 
 namespace Anasazi {
 
+typedef Teuchos_Ordinal Array_size_type;
+
   //! @name Anasazi Exceptions
   //@{
 

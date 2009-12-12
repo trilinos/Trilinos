@@ -1013,7 +1013,7 @@ namespace Anasazi {
         
         // Add the auxiliary vectors to the current basis vectors if any exist
         if (auxVecs_.size() > 0) {
-          for (unsigned int i=0; i<auxVecs_.size(); i++) {
+          for (Array_size_type i=0; i<auxVecs_.size(); i++) {
             AVprev.append( auxVecs_[i] );
             AsubH.append( Teuchos::null );
           }
@@ -1122,7 +1122,7 @@ namespace Anasazi {
         tmp = orthman_->orthogError(*lclV,*lclF);
         os << " >> Error in V^H M F == 0  : " << tmp << std::endl;
       }
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         if (curDim_) {
           tmp = orthman_->orthogError(*lclV,*auxVecs_[i]);
           os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << std::endl;
@@ -1162,10 +1162,10 @@ namespace Anasazi {
     }
 
     if (chk.checkAux) {
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
         os << " >> Error in Aux[" << i << "]^H M Aux[" << i << "] == I : " << tmp << std::endl;
-        for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
+        for (Array_size_type j=i+1; j<auxVecs_.size(); j++) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
           os << " >> Error in Aux[" << i << "]^H M Aux[" << j << "] == 0 : " << tmp << std::endl;
         }

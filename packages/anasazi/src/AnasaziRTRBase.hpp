@@ -1011,7 +1011,7 @@ namespace Anasazi {
       int numsofar = 0;
       for (tarcpmv v=auxvecs.begin(); v != auxvecs.end(); ++v) {
         std::vector<int> ind(MVT::GetNumberVecs(**v));
-        for (unsigned int j=0; j<ind.size(); j++) ind[j] = numsofar++;
+        for (size_t j=0; j<ind.size(); j++) ind[j] = numsofar++;
         MVT::SetBlock(**v,ind,*V_);
         auxVecs_.push_back(MVT::CloneView(*Teuchos::rcp_static_cast<const MV>(V_),ind));
       }
@@ -1471,7 +1471,7 @@ namespace Anasazi {
     if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
       os << " >> Error in X^H B X == I :    " << scientific << setprecision(10) << tmp << endl;
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*X_,*auxVecs_[i]);
         os << " >> Error in X^H B Q[" << i << "] == 0 : " << scientific << setprecision(10) << tmp << endl;
       }
@@ -1491,7 +1491,7 @@ namespace Anasazi {
     if (chk.checkEta && initialized_) {
       tmp = orthman_->orthogError(*X_,*eta_);
       os << " >> Error in X^H B Eta == 0 :  " << scientific << setprecision(10) << tmp << endl;
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*eta_,*auxVecs_[i]);
         os << " >> Error in Eta^H B Q[" << i << "]==0 : " << scientific << setprecision(10) << tmp << endl;
       }
@@ -1532,10 +1532,10 @@ namespace Anasazi {
 
     // Q
     if (chk.checkQ) {
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
         os << " >> Error in Q[" << i << "]^H B Q[" << i << "]==I: " << scientific << setprecision(10) << tmp << endl;
-        for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
+        for (Array_size_type j=i+1; j<auxVecs_.size(); j++) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
           os << " >> Error in Q[" << i << "]^H B Q[" << j << "]==0: " << scientific << setprecision(10) << tmp << endl;
         }

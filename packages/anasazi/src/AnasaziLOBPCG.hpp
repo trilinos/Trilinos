@@ -1961,7 +1961,7 @@ namespace Anasazi {
     if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
       os << " >> Error in X^H M X == I : " << tmp << endl;
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*X_,*auxVecs_[i]);
         os << " >> Error in X^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
@@ -1983,7 +1983,7 @@ namespace Anasazi {
         tmp = orthman_->orthogError(*P_,*X_);
         os << " >> Error in P^H M X == 0 : " << tmp << endl;
       }
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*P_,*auxVecs_[i]);
         os << " >> Error in P^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
@@ -2009,7 +2009,7 @@ namespace Anasazi {
           os << " >> Error in H^H M P == 0 : " << tmp << endl;
         }
       }
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthogError(*H_,*auxVecs_[i]);
         os << " >> Error in H^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
@@ -2031,10 +2031,10 @@ namespace Anasazi {
 
     // Q
     if (chk.checkQ) {
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (Array_size_type i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
         os << " >> Error in Q[" << i << "]^H M Q[" << i << "] == I : " << tmp << endl;
-        for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
+        for (Array_size_type j=i+1; j<auxVecs_.size(); j++) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
           os << " >> Error in Q[" << i << "]^H M Q[" << j << "] == 0 : " << tmp << endl;
         }
