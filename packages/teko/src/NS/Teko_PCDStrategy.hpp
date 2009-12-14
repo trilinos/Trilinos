@@ -117,6 +117,8 @@ protected:
    Teuchos::RCP<InverseFactory> invFactoryF_; // for \tilde{A_00}\f$
    Teuchos::RCP<InverseFactory> invFactoryS_;
 
+   DiagonalType massInverseType_;
+
    static Teuchos::RCP<Teuchos::Time> initTimer_;
    static Teuchos::RCP<Teuchos::Time> invSTimer_;
    static Teuchos::RCP<Teuchos::Time> invFTimer_;

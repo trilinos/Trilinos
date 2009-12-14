@@ -94,13 +94,13 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    LinearOp C  = Teko::getBlock(1,1,A);
 
    LinearOp  Qp = state.getLinearOp(presMassStr);
-   LinearOp iQp = getInvDiagonalOp(Qp);
+   LinearOp iQp = getInvDiagonalOp(Qp,massInverseType_);
 
    // build the inverse Laplacian complement
    /////////////////////////////////////////////
    ModifiableLinearOp & invLaplace = state.getModifiableOp("invLaplace");
    {
-      Teko_DEBUG_SCOPE("Building S",10);
+      Teko_DEBUG_SCOPE("Building inv(Laplace)",10);
       Teuchos::TimeMonitor timer(*invSTimer_,true);
 
       LinearOp laplace = state.getLinearOp(presLapStr);
@@ -118,8 +118,8 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
 
       // build Schur-complement
       LinearOp pcd = state.getLinearOp(pcdStr);
-      LinearOp invLap = invLaplace;
-      LinearOp invS = multiply(multiply(invLap,pcd),iQp);
+      LinearOp invL = invLaplace;
+      LinearOp invS = multiply(multiply(invL,pcd),iQp);
 
       state.addLinearOp("invS",invS);
    }
@@ -127,7 +127,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    // build inverse F
    /////////////////////////////////////////////
    {
-      Teko_DEBUG_SCOPE("Building inverseF",10);
+      Teko_DEBUG_SCOPE("Building inv(F)",10);
       Teuchos::TimeMonitor timer(*invFTimer_,true);
 
       ModifiableLinearOp & invF = state.getModifiableOp("invF"); 
@@ -158,6 +158,7 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
    Teko_DEBUG_SCOPE("PCDStrategy::initializeFromParameterList",10);
 
    std::string invStr="Amesos", invFStr="", invSStr="";
+   massInverseType_ = Diagonal;
 
    // "parse" the parameter list
    if(pl.isParameter("Inverse Type"))
@@ -166,17 +167,26 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
       invFStr = pl.get<std::string>("Inverse Velocity Type");
    if(pl.isParameter("Inverse Laplace Type"))
       invSStr = pl.get<std::string>("Inverse Laplace Type");
+   if(pl.isParameter("Inverse Mass Type")) {
+      std::string massInverseStr = pl.get<std::string>("Inverse Mass Type");
+
+      // build inverse types
+      massInverseType_ = getDiagonalType(massInverseStr);
+      if(massInverseType_==NotDiag)
+         *getOutputStream() << "PCD Strategy requires \"Inverse Mass Type\" to be: " 
+                            << "Diagonal, AbsRowSum or Lumped" << std::endl;
+   }
 
    // set defaults as needed
    if(invFStr=="") invFStr = invStr;
    if(invSStr=="") invSStr = invStr;
 
    Teko_DEBUG_MSG_BEGIN(5)
-      DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameters: " << std::endl;
+      DEBUG_STREAM << "PCD Strategy Parameters: " << std::endl;
       DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
       DEBUG_STREAM << "   inv F type = \"" << invFStr << "\"" << std::endl;
       DEBUG_STREAM << "   inv Laplace type = \"" << invSStr << "\"" << std::endl;
-      DEBUG_STREAM << "LU2x2 Diagonal Strategy Parameter list: " << std::endl;
+      DEBUG_STREAM << "PCD Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    Teko_DEBUG_MSG_END()
 
