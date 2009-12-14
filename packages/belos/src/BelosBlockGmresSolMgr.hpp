@@ -936,7 +936,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     else
       tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
     printer_->stream(Warnings) << 
-      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
+      "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
       " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
     plist.set("Num Blocks",tmpNumBlocks);
   } 
