@@ -52,7 +52,7 @@ INCLUDE(PackageListHelpers)
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
   Teuchos               teuchos                        PS
-  ThreadPool            ThreadPool                     SS # Depends on Ptheads TPL
+  ThreadPool            ThreadPool                     PS # Depends on ptheads system library
   RTOp                  rtop                           PS
   Kokkos                kokkos                         PS
   Epetra                epetra                         PS
@@ -87,7 +87,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Sacado                sacado                         PS
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
-  Phdmesh               phdmesh                        PS
+  Phdmesh               phdmesh                        SS # to be replaced by STK
   NOX                   nox                            PS
   Moertel               moertel                        PS
   TrilinosCouplings     trilinoscouplings              SS
