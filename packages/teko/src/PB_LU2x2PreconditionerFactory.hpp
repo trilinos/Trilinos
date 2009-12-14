@@ -111,7 +111,7 @@ public:
      * @param[in] strategy  Strategy object that takes a 2x2 block matrix and
      *                      and constructs the \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ objects.
      */
-   LU2x2PreconditionerFactory(const Teuchos::RCP<const LU2x2Strategy> & strategy);
+   LU2x2PreconditionerFactory(const Teuchos::RCP<LU2x2Strategy> & strategy);
 
 
    /** \brief Default constructor for use with AutoClone
@@ -144,6 +144,37 @@ public:
      */
    virtual void initializeFromParameterList(const Teuchos::ParameterList & settings);
 
+   /** \brief Request the additional parameters this preconditioner factory
+     *        needs. 
+     *
+     * Request the additonal parameters needed by this preconditioner factory.
+     * The parameter list will have a set of fields that can be filled with 
+     * the requested values. These fields include all requirements, even those
+     * of the sub-solvers if there are any.  Once correctly filled the object
+     * can be updated by calling the updateRequestedParameters with the filled
+     * parameter list.
+     *
+     * \returns A parameter list with the requested parameters.
+     *
+     * \note The default implementation returns Teuchos::null.
+     */
+   virtual Teuchos::RCP<Teuchos::ParameterList> getRequestedParameters() const;
+   
+   /** \brief Update this object with the fields from a parameter list.
+     *
+     * Update the requested fields using a parameter list. This method is
+     * expected to pair with the getRequestedParameters method (i.e. the fields
+     * requested are going to be update using this method).
+     *
+     * \param[in] pl Parameter list containing the requested parameters.
+     *
+     * \returns If the method succeeded (found all its required parameters) this
+     *          method returns true, otherwise it returns false.
+     *
+     * \note The default implementation returns true (it does nothing!).
+     */
+   virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
+
    /** \brief Determine the type of inverse operator to build. 
      *
      * Determine the type of inverse operator to build. If true
@@ -173,7 +204,7 @@ public:
  
 protected: 
    //! some members
-   Teuchos::RCP<const LU2x2Strategy> invOpsStrategy_;
+   Teuchos::RCP<LU2x2Strategy> invOpsStrategy_;
 
    /** If true, use full LDU decomposition, otherwise
      * use the Golub & Wathen style upper block. This is

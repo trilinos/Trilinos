@@ -33,6 +33,7 @@
 #include "src/tLumping.hpp"
 #include "src/tAbsRowSum.hpp"
 #include "src/tNeumannSeries.hpp"
+#include "src/tPCDStrategy.hpp"
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
 #include "src/Epetra/tInterlacedEpetra.hpp"
@@ -100,6 +101,7 @@ int main(int argc,char * argv[])
    Teko_ADD_UNIT_TEST(Teko::Test::tLumping,Lumping);
    Teko_ADD_UNIT_TEST(Teko::Test::tAbsRowSum,AbsRowSum);
    Teko_ADD_UNIT_TEST(Teko::Test::tNeumannSeries,NeumannSeries);
+   Teko_ADD_UNIT_TEST(Teko::Test::tPCDStrategy,PCDStrategy);
    if(not isfast) {
       Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest,LSCIntegrationTest);
       Teko_ADD_UNIT_TEST(Teko::Test::tStridedEpetraOperator,tStridedEpetraOperator);

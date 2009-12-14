@@ -89,6 +89,14 @@ public:
      return itr->second; }
 
    //! Add a named operator to the state object
+   virtual void addLinearOp(const std::string & name,const Teko::LinearOp & lo)
+   { linearOps_[name] = lo; }
+
+   //! Add a named operator to the state object
+   virtual Teko::LinearOp getLinearOp(const std::string & name)
+   { return linearOps_[name]; }
+
+   //! Add a named operator to the state object
    virtual void addModifiableOp(const std::string & name,const Teko::ModifiableLinearOp & mlo)
    { modifiableOp_[name] = mlo; }
 
@@ -111,6 +119,7 @@ protected:
    //! Store a map of inverse linear operators
    std::map<std::string,Teko::InverseLinearOp> inverses_;
    std::map<std::string,Teko::ModifiableLinearOp> modifiableOp_;
+   std::map<std::string,Teko::LinearOp> linearOps_;
 
    //! Stores the initialization state 
    bool isInitialized_;

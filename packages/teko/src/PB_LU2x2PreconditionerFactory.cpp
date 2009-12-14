@@ -6,6 +6,7 @@
 
 // default strategies
 #include "PB_LU2x2DiagonalStrategy.hpp"
+#include "NS/Teko_PCDStrategy.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -22,7 +23,7 @@ LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(LinearOp & hatInvA00,Line
       : invOpsStrategy_(rcp(new StaticLU2x2Strategy(hatInvA00,tildeInvA00,invS))), useFullLDU_(true)
 { }
 
-LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(const RCP<const LU2x2Strategy> & strategy)
+LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(const RCP<LU2x2Strategy> & strategy)
    : invOpsStrategy_(strategy), useFullLDU_(true)
 { }
 
@@ -80,6 +81,45 @@ void LU2x2PreconditionerFactory::initializeFromParameterList(const Teuchos::Para
    invOpsStrategy_ = buildStrategy(stratName,pl,getInverseLibrary());
 }
 
+/** \brief Request the additional parameters this preconditioner factory
+  *        needs. 
+  *
+  * Request the additonal parameters needed by this preconditioner factory.
+  * The parameter list will have a set of fields that can be filled with 
+  * the requested values. These fields include all requirements, even those
+  * of the sub-solvers if there are any.  Once correctly filled the object
+  * can be updated by calling the updateRequestedParameters with the filled
+  * parameter list.
+  *
+  * \returns A parameter list with the requested parameters.
+  *
+  * \note The default implementation returns Teuchos::null.
+  */
+Teuchos::RCP<Teuchos::ParameterList> LU2x2PreconditionerFactory::getRequestedParameters() const
+{
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::getRequestedParameters",0);
+   return invOpsStrategy_->getRequestedParameters();
+}
+
+/** \brief Update this object with the fields from a parameter list.
+  *
+  * Update the requested fields using a parameter list. This method is
+  * expected to pair with the getRequestedParameters method (i.e. the fields
+  * requested are going to be update using this method).
+  *
+  * \param[in] pl Parameter list containing the requested parameters.
+  *
+  * \returns If the method succeeded (found all its required parameters) this
+  *          method returns true, otherwise it returns false.
+  *
+  * \note The default implementation returns true (it does nothing!).
+  */
+bool LU2x2PreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
+{
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::updateRequestedParameters",0);
+   return invOpsStrategy_->updateRequestedParameters(pl);
+}
+
 /////////////////////////////////////////////////////
 // Static members and methods
 /////////////////////////////////////////////////////
@@ -103,13 +143,15 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
                                                              const Teuchos::ParameterList & settings,
                                                              const RCP<const InverseLibrary> & invLib)
 {
-   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildStrategy",10);
+   Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildStrategy",0);
 
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
 
    // request the preconditioner factory from the CloneFactory
    RCP<LU2x2Strategy> strategy = strategyBuilder_.build(name);
+
+   Teko_DEBUG_MSG("What! " << strategy,1);
 
    if(strategy==Teuchos::null) {
       Teko_DEBUG_MSG("Warning: Could not build LU2x2Strategy named \"" 
@@ -158,6 +200,10 @@ void LU2x2PreconditionerFactory::initializeStrategyBuilder()
    // add various strategies to the factory
    clone = rcp(new AutoClone<LU2x2DiagonalStrategy>());
    strategyBuilder_.addClone("Diagonal Strategy",clone);
+
+   // add various strategies to the factory
+   clone = rcp(new AutoClone<NS::PCDStrategy>());
+   strategyBuilder_.addClone("NS PCD Strategy",clone);
 }
 
 } // end namespace Teko
