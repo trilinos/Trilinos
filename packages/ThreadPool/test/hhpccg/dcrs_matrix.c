@@ -250,13 +250,15 @@ double dcrs_apply_and_dot(
 
     get_off_process_entries( matrix , x );
 
-    /*  Perform work with remote contributions on this thread */
-    dcrs_apply_and_dot_span( matrix ,
-                             matrix->n_internal_row ,
-                             matrix->n_local_row ,
-                             x , y , & remote_result );
-
     TPI_Wait(); /* Wait for internal result */
+
+    info.jBeg = matrix->n_internal_row ;
+    info.jEnd = matrix->n_local_row ;
+
+    TPI_Run_threads_reduce( tpi_work_dcrs_apply_and_dot , & info , 
+                            tpi_work_dot_join ,
+                            tpi_work_dot_init ,
+                            sizeof(remote_result) , & remote_result );
 
     result += remote_result ;
   }

@@ -43,7 +43,6 @@ int Run( Worker & worker , void (Worker::*method)(Work &) ,
 //----------------------------------------------------------------------
 
 inline int Lock( int n )    { return TPI_Lock( n ); }
-inline int Trylock( int n ) { return TPI_Trylock( n ); }
 inline int Unlock( int n )  { return TPI_Unlock( n ); }
 
 /** Lock guard to insure that a lock is released
