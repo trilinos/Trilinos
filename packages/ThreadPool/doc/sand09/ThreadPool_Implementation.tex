@@ -1,0 +1,91 @@
+\section{Performance Considerations}
+
+The ThreadPool manages a set of parallel \emph{pthreads} \cite{pthreads:Standard} to run on a CPU-multicore node.
+%
+The purpose of these threads is to support thread-parallel execution of 
+\emph{high performance computing} (HPC) work subprograms.
+%
+As such the implementation of the ThreadPool addresses the following potential performance impediments.
+%
+\begin{blist}
+\item  The time required to create and destroy threads.
+\item  The time required to block and unblock threads.
+\item  Sharing CPU resources with threads that exist outside of the ThreadPool.
+\item  Serialization of code segments within the HPC kernel.
+\end{blist}
+
+
+
+\subsection{Pool of Threads}
+
+The ThreadPool creates a pool of threads at initialization, holds them ready to execute HPC work subprograms, and terminates the threads only upon request
+(Figure~\ref{fig:ThreadPoolStates}).
+%
+It is intended for the HPC application to initialized the ThreadPool when it begins execution and terminate the ThreadPool only after all of the application's work has been completed.
+%
+This \emph{thread pool} strategy pays the time-cost of creating and deleting threads only once.
+
+
+
+\subsection{Ready, Spinning Threads}
+
+A thread is either running or blocked on the compute node.
+%
+When a thread is running 
+(1) it is assigned to a CPU-core and
+(2) its instructions and data are present in the nodes' main memory and cache memory; within limitations of the node's capacity and operating system kernel.
+%
+When a thread is blocked its instructions and data may be ejected from cache memory or even swapped out of main memory.
+%
+Activating a blocked thread can include time-costs of
+(1) reassigning the thread to a CPU-core,
+(2) reloading its instructions and data into main memory and cache memory.
+
+
+The time-cost of unblocking a blocked thread is minimized by keeping threads actively running on the CPU-cores, even when they are doing no work.
+%
+\emph{Spinning} is the term associated with threads which are actively running and waiting for work.
+%
+When the ThreadPool is in the READY state (Figure~\ref{fig:ThreadPoolStates}) the created threads are spinning.
+%
+When an application calls one of the \texttt{TPI\_Run} functions the ThreadPool attaches the application's work subprogram and work information to each thread, and these threads then call the work subprogram in thread-parallel.
+
+
+\subsection{Blocking Threads}
+
+An application may utilize multiple thread-parallel capabilities such as this ThreadPool,
+OpenMP \cite{OpenMP:Website}, 
+Intel threading builing blocks (TBB) \cite{TBB:Book}, or 
+Boost's C++ thread pool \cite{boost:threadpool}.
+%
+If the ThreadPool created threads are spinning in the READY state then these threads will compete with other thread-parallel capabilities for CPU resources.
+%
+As such the ThreadPool provides an application with a means of blocking and unblocking ThreadPool created threads.
+%
+As previously noted, a blocked thread is detached from a CPU core and may have its instruction and data ejected from cache or entirely swapped out of main memory.
+
+
+
+\subsection{Work Completion and Reductions}
+
+Every call to a \texttt{TPI\_Run} function waits for all created threads to return to the READY state before returning to the application.
+%
+This completion operation is a parallel collective barrier in which the application's main thread of execution cannot proceed until all created threads have completed.
+%
+The barrier is a parallel reduction operation with the reduced data being the created threads' transition from the ACTIVE state to the READY state.
+%
+This reduction is implemented as a fan-in operation with the application's main thread of execution being the root of the fan-in tree.
+
+
+An application's parallel reduction operations 
+(Section~\ref{sec:WorkSubprogramWithReduce})
+are attached to the work-completion barrier.
+%
+This implementation performs the given reduction operation without having to introduce locking or additional synchronizations.
+%
+Furthermore, the reduction is deterministic due to the deterministic fan-in operation for the work-completion barrier.
+
+
+
+
+
