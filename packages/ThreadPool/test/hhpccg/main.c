@@ -309,7 +309,9 @@ void hpccg_alloc_and_fill( const int np ,
                                   ( 2 * ghost + my_box[2][1]- my_box[2][0] ) );
 
   /* Generate local layout with ghosting. */
-  box_partition_map( np, my_p, gbox, pbox, ghost,
+  box_partition_map( np, my_p, gbox,
+                     (const int (* const)[3][2]) pbox,
+                     ghost,
                      my_uses_box , map_local_ord ,
                      & matrix->n_internal_row ,
                      & matrix->n_local_row ,
@@ -335,7 +337,7 @@ void hpccg_alloc_and_fill( const int np ,
     for ( iz = my_box[2][0] ; iz < my_box[2][1] ; ++iz ) {
     for ( iy = my_box[1][0] ; iy < my_box[1][1] ; ++iy ) {
     for ( ix = my_box[0][0] ; ix < my_box[0][1] ; ++ix ) {
-      const int irow = box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+      const int irow = box_map_local( (const int (*const)[2]) my_uses_box, map_local_ord, ix, iy, iz );
       int count = 1 ; /* Count the diagonal */
 
       /* Count the off-diagonal terms to follow */
@@ -369,7 +371,7 @@ void hpccg_alloc_and_fill( const int np ,
     for ( iz = my_box[2][0] ; iz < my_box[2][1] ; ++iz ) {
     for ( iy = my_box[1][0] ; iy < my_box[1][1] ; ++iy ) {
     for ( ix = my_box[0][0] ; ix < my_box[0][1] ; ++ix ) {
-      const int irow = box_map_local( my_uses_box, map_local_ord, ix, iy, iz );
+      const int irow = box_map_local( (const int (*const)[2]) my_uses_box, map_local_ord, ix, iy, iz );
       int ipc = pc[ irow ];
 
       /* Diagonal term first */
@@ -393,7 +395,7 @@ void hpccg_alloc_and_fill( const int np ,
           /* 'icol' is mapped for communication */
 
           const int icol =
-            box_map_local( my_uses_box, map_local_ord, g_ix, g_iy, g_iz );
+            box_map_local( (const int (*const)[2]) my_uses_box, map_local_ord, g_ix, g_iy, g_iz );
 
           if ( icol < 0 ) { abort(); }
 

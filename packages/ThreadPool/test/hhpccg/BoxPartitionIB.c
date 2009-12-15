@@ -70,13 +70,6 @@ void box_partition_rcb( const int np ,
 
 /*--------------------------------------------------------------------*/
 
-static int box_disjoint( BoxInput a , BoxInput b )
-{
-  return a[0][1] <= b[0][0] || b[0][1] <= a[0][0] ||
-         a[1][1] <= b[1][0] || b[1][1] <= a[1][0] ||
-         a[2][1] <= b[2][0] || b[2][1] <= a[2][0] ;
-}
-
 static int box_intersect( BoxInput a , BoxInput b , BoxOutput c )
 {
   int i ;
@@ -207,7 +200,6 @@ void box_partition_map(
   int * recv_pc = (int *) malloc( ( np + 1 ) * sizeof(int) );
   int * send_pc = (int *) malloc( ( np + 1 ) * sizeof(int) );
 
-  int * local_id = NULL ;
   int   id_length = 0 ;
 
   int * send_id  = NULL ;
@@ -215,7 +207,7 @@ void box_partition_map(
 
   int own_length , use_length , int_length ;
   int count_interior , count_parallel ;
-  int iLocal , iSend ;
+  int iSend ;
   int g_ix , g_iy , g_iz ;
   int i ;
 
@@ -359,6 +351,14 @@ static void box_print( FILE * fp , const int a[][2] )
                 a[1][0] , a[1][1] ,  
                 a[2][0] , a[2][1] );
 }
+
+static int box_disjoint( BoxInput a , BoxInput b )
+{
+  return a[0][1] <= b[0][0] || b[0][1] <= a[0][0] ||
+         a[1][1] <= b[1][0] || b[1][1] <= a[1][0] ||
+         a[2][1] <= b[2][0] || b[2][1] <= a[2][0] ;
+}
+
 
 static void test_box( const int box[3][2] , const int np )
 {

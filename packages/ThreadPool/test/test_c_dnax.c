@@ -55,7 +55,7 @@ int main( int argc , char ** argv )
 #endif
 
 
-  fprintf( stdcout , "\"TESTING Multiarray 'axpby' with: %s\"\n" ,
+  fprintf( stdout , "\"TESTING Multiarray 'axpby' with: %s\"\n" ,
            TPI_Version() );
  
   for ( i = 0 ; i < num_test ; ++i ) {

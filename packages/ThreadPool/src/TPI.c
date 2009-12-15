@@ -484,6 +484,7 @@ int TPI_Init( int n )
 
     if ( ! result ) {
       int thread_rank = 0 ;
+      int count = 1 ;
 
       /* Initialize one lock for blocking and unblocking */
 
@@ -491,7 +492,6 @@ int TPI_Init( int n )
 
       /* Initialize threads with fan-in / fan-out span of threads */
 
-      int count = 1 ;
       for ( thread_rank = 0 ; thread_rank <= n ; ++thread_rank ) {
         Thread * const thread = thread_pool.m_thread + thread_rank ;
 
