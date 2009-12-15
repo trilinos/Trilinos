@@ -173,6 +173,9 @@ MACRO(SELECT_MODIFIED_PACKAGES_ONLY)
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
+  # ToDo: cd to preCopyrightTrilinos and append the modiedFiles.txt file with that
+  # set of changes.
+
   EXECUTE_PROCESS(
     COMMAND ${TRILINOS_CMAKE_DIR}/python/get-trilinos-packages-from-files-list.py
       --files-list-file=${MODIFIED_FILES_FILE_NAME}
@@ -503,6 +506,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     CTEST_UPDATE( SOURCE "${CTEST_SOURCE_DIRECTORY}"
       RETURN_VALUE  UPDATE_RETURN_VAL)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
+
+    # ToDo: Add git command to update preCopyrightTrilinos
     
     IF(CTEST_TEST_TYPE STREQUAL Continuous)
       IF(UPDATE_RETURN_VAL EQUAL 0)
@@ -511,7 +516,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
           RETURN()
         ENDIF()
       ENDIF()
-    ENDIF()    
+    ENDIF()
 
     #setting branch switch to success incase we are not doing a switch to a different branch.
     SET(EG_SWITCH_RETURN_VAL "0")

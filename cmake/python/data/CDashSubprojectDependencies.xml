@@ -587,6 +587,38 @@
       <Email address="aristos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Piro">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Kokkos" type="ILO"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="GlobiPack" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="OptiPack" type="LO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="ILO"/>
+    <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="TriKota" type="LO"/>
+    <Dependency name="Stokhos" type="LO"/>
+    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="NOX" type="LO"/>
+    <Dependency name="Rythmos" type="LO"/>
+    <Dependency name="MOOCHO" type="LO"/>
+    <EmailAddresses>
+      <Email address="piro-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Sundance">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
