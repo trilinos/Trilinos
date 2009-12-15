@@ -28,7 +28,7 @@ void PCDStrategy::buildTimers()
       opsTimer_ = TimeMonitor::getNewTimer("PCDStrategy::initializePrec buildOps");
 }
 
-PCDStrategy::PCDStrategy() 
+PCDStrategy::PCDStrategy() : massInverseType_(Diagonal)
 { 
    buildTimers();
 }
@@ -36,7 +36,7 @@ PCDStrategy::PCDStrategy()
 //! Constructor to set the inverse factories.
 PCDStrategy::PCDStrategy(const Teuchos::RCP<InverseFactory> & invFA,
                                              const Teuchos::RCP<InverseFactory> & invS)
-   : invFactoryF_(invFA), invFactoryS_(invS) 
+   : invFactoryF_(invFA), invFactoryS_(invS), massInverseType_(Diagonal)
 {
    buildTimers();
 }
@@ -94,7 +94,23 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    LinearOp C  = Teko::getBlock(1,1,A);
 
    LinearOp  Qp = state.getLinearOp(presMassStr);
+
+   // build the inverse Laplacian complement
+   /////////////////////////////////////////////
    LinearOp iQp = getInvDiagonalOp(Qp,massInverseType_);
+   if(massInverseType_==NotDiag) {
+      ModifiableLinearOp & invMass = state.getModifiableOp("invMass");
+      Teko_DEBUG_SCOPE("Building inv(Mass)",10);
+
+      if(invMass==Teuchos::null)
+         invMass = buildInverse(*invFactoryS_,Qp);
+      else
+         rebuildInverse(*invFactoryS_,Qp,invMass);
+
+      iQp = invMass;
+   }
+   else
+      iQp = getInvDiagonalOp(Qp,massInverseType_);
 
    // build the inverse Laplacian complement
    /////////////////////////////////////////////
@@ -172,9 +188,9 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
 
       // build inverse types
       massInverseType_ = getDiagonalType(massInverseStr);
-      if(massInverseType_==NotDiag)
-         *getOutputStream() << "PCD Strategy requires \"Inverse Mass Type\" to be: " 
-                            << "Diagonal, AbsRowSum or Lumped" << std::endl;
+      // if(massInverseType_==NotDiag)
+      //    *getOutputStream() << "PCD Strategy requires \"Inverse Mass Type\" to be: " 
+      //                       << "Diagonal, AbsRowSum or Lumped" << std::endl;
    }
 
    // set defaults as needed
