@@ -1,8 +1,11 @@
-/* Tifpack_config.h.in. This file is preprocessed by cmake to create Tifpack_config.h. */
+/* Tifpack_config.h.in is preprocessed by cmake to create Tifpack_config.h. */
 
-/* Define if want to build tifpack-debug */
+/* Define if we want to build tifpack-debug */
 #cmakedefine HAVE_TIFPACK_DEBUG
 
 /* Define if we have MPI */
 #cmakedefine HAVE_TIFPACK_MPI
+
+/* Define if we have the QD extended-precision TPL */
+#cmakedefine HAVE_TIFPACK_QD
 

@@ -357,7 +357,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="QD"/>
     <EmailAddresses>
       <Checkin address="tifpack-checkins@software.sandia.gov"/>
       <Regression address="tifpack-regression@software.sandia.gov"/>

@@ -652,7 +652,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ApplyInverseGS_Row
         
         for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-          double dtemp = 0.0;
+          Scalar dtemp = 0.0;
           for (size_t k = 0 ; k < NumEntries ; ++k) {
             LocalOrdinal col = Indices[k];
             dtemp += Values[k] * y2_ptr[m][col];
@@ -1101,10 +1101,10 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
   Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
     Scalar& diag = DiagView[i];
-    if (std::abs(diag) < MinDiagonalValue_)
+    if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < MinDiagonalValue_)
       diag = MinDiagonalValue_;
-    if (diag != 0.0)
-      diag = 1.0 / diag;
+    if (diag != Teuchos::ScalarTraits<Scalar>::zero())
+      diag = Teuchos::ScalarTraits<Scalar>::one() / diag;
   }
   ComputeFlops_ += NumMyRows_;
 

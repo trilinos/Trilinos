@@ -37,6 +37,10 @@
 #include <Tifpack_Version.hpp>
 #include <iostream>
 
+#ifdef HAVE_TIFPACK_QD
+#include <qd/dd_real.h>
+#endif
+
 #include <Tifpack_UnitTestHelpers.hpp>
 #include <Tifpack_PointRelaxation.hpp>
 
@@ -108,6 +112,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackPointRelaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+
+#ifdef HAVE_TIFPACK_QD
+UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
+#endif
 
 }//namespace <anonymous>
 

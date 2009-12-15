@@ -44,9 +44,25 @@ specific unit test suites.
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
+#ifdef HAVE_TIFPACK_QD
+#include <qd/dd_real.h>
+#endif
 
 int main( int argc, char* argv[] )
 {
+#ifdef HAVE_TIFPACK_QD
+  //If we're using extended-precision types, we have to run a QD-specific
+  //function at the beginning and end of our main:
+  unsigned int old_cw;
+  fpu_fix_start(&old_cw);
+#endif
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+  int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+#ifdef HAVE_TIFPACK_QD
+  fpu_fix_end(&old_cw);
+#endif
+
+  return ret;
 }

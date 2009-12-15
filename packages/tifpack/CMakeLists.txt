@@ -26,6 +26,22 @@ ADD_OPTION_AND_DEFINE(
   ${Trilinos_ENABLE_DEBUG}
   )
 
+IF (TPL_ENABLE_QD)
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_QD
+  HAVE_TIFPACK_QD
+  "Enable use of the QD TPL."
+  ${TPL_ENABLE_QD}
+  )
+ENDIF()
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_MPI
+  HAVE_TIFPACK_MPI
+  "Enable use of the MPI TPL."
+  ${Trilinos_ENABLE_MPI}
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
