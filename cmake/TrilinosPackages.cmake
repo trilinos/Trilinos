@@ -94,7 +94,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Rythmos               rythmos                        PS
   MOOCHO                moocho                         PS
   Aristos               aristos                        EX
-  Sundance              Sundance                       PS
+  Sundance              Sundance                       SS # Could be PS based on deps (BUG: 4669)
   CTrilinos             CTrilinos                      PS
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
