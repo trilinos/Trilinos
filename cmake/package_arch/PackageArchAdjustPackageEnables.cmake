@@ -14,6 +14,50 @@ INCLUDE(RemoveGlobalDuplicates)
 
 
 #
+# Macro that helps to set up backward package dependency lists
+#
+
+FUNCTION(PACKAGE_ARCH_SET_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
+ 
+  #MESSAGE("\nPACKAGE_ARCH_SET_DEP_PACKAGES: ${PACKAGE_NAME} ${LIST_TYPE}")
+
+  SET(PACKAGE_DEPS_LIST)
+
+  FOREACH(DEP_PKG ${${LIST_TYPE}})
+    FIND_LIST_ELEMENT( ${PROJECT_NAME}_PACKAGES ${DEP_PKG} DEP_PKG_FOUND)
+    #PRINT_VAR(DEP_PKG_FOUND)
+    IF (DEP_PKG_FOUND)
+      LIST(APPEND PACKAGE_DEPS_LIST ${DEP_PKG})
+    ELSE()
+      IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
+        MULTILINE_SET(ERRMSG
+          "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
+          " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
+          " '${DEP_PKG}' is either not defined or is listed later in the package order."
+          "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
+          " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
+          " '${PACKAGE_NAME}'.")
+        MESSAGE(FATAL_ERROR ${ERRMSG})
+      ELSE()
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+          MESSAGE(
+            "\n***"
+            "\n*** WARNING: The package ${DEP_PKG} which is a dependent package of"
+              " ${PACKAGE_NAME} being ignored because ${DEP_PKG} is missing!"
+            "\n***\n" )
+        ENDIF()
+      ENDIF()
+    ENDIF()
+  ENDFOREACH()
+
+  #PRINT_VAR(PACKAGE_DEPS_LIST)
+
+  SET(${PACKAGE_NAME}_${LIST_TYPE} ${PACKAGE_DEPS_LIST} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
 # Macro that helps to set up forward package dependency lists
 #
 
@@ -229,50 +273,6 @@ FUNCTION(ASSERT_DEFINED_PACKAGE_VAR PACKAGE_VAR PACKAGE_NAME)
       "Error, the package variable ${PACKAGE_VAR} was not defined correctly for package ${PACKAGE_NAME}!"
       )
   ENDIF()
-ENDFUNCTION()
-
-
-#
-# Macro that helps to set up backward package dependency lists
-#
-
-FUNCTION(PACKAGE_ARCH_SET_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
- 
-  #MESSAGE("\nPACKAGE_ARCH_SET_DEP_PACKAGES: ${PACKAGE_NAME} ${LIST_TYPE}")
-
-  SET(PACKAGE_DEPS_LIST)
-
-  FOREACH(DEP_PKG ${${LIST_TYPE}})
-    FIND_LIST_ELEMENT( ${PROJECT_NAME}_PACKAGES ${DEP_PKG} DEP_PKG_FOUND)
-    #PRINT_VAR(DEP_PKG_FOUND)
-    IF (DEP_PKG_FOUND)
-      LIST(APPEND PACKAGE_DEPS_LIST ${DEP_PKG})
-    ELSE()
-      IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-        MULTILINE_SET(ERRMSG
-          "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
-          " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
-          " '${DEP_PKG}' is either not defined or is listed later in the package order."
-          "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
-          " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
-          " '${PACKAGE_NAME}'.")
-        MESSAGE(FATAL_ERROR ${ERRMSG})
-      ELSE()
-        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          MESSAGE(
-            "\n***"
-            "\n*** WARNING: The package ${DEP_PKG} which is a dependent package of"
-              " ${PACKAGE_NAME} being ignored because ${DEP_PKG} is missing!"
-            "\n***\n" )
-        ENDIF()
-      ENDIF()
-    ENDIF()
-  ENDFOREACH()
-
-  #PRINT_VAR(PACKAGE_DEPS_LIST)
-
-  SET(${PACKAGE_NAME}_${LIST_TYPE} ${PACKAGE_DEPS_LIST} PARENT_SCOPE)
-
 ENDFUNCTION()
 
 

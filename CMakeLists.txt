@@ -410,6 +410,4 @@ CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
 MESSAGE("")
 MESSAGE("Exporting library dependencies ...")
 MESSAGE("")
-export_library_dependencies( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake
- )
-
+EXPORT_LIBRARY_DEPENDENCIES( ${Trilinos_BINARY_DIR}/TrilinosLibraryDepends.cmake )
