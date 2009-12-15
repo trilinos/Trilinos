@@ -35,12 +35,14 @@ ADD_OPTION_AND_DEFINE(
   )
 ENDIF()
 
+IF (Trilinos_ENABLE_MPI)
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_MPI
   HAVE_TIFPACK_MPI
   "Enable use of the MPI TPL."
   ${Trilinos_ENABLE_MPI}
   )
+ENDIF()
 
 #
 # C) Add the libraries, tests, and examples
