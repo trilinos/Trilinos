@@ -10,6 +10,7 @@
 // Teko includes
 #include "PB_Utilities.hpp"
 #include "PB_BlockPreconditionerFactory.hpp"
+#include "Teko_PreconditionerLinearOp.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
@@ -143,8 +144,11 @@ InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & line
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory_->createPrec();
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(linearOp),&*prec);
 
-   RCP<Thyra::LinearOpBase<double> > precOp = prec->getNonconstUnspecifiedPrecOp();
-   Teuchos::set_extra_data(prec,"prec",Teuchos::inOutArg(precOp));
+//   RCP<Thyra::LinearOpBase<double> > precOp = prec->getNonconstUnspecifiedPrecOp();
+//   Teuchos::set_extra_data(prec,"prec",Teuchos::inOutArg(precOp));
+
+   RCP<Teko::PreconditionerLinearOp<double> > precOp 
+         = rcp(new Teko::PreconditionerLinearOp<double>(prec));
 
    return precOp;
 }
@@ -164,8 +168,10 @@ void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,Invers
 {
    Teko_DEBUG_MSG("BEGIN PreconditionerInverseFactory::rebuildInverse",10);
 
+   // RCP<Thyra::PreconditionerBase<double> > prec 
+   //       = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
    RCP<Thyra::PreconditionerBase<double> > prec 
-         = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
+         = Teuchos::rcp_dynamic_cast<Teko::PreconditionerLinearOp<double> >(dest)->getNonconstPreconditioner();
 
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(source),&*prec);
 

@@ -41,6 +41,16 @@
 #include "src/Epetra/tBlockedEpetraOperator.hpp"
 #include "src/Epetra/tEpetraThyraConverter.hpp"
 
+void gdbIn()
+{
+    int i = 0;
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    printf("PID %d on %s ready for attach\n", getpid(), hostname);
+    fflush(stdout);
+    while (0 == i)
+        sleep(5);
+}
 
 int main(int argc,char * argv[])
 {
@@ -82,11 +92,13 @@ int main(int argc,char * argv[])
    termout->setOutputToRootOnly(0);
    failout->setOutputToRootOnly(0);
 
+   // gdbIn();
+
    Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
    Teko_ADD_UNIT_TEST(Teko::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
-   Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
+   // Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
    Teko_ADD_UNIT_TEST(Teko::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
    Teko_ADD_UNIT_TEST(Teko::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
