@@ -14,11 +14,27 @@ INCLUDE(RemoveGlobalDuplicates)
 
 
 #
-# Macro that helps to set up backward package dependency lists
+# Function that creates error message about missing/misspelled package.
+#
+
+FUNCTION(PACKAGE_ARCH_ABORT_ON_MISSING_PACKAGE   DEP_PKG  PACKAGE_NAME  DEP_PKG_LIST_NAME)
+  MULTILINE_SET(ERRMSG
+    "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
+    " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
+    " '${DEP_PKG}' is either not defined or is listed later in the package order."
+    "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
+    " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
+    " '${PACKAGE_NAME}'.")
+  MESSAGE(FATAL_ERROR ${ERRMSG})
+ENDFUNCTION()
+
+
+#
+# Function that helps to set up backward package dependency lists
 #
 
 FUNCTION(PACKAGE_ARCH_SET_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
- 
+
   #MESSAGE("\nPACKAGE_ARCH_SET_DEP_PACKAGES: ${PACKAGE_NAME} ${LIST_TYPE}")
 
   SET(PACKAGE_DEPS_LIST)
@@ -30,14 +46,15 @@ FUNCTION(PACKAGE_ARCH_SET_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
       LIST(APPEND PACKAGE_DEPS_LIST ${DEP_PKG})
     ELSE()
       IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-        MULTILINE_SET(ERRMSG
-          "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
-          " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
-          " '${DEP_PKG}' is either not defined or is listed later in the package order."
-          "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
-          " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
-          " '${PACKAGE_NAME}'.")
-        MESSAGE(FATAL_ERROR ${ERRMSG})
+        PACKAGE_ARCH_ABORT_ON_MISSING_PACKAGE(${DEP_PKG} ${ PACKAGE_NAME} ${DEP_PKG_LIST_NAME})
+#        MULTILINE_SET(ERRMSG
+#          "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
+#          " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
+#          " '${DEP_PKG}' is either not defined or is listed later in the package order."
+#          "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
+#          " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
+#          " '${PACKAGE_NAME}'.")
+#        MESSAGE(FATAL_ERROR ${ERRMSG})
       ELSE()
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(
@@ -77,14 +94,15 @@ FUNCTION(PACKAGE_ARCH_APPEND_FORWARD_DEP_PACKAGES PACKAGE_NAME LIST_TYPE)
     #MESSAGE("FWD_DEP_PKG_LIST_NAME = ${FWD_DEP_PKG_LIST_NAME}")
     IF (NOT DEFINED ${FWD_DEP_PKG_LIST_NAME})
       IF (${PROJECT_NAME}_ASSERT_MISSING_PACKAGES)
-        MULTILINE_SET(ERRMSG
-          "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
-          " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
-          " '${DEP_PKG}' is either not defined or is listed later in the package order."
-          "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
-          " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
-          " '${PACKAGE_NAME}'.")
-        MESSAGE(FATAL_ERROR ${ERRMSG})
+        PACKAGE_ARCH_ABORT_ON_MISSING_PACKAGE(${DEP_PKG} ${ PACKAGE_NAME} ${DEP_PKG_LIST_NAME})
+#        MULTILINE_SET(ERRMSG
+#          "Error, the package '${DEP_PKG}' is listed as a dependency of the package"
+#          " '${PACKAGE_NAME}' in the list '${DEP_PKG_LIST_NAME}' but the package"
+#          " '${DEP_PKG}' is either not defined or is listed later in the package order."
+#          "  Check the spelling of '${DEP_PKG}' or see how it is listed in"
+#          " ${PROJECT_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to"
+#          " '${PACKAGE_NAME}'.")
+#        MESSAGE(FATAL_ERROR ${ERRMSG})
       ELSE()
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(
