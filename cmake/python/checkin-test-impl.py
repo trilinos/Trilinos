@@ -77,9 +77,7 @@ commit/push:
 
   $ cd $TRILINOS_HOME
   $ cd CHECKIN
-  $ ../checkin-test.py \
-      --make-options="-j4" --ctest-options="-j4" --ctest-timeout=180 \
-      [--commit -commit-msg-header-file=checkin_message] \
+  $ ../checkin-test.py -j4 [--commit -commit-msg-header-file=checkin_message] \
       --do-all --push
 
   NOTE: The above will: a) (optionally) commit local changes, b) pull updates
@@ -168,7 +166,7 @@ extra builds specified with --extra-builds):
   --local-do-all is set.)
   
   4.b) Build all configured code with 'make' (e.g. with -jN set through
-  --make-options).  (done if --build, --do-all, or --local-do-all is set.)
+  -j or --make-options).  (done if --build, --do-all, or --local-do-all is set.)
   
   4.c) Run all tests for enabled packages.  (done if --test, --do-all, or
   --local-do-all is set.)
@@ -544,6 +542,10 @@ clp.add_option(
   +" --disable-packages." )
 
 clp.add_option(
+  "-j", dest="overallNumProcs", type="string", default="",
+  help="The options to pass to make and ctest (e.g. -j4)." )
+
+clp.add_option(
   "--make-options", dest="makeOptions", type="string", default="",
   help="The options to pass to make (e.g. -j4)." )
 
@@ -764,6 +766,8 @@ if options.enableFwdPackages:
 else:
   print "  --no-enable-fwd-packages \\"
 print "  --extra-cmake-options='"+options.extraCmakeOptions+"' \\"
+if options.overallNumProcs:
+  print "  -j"+options.overallNumProcs+" \\"
 print "  --make-options='"+options.makeOptions+"' \\"
 print "  --ctest-options='"+options.ctestOptions+"' \\"
 print "  --ctest-timeout="+str(options.ctestTimeOut)+" \\"

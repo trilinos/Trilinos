@@ -81,9 +81,7 @@ echo "
 #
 
 ../../Trilinos/checkin-test.py \
---make-options="-j4" \
---ctest-options="-j4" \
---ctest-timeout=180 \
+-j4 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
 

@@ -1293,6 +1293,10 @@ def checkinTest(inOptions):
 
   assertEgGitVersions(inOptions)
 
+  if inOptions.overallNumProcs:
+    inOptions.makeOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.makeOptions
+    inOptions.ctestOptions = "-j"+inOptions.overallNumProcs+" "+inOptions.ctestOptions
+
   assertPackageNames("--enable-packages", inOptions.enablePackages)
   assertPackageNames("--disable-packages", inOptions.disablePackages)
 
