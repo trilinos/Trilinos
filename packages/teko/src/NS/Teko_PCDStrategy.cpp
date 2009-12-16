@@ -135,8 +135,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
       // build Schur-complement
       LinearOp pcd = state.getLinearOp(pcdStr);
       LinearOp invL = invLaplace;
-      // LinearOp invS = multiply(multiply(invL,pcd),iQp);
-      LinearOp invS = multiply(iQp,multiply(pcd,invL));
+      LinearOp invS = multiply(iQp,pcd,invL);
 
       state.addLinearOp("invS",invS);
    }

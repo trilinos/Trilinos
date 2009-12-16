@@ -98,7 +98,7 @@ int main(int argc,char * argv[])
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
    Teko_ADD_UNIT_TEST(Teko::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
-   // Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
    Teko_ADD_UNIT_TEST(Teko::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
    Teko_ADD_UNIT_TEST(Teko::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);

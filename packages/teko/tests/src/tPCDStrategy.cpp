@@ -189,7 +189,7 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
 
       Teko::LinearOp invLaplace = inverseFact->buildInverse(laplace);
       Teko::LinearOp iQp = Teko::getInvDiagonalOp(Qp);
-      Teko::LinearOp invSchur = multiply(invLaplace,Fp,iQp);
+      Teko::LinearOp invSchur = multiply(iQp,Fp,invLaplace);
 
       Teko::BlockPreconditionerState state;
       Teko::NS::PCDStrategy strategy(inverseFact,inverseFact);
