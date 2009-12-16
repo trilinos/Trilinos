@@ -97,7 +97,7 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
 
    // build the inverse Laplacian complement
    /////////////////////////////////////////////
-   LinearOp iQp = getInvDiagonalOp(Qp,massInverseType_);
+   LinearOp iQp;
    if(massInverseType_==NotDiag) {
       ModifiableLinearOp & invMass = state.getModifiableOp("invMass");
       Teko_DEBUG_SCOPE("Building inv(Mass)",10);
@@ -135,7 +135,8 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
       // build Schur-complement
       LinearOp pcd = state.getLinearOp(pcdStr);
       LinearOp invL = invLaplace;
-      LinearOp invS = multiply(multiply(invL,pcd),iQp);
+      // LinearOp invS = multiply(multiply(invL,pcd),iQp);
+      LinearOp invS = multiply(iQp,multiply(pcd,invL));
 
       state.addLinearOp("invS",invS);
    }
@@ -180,7 +181,7 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
    if(pl.isParameter("Inverse Type"))
       invStr = pl.get<std::string>("Inverse Type");
    if(pl.isParameter("Inverse F Type"))
-      invFStr = pl.get<std::string>("Inverse Velocity Type");
+      invFStr = pl.get<std::string>("Inverse F Type");
    if(pl.isParameter("Inverse Laplace Type"))
       invSStr = pl.get<std::string>("Inverse Laplace Type");
    if(pl.isParameter("Inverse Mass Type")) {
