@@ -101,11 +101,9 @@ bool FiniteDifferenceColoringWithUpdate::computeJacobian(const Epetra_Vector& x,
   }
 
   if(jacobianComputed && use_update){
-    if(!x.Comm().MyPID()) printf("CMS: Using Update Color Map\n");
     rv=differenceProbe(x,*testMatrix->jacobian,*updateColorMap_);
   }
   else{
-    if(!x.Comm().MyPID()) printf("CMS: Using Full Color Map...\n");
     rv=differenceProbe(x,*testMatrix->jacobian,*colorMap_);
     jacobianComputed=rv;
   }

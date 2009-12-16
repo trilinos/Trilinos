@@ -209,6 +209,16 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "Test passed!"
       )
+
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      1DfemStratimikosReuse
+      SOURCES 
+      1DfemInterface.H
+      1DfemInterface.C
+      1DfemStratimikosReuse.C
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Test passed!"
+      )
   ENDIF()
   
   

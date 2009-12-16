@@ -61,24 +61,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardSensitivity_UnitTest
-    SOURCES Rythmos_ForwardSensitivity_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
     HermiteInterpolator_UnitTest
     SOURCES Rythmos_HermiteInterpolator_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ImplicitBDF_UnitTest
-    SOURCES Rythmos_ImplicitBDF_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -152,14 +136,48 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    VanderPolModel_UnitTest
-    SOURCES Rythmos_VanderPolModel_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
+IF (${PACKAGE_NAME}_ENABLE_Sacado)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      VanderPolModel_UnitTest
+      SOURCES Rythmos_VanderPolModel_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      AdjointModelEvaluator_UnitTest
+      SOURCES Rythmos_AdjointModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      ForwardSensitivity_UnitTest
+      SOURCES Rythmos_ForwardSensitivity_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      ImplicitBDF_UnitTest
+      SOURCES Rythmos_ImplicitBDF_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      BasicDiscreteAdjointStepperTester_UnitTest
+      SOURCES Rythmos_BasicDiscreteAdjointStepperTester_UnitTest.cpp Rythmos_UnitTest.cpp
+      DEPLIBS rythmos_test_models
+      HOST None
+      NUM_MPI_PROCS 1
+      STANDARD_PASS_OUTPUT
+      )
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     StepperBuilder_UnitTest
@@ -214,14 +232,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Thyra_UnitTest
     SOURCES Rythmos_Thyra_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    AdjointModelEvaluator_UnitTest
-    SOURCES Rythmos_AdjointModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -284,18 +294,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    BasicDiscreteAdjointStepperTester_UnitTest
-    SOURCES Rythmos_BasicDiscreteAdjointStepperTester_UnitTest.cpp Rythmos_UnitTest.cpp
-    DEPLIBS rythmos_test_models
-    HOST None
-    NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
-    )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
     TestModelBuilder_UnitTest
     SOURCES Rythmos_TestModelBuilder_UnitTest.cpp Rythmos_UnitTest.cpp Rythmos_UnitTestModels.cpp
     DEPLIBS rythmos_test_models
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
     )
+

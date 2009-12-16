@@ -29,6 +29,8 @@
 
 #include "VanderPolModel.hpp"
 
+#ifdef Rythmos_ENABLE_Sacado
+
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #include "Sacado.hpp"
@@ -683,3 +685,5 @@ Rythmos::vanderPolModel(const RCP<ParameterList> &pl)
   model->setParameterList(pl);
   return(model);
 }
+
+#endif // Rythmos_ENABLE_Sacado

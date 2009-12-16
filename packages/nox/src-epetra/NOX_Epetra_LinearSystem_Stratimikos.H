@@ -55,6 +55,15 @@
 
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
+#include "Thyra_PreconditionerBase.hpp"
+
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_PreconditionerFactoryBase.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+
+
 
 // Forward declares
 namespace NOX {
@@ -78,14 +87,66 @@ namespace Epetra {
 
 \brief Concrete implementation of NOX::Epetra::LinearSolver for Stratimikos.
 
-This solver provides the linear algebra services provided
-by Trilinos through the Stratimikos linear solver strategies
+This solver class provides the linear algebra services 
+through the Stratimikos linear solver strategies
 package.
  
 This class handles construction of both the preconditioners 
 and solvers.  All options are determined through parameter 
 lists and the basic constructors. 
 
+<B>Constructing a Linear System</B>
+
+There are two constructors for this linear system class.
+The first is for supplying a Jacobian operator which, if
+it is a Epetra_RowMatrix, can be used to generate a 
+preconditioner. 
+
+The second is for the cases when the user wants to supply
+an operator other than the Jacobian for use in preconditioning.
+This constructor allows for two use cases itself. The default
+case is that the preconditioning operator is a matrix that is
+an approximation of the Jacobian, which is used internally
+to generate a preconditioner (such as by ILU). The second
+use case is where the preconditioning operator supplied to
+this constructor approximates the inverse of the Jacobian
+matrix. This case requires that the bool option 
+precIsAlreadyInverted is set as true (optional eighth argument).
+
+As compared to the NOX::Epetra::LinearSystem::AztecOO class,
+this implementation has dropped internal support for 
+Matrix-Free and Finite Difference Jacobians. However, 
+the Jacobian operator supplied to this class can be
+constructed using these classes, as is done in the 
+1DfemStratimikos examples.
+
+<B>"Stratimikos Linear Solver" sublist parameters</B>
+
+A Teuchos::ParameterList called "Stratimikos Linear Solver" is input to this class
+to select all the options. This list itself contains only 2 sublists.
+
+<li> "Stratimikos" sublist - This very extensive list is sent directly 
+to the Stratimikos layer to allow selection of numerous linear solver
+and preconditioning strategies. This list is documented here:
+Stratimikos::DefaultLinearSolverBuilder .
+
+<li> "NOX Stratimikos Options" sublist - This allows the NOX driver code
+for Stratimikos to parse some options, such as for preconditioner reuse.
+
+<ul>
+<li> "Preconditioner Reuse Policy" - (string) Allows the user to set how and when the preconditioner should be computed.  This flag supports native Aztec, Ifpack and ML preconditioners.  There are three options:
+    <ul>
+    <li>"Rebuild" - The "Rebuild" option always completely destroys and then rebuilds the preconditioner each time a linear solve is requested.
+    <li>"Reuse" - The group/linear solver will not recompute the preconditioner even if the group's solution vector changes.  It just blindly reuses what has been constructed.  This turns off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  We don't recommend users trying this.
+    <li>"Recompute" - Recomputes the preconditioner, but will try to efficiently reuse any objects that don't need to be destroyed.  How efficient the "Recompute" option is depends on the type of preconditioner.  For example if we are using ILU from the Ifpack library, we would like to not destroy and reallocate the graph each solve.  With this option, we tell Ifpack to reuse the graph from last time - e.g the sparisty pattern has not changed between applications of the preconditioner.
+    </ul>
+
+<li> "Max Age Of Prec" - (int) If the "Preconditioner Reuse Policy" is set to "Reuse", this integer tells the linear system how many times to reuse the preconditioner before rebuilding it.  Defaults to 1.
+
+<li> "Zero Initial Guess" - boolean.  Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).  Defaults to false.
+
+
+</ul>
  */
 
 class LinearSystemStratimikos : public virtual NOX::Epetra::LinearSystem {
@@ -109,14 +170,15 @@ public:
   //! Constructor with a user supplied Jacobian Operator.  
   /*! Either there is no preconditioning or the preconditioner will be 
     used/created internally.  The Jacobian (if derived from an 
-    Epetra_RowMatrix class can be used with an internal preconditioner. 
-    The stratimikosParams object is sent directly to the Stratimikos
-    package. See Stratimikos for full documentation.
+    Epetra_RowMatrix class) can be used to internally to create a
+    preconditioner. The stratimikosLinSolParam list needs to have 
+    a sublist called Stratimikos which is sent directly to the 
+    Stratimikos package. See Stratimikos for full documentation.
    */
 
   LinearSystemStratimikos(
     Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& stratimikosParams, 
+    Teuchos::ParameterList& stratimikosLinSolParams, 
     const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
     const Teuchos::RCP<Epetra_Operator>& J,
     const NOX::Epetra::Vector& cloneVector,
@@ -132,12 +194,13 @@ public:
       is already assumed to approximate J-inverse and it is
       just applied as-is. 
   
-      The stratimikosParams object is sent directly to the Stratimikos
-      package. See Stratimikos for full documentation.
+      The stratimikosLinSolParams list needs to have a 
+      sublist called Stratimikos which is sent directly to the 
+      Stratimikos package. See Stratimikos for full documentation.
   */
   LinearSystemStratimikos(
     Teuchos::ParameterList& printingParams, 
-    Teuchos::ParameterList& linearSolverParams, 
+    Teuchos::ParameterList& stratimikosLinSolParams, 
     const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
     const Teuchos::RCP<Epetra_Operator>& J,  
     const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
@@ -169,20 +232,10 @@ public:
 				    Teuchos::ParameterList& linearSolverParams,
 				    bool recomputeGraph) const;
   
-  /*! 
-    \brief 
-    Deletes all objects associated with the chosen preconditioner.
-    This is called during linear solves and when the solution vector
-    changes to reset the preconditioner.
-  */
   virtual bool destroyPreconditioner() const;
 
-  /*! \brief Recalculates the preconditioner using an already allocated graph.
-    
-    Use this to compute a new preconditioner while using the same
-    graph for the preconditioner.  This avoids deleting and
-    reallocating the memory required for the preconditioner and
-    results in a big speed-up for large-scale jobs.
+  /*! \brief recompute preconditioner not supported here. The
+      current supported options are rebuild and reuse.
   */
   virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x, 
 			     Teuchos::ParameterList& linearSolverParams) const;
@@ -190,7 +243,7 @@ public:
   virtual PreconditionerReusePolicyType 
   getPreconditionerPolicy(bool advanceReuseCounter=true);
 
-  //! Reset the linear solver parameters.
+  //! Reset the NOX Stratimimos Options, such as preconditioner reuse.
   virtual void reset(Teuchos::ParameterList& linearSolverParams);
 
   //! Get the scaling object.
@@ -254,7 +307,7 @@ public:
 
 protected:
 
-  //! Builds the linear op with solve factory
+  //! Builds the linear op with solve factory from the Stratimikos sublist
   void initializeStratimikos(Teuchos::ParameterList& stratParams);
 
   //! Returns the type of operator that is passed into the group constructors.
@@ -313,6 +366,7 @@ protected:
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory;
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows;
   Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp;
+  mutable Teuchos::RCP<Thyra::PreconditionerBase<double,double> > precObj;
 
   //! Scaling object supplied by the user
   Teuchos::RCP<NOX::Epetra::Scaling> scaling;

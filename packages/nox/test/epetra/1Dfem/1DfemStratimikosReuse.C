@@ -183,11 +183,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& noxStratParams = stratLinSolParams.sublist("NOX Stratimikos Options");
   Teuchos::ParameterList& stratParams = stratLinSolParams.sublist("Stratimikos");
 
-//  noxStratParams.set("Preconditioner Reuse Policy","Reuse");
-//  noxStratParams.set("Max Age of Prec", 3);
+  noxStratParams.set("Preconditioner Reuse Policy","Reuse");
+  noxStratParams.set("Max Age Of Prec", 2);
 
   stratParams.set("Linear Solver Type", "Belos");  
-  stratParams.set("Preconditioner Type", "None");  
+  stratParams.set("Preconditioner Type", "Ifpack");  
   Teuchos::ParameterList&  belosParams = stratParams
      .sublist("Linear Solver Types").sublist("Belos");
   belosParams.set("Solver Type","Block GMRES");
