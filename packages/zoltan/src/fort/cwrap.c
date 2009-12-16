@@ -1600,7 +1600,7 @@ int Zfw_Order(
  int *num_gid_entries,
  int *num_obj,
  ZOLTAN_ID_PTR gids, 
- int *rank, int *iperm)
+ int *perm)
 {
    struct Zoltan_Struct *lb;
    int ierr;
@@ -1608,7 +1608,7 @@ int Zfw_Order(
 
    Zoltan_Current = lb;
    ierr = Zoltan_Order(lb,*num_gid_entries,*num_obj,
-                       gids, rank, iperm);
+                       gids, perm);
    return ierr;
 }
 

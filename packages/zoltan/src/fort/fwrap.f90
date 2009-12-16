@@ -830,7 +830,7 @@ end interface
 
 interface
 function Zfw_Order(zz,nbytes,num_gid_entries,num_obj, &
-                   gids,rank,iperm)
+                   gids,perm)
 use zoltan_types
 use zoltan_user_data
 implicit none
@@ -840,7 +840,7 @@ INTEGER(Zoltan_INT), INTENT(IN) :: nbytes
 INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 INTEGER(Zoltan_INT) :: gids(*)
-INTEGER(Zoltan_INT) :: rank(*), iperm(*)
+INTEGER(Zoltan_INT) :: perm(*)
 end function Zfw_Order
 end interface
 
@@ -2140,13 +2140,13 @@ if (free_export_procs) deallocate(export_procs)
 end function Zf90_Help_Migrate
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-function Zf90_Order(zz,num_gid_entries,num_obj,gids,rank,iperm)
+function Zf90_Order(zz,num_gid_entries,num_obj,gids,perm)
 integer(Zoltan_INT) :: Zf90_Order
 TYPE(Zoltan_Struct), INTENT(IN) :: zz 
 INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 INTEGER(Zoltan_INT) :: gids(*)
-INTEGER(Zoltan_INT) :: rank(*), iperm(*)
+INTEGER(Zoltan_INT) :: perm(*)
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
 nbytes = Zoltan_PTR_LENGTH
@@ -2154,7 +2154,7 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 Zf90_Order = Zfw_Order(zz_addr,nbytes,num_gid_entries,num_obj,&
-                       gids,rank,iperm)
+                       gids,perm)
 end function Zf90_Order
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

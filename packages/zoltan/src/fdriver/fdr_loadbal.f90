@@ -82,7 +82,7 @@ type(PARIO_INFO) :: pio_info
   real(Zoltan_FLOAT), allocatable :: psize(:)
   integer(Zoltan_INT), allocatable :: partid(:)
   integer(Zoltan_INT), allocatable :: idx(:)
-  integer(Zoltan_INT), allocatable :: order(:), iperm(:)
+  integer(Zoltan_INT), allocatable :: order(:)
   integer(Zoltan_INT), allocatable :: order_gids(:), order_lids(:)
   integer(Zoltan_INT), allocatable :: color(:)
   integer(Zoltan_INT), allocatable :: gids(:), lids(:)
@@ -450,7 +450,6 @@ type(PARIO_INFO) :: pio_info
 !   /* Do only ordering if this was specified in the driver input file */
 
     allocate(order(mesh%num_elems));
-    allocate(iperm(mesh%num_elems));
     allocate(order_gids(mesh%num_elems*num_gid_entries));
     do i = 0, mesh%num_elems-1
       order_gids(num_gid_entries*(i+1)) = mesh%elements(i)%globalID
@@ -460,7 +459,7 @@ type(PARIO_INFO) :: pio_info
 
     ierr = Zoltan_Order(zz_obj, num_gid_entries, &
         mesh%num_elems, order_gids, &
-        order, iperm)
+        order)
     if (ierr .ne. ZOLTAN_OK) then
       print *, "fatal:  error returned from Zoltan_Order()"
       run_zoltan = .false.
@@ -475,13 +474,11 @@ type(PARIO_INFO) :: pio_info
       current_elem => search_by_global_id(Mesh, order_gids(num_gid_entries*i), &
                                           curr_idx)
       current_elem%perm_value = order(i);
-      current_elem%invperm_value = iperm(i);
     enddo
 
 9998 continue
 !   /* Free order data */
     deallocate(order);
-    deallocate(iperm);
     deallocate(order_gids);
 
 
