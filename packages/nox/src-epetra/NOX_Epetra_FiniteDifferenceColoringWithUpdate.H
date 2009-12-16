@@ -133,12 +133,15 @@ class FiniteDifferenceColoringWithUpdate : public FiniteDifference {
   //! Computes (or updates) Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x);
 
+  //! Disable/Enable the (low computational cost) probing diagnostics
+  void SetProbingDiagnostics(bool activate){use_probing_diags=activate;}
 
 protected:  
   bool differenceProbe(const Epetra_Vector& x, Epetra_CrsMatrix& Jac,const Epetra_MapColoring &colors);
 
   bool jacobianComputed;
   bool use_update;
+  bool use_probing_diags;
 
   // These should be COLUMN colorings, ergo, no import should be needed
   const Teuchos::RCP<Epetra_MapColoring>& colorMap_;

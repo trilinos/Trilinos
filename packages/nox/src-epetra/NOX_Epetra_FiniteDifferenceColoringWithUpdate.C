@@ -21,6 +21,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
   use_update(false),
+  use_probing_diags(false),  
   colorMap_(colorMap),
   updateColorMap_(Teuchos::null)
 {
@@ -37,6 +38,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
   use_update(false),
+  use_probing_diags(false),  
   colorMap_(colorMap),
   updateColorMap_(Teuchos::null)
 {
@@ -53,6 +55,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
   FiniteDifference(printingParams_, i_, initialGuess_, beta_, alpha_),
   jacobianComputed(false),
   use_update(true),
+  use_probing_diags(false),  
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -69,6 +72,7 @@ FiniteDifferenceColoringWithUpdate::FiniteDifferenceColoringWithUpdate(
   FiniteDifference(printingParams_, i_, initialGuess_, rawGraph_, beta_, alpha_),
   jacobianComputed(false),
   use_update(true),
+  use_probing_diags(false),  
   colorMap_(colorMap),
   updateColorMap_(updatecolorMap)
 {
@@ -124,6 +128,9 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
     xcol->Import(x,*jac.Importer(),InsertAdd);
   }
 
+  // Counters for probing diagnostics
+  double tmp,probing_error_lower_bound=0.0;
+
   // Grab coloring info (being very careful to ignore color 0)
   int Ncolors=colors.MaxNumColors()+1;
   int num_c0_global,num_c0_local=colors.NumElementsWithColor(0);
@@ -168,12 +175,20 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
       for(int k=0;k<jac.NumMyEntries(i);k++){
 	if(colors[indices[k]]==j){
 	  values[k]=Jc[i] / (scaleFactor*(alpha*abs((*xcol)[indices[k]])+beta));
+	  // If probing diagnostics are on, zero out the entries as they are used
+	  if(use_probing_diags) Jc[i]=0.0;
 	  break;// Only one value per row...
-	}
+	}    
       }
+    }
+    if(use_probing_diags){
+      Jc.Norm2(&tmp);
+      probing_error_lower_bound+=tmp*tmp;
     }
   }
 
+  // If diagnostics are requested, output Frobenius norm lower bound
+  if(use_probing_diags && !x.Comm().MyPID()) printf("Probing Error Lower Bound (Frobenius) = %6.4e\n",sqrt(probing_error_lower_bound));
 
   // Cleanup
   if(!jac.ColMap().SameAs(x.Map()))
