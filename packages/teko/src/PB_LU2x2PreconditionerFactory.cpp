@@ -151,8 +151,6 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
    // request the preconditioner factory from the CloneFactory
    RCP<LU2x2Strategy> strategy = strategyBuilder_.build(name);
 
-   Teko_DEBUG_MSG("What! " << strategy,1);
-
    if(strategy==Teuchos::null) {
       Teko_DEBUG_MSG("Warning: Could not build LU2x2Strategy named \"" 
                  << name << "\"...pressing on, failure expected",0)
