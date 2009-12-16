@@ -562,7 +562,7 @@ void ImplicitBDFStepper<Scalar>::getPoints(
     x_vec->clear();
   if (xdot_vec)
     xdot_vec->clear();
-  for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
+  for (Teuchos::Ordinal i=0 ; i<time_vec.size() ; ++i) {
     RCP<Thyra::VectorBase<Scalar> >
       x_temp = createMember(xn0_->space());
     RCP<Thyra::VectorBase<Scalar> >
@@ -583,7 +583,7 @@ void ImplicitBDFStepper<Scalar>::getPoints(
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"getPoints");
     *out << "Passing out the interpolated values:" << std::endl;
-    for (unsigned int i=0; i<time_vec.size() ; ++i) {
+    for (Teuchos::Ordinal i=0; i<time_vec.size() ; ++i) {
       *out << "time_[" << i << "] = " << time_vec[i] << std::endl;
       if (x_vec) {
         *out << "x_vec[" << i << "] = " << std::endl;

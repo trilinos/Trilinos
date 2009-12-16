@@ -232,16 +232,16 @@ void InterpolationBuffer<Scalar>::addPoints(
   Teuchos::OSTab ostab(out,1,"IB::addPoints");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
-    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<time_vec.size() ; ++i) {
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     }
     *out << "x_vec = " << std::endl;
-    for (unsigned int i=0 ; i<x_vec.size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<x_vec.size() ; ++i) {
       *out << "x_vec[" << i << "] = " << std::endl;
       x_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
     }
     *out << "xdot_vec = " << std::endl;
-    for (unsigned int i=0 ; i<xdot_vec.size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<xdot_vec.size() ; ++i) {
       if (!is_null(xdot_vec[i])) {
         *out << "xdot_vec[" << i << "] = " << std::endl;
         xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
@@ -324,7 +324,7 @@ void InterpolationBuffer<Scalar>::addPoints(
   std::sort(data_vec_->begin(),data_vec_->end());
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "data_vec at end of addPoints:" << std::endl;
-    for (unsigned int i=0 ; i<data_vec_->size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<data_vec_->size() ; ++i) {
       *out << "data_vec[" << i << "] = " << std::endl;
       (*data_vec_)[i].describe(*out,Teuchos::VERB_EXTREME);
     }
@@ -382,7 +382,7 @@ void InterpolationBuffer<Scalar>::getNodes( Array<Scalar>* time_vec ) const
   Teuchos::OSTab ostab(out,1,"IB::getNodes");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
-    for (unsigned int i=0 ; i<time_vec->size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<time_vec->size() ; ++i) {
       *out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
     }
   }
@@ -453,7 +453,7 @@ void InterpolationBuffer<Scalar>::describe(
   } else if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
   } else if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "data_vec = " << std::endl;
-    for (unsigned int i=0; i<data_vec_->size() ; ++i) {
+    for (Teuchos::Ordinal i=0; i<data_vec_->size() ; ++i) {
       out << "data_vec[" << i << "] = " << std::endl;
       (*data_vec_)[i].describe(out,this->getVerbLevel());
     }

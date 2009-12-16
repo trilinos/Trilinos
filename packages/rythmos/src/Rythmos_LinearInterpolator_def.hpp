@@ -101,12 +101,12 @@ void LinearInterpolator<Scalar>::interpolate(
   Teuchos::OSTab ostab(out,1,"LI::interpolator");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "nodes_:" << std::endl;
-    for (unsigned int i=0 ; i<(*nodes_).size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<(*nodes_).size() ; ++i) {
       *out << "nodes_[" << i << "] = " << std::endl;
       (*nodes_)[i].describe(*out,Teuchos::VERB_EXTREME);
     }
     *out << "t_values = " << std::endl;
-    for (unsigned int i=0 ; i<t_values.size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<t_values.size() ; ++i) {
       *out << "t_values[" << i << "] = " << t_values[i] << std::endl;
     }
   }

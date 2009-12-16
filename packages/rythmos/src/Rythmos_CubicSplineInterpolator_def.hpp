@@ -174,10 +174,12 @@ void evaluateCubicSpline(
     )
 {
   using Teuchos::outArg;
+  using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Assert preconditions:
   validateCubicSplineCoeff<Scalar>(coeff);
-  TEST_FOR_EXCEPTION( ((j < 0) || (j >= coeff.a.size())), std::out_of_range, "Error!, j is out of range" );
+  TEST_FOR_EXCEPTION( ((j < 0) || (as<Teuchos::Ordinal>(j) >= coeff.a.size())),
+     std::out_of_range, "Error!, j is out of range" );
 
   Scalar dt = t-coeff.t[j];
   const Thyra::VectorBase<Scalar>& a = *(coeff.a[j]);
@@ -276,12 +278,12 @@ void CubicSplineInterpolator<Scalar>::interpolate(
   Teuchos::OSTab ostab(out,1,"CSI::interpolator");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "nodes_:" << std::endl;
-    for (unsigned int i=0 ; i<(*nodes_).size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<(*nodes_).size() ; ++i) {
       *out << "nodes_[" << i << "] = " << std::endl;
       (*nodes_)[i].describe(*out,Teuchos::VERB_EXTREME);
     }
     *out << "t_values = " << std::endl;
-    for (unsigned int i=0 ; i<t_values.size() ; ++i) {
+    for (Teuchos::Ordinal i=0 ; i<t_values.size() ; ++i) {
       *out << "t_values[" << i << "] = " << t_values[i] << std::endl;
     }
   }
