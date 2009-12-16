@@ -31,6 +31,9 @@
 #define VAN_DER_POL_MODEL_HPP
 
 #include "Rythmos_ConfigDefs.h"
+
+#ifdef Rythmos_ENABLE_Sacado
+
 #include "Rythmos_Types.hpp"
 
 #include "Thyra_ModelEvaluator.hpp" // Interface
@@ -179,4 +182,5 @@ RCP<VanderPolModel> vanderPolModel(const RCP<ParameterList> &pl);
 
 } // namespace Rythmos 
 
+#endif //Rythmos_ENABLE_Sacado
 #endif // VAN_DER_POL_MODEL_HPP

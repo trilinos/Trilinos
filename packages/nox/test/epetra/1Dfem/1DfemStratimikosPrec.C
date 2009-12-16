@@ -179,9 +179,17 @@ int main(int argc, char *argv[])
     newtonParams.set("Forcing Term Method", "Constant");
 
   // Alternative linear solver list for Stratimikos
-  Teuchos::ParameterList& stratParams = newtonParams.sublist("Stratimikos");
+  Teuchos::ParameterList& stratLinSolParams = newtonParams.sublist("Stratimikos Linear Solver");
+  Teuchos::ParameterList& noxStratParams = stratLinSolParams.sublist("NOX Stratimikos Options");
+  Teuchos::ParameterList& stratParams = stratLinSolParams.sublist("Stratimikos");
+
+  noxStratParams.set("Preconditioner Reuse Policy","Rebuild");
+
   stratParams.set("Linear Solver Type", "AztecOO");
   stratParams.set("Preconditioner Type", "ML");
+  if (verbose) stratParams.sublist("Linear Solver Types")
+                 .sublist("AztecOO").sublist("Forward Solve")
+                 .sublist("AztecOO Settings").set("Output Frequency", 1);
 
   // Let's force all status tests to do a full check
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
@@ -203,8 +211,7 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
   Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = 
-    Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams, stratParams,
-                                                     // iReq,
+    Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams, stratLinSolParams,
                                                       iJac, Analytic, 
                                                       iPrec, FD, 
 						      *soln, false));

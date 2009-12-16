@@ -65,6 +65,7 @@
 // External include files for Stratimikos
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -88,7 +89,7 @@
 NOX::Epetra::LinearSystemStratimikos::
 LinearSystemStratimikos(
  Teuchos::ParameterList& printParams, 
- Teuchos::ParameterList& linearSolverParams,  
+ Teuchos::ParameterList& stratSolverParams,  
  const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
  const Teuchos::RCP<Epetra_Operator>& jacobian,
  const NOX::Epetra::Vector& cloneVector,
@@ -109,20 +110,20 @@ LinearSystemStratimikos(
   timeApplyJacbianInverse(0.0)
 {
   // Allocate solver
-  initializeStratimikos(linearSolverParams);
+  initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
   tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
 
   jacType = getOperatorType(*jacPtr);
   precType = jacType;
 
-  reset(linearSolverParams);
+  reset(stratSolverParams.sublist("NOX Stratimikos Options"));
 }
 
 //***********************************************************************
 NOX::Epetra::LinearSystemStratimikos::
 LinearSystemStratimikos(
  Teuchos::ParameterList& printParams, 
- Teuchos::ParameterList& linearSolverParams,
+ Teuchos::ParameterList& stratSolverParams,
  const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
  const Teuchos::RCP<Epetra_Operator>& jacobian,
  const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
@@ -156,14 +157,14 @@ LinearSystemStratimikos(
     precPtr = preconditioner;
   }
 
-  initializeStratimikos(linearSolverParams);
+  initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
   tmpVectorPtr = Teuchos::rcp(new NOX::Epetra::Vector(cloneVector));
 
   // Both operators are supplied
   jacType = getOperatorType(*jacPtr);
   precType = getOperatorType(*precPtr);
 
-  reset(linearSolverParams);
+  reset(stratSolverParams.sublist("NOX Stratimikos Options"));
 }
 
 //***********************************************************************
@@ -197,29 +198,29 @@ initializeStratimikos(Teuchos::ParameterList& stratParams)
 }
 //***********************************************************************
 void NOX::Epetra::LinearSystemStratimikos::
-reset(Teuchos::ParameterList& linearSolverParams)
+reset(Teuchos::ParameterList& noxStratParams)
 {
 
   // First remove any preconditioner that may still be active
   destroyPreconditioner();
     
   zeroInitialGuess = 
-    linearSolverParams.get("Zero Initial Guess", false);
+    noxStratParams.get("Zero Initial Guess", false);
 
   manualScaling = 
-    linearSolverParams.get("Compute Scaling Manually", true);
+    noxStratParams.get("Compute Scaling Manually", true);
 
   // Place linear solver details in the "Output" sublist of the
   // "Linear Solver" parameter list
   outputSolveDetails = 
-    linearSolverParams.get("Output Solver Details", true);
+    noxStratParams.get("Output Solver Details", true);
 
   throwErrorOnPrecFailure = 
-    linearSolverParams.get("Throw Error on Prec Failure", true);
+    noxStratParams.get("Throw Error on Prec Failure", true);
 
   // Setup the preconditioner reuse policy
   std::string preReusePolicyName = 
-    linearSolverParams.get("Preconditioner Reuse Policy", "Rebuild");
+    noxStratParams.get("Preconditioner Reuse Policy", "Rebuild");
   if (preReusePolicyName == "Rebuild")
     precReusePolicy = PRPT_REBUILD;
   else if (preReusePolicyName == "Recompute")
@@ -230,7 +231,7 @@ reset(Teuchos::ParameterList& linearSolverParams)
     string errorMessage = "Option for \"Preconditioner Reuse Policy\" is invalid! \nPossible options are \"Reuse\", \"Rebuild\", and \"Recompute\".";
     throwError("reset()", errorMessage);
   }
-  maxAgeOfPrec = linearSolverParams.get("Max Age Of Prec", 1);
+  maxAgeOfPrec = noxStratParams.get("Max Age Of Prec", 1);
   precQueryCounter = 0;
 
 #ifdef HAVE_NOX_DEBUG
@@ -272,6 +273,9 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 		     const NOX::Epetra::Vector& input, 
 		     NOX::Epetra::Vector& result)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
   double startTime = timer.WallTime();
 
   // Need non-const version of the input vector
@@ -287,7 +291,14 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp =
     Thyra::epetraLinearOp(jacPtr);
 
+//Teuchos::RCP<Thyra::PreconditionerBase<double> > precObj;
+  // Set the linear Op and  precomputed prec on this lows
+    Thyra::initializePreconditionedOp<double>(
+      *lowsFactory, linearOp, precObj ,&*lows);
+
+#ifdef XXXXX
   // Construct preconditioner if given AND if factory supports it
+  // Construct prec from matrix that approximates the linear op
   if (precMatrixSource == SeparateMatrix &&
       lowsFactory->supportsPreconditionerInputType(
           Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX)) {
@@ -295,9 +306,11 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
        Thyra::epetraLinearOp(precPtr);
 
-    Thyra::initializeApproxPreconditionedOp<double>(*lowsFactory,linearOp,precOp,&*lows);
+    Thyra::initializeApproxPreconditionedOp<double>
+       (*lowsFactory,linearOp,precOp,&*lows);
    
   }
+  // Use prec operator that approximates inverse of linear op
   else if (precMatrixSource == UserDefined_ &&
       lowsFactory->supportsPreconditionerInputType(
           Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)) {
@@ -311,8 +324,28 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   else {
     // Default case of using only the Jacobian and no 
     // separate preconditioner object
-    Thyra::initializeOp(*lowsFactory, linearOp, &*lows);
+
+//    Thyra::initializeOp(*lowsFactory, linearOp, &*lows);
+
+    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory =
+      lowsFactory->getPreconditionerFactory();
+
+if (precFactory == Teuchos::null) cout << "AGS precFactory Null" << endl;
+
+if (precFactory != Teuchos::null) {
+    precObj = precFactory->createPrec();
+
+    RCP<const Thyra::LinearOpSourceBase<double> > losb =
+         rcp(new Thyra::DefaultLinearOpSource<double>(linearOp));
+
+    precFactory->initializePrec(losb, precObj.get());
+}
+
+    Thyra::initializePreconditionedOp<double>(
+      *lowsFactory, linearOp, precObj ,&*lows);
+
   }
+#endif
 
   Teuchos::RCP<Epetra_Vector> resultRCP =
     Teuchos::rcp(&result.getEpetraVector(), false);
@@ -389,72 +422,6 @@ applyRightPreconditioning(bool useTranspose,
 cout << " NOX::Epetra::LinearSystemStratimikos::applyRightPreconditioning\n"
      << " NOT IMPLEMENTED " << endl;
 return false;
-/**
-  int errorCode = 1;
-
-  // Create the preconditioner if not already done.
-  if (!isPrecConstructed) {
-    throwError("applyRightPreconditioning", 
-	 "Preconditioner is not constructed! Call createPreconditioner() first.");
-  }
-
-  if (precAlgorithm == None_) {
-    if (&result != &input)
-      result = input;
-    return true;
-  }
-  else if (precAlgorithm == Stratimikos_) {
-
-    // RPP: We can not directly access Aztec preconditioners.
-    // A cheesy way to apply an aztec preconditioner to an arbitrary 
-    // vector is to call a Aztec.iterate() but only take one GMRES iteration.
-    // This does NOT give the exact preconditioner, but it is a good
-    // approximation.  We implement this here but highly recommend the 
-    // use of IFPACK preconditioners if available!  
-
-    // Zero out the temporary vector
-    tmpVectorPtr->init(0.0);
-
-    // Turn off printing in Aztec when using applyRightPreconditioner
-    aztecSolverPtr->SetAztecOption(AZ_output,AZ_none);
-
-    // Get the number of iterations in the preconditioner
-    int numIters = params.get("AztecOO Preconditioner Iterations", 1);
-    
-    AztecOO_Operator prec(aztecSolverPtr.get(), numIters);
-    
-    errorCode = prec.ApplyInverse(input.getEpetraVector(), 
-				  result.getEpetraVector());
-  }
-  else if (precAlgorithm == UserDefined_) {
-
-    if (useTranspose)
-      precPtr->SetUseTranspose(true);
-
-    errorCode = precPtr->ApplyInverse(input.getEpetraVector(), 
-				      result.getEpetraVector());
-    if (useTranspose)
-      precPtr->SetUseTranspose(false);
-
-  }
-  else
-    throwError("applyRightPreconditioning", 
-	       "Parameter \"preconditioner\" is not vaild for this method");
-
-  if (errorCode != 0) {
-    std::string msg = "Error - NOX::Epetra::LinearSystemAztecOO::applyRightPreconditioning() - A non-zero error code has been returned from the preconditioner.";
-    if (throwErrorOnPrecFailure) {
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-    }
-    else {
-      if (utils.isPrintType(NOX::Utils::Warning))
-	utils.out() << msg << endl;
-    }
-    return false;
-  }
-  
-  return true;
-**/
 }
 
 //***********************************************************************
@@ -462,23 +429,77 @@ bool NOX::Epetra::LinearSystemStratimikos::
 createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p, 
 		     bool recomputeGraph) const
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
   double startTime = timer.WallTime();  
 
   if (utils.isPrintType(Utils::LinearSolverDetails))
     utils.out() << "\n       Creating a new preconditioner" << endl;;
 
 
+//  Teuchos::RCP<Thyra::PreconditionerBase<double> > precObj;
+
   if (precMatrixSource == UseJacobian) {
-    // Just set and enforce explicit constuction.
+    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory =
+      lowsFactory->getPreconditionerFactory();
+
+    if (precFactory != Teuchos::null) {
+      precObj = precFactory->createPrec();
+
+      // Wrap Thyra objects around Epetra Op
+      RCP<const Thyra::LinearOpBase<double> > linearOp =
+        Thyra::epetraLinearOp(jacPtr);
+  
+      RCP<const Thyra::LinearOpSourceBase<double> > losb =
+           rcp(new Thyra::DefaultLinearOpSource<double>(linearOp));
+
+      // Computation of prec (e.g. ilu) happens here:
+      precFactory->initializePrec(losb, precObj.get());
+    }
+    else // no preconditioner
+      precObj = Teuchos::null;
+
   }
   else if (precMatrixSource == SeparateMatrix) {
+
+    // Compute matrix for use in preconditioning
     precInterfacePtr->computePreconditioner(x.getEpetraVector(), 
 				      *precPtr, &p);
+
+    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory =
+      lowsFactory->getPreconditionerFactory();
+
+    if (precFactory != Teuchos::null) {
+      precObj = precFactory->createPrec();
+
+      // Send Prec Matrix to 
+      RCP<const Thyra::LinearOpBase<double> > precOp =
+        Thyra::epetraLinearOp(precPtr);
+
+      RCP<const Thyra::LinearOpSourceBase<double> > losb =
+           rcp(new Thyra::DefaultLinearOpSource<double>(precOp));
+
+      // Computation of prec (e.g. ilu) happens here:
+      precFactory->initializePrec(losb, precObj.get());
+    }
+    else // no preconditioner
+      precObj = Teuchos::null;
+
   }
   else if (precMatrixSource == UserDefined_) {
 
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					    *precPtr, &p);
+
+    RCP<const Thyra::LinearOpBase<double> > precOp =
+      Thyra::epetraLinearOp(precPtr);
+
+    //precObj = Thyra::rightPrec<double>(precOp);
+    RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
+       rcp(new Thyra::DefaultPreconditioner<double>);
+    precObjDef->initializeRight(precOp);
+    precObj = precObjDef;
   }
 
   isPrecConstructed = true; 

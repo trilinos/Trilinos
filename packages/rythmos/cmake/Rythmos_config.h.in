@@ -8,3 +8,6 @@
 
 /* Define if we want Rythmos DEBUG turned on */
 #cmakedefine RYTHMOS_DEBUG
+
+/* Define for whether Sacado is available */
+#cmakedefine Rythmos_ENABLE_Sacado
