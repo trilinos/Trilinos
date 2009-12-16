@@ -996,7 +996,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   if (numBlocks_ > dim) {
     numBlocks_ = dim;
     printer_->stream(Warnings) << 
-      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
+      "Warning! Requested Krylov subspace dimension is larger than operator dimension!" << std::endl <<
       " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << numBlocks_ << std::endl;
     params_->set("Num Blocks", numBlocks_);
   } 

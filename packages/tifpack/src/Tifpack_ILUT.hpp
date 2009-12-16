@@ -244,27 +244,28 @@ public:
     return(ApplyInverseFlops_);
   }
 
-  inline magnitudeType LevelOfFill() const {
+  inline double LevelOfFill() const {
     return(LevelOfFill_);
   }
 
-  //! Set relative threshold value
-  inline magnitudeType RelaxValue() const {
-    return(Relax_);
-  }
-
   //! Get absolute threshold value
-  inline magnitudeType AbsoluteThreshold() const
+  inline double AbsoluteThreshold() const
   {
     return(Athresh_);
   }
 
   //! Get relative threshold value
-  inline magnitudeType RelativeThreshold() const
+  inline double RelativeThreshold() const
   {
     return(Rthresh_);
   }
-    
+
+  //! Get the relax value
+  inline magnitudeType RelaxValue() const
+  {
+    return(RelaxValue_);
+  }
+
   //! Gets the dropping tolerance
   inline magnitudeType DropTolerance() const
   {
@@ -309,14 +310,13 @@ private:
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_;
   //! Condition number estimate.
   magnitudeType Condest_;
-  //! relaxation value
-  magnitudeType Relax_;
   //! Absolute threshold
-  magnitudeType Athresh_;
+  double Athresh_;
   //! Relative threshold
-  magnitudeType Rthresh_;
+  double Rthresh_;
+  magnitudeType RelaxValue_;
   //! Level-of-fill
-  magnitudeType LevelOfFill_;
+  double LevelOfFill_;
   //! Discards all elements below this tolerance
   magnitudeType DropTolerance_;
   //! \c true if \c this object has been initialized
@@ -354,9 +354,9 @@ ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ILUT(const Teuchos::RCP<const Tpet
   A_(A),
   Comm_(A->getRowMap()->getComm()),
   Condest_(-1.0),
-  Relax_(0.),
   Athresh_(0.0),
   Rthresh_(1.0),
+  RelaxValue_(0.0),
   LevelOfFill_(1.0),
   DropTolerance_(1e-12),
   IsInitialized_(false),
@@ -418,7 +418,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetParameters(Teuchos::Parame
 
   Tifpack::GetParameter(params, "fact: absolute threshold", Athresh_);
   Tifpack::GetParameter(params, "fact: relative threshold", Rthresh_);
-  Tifpack::GetParameter(params, "fact: relax value", Relax_);
+  Tifpack::GetParameter(params, "fact: relax value", RelaxValue_);
   Tifpack::GetParameter(params, "fact: drop tolerance", DropTolerance_);
 }
 
@@ -520,13 +520,13 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
   Teuchos::Array<GlobalOrdinal> keys;
   Teuchos::Array<Scalar> values;
-  Teuchos::Array<Scalar> AbsRow;
+  Teuchos::Array<magnitudeType> AbsRow;
 
   // =================== //
   // start factorization //
   // =================== //
 
-  magnitudeType this_proc_flops = 0.0;
+  double this_proc_flops = 0.0;
 
   for (GlobalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
   {
@@ -565,8 +565,11 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
         NnzUpper++;
     }
 
-    int FillL = (int)(LevelOfFill() * NnzLower);
-    int FillU = (int)(LevelOfFill() * NnzUpper);
+    //Can magnitudeType always be assign-converted to double?
+    double lof = LevelOfFill();
+
+    int FillL = (int)(lof * NnzLower);
+    int FillU = (int)(lof * NnzUpper);
     if (FillL == 0) FillL = 1;
     if (FillU == 0) FillU = 1;
 
@@ -608,7 +611,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
         DiagonalValueK = AbsoluteThreshold();
 
       Scalar xxx = SingleRowU[col_k];
-      if (std::abs(xxx) > DropTolerance()) {
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(xxx) > DropTolerance()) {
         SingleRowL[col_k] = xxx / DiagonalValueK;
         ++flops;
 
@@ -641,19 +644,19 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
     SingleRowL.copyToArrays( keys, values );
     for (int i = 0; i < sizeL; ++i) {
-      if (std::abs(values[i]) > DropTolerance()) {
-        AbsRow[count++] = std::abs(values[i]);
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) > DropTolerance()) {
+        AbsRow[count++] = Teuchos::ScalarTraits<Scalar>::magnitude(values[i]);
       }
     }
 
     if (count > FillL) {
       std::nth_element(AbsRow.begin(), AbsRow.begin() + FillL, AbsRow.begin() + count,
-                  std::greater<Scalar>());
+                  std::greater<magnitudeType>());
       cutoff = AbsRow[FillL];
     }
 
     for (int i = 0; i < sizeL; ++i) {
-      if (std::abs(values[i]) >= cutoff) {
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) >= cutoff) {
         L_->insertGlobalValues(row_i, keys(i,1), values(i,1));
       }
       else
@@ -674,15 +677,15 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     SingleRowU.copyToArrays(keys, values);
 
     for (size_t i = 0; i < sizeU; ++i) {
-      if (keys[i] >= row_i && std::abs(values[i]) > DropTolerance())
+      if (keys[i] >= row_i && Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) > DropTolerance())
       {
-        AbsRow[count++] = std::abs(values[i]);
+        AbsRow[count++] = Teuchos::ScalarTraits<Scalar>::magnitude(values[i]);
       }
     }
 
     if (count > FillU) {
       std::nth_element(AbsRow.begin(), AbsRow.begin() + FillU, AbsRow.begin() + count,
-                  std::greater<double>());
+                  std::greater<magnitudeType>());
       cutoff = AbsRow[FillU];
     }
 
@@ -693,7 +696,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       dtmp[0] = values[i];
 
       if (di[0] >= row_i) {
-        if (std::abs(dtmp[0]) >= cutoff || row_i == di[0]) {
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(dtmp[0]) >= cutoff || row_i == di[0]) {
           U_->insertGlobalValues(row_i, di(), dtmp());
         }
         else
@@ -709,7 +712,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     }
   }
 
-  magnitudeType tf;
+  double tf;
   Teuchos::reduceAll(Comm(), Teuchos::REDUCE_SUM, 1, &this_proc_flops, &tf);
   ComputeFlops_ += tf;
 

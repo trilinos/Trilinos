@@ -40,7 +40,7 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal, class Node>
 Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& TIFP,
 		      const Tifpack::CondestType CT,
 		      const int MaxIters = 1550,
-		      const double Tol = 1e-9,
+		      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = 1e-9,
 		      Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix = 0)
 {
   Scalar ConditionNumberEstimate = -1.0;

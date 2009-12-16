@@ -37,6 +37,10 @@
 #include <Tifpack_Version.hpp>
 #include <iostream>
 
+#ifdef HAVE_TIFPACK_QD
+#include <qd/dd_real.h>
+#endif
+
 #include <Tifpack_UnitTestHelpers.hpp>
 #include <Tifpack_ILUT.hpp>
 
@@ -143,6 +147,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test1, Scalar, LocalOrdinal, Glob
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
+
+#ifdef HAVE_TIFPACK_QD
+UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
+#endif
 
 }//namespace <anonymous>
 

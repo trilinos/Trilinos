@@ -779,7 +779,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	if (sigma == zero) {
 	  beta[curDim + j] = zero;
 	} else {
-	  mu = std::sqrt((*H_)(curDim+j,curDim+j)*(*H_)(curDim+j,curDim+j)+sigma);
+	  mu = Teuchos::ScalarTraits<ScalarType>::squareroot((*H_)(curDim+j,curDim+j)*(*H_)(curDim+j,curDim+j)+sigma);
 	  if ( Teuchos::ScalarTraits<ScalarType>::real((*H_)(curDim+j,curDim+j)) 
 	       < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
 	    vscale = (*H_)(curDim+j,curDim+j) - mu;

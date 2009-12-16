@@ -787,7 +787,7 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
   //(length of the list of equation data that is to follow).
   MPI_Request* requests = new MPI_Request[numOutProcs];
   MPI_Status* statuses = new MPI_Status[numOutProcs];
-  int firsttag = 20051014;
+  int firsttag = 1014;
   int offset = 0;
   for(size_t i=0; i<numOutProcs; ++i) {
     if (MPI_Irecv(&(recvbuf[i]), 1, MPI_INT, outProcs[i], firsttag,

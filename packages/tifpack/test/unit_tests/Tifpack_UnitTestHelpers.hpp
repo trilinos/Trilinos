@@ -4,6 +4,7 @@
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsGraph.hpp>
@@ -109,22 +110,25 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
 
+  const Scalar two = 2*Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+
   for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
     if (g_row == rowmap->getMinGlobalIndex()) {
       col.resize(2);
       coef.resize(2);
       col[0] = g_row;
       col[1] = g_row+1;
-      coef[0] = 2;
-      coef[1] = 0;
+      coef[0] = two;
+      coef[1] = zero;
     }
     else if (g_row == rowmap->getMaxGlobalIndex()) {
       col.resize(2);
       coef.resize(2);
       col[0] = g_row-1;
       col[1] = g_row;
-      coef[0] = 0;
-      coef[1] = 2;
+      coef[0] = zero;
+      coef[1] = two;
     }
     else {
       col.resize(3);
@@ -132,9 +136,9 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
       col[0] = g_row-1;
       col[1] = g_row;
       col[2] = g_row+1;
-      coef[0] = 0;
-      coef[1] = 2;
-      coef[2] = 0;
+      coef[0] = zero;
+      coef[1] = two;
+      coef[2] = zero;
     }
 
     crsmatrix->insertGlobalValues(g_row, col(), coef() );
@@ -153,22 +157,26 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
 
+  const Scalar ten = 10*Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = 2*Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar onetenth = Teuchos::ScalarTraits<Scalar>::one() / ten;
+
   for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
     if (g_row == rowmap->getMinGlobalIndex()) {
       col.resize(2);
       coef.resize(2);
       col[0] = g_row;
       col[1] = g_row+1;
-      coef[0] = 2;
-      coef[1] = 0.1;
+      coef[0] = two;
+      coef[1] = onetenth;
     }
     else if (g_row == rowmap->getMaxGlobalIndex()) {
       col.resize(2);
       coef.resize(2);
       col[0] = g_row-1;
       col[1] = g_row;
-      coef[0] = 0.1;
-      coef[1] = 2;
+      coef[0] = onetenth;
+      coef[1] = two;
     }
     else {
       col.resize(3);
@@ -176,9 +184,9 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
       col[0] = g_row-1;
       col[1] = g_row;
       col[2] = g_row+1;
-      coef[0] = 0.1;
-      coef[1] = 2;
-      coef[2] = 0.1;
+      coef[0] = onetenth;
+      coef[1] = two;
+      coef[2] = onetenth;
     }
 
     crsmatrix->insertGlobalValues(g_row, col(), coef() );

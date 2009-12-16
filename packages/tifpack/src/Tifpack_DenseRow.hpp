@@ -167,7 +167,7 @@ template<class Scalar,class GlobalOrdinal>
 void DenseRow<Scalar,GlobalOrdinal>::reset()
 {
   for(tsize_t i=0; i<m_values.size(); ++i) {
-    m_values[i] = 0;
+    m_values[i] = Teuchos::ScalarTraits<Scalar>::zero();
     m_used[i] = false;
   }
 }
