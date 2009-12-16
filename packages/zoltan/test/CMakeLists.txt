@@ -107,27 +107,27 @@ IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/hg_vwgt)
 ENDIF()
 
 # Copy executables to test directory.
-PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveExeCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(zoltan_zdrive_copy
   SOURCE_FILES zdrive.exe
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/driver
 )
 
 IF (${PACKAGE_NAME}_ENABLE_CPPDRIVER)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(ZCPPDriveExeCopyFiles
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(zoltan_zCPPdrive_copy
     SOURCE_FILES zCPPdrive.exe
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/driver
   )
 ENDIF()
 
 IF(Trilinos_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(ZFDriveExeCopyFiles
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(zoltan_zfdrive_copy
     SOURCE_FILES zfdrive.exe
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/../src/fdriver
   )
 ENDIF()
 
 # Command that copies test perl script to the test directory.
-PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveMainCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(zoltan_ctest_zoltan_copy
   SOURCE_FILES ctest_zoltan.pl
 )
 
