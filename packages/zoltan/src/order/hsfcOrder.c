@@ -34,9 +34,9 @@ int Zoltan_LocalHSFC_Order(
                            )
 {
 
-  static char *yo = "Zoltan_Scotch_Order";
+  static char *yo = "Zoltan_LocalHSFC_Order";
 
-  int n, ierr;
+  int n, ierr=ZOLTAN_OK;
 
   double (*fhsfc)(ZZ*, double*);  /* space filling curve function */
 
@@ -102,7 +102,7 @@ int Zoltan_LocalHSFC_Order(
   /******************************************************************/
   /* Get lists of objects                                           */
   /******************************************************************/
-  zz->Get_Obj_List(zz->Get_Obj_List_Data, n, n, gids, lids, wgt_dim, obj_wgts, &ierr); 
+  zz->Get_Obj_List(zz->Get_Obj_List_Data, zz->Num_GID, zz->Num_LID, gids, lids, wgt_dim, obj_wgts, &ierr); 
   if ((ierr!= ZOLTAN_OK) && (ierr!= ZOLTAN_WARN))
   {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Get_Obj_List returned error.");
