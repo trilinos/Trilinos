@@ -285,7 +285,7 @@ namespace Belos {
     
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<ostream> outputStream_;
+    Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
@@ -310,7 +310,7 @@ namespace Belos {
     static const int outputFreq_default_;
     static const std::string label_default_;
     static const std::string orthoType_default_;
-    static const Teuchos::RCP<ostream> outputStream_default_;
+    static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
@@ -364,7 +364,7 @@ template<class ScalarType, class MV, class OP>
 const std::string PCPGSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<ostream> PCPGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> PCPGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
@@ -541,7 +541,7 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
 
   // output stream
   if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RCP<ostream> >(*params,"Output Stream");
+    outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
 
     // Update parameter in our list.
     params_->set("Output Stream", outputStream_);
@@ -1056,7 +1056,7 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
     curind[0] = i;
     P = MVT::CloneView(*U_,curind);
     AP = MVT::CloneView(*C_,curind);
-    anorm(0,0) = one / std::sqrt( D(i-q,i-q) ) ;
+    anorm(0,0) = one / Teuchos::ScalarTraits<ScalarType>::squareroot( D(i-q,i-q) ) ;
     MVT::MvAddMv( anorm(0,0), *P, zero, *AP, *P );
     MVT::MvAddMv( zero, *P, anorm(0,0), *AP, *AP );
     P = Teuchos::null;
@@ -1093,7 +1093,7 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
       MVT::MvTransMv( one, *P, *AP, anorm );
       P = Teuchos::null;
       AP = Teuchos::null;
-      anorm(0,0) = std::sqrt( anorm(0,0) ) ;
+      anorm(0,0) = Teuchos::ScalarTraits<ScalarType>::squareroot( anorm(0,0) ) ;
     }
     if( rteps <= anorm(0,0) && anorm(0,0) < 9.765625e-4){
        /*
@@ -1135,7 +1135,7 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
       AQ = Teuchos::null;
       gamma(0,0) = ( Pivots[l] - alpha(0,0))*( Pivots[l] + alpha(0,0));
       if( gamma(0,0) > 0){
-        Pivots[l] = std::sqrt( gamma(0,0) );
+        Pivots[l] = Teuchos::ScalarTraits<ScalarType>::squareroot( gamma(0,0) );
       }
       else {
         Pivots[l] = zero; //rank deficiency revealed
