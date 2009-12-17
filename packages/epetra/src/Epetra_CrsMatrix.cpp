@@ -43,7 +43,6 @@
 #endif 
 
 #include <cstdlib>
-#include <cstdio>
 #ifdef EPETRA_CACHE_BYPASS
 // Turn cache bypass on or off for a given memory range.
 // address is the starting address of the range
@@ -2897,7 +2896,7 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
       int ione = 1;
       EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #else
-      cask_csr_dgesmm(1, 1.0, NumMyRows_, NumMyRows_,  NumVectors, 
+      cask_csr_dgesmm(1, 1.0, NumMyRows_, NumCols,  NumVectors, 
                       IndexOffset, Indices, Values, *X, LDX, 0.0, *Y, LDY);
 #endif
 #ifdef EPETRA_CACHE_BYPASS
