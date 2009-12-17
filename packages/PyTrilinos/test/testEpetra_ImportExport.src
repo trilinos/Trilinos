@@ -210,7 +210,7 @@ class EpetraImportTestCase(unittest.TestCase):
     def testNumSend(self):
         "Test Epetra.Import NumSend method"
         numSend  = self.myN * (self.globalN - self.myN)
-        self.assertEqual(self.importer.NumSend(), 0)
+        self.assertEqual(self.importer.NumSend(), numSend)
 
     def testNumRecv(self):
         "Test Epetra.Import NumRecv method"
