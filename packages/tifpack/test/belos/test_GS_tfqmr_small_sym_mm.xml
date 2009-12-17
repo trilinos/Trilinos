@@ -1,0 +1,17 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="small_sym.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="TFQMR"/>
+  <ParameterList name="Belos">
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Tifpack::Preconditioner" type="string" value="POINT_RELAXATION"/>
+  <ParameterList name="Tifpack">
+    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="9"/>
+</ParameterList>

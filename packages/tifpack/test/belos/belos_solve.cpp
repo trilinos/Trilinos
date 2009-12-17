@@ -92,6 +92,19 @@ int main(int argc, char*argv[])
     std::cout << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
   }
 
+  Teuchos::RCP<TMV> R = Teuchos::rcp(new TMV(*problem->getRHS()));
+  problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
+  Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
+  R->norm2(norms);
+
+  if (norms.size() < 1) {
+    throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
+  }
+
+  if (comm->getRank() == 0) {
+    std::cout << "2-Norm of 0th residual vec: " << norms[0] << std::endl;
+  }
+
   //If the xml file specified a number of iterations to expect, then we will
   //use that as a test pass/fail criteria.
 
@@ -99,15 +112,16 @@ int main(int argc, char*argv[])
     int expected_iters = 0;
     Tifpack::GetParameter(test_params, "expectNumIters", expected_iters);
     int actual_iters = solver->getNumIters();
-    if (ret == Belos::Converged && actual_iters == expected_iters) {
+    if (ret == Belos::Converged && actual_iters == expected_iters && norms[0] < 1.e-7) {
       if (comm->getRank() == 0) {
         std::cout << "End Result: TEST PASSED" << std::endl;
       }
     }
     else {
       if (comm->getRank() == 0) {
-        std::cout << "Failed to converge in expected number of iterations ("
-              <<expected_iters<<")!" << std::endl;
+        std::cout << "Actual iters("<<actual_iters
+           <<") != expected number of iterations ("
+              <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
       }
     }
   }
