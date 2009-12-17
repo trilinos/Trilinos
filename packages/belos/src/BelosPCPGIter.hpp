@@ -714,7 +714,7 @@ namespace Belos {
     Teuchos::RCP<MV> AP;
 
     std::vector<int> curind(1);
-    double rnorm;
+    std::vector<ScalarType> rnorm(MVT::GetNumberVecs(*cur_soln_vec));
     if (prevUdim_ > 0){                 // A-orthonalize P=Z to Uprev
       curind[0] = curDim_ - 1;          // column = dimension - 1 
       P = MVT::CloneView(*U_,curind); 
@@ -746,8 +746,8 @@ namespace Belos {
       //std::vector<int> curind(1);
       curind[0] = curDim_ - 1;          // column = dimension - 1 
       if( debug ){
-        (*R_).Norm2(&rnorm);
-        std::cout << iter_ << "  " << curDim_ <<  "   " << rnorm << std::endl;
+        MVT::MvNorm(*R_, rnorm);
+        std::cout << iter_ << "  " << curDim_ <<  "   " << rnorm[0] << std::endl;
       }
       if( prevUdim_ + iter_ < savedBlocks_ ){
         P = MVT::CloneView(*U_,curind); 
