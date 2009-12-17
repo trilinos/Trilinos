@@ -784,7 +784,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       /* NOTE: This part of the code is not modified to recognize
 	       blanked vertices. */
     int i;
-      int *order = NULL;		/* Ordering vector(s) */
+      ZOLTAN_ID_PTR order = NULL;	/* Ordering vector(s) */
       ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
 
@@ -796,9 +796,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	printf("Turn off \"test dynamic graph\".\n");
       }
 
-      order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
-      order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_gid_entries * sizeof(int));
-      order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_lid_entries * sizeof(int));
+      order = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_gid_entries * sizeof(ZOLTAN_ID_TYPE));
+      order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_gid_entries * sizeof(ZOLTAN_ID_TYPE));
+      order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * num_lid_entries * sizeof(ZOLTAN_ID_TYPE));
 
       if (!order || !order_gids || !order_lids) {
 	  /* Free order data */
@@ -852,9 +852,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     /* Copy ordering permutation into mesh structure */
     for (i = 0; i < mesh->num_elems; i++){
       int lid = order_lids[num_lid_entries * i + (num_lid_entries - 1)];
-      mesh->elements[lid].perm_value = order[i];
+      mesh->elements[lid].perm_value = order[num_gid_entries*(i+1)-1];
       /* TODO: Add a function to compute invert permutation */
-      mesh->elements[lid].invperm_value = order[i];/* order[(mesh->num_elems)+i] */;
+      mesh->elements[lid].invperm_value = order[num_gid_entries*(i+1)-1];/* order[(mesh->num_elems)+i] */;
     }
 
     /* Free order data */

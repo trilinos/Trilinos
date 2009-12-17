@@ -449,7 +449,7 @@ type(PARIO_INFO) :: pio_info
   if (IAND(Driver_Action,2).gt.0) then
 !   /* Do only ordering if this was specified in the driver input file */
 
-    allocate(order(mesh%num_elems));
+    allocate(order(mesh%num_elems*num_gid_entries));
     allocate(order_gids(mesh%num_elems*num_gid_entries));
     do i = 0, mesh%num_elems-1
       order_gids(num_gid_entries*(i+1)) = mesh%elements(i)%globalID
@@ -473,7 +473,9 @@ type(PARIO_INFO) :: pio_info
     do i = 1, mesh%num_elems
       current_elem => search_by_global_id(Mesh, order_gids(num_gid_entries*i), &
                                           curr_idx)
-      current_elem%perm_value = order(i);
+      current_elem%perm_value = order(num_gid_entries*i);
+!     TODO:  Add Zoltan fn to compute invperm; for now, do what zdrive does.
+      current_elem%invperm_value = current_elem%perm_value;
     enddo
 
 9998 continue
