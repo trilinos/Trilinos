@@ -106,3 +106,5 @@
 /* template qualifier required for calling template methods from non-template
    code */
 #define INVALID_TEMPLATE_QUALIFIER @INVALID_TEMPLATE_QUALIFIER@
+
+@TEUCHOS_DEPRECATED_DECLARATIONS@

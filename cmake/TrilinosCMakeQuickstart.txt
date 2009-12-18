@@ -15,8 +15,6 @@
 <li>\ref Dashboard
 </ul>
 
-Last Updated: 2009/05/04
-
 Section A: Getting Started
     --  Installing CMake from binary
     --  Installing CMake from source
@@ -34,7 +32,8 @@ Section C: Configuring Trilinos
     --  Building shared libraries
     --  Configuring with third party libraries (TPLS)
     --  Getting verbose output
-    --  Disabling dependency testing
+    --  Enabling/disabling deprecated warnings
+    --  Disable update of package dependency information
     --  Enable coverage testing
     --  Viewing configure options and documentation
     --  Reconfiguring from scratch
@@ -592,15 +591,20 @@ Section H: Dashboard testing
   NOTE: This will print a complete stack trace to show exactly where you are.
 
 
-(*) Disabling framework level dependency tests:
+(*) Enabling/disabling deprecated warnings:
 
-    -D Trilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF \
-    -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF
+    -D Trilinos_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
 
-  NOTE: Above will disable the Trilinos framework-level dependency unit tests
-  which have names like TrilinosDep_* and TrilinosOutputDep_*.  You should turn
-  these off, for example, when you are doing a dynamic analysis (i.e. memcheck
-  with valgrind) test.
+  Above will disable, by default, all deprecated warnings in Trilinos.  By
+  default, deprecated warnings are enabled.
+
+  To enable/disable deprecated warnings for a single Trilinos package use:
+
+    -D <PACKAGE>_SHOW_DEPRECATED_WARNINGS:BOOL=OFF
+
+  This will override the global behavior set by
+  Trilinos_SHOW_DEPRECATED_WARNINGS for individual packages <PACKAGE>
+  (e.g. <PACKAGE> = Teuchos, Thyra, etc.)
 
 
 (*) Disable update of package dependency information:
