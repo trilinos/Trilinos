@@ -21,6 +21,7 @@ using Teuchos::rcpFromRef;
 using Teuchos::rcpFromUndefRef;
 using Teuchos::outArg;
 using Teuchos::rcpWithEmbeddedObj;
+using Teuchos::getEmbeddedObj;
 using Teuchos::getOptionalEmbeddedObj;
 using Teuchos::getOptionalNonconstEmbeddedObj;
 using Teuchos::set_extra_data;
@@ -712,6 +713,56 @@ TEUCHOS_UNIT_TEST( RCP, multiRcpCreateError )
 */
 
 #endif // TEUCHOS_DEBUG
+
+
+RCP<C> createCAFactory()
+{
+  RCP<C> c = rcp(new C);
+  c->set_A(rcp(new A));
+  return c;
+}
+
+
+RCP<A> createACFactory()
+{
+  RCP<C> c = createCAFactory();
+  return rcpWithEmbeddedObj(c->get_A().getRawPtr(), std::make_pair(c->get_A(), c), false);
+}
+
+
+RCP<C> extractCFromA(const RCP<A> &a)
+{
+  typedef std::pair<RCP<A>, RCP<C> > ACPair_t;
+  ACPair_t acPair = getEmbeddedObj<A, ACPair_t>(a);
+  return acPair.second;
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, invertObjectOwnership_basic )
+{
+  RCP<A> a = createACFactory();
+  RCP<C> c = extractCFromA(a);
+  TEST_EQUALITY_CONST( a.strong_count(), 1 );
+  TEST_EQUALITY_CONST( c->get_A().strong_count(), 3 );
+  TEST_ASSERT( !a.shares_resource(c->get_A()) );
+  TEST_EQUALITY( a.getRawPtr(), c->get_A().getRawPtr() );
+  TEST_EQUALITY( a->A_g(), A_g_return );
+  TEST_EQUALITY( c->C_g(), C_g_return );
+}
+
+
+// This unit test shows that you can remove the RCP in the C object
+// and the A object will still live on.
+TEUCHOS_UNIT_TEST( RCP, invertObjectOwnership_remove_A )
+{
+  RCP<A> a = createACFactory();
+  extractCFromA(a)->set_A(null);
+  RCP<C> c = extractCFromA(a);
+  TEST_EQUALITY_CONST( a.strong_count(), 1 );
+  TEST_EQUALITY_CONST( c->get_A(), null );
+  TEST_EQUALITY( a->A_g(), A_g_return );
+  TEST_EQUALITY( c->C_g(), C_g_return );
+}
 
 
 //
