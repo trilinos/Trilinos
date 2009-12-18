@@ -70,14 +70,6 @@ MESSAGE("")
 
 PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
 
-IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-  SET(Trilinos_ENABLE_DEBUG_DEFAULT ON)
-ELSE()
-  SET(Trilinos_ENABLE_DEBUG_DEFAULT OFF)
-ENDIF()
-SET(Trilinos_ENABLE_DEBUG ${Trilinos_ENABLE_DEBUG_DEFAULT} CACHE BOOL
-  "Enable debug checking for Trilinos packages.  Off by default unless CMAKE_BUILD_TYPE=\"DEBUG\"." )
-
 ADVANCED_OPTION(Trilinos_ENABLE_EXPLICIT_INSTANTIATION
   "Enable explicit template instantiation in all package where it is supported."
   OFF )

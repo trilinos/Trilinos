@@ -104,7 +104,7 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
   FOREACH(PACK_NAME ${PACK_LIST})
 
     # Skip packages that haven't been enabled. 
-    IF(Trilinos_ENABLE_${PACK_NAME})
+    IF(${PROJECT_NAME}_ENABLE_${PACK_NAME})
       
       # ------- library handling -------------
 
@@ -149,7 +149,7 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
 
   #  MESSAGE("Unsorted enabled TPLs")
   #  PRINT_VAR(TPL_LIST)
-  #  MESSAGE("All Trilinos TPLs")
+  #  MESSAGE("All ${PROJECT_NAME} TPLs")
   #  PRINT_VAR(${Proj}_TPLS)
 
   # Here we sort the list of enabled TPLS in the order given by ${Proj}_TPLS}.
