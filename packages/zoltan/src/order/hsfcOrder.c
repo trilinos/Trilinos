@@ -42,6 +42,7 @@ int Zoltan_LocalHSFC_Order(
 
   int wgt_dim=0; 
   float *obj_wgts=0;
+  int *parts=0;
 
   int numGeomDims=0;
   double *geomArray=0;
@@ -102,7 +103,7 @@ int Zoltan_LocalHSFC_Order(
   /******************************************************************/
   /* Get lists of objects                                           */
   /******************************************************************/
-  zz->Get_Obj_List(zz->Get_Obj_List_Data, zz->Num_GID, zz->Num_LID, gids, lids, wgt_dim, obj_wgts, &ierr); 
+  ierr = Zoltan_Get_Obj_List(zz, &n, &gids, &lids, wgt_dim, &obj_wgts, &parts);
   if ((ierr!= ZOLTAN_OK) && (ierr!= ZOLTAN_WARN))
   {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Get_Obj_List returned error.");
@@ -231,7 +232,9 @@ int Zoltan_LocalHSFC_Order(
 
   for(objNum=0; objNum<n; objNum++)
   {
-    rank[coordIndx[objNum]] = objNum + offset;
+    /*MMW temporary hack to make Cedric's interface give me want I need */
+    /*rank[coordIndx[objNum]] = objNum + offset; */
+    rank[objNum] = coordIndx[objNum] + offset; 
   }
 
   /******************************************************************/
