@@ -4,7 +4,24 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.0.4 December 18, 2009
+
+0. Stokhos - This was left off the 10.0.3 release notes by mistake. Stokhos is
+             now available for use as of 10.0.3
+
+1. Pytrilinos - Added Make install capability
+
+2. Zoltan - Made the code and documentation for vtxedge_ptr consistent
+
+3. ML - Fix usage of HAVE_INTTYPES to be consistent with TrilinosCouplings
+
+4. Epetra - Bug fix for a CASK call. 
+
+-------------------------------------------------------------------------------
+
 Release update 10.0.3 December 08, 2009
+
+0. Stokhos - Stokhos is now available as of this release
 
 1. Epetra - Added support for the Cray CASK Library
 
@@ -23,6 +40,8 @@ Release update 10.0.3 December 08, 2009
 7. ML - Coordinate fix when number of PDEs > 1
 
 8. PyTrilinos - Fixes to allow Anasazi to build under certain conditions
+
+-------------------------------------------------------------------------------
 
 Release update 10.0.2 October 28, 2009
 

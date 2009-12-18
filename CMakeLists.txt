@@ -13,7 +13,7 @@ MESSAGE("")
 
 PROJECT(Trilinos NONE)
 
-SET(Trilinos_VERSION "10.0.3")
+SET(Trilinos_VERSION "10.0.4")
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 # Above, we put these in the cache so we can grep them out
