@@ -1,7 +1,6 @@
 INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
-  AztecOO
   CompareWithAztecOO
   Container
   CrsRiluk
@@ -16,6 +15,9 @@ ADD_SUBDIRECTORIES(
   BlockCheby
   #UseTranspose
   )
+IF (${PACKAGE_NAME}_ENABLE_AztecOO)
+  ADD_SUBDIRECTORY(AztecOO)
+ENDIF()
 IF (HAVE_HYPRE)
   ADD_SUBDIRECTORY(Hypre)
 ENDIF()
