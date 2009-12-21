@@ -62,28 +62,29 @@ Teuchos::RCP<
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
-  typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
 
-  Teuchos::RCP<BLinProb> problem;
   Teuchos::RCP<const TCRS> A;
-
-  std::string hb_file("not specified");
-  Tifpack::GetParameter(test_params, "hb_file", hb_file);
-  std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
-  if (hb_file != "not specified") {
-//    problem = build_problem_hb(hb_file);
-    throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
-  }
 
   std::string mm_file("not specified");
   Tifpack::GetParameter(test_params, "mm_file", mm_file);
-  std::cout << "Matrix-Market file: " << mm_file << std::endl;
+  std::string hb_file("not specified");
+  Tifpack::GetParameter(test_params, "hb_file", hb_file);
+
   if (mm_file != "not specified") {
+    if (comm->getRank() == 0) {
+      std::cout << "Matrix-Market file: " << mm_file << std::endl;
+    }
     A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm);
   }
+  else if (hb_file != "not specified") {
+    throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
+    std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
+  }
+  else {
+    throw std::runtime_error("No matrix file specified.");
+  }
 
-  problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
-  return problem;
+  return build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
 }
 
 
