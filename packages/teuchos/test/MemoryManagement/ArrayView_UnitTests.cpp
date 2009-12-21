@@ -15,6 +15,7 @@ using Teuchos::ArrayRCP;
 using Teuchos::arcp;
 using Teuchos::ArrayView;
 using Teuchos::arrayView;
+using Teuchos::av_const_cast;
 using Teuchos::av_reinterpret_cast;
 using Teuchos::DanglingReferenceError;
 using Teuchos::as;
@@ -26,6 +27,8 @@ TEUCHOS_UNIT_TEST( ArrayView, assignSelf )
 {
   ArrayView<int> av;
   av = av;
+  TEST_ASSERT(is_null(av));
+  TEST_ASSERT(!nonnull(av));
 }
 
 
@@ -37,14 +40,34 @@ TEUCHOS_UNIT_TEST( ArrayView, assignFuncSelf )
 }
 
 
-TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_null )
+TEUCHOS_UNIT_TEST( ArrayView, av_const_cast_null )
+{
+  ArrayView<const int> av_int1 = null;
+  ArrayView<int> av_int2 = av_const_cast<int>(av_int1);
+  TEST_ASSERT(is_null(av_int2));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, av_const_cast )
+{
+  ArrayRCP<const int> arcp_int = arcp<int>(n);
+  ArrayView<const int> av_int1 = arcp_int;
+  ArrayView<int> av_int2 = av_const_cast<int>(av_int1);
+  TEST_ASSERT(nonnull(av_int2));
+  TEST_EQUALITY(av_int1.getRawPtr(), av_int2.getRawPtr());
+  TEST_COMPARE_ARRAYS(av_int2, arcp_int);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, av_reinterpret_cast_null )
 {
   ArrayView<char> av_char = null;
   ArrayView<int> av_int = av_reinterpret_cast<int>(av_char);
   TEST_ASSERT(is_null(av_int));
 }
 
-TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_char_to_int )
+
+TEUCHOS_UNIT_TEST( ArrayView, av_reinterpret_cast_char_to_int )
 {
 
   const int sizeOfInt = sizeof(int);
@@ -65,7 +88,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_char_to_int )
 }
 
 
-TEUCHOS_UNIT_TEST( ArrayRCP, av_reinterpret_cast_int_to_char )
+TEUCHOS_UNIT_TEST( ArrayView, av_reinterpret_cast_int_to_char )
 {
 
   const int sizeOfInt = sizeof(int);
