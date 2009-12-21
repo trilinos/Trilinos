@@ -112,8 +112,8 @@ bool run_scalar_product_tests(
   RCP<const Thyra::EuclideanScalarProd<Scalar> >
     euclideanScalarProd = rcp(new Thyra::EuclideanScalarProd<Scalar>());
   RCP<const Thyra::LinearOpScalarProd<Scalar> >
-    domainScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(domainScalarProdOp)),
-    rangeScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(rangeScalarProdOp));
+    domainScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(domainScalarProdOp.create_weak())),
+    rangeScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(rangeScalarProdOp.create_weak()));
 
   const ScalarMag warning_tol = ScalarMag(1e-2)*tol, error_tol = tol;
   Thyra::LinearOpTester<Scalar> linearOpTester;

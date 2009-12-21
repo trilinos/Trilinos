@@ -726,7 +726,8 @@ RCP<C> createCAFactory()
 RCP<A> createACFactory()
 {
   RCP<C> c = createCAFactory();
-  return rcpWithEmbeddedObj(c->get_A().getRawPtr(), std::make_pair(c->get_A(), c), false);
+  return rcpWithEmbeddedObj(c->get_A().getRawPtr(),
+    std::make_pair(c->get_A(), c), false);
 }
 
 
