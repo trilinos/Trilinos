@@ -1,7 +1,6 @@
 INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
-  AztecOO
   CompareWithAztecOO
   Container
   CrsRiluk
