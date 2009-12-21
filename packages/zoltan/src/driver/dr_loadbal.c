@@ -487,7 +487,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
 #ifdef ZOLTAN_NEMESIS
-  if (pio_info->file_type == NEMESIS_FILE) {
+  if (pio_info->file_type == NEMESIS_FILE && Test.Hypergraph_Callbacks) {
     if (Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_CS_FN_TYPE,
 		      (void (*)()) get_nemesis_hg_size,
 		      (void *) mesh) == ZOLTAN_FATAL) {
