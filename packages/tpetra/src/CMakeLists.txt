@@ -44,6 +44,7 @@ APPEND_SET(HEADERS
   Tpetra_Distributor.hpp
   Tpetra_Export.hpp
   Tpetra_FlipOp.hpp
+  Tpetra_HybridPlatform.hpp
   Tpetra_Import.hpp
   Tpetra_ImportExportData.hpp
   Tpetra_InverseOperator.hpp
