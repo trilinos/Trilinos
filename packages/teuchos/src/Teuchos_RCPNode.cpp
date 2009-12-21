@@ -56,7 +56,7 @@ struct RCPNodeInfo {
 };
 
 
-typedef std::map<const void*, RCPNodeInfo> rcp_node_list_t;
+typedef std::multimap<const void*, RCPNodeInfo> rcp_node_list_t;
 
 
 // Here we must let the ActiveRCPNodesSetup constructor and destructor handle
@@ -216,32 +216,47 @@ void Teuchos::add_new_RCPNode( RCPNode* rcp_node, const std::string &info )
 
     TEST_FOR_EXCEPT(0==rcp_node_list);
 
-    const void *map_key_void_ptr = get_map_key_void_ptr(rcp_node);
+    const void * const map_key_void_ptr = get_map_key_void_ptr(rcp_node);
     
     // See if the rcp_node or its object has already been added.
-    const rcp_node_list_t::const_iterator itr = rcp_node_list->find(map_key_void_ptr);
-    const bool rcp_node_already_exists = itr!=rcp_node_list->end();
-    if (rcp_node_already_exists) {
-      TEST_FOR_EXCEPTION( rcp_node_already_exists, DuplicateOwningRCPError,
-        "Teuchos::add_new_RCPNode(node_ptr): Error, the client is trying to create a new\n"
-        "RCPNode object to an existing managed object in another RCPNode:\n"
-        "\n"
-        "  New " << convertRCPNodeToString(rcp_node) << "\n"
-        "\n"
-        "  Existing " << convertRCPNodeToString(itr->second.nodePtr) << "\n"
-        "\n"
-        "  Number current nodes = " << rcp_node_list->size() << "\n"
-        "\n"
-        "This may indicate that the user might be trying to create a weak RCP to an existing\n"
-        "object but forgot make it non-ownning.  Perhaps they meant to use rcpFromRef(...)\n"
-        "or an equivalent function.");
-    }
-    
+    typedef rcp_node_list_t::iterator itr_t;
+    typedef std::pair<itr_t, itr_t> itr_itr_t;
+    const itr_itr_t itr_itr = rcp_node_list->equal_range(map_key_void_ptr);
+    const bool rcp_node_already_exists = itr_itr.first != itr_itr.second;
+    TEST_FOR_EXCEPTION(
+      rcp_node_already_exists && rcp_node->has_ownership(),
+      DuplicateOwningRCPError,
+      "Teuchos::add_new_RCPNode(node_ptr): Error, the client is trying to create a new\n"
+      "RCPNode object to an existing managed object in another RCPNode:\n"
+      "\n"
+      "  New " << convertRCPNodeToString(rcp_node) << "\n"
+      "\n"
+      "  Existing " << convertRCPNodeToString(itr_itr.first->second.nodePtr) << "\n"
+      "\n"
+      "  Number current nodes = " << rcp_node_list->size() << "\n"
+      "\n"
+      "This may indicate that the user might be trying to create a weak RCP to an existing\n"
+      "object but forgot make it non-ownning.  Perhaps they meant to use rcpFromRef(...)\n"
+      "or an equivalent function.");
+
+    // NOTE: We allow duplicate RCPNodes if the new node is non-owning.  This
+    // might indicate a advanced usage of the RCP class that we want to
+    // support.  The typical problem is when the programmer unknowingly
+    // creates an owning RCP to an object already owned by another RCPNode.
+
     // Add the new RCP node keyed as described above.
     ++add_new_RCPNode_call_number;
-    (*rcp_node_list)[map_key_void_ptr] =
-      RCPNodeInfo(info, rcp_node, add_new_RCPNode_call_number);
-
+    (*rcp_node_list).insert(
+      itr_itr.second,
+      std::make_pair(
+        map_key_void_ptr,
+        RCPNodeInfo(info, rcp_node, add_new_RCPNode_call_number)
+        )
+      );
+    // NOTE: Above, if there is already an existing RCPNode with the same key
+    // value, this iterator itr_itr.second will point to one after the found
+    // range.  I suspect that this might also ensure that the elements are
+    // sorted in natural order.
   }
 }
 
@@ -251,6 +266,14 @@ int Teuchos::get_add_new_RCPNode_call_number()
   return add_new_RCPNode_call_number;
 }
 
+
+#define TEUCHOS_RCPNODE_REMOVE_RCPNODE(CONDITION, RCPNODE) \
+  TEST_FOR_EXCEPTION((CONDITION), \
+    std::logic_error, \
+    "Teuchos::remove_RCPNode(node_ptr): Error, the " \
+    << convertRCPNodeToString(RCPNODE) << " is not found in the list of" \
+    " active RCP nodes being traced even though all nodes should be traced." \
+    "  This should not be possible and can only be an internal programming error!")
 
 
 void Teuchos::remove_RCPNode( RCPNode* rcp_node )
@@ -266,19 +289,18 @@ void Teuchos::remove_RCPNode( RCPNode* rcp_node )
   // implementation of std::map).
 
   TEUCHOS_ASSERT(rcp_node_list);
-  const rcp_node_list_t::iterator itr =
-    rcp_node_list->find(get_map_key_void_ptr(rcp_node));
+  typedef rcp_node_list_t::iterator itr_t;
+  typedef std::pair<itr_t, itr_t> itr_itr_t;
+
+  const itr_itr_t itr_itr =
+    rcp_node_list->equal_range(get_map_key_void_ptr(rcp_node));
+  const bool rcp_node_exists = itr_itr.first != itr_itr.second;
 
 #ifdef HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
   // If we have the macro HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING turned on a
   // compile time, then all RCPNode objects that get created will have been
   // added to this list.  In this case, we can asset that the node exists.
-  TEST_FOR_EXCEPTION( itr==rcp_node_list->end(),
-    std::logic_error,
-    "Teuchos::remove_RCPNode(node_ptr): Error, the "
-    << convertRCPNodeToString(rcp_node) << " is not found in the list of"
-    " active RCP nodes being traced even though all nodes should be traced."
-    "  This should not be possible and can only be an internal programming error!");
+  TEUCHOS_RCPNODE_REMOVE_RCPNODE(!rcp_node_exists, rcp_node);
 #else
   // If the macro HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING turned off, then is is
   // possible that an RCP got created before the bool
@@ -287,13 +309,22 @@ void Teuchos::remove_RCPNode( RCPNode* rcp_node )
   // will just let this go!
 #endif
 
-  if (itr != rcp_node_list->end()) {
+  if (rcp_node_exists) {
 #ifdef RCP_NODE_DEBUG_TRACE_PRINT
     std::cerr
       << "Teuchos::remove_RCPNode(...): Removing "
       << convertRCPNodeToString(rcp_node) << " ...\n";
 #endif
-    rcp_node_list->erase(itr);
+    bool foundRCPNode = false;
+    for(itr_t itr = itr_itr.first; itr != itr_itr.second; ++itr) {
+      if (itr->second.nodePtr == rcp_node) {
+        rcp_node_list->erase(itr);
+        foundRCPNode = true;
+        break;
+      }
+    }
+    // Whoops! Did not find the node!
+    TEUCHOS_RCPNODE_REMOVE_RCPNODE(!foundRCPNode, rcp_node);
   }
 
 }
@@ -301,13 +332,16 @@ void Teuchos::remove_RCPNode( RCPNode* rcp_node )
 
 Teuchos::RCPNode* Teuchos::get_existing_RCPNodeGivenLookupKey(const void* p)
 {
+  typedef rcp_node_list_t::iterator itr_t;
+  typedef std::pair<itr_t, itr_t> itr_itr_t;
   if (!p)
     return 0;
-  const rcp_node_list_t::iterator itr =
-    rcp_node_list->find(p);
-  if (itr!=rcp_node_list->end())
-    return itr->second.nodePtr;
+  const itr_itr_t itr_itr = rcp_node_list->equal_range(p);
+  if (itr_itr.first != itr_itr.second)
+    return itr_itr.first->second.nodePtr;
   return 0;
+  // NOTE: Above, we return the first RCPNode added that has the given key
+  // value.  
 }
 
 

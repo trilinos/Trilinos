@@ -1360,7 +1360,8 @@ def checkinTest(inOptions):
     removeIfExists(getFinalPullOutputFileName())
     removeIfExists(getModifiedFilesOutputFileName())
     removeIfExists(getPushOutputFileName())
-    removeIfExists(getExtraCommandOutputFileName())
+    if inOptions.executeOnReadyToPush:
+      removeIfExists(getExtraCommandOutputFileName())
 
     for buildTestCase in buildTestCaseList:
       cleanBuildTestCaseOutputFiles(

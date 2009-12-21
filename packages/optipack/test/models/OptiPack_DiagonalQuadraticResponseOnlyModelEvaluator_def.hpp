@@ -141,7 +141,10 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setDiagonalBarVector(
 
   // Reset the scalar product for p_space!
 
-  RCP<Thyra::VectorBase<Scalar> > s_bar = createMember<Scalar>(p_space_);
+  RCP<Thyra::VectorBase<Scalar> > s_bar = createMember<Scalar>(p_space_->clone());
+  // NOTE: We have to clone the vector space in order to avoid creating a
+  // circular reference between the space and the vector that defines the
+  // scalar product for the vector space.
 
   // s_bar[i] = diag[i] / diag_bar[i] 
   V_S( s_bar.ptr(), ST::zero() );

@@ -32,11 +32,6 @@ EXTRA_ARGS=$@
 
 echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
 
-# 2009/08/28: Sundance is not building for this build case.  Kevin long said
-# to turn it off for now.  Plese don't do this in your scripts unless you
-# absolutely have to!
-echo "-DTrilinos_ENABLE_Sundance:BOOL=OFF" > SERIAL_RELEASE.config
-
 echo "
 -DTPL_ENABLE_Boost:BOOL=ON
 -DBoost_INCLUDE_DIRS:PATH=$HOME/PROJECTS/install/boost-1.40.0/include
@@ -81,7 +76,9 @@ echo "
 #
 
 ../../Trilinos/checkin-test.py \
--j4 --ctest-timeout=180 \
+--make-options=-j8 \
+--ctest-options=-j4 \
+--ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
 

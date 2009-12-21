@@ -66,6 +66,19 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     CACHE STRING
     "Extra flags added to the end of every linked executable"
     )
+
+  IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    SET(${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT ON)
+  ELSE()
+    SET(${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT OFF)
+  ENDIF()
+  SET(${PROJECT_NAME}_ENABLE_DEBUG ${${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT} CACHE BOOL
+    "Enable debug checking for ${PROJECT_NAME} packages.  Off by default unless CMAKE_BUILD_TYPE=\"DEBUG\"." )
+  
+  ADVANCED_SET(${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS ON
+    CACHE BOOL
+    "Show warnings about deprecated code"
+    )
   
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
   
@@ -363,20 +376,6 @@ MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
   # PACKAGE_ADD_TEST(...) function.
 
   PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
-
-  # Set some other options
-  IF(MSVC)
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE 
-      -D_CRT_NONSTDC_NO_DEPRECATE  -D_SCL_SECURE_NO_WARNINGS)
-    INCLUDE_DIRECTORIES(${Trilinos_SOURCE_DIR}/commonTools/WinInterface/include)
-    # find the CLAPACK built by CMake on the machine for MSVC
-    # if found it will set the BLAS and LAPACK libraries
-    FIND_PACKAGE(CLAPACK 3.2.1 NO_MODULE)
-    IF(CLAPACK_FOUND)
-      SET(TPL_BLAS_LIBRARIES blas CACHE INTERNAL "")
-      SET(TPL_LAPACK_LIBRARIES lapack CACHE INTERNAL "")
-    ENDIF()
-  ENDIF()
 
 ENDMACRO()
 

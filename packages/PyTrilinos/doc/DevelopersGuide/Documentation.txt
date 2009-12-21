@@ -141,7 +141,7 @@ provided by Prabhu Ramachandran) to be run on the resulting output.
 This produces a file with a ``_dox.i`` suffix, e.g. ``Teuchos_dox.i``,
 intended to be included into the package interface file
 ``src/Teuchos.i``.  To facilitate this inclusion, SWIG is invoked with
-``-I$(top_srcdir)/doc/Doxygen``.  See ``config/swig.am`` for details.
+``-I$(top_srcdir)/doc/Doxygen``.
 
 Overriding Doxygen Documentation
 --------------------------------
@@ -157,7 +157,7 @@ that redefines the docstring for a specified symbol.  These directives
 should be placed directly in the appropriate interface file.  By
 convention, all directives pertaining to the symbols within a single
 ``%include`` file are grouped together.  The documentation directives
-should be at the tops of these groupings.
+should be at the top of these groupings.
 
 There are two SWIG documentation directives that can be employed to
 override or append docstrings.  If you wish to append documentation to

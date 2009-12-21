@@ -1701,6 +1701,7 @@ namespace Tpetra
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     using Teuchos::rcp;
+    using Teuchos::outArg;
     using std::list;
     using std::pair;
     using std::make_pair;
@@ -1711,7 +1712,8 @@ namespace Tpetra
     // Determine if any nodes have global entries to share
     size_t MyNonlocals = nonlocals_.size(), 
            MaxGlobalNonlocals;
-    Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,&MaxGlobalNonlocals);
+    Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,
+      outArg(MaxGlobalNonlocals));
     if (MaxGlobalNonlocals == 0) return;  // no entries to share
 
     // compute a list of NLRs from nonlocals_ and use it to compute:
@@ -1743,7 +1745,7 @@ namespace Tpetra
         LookupStatus stat = getRowMap()->getRemoteIndexList(NLRs(),NLRIds());
         char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
-        Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,&gblerror);
+        Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,outArg(gblerror));
         TEST_FOR_EXCEPTION(gblerror, std::runtime_error,
             Teuchos::typeName(*this) << "::globalAssemble(): non-local entries correspond to invalid rows.");
       }

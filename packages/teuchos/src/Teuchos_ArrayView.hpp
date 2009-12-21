@@ -402,10 +402,28 @@ bool Teuchos::is_null( const ArrayView<T> &av )
 }
 
 
+template<class T> inline
+bool Teuchos::nonnull( const ArrayView<T> &av )
+{
+  return !av.is_null();
+}
+
+
 template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayView<T>& p )
 {
   return out << p.toString();
+}
+
+
+template<class T2, class T1>
+REFCOUNTPTR_INLINE
+Teuchos::ArrayView<T2>
+Teuchos::av_const_cast(const ArrayView<T1>& p1)
+{
+  T2 *ptr2 = const_cast<T2*>(p1.getRawPtr());
+  return ArrayView<T2>(ptr2, p1.size());
+  // Note: Above is just fine even if p1.get()==NULL!
 }
 
 

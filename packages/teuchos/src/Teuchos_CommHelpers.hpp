@@ -210,7 +210,7 @@ void reduceAll(
 
 /** \brief Deprecated . */
 template<typename Ordinal, typename Packet>
-void reduceAll(
+TEUCHOS_DEPRECATED void reduceAll(
   const Comm<Ordinal>& comm, const EReductionType reductType,
   const Packet &send, Packet *globalReduct
   )
@@ -302,7 +302,7 @@ void scan(
 
 /** \brief Deprecated. */
 template<typename Ordinal, typename Packet>
-void scan(
+TEUCHOS_DEPRECATED void scan(
   const Comm<Ordinal>& comm, const EReductionType reductType,
   const Packet &send, Packet *scanReduct
   )

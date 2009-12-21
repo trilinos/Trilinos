@@ -56,6 +56,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::outArg;
   using Teuchos::arcpClone;
   using Teuchos::arrayView;
   using Teuchos::broadcast;
@@ -131,6 +132,7 @@ namespace {
 
 #define STD_TESTS(matrix) \
   { \
+    using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
     ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
     ArrayRCP<const LO> loview; \
@@ -146,7 +148,7 @@ namespace {
     } \
     TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
-    Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
+    Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
   }
 
@@ -376,7 +378,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -437,7 +439,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -529,7 +531,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 

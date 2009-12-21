@@ -1860,16 +1860,19 @@ namespace Tpetra
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::outArg;
     using std::deque;
     using std::pair;
     using std::make_pair;
+    using Teuchos::outArg;
     typedef typename std::map<GlobalOrdinal,std::deque<GlobalOrdinal> >::const_iterator NLITER;
     int numImages = Teuchos::size(*getComm());
     int myImageID = Teuchos::rank(*getComm());
     // Determine if any nodes have global entries to share
     {
       size_t MyNonlocals = nonlocals_.size(), MaxGlobalNonlocals;
-      Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,&MaxGlobalNonlocals);
+      Teuchos::reduceAll<int,size_t>(*getComm(),Teuchos::REDUCE_MAX,MyNonlocals,
+        outArg(MaxGlobalNonlocals));
       if (MaxGlobalNonlocals == 0) return;  // no entries to share
     }
 
@@ -1901,7 +1904,7 @@ namespace Tpetra
         LookupStatus stat = rowMap_->getRemoteIndexList(NLRs(),NLRIds());
         char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
-        Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,&gblerror);
+        Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,outArg(gblerror));
         TEST_FOR_EXCEPTION(gblerror != 0, std::runtime_error,
             Teuchos::typeName(*this) << "::globalAssemble(): non-local entries correspond to invalid rows.");
       }
@@ -2083,6 +2086,7 @@ namespace Tpetra
                                                                OptimizeOption os) {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
+    using Teuchos::outArg;
 
     domainMap_ = domainMap;
     rangeMap_  = rangeMap;
@@ -2108,7 +2112,8 @@ namespace Tpetra
       Teuchos::reduceAll<int,global_size_t>(*getComm(),Teuchos::REDUCE_SUM,2,lcl,gbl);
       globalNumEntries_ = gbl[0]; 
       globalNumDiags_   = gbl[1];
-      Teuchos::reduceAll<int,global_size_t>(*getComm(),Teuchos::REDUCE_MAX,nodeMaxNumRowEntries_,&globalMaxNumRowEntries_);
+      Teuchos::reduceAll<int,global_size_t>(*getComm(),Teuchos::REDUCE_MAX,nodeMaxNumRowEntries_,
+        outArg(globalMaxNumRowEntries_));
       haveGlobalConstants_ = true;
     }
 
@@ -2252,6 +2257,7 @@ namespace Tpetra
     using Teuchos::ArrayRCP;
     using Teuchos::Array;
     using Teuchos::ArrayView;
+    using Teuchos::outArg;
     typedef Teuchos::OrdinalTraits<GlobalOrdinal> GOT;
     // 
     if (hasColMap()) return;
@@ -2357,7 +2363,8 @@ namespace Tpetra
         // Same error message as above for serial case.
         char missingID_lcl = (stat == IDNotPresent ? 1 : 0);
         char missingID_gbl;
-        Teuchos::reduceAll<int,char>(*getComm(),Teuchos::REDUCE_MAX,missingID_lcl,&missingID_gbl);
+        Teuchos::reduceAll<int,char>(*getComm(),Teuchos::REDUCE_MAX,missingID_lcl,
+          outArg(missingID_gbl));
         TEST_FOR_EXCEPTION(missingID_gbl == 1, std::runtime_error,
             Teuchos::typeName(*this) << "::makeColMap(): Some column IDs are not in the domain map." << std::endl 
             << "Either these column IDs are invalid or the domain map is invalid." << std::endl

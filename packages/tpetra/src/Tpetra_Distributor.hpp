@@ -798,11 +798,12 @@ namespace Tpetra {
             Teuchos::ArrayRCP<Ordinal> &exportGIDs, 
             Teuchos::ArrayRCP<int> &exportNodeIDs)
   {
+    using Teuchos::outArg;
     {
       const int myImageID = comm_->getRank();
       int err_node = (remoteIDs.size() != remoteImageIDs.size()) ? myImageID : -1;
       int gbl_err;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,err_node,&gbl_err);
+      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,err_node,outArg(gbl_err));
       TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
           Teuchos::typeName(*this) 
           << "::createFromRecvs(): lists of remote IDs and remote node IDs must have the same size (error on node " 

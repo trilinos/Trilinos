@@ -4,121 +4,60 @@ Adding New Modules to PyTrilinos
 If you want to add a Trilinos package as a new module in PyTrilinos,
 here are the necessary steps.
 
-#. Add the package to the configure script so that PyTrilinos
-   recognizes that it can use it.  Within ``configure.ac``, copy and
-   paste one of the ::
-
-      TAC_ARG_ENABLE_CAN_USE_PACKAGE
-
-   macros, and modify the arguments for your package.
+#. Add the package name to the ``cmake/Dependencies.cmake`` file, where
+   variable ``LIB_OPTIONAL_DEP_PACKAGES`` is set.  It is important
+   that packages be listed in build order.
 
 #. If your package uses nested namespaces, then the python interface
    should use corresponding nested modules.  To partially facilitate
-   this, within the ``src/PyTrilinos`` (and/or the
-   ``src-boost/PyTrilinos``) directory, make a directory with your
-   package name.  Within that directory, create an empty file (via
-   ``touch``, for example) named ``.dummy.in``.  At the end of
-   ``configure.ac``, modify the ::
+   this, within the ``src/PyTrilinos`` directory, make a directory with your
+   package name.  Repeat for nested namespaces.
 
-      AC_CONFIG_FILES
+   In ``src/PyTrilinos/CMakeLists.txt``, you will find logic such as::
 
-   macro to include the argument ::
+      # The NOX module employs namespaces, so include the NOX directory
+      IF(${PACKAGE_NAME}_ENABLE_NOX)
+        ADD_SUBDIRECTORY(NOX)
+      ENDIF(${PACKAGE_NAME}_ENABLE_NOX)
 
-      src/PyTrilinos/PACKAGE/.dummy
+   Add similar logic for your code.  In each nested directory, create
+   a new ``CMakeLists.txt`` file and provide similar logic.
 
-   where ``PACKAGE`` is the name of your package (and ``src`` could be
-   ``src-boost`` if appropriate).  This may need to be repeated for
-   more deeply nested namespaces (such as ``NOX/Epetra``, for
-   example).
+#. In the top-level ``CMakeLists.txt`` file, you will find a series of
+   if-blocks that look like this::
 
-#. Tell the ``Makefile`` in the source directory (either ``src`` or
-   ``src-boost``) to optionally enable the package.  Within
-   ``src/Makefile.am``, you will find a series of ``automake``
-   directives that look like ::
+      IF(PyTrilinos_ENABLE_Teuchos)
+        APPEND_SET(${PACKAGE_NAME}_PACKAGES Teuchos)
+        APPEND_SET(${PACKAGE_NAME}_MODULES  Teuchos)
+      ENDIF(PyTrilinos_ENABLE_Teuchos)
 
-      @HAVE_PYTRILINOS_TEUCHOS_TRUE@ENABLE_TEUCHOS=true
-      @HAVE_PYTRILINOS_TEUCHOS_FALSE@ENABLE_TEUCHOS=
+   Add a similar if-block for your new package, making sure it is
+   placed in build-order relative to the other packages.  See the
+   logic for the ``NOX`` package if your package supports nested
+   namespaces (sub-modules).
 
-   Copy and paste one of these sets and change (in this example) the
-   four occurences of ``TEUCHOS`` to the (all-caps version of the)
-   name of your package.
+#. If your package will require compiled code that will be archived in
+   the pytrilinos shared library, add the headers and sources to
+   ``src/CMakeLists.txt``, using the existing if-blocks as a guide.
 
-#. Gain access to the exported variables of the package's Makefile.
-   Within this same source directory ``Makefile.am``, include the
-   package export Makefile.  For example, for Teuchos, you will see
-   ::
+#. If your package supports nested namespaces (sub-modules), then in
+   ``src/CMakeLists.txt``, find the loop prefaced with the comment::
 
-      # Teuchos
-      if HAVE_PYTRILINOS_TEUCHOS
-      include $(top_builddir)/../teuchos/Makefile.export.teuchos
-      ...
-      endif
+      # Loop over the PyTrilinos-enabled Trilinos modules and define the
+      # swig-generated PyTrilinos extension modules
 
-   Change the case-sensitive Teuchos package names to your
-   case-sensitive package names.
+   Use the existing if-blocks to add logic to support your
+   sub-modules.
 
-#. Within this same ``if`` block within this ``Makefile.am``, set up
-   the build variables.  Within the ``src`` directory, these variables
-   are ::
+#. Add your package by writing the required SWIG interface files.  For
+   a standard PACKAGE, it will be in the file
 
-      PACKAGE_INTERFACES = ...
-      PACKAGE_PROXIES    = ...
+      ``PACKAGE.i``
 
-   and in the ``src-boost`` directory, they are ::
+   For a package that supports nested namespaces, the primary SWIG
+   interface file will be named::
 
-      PACKAGE_WRAPPERS = ...
-      PACKAGE_PROXIES  = ...
+      ``PACKAGE/__init__.i``
 
-   where ``PACKAGE`` is the (all-caps version of the) name of your
-   package.  ``PACKAGE_INTERFACES`` should be a space-delimited list
-   of swig interface files.  ``PACKAGE_PROXIES`` should be a list of
-   python proxy files, each with ``PyTrilinos/`` directory prefix.
-   ``PACKAGE_WRAPPERS`` should be a list of boost C++ wrapper files
-   that implement the BOOST_PYTHON_MODULE macro.
-
-   Typically, you will have a single swig interface file named after
-   your package with a ``.i`` extension; a single python proxy file
-   named after you package with a ``.py`` extension; and a single
-   boost C++ wrapper named after your package with a ``_wrap.cpp``
-   suffix.  In ``src`` you will need to create the ``.i`` file; in
-   ``src-boost``, you will have to create both the ``_wrap.cpp`` and
-   ``.py`` files.
-
-#. Again, within this same ``Makefile.am``, after these
-   package-specific definitions, you will find, for example ::
-
-      PROXIES = ...
-
-   where the right-hand side is a list of all of the individual
-   package ``_PROXIES`` variables.  Add you package to this and other
-   related lists.
-
-#. Alter ``src/setup.py`` to include the new module.  In this file,
-   the first non-commented line of code is to define the list of
-   strings in a variable called ``modules``.  Add the name of your
-   package to this list.  Note that the order of the list should be
-   the Trilinos build order.  This order can be obtained from the
-   top-level Trilinos ``Makefile.am`` file.
-
-#. Create a swig interface file, using an existing swig interface file
-   as a template.  Start with the ``%module`` directive and limit your
-   first cut to including the package configuration definitions::
-
-      %include "Komplex_config.h"
-
-#. This should be sufficient for getting started.  From the
-   ``PyTrilinos`` main directory, run the ``bootstrap`` command to
-   generate the ``configure`` and ``Makefile.in`` files that will be
-   used by the top-level ``configure`` script.  From your top-level
-   build directory, run your ``configure`` script and ``make`` to
-   build your first cut.  To test it, do the following::
-
-      $ cd packages/PyTrilinos/test
-      $ make
-      $ python
-      >>> import setpath
-      >>> setpath.setpath()
-      >>> import Package    # where Package is your package name
-      >>> dir(Package)
-
-   You should have some simple items defined within your Package.
+   In both cases, of course, ``PACKAGE`` will be replaced with your
+   package name.

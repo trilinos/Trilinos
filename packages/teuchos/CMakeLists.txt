@@ -1,5 +1,4 @@
 INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
 
 #
 # A) Define the package
@@ -28,6 +27,10 @@ CHECK_BLAS_FLOAT(HAVE_TEUCHOS_BLASFLOAT)
 SET( ${PACKAGE_NAME}_ORDINAL_TYPE ptrdiff_t
   CACHE STRING
   "Select the data type for Teuchos_Ordinal (Teuchos::Ordinal)." )
+
+PACKAGE_ADD_DEBUG_OPTION()
+
+PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
@@ -72,13 +75,6 @@ ADD_OPTION_AND_DEFINE(
   HAVE_TEUCHOS_FLOAT
   "Enable Teuchos features for float data type."
   ON
-  )
-
-ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_DEBUG
-  HAVE_TEUCHOS_DEBUG
-  "Enable a host of runtime debug checking."
-  ${Trilinos_ENABLE_DEBUG}
   )
 
 ADD_OPTION_AND_DEFINE(

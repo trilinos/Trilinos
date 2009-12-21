@@ -449,6 +449,14 @@ template<class T>
 bool is_null( const ArrayView<T> &av );
 
 
+/** \brief Returns true if <tt>av.get()!=NULL</tt>.
+ *
+ * \relates ArrayView
+ */
+template<class T>
+bool nonnull( const ArrayView<T> &av );
+
+
 /** \brief Output stream inserter.
  *
  * The implementation of this function just prints pointer addresses and
@@ -458,6 +466,18 @@ bool is_null( const ArrayView<T> &av );
  */
 template<class T>
 std::ostream& operator<<( std::ostream& out, const ArrayView<T>& av );
+
+
+/** \brief Const cast of underlying <tt>ArrayView</tt> type from <tt>const T*</tt>
+ * to <tt>T*</tt>.
+ *
+ * The function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>)
+ * compiles.
+ *
+ * \relates ArrayView
+ */
+template<class T2, class T1>
+ArrayView<T2> av_const_cast(const ArrayView<T1>& p1);
 
 
 /** \brief Reinterpret cast of underlying <tt>ArrayView</tt> type from

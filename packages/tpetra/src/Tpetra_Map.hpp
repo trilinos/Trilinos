@@ -64,6 +64,7 @@ namespace Tpetra {
     // - contiguous
     // - as evenly distributed as possible
     using Teuchos::as;
+    using Teuchos::outArg;
     const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
     const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
@@ -206,6 +207,8 @@ namespace Tpetra {
     // This differs from Map(Ord,Ord,Plat) in that the user has specified the number of elements 
     // per node, so that they are not (necessarily) evenly distributed
 
+    using Teuchos::outArg;
+
     const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
     const size_t  L1 = Teuchos::OrdinalTraits<size_t>::one();
     const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
@@ -230,7 +233,8 @@ namespace Tpetra {
            + ensure that it is the same on all nodes
        */
       global_size_t global_sum;
-      Teuchos::reduceAll<int,global_size_t>(*comm_,Teuchos::REDUCE_SUM,Teuchos::as<global_size_t>(numLocalElements_in),&global_sum);
+      Teuchos::reduceAll<int,global_size_t>(*comm_,Teuchos::REDUCE_SUM,
+        Teuchos::as<global_size_t>(numLocalElements_in),outArg(global_sum));
       /* there are three errors we should be detecting:
          - numGlobalElements != invalid() and it is incorrect/invalid
          - numLocalElements invalid (<0)
@@ -303,7 +307,7 @@ namespace Tpetra {
 
     // compute my local offset
     GlobalOrdinal start_index;
-    Teuchos::scan<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_SUM,numLocalElements_,&start_index);
+    Teuchos::scan<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_SUM,numLocalElements_,Teuchos::outArg(start_index));
     start_index -= numLocalElements_;
 
     minAllGID_ = indexBase_;
@@ -322,6 +326,7 @@ namespace Tpetra {
   : comm_(comm_in),
     node_(node_in) {
     using Teuchos::as;
+    using Teuchos::outArg;
     // Distribute the elements across the nodes in an arbitrary user-specified manner
     // They are not necessarily contiguous or evenly distributed
     const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
@@ -347,7 +352,8 @@ namespace Tpetra {
            + ensure that it is the same on all nodes
        */
       global_size_t global_sum;
-      Teuchos::reduceAll<int,global_size_t>(*comm_,Teuchos::REDUCE_SUM,as<global_size_t>(numLocalElements_in),&global_sum);
+      Teuchos::reduceAll<int,global_size_t>(*comm_,Teuchos::REDUCE_SUM,
+        as<global_size_t>(numLocalElements_in),outArg(global_sum));
       localChecks[0] = -1;
       localChecks[1] = 0;
       if (numGlobalElements_in < GST1 && numGlobalElements_in != GST0 && numGlobalElements_in != GSTI) {
@@ -436,7 +442,8 @@ namespace Tpetra {
       GlobalOrdinal minmaxAllGIDlcl[2], minmaxAllGIDgbl[2];
       minmaxAllGIDlcl[0] = -minMyGID_;  // negative allows us to do a single
       minmaxAllGIDlcl[1] =  maxMyGID_;  // reduction below
-      Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,2,minmaxAllGIDlcl,minmaxAllGIDgbl);
+      Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,2,minmaxAllGIDlcl,
+        minmaxAllGIDgbl);
       minAllGID_ = -minmaxAllGIDgbl[0];
       maxAllGID_ =  minmaxAllGIDgbl[1];
     }
@@ -554,6 +561,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
+    using Teuchos::outArg;
     // check to make sure distribution is the same
     char iscompat_lcl;
     if (getGlobalNumElements() != map.getGlobalNumElements() ||
@@ -566,12 +574,14 @@ namespace Tpetra {
       iscompat_lcl = 1;
     }
     char iscompat_gbl;
-    Teuchos::reduceAll<int,char>(*comm_,Teuchos::REDUCE_MIN,iscompat_lcl,&iscompat_gbl);
+    Teuchos::reduceAll<int,char>(*comm_,Teuchos::REDUCE_MIN,iscompat_lcl,
+      outArg(iscompat_gbl));
     return (iscompat_gbl == 1);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::isSameAs(const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
+    using Teuchos::outArg;
     if (this == &map) {
       // we should assume that this is globally coherent
       // if they share the same underlying MapData, then they must be equivalent maps
@@ -630,7 +640,7 @@ namespace Tpetra {
 
     // now, determine if we detected not-same-ness on any node
     char isSame_gbl;
-    Teuchos::reduceAll<int,char>(*comm_,Teuchos::REDUCE_MIN,isSame_lcl,&isSame_gbl);
+    Teuchos::reduceAll<int,char>(*comm_,Teuchos::REDUCE_MIN,isSame_lcl,outArg(isSame_gbl));
     return (isSame_gbl == 1);
   }
 
@@ -786,6 +796,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal,class GlobalOrdinal, class Node>
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::checkIsDist() const {
+    using Teuchos::outArg;
     bool global = false;
     if(comm_->getSize() > 1) {
       char localRep = 0;
@@ -793,7 +804,7 @@ namespace Tpetra {
         localRep = 1;
       }
       char allLocalRep;
-      Teuchos::reduceAll<int>(*comm_,Teuchos::REDUCE_MIN,localRep,&allLocalRep);
+      Teuchos::reduceAll<int>(*comm_,Teuchos::REDUCE_MIN,localRep,outArg(allLocalRep));
       if (allLocalRep != 1) {
         global = true;
       }

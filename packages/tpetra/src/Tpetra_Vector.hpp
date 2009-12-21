@@ -90,6 +90,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const {
+    using Teuchos::outArg;
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
@@ -103,29 +104,31 @@ namespace Tpetra {
     dot = MVT::Dot(this->lclMV_,a.lclMV_);
     if (this->isDistributed()) {
       Scalar lcl = dot;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcl,&dot);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcl,outArg(dot));
     }
     return dot;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Scalar Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue() const {
+    using Teuchos::outArg;
     typedef Teuchos::ScalarTraits<Scalar> SCT;
     Scalar sum = MVT::Sum(this->lclMV_);
     if (this->isDistributed()) {
       Scalar lsum = sum;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,&sum);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lsum,outArg(sum));
     }
     return sum / Teuchos::as<Scalar>(this->getGlobalLength());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const {
+    using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::Norm1(*this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
     }
     return norm;
   }
@@ -133,22 +136,24 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2() const {
     using Teuchos::ScalarTraits;
+    using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::Norm2Squared(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
     }
     return ScalarTraits<Mag>::squareroot(norm);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf() const {
+    using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
     Mag norm = MVT::NormInf(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_MAX,lnorm,&norm);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_MAX,lnorm,outArg(norm));
     }
     return norm;
   }
@@ -156,6 +161,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const {
     using Teuchos::ScalarTraits;
+    using Teuchos::outArg;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*weights.getMap()), std::runtime_error,
@@ -169,7 +175,7 @@ namespace Tpetra {
     Mag norm = MVT::WeightedNorm(this->lclMV_,weights.lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,&norm);
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
     }
     return ScalarTraits<Mag>::squareroot(norm / Teuchos::as<Mag>(this->getGlobalLength()));
   }
