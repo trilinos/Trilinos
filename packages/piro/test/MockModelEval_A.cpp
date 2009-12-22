@@ -89,7 +89,6 @@ RCP<const  Teuchos::Array<std::string> > MockModelEval_A::get_p_names(int l) con
     const std::string name = ss.str();
     (*p_names)[i] = name;
   }
-cout << "XXX  " << *p_names << endl;
   return p_names;
 }
 

@@ -1,5 +1,5 @@
 <ParameterList>
-  <Parameter name="Piro Solver" type="string" value="Rythmos"/>
+  <Parameter name="Piro Solver" type="string" value="LOCA"/>
   <Parameter name="Compute Sensitivities" type="bool" value="0"/>
   <ParameterList name="LOCA">
     <ParameterList name="Bifurcation"/>
@@ -38,7 +38,7 @@
           <Parameter name="Orthogonalization" type="string" value="Classical"/>
           <Parameter name="Output Frequency" type="int" value="20"/>
           <Parameter name="Output Solver Details" type="bool" value="1"/>
-          <Parameter name="Preconditioner" type="string" value="Ifpack"/>
+          <Parameter name="Preconditioner" type="string" value="None"/>
           <Parameter name="Preconditioner Operator" type="string" value="Use Jacobian"/>
           <Parameter name="Preconditioner Reuse Policy" type="string" value="Rebuild"/>
           <Parameter name="RCM Reordering" type="string" value="Disabled"/>
@@ -46,6 +46,7 @@
           <Parameter name="Throw Error on Prec Failure" type="bool" value="1"/>
           <Parameter name="Tolerance" type="double" value="0.0001"/>
           <Parameter name="Zero Initial Guess" type="bool" value="0"/>
+          <!--Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/-->
         </ParameterList>
         <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
       </ParameterList>
@@ -77,8 +78,17 @@
       <Parameter name="Status Test Check Type" type="string" value="Minimal"/>
     </ParameterList>
     <ParameterList name="Status Tests">
-      <Parameter name="Test Type" type="string" value="NormF"/>
-      <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+      <Parameter name="Test Type" type="string" value="Combo"/>
+      <Parameter name="Combo Type" type="string" value="OR"/>
+      <Parameter name="Number of Tests" type="int" value="2"/>
+      <ParameterList name="Test 0">
+        <Parameter name="Test Type" type="string" value="NormF"/>
+        <Parameter name="Tolerance" type="double" value="1.0e-8"/>
+      </ParameterList>
+      <ParameterList name="Test 1">
+        <Parameter name="Test Type" type="string" value="MaxIters"/>
+        <Parameter name="Maximum Iterations" type="int" value="10"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Rythmos">

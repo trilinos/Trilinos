@@ -1,4 +1,5 @@
 #include "Piro_Epetra_LOCASolver.hpp"
+#include "Piro_Epetra_MatrixFreeDecorator.hpp"
 #include "Piro_ValidPiroParameters.hpp"
 
 
@@ -18,6 +19,11 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
   Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
   Teuchos::ParameterList& lsParams = noxParams->
 	sublist("Direction").sublist("Newton").sublist("Linear Solver");
+  string jacobianSource = lsParams.get("Jacobian Operator", "Have Jacobian");
+
+  if (jacobianSource == "Matrix-Free") {
+   model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model));
+  }
 
   // Grab some modelEval stuff from underlying model
   EpetraExt::ModelEvaluator::InArgs inargs = model->createInArgs();
@@ -50,17 +56,18 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
   Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> itmp = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = itmp;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac;
-  string jacobianSource = lsParams.get("Jacobian Operator", "Have Jacobian");
 
-  if (jacobianSource == "Have Jacobian") {
+  if (jacobianSource == "Have Jacobian" || jacobianSource == "Matrix-Free") {
     A = model->create_W();
     iJac = interface;
   }
+/*
   else if (jacobianSource == "Matrix-Free") {
     A = Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams,
                                      iReq, *currentSolution));
     iJac = Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(A);
   }
+*/
   else if (jacobianSource == "Finite Difference") {
     A = Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams,
                                             iReq, *currentSolution));
