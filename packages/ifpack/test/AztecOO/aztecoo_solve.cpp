@@ -32,6 +32,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #ifdef HAVE_MPI
@@ -53,6 +54,9 @@ void process_command_line(int argc, char*argv[], std::string& xml_params_file);
 
 int main(int argc, char*argv[])
 {
+  Teuchos::Time timer("total");
+  timer.start();
+
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -141,6 +145,11 @@ int main(int argc, char*argv[])
               <<expected_iters<<"), or resid-norm(" << norm << ") >= 1.e-7"<<std::endl;
       }
     }
+  }
+
+  timer.stop();
+  if (Comm.MyPID() == 0) {
+    std::cout << "proc 0 total program time: " << timer.totalElapsedTime() << std::endl;
   }
 
   return 0;
