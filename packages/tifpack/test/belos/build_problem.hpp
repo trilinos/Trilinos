@@ -77,8 +77,11 @@ Teuchos::RCP<
     A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm);
   }
   else if (hb_file != "not specified") {
+    if (comm->getRank() == 0) {
+      std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
+    }
+//    problem = build_problem_hb(hb_file);
     throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
-    std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
   }
   else {
     throw std::runtime_error("No matrix file specified.");

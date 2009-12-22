@@ -1,6 +1,7 @@
 #ifndef _read_matrix_hpp_
 #define _read_matrix_hpp_
 
+#include <iostream>
 #include <fstream>
 
 #include "Teuchos_CommHelpers.hpp"
@@ -18,6 +19,10 @@ read_matrix_mm(const std::string& mm_file,
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
  
   int my_proc = comm->getRank();
+
+  if (my_proc == 0) {
+    std::cout << "Reading matrix-market file..." << std::endl;
+  }
 
   GlobalOrdinal num_global_rows = 0;
   LocalOrdinal nnz_per_row = 0;
@@ -81,6 +86,10 @@ read_matrix_mm(const std::string& mm_file,
 
       A->insertGlobalValues(g_row, col(), coef() );
     }
+  }
+
+  if (my_proc == 0) {
+    std::cout << "... Finshed reading matrix-market file." << std::endl;
   }
 
   A->fillComplete();

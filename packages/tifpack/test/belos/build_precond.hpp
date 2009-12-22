@@ -1,6 +1,8 @@
 #ifndef _build_precond_hpp_
 #define _build_precond_hpp_
 
+#include <iostream>
+
 #include "Tpetra_FlipOp.hpp"
 #include "Tifpack_Factory.hpp"
 
@@ -22,9 +24,19 @@ build_precond(Teuchos::ParameterList& test_params,
     tif_params = test_params.sublist("Tifpack");
   }
 
+  if (A->getRowMap()->getComm()->getRank() == 0) {
+    std::cout << "Configuring/Initializing/Computing Tifpack preconditioner..."
+       << std::endl;
+  }
+
   prec->SetParameters(tif_params);
   prec->Initialize();
   prec->Compute();
+
+  if (A->getRowMap()->getComm()->getRank() == 0) {
+    std::cout << "... Finished Computing Tifpack preconditioner."
+       << std::endl;
+  }
 
   Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_op =
     Teuchos::rcp(new Tpetra::FlipOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(prec));
