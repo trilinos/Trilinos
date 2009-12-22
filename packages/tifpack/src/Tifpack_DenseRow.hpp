@@ -101,8 +101,9 @@ DenseRow<Scalar,GlobalOrdinal>::DenseRow(GlobalOrdinal first_index, GlobalOrdina
    m_values(last_index-first_index+1, 0),
    m_used(NULL)
 {
-  m_used = new bool[m_values.size()];
-  for(tsize_t i=0; i<m_values.size(); ++i) {
+  tsize_t len = m_values.size();
+  m_used = new bool[len];
+  for(tsize_t i=0; i<len; ++i) {
     m_used[i] = false;
   }
 }
@@ -157,7 +158,8 @@ template<class Scalar,class GlobalOrdinal>
 size_t DenseRow<Scalar,GlobalOrdinal>::getNumEntries() const
 {
   size_t num_entries = 0;
-  for(tsize_t i=0; i<m_values.size(); ++i) {
+  tsize_t len = m_values.size();
+  for(tsize_t i=0; i<len; ++i) {
     if (m_used[i]) ++num_entries;
   }
   return num_entries;
@@ -166,7 +168,8 @@ size_t DenseRow<Scalar,GlobalOrdinal>::getNumEntries() const
 template<class Scalar,class GlobalOrdinal>
 void DenseRow<Scalar,GlobalOrdinal>::reset()
 {
-  for(tsize_t i=0; i<m_values.size(); ++i) {
+  tsize_t len = m_values.size();
+  for(tsize_t i=0; i<len; ++i) {
     m_values[i] = Teuchos::ScalarTraits<Scalar>::zero();
     m_used[i] = false;
   }
@@ -179,8 +182,9 @@ void DenseRow<Scalar,GlobalOrdinal>::copyToArrays(Teuchos::Array<GlobalOrdinal>&
   size_t num_entries = getNumEntries();
   indices.resize(num_entries);
   values.resize(num_entries);
+  tsize_t len = m_values.size();
   tsize_t offset = 0;
-  for(tsize_t i=0; i<m_values.size(); ++i) {
+  for(tsize_t i=0; i<len; ++i) {
     if (m_used[i]) {
       values[offset] = m_values[i];
       indices[offset++] = m_first_index+i;

@@ -60,9 +60,6 @@ Teuchos::RCP<
    > build_problem(Teuchos::ParameterList& test_params,
                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
-  Teuchos::Time timer("build_problem");
-  timer.start();
-
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
@@ -93,11 +90,6 @@ Teuchos::RCP<
   }
 
   Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
-
-  timer.stop();
-  if (comm->getRank() == 0) {
-    std::cout << "proc 0 time to read matrix & create problem: " << timer.totalElapsedTime() << std::endl;
-  }
 
   return problem;
 }

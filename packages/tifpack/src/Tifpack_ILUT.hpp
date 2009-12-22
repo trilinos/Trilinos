@@ -68,7 +68,7 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   // @{ Constructors and Destructors
-  //! ILUT constuctor with variable number of indices per row.
+  //! ILUT constuctor with RowMatrix input
   ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
   
   //! ILUT Destructor
@@ -444,9 +444,6 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Initialize()
 }
 
 //==========================================================================
-// MS // completely rewritten the algorithm on 25-Jan-05, using more STL
-// MS // and in a nicer and cleaner way. Also, it is more efficient.
-// MS // WARNING: Still not fully tested!
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 {
@@ -459,23 +456,26 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
   NumMyRows_ = A_->getNodeNumRows();
   size_t Length = A_->getNodeMaxNumRowEntries();
-  Teuchos::Array<GlobalOrdinal>    RowIndicesL(Length);
+  Teuchos::Array<LocalOrdinal>    RowIndicesL(Length);
   Teuchos::Array<Scalar> RowValuesL(Length);
-  Teuchos::Array<GlobalOrdinal>    RowIndicesU(Length);
+  Teuchos::Array<LocalOrdinal>    RowIndicesU(Length);
   Teuchos::Array<Scalar> RowValuesU(Length);
   bool distributed = (Comm().getSize() > 1) ? true : false;
 
   size_t RowNnzU;
 
-  L_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), 0));
-  U_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), 0));
+  L_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), A_->getColMap(), 0));
+  U_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), A_->getColMap(), 0));
 
   TEST_FOR_EXCEPTION(L_ == Teuchos::null || U_ == Teuchos::null, std::runtime_error,
      "Tifpack::ILUT::Compute ERROR, failed to allocate L_ or U_");
 
+  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+
   // insert first row in U_ and L_
   LocalOrdinal lrow0 = 0;
-  A_->getGlobalRowCopy(lrow0, RowIndicesU(), RowValuesU(), RowNnzU);
+  A_->getLocalRowCopy(lrow0, RowIndicesU(), RowValuesU(), RowNnzU);
 
   if (distributed)
   {
@@ -487,8 +487,6 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
         RowValuesU[count] = RowValuesU[i];
         ++count;
       }
-      else
-        continue;
     }
     RowNnzU = count;
   }
@@ -502,25 +500,20 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     }
   }
 
-  GlobalOrdinal g_row0 = 0;
-  U_->insertGlobalValues(g_row0,RowIndicesU(), RowValuesU());
+  U_->insertLocalValues(0,RowIndicesU(), RowValuesU());
 
-   // FIXME: DOES IT WORK IN PARALLEL ??
-  RowValuesU[0] = 1.0;
+  RowValuesU[0] = one;
   RowIndicesU[0] = 0;
-  L_->insertGlobalValues(g_row0,RowIndicesU(0,1), RowValuesU(0,1));
+  L_->insertLocalValues(0,RowIndicesU(0,1), RowValuesU(0,1));
 
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colmap =
-    A_->getColMap();
+  LocalOrdinal min_col = 0, max_col = NumMyRows_;
 
-  GlobalOrdinal min_col = colmap->getMinGlobalIndex();
-  GlobalOrdinal max_col = colmap->getMaxGlobalIndex();
-  Tifpack::DenseRow<Scalar,GlobalOrdinal> SingleRowU(min_col, max_col);
-  Tifpack::DenseRow<Scalar,GlobalOrdinal> SingleRowL(min_col, max_col);
-
-  Teuchos::Array<GlobalOrdinal> keys;
+  Teuchos::Array<LocalOrdinal> keys;
   Teuchos::Array<Scalar> values;
   Teuchos::Array<magnitudeType> AbsRow;
+
+  Teuchos::Array<LocalOrdinal> tmpi;
+  Teuchos::Array<Scalar> tmpv;
 
   // =================== //
   // start factorization //
@@ -528,10 +521,10 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
   double this_proc_flops = 0.0;
 
-  for (GlobalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
+  for (LocalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
   {
     // get row `row_i' of the matrix, store in U pointers
-    A_->getGlobalRowCopy(row_i, RowIndicesU(), RowValuesU(), RowNnzU);
+    A_->getLocalRowCopy(row_i, RowIndicesU(), RowValuesU(), RowNnzU);
 
     if (distributed)
     {
@@ -543,14 +536,14 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
           RowValuesU[count] = RowValuesU[i];
           ++count;
         }
-        else
-          continue;
       }
       RowNnzU = count;
     }
 
     size_t NnzLower = 0;
     size_t NnzUpper = 0;
+
+    LocalOrdinal start_col = RowIndicesU[0];
 
     for (size_t i = 0 ;i < RowNnzU ; ++i) {
       if (RowIndicesU[i] < row_i)
@@ -563,6 +556,8 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       }
       else
         NnzUpper++;
+
+      if (RowIndicesU[i] < start_col) start_col = RowIndicesU[i];
     }
 
     //Can magnitudeType always be assign-converted to double?
@@ -573,31 +568,27 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     if (FillL == 0) FillL = 1;
     if (FillU == 0) FillU = 1;
 
-    SingleRowU.reset();
+    Tifpack::DenseRow<Scalar,LocalOrdinal> SingleRowU(min_col, max_col);
 
     for (size_t i = 0 ; i < RowNnzU ; ++i) {
-        SingleRowU[RowIndicesU[i]] = RowValuesU[i];
+      SingleRowU[RowIndicesU[i]] = RowValuesU[i];
     }
 
     // for the multipliers
-    SingleRowL.reset();
-
-    GlobalOrdinal start_col = NumMyRows_;
-    for (size_t i = 0 ; i < RowNnzU ; ++i)
-      start_col = std::min(start_col, RowIndicesU[i]);
+    Tifpack::DenseRow<Scalar,LocalOrdinal> SingleRowL(min_col, max_col);
 
     int flops = 0;
 
-    for (GlobalOrdinal col_k = start_col ; col_k < row_i ; ++col_k) {
+    for (LocalOrdinal col_k = start_col ; col_k < row_i ; ++col_k) {
 
-      Teuchos::ArrayRCP<const GlobalOrdinal>    ColIndicesK;
+      Teuchos::ArrayRCP<const LocalOrdinal>    ColIndicesK;
       Teuchos::ArrayRCP<const Scalar> ColValuesK;
 
-      U_->getGlobalRowView(col_k, ColIndicesK, ColValuesK);
+      U_->getLocalRowView(col_k, ColIndicesK, ColValuesK);
       size_t ColNnzK = ColIndicesK.size();
 
       // FIXME: can keep trace of diagonals
-      Scalar DiagonalValueK = 0.0;
+      Scalar DiagonalValueK = zero;
       for (size_t i = 0 ; i < ColNnzK ; ++i) {
         if (ColIndicesK[i] == col_k) {
           DiagonalValueK = ColValuesK[i];
@@ -606,7 +597,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       }
 
       // FIXME: this should never happen!
-      if (DiagonalValueK == 0.0)
+      if (DiagonalValueK == zero)
         DiagonalValueK = AbsoluteThreshold();
 
       Scalar xxx = SingleRowU[col_k];
@@ -615,7 +606,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
         ++flops;
 
         Scalar yyy = SingleRowL[col_k];
-        if (yyy !=  0.0) {
+        if (yyy !=  zero) {
           for (size_t j = 0 ; j < ColNnzK ; ++j) {
             GlobalOrdinal col_j = ColIndicesK[j];
 
@@ -632,17 +623,14 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
     magnitudeType cutoff = DropTolerance();
     Teuchos::Array<Scalar> DiscardedElements(1,0);
-    int count;
 
     // drop elements to satisfy LevelOfFill(), start with L
-    count = 0;
-    int sizeL = SingleRowL.getNumEntries();
-    keys.resize(sizeL);
-    values.resize(sizeL);
-
-    AbsRow.resize(sizeL);
 
     SingleRowL.copyToArrays( keys, values );
+    int sizeL = keys.size();
+    AbsRow.resize(sizeL);
+
+    int count = 0;
     for (int i = 0; i < sizeL; ++i) {
       if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) > DropTolerance()) {
         AbsRow[count++] = Teuchos::ScalarTraits<Scalar>::magnitude(values[i]);
@@ -655,26 +643,33 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       cutoff = AbsRow[FillL];
     }
 
+    tmpi.resize(0);
+    tmpv.resize(0);
+
     for (int i = 0; i < sizeL; ++i) {
       if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) >= cutoff) {
-        L_->insertGlobalValues(row_i, keys(i,1), values(i,1));
+        tmpi.push_back(keys[i]);
+        tmpv.push_back(values[i]);
       }
       else
         DiscardedElements[0] += values[i];
     }
 
-    // FIXME: DOES IT WORK IN PARALLEL ???
+    if (tmpi.size() > 0) {
+      L_->insertLocalValues(row_i, tmpi(), tmpv());
+    }
+
     // add 1 to the diagonal
-    Teuchos::Array<GlobalOrdinal> di(1,row_i);
-    Teuchos::Array<Scalar> dtmp(1,1);
-    L_->insertGlobalValues(row_i, di(), dtmp());
+    tmpi.resize(1); tmpi[0] = row_i;
+    tmpv.resize(1); tmpv[0] = one;
+    L_->insertLocalValues(row_i, tmpi(), tmpv());
 
     // same business with U_
     count = 0;
-    size_t sizeU = SingleRowU.getNumEntries();
-    AbsRow.resize(sizeU);
 
     SingleRowU.copyToArrays(keys, values);
+    size_t sizeU = keys.size();
+    AbsRow.resize(sizeU);
 
     for (size_t i = 0; i < sizeU; ++i) {
       if (keys[i] >= row_i && Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) > DropTolerance())
@@ -689,26 +684,30 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       cutoff = AbsRow[FillU];
     }
 
-    // sets the factors in U_
-    for (size_t i = 0; i < sizeU; ++i)
-    {
-      di[0] = keys[i];
-      dtmp[0] = values[i];
+    tmpi.resize(0);
+    tmpv.resize(0);
 
-      if (di[0] >= row_i) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(dtmp[0]) >= cutoff || row_i == di[0]) {
-          U_->insertGlobalValues(row_i, di(), dtmp());
+    // sets the factors in U_
+    for (size_t i = 0; i < sizeU; ++i) {
+      if (keys[i] >= row_i) {
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) >= cutoff ||
+            row_i == keys[i]) {
+          tmpi.push_back(keys[i]);
+          tmpv.push_back(values[i]);
         }
-        else
-          DiscardedElements[0] += dtmp[0];
+        else DiscardedElements[0] += values[i];
       }
+    }
+
+    if (tmpi.size() > 0) {
+      U_->insertLocalValues(row_i, tmpi(), tmpv());
     }
 
     // FIXME: not so sure of that!
     if (RelaxValue() != 0.0) {
       DiscardedElements[0] *= RelaxValue();
-      di[0] = row_i;
-      U_->insertGlobalValues(row_i, di(), DiscardedElements());
+      tmpi.resize(1); tmpi[0] = row_i;
+      U_->insertLocalValues(row_i, tmpi(), DiscardedElements());
     }
   }
 
