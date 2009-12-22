@@ -588,7 +588,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   /*  Send edge weights, if any */
 
-  dim = zz->Edge_Weight_Dim;
+  dim = zhg->edgeWeightDim;
   if (method_repart && (!dim))
     dim = 1; /* Need edge weights for REPARTITION; force malloc of ewgt array */
   phg->EdgeWeightDim = dim;
@@ -600,7 +600,10 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
     if (nwgt && (!phg->ewgt || !tmpwgts)) MEMORY_ERROR;
 
-    if (zz->Edge_Weight_Dim) {  /* Edge weights provided by application */
+    if (zhg->edgeWeightDim) { 
+      /* 
+       * Edge weights provided by application or set in Zoltan_Get_Hypergraph_From_Queries
+       */
       if (phg->comm->nProc_y == 1) {
         for (i = 0; i < nLocalEdges; i++) {
           idx = edgeGNO[i];
@@ -685,7 +688,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         CHECK_FOR_MPI_ERROR(rc);
       }
     }
-    else { /* dim > 0 but zz->Edge_Weight_Dim == 0 */
+    else { /* dim > 0 but zhg->edgeWeightDim == 0 */
       /* Edge weights are needed for REPARTITION but are not provided by app */
       /* Set the edge weights for input vertices to 1. */
       for (i = 0; i < phg->nEdge; i++) phg->ewgt[i] = 1.;
@@ -923,7 +926,7 @@ float ewgt;
       parts[pin_parts[cnt]] = i+1;
       cnt++;
     }
-    ewgt = (zhg->Ewgt ? zhg->Ewgt[i*zz->Edge_Weight_Dim] : 1.);
+    ewgt = (zhg->Ewgt ? zhg->Ewgt[i*zhg->edgeWeightDim] : 1.);
     if (nparts > 1) {
       loccuts[0] += (nparts-1) * ewgt;
       loccuts[1] += ewgt;
@@ -1434,7 +1437,7 @@ int myProc_y = phg->comm->myProc_y;
     phg->nEdge -= phg->nRepartEdge;
     phg->nPins -= phg->nRepartPin;
 
-    if (zz->Edge_Weight_Dim) {
+    if (zhg->edgeWeightDim) {
       /* Remove the RepartMultiplier from edge weights */
       for (i = 0; i < phg->nEdge; i++)
         phg->ewgt[i] /= hgp->RepartMultiplier;
@@ -1483,7 +1486,7 @@ static int remove_dense_edges(ZZ *zz,
 char *yo = "remove_dense_edges";
 int ierr = ZOLTAN_OK;
 int i, w, esize, k, l, kpin, lpin, pin;
-int ew_dim = zz->Edge_Weight_Dim;
+int ew_dim = zhg->edgeWeightDim;
 int global_nremove = 0; 
 int global_nremove_pins = 0; 
 int nremove = 0;

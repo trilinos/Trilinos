@@ -169,6 +169,7 @@ struct Zoltan_HGraph {
   int globalHedges;         /* global number of hyperedges listed here */
   int *edgeGNO;             /* edge global number */
   int *Esize;               /* number of vertices in hyperedge */
+  int edgeWeightDim;        /* Number of weights stored for each hyperedge */
   float *Ewgt;              /* Edge weights for each hyperedge */
   int *pinGNO;             /* pin global number NEW */
   int *Pin_Procs;           /* Process owning each pin  */
