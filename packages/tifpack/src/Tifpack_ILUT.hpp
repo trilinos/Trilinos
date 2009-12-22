@@ -502,13 +502,13 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     }
   }
 
-  GlobalOrdinal grow0 = 0;
-  U_->insertGlobalValues(grow0,RowIndicesU(), RowValuesU());
+  GlobalOrdinal g_row0 = 0;
+  U_->insertGlobalValues(g_row0,RowIndicesU(), RowValuesU());
 
    // FIXME: DOES IT WORK IN PARALLEL ??
   RowValuesU[0] = 1.0;
   RowIndicesU[0] = 0;
-  L_->insertGlobalValues(grow0,RowIndicesU(0,1), RowValuesU(0,1));
+  L_->insertGlobalValues(g_row0,RowIndicesU(0,1), RowValuesU(0,1));
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colmap =
     A_->getColMap();
@@ -573,7 +573,6 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     if (FillL == 0) FillL = 1;
     if (FillU == 0) FillU = 1;
 
-    // convert line `row_i' into STL map for fast access
     SingleRowU.reset();
 
     for (size_t i = 0 ; i < RowNnzU ; ++i) {
@@ -615,15 +614,16 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
         SingleRowL[col_k] = xxx / DiagonalValueK;
         ++flops;
 
-        for (size_t j = 0 ; j < ColNnzK ; ++j) {
-          GlobalOrdinal col_j = ColIndicesK[j];
+        Scalar yyy = SingleRowL[col_k];
+        if (yyy !=  0.0) {
+          for (size_t j = 0 ; j < ColNnzK ; ++j) {
+            GlobalOrdinal col_j = ColIndicesK[j];
 
-          if (col_j < col_k) continue;
+            if (col_j < col_k) continue;
 
-          Scalar yyy = SingleRowL[col_k];
-          if (yyy !=  0.0)
             SingleRowU[col_j] += -yyy * ColValuesK[j];
-          flops += 2;
+            flops += 2;
+          }
         }
       }
     }

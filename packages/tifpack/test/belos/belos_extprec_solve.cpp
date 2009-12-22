@@ -36,6 +36,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Tifpack_Parameters.hpp"
@@ -53,6 +54,9 @@ int main(int argc, char*argv[])
 {
   unsigned int old_cw;
   fpu_fix_start(&old_cw);
+
+  Teuchos::Time timer("total");
+  timer.start();
 
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
@@ -138,6 +142,12 @@ int main(int argc, char*argv[])
   }
 
   fpu_fix_end(&old_cw);
+
+  timer.stop();
+  if (comm->getRank() == 0) {
+    std::cout << "proc 0 total program time: " << timer.totalElapsedTime()
+        << std::endl;
+  }
 
   return 0;
 }

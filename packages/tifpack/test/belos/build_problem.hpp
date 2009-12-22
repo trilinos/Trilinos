@@ -6,6 +6,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Tifpack_Preconditioner.hpp"
@@ -59,9 +60,13 @@ Teuchos::RCP<
    > build_problem(Teuchos::ParameterList& test_params,
                    const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
+  Teuchos::Time timer("build_problem");
+  timer.start();
+
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
+  typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
 
   Teuchos::RCP<const TCRS> A;
 
@@ -87,7 +92,14 @@ Teuchos::RCP<
     throw std::runtime_error("No matrix file specified.");
   }
 
-  return build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
+  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
+
+  timer.stop();
+  if (comm->getRank() == 0) {
+    std::cout << "proc 0 time to read matrix & create problem: " << timer.totalElapsedTime() << std::endl;
+  }
+
+  return problem;
 }
 
 
