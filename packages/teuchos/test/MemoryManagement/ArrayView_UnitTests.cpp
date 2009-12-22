@@ -111,6 +111,16 @@ TEUCHOS_UNIT_TEST( ArrayView, av_reinterpret_cast_int_to_char )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, arrayView_zero_size, T )
+{
+  Array<T> a;
+  const ArrayView<T> av = arrayView(a.getRawPtr(), a.size());
+  TEST_EQUALITY_CONST(av.size(), 0);
+  TEST_ASSERT(is_null(av));
+  TEST_ASSERT(!nonnull(av));
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, arrayView, T )
 {
   Array<T> a = generateArray<T>(n);
@@ -216,6 +226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 
 
 #define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView_zero_size, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
