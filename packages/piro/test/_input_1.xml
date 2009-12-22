@@ -14,9 +14,15 @@
       <Parameter  name="Max Steps" type="int" value="6"/>
       <Parameter  name="Max Value" type="double" value="12.25"/>
       <Parameter  name="Min Value" type="double" value="0.5"/>
-      <Parameter  name="Compute Eigenvalues" type="bool" value="0"/>
+      <Parameter  name="Compute Eigenvalues" type="bool" value="1"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Method" type="string" value="Anasazi"/>
+        <Parameter name="Operator" type="string" value="Shift-Invert"/>
+        <Parameter name="Num Blocks" type="int" value="3"/>
+        <Parameter name="Num Eigenvalues" type="int" value="1"/>
+        <Parameter name="Block Size" type="int" value="1"/>
+        <Parameter name="Maximum Restarts" type="int" value="0"/>
+        <Parameter name="Shift" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Step Size">
@@ -46,7 +52,7 @@
           <Parameter name="Throw Error on Prec Failure" type="bool" value="1"/>
           <Parameter name="Tolerance" type="double" value="0.0001"/>
           <Parameter name="Zero Initial Guess" type="bool" value="0"/>
-          <!--Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/-->
+          <Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/>
         </ParameterList>
         <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
       </ParameterList>

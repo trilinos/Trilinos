@@ -127,9 +127,9 @@ EpetraExt::ModelEvaluator::InArgs MockModelEval_A::createInArgs() const
   inArgs.setSupports(IN_ARG_t,true);
 
   // This ModelEvaluator only supports explicit time integration...
-  inArgs.setSupports(IN_ARG_x_dot,false);
-  inArgs.setSupports(IN_ARG_alpha,false);
-  inArgs.setSupports(IN_ARG_beta,false);
+  inArgs.setSupports(IN_ARG_x_dot,true);
+  inArgs.setSupports(IN_ARG_alpha,true);
+  inArgs.setSupports(IN_ARG_beta,true);
 
   return inArgs;
 }
@@ -223,4 +223,37 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
      (*dgdp_out)[0][0] = -1.0;
      (*dgdp_out)[0][1] = -1.0;
    }
+
+  // Modify for time dependent (implicit timeintegration or eigensolves
+  // Check if time dependent
+  RCP<const Epetra_Vector> x_dot = inArgs.get_x_dot();
+
+  if (x_dot.get()) {
+    double alpha =  inArgs.get_alpha();
+    double beta  =  inArgs.get_beta();
+    if (alpha==0.0 && beta==0.0) {
+      cout << "MockModelEval Warning: alpha=beta=0 -- setting beta=1" << endl;
+      beta = 1.0;
+    }
+
+    if (f_out != Teuchos::null) {
+      for (int i=0; i<myVecLength; i++) {
+         (*f_out)[i] = -alpha*(*x_dot)[i] + beta * (*f_out)[i];
+      }
+    }
+    if (dfdp_out != Teuchos::null) {
+      dfdp_out->Scale(beta);
+    }
+    if (W_out != Teuchos::null) {
+      Teuchos::RCP<Epetra_CrsMatrix> W_out_crs =
+        Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_out, true);
+      W_out_crs->Scale(beta);
+
+      double diag = -alpha;
+      for (int i=0; i<myVecLength; i++) {
+        W_out_crs->SumIntoMyValues(i, 1, &diag, &i);
+      }
+   cout << " W_crs  = " << *W_out_crs << endl;
+    }
+  } 
 } 
